@@ -1,28 +1,37 @@
-const videos = [
-  {
-    href: "#",
-    thumbClass: "thumb-2",
-    pill: { label: "Finanças", className: "pill-finance" },
-    title: "€55.000 de salário na França, mas quanto realmente sobra?",
-    meta: "V2 · 30 abr 2025",
-  },
-  {
-    href: "#",
-    thumbClass: "thumb-1",
-    pill: { label: "Finanças", className: "pill-finance" },
-    title: "Gastei €3.576 para morar em Paris",
-    meta: "V1 · 23 abr 2025",
-  },
-  {
-    href: "#",
-    thumbClass: "thumb-3",
-    pill: { label: "Em breve", className: "pill-soon" },
-    title: "Próximo vídeo chegando…",
-    meta: "V3 · em produção",
-  },
-];
+import Image from "next/image";
+import { getLatestVideos, formatVideoDate } from "@/lib/youtube";
 
-export default function Videos() {
+function EmBreve() {
+  return (
+    <div className="videos-empty">
+      <div className="videos-empty-icon">
+        <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+          <circle cx="20" cy="20" r="19" stroke="rgba(255,255,255,0.12)" strokeWidth="1.5" />
+          <path
+            d="M16 14.5l12 5.5-12 5.5V14.5z"
+            fill="rgba(255,255,255,0.25)"
+          />
+        </svg>
+      </div>
+      <p className="videos-empty-title">Vídeos chegando em breve</p>
+      <p className="videos-empty-sub">
+        O canal está sendo preparado. Inscreva-se para não perder o primeiro vídeo.
+      </p>
+      <a
+        href="https://youtube.com/@andregutto"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="videos-empty-cta"
+      >
+        Inscrever-se no canal →
+      </a>
+    </div>
+  );
+}
+
+export default async function Videos() {
+  const videos = await getLatestVideos(6);
+
   return (
     <section className="videos" id="videos">
       <div className="videos-header">
@@ -43,20 +52,40 @@ export default function Videos() {
         </a>
       </div>
 
-      <div className="videos-grid">
-        {videos.map((v, i) => (
-          <a key={i} href={v.href} className="video-card">
-            <div className={`video-thumb ${v.thumbClass}`}>
-              <span className={`video-pill ${v.pill.className}`}>{v.pill.label}</span>
-              <div className="play-btn"></div>
-            </div>
-            <div className="video-info">
-              <div className="video-title">{v.title}</div>
-              <div className="video-meta">{v.meta}</div>
-            </div>
-          </a>
-        ))}
-      </div>
+      {videos.length === 0 ? (
+        <EmBreve />
+      ) : (
+        <div className="videos-grid">
+          {videos.map((v) => (
+            <a
+              key={v.id}
+              href={v.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="video-card"
+            >
+              <div className="video-thumb video-thumb--real">
+                {v.thumbnail ? (
+                  <Image
+                    src={v.thumbnail}
+                    alt={v.title}
+                    fill
+                    sizes="(max-width: 800px) 100vw, 33vw"
+                    style={{ objectFit: "cover" }}
+                  />
+                ) : (
+                  <div className="thumb-1" style={{ position: "absolute", inset: 0 }} />
+                )}
+                <div className="play-btn play-btn--overlay"></div>
+              </div>
+              <div className="video-info">
+                <div className="video-title">{v.title}</div>
+                <div className="video-meta">{formatVideoDate(v.publishedAt)}</div>
+              </div>
+            </a>
+          ))}
+        </div>
+      )}
     </section>
   );
 }
