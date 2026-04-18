@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install *)",
+      "Bash(npm run *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000)",
+      "Bash(curl -s http://localhost:3000)",
+      "Bash(node -e \"try{localStorage.getItem\\('x'\\)}catch\\(e\\){console.log\\('expected - no localStorage in node'\\)}\")",
+      "Bash(node *)",
+      "Bash(touch /tmp/next-ls.json)",
+      "Bash(NODE_OPTIONS='--localstorage-file=/tmp/next-ls.json' npx next dev --port 3000)",
+      "Bash(git init *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git branch *)",
+      "Bash(git remote *)"
+    ]
+  }
+}
