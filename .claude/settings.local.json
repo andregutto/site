@@ -13,7 +13,10 @@
       "Bash(git add *)",
       "Bash(git commit *)",
       "Bash(git branch *)",
-      "Bash(git remote *)"
+      "Bash(git remote *)",
+      "Bash(git push *)",
+      "Bash(npm show *)",
+      "Bash(NODE_OPTIONS='--localstorage-file=/tmp/next-ls.json' npx next *)"
     ]
   }
 }
