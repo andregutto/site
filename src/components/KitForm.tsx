@@ -28,8 +28,8 @@ export default function KitForm({
     setError('');
 
     try {
-      // POST direto para o Kit, sem API key, endpoint público do formulário embed
-      const res = await fetch(`https://app.kit.com/forms/${formId}/subscriptions`, {
+      // POST via domínio ConvertKit (app.convertkit.com) — Kit ainda usa esse endpoint para subscriptions
+      const res = await fetch(`https://app.convertkit.com/forms/${formId}/subscriptions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams({ email_address: email }),
