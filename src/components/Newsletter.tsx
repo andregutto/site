@@ -15,8 +15,9 @@ export default function Newsletter() {
       </p>
 
       <KitForm
-        formId="917f16e25d"
+        formId="9345097"
         successMessage="Obrigado! Você vai receber tudo no seu email."
+        buttonText="Assinar →"
         noHeader
       />
     </section>

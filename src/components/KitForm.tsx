@@ -8,6 +8,7 @@ interface Props {
   title?: string;
   subtitle?: string;
   noHeader?: boolean;
+  buttonText?: string;
 }
 
 export default function KitForm({
@@ -16,6 +17,7 @@ export default function KitForm({
   title = 'Receber por email',
   subtitle = 'Deixa seu email e eu envio direto pra você.',
   noHeader = false,
+  buttonText = 'Pegar grátis →',
 }: Props) {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
@@ -28,8 +30,8 @@ export default function KitForm({
     setError('');
 
     try {
-      // POST via domínio ConvertKit (app.convertkit.com) — Kit ainda usa esse endpoint para subscriptions
-      const res = await fetch(`https://app.convertkit.com/forms/${formId}/subscriptions`, {
+      // formId deve ser o ID numérico do formulário (ex: 9344800), não o data-uid
+      const res = await fetch(`https://app.kit.com/forms/${formId}/subscriptions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams({ email_address: email }),
@@ -74,7 +76,7 @@ export default function KitForm({
           />
           {error && <span className="kit-error">{error}</span>}
           <button type="submit" className="kit-btn" disabled={loading}>
-            {loading ? 'Enviando…' : 'Pegar grátis →'}
+            {loading ? 'Enviando…' : buttonText}
           </button>
           <p className="kit-note">Sem spam. Cancele quando quiser.</p>
         </form>
