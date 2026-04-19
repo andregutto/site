@@ -16,7 +16,8 @@
       "Bash(git remote *)",
       "Bash(git push *)",
       "Bash(npm show *)",
-      "Bash(NODE_OPTIONS='--localstorage-file=/tmp/next-ls.json' npx next *)"
+      "Bash(NODE_OPTIONS='--localstorage-file=/tmp/next-ls.json' npx next *)",
+      "Bash(npx tsc *)"
     ]
   }
 }

@@ -22,7 +22,7 @@ export default function Sobre() {
           <span className="pillar-icon">💶</span>
           <div className="pillar-title">Finanças</div>
           <p className="pillar-desc">
-            Custo de vida real, câmbio, investimentos, impostos, salários. Bastidor financeiro — não aula de finanças.
+            Custo de vida real, câmbio, investimentos, impostos, salários. Bastidor financeiro, não aula de finanças.
           </p>
         </div>
         <div className="pillar lifestyle">

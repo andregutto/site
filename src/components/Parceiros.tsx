@@ -5,7 +5,7 @@ export default function Parceiros() {
         <div>
           <span className="parceiros-label">Ferramentas que uso</span>
           <p className="parceiros-desc">
-            Uso o Revolut no dia a dia para transferências entre Brasil e França. Se quiser abrir sua conta, use meu link — os dois ganhamos um bônus.
+            Uso o Revolut no dia a dia para transferências entre Brasil e França. Se quiser abrir sua conta, use meu link: os dois ganhamos um bônus.
           </p>
         </div>
         <a

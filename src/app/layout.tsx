@@ -35,11 +35,11 @@ const dmMono = DM_Mono({
 export const metadata: Metadata = {
   title: "André Gutto",
   description:
-    "Finanças reais e os bastidores de quem escolheu construir uma vida diferente — fora do Brasil.",
+    "Finanças reais e os bastidores de quem escolheu construir uma vida diferente, fora do Brasil.",
   openGraph: {
     title: "André Gutto",
     description:
-      "Finanças reais e os bastidores de quem escolheu construir uma vida diferente — fora do Brasil.",
+      "Finanças reais e os bastidores de quem escolheu construir uma vida diferente, fora do Brasil.",
     locale: "pt_BR",
     type: "website",
   },

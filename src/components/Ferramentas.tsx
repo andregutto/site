@@ -1,3 +1,5 @@
+import KitFormModal from "./KitFormModal";
+
 export default function Ferramentas() {
   return (
     <section className="ferramentas" id="ferramentas">
@@ -23,7 +25,14 @@ export default function Ferramentas() {
           <p className="tool-desc">
             Todos os gastos do vídeo V1 organizados. Aluguel, alimentação, transporte, lazer. Adapte pra sua realidade.
           </p>
-          <a href="#newsletter" className="tool-link finance">Pegar grátis →</a>
+          <KitFormModal
+            formId="9344800"
+            successMessage="Enviado! Verifique seu email para acessar a planilha."
+            title="Planilha de Custo de Vida em Paris"
+            subtitle="Deixa seu email e eu envio a planilha direto pra você."
+          >
+            <button className="tool-link finance">Pegar grátis →</button>
+          </KitFormModal>
         </div>
 
         <div className="tool-card t-salary">
