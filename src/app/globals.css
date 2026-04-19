@@ -501,6 +501,7 @@ nav {
   position: relative;
   transition: transform 0.2s, border-color 0.2s;
   overflow: hidden;
+  cursor: pointer;
 }
 .tool-card::after {
   content: '';
