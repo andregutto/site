@@ -51,12 +51,12 @@ export default function Hero() {
       <div className="hero-right">
         <Image
           className="hero-photo"
-          src="/hero.jpg"
+          src="/hero-2.jpg"
           alt="André Gutto em Paris"
           fill
           priority
           sizes="45vw"
-          style={{ objectFit: "cover", objectPosition: "60% 15%" }}
+          style={{ objectFit: "cover", objectPosition: "center 62%" }}
         />
         <div className="location-badge">
           <span className="badge-city">Paris</span>

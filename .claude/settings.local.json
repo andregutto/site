@@ -17,7 +17,10 @@
       "Bash(git push *)",
       "Bash(npm show *)",
       "Bash(NODE_OPTIONS='--localstorage-file=/tmp/next-ls.json' npx next *)",
-      "Bash(npx tsc *)"
+      "Bash(npx tsc *)",
+      "Bash(sips *)",
+      "Bash(pkill -f \"next dev\")",
+      "Bash(kill 4320)"
     ]
   }
 }
