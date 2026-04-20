@@ -34,16 +34,16 @@ export default function Hero() {
 
         <div className="hero-stats">
           <div>
-            <span className="stat-num">V2</span>
+            <span className="stat-num">V1</span>
             <span className="stat-label">Último vídeo</span>
           </div>
           <div>
-            <span className="stat-num">€55K</span>
-            <span className="stat-label">Salário analisado</span>
+            <span className="stat-num">€3.566</span>
+            <span className="stat-label">Custo de vida</span>
           </div>
           <div>
-            <span className="stat-num">2</span>
-            <span className="stat-label">Ferramentas grátis</span>
+            <span className="stat-num">1</span>
+            <span className="stat-label">Ferramenta grátis</span>
           </div>
         </div>
       </div>
