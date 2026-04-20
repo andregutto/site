@@ -43,6 +43,7 @@ export default function KitFormModal({ formId, successMessage, title, subtitle, 
           successMessage={successMessage}
           title={title}
           subtitle={subtitle}
+          autoFocus
         />
       </Modal>
     </>

@@ -9,6 +9,7 @@ interface Props {
   subtitle?: string;
   noHeader?: boolean;
   buttonText?: string;
+  autoFocus?: boolean;
 }
 
 export default function KitForm({
@@ -18,6 +19,7 @@ export default function KitForm({
   subtitle = 'Deixa seu email e eu envio direto pra você.',
   noHeader = false,
   buttonText = 'Pegar grátis →',
+  autoFocus = false,
 }: Props) {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
@@ -72,7 +74,7 @@ export default function KitForm({
             value={email}
             onChange={e => setEmail(e.target.value)}
             required
-            autoFocus
+            autoFocus={autoFocus}
           />
           {error && <span className="kit-error">{error}</span>}
           <button type="submit" className="kit-btn" disabled={loading}>
