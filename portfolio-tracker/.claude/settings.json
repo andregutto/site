@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc)",
+      "Bash(npm run dev*)",
+      "Bash(npm run build*)",
+      "Bash(npm install*)",
+      "Bash(npm install)",
+      "Bash(curl -s *)",
+      "Bash(curl -s)",
+      "Bash(curl -X *)",
+      "Bash(pkill *)",
+      "Bash(lsof *)",
+      "Bash(kill *)",
+      "Bash(mkdir *)",
+      "Bash(mkdir)",
+      "Bash(rm *)",
+      "Bash(mv *)",
+      "Bash(cp *)",
+      "Bash(node --input-type*)",
+      "Bash(python3 - *)",
+      "Bash(python3 -*)",
+      "Bash(textutil *)",
+      "Bash(sips *)",
+      "Bash(open *)",
+      "Bash(wc -l *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push *)",
+      "Bash(npm run *)"
+    ]
+  }
+}

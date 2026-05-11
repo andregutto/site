@@ -1,0 +1,246 @@
+// CRUD de ativos + manual_values + detalhe
+import { Router, Response } from 'express'
+import { requireAuth, AuthRequest } from '../middleware/auth.js'
+import { supabaseAdmin } from '../lib/supabase.js'
+import { getCurrentPrice, Asset } from '../services/priceService.js'
+import { getFxRate } from '../lib/fx.js'
+
+const router = Router()
+
+// Valida que o ativo pertence ao usuário e retorna o asset
+async function getOwnedAsset(assetId: number, userId: string) {
+  const { data } = await supabaseAdmin
+    .from('assets')
+    .select('id, code, name, asset_type, currency, fi_principal, fi_start_date, fi_type, fi_rate, fi_spread')
+    .eq('id', assetId)
+    .eq('user_id', userId)
+    .single()
+  return data
+}
+
+// GET /api/assets/:id/manual-values — histórico de valores manuais
+router.get('/:id/manual-values', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const assetId = Number(req.params.id)
+  if (!await getOwnedAsset(assetId, userId)) {
+    res.status(404).json({ error: 'Ativo não encontrado' }); return
+  }
+  const { data, error } = await supabaseAdmin
+    .from('manual_values')
+    .select('id, ref_date, value, currency, notes, created_at')
+    .eq('asset_id', assetId)
+    .order('ref_date', { ascending: false })
+    .limit(24)
+  if (error) { res.status(500).json({ error: error.message }); return }
+  res.json(data ?? [])
+})
+
+// POST /api/assets/:id/manual-value — upsert valor manual
+router.post('/:id/manual-value', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const assetId = Number(req.params.id)
+  if (!await getOwnedAsset(assetId, userId)) {
+    res.status(404).json({ error: 'Ativo não encontrado' }); return
+  }
+  const { ref_date, value, currency, notes } = req.body as {
+    ref_date: string; value: number; currency: string; notes?: string
+  }
+  if (!ref_date || value == null || !currency) {
+    res.status(400).json({ error: 'ref_date, value e currency são obrigatórios' }); return
+  }
+  const { error } = await supabaseAdmin
+    .from('manual_values')
+    .upsert(
+      { asset_id: assetId, ref_date, value, currency, notes: notes ?? null },
+      { onConflict: 'asset_id,ref_date' }
+    )
+  if (error) { res.status(500).json({ error: error.message }); return }
+  res.json({ ok: true })
+})
+
+// DELETE /api/assets/:id/manual-value/:valueId — remove entrada manual
+router.delete('/:id/manual-value/:valueId', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const assetId = Number(req.params.id)
+  const valueId = Number(req.params.valueId)
+  if (!await getOwnedAsset(assetId, userId)) {
+    res.status(404).json({ error: 'Ativo não encontrado' }); return
+  }
+  const { error } = await supabaseAdmin
+    .from('manual_values')
+    .delete()
+    .eq('id', valueId)
+    .eq('asset_id', assetId)
+  if (error) { res.status(500).json({ error: error.message }); return }
+  res.json({ ok: true })
+})
+
+// PATCH /api/assets/:id — atualiza campos do ativo (fi_principal, fi_start_date, etc.)
+const PATCHABLE = ['fi_principal', 'fi_start_date', 'fi_type', 'fi_rate', 'fi_spread', 'fi_maturity', 'exchange', 'name', 'notes'] as const
+router.patch('/:id', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const assetId = Number(req.params.id)
+  if (!await getOwnedAsset(assetId, userId)) {
+    res.status(404).json({ error: 'Ativo não encontrado' }); return
+  }
+  const updates = Object.fromEntries(
+    Object.entries(req.body as Record<string, unknown>).filter(([k]) => PATCHABLE.includes(k as typeof PATCHABLE[number]))
+  )
+  if (Object.keys(updates).length === 0) {
+    res.status(400).json({ error: 'Nenhum campo válido para atualizar' }); return
+  }
+  const { error } = await supabaseAdmin
+    .from('assets')
+    .update(updates)
+    .eq('id', assetId)
+    .eq('user_id', userId)
+  if (error) { res.status(500).json({ error: error.message }); return }
+  res.json({ ok: true })
+})
+
+// GET /api/assets/:id/detail — detalhe completo: P&L + histórico + aportes
+router.get('/:id/detail', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const assetId = Number(req.params.id)
+
+  const { data: asset } = await supabaseAdmin
+    .from('assets')
+    .select('*, asset_classes(id, name, color)')
+    .eq('id', assetId)
+    .eq('user_id', userId)
+    .single()
+
+  if (!asset) { res.status(404).json({ error: 'Ativo não encontrado' }); return }
+
+  const cls = asset.asset_classes as { id: number; name: string; color: string } | null
+
+  // Aportes ordenados por data
+  const { data: rawContribs } = await supabaseAdmin
+    .from('contributions')
+    .select('id, date, type, quantity, price_orig, currency, fx_rate_brl, value_brl, description')
+    .eq('asset_id', assetId)
+    .order('date', { ascending: true })
+
+  const contribs = rawContribs ?? []
+
+  // Holdings e custo médio acumulado
+  let totalQty = 0
+  let totalCostBrl = 0
+  for (const c of contribs) {
+    const qty = c.quantity ?? 0
+    // Prefer value_brl; fall back to price_orig × qty × fx when value_brl is null
+    const costBrl = c.value_brl != null
+      ? c.value_brl
+      : (c.price_orig != null ? c.price_orig * qty * (c.fx_rate_brl ?? 5.70) : 0)
+    if (c.type === 'buy') {
+      totalQty   += qty
+      totalCostBrl += costBrl
+    } else {
+      if (totalQty > 0) totalCostBrl = totalCostBrl * (1 - qty / totalQty)
+      totalQty = Math.max(0, totalQty - qty)
+    }
+  }
+  const holdings    = Math.max(0, totalQty)
+  const investedBrl = totalCostBrl
+  const avgCostBrl  = holdings > 0 && totalCostBrl > 0 ? totalCostBrl / holdings : null
+
+  // Preço atual
+  let currentValueBrl = 0
+  let currentPrice: number | null = null
+  let priceCurrency = asset.currency || 'BRL'
+  let priceSource   = ''
+
+  try {
+    if (asset.asset_type === 'manual') {
+      const { data: mv } = await supabaseAdmin
+        .from('manual_values')
+        .select('value, currency')
+        .eq('asset_id', assetId)
+        .order('ref_date', { ascending: false })
+        .limit(1).single()
+      if (mv) {
+        currentValueBrl = mv.currency === 'BRL' ? mv.value : mv.value * await getFxRate(mv.currency)
+        priceCurrency   = mv.currency
+        priceSource     = 'manual'
+      }
+    } else {
+      const result = await getCurrentPrice(asset as Asset)
+      currentPrice  = result.price
+      priceCurrency = result.currency
+      priceSource   = result.source
+      if (asset.asset_type === 'fixed_income') {
+        currentValueBrl = result.price
+      } else {
+        const fx = result.currency === 'BRL' ? 1 : await getFxRate(result.currency)
+        currentValueBrl = holdings * result.price * fx
+      }
+    }
+  } catch { /* sem preço disponível */ }
+
+  const gainLossBrl = currentValueBrl - investedBrl
+  const gainLossPct = investedBrl > 0 ? (gainLossBrl / investedBrl) * 100 : null
+
+  // Histórico de preços (price_history para ticker; manual_values para manual)
+  type HistoryPoint = { date: string; price: number; value_brl: number }
+  let history: HistoryPoint[] = []
+
+  if (asset.asset_type === 'ticker') {
+    const today = new Date().toISOString().split('T')[0]
+    const { data: ph } = await supabaseAdmin
+      .from('price_history')
+      .select('ref_date, price, currency')
+      .eq('asset_id', assetId)
+      .lte('ref_date', today)
+      .order('ref_date', { ascending: true })
+
+    // Holdings em cada data histórica
+    const fxApprox = priceCurrency === 'BRL' ? 1 : await getFxRate(priceCurrency).catch(() => 5.70)
+    history = (ph ?? []).map((p) => {
+      let qtyAt = 0
+      for (const c of contribs) {
+        if (c.date <= p.ref_date) qtyAt += c.type === 'buy' ? (c.quantity ?? 0) : -(c.quantity ?? 0)
+      }
+      qtyAt = Math.max(0, qtyAt)
+      return {
+        date:      p.ref_date,
+        price:     p.price,
+        value_brl: Math.round(qtyAt * p.price * fxApprox * 100) / 100,
+      }
+    })
+  } else if (asset.asset_type === 'manual') {
+    const { data: mv } = await supabaseAdmin
+      .from('manual_values')
+      .select('ref_date, value, currency')
+      .eq('asset_id', assetId)
+      .order('ref_date', { ascending: true })
+    for (const m of (mv ?? [])) {
+      const fx = m.currency === 'BRL' ? 1 : await getFxRate(m.currency).catch(() => 5.70)
+      history.push({ date: m.ref_date, price: m.value, value_brl: Math.round(m.value * fx * 100) / 100 })
+    }
+  }
+
+  res.json({
+    id:            asset.id,
+    code:          asset.code,
+    name:          asset.name,
+    asset_type:    asset.asset_type,
+    currency:      asset.currency,
+    class_name:    cls?.name ?? 'Sem classe',
+    class_color:   cls?.color ?? '#6B7280',
+    fi_type:       asset.fi_type ?? null,
+    fi_principal:  asset.fi_principal ?? null,
+    current_value_brl: Math.round(currentValueBrl * 100) / 100,
+    current_price: currentPrice,
+    price_currency: priceCurrency,
+    price_source:   priceSource,
+    holdings:       asset.asset_type === 'ticker' ? holdings : null,
+    avg_cost_brl:   avgCostBrl !== null ? Math.round(avgCostBrl * 100) / 100 : null,
+    invested_brl:   Math.round(investedBrl * 100) / 100,
+    gain_loss_brl:  Math.round(gainLossBrl * 100) / 100,
+    gain_loss_pct:  gainLossPct !== null ? Math.round(gainLossPct * 100) / 100 : null,
+    history,
+    contributions: contribs.slice().reverse(),  // mais recente primeiro
+  })
+})
+
+export default router
