@@ -68,18 +68,36 @@ export default function PerformancePage() {
     (benchmarks?.monthly ?? []).map(b => [b.month, b])
   )
 
-  const chartData = monthly?.monthly
-    .filter(m => m.total > 0)
-    .map(m => {
-      const b = benchmarkMap.get(m.month)
-      return {
-        month:    fmtMonth(m.month),
-        total:    m.total,
-        cdi:      b ? Math.round((b.cdi_cum - 1) * 10000) / 100   : null,
-        ibov:     b?.ibov_cum  != null ? Math.round((b.ibov_cum  - 1) * 10000) / 100 : null,
-        sp500:    b?.sp500_cum != null ? Math.round((b.sp500_cum - 1) * 10000) / 100 : null,
-      }
-    }) ?? []
+  // Todos os meses com dado de portfólio
+  const monthsWithData = monthly?.monthly.filter(m => m.total > 0) ?? []
+  const firstTotal     = monthsWithData[0]?.total ?? 0
+  const firstMonth     = monthsWithData[0]?.month ?? ''
+
+  // Base dos benchmarks no mesmo mês de início do portfólio
+  const baseBench  = benchmarkMap.get(firstMonth)
+  const baseCDI    = baseBench?.cdi_cum   ?? 1
+  const baseIBOV   = baseBench?.ibov_cum  ?? null
+  const baseSP500  = baseBench?.sp500_cum ?? null
+
+  const pct = (v: number, base: number) => Math.round((v / base - 1) * 10000) / 100
+
+  const chartData = monthsWithData.map(m => {
+    const b = benchmarkMap.get(m.month)
+    return {
+      month:     fmtMonth(m.month),
+      portfolio: firstTotal > 0 ? pct(m.total, firstTotal) : 0,
+      cdi:       b ? pct(b.cdi_cum, baseCDI) : null,
+      ibov:      (b?.ibov_cum  != null && baseIBOV  != null) ? pct(b.ibov_cum,  baseIBOV)  : null,
+      sp500:     (b?.sp500_cum != null && baseSP500 != null) ? pct(b.sp500_cum, baseSP500) : null,
+    }
+  })
+
+  // Valores acumulados do último ponto do gráfico (mesma base do portfólio)
+  const lastPoint      = chartData[chartData.length - 1]
+  const portfolioAccum = lastPoint?.portfolio ?? null
+  const cdiAccum       = lastPoint?.cdi       ?? null
+  const ibovAccum      = lastPoint?.ibov      ?? null
+  const sp500Accum     = lastPoint?.sp500     ?? null
 
   const isLoading = sLoading || mLoading
 
@@ -172,7 +190,7 @@ export default function PerformancePage() {
           {chartData.length > 0 && (
             <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
               <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
-                <h2 className="font-semibold text-gray-800">Evolução Patrimonial {year}</h2>
+                <h2 className="font-semibold text-gray-800">Rentabilidade Acumulada {year}</h2>
                 <div className="flex items-center gap-2">
                   {([['CDI', showCDI, setShowCDI, '#16a34a'], ['IBOV', showIBOV, setShowIBOV, '#dc2626'], ['S&P500', showSP500, setShowSP500, '#f59e0b']] as const).map(
                     ([label, active, setter, color]) => (
@@ -198,46 +216,36 @@ export default function PerformancePage() {
                     <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
                     <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#9ca3af' }} />
                     <YAxis
-                      yAxisId="brl"
                       tick={{ fontSize: 11, fill: '#9ca3af' }}
-                      tickFormatter={v => `R$${(v / 1000).toFixed(0)}k`}
+                      tickFormatter={v => `${v > 0 ? '+' : ''}${v.toFixed(1)}%`}
                     />
-                    {(showCDI || showIBOV || showSP500) && (
-                      <YAxis
-                        yAxisId="pct"
-                        orientation="right"
-                        tick={{ fontSize: 11, fill: '#9ca3af' }}
-                        tickFormatter={v => `${v > 0 ? '+' : ''}${v.toFixed(1)}%`}
-                      />
-                    )}
                     <Tooltip
-                      formatter={(v: number, name: string) => {
-                        if (name === 'Patrimônio') return [fmtBRL(v), name]
-                        return [`${v > 0 ? '+' : ''}${v.toFixed(2)}%`, name]
-                      }}
+                      formatter={(v: number) => [`${v >= 0 ? '+' : ''}${v.toFixed(2)}%`]}
                       contentStyle={{ borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 12 }}
                     />
-                    {(showCDI || showIBOV || showSP500) && <Legend wrapperStyle={{ fontSize: 11 }} />}
-                    <Line yAxisId="brl" type="monotone" dataKey="total"  name="Patrimônio" stroke="#001A70" strokeWidth={2} dot={{ r: 3, fill: '#001A70' }} activeDot={{ r: 5 }} />
-                    {showCDI   && <Line yAxisId="pct" type="monotone" dataKey="cdi"   name="CDI"   stroke="#16a34a" strokeWidth={1.5} dot={false} strokeDasharray="4 2" connectNulls />}
-                    {showIBOV  && <Line yAxisId="pct" type="monotone" dataKey="ibov"  name="IBOV"  stroke="#dc2626" strokeWidth={1.5} dot={false} strokeDasharray="4 2" connectNulls />}
-                    {showSP500 && <Line yAxisId="pct" type="monotone" dataKey="sp500" name="S&P500" stroke="#f59e0b" strokeWidth={1.5} dot={false} strokeDasharray="4 2" connectNulls />}
+                    <Legend wrapperStyle={{ fontSize: 11 }} />
+                    <Line type="monotone" dataKey="portfolio" name="Carteira"  stroke="#001A70" strokeWidth={2}   dot={{ r: 3, fill: '#001A70' }} activeDot={{ r: 5 }} />
+                    {showCDI   && <Line type="monotone" dataKey="cdi"   name="CDI"    stroke="#16a34a" strokeWidth={1.5} dot={false} strokeDasharray="4 2" connectNulls />}
+                    {showIBOV  && <Line type="monotone" dataKey="ibov"  name="IBOV"   stroke="#dc2626" strokeWidth={1.5} dot={false} strokeDasharray="4 2" connectNulls />}
+                    {showSP500 && <Line type="monotone" dataKey="sp500" name="S&P500" stroke="#f59e0b" strokeWidth={1.5} dot={false} strokeDasharray="4 2" connectNulls />}
                   </LineChart>
                 </ResponsiveContainer>
               </div>
             </div>
           )}
 
-          {benchmarks && (
-            <div className="grid grid-cols-3 gap-3">
+          {/* Cards de comparação — mesma base do gráfico */}
+          {chartData.length > 0 && (
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
               {[
-                { label: 'CDI no ano',   value: benchmarks.cdi_pct,   color: 'text-green-600' },
-                { label: 'IBOV no ano',  value: benchmarks.ibov_pct,  color: 'text-red-600' },
-                { label: 'S&P500 no ano', value: benchmarks.sp500_pct, color: 'text-amber-600' },
-              ].map(({ label, value, color }) => (
-                <div key={label} className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm text-center">
+                { label: 'Carteira',  value: portfolioAccum, color: '#001A70',  text: 'text-[#001A70]' },
+                { label: 'CDI',       value: cdiAccum,       color: '#16a34a',  text: 'text-green-600' },
+                { label: 'IBOV',      value: ibovAccum,      color: '#dc2626',  text: 'text-red-600'   },
+                { label: 'S&P500',    value: sp500Accum,     color: '#f59e0b',  text: 'text-amber-600' },
+              ].map(({ label, value, text }) => (
+                <div key={label} className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm">
                   <p className="text-gray-400 text-xs">{label}</p>
-                  <p className={`text-lg font-bold mt-1 ${value != null ? color : 'text-gray-300'}`}>
+                  <p className={`text-xl font-bold mt-1 ${value != null ? text : 'text-gray-300'}`}>
                     {value != null ? `${value >= 0 ? '+' : ''}${value.toFixed(2)}%` : '—'}
                   </p>
                 </div>
