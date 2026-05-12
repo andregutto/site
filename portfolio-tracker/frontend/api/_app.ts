@@ -1,14 +1,14 @@
 import express, { Request, Response, NextFunction } from 'express'
 import cors from 'cors'
 
-import fxRouter          from './_routes/fx'
-import pricesRouter      from './_routes/prices'
-import portfolioRouter   from './_routes/portfolio'
-import performanceRouter from './_routes/performance'
-import assetsRouter      from './_routes/assets'
-import contributionsRouter  from './_routes/contributions'
-import institutionsRouter  from './_routes/institutions'
-import profileRouter       from './_routes/profile'
+import fxRouter          from './_routes/fx.js'
+import pricesRouter      from './_routes/prices.js'
+import portfolioRouter   from './_routes/portfolio.js'
+import performanceRouter from './_routes/performance.js'
+import assetsRouter      from './_routes/assets.js'
+import contributionsRouter  from './_routes/contributions.js'
+import institutionsRouter  from './_routes/institutions.js'
+import profileRouter       from './_routes/profile.js'
 
 const app = express()
 
