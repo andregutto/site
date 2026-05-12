@@ -60,10 +60,11 @@ export interface MonthlyPerf {
   month: string
   total: number
   prev_total: number
+  contributions: number
 }
 
 export interface PerformanceMonthly {
-  year: number
+  year?: number
   monthly: MonthlyPerf[]
 }
 
@@ -75,12 +76,14 @@ export interface BenchmarkMonthly {
 }
 
 export interface PerformanceBenchmarks {
-  year:      number
+  year?:     number
   cdi_pct:   number | null
   ibov_pct:  number | null
   sp500_pct: number | null
   monthly:   BenchmarkMonthly[]
 }
+
+export type AssetReturns = Record<number, number | null>
 
 export interface Asset {
   id: number

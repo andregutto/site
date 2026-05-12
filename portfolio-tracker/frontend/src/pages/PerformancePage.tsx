@@ -57,8 +57,10 @@ export default function PerformancePage() {
     switch (mode) {
       case 'year':
         return { from: `${year}-01`, to: `${year}-12`, label: String(year) }
-      case 'current_month':
-        return { from: currentYM, to: currentYM, label: fmtMonth(currentYM) }
+      case 'current_month': {
+        const prevYM = addMonths(currentYM, -1)
+        return { from: prevYM, to: currentYM, label: fmtMonth(currentYM) }
+      }
       case 'last_12': {
         const f = addMonths(currentYM, -11)
         return { from: f, to: currentYM, label: `${fmtMonth(f)} - ${fmtMonth(currentYM)}` }
@@ -99,7 +101,6 @@ export default function PerformancePage() {
   )
 
   const monthsWithData = monthly?.monthly.filter(m => m.total > 0) ?? []
-  const firstTotal = monthsWithData[0]?.total ?? 0
   const firstMonth = monthsWithData[0]?.month ?? ''
 
   const baseBench  = benchmarkMap.get(firstMonth)
@@ -109,11 +110,23 @@ export default function PerformancePage() {
 
   const pct = (v: number, base: number) => Math.round((v / base - 1) * 10000) / 100
 
-  const chartData = monthsWithData.map(m => {
+  // Contribution-adjusted cumulative return: chain monthly Simple Dietz returns
+  let cumulative = 1
+  const chartData = monthsWithData.map((m, i) => {
+    if (i > 0) {
+      const prevTotal = monthsWithData[i - 1].total
+      const cf = m.contributions ?? 0
+      const denom = prevTotal + 0.5 * cf
+      if (denom > 0) {
+        const r = (m.total - prevTotal - cf) / denom
+        cumulative *= (1 + r)
+      }
+    }
+    const portfolioPct = Math.round((cumulative - 1) * 10000) / 100
     const b = benchmarkMap.get(m.month)
     return {
       month:     fmtMonth(m.month),
-      portfolio: firstTotal > 0 ? pct(m.total, firstTotal) : 0,
+      portfolio: portfolioPct,
       cdi:       b ? pct(b.cdi_cum, baseCDI) : null,
       ibov:      (b?.ibov_cum  != null && baseIBOV  != null) ? pct(b.ibov_cum,  baseIBOV)  : null,
       sp500:     (b?.sp500_cum != null && baseSP500 != null) ? pct(b.sp500_cum, baseSP500) : null,
@@ -311,31 +324,37 @@ export default function PerformancePage() {
                     <tr>
                       <th className="px-4 py-3 text-left">Mês</th>
                       <th className="px-4 py-3 text-right">Patrimônio</th>
-                      <th className="px-4 py-3 text-right">Variação</th>
+                      <th className="px-4 py-3 text-right">Aportes</th>
+                      <th className="px-4 py-3 text-right">Ganho/Perda</th>
+                      <th className="px-4 py-3 text-right">Rentab.</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
                     {monthly.monthly.map((m) => {
-                      const change    = m.prev_total > 0 ? m.total - m.prev_total : null
-                      const changePct = m.prev_total > 0 ? ((m.total - m.prev_total) / m.prev_total) * 100 : null
+                      const cf      = m.contributions ?? 0
+                      const gain    = m.prev_total > 0 ? m.total - m.prev_total - cf : null
+                      const denom   = m.prev_total + 0.5 * cf
+                      const gainPct = gain != null && denom > 0 ? (gain / denom) * 100 : null
                       return (
                         <tr key={m.month} className="hover:bg-gray-50">
                           <td className="px-4 py-3 font-medium text-gray-700">{fmtMonth(m.month)}</td>
                           <td className="px-4 py-3 text-right text-gray-900">
                             {m.total > 0 ? fmtBRL(m.total) : '—'}
                           </td>
+                          <td className="px-4 py-3 text-right text-gray-500 text-xs">
+                            {cf !== 0 ? `${cf > 0 ? '+' : ''}${fmtBRL(cf)}` : '—'}
+                          </td>
                           <td className={`px-4 py-3 text-right font-medium ${
-                            change == null ? 'text-gray-400' :
-                            change >= 0 ? 'text-green-600' : 'text-red-600'
+                            gain == null ? 'text-gray-400' :
+                            gain >= 0 ? 'text-green-600' : 'text-red-600'
                           }`}>
-                            {change != null && changePct != null ? (
-                              <span>
-                                {change >= 0 ? '+' : ''}{fmtBRL(change)}
-                                <span className="text-xs ml-1 opacity-70">
-                                  ({changePct >= 0 ? '+' : ''}{changePct.toFixed(1)}%)
-                                </span>
-                              </span>
-                            ) : '—'}
+                            {gain != null ? `${gain >= 0 ? '+' : ''}${fmtBRL(gain)}` : '—'}
+                          </td>
+                          <td className={`px-4 py-3 text-right text-xs font-semibold ${
+                            gainPct == null ? 'text-gray-300' :
+                            gainPct >= 0 ? 'text-green-600' : 'text-red-600'
+                          }`}>
+                            {gainPct != null ? `${gainPct >= 0 ? '+' : ''}${gainPct.toFixed(2)}%` : '—'}
                           </td>
                         </tr>
                       )

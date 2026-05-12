@@ -152,9 +152,14 @@ router.get('/summary', requireAuth, async (req, res: Response) => {
   const [fromY, fromM] = fromStr.split('-').map(Number)
   const [toY,   toM  ] = toStr.split('-').map(Number)
 
-  if (fromY > toY || (fromY === toY && fromM >= toM)) {
+  if (fromY > toY || (fromY === toY && fromM > toM)) {
     res.status(400).json({ error: '"from" deve ser anterior a "to"' }); return
   }
+
+  // v_ini = valor ao fim do mês ANTERIOR a from (= início real do período)
+  // Isso evita contar aportes de from no denominador errado
+  const prevM = fromM === 1 ? 12 : fromM - 1
+  const prevY = fromM === 1 ? fromY - 1 : fromY
 
   const fromDateStr = `${fromY}-${String(fromM).padStart(2, '0')}-01`
   const toLastDay   = new Date(toY, toM, 0).getDate()
@@ -167,21 +172,22 @@ router.get('/summary', requireAuth, async (req, res: Response) => {
     .gte('date', fromDateStr)
     .lte('date', toDateStr)
 
-  const totalContribs = (contributions ?? []).reduce((s, c) => {
+  const totalContribs = (contributions ?? []).reduce((s: number, c: { type: string; value_brl: number | null }) => {
     return s + (c.type === 'buy' ? (c.value_brl ?? 0) : -(c.value_brl ?? 0))
   }, 0)
 
   const [start, end] = await Promise.all([
-    getPortfolioValueAtMonth(userId, fromY, fromM),
+    getPortfolioValueAtMonth(userId, prevY, prevM),
     getPortfolioValueAtMonth(userId, toY,   toM),
   ])
 
   const v_ini = start.total
   const v_fim = end.total
 
-  const base       = v_ini - totalContribs
-  const return_pct = base > 0 ? ((v_fim - v_ini - totalContribs) / base) * 100 : null
+  // Simple Dietz: R = (V_fim - V_ini - CF) / (V_ini + 0.5 * CF)
   const return_abs = v_fim - v_ini - totalContribs
+  const dietz_base = v_ini + 0.5 * totalContribs
+  const return_pct = dietz_base > 0 ? (return_abs / dietz_base) * 100 : null
 
   res.json({
     from:          fromStr,
@@ -222,17 +228,37 @@ router.get('/monthly', requireAuth, async (req, res: Response) => {
     }
   }
 
-  const values = await Promise.all(
-    months.map(async ({ year: y, month: m, label }) => {
-      const { total } = await getPortfolioValueAtMonth(userId, y, m)
-      return { month: label, total }
-    })
-  )
+  const rangeFromDate = `${fromY}-${String(fromM).padStart(2, '0')}-01`
+  const rangeToLastDay = new Date(toY, toM, 0).getDate()
+  const rangeToDate    = `${toY}-${String(toM).padStart(2, '0')}-${String(rangeToLastDay).padStart(2, '0')}`
 
-  const monthly = values.map((v, i) => ({
-    month:      v.month,
-    total:      v.total,
-    prev_total: i > 0 ? values[i - 1].total : 0,
+  const [valuesArr, contribsData] = await Promise.all([
+    Promise.all(
+      months.map(async ({ year: y, month: m, label }) => {
+        const { total } = await getPortfolioValueAtMonth(userId, y, m)
+        return { month: label, total }
+      })
+    ),
+    supabaseAdmin
+      .from('contributions')
+      .select('date, value_brl, type, assets!inner(user_id)')
+      .eq('assets.user_id', userId)
+      .gte('date', rangeFromDate)
+      .lte('date', rangeToDate),
+  ])
+
+  const contribsByMonth: Record<string, number> = {}
+  for (const c of (contribsData.data ?? [])) {
+    const ym = (c.date as string).substring(0, 7)
+    const delta = c.type === 'buy' ? (c.value_brl ?? 0) : -(c.value_brl ?? 0)
+    contribsByMonth[ym] = (contribsByMonth[ym] ?? 0) + delta
+  }
+
+  const monthly = valuesArr.map((v, i) => ({
+    month:         v.month,
+    total:         v.total,
+    prev_total:    i > 0 ? valuesArr[i - 1].total : 0,
+    contributions: contribsByMonth[v.month] ?? 0,
   }))
 
   res.json({ monthly })
