@@ -9,6 +9,7 @@ import ContributionsPage from './pages/ContributionsPage'
 import ProfilePage from './pages/ProfilePage'
 import RebalancePage from './pages/RebalancePage'
 import InstitutionPage from './pages/InstitutionPage'
+import InstitutionsPage from './pages/InstitutionsPage'
 import AppLayout from './components/AppLayout'
 
 function ProtectedRoutes() {
@@ -30,7 +31,11 @@ function ProtectedRoutes() {
 function AppRoutes() {
   const { user, loading } = useAuth()
 
-  if (loading) return null
+  if (loading) return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="text-gray-400 text-sm animate-pulse">Carregando...</div>
+    </div>
+  )
 
   return (
     <Routes>
@@ -43,6 +48,7 @@ function AppRoutes() {
         <Route path="/profile"        element={<ProfilePage />} />
         <Route path="/rebalance"      element={<RebalancePage />} />
         <Route path="/by-institution" element={<InstitutionPage />} />
+        <Route path="/institutions"   element={<InstitutionsPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
