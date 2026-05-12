@@ -7,6 +7,7 @@ export type Currency = 'BRL' | 'USD' | 'EUR'
 export interface FxRates {
   USD: number  // BRL por 1 USD
   EUR: number  // BRL por 1 EUR
+  [key: string]: number
 }
 
 interface CurrencyContextValue {
