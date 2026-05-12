@@ -1,7 +1,7 @@
-import * as brapi       from './brapiService'
-import * as yahoo       from './yahooService'
-import * as coingecko   from './coingeckoService'
-import { calculateCurrentValue, FixedIncomeAsset } from './fixedIncomeService'
+import * as brapi       from './brapiService.js'
+import * as yahoo       from './yahooService.js'
+import * as coingecko   from './coingeckoService.js'
+import { calculateCurrentValue, FixedIncomeAsset } from './fixedIncomeService.js'
 
 export interface Asset {
   id:           number
