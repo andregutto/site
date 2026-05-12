@@ -298,8 +298,105 @@ Causa raiz: `sync-history` gravava o mês corrente (`2026-05-01`) na `price_hist
 - [ ] Notificações / alertas de rebalanceamento
 
 #### Deploy
-- [ ] Variáveis de ambiente de produção
-- [ ] Deploy: Vercel (frontend) + Railway (backend)
+- [x] ~~Deploy: Vercel (frontend) + Railway (backend)~~ → arquitetura mudou (ver Sessão 7)
+- [ ] Configurar subdomínio `portfolio.andregutto.com` no DNS
+- [ ] Confirmar que dashboard carrega em produção
+
+---
+
+---
+
+## Sessão 7 — Deploy Vercel + debugging API (12/05/2026) 🔧 EM PROGRESSO
+
+### Decisão arquitetural: Railway → Vercel Serverless
+
+O backend Express (antes em Railway) foi migrado para **Vercel Serverless Functions** dentro do mesmo projeto do frontend, eliminando Railway.
+
+**Nova estrutura:**
+```
+portfolio-tracker/frontend/
+├── src/              ← frontend Vite/React (serve via dist/)
+├── api/              ← serverless functions (Express via catch-all)
+│   ├── [...path].ts  ← entry point → exporta Express app
+│   ├── _app.ts       ← configura Express + rotas
+│   ├── _lib/         ← supabase, cache, fx
+│   ├── _middleware/  ← auth JWT
+│   ├── _routes/      ← todas as rotas do backend original
+│   └── _services/    ← brapi, yahoo, coingecko, bcb, etc.
+└── vercel.json       ← routing: /api/* → function, /* → SPA
+```
+
+### Problemas encontrados e corrigidos
+
+#### Build failures (TypeScript)
+- ✅ `AllocationChart.tsx`: `Legend` importado mas não usado
+- ✅ `AllocationChart.tsx`, `AssetDetailPage.tsx`, `PerformancePage.tsx`: `formatter={(v: number) => ...}` conflita com tipo `ValueType` do Recharts — corrigido com `Number(v)`
+- ✅ `CurrencyContext.tsx`: `ReactNode` precisava de `import type` por causa de `verbatimModuleSyntax: true`
+- ✅ `App.tsx` importava `InstitutionsPage.tsx` que não estava no git (arquivo novo local-only)
+
+#### Blank page (React não inicializava)
+- ✅ `src/lib/supabase.ts`: `throw new Error(...)` em nível de módulo crashava o bundle antes do React montar → substituído por `console.error` + placeholder URL
+- ✅ `AuthContext.tsx`: `getSession()` sem `.catch()` — se Supabase falha, `setLoading(false)` nunca é chamado → app congela em branco
+- ✅ `App.tsx`: `if (loading) return null` → tela branca; substituído por spinner
+
+#### 404 nas rotas de API
+- Causa: `"framework": "vite"` no `vercel.json` sobrescrevia o pipeline de routing do Vercel, impedindo `/api/*` de chegar às serverless functions
+- ✅ Removido `framework: "vite"`, substituído `rewrites` por `routes` explícitas:
+  ```json
+  { "src": "/api/(.*)", "dest": "/api/[...path]" },
+  { "handle": "filesystem" },
+  { "src": "/(.*)", "dest": "/index.html" }
+  ```
+
+#### 500 nas rotas de API (status atual)
+- `api/_lib/supabase.ts`: `throw new Error(...)` em módulo crashava toda a inicialização do Express → substituído por `console.error` + placeholder URL
+- `api/_middleware/auth.ts`: `requireAuth` sem try/catch → exceção de rede do Supabase causava 500 não formatado → adicionado try/catch com 503
+- `api/_app.ts`: sem error handler global → erros chegavam como stack trace ou 500 vazio → adicionado middleware `(err, req, res, next)` que retorna JSON
+- `api/_app.ts`: CORS fixo em `localhost:5174` → variabilizado via `FRONTEND_ORIGIN` (comma-separated)
+- ✅ `/api/health` adicionado com check de env vars: `{ status, env: { supabase_url, service_key, anon_key } }`
+
+### Commits da sessão
+| Hash | Descrição |
+|---|---|
+| `8bfc81b` | Fix TypeScript: Legend, formatters Recharts, import type |
+| `af824ec` | supabase.ts: throw → console.error + placeholder |
+| `1a20cbd` | vercel.json: buildCommand/outputDirectory explícitos |
+| `bd1267e` | AuthContext + App: resilientes a falha do Supabase |
+| `233c323` | Commita InstitutionsPage.tsx e outros arquivos faltando |
+| `15793fb` | vercel.json: routes explícitas, remove framework:vite |
+| `903108a` | api/_lib/supabase: sem throw, api/_app: error handler + CORS + health |
+| `c54c914` | requireAuth: try/catch para falha de rede do Supabase |
+
+### Estado atual das env vars no Vercel
+Configuradas para Production + Preview:
+- `VITE_SUPABASE_URL` — para o bundle do frontend
+- `VITE_SUPABASE_ANON_KEY` — para o bundle do frontend
+- `SUPABASE_URL` — para as serverless functions
+- `SUPABASE_ANON_KEY` — para as serverless functions
+- `SUPABASE_SERVICE_ROLE_KEY` — para as serverless functions (admin)
+- `FRONTEND_ORIGIN` — **não configurado ainda** (não crítico: mesma origem)
+
+### O que ainda falta para o dashboard funcionar
+
+#### Imediato — verificar após próximo deploy
+1. Acessar `/api/health` no Vercel e confirmar `env.supabase_url: true, env.service_key: true`
+2. Se health OK mas dashboard 500 → verificar Function Logs no Vercel para erro específico
+3. Se health mostra `false` → env vars não chegaram à runtime (scope errado ou redeploy sem cache)
+
+#### Subdomínio (a fazer)
+- Vercel: Project Settings > Domains → adicionar `portfolio.andregutto.com`
+- DNS: adicionar CNAME `portfolio → cname.vercel-dns.com`
+
+#### Melhorias pendentes (backlog)
+- [ ] `BRAPI_TOKEN` no Vercel (sem token fica rate-limited mas funciona)
+- [ ] Settings Page: targets de alocação por classe com sliders
+- [ ] Exportar CSV de aportes / extrato
+- [ ] Adicionar novo ativo via frontend (atualmente só via seed/SQL)
+- [ ] Notificações de rebalanceamento quando alocação desvia do target
+- [ ] Paginação na tabela de aportes (grande volume)
+- [ ] Modo escuro
+- [ ] PWA (instalável no celular)
+- [ ] Dados a preencher manualmente: TARPON, CDB BTG, NTN-Bs, NATIXIS, REVOLUT
 
 ---
 
@@ -320,9 +417,10 @@ Cole no Claude Code:
 
 ```
 Projeto: Portfolio Tracker genérico (brasileiro no exterior, multi-moeda)
-Stack: React + Vite + Tailwind (frontend :5174), Node/Express (backend :3001), Supabase
+Stack: React + Vite + Tailwind (frontend Vite :5174), Express serverless (Vercel api/), Supabase
 Progresso: portfolio-tracker/PROGRESS.md
-Sessões 1-6 concluídas — sistema completo com dashboard, detalhe de ativos, aportes, perfil, benchmarks
-Próximo objetivo: ver pendências na sessão 6 do PROGRESS.md
+Sessões 1-7 — sistema completo, deploy Vercel em progresso (API retornando 500)
+Próximo objetivo: verificar /api/health no Vercel, corrigir 500 e confirmar dashboard funcionando
 UUID André: 453bc770-0cea-4c88-b72f-babf9e50437e
+URL Vercel: ver último deploy em vercel.com/andreguttos-projects/portfolio-tracker
 ```
