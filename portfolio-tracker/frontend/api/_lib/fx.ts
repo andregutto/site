@@ -1,5 +1,5 @@
-import { supabaseAdmin } from './supabase'
-import { cache, TTL } from './cache'
+import { supabaseAdmin } from './supabase.js'
+import { cache, TTL } from './cache.js'
 
 const AWESOME_BASE = 'https://economia.awesomeapi.com.br/json'
 const FX_FALLBACK: Record<string, number> = { USD: 5.70, EUR: 6.40, GBP: 7.20 }
