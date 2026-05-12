@@ -400,7 +400,7 @@ Configuradas para Production + Preview:
 
 ---
 
-## Sessão 8 — Filtros de período (12/05/2026) ✅ CONCLUÍDA
+## Sessão 8 — Filtros de periodo + Formulario de aportes + Fix Performance (12/05/2026) ✅ CONCLUÍDA
 
 ### Item 1: Filtros de período
 
@@ -419,6 +419,32 @@ Configuradas para Production + Preview:
 - `src/hooks/usePortfolio.ts` — novo hook `usePerformanceInception`
 - `src/pages/PerformancePage.tsx` — tipo `since_inception`, `derivePeriod()` extendido, botao adicionado
 - `src/components/AssetTable.tsx` — tipo `last_30d`, nova opcao no seletor, `getPeriodRange()` extendido
+
+### Fix URGENTE: Bug de rentabilidade na Performance
+
+Tres bugs corrigidos no calculo de retorno:
+
+1. **Simple Dietz formula errada**: denominador era `v_ini - CF` → corrigido para `v_ini + 0.5 * CF`
+2. **v_ini usava o mes errado**: usava fim do proprio mes from → corrigido para fim do mes anterior (inicio real do periodo)
+3. **Grafico nao descontava aportes**: mostrava `(total_mes / total_primeiro_mes - 1)%` → corrigido para chaining de Simple Dietz mensal ajustado por CF
+4. Tabela mensal ganhou colunas separadas: Aportes / Ganho·Perda / Rentab. (antes so tinha "Variacao" que misturava os dois)
+5. `current_month` no derivePeriod usava from==to → corrigido para from=mes_anterior
+
+### Item 2: Formulario de aportes
+
+#### Backend
+- ✅ `GET /api/assets` — lista simples de ativos ativos (sem calculo de preco)
+- ✅ `GET /api/assets/classes` — lista de classes de ativos do usuario
+- ✅ `POST /api/assets` — criacao de novo ativo (code, name, asset_type, currency, asset_class_id, tickers)
+
+#### Frontend
+- ✅ ContributionsPage usa `/api/assets` em vez de `/portfolio/value` (mais rapido, sem precificacao)
+- ✅ Seletor de moeda (BRL/USD/EUR/GBP/CHF) no campo de preco com auto-calculo de value_brl via FX
+- ✅ Filtro de busca de ativo (por codigo ou nome) acima do `<select>`
+- ✅ Formulario inline "+ Ativo" para criar novo ativo sem sair da pagina
+- ✅ Le `?assetId=N&new=1` na URL para pre-selecionar ativo (usado pelo botao do AssetDetailPage)
+- ✅ Form simplificado para `manual` e `fixed_income` (sem campos qty/preco)
+- ✅ AssetDetailPage: botao "+ Aporte" que abre ContributionsPage pre-selecionado
 
 ---
 
