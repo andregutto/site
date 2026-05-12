@@ -13,13 +13,17 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
     return
   }
 
-  const { data: { user }, error } = await supabaseAdmin.auth.getUser(token)
-  if (error || !user) {
-    res.status(401).json({ error: 'Token inválido ou expirado' })
-    return
+  try {
+    const { data: { user }, error } = await supabaseAdmin.auth.getUser(token)
+    if (error || !user) {
+      res.status(401).json({ error: 'Token inválido ou expirado' })
+      return
+    }
+    (req as AuthRequest).userId = user.id
+    ;(req as AuthRequest).jwt   = token
+    next()
+  } catch (err) {
+    console.error('[requireAuth] Supabase error:', err)
+    res.status(503).json({ error: 'Serviço de autenticação indisponível' })
   }
-
-  (req as AuthRequest).userId = user.id
-  ;(req as AuthRequest).jwt   = token
-  next()
 }
