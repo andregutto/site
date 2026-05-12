@@ -8,6 +8,11 @@ export interface FixedIncomeAsset {
   fi_spread?:    number | null
 }
 
+export interface FITranche {
+  principal:  number
+  start_date: string
+}
+
 function businessDaysBetween(start: Date, end: Date): number {
   let count = 0
   const d = new Date(start)
@@ -22,58 +27,110 @@ function businessDaysBetween(start: Date, end: Date): number {
   return count
 }
 
-async function calcPosCDI(asset: FixedIncomeAsset, today: Date): Promise<number> {
-  const start = new Date(asset.fi_start_date)
-  const rates  = await getCDIRates(start, today)
-  if (rates.length === 0) throw new Error('Nenhuma taxa CDI disponível para o período')
+async function calcPosCDI(tranches: FITranche[], fi_rate: number, today: Date): Promise<number> {
+  const minStart = tranches.reduce((min, t) => {
+    const d = new Date(t.start_date)
+    return d < min ? d : min
+  }, new Date(tranches[0].start_date))
 
-  const factor = rates.reduce((acc, r) => acc * (1 + (r.value / 100) * asset.fi_rate!), 1)
-  return asset.fi_principal * factor
-}
+  const allRates = await getCDIRates(minStart, today)
+  if (allRates.length === 0) throw new Error('Nenhuma taxa CDI disponível para o período')
 
-async function calcSelic(asset: FixedIncomeAsset, today: Date): Promise<number> {
-  const start = new Date(asset.fi_start_date)
-  const rates  = await getSelicRates(start, today)
-  if (rates.length === 0) throw new Error('Nenhuma taxa Selic disponível para o período')
-
-  const factor = rates.reduce((acc, r) => acc * (1 + (r.value / 100) * (asset.fi_rate ?? 1)), 1)
-  return asset.fi_principal * factor
-}
-
-function calcPre(asset: FixedIncomeAsset, today: Date): number {
-  const start   = new Date(asset.fi_start_date)
-  const busdays = businessDaysBetween(start, today)
-  const factor  = Math.pow(1 + asset.fi_rate!, busdays / 252)
-  return asset.fi_principal * factor
-}
-
-async function calcIPCAPlus(asset: FixedIncomeAsset, today: Date): Promise<number> {
-  const start   = new Date(asset.fi_start_date)
-  const busdays = businessDaysBetween(start, today)
-
-  const rates  = await getIPCARates(start, today)
-  if (rates.length === 0) throw new Error('Nenhuma taxa IPCA disponível para o período')
-
-  const ipcaFactor   = rates.reduce((acc, r) => acc * (1 + r.value / 100), 1)
-  const spread       = asset.fi_spread ?? 0
-  const spreadFactor = Math.pow(1 + spread, busdays / 252)
-
-  return asset.fi_principal * ipcaFactor * spreadFactor
-}
-
-export async function calculateCurrentValue(asset: FixedIncomeAsset): Promise<number> {
-  if (!asset.fi_principal || !asset.fi_start_date) {
-    throw new Error('fi_principal e fi_start_date são obrigatórios')
+  let total = 0
+  for (const t of tranches) {
+    const tStart = new Date(t.start_date)
+    tStart.setHours(0, 0, 0, 0)
+    const trancheRates = allRates.filter(r => {
+      const rDate = new Date(r.date)
+      rDate.setHours(0, 0, 0, 0)
+      return rDate >= tStart
+    })
+    const factor = trancheRates.reduce((acc, r) => acc * (1 + (r.value / 100) * fi_rate), 1)
+    total += t.principal * factor
   }
+  return total
+}
+
+async function calcSelic(tranches: FITranche[], fi_rate: number, today: Date): Promise<number> {
+  const minStart = tranches.reduce((min, t) => {
+    const d = new Date(t.start_date)
+    return d < min ? d : min
+  }, new Date(tranches[0].start_date))
+
+  const allRates = await getSelicRates(minStart, today)
+  if (allRates.length === 0) throw new Error('Nenhuma taxa Selic disponível para o período')
+
+  let total = 0
+  for (const t of tranches) {
+    const tStart = new Date(t.start_date)
+    tStart.setHours(0, 0, 0, 0)
+    const trancheRates = allRates.filter(r => {
+      const rDate = new Date(r.date)
+      rDate.setHours(0, 0, 0, 0)
+      return rDate >= tStart
+    })
+    const factor = trancheRates.reduce((acc, r) => acc * (1 + (r.value / 100) * fi_rate), 1)
+    total += t.principal * factor
+  }
+  return total
+}
+
+function calcPre(tranches: FITranche[], fi_rate: number, today: Date): number {
+  let total = 0
+  for (const t of tranches) {
+    const start   = new Date(t.start_date)
+    const busdays = businessDaysBetween(start, today)
+    const factor  = Math.pow(1 + fi_rate, busdays / 252)
+    total += t.principal * factor
+  }
+  return total
+}
+
+async function calcIPCAPlus(tranches: FITranche[], fi_spread: number, today: Date): Promise<number> {
+  const minStart = tranches.reduce((min, t) => {
+    const d = new Date(t.start_date)
+    return d < min ? d : min
+  }, new Date(tranches[0].start_date))
+
+  const allRates = await getIPCARates(minStart, today)
+  if (allRates.length === 0) throw new Error('Nenhuma taxa IPCA disponível para o período')
+
+  let total = 0
+  for (const t of tranches) {
+    const tStart  = new Date(t.start_date)
+    tStart.setHours(0, 0, 0, 0)
+    const busdays = businessDaysBetween(tStart, today)
+
+    const trancheRates = allRates.filter(r => {
+      const rDate = new Date(r.date)
+      rDate.setHours(0, 0, 0, 0)
+      return rDate >= tStart
+    })
+    const ipcaFactor   = trancheRates.reduce((acc, r) => acc * (1 + r.value / 100), 1)
+    const spreadFactor = Math.pow(1 + fi_spread, busdays / 252)
+    total += t.principal * ipcaFactor * spreadFactor
+  }
+  return total
+}
+
+export async function calculateCurrentValue(asset: FixedIncomeAsset, tranches?: FITranche[]): Promise<number> {
+  const effectiveTranches: FITranche[] = tranches?.length
+    ? tranches
+    : (() => {
+        if (!asset.fi_principal || !asset.fi_start_date) {
+          throw new Error('fi_principal e fi_start_date são obrigatórios')
+        }
+        return [{ principal: asset.fi_principal, start_date: asset.fi_start_date }]
+      })()
 
   const today = new Date()
   today.setHours(0, 0, 0, 0)
 
   switch (asset.fi_type) {
-    case 'pos_cdi':   return calcPosCDI(asset, today)
-    case 'selic':     return calcSelic(asset, today)
-    case 'pre':       return calcPre(asset, today)
-    case 'ipca_plus': return calcIPCAPlus(asset, today)
+    case 'pos_cdi':   return calcPosCDI(effectiveTranches, asset.fi_rate!, today)
+    case 'selic':     return calcSelic(effectiveTranches, asset.fi_rate ?? 1, today)
+    case 'pre':       return calcPre(effectiveTranches, asset.fi_rate!, today)
+    case 'ipca_plus': return calcIPCAPlus(effectiveTranches, asset.fi_spread ?? 0, today)
     default:          throw new Error(`Tipo de RF desconhecido: ${asset.fi_type}`)
   }
 }
