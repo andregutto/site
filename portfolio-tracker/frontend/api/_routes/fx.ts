@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express'
-import { cache, TTL } from '../_lib/cache'
+import { cache, TTL } from '../_lib/cache.js'
 
 const router = Router()
 const AWESOME_BASE = 'https://economia.awesomeapi.com.br/json'
