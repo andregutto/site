@@ -406,6 +406,59 @@ router.get('/inception', requireAuth, async (req, res: Response) => {
   res.json({ inception: firstDate.substring(0, 7) })
 })
 
+router.get('/debug-manual', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const ym = (req.query.ym as string) || localYM(new Date())
+  const [y, m] = ym.split('-').map(Number)
+  const lastDay = new Date(y, m, 0).getDate()
+  const dateStr = `${ym}-${String(lastDay).padStart(2, '0')}`
+
+  const { data: assets } = await supabaseAdmin
+    .from('assets')
+    .select('id, code, asset_type, fi_principal, fi_start_date, fi_type, fi_rate')
+    .eq('user_id', userId)
+    .eq('active', true)
+
+  const manualAssets = (assets ?? []).filter((a) => a.asset_type === 'manual')
+  const fiAssets     = (assets ?? []).filter((a) => a.asset_type === 'fixed_income')
+  const manualIds    = manualAssets.map((a) => a.id)
+
+  let manualValues: unknown[] = []
+  if (manualIds.length > 0) {
+    const { data } = await supabaseAdmin
+      .from('manual_values')
+      .select('asset_id, value, currency, ref_date')
+      .in('asset_id', manualIds)
+      .order('ref_date', { ascending: true })
+    manualValues = data ?? []
+  }
+
+  // Simulate carry-backward for the requested ym
+  const mvByAsset: Record<number, Array<{ value: number; currency: string; ref_date: string }>> = {}
+  for (const mv of manualValues as Array<{ asset_id: number; value: number; currency: string; ref_date: string }>) {
+    if (!mvByAsset[mv.asset_id]) mvByAsset[mv.asset_id] = []
+    mvByAsset[mv.asset_id].push(mv)
+  }
+  const resolved: Record<string, unknown> = {}
+  for (const a of manualAssets) {
+    const entries = mvByAsset[a.id] ?? []
+    if (!entries.length) { resolved[a.code] = null; continue }
+    let best = entries[0]
+    for (const e of entries) { if (e.ref_date <= dateStr) best = e }
+    resolved[a.code] = { value: best.value, currency: best.currency, ref_date: best.ref_date }
+  }
+
+  res.json({
+    requested_ym:   ym,
+    date_str:       dateStr,
+    manual_assets:  manualAssets.map((a) => ({ id: a.id, code: a.code })),
+    fi_assets:      fiAssets.map((a) => ({ id: a.id, code: a.code, fi_principal: a.fi_principal, fi_start_date: a.fi_start_date, fi_type: a.fi_type })),
+    manual_values_count: manualValues.length,
+    manual_values:  manualValues,
+    resolved_values: resolved,
+  })
+})
+
 router.get('/asset-returns', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const fromStr = (req.query.from as string) || localYM(new Date())
