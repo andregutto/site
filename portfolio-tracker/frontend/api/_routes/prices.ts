@@ -1,7 +1,7 @@
 import { Router, Response } from 'express'
-import { requireAuth, AuthRequest } from '../_middleware/auth'
-import { supabaseAdmin } from '../_lib/supabase'
-import { getCurrentPrice, getMonthlyHistory, Asset } from '../_services/priceService'
+import { requireAuth, AuthRequest } from '../_middleware/auth.js'
+import { supabaseAdmin } from '../_lib/supabase.js'
+import { getCurrentPrice, getMonthlyHistory, Asset } from '../_services/priceService.js'
 
 const router = Router()
 
