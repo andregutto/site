@@ -1,0 +1,17 @@
+{
+  "name": "Portfolio Tracker · André Gutto",
+  "short_name": "Portfolio",
+  "description": "Rastreador de portfólio pessoal",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f9fafb",
+  "theme_color": "#001A70",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
