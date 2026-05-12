@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { apiFetch } from '../lib/api'
+import { parseLocaleNum, inputCls } from '../lib/numparse'
 import type { PortfolioAsset, ManualValue } from '../lib/types'
 
 interface Props {
@@ -28,6 +29,7 @@ export default function ManualValueModal({ asset, onClose, onSaved }: Props) {
 
   const [refDate, setRefDate]   = useState(today)
   const [value, setValue]       = useState('')
+  const [valueError, setValueError] = useState<string | undefined>()
   const [currency, setCurrency] = useState(asset.currency || 'BRL')
   const [notes, setNotes]       = useState('')
   const [saving, setSaving]     = useState(false)
@@ -41,8 +43,8 @@ export default function ManualValueModal({ asset, onClose, onSaved }: Props) {
   }, [asset.id])
 
   async function handleSave() {
-    const v = parseFloat(value.replace(',', '.'))
-    if (isNaN(v) || v <= 0) { setError('Informe um valor válido maior que zero.'); return }
+    const v = parseLocaleNum(value)
+    if (v === null || v <= 0) { setError('Informe um valor valido maior que zero.'); return }
     setSaving(true)
     setError(null)
     try {
@@ -113,10 +115,15 @@ export default function ManualValueModal({ asset, onClose, onSaved }: Props) {
                 type="text"
                 inputMode="decimal"
                 value={value}
-                onChange={e => setValue(e.target.value)}
+                onChange={e => { setValue(e.target.value); setValueError(undefined) }}
+                onBlur={e => {
+                  const raw = e.target.value.trim()
+                  if (raw && (parseLocaleNum(raw) === null)) setValueError('Formato invalido')
+                }}
                 placeholder="0,00"
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20"
+                className={inputCls('w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2', !!valueError)}
               />
+              {valueError && <p className="text-xs text-red-500 mt-0.5">{valueError}</p>}
             </div>
 
             <div>

@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import { useContributions } from '../hooks/usePortfolio'
 import { useCurrency } from '../contexts/CurrencyContext'
 import { apiFetch } from '../lib/api'
+import { parseLocaleNum, inputCls } from '../lib/numparse'
 
 function fmtDate(iso: string) {
   return new Date(iso + 'T12:00:00').toLocaleDateString('pt-BR')
@@ -36,10 +37,7 @@ const FORM_TYPES = [
 
 type FormTypeValue = typeof FORM_TYPES[number]['value']
 
-function parseNum(s: string): number | null {
-  const v = parseFloat(s.replace(/\./g, '').replace(',', '.'))
-  return isNaN(v) ? null : v
-}
+const BASE_INPUT = 'w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2'
 
 export default function ContributionsPage() {
   const { data: contributions, loading, error, refresh } = useContributions()
@@ -56,6 +54,14 @@ export default function ContributionsPage() {
   const [formErr,         setFormErr]         = useState<string | null>(null)
   const [newAssetErr,     setNewAssetErr]     = useState<string | null>(null)
   const [assetSearch,     setAssetSearch]     = useState('')
+  const [fieldErrors, setFieldErrors] = useState<{ quantity?: string; price?: string; valueBrl?: string }>({})
+
+  function validateField(field: 'quantity' | 'price' | 'valueBrl', raw: string) {
+    const v = parseLocaleNum(raw)
+    let msg: string | undefined
+    if (raw.trim() && (v === null || v < 0)) msg = 'Formato invalido'
+    setFieldErrors(prev => ({ ...prev, [field]: msg }))
+  }
 
   // contribution form fields
   const [assetId,       setAssetId]       = useState('')
@@ -153,8 +159,8 @@ export default function ContributionsPage() {
 
   // Auto-compute value_brl from qty x price x fx
   useEffect(() => {
-    const qty   = parseNum(quantity)
-    const price = parseNum(priceOrig)
+    const qty   = parseLocaleNum(quantity)
+    const price = parseLocaleNum(priceOrig)
     if (!qty || !price) return
     if (priceCurrency === 'BRL') {
       setValueBrl((qty * price).toFixed(2).replace('.', ','))
@@ -172,7 +178,7 @@ export default function ContributionsPage() {
   function resetForm() {
     setAssetId(''); setDate(new Date().toISOString().split('T')[0]); setType('buy')
     setQuantity(''); setPriceOrig(''); setPriceCurrency('BRL'); setValueBrl(''); setDescription('')
-    setAssetSearch(''); setFormErr(null)
+    setAssetSearch(''); setFormErr(null); setFieldErrors({})
   }
 
   function resetNewAsset() {
@@ -183,10 +189,10 @@ export default function ContributionsPage() {
 
   async function handleSave() {
     if (!assetId) { setFormErr('Selecione um ativo.'); return }
-    const qty = parseNum(quantity)
+    const qty  = parseLocaleNum(quantity)
+    const vBrl = parseLocaleNum(valueBrl)
     if (!qty || qty <= 0) { setFormErr('Informe uma quantidade valida.'); return }
     if (!date) { setFormErr('Informe a data.'); return }
-    const vBrl = parseNum(valueBrl)
     if (!vBrl || vBrl <= 0) { setFormErr('Informe o valor total em BRL.'); return }
 
     setSaving(true); setFormErr(null)
@@ -198,7 +204,7 @@ export default function ContributionsPage() {
           date,
           type,
           quantity:    qty,
-          price_orig:  parseNum(priceOrig) ?? undefined,
+          price_orig:  parseLocaleNum(priceOrig) ?? undefined,
           currency:    priceCurrency,
           value_brl:   vBrl,
           description: description || undefined,
@@ -474,9 +480,11 @@ export default function ContributionsPage() {
                   inputMode="decimal"
                   value={quantity}
                   onChange={e => setQuantity(e.target.value)}
+                  onBlur={e => validateField('quantity', e.target.value)}
                   placeholder="0,00"
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20"
+                  className={inputCls(BASE_INPUT, !!fieldErrors.quantity)}
                 />
+                {fieldErrors.quantity && <p className="text-xs text-red-500 mt-0.5">{fieldErrors.quantity}</p>}
               </div>
             )}
 
@@ -497,10 +505,12 @@ export default function ContributionsPage() {
                     inputMode="decimal"
                     value={priceOrig}
                     onChange={e => setPriceOrig(e.target.value)}
+                    onBlur={e => validateField('price', e.target.value)}
                     placeholder="0,00"
-                    className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20"
+                    className={inputCls('flex-1 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2', !!fieldErrors.price)}
                   />
                 </div>
+                {fieldErrors.price && <p className="text-xs text-red-500 mt-0.5">{fieldErrors.price}</p>}
               </div>
             )}
 
@@ -519,9 +529,11 @@ export default function ContributionsPage() {
                 inputMode="decimal"
                 value={valueBrl}
                 onChange={e => setValueBrl(e.target.value)}
+                onBlur={e => validateField('valueBrl', e.target.value)}
                 placeholder="0,00"
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20"
+                className={inputCls(BASE_INPUT, !!fieldErrors.valueBrl)}
               />
+              {fieldErrors.valueBrl && <p className="text-xs text-red-500 mt-0.5">{fieldErrors.valueBrl}</p>}
             </div>
 
             {/* Description */}

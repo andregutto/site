@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { apiFetch } from '../lib/api'
+import { parseLocaleNum, inputCls } from '../lib/numparse'
 import type { PortfolioAsset } from '../lib/types'
 import InstitutionSelect from './InstitutionSelect'
 
@@ -41,8 +42,10 @@ export default function FixedIncomeSetupModal({ asset, onClose, onSaved }: Props
 
   const [fiType,      setFiType]      = useState(asset.fi_type ?? 'pos_cdi')
   const [principal,   setPrincipal]   = useState('')
+  const [principalErr, setPrincipalErr] = useState<string | undefined>()
   const [startDate,   setStartDate]   = useState(asset.fi_start_date ?? '')
   const [rate,        setRate]        = useState(initialRate(asset))
+  const [rateErr,     setRateErr]     = useState<string | undefined>()
   const [maturity,    setMaturity]    = useState(asset.fi_maturity ?? '')
   const [institution, setInstitution] = useState(asset.exchange ?? '')
   const [saving,      setSaving]      = useState(false)
@@ -52,12 +55,12 @@ export default function FixedIncomeSetupModal({ asset, onClose, onSaved }: Props
   const needsRate = true
 
   async function handleSave() {
-    const p = parseFloat(principal.replace(/\./g, '').replace(',', '.'))
-    if (isNaN(p) || p <= 0) { setError('Informe o valor principal investido.'); return }
-    if (!startDate)          { setError('Informe a data de início.'); return }
+    const p = parseLocaleNum(principal)
+    if (p === null || p <= 0) { setError('Informe o valor principal investido.'); return }
+    if (!startDate)           { setError('Informe a data de inicio.'); return }
 
-    const rateVal = parseFloat(rate.replace(',', '.'))
-    if (needsRate && (isNaN(rateVal) || rateVal <= 0)) {
+    const rateVal = parseLocaleNum(rate)
+    if (needsRate && (rateVal === null || rateVal <= 0)) {
       setError('Informe a taxa contratada.'); return
     }
 
@@ -70,7 +73,7 @@ export default function FixedIncomeSetupModal({ asset, onClose, onSaved }: Props
         fi_type: fiType,
       }
 
-      if (!isNaN(rateVal) && rateVal > 0) {
+      if (rateVal !== null && rateVal > 0) {
         if (fiType === 'ipca_plus') {
           patch.fi_spread = rateVal / 100
           patch.fi_rate   = null
@@ -135,10 +138,15 @@ export default function FixedIncomeSetupModal({ asset, onClose, onSaved }: Props
               type="text"
               inputMode="decimal"
               value={principal}
-              onChange={e => setPrincipal(e.target.value)}
+              onChange={e => { setPrincipal(e.target.value); setPrincipalErr(undefined) }}
+              onBlur={e => {
+                const raw = e.target.value.trim()
+                if (raw && parseLocaleNum(raw) === null) setPrincipalErr('Formato invalido')
+              }}
               placeholder="ex: 50.000,00"
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20"
+              className={inputCls('w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2', !!principalErr)}
             />
+            {principalErr && <p className="text-xs text-red-500 mt-0.5">{principalErr}</p>}
           </div>
 
           {/* Taxa contratada */}
@@ -149,11 +157,18 @@ export default function FixedIncomeSetupModal({ asset, onClose, onSaved }: Props
                 type="text"
                 inputMode="decimal"
                 value={rate}
-                onChange={e => setRate(e.target.value)}
+                onChange={e => { setRate(e.target.value); setRateErr(undefined) }}
+                onBlur={e => {
+                  const raw = e.target.value.trim()
+                  if (raw && parseLocaleNum(raw) === null) setRateErr('Formato invalido')
+                }}
                 placeholder={rateCfg.placeholder}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20"
+                className={inputCls('w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2', !!rateErr)}
               />
-              {rateCfg.hint && <p className="text-xs text-gray-400 mt-1">{rateCfg.hint}</p>}
+              {rateErr
+                ? <p className="text-xs text-red-500 mt-0.5">{rateErr}</p>
+                : rateCfg.hint && <p className="text-xs text-gray-400 mt-1">{rateCfg.hint}</p>
+              }
             </div>
           )}
 
