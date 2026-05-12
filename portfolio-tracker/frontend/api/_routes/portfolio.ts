@@ -76,6 +76,7 @@ router.get('/value', requireAuth, async (req, res: Response) => {
         class_id:    cls?.id ?? null,
         class_name:  cls?.name ?? 'Sem classe',
         class_color: cls?.color ?? '#6B7280',
+        exchange:    (a.exchange as string | null) ?? null,
       }
 
       try {
@@ -99,7 +100,7 @@ router.get('/value', requireAuth, async (req, res: Response) => {
 
         } else if (a.asset_type === 'fixed_income') {
           if (!a.fi_principal || !a.fi_start_date || !a.fi_type || (a.fi_type !== 'ipca_plus' && a.fi_rate == null)) {
-            byAsset.push({ ...base, value_brl: 0, value_orig: 0, currency: a.currency || 'BRL', holdings: null, price: null, source: 'fixed_income', needs_manual: true, fi_type: a.fi_type, fi_start_date: a.fi_start_date, fi_rate: a.fi_rate, fi_spread: a.fi_spread, fi_maturity: a.fi_maturity ?? null, exchange: a.exchange ?? null })
+            byAsset.push({ ...base, value_brl: 0, value_orig: 0, currency: a.currency || 'BRL', holdings: null, price: null, source: 'fixed_income', needs_manual: true, fi_type: a.fi_type, fi_start_date: a.fi_start_date, fi_rate: a.fi_rate, fi_spread: a.fi_spread, fi_maturity: a.fi_maturity ?? null })
             return
           }
           const result = await getCurrentPrice(a as Asset)

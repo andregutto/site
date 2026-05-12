@@ -16,18 +16,20 @@ router.get('/', requireAuth, async (req, res: Response) => {
     country:              meta.country    ?? '',
     portfolio_start_date: meta.portfolio_start_date ?? '',
     allocation_targets:   meta.allocation_targets   ?? {},
+    institution_data:     meta.institution_data     ?? {},
   })
 })
 
 router.patch('/', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
-  const { first_name, last_name, country, portfolio_start_date, allocation_targets } = req.body as {
+  const { first_name, last_name, country, portfolio_start_date, allocation_targets, institution_data } = req.body as {
     first_name?: string; last_name?: string; country?: string
     portfolio_start_date?: string; allocation_targets?: Record<string, number>
+    institution_data?: Record<string, Record<string, string>>
   }
   const { data: { user: current } } = await supabaseAdmin.auth.admin.getUserById(userId)
   const meta = { ...(current?.user_metadata ?? {}), ...Object.fromEntries(
-    Object.entries({ first_name, last_name, country, portfolio_start_date, allocation_targets })
+    Object.entries({ first_name, last_name, country, portfolio_start_date, allocation_targets, institution_data })
       .filter(([, v]) => v !== undefined)
   )}
   const { error } = await supabaseAdmin.auth.admin.updateUserById(userId, { user_metadata: meta })
