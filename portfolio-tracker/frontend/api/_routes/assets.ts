@@ -399,12 +399,15 @@ router.get('/:id/detail', requireAuth, async (req, res: Response) => {
 
   let totalQty = 0
   let totalCostBrl = 0
+  let totalIncomeBrl = 0
   for (const c of contribs) {
     const qty = c.quantity ?? 0
     const costBrl = c.value_brl != null
       ? c.value_brl
       : (c.price_orig != null ? c.price_orig * qty * (c.fx_rate_brl ?? 5.70) : 0)
-    if (c.type === 'buy') {
+    if (c.type === 'income') {
+      totalIncomeBrl += c.value_brl ?? 0
+    } else if (c.type === 'buy') {
       totalQty   += qty
       totalCostBrl += costBrl
     } else {
@@ -508,6 +511,7 @@ router.get('/:id/detail', requireAuth, async (req, res: Response) => {
     invested_brl:   Math.round(investedBrl * 100) / 100,
     gain_loss_brl:  Math.round(gainLossBrl * 100) / 100,
     gain_loss_pct:  gainLossPct !== null ? Math.round(gainLossPct * 100) / 100 : null,
+    total_income_brl: Math.round(totalIncomeBrl * 100) / 100,
     history,
     contributions: contribs.slice().reverse(),
   })

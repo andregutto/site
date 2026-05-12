@@ -34,6 +34,7 @@ router.get('/value', requireAuth, async (req, res: Response) => {
 
   const holdingsMap: Record<number, number> = {}
   for (const c of (contributions ?? [])) {
+    if (c.type === 'income') continue
     holdingsMap[c.asset_id] = (holdingsMap[c.asset_id] ?? 0) +
       (c.type === 'buy' ? c.quantity : -c.quantity)
   }

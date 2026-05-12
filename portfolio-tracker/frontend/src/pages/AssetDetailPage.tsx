@@ -237,7 +237,7 @@ export default function AssetDetailPage() {
           <SummaryCard
             label="Quantidade"
             value={fmtNum(data.holdings, 6)}
-            sub={data.avg_cost_brl != null ? `Custo médio ${fmt(data.avg_cost_brl)}` : undefined}
+            sub={data.avg_cost_brl != null ? `Custo medio ${fmt(data.avg_cost_brl)}` : undefined}
             neutral
           />
         ) : weightPct != null ? (
@@ -248,6 +248,13 @@ export default function AssetDetailPage() {
           />
         ) : (
           <SummaryCard label="Peso na carteira" value="—" neutral />
+        )}
+        {data.total_income_brl > 0 && (
+          <SummaryCard
+            label="Rendimentos recebidos"
+            value={fmt(data.total_income_brl)}
+            positive
+          />
         )}
       </div>
 
@@ -425,11 +432,11 @@ export default function AssetDetailPage() {
                     <td className="px-4 py-3 text-gray-600">{fmtDate(c.date)}</td>
                     <td className="px-4 py-3">
                       <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-                        c.type === 'buy'
-                          ? 'bg-green-100 text-green-700'
-                          : 'bg-red-100 text-red-700'
+                        c.type === 'buy'    ? 'bg-green-100 text-green-700' :
+                        c.type === 'income' ? 'bg-purple-100 text-purple-700' :
+                                              'bg-red-100 text-red-700'
                       }`}>
-                        {c.type === 'buy' ? 'Compra' : 'Venda'}
+                        {c.type === 'buy' ? 'Compra' : c.type === 'income' ? 'Rendimento' : 'Venda'}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-right text-gray-700">{fmtNum(c.quantity, 6)}</td>

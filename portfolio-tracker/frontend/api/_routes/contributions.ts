@@ -26,8 +26,8 @@ router.post('/', requireAuth, async (req, res: Response) => {
   const { asset_id, date, type, quantity, price_orig, currency, fx_rate_brl, value_brl, description } = req.body as {
     asset_id:    number
     date:        string
-    type:        'buy' | 'sell'
-    quantity:    number
+    type:        'buy' | 'sell' | 'income'
+    quantity?:   number
     price_orig?: number
     currency?:   string
     fx_rate_brl?: number
@@ -35,8 +35,12 @@ router.post('/', requireAuth, async (req, res: Response) => {
     description?: string
   }
 
-  if (!asset_id || !date || !type || !quantity) {
+  const qty = type === 'income' ? (quantity ?? 0) : quantity
+  if (!asset_id || !date || !type || (type !== 'income' && qty == null)) {
     res.status(400).json({ error: 'asset_id, date, type e quantity são obrigatórios' }); return
+  }
+  if (!['buy', 'sell', 'income'].includes(type)) {
+    res.status(400).json({ error: 'type deve ser buy, sell ou income' }); return
   }
 
   const { data: asset } = await supabaseAdmin
@@ -50,7 +54,7 @@ router.post('/', requireAuth, async (req, res: Response) => {
   const { data, error } = await supabaseAdmin
     .from('contributions')
     .insert({
-      asset_id, date, type, quantity,
+      asset_id, date, type, quantity: qty,
       price_orig:  price_orig  ?? null,
       currency:    currency    ?? null,
       fx_rate_brl: fx_rate_brl ?? null,

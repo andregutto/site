@@ -89,7 +89,7 @@ export default function ContributionsPage() {
   // contribution form
   const [assetId,       setAssetId]       = useState('')
   const [date,          setDate]          = useState(new Date().toISOString().split('T')[0])
-  const [type,          setType]          = useState<'buy' | 'sell'>('buy')
+  const [type,          setType]          = useState<'buy' | 'sell' | 'income'>('buy')
   const [quantity,      setQuantity]      = useState('')
   const [priceOrig,     setPriceOrig]     = useState('')
   const [priceCurrency, setPriceCurrency] = useState('BRL')
@@ -214,6 +214,7 @@ export default function ContributionsPage() {
   const isManualAsset = selectedAsset?.asset_type === 'manual'
   const isSimpleAsset = isRfAsset || isManualAsset
   const isRfBuy       = isRfAsset && type === 'buy'
+  const isIncome      = type === 'income'
   const sellDisabled  = showNewAsset
   const isTickerForm  = ['ticker_b3', 'ticker_intl', 'cripto'].includes(newFormType)
   const rateCfg       = rateLabel(newFiType)
@@ -221,6 +222,26 @@ export default function ContributionsPage() {
   async function handleSave() {
     if (!assetId) { setFormErr('Selecione um ativo.'); return }
     if (!date)    { setFormErr('Informe a data.'); return }
+
+    if (isIncome) {
+      const vBrl = parseLocaleNum(valueBrl)
+      if (!vBrl || vBrl <= 0) { setFormErr('Informe o valor do rendimento.'); return }
+      setSaving(true); setFormErr(null)
+      try {
+        await apiFetch('/contributions', {
+          method: 'POST',
+          body: JSON.stringify({
+            asset_id: Number(assetId), date, type: 'income',
+            quantity: 0, value_brl: vBrl,
+            description: description || undefined,
+          }),
+        })
+        setShowForm(false); resetForm(); refresh()
+      } catch (e) {
+        setFormErr(e instanceof Error ? e.message : 'Erro ao salvar')
+      } finally { setSaving(false) }
+      return
+    }
 
     if (isRfBuy) {
       // RF aporte adicional
@@ -674,11 +695,14 @@ export default function ContributionsPage() {
             <div>
               <label className="block text-xs text-gray-500 mb-1">Tipo</label>
               <div className="flex gap-2">
-                {(['buy', 'sell'] as const).map(btnType => {
+                {(['buy', 'sell', 'income'] as const).map(btnType => {
                   const isSellDisabled = btnType === 'sell' && sellDisabled
-                  const label = isRfAsset
-                    ? (btnType === 'buy' ? 'Aporte' : 'Resgate')
+                  const label = btnType === 'income' ? 'Rendimento'
+                    : isRfAsset ? (btnType === 'buy' ? 'Aporte' : 'Resgate')
                     : (btnType === 'buy' ? 'Compra' : 'Venda')
+                  const activeColor = btnType === 'buy' ? 'bg-green-600 text-white border-green-600'
+                    : btnType === 'income' ? 'bg-purple-600 text-white border-purple-600'
+                    : 'bg-red-600 text-white border-red-600'
                   return (
                     <button
                       key={btnType}
@@ -688,9 +712,7 @@ export default function ContributionsPage() {
                       className={`flex-1 py-2 text-sm font-medium rounded-lg border transition-colors ${
                         isSellDisabled
                           ? 'border-gray-100 text-gray-300 cursor-not-allowed'
-                          : type === btnType
-                            ? btnType === 'buy' ? 'bg-green-600 text-white border-green-600' : 'bg-red-600 text-white border-red-600'
-                            : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                          : type === btnType ? activeColor : 'border-gray-200 text-gray-600 hover:bg-gray-50'
                       }`}
                     >{label}</button>
                   )
@@ -713,8 +735,8 @@ export default function ContributionsPage() {
               </div>
             )}
 
-            {/* Qty + Price (ticker only) */}
-            {!isSimpleAsset && (
+            {/* Qty + Price (ticker only, not income) */}
+            {!isSimpleAsset && !isIncome && (
               <div>
                 <label className="block text-xs text-gray-500 mb-1">Quantidade</label>
                 <input
@@ -729,7 +751,7 @@ export default function ContributionsPage() {
                 {fieldErrors.quantity && <p className="text-xs text-red-500 mt-0.5">{fieldErrors.quantity}</p>}
               </div>
             )}
-            {!isSimpleAsset && (
+            {!isSimpleAsset && !isIncome && (
               <div>
                 <label className="block text-xs text-gray-500 mb-1">Preco unitario</label>
                 <div className="flex gap-1.5">
@@ -757,7 +779,7 @@ export default function ContributionsPage() {
             {/* Value BRL */}
             <div className="sm:col-span-2">
               <label className="block text-xs text-gray-500 mb-1">
-                {isRfBuy ? 'Valor do aporte adicional (R$)' : isRfAsset ? 'Valor resgatado (R$)' : isManualAsset ? 'Valor (R$)' : (
+                {isIncome ? 'Valor recebido (R$)' : isRfBuy ? 'Valor do aporte adicional (R$)' : isRfAsset ? 'Valor resgatado (R$)' : isManualAsset ? 'Valor (R$)' : (
                   <>
                     Valor total em BRL
                     {priceCurrency !== 'BRL' && (fxRates as Record<string, number>)[priceCurrency] && (
@@ -801,7 +823,7 @@ export default function ContributionsPage() {
             onClick={handleSave}
             disabled={saving}
             className="w-full bg-[#001A70] text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-[#001A70]/90 disabled:opacity-50 transition-colors"
-          >{saving ? 'Salvando...' : isRfBuy ? 'Registrar aporte' : 'Registrar'}</button>
+          >{saving ? 'Salvando...' : isIncome ? 'Registrar rendimento' : isRfBuy ? 'Registrar aporte' : 'Registrar'}</button>
         </div>
       )}
 
@@ -846,8 +868,12 @@ export default function ContributionsPage() {
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${c.type === 'buy' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                        {c.type === 'buy' ? 'Compra' : 'Venda'}
+                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                        c.type === 'buy' ? 'bg-green-100 text-green-700' :
+                        c.type === 'income' ? 'bg-purple-100 text-purple-700' :
+                        'bg-red-100 text-red-700'
+                      }`}>
+                        {c.type === 'buy' ? 'Compra' : c.type === 'income' ? 'Rendimento' : 'Venda'}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-right text-gray-600">{fmtNum(c.quantity, 6)}</td>

@@ -104,7 +104,7 @@ export interface AssetHistoryPoint {
 export interface Contribution {
   id: number
   date: string
-  type: 'buy' | 'sell'
+  type: 'buy' | 'sell' | 'income'
   quantity: number
   price_orig: number | null
   currency: string | null
@@ -133,6 +133,7 @@ export interface AssetDetail {
   invested_brl: number
   gain_loss_brl: number
   gain_loss_pct: number | null
+  total_income_brl: number
   history: AssetHistoryPoint[]
   contributions: Contribution[]
 }
