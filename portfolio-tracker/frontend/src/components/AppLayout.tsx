@@ -1,26 +1,34 @@
 import { NavLink, Outlet, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useCurrency, type Currency } from '../contexts/CurrencyContext'
-
-const navItems = [
-  { to: '/',               label: 'Dashboard',    icon: '▦', end: true },
-  { to: '/performance',    label: 'Performance',  icon: '↗', end: false },
-  { to: '/contributions',  label: 'Aportes',      icon: '⊕', end: false },
-  { to: '/rebalance',      label: 'Balanc.',      icon: '⇌', end: false },
-  { to: '/by-institution', label: 'Instituições', icon: '⊟', end: false },
-  { to: '/classes',        label: 'Classes',      icon: '◈', end: false },
-  { to: '/reports',        label: 'IR',           icon: '⊞', end: false },
-]
+import { useI18n, type Locale } from '../contexts/I18nContext'
 
 const CURRENCIES: Currency[] = ['BRL', 'USD', 'EUR']
+const LOCALES: { value: Locale; flag: string }[] = [
+  { value: 'pt', flag: '🇧🇷' },
+  { value: 'en', flag: '🇺🇸' },
+  { value: 'fr', flag: '🇫🇷' },
+]
 
 export default function AppLayout() {
   const { user, signOut } = useAuth()
   const { currency, setCurrency } = useCurrency()
+  const { t, locale, setLocale } = useI18n()
+
   const meta = user?.user_metadata ?? {}
   const headerLabel = [meta.first_name, meta.last_name].filter(Boolean).join(' ') || user?.email || ''
   const avatarUrl = meta.avatar_url as string | undefined
   const avatarInitials = headerLabel.slice(0, 2).toUpperCase()
+
+  const navItems = [
+    { to: '/',               label: t.nav.dashboard,     icon: '▦', end: true },
+    { to: '/performance',    label: t.nav.performance,   icon: '↗', end: false },
+    { to: '/contributions',  label: t.nav.contributions, icon: '⊕', end: false },
+    { to: '/rebalance',      label: t.nav.rebalance,     icon: '⇌', end: false },
+    { to: '/by-institution', label: t.nav.institutions,  icon: '⊟', end: false },
+    { to: '/classes',        label: t.nav.classes,       icon: '◈', end: false },
+    { to: '/reports',        label: t.nav.ir,            icon: '⊞', end: false },
+  ]
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -55,7 +63,23 @@ export default function AppLayout() {
             </nav>
           </div>
 
-          <div className="flex items-center gap-3 shrink-0">
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Language selector */}
+            <div className="flex items-center bg-gray-100 rounded-lg p-0.5 gap-0">
+              {LOCALES.map(l => (
+                <button
+                  key={l.value}
+                  onClick={() => setLocale(l.value)}
+                  title={l.value.toUpperCase()}
+                  className={`px-1.5 py-1 text-sm rounded-md transition-colors ${
+                    locale === l.value ? 'bg-white shadow-sm' : 'opacity-40 hover:opacity-70'
+                  }`}
+                >
+                  {l.flag}
+                </button>
+              ))}
+            </div>
+
             {/* Currency selector */}
             <div className="flex items-center bg-gray-100 rounded-lg p-0.5 gap-0.5">
               {CURRENCIES.map(c => (
@@ -72,6 +96,7 @@ export default function AppLayout() {
                 </button>
               ))}
             </div>
+
             <Link to="/profile" className="hidden sm:flex items-center gap-2 hover:opacity-80 transition-opacity" title={headerLabel}>
               {avatarUrl ? (
                 <img src={avatarUrl} alt="Avatar" className="w-7 h-7 rounded-full object-cover" />
@@ -84,7 +109,7 @@ export default function AppLayout() {
               onClick={() => signOut()}
               className="text-xs text-gray-500 hover:text-red-600 transition-colors"
             >
-              Sair
+              {t.nav.signout}
             </button>
           </div>
         </div>

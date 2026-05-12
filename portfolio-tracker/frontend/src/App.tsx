@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { CurrencyProvider } from './contexts/CurrencyContext'
+import { I18nProvider } from './contexts/I18nContext'
 import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
 import PerformancePage from './pages/PerformancePage'
@@ -63,9 +64,11 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <CurrencyProvider>
-          <AppRoutes />
-        </CurrencyProvider>
+        <I18nProvider>
+          <CurrencyProvider>
+            <AppRoutes />
+          </CurrencyProvider>
+        </I18nProvider>
       </AuthProvider>
     </BrowserRouter>
   )
