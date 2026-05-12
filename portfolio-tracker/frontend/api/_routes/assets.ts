@@ -165,6 +165,70 @@ async function getOwnedAsset(assetId: number, userId: string) {
   return data
 }
 
+// POST /api/assets/:id/migrate-to-fi — converte ativo manual em renda fixa
+router.post('/:id/migrate-to-fi', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const assetId = Number(req.params.id)
+  const asset = await getOwnedAsset(assetId, userId)
+  if (!asset) { res.status(404).json({ error: 'Ativo nao encontrado' }); return }
+  if (asset.asset_type !== 'manual') { res.status(400).json({ error: 'Apenas ativos manuais podem ser migrados' }); return }
+
+  const { fi_type, fi_rate, fi_spread, fi_maturity, exchange, fi_principal, fi_start_date } = req.body as {
+    fi_type: string; fi_rate?: number | null; fi_spread?: number | null
+    fi_maturity?: string | null; exchange?: string | null
+    fi_principal?: number; fi_start_date?: string
+  }
+
+  if (!fi_type) { res.status(400).json({ error: 'fi_type e obrigatorio' }); return }
+  if (fi_type !== 'ipca_plus' && (fi_rate == null || fi_rate <= 0)) {
+    res.status(400).json({ error: 'fi_rate e obrigatorio para este tipo' }); return
+  }
+
+  const { data: existingContribs } = await supabaseAdmin
+    .from('contributions')
+    .select('value_brl, date')
+    .eq('asset_id', assetId)
+    .eq('type', 'buy')
+    .order('date', { ascending: true })
+
+  let effectivePrincipal: number
+  let effectiveStartDate: string
+
+  if (existingContribs?.length) {
+    effectivePrincipal = existingContribs.reduce((s, c) => s + (c.value_brl ?? 0), 0)
+    effectiveStartDate = existingContribs[0].date
+  } else {
+    if (!fi_principal || fi_principal <= 0) {
+      res.status(400).json({ error: 'fi_principal e obrigatorio quando nao ha aportes registrados' }); return
+    }
+    if (!fi_start_date) {
+      res.status(400).json({ error: 'fi_start_date e obrigatorio quando nao ha aportes registrados' }); return
+    }
+    effectivePrincipal = fi_principal
+    effectiveStartDate = fi_start_date
+    const { error: cErr } = await supabaseAdmin.from('contributions').insert({
+      asset_id: assetId, date: fi_start_date, type: 'buy',
+      quantity: 1, price_orig: fi_principal, currency: 'BRL', value_brl: fi_principal,
+    })
+    if (cErr) { res.status(500).json({ error: cErr.message }); return }
+  }
+
+  const updates: Record<string, unknown> = {
+    asset_type:    'fixed_income',
+    fi_type,
+    fi_principal:  effectivePrincipal,
+    fi_start_date: effectiveStartDate,
+  }
+  if (fi_rate   != null) updates.fi_rate   = fi_rate
+  if (fi_spread != null) updates.fi_spread = fi_spread
+  if (fi_maturity)       updates.fi_maturity = fi_maturity
+  if (exchange)          updates.exchange    = exchange
+
+  const { error } = await supabaseAdmin.from('assets').update(updates).eq('id', assetId).eq('user_id', userId)
+  if (error) { res.status(500).json({ error: error.message }); return }
+  res.json({ ok: true })
+})
+
 // POST /api/assets/:id/fi-deposit — aporte adicional em renda fixa
 router.post('/:id/fi-deposit', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest

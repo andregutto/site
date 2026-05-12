@@ -4,6 +4,7 @@ import { useAssetDetail } from '../hooks/usePortfolio'
 import { useCurrency } from '../contexts/CurrencyContext'
 import { apiFetch } from '../lib/api'
 import InstitutionSelect from '../components/InstitutionSelect'
+import MigrateToFIModal from '../components/MigrateToFIModal'
 import {
   LineChart, Line, XAxis, YAxis, Tooltip,
   ResponsiveContainer, CartesianGrid, ReferenceLine,
@@ -51,10 +52,11 @@ export default function AssetDetailPage() {
   const location   = useLocation()
   const { data, loading, error } = useAssetDetail(id ? Number(id) : null)
   const { fmt, convert, currency } = useCurrency()
-  const [archiving,        setArchiving]        = useState(false)
+  const [archiving,          setArchiving]          = useState(false)
   const [editingInstitution, setEditingInstitution] = useState(false)
   const [institutionValue,   setInstitutionValue]   = useState('')
   const [savingInstitution,  setSavingInstitution]  = useState(false)
+  const [showMigrateModal,   setShowMigrateModal]   = useState(false)
 
   async function handleArchive() {
     if (!id || !confirm('Arquivar este ativo? Ele vai sair do dashboard mas o histórico é mantido.')) return
@@ -173,6 +175,14 @@ export default function AssetDetailPage() {
             to={`/contributions?assetId=${id}&new=1`}
             className="text-xs text-[#001A70] border border-[#001A70]/30 hover:bg-blue-50 rounded-lg px-2.5 py-1 transition-colors mt-1"
           >+ Aporte</Link>
+          {data.asset_type === 'manual' && (
+            <button
+              onClick={() => setShowMigrateModal(true)}
+              className="text-xs text-blue-600 border border-blue-200 hover:bg-blue-50 rounded-lg px-2.5 py-1 transition-colors"
+            >
+              Converter para RF
+            </button>
+          )}
           <button
             onClick={handleArchive}
             disabled={archiving}
@@ -287,6 +297,18 @@ export default function AssetDetailPage() {
             </ResponsiveContainer>
           </div>
         </div>
+      )}
+
+      {showMigrateModal && (
+        <MigrateToFIModal
+          assetId={data.id}
+          assetName={data.name}
+          assetCode={data.code}
+          investedBrl={data.invested_brl}
+          hasContributions={data.contributions.length > 0}
+          onClose={() => setShowMigrateModal(false)}
+          onSaved={() => { setShowMigrateModal(false); refresh() }}
+        />
       )}
 
       {/* Histórico de aportes */}
