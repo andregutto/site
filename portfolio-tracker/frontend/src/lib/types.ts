@@ -116,6 +116,7 @@ export interface AssetDetail {
   name: string
   asset_type: 'ticker' | 'fixed_income' | 'manual'
   currency: string
+  exchange: string | null
   class_name: string
   class_color: string
   fi_type: string | null

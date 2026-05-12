@@ -23,7 +23,13 @@ export default function AppLayout() {
       <header className="bg-white border-b border-gray-100 sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
           <div className="flex items-center gap-5 min-w-0">
-            <span className="font-bold text-[#001A70] text-base shrink-0">Portfolio Tracker</span>
+            <a
+              href="https://andregutto.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="shrink-0 transition-opacity duration-200 hover:opacity-70 tracking-[-0.2px]"
+              style={{ fontFamily: "'Libre Baskerville', serif", fontSize: 19, fontWeight: 400, color: '#1B2F4E', textDecoration: 'none' }}
+            >André Gutto</a>
             <nav className="hidden sm:flex items-center gap-1">
               {navItems.map(({ to, label, icon, end }) => (
                 <NavLink

@@ -3,6 +3,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useAssetDetail } from '../hooks/usePortfolio'
 import { useCurrency } from '../contexts/CurrencyContext'
 import { apiFetch } from '../lib/api'
+import InstitutionSelect from '../components/InstitutionSelect'
 import {
   LineChart, Line, XAxis, YAxis, Tooltip,
   ResponsiveContainer, CartesianGrid, ReferenceLine,
@@ -50,7 +51,10 @@ export default function AssetDetailPage() {
   const location   = useLocation()
   const { data, loading, error } = useAssetDetail(id ? Number(id) : null)
   const { fmt, convert, currency } = useCurrency()
-  const [archiving, setArchiving] = useState(false)
+  const [archiving,        setArchiving]        = useState(false)
+  const [editingInstitution, setEditingInstitution] = useState(false)
+  const [institutionValue,   setInstitutionValue]   = useState('')
+  const [savingInstitution,  setSavingInstitution]  = useState(false)
 
   async function handleArchive() {
     if (!id || !confirm('Arquivar este ativo? Ele vai sair do dashboard mas o histórico é mantido.')) return
@@ -59,6 +63,20 @@ export default function AssetDetailPage() {
       await apiFetch(`/assets/${id}/archive`, { method: 'POST' })
       navigate(-1)
     } catch { setArchiving(false) }
+  }
+
+  async function handleSaveInstitution() {
+    if (!id) return
+    setSavingInstitution(true)
+    try {
+      await apiFetch(`/assets/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ exchange: institutionValue.trim() || null }),
+      })
+      setEditingInstitution(false)
+    } catch { /* keep editing open */ } finally {
+      setSavingInstitution(false)
+    }
   }
 
   // total_brl passado via navegação (do dashboard) para calcular % carteira
@@ -125,10 +143,36 @@ export default function AssetDetailPage() {
               <p className="text-xs text-gray-400">{data.price_source}</p>
             </>
           )}
+          {/* Instituição */}
+          {editingInstitution ? (
+            <div className="flex items-center gap-1 mt-1 w-52">
+              <div className="flex-1">
+                <InstitutionSelect
+                  value={institutionValue}
+                  onChange={setInstitutionValue}
+                  placeholder="Instituição..."
+                  autoFocus
+                />
+              </div>
+              <button
+                onClick={handleSaveInstitution}
+                disabled={savingInstitution}
+                className="text-xs text-[#001A70] font-semibold disabled:opacity-50 shrink-0"
+              >OK</button>
+              <button onClick={() => setEditingInstitution(false)} className="text-xs text-gray-400 shrink-0">✕</button>
+            </div>
+          ) : (
+            <button
+              onClick={() => { setInstitutionValue(data.exchange ?? ''); setEditingInstitution(true) }}
+              className="text-xs text-gray-400 hover:text-[#001A70] border border-gray-200 hover:border-[#001A70] rounded-lg px-2.5 py-1 transition-colors mt-1"
+            >
+              {data.exchange || 'Sem instituição'}
+            </button>
+          )}
           <button
             onClick={handleArchive}
             disabled={archiving}
-            className="text-xs text-gray-400 hover:text-red-500 transition-colors disabled:opacity-50 mt-1"
+            className="text-xs text-gray-400 hover:text-red-500 transition-colors disabled:opacity-50"
           >
             Arquivar
           </button>
