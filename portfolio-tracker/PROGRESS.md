@@ -400,6 +400,28 @@ Configuradas para Production + Preview:
 
 ---
 
+## Sessão 8 — Filtros de período (12/05/2026) ✅ CONCLUÍDA
+
+### Item 1: Filtros de período
+
+#### Dashboard — AssetTable
+- ✅ Adicionado periodo "Últ. 30d" (`last_30d`) ao seletor da coluna Rentab., ao lado de Mês atual, Últ. 12m e YTD
+- "Últ. 30d" usa `from = mes_anterior, to = mes_atual` (aproximacao mensal de 30 dias sobre price_history mensal)
+
+#### Performance — PerformancePage
+- ✅ Adicionado modo "Desde o início" (`since_inception`)
+- ✅ Novo endpoint `GET /api/performance/inception` — retorna `{ inception: 'YYYY-MM' }` com o mes da primeira contribuicao do usuario
+- ✅ Novo hook `usePerformanceInception()` em `usePortfolio.ts`
+- Botoes de modo agora: Mês atual | Últ. 12 meses | Desde o início | Personalizado (alem da navegacao por ano)
+
+#### Arquivos modificados
+- `api/_routes/performance.ts` — novo endpoint `/inception`
+- `src/hooks/usePortfolio.ts` — novo hook `usePerformanceInception`
+- `src/pages/PerformancePage.tsx` — tipo `since_inception`, `derivePeriod()` extendido, botao adicionado
+- `src/components/AssetTable.tsx` — tipo `last_30d`, nova opcao no seletor, `getPeriodRange()` extendido
+
+---
+
 ## Referências rápidas
 
 | Item | Valor |

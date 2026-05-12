@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { apiFetch } from '../lib/api'
-import type { PortfolioValue, PerformanceSummary, PerformanceMonthly, PerformanceBenchmarks, AssetDetail, ContributionRow } from '../lib/types'
+import type { PortfolioValue, PerformanceSummary, PerformanceMonthly, PerformanceBenchmarks, AssetReturns, AssetDetail, ContributionRow } from '../lib/types'
 
 export function usePortfolioValue() {
   const [data, setData]     = useState<PortfolioValue | null>(null)
@@ -66,7 +66,7 @@ export function usePerformanceSummary(from: string, to: string) {
   return { data, loading, error }
 }
 
-export function usePerformanceMonthly(year: number) {
+export function usePerformanceMonthly(from: string, to: string) {
   const [data, setData]     = useState<PerformanceMonthly | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError]   = useState<string | null>(null)
@@ -74,28 +74,56 @@ export function usePerformanceMonthly(year: number) {
   useEffect(() => {
     setLoading(true)
     setError(null)
-    apiFetch<PerformanceMonthly>(`/performance/monthly?year=${year}`)
+    apiFetch<PerformanceMonthly>(`/performance/monthly?from=${from}&to=${to}`)
       .then(setData)
       .catch((err) => setError(err instanceof Error ? err.message : 'Erro'))
       .finally(() => setLoading(false))
-  }, [year])
+  }, [from, to])
 
   return { data, loading, error }
 }
 
-export function usePerformanceBenchmarks(year: number) {
+export function usePerformanceBenchmarks(from: string, to: string) {
   const [data, setData]     = useState<PerformanceBenchmarks | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     setLoading(true)
-    apiFetch<PerformanceBenchmarks>(`/performance/benchmarks?year=${year}`)
+    apiFetch<PerformanceBenchmarks>(`/performance/benchmarks?from=${from}&to=${to}`)
       .then(setData)
       .catch(() => setData(null))
       .finally(() => setLoading(false))
-  }, [year])
+  }, [from, to])
 
   return { data, loading }
+}
+
+export function useAssetReturns(from: string | null, to: string | null) {
+  const [data, setData]     = useState<AssetReturns | null>(null)
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    if (!from || !to) { setData(null); return }
+    setLoading(true)
+    apiFetch<AssetReturns>(`/performance/asset-returns?from=${from}&to=${to}`)
+      .then(setData)
+      .catch(() => setData(null))
+      .finally(() => setLoading(false))
+  }, [from, to])
+
+  return { data, loading }
+}
+
+export function usePerformanceInception() {
+  const [inception, setInception] = useState<string | null>(null)
+
+  useEffect(() => {
+    apiFetch<{ inception: string | null }>('/performance/inception')
+      .then(r => setInception(r.inception))
+      .catch(() => setInception(null))
+  }, [])
+
+  return inception
 }
 
 export function useAssetDetail(id: number | null) {

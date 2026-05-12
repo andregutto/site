@@ -342,6 +342,20 @@ router.get('/benchmarks', requireAuth, async (req, res: Response) => {
   res.json({ cdi_pct: cdiPct, ibov_pct: ibovPct, sp500_pct: sp500Pct, monthly })
 })
 
+router.get('/inception', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const { data } = await supabaseAdmin
+    .from('contributions')
+    .select('date, assets!inner(user_id)')
+    .eq('assets.user_id', userId)
+    .order('date', { ascending: true })
+    .limit(1)
+
+  const firstDate = (data as Array<{ date: string }> | null)?.[0]?.date
+  if (!firstDate) { res.json({ inception: null }); return }
+  res.json({ inception: firstDate.substring(0, 7) })
+})
+
 router.get('/asset-returns', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const fromStr = (req.query.from as string) || localYM(new Date())
