@@ -1,9 +1,9 @@
 import { Router, Response } from 'express'
-import { requireAuth, AuthRequest } from '../_middleware/auth'
-import { supabaseAdmin } from '../_lib/supabase'
-import { getCurrentPrice, getMonthlyHistory, Asset } from '../_services/priceService'
-import { getFxRate } from '../_lib/fx'
-import * as yahoo from '../_services/yahooService'
+import { requireAuth, AuthRequest } from '../_middleware/auth.js'
+import { supabaseAdmin } from '../_lib/supabase.js'
+import { getCurrentPrice, getMonthlyHistory, Asset } from '../_services/priceService.js'
+import { getFxRate } from '../_lib/fx.js'
+import * as yahoo from '../_services/yahooService.js'
 
 const router = Router()
 
