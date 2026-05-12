@@ -1,4 +1,4 @@
-import { cache, TTL } from '../_lib/cache'
+import { cache, TTL } from '../_lib/cache.js'
 
 const BASE = 'https://api.coingecko.com/api/v3'
 
