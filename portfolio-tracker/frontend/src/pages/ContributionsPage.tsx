@@ -25,11 +25,16 @@ interface AssetClass { id: number; name: string; color: string }
 
 const CURRENCIES = ['BRL', 'USD', 'EUR', 'GBP', 'CHF']
 
-const ASSET_TYPES = [
-  { value: 'ticker',       label: 'Ativo (ação / ETF / cripto)' },
-  { value: 'fixed_income', label: 'Renda fixa' },
-  { value: 'manual',       label: 'Valor manual' },
-]
+// Form-level type drives market lookup logic and maps to DB asset_type
+const FORM_TYPES = [
+  { value: 'ticker_b3',    label: 'Ativo B3 (acao / FII)',        dbType: 'ticker',       currency: 'BRL', market: 'b3'     },
+  { value: 'ticker_intl',  label: 'Ativo Internacional (ETF...)', dbType: 'ticker',       currency: 'USD', market: 'intl'   },
+  { value: 'cripto',       label: 'Cripto',                       dbType: 'ticker',       currency: 'USD', market: 'cripto' },
+  { value: 'fixed_income', label: 'Renda fixa',                   dbType: 'fixed_income', currency: 'BRL', market: null     },
+  { value: 'manual',       label: 'Valor manual',                 dbType: 'manual',       currency: 'BRL', market: null     },
+] as const
+
+type FormTypeValue = typeof FORM_TYPES[number]['value']
 
 function parseNum(s: string): number | null {
   const v = parseFloat(s.replace(/\./g, '').replace(',', '.'))
@@ -53,21 +58,23 @@ export default function ContributionsPage() {
   const [assetSearch,     setAssetSearch]     = useState('')
 
   // contribution form fields
-  const [assetId,      setAssetId]      = useState('')
-  const [date,         setDate]         = useState(new Date().toISOString().split('T')[0])
-  const [type,         setType]         = useState<'buy' | 'sell'>('buy')
-  const [quantity,     setQuantity]     = useState('')
-  const [priceOrig,    setPriceOrig]    = useState('')
+  const [assetId,       setAssetId]       = useState('')
+  const [date,          setDate]          = useState(new Date().toISOString().split('T')[0])
+  const [type,          setType]          = useState<'buy' | 'sell'>('buy')
+  const [quantity,      setQuantity]      = useState('')
+  const [priceOrig,     setPriceOrig]     = useState('')
   const [priceCurrency, setPriceCurrency] = useState('BRL')
-  const [valueBrl,     setValueBrl]     = useState('')
-  const [description,  setDescription]  = useState('')
+  const [valueBrl,      setValueBrl]      = useState('')
+  const [description,   setDescription]  = useState('')
 
   // new asset form fields
-  const [newCode,      setNewCode]      = useState('')
-  const [newName,      setNewName]      = useState('')
-  const [newAssetType, setNewAssetType] = useState('ticker')
-  const [newCurrency,  setNewCurrency]  = useState('BRL')
-  const [newClassId,   setNewClassId]   = useState('')
+  const [newFormType,     setNewFormType]     = useState<FormTypeValue>('ticker_b3')
+  const [newCode,         setNewCode]         = useState('')
+  const [newName,         setNewName]         = useState('')
+  const [newNameLoading,  setNewNameLoading]  = useState(false)
+  const [newCurrency,     setNewCurrency]     = useState('BRL')
+  const [newClassId,      setNewClassId]      = useState('')
+  const [newCoingeckoId,  setNewCoingeckoId]  = useState('')
 
   const loadAssets = useCallback(async () => {
     try {
@@ -95,12 +102,56 @@ export default function ContributionsPage() {
 
   const selectedAsset = assets.find(a => a.id === Number(assetId))
 
-  // When asset changes, set priceCurrency to the asset's native currency
+  // When existing asset changes, sync price currency
   useEffect(() => {
     if (selectedAsset) setPriceCurrency(selectedAsset.currency)
   }, [assetId, selectedAsset])
 
-  // Auto-compute value_brl from qty × price × fx when all three are known
+  // When showNewAsset opens, force type=buy (no selling an asset that doesn't exist yet)
+  useEffect(() => {
+    if (showNewAsset) setType('buy')
+  }, [showNewAsset])
+
+  // Auto-set currency when new asset form type changes
+  useEffect(() => {
+    const config = FORM_TYPES.find(t => t.value === newFormType)
+    if (config) setNewCurrency(config.currency)
+    setNewName('')
+    setNewCode('')
+    setNewCoingeckoId('')
+    setNewNameLoading(false)
+  }, [newFormType])
+
+  // Auto-fetch name after code is typed (debounced 600ms) - ticker types only
+  useEffect(() => {
+    const config = FORM_TYPES.find(t => t.value === newFormType)
+    const market = config?.market
+    const code   = newCode.trim()
+    if (!market || !code) {
+      setNewName('')
+      setNewCoingeckoId('')
+      setNewNameLoading(false)
+      return
+    }
+    setNewName('')
+    setNewNameLoading(true)
+    const timer = setTimeout(async () => {
+      try {
+        const result = await apiFetch<{ name: string | null; coingecko_id?: string | null }>(
+          `/assets/lookup?code=${encodeURIComponent(code)}&market=${encodeURIComponent(market)}`
+        )
+        setNewName(result.name ?? '')
+        if (result.coingecko_id) setNewCoingeckoId(result.coingecko_id)
+      } catch {
+        setNewName('')
+      } finally {
+        setNewNameLoading(false)
+      }
+    }, 600)
+    return () => { clearTimeout(timer); setNewNameLoading(false) }
+  }, [newCode, newFormType])
+
+  // Auto-compute value_brl from qty x price x fx
   useEffect(() => {
     const qty   = parseNum(quantity)
     const price = parseNum(priceOrig)
@@ -124,10 +175,16 @@ export default function ContributionsPage() {
     setAssetSearch(''); setFormErr(null)
   }
 
+  function resetNewAsset() {
+    setNewCode(''); setNewName(''); setNewFormType('ticker_b3')
+    setNewCurrency('BRL'); setNewClassId(''); setNewCoingeckoId('')
+    setNewNameLoading(false); setNewAssetErr(null)
+  }
+
   async function handleSave() {
     if (!assetId) { setFormErr('Selecione um ativo.'); return }
     const qty = parseNum(quantity)
-    if (!qty || qty <= 0) { setFormErr('Informe uma quantidade válida.'); return }
+    if (!qty || qty <= 0) { setFormErr('Informe uma quantidade valida.'); return }
     if (!date) { setFormErr('Informe a data.'); return }
     const vBrl = parseNum(valueBrl)
     if (!vBrl || vBrl <= 0) { setFormErr('Informe o valor total em BRL.'); return }
@@ -158,25 +215,44 @@ export default function ContributionsPage() {
   }
 
   async function handleCreateAsset() {
-    if (!newCode.trim()) { setNewAssetErr('Informe o código do ativo.'); return }
-    if (!newName.trim()) { setNewAssetErr('Informe o nome.'); return }
+    const config = FORM_TYPES.find(t => t.value === newFormType)
+    const isTickerType = config?.market != null
+
+    if (!newCode.trim()) { setNewAssetErr('Informe o codigo do ativo.'); return }
+    if (isTickerType && newNameLoading) { setNewAssetErr('Aguarde a busca do nome.'); return }
+    if (!newName.trim()) {
+      setNewAssetErr(isTickerType
+        ? 'Nome nao encontrado. Verifique o codigo.'
+        : 'Informe o nome.')
+      return
+    }
+
     setSavingNewAsset(true); setNewAssetErr(null)
     try {
+      const code         = newCode.trim().toUpperCase()
+      const ticker_brapi = newFormType === 'ticker_b3'   ? code : undefined
+      const ticker_yahoo = newFormType === 'ticker_intl' ? code
+                         : newFormType === 'cripto'      ? `${code}-USD` : undefined
+      const coingecko_id = newFormType === 'cripto' ? (newCoingeckoId || undefined) : undefined
+
       const created = await apiFetch<{ id: number; code: string; name: string; asset_type: string; currency: string }>('/assets', {
         method: 'POST',
         body: JSON.stringify({
-          code:           newCode.trim(),
+          code,
           name:           newName.trim(),
-          asset_type:     newAssetType,
+          asset_type:     config?.dbType ?? 'ticker',
           currency:       newCurrency,
           asset_class_id: newClassId ? Number(newClassId) : null,
+          ticker_brapi,
+          ticker_yahoo,
+          coingecko_id,
         }),
       })
       await loadAssets()
       setAssetId(String(created.id))
       setPriceCurrency(created.currency)
       setShowNewAsset(false)
-      setNewCode(''); setNewName(''); setNewAssetType('ticker'); setNewCurrency('BRL'); setNewClassId('')
+      resetNewAsset()
     } catch (e) {
       setNewAssetErr(e instanceof Error ? e.message : 'Erro ao criar ativo')
     } finally {
@@ -192,7 +268,9 @@ export default function ContributionsPage() {
     } catch { /* ignore */ }
   }
 
-  const isSimpleAsset = selectedAsset && (selectedAsset.asset_type === 'fixed_income' || selectedAsset.asset_type === 'manual')
+  const isSimpleAsset  = selectedAsset && (selectedAsset.asset_type === 'fixed_income' || selectedAsset.asset_type === 'manual')
+  const sellDisabled   = showNewAsset
+  const isTickerForm   = ['ticker_b3', 'ticker_intl', 'cripto'].includes(newFormType)
 
   return (
     <div className="space-y-6">
@@ -218,7 +296,7 @@ export default function ContributionsPage() {
                 type="text"
                 value={assetSearch}
                 onChange={e => setAssetSearch(e.target.value)}
-                placeholder="Filtrar por código ou nome..."
+                placeholder="Filtrar por codigo ou nome..."
                 className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20"
               />
               <div className="flex gap-2">
@@ -236,7 +314,7 @@ export default function ContributionsPage() {
                 </select>
                 <button
                   type="button"
-                  onClick={() => setShowNewAsset(v => !v)}
+                  onClick={() => { setShowNewAsset(v => !v); if (showNewAsset) resetNewAsset() }}
                   className="px-3 py-2 text-sm border border-gray-200 rounded-lg text-[#001A70] hover:bg-blue-50 transition-colors shrink-0"
                   title="Criar novo ativo"
                 >+ Ativo</button>
@@ -248,47 +326,80 @@ export default function ContributionsPage() {
               <div className="sm:col-span-2 bg-blue-50 border border-blue-100 rounded-xl p-4 space-y-3">
                 <p className="text-xs font-semibold text-[#001A70]">Novo ativo</p>
                 <div className="grid grid-cols-2 gap-2">
+                  {/* Type selector */}
+                  <div className="col-span-2">
+                    <label className="block text-xs text-gray-500 mb-1">Tipo</label>
+                    <select
+                      value={newFormType}
+                      onChange={e => setNewFormType(e.target.value as FormTypeValue)}
+                      className="w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20 bg-white"
+                    >
+                      {FORM_TYPES.map(t => (
+                        <option key={t.value} value={t.value}>{t.label}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Code */}
                   <div>
                     <label className="block text-xs text-gray-500 mb-1">Codigo</label>
                     <input
                       type="text"
                       value={newCode}
                       onChange={e => setNewCode(e.target.value.toUpperCase())}
-                      placeholder="ex: AAPL"
+                      placeholder={newFormType === 'cripto' ? 'ex: BTC' : newFormType === 'ticker_intl' ? 'ex: AAPL' : 'ex: PETR4'}
                       className="w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20 bg-white"
                     />
                   </div>
-                  <div>
-                    <label className="block text-xs text-gray-500 mb-1">Moeda</label>
-                    <select
-                      value={newCurrency}
-                      onChange={e => setNewCurrency(e.target.value)}
-                      className="w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20 bg-white"
-                    >
-                      {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
-                    </select>
-                  </div>
+
+                  {/* Currency (hidden for B3 since always BRL) */}
+                  {newFormType !== 'ticker_b3' ? (
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">Moeda</label>
+                      <select
+                        value={newCurrency}
+                        onChange={e => setNewCurrency(e.target.value)}
+                        className="w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20 bg-white"
+                      >
+                        {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
+                      </select>
+                    </div>
+                  ) : (
+                    <div className="flex items-end pb-1">
+                      <span className="text-xs text-gray-400">Moeda: BRL</span>
+                    </div>
+                  )}
+
+                  {/* Name - readonly for ticker types, auto-filled */}
                   <div className="col-span-2">
-                    <label className="block text-xs text-gray-500 mb-1">Nome completo</label>
+                    <label className="block text-xs text-gray-500 mb-1">
+                      Nome completo
+                      {isTickerForm && (
+                        <span className="ml-1 text-gray-400">
+                          {newNameLoading ? '· buscando...' : newName ? '· preenchido automaticamente' : newCode ? '· nao encontrado' : '· preenchido apos digitar o codigo'}
+                        </span>
+                      )}
+                    </label>
                     <input
                       type="text"
                       value={newName}
-                      onChange={e => setNewName(e.target.value)}
-                      placeholder="ex: Apple Inc."
-                      className="w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20 bg-white"
+                      readOnly={isTickerForm}
+                      onChange={isTickerForm ? undefined : e => setNewName(e.target.value)}
+                      placeholder={
+                        isTickerForm
+                          ? newNameLoading ? 'Buscando...'
+                          : newCode ? 'Nome nao encontrado'
+                          : 'Sera preenchido automaticamente'
+                        : 'ex: Apple Inc.'
+                      }
+                      className={`w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20 ${
+                        isTickerForm ? 'bg-gray-50 text-gray-500 cursor-default' : 'bg-white'
+                      }`}
                     />
                   </div>
-                  <div>
-                    <label className="block text-xs text-gray-500 mb-1">Tipo</label>
-                    <select
-                      value={newAssetType}
-                      onChange={e => setNewAssetType(e.target.value)}
-                      className="w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20 bg-white"
-                    >
-                      {ASSET_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-                    </select>
-                  </div>
-                  <div>
+
+                  {/* Class */}
+                  <div className="col-span-2">
                     <label className="block text-xs text-gray-500 mb-1">Classe</label>
                     <select
                       value={newClassId}
@@ -300,17 +411,19 @@ export default function ContributionsPage() {
                     </select>
                   </div>
                 </div>
+
                 {newAssetErr && <p className="text-xs text-red-600">{newAssetErr}</p>}
+
                 <div className="flex gap-2">
                   <button
                     type="button"
                     onClick={handleCreateAsset}
-                    disabled={savingNewAsset}
+                    disabled={savingNewAsset || newNameLoading}
                     className="px-3 py-1.5 bg-[#001A70] text-white text-xs font-semibold rounded-lg disabled:opacity-50"
                   >{savingNewAsset ? 'Criando...' : 'Criar ativo'}</button>
                   <button
                     type="button"
-                    onClick={() => { setShowNewAsset(false); setNewAssetErr(null) }}
+                    onClick={() => { setShowNewAsset(false); resetNewAsset() }}
                     className="px-3 py-1.5 text-xs text-gray-500 hover:text-gray-700"
                   >Cancelar</button>
                 </div>
@@ -331,18 +444,24 @@ export default function ContributionsPage() {
             <div>
               <label className="block text-xs text-gray-500 mb-1">Tipo</label>
               <div className="flex gap-2">
-                {(['buy', 'sell'] as const).map(t => (
-                  <button
-                    key={t}
-                    type="button"
-                    onClick={() => setType(t)}
-                    className={`flex-1 py-2 text-sm font-medium rounded-lg border transition-colors ${
-                      type === t
-                        ? t === 'buy' ? 'bg-green-600 text-white border-green-600' : 'bg-red-600 text-white border-red-600'
-                        : 'border-gray-200 text-gray-600 hover:bg-gray-50'
-                    }`}
-                  >{t === 'buy' ? 'Compra' : 'Venda'}</button>
-                ))}
+                {(['buy', 'sell'] as const).map(btnType => {
+                  const isSellDisabled = btnType === 'sell' && sellDisabled
+                  return (
+                    <button
+                      key={btnType}
+                      type="button"
+                      onClick={() => { if (!isSellDisabled) setType(btnType) }}
+                      disabled={isSellDisabled}
+                      className={`flex-1 py-2 text-sm font-medium rounded-lg border transition-colors ${
+                        isSellDisabled
+                          ? 'border-gray-100 text-gray-300 cursor-not-allowed'
+                          : type === btnType
+                            ? btnType === 'buy' ? 'bg-green-600 text-white border-green-600' : 'bg-red-600 text-white border-red-600'
+                            : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                      }`}
+                    >{btnType === 'buy' ? 'Compra' : 'Venda'}</button>
+                  )
+                })}
               </div>
             </div>
 
@@ -386,7 +505,7 @@ export default function ContributionsPage() {
             )}
 
             {/* Value BRL */}
-            <div className={isSimpleAsset ? 'sm:col-span-2' : 'sm:col-span-2'}>
+            <div className="sm:col-span-2">
               <label className="block text-xs text-gray-500 mb-1">
                 Valor total em BRL
                 {priceCurrency !== 'BRL' && (fxRates as Record<string, number>)[priceCurrency] && (

@@ -19,6 +19,46 @@ router.get('/', requireAuth, async (req, res: Response) => {
   res.json(data ?? [])
 })
 
+// GET /api/assets/lookup?code=AAPL&market=b3|intl|cripto
+// Returns { name, coingecko_id? } for auto-filling the new asset form
+router.get('/lookup', requireAuth, async (req, res: Response) => {
+  const { code, market } = req.query as { code?: string; market?: string }
+  if (!code || !market) { res.json({ name: null }); return }
+  const ticker = code.trim().toUpperCase()
+
+  try {
+    if (market === 'b3') {
+      const token = process.env.BRAPI_TOKEN
+      const url = `https://brapi.dev/api/quote/${ticker}${token ? `?token=${token}` : ''}`
+      const r = await fetch(url, { signal: AbortSignal.timeout(5000) })
+      if (!r.ok) { res.json({ name: null }); return }
+      const d = await r.json() as { results?: Array<{ longName?: string; shortName?: string }> }
+      res.json({ name: d.results?.[0]?.longName || d.results?.[0]?.shortName || null })
+
+    } else if (market === 'intl') {
+      const url = `https://query2.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(ticker)}&lang=en-US&quotesCount=5`
+      const r = await fetch(url, { signal: AbortSignal.timeout(5000), headers: { 'User-Agent': 'Mozilla/5.0' } })
+      if (!r.ok) { res.json({ name: null }); return }
+      const d = await r.json() as { quotes?: Array<{ longname?: string; shortname?: string; symbol?: string }> }
+      const match = d.quotes?.find(q => q.symbol?.toUpperCase() === ticker) ?? d.quotes?.[0]
+      res.json({ name: match?.longname || match?.shortname || null })
+
+    } else if (market === 'cripto') {
+      const url = `https://api.coingecko.com/api/v3/search?query=${encodeURIComponent(ticker)}`
+      const r = await fetch(url, { signal: AbortSignal.timeout(5000) })
+      if (!r.ok) { res.json({ name: null, coingecko_id: null }); return }
+      const d = await r.json() as { coins?: Array<{ id: string; name: string; symbol: string }> }
+      const match = d.coins?.find(c => c.symbol.toUpperCase() === ticker)
+      res.json(match ? { name: match.name, coingecko_id: match.id } : { name: null, coingecko_id: null })
+
+    } else {
+      res.json({ name: null })
+    }
+  } catch {
+    res.json({ name: null, coingecko_id: null })
+  }
+})
+
 // GET /api/assets/classes — list asset classes for the user
 router.get('/classes', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
