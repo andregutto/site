@@ -139,6 +139,7 @@ router.get('/value', requireAuth, async (req, res: Response) => {
           value_orig: Math.round(value_orig * 100) / 100,
           currency, holdings, price, source,
           needs_manual: false,
+          exchange: a.exchange ?? null,
         })
       } catch (err) {
         console.warn(`[portfolio] Erro ao calcular ${a.code}:`, err)
