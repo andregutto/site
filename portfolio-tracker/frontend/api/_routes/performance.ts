@@ -1,6 +1,7 @@
 import { Router, Response } from 'express'
 import { requireAuth, AuthRequest } from '../_middleware/auth.js'
 import { supabaseAdmin } from '../_lib/supabase.js'
+import { getFxRate } from '../_lib/fx.js'
 import { getRates, SERIES } from '../_services/bcbService.js'
 import { getCurrentPrice, Asset } from '../_services/priceService.js'
 import YahooFinance from 'yahoo-finance2'
@@ -23,15 +24,15 @@ async function getPortfolioValueAtMonth(
   year: number,
   month: number   // 1-based
 ): Promise<{ total: number; detail: Array<{ asset_id: number; value: number }> }> {
-  // Use string construction to avoid timezone-shifted toISOString()
-  const ym  = `${year}-${String(month).padStart(2, '0')}`
-  // Last day of month for a tight upper bound
+  const ym      = `${year}-${String(month).padStart(2, '0')}`
   const lastDay = new Date(year, month, 0).getDate()
   const dateStr = `${ym}-${String(lastDay).padStart(2, '0')}`
+  // Current month or future: allow live-price fallback for assets missing price_history
+  const isCurrentOrFuture = ym >= localYM(new Date())
 
   const { data: assets } = await supabaseAdmin
     .from('assets')
-    .select('id, asset_type, currency, fi_principal, fi_start_date, fi_type, fi_rate, fi_spread')
+    .select('id, asset_type, currency, fi_principal, fi_start_date, fi_type, fi_rate, fi_spread, ticker_brapi, ticker_yahoo, coingecko_id')
     .eq('user_id', userId)
     .eq('active', true)
 
@@ -51,31 +52,41 @@ async function getPortfolioValueAtMonth(
       (c.type === 'buy' ? c.quantity : -c.quantity)
   }
 
+  // Fetch ALL price_history (no date filter) to enable carry-backward for assets
+  // that have no history before the query date (e.g. crypto added recently)
   const { data: prices } = await supabaseAdmin
     .from('price_history')
     .select('asset_id, price, currency, ref_date')
     .in('asset_id', assetIds)
-    .lte('ref_date', dateStr)
-    .order('ref_date', { ascending: false })
+    .order('ref_date', { ascending: true }) // oldest first for carry-backward
 
-  const priceMap: Record<number, { price: number; currency: string }> = {}
-  const seen = new Set<number>()
+  const phByAsset: Record<number, Array<{ price: number; currency: string; ref_date: string }>> = {}
   for (const p of (prices ?? [])) {
-    if (!seen.has(p.asset_id)) {
-      priceMap[p.asset_id] = { price: p.price, currency: p.currency }
-      seen.add(p.asset_id)
-    }
+    if (!phByAsset[p.asset_id]) phByAsset[p.asset_id] = []
+    phByAsset[p.asset_id].push(p)
   }
 
+  // Best price: most recent <= dateStr, else oldest available (carry-backward from future)
+  const priceMap: Record<number, { price: number; currency: string }> = {}
+  for (const id of assetIds) {
+    const entries = phByAsset[id] ?? []
+    if (!entries.length) continue
+    let best = entries[0]
+    for (const e of entries) {
+      if (e.ref_date <= dateStr) best = e
+    }
+    priceMap[id] = { price: best.price, currency: best.currency }
+  }
+
+  // Manual assets: carry-backward from manual_values
   const manualIds = assets.filter((a) => a.asset_type === 'manual').map((a) => a.id)
   const manualMap: Record<number, { value: number; currency: string }> = {}
   if (manualIds.length > 0) {
-    // Fetch ALL entries (no date filter) so we can carry backward when no historical data exists
     const { data: allMV } = await supabaseAdmin
       .from('manual_values')
       .select('asset_id, value, currency, ref_date')
       .in('asset_id', manualIds)
-      .order('ref_date', { ascending: true }) // oldest first
+      .order('ref_date', { ascending: true })
 
     const mvByAsset: Record<number, Array<{ value: number; currency: string; ref_date: string }>> = {}
     for (const mv of (allMV ?? [])) {
@@ -86,32 +97,12 @@ async function getPortfolioValueAtMonth(
     for (const id of manualIds) {
       const entries = mvByAsset[id] ?? []
       if (!entries.length) continue
-      // Use most recent entry <= dateStr (carry forward from past)
-      // If none exists before dateStr, use oldest entry (carry backward from future)
-      let best = entries[0] // fallback: oldest available
+      let best = entries[0]
       for (const e of entries) {
-        if (e.ref_date <= dateStr) best = e  // keeps the latest that is <= dateStr
+        if (e.ref_date <= dateStr) best = e
       }
       manualMap[id] = { value: best.value, currency: best.currency }
     }
-  }
-
-  const fxCache: Record<string, number> = {}
-  async function getFx(currency: string): Promise<number> {
-    if (currency === 'BRL') return 1
-    if (fxCache[currency]) return fxCache[currency]
-    const { data: fx } = await supabaseAdmin
-      .from('fx_rates')
-      .select('rate')
-      .eq('from_currency', currency)
-      .eq('to_currency', 'BRL')
-      .lte('ref_date', dateStr)
-      .order('ref_date', { ascending: false })
-      .limit(1)
-      .single()
-    const rate = fx?.rate ?? 5.7
-    fxCache[currency] = rate
-    return rate
   }
 
   const detail: Array<{ asset_id: number; value: number }> = []
@@ -123,24 +114,32 @@ async function getPortfolioValueAtMonth(
       if (a.asset_type === 'manual') {
         const mv = manualMap[a.id]
         if (mv) {
-          const fx = await getFx(mv.currency)
+          const fx = await getFxRate(mv.currency)
           value = mv.value * fx
         }
       } else if (a.asset_type === 'fixed_income') {
-        // RF não entra em price_history — calcula live via BCB
         try {
           const result = await getCurrentPrice({
             ...a,
             ticker_brapi: null, ticker_yahoo: null, coingecko_id: null,
           } as Asset)
-          value = result.price  // already BRL total value
+          value = result.price
         } catch { value = 0 }
       } else {
         const holdings = holdingsMap[a.id] ?? 0
-        const ph = priceMap[a.id]
-        if (holdings > 0 && ph) {
-          const fx = await getFx(ph.currency)
-          value = holdings * ph.price * fx
+        if (holdings > 0) {
+          const ph = priceMap[a.id]
+          if (ph) {
+            const fx = await getFxRate(ph.currency)
+            value = holdings * ph.price * fx
+          } else if (isCurrentOrFuture) {
+            // No price_history at all: fall back to live price for current month
+            try {
+              const result = await getCurrentPrice(a as Asset)
+              const fx = result.currency === 'BRL' ? 1 : await getFxRate(result.currency)
+              value = holdings * result.price * fx
+            } catch { value = 0 }
+          }
         }
       }
     } catch { value = 0 }
