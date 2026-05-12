@@ -11,6 +11,7 @@ import RebalancePage from './pages/RebalancePage'
 import InstitutionPage from './pages/InstitutionPage'
 import InstitutionsPage from './pages/InstitutionsPage'
 import ClassesPage from './pages/ClassesPage'
+import ReportsPage from './pages/ReportsPage'
 import AppLayout from './components/AppLayout'
 
 function ProtectedRoutes() {
@@ -51,6 +52,7 @@ function AppRoutes() {
         <Route path="/by-institution" element={<InstitutionPage />} />
         <Route path="/institutions"   element={<InstitutionsPage />} />
         <Route path="/classes"        element={<ClassesPage />} />
+        <Route path="/reports"        element={<ReportsPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

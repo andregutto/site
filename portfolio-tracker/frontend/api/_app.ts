@@ -9,6 +9,7 @@ import assetsRouter      from './_routes/assets.js'
 import contributionsRouter  from './_routes/contributions.js'
 import institutionsRouter  from './_routes/institutions.js'
 import profileRouter       from './_routes/profile.js'
+import reportsRouter       from './_routes/reports.js'
 
 const app = express()
 
@@ -28,6 +29,7 @@ app.use('/api/assets',        assetsRouter)
 app.use('/api/contributions', contributionsRouter)
 app.use('/api/institutions',  institutionsRouter)
 app.use('/api/profile',       profileRouter)
+app.use('/api/reports',       reportsRouter)
 
 // Health — acessível em /api/health via Vercel routing
 app.get(['/health', '/api/health'], (_req, res) => {
