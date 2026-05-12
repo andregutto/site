@@ -177,38 +177,75 @@ ALTER TABLE contributions ADD CONSTRAINT contributions_type_check
 
 ### Item 15 - Perfil: foto, tooltip, termos
 
-**O que será feito:** *(a implementar)*
+**O que foi feito:** ProfilePage ganhou upload de avatar (canvas resize para JPEG 128x128, base64 em user_metadata). Avatar aparece no header (circulo 28px com foto ou iniciais). Hover overlay "Alterar" ao passar o mouse. Tooltip `title` no circulo mostra nome · email. Secao "Termos de uso" adicionada ao final da pagina. Backend GET /profile retorna `avatar_url`, PATCH /profile aceita `avatar_url`.
 
-**Como testar:** *(a preencher)*
+**Como testar:**
+- Perfil → clicar no circulo de avatar ou link "Adicionar foto" → selecionar imagem → deve aparecer redimensionada como circulo
+- Hover no circulo de avatar → deve aparecer overlay "Alterar"
+- Salvar → recarregar pagina → foto deve persistir
+- Header no topo → deve mostrar circulo com foto (ou iniciais se sem foto) ao lado do nome
+- Passar o mouse no circulo do header → tooltip com nome completo
+- Scroll ate o fundo da pagina de perfil → secao "Termos de uso" deve aparecer com texto de privacidade e versao
 
 ---
 
 ### Item 16 - PWA
 
-**O que será feito:** *(a implementar)*
+**O que foi feito:** `public/manifest.json` com nome, cores e icone SVG. `public/sw.js` com cache-first para assets estaticos e network-first para chamadas `/api/*`. `index.html` ganhou `<link rel="manifest">`, `<meta name="theme-color">` e metas Apple. `main.tsx` registra o service worker no evento `load`.
 
-**Como testar:** *(a preencher)*
+**Como testar:**
+- Abrir portfolio.andregutto.com no Chrome → DevTools → Application → Manifest → deve mostrar nome, cores e icone
+- DevTools → Application → Service Workers → deve aparecer `sw.js` como ativo
+- Chrome no desktop → barra de endereco deve mostrar icone de instalacao (computador com seta)
+- Instalar → app abre em janela separada sem barra de URL
+- Chrome no Android/iOS → "Adicionar a tela inicial" deve funcionar
+- Desconectar internet → navegar no app → paginas ja visitadas devem carregar do cache
+- DevTools → Application → Cache Storage → deve conter `/`, `/manifest.json`, `/favicon.svg`
 
 ---
 
 ### Item 17 - Relatórios IR Brasil e França
 
-**O que será feito:** *(a implementar)*
+**O que foi feito:** Nova pagina `/reports` com seletor de ano (ultimos 6 anos) e abas Brasil/Franca. Para Brasil: cards de resumo (ganho/perda, rendimentos, qtd de ativos), tabela "Ganho de Capital -- Alienacoes" com custo medio ponderado, tabela "Rendimentos Recebidos", tabela "Bens e Direitos em 31/12/ano". Para Franca: mesmos dados com nomenclatura francesa (Plus-values, Revenus mobiliers, Etat du patrimoine). Backend GET /api/reports/:year calcula custo medio por ativo acumulando todas as compras ate o final do ano.
 
-**Como testar:** *(a preencher)*
+**Como testar:**
+- Menu superior → icone ⊞ "IR" → pagina de relatorios abre
+- Selecionar ano com vendas → tabela de alienacoes deve aparecer com ganho/perda em verde/vermelho
+- Selecionar ano sem vendas → tabela vazia com mensagem
+- Verificar rendimentos: apenas contributions do tipo "income" aparecem
+- "Bens e Direitos": ativos com posicao > 0 em 31/12 do ano selecionado
+- Trocar aba para "Franca" → mesmos dados com texto em frances
+- Aviso legal deve aparecer no rodape de cada aba
+- Mudar de ano → dados recarregam automaticamente
 
 ---
 
 ### Item 18 - i18n (pt.json, en.json, fr.json)
 
-**O que será feito:** *(a implementar)*
+**O que foi feito:** `I18nProvider` com hook `useI18n()`. Tres arquivos de traducao: `src/i18n/pt.json`, `en.json`, `fr.json` cobrindo navegacao, perfil, relatorios e strings comuns. Seletor de idioma com bandeiras (🇧🇷🇺🇸🇫🇷) no header, persiste no `localStorage`. AppLayout usa `t.nav.*` para todos os labels de navegacao e botao "Sair". I18nProvider envolvido em App.tsx.
 
-**Como testar:** *(a preencher)*
+**Como testar:**
+- Header → clicar na bandeira 🇺🇸 → labels do menu mudam para ingles (Dashboard, Performance, Contributions, etc.)
+- Clicar na bandeira 🇫🇷 → labels mudam para frances (Tableau de bord, Apports, etc.)
+- Recarregar a pagina → idioma selecionado persiste (salvo no localStorage)
+- Abrir no celular → nav mobile tambem exibe os labels traduzidos
+- Clicar em 🇧🇷 → volta para portugues
+- Navegar entre paginas com idioma trocado → seletor permanece ativo no mesmo idioma
 
 ---
 
 ### Item 19 - Login page melhorias
 
-**O que será feito:** *(a implementar)*
+**O que foi feito:** Logo SVG do portfolio no topo. Toggle "Mostrar/Ocultar" na senha. Fluxo "Esqueceu a senha?" abre modo `forgot` com campo de email e envia reset via `supabase.auth.resetPasswordForEmail`. Spinner animado durante loading. Rodape com link para andregutto.com. Layout com melhor hierarquia visual e separacao de erros vs informacoes (vermelho vs azul).
 
-**Como testar:** *(a preencher)*
+**Como testar:**
+- Acessar portfolio.andregutto.com/login (ou deslogar)
+- Logo SVG deve aparecer no topo
+- Campo senha → clicar "Mostrar" → senha deve ficar visivel → "Ocultar" → volta a ocultar
+- Clicar "Esqueceu a senha?" → campo senha some, instrucao aparece, botao muda para "Enviar email"
+- Digitar email valido → clicar "Enviar email" → mensagem azul "Email de redefinicao enviado"
+- Clicar "← Voltar ao login" → volta ao modo login
+- Login com credenciais erradas → mensagem vermelha com erro do Supabase
+- Login com credenciais corretas → redireciona para dashboard
+- Botao "Entrar" durante carregamento → spinner animado visivel
+- Rodape → link "andregutto.com" deve abrir em nova aba
