@@ -1,4 +1,4 @@
-import { cache, TTL } from '../_lib/cache'
+import { cache, TTL } from '../_lib/cache.js'
 
 const BASE = 'https://brapi.dev/api'
 const TOKEN = process.env.BRAPI_TOKEN ? `?token=${process.env.BRAPI_TOKEN}` : ''
