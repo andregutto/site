@@ -8,6 +8,7 @@ const navItems = [
   { to: '/contributions',  label: 'Aportes',      icon: '⊕', end: false },
   { to: '/rebalance',      label: 'Balanc.',      icon: '⇌', end: false },
   { to: '/by-institution', label: 'Instituições', icon: '⊟', end: false },
+  { to: '/classes',        label: 'Classes',      icon: '◈', end: false },
 ]
 
 const CURRENCIES: Currency[] = ['BRL', 'USD', 'EUR']

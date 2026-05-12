@@ -71,6 +71,60 @@ router.get('/classes', requireAuth, async (req, res: Response) => {
   res.json(data ?? [])
 })
 
+// POST /api/assets/classes — create a class
+router.post('/classes', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const { name, color } = req.body as { name: string; color?: string }
+  if (!name?.trim()) { res.status(400).json({ error: 'Nome obrigatorio' }); return }
+  const { data, error } = await supabaseAdmin
+    .from('asset_classes')
+    .insert({ user_id: userId, name: name.trim(), color: color ?? '#6B7280' })
+    .select('id, name, color')
+    .single()
+  if (error) { res.status(500).json({ error: error.message }); return }
+  res.status(201).json(data)
+})
+
+// PATCH /api/assets/classes/:id — rename or recolor
+router.patch('/classes/:id', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const classId = Number(req.params.id)
+  const { name, color } = req.body as { name?: string; color?: string }
+  const updates: Record<string, string> = {}
+  if (name) updates.name = name.trim()
+  if (color) updates.color = color
+  if (!Object.keys(updates).length) { res.status(400).json({ error: 'Nada para atualizar' }); return }
+  const { error } = await supabaseAdmin
+    .from('asset_classes')
+    .update(updates)
+    .eq('id', classId)
+    .eq('user_id', userId)
+  if (error) { res.status(500).json({ error: error.message }); return }
+  res.json({ ok: true })
+})
+
+// DELETE /api/assets/classes/:id
+router.delete('/classes/:id', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const classId = Number(req.params.id)
+  const { count } = await supabaseAdmin
+    .from('assets')
+    .select('id', { count: 'exact', head: true })
+    .eq('asset_class_id', classId)
+    .eq('user_id', userId)
+    .eq('active', true)
+  if (count && count > 0) {
+    res.status(409).json({ error: `Classe em uso por ${count} ativo(s). Mova-os antes de excluir.` }); return
+  }
+  const { error } = await supabaseAdmin
+    .from('asset_classes')
+    .delete()
+    .eq('id', classId)
+    .eq('user_id', userId)
+  if (error) { res.status(500).json({ error: error.message }); return }
+  res.json({ ok: true })
+})
+
 // POST /api/assets — create a new asset
 router.post('/', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
@@ -165,7 +219,7 @@ router.delete('/:id/manual-value/:valueId', requireAuth, async (req, res: Respon
   res.json({ ok: true })
 })
 
-const PATCHABLE = ['fi_principal', 'fi_start_date', 'fi_type', 'fi_rate', 'fi_spread', 'fi_maturity', 'exchange', 'name', 'notes'] as const
+const PATCHABLE = ['fi_principal', 'fi_start_date', 'fi_type', 'fi_rate', 'fi_spread', 'fi_maturity', 'exchange', 'name', 'notes', 'asset_class_id'] as const
 router.patch('/:id', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const assetId = Number(req.params.id)
