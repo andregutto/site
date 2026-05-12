@@ -18,6 +18,8 @@ export default function AppLayout() {
   const { currency, setCurrency } = useCurrency()
   const meta = user?.user_metadata ?? {}
   const headerLabel = [meta.first_name, meta.last_name].filter(Boolean).join(' ') || user?.email || ''
+  const avatarUrl = meta.avatar_url as string | undefined
+  const avatarInitials = headerLabel.slice(0, 2).toUpperCase()
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -69,7 +71,14 @@ export default function AppLayout() {
                 </button>
               ))}
             </div>
-            <Link to="/profile" className="text-xs text-gray-400 hidden sm:block hover:text-[#001A70] transition-colors truncate max-w-[120px]">{headerLabel}</Link>
+            <Link to="/profile" className="hidden sm:flex items-center gap-2 hover:opacity-80 transition-opacity" title={headerLabel}>
+              {avatarUrl ? (
+                <img src={avatarUrl} alt="Avatar" className="w-7 h-7 rounded-full object-cover" />
+              ) : (
+                <div className="w-7 h-7 rounded-full bg-[#001A70] text-white flex items-center justify-center text-[10px] font-bold">{avatarInitials}</div>
+              )}
+              <span className="text-xs text-gray-400 hover:text-[#001A70] transition-colors truncate max-w-[100px]">{headerLabel}</span>
+            </Link>
             <button
               onClick={() => signOut()}
               className="text-xs text-gray-500 hover:text-red-600 transition-colors"
