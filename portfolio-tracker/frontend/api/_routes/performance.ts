@@ -70,19 +70,29 @@ async function getPortfolioValueAtMonth(
   const manualIds = assets.filter((a) => a.asset_type === 'manual').map((a) => a.id)
   const manualMap: Record<number, { value: number; currency: string }> = {}
   if (manualIds.length > 0) {
-    const { data: manualValues } = await supabaseAdmin
+    // Fetch ALL entries (no date filter) so we can carry backward when no historical data exists
+    const { data: allMV } = await supabaseAdmin
       .from('manual_values')
       .select('asset_id, value, currency, ref_date')
       .in('asset_id', manualIds)
-      .lte('ref_date', dateStr)
-      .order('ref_date', { ascending: false })
+      .order('ref_date', { ascending: true }) // oldest first
 
-    const seenM = new Set<number>()
-    for (const mv of (manualValues ?? [])) {
-      if (!seenM.has(mv.asset_id)) {
-        manualMap[mv.asset_id] = { value: mv.value, currency: mv.currency }
-        seenM.add(mv.asset_id)
+    const mvByAsset: Record<number, Array<{ value: number; currency: string; ref_date: string }>> = {}
+    for (const mv of (allMV ?? [])) {
+      if (!mvByAsset[mv.asset_id]) mvByAsset[mv.asset_id] = []
+      mvByAsset[mv.asset_id].push({ value: mv.value, currency: mv.currency, ref_date: mv.ref_date })
+    }
+
+    for (const id of manualIds) {
+      const entries = mvByAsset[id] ?? []
+      if (!entries.length) continue
+      // Use most recent entry <= dateStr (carry forward from past)
+      // If none exists before dateStr, use oldest entry (carry backward from future)
+      let best = entries[0] // fallback: oldest available
+      for (const e of entries) {
+        if (e.ref_date <= dateStr) best = e  // keeps the latest that is <= dateStr
       }
+      manualMap[id] = { value: best.value, currency: best.currency }
     }
   }
 
@@ -167,13 +177,23 @@ router.get('/summary', requireAuth, async (req, res: Response) => {
 
   const { data: contributions } = await supabaseAdmin
     .from('contributions')
-    .select('asset_id, date, value_brl, type, assets!inner(user_id)')
+    .select('asset_id, date, value_brl, price_orig, quantity, fx_rate_brl, currency, type, assets!inner(user_id)')
     .eq('assets.user_id', userId)
     .gte('date', fromDateStr)
     .lte('date', toDateStr)
 
-  const totalContribs = (contributions ?? []).reduce((s: number, c: { type: string; value_brl: number | null }) => {
-    return s + (c.type === 'buy' ? (c.value_brl ?? 0) : -(c.value_brl ?? 0))
+  function estimateContribValue(c: { value_brl: number | null; price_orig: number | null; quantity: number | null; fx_rate_brl: number | null; currency: string | null }): number {
+    if (c.value_brl != null) return c.value_brl
+    if (c.price_orig != null && c.quantity != null) {
+      const fx = c.fx_rate_brl ?? (c.currency && c.currency !== 'BRL' ? 5.7 : 1)
+      return c.price_orig * c.quantity * fx
+    }
+    return 0
+  }
+
+  const totalContribs = (contributions ?? []).reduce((s: number, c) => {
+    const v = estimateContribValue(c as Parameters<typeof estimateContribValue>[0])
+    return s + (c.type === 'buy' ? v : -v)
   }, 0)
 
   const [start, end] = await Promise.all([
@@ -241,7 +261,7 @@ router.get('/monthly', requireAuth, async (req, res: Response) => {
     ),
     supabaseAdmin
       .from('contributions')
-      .select('date, value_brl, type, assets!inner(user_id)')
+      .select('date, value_brl, price_orig, quantity, fx_rate_brl, currency, type, assets!inner(user_id)')
       .eq('assets.user_id', userId)
       .gte('date', rangeFromDate)
       .lte('date', rangeToDate),
@@ -250,7 +270,11 @@ router.get('/monthly', requireAuth, async (req, res: Response) => {
   const contribsByMonth: Record<string, number> = {}
   for (const c of (contribsData.data ?? [])) {
     const ym = (c.date as string).substring(0, 7)
-    const delta = c.type === 'buy' ? (c.value_brl ?? 0) : -(c.value_brl ?? 0)
+    const vBrl = c.value_brl ??
+      (c.price_orig != null && c.quantity != null
+        ? c.price_orig * c.quantity * (c.fx_rate_brl ?? (c.currency && c.currency !== 'BRL' ? 5.7 : 1))
+        : 0)
+    const delta = c.type === 'buy' ? vBrl : -vBrl
     contribsByMonth[ym] = (contribsByMonth[ym] ?? 0) + delta
   }
 

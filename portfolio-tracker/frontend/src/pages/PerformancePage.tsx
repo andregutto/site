@@ -57,10 +57,8 @@ export default function PerformancePage() {
     switch (mode) {
       case 'year':
         return { from: `${year}-01`, to: `${year}-12`, label: String(year) }
-      case 'current_month': {
-        const prevYM = addMonths(currentYM, -1)
-        return { from: prevYM, to: currentYM, label: fmtMonth(currentYM) }
-      }
+      case 'current_month':
+        return { from: currentYM, to: currentYM, label: fmtMonth(currentYM) }
       case 'last_12': {
         const f = addMonths(currentYM, -11)
         return { from: f, to: currentYM, label: `${fmtMonth(f)} - ${fmtMonth(currentYM)}` }
