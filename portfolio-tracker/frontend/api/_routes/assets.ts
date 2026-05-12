@@ -6,6 +6,61 @@ import { getFxRate } from '../_lib/fx.js'
 
 const router = Router()
 
+// GET /api/assets — simple list of all active assets (no pricing)
+router.get('/', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const { data, error } = await supabaseAdmin
+    .from('assets')
+    .select('id, code, name, asset_type, currency, asset_classes(id, name, color)')
+    .eq('user_id', userId)
+    .eq('active', true)
+    .order('code')
+  if (error) { res.status(500).json({ error: error.message }); return }
+  res.json(data ?? [])
+})
+
+// GET /api/assets/classes — list asset classes for the user
+router.get('/classes', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const { data, error } = await supabaseAdmin
+    .from('asset_classes')
+    .select('id, name, color')
+    .eq('user_id', userId)
+    .order('name')
+  if (error) { res.status(500).json({ error: error.message }); return }
+  res.json(data ?? [])
+})
+
+// POST /api/assets — create a new asset
+router.post('/', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const { code, name, asset_type, currency, asset_class_id, ticker_yahoo, ticker_brapi, coingecko_id } = req.body as {
+    code: string; name: string; asset_type: string; currency: string
+    asset_class_id?: number | null; ticker_yahoo?: string; ticker_brapi?: string; coingecko_id?: string
+  }
+  if (!code || !name || !asset_type || !currency) {
+    res.status(400).json({ error: 'code, name, asset_type e currency são obrigatórios' }); return
+  }
+  const { data, error } = await supabaseAdmin
+    .from('assets')
+    .insert({
+      user_id:        userId,
+      code:           code.trim().toUpperCase(),
+      name:           name.trim(),
+      asset_type,
+      currency,
+      asset_class_id: asset_class_id ?? null,
+      ticker_yahoo:   ticker_yahoo   ?? null,
+      ticker_brapi:   ticker_brapi   ?? null,
+      coingecko_id:   coingecko_id   ?? null,
+      active:         true,
+    })
+    .select('id, code, name, asset_type, currency')
+    .single()
+  if (error) { res.status(500).json({ error: error.message }); return }
+  res.status(201).json(data)
+})
+
 async function getOwnedAsset(assetId: number, userId: string) {
   const { data } = await supabaseAdmin
     .from('assets')

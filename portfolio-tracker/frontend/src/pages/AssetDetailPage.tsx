@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useParams, useNavigate, useLocation } from 'react-router-dom'
+import { useParams, useNavigate, useLocation, Link } from 'react-router-dom'
 import { useAssetDetail } from '../hooks/usePortfolio'
 import { useCurrency } from '../contexts/CurrencyContext'
 import { apiFetch } from '../lib/api'
@@ -169,6 +169,10 @@ export default function AssetDetailPage() {
               {data.exchange || 'Sem instituição'}
             </button>
           )}
+          <Link
+            to={`/contributions?assetId=${id}&new=1`}
+            className="text-xs text-[#001A70] border border-[#001A70]/30 hover:bg-blue-50 rounded-lg px-2.5 py-1 transition-colors mt-1"
+          >+ Aporte</Link>
           <button
             onClick={handleArchive}
             disabled={archiving}
