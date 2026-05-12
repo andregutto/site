@@ -1,7 +1,7 @@
 import { Router, Response } from 'express'
-import { requireAuth, AuthRequest } from '../_middleware/auth'
-import { supabaseAdmin } from '../_lib/supabase'
-import { getRates, SERIES } from '../_services/bcbService'
+import { requireAuth, AuthRequest } from '../_middleware/auth.js'
+import { supabaseAdmin } from '../_lib/supabase.js'
+import { getRates, SERIES } from '../_services/bcbService.js'
 import YahooFinance from 'yahoo-finance2'
 
 const yf = new YahooFinance({ suppressNotices: ['yahooSurvey', 'ripHistorical'] })
