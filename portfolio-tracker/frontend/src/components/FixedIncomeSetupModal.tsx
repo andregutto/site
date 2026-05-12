@@ -4,6 +4,7 @@ import { parseLocaleNum, inputCls } from '../lib/numparse'
 import type { PortfolioAsset } from '../lib/types'
 import InstitutionSelect from './InstitutionSelect'
 
+
 interface Props {
   asset: PortfolioAsset
   onClose: () => void
@@ -51,6 +52,13 @@ export default function FixedIncomeSetupModal({ asset, onClose, onSaved }: Props
   const [saving,      setSaving]      = useState(false)
   const [error,       setError]       = useState<string | null>(null)
 
+  // Portability
+  const [showPortability,   setShowPortability]   = useState(false)
+  const [portInstitution,   setPortInstitution]   = useState('')
+  const [portDate,          setPortDate]          = useState(new Date().toISOString().split('T')[0])
+  const [savingPortability, setSavingPortability] = useState(false)
+  const [portError,         setPortError]         = useState<string | null>(null)
+
   const rateCfg  = rateConfig(fiType)
   const needsRate = true
 
@@ -96,6 +104,24 @@ export default function FixedIncomeSetupModal({ asset, onClose, onSaved }: Props
       setError(e instanceof Error ? e.message : 'Erro ao salvar')
     } finally {
       setSaving(false)
+    }
+  }
+
+  async function handlePortability() {
+    if (!portInstitution.trim()) { setPortError('Informe a nova instituicao.'); return }
+    setSavingPortability(true); setPortError(null)
+    try {
+      await apiFetch(`/assets/${asset.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ exchange: portInstitution.trim() }),
+      })
+      setShowPortability(false)
+      setPortInstitution('')
+      onSaved()
+    } catch (e) {
+      setPortError(e instanceof Error ? e.message : 'Erro ao registrar portabilidade')
+    } finally {
+      setSavingPortability(false)
     }
   }
 
@@ -221,6 +247,50 @@ export default function FixedIncomeSetupModal({ asset, onClose, onSaved }: Props
             >
               {saving ? 'Salvando...' : 'Salvar e calcular'}
             </button>
+          </div>
+
+          {/* Portabilidade */}
+          <div className="border-t border-gray-100 pt-4 mt-2">
+            <button
+              type="button"
+              onClick={() => { setShowPortability(v => !v); setPortError(null) }}
+              className="text-xs text-[#001A70] hover:underline font-medium"
+            >
+              {showPortability ? '↑ Fechar portabilidade' : '⇌ Registrar portabilidade'}
+            </button>
+
+            {showPortability && (
+              <div className="mt-3 space-y-3">
+                <p className="text-xs text-gray-500">
+                  Mova este titulo para outra instituicao. Atualiza o custodiante sem alterar os parametros financeiros.
+                </p>
+                {asset.exchange && (
+                  <p className="text-xs text-gray-400">Custodiante atual: <span className="font-medium text-gray-700">{asset.exchange}</span></p>
+                )}
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">Nova instituicao</label>
+                  <InstitutionSelect value={portInstitution} onChange={setPortInstitution} />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">Data da portabilidade</label>
+                  <input
+                    type="date"
+                    value={portDate}
+                    max={new Date().toISOString().split('T')[0]}
+                    onChange={e => setPortDate(e.target.value)}
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20"
+                  />
+                </div>
+                {portError && <p className="text-xs text-red-600">{portError}</p>}
+                <button
+                  onClick={handlePortability}
+                  disabled={savingPortability}
+                  className="w-full border border-[#001A70] text-[#001A70] rounded-xl py-2 text-sm font-semibold hover:bg-[#001A70]/5 disabled:opacity-50 transition-colors"
+                >
+                  {savingPortability ? 'Registrando...' : 'Confirmar portabilidade'}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

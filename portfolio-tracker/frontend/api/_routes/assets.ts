@@ -11,7 +11,7 @@ router.get('/', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const { data, error } = await supabaseAdmin
     .from('assets')
-    .select('id, code, name, asset_type, currency, asset_classes(id, name, color)')
+    .select('id, code, name, asset_type, currency, exchange, fi_principal, fi_start_date, fi_type, fi_maturity, asset_classes(id, name, color)')
     .eq('user_id', userId)
     .eq('active', true)
     .order('code')
@@ -164,6 +164,36 @@ async function getOwnedAsset(assetId: number, userId: string) {
     .single()
   return data
 }
+
+// POST /api/assets/:id/fi-deposit — aporte adicional em renda fixa
+router.post('/:id/fi-deposit', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const assetId = Number(req.params.id)
+  const asset = await getOwnedAsset(assetId, userId)
+  if (!asset) { res.status(404).json({ error: 'Ativo nao encontrado' }); return }
+  if (asset.asset_type !== 'fixed_income') { res.status(400).json({ error: 'Ativo nao e renda fixa' }); return }
+
+  const { date, value_brl, notes } = req.body as { date: string; value_brl: number; notes?: string }
+  if (!date || !value_brl || value_brl <= 0) {
+    res.status(400).json({ error: 'date e value_brl sao obrigatorios' }); return
+  }
+
+  const { error: cErr } = await supabaseAdmin.from('contributions').insert({
+    asset_id: assetId, date, type: 'buy',
+    quantity: 1, price_orig: value_brl, currency: 'BRL',
+    value_brl, description: notes ?? null,
+  })
+  if (cErr) { res.status(500).json({ error: cErr.message }); return }
+
+  const currentPrincipal = asset.fi_principal ?? 0
+  const { error: pErr } = await supabaseAdmin
+    .from('assets')
+    .update({ fi_principal: currentPrincipal + value_brl })
+    .eq('id', assetId)
+  if (pErr) { res.status(500).json({ error: pErr.message }); return }
+
+  res.json({ ok: true })
+})
 
 router.get('/:id/manual-values', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest

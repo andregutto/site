@@ -4,6 +4,7 @@ import { useContributions } from '../hooks/usePortfolio'
 import { useCurrency } from '../contexts/CurrencyContext'
 import { apiFetch } from '../lib/api'
 import { parseLocaleNum, inputCls } from '../lib/numparse'
+import InstitutionSelect from '../components/InstitutionSelect'
 
 function fmtDate(iso: string) {
   return new Date(iso + 'T12:00:00').toLocaleDateString('pt-BR')
@@ -13,12 +14,21 @@ function fmtNum(v: number, d = 4) {
   return new Intl.NumberFormat('pt-BR', { maximumFractionDigits: d }).format(v)
 }
 
+function fmtBrl(v: number) {
+  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v)
+}
+
 interface AssetOption {
   id: number
   code: string
   name: string
   asset_type: string
   currency: string
+  exchange: string | null
+  fi_principal: number | null
+  fi_start_date: string | null
+  fi_type: string | null
+  fi_maturity: string | null
   asset_classes: { id: number; name: string; color: string } | null
 }
 
@@ -26,7 +36,6 @@ interface AssetClass { id: number; name: string; color: string }
 
 const CURRENCIES = ['BRL', 'USD', 'EUR', 'GBP', 'CHF']
 
-// Form-level type drives market lookup logic and maps to DB asset_type
 const FORM_TYPES = [
   { value: 'ticker_b3',    label: 'Ativo B3 (acao / FII)',        dbType: 'ticker',       currency: 'BRL', market: 'b3'     },
   { value: 'ticker_intl',  label: 'Ativo Internacional (ETF...)', dbType: 'ticker',       currency: 'USD', market: 'intl'   },
@@ -34,10 +43,23 @@ const FORM_TYPES = [
   { value: 'fixed_income', label: 'Renda fixa',                   dbType: 'fixed_income', currency: 'BRL', market: null     },
   { value: 'manual',       label: 'Valor manual',                 dbType: 'manual',       currency: 'BRL', market: null     },
 ] as const
-
 type FormTypeValue = typeof FORM_TYPES[number]['value']
 
+const FI_TYPES = [
+  { value: 'pos_cdi',   label: 'Pos-fixado CDI'    },
+  { value: 'selic',     label: 'Selic'              },
+  { value: 'pre',       label: 'Pre-fixado'         },
+  { value: 'ipca_plus', label: 'IPCA+'              },
+]
+
+function rateLabel(fiType: string) {
+  if (fiType === 'pre')       return { label: 'Taxa (% a.a.)',        placeholder: 'ex: 12,5'  }
+  if (fiType === 'ipca_plus') return { label: 'Spread IPCA+ (% a.a.)', placeholder: 'ex: 6,5'  }
+  return                              { label: 'Taxa CDI/Selic (%)',   placeholder: 'ex: 102,5' }
+}
+
 const BASE_INPUT = 'w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2'
+const SMALL_INPUT = 'w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20 bg-white'
 
 export default function ContributionsPage() {
   const { data: contributions, loading, error, refresh } = useContributions()
@@ -63,7 +85,7 @@ export default function ContributionsPage() {
     setFieldErrors(prev => ({ ...prev, [field]: msg }))
   }
 
-  // contribution form fields
+  // contribution form
   const [assetId,       setAssetId]       = useState('')
   const [date,          setDate]          = useState(new Date().toISOString().split('T')[0])
   const [type,          setType]          = useState<'buy' | 'sell'>('buy')
@@ -73,7 +95,7 @@ export default function ContributionsPage() {
   const [valueBrl,      setValueBrl]      = useState('')
   const [description,   setDescription]  = useState('')
 
-  // new asset form fields
+  // new asset form
   const [newFormType,     setNewFormType]     = useState<FormTypeValue>('ticker_b3')
   const [newCode,         setNewCode]         = useState('')
   const [newName,         setNewName]         = useState('')
@@ -81,6 +103,15 @@ export default function ContributionsPage() {
   const [newCurrency,     setNewCurrency]     = useState('BRL')
   const [newClassId,      setNewClassId]      = useState('')
   const [newCoingeckoId,  setNewCoingeckoId]  = useState('')
+  // RF-specific new asset fields
+  const [newFiType,        setNewFiType]        = useState('pos_cdi')
+  const [newFiRate,        setNewFiRate]        = useState('')
+  const [newFiPrincipal,   setNewFiPrincipal]   = useState('')
+  const [newFiStartDate,   setNewFiStartDate]   = useState('')
+  const [newFiMaturity,    setNewFiMaturity]    = useState('')
+  const [newFiInstitution, setNewFiInstitution] = useState('')
+
+  const today = new Date().toISOString().split('T')[0]
 
   const loadAssets = useCallback(async () => {
     try {
@@ -95,7 +126,6 @@ export default function ContributionsPage() {
 
   useEffect(() => { loadAssets() }, [loadAssets])
 
-  // URL param: open form pre-filled with a specific asset
   useEffect(() => {
     const paramId = searchParams.get('assetId')
     const isNew   = searchParams.get('new') === '1'
@@ -108,39 +138,27 @@ export default function ContributionsPage() {
 
   const selectedAsset = assets.find(a => a.id === Number(assetId))
 
-  // When existing asset changes, sync price currency
   useEffect(() => {
     if (selectedAsset) setPriceCurrency(selectedAsset.currency)
   }, [assetId, selectedAsset])
 
-  // When showNewAsset opens, force type=buy (no selling an asset that doesn't exist yet)
   useEffect(() => {
     if (showNewAsset) setType('buy')
   }, [showNewAsset])
 
-  // Auto-set currency when new asset form type changes
   useEffect(() => {
     const config = FORM_TYPES.find(t => t.value === newFormType)
     if (config) setNewCurrency(config.currency)
-    setNewName('')
-    setNewCode('')
-    setNewCoingeckoId('')
-    setNewNameLoading(false)
+    setNewName(''); setNewCode(''); setNewCoingeckoId(''); setNewNameLoading(false)
   }, [newFormType])
 
-  // Auto-fetch name after code is typed (debounced 600ms) - ticker types only
+  // Auto-fetch ticker name
   useEffect(() => {
     const config = FORM_TYPES.find(t => t.value === newFormType)
     const market = config?.market
     const code   = newCode.trim()
-    if (!market || !code) {
-      setNewName('')
-      setNewCoingeckoId('')
-      setNewNameLoading(false)
-      return
-    }
-    setNewName('')
-    setNewNameLoading(true)
+    if (!market || !code) { setNewName(''); setNewCoingeckoId(''); setNewNameLoading(false); return }
+    setNewName(''); setNewNameLoading(true)
     const timer = setTimeout(async () => {
       try {
         const result = await apiFetch<{ name: string | null; coingecko_id?: string | null }>(
@@ -148,17 +166,14 @@ export default function ContributionsPage() {
         )
         setNewName(result.name ?? '')
         if (result.coingecko_id) setNewCoingeckoId(result.coingecko_id)
-      } catch {
-        setNewName('')
-      } finally {
-        setNewNameLoading(false)
-      }
+      } catch { setNewName('') } finally { setNewNameLoading(false) }
     }, 600)
     return () => { clearTimeout(timer); setNewNameLoading(false) }
   }, [newCode, newFormType])
 
-  // Auto-compute value_brl from qty x price x fx
+  // Auto-compute valueBrl for ticker assets
   useEffect(() => {
+    if (selectedAsset?.asset_type === 'fixed_income') return
     const qty   = parseLocaleNum(quantity)
     const price = parseLocaleNum(priceOrig)
     if (!qty || !price) return
@@ -168,7 +183,7 @@ export default function ContributionsPage() {
       const rate = (fxRates as Record<string, number>)[priceCurrency]
       if (rate) setValueBrl((qty * price * rate).toFixed(2).replace('.', ','))
     }
-  }, [quantity, priceOrig, priceCurrency, fxRates])
+  }, [quantity, priceOrig, priceCurrency, fxRates, selectedAsset])
 
   const filteredAssets = assets.filter(a =>
     a.code.toLowerCase().includes(assetSearch.toLowerCase()) ||
@@ -176,33 +191,80 @@ export default function ContributionsPage() {
   )
 
   function resetForm() {
-    setAssetId(''); setDate(new Date().toISOString().split('T')[0]); setType('buy')
+    setAssetId(''); setDate(today); setType('buy')
     setQuantity(''); setPriceOrig(''); setPriceCurrency('BRL'); setValueBrl(''); setDescription('')
     setAssetSearch(''); setFormErr(null); setFieldErrors({})
   }
 
   function resetNewAsset() {
     setNewCode(''); setNewName(''); setNewFormType('ticker_b3')
-    setNewCurrency('BRL'); setNewClassId(''); setNewCoingeckoId('')
-    setNewNameLoading(false); setNewAssetErr(null)
+    setNewCurrency('BRL'); setNewClassId(''); setNewCoingeckoId(''); setNewNameLoading(false)
+    setNewFiType('pos_cdi'); setNewFiRate(''); setNewFiPrincipal('')
+    setNewFiStartDate(''); setNewFiMaturity(''); setNewFiInstitution(''); setNewAssetErr(null)
   }
+
+  const isRfAsset     = selectedAsset?.asset_type === 'fixed_income'
+  const isManualAsset = selectedAsset?.asset_type === 'manual'
+  const isSimpleAsset = isRfAsset || isManualAsset
+  const isRfBuy       = isRfAsset && type === 'buy'
+  const sellDisabled  = showNewAsset
+  const isTickerForm  = ['ticker_b3', 'ticker_intl', 'cripto'].includes(newFormType)
+  const rateCfg       = rateLabel(newFiType)
 
   async function handleSave() {
     if (!assetId) { setFormErr('Selecione um ativo.'); return }
+    if (!date)    { setFormErr('Informe a data.'); return }
+
+    if (isRfBuy) {
+      // RF aporte adicional
+      const vBrl = parseLocaleNum(valueBrl)
+      if (!vBrl || vBrl <= 0) { setFormErr('Informe o valor do aporte.'); return }
+      setSaving(true); setFormErr(null)
+      try {
+        await apiFetch(`/assets/${Number(assetId)}/fi-deposit`, {
+          method: 'POST',
+          body: JSON.stringify({ date, value_brl: vBrl, notes: description || undefined }),
+        })
+        setShowForm(false); resetForm(); refresh()
+      } catch (e) {
+        setFormErr(e instanceof Error ? e.message : 'Erro ao salvar')
+      } finally { setSaving(false) }
+      return
+    }
+
+    if (isSimpleAsset) {
+      // manual or RF sell: record contribution with qty=1
+      const vBrl = parseLocaleNum(valueBrl)
+      if (!vBrl || vBrl <= 0) { setFormErr('Informe o valor.'); return }
+      setSaving(true); setFormErr(null)
+      try {
+        await apiFetch('/contributions', {
+          method: 'POST',
+          body: JSON.stringify({
+            asset_id: Number(assetId), date, type,
+            quantity: 1, value_brl: vBrl,
+            description: description || undefined,
+          }),
+        })
+        setShowForm(false); resetForm(); refresh()
+      } catch (e) {
+        setFormErr(e instanceof Error ? e.message : 'Erro ao salvar')
+      } finally { setSaving(false) }
+      return
+    }
+
+    // Standard ticker contribution
     const qty  = parseLocaleNum(quantity)
     const vBrl = parseLocaleNum(valueBrl)
     if (!qty || qty <= 0) { setFormErr('Informe uma quantidade valida.'); return }
-    if (!date) { setFormErr('Informe a data.'); return }
     if (!vBrl || vBrl <= 0) { setFormErr('Informe o valor total em BRL.'); return }
-
     setSaving(true); setFormErr(null)
     try {
       await apiFetch('/contributions', {
         method: 'POST',
         body: JSON.stringify({
           asset_id:    Number(assetId),
-          date,
-          type,
+          date, type,
           quantity:    qty,
           price_orig:  parseLocaleNum(priceOrig) ?? undefined,
           currency:    priceCurrency,
@@ -210,27 +272,27 @@ export default function ContributionsPage() {
           description: description || undefined,
         }),
       })
-      setShowForm(false)
-      resetForm()
-      refresh()
+      setShowForm(false); resetForm(); refresh()
     } catch (e) {
       setFormErr(e instanceof Error ? e.message : 'Erro ao salvar')
-    } finally {
-      setSaving(false)
-    }
+    } finally { setSaving(false) }
   }
 
   async function handleCreateAsset() {
     const config = FORM_TYPES.find(t => t.value === newFormType)
     const isTickerType = config?.market != null
+    const isRfNew = newFormType === 'fixed_income'
 
     if (!newCode.trim()) { setNewAssetErr('Informe o codigo do ativo.'); return }
     if (isTickerType && newNameLoading) { setNewAssetErr('Aguarde a busca do nome.'); return }
     if (!newName.trim()) {
-      setNewAssetErr(isTickerType
-        ? 'Nome nao encontrado. Verifique o codigo.'
-        : 'Informe o nome.')
+      setNewAssetErr(isTickerType ? 'Nome nao encontrado. Verifique o codigo.' : 'Informe o nome.')
       return
+    }
+    if (isRfNew) {
+      if (!newFiPrincipal || parseLocaleNum(newFiPrincipal) == null) { setNewAssetErr('Informe o valor investido.'); return }
+      if (!newFiStartDate) { setNewAssetErr('Informe a data de inicio.'); return }
+      if (!newFiRate || parseLocaleNum(newFiRate) == null) { setNewAssetErr('Informe a taxa contratada.'); return }
     }
 
     setSavingNewAsset(true); setNewAssetErr(null)
@@ -249,11 +311,37 @@ export default function ContributionsPage() {
           asset_type:     config?.dbType ?? 'ticker',
           currency:       newCurrency,
           asset_class_id: newClassId ? Number(newClassId) : null,
-          ticker_brapi,
-          ticker_yahoo,
-          coingecko_id,
+          ticker_brapi, ticker_yahoo, coingecko_id,
         }),
       })
+
+      if (isRfNew) {
+        const principal = parseLocaleNum(newFiPrincipal) ?? 0
+        const rateRaw   = parseLocaleNum(newFiRate) ?? 0
+        const rateDecimal = rateRaw / 100
+        await apiFetch(`/assets/${created.id}`, {
+          method: 'PATCH',
+          body: JSON.stringify({
+            fi_type:       newFiType,
+            fi_principal:  principal,
+            fi_start_date: newFiStartDate,
+            fi_maturity:   newFiMaturity || null,
+            exchange:      newFiInstitution || null,
+            ...(newFiType === 'ipca_plus'
+              ? { fi_spread: rateDecimal, fi_rate: null }
+              : { fi_rate: rateDecimal, fi_spread: null }),
+          }),
+        })
+        // Record initial contribution for history
+        await apiFetch('/contributions', {
+          method: 'POST',
+          body: JSON.stringify({
+            asset_id: created.id, date: newFiStartDate, type: 'buy',
+            quantity: 1, value_brl: principal, description: 'Aplicacao inicial',
+          }),
+        })
+      }
+
       await loadAssets()
       setAssetId(String(created.id))
       setPriceCurrency(created.currency)
@@ -274,10 +362,6 @@ export default function ContributionsPage() {
     } catch { /* ignore */ }
   }
 
-  const isSimpleAsset  = selectedAsset && (selectedAsset.asset_type === 'fixed_income' || selectedAsset.asset_type === 'manual')
-  const sellDisabled   = showNewAsset
-  const isTickerForm   = ['ticker_b3', 'ticker_intl', 'cripto'].includes(newFormType)
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -295,7 +379,7 @@ export default function ContributionsPage() {
           <h2 className="font-semibold text-gray-800">Registrar aporte / resgate</h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {/* Asset selector with search */}
+            {/* Asset selector */}
             <div className="sm:col-span-2 space-y-1.5">
               <label className="block text-xs text-gray-500">Ativo</label>
               <input
@@ -322,7 +406,6 @@ export default function ContributionsPage() {
                   type="button"
                   onClick={() => { setShowNewAsset(v => !v); if (showNewAsset) resetNewAsset() }}
                   className="px-3 py-2 text-sm border border-gray-200 rounded-lg text-[#001A70] hover:bg-blue-50 transition-colors shrink-0"
-                  title="Criar novo ativo"
                 >+ Ativo</button>
               </div>
             </div>
@@ -332,17 +415,15 @@ export default function ContributionsPage() {
               <div className="sm:col-span-2 bg-blue-50 border border-blue-100 rounded-xl p-4 space-y-3">
                 <p className="text-xs font-semibold text-[#001A70]">Novo ativo</p>
                 <div className="grid grid-cols-2 gap-2">
-                  {/* Type selector */}
+                  {/* Type */}
                   <div className="col-span-2">
                     <label className="block text-xs text-gray-500 mb-1">Tipo</label>
                     <select
                       value={newFormType}
                       onChange={e => setNewFormType(e.target.value as FormTypeValue)}
-                      className="w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20 bg-white"
+                      className={SMALL_INPUT}
                     >
-                      {FORM_TYPES.map(t => (
-                        <option key={t.value} value={t.value}>{t.label}</option>
-                      ))}
+                      {FORM_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
                     </select>
                   </div>
 
@@ -352,31 +433,27 @@ export default function ContributionsPage() {
                     <input
                       type="text"
                       value={newCode}
-                      onChange={e => setNewCode(e.target.value.toUpperCase())}
-                      placeholder={newFormType === 'cripto' ? 'ex: BTC' : newFormType === 'ticker_intl' ? 'ex: AAPL' : 'ex: PETR4'}
-                      className="w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20 bg-white"
+                      onChange={e => setNewCode(newFormType === 'fixed_income' ? e.target.value : e.target.value.toUpperCase())}
+                      placeholder={newFormType === 'cripto' ? 'ex: BTC' : newFormType === 'ticker_intl' ? 'ex: AAPL' : newFormType === 'fixed_income' ? 'ex: CDB-NUBANK' : 'ex: PETR4'}
+                      className={SMALL_INPUT}
                     />
                   </div>
 
-                  {/* Currency (hidden for B3 since always BRL) */}
-                  {newFormType !== 'ticker_b3' ? (
+                  {/* Currency (hidden for B3 and RF) */}
+                  {newFormType !== 'ticker_b3' && newFormType !== 'fixed_income' && newFormType !== 'manual' ? (
                     <div>
                       <label className="block text-xs text-gray-500 mb-1">Moeda</label>
-                      <select
-                        value={newCurrency}
-                        onChange={e => setNewCurrency(e.target.value)}
-                        className="w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20 bg-white"
-                      >
+                      <select value={newCurrency} onChange={e => setNewCurrency(e.target.value)} className={SMALL_INPUT}>
                         {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
                       </select>
                     </div>
                   ) : (
                     <div className="flex items-end pb-1">
-                      <span className="text-xs text-gray-400">Moeda: BRL</span>
+                      <span className="text-xs text-gray-400">Moeda: {newCurrency}</span>
                     </div>
                   )}
 
-                  {/* Name - readonly for ticker types, auto-filled */}
+                  {/* Name */}
                   <div className="col-span-2">
                     <label className="block text-xs text-gray-500 mb-1">
                       Nome completo
@@ -391,31 +468,93 @@ export default function ContributionsPage() {
                       value={newName}
                       readOnly={isTickerForm}
                       onChange={isTickerForm ? undefined : e => setNewName(e.target.value)}
-                      placeholder={
-                        isTickerForm
-                          ? newNameLoading ? 'Buscando...'
-                          : newCode ? 'Nome nao encontrado'
-                          : 'Sera preenchido automaticamente'
-                        : 'ex: Apple Inc.'
-                      }
-                      className={`w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20 ${
-                        isTickerForm ? 'bg-gray-50 text-gray-500 cursor-default' : 'bg-white'
-                      }`}
+                      placeholder={isTickerForm
+                        ? newNameLoading ? 'Buscando...' : newCode ? 'Nao encontrado' : 'Preenchido automaticamente'
+                        : newFormType === 'fixed_income' ? 'ex: CDB Nubank 102% CDI' : 'ex: Fundo X'}
+                      className={`w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20 ${isTickerForm ? 'bg-gray-50 text-gray-500 cursor-default' : 'bg-white'}`}
                     />
                   </div>
 
                   {/* Class */}
                   <div className="col-span-2">
                     <label className="block text-xs text-gray-500 mb-1">Classe</label>
-                    <select
-                      value={newClassId}
-                      onChange={e => setNewClassId(e.target.value)}
-                      className="w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20 bg-white"
-                    >
+                    <select value={newClassId} onChange={e => setNewClassId(e.target.value)} className={SMALL_INPUT}>
                       <option value="">Sem classe</option>
                       {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                     </select>
                   </div>
+
+                  {/* RF-specific fields */}
+                  {newFormType === 'fixed_income' && (
+                    <>
+                      <div className="col-span-2 border-t border-blue-200 pt-2">
+                        <p className="text-xs font-semibold text-[#001A70] mb-2">Configuracao da renda fixa</p>
+                      </div>
+
+                      {/* fi_type */}
+                      <div className="col-span-2">
+                        <label className="block text-xs text-gray-500 mb-1">Tipo</label>
+                        <select value={newFiType} onChange={e => setNewFiType(e.target.value)} className={SMALL_INPUT}>
+                          {FI_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                        </select>
+                      </div>
+
+                      {/* fi_rate */}
+                      <div>
+                        <label className="block text-xs text-gray-500 mb-1">{rateCfg.label}</label>
+                        <input
+                          type="text"
+                          inputMode="decimal"
+                          value={newFiRate}
+                          onChange={e => setNewFiRate(e.target.value)}
+                          placeholder={rateCfg.placeholder}
+                          className={SMALL_INPUT}
+                        />
+                      </div>
+
+                      {/* fi_principal */}
+                      <div>
+                        <label className="block text-xs text-gray-500 mb-1">Valor investido (R$)</label>
+                        <input
+                          type="text"
+                          inputMode="decimal"
+                          value={newFiPrincipal}
+                          onChange={e => setNewFiPrincipal(e.target.value)}
+                          placeholder="ex: 50.000,00"
+                          className={SMALL_INPUT}
+                        />
+                      </div>
+
+                      {/* fi_start_date */}
+                      <div>
+                        <label className="block text-xs text-gray-500 mb-1">Data de inicio</label>
+                        <input
+                          type="date"
+                          value={newFiStartDate}
+                          max={today}
+                          onChange={e => setNewFiStartDate(e.target.value)}
+                          className={SMALL_INPUT}
+                        />
+                      </div>
+
+                      {/* fi_maturity */}
+                      <div>
+                        <label className="block text-xs text-gray-500 mb-1">Vencimento (opc.)</label>
+                        <input
+                          type="date"
+                          value={newFiMaturity}
+                          onChange={e => setNewFiMaturity(e.target.value)}
+                          className={SMALL_INPUT}
+                        />
+                      </div>
+
+                      {/* institution */}
+                      <div className="col-span-2">
+                        <label className="block text-xs text-gray-500 mb-1">Instituicao (opc.)</label>
+                        <InstitutionSelect value={newFiInstitution} onChange={setNewFiInstitution} />
+                      </div>
+                    </>
+                  )}
                 </div>
 
                 {newAssetErr && <p className="text-xs text-red-600">{newAssetErr}</p>}
@@ -426,7 +565,7 @@ export default function ContributionsPage() {
                     onClick={handleCreateAsset}
                     disabled={savingNewAsset || newNameLoading}
                     className="px-3 py-1.5 bg-[#001A70] text-white text-xs font-semibold rounded-lg disabled:opacity-50"
-                  >{savingNewAsset ? 'Criando...' : 'Criar ativo'}</button>
+                  >{savingNewAsset ? 'Criando...' : newFormType === 'fixed_income' ? 'Criar e configurar' : 'Criar ativo'}</button>
                   <button
                     type="button"
                     onClick={() => { setShowNewAsset(false); resetNewAsset() }}
@@ -442,7 +581,7 @@ export default function ContributionsPage() {
               <input
                 type="date"
                 value={date}
-                max={new Date().toISOString().split('T')[0]}
+                max={today}
                 onChange={e => setDate(e.target.value)}
                 className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20"
               />
@@ -452,6 +591,9 @@ export default function ContributionsPage() {
               <div className="flex gap-2">
                 {(['buy', 'sell'] as const).map(btnType => {
                   const isSellDisabled = btnType === 'sell' && sellDisabled
+                  const label = isRfAsset
+                    ? (btnType === 'buy' ? 'Aporte' : 'Resgate')
+                    : (btnType === 'buy' ? 'Compra' : 'Venda')
                   return (
                     <button
                       key={btnType}
@@ -465,13 +607,28 @@ export default function ContributionsPage() {
                             ? btnType === 'buy' ? 'bg-green-600 text-white border-green-600' : 'bg-red-600 text-white border-red-600'
                             : 'border-gray-200 text-gray-600 hover:bg-gray-50'
                       }`}
-                    >{btnType === 'buy' ? 'Compra' : 'Venda'}</button>
+                    >{label}</button>
                   )
                 })}
               </div>
             </div>
 
-            {/* Quantity (hidden for manual/fixed_income) */}
+            {/* RF buy: show current principal info */}
+            {isRfBuy && selectedAsset?.fi_principal != null && (
+              <div className="sm:col-span-2 bg-blue-50 border border-blue-100 rounded-lg px-4 py-3 text-sm">
+                <p className="text-xs text-gray-500">Saldo atual (principal)</p>
+                <p className="font-semibold text-gray-800">{fmtBrl(selectedAsset.fi_principal)}</p>
+                {selectedAsset.fi_type && (
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    {FI_TYPES.find(t => t.value === selectedAsset.fi_type)?.label ?? selectedAsset.fi_type}
+                    {selectedAsset.fi_start_date && ` · desde ${fmtDate(selectedAsset.fi_start_date)}`}
+                    {selectedAsset.fi_maturity && ` · vence ${fmtDate(selectedAsset.fi_maturity)}`}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Qty + Price (ticker only) */}
             {!isSimpleAsset && (
               <div>
                 <label className="block text-xs text-gray-500 mb-1">Quantidade</label>
@@ -487,8 +644,6 @@ export default function ContributionsPage() {
                 {fieldErrors.quantity && <p className="text-xs text-red-500 mt-0.5">{fieldErrors.quantity}</p>}
               </div>
             )}
-
-            {/* Price with currency selector */}
             {!isSimpleAsset && (
               <div>
                 <label className="block text-xs text-gray-500 mb-1">Preco unitario</label>
@@ -517,11 +672,15 @@ export default function ContributionsPage() {
             {/* Value BRL */}
             <div className="sm:col-span-2">
               <label className="block text-xs text-gray-500 mb-1">
-                Valor total em BRL
-                {priceCurrency !== 'BRL' && (fxRates as Record<string, number>)[priceCurrency] && (
-                  <span className="ml-1 text-gray-400">
-                    (1 {priceCurrency} = {(fxRates as Record<string, number>)[priceCurrency].toFixed(2)} BRL)
-                  </span>
+                {isRfBuy ? 'Valor do aporte adicional (R$)' : isRfAsset ? 'Valor resgatado (R$)' : isManualAsset ? 'Valor (R$)' : (
+                  <>
+                    Valor total em BRL
+                    {priceCurrency !== 'BRL' && (fxRates as Record<string, number>)[priceCurrency] && (
+                      <span className="ml-1 text-gray-400">
+                        (1 {priceCurrency} = {(fxRates as Record<string, number>)[priceCurrency].toFixed(2)} BRL)
+                      </span>
+                    )}
+                  </>
                 )}
               </label>
               <input
@@ -538,12 +697,14 @@ export default function ContributionsPage() {
 
             {/* Description */}
             <div className="sm:col-span-2">
-              <label className="block text-xs text-gray-500 mb-1">Descricao (opcional)</label>
+              <label className="block text-xs text-gray-500 mb-1">
+                {isRfBuy ? 'Observacao (opcional)' : 'Descricao (opcional)'}
+              </label>
               <input
                 type="text"
                 value={description}
                 onChange={e => setDescription(e.target.value)}
-                placeholder="ex: compra na corretora XP"
+                placeholder={isRfBuy ? 'ex: aporte mensal' : 'ex: compra na corretora XP'}
                 className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20"
               />
             </div>
@@ -555,11 +716,11 @@ export default function ContributionsPage() {
             onClick={handleSave}
             disabled={saving}
             className="w-full bg-[#001A70] text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-[#001A70]/90 disabled:opacity-50 transition-colors"
-          >{saving ? 'Salvando...' : 'Registrar'}</button>
+          >{saving ? 'Salvando...' : isRfBuy ? 'Registrar aporte' : 'Registrar'}</button>
         </div>
       )}
 
-      {/* Tabela de aportes */}
+      {/* Historico */}
       <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
         <div className="px-5 py-4 border-b border-gray-100">
           <h2 className="font-semibold text-gray-800">
@@ -600,9 +761,7 @@ export default function ContributionsPage() {
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-                        c.type === 'buy' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                      }`}>
+                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${c.type === 'buy' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                         {c.type === 'buy' ? 'Compra' : 'Venda'}
                       </span>
                     </td>
