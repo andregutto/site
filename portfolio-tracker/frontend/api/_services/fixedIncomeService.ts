@@ -1,4 +1,4 @@
-import { getCDIRates, getIPCARates, getSelicRates } from './bcbService'
+import { getCDIRates, getIPCARates, getSelicRates } from './bcbService.js'
 
 export interface FixedIncomeAsset {
   fi_principal:  number
