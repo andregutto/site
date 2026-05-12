@@ -1,5 +1,5 @@
 import YahooFinance from 'yahoo-finance2'
-import { cache, TTL } from '../_lib/cache'
+import { cache, TTL } from '../_lib/cache.js'
 
 const yf = new YahooFinance({ suppressNotices: ['yahooSurvey', 'ripHistorical'] })
 
