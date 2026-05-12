@@ -50,7 +50,7 @@ export default function AssetDetailPage() {
   const { id }     = useParams<{ id: string }>()
   const navigate   = useNavigate()
   const location   = useLocation()
-  const { data, loading, error } = useAssetDetail(id ? Number(id) : null)
+  const { data, loading, error, refresh } = useAssetDetail(id ? Number(id) : null)
   const { fmt, convert, currency } = useCurrency()
   const [archiving,          setArchiving]          = useState(false)
   const [editingInstitution, setEditingInstitution] = useState(false)
@@ -114,6 +114,24 @@ export default function AssetDetailPage() {
     month: fmtMonth(h.date),
     value: convert(h.value_brl),
   }))
+
+  const isManual = data.asset_type === 'manual'
+  const lastHistoryDate = data.history.length > 0 ? data.history[data.history.length - 1].date : null
+  const daysSinceUpdate = lastHistoryDate
+    ? Math.floor((Date.now() - new Date(lastHistoryDate + 'T12:00:00').getTime()) / (1000 * 60 * 60 * 24))
+    : null
+  const isStale = isManual && (daysSinceUpdate === null || daysSinceUpdate > 30)
+
+  const manualEntries = isManual
+    ? data.history.map((h, i) => {
+        const prev = i > 0 ? data.history[i - 1] : null
+        const changeAbs = prev != null ? h.value_brl - prev.value_brl : null
+        const changePct = prev != null && prev.value_brl > 0
+          ? ((h.value_brl - prev.value_brl) / prev.value_brl) * 100
+          : null
+        return { ...h, changeAbs, changePct }
+      }).reverse()
+    : []
 
   return (
     <div className="space-y-6">
@@ -233,6 +251,27 @@ export default function AssetDetailPage() {
         )}
       </div>
 
+      {/* Alerta de valor desatualizado (manual >30 dias) */}
+      {isStale && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex items-start gap-3">
+          <span className="text-amber-500 text-base mt-0.5">!</span>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-amber-800">
+              {daysSinceUpdate === null
+                ? 'Nenhum valor registrado para este ativo.'
+                : `Valor desatualizado ha ${daysSinceUpdate} dia${daysSinceUpdate !== 1 ? 's' : ''}.`}
+            </p>
+            <p className="text-xs text-amber-600 mt-0.5">Registre o valor atual para manter o portfolio preciso.</p>
+          </div>
+          <Link
+            to={`/contributions?assetId=${id}&new=1`}
+            className="text-xs font-semibold text-amber-700 border border-amber-300 rounded-lg px-2.5 py-1 hover:bg-amber-100 transition-colors shrink-0"
+          >
+            Atualizar
+          </Link>
+        </div>
+      )}
+
       {/* Peso na carteira (se mostrou quantidade acima) */}
       {data.holdings != null && weightPct != null && (
         <div className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm">
@@ -309,6 +348,52 @@ export default function AssetDetailPage() {
           onClose={() => setShowMigrateModal(false)}
           onSaved={() => { setShowMigrateModal(false); refresh() }}
         />
+      )}
+
+      {/* Historico de valores manuais com rentabilidade entre entradas */}
+      {isManual && manualEntries.length > 0 && (
+        <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
+          <div className="px-5 py-4 border-b border-gray-100">
+            <h2 className="font-semibold text-gray-800">Historico de valores ({manualEntries.length})</h2>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
+                <tr>
+                  <th className="px-4 py-3 text-left">Data</th>
+                  <th className="px-4 py-3 text-right">Valor</th>
+                  <th className="px-4 py-3 text-right">Variacao</th>
+                  <th className="px-4 py-3 text-right">Diferenca</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {manualEntries.map((e, i) => (
+                  <tr key={e.date + i} className="hover:bg-gray-50">
+                    <td className="px-4 py-3 text-gray-600">{fmtDate(e.date)}</td>
+                    <td className="px-4 py-3 text-right font-medium text-gray-900">{fmt(e.value_brl)}</td>
+                    <td className="px-4 py-3 text-right">
+                      {e.changePct != null ? (
+                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                          e.changePct > 0 ? 'bg-green-100 text-green-700' :
+                          e.changePct < 0 ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-500'
+                        }`}>
+                          {e.changePct >= 0 ? '+' : ''}{e.changePct.toFixed(2)}%
+                        </span>
+                      ) : (
+                        <span className="text-xs text-gray-400">—</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-right text-gray-500 text-xs">
+                      {e.changeAbs != null
+                        ? `${e.changeAbs >= 0 ? '+' : ''}${fmt(e.changeAbs)}`
+                        : '—'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       )}
 
       {/* Histórico de aportes */}
