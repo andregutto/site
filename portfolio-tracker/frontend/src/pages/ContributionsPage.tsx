@@ -42,6 +42,7 @@ const FORM_TYPES = [
   { value: 'cripto',       label: 'Cripto',                       dbType: 'ticker',       currency: 'USD', market: 'cripto' },
   { value: 'fixed_income', label: 'Renda fixa',                   dbType: 'fixed_income', currency: 'BRL', market: null     },
   { value: 'manual',       label: 'Valor manual',                 dbType: 'manual',       currency: 'BRL', market: null     },
+  { value: 'imovel',       label: 'Imovel fisico',                dbType: 'manual',       currency: 'BRL', market: null     },
 ] as const
 type FormTypeValue = typeof FORM_TYPES[number]['value']
 
@@ -110,6 +111,10 @@ export default function ContributionsPage() {
   const [newFiStartDate,   setNewFiStartDate]   = useState('')
   const [newFiMaturity,    setNewFiMaturity]    = useState('')
   const [newFiInstitution, setNewFiInstitution] = useState('')
+  // Imóvel-specific new asset fields
+  const [newImvPurchaseDate,  setNewImvPurchaseDate]  = useState('')
+  const [newImvPurchaseValue, setNewImvPurchaseValue] = useState('')
+  const [newImvPurchaseBrl,   setNewImvPurchaseBrl]   = useState('')
 
   const today = new Date().toISOString().split('T')[0]
 
@@ -200,7 +205,9 @@ export default function ContributionsPage() {
     setNewCode(''); setNewName(''); setNewFormType('ticker_b3')
     setNewCurrency('BRL'); setNewClassId(''); setNewCoingeckoId(''); setNewNameLoading(false)
     setNewFiType('pos_cdi'); setNewFiRate(''); setNewFiPrincipal('')
-    setNewFiStartDate(''); setNewFiMaturity(''); setNewFiInstitution(''); setNewAssetErr(null)
+    setNewFiStartDate(''); setNewFiMaturity(''); setNewFiInstitution('')
+    setNewImvPurchaseDate(''); setNewImvPurchaseValue(''); setNewImvPurchaseBrl('')
+    setNewAssetErr(null)
   }
 
   const isRfAsset     = selectedAsset?.asset_type === 'fixed_income'
@@ -281,7 +288,8 @@ export default function ContributionsPage() {
   async function handleCreateAsset() {
     const config = FORM_TYPES.find(t => t.value === newFormType)
     const isTickerType = config?.market != null
-    const isRfNew = newFormType === 'fixed_income'
+    const isRfNew  = newFormType === 'fixed_income'
+    const isImvNew = newFormType === 'imovel'
 
     if (!newCode.trim()) { setNewAssetErr('Informe o codigo do ativo.'); return }
     if (isTickerType && newNameLoading) { setNewAssetErr('Aguarde a busca do nome.'); return }
@@ -293,6 +301,13 @@ export default function ContributionsPage() {
       if (!newFiPrincipal || parseLocaleNum(newFiPrincipal) == null) { setNewAssetErr('Informe o valor investido.'); return }
       if (!newFiStartDate) { setNewAssetErr('Informe a data de inicio.'); return }
       if (!newFiRate || parseLocaleNum(newFiRate) == null) { setNewAssetErr('Informe a taxa contratada.'); return }
+    }
+    if (isImvNew) {
+      if (!newImvPurchaseDate) { setNewAssetErr('Informe a data de compra.'); return }
+      if (!newImvPurchaseValue || parseLocaleNum(newImvPurchaseValue) == null) { setNewAssetErr('Informe o valor de compra.'); return }
+      if (newCurrency !== 'BRL' && (!newImvPurchaseBrl || parseLocaleNum(newImvPurchaseBrl) == null)) {
+        setNewAssetErr('Informe o equivalente em BRL para registrar o custo.'); return
+      }
     }
 
     setSavingNewAsset(true); setNewAssetErr(null)
@@ -332,12 +347,32 @@ export default function ContributionsPage() {
               : { fi_rate: rateDecimal, fi_spread: null }),
           }),
         })
-        // Record initial contribution for history
         await apiFetch('/contributions', {
           method: 'POST',
           body: JSON.stringify({
             asset_id: created.id, date: newFiStartDate, type: 'buy',
             quantity: 1, value_brl: principal, description: 'Aplicacao inicial',
+          }),
+        })
+      }
+
+      if (isImvNew) {
+        const purchaseVal = parseLocaleNum(newImvPurchaseValue) ?? 0
+        const purchaseBrl = newCurrency === 'BRL'
+          ? purchaseVal
+          : (parseLocaleNum(newImvPurchaseBrl) ?? purchaseVal)
+        await apiFetch(`/assets/${created.id}/manual-value`, {
+          method: 'POST',
+          body: JSON.stringify({
+            ref_date: newImvPurchaseDate, value: purchaseVal,
+            currency: newCurrency, notes: 'Valor de compra',
+          }),
+        })
+        await apiFetch('/contributions', {
+          method: 'POST',
+          body: JSON.stringify({
+            asset_id: created.id, date: newImvPurchaseDate, type: 'buy',
+            quantity: 1, value_brl: purchaseBrl, description: 'Compra do imovel',
           }),
         })
       }
@@ -434,13 +469,20 @@ export default function ContributionsPage() {
                       type="text"
                       value={newCode}
                       onChange={e => setNewCode(newFormType === 'fixed_income' ? e.target.value : e.target.value.toUpperCase())}
-                      placeholder={newFormType === 'cripto' ? 'ex: BTC' : newFormType === 'ticker_intl' ? 'ex: AAPL' : newFormType === 'fixed_income' ? 'ex: CDB-NUBANK' : 'ex: PETR4'}
+                      placeholder={newFormType === 'cripto' ? 'ex: BTC' : newFormType === 'ticker_intl' ? 'ex: AAPL' : newFormType === 'fixed_income' ? 'ex: CDB-NUBANK' : newFormType === 'imovel' ? 'ex: APTO-PARIS' : 'ex: PETR4'}
                       className={SMALL_INPUT}
                     />
                   </div>
 
                   {/* Currency (hidden for B3 and RF) */}
-                  {newFormType !== 'ticker_b3' && newFormType !== 'fixed_income' && newFormType !== 'manual' ? (
+                  {newFormType === 'imovel' ? (
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">Moeda</label>
+                      <select value={newCurrency} onChange={e => setNewCurrency(e.target.value)} className={SMALL_INPUT}>
+                        {['BRL', 'EUR', 'USD'].map(c => <option key={c} value={c}>{c}</option>)}
+                      </select>
+                    </div>
+                  ) : newFormType !== 'ticker_b3' && newFormType !== 'fixed_income' && newFormType !== 'manual' ? (
                     <div>
                       <label className="block text-xs text-gray-500 mb-1">Moeda</label>
                       <select value={newCurrency} onChange={e => setNewCurrency(e.target.value)} className={SMALL_INPUT}>
@@ -470,7 +512,7 @@ export default function ContributionsPage() {
                       onChange={isTickerForm ? undefined : e => setNewName(e.target.value)}
                       placeholder={isTickerForm
                         ? newNameLoading ? 'Buscando...' : newCode ? 'Nao encontrado' : 'Preenchido automaticamente'
-                        : newFormType === 'fixed_income' ? 'ex: CDB Nubank 102% CDI' : 'ex: Fundo X'}
+                        : newFormType === 'fixed_income' ? 'ex: CDB Nubank 102% CDI' : newFormType === 'imovel' ? 'ex: Apartamento Paris 11e' : 'ex: Fundo X'}
                       className={`w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20 ${isTickerForm ? 'bg-gray-50 text-gray-500 cursor-default' : 'bg-white'}`}
                     />
                   </div>
@@ -483,6 +525,49 @@ export default function ContributionsPage() {
                       {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                     </select>
                   </div>
+
+                  {/* Imóvel-specific fields */}
+                  {newFormType === 'imovel' && (
+                    <>
+                      <div className="col-span-2 border-t border-blue-200 pt-2">
+                        <p className="text-xs font-semibold text-[#001A70] mb-2">Dados do imovel</p>
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-500 mb-1">Data de compra</label>
+                        <input
+                          type="date"
+                          value={newImvPurchaseDate}
+                          max={today}
+                          onChange={e => setNewImvPurchaseDate(e.target.value)}
+                          className={SMALL_INPUT}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-500 mb-1">Valor de compra ({newCurrency})</label>
+                        <input
+                          type="text"
+                          inputMode="decimal"
+                          value={newImvPurchaseValue}
+                          onChange={e => setNewImvPurchaseValue(e.target.value)}
+                          placeholder="ex: 200.000,00"
+                          className={SMALL_INPUT}
+                        />
+                      </div>
+                      {newCurrency !== 'BRL' && (
+                        <div className="col-span-2">
+                          <label className="block text-xs text-gray-500 mb-1">Equivalente em BRL (na data de compra)</label>
+                          <input
+                            type="text"
+                            inputMode="decimal"
+                            value={newImvPurchaseBrl}
+                            onChange={e => setNewImvPurchaseBrl(e.target.value)}
+                            placeholder="ex: 1.280.000,00"
+                            className={SMALL_INPUT}
+                          />
+                        </div>
+                      )}
+                    </>
+                  )}
 
                   {/* RF-specific fields */}
                   {newFormType === 'fixed_income' && (
@@ -565,7 +650,7 @@ export default function ContributionsPage() {
                     onClick={handleCreateAsset}
                     disabled={savingNewAsset || newNameLoading}
                     className="px-3 py-1.5 bg-[#001A70] text-white text-xs font-semibold rounded-lg disabled:opacity-50"
-                  >{savingNewAsset ? 'Criando...' : newFormType === 'fixed_income' ? 'Criar e configurar' : 'Criar ativo'}</button>
+                  >{savingNewAsset ? 'Criando...' : newFormType === 'fixed_income' ? 'Criar e configurar' : newFormType === 'imovel' ? 'Registrar imovel' : 'Criar ativo'}</button>
                   <button
                     type="button"
                     onClick={() => { setShowNewAsset(false); resetNewAsset() }}
