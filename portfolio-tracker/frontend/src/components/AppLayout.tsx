@@ -3,9 +3,11 @@ import { useAuth } from '../contexts/AuthContext'
 import { useCurrency, type Currency } from '../contexts/CurrencyContext'
 
 const navItems = [
-  { to: '/',              label: 'Dashboard',   icon: '▦', end: true },
-  { to: '/performance',   label: 'Performance', icon: '↗', end: false },
-  { to: '/contributions', label: 'Aportes',     icon: '⊕', end: false },
+  { to: '/',               label: 'Dashboard',    icon: '▦', end: true },
+  { to: '/performance',    label: 'Performance',  icon: '↗', end: false },
+  { to: '/contributions',  label: 'Aportes',      icon: '⊕', end: false },
+  { to: '/rebalance',      label: 'Balanc.',      icon: '⇌', end: false },
+  { to: '/by-institution', label: 'Instituições', icon: '⊟', end: false },
 ]
 
 const CURRENCIES: Currency[] = ['BRL', 'USD', 'EUR']
@@ -13,6 +15,8 @@ const CURRENCIES: Currency[] = ['BRL', 'USD', 'EUR']
 export default function AppLayout() {
   const { user, signOut } = useAuth()
   const { currency, setCurrency } = useCurrency()
+  const meta = user?.user_metadata ?? {}
+  const headerLabel = [meta.first_name, meta.last_name].filter(Boolean).join(' ') || user?.email || ''
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -58,7 +62,7 @@ export default function AppLayout() {
                 </button>
               ))}
             </div>
-            <Link to="/profile" className="text-xs text-gray-400 hidden sm:block hover:text-[#001A70] transition-colors">{user?.email}</Link>
+            <Link to="/profile" className="text-xs text-gray-400 hidden sm:block hover:text-[#001A70] transition-colors truncate max-w-[120px]">{headerLabel}</Link>
             <button
               onClick={() => signOut()}
               className="text-xs text-gray-500 hover:text-red-600 transition-colors"

@@ -5,31 +5,34 @@ import { useCurrency, type Currency } from '../contexts/CurrencyContext'
 
 interface ProfileData {
   email:                string
-  name:                 string
+  first_name:           string
+  last_name:            string
   country:              string
   portfolio_start_date: string
+  allocation_targets:   Record<string, number>
 }
 
 const COUNTRY_OPTIONS = [
-  { value: '',   label: 'Selecione o país' },
-  { value: 'Brasil',   label: 'Brasil' },
-  { value: 'França',   label: 'França' },
-  { value: 'Portugal', label: 'Portugal' },
-  { value: 'Alemanha', label: 'Alemanha' },
-  { value: 'Espanha',  label: 'Espanha' },
+  { value: '',            label: 'Selecione o país' },
+  { value: 'Brasil',      label: 'Brasil' },
+  { value: 'França',      label: 'França' },
+  { value: 'Portugal',    label: 'Portugal' },
+  { value: 'Alemanha',    label: 'Alemanha' },
+  { value: 'Espanha',     label: 'Espanha' },
   { value: 'Reino Unido', label: 'Reino Unido' },
-  { value: 'Suíça',    label: 'Suíça' },
-  { value: 'EUA',      label: 'EUA' },
-  { value: 'Canadá',   label: 'Canadá' },
-  { value: 'Austrália', label: 'Austrália' },
-  { value: 'Outro',    label: 'Outro' },
+  { value: 'Suíça',       label: 'Suíça' },
+  { value: 'EUA',         label: 'EUA' },
+  { value: 'Canadá',      label: 'Canadá' },
+  { value: 'Austrália',   label: 'Austrália' },
+  { value: 'Outro',       label: 'Outro' },
 ]
 
 const CURRENCIES: Currency[] = ['BRL', 'USD', 'EUR']
 
-function initials(name: string, email: string) {
-  if (name.trim()) {
-    return name.trim().split(/\s+/).slice(0, 2).map(w => w[0]).join('').toUpperCase()
+function initials(firstName: string, lastName: string, email: string) {
+  if (firstName.trim()) {
+    const parts = [firstName.trim()[0], lastName.trim()[0]].filter(Boolean)
+    return parts.join('').toUpperCase()
   }
   return email.slice(0, 2).toUpperCase()
 }
@@ -43,10 +46,11 @@ export default function ProfilePage() {
   const [saveOk,   setSaveOk]   = useState(false)
   const [error,    setError]    = useState<string | null>(null)
 
-  const [name,      setName]      = useState('')
-  const [country,   setCountry]   = useState('')
-  const [startDate, setStartDate] = useState('')
-  const [email,     setEmail]     = useState('')
+  const [firstName,  setFirstName]  = useState('')
+  const [lastName,   setLastName]   = useState('')
+  const [country,    setCountry]    = useState('')
+  const [startDate,  setStartDate]  = useState('')
+  const [email,      setEmail]      = useState('')
 
   const [newPassword,    setNewPassword]    = useState('')
   const [confirmPwd,     setConfirmPwd]     = useState('')
@@ -58,7 +62,8 @@ export default function ProfilePage() {
     apiFetch<ProfileData>('/profile')
       .then(d => {
         setEmail(d.email)
-        setName(d.name)
+        setFirstName(d.first_name)
+        setLastName(d.last_name)
         setCountry(d.country)
         setStartDate(d.portfolio_start_date)
       })
@@ -72,7 +77,7 @@ export default function ProfilePage() {
     try {
       await apiFetch('/profile', {
         method: 'PATCH',
-        body: JSON.stringify({ name, country, portfolio_start_date: startDate }),
+        body: JSON.stringify({ first_name: firstName, last_name: lastName, country, portfolio_start_date: startDate }),
       })
       setSaveOk(true)
       setTimeout(() => setSaveOk(false), 3000)
@@ -104,7 +109,8 @@ export default function ProfilePage() {
   }
 
   const emailForDisplay = email || user?.email || ''
-  const avatarInitials  = initials(name, emailForDisplay)
+  const avatarInitials  = initials(firstName, lastName, emailForDisplay)
+  const displayName     = [firstName, lastName].filter(Boolean).join(' ') || 'Sem nome'
 
   return (
     <div className="max-w-lg mx-auto space-y-6">
@@ -116,13 +122,13 @@ export default function ProfilePage() {
         </div>
       ) : (
         <>
-          {/* Avatar + email */}
+          {/* Avatar + nome */}
           <div className="bg-white border border-gray-100 rounded-2xl p-6 flex items-center gap-5 shadow-sm">
             <div className="w-16 h-16 rounded-full bg-[#001A70] text-white flex items-center justify-center text-xl font-bold shrink-0">
               {avatarInitials}
             </div>
             <div className="min-w-0">
-              <p className="font-semibold text-gray-900 truncate">{name || 'Sem nome'}</p>
+              <p className="font-semibold text-gray-900 truncate">{displayName}</p>
               <p className="text-sm text-gray-500 truncate">{emailForDisplay}</p>
             </div>
           </div>
@@ -141,15 +147,27 @@ export default function ProfilePage() {
               />
             </div>
 
-            <div>
-              <label className="block text-xs text-gray-500 mb-1">Nome</label>
-              <input
-                type="text"
-                value={name}
-                onChange={e => setName(e.target.value)}
-                placeholder="Seu nome completo"
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20"
-              />
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">Nome</label>
+                <input
+                  type="text"
+                  value={firstName}
+                  onChange={e => setFirstName(e.target.value)}
+                  placeholder="André"
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">Sobrenome</label>
+                <input
+                  type="text"
+                  value={lastName}
+                  onChange={e => setLastName(e.target.value)}
+                  placeholder="Gutto"
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20"
+                />
+              </div>
             </div>
 
             <div>

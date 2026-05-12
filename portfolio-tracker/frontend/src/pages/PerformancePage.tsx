@@ -1,6 +1,5 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { usePerformanceSummary, usePerformanceMonthly, useSyncHistory, usePerformanceBenchmarks } from '../hooks/usePortfolio'
-import { apiFetch } from '../lib/api'
 import {
   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend
 } from 'recharts'
@@ -37,43 +36,35 @@ export default function PerformancePage() {
 
   const from = `${year}-01`
   const to   = `${year}-12`
-  const { data: summary, loading: sLoading, error: sError } = usePerformanceSummary(from, to)
+  const { data: summary, loading: sLoading } = usePerformanceSummary(from, to)
   const { data: monthly, loading: mLoading } = usePerformanceMonthly(year)
-  const { sync, loading: syncing, result: syncResult } = useSyncHistory()
-  const { data: benchmarks } = usePerformanceBenchmarks(year)
+  const { sync, loading: syncing } = useSyncHistory()
+  const { data: benchmarks, loading: bLoading } = usePerformanceBenchmarks(year)
 
   const [showCDI,   setShowCDI]   = useState(true)
   const [showIBOV,  setShowIBOV]  = useState(false)
   const [showSP500, setShowSP500] = useState(false)
 
-  type ResetResult = { deleted: number; created: number; results: { code: string; price: number | null; status: string }[] }
-  const [resetting,   setResetting]   = useState(false)
-  const [resetResult, setResetResult] = useState<ResetResult | null>(null)
-  const [resetError,  setResetError]  = useState<string | null>(null)
-
-  async function handleReset() {
-    if (!confirm('Isso vai apagar todas as contribuições de 2023-01-01 e recriar em 2025-01-01 com preços históricos do Yahoo. Continuar?')) return
-    setResetting(true); setResetResult(null); setResetError(null)
-    try {
-      const data = await apiFetch<ResetResult>('/portfolio/reset-baseline', { method: 'POST' })
-      setResetResult(data)
-    } catch (e) {
-      setResetError(e instanceof Error ? e.message : 'Erro ao resetar')
-    } finally {
-      setResetting(false)
+  // Auto-sync once when current year has no price history
+  const [autoSynced, setAutoSynced] = useState(false)
+  useEffect(() => {
+    if (!mLoading && !autoSynced && monthly && year === currentYear) {
+      const hasData = monthly.monthly.some(m => m.total > 0)
+      if (!hasData) {
+        setAutoSynced(true)
+        sync()
+      }
     }
-  }
+  }, [mLoading, monthly, year, currentYear, autoSynced, sync])
 
   const benchmarkMap = new Map(
     (benchmarks?.monthly ?? []).map(b => [b.month, b])
   )
 
-  // Todos os meses com dado de portfólio
   const monthsWithData = monthly?.monthly.filter(m => m.total > 0) ?? []
-  const firstTotal     = monthsWithData[0]?.total ?? 0
-  const firstMonth     = monthsWithData[0]?.month ?? ''
+  const firstTotal = monthsWithData[0]?.total ?? 0
+  const firstMonth = monthsWithData[0]?.month ?? ''
 
-  // Base dos benchmarks no mesmo mês de início do portfólio
   const baseBench  = benchmarkMap.get(firstMonth)
   const baseCDI    = baseBench?.cdi_cum   ?? 1
   const baseIBOV   = baseBench?.ibov_cum  ?? null
@@ -92,14 +83,13 @@ export default function PerformancePage() {
     }
   })
 
-  // Valores acumulados do último ponto do gráfico (mesma base do portfólio)
   const lastPoint      = chartData[chartData.length - 1]
   const portfolioAccum = lastPoint?.portfolio ?? null
   const cdiAccum       = lastPoint?.cdi       ?? null
   const ibovAccum      = lastPoint?.ibov      ?? null
   const sp500Accum     = lastPoint?.sp500     ?? null
 
-  const isLoading = sLoading || mLoading
+  const isLoading = sLoading || mLoading || bLoading
 
   return (
     <div className="space-y-6">
@@ -120,12 +110,17 @@ export default function PerformancePage() {
       </div>
 
       {isLoading ? (
-        <div className="text-center text-gray-400 text-sm py-12 animate-pulse">Carregando performance...</div>
+        <div className="text-center text-gray-400 text-sm py-12 animate-pulse">
+          {syncing ? 'Atualizando dados de preços...' : 'Carregando performance...'}
+        </div>
       ) : (
         <>
           {summary && (
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              <SummaryCard label="Início do ano" value={fmtBRL(summary.value_start)} />
+              <SummaryCard
+                label="Início do ano"
+                value={summary.value_start > 0 ? fmtBRL(summary.value_start) : '—'}
+              />
               <SummaryCard label="Fim do período" value={fmtBRL(summary.value_end)} />
               <SummaryCard
                 label="Retorno absoluto"
@@ -141,53 +136,7 @@ export default function PerformancePage() {
             </div>
           )}
 
-          {(summary?.note || sError) && (
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-amber-700 text-sm flex items-center justify-between gap-4">
-              <span>{summary?.note ?? 'Histórico de preços indisponível.'}</span>
-              <button
-                onClick={sync}
-                disabled={syncing}
-                className="shrink-0 px-4 py-2 bg-amber-600 text-white text-xs font-semibold rounded-lg hover:bg-amber-700 disabled:opacity-50 transition-colors"
-              >
-                {syncing ? 'Sincronizando...' : 'Inicializar histórico'}
-              </button>
-            </div>
-          )}
-
-          {syncResult && (
-            <div className="space-y-2">
-              <div className={`border rounded-xl p-3 text-sm ${
-                syncResult.errors === 0
-                  ? 'bg-green-50 border-green-200 text-green-700'
-                  : 'bg-blue-50 border-blue-200 text-blue-700'
-              }`}>
-                Sincronizados: {syncResult.synced}/{syncResult.total} ativos
-                {syncResult.errors > 0 && ` · ${syncResult.errors} erro(s)`}
-                {syncResult.synced > 0 && ' · Recarregue a página para ver os dados.'}
-              </div>
-              {syncResult.details.some(d => d.status !== 'ok') && (
-                <details className="bg-gray-50 border border-gray-200 rounded-xl p-3 text-xs text-gray-600">
-                  <summary className="cursor-pointer font-medium text-gray-700 mb-2">
-                    Detalhes por ativo ({syncResult.details.filter(d => d.status === 'error').length} erros,{' '}
-                    {syncResult.details.filter(d => d.status === 'empty').length} vazios)
-                  </summary>
-                  <div className="mt-2 space-y-1 max-h-48 overflow-y-auto font-mono">
-                    {syncResult.details.map(d => (
-                      <div key={d.id} className={
-                        d.status === 'ok' ? 'text-green-700' :
-                        d.status === 'empty' ? 'text-gray-400' : 'text-red-600'
-                      }>
-                        {d.status === 'ok' ? '✓' : d.status === 'empty' ? '–' : '✗'}{' '}
-                        {d.code}{d.status === 'ok' ? ` (${d.points} pts)` : ''}{d.error ? `: ${d.error}` : ''}
-                      </div>
-                    ))}
-                  </div>
-                </details>
-              )}
-            </div>
-          )}
-
-          {chartData.length > 0 && (
+          {chartData.length > 0 ? (
             <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
               <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
                 <h2 className="font-semibold text-gray-800">Rentabilidade Acumulada {year}</h2>
@@ -220,7 +169,7 @@ export default function PerformancePage() {
                       tickFormatter={v => `${v > 0 ? '+' : ''}${v.toFixed(1)}%`}
                     />
                     <Tooltip
-                      formatter={(v: number) => [`${v >= 0 ? '+' : ''}${v.toFixed(2)}%`]}
+                      formatter={(v) => [`${Number(v) >= 0 ? '+' : ''}${Number(v).toFixed(2)}%`]}
                       contentStyle={{ borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 12 }}
                     />
                     <Legend wrapperStyle={{ fontSize: 11 }} />
@@ -232,16 +181,23 @@ export default function PerformancePage() {
                 </ResponsiveContainer>
               </div>
             </div>
+          ) : (
+            <div className="bg-white border border-gray-100 rounded-2xl p-12 text-center text-gray-400 shadow-sm">
+              <p className="text-base font-medium text-gray-500">Sem dados de preço para {year}</p>
+              <p className="text-sm mt-1">
+                {syncing ? 'Sincronizando histórico de preços...' : 'Acesse o Dashboard para carregar os preços dos ativos.'}
+              </p>
+            </div>
           )}
 
-          {/* Cards de comparação — mesma base do gráfico */}
+          {/* Benchmark comparison cards */}
           {chartData.length > 0 && (
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
               {[
-                { label: 'Carteira',  value: portfolioAccum, color: '#001A70',  text: 'text-[#001A70]' },
-                { label: 'CDI',       value: cdiAccum,       color: '#16a34a',  text: 'text-green-600' },
-                { label: 'IBOV',      value: ibovAccum,      color: '#dc2626',  text: 'text-red-600'   },
-                { label: 'S&P500',    value: sp500Accum,     color: '#f59e0b',  text: 'text-amber-600' },
+                { label: 'Carteira',  value: portfolioAccum, text: 'text-[#001A70]' },
+                { label: 'CDI',       value: cdiAccum,       text: 'text-green-600' },
+                { label: 'IBOV',      value: ibovAccum,      text: 'text-red-600'   },
+                { label: 'S&P500',    value: sp500Accum,     text: 'text-amber-600' },
               ].map(({ label, value, text }) => (
                 <div key={label} className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm">
                   <p className="text-gray-400 text-xs">{label}</p>
@@ -269,10 +225,8 @@ export default function PerformancePage() {
                   </thead>
                   <tbody className="divide-y divide-gray-50">
                     {monthly.monthly.map((m) => {
-                      const change = m.prev_total > 0 ? m.total - m.prev_total : null
-                      const changePct = m.prev_total > 0
-                        ? ((m.total - m.prev_total) / m.prev_total) * 100
-                        : null
+                      const change    = m.prev_total > 0 ? m.total - m.prev_total : null
+                      const changePct = m.prev_total > 0 ? ((m.total - m.prev_total) / m.prev_total) * 100 : null
                       return (
                         <tr key={m.month} className="hover:bg-gray-50">
                           <td className="px-4 py-3 font-medium text-gray-700">{fmtMonth(m.month)}</td>
@@ -302,47 +256,6 @@ export default function PerformancePage() {
           )}
         </>
       )}
-
-      {/* Ferramentas */}
-      <details className="bg-gray-50 border border-gray-200 rounded-2xl overflow-hidden">
-        <summary className="px-5 py-4 cursor-pointer text-sm font-medium text-gray-600 hover:text-gray-800">
-          Ferramentas avançadas
-        </summary>
-        <div className="px-5 pb-5 space-y-3 border-t border-gray-100 pt-4">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <p className="text-sm font-medium text-gray-700">Resetar ponto zero</p>
-              <p className="text-xs text-gray-500 mt-0.5">
-                Substitui as contribuições de 01/01/2023 por contribuições de 02/01/2025
-                com preços históricos reais via Yahoo Finance.
-              </p>
-            </div>
-            <button
-              onClick={handleReset}
-              disabled={resetting}
-              className="shrink-0 px-4 py-2 bg-red-600 text-white text-xs font-semibold rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors"
-            >
-              {resetting ? 'Processando...' : 'Resetar 2023 → 2025'}
-            </button>
-          </div>
-          {resetError && <p className="text-xs text-red-600">{resetError}</p>}
-          {resetResult && (
-            <div className="bg-green-50 border border-green-200 rounded-xl p-3 text-sm text-green-700 space-y-1">
-              <p>Removidos: {resetResult.deleted} · Criados: {resetResult.created}</p>
-              <details className="text-xs">
-                <summary className="cursor-pointer font-medium">Ver por ativo</summary>
-                <div className="mt-2 space-y-0.5 font-mono max-h-40 overflow-y-auto">
-                  {resetResult.results.map(r => (
-                    <div key={r.code} className={r.status === 'ok' ? 'text-green-700' : 'text-amber-600'}>
-                      {r.status === 'ok' ? '✓' : '–'} {r.code}{r.price != null ? ` @ ${r.price}` : ' (sem preço)'}
-                    </div>
-                  ))}
-                </div>
-              </details>
-            </div>
-          )}
-        </div>
-      </details>
     </div>
   )
 }

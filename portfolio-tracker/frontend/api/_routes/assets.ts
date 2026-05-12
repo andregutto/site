@@ -1,13 +1,11 @@
-// CRUD de ativos + manual_values + detalhe
 import { Router, Response } from 'express'
-import { requireAuth, AuthRequest } from '../middleware/auth.js'
-import { supabaseAdmin } from '../lib/supabase.js'
-import { getCurrentPrice, Asset } from '../services/priceService.js'
-import { getFxRate } from '../lib/fx.js'
+import { requireAuth, AuthRequest } from '../_middleware/auth'
+import { supabaseAdmin } from '../_lib/supabase'
+import { getCurrentPrice, Asset } from '../_services/priceService'
+import { getFxRate } from '../_lib/fx'
 
 const router = Router()
 
-// Valida que o ativo pertence ao usuário e retorna o asset
 async function getOwnedAsset(assetId: number, userId: string) {
   const { data } = await supabaseAdmin
     .from('assets')
@@ -18,7 +16,6 @@ async function getOwnedAsset(assetId: number, userId: string) {
   return data
 }
 
-// GET /api/assets/:id/manual-values — histórico de valores manuais
 router.get('/:id/manual-values', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const assetId = Number(req.params.id)
@@ -35,7 +32,6 @@ router.get('/:id/manual-values', requireAuth, async (req, res: Response) => {
   res.json(data ?? [])
 })
 
-// POST /api/assets/:id/manual-value — upsert valor manual
 router.post('/:id/manual-value', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const assetId = Number(req.params.id)
@@ -58,7 +54,6 @@ router.post('/:id/manual-value', requireAuth, async (req, res: Response) => {
   res.json({ ok: true })
 })
 
-// DELETE /api/assets/:id/manual-value/:valueId — remove entrada manual
 router.delete('/:id/manual-value/:valueId', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const assetId = Number(req.params.id)
@@ -75,7 +70,6 @@ router.delete('/:id/manual-value/:valueId', requireAuth, async (req, res: Respon
   res.json({ ok: true })
 })
 
-// PATCH /api/assets/:id — atualiza campos do ativo (fi_principal, fi_start_date, etc.)
 const PATCHABLE = ['fi_principal', 'fi_start_date', 'fi_type', 'fi_rate', 'fi_spread', 'fi_maturity', 'exchange', 'name', 'notes'] as const
 router.patch('/:id', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
@@ -98,6 +92,7 @@ router.patch('/:id', requireAuth, async (req, res: Response) => {
   res.json({ ok: true })
 })
 
+// POST /api/assets/:id/archive — marks asset as inactive (soft delete)
 router.post('/:id/archive', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const assetId = Number(req.params.id)
@@ -110,6 +105,7 @@ router.post('/:id/archive', requireAuth, async (req, res: Response) => {
   res.json({ ok: true })
 })
 
+// POST /api/assets/:id/unarchive — restores archived asset
 router.post('/:id/unarchive', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const assetId = Number(req.params.id)
@@ -122,6 +118,7 @@ router.post('/:id/unarchive', requireAuth, async (req, res: Response) => {
   res.json({ ok: true })
 })
 
+// GET /api/assets/archived — list inactive assets
 router.get('/archived', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const { data, error } = await supabaseAdmin
@@ -134,7 +131,6 @@ router.get('/archived', requireAuth, async (req, res: Response) => {
   res.json(data ?? [])
 })
 
-// GET /api/assets/:id/detail — detalhe completo: P&L + histórico + aportes
 router.get('/:id/detail', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const assetId = Number(req.params.id)
@@ -150,7 +146,6 @@ router.get('/:id/detail', requireAuth, async (req, res: Response) => {
 
   const cls = asset.asset_classes as { id: number; name: string; color: string } | null
 
-  // Aportes ordenados por data
   const { data: rawContribs } = await supabaseAdmin
     .from('contributions')
     .select('id, date, type, quantity, price_orig, currency, fx_rate_brl, value_brl, description')
@@ -159,12 +154,10 @@ router.get('/:id/detail', requireAuth, async (req, res: Response) => {
 
   const contribs = rawContribs ?? []
 
-  // Holdings e custo médio acumulado
   let totalQty = 0
   let totalCostBrl = 0
   for (const c of contribs) {
     const qty = c.quantity ?? 0
-    // Prefer value_brl; fall back to price_orig × qty × fx when value_brl is null
     const costBrl = c.value_brl != null
       ? c.value_brl
       : (c.price_orig != null ? c.price_orig * qty * (c.fx_rate_brl ?? 5.70) : 0)
@@ -180,7 +173,6 @@ router.get('/:id/detail', requireAuth, async (req, res: Response) => {
   const investedBrl = totalCostBrl
   const avgCostBrl  = holdings > 0 && totalCostBrl > 0 ? totalCostBrl / holdings : null
 
-  // Preço atual
   let currentValueBrl = 0
   let currentPrice: number | null = null
   let priceCurrency = asset.currency || 'BRL'
@@ -216,7 +208,6 @@ router.get('/:id/detail', requireAuth, async (req, res: Response) => {
   const gainLossBrl = currentValueBrl - investedBrl
   const gainLossPct = investedBrl > 0 ? (gainLossBrl / investedBrl) * 100 : null
 
-  // Histórico de preços (price_history para ticker; manual_values para manual)
   type HistoryPoint = { date: string; price: number; value_brl: number }
   let history: HistoryPoint[] = []
 
@@ -229,7 +220,6 @@ router.get('/:id/detail', requireAuth, async (req, res: Response) => {
       .lte('ref_date', today)
       .order('ref_date', { ascending: true })
 
-    // Holdings em cada data histórica
     const fxApprox = priceCurrency === 'BRL' ? 1 : await getFxRate(priceCurrency).catch(() => 5.70)
     history = (ph ?? []).map((p) => {
       let qtyAt = 0
@@ -275,7 +265,7 @@ router.get('/:id/detail', requireAuth, async (req, res: Response) => {
     gain_loss_brl:  Math.round(gainLossBrl * 100) / 100,
     gain_loss_pct:  gainLossPct !== null ? Math.round(gainLossPct * 100) / 100 : null,
     history,
-    contributions: contribs.slice().reverse(),  // mais recente primeiro
+    contributions: contribs.slice().reverse(),
   })
 })
 

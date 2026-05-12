@@ -1,6 +1,8 @@
+import { useState } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useAssetDetail } from '../hooks/usePortfolio'
 import { useCurrency } from '../contexts/CurrencyContext'
+import { apiFetch } from '../lib/api'
 import {
   LineChart, Line, XAxis, YAxis, Tooltip,
   ResponsiveContainer, CartesianGrid, ReferenceLine,
@@ -48,6 +50,16 @@ export default function AssetDetailPage() {
   const location   = useLocation()
   const { data, loading, error } = useAssetDetail(id ? Number(id) : null)
   const { fmt, convert, currency } = useCurrency()
+  const [archiving, setArchiving] = useState(false)
+
+  async function handleArchive() {
+    if (!id || !confirm('Arquivar este ativo? Ele vai sair do dashboard mas o histórico é mantido.')) return
+    setArchiving(true)
+    try {
+      await apiFetch(`/assets/${id}/archive`, { method: 'POST' })
+      navigate(-1)
+    } catch { setArchiving(false) }
+  }
 
   // total_brl passado via navegação (do dashboard) para calcular % carteira
   const totalBrl: number = (location.state as { total_brl?: number } | null)?.total_brl ?? 0
@@ -106,12 +118,21 @@ export default function AssetDetailPage() {
           </div>
           <p className="text-sm text-gray-500 mt-0.5 truncate">{data.name}</p>
         </div>
-        {data.current_price != null && (
-          <div className="text-right shrink-0">
-            <p className="font-bold text-gray-900">{priceLabel}</p>
-            <p className="text-xs text-gray-400">{data.price_source}</p>
-          </div>
-        )}
+        <div className="shrink-0 flex flex-col items-end gap-1">
+          {data.current_price != null && (
+            <>
+              <p className="font-bold text-gray-900">{priceLabel}</p>
+              <p className="text-xs text-gray-400">{data.price_source}</p>
+            </>
+          )}
+          <button
+            onClick={handleArchive}
+            disabled={archiving}
+            className="text-xs text-gray-400 hover:text-red-500 transition-colors disabled:opacity-50 mt-1"
+          >
+            Arquivar
+          </button>
+        </div>
       </div>
 
       {/* Summary cards */}
@@ -192,8 +213,8 @@ export default function AssetDetailPage() {
                   width={50}
                 />
                 <Tooltip
-                  formatter={(v: number) => [
-                    new Intl.NumberFormat('pt-BR', { style: 'currency', currency, maximumFractionDigits: 0 }).format(v),
+                  formatter={(v) => [
+                    new Intl.NumberFormat('pt-BR', { style: 'currency', currency, maximumFractionDigits: 0 }).format(Number(v)),
                     'Valor',
                   ]}
                   contentStyle={{ borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 12 }}
@@ -263,9 +284,12 @@ export default function AssetDetailPage() {
                         : '—'}
                     </td>
                     <td className="px-4 py-3 text-right font-medium text-gray-900">
-                      {c.value_brl != null
-                        ? fmt(c.value_brl)
-                        : '—'}
+                      {(() => {
+                        const v = c.value_brl ?? (c.price_orig != null
+                          ? c.price_orig * c.quantity * (c.fx_rate_brl ?? 1)
+                          : null)
+                        return v != null ? fmt(v) : '—'
+                      })()}
                     </td>
                   </tr>
                 ))}

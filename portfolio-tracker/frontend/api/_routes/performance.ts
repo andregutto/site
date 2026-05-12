@@ -1,13 +1,14 @@
 import { Router, Response } from 'express'
-import { requireAuth, AuthRequest } from '../middleware/auth.js'
-import { supabaseAdmin } from '../lib/supabase.js'
-import { getRates, SERIES } from '../services/bcbService.js'
+import { requireAuth, AuthRequest } from '../_middleware/auth'
+import { supabaseAdmin } from '../_lib/supabase'
+import { getRates, SERIES } from '../_services/bcbService'
 import YahooFinance from 'yahoo-finance2'
 
 const yf = new YahooFinance({ suppressNotices: ['yahooSurvey', 'ripHistorical'] })
 
 const router = Router()
 
+// Use local date components to avoid UTC offset shifting months
 function localDate(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
@@ -19,9 +20,11 @@ function localYM(d: Date): string {
 async function getPortfolioValueAtMonth(
   userId: string,
   year: number,
-  month: number
+  month: number   // 1-based
 ): Promise<{ total: number; detail: Array<{ asset_id: number; value: number }> }> {
-  const ym      = `${year}-${String(month).padStart(2, '0')}`
+  // Use string construction to avoid timezone-shifted toISOString()
+  const ym  = `${year}-${String(month).padStart(2, '0')}`
+  // Last day of month for a tight upper bound
   const lastDay = new Date(year, month, 0).getDate()
   const dateStr = `${ym}-${String(lastDay).padStart(2, '0')}`
 
@@ -87,10 +90,14 @@ async function getPortfolioValueAtMonth(
     if (currency === 'BRL') return 1
     if (fxCache[currency]) return fxCache[currency]
     const { data: fx } = await supabaseAdmin
-      .from('fx_rates').select('rate')
-      .eq('from_currency', currency).eq('to_currency', 'BRL')
+      .from('fx_rates')
+      .select('rate')
+      .eq('from_currency', currency)
+      .eq('to_currency', 'BRL')
       .lte('ref_date', dateStr)
-      .order('ref_date', { ascending: false }).limit(1).single()
+      .order('ref_date', { ascending: false })
+      .limit(1)
+      .single()
     const rate = fx?.rate ?? 5.7
     fxCache[currency] = rate
     return rate
@@ -158,8 +165,9 @@ router.get('/summary', requireAuth, async (req, res: Response) => {
     getPortfolioValueAtMonth(userId, toY,   toM),
   ])
 
-  const v_ini      = start.total
-  const v_fim      = end.total
+  const v_ini = start.total
+  const v_fim = end.total
+
   const base       = v_ini - totalContribs
   const return_pct = base > 0 ? ((v_fim - v_ini - totalContribs) / base) * 100 : null
   const return_abs = v_fim - v_ini - totalContribs
@@ -180,6 +188,7 @@ router.get('/monthly', requireAuth, async (req, res: Response) => {
   const year = parseInt(req.query.year as string || String(new Date().getFullYear()))
   const now  = new Date()
 
+  // Build list of months up to (and including) current month
   const months: Array<{ year: number; month: number; label: string }> = []
   for (let m = 1; m <= 12; m++) {
     if (year < now.getFullYear() || (year === now.getFullYear() && m <= now.getMonth() + 1)) {
@@ -204,9 +213,11 @@ router.get('/monthly', requireAuth, async (req, res: Response) => {
 })
 
 router.get('/benchmarks', requireAuth, async (req, res: Response) => {
-  const year  = parseInt(req.query.year as string || String(new Date().getFullYear()))
-  const today = localDate(new Date())
+  const year    = parseInt(req.query.year as string || String(new Date().getFullYear()))
+  const today   = localDate(new Date())
+  const startYM = `${year}-01`
 
+  // Only include months up to today
   const months: string[] = []
   for (let m = 1; m <= 12; m++) {
     const ym = `${year}-${String(m).padStart(2, '0')}`
@@ -219,14 +230,18 @@ router.get('/benchmarks', requireAuth, async (req, res: Response) => {
   type Monthly = { month: string; cdi_cum: number; ibov_cum: number | null; sp500_cum: number | null }
   const monthly: Monthly[] = months.map(m => ({ month: m, cdi_cum: 1, ibov_cum: null, sp500_cum: null }))
 
+  // CDI: compound daily rates from BCB
   let cdiPct: number | null = null
   try {
-    const startDate = new Date(year, 0, 2)
+    const startDate = new Date(year, 0, 2)  // Jan 2 (fmtDate uses local components, safe)
     const endDate   = new Date()
-    if (endDate.getFullYear() > year) endDate.setFullYear(year, 11, 31)
+    if (endDate.getFullYear() > year) {
+      endDate.setFullYear(year, 11, 31)  // Dec 31 of target year
+    }
     const rates = await getRates(SERIES.CDI, startDate, endDate)
     const monthMap = new Map<string, number>()
     for (const r of rates) {
+      // Use local month components to avoid timezone shift
       const m = localYM(r.date)
       monthMap.set(m, (monthMap.get(m) ?? 1) * (1 + r.value / 100))
     }
@@ -238,6 +253,7 @@ router.get('/benchmarks', requireAuth, async (req, res: Response) => {
     cdiPct = Math.round((cum - 1) * 10000) / 100
   } catch { /* sem dados CDI */ }
 
+  // Fetch IBOV and S&P500 using explicit year range
   async function fetchYearlyMonthly(ticker: string) {
     const endStr = today < `${year}-12-31` ? today : `${year}-12-31`
     const rows = await yf.historical(ticker, {
@@ -245,12 +261,14 @@ router.get('/benchmarks', requireAuth, async (req, res: Response) => {
       period2:  endStr,
       interval: '1mo',
     })
+    // Map date using local components to avoid UTC offset shift
     return rows.map(r => ({
       ym:    localYM(r.date),
       price: r.close ?? r.adjClose ?? 0,
     })).filter(r => r.ym.startsWith(String(year)))
   }
 
+  // IBOV
   let ibovPct: number | null = null
   try {
     const pts = await fetchYearlyMonthly('^BVSP')
@@ -260,9 +278,13 @@ router.get('/benchmarks', requireAuth, async (req, res: Response) => {
         const match = pts.find(p => p.ym === entry.month)
         entry.ibov_cum = match ? Math.round((match.price / base) * 10000) / 10000 : null
       }
+      ibovPct = pts.length >= 2
+        ? Math.round((pts[pts.length - 1].price / base - 1) * 10000) / 100
+        : null
     }
   } catch { /* sem dados IBOV */ }
 
+  // S&P500
   let sp500Pct: number | null = null
   try {
     const pts = await fetchYearlyMonthly('^GSPC')
@@ -272,10 +294,14 @@ router.get('/benchmarks', requireAuth, async (req, res: Response) => {
         const match = pts.find(p => p.ym === entry.month)
         entry.sp500_cum = match ? Math.round((match.price / base) * 10000) / 10000 : null
       }
+      sp500Pct = pts.length >= 2
+        ? Math.round((pts[pts.length - 1].price / base - 1) * 10000) / 100
+        : null
     }
   } catch { /* sem dados S&P500 */ }
 
-  // Fill forward null gaps
+  // Normalize: if first month has ibov/sp500 data, it's the baseline (= 1.0 = 0%)
+  // Fill forward null gaps using last known value
   let lastIbov: number | null = null
   let lastSp500: number | null = null
   for (const entry of monthly) {
@@ -285,11 +311,15 @@ router.get('/benchmarks', requireAuth, async (req, res: Response) => {
     if (entry.sp500_cum == null && lastSp500 != null) entry.sp500_cum = lastSp500
   }
 
+  // Recalculate year-end pct from last filled entry
   const lastEntry = monthly[monthly.length - 1]
   if (lastEntry.ibov_cum  != null) ibovPct  = Math.round((lastEntry.ibov_cum  - 1) * 10000) / 100
   if (lastEntry.sp500_cum != null) sp500Pct = Math.round((lastEntry.sp500_cum - 1) * 10000) / 100
 
-  res.json({ year, cdi_pct: cdiPct, ibov_pct: ibovPct, sp500_pct: sp500Pct, monthly })
+  // Filter to only months covered in startYM onward (already done in months array)
+  const filteredMonthly = monthly.filter(m => m.month >= startYM)
+
+  res.json({ year, cdi_pct: cdiPct, ibov_pct: ibovPct, sp500_pct: sp500Pct, monthly: filteredMonthly })
 })
 
 export default router

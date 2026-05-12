@@ -7,6 +7,8 @@ import PerformancePage from './pages/PerformancePage'
 import AssetDetailPage from './pages/AssetDetailPage'
 import ContributionsPage from './pages/ContributionsPage'
 import ProfilePage from './pages/ProfilePage'
+import RebalancePage from './pages/RebalancePage'
+import InstitutionPage from './pages/InstitutionPage'
 import AppLayout from './components/AppLayout'
 
 function ProtectedRoutes() {
@@ -34,11 +36,13 @@ function AppRoutes() {
     <Routes>
       <Route path="/login" element={user ? <Navigate to="/" replace /> : <LoginPage />} />
       <Route element={<ProtectedRoutes />}>
-        <Route path="/"              element={<DashboardPage />} />
-        <Route path="/performance"   element={<PerformancePage />} />
-        <Route path="/assets/:id"    element={<AssetDetailPage />} />
-        <Route path="/contributions" element={<ContributionsPage />} />
-        <Route path="/profile"       element={<ProfilePage />} />
+        <Route path="/"               element={<DashboardPage />} />
+        <Route path="/performance"    element={<PerformancePage />} />
+        <Route path="/assets/:id"     element={<AssetDetailPage />} />
+        <Route path="/contributions"  element={<ContributionsPage />} />
+        <Route path="/profile"        element={<ProfilePage />} />
+        <Route path="/rebalance"      element={<RebalancePage />} />
+        <Route path="/by-institution" element={<InstitutionPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

@@ -1,4 +1,4 @@
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts'
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
 import type { PortfolioClass } from '../lib/types'
 
 interface Props {
@@ -34,7 +34,7 @@ export default function AllocationChart({ data }: Props) {
                 ))}
               </Pie>
               <Tooltip
-                formatter={(value: number) => [fmtBRL(value), 'Valor']}
+                formatter={(value) => [fmtBRL(Number(value)), 'Valor']}
                 contentStyle={{ borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 12 }}
               />
             </PieChart>
