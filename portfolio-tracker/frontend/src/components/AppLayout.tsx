@@ -1,8 +1,13 @@
+import { useState, useEffect } from 'react'
 import { NavLink, Outlet, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useCurrency, type Currency } from '../contexts/CurrencyContext'
 import { useI18n } from '../contexts/I18nContext'
+import { apiFetch } from '../lib/api'
 import LoginFooter from './LoginFooter'
+import OnboardingOverlay from './OnboardingOverlay'
+
+const ONBOARDING_KEY = 'onboarding_v1_done'
 
 const CURRENCIES: Currency[] = ['BRL', 'USD', 'EUR']
 
@@ -10,6 +15,14 @@ export default function AppLayout() {
   const { user, signOut } = useAuth()
   const { currency, setCurrency } = useCurrency()
   const { t } = useI18n()
+  const [showOnboarding, setShowOnboarding] = useState(false)
+
+  useEffect(() => {
+    if (localStorage.getItem(ONBOARDING_KEY)) return
+    apiFetch<{ id: number }[]>('/assets')
+      .then(assets => { if (assets.length === 0) setShowOnboarding(true) })
+      .catch(() => {})
+  }, [])
 
   const meta = user?.user_metadata ?? {}
   const headerLabel = [meta.first_name, meta.last_name].filter(Boolean).join(' ') || user?.email || ''
@@ -121,6 +134,10 @@ export default function AppLayout() {
       <div className="max-w-6xl mx-auto w-full px-4 pb-2">
         <LoginFooter />
       </div>
+
+      {showOnboarding && (
+        <OnboardingOverlay onDone={() => setShowOnboarding(false)} />
+      )}
     </div>
   )
 }

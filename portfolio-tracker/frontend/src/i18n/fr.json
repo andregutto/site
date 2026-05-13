@@ -179,5 +179,31 @@
     "Canadá":  "Canada",
     "Austrália":"Australie",
     "Outro":   "Autre"
+  },
+  "onboarding": {
+    "skip": "Passer",
+    "back": "Retour",
+    "continue": "Continuer",
+    "welcomeTitle": "Bienvenue sur Portfolio Tracker",
+    "welcomeBody": "Suivez tous vos investissements en un seul endroit : actions, ETF, crypto, obligations et immobilier. Configurons votre compte en 3 étapes.",
+    "start": "Commencer la configuration",
+    "classesTitle": "Vos classes d'actifs",
+    "classesBody": "Nous avons créé les classes les plus courantes pour vous. Vous pouvez modifier les couleurs, les noms et en ajouter dans l'onglet Classes.",
+    "classesNote": "Les classes vous aident à organiser et visualiser l'allocation de votre portefeuille.",
+    "assetsTitle": "Ajoutez votre premier actif",
+    "assetsBody": "Quel type d'actif souhaitez-vous enregistrer en premier ? Cliquez pour ouvrir le formulaire.",
+    "assetB3": "Action ou REIT brésilien",
+    "assetB3Desc": "Ex : PETR4, MXRF11, BOVA11",
+    "assetIntl": "Actif international",
+    "assetIntlDesc": "Ex : AAPL, VOO, MSFT",
+    "assetCrypto": "Crypto",
+    "assetCryptoDesc": "Ex : Bitcoin, Ethereum, Solana",
+    "assetFi": "Revenu fixe",
+    "assetFiDesc": "CDB, LCI, Bons du Trésor",
+    "assetImovel": "Immobilier physique",
+    "assetImovelDesc": "Enregistrez le bien et les loyers comme revenus mensuels",
+    "doneTitle": "Tout est prêt !",
+    "doneBody": "Votre portefeuille est configuré. Ajoutez des actifs et des apports depuis l'onglet Apports à tout moment.",
+    "gotoDashboard": "Aller au tableau de bord"
   }
 }

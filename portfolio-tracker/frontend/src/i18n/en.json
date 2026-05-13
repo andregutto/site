@@ -179,5 +179,31 @@
     "Canadá":  "Canada",
     "Austrália":"Australia",
     "Outro":   "Other"
+  },
+  "onboarding": {
+    "skip": "Skip",
+    "back": "Back",
+    "continue": "Continue",
+    "welcomeTitle": "Welcome to Portfolio Tracker",
+    "welcomeBody": "Track all your investments in one place: stocks, REITs, crypto, fixed income and real estate. Let's set up your account in 3 steps.",
+    "start": "Start setup",
+    "classesTitle": "Your asset classes",
+    "classesBody": "We created the most common classes for you. You can edit colors, names and add new ones in the Classes tab at any time.",
+    "classesNote": "Classes help you organize and visualize your portfolio allocation.",
+    "assetsTitle": "Add your first asset",
+    "assetsBody": "What type of asset do you want to register first? Click to open the form.",
+    "assetB3": "Brazilian stock or REIT",
+    "assetB3Desc": "e.g. PETR4, MXRF11, BOVA11",
+    "assetIntl": "International asset",
+    "assetIntlDesc": "e.g. AAPL, VOO, MSFT",
+    "assetCrypto": "Crypto",
+    "assetCryptoDesc": "e.g. Bitcoin, Ethereum, Solana",
+    "assetFi": "Fixed income",
+    "assetFiDesc": "CDB, LCI, Treasury bonds",
+    "assetImovel": "Physical real estate",
+    "assetImovelDesc": "Register the property and log rental income as monthly earnings",
+    "doneTitle": "All set!",
+    "doneBody": "Your portfolio is configured. Add assets and contributions from the Contributions tab at any time.",
+    "gotoDashboard": "Go to Dashboard"
   }
 }
