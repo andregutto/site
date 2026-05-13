@@ -45,6 +45,26 @@ function fmtBrl(v: number) {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 2 }).format(v)
 }
 
+async function downloadBackupCsv() {
+  const rows = await apiFetch<Record<string, unknown>[]>('/import/b3/backup')
+  if (!rows.length) { alert('Nenhum aporte encontrado para backup.'); return }
+  const headers = Object.keys(rows[0])
+  const csv = [
+    headers.join(','),
+    ...rows.map(r => headers.map(h => {
+      const v = String(r[h] ?? '')
+      return v.includes(',') || v.includes('"') ? `"${v.replace(/"/g, '""')}"` : v
+    }).join(','))
+  ].join('\n')
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+  const url  = URL.createObjectURL(blob)
+  const a    = document.createElement('a')
+  a.href = url
+  a.download = `backup_aportes_${new Date().toISOString().slice(0, 10)}.csv`
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
 function readBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
@@ -355,6 +375,21 @@ export default function ImportB3Page() {
         {error && (
           <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-red-700 text-sm">{error}</div>
         )}
+
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl px-5 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div>
+            <p className="text-sm font-semibold text-amber-900">Faça um backup antes de confirmar</p>
+            <p className="text-xs text-amber-700 mt-0.5">
+              A importação é irreversível. Baixe o CSV com todos os seus aportes atuais antes de prosseguir.
+            </p>
+          </div>
+          <button
+            onClick={downloadBackupCsv}
+            className="px-4 py-2 border border-amber-400 text-amber-800 bg-white rounded-xl text-sm font-semibold hover:bg-amber-50 transition-colors shrink-0"
+          >
+            ⬇ Baixar backup CSV
+          </button>
+        </div>
 
         <div className="flex items-center justify-between gap-4 pb-4">
           <p className="text-xs text-gray-400">

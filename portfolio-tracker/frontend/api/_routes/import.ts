@@ -119,6 +119,41 @@ async function getAssetStatuses(userId: string, operations: MergedOp[]): Promise
   })
 }
 
+// ─── GET /api/import/b3/backup ───────────────────────────────────────────────
+// Download all contributions as CSV for backup before import
+
+router.get('/b3/backup', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+
+  const { data: assets } = await supabaseAdmin
+    .from('assets').select('id, code').eq('user_id', userId)
+
+  const assetIds = (assets ?? []).map(a => a.id as number)
+  const assetCode = new Map((assets ?? []).map(a => [a.id as number, a.code as string]))
+
+  const { data: contribs, error } = await supabaseAdmin
+    .from('contributions')
+    .select('asset_id, date, type, quantity, price_orig, currency, fx_rate_brl, value_brl, description')
+    .in('asset_id', assetIds)
+    .order('date')
+
+  if (error) { res.status(500).json({ error: error.message }); return }
+
+  const rows = (contribs ?? []).map(c => ({
+    ticker:      assetCode.get(c.asset_id as number) ?? '',
+    date:        c.date,
+    type:        c.type,
+    quantity:    c.quantity,
+    price_orig:  c.price_orig,
+    currency:    c.currency,
+    fx_rate_brl: c.fx_rate_brl,
+    value_brl:   c.value_brl,
+    description: c.description ?? '',
+  }))
+
+  res.json(rows)
+})
+
 // ─── POST /api/import/b3/parse ────────────────────────────────────────────────
 // Parse xlsx, return preview without touching the DB
 
