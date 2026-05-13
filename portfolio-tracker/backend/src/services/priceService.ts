@@ -89,7 +89,7 @@ export async function getMonthlyHistory(asset: Asset, months = 24): Promise<Pric
   if (asset.ticker_yahoo) {
     try {
       const pts = await yahoo.getMonthlyHistory(asset.ticker_yahoo, months)
-      return pts.map((p) => ({ ...p, currency: asset.currency || 'USD' }))
+      if (pts.length > 0) return pts.map((p) => ({ ...p, currency: asset.currency || 'USD' }))
     } catch {
       // fallthrough
     }

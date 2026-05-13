@@ -14,6 +14,8 @@ import InstitutionsPage from './pages/InstitutionsPage'
 import ClassesPage from './pages/ClassesPage'
 import ReportsPage from './pages/ReportsPage'
 import AppLayout from './components/AppLayout'
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage'
+import TermsOfUsePage from './pages/TermsOfUsePage'
 
 function ProtectedRoutes() {
   const { user, loading } = useAuth()
@@ -42,7 +44,9 @@ function AppRoutes() {
 
   return (
     <Routes>
-      <Route path="/login" element={user ? <Navigate to="/" replace /> : <LoginPage />} />
+      <Route path="/login"   element={user ? <Navigate to="/" replace /> : <LoginPage />} />
+      <Route path="/privacy" element={<PrivacyPolicyPage />} />
+      <Route path="/terms"   element={<TermsOfUsePage />} />
       <Route element={<ProtectedRoutes />}>
         <Route path="/"               element={<DashboardPage />} />
         <Route path="/performance"    element={<PerformancePage />} />

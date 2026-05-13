@@ -1,19 +1,15 @@
 import { NavLink, Outlet, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useCurrency, type Currency } from '../contexts/CurrencyContext'
-import { useI18n, type Locale } from '../contexts/I18nContext'
+import { useI18n } from '../contexts/I18nContext'
+import LoginFooter from './LoginFooter'
 
 const CURRENCIES: Currency[] = ['BRL', 'USD', 'EUR']
-const LOCALES: { value: Locale; flag: string }[] = [
-  { value: 'pt', flag: '🇧🇷' },
-  { value: 'en', flag: '🇺🇸' },
-  { value: 'fr', flag: '🇫🇷' },
-]
 
 export default function AppLayout() {
   const { user, signOut } = useAuth()
   const { currency, setCurrency } = useCurrency()
-  const { t, locale, setLocale } = useI18n()
+  const { t } = useI18n()
 
   const meta = user?.user_metadata ?? {}
   const headerLabel = [meta.first_name, meta.last_name].filter(Boolean).join(' ') || user?.email || ''
@@ -64,22 +60,6 @@ export default function AppLayout() {
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
-            {/* Language selector */}
-            <div className="flex items-center bg-gray-100 rounded-lg p-0.5 gap-0">
-              {LOCALES.map(l => (
-                <button
-                  key={l.value}
-                  onClick={() => setLocale(l.value)}
-                  title={l.value.toUpperCase()}
-                  className={`px-1.5 py-1 text-sm rounded-md transition-colors ${
-                    locale === l.value ? 'bg-white shadow-sm' : 'opacity-40 hover:opacity-70'
-                  }`}
-                >
-                  {l.flag}
-                </button>
-              ))}
-            </div>
-
             {/* Currency selector */}
             <div className="flex items-center bg-gray-100 rounded-lg p-0.5 gap-0.5">
               {CURRENCIES.map(c => (
@@ -137,6 +117,10 @@ export default function AppLayout() {
       <main className="flex-1 max-w-6xl mx-auto w-full px-4 py-6">
         <Outlet />
       </main>
+
+      <div className="max-w-6xl mx-auto w-full px-4 pb-2">
+        <LoginFooter />
+      </div>
     </div>
   )
 }

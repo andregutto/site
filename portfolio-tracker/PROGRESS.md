@@ -448,6 +448,62 @@ Tres bugs corrigidos no calculo de retorno:
 
 ---
 
+## Sessão 9 — Fixes críticos + Formulário de novo ativo (12/05/2026) ✅ CONCLUÍDA
+
+### Bugs corrigidos
+
+#### Build failure bloqueando todos os deploys desde f4d2726
+- Causa: `FxRates` sem index signature causava `TS2352` no `ContributionsPage`
+- ✅ `CurrencyContext.tsx` — adicionado `[key: string]: number` à interface `FxRates`
+- Impacto: todos os commits de correção (Simple Dietz, carry-backward, Item 2) nunca chegaram à produção; desabloqueados em bloco com este fix
+
+#### Performance — total não batia com Dashboard (~R$ 307k de diferença)
+Causa raiz: `getPortfolioValueAtMonth` tinha três divergências vs `/api/portfolio/value`:
+1. `getFx()` usava fallback 5.7 para qualquer moeda estrangeira (EUR correto: ~6.4)
+2. `price_history` com filtro `.lte('ref_date', dateStr)` zerava ativos sem histórico anterior à data
+3. BTC, ETH, SOL, TARPON têm zero entradas em `price_history` → valor 0 em todos os meses
+
+Correções aplicadas em `api/_routes/performance.ts`:
+- ✅ Substituído `getFx()` local por `getFxRate()` de `_lib/fx.js` (AwesomeAPI + fallback EUR=6.40)
+- ✅ `price_history` agora busca sem filtro de data + carry-backward: mais recente ≤ dateStr, senão o mais antigo disponível
+- ✅ Para o mês atual: se não há `price_history`, cai para `getCurrentPrice()` ao vivo (mesma fonte do Dashboard)
+- ✅ Select de assets expandido para incluir `ticker_brapi`, `ticker_yahoo`, `coingecko_id`
+
+#### Bug Instituições (Item 11) — resolvido pelo usuário via SQL/código
+- Exchange null não disparava PATCH corretamente
+- ✅ Corrigido fora desta sessão Claude
+
+#### Deploy Railway → correção imports .js — resolvido pelo usuário
+- ✅ Corrigido fora desta sessão Claude
+
+### Features entregues
+
+#### GET /api/assets/lookup — busca de nome automática
+- ✅ Endpoint novo: `GET /api/assets/lookup?code=PETR4&market=b3|intl|cripto`
+- B3: brapi.dev (`longName` / `shortName`)
+- Internacional: Yahoo Finance search API
+- Cripto: CoinGecko `/search` (retorna `name` + `coingecko_id`)
+
+#### Formulário de novo ativo melhorado (ContributionsPage)
+- ✅ Campo "Nome completo" readonly para tickers — preenchido 600ms após digitar o código (debounce)
+- ✅ Tipo de ativo expandido: Ativo B3 / Ativo Internacional / Cripto / Renda Fixa / Valor manual
+- ✅ Cada tipo pré-configura moeda, `ticker_brapi` / `ticker_yahoo` / `coingecko_id`
+- ✅ Botão "Venda" desabilitado enquanto formulário de novo ativo está aberto
+- ✅ Tipo forçado para "Compra" ao abrir o formulário de novo ativo
+
+#### Endpoint de diagnóstico
+- ✅ `GET /api/performance/debug-manual?ym=YYYY-MM` — retorna manual_values e resolução carry-backward para qualquer mês (requer auth)
+
+### Itens concluídos nesta sessão
+| Item | Status |
+|---|---|
+| Item 11: Bug Instituições | ✅ (usuário) |
+| Item 12: Performance total ≠ Dashboard | ✅ |
+| Item 1: Filtros de período | ✅ (Sessão 8) |
+| Item 2: Formulário de aportes | ✅ (Sessão 8) |
+
+---
+
 ## Referências rápidas
 
 | Item | Valor |

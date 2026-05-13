@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { apiFetch } from '../lib/api'
 import { useAuth } from '../contexts/AuthContext'
 import { useCurrency, type Currency } from '../contexts/CurrencyContext'
+import LanguageSelector from '../components/LanguageSelector'
 
 interface ProfileData {
   email:                string
@@ -282,6 +283,11 @@ export default function ProfilePage() {
                   </button>
                 ))}
               </div>
+            </div>
+
+            <div>
+              <label className="block text-xs text-gray-500 mb-2">Idioma / Language</label>
+              <LanguageSelector />
             </div>
 
             {error    && <p className="text-xs text-red-600">{error}</p>}

@@ -1,11 +1,33 @@
 import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
+import { useI18n } from '../contexts/I18nContext'
+import LoginFooter from '../components/LoginFooter'
+import LanguageSelector from '../components/LanguageSelector'
 
 type Mode = 'login' | 'register' | 'forgot'
+type Currency = 'BRL' | 'USD' | 'EUR'
+
+const COUNTRY_OPTIONS = [
+  { value: '',            label: '—' },
+  { value: 'Brasil',      label: 'Brasil' },
+  { value: 'França',      label: 'France' },
+  { value: 'Portugal',    label: 'Portugal' },
+  { value: 'Alemanha',    label: 'Deutschland' },
+  { value: 'Espanha',     label: 'España' },
+  { value: 'Reino Unido', label: 'United Kingdom' },
+  { value: 'Suíça',       label: 'Suisse / Schweiz' },
+  { value: 'EUA',         label: 'United States' },
+  { value: 'Canadá',      label: 'Canada' },
+  { value: 'Austrália',   label: 'Australia' },
+  { value: 'Outro',       label: 'Outro / Other' },
+]
 
 export default function LoginPage() {
   const { signIn, signUp } = useAuth()
+  const { t } = useI18n()
+  const l = t.login
+
   const [mode, setMode]         = useState<Mode>('login')
   const [email, setEmail]       = useState('')
   const [password, setPassword] = useState('')
@@ -13,6 +35,24 @@ export default function LoginPage() {
   const [error, setError]       = useState('')
   const [info, setInfo]         = useState('')
   const [loading, setLoading]   = useState(false)
+
+  // Register-only fields
+  const [firstName,  setFirstName]  = useState('')
+  const [lastName,   setLastName]   = useState('')
+  const [country,    setCountry]    = useState('')
+  const [taxCountry, setTaxCountry] = useState('')
+  const [birthdate,  setBirthdate]  = useState('')
+  const [currency,   setCurrency]   = useState<Currency>('BRL')
+
+  function resetExtras() {
+    setFirstName(''); setLastName(''); setCountry('')
+    setTaxCountry(''); setBirthdate(''); setCurrency('BRL')
+  }
+
+  function switchMode(m: Mode) {
+    setMode(m); setError(''); setInfo('')
+    if (m !== 'register') resetExtras()
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -22,14 +62,31 @@ export default function LoginPage() {
       if (mode === 'login') {
         await signIn(email, password)
       } else if (mode === 'register') {
-        await signUp(email, password)
-        setInfo('Verifique seu email para confirmar o cadastro.')
+        const metadata: Record<string, unknown> = {
+          first_name:       firstName || undefined,
+          last_name:        lastName  || undefined,
+          country:          country   || undefined,
+          tax_country:      taxCountry || undefined,
+          birthdate:        birthdate  || undefined,
+          default_currency: currency,
+        }
+        Object.keys(metadata).forEach(k => metadata[k] === undefined && delete metadata[k])
+        await signUp(email, password, Object.keys(metadata).length ? metadata : undefined)
+        setInfo(l.confirmEmail)
+        // store currency preference immediately
+        localStorage.setItem('preferredCurrency', currency)
+        // subscribe to newsletter (fire and forget)
+        fetch('/api/newsletter/subscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, first_name: firstName || undefined, last_name: lastName || undefined, country: country || undefined }),
+        }).catch(() => {})
       } else {
         const { error: err } = await supabase.auth.resetPasswordForEmail(email, {
           redirectTo: `${window.location.origin}/reset-password`,
         })
         if (err) throw err
-        setInfo('Email de redefinicao enviado. Verifique sua caixa de entrada.')
+        setInfo(l.emailSent)
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro desconhecido')
@@ -39,39 +96,58 @@ export default function LoginPage() {
   }
 
   const submitLabel = loading
-    ? 'Aguarde...'
-    : mode === 'login' ? 'Entrar'
-    : mode === 'register' ? 'Criar conta'
-    : 'Enviar email'
+    ? l.loading
+    : mode === 'login' ? l.submit
+    : mode === 'register' ? l.submitRegister
+    : l.submitForgot
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6">
-      <div className="w-full max-w-sm space-y-6">
+      <div className="w-full max-w-sm space-y-5">
 
-        {/* Branding */}
-        <div className="text-center space-y-2">
-          <div className="flex justify-center mb-2">
-            <img src="/favicon.svg" alt="Logo" className="w-12 h-12" />
-          </div>
-          <h1 className="text-2xl font-bold text-[#001A70]">Portfolio Tracker</h1>
-          <p className="text-gray-500 text-sm">Acompanhe seus investimentos globais</p>
+        {/* Language selector */}
+        <div className="flex justify-center">
+          <LanguageSelector />
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 space-y-5">
+        {/* Branding */}
+        <div className="text-center space-y-1">
+          <a
+            href="https://andregutto.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:opacity-70 transition-opacity tracking-[-0.2px] block"
+            style={{ fontFamily: "'Libre Baskerville', serif", fontSize: 16, color: '#1B2F4E', textDecoration: 'none' }}
+          >
+            André Gutto
+          </a>
+          <div className="flex justify-center pt-1 pb-1">
+            <img src="/favicon.svg" alt="Logo" className="w-10 h-10" />
+          </div>
+          <h1
+            className="text-[28px] font-bold text-[#001A70] leading-tight"
+            style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+          >
+            Portfolio Tracker
+          </h1>
+          <p className="text-gray-500 text-sm">{l.subtitle}</p>
+        </div>
 
-          {/* Mode tabs (login/register only) */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-7 space-y-5">
+
+          {/* Mode tabs */}
           {mode !== 'forgot' && (
             <div className="flex bg-gray-100 rounded-lg p-1 gap-1">
               {(['login', 'register'] as const).map(m => (
                 <button
                   key={m}
                   type="button"
-                  onClick={() => { setMode(m); setError(''); setInfo('') }}
+                  onClick={() => switchMode(m)}
                   className={`flex-1 py-2 rounded-md text-sm font-medium transition-all ${
                     mode === m ? 'bg-white shadow-sm text-[#001A70]' : 'text-gray-500 hover:text-gray-700'
                   }`}
                 >
-                  {m === 'login' ? 'Entrar' : 'Criar conta'}
+                  {m === 'login' ? l.loginTab : l.registerTab}
                 </button>
               ))}
             </div>
@@ -81,20 +157,46 @@ export default function LoginPage() {
             <div>
               <button
                 type="button"
-                onClick={() => { setMode('login'); setError(''); setInfo('') }}
+                onClick={() => switchMode('login')}
                 className="text-xs text-[#001A70] hover:underline flex items-center gap-1"
               >
-                ← Voltar ao login
+                {l.backToLogin}
               </button>
-              <p className="text-sm text-gray-500 mt-2">
-                Digite seu email e enviaremos um link para redefinir sua senha.
-              </p>
+              <p className="text-sm text-gray-500 mt-2">{l.forgotDesc}</p>
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
+
+            {/* Register-only: nome + sobrenome */}
+            {mode === 'register' && (
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">{l.firstName}</label>
+                  <input
+                    type="text"
+                    value={firstName}
+                    onChange={e => setFirstName(e.target.value)}
+                    placeholder="André"
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20 focus:border-[#001A70]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">{l.lastName}</label>
+                  <input
+                    type="text"
+                    value={lastName}
+                    onChange={e => setLastName(e.target.value)}
+                    placeholder="Gutto"
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20 focus:border-[#001A70]"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Email */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{l.email}</label>
               <input
                 type="email"
                 value={email}
@@ -106,9 +208,10 @@ export default function LoginPage() {
               />
             </div>
 
+            {/* Password */}
             {mode !== 'forgot' && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Senha</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{l.password}</label>
                 <div className="relative">
                   <input
                     type={showPwd ? 'text' : 'password'}
@@ -126,19 +229,82 @@ export default function LoginPage() {
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xs"
                     tabIndex={-1}
                   >
-                    {showPwd ? 'Ocultar' : 'Mostrar'}
+                    {showPwd ? l.hidePwd : l.showPwd}
                   </button>
                 </div>
                 {mode === 'login' && (
                   <button
                     type="button"
-                    onClick={() => { setMode('forgot'); setError(''); setInfo('') }}
+                    onClick={() => switchMode('forgot')}
                     className="text-xs text-gray-400 hover:text-[#001A70] mt-1 block"
                   >
-                    Esqueceu a senha?
+                    {l.forgotPwd}
                   </button>
                 )}
               </div>
+            )}
+
+            {/* Register-only: país + residência fiscal */}
+            {mode === 'register' && (
+              <>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">{t.profile.country}</label>
+                    <select
+                      value={country}
+                      onChange={e => setCountry(e.target.value)}
+                      className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#001A70]/20"
+                    >
+                      {COUNTRY_OPTIONS.map(o => (
+                        <option key={o.value} value={o.value}>{o.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">{l.taxCountry}</label>
+                    <select
+                      value={taxCountry}
+                      onChange={e => setTaxCountry(e.target.value)}
+                      className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#001A70]/20"
+                    >
+                      {COUNTRY_OPTIONS.map(o => (
+                        <option key={o.value} value={o.value}>{o.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">{l.birthdate}</label>
+                    <input
+                      type="date"
+                      value={birthdate}
+                      onChange={e => setBirthdate(e.target.value)}
+                      className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">{l.defaultCurrency}</label>
+                    <div className="flex gap-1.5">
+                      {(['BRL', 'USD', 'EUR'] as Currency[]).map(c => (
+                        <button
+                          key={c}
+                          type="button"
+                          onClick={() => setCurrency(c)}
+                          className={`flex-1 py-2 text-xs font-semibold rounded-lg border transition-colors ${
+                            currency === c
+                              ? 'bg-[#001A70] text-white border-[#001A70]'
+                              : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'
+                          }`}
+                        >
+                          {c}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </>
             )}
 
             {error && (
@@ -164,10 +330,7 @@ export default function LoginPage() {
           </form>
         </div>
 
-        <p className="text-center text-xs text-gray-400">
-          <a href="https://andregutto.com" target="_blank" rel="noopener noreferrer" className="hover:text-[#001A70] transition-colors">andregutto.com</a>
-          {' · '}portfolio.andregutto.com · v1.0
-        </p>
+        <LoginFooter />
       </div>
     </div>
   )
