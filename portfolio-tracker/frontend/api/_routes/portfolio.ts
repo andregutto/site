@@ -213,7 +213,7 @@ router.post('/sync-history', requireAuth, async (req, res: Response) => {
 
   const results = await Promise.allSettled(
     assets.map(async (a): Promise<Detail> => {
-      const history = await getMonthlyHistory(a as Asset, 24)
+      const history = await getMonthlyHistory(a as Asset, 72)
       if (history.length > 0) {
         const { error: upsertErr } = await supabaseAdmin.from('price_history').upsert(
           history.map((p) => ({

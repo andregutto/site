@@ -35,6 +35,12 @@ interface ExecuteResult {
   skipped_tickers: string[]
 }
 
+interface SyncResult {
+  synced: number
+  errors: number
+  total: number
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function fmtDate(iso: string) {
@@ -96,12 +102,15 @@ function StatCard({ label, value, sub, color = 'gray' }: { label: string; value:
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 type Step = 'upload' | 'preview' | 'executing' | 'done'
+type ExecPhase = 'importing' | 'syncing'
 
 export default function ImportB3Page() {
   const navigate = useNavigate()
   const [step,          setStep]          = useState<Step>('upload')
+  const [execPhase,     setExecPhase]     = useState<ExecPhase>('importing')
   const [parseResult,   setParseResult]   = useState<ParseResult | null>(null)
   const [execResult,    setExecResult]    = useState<ExecuteResult | null>(null)
+  const [syncResult,    setSyncResult]    = useState<SyncResult | null>(null)
   const [loading,       setLoading]       = useState(false)
   const [error,         setError]         = useState<string | null>(null)
   const [dragOver,      setDragOver]      = useState(false)
@@ -142,6 +151,7 @@ export default function ImportB3Page() {
   async function handleExecute() {
     if (!parseResult) return
     setStep('executing')
+    setExecPhase('importing')
     setError(null)
     try {
       const result = await apiFetch<ExecuteResult>('/import/b3/execute', {
@@ -149,6 +159,16 @@ export default function ImportB3Page() {
         body: JSON.stringify({ operations: parseResult.operations }),
       })
       setExecResult(result)
+
+      // Sync price history so Performance page shows correct data
+      setExecPhase('syncing')
+      try {
+        const sync = await apiFetch<SyncResult>('/portfolio/sync-history', { method: 'POST' })
+        setSyncResult(sync)
+      } catch {
+        // non-fatal — user can re-sync manually
+      }
+
       setStep('done')
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Erro ao executar importação')
@@ -412,9 +432,21 @@ export default function ImportB3Page() {
   if (step === 'executing') {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-center space-y-3">
-          <div className="text-3xl animate-bounce">📥</div>
-          <p className="text-gray-500 text-sm animate-pulse">Importando operações...</p>
+        <div className="text-center space-y-4 max-w-xs">
+          <div className="text-3xl animate-bounce">{execPhase === 'importing' ? '📥' : '📊'}</div>
+          <p className="text-gray-700 text-sm font-medium animate-pulse">
+            {execPhase === 'importing' ? 'Importando operações...' : 'Sincronizando histórico de preços...'}
+          </p>
+          <p className="text-xs text-gray-400">
+            {execPhase === 'syncing' && 'Isso pode levar até 1 minuto dependendo da quantidade de ativos.'}
+          </p>
+          <div className="flex items-center gap-2 justify-center">
+            <div className={`w-2 h-2 rounded-full ${execPhase === 'importing' ? 'bg-[#001A70] animate-pulse' : 'bg-green-500'}`} />
+            <span className={`text-xs ${execPhase === 'importing' ? 'text-[#001A70] font-medium' : 'text-gray-400'}`}>Importação</span>
+            <div className="w-6 h-px bg-gray-200" />
+            <div className={`w-2 h-2 rounded-full ${execPhase === 'syncing' ? 'bg-[#001A70] animate-pulse' : 'bg-gray-200'}`} />
+            <span className={`text-xs ${execPhase === 'syncing' ? 'text-[#001A70] font-medium' : 'text-gray-400'}`}>Histórico</span>
+          </div>
         </div>
       </div>
     )
@@ -435,6 +467,23 @@ export default function ImportB3Page() {
           <StatCard label="Aportes limpos"    value={execResult.cleaned_contributions}  color="amber" />
           <StatCard label="Operações import." value={execResult.imported_contributions} color="green" />
         </div>
+
+        {syncResult != null && (
+          <div className={`border rounded-2xl px-5 py-4 flex items-center justify-between gap-3 ${
+            syncResult.errors > 0 ? 'bg-amber-50 border-amber-200' : 'bg-green-50 border-green-100'
+          }`}>
+            <div>
+              <p className={`text-sm font-semibold ${syncResult.errors > 0 ? 'text-amber-900' : 'text-green-900'}`}>
+                Histórico de preços sincronizado
+              </p>
+              <p className={`text-xs mt-0.5 ${syncResult.errors > 0 ? 'text-amber-700' : 'text-green-700'}`}>
+                {syncResult.synced} de {syncResult.total} ativos com histórico
+                {syncResult.errors > 0 ? ` · ${syncResult.errors} com erro` : ''}
+              </p>
+            </div>
+            <span className="text-2xl">{syncResult.errors > 0 ? '⚠️' : '📊'}</span>
+          </div>
+        )}
 
         {execResult.skipped_tickers.length > 0 && (
           <div className="bg-red-50 border border-red-100 rounded-2xl p-4">

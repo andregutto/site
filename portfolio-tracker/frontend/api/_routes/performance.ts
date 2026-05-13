@@ -47,7 +47,7 @@ async function autoSyncHistory(
 
   await Promise.allSettled(toSync.map(async a => {
     try {
-      const pts = await getMonthlyHistory(a as Asset, 26)
+      const pts = await getMonthlyHistory(a as Asset, 72)
       if (!pts.length) return
       await supabaseAdmin.from('price_history').upsert(
         pts.map(p => ({
