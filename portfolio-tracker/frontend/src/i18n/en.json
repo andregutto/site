@@ -95,7 +95,10 @@
     "lastName":        "Last name",
     "taxCountry":      "Tax residence",
     "birthdate":       "Date of birth",
-    "defaultCurrency": "Default currency"
+    "defaultCurrency": "Default currency",
+    "errEmailNotConfirmed": "Email not confirmed. Check your inbox and click the activation link.",
+    "errInvalidCredentials": "Incorrect email or password.",
+    "errTooManyRequests": "Too many attempts. Please wait a few minutes and try again."
   },
   "dashboard": {
     "assetsTitle":       "Assets",

@@ -250,6 +250,16 @@ export default function AssetTable({ assets, onAssetClick }: Props) {
                         <td className="px-4 py-3 pl-10">
                           <div className="font-medium text-gray-900">{asset.code}</div>
                           <div className="text-xs text-gray-400 truncate max-w-[200px]">{asset.name}</div>
+                          {!asset.needs_manual && asset.source === 'manual' && (() => {
+                            if (!asset.last_manual_date) return null
+                            const days = Math.floor((Date.now() - new Date(asset.last_manual_date).getTime()) / 86_400_000)
+                            if (days < 30) return null
+                            return (
+                              <span className="text-[10px] text-amber-500 font-medium" title={`Último valor registrado há ${days} dias`}>
+                                ⚠ desatualizado ({days}d)
+                              </span>
+                            )
+                          })()}
                         </td>
                         <td className="px-4 py-3 text-right text-gray-600">
                           {asset.holdings != null ? fmtNumber(asset.holdings, 6) : '—'}

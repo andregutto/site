@@ -52,7 +52,7 @@ router.get('/value', requireAuth, async (req, res: Response) => {
     rfTranchesMap[c.asset_id].push({ principal: c.value_brl, start_date: c.date })
   }
 
-  const manualMap: Record<number, { value: number; currency: string }> = {}
+  const manualMap: Record<number, { value: number; currency: string; last_date: string }> = {}
   if (assetIds.length > 0) {
     const { data: manualValues } = await supabaseAdmin
       .from('manual_values')
@@ -63,7 +63,7 @@ router.get('/value', requireAuth, async (req, res: Response) => {
     const seen = new Set<number>()
     for (const mv of (manualValues ?? [])) {
       if (!seen.has(mv.asset_id)) {
-        manualMap[mv.asset_id] = { value: mv.value, currency: mv.currency }
+        manualMap[mv.asset_id] = { value: mv.value, currency: mv.currency, last_date: mv.ref_date }
         seen.add(mv.asset_id)
       }
     }
@@ -76,6 +76,7 @@ router.get('/value', requireAuth, async (req, res: Response) => {
     holdings: number | null; price: number | null; source: string
     needs_manual: boolean
     invested_brl: number | null
+    last_manual_date: string | null
     fi_type?: string | null
     fi_start_date?: string | null
     fi_rate?: number | null
@@ -106,7 +107,7 @@ router.get('/value', requireAuth, async (req, res: Response) => {
         if (a.asset_type === 'manual') {
           const mv = manualMap[a.id]
           if (!mv) {
-            byAsset.push({ ...base, value_brl: 0, value_orig: 0, currency: a.currency || 'EUR', holdings: null, price: null, source: 'manual', needs_manual: true, invested_brl: investedMap[a.id] ?? null })
+            byAsset.push({ ...base, value_brl: 0, value_orig: 0, currency: a.currency || 'EUR', holdings: null, price: null, source: 'manual', needs_manual: true, invested_brl: investedMap[a.id] ?? null, last_manual_date: null })
             return
           }
           value_orig = mv.value
@@ -119,7 +120,7 @@ router.get('/value', requireAuth, async (req, res: Response) => {
           const hasTranches = tranches && tranches.length > 0
           if (!a.fi_type || (a.fi_type !== 'ipca_plus' && a.fi_rate == null) ||
               (!hasTranches && (!a.fi_principal || !a.fi_start_date))) {
-            byAsset.push({ ...base, value_brl: 0, value_orig: 0, currency: a.currency || 'BRL', holdings: null, price: null, source: 'fixed_income', needs_manual: true, invested_brl: investedMap[a.id] ?? null, fi_type: a.fi_type, fi_start_date: a.fi_start_date, fi_rate: a.fi_rate, fi_spread: a.fi_spread, fi_maturity: a.fi_maturity ?? null })
+            byAsset.push({ ...base, value_brl: 0, value_orig: 0, currency: a.currency || 'BRL', holdings: null, price: null, source: 'fixed_income', needs_manual: true, invested_brl: investedMap[a.id] ?? null, last_manual_date: null, fi_type: a.fi_type, fi_start_date: a.fi_start_date, fi_rate: a.fi_rate, fi_spread: a.fi_spread, fi_maturity: a.fi_maturity ?? null })
             return
           }
           const result = await getCurrentPrice(a as Asset, hasTranches ? tranches : undefined)
@@ -147,7 +148,7 @@ router.get('/value', requireAuth, async (req, res: Response) => {
               source     = 'manual'
               value_brl  = currency === 'BRL' ? value_orig : value_orig * await getFxRate(currency)
             } else {
-              byAsset.push({ ...base, value_brl: 0, value_orig: 0, currency: a.currency || 'BRL', holdings, price: null, source: 'error', needs_manual: true, invested_brl: investedMap[a.id] ?? null })
+              byAsset.push({ ...base, value_brl: 0, value_orig: 0, currency: a.currency || 'BRL', holdings, price: null, source: 'error', needs_manual: true, invested_brl: investedMap[a.id] ?? null, last_manual_date: null })
               return
             }
           }
@@ -160,6 +161,7 @@ router.get('/value', requireAuth, async (req, res: Response) => {
           currency, holdings, price, source,
           needs_manual: false,
           invested_brl: investedMap[a.id] != null ? Math.round(investedMap[a.id] * 100) / 100 : null,
+          last_manual_date: source === 'manual' ? (manualMap[a.id]?.last_date ?? null) : null,
           exchange: a.exchange ?? null,
         })
       } catch (err) {

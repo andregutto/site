@@ -95,7 +95,10 @@
     "lastName":        "Nom",
     "taxCountry":      "Résidence fiscale",
     "birthdate":       "Date de naissance",
-    "defaultCurrency": "Devise par défaut"
+    "defaultCurrency": "Devise par défaut",
+    "errEmailNotConfirmed": "E-mail non confirmé. Vérifiez votre boîte de réception et cliquez sur le lien d'activation.",
+    "errInvalidCredentials": "E-mail ou mot de passe incorrect.",
+    "errTooManyRequests": "Trop de tentatives. Veuillez patienter quelques minutes."
   },
   "dashboard": {
     "assetsTitle":       "Actifs",

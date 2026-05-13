@@ -13,6 +13,7 @@ export interface PortfolioAsset {
   source: string
   needs_manual: boolean
   invested_brl: number | null
+  last_manual_date: string | null
   fi_type?: string | null
   fi_start_date?: string | null
   fi_rate?: number | null

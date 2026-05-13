@@ -89,7 +89,11 @@ export default function LoginPage() {
         setInfo(l.emailSent)
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro desconhecido')
+      const msg = err instanceof Error ? err.message : ''
+      if (/email not confirmed/i.test(msg))       setError(l.errEmailNotConfirmed)
+      else if (/invalid login credentials/i.test(msg)) setError(l.errInvalidCredentials)
+      else if (/too many requests|rate limit/i.test(msg)) setError(l.errTooManyRequests)
+      else setError(msg || 'Erro desconhecido')
     } finally {
       setLoading(false)
     }
