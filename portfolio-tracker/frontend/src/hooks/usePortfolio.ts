@@ -58,15 +58,11 @@ export function useResetPriceHistory() {
   const [loading, setLoading] = useState(false)
   const [result, setResult]   = useState<ResetResult | null>(null)
 
-  const reset = useCallback(async (since = '2025-01-01') => {
+  const reset = useCallback(async () => {
     setLoading(true)
     setResult(null)
     try {
-      const r = await apiFetch<ResetResult>('/portfolio/reset-price-history', {
-        method: 'POST',
-        body: JSON.stringify({ since }),
-        headers: { 'Content-Type': 'application/json' },
-      })
+      const r = await apiFetch<ResetResult>('/portfolio/reset-price-history', { method: 'POST' })
       setResult(r)
     } finally {
       setLoading(false)

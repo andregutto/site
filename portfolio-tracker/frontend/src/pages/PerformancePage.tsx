@@ -202,7 +202,7 @@ export default function PerformancePage() {
           </button>
 
           <button
-            onClick={() => resetHistory('2025-01-01')}
+            onClick={() => resetHistory()}
             disabled={syncing || resetting}
             title="Apaga e rebusca o histórico de preços desde Jan/2025 para todos os ativos. Use quando o cálculo de rentabilidade estiver errado após uma importação."
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-amber-200 bg-white text-amber-600 hover:border-amber-400 hover:bg-amber-50 disabled:opacity-50 disabled:cursor-wait transition-colors"

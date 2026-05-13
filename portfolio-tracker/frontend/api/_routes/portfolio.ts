@@ -257,7 +257,6 @@ router.post('/sync-history', requireAuth, async (req, res: Response) => {
 
 router.post('/reset-price-history', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
-  const since: string = (req.body?.since as string) || '2025-01-01'
 
   const { data: assets } = await supabaseAdmin
     .from('assets')
@@ -269,11 +268,12 @@ router.post('/reset-price-history', requireAuth, async (req, res: Response) => {
 
   const assetIds = assets.map(a => a.id as number)
 
+  // Delete ALL price_history for user's assets — no date filter — so stale or
+  // timezone-shifted dates from any year are fully replaced by the fresh sync.
   const { count: deleted } = await supabaseAdmin
     .from('price_history')
     .delete({ count: 'exact' })
     .in('asset_id', assetIds)
-    .gte('ref_date', since)
 
   // Clear in-memory cache so brapi / yahoo return fresh data (not stale cached responses)
   cache.deletePattern('brapi:history:')
