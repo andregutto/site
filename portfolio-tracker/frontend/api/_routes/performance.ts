@@ -3,7 +3,7 @@ import { requireAuth, AuthRequest } from '../_middleware/auth.js'
 import { supabaseAdmin } from '../_lib/supabase.js'
 import { getFxRate } from '../_lib/fx.js'
 import { getRates, SERIES } from '../_services/bcbService.js'
-import { getCurrentPrice, Asset } from '../_services/priceService.js'
+import { getCurrentPrice, getMonthlyHistory, Asset } from '../_services/priceService.js'
 import YahooFinance from 'yahoo-finance2'
 
 const yf = new YahooFinance({ suppressNotices: ['yahooSurvey', 'ripHistorical'] })
@@ -17,6 +17,45 @@ function localDate(d: Date): string {
 
 function localYM(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+}
+
+// Detects ticker assets with missing price_history for the requested months
+// and auto-populates via getMonthlyHistory(). Called before any computation
+// so that historical months (e.g. April) use real prices instead of carry-forward.
+async function autoSyncHistory(
+  assets: Array<{ id: number; asset_type: string; currency: string; ticker_yahoo: string | null; ticker_brapi: string | null; coingecko_id: string | null; fi_principal: number | null; fi_start_date: string | null; fi_type: string | null; fi_rate: number | null; fi_spread: number | null }>,
+  neededYMs: string[]  // e.g. ['2026-01', '2026-04']
+) {
+  if (!assets.length || !neededYMs.length) return
+  const neededDates = [...new Set(neededYMs)].map(ym => ym + '-01')
+  const assetIds = assets.map(a => a.id)
+
+  const { data: existing } = await supabaseAdmin
+    .from('price_history')
+    .select('asset_id, ref_date')
+    .in('asset_id', assetIds)
+    .in('ref_date', neededDates)
+
+  const have = new Set((existing ?? []).map(p => `${p.asset_id}|${p.ref_date}`))
+  const toSync = assets.filter(a => neededDates.some(d => !have.has(`${a.id}|${d}`)))
+  if (!toSync.length) return
+
+  await Promise.allSettled(toSync.map(async a => {
+    try {
+      const pts = await getMonthlyHistory(a as Asset, 26)
+      if (!pts.length) return
+      await supabaseAdmin.from('price_history').upsert(
+        pts.map(p => ({
+          asset_id: a.id,
+          ref_date:  p.date.substring(0, 7) + '-01',
+          price:     p.price,
+          currency:  p.currency,
+          source:    'auto',
+        })),
+        { onConflict: 'asset_id,ref_date' }
+      )
+    } catch { /* best effort — endpoint still returns data */ }
+  }))
 }
 
 async function getPortfolioValueAtMonth(
@@ -181,6 +220,17 @@ router.get('/summary', requireAuth, async (req, res: Response) => {
   const toLastDay   = new Date(toY, toM, 0).getDate()
   const toDateStr   = `${toY}-${String(toM).padStart(2, '0')}-${toLastDay}`
 
+  const { data: tickerAssetsSync } = await supabaseAdmin
+    .from('assets')
+    .select('id, asset_type, currency, ticker_yahoo, ticker_brapi, coingecko_id, fi_principal, fi_start_date, fi_type, fi_rate, fi_spread')
+    .eq('user_id', userId)
+    .eq('active', true)
+    .eq('asset_type', 'ticker')
+  if (tickerAssetsSync?.length) {
+    const prevYM = `${prevY}-${String(prevM).padStart(2, '0')}`
+    await autoSyncHistory(tickerAssetsSync, [prevYM, toStr])
+  }
+
   const { data: userAssets } = await supabaseAdmin
     .from('assets').select('id').eq('user_id', userId).eq('active', true)
   const userAssetIds = (userAssets ?? []).map(a => a.id)
@@ -266,6 +316,17 @@ router.get('/monthly', requireAuth, async (req, res: Response) => {
   const { data: userAssets2 } = await supabaseAdmin
     .from('assets').select('id').eq('user_id', userId).eq('active', true)
   const userAssetIds2 = (userAssets2 ?? []).map(a => a.id)
+
+  // Auto-populate price_history for months missing data (fixes carry-forward bug)
+  const { data: tickerAssetsForSync } = await supabaseAdmin
+    .from('assets')
+    .select('id, asset_type, currency, ticker_yahoo, ticker_brapi, coingecko_id, fi_principal, fi_start_date, fi_type, fi_rate, fi_spread')
+    .eq('user_id', userId)
+    .eq('active', true)
+    .eq('asset_type', 'ticker')
+  if (tickerAssetsForSync?.length) {
+    await autoSyncHistory(tickerAssetsForSync, months.map(m => m.label))
+  }
 
   const [valuesArr, contribsData] = await Promise.all([
     Promise.all(
@@ -504,6 +565,9 @@ router.get('/asset-returns', requireAuth, async (req, res: Response) => {
 
   if (!assets?.length) { res.json({}); return }
   const assetIds = assets.map(a => a.id)
+
+  // Auto-sync: find assets with no price_history in the requested range, fetch and store
+  await autoSyncHistory(assets, [fromStr, toStr])
 
   // Fetch all history in one query for both start and oldest lookups
   const [{ data: endPricesRaw }, { data: allHistory }] = await Promise.all([

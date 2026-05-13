@@ -2,7 +2,7 @@ import { Router, Response } from 'express'
 import { requireAuth, AuthRequest } from '../middleware/auth.js'
 import { supabaseAdmin } from '../lib/supabase.js'
 import { getRates, SERIES } from '../services/bcbService.js'
-import { getCurrentPrice, Asset } from '../services/priceService.js'
+import { getCurrentPrice, getMonthlyHistory, Asset } from '../services/priceService.js'
 import YahooFinance from 'yahoo-finance2'
 
 const yf = new YahooFinance({ suppressNotices: ['yahooSurvey', 'ripHistorical'] })
@@ -15,6 +15,42 @@ function localDate(d: Date): string {
 
 function localYM(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+}
+
+async function autoSyncHistory(
+  assets: Array<{ id: number; asset_type: string; currency: string; ticker_yahoo: string | null; ticker_brapi: string | null; coingecko_id: string | null; fi_principal: number | null; fi_start_date: string | null; fi_type: string | null; fi_rate: number | null; fi_spread: number | null }>,
+  neededYMs: string[]
+) {
+  if (!assets.length || !neededYMs.length) return
+  const neededDates = [...new Set(neededYMs)].map(ym => ym + '-01')
+  const assetIds = assets.map(a => a.id)
+
+  const { data: existing } = await supabaseAdmin
+    .from('price_history')
+    .select('asset_id, ref_date')
+    .in('asset_id', assetIds)
+    .in('ref_date', neededDates)
+
+  const have = new Set((existing ?? []).map(p => `${p.asset_id}|${p.ref_date}`))
+  const toSync = assets.filter(a => neededDates.some(d => !have.has(`${a.id}|${d}`)))
+  if (!toSync.length) return
+
+  await Promise.allSettled(toSync.map(async a => {
+    try {
+      const pts = await getMonthlyHistory(a as Asset, 26)
+      if (!pts.length) return
+      await supabaseAdmin.from('price_history').upsert(
+        pts.map(p => ({
+          asset_id: a.id,
+          ref_date:  p.date.substring(0, 7) + '-01',
+          price:     p.price,
+          currency:  p.currency,
+          source:    'auto',
+        })),
+        { onConflict: 'asset_id,ref_date' }
+      )
+    } catch { /* best effort */ }
+  }))
 }
 
 async function getPortfolioValueAtMonth(
@@ -171,6 +207,15 @@ router.get('/summary', requireAuth, async (req, res: Response) => {
   const prevM = fromM === 1 ? 12 : fromM - 1
   const prevY = fromM === 1 ? fromY - 1 : fromY
 
+  const { data: tickerAssetsSync } = await supabaseAdmin
+    .from('assets')
+    .select('id, asset_type, currency, ticker_yahoo, ticker_brapi, coingecko_id, fi_principal, fi_start_date, fi_type, fi_rate, fi_spread')
+    .eq('user_id', userId).eq('active', true).eq('asset_type', 'ticker')
+  if (tickerAssetsSync?.length) {
+    const prevYM = `${prevY}-${String(prevM).padStart(2, '0')}`
+    await autoSyncHistory(tickerAssetsSync, [prevYM, toStr])
+  }
+
   const { data: userAssets } = await supabaseAdmin
     .from('assets').select('id').eq('user_id', userId).eq('active', true)
   const userAssetIds = (userAssets ?? []).map(a => a.id)
@@ -254,6 +299,14 @@ router.get('/monthly', requireAuth, async (req, res: Response) => {
   const { data: userAssets2 } = await supabaseAdmin
     .from('assets').select('id').eq('user_id', userId).eq('active', true)
   const userAssetIds2 = (userAssets2 ?? []).map(a => a.id)
+
+  const { data: tickerAssetsSync2 } = await supabaseAdmin
+    .from('assets')
+    .select('id, asset_type, currency, ticker_yahoo, ticker_brapi, coingecko_id, fi_principal, fi_start_date, fi_type, fi_rate, fi_spread')
+    .eq('user_id', userId).eq('active', true).eq('asset_type', 'ticker')
+  if (tickerAssetsSync2?.length) {
+    await autoSyncHistory(tickerAssetsSync2, months.map(m => m.label))
+  }
 
   const [valuesArr, contribsData] = await Promise.all([
     Promise.all(
