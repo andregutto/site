@@ -200,11 +200,12 @@ router.get('/value', requireAuth, async (req, res: Response) => {
 router.post('/sync-history', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
 
+  // Sync ALL ticker assets (active + sold/inactive) so that historical portfolio
+  // values computed by getPortfolioValueAtMonth can use real prices for past months.
   const { data: assets } = await supabaseAdmin
     .from('assets')
     .select('id,code,asset_type,currency,ticker_brapi,ticker_yahoo,coingecko_id,fi_principal,fi_start_date,fi_type,fi_rate,fi_spread')
     .eq('user_id', userId)
-    .eq('active', true)
     .eq('asset_type', 'ticker')
 
   if (!assets?.length) { res.json({ synced: 0, errors: 0, total: 0, details: [] }); return }

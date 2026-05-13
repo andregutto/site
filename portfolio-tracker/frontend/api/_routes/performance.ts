@@ -74,11 +74,13 @@ async function getPortfolioValueAtMonth(
   // Current month or future: allow live-price fallback for assets missing price_history
   const isCurrentOrFuture = ym >= localYM(new Date())
 
+  // Include ALL assets (active AND inactive): sold assets may have had holdings
+  // in past months and must be counted for correct historical portfolio value.
+  // Holdings computed from contributions (lte dateStr) naturally produce 0 for sold assets.
   const { data: assets } = await supabaseAdmin
     .from('assets')
-    .select('id, asset_type, currency, fi_principal, fi_start_date, fi_type, fi_rate, fi_spread, ticker_brapi, ticker_yahoo, coingecko_id')
+    .select('id, asset_type, currency, active, fi_principal, fi_start_date, fi_type, fi_rate, fi_spread, ticker_brapi, ticker_yahoo, coingecko_id')
     .eq('user_id', userId)
-    .eq('active', true)
 
   if (!assets?.length) return { total: 0, detail: [] }
 
@@ -122,8 +124,8 @@ async function getPortfolioValueAtMonth(
     priceMap[id] = { price: best.price, currency: best.currency, ref_date: best.ref_date }
   }
 
-  // Manual assets: carry-backward from manual_values
-  const manualIds = assets.filter((a) => a.asset_type === 'manual').map((a) => a.id)
+  // Manual assets: carry-backward from manual_values (only active ones)
+  const manualIds = assets.filter((a) => a.asset_type === 'manual' && a.active).map((a) => a.id)
   const manualMap: Record<number, { value: number; currency: string }> = {}
   if (manualIds.length > 0) {
     const { data: allMV } = await supabaseAdmin
@@ -156,12 +158,14 @@ async function getPortfolioValueAtMonth(
     let value = 0
     try {
       if (a.asset_type === 'manual') {
+        if (!a.active) continue  // inactive manual assets are not valued historically
         const mv = manualMap[a.id]
         if (mv) {
           const fx = await getFxRate(mv.currency)
           value = mv.value * fx
         }
       } else if (a.asset_type === 'fixed_income') {
+        if (!a.active) continue  // inactive fixed_income assets are not valued historically
         try {
           const result = await getCurrentPrice({
             ...a,
@@ -225,11 +229,12 @@ router.get('/summary', requireAuth, async (req, res: Response) => {
   const toLastDay   = new Date(toY, toM, 0).getDate()
   const toDateStr   = `${toY}-${String(toM).padStart(2, '0')}-${toLastDay}`
 
+  // Sync ALL ticker assets (including sold/inactive) so their historical price_history
+  // is available for correct v_ini computation in getPortfolioValueAtMonth.
   const { data: tickerAssetsSync } = await supabaseAdmin
     .from('assets')
     .select('id, asset_type, currency, ticker_yahoo, ticker_brapi, coingecko_id, fi_principal, fi_start_date, fi_type, fi_rate, fi_spread')
     .eq('user_id', userId)
-    .eq('active', true)
     .eq('asset_type', 'ticker')
   if (tickerAssetsSync?.length) {
     const prevYM = `${prevY}-${String(prevM).padStart(2, '0')}`
@@ -314,37 +319,43 @@ router.get('/monthly', requireAuth, async (req, res: Response) => {
     }
   }
 
-  const rangeFromDate = `${fromY}-${String(fromM).padStart(2, '0')}-01`
   const rangeToLastDay = new Date(toY, toM, 0).getDate()
   const rangeToDate    = `${toY}-${String(toM).padStart(2, '0')}-${String(rangeToLastDay).padStart(2, '0')}`
 
+  // Previous month for first-row prev_total
+  const prevM = fromM === 1 ? 12 : fromM - 1
+  const prevY = fromM === 1 ? fromY - 1 : fromY
+  const prevYM = `${prevY}-${String(prevM).padStart(2, '0')}`
+
   const { data: userAssets2 } = await supabaseAdmin
-    .from('assets').select('id').eq('user_id', userId).eq('active', true)
+    .from('assets').select('id').eq('user_id', userId)
   const userAssetIds2 = (userAssets2 ?? []).map(a => a.id)
 
-  // Auto-populate price_history for months missing data (fixes carry-forward bug)
+  // Sync ALL ticker assets (active + sold) so historical months have correct prices
   const { data: tickerAssetsForSync } = await supabaseAdmin
     .from('assets')
     .select('id, asset_type, currency, ticker_yahoo, ticker_brapi, coingecko_id, fi_principal, fi_start_date, fi_type, fi_rate, fi_spread')
     .eq('user_id', userId)
-    .eq('active', true)
     .eq('asset_type', 'ticker')
   if (tickerAssetsForSync?.length) {
-    await autoSyncHistory(tickerAssetsForSync, months.map(m => m.label))
+    // Include prevYM so the first row's prev_total has price data
+    await autoSyncHistory(tickerAssetsForSync, [prevYM, ...months.map(m => m.label)])
   }
 
-  const [valuesArr, contribsData] = await Promise.all([
+  const [prevMonthResult, valuesArr, contribsData] = await Promise.all([
+    getPortfolioValueAtMonth(userId, prevY, prevM),
     Promise.all(
       months.map(async ({ year: y, month: m, label }) => {
         const { total } = await getPortfolioValueAtMonth(userId, y, m)
         return { month: label, total }
       })
     ),
+    // Fetch ALL contributions (no lower date bound) so every historical month shows
+    // its actual cash flows in the APORTES column regardless of the viewed period.
     supabaseAdmin
       .from('contributions')
       .select('date, value_brl, price_orig, quantity, fx_rate_brl, currency, type')
       .in('asset_id', userAssetIds2)
-      .gte('date', rangeFromDate)
       .lte('date', rangeToDate),
   ])
 
@@ -363,7 +374,7 @@ router.get('/monthly', requireAuth, async (req, res: Response) => {
   const monthly = valuesArr.map((v, i) => ({
     month:         v.month,
     total:         v.total,
-    prev_total:    i > 0 ? valuesArr[i - 1].total : 0,
+    prev_total:    i > 0 ? valuesArr[i - 1].total : prevMonthResult.total,
     contributions: contribsByMonth[v.month] ?? 0,
   }))
 
