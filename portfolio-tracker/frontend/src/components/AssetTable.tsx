@@ -256,9 +256,15 @@ export default function AssetTable({ assets, onAssetClick }: Props) {
                         </td>
                         <td className="px-4 py-3 text-right text-gray-600">
                           {asset.needs_manual ? (
-                            <span className="text-xs text-amber-600 font-medium">{d.enterValue}</span>
+                            asset.invested_brl != null ? (
+                              <span className="text-xs text-gray-500">{fmt(asset.invested_brl)}</span>
+                            ) : (
+                              <span className="text-xs text-amber-600 font-medium">{d.enterValue}</span>
+                            )
                           ) : asset.price != null ? (
                             `${asset.currency} ${fmtNumber(asset.price, 2)}`
+                          ) : asset.invested_brl != null ? (
+                            <span className="text-xs text-gray-500">{fmt(asset.invested_brl)}</span>
                           ) : asset.source === 'manual' ? (
                             d.manual
                           ) : '—'}
@@ -282,6 +288,18 @@ export default function AssetTable({ assets, onAssetClick }: Props) {
                             <span className={`text-xs font-semibold ${ret >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                               {ret >= 0 ? '+' : ''}{ret.toFixed(2)}%
                             </span>
+                          ) : asset.invested_brl != null && asset.invested_brl > 0 && asset.value_brl > 0 ? (
+                            (() => {
+                              const r = (asset.value_brl - asset.invested_brl) / asset.invested_brl * 100
+                              return (
+                                <span
+                                  className={`text-xs font-semibold ${r >= 0 ? 'text-green-600' : 'text-red-600'}`}
+                                  title="Rentabilidade total desde o primeiro aporte"
+                                >
+                                  {r >= 0 ? '+' : ''}{r.toFixed(2)}%
+                                </span>
+                              )
+                            })()
                           ) : (
                             <span className="text-gray-300 text-xs">—</span>
                           )}
