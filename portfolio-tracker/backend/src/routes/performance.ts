@@ -168,27 +168,45 @@ router.get('/summary', requireAuth, async (req, res: Response) => {
   const toLastDay   = new Date(toY, toM, 0).getDate()
   const toDateStr   = `${toY}-${String(toM).padStart(2, '0')}-${toLastDay}`
 
+  const prevM = fromM === 1 ? 12 : fromM - 1
+  const prevY = fromM === 1 ? fromY - 1 : fromY
+
+  const { data: userAssets } = await supabaseAdmin
+    .from('assets').select('id').eq('user_id', userId).eq('active', true)
+  const userAssetIds = (userAssets ?? []).map(a => a.id)
+
   const { data: contributions } = await supabaseAdmin
     .from('contributions')
-    .select('asset_id, date, value_brl, type, assets!inner(user_id)')
-    .eq('assets.user_id', userId)
+    .select('asset_id, date, value_brl, price_orig, quantity, fx_rate_brl, currency, type')
+    .in('asset_id', userAssetIds)
     .gte('date', fromDateStr)
     .lte('date', toDateStr)
 
-  const totalContribs = (contributions ?? []).reduce((s, c) => {
-    return s + (c.type === 'buy' ? (c.value_brl ?? 0) : -(c.value_brl ?? 0))
+  function estimateContribValue(c: { value_brl: number | null; price_orig: number | null; quantity: number | null; fx_rate_brl: number | null; currency: string | null }): number {
+    if (c.value_brl != null) return c.value_brl
+    if (c.price_orig != null && c.quantity != null) {
+      const fx = c.fx_rate_brl ?? (c.currency && c.currency !== 'BRL' ? 5.7 : 1)
+      return c.price_orig * c.quantity * fx
+    }
+    return 0
+  }
+
+  const totalContribs = (contributions ?? []).reduce((s: number, c) => {
+    if (c.type === 'income') return s
+    const v = estimateContribValue(c as Parameters<typeof estimateContribValue>[0])
+    return s + (c.type === 'buy' ? v : -v)
   }, 0)
 
   const [start, end] = await Promise.all([
-    getPortfolioValueAtMonth(userId, fromY, fromM),
+    getPortfolioValueAtMonth(userId, prevY, prevM),
     getPortfolioValueAtMonth(userId, toY,   toM),
   ])
 
   const v_ini      = start.total
   const v_fim      = end.total
-  const base       = v_ini - totalContribs
-  const return_pct = base > 0 ? ((v_fim - v_ini - totalContribs) / base) * 100 : null
   const return_abs = v_fim - v_ini - totalContribs
+  const dietz_base = v_ini + 0.5 * totalContribs
+  const return_pct = dietz_base > 0 ? (return_abs / dietz_base) * 100 : null
 
   res.json({
     from:          fromStr,
@@ -229,17 +247,46 @@ router.get('/monthly', requireAuth, async (req, res: Response) => {
     }
   }
 
-  const values = await Promise.all(
-    months.map(async ({ year: y, month: m, label }) => {
-      const { total } = await getPortfolioValueAtMonth(userId, y, m)
-      return { month: label, total }
-    })
-  )
+  const rangeFromDate  = `${fromY}-${String(fromM).padStart(2, '0')}-01`
+  const rangeToLastDay = new Date(toY, toM, 0).getDate()
+  const rangeToDate    = `${toY}-${String(toM).padStart(2, '0')}-${String(rangeToLastDay).padStart(2, '0')}`
 
-  const monthly = values.map((v, i) => ({
-    month:      v.month,
-    total:      v.total,
-    prev_total: i > 0 ? values[i - 1].total : 0,
+  const { data: userAssets2 } = await supabaseAdmin
+    .from('assets').select('id').eq('user_id', userId).eq('active', true)
+  const userAssetIds2 = (userAssets2 ?? []).map(a => a.id)
+
+  const [valuesArr, contribsData] = await Promise.all([
+    Promise.all(
+      months.map(async ({ year: y, month: m, label }) => {
+        const { total } = await getPortfolioValueAtMonth(userId, y, m)
+        return { month: label, total }
+      })
+    ),
+    supabaseAdmin
+      .from('contributions')
+      .select('date, value_brl, price_orig, quantity, fx_rate_brl, currency, type')
+      .in('asset_id', userAssetIds2)
+      .gte('date', rangeFromDate)
+      .lte('date', rangeToDate),
+  ])
+
+  const contribsByMonth: Record<string, number> = {}
+  for (const c of (contribsData.data ?? [])) {
+    if (c.type === 'income') continue
+    const ym = (c.date as string).substring(0, 7)
+    const vBrl = c.value_brl ??
+      (c.price_orig != null && c.quantity != null
+        ? c.price_orig * c.quantity * (c.fx_rate_brl ?? (c.currency && c.currency !== 'BRL' ? 5.7 : 1))
+        : 0)
+    const delta = c.type === 'buy' ? vBrl : -vBrl
+    contribsByMonth[ym] = (contribsByMonth[ym] ?? 0) + delta
+  }
+
+  const monthly = valuesArr.map((v, i) => ({
+    month:         v.month,
+    total:         v.total,
+    prev_total:    i > 0 ? valuesArr[i - 1].total : 0,
+    contributions: contribsByMonth[v.month] ?? 0,
   }))
 
   res.json({ monthly })
@@ -347,6 +394,24 @@ router.get('/benchmarks', requireAuth, async (req, res: Response) => {
   if (lastEntry.sp500_cum != null) sp500Pct = Math.round((lastEntry.sp500_cum - 1) * 10000) / 100
 
   res.json({ cdi_pct: cdiPct, ibov_pct: ibovPct, sp500_pct: sp500Pct, monthly })
+})
+
+router.get('/inception', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const { data: userAssets } = await supabaseAdmin
+    .from('assets').select('id').eq('user_id', userId).eq('active', true)
+  const userAssetIds = (userAssets ?? []).map(a => a.id)
+
+  const { data } = await supabaseAdmin
+    .from('contributions')
+    .select('date')
+    .in('asset_id', userAssetIds)
+    .order('date', { ascending: true })
+    .limit(1)
+
+  const firstDate = (data as Array<{ date: string }> | null)?.[0]?.date
+  if (!firstDate) { res.json({ inception: null }); return }
+  res.json({ inception: firstDate.substring(0, 7) })
 })
 
 router.get('/asset-returns', requireAuth, async (req, res: Response) => {

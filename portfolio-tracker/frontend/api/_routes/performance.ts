@@ -181,10 +181,14 @@ router.get('/summary', requireAuth, async (req, res: Response) => {
   const toLastDay   = new Date(toY, toM, 0).getDate()
   const toDateStr   = `${toY}-${String(toM).padStart(2, '0')}-${toLastDay}`
 
+  const { data: userAssets } = await supabaseAdmin
+    .from('assets').select('id').eq('user_id', userId).eq('active', true)
+  const userAssetIds = (userAssets ?? []).map(a => a.id)
+
   const { data: contributions } = await supabaseAdmin
     .from('contributions')
-    .select('asset_id, date, value_brl, price_orig, quantity, fx_rate_brl, currency, type, assets!inner(user_id)')
-    .eq('assets.user_id', userId)
+    .select('asset_id, date, value_brl, price_orig, quantity, fx_rate_brl, currency, type')
+    .in('asset_id', userAssetIds)
     .gte('date', fromDateStr)
     .lte('date', toDateStr)
 
@@ -198,6 +202,7 @@ router.get('/summary', requireAuth, async (req, res: Response) => {
   }
 
   const totalContribs = (contributions ?? []).reduce((s: number, c) => {
+    if (c.type === 'income') return s  // income is portfolio return, not a cash flow
     const v = estimateContribValue(c as Parameters<typeof estimateContribValue>[0])
     return s + (c.type === 'buy' ? v : -v)
   }, 0)
@@ -258,6 +263,10 @@ router.get('/monthly', requireAuth, async (req, res: Response) => {
   const rangeToLastDay = new Date(toY, toM, 0).getDate()
   const rangeToDate    = `${toY}-${String(toM).padStart(2, '0')}-${String(rangeToLastDay).padStart(2, '0')}`
 
+  const { data: userAssets2 } = await supabaseAdmin
+    .from('assets').select('id').eq('user_id', userId).eq('active', true)
+  const userAssetIds2 = (userAssets2 ?? []).map(a => a.id)
+
   const [valuesArr, contribsData] = await Promise.all([
     Promise.all(
       months.map(async ({ year: y, month: m, label }) => {
@@ -267,14 +276,15 @@ router.get('/monthly', requireAuth, async (req, res: Response) => {
     ),
     supabaseAdmin
       .from('contributions')
-      .select('date, value_brl, price_orig, quantity, fx_rate_brl, currency, type, assets!inner(user_id)')
-      .eq('assets.user_id', userId)
+      .select('date, value_brl, price_orig, quantity, fx_rate_brl, currency, type')
+      .in('asset_id', userAssetIds2)
       .gte('date', rangeFromDate)
       .lte('date', rangeToDate),
   ])
 
   const contribsByMonth: Record<string, number> = {}
   for (const c of (contribsData.data ?? [])) {
+    if (c.type === 'income') continue  // income is portfolio return, not a cash flow
     const ym = (c.date as string).substring(0, 7)
     const vBrl = c.value_brl ??
       (c.price_orig != null && c.quantity != null
@@ -400,10 +410,14 @@ router.get('/benchmarks', requireAuth, async (req, res: Response) => {
 
 router.get('/inception', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
+  const { data: userAssets } = await supabaseAdmin
+    .from('assets').select('id').eq('user_id', userId).eq('active', true)
+  const userAssetIds = (userAssets ?? []).map(a => a.id)
+
   const { data } = await supabaseAdmin
     .from('contributions')
-    .select('date, assets!inner(user_id)')
-    .eq('assets.user_id', userId)
+    .select('date')
+    .in('asset_id', userAssetIds)
     .order('date', { ascending: true })
     .limit(1)
 
