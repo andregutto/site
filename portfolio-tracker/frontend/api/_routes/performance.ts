@@ -473,13 +473,17 @@ router.get('/asset-returns', requireAuth, async (req, res: Response) => {
   const [fromY, fromM] = fromStr.split('-').map(Number)
   const [toY,   toM  ] = toStr.split('-').map(Number)
 
+  const currentYM       = localYM(new Date())
+  const isCurrentPeriod = toStr >= currentYM
+
   const fromDate  = `${fromY}-${String(fromM).padStart(2, '0')}-01`
   const toLastDay = new Date(toY, toM, 0).getDate()
   const toDate    = `${toY}-${String(toM).padStart(2, '0')}-${String(toLastDay).padStart(2, '0')}`
 
+  // Fetch assets with pricing fields for live-price fallback
   const { data: assets } = await supabaseAdmin
     .from('assets')
-    .select('id')
+    .select('id, asset_type, currency, ticker_brapi, ticker_yahoo, coingecko_id, fi_principal, fi_start_date, fi_type, fi_rate, fi_spread')
     .eq('user_id', userId)
     .eq('active', true)
     .eq('asset_type', 'ticker')
@@ -487,28 +491,48 @@ router.get('/asset-returns', requireAuth, async (req, res: Response) => {
   if (!assets?.length) { res.json({}); return }
   const assetIds = assets.map(a => a.id)
 
-  const [{ data: startPrices }, { data: endPrices }] = await Promise.all([
-    supabaseAdmin.from('price_history').select('asset_id, price')
-      .in('asset_id', assetIds).lt('ref_date', fromDate).order('ref_date', { ascending: false }),
-    supabaseAdmin.from('price_history').select('asset_id, price')
+  // Fetch all history in one query for both start and oldest lookups
+  const [{ data: endPricesRaw }, { data: allHistory }] = await Promise.all([
+    supabaseAdmin.from('price_history').select('asset_id, price, ref_date')
       .in('asset_id', assetIds).lte('ref_date', toDate).order('ref_date', { ascending: false }),
+    supabaseAdmin.from('price_history').select('asset_id, price, ref_date')
+      .in('asset_id', assetIds).order('ref_date', { ascending: true }),
   ])
 
-  const startMap: Record<number, number> = {}
-  for (const p of (startPrices ?? [])) {
-    if (!(p.asset_id in startMap)) startMap[p.asset_id] = p.price
+  // Most recent price strictly before fromDate (start of period), and oldest price per asset
+  const startMap:  Record<number, number> = {}
+  const oldestMap: Record<number, number> = {}
+  for (const p of (allHistory ?? [])) {
+    if (!(p.asset_id in oldestMap)) oldestMap[p.asset_id] = p.price   // first = oldest (asc order)
+    if (p.ref_date < fromDate) startMap[p.asset_id] = p.price         // keep overwriting = most recent before fromDate
   }
-  const endMap: Record<number, number> = {}
-  for (const p of (endPrices ?? [])) {
-    if (!(p.asset_id in endMap)) endMap[p.asset_id] = p.price
+
+  // Most recent end price with its date (for staleness check)
+  const endMap: Record<number, { price: number; ref_date: string }> = {}
+  for (const p of (endPricesRaw ?? [])) {
+    if (!(p.asset_id in endMap)) endMap[p.asset_id] = { price: p.price, ref_date: p.ref_date }
+  }
+
+  // For current period: supplement stale or missing end prices with live price
+  if (isCurrentPeriod) {
+    await Promise.all(assets.map(async (a) => {
+      const entry = endMap[a.id]
+      if (!entry || entry.ref_date.substring(0, 7) < currentYM) {
+        try {
+          const result = await getCurrentPrice(a as Asset)
+          endMap[a.id] = { price: result.price, ref_date: currentYM + '-01' }
+        } catch { /* keep stale or absent */ }
+      }
+    }))
   }
 
   const returns: Record<number, number | null> = {}
   for (const a of assets) {
-    const ps = startMap[a.id]
-    const pe = endMap[a.id]
-    returns[a.id] = (ps != null && pe != null && ps > 0)
+    const ps = startMap[a.id] ?? oldestMap[a.id]   // carry-backward: oldest if no pre-period price
+    const pe = endMap[a.id]?.price
+    returns[a.id] = (ps != null && pe != null && ps > 0 && ps !== pe)
       ? Math.round((pe / ps - 1) * 10000) / 100
+      : (ps != null && pe != null && ps === pe) ? 0
       : null
   }
 
