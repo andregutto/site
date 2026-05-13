@@ -58,8 +58,8 @@ router.get('/:year', requireAuth, async (req, res: Response) => {
     const gainLossPct  = costBasis > 0 ? (gainLoss / costBasis) * 100 : null
     return {
       id: c.id, date: c.date, asset_id: c.asset_id,
-      code: (c.assets as { code: string } | null)?.code ?? '',
-      name: (c.assets as { name: string } | null)?.name ?? '',
+      code: (c.assets as unknown as { code: string } | null)?.code ?? '',
+      name: (c.assets as unknown as { name: string } | null)?.name ?? '',
       qty, sale_value_brl: saleValue, cost_basis_brl: costBasis,
       gain_loss_brl: gainLoss, gain_loss_pct: gainLossPct,
     }
@@ -68,8 +68,8 @@ router.get('/:year', requireAuth, async (req, res: Response) => {
   // Income in the year
   const income = (contribs ?? []).filter(c => c.type === 'income').map(c => ({
     id: c.id, date: c.date, asset_id: c.asset_id,
-    code: (c.assets as { code: string } | null)?.code ?? '',
-    name: (c.assets as { name: string } | null)?.name ?? '',
+    code: (c.assets as unknown as { code: string } | null)?.code ?? '',
+    name: (c.assets as unknown as { name: string } | null)?.name ?? '',
     value_brl: c.value_brl ?? 0,
     description: c.description ?? '',
   }))
