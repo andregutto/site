@@ -126,7 +126,7 @@
     "title":   "Politique de confidentialité",
     "updated": "Dernière mise à jour : mai 2026",
     "s1title": "1. Responsable du traitement",
-    "s1body":  "Le responsable du traitement de vos données personnelles est André Gutto (andreaugustops@gmail.com). Ce système est strictement à usage personnel et privé.",
+    "s1body":  "Le responsable du traitement de vos données personnelles est André Gutto (andre@andregutto.com). Ce système est strictement à usage personnel et privé.",
     "s2title": "2. Données collectées",
     "s2body":  "Nous collectons : adresse e-mail (pour l'authentification), prénom et nom (fournis volontairement), pays de résidence et données financières personnelles saisies par vous (actifs, apports, transactions). Aucune donnée n'est obtenue auprès de tiers sans votre consentement.",
     "s3title": "3. Finalités et base légale",
@@ -142,7 +142,7 @@
     "s8title": "8. Autorité de contrôle",
     "s8body":  "Si vous résidez en France, vous avez le droit d'introduire une réclamation auprès de la CNIL (Commission Nationale de l'Informatique et des Libertés) sur cnil.fr si vous estimez que vos données personnelles ne sont pas traitées conformément au RGPD.",
     "s9title": "9. Contact",
-    "s9body":  "Pour toute question relative à cette politique ou au traitement de vos données, veuillez nous contacter : andreaugustops@gmail.com"
+    "s9body":  "Pour toute question relative à cette politique ou au traitement de vos données, veuillez nous contacter : andre@andregutto.com"
   },
   "termsPage": {
     "title":   "Conditions d'utilisation",
@@ -164,7 +164,7 @@
     "s8title": "8. Droit applicable",
     "s8body":  "Ces conditions sont régies par le droit français (loi n° 2004-575 du 21 juin 2004 pour la confiance dans l'économie numérique) et le Règlement Général sur la Protection des Données (RGPD).",
     "s9title": "9. Contact",
-    "s9body":  "Pour toute question, veuillez nous contacter : andreaugustops@gmail.com"
+    "s9body":  "Pour toute question, veuillez nous contacter : andre@andregutto.com"
   },
   "countries": {
     "select":  "Sélectionnez le pays",

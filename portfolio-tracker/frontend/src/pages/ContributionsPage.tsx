@@ -977,11 +977,11 @@ export default function ContributionsPage() {
                         <div className="flex items-center justify-end gap-2">
                           <button
                             onClick={() => { setConfirmDeleteId(null); handleEditClick(c) }}
-                            className="text-gray-300 hover:text-[#001A70] transition-colors"
+                            className="text-gray-400 hover:text-[#001A70] transition-colors"
                             title="Editar"
                           >
-                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536M9 13l6.586-6.586a2 2 0 112.828 2.828L11.828 15.828a2 2 0 01-1.414.586H9v-2a2 2 0 01.586-1.414z" />
+                            <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor">
+                              <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
                             </svg>
                           </button>
                           <button

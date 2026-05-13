@@ -126,7 +126,7 @@
     "title":   "Política de Privacidade",
     "updated": "Última atualização: maio de 2026",
     "s1title": "1. Responsável pelo Tratamento",
-    "s1body":  "O responsável pelo tratamento dos seus dados pessoais é André Gutto (andreaugustops@gmail.com). Este sistema é de uso estritamente pessoal e privado.",
+    "s1body":  "O responsável pelo tratamento dos seus dados pessoais é André Gutto (andre@andregutto.com). Este sistema é de uso estritamente pessoal e privado.",
     "s2title": "2. Dados Coletados",
     "s2body":  "Coletamos: endereço de e-mail (para autenticação), nome e sobrenome (informados voluntariamente), país de residência e dados financeiros pessoais inseridos por você (ativos, aportes, movimentações). Nenhum dado é obtido de terceiros sem o seu consentimento.",
     "s3title": "3. Finalidade e Base Legal",
@@ -142,7 +142,7 @@
     "s8title": "8. Autoridade de Supervisão",
     "s8body":  "Se você reside na França, tem o direito de apresentar uma reclamação junto à CNIL (Commission Nationale de l'Informatique et des Libertés) em cnil.fr caso considere que seus dados pessoais não estão sendo tratados de acordo com o RGPD.",
     "s9title": "9. Contato",
-    "s9body":  "Para qualquer questão relativa a esta política ou ao tratamento dos seus dados, entre em contato: andreaugustops@gmail.com"
+    "s9body":  "Para qualquer questão relativa a esta política ou ao tratamento dos seus dados, entre em contato: andre@andregutto.com"
   },
   "termsPage": {
     "title":   "Termos de Uso",
@@ -164,7 +164,7 @@
     "s8title": "8. Lei Aplicável",
     "s8body":  "Estes termos são regidos pela legislação francesa (loi n° 2004-575 du 21 juin 2004 pour la confiance dans l'économie numérique) e pelo Regulamento Geral de Proteção de Dados (RGPD/GDPR).",
     "s9title": "9. Contato",
-    "s9body":  "Em caso de dúvidas, entre em contato: andreaugustops@gmail.com"
+    "s9body":  "Em caso de dúvidas, entre em contato: andre@andregutto.com"
   },
   "countries": {
     "select":  "Selecione o país",

@@ -126,7 +126,7 @@
     "title":   "Privacy Policy",
     "updated": "Last updated: May 2026",
     "s1title": "1. Data Controller",
-    "s1body":  "The controller of your personal data is André Gutto (andreaugustops@gmail.com). This system is strictly for personal and private use.",
+    "s1body":  "The controller of your personal data is André Gutto (andre@andregutto.com). This system is strictly for personal and private use.",
     "s2title": "2. Data Collected",
     "s2body":  "We collect: email address (for authentication), first and last name (provided voluntarily), country of residence, and personal financial data entered by you (assets, contributions, transactions). No data is obtained from third parties without your consent.",
     "s3title": "3. Purpose and Legal Basis",
@@ -142,7 +142,7 @@
     "s8title": "8. Supervisory Authority",
     "s8body":  "If you reside in France, you have the right to file a complaint with the CNIL (Commission Nationale de l'Informatique et des Libertés) at cnil.fr if you believe your personal data is not being processed in accordance with the GDPR.",
     "s9title": "9. Contact",
-    "s9body":  "For any questions regarding this policy or the processing of your data, please contact: andreaugustops@gmail.com"
+    "s9body":  "For any questions regarding this policy or the processing of your data, please contact: andre@andregutto.com"
   },
   "termsPage": {
     "title":   "Terms of Use",
@@ -164,7 +164,7 @@
     "s8title": "8. Governing Law",
     "s8body":  "These terms are governed by French law (loi n° 2004-575 du 21 juin 2004 for confidence in the digital economy) and the General Data Protection Regulation (GDPR).",
     "s9title": "9. Contact",
-    "s9body":  "For any questions, please contact: andreaugustops@gmail.com"
+    "s9body":  "For any questions, please contact: andre@andregutto.com"
   },
   "countries": {
     "select":  "Select country",
