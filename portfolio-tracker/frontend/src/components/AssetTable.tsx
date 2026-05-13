@@ -42,11 +42,11 @@ export default function AssetTable({ assets, onAssetClick }: Props) {
   const { t } = useI18n()
   const d = t.dashboard
 
-  const [search,    setSearch]    = useState('')
-  const [sortKey,   setSortKey]   = useState<SortKey>('value_brl')
-  const [sortDir,   setSortDir]   = useState<'asc' | 'desc'>('desc')
-  const [period,    setPeriod]    = useState<PeriodKey>('ytd')
-  const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
+  const [search,   setSearch]   = useState('')
+  const [sortKey,  setSortKey]  = useState<SortKey>('value_brl')
+  const [sortDir,  setSortDir]  = useState<'asc' | 'desc'>('desc')
+  const [period,   setPeriod]   = useState<PeriodKey>('ytd')
+  const [expanded, setExpanded] = useState<Set<string>>(new Set())
 
   const PERIOD_OPTIONS: Array<{ key: PeriodKey; label: string }> = [
     { key: 'current_month', label: d.periodCurrent },
@@ -75,8 +75,8 @@ export default function AssetTable({ assets, onAssetClick }: Props) {
     else { setSortKey(key); setSortDir('desc') }
   }
 
-  function toggleCollapse(name: string) {
-    setCollapsed(prev => {
+  function toggleExpand(name: string) {
+    setExpanded(prev => {
       const next = new Set(prev)
       if (next.has(name)) next.delete(name)
       else next.add(name)
@@ -180,8 +180,8 @@ export default function AssetTable({ assets, onAssetClick }: Props) {
           </thead>
           <tbody>
             {groups.map(group => {
-              const isOpen    = !collapsed.has(group.name)
-              const groupPct  = portfolioTotal > 0 ? (group.total / portfolioTotal) * 100 : 0
+              const isOpen   = expanded.has(group.name)
+              const groupPct = portfolioTotal > 0 ? (group.total / portfolioTotal) * 100 : 0
 
               const assetsWithRet = returns
                 ? group.assets.filter(a => !a.needs_manual && a.value_brl > 0 && returns[a.id] != null)
@@ -195,17 +195,17 @@ export default function AssetTable({ assets, onAssetClick }: Props) {
                 <Fragment key={group.name}>
                   {/* Group header row - columns aligned with table */}
                   <tr
-                    onClick={() => toggleCollapse(group.name)}
+                    onClick={() => toggleExpand(group.name)}
                     className="bg-gray-50/80 border-t border-gray-100 cursor-pointer hover:bg-gray-100/60 transition-colors select-none"
                   >
-                    <td className="px-4 py-2.5">
+                    <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <ChevronIcon open={isOpen} />
                         <span
-                          className="w-2.5 h-2.5 rounded-full shrink-0"
+                          className="w-3 h-3 rounded-full shrink-0"
                           style={{ backgroundColor: group.color }}
                         />
-                        <span className="font-bold text-gray-800 text-base">{group.name}</span>
+                        <span className="font-bold text-gray-900 text-base tracking-tight">{group.name}</span>
                         <span className="text-xs text-gray-400 font-normal">
                           {group.assets.length} {group.assets.length === 1 ? d.asset : d.assets}
                         </span>
@@ -213,13 +213,13 @@ export default function AssetTable({ assets, onAssetClick }: Props) {
                     </td>
                     <td />
                     <td />
-                    <td className="px-4 py-2.5 text-right font-semibold text-gray-800 text-sm tabular-nums">
+                    <td className="px-4 py-3 text-right font-bold text-gray-900 text-base tabular-nums">
                       {fmt(group.total)}
                     </td>
-                    <td className="px-4 py-2.5 text-right text-xs text-gray-500 font-medium">
+                    <td className="px-4 py-3 text-right text-sm text-gray-500 font-medium">
                       {groupPct.toFixed(1)}%
                     </td>
-                    <td className="px-4 py-2.5 text-right">
+                    <td className="px-4 py-3 text-right">
                       {returnsLoading ? (
                         <span className="text-gray-200 text-xs">...</span>
                       ) : groupRentab !== null ? (

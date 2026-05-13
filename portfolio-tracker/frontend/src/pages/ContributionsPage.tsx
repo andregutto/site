@@ -410,8 +410,11 @@ export default function ContributionsPage() {
     }
   }
 
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null)
+
   async function handleDelete(id: number) {
-    if (!confirm('Remover este aporte?')) return
+    if (confirmDeleteId !== id) { setConfirmDeleteId(id); return }
+    setConfirmDeleteId(null)
     try {
       await apiFetch(`/contributions/${id}`, { method: 'DELETE' })
       refresh()
@@ -881,11 +884,24 @@ export default function ContributionsPage() {
                       {c.value_brl != null ? fmt(c.value_brl) : '—'}
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <button
-                        onClick={() => handleDelete(c.id)}
-                        className="text-gray-300 hover:text-red-500 transition-colors text-sm"
-                        title="Remover"
-                      >x</button>
+                      {confirmDeleteId === c.id ? (
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => handleDelete(c.id)}
+                            className="text-xs font-semibold text-red-600 hover:text-red-700 transition-colors"
+                          >Confirmar</button>
+                          <button
+                            onClick={() => setConfirmDeleteId(null)}
+                            className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
+                          >Cancelar</button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => handleDelete(c.id)}
+                          className="text-gray-300 hover:text-red-500 transition-colors text-base leading-none"
+                          title="Remover"
+                        >×</button>
+                      )}
                     </td>
                   </tr>
                 ))}
