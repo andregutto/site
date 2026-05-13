@@ -26,6 +26,12 @@ class TTLCache {
     this.set(key, data, ttlMs)
     return data
   }
+
+  deletePattern(prefix: string): void {
+    for (const key of this.store.keys()) {
+      if (key.startsWith(prefix)) this.store.delete(key)
+    }
+  }
 }
 
 export const cache = new TTLCache()

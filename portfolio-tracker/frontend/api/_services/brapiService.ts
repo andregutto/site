@@ -45,7 +45,10 @@ export async function getMonthlyHistory(ticker: string, months = 24): Promise<Pr
 
       const hist = json.results?.[0]?.historicalDataPrice ?? []
       return hist.map((p) => ({
-        date:  new Date(p.date * 1000).toISOString().split('T')[0],
+        // brapi timestamps are end-of-day in Brazil (UTC-3); using toISOString would
+        // shift late-night BRT timestamps into the next UTC day, causing an off-by-one
+        // month error. toLocaleDateString with São Paulo timezone gives the correct date.
+        date:  new Date(p.date * 1000).toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' }),
         price: p.close,
       })).reverse()
     }

@@ -49,6 +49,33 @@ export function useSyncHistory() {
   return { sync, loading, result }
 }
 
+export interface ResetResult {
+  deleted: number; synced: number; errors: number; total: number
+  details: Array<{ code: string; status: 'ok' | 'empty' | 'error'; points?: number; error?: string }>
+}
+
+export function useResetPriceHistory() {
+  const [loading, setLoading] = useState(false)
+  const [result, setResult]   = useState<ResetResult | null>(null)
+
+  const reset = useCallback(async (since = '2025-01-01') => {
+    setLoading(true)
+    setResult(null)
+    try {
+      const r = await apiFetch<ResetResult>('/portfolio/reset-price-history', {
+        method: 'POST',
+        body: JSON.stringify({ since }),
+        headers: { 'Content-Type': 'application/json' },
+      })
+      setResult(r)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  return { reset, loading, result }
+}
+
 export function usePerformanceSummary(from: string, to: string) {
   const [data, setData]     = useState<PerformanceSummary | null>(null)
   const [loading, setLoading] = useState(true)

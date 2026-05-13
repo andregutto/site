@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { usePerformanceSummary, usePerformanceMonthly, useSyncHistory, usePerformanceBenchmarks, usePerformanceInception } from '../hooks/usePortfolio'
+import { usePerformanceSummary, usePerformanceMonthly, useSyncHistory, usePerformanceBenchmarks, usePerformanceInception, useResetPriceHistory } from '../hooks/usePortfolio'
 import {
   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend
 } from 'recharts'
@@ -76,7 +76,8 @@ export default function PerformancePage() {
 
   const { data: summary,    loading: sLoading } = usePerformanceSummary(from, to)
   const { data: monthly,    loading: mLoading } = usePerformanceMonthly(from, to)
-  const { sync, loading: syncing }              = useSyncHistory()
+  const { sync, loading: syncing }                    = useSyncHistory()
+  const { reset: resetHistory, loading: resetting, result: resetResult } = useResetPriceHistory()
   const { data: benchmarks, loading: bLoading } = usePerformanceBenchmarks(from, to)
 
   const [showCDI,   setShowCDI]   = useState(true)
@@ -190,7 +191,7 @@ export default function PerformancePage() {
 
           <button
             onClick={sync}
-            disabled={syncing}
+            disabled={syncing || resetting}
             title="Busca preços históricos de todos os ativos e popula o histórico de cotações"
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-200 bg-white text-gray-500 hover:border-[#001A70] hover:text-[#001A70] disabled:opacity-50 disabled:cursor-wait transition-colors"
           >
@@ -198,6 +199,18 @@ export default function PerformancePage() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
             </svg>
             {syncing ? 'Sincronizando...' : 'Sincronizar histórico'}
+          </button>
+
+          <button
+            onClick={() => resetHistory('2025-01-01')}
+            disabled={syncing || resetting}
+            title="Apaga e rebusca o histórico de preços desde Jan/2025 para todos os ativos. Use quando o cálculo de rentabilidade estiver errado após uma importação."
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-amber-200 bg-white text-amber-600 hover:border-amber-400 hover:bg-amber-50 disabled:opacity-50 disabled:cursor-wait transition-colors"
+          >
+            <svg className={`w-3 h-3 ${resetting ? 'animate-spin' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+            </svg>
+            {resetting ? 'Recalculando...' : 'Recalcular histórico'}
           </button>
         </div>
       </div>
@@ -226,6 +239,25 @@ export default function PerformancePage() {
               className="border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20"
             />
           </div>
+        </div>
+      )}
+
+      {resetting && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm text-amber-800">
+          Apagando histórico e rebuscando preços de todos os ativos em lotes... isso pode levar até 60 segundos.
+        </div>
+      )}
+
+      {resetResult && !resetting && (
+        <div className={`rounded-xl px-4 py-3 text-sm border ${resetResult.errors === 0 ? 'bg-green-50 border-green-200 text-green-800' : 'bg-amber-50 border-amber-200 text-amber-800'}`}>
+          Histórico recalculado: {resetResult.synced}/{resetResult.total} ativos atualizados
+          {resetResult.deleted > 0 && ` · ${resetResult.deleted} entradas removidas`}
+          {resetResult.errors > 0 && ` · ${resetResult.errors} com erro`}
+          {resetResult.errors > 0 && (
+            <span className="ml-1 text-xs">
+              ({resetResult.details.filter(d => d.status === 'error').map(d => d.code).join(', ')})
+            </span>
+          )}
         </div>
       )}
 

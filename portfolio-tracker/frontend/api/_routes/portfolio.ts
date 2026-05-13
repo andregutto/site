@@ -3,6 +3,7 @@ import { requireAuth, AuthRequest } from '../_middleware/auth.js'
 import { supabaseAdmin } from '../_lib/supabase.js'
 import { getCurrentPrice, getMonthlyHistory, Asset, FITranche } from '../_services/priceService.js'
 import { getFxRate } from '../_lib/fx.js'
+import { cache } from '../_lib/cache.js'
 import * as yahoo from '../_services/yahooService.js'
 
 const router = Router()
@@ -212,41 +213,108 @@ router.post('/sync-history', requireAuth, async (req, res: Response) => {
 
   type Detail = { id: number; code: string; status: 'ok' | 'empty' | 'error'; points?: number; error?: string }
 
-  const results = await Promise.allSettled(
-    assets.map(async (a): Promise<Detail> => {
-      const history = await getMonthlyHistory(a as Asset, 72)
-      if (history.length > 0) {
+  let synced = 0, errors = 0
+  const details: Detail[] = []
+  const BATCH = 5
+
+  for (let i = 0; i < assets.length; i += BATCH) {
+    const batch = assets.slice(i, i + BATCH)
+    const batchResults = await Promise.allSettled(
+      batch.map(async (a): Promise<Detail> => {
+        const history = await getMonthlyHistory(a as Asset, 72)
+        if (!history.length) return { id: a.id, code: a.code, status: 'empty' }
         const { error: upsertErr } = await supabaseAdmin.from('price_history').upsert(
-          history.map((p) => ({
-            asset_id: a.id,
-            ref_date:  p.date,  // use the actual date from the API
-            price:     p.price,
-            currency:  p.currency,
-            source:    'sync',
-          })),
+          history.map((p) => ({ asset_id: a.id, ref_date: p.date, price: p.price, currency: p.currency, source: 'sync' })),
           { onConflict: 'asset_id,ref_date' }
         )
         if (upsertErr) throw new Error(`DB upsert: ${upsertErr.message}`)
         return { id: a.id, code: a.code, status: 'ok', points: history.length }
+      })
+    )
+    for (let j = 0; j < batchResults.length; j++) {
+      const r = batchResults[j]
+      if (r.status === 'fulfilled') {
+        if (r.value.status === 'ok') synced++
+        details.push(r.value)
+      } else {
+        errors++
+        const msg = r.reason instanceof Error ? r.reason.message : String(r.reason)
+        console.warn(`[sync-history] Erro em ${batch[j].code}:`, msg)
+        details.push({ id: batch[j].id, code: batch[j].code, status: 'error', error: msg })
       }
-      return { id: a.id, code: a.code, status: 'empty' }
-    })
-  )
-
-  let synced = 0, errors = 0
-  const details: Detail[] = results.map((r, i) => {
-    if (r.status === 'fulfilled') {
-      if (r.value.status === 'ok') synced++
-      return r.value
-    } else {
-      errors++
-      const msg = r.reason instanceof Error ? r.reason.message : String(r.reason)
-      console.warn(`[sync-history] Erro em ${assets[i].code}:`, msg)
-      return { id: assets[i].id, code: assets[i].code, status: 'error', error: msg }
     }
-  })
+    // throttle to avoid brapi rate-limiting (free tier ~15 req/min)
+    if (i + BATCH < assets.length) await new Promise(r => setTimeout(r, 1200))
+  }
 
   res.json({ synced, errors, total: assets.length, details })
+})
+
+// ─── POST /api/portfolio/reset-price-history ─────────────────────────────────
+// Purges price_history from a given date (default 2025-01-01) then re-syncs
+// ALL ticker assets (active + inactive) in batches. Fixes stale / off-by-one
+// data that accumulated from previous syncs and the brapi timezone bug.
+
+router.post('/reset-price-history', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const since: string = (req.body?.since as string) || '2025-01-01'
+
+  const { data: assets } = await supabaseAdmin
+    .from('assets')
+    .select('id,code,asset_type,currency,ticker_brapi,ticker_yahoo,coingecko_id,fi_principal,fi_start_date,fi_type,fi_rate,fi_spread')
+    .eq('user_id', userId)
+    .eq('asset_type', 'ticker')
+
+  if (!assets?.length) { res.json({ deleted: 0, synced: 0, errors: 0, total: 0, details: [] }); return }
+
+  const assetIds = assets.map(a => a.id as number)
+
+  const { count: deleted } = await supabaseAdmin
+    .from('price_history')
+    .delete({ count: 'exact' })
+    .in('asset_id', assetIds)
+    .gte('ref_date', since)
+
+  // Clear in-memory cache so brapi / yahoo return fresh data (not stale cached responses)
+  cache.deletePattern('brapi:history:')
+  cache.deletePattern('yahoo:history:')
+  cache.deletePattern('coingecko:history:')
+
+  type Detail = { id: number; code: string; status: 'ok' | 'empty' | 'error'; points?: number; error?: string }
+
+  let synced = 0, errors = 0
+  const details: Detail[] = []
+  const BATCH = 5
+
+  for (let i = 0; i < assets.length; i += BATCH) {
+    const batch = assets.slice(i, i + BATCH)
+    const batchResults = await Promise.allSettled(
+      batch.map(async (a): Promise<Detail> => {
+        const history = await getMonthlyHistory(a as Asset, 72)
+        if (!history.length) return { id: a.id, code: a.code, status: 'empty' }
+        const { error: upsertErr } = await supabaseAdmin.from('price_history').upsert(
+          history.map((p) => ({ asset_id: a.id, ref_date: p.date, price: p.price, currency: p.currency, source: 'reset' })),
+          { onConflict: 'asset_id,ref_date' }
+        )
+        if (upsertErr) throw new Error(`DB: ${upsertErr.message}`)
+        return { id: a.id, code: a.code, status: 'ok', points: history.length }
+      })
+    )
+    for (let j = 0; j < batchResults.length; j++) {
+      const r = batchResults[j]
+      if (r.status === 'fulfilled') {
+        if (r.value.status === 'ok') synced++
+        details.push(r.value)
+      } else {
+        errors++
+        const msg = r.reason instanceof Error ? r.reason.message : String(r.reason)
+        details.push({ id: batch[j].id, code: batch[j].code, status: 'error', error: msg })
+      }
+    }
+    if (i + BATCH < assets.length) await new Promise(r => setTimeout(r, 1200))
+  }
+
+  res.json({ deleted: deleted ?? 0, synced, errors, total: assets.length, details })
 })
 
 router.post('/reset-baseline', requireAuth, async (req, res: Response) => {
