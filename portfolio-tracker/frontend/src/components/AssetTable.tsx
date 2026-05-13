@@ -205,8 +205,8 @@ export default function AssetTable({ assets, onAssetClick }: Props) {
                           className="w-2.5 h-2.5 rounded-full shrink-0"
                           style={{ backgroundColor: group.color }}
                         />
-                        <span className="font-semibold text-gray-700 text-sm">{group.name}</span>
-                        <span className="text-xs text-gray-400">
+                        <span className="font-bold text-gray-800 text-base">{group.name}</span>
+                        <span className="text-xs text-gray-400 font-normal">
                           {group.assets.length} {group.assets.length === 1 ? d.asset : d.assets}
                         </span>
                       </div>

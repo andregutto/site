@@ -67,7 +67,7 @@ async function getPortfolioValueAtMonth(
   }
 
   // Best price: most recent <= dateStr, else oldest available (carry-backward from future)
-  const priceMap: Record<number, { price: number; currency: string }> = {}
+  const priceMap: Record<number, { price: number; currency: string; ref_date: string }> = {}
   for (const id of assetIds) {
     const entries = phByAsset[id] ?? []
     if (!entries.length) continue
@@ -75,7 +75,7 @@ async function getPortfolioValueAtMonth(
     for (const e of entries) {
       if (e.ref_date <= dateStr) best = e
     }
-    priceMap[id] = { price: best.price, currency: best.currency }
+    priceMap[id] = { price: best.price, currency: best.currency, ref_date: best.ref_date }
   }
 
   // Manual assets: carry-backward from manual_values
@@ -129,16 +129,23 @@ async function getPortfolioValueAtMonth(
         const holdings = holdingsMap[a.id] ?? 0
         if (holdings > 0) {
           const ph = priceMap[a.id]
-          if (ph) {
+          // For current month: use live price when history is absent or stale (from a previous month)
+          const phStale = ph && isCurrentOrFuture && ph.ref_date.substring(0, 7) < ym
+          if (ph && !phStale) {
             const fx = await getFxRate(ph.currency)
             value = holdings * ph.price * fx
           } else if (isCurrentOrFuture) {
-            // No price_history at all: fall back to live price for current month
             try {
               const result = await getCurrentPrice(a as Asset)
               const fx = result.currency === 'BRL' ? 1 : await getFxRate(result.currency)
               value = holdings * result.price * fx
-            } catch { value = 0 }
+            } catch {
+              // Last resort: use stale history if live price fails
+              if (ph) {
+                const fx = await getFxRate(ph.currency)
+                value = holdings * ph.price * fx
+              }
+            }
           }
         }
       }

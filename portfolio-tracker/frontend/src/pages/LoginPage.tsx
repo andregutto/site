@@ -102,11 +102,11 @@ export default function LoginPage() {
     : l.submitForgot
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6">
-      <div className="w-full max-w-sm space-y-5">
+    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-6 py-10">
+      <div className="w-full max-w-sm">
 
         {/* Header bar: André Gutto left, language selector right */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between mb-8">
           <a
             href="https://andregutto.com"
             target="_blank"
@@ -119,9 +119,11 @@ export default function LoginPage() {
           <LanguageSelector />
         </div>
 
+        <div className="space-y-5">
+
         {/* Branding */}
         <div className="text-center space-y-1">
-          <div className="flex justify-center pt-1 pb-1">
+          <div className="flex justify-center pb-1">
             <img src="/favicon.svg" alt="Logo" className="w-10 h-10" />
           </div>
           <h1
@@ -329,7 +331,11 @@ export default function LoginPage() {
           </form>
         </div>
 
-        <LoginFooter />
+        </div>{/* end space-y-5 */}
+
+        <div className="mt-6">
+          <LoginFooter />
+        </div>
       </div>
     </div>
   )
