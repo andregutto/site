@@ -14,7 +14,9 @@ export default function DashboardPage() {
   const navigate = useNavigate()
 
   function handleAssetClick(asset: PortfolioAsset) {
-    if (asset.needs_manual) {
+    // Ticker assets with pricing failure → go to detail page (archive or inspect)
+    // True manual/RF assets with missing data → open setup modal
+    if (asset.needs_manual && (asset.source === 'manual' || asset.source === 'fixed_income')) {
       setSelectedAsset(asset)
     } else {
       navigate(`/assets/${asset.id}`, { state: { total_brl: data?.total_brl ?? 0 } })
