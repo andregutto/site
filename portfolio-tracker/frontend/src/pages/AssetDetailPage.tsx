@@ -167,6 +167,11 @@ export default function AssetDetailPage() {
                 Rendendo {fiIndexerLabel(data.fi_type, data.fi_rate, data.fi_spread)}
               </span>
             )}
+            {data.asset_type === 'ticker' && data.avg_cost_brl != null && (
+              <span className="text-xs px-2.5 py-0.5 rounded-full bg-gray-100 border border-gray-200 text-gray-600 font-semibold">
+                PM {data.price_currency !== 'BRL' ? 'BRL' : data.price_currency} {fmtNum(data.avg_cost_brl, 2)}
+              </span>
+            )}
           </div>
           <p className="text-sm text-gray-500 mt-0.5 truncate">{data.name}</p>
         </div>
@@ -271,6 +276,61 @@ export default function AssetDetailPage() {
           />
         )}
       </div>
+
+      {/* Posição atual (apenas tickers) */}
+      {data.asset_type === 'ticker' && data.holdings != null && data.holdings > 0 && (
+        <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-4">
+          <h2 className="font-semibold text-indigo-900 text-sm mb-3">Posição atual</h2>
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+            {data.avg_cost_brl != null && (
+              <>
+                <div>
+                  <p className="text-xs text-indigo-500 uppercase tracking-wide mb-0.5">Preço médio pago</p>
+                  <p className="font-bold text-indigo-900 text-sm">
+                    BRL {fmtNum(data.avg_cost_brl, 2)}
+                  </p>
+                  {data.price_currency !== 'BRL' && data.current_price != null && data.current_value_brl > 0 && (
+                    <p className="text-xs text-indigo-400">
+                      {data.price_currency} {fmtNum(data.avg_cost_brl / (data.current_value_brl / (data.holdings * data.current_price)), 2)}
+                    </p>
+                  )}
+                </div>
+                <div className="w-px h-8 bg-indigo-200 hidden sm:block" />
+              </>
+            )}
+            {data.current_price != null && (
+              <>
+                <div>
+                  <p className="text-xs text-indigo-500 uppercase tracking-wide mb-0.5">Preço atual</p>
+                  <p className="font-bold text-indigo-900 text-sm">
+                    {data.price_currency} {fmtNum(data.current_price, 2)}
+                  </p>
+                  <p className="text-xs text-indigo-400">{data.price_source}</p>
+                </div>
+                <div className="w-px h-8 bg-indigo-200 hidden sm:block" />
+              </>
+            )}
+            {data.gain_loss_pct != null && (
+              <>
+                <div>
+                  <p className="text-xs text-indigo-500 uppercase tracking-wide mb-0.5">Retorno total</p>
+                  <p className={`font-bold text-sm ${data.gain_loss_pct >= 0 ? 'text-green-700' : 'text-red-600'}`}>
+                    {data.gain_loss_pct >= 0 ? '+' : ''}{data.gain_loss_pct.toFixed(2)}%
+                  </p>
+                  <p className={`text-xs ${data.gain_loss_brl >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                    {data.gain_loss_brl >= 0 ? '+' : ''}{fmt(data.gain_loss_brl)}
+                  </p>
+                </div>
+                <div className="w-px h-8 bg-indigo-200 hidden sm:block" />
+              </>
+            )}
+            <div>
+              <p className="text-xs text-indigo-500 uppercase tracking-wide mb-0.5">Quantidade</p>
+              <p className="font-bold text-indigo-900 text-sm">{fmtNum(data.holdings, data.holdings < 10 ? 6 : 2)}</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Rentabilidade do Indexador (apenas RF) */}
       {data.asset_type === 'fixed_income' && (data.gain_loss_pct != null || fiIndexerLabel(data.fi_type, data.fi_rate, data.fi_spread)) && (
@@ -463,72 +523,89 @@ export default function AssetDetailPage() {
       )}
 
       {/* Histórico de aportes */}
-      <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
-        <div className="px-5 py-4 border-b border-gray-100">
-          <h2 className="font-semibold text-gray-800">
-            Aportes{data.contributions.length > 0 ? ` (${data.contributions.length})` : ''}
-          </h2>
-        </div>
-        {data.contributions.length === 0 ? (
-          <p className="text-center text-gray-400 py-8 text-sm">
-            Nenhum aporte registrado.
-          </p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
-                <tr>
-                  <th className="px-4 py-3 text-left">Data</th>
-                  <th className="px-4 py-3 text-left">Tipo</th>
-                  <th className="px-4 py-3 text-right">Qtd</th>
-                  <th className="px-4 py-3 text-right">Preço</th>
-                  <th className="px-4 py-3 text-right">Total BRL</th>
-                  <th className="px-4 py-3 text-right">Lucro</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {data.contributions.map(c => (
-                  <tr key={c.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 text-gray-600">{fmtDate(c.date)}</td>
-                    <td className="px-4 py-3">
-                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-                        c.type === 'buy'    ? 'bg-green-100 text-green-700' :
-                        c.type === 'income' ? 'bg-purple-100 text-purple-700' :
-                                              'bg-red-100 text-red-700'
-                      }`}>
-                        {c.type === 'buy' ? 'Compra' : c.type === 'income' ? 'Rendimento' : 'Venda'}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-right text-gray-700">{fmtNum(c.quantity, 6)}</td>
-                    <td className="px-4 py-3 text-right text-gray-500">
-                      {c.price_orig != null && c.currency
-                        ? `${c.currency} ${fmtNum(c.price_orig, 4)}`
-                        : '—'}
-                    </td>
-                    <td className="px-4 py-3 text-right font-medium text-gray-900">
-                      {(() => {
-                        const v = c.value_brl ?? (c.price_orig != null
-                          ? c.price_orig * c.quantity * (c.fx_rate_brl ?? 1)
+      {(() => {
+        // Preço atual por unidade em BRL para calcular lucro por aporte em tickers
+        const currentPriceBrl = data.asset_type === 'ticker' && data.holdings != null && data.holdings > 0 && data.current_value_brl > 0
+          ? data.current_value_brl / data.holdings
+          : null
+
+        return (
+          <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
+            <div className="px-5 py-4 border-b border-gray-100">
+              <h2 className="font-semibold text-gray-800">
+                Aportes{data.contributions.length > 0 ? ` (${data.contributions.length})` : ''}
+              </h2>
+            </div>
+            {data.contributions.length === 0 ? (
+              <p className="text-center text-gray-400 py-8 text-sm">
+                Nenhum aporte registrado.
+              </p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
+                    <tr>
+                      <th className="px-4 py-3 text-left">Data</th>
+                      <th className="px-4 py-3 text-left">Tipo</th>
+                      <th className="px-4 py-3 text-right">Qtd</th>
+                      <th className="px-4 py-3 text-right">Preço Unit.</th>
+                      <th className="px-4 py-3 text-right">Total BRL</th>
+                      <th className="px-4 py-3 text-right">Lucro</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {data.contributions.map(c => {
+                      const totalBrlVal = c.value_brl ?? (c.price_orig != null
+                        ? c.price_orig * c.quantity * (c.fx_rate_brl ?? 1)
+                        : null)
+
+                      // Lucro: vem do backend para RF; calculado aqui para tickers
+                      const profitBrl = c.profit_brl != null
+                        ? c.profit_brl
+                        : (data.asset_type === 'ticker' && c.type === 'buy' && currentPriceBrl != null && totalBrlVal != null
+                          ? c.quantity * currentPriceBrl - totalBrlVal
                           : null)
-                        return v != null ? fmt(v) : '—'
-                      })()}
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      {c.profit_brl != null ? (
-                        <span className={`text-xs font-semibold ${c.profit_brl >= 0 ? 'text-green-700' : 'text-red-600'}`}>
-                          {c.profit_brl >= 0 ? '+' : ''}{fmt(c.profit_brl)}
-                        </span>
-                      ) : (
-                        <span className="text-xs text-gray-400">—</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+
+                      return (
+                        <tr key={c.id} className="hover:bg-gray-50">
+                          <td className="px-4 py-3 text-gray-600">{fmtDate(c.date)}</td>
+                          <td className="px-4 py-3">
+                            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                              c.type === 'buy'    ? 'bg-green-100 text-green-700' :
+                              c.type === 'income' ? 'bg-purple-100 text-purple-700' :
+                                                    'bg-red-100 text-red-700'
+                            }`}>
+                              {c.type === 'buy' ? 'Compra' : c.type === 'income' ? 'Rendimento' : 'Venda'}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-right text-gray-700">{fmtNum(c.quantity, 6)}</td>
+                          <td className="px-4 py-3 text-right text-gray-500">
+                            {c.price_orig != null && c.currency
+                              ? `${c.currency} ${fmtNum(c.price_orig, 4)}`
+                              : '—'}
+                          </td>
+                          <td className="px-4 py-3 text-right font-medium text-gray-900">
+                            {totalBrlVal != null ? fmt(totalBrlVal) : '—'}
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            {profitBrl != null ? (
+                              <span className={`text-xs font-semibold ${profitBrl >= 0 ? 'text-green-700' : 'text-red-600'}`}>
+                                {profitBrl >= 0 ? '+' : ''}{fmt(profitBrl)}
+                              </span>
+                            ) : (
+                              <span className="text-xs text-gray-400">—</span>
+                            )}
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
-        )}
-      </div>
+        )
+      })()}
     </div>
   )
 }

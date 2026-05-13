@@ -255,18 +255,12 @@ export default function AssetTable({ assets, onAssetClick }: Props) {
                           {asset.holdings != null ? fmtNumber(asset.holdings, 6) : '—'}
                         </td>
                         <td className="px-4 py-3 text-right text-gray-600">
-                          {asset.needs_manual ? (
-                            asset.invested_brl != null ? (
-                              <span className="text-xs text-gray-500">{fmt(asset.invested_brl)}</span>
-                            ) : (
-                              <span className="text-xs text-amber-600 font-medium">{d.enterValue}</span>
-                            )
+                          {asset.needs_manual && asset.invested_brl == null ? (
+                            <span className="text-xs text-amber-600 font-medium">{d.enterValue}</span>
+                          ) : asset.invested_brl != null ? (
+                            fmt(asset.invested_brl)
                           ) : asset.price != null ? (
                             `${asset.currency} ${fmtNumber(asset.price, 2)}`
-                          ) : asset.invested_brl != null ? (
-                            <span className="text-xs text-gray-500">{fmt(asset.invested_brl)}</span>
-                          ) : asset.source === 'manual' ? (
-                            d.manual
                           ) : '—'}
                         </td>
                         <td className="px-4 py-3 text-right font-medium">
