@@ -39,9 +39,8 @@ export async function getMonthlyHistory(ticker: string, months = 24): Promise<Pr
     `brapi:history:${ticker}:${months}`,
     TTL.PRICE_HISTORICAL,
     async () => {
-      const range = months <= 12 ? '1y' : months <= 24 ? '2y' : months <= 60 ? '5y' : 'max'
       const json = await fetchBrapi(
-        `/quote/${ticker}${TOKEN}${SEP}range=${range}&interval=1mo&fundamental=false`
+        `/quote/${ticker}${TOKEN}${SEP}range=max&interval=1mo&fundamental=false`
       ) as { results: BrapiResult[] }
 
       const hist = json.results?.[0]?.historicalDataPrice ?? []
