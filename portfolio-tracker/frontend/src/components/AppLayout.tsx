@@ -37,7 +37,6 @@ export default function AppLayout() {
     { to: '/by-institution', label: t.nav.institutions,  icon: '⊟', end: false },
     { to: '/classes',        label: t.nav.classes,       icon: '◈', end: false },
     { to: '/reports',        label: t.nav.ir,            icon: '⊞', end: false },
-    { to: '/import/b3',     label: 'Importar B3',       icon: '⇩', end: false },
   ]
 
   return (

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useSearchParams, Link } from 'react-router-dom'
 import { useContributions } from '../hooks/usePortfolio'
 import { useCurrency } from '../contexts/CurrencyContext'
 import { apiFetch } from '../lib/api'
@@ -485,14 +485,22 @@ export default function ContributionsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-3">
         <h1 className="text-xl font-bold text-gray-900">Aportes</h1>
-        <button
-          onClick={() => { if (showForm) { cancelEdit() } else { setShowForm(true) } }}
-          className="px-4 py-2 bg-[#001A70] text-white text-sm font-semibold rounded-xl hover:bg-[#001A70]/90 transition-colors"
-        >
-          {showForm ? 'Cancelar' : '+ Novo aporte'}
-        </button>
+        <div className="flex items-center gap-2">
+          <Link
+            to="/import/b3"
+            className="px-3 py-2 border border-gray-200 text-gray-600 text-sm font-medium rounded-xl hover:bg-gray-50 transition-colors"
+          >
+            Importar B3
+          </Link>
+          <button
+            onClick={() => { if (showForm) { cancelEdit() } else { setShowForm(true) } }}
+            className="px-4 py-2 bg-[#001A70] text-white text-sm font-semibold rounded-xl hover:bg-[#001A70]/90 transition-colors"
+          >
+            {showForm ? 'Cancelar' : '+ Novo aporte'}
+          </button>
+        </div>
       </div>
 
       {showForm && (
