@@ -21,36 +21,36 @@ BEGIN
   -- FIIs — ticker (brapi)
   -- -------------------------------------------------------
   INSERT INTO assets (user_id, code, name, asset_type, class_id, sector, country, currency, exchange, ticker_brapi, ticker_yahoo) VALUES
-    (uid,'HSML11','HSI Malls FII',            'ticker',cls_fiis,'Shopping', 'Brasil','BRL','BVMF','HSML11','HSML11.SA'),
-    (uid,'VISC11','Vinci Shopping Centers FII','ticker',cls_fiis,'Shopping', 'Brasil','BRL','BVMF','VISC11','VISC11.SA'),
-    (uid,'BTHF11','BTG Real Estate HF FII',   'ticker',cls_fiis,'Hotel',    'Brasil','BRL','BVMF','BTHF11','BTHF11.SA'),
-    (uid,'HTMX11','FII Hotel Maxinvest',       'ticker',cls_fiis,'Hotel',    'Brasil','BRL','BVMF','HTMX11','HTMX11.SA'),
-    (uid,'TRBL11','Tellus Rio Bravo Log. FII', 'ticker',cls_fiis,'Logística','Brasil','BRL','BVMF','TRBL11','TRBL11.SA'),
-    (uid,'LVBI11','VBI Logístico FII',         'ticker',cls_fiis,'Logística','Brasil','BRL','BVMF','LVBI11','LVBI11.SA'),
-    (uid,'PMLL11','Patria Malls FII',          'ticker',cls_fiis,'Shopping', 'Brasil','BRL','BVMF','PMLL11','PMLL11.SA')
+    (uid,'HSML11','HSI Malls FII',            'ticker',cls_fiis,'Shopping', 'Brasil','BRL','XP','HSML11','HSML11.SA'),
+    (uid,'VISC11','Vinci Shopping Centers FII','ticker',cls_fiis,'Shopping', 'Brasil','BRL','XP','VISC11','VISC11.SA'),
+    (uid,'BTHF11','BTG Real Estate HF FII',   'ticker',cls_fiis,'Hotel',    'Brasil','BRL','XP','BTHF11','BTHF11.SA'),
+    (uid,'HTMX11','FII Hotel Maxinvest',       'ticker',cls_fiis,'Hotel',    'Brasil','BRL','XP','HTMX11','HTMX11.SA'),
+    (uid,'TRBL11','Tellus Rio Bravo Log. FII', 'ticker',cls_fiis,'Logística','Brasil','BRL','XP','TRBL11','TRBL11.SA'),
+    (uid,'LVBI11','VBI Logístico FII',         'ticker',cls_fiis,'Logística','Brasil','BRL','XP','LVBI11','LVBI11.SA'),
+    (uid,'PMLL11','Patria Malls FII',          'ticker',cls_fiis,'Shopping', 'Brasil','BRL','XP','PMLL11','PMLL11.SA')
   ON CONFLICT (user_id, code) DO NOTHING;
 
   -- -------------------------------------------------------
   -- Ações Brasil — ticker (brapi)
   -- -------------------------------------------------------
   INSERT INTO assets (user_id, code, name, asset_type, class_id, sector, country, currency, exchange, ticker_brapi, ticker_yahoo) VALUES
-    (uid,'ITSA3', 'Itaúsa SA',              'ticker',cls_acoes,'Financeiro', 'Brasil','BRL','BVMF','ITSA3', 'ITSA3.SA'),
-    (uid,'WEGE3', 'Weg SA',                 'ticker',cls_acoes,'Tecnologia', 'Brasil','BRL','BVMF','WEGE3', 'WEGE3.SA'),
-    (uid,'KLBN11','Klabin SA Unit',         'ticker',cls_acoes,'Papel',      'Brasil','BRL','BVMF','KLBN11','KLBN11.SA'),
-    (uid,'SBSP3', 'Cia Saneamento Básico SP','ticker',cls_acoes,'Saneamento','Brasil','BRL','BVMF','SBSP3', 'SBSP3.SA'),
-    (uid,'SAPR3', 'Sanepar SA',             'ticker',cls_acoes,'Saneamento','Brasil','BRL','BVMF','SAPR3', 'SAPR3.SA'),
-    (uid,'BBDC3', 'Banco Bradesco SA',      'ticker',cls_acoes,'Financeiro', 'Brasil','BRL','BVMF','BBDC3', 'BBDC3.SA'),
-    (uid,'VALE3', 'Vale SA',                'ticker',cls_acoes,'Metais',     'Brasil','BRL','BVMF','VALE3', 'VALE3.SA'),
-    (uid,'PETR4', 'Petrobras PN',           'ticker',cls_acoes,'Petróleo',   'Brasil','BRL','BVMF','PETR4', 'PETR4.SA'),
-    (uid,'CMIG3', 'CEMIG SA',               'ticker',cls_acoes,'Energia',    'Brasil','BRL','BVMF','CMIG3', 'CMIG3.SA'),
-    (uid,'TAEE3', 'Taesa SA',               'ticker',cls_acoes,'Energia',    'Brasil','BRL','BVMF','TAEE3', 'TAEE3.SA'),
-    (uid,'SANB3', 'Banco Santander Brasil', 'ticker',cls_acoes,'Banco',      'Brasil','BRL','BVMF','SANB3', 'SANB3.SA'),
-    (uid,'BBSE3', 'BB Seguridade SA',       'ticker',cls_acoes,'Seguros',    'Brasil','BRL','BVMF','BBSE3', 'BBSE3.SA'),
-    (uid,'SMAL11','iShares Small Cap ETF',  'ticker',cls_acoes,'Small Caps', 'Brasil','BRL','BVMF','SMAL11','SMAL11.SA'),
-    (uid,'MULT3', 'Multiplan SA',           'ticker',cls_acoes,'Shopping',   'Brasil','BRL','BVMF','MULT3', 'MULT3.SA'),
-    (uid,'ABCB4', 'Banco ABC Brasil',       'ticker',cls_acoes,'Financeiro', 'Brasil','BRL','BVMF','ABCB4', 'ABCB4.SA'),
-    (uid,'RANI3', 'Irani Papel e Embalagem','ticker',cls_acoes,'Papel',      'Brasil','BRL','BVMF','RANI3', 'RANI3.SA'),
-    (uid,'TARPON','Tarpon GT FIC FIA',      'ticker',cls_acoes,'Fundo',      'Brasil','BRL','BTG', 'TARPON',NULL)
+    (uid,'ITSA3', 'Itaúsa SA',              'ticker',cls_acoes,'Financeiro', 'Brasil','BRL','XP', 'ITSA3', 'ITSA3.SA'),
+    (uid,'WEGE3', 'Weg SA',                 'ticker',cls_acoes,'Tecnologia', 'Brasil','BRL','XP', 'WEGE3', 'WEGE3.SA'),
+    (uid,'KLBN11','Klabin SA Unit',         'ticker',cls_acoes,'Papel',      'Brasil','BRL','XP', 'KLBN11','KLBN11.SA'),
+    (uid,'SBSP3', 'Cia Saneamento Básico SP','ticker',cls_acoes,'Saneamento','Brasil','BRL','XP', 'SBSP3', 'SBSP3.SA'),
+    (uid,'SAPR3', 'Sanepar SA',             'ticker',cls_acoes,'Saneamento','Brasil','BRL','XP', 'SAPR3', 'SAPR3.SA'),
+    (uid,'BBDC3', 'Banco Bradesco SA',      'ticker',cls_acoes,'Financeiro', 'Brasil','BRL','XP', 'BBDC3', 'BBDC3.SA'),
+    (uid,'VALE3', 'Vale SA',                'ticker',cls_acoes,'Metais',     'Brasil','BRL','XP', 'VALE3', 'VALE3.SA'),
+    (uid,'PETR4', 'Petrobras PN',           'ticker',cls_acoes,'Petróleo',   'Brasil','BRL','XP', 'PETR4', 'PETR4.SA'),
+    (uid,'CMIG3', 'CEMIG SA',               'ticker',cls_acoes,'Energia',    'Brasil','BRL','XP', 'CMIG3', 'CMIG3.SA'),
+    (uid,'TAEE3', 'Taesa SA',               'ticker',cls_acoes,'Energia',    'Brasil','BRL','XP', 'TAEE3', 'TAEE3.SA'),
+    (uid,'SANB3', 'Banco Santander Brasil', 'ticker',cls_acoes,'Banco',      'Brasil','BRL','XP', 'SANB3', 'SANB3.SA'),
+    (uid,'BBSE3', 'BB Seguridade SA',       'ticker',cls_acoes,'Seguros',    'Brasil','BRL','XP', 'BBSE3', 'BBSE3.SA'),
+    (uid,'SMAL11','iShares Small Cap ETF',  'ticker',cls_acoes,'Small Caps', 'Brasil','BRL','XP', 'SMAL11','SMAL11.SA'),
+    (uid,'MULT3', 'Multiplan SA',           'ticker',cls_acoes,'Shopping',   'Brasil','BRL','XP', 'MULT3', 'MULT3.SA'),
+    (uid,'ABCB4', 'Banco ABC Brasil',       'ticker',cls_acoes,'Financeiro', 'Brasil','BRL','XP', 'ABCB4', 'ABCB4.SA'),
+    (uid,'RANI3', 'Irani Papel e Embalagem','ticker',cls_acoes,'Papel',      'Brasil','BRL','XP', 'RANI3', 'RANI3.SA'),
+    (uid,'TARPON','Tarpon GT FIC FIA',      'ticker',cls_acoes,'Fundo',      'Brasil','BRL','BTG','TARPON',NULL)
   ON CONFLICT (user_id, code) DO NOTHING;
 
   -- -------------------------------------------------------
@@ -91,36 +91,36 @@ BEGIN
   -- -------------------------------------------------------
   INSERT INTO assets (user_id, code, name, asset_type, class_id, country, currency, exchange) VALUES
     (uid,'REVOLUT','Saldo Revolut (EUR)', 'manual',cls_rf,  'Europa','EUR','Revolut'),
-    (uid,'NATIXIS','Previdência NATIXIS', 'manual',cls_prev,'França','EUR','NATIXIS')
+    (uid,'NATIXIS','Previdência NATIXIS', 'manual',cls_prev,'França','EUR','Natixis')
   ON CONFLICT (user_id, code) DO NOTHING;
 
   -- -------------------------------------------------------
   -- Exterior USA — ticker (Yahoo Finance)
   -- -------------------------------------------------------
   INSERT INTO assets (user_id, code, name, asset_type, class_id, sector, country, currency, exchange, ticker_yahoo) VALUES
-    (uid,'META', 'Meta Platforms',            'ticker',cls_ext,'Tecnologia',    'USA','USD','IB','META'),
-    (uid,'AAPL', 'Apple Inc',                 'ticker',cls_ext,'Tecnologia',    'USA','USD','IB','AAPL'),
-    (uid,'AMZN', 'Amazon.com',                'ticker',cls_ext,'Consumo',       'USA','USD','IB','AMZN'),
-    (uid,'DIS',  'Walt Disney',               'ticker',cls_ext,'Entretenimento','USA','USD','IB','DIS'),
-    (uid,'GOOGL','Alphabet Inc',              'ticker',cls_ext,'Tecnologia',    'USA','USD','IB','GOOGL'),
-    (uid,'JPM',  'JPMorgan Chase',            'ticker',cls_ext,'Financeiro',    'USA','USD','IB','JPM'),
-    (uid,'NFLX', 'Netflix Inc',               'ticker',cls_ext,'Entretenimento','USA','USD','IB','NFLX'),
-    (uid,'TSM',  'Taiwan Semiconductor',      'ticker',cls_ext,'Tecnologia',    'USA','USD','IB','TSM'),
-    (uid,'KO',   'Coca-Cola Co',              'ticker',cls_ext,'Alimentos',     'USA','USD','IB','KO'),
-    (uid,'V',    'Visa Inc',                  'ticker',cls_ext,'Financeiro',    'USA','USD','IB','V'),
-    (uid,'MSFT', 'Microsoft Corp',            'ticker',cls_ext,'Tecnologia',    'USA','USD','IB','MSFT'),
-    (uid,'CRM',  'Salesforce Inc',            'ticker',cls_ext,'Tecnologia',    'USA','USD','IB','CRM'),
-    (uid,'NKE',  'Nike Inc',                  'ticker',cls_ext,'Consumo',       'USA','USD','IB','NKE'),
-    (uid,'TSLA', 'Tesla Inc',                 'ticker',cls_ext,'Tecnologia',    'USA','USD','IB','TSLA'),
-    (uid,'MCD',  'McDonald''s Corp',          'ticker',cls_ext,'Consumo',       'USA','USD','IB','MCD'),
-    (uid,'JNJ',  'Johnson & Johnson',         'ticker',cls_ext,'Saúde',         'USA','USD','IB','JNJ'),
-    (uid,'IVV',  'iShares S&P 500 ETF',       'ticker',cls_ext,'Índice',        'USA','USD','IB','IVV'),
-    (uid,'IJS',  'iShares SmallCap Value ETF','ticker',cls_ext,'Small Caps',    'USA','USD','IB','IJS'),
-    (uid,'VNQ',  'Vanguard Real Estate ETF',  'ticker',cls_ext,'Imobiliário',   'USA','USD','IB','VNQ'),
-    (uid,'IAU',  'iShares Gold Trust',        'ticker',cls_ext,'Ouro',          'USA','USD','IB','IAU'),
-    (uid,'VUG',  'Vanguard Growth ETF',       'ticker',cls_ext,'Índice',        'USA','USD','IB','VUG'),
-    (uid,'VGT',  'Vanguard IT Index ETF',     'ticker',cls_ext,'Tecnologia',    'USA','USD','IB','VGT'),
-    (uid,'AGG',  'iShares US Bond ETF',       'ticker',cls_ext,'Renda Fixa',    'USA','USD','IB','AGG')
+    (uid,'META', 'Meta Platforms',            'ticker',cls_ext,'Tecnologia',    'USA','USD','Interactive Brokers','META'),
+    (uid,'AAPL', 'Apple Inc',                 'ticker',cls_ext,'Tecnologia',    'USA','USD','Interactive Brokers','AAPL'),
+    (uid,'AMZN', 'Amazon.com',                'ticker',cls_ext,'Consumo',       'USA','USD','Interactive Brokers','AMZN'),
+    (uid,'DIS',  'Walt Disney',               'ticker',cls_ext,'Entretenimento','USA','USD','Interactive Brokers','DIS'),
+    (uid,'GOOGL','Alphabet Inc',              'ticker',cls_ext,'Tecnologia',    'USA','USD','Interactive Brokers','GOOGL'),
+    (uid,'JPM',  'JPMorgan Chase',            'ticker',cls_ext,'Financeiro',    'USA','USD','Interactive Brokers','JPM'),
+    (uid,'NFLX', 'Netflix Inc',               'ticker',cls_ext,'Entretenimento','USA','USD','Interactive Brokers','NFLX'),
+    (uid,'TSM',  'Taiwan Semiconductor',      'ticker',cls_ext,'Tecnologia',    'USA','USD','Interactive Brokers','TSM'),
+    (uid,'KO',   'Coca-Cola Co',              'ticker',cls_ext,'Alimentos',     'USA','USD','Interactive Brokers','KO'),
+    (uid,'V',    'Visa Inc',                  'ticker',cls_ext,'Financeiro',    'USA','USD','Interactive Brokers','V'),
+    (uid,'MSFT', 'Microsoft Corp',            'ticker',cls_ext,'Tecnologia',    'USA','USD','Interactive Brokers','MSFT'),
+    (uid,'CRM',  'Salesforce Inc',            'ticker',cls_ext,'Tecnologia',    'USA','USD','Interactive Brokers','CRM'),
+    (uid,'NKE',  'Nike Inc',                  'ticker',cls_ext,'Consumo',       'USA','USD','Interactive Brokers','NKE'),
+    (uid,'TSLA', 'Tesla Inc',                 'ticker',cls_ext,'Tecnologia',    'USA','USD','Interactive Brokers','TSLA'),
+    (uid,'MCD',  'McDonald''s Corp',          'ticker',cls_ext,'Consumo',       'USA','USD','Interactive Brokers','MCD'),
+    (uid,'JNJ',  'Johnson & Johnson',         'ticker',cls_ext,'Saúde',         'USA','USD','Interactive Brokers','JNJ'),
+    (uid,'IVV',  'iShares S&P 500 ETF',       'ticker',cls_ext,'Índice',        'USA','USD','Interactive Brokers','IVV'),
+    (uid,'IJS',  'iShares SmallCap Value ETF','ticker',cls_ext,'Small Caps',    'USA','USD','Interactive Brokers','IJS'),
+    (uid,'VNQ',  'Vanguard Real Estate ETF',  'ticker',cls_ext,'Imobiliário',   'USA','USD','Interactive Brokers','VNQ'),
+    (uid,'IAU',  'iShares Gold Trust',        'ticker',cls_ext,'Ouro',          'USA','USD','Interactive Brokers','IAU'),
+    (uid,'VUG',  'Vanguard Growth ETF',       'ticker',cls_ext,'Índice',        'USA','USD','Interactive Brokers','VUG'),
+    (uid,'VGT',  'Vanguard IT Index ETF',     'ticker',cls_ext,'Tecnologia',    'USA','USD','Interactive Brokers','VGT'),
+    (uid,'AGG',  'iShares US Bond ETF',       'ticker',cls_ext,'Renda Fixa',    'USA','USD','Interactive Brokers','AGG')
   ON CONFLICT (user_id, code) DO NOTHING;
 
 END $$;
