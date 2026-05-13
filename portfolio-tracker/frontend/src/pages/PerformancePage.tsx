@@ -244,20 +244,18 @@ export default function PerformancePage() {
 
       {resetting && (
         <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm text-amber-800">
-          Apagando histórico e rebuscando preços de todos os ativos em lotes... isso pode levar até 60 segundos.
+          Apagando histórico de preços...
         </div>
       )}
 
       {resetResult && !resetting && (
-        <div className={`rounded-xl px-4 py-3 text-sm border ${resetResult.errors === 0 ? 'bg-green-50 border-green-200 text-green-800' : 'bg-amber-50 border-amber-200 text-amber-800'}`}>
-          Histórico recalculado: {resetResult.synced}/{resetResult.total} ativos atualizados
-          {resetResult.deleted > 0 && ` · ${resetResult.deleted} entradas removidas`}
-          {resetResult.errors > 0 && ` · ${resetResult.errors} com erro`}
-          {resetResult.errors > 0 && (
-            <span className="ml-1 text-xs">
-              ({resetResult.details.filter(d => d.status === 'error').map(d => d.code).join(', ')})
-            </span>
-          )}
+        <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 text-sm text-blue-800">
+          <p className="font-medium">Histórico apagado — sincronização rodando em segundo plano</p>
+          <p className="mt-1 text-blue-700">
+            {resetResult.deleted > 0 && `${resetResult.deleted} entradas removidas. `}
+            Buscando preços de {resetResult.total} ativos (1 por vez, intervalo de 5s para respeitar o limite da API).
+            Isso leva de 5 a 10 minutos. Recarregue a página após alguns minutos para ver os dados atualizados.
+          </p>
         </div>
       )}
 

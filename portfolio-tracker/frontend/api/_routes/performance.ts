@@ -264,22 +264,27 @@ router.get('/summary', requireAuth, async (req, res: Response) => {
     await autoSyncHistory(tickerAssetsSync, [prevYM, toStr])
   }
 
+  // ALL assets (not just active): sold assets may have had contributions
+  // within the period that must count in the Simple Dietz cash-flow term.
   const { data: userAssets } = await supabaseAdmin
-    .from('assets').select('id').eq('user_id', userId).eq('active', true)
+    .from('assets').select('id').eq('user_id', userId)
   const userAssetIds = (userAssets ?? []).map(a => a.id)
 
   const { data: contributions } = await supabaseAdmin
     .from('contributions')
     .select('asset_id, date, value_brl, price_orig, quantity, fx_rate_brl, currency, type')
-    .in('asset_id', userAssetIds)
+    .in('asset_id', userAssetIds.length ? userAssetIds : [-1])
     .gte('date', fromDateStr)
     .lte('date', toDateStr)
 
   function estimateContribValue(c: { value_brl: number | null; price_orig: number | null; quantity: number | null; fx_rate_brl: number | null; currency: string | null }): number {
-    if (c.value_brl != null) return c.value_brl
-    if (c.price_orig != null && c.quantity != null) {
-      const fx = c.fx_rate_brl ?? (c.currency && c.currency !== 'BRL' ? 5.7 : 1)
-      return c.price_orig * c.quantity * fx
+    const vBrl = Number(c.value_brl)
+    if (vBrl > 0) return vBrl
+    const price = Number(c.price_orig)
+    const qty   = Number(c.quantity)
+    if (price > 0 && qty > 0) {
+      const fx = Number(c.fx_rate_brl) || (c.currency && c.currency !== 'BRL' ? 5.7 : 1)
+      return price * qty * fx
     }
     return 0
   }
@@ -378,17 +383,21 @@ router.get('/monthly', requireAuth, async (req, res: Response) => {
     supabaseAdmin
       .from('contributions')
       .select('date, value_brl, price_orig, quantity, fx_rate_brl, currency, type')
-      .in('asset_id', userAssetIds2)
+      .in('asset_id', userAssetIds2.length ? userAssetIds2 : [-1])
       .lte('date', rangeToDate),
   ])
+
+  if (contribsData.error) console.error('[monthly] contributions query error:', contribsData.error.message)
 
   const contribsByMonth: Record<string, number> = {}
   for (const c of (contribsData.data ?? [])) {
     if (c.type === 'income') continue  // income is portfolio return, not a cash flow
     const ym = (c.date as string).substring(0, 7)
-    const vBrl = c.value_brl ??
-      (c.price_orig != null && c.quantity != null
-        ? c.price_orig * c.quantity * (c.fx_rate_brl ?? (c.currency && c.currency !== 'BRL' ? 5.7 : 1))
+    // Use Number() to safely coerce Supabase DECIMAL fields (may arrive as strings)
+    const vBrl = Number(c.value_brl) > 0
+      ? Number(c.value_brl)
+      : (Number(c.price_orig) > 0 && Number(c.quantity) > 0
+        ? Number(c.price_orig) * Number(c.quantity) * (Number(c.fx_rate_brl) || (c.currency && c.currency !== 'BRL' ? 5.7 : 1))
         : 0)
     const delta = c.type === 'buy' ? vBrl : -vBrl
     contribsByMonth[ym] = (contribsByMonth[ym] ?? 0) + delta

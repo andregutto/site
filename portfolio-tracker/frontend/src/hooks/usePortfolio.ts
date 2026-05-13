@@ -50,8 +50,9 @@ export function useSyncHistory() {
 }
 
 export interface ResetResult {
-  deleted: number; synced: number; errors: number; total: number
-  details: Array<{ code: string; status: 'ok' | 'empty' | 'error'; points?: number; error?: string }>
+  status: 'started'
+  deleted: number
+  total: number
 }
 
 export function useResetPriceHistory() {

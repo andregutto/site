@@ -258,12 +258,12 @@ router.post('/reset-price-history', requireAuth, async (req, res: Response) => {
     .eq('user_id', userId)
     .eq('asset_type', 'ticker')
 
-  if (!assets?.length) { res.json({ deleted: 0, synced: 0, errors: 0, total: 0, details: [] }); return }
+  if (!assets?.length) { res.json({ status: 'started', deleted: 0, total: 0 }); return }
 
   const assetIds = assets.map(a => a.id as number)
 
-  // Delete ALL price_history for user's assets — no date filter — so stale or
-  // timezone-shifted dates from any year are fully replaced by the fresh sync.
+  // Delete ALL price_history synchronously before returning so the client sees
+  // zeroed-out data immediately, avoiding stale/wrong values during the re-sync.
   const { count: deleted } = await supabaseAdmin
     .from('price_history')
     .delete({ count: 'exact' })
@@ -274,36 +274,34 @@ router.post('/reset-price-history', requireAuth, async (req, res: Response) => {
   cache.deletePattern('yahoo:history:')
   cache.deletePattern('coingecko:history:')
 
-  type Detail = { id: number; code: string; status: 'ok' | 'empty' | 'error'; points?: number; error?: string }
+  // Return immediately — the HTTP connection closes and the frontend unblocks.
+  // The sequential sync continues in the background (~5 min for 77 assets at 5s/req).
+  res.json({ status: 'started', deleted: deleted ?? 0, total: assets.length })
 
-  let synced = 0, errors = 0
-  const details: Detail[] = []
-
-  // brapi free tier: ~15 req/min → 1 request every 5s to stay safely within limit
-  for (let i = 0; i < assets.length; i++) {
-    const a = assets[i]
-    try {
-      const history = await getMonthlyHistory(a as Asset, 72)
-      if (!history.length) {
-        details.push({ id: a.id, code: a.code, status: 'empty' })
-      } else {
-        const { error: upsertErr } = await supabaseAdmin.from('price_history').upsert(
-          history.map((p) => ({ asset_id: a.id, ref_date: p.date, price: p.price, currency: p.currency, source: 'reset' })),
-          { onConflict: 'asset_id,ref_date' }
-        )
-        if (upsertErr) throw new Error(`DB: ${upsertErr.message}`)
-        synced++
-        details.push({ id: a.id, code: a.code, status: 'ok', points: history.length })
+  // Fire-and-forget background sync (not awaited — runs after response is sent)
+  const runSync = async () => {
+    for (let i = 0; i < assets.length; i++) {
+      const a = assets[i]
+      try {
+        const history = await getMonthlyHistory(a as Asset, 72)
+        if (history.length) {
+          const { error: upsertErr } = await supabaseAdmin.from('price_history').upsert(
+            history.map((p) => ({ asset_id: a.id, ref_date: p.date, price: p.price, currency: p.currency, source: 'reset' })),
+            { onConflict: 'asset_id,ref_date' }
+          )
+          if (upsertErr) console.warn(`[reset] DB upsert ${a.code}:`, upsertErr.message)
+          else console.log(`[reset] ${a.code} ok (${history.length} pts)`)
+        } else {
+          console.log(`[reset] ${a.code} empty`)
+        }
+      } catch (err) {
+        console.warn(`[reset] ${a.code} error:`, err instanceof Error ? err.message : String(err))
       }
-    } catch (err) {
-      errors++
-      const msg = err instanceof Error ? err.message : String(err)
-      details.push({ id: a.id, code: a.code, status: 'error', error: msg })
+      if (i + 1 < assets.length) await new Promise(r => setTimeout(r, 5000))
     }
-    if (i + 1 < assets.length) await new Promise(r => setTimeout(r, 5000))
+    console.log('[reset-price-history] background sync complete')
   }
-
-  res.json({ deleted: deleted ?? 0, synced, errors, total: assets.length, details })
+  runSync().catch(err => console.error('[reset-price-history] fatal:', err))
 })
 
 router.post('/reset-baseline', requireAuth, async (req, res: Response) => {
