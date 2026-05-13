@@ -1,7 +1,9 @@
+import { useState } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { CurrencyProvider } from './contexts/CurrencyContext'
 import { I18nProvider } from './contexts/I18nContext'
+import { supabase } from './lib/supabase'
 import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
 import PerformancePage from './pages/PerformancePage'
@@ -17,6 +19,48 @@ import AppLayout from './components/AppLayout'
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage'
 import TermsOfUsePage from './pages/TermsOfUsePage'
 
+function EmailConfirmGate({ email }: { email: string }) {
+  const { signOut } = useAuth()
+  const [sent, setSent] = useState(false)
+  const [sending, setSending] = useState(false)
+
+  async function resend() {
+    setSending(true)
+    await supabase.auth.resend({ type: 'signup', email })
+    setSent(true)
+    setSending(false)
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 w-full max-w-sm p-8 space-y-5 text-center">
+        <div className="w-14 h-14 bg-[#001A70]/10 rounded-2xl flex items-center justify-center mx-auto">
+          <svg className="w-7 h-7 text-[#001A70]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />
+          </svg>
+        </div>
+        <div>
+          <h2 className="text-lg font-bold text-gray-900">Confirme seu e-mail</h2>
+          <p className="text-sm text-gray-500 mt-2">
+            Enviamos um link de confirmacao para <span className="font-medium text-gray-700">{email}</span>. Verifique sua caixa de entrada e clique no link para ativar sua conta.
+          </p>
+        </div>
+        {sent && <p className="text-xs text-green-600">E-mail reenviado. Verifique sua caixa de entrada.</p>}
+        <button
+          onClick={resend}
+          disabled={sending || sent}
+          className="w-full border border-[#001A70] text-[#001A70] rounded-xl py-2.5 text-sm font-semibold hover:bg-[#001A70]/5 disabled:opacity-50 transition-colors"
+        >
+          {sending ? 'Enviando...' : sent ? 'E-mail enviado' : 'Reenviar e-mail'}
+        </button>
+        <button onClick={() => signOut()} className="text-xs text-gray-400 hover:text-gray-600 transition-colors">
+          Sair
+        </button>
+      </div>
+    </div>
+  )
+}
+
 function ProtectedRoutes() {
   const { user, loading } = useAuth()
 
@@ -29,6 +73,8 @@ function ProtectedRoutes() {
   }
 
   if (!user) return <Navigate to="/login" replace />
+
+  if (!user.email_confirmed_at) return <EmailConfirmGate email={user.email ?? ''} />
 
   return <AppLayout />
 }

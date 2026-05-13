@@ -3,6 +3,7 @@ import { apiFetch } from '../lib/api'
 import { useAuth } from '../contexts/AuthContext'
 import { useCurrency, type Currency } from '../contexts/CurrencyContext'
 import LanguageSelector from '../components/LanguageSelector'
+import { supabase } from '../lib/supabase'
 
 interface ProfileData {
   email:                string
@@ -84,6 +85,11 @@ export default function ProfilePage() {
   const [pwdOk,          setPwdOk]          = useState(false)
   const [pwdError,       setPwdError]       = useState<string | null>(null)
 
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [deleteConfirm,   setDeleteConfirm]   = useState('')
+  const [deleting,        setDeleting]        = useState(false)
+  const [deleteError,     setDeleteError]     = useState<string | null>(null)
+
   useEffect(() => {
     apiFetch<ProfileData>('/profile')
       .then(d => {
@@ -142,6 +148,17 @@ export default function ProfilePage() {
     } catch (e) {
       setPwdError(e instanceof Error ? e.message : 'Erro ao alterar senha')
     } finally { setSavingPwd(false) }
+  }
+
+  async function handleDeleteAccount() {
+    setDeleting(true); setDeleteError(null)
+    try {
+      await apiFetch('/profile', { method: 'DELETE' })
+      await supabase.auth.signOut()
+    } catch (e) {
+      setDeleteError(e instanceof Error ? e.message : 'Erro ao excluir conta')
+      setDeleting(false)
+    }
   }
 
   const emailForDisplay = email || user?.email || ''
@@ -339,6 +356,59 @@ export default function ProfilePage() {
               {savingPwd ? 'Alterando...' : 'Alterar senha'}
             </button>
           </form>
+
+          {/* Excluir conta */}
+          <div className="bg-white border border-red-100 rounded-2xl p-6 shadow-sm space-y-3">
+            <h2 className="font-semibold text-red-700">Zona de perigo</h2>
+            <p className="text-xs text-gray-500">A exclusao e permanente e remove todos os seus dados: ativos, aportes, historico de precos e configuracoes. Esta acao nao pode ser desfeita.</p>
+            <button
+              type="button"
+              onClick={() => { setShowDeleteModal(true); setDeleteConfirm(''); setDeleteError(null) }}
+              className="px-4 py-2 text-sm font-semibold text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors"
+            >
+              Excluir minha conta
+            </button>
+          </div>
+
+          {/* Modal de confirmacao de exclusao */}
+          {showDeleteModal && (
+            <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+              <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+                <h3 className="text-lg font-bold text-gray-900">Confirmar exclusao</h3>
+                <p className="text-sm text-gray-500">
+                  Esta acao excluira permanentemente sua conta e todos os dados associados. Para confirmar, digite seu e-mail abaixo:
+                </p>
+                <p className="text-xs font-mono bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-gray-700 select-all">{emailForDisplay}</p>
+                <input
+                  type="email"
+                  value={deleteConfirm}
+                  onChange={e => setDeleteConfirm(e.target.value)}
+                  placeholder="Digite seu e-mail"
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-300"
+                  autoFocus
+                />
+                {deleteError && <p className="text-xs text-red-600">{deleteError}</p>}
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowDeleteModal(false)}
+                    disabled={deleting}
+                    className="flex-1 py-2.5 text-sm font-semibold border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-50 transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleDeleteAccount}
+                    disabled={deleting || deleteConfirm.trim().toLowerCase() !== emailForDisplay.toLowerCase()}
+                    className="flex-1 py-2.5 text-sm font-semibold bg-red-600 text-white rounded-xl hover:bg-red-700 disabled:opacity-40 transition-colors"
+                  >
+                    {deleting ? 'Excluindo...' : 'Excluir conta'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Termos */}
           <div className="bg-gray-50 border border-gray-100 rounded-2xl p-5 text-xs text-gray-400 space-y-1">

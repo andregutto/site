@@ -62,4 +62,11 @@ router.patch('/password', requireAuth, async (req, res: Response) => {
   res.json({ ok: true })
 })
 
+router.delete('/', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const { error } = await supabaseAdmin.auth.admin.deleteUser(userId)
+  if (error) { res.status(500).json({ error: error.message }); return }
+  res.json({ ok: true })
+})
+
 export default router
