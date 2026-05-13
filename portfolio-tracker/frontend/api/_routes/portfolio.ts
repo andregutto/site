@@ -215,36 +215,30 @@ router.post('/sync-history', requireAuth, async (req, res: Response) => {
 
   let synced = 0, errors = 0
   const details: Detail[] = []
-  const BATCH = 5
 
-  for (let i = 0; i < assets.length; i += BATCH) {
-    const batch = assets.slice(i, i + BATCH)
-    const batchResults = await Promise.allSettled(
-      batch.map(async (a): Promise<Detail> => {
-        const history = await getMonthlyHistory(a as Asset, 72)
-        if (!history.length) return { id: a.id, code: a.code, status: 'empty' }
+  // brapi free tier: ~15 req/min → 1 request every 5s to stay safely within limit
+  for (let i = 0; i < assets.length; i++) {
+    const a = assets[i]
+    try {
+      const history = await getMonthlyHistory(a as Asset, 72)
+      if (!history.length) {
+        details.push({ id: a.id, code: a.code, status: 'empty' })
+      } else {
         const { error: upsertErr } = await supabaseAdmin.from('price_history').upsert(
           history.map((p) => ({ asset_id: a.id, ref_date: p.date, price: p.price, currency: p.currency, source: 'sync' })),
           { onConflict: 'asset_id,ref_date' }
         )
         if (upsertErr) throw new Error(`DB upsert: ${upsertErr.message}`)
-        return { id: a.id, code: a.code, status: 'ok', points: history.length }
-      })
-    )
-    for (let j = 0; j < batchResults.length; j++) {
-      const r = batchResults[j]
-      if (r.status === 'fulfilled') {
-        if (r.value.status === 'ok') synced++
-        details.push(r.value)
-      } else {
-        errors++
-        const msg = r.reason instanceof Error ? r.reason.message : String(r.reason)
-        console.warn(`[sync-history] Erro em ${batch[j].code}:`, msg)
-        details.push({ id: batch[j].id, code: batch[j].code, status: 'error', error: msg })
+        synced++
+        details.push({ id: a.id, code: a.code, status: 'ok', points: history.length })
       }
+    } catch (err) {
+      errors++
+      const msg = err instanceof Error ? err.message : String(err)
+      console.warn(`[sync-history] Erro em ${a.code}:`, msg)
+      details.push({ id: a.id, code: a.code, status: 'error', error: msg })
     }
-    // throttle to avoid brapi rate-limiting (free tier ~15 req/min)
-    if (i + BATCH < assets.length) await new Promise(r => setTimeout(r, 1200))
+    if (i + 1 < assets.length) await new Promise(r => setTimeout(r, 5000))
   }
 
   res.json({ synced, errors, total: assets.length, details })
@@ -284,34 +278,29 @@ router.post('/reset-price-history', requireAuth, async (req, res: Response) => {
 
   let synced = 0, errors = 0
   const details: Detail[] = []
-  const BATCH = 5
 
-  for (let i = 0; i < assets.length; i += BATCH) {
-    const batch = assets.slice(i, i + BATCH)
-    const batchResults = await Promise.allSettled(
-      batch.map(async (a): Promise<Detail> => {
-        const history = await getMonthlyHistory(a as Asset, 72)
-        if (!history.length) return { id: a.id, code: a.code, status: 'empty' }
+  // brapi free tier: ~15 req/min → 1 request every 5s to stay safely within limit
+  for (let i = 0; i < assets.length; i++) {
+    const a = assets[i]
+    try {
+      const history = await getMonthlyHistory(a as Asset, 72)
+      if (!history.length) {
+        details.push({ id: a.id, code: a.code, status: 'empty' })
+      } else {
         const { error: upsertErr } = await supabaseAdmin.from('price_history').upsert(
           history.map((p) => ({ asset_id: a.id, ref_date: p.date, price: p.price, currency: p.currency, source: 'reset' })),
           { onConflict: 'asset_id,ref_date' }
         )
         if (upsertErr) throw new Error(`DB: ${upsertErr.message}`)
-        return { id: a.id, code: a.code, status: 'ok', points: history.length }
-      })
-    )
-    for (let j = 0; j < batchResults.length; j++) {
-      const r = batchResults[j]
-      if (r.status === 'fulfilled') {
-        if (r.value.status === 'ok') synced++
-        details.push(r.value)
-      } else {
-        errors++
-        const msg = r.reason instanceof Error ? r.reason.message : String(r.reason)
-        details.push({ id: batch[j].id, code: batch[j].code, status: 'error', error: msg })
+        synced++
+        details.push({ id: a.id, code: a.code, status: 'ok', points: history.length })
       }
+    } catch (err) {
+      errors++
+      const msg = err instanceof Error ? err.message : String(err)
+      details.push({ id: a.id, code: a.code, status: 'error', error: msg })
     }
-    if (i + BATCH < assets.length) await new Promise(r => setTimeout(r, 1200))
+    if (i + 1 < assets.length) await new Promise(r => setTimeout(r, 5000))
   }
 
   res.json({ deleted: deleted ?? 0, synced, errors, total: assets.length, details })

@@ -88,14 +88,30 @@ async function getPortfolioValueAtMonth(
 
   const { data: contributions } = await supabaseAdmin
     .from('contributions')
-    .select('asset_id, type, quantity')
+    .select('asset_id, type, quantity, value_brl, price_orig, fx_rate_brl, currency')
     .in('asset_id', assetIds)
     .lte('date', dateStr)
 
   const holdingsMap: Record<number, number> = {}
+  // costMap: used as fallback price when price_history is missing (delisted/renamed tickers)
+  const costMap: Record<number, { totalCost: number; totalQty: number }> = {}
   for (const c of (contributions ?? [])) {
     holdingsMap[c.asset_id] = (holdingsMap[c.asset_id] ?? 0) +
       (c.type === 'buy' ? c.quantity : -c.quantity)
+    if (c.type === 'buy') {
+      const qty = c.quantity ?? 0
+      if (qty > 0) {
+        const vBrl = c.value_brl ??
+          (c.price_orig != null
+            ? c.price_orig * qty * (c.fx_rate_brl ?? (c.currency && c.currency !== 'BRL' ? 5.7 : 1))
+            : 0)
+        if (vBrl > 0) {
+          if (!costMap[c.asset_id]) costMap[c.asset_id] = { totalCost: 0, totalQty: 0 }
+          costMap[c.asset_id].totalCost += vBrl
+          costMap[c.asset_id].totalQty  += qty
+        }
+      }
+    }
   }
 
   // Fetch ALL price_history (no date filter) to enable carry-backward for assets
@@ -188,12 +204,19 @@ async function getPortfolioValueAtMonth(
               const fx = result.currency === 'BRL' ? 1 : await getFxRate(result.currency)
               value = holdings * result.price * fx
             } catch {
-              // Last resort: use stale history if live price fails
               if (ph) {
                 const fx = await getFxRate(ph.currency)
                 value = holdings * ph.price * fx
+              } else {
+                // No price history AND live price unavailable (delisted/renamed) → cost basis
+                const cost = costMap[a.id]
+                if (cost && cost.totalQty > 0) value = holdings * (cost.totalCost / cost.totalQty)
               }
             }
+          } else if (!ph) {
+            // Historical month with no price_history at all → use avg cost as proxy
+            const cost = costMap[a.id]
+            if (cost && cost.totalQty > 0) value = holdings * (cost.totalCost / cost.totalQty)
           }
         }
       }
