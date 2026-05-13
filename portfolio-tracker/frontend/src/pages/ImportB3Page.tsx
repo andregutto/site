@@ -35,10 +35,19 @@ interface ExecuteResult {
   skipped_tickers: string[]
 }
 
+interface SyncDetail {
+  id: number
+  code: string
+  status: 'ok' | 'empty' | 'error'
+  points?: number
+  error?: string
+}
+
 interface SyncResult {
   synced: number
   errors: number
   total: number
+  details: SyncDetail[]
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -469,19 +478,44 @@ export default function ImportB3Page() {
         </div>
 
         {syncResult != null && (
-          <div className={`border rounded-2xl px-5 py-4 flex items-center justify-between gap-3 ${
+          <div className={`border rounded-2xl p-5 space-y-3 ${
             syncResult.errors > 0 ? 'bg-amber-50 border-amber-200' : 'bg-green-50 border-green-100'
           }`}>
-            <div>
-              <p className={`text-sm font-semibold ${syncResult.errors > 0 ? 'text-amber-900' : 'text-green-900'}`}>
-                Histórico de preços sincronizado
-              </p>
-              <p className={`text-xs mt-0.5 ${syncResult.errors > 0 ? 'text-amber-700' : 'text-green-700'}`}>
-                {syncResult.synced} de {syncResult.total} ativos com histórico
-                {syncResult.errors > 0 ? ` · ${syncResult.errors} com erro` : ''}
-              </p>
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className={`text-sm font-semibold ${syncResult.errors > 0 ? 'text-amber-900' : 'text-green-900'}`}>
+                  Histórico de preços sincronizado
+                </p>
+                <p className={`text-xs mt-0.5 ${syncResult.errors > 0 ? 'text-amber-700' : 'text-green-700'}`}>
+                  {syncResult.synced} de {syncResult.total} ativos com histórico obtido com sucesso
+                </p>
+              </div>
+              <span className="text-2xl shrink-0">{syncResult.errors > 0 ? '⚠️' : '📊'}</span>
             </div>
-            <span className="text-2xl">{syncResult.errors > 0 ? '⚠️' : '📊'}</span>
+
+            {syncResult.errors > 0 && (() => {
+              const failed = syncResult.details.filter(d => d.status === 'error' || d.status === 'empty')
+              if (!failed.length) return null
+              return (
+                <div className="border-t border-amber-200 pt-3 space-y-2">
+                  <p className="text-xs font-semibold text-amber-900">
+                    {failed.length} ativo{failed.length > 1 ? 's' : ''} sem histórico de preços disponível:
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {failed.map(d => (
+                      <span key={d.code} className="text-xs px-2.5 py-1 rounded-full bg-amber-100 border border-amber-300 text-amber-800 font-semibold">
+                        {d.code}
+                      </span>
+                    ))}
+                  </div>
+                  <p className="text-xs text-amber-700 leading-relaxed">
+                    Esses ativos foram importados corretamente, mas não foi possível obter o histórico de cotações (ativo delistado, sem cobertura na fonte, ou erro temporário).
+                    <strong> Impacto:</strong> os meses anteriores à data atual aparecerão com valor <strong>R$ 0</strong> na Performance para esses ativos.
+                    Para corrigir, você pode cadastrar o valor atual manualmente na página do ativo.
+                  </p>
+                </div>
+              )
+            })()}
           </div>
         )}
 
