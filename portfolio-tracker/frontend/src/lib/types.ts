@@ -1,3 +1,13 @@
+export interface MergedOp {
+  date: string
+  ticker: string
+  type: 'buy' | 'sell'
+  quantity: number
+  price: number
+  value_brl: number
+  institution: string
+}
+
 export interface PortfolioAsset {
   id: number
   code: string

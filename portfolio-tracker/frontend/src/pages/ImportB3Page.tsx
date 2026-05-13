@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { apiFetch } from '../lib/api'
-import type { MergedOp } from '../../api/_routes/import'
+import type { MergedOp } from '../lib/types'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
