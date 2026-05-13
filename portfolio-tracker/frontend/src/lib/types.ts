@@ -141,7 +141,7 @@ export interface AssetDetail {
 export interface ContributionRow {
   id: number
   date: string
-  type: 'buy' | 'sell'
+  type: 'buy' | 'sell' | 'income'
   quantity: number
   price_orig: number | null
   currency: string | null
