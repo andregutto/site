@@ -27,12 +27,19 @@ interface ParseResult {
   }
 }
 
+interface AssetPosition {
+  ticker: string
+  net_qty: number
+  active: boolean
+}
+
 interface ExecuteResult {
   created_assets: number
   cleaned_contributions: number
   imported_contributions: number
   tickers_total: number
   skipped_tickers: string[]
+  asset_positions: AssetPosition[]
 }
 
 interface SyncDetail {
@@ -90,6 +97,63 @@ function readBase64(file: File): Promise<string> {
 }
 
 // ─── Sub-components ──────────────────────────────────────────────────────────
+
+function PositionsReview({ positions }: { positions: AssetPosition[] }) {
+  const [expanded, setExpanded] = useState(false)
+  const active   = positions.filter(p => p.active)
+  const inactive = positions.filter(p => !p.active)
+  const visible  = expanded ? positions : positions.slice(0, 10)
+
+  return (
+    <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
+      <button
+        onClick={() => setExpanded(v => !v)}
+        className="w-full px-5 py-3.5 flex items-center justify-between hover:bg-gray-50 transition-colors"
+      >
+        <span className="font-semibold text-gray-800 text-sm">
+          Posições finais ({active.length} em carteira · {inactive.length} zeradas)
+        </span>
+        <span className="text-gray-400 text-xs">{expanded ? '▲ Recolher' : '▼ Expandir'}</span>
+      </button>
+      {expanded && (
+        <div className="border-t border-gray-100 overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50 text-xs text-gray-500 uppercase">
+              <tr>
+                <th className="px-4 py-2 text-left">Ticker</th>
+                <th className="px-4 py-2 text-right">Qtd final</th>
+                <th className="px-4 py-2 text-left">Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+              {visible.map(p => (
+                <tr key={p.ticker} className={p.active ? '' : 'opacity-50'}>
+                  <td className="px-4 py-2 font-semibold text-gray-900">{p.ticker}</td>
+                  <td className={`px-4 py-2 text-right tabular-nums ${p.net_qty < 0 ? 'text-red-600 font-semibold' : 'text-gray-700'}`}>
+                    {new Intl.NumberFormat('pt-BR').format(p.net_qty)}
+                    {p.net_qty < 0 && <span className="ml-1 text-xs font-normal text-red-500" title="Qtd negativa pode indicar evento corporativo não registrado">⚠</span>}
+                  </td>
+                  <td className="px-4 py-2">
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${p.active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                      {p.active ? 'Em carteira' : 'Zerado'}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {positions.length > 10 && (
+            <div className="px-4 py-2 border-t border-gray-50 text-center">
+              <button onClick={() => setExpanded(v => !v)} className="text-xs text-gray-400 hover:text-gray-600">
+                Mostrando {visible.length} de {positions.length}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
 
 function StatCard({ label, value, sub, color = 'gray' }: { label: string; value: string | number; sub?: string; color?: 'gray' | 'blue' | 'amber' | 'green' | 'red' }) {
   const colors = {
@@ -546,6 +610,16 @@ export default function ImportB3Page() {
               )
             })()}
           </div>
+        )}
+
+        {/* Corporate events warning */}
+        <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4 text-xs text-blue-800 space-y-1">
+          <p className="font-semibold">Atenção: eventos corporativos não estão no Extrato de Negociação</p>
+          <p>Splits, desdobramentos, bonificações e liquidações de fundos <strong>não aparecem</strong> nesse arquivo e não foram importados. Ativos que passaram por esses eventos podem ter posição final incorreta abaixo. Revise e ajuste manualmente se necessário.</p>
+        </div>
+
+        {execResult.asset_positions.length > 0 && (
+          <PositionsReview positions={execResult.asset_positions} />
         )}
 
         {execResult.skipped_tickers.length > 0 && (

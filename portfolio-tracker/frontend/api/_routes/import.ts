@@ -204,18 +204,35 @@ router.post('/b3/execute', requireAuth, async (req, res: Response) => {
 
   const tickers = [...new Set(operations.map(o => o.ticker))]
 
-  // 1. Get existing assets
-  const { data: existingAssets } = await supabaseAdmin
-    .from('assets').select('id, code').eq('user_id', userId).in('code', tickers)
+  // 1. Get existing assets + user classes for auto-assignment
+  const [{ data: existingAssets }, { data: userClasses }] = await Promise.all([
+    supabaseAdmin.from('assets').select('id, code').eq('user_id', userId).in('code', tickers),
+    supabaseAdmin.from('asset_classes').select('id, name').eq('user_id', userId),
+  ])
 
   const assetMap = new Map((existingAssets ?? []).map(a => [a.code as string, a.id as number]))
+
+  // Resolve class_id by name pattern (FII = ends in 11, else Ações)
+  function resolveClassId(ticker: string): number | null {
+    if (!userClasses?.length) return null
+    const isFii = /\d{2}11$/.test(ticker)
+    const patterns = isFii
+      ? [/fii/i, /imobili/i, /fundo/i]
+      : [/a[çc][oõ]es?/i, /a[çc]ao/i, /b3/i, /acion/i, /equit/i]
+    for (const p of patterns) {
+      const found = userClasses.find(c => p.test(c.name))
+      if (found) return found.id as number
+    }
+    return null
+  }
 
   // 2. Create missing assets
   const toCreate = tickers.filter(t => !assetMap.has(t))
   let created = 0
   for (const ticker of toCreate) {
-    const ops     = operations.filter(o => o.ticker === ticker)
-    const net_qty = ops.reduce((s, o) => s + (o.type === 'buy' ? o.quantity : -o.quantity), 0)
+    const ops      = operations.filter(o => o.ticker === ticker)
+    const net_qty  = ops.reduce((s, o) => s + (o.type === 'buy' ? o.quantity : -o.quantity), 0)
+    const classId  = resolveClassId(ticker)
     const { data: newAsset, error: createErr } = await supabaseAdmin
       .from('assets')
       .insert({
@@ -226,6 +243,7 @@ router.post('/b3/execute', requireAuth, async (req, res: Response) => {
         currency:     'BRL',
         ticker_brapi: ticker,
         active:       net_qty > 0,
+        ...(classId != null ? { class_id: classId } : {}),
       })
       .select('id')
       .single()
@@ -279,12 +297,23 @@ router.post('/b3/execute', requireAuth, async (req, res: Response) => {
     }
   }
 
+  // Build final positions for review
+  const asset_positions = tickers
+    .filter(t => assetMap.has(t))
+    .map(ticker => {
+      const ops     = operations.filter(o => o.ticker === ticker)
+      const net_qty = ops.reduce((s, o) => s + (o.type === 'buy' ? o.quantity : -o.quantity), 0)
+      return { ticker, net_qty, active: net_qty > 0 }
+    })
+    .sort((a, b) => b.net_qty - a.net_qty)
+
   res.json({
     created_assets:         created,
     cleaned_contributions:  cleaned,
     imported_contributions: toInsert.length,
     tickers_total:          tickers.length,
     skipped_tickers:        tickers.filter(t => !assetMap.has(t)),
+    asset_positions,
   })
 })
 
