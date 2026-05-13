@@ -211,7 +211,7 @@ router.post('/sync-history', requireAuth, async (req, res: Response) => {
         const { error: upsertErr } = await supabaseAdmin.from('price_history').upsert(
           history.map((p) => ({
             asset_id: a.id,
-            ref_date:  p.date.substring(0, 7) + '-01',
+            ref_date:  p.date,
             price:     p.price,
             currency:  p.currency,
             source:    'sync',

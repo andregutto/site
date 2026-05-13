@@ -27,17 +27,22 @@ async function autoSyncHistory(
   neededYMs: string[]  // e.g. ['2026-01', '2026-04']
 ) {
   if (!assets.length || !neededYMs.length) return
-  const neededDates = [...new Set(neededYMs)].map(ym => ym + '-01')
-  const assetIds = assets.map(a => a.id)
+  const uniqueYMs = [...new Set(neededYMs)].sort()
+  const assetIds  = assets.map(a => a.id)
 
+  // Query by range to find any stored entry for each needed month (regardless of which day was stored).
+  const rangeFrom = uniqueYMs[0] + '-01'
+  const rangeTo   = uniqueYMs[uniqueYMs.length - 1] + '-31'
   const { data: existing } = await supabaseAdmin
     .from('price_history')
     .select('asset_id, ref_date')
     .in('asset_id', assetIds)
-    .in('ref_date', neededDates)
+    .gte('ref_date', rangeFrom)
+    .lte('ref_date', rangeTo)
 
-  const have = new Set((existing ?? []).map(p => `${p.asset_id}|${p.ref_date}`))
-  const toSync = assets.filter(a => neededDates.some(d => !have.has(`${a.id}|${d}`)))
+  // Key by asset_id|YYYY-MM so any stored day within the month counts.
+  const have = new Set((existing ?? []).map(p => `${p.asset_id}|${(p.ref_date as string).substring(0, 7)}`))
+  const toSync = assets.filter(a => uniqueYMs.some(ym => !have.has(`${a.id}|${ym}`)))
   if (!toSync.length) return
 
   await Promise.allSettled(toSync.map(async a => {
@@ -47,7 +52,7 @@ async function autoSyncHistory(
       await supabaseAdmin.from('price_history').upsert(
         pts.map(p => ({
           asset_id: a.id,
-          ref_date:  p.date.substring(0, 7) + '-01',
+          ref_date:  p.date,  // use the actual date returned by the API (e.g. '2026-04-30')
           price:     p.price,
           currency:  p.currency,
           source:    'auto',
