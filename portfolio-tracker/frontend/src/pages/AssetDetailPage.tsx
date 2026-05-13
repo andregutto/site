@@ -24,6 +24,15 @@ function fmtNum(v: number, d = 4) {
   return new Intl.NumberFormat('pt-BR', { maximumFractionDigits: d }).format(v)
 }
 
+function fiIndexerLabel(fi_type: string | null, fi_rate: number | null, fi_spread: number | null): string | null {
+  if (!fi_type) return null
+  if (fi_type === 'pos_cdi' && fi_rate != null) return `${(fi_rate * 100).toFixed(1)}% do CDI`
+  if (fi_type === 'selic'   && fi_rate != null) return `${(fi_rate * 100).toFixed(1)}% da Selic`
+  if (fi_type === 'pre'     && fi_rate != null) return `${(fi_rate * 100).toFixed(2)}% a.a.`
+  if (fi_type === 'ipca_plus' && fi_spread != null) return `IPCA+ ${(fi_spread * 100).toFixed(2)}% a.a.`
+  return null
+}
+
 interface SummaryCardProps {
   label: string
   value: string
@@ -153,6 +162,11 @@ export default function AssetDetailPage() {
                 {data.fi_type.replace('_', ' ').replace('plus', '+').toUpperCase()}
               </span>
             )}
+            {data.asset_type === 'fixed_income' && fiIndexerLabel(data.fi_type, data.fi_rate, data.fi_spread) && (
+              <span className="text-xs px-2.5 py-0.5 rounded-full bg-green-50 border border-green-200 text-green-700 font-semibold">
+                Rendendo {fiIndexerLabel(data.fi_type, data.fi_rate, data.fi_spread)}
+              </span>
+            )}
           </div>
           <p className="text-sm text-gray-500 mt-0.5 truncate">{data.name}</p>
         </div>
@@ -257,6 +271,51 @@ export default function AssetDetailPage() {
           />
         )}
       </div>
+
+      {/* Rentabilidade do Indexador (apenas RF) */}
+      {data.asset_type === 'fixed_income' && (data.gain_loss_pct != null || fiIndexerLabel(data.fi_type, data.fi_rate, data.fi_spread)) && (
+        <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4">
+          <h2 className="font-semibold text-blue-900 text-sm mb-3">Rentabilidade do Indexador</h2>
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+            <div>
+              <p className="text-xs text-blue-500 uppercase tracking-wide mb-0.5">Indexador contratado</p>
+              <p className="font-bold text-blue-900 text-sm">
+                {fiIndexerLabel(data.fi_type, data.fi_rate, data.fi_spread) ?? '—'}
+              </p>
+            </div>
+            <div className="w-px h-8 bg-blue-200 hidden sm:block" />
+            <div>
+              <p className="text-xs text-blue-500 uppercase tracking-wide mb-0.5">Rendimento acumulado</p>
+              <p className={`font-bold text-sm ${
+                data.gain_loss_pct == null ? 'text-blue-900' :
+                data.gain_loss_pct >= 0   ? 'text-green-700' : 'text-red-600'
+              }`}>
+                {data.gain_loss_pct != null
+                  ? `${data.gain_loss_pct >= 0 ? '+' : ''}${data.gain_loss_pct.toFixed(2)}%`
+                  : '—'}
+              </p>
+            </div>
+            <div className="w-px h-8 bg-blue-200 hidden sm:block" />
+            <div>
+              <p className="text-xs text-blue-500 uppercase tracking-wide mb-0.5">Lucro total</p>
+              <p className={`font-bold text-sm ${
+                data.gain_loss_brl >= 0 ? 'text-green-700' : 'text-red-600'
+              }`}>
+                {data.gain_loss_brl >= 0 ? '+' : ''}{fmt(data.gain_loss_brl)}
+              </p>
+            </div>
+            {data.fi_start_date && (
+              <>
+                <div className="w-px h-8 bg-blue-200 hidden sm:block" />
+                <div>
+                  <p className="text-xs text-blue-500 uppercase tracking-wide mb-0.5">Desde</p>
+                  <p className="font-bold text-blue-900 text-sm">{fmtDate(data.fi_start_date)}</p>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Alerta de valor desatualizado (manual >30 dias) */}
       {isStale && (
@@ -424,6 +483,7 @@ export default function AssetDetailPage() {
                   <th className="px-4 py-3 text-right">Qtd</th>
                   <th className="px-4 py-3 text-right">Preço</th>
                   <th className="px-4 py-3 text-right">Total BRL</th>
+                  <th className="px-4 py-3 text-right">Lucro</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
@@ -452,6 +512,15 @@ export default function AssetDetailPage() {
                           : null)
                         return v != null ? fmt(v) : '—'
                       })()}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      {c.profit_brl != null ? (
+                        <span className={`text-xs font-semibold ${c.profit_brl >= 0 ? 'text-green-700' : 'text-red-600'}`}>
+                          {c.profit_brl >= 0 ? '+' : ''}{fmt(c.profit_brl)}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-gray-400">—</span>
+                      )}
                     </td>
                   </tr>
                 ))}

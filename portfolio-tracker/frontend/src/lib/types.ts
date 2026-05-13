@@ -111,6 +111,7 @@ export interface Contribution {
   fx_rate_brl: number | null
   value_brl: number | null
   description: string | null
+  profit_brl: number | null
 }
 
 export interface AssetDetail {
@@ -124,6 +125,9 @@ export interface AssetDetail {
   class_color: string
   fi_type: string | null
   fi_principal: number | null
+  fi_rate: number | null
+  fi_spread: number | null
+  fi_start_date: string | null
   current_value_brl: number
   current_price: number | null
   price_currency: string

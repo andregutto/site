@@ -1,7 +1,8 @@
 import { Router, Response } from 'express'
 import { requireAuth, AuthRequest } from '../_middleware/auth.js'
 import { supabaseAdmin } from '../_lib/supabase.js'
-import { getCurrentPrice, Asset } from '../_services/priceService.js'
+import { getCurrentPrice, Asset, FITranche } from '../_services/priceService.js'
+import { calculateTrancheProfits, FixedIncomeAsset } from '../_services/fixedIncomeService.js'
 import { getFxRate } from '../_lib/fx.js'
 
 const router = Router()
@@ -419,6 +420,18 @@ router.get('/:id/detail', requireAuth, async (req, res: Response) => {
   const investedBrl = totalCostBrl
   const avgCostBrl  = holdings > 0 && totalCostBrl > 0 ? totalCostBrl / holdings : null
 
+  // Build tranches from buy contributions (RF assets)
+  const rfTranches: FITranche[] = []
+  if (asset.asset_type === 'fixed_income') {
+    for (const c of contribs) {
+      if (c.type !== 'buy' || !c.value_brl || c.value_brl <= 0) continue
+      rfTranches.push({ principal: c.value_brl, start_date: c.date })
+    }
+    if (rfTranches.length === 0 && asset.fi_principal && asset.fi_start_date) {
+      rfTranches.push({ principal: asset.fi_principal, start_date: asset.fi_start_date })
+    }
+  }
+
   let currentValueBrl = 0
   let currentPrice: number | null = null
   let priceCurrency = asset.currency || 'BRL'
@@ -438,7 +451,10 @@ router.get('/:id/detail', requireAuth, async (req, res: Response) => {
         priceSource     = 'manual'
       }
     } else {
-      const result = await getCurrentPrice(asset as Asset)
+      const result = await getCurrentPrice(
+        asset as Asset,
+        asset.asset_type === 'fixed_income' && rfTranches.length ? rfTranches : undefined
+      )
       currentPrice  = result.price
       priceCurrency = result.currency
       priceSource   = result.source
@@ -453,6 +469,18 @@ router.get('/:id/detail', requireAuth, async (req, res: Response) => {
 
   const gainLossBrl = currentValueBrl - investedBrl
   const gainLossPct = investedBrl > 0 ? (gainLossBrl / investedBrl) * 100 : null
+
+  // Per-contribution profit for RF assets (fetches BCB rates once, applies per tranche)
+  const profitByContribId = new Map<number, number>()
+  if (asset.asset_type === 'fixed_income' && rfTranches.length > 0) {
+    try {
+      const trancheResults = await calculateTrancheProfits(asset as unknown as FixedIncomeAsset, rfTranches)
+      const buyContribs = contribs.filter(c => c.type === 'buy' && c.value_brl && c.value_brl > 0)
+      buyContribs.forEach((c, i) => {
+        if (trancheResults[i] != null) profitByContribId.set(c.id, trancheResults[i].profit_brl)
+      })
+    } catch { /* ignore per-tranche errors */ }
+  }
 
   type HistoryPoint = { date: string; price: number; value_brl: number }
   let history: HistoryPoint[] = []
@@ -502,6 +530,9 @@ router.get('/:id/detail', requireAuth, async (req, res: Response) => {
     class_color:   cls?.color ?? '#6B7280',
     fi_type:       asset.fi_type ?? null,
     fi_principal:  asset.fi_principal ?? null,
+    fi_rate:       asset.fi_rate ?? null,
+    fi_spread:     asset.fi_spread ?? null,
+    fi_start_date: asset.fi_start_date ?? null,
     current_value_brl: Math.round(currentValueBrl * 100) / 100,
     current_price: currentPrice,
     price_currency: priceCurrency,
@@ -513,7 +544,10 @@ router.get('/:id/detail', requireAuth, async (req, res: Response) => {
     gain_loss_pct:  gainLossPct !== null ? Math.round(gainLossPct * 100) / 100 : null,
     total_income_brl: Math.round(totalIncomeBrl * 100) / 100,
     history,
-    contributions: contribs.slice().reverse(),
+    contributions: contribs.slice().reverse().map(c => ({
+      ...c,
+      profit_brl: profitByContribId.has(c.id) ? profitByContribId.get(c.id)! : null,
+    })),
   })
 })
 

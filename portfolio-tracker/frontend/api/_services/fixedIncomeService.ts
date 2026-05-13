@@ -113,6 +113,75 @@ async function calcIPCAPlus(tranches: FITranche[], fi_spread: number, today: Dat
   return total
 }
 
+export interface TrancheProfitResult {
+  principal:     number
+  start_date:    string
+  current_value: number
+  profit_brl:    number
+}
+
+export async function calculateTrancheProfits(
+  asset: FixedIncomeAsset,
+  tranches: FITranche[]
+): Promise<TrancheProfitResult[]> {
+  if (!tranches.length) return []
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  const minStart = tranches.reduce((min, t) => {
+    const d = new Date(t.start_date); return d < min ? d : min
+  }, new Date(tranches[0].start_date))
+
+  if (asset.fi_type === 'pos_cdi') {
+    const allRates = await getCDIRates(minStart, today)
+    return tranches.map(t => {
+      const tStart = new Date(t.start_date); tStart.setHours(0, 0, 0, 0)
+      const trancheRates = allRates.filter(r => { const rd = new Date(r.date); rd.setHours(0, 0, 0, 0); return rd >= tStart })
+      const factor = trancheRates.reduce((acc, r) => acc * (1 + (r.value / 100) * asset.fi_rate!), 1)
+      const current_value = t.principal * factor
+      return { principal: t.principal, start_date: t.start_date, current_value, profit_brl: current_value - t.principal }
+    })
+  }
+
+  if (asset.fi_type === 'selic') {
+    const allRates = await getSelicRates(minStart, today)
+    const fi_rate = asset.fi_rate ?? 1
+    return tranches.map(t => {
+      const tStart = new Date(t.start_date); tStart.setHours(0, 0, 0, 0)
+      const trancheRates = allRates.filter(r => { const rd = new Date(r.date); rd.setHours(0, 0, 0, 0); return rd >= tStart })
+      const factor = trancheRates.reduce((acc, r) => acc * (1 + (r.value / 100) * fi_rate), 1)
+      const current_value = t.principal * factor
+      return { principal: t.principal, start_date: t.start_date, current_value, profit_brl: current_value - t.principal }
+    })
+  }
+
+  if (asset.fi_type === 'pre') {
+    return tranches.map(t => {
+      const start = new Date(t.start_date)
+      const busdays = businessDaysBetween(start, today)
+      const factor = Math.pow(1 + asset.fi_rate!, busdays / 252)
+      const current_value = t.principal * factor
+      return { principal: t.principal, start_date: t.start_date, current_value, profit_brl: current_value - t.principal }
+    })
+  }
+
+  if (asset.fi_type === 'ipca_plus') {
+    const allRates = await getIPCARates(minStart, today)
+    const fi_spread = asset.fi_spread ?? 0
+    return tranches.map(t => {
+      const tStart = new Date(t.start_date); tStart.setHours(0, 0, 0, 0)
+      const busdays = businessDaysBetween(tStart, today)
+      const trancheRates = allRates.filter(r => { const rd = new Date(r.date); rd.setHours(0, 0, 0, 0); return rd >= tStart })
+      const ipcaFactor   = trancheRates.reduce((acc, r) => acc * (1 + r.value / 100), 1)
+      const spreadFactor = Math.pow(1 + fi_spread, busdays / 252)
+      const current_value = t.principal * ipcaFactor * spreadFactor
+      return { principal: t.principal, start_date: t.start_date, current_value, profit_brl: current_value - t.principal }
+    })
+  }
+
+  throw new Error(`Tipo de RF desconhecido: ${asset.fi_type}`)
+}
+
 export async function calculateCurrentValue(asset: FixedIncomeAsset, tranches?: FITranche[]): Promise<number> {
   const effectiveTranches: FITranche[] = tranches?.length
     ? tranches
