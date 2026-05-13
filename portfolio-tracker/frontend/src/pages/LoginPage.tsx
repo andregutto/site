@@ -105,22 +105,22 @@ export default function LoginPage() {
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6">
       <div className="w-full max-w-sm space-y-5">
 
-        {/* Language selector */}
-        <div className="flex justify-center">
+        {/* Header bar: André Gutto left, language selector right */}
+        <div className="flex items-center justify-between">
+          <a
+            href="https://andregutto.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:opacity-70 transition-opacity tracking-[-0.2px]"
+            style={{ fontFamily: "'Libre Baskerville', serif", fontSize: 16, color: '#1B2F4E', textDecoration: 'none' }}
+          >
+            André Gutto
+          </a>
           <LanguageSelector />
         </div>
 
         {/* Branding */}
         <div className="text-center space-y-1">
-          <a
-            href="https://andregutto.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hover:opacity-70 transition-opacity tracking-[-0.2px] block"
-            style={{ fontFamily: "'Libre Baskerville', serif", fontSize: 16, color: '#1B2F4E', textDecoration: 'none' }}
-          >
-            André Gutto
-          </a>
           <div className="flex justify-center pt-1 pb-1">
             <img src="/favicon.svg" alt="Logo" className="w-10 h-10" />
           </div>
@@ -274,34 +274,33 @@ export default function LoginPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs text-gray-500 mb-1">{l.birthdate}</label>
-                    <input
-                      type="date"
-                      value={birthdate}
-                      onChange={e => setBirthdate(e.target.value)}
-                      className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-gray-500 mb-1">{l.defaultCurrency}</label>
-                    <div className="flex gap-1.5">
-                      {(['BRL', 'USD', 'EUR'] as Currency[]).map(c => (
-                        <button
-                          key={c}
-                          type="button"
-                          onClick={() => setCurrency(c)}
-                          className={`flex-1 py-2 text-xs font-semibold rounded-lg border transition-colors ${
-                            currency === c
-                              ? 'bg-[#001A70] text-white border-[#001A70]'
-                              : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'
-                          }`}
-                        >
-                          {c}
-                        </button>
-                      ))}
-                    </div>
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">{l.birthdate}</label>
+                  <input
+                    type="date"
+                    value={birthdate}
+                    onChange={e => setBirthdate(e.target.value)}
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">{l.defaultCurrency}</label>
+                  <div className="flex gap-2">
+                    {(['BRL', 'USD', 'EUR'] as Currency[]).map(c => (
+                      <button
+                        key={c}
+                        type="button"
+                        onClick={() => setCurrency(c)}
+                        className={`flex-1 py-2 text-xs font-semibold rounded-lg border transition-colors ${
+                          currency === c
+                            ? 'bg-[#001A70] text-white border-[#001A70]'
+                            : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'
+                        }`}
+                      >
+                        {c}
+                      </button>
+                    ))}
                   </div>
                 </div>
               </>

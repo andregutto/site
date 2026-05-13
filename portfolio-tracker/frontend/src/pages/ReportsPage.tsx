@@ -68,7 +68,7 @@ export default function ReportsPage() {
           </select>
           <div className="flex rounded-lg border border-gray-200 overflow-hidden text-sm">
             <button onClick={() => setTab('br')} className={`px-4 py-1.5 font-medium transition-colors ${tab === 'br' ? 'bg-[#001A70] text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}>Brasil</button>
-            <button onClick={() => setTab('fr')} className={`px-4 py-1.5 font-medium transition-colors ${tab === 'fr' ? 'bg-[#001A70] text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}>Franca</button>
+            <button onClick={() => setTab('fr')} className={`px-4 py-1.5 font-medium transition-colors ${tab === 'fr' ? 'bg-[#001A70] text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}>França</button>
           </div>
         </div>
       </div>
