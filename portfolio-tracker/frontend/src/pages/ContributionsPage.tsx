@@ -411,6 +411,7 @@ export default function ContributionsPage() {
   }
 
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null)
+  const [editId, setEditId] = useState<number | null>(null)
 
   async function handleDelete(id: number) {
     if (confirmDeleteId !== id) { setConfirmDeleteId(id); return }
@@ -421,12 +422,73 @@ export default function ContributionsPage() {
     } catch { /* ignore */ }
   }
 
+  function handleEditClick(c: typeof contributions[number]) {
+    setEditId(c.id)
+    setAssetId(String(c.assets.id))
+    setDate(c.date)
+    setType(c.type as 'buy' | 'sell' | 'income')
+    setQuantity(c.quantity != null ? String(c.quantity).replace('.', ',') : '')
+    setPriceOrig(c.price_orig != null ? String(c.price_orig).replace('.', ',') : '')
+    setPriceCurrency(c.currency ?? (assets.find(a => a.id === c.assets.id)?.currency ?? 'BRL'))
+    setValueBrl(c.value_brl != null ? String(c.value_brl).replace('.', ',') : '')
+    setDescription(c.description ?? '')
+    setAssetSearch('')
+    setFormErr(null)
+    setFieldErrors({})
+    setShowForm(true)
+    setShowNewAsset(false)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  function cancelEdit() {
+    setEditId(null)
+    resetForm()
+    setShowForm(false)
+  }
+
+  async function handleUpdate() {
+    if (!editId) return
+    if (!date) { setFormErr('Informe a data.'); return }
+
+    const vBrl = parseLocaleNum(valueBrl)
+    const qty  = parseLocaleNum(quantity)
+
+    if (isIncome || isSimpleAsset) {
+      if (!vBrl || vBrl <= 0) { setFormErr('Informe o valor.'); return }
+    } else {
+      if (!qty || qty <= 0) { setFormErr('Informe uma quantidade valida.'); return }
+      if (!vBrl || vBrl <= 0) { setFormErr('Informe o valor total em BRL.'); return }
+    }
+
+    setSaving(true); setFormErr(null)
+    try {
+      await apiFetch(`/contributions/${editId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          date,
+          type,
+          quantity:   (isIncome || isSimpleAsset) ? (qty ?? 0) : qty,
+          price_orig: parseLocaleNum(priceOrig) ?? null,
+          currency:   priceCurrency || null,
+          value_brl:  vBrl,
+          description: description || null,
+        }),
+      })
+      setEditId(null)
+      setShowForm(false)
+      resetForm()
+      refresh()
+    } catch (e) {
+      setFormErr(e instanceof Error ? e.message : 'Erro ao salvar')
+    } finally { setSaving(false) }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold text-gray-900">Aportes</h1>
         <button
-          onClick={() => { if (showForm) resetForm(); setShowForm(f => !f) }}
+          onClick={() => { if (showForm) { cancelEdit() } else { setShowForm(true) } }}
           className="px-4 py-2 bg-[#001A70] text-white text-sm font-semibold rounded-xl hover:bg-[#001A70]/90 transition-colors"
         >
           {showForm ? 'Cancelar' : '+ Novo aporte'}
@@ -435,38 +497,48 @@ export default function ContributionsPage() {
 
       {showForm && (
         <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm space-y-4">
-          <h2 className="font-semibold text-gray-800">Registrar aporte / resgate</h2>
+          <h2 className="font-semibold text-gray-800">
+            {editId ? 'Editar aporte' : 'Registrar aporte / resgate'}
+          </h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {/* Asset selector */}
             <div className="sm:col-span-2 space-y-1.5">
               <label className="block text-xs text-gray-500">Ativo</label>
-              <input
-                type="text"
-                value={assetSearch}
-                onChange={e => setAssetSearch(e.target.value)}
-                placeholder="Filtrar por codigo ou nome..."
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20"
-              />
-              <div className="flex gap-2">
-                <select
-                  value={assetId}
-                  onChange={e => { setAssetId(e.target.value); setAssetSearch('') }}
-                  className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20"
-                >
-                  <option value="">Selecione um ativo...</option>
-                  {filteredAssets.map(a => (
-                    <option key={a.id} value={a.id}>
-                      {a.code} — {a.name} ({a.currency})
-                    </option>
-                  ))}
-                </select>
-                <button
-                  type="button"
-                  onClick={() => { setShowNewAsset(v => !v); if (showNewAsset) resetNewAsset() }}
-                  className="px-3 py-2 text-sm border border-gray-200 rounded-lg text-[#001A70] hover:bg-blue-50 transition-colors shrink-0"
-                >+ Ativo</button>
-              </div>
+              {editId ? (
+                <div className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-600">
+                  {selectedAsset ? `${selectedAsset.code} — ${selectedAsset.name}` : 'Ativo desconhecido'}
+                </div>
+              ) : (
+                <>
+                  <input
+                    type="text"
+                    value={assetSearch}
+                    onChange={e => setAssetSearch(e.target.value)}
+                    placeholder="Filtrar por codigo ou nome..."
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20"
+                  />
+                  <div className="flex gap-2">
+                    <select
+                      value={assetId}
+                      onChange={e => { setAssetId(e.target.value); setAssetSearch('') }}
+                      className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20"
+                    >
+                      <option value="">Selecione um ativo...</option>
+                      {filteredAssets.map(a => (
+                        <option key={a.id} value={a.id}>
+                          {a.code} — {a.name} ({a.currency})
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() => { setShowNewAsset(v => !v); if (showNewAsset) resetNewAsset() }}
+                      className="px-3 py-2 text-sm border border-gray-200 rounded-lg text-[#001A70] hover:bg-blue-50 transition-colors shrink-0"
+                    >+ Ativo</button>
+                  </div>
+                </>
+              )}
             </div>
 
             {/* New asset inline form */}
@@ -823,10 +895,16 @@ export default function ContributionsPage() {
           {formErr && <p className="text-xs text-red-600">{formErr}</p>}
 
           <button
-            onClick={handleSave}
+            onClick={editId ? handleUpdate : handleSave}
             disabled={saving}
             className="w-full bg-[#001A70] text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-[#001A70]/90 disabled:opacity-50 transition-colors"
-          >{saving ? 'Salvando...' : isIncome ? 'Registrar rendimento' : isRfBuy ? 'Registrar aporte' : 'Registrar'}</button>
+          >
+            {saving ? 'Salvando...'
+              : editId ? 'Salvar alteracoes'
+              : isIncome ? 'Registrar rendimento'
+              : isRfBuy ? 'Registrar aporte'
+              : 'Registrar'}
+          </button>
         </div>
       )}
 
@@ -896,11 +974,22 @@ export default function ContributionsPage() {
                           >Cancelar</button>
                         </div>
                       ) : (
-                        <button
-                          onClick={() => handleDelete(c.id)}
-                          className="text-gray-300 hover:text-red-500 transition-colors text-base leading-none"
-                          title="Remover"
-                        >×</button>
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => { setConfirmDeleteId(null); handleEditClick(c) }}
+                            className="text-gray-300 hover:text-[#001A70] transition-colors"
+                            title="Editar"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536M9 13l6.586-6.586a2 2 0 112.828 2.828L11.828 15.828a2 2 0 01-1.414.586H9v-2a2 2 0 01.586-1.414z" />
+                            </svg>
+                          </button>
+                          <button
+                            onClick={() => handleDelete(c.id)}
+                            className="text-gray-300 hover:text-red-500 transition-colors text-base leading-none"
+                            title="Remover"
+                          >×</button>
+                        </div>
                       )}
                     </td>
                   </tr>
