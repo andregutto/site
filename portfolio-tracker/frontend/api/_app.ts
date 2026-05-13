@@ -11,6 +11,7 @@ import institutionsRouter  from './_routes/institutions.js'
 import profileRouter       from './_routes/profile.js'
 import reportsRouter       from './_routes/reports.js'
 import newsletterRouter    from './_routes/newsletter.js'
+import importRouter        from './_routes/import.js'
 
 const app = express()
 
@@ -20,7 +21,7 @@ const allowedOrigins = (process.env.FRONTEND_ORIGIN ?? '')
 if (!allowedOrigins.length) allowedOrigins.push('http://localhost:5174')
 
 app.use(cors({ origin: allowedOrigins }))
-app.use(express.json())
+app.use(express.json({ limit: '10mb' }))
 
 app.use('/api/fx',            fxRouter)
 app.use('/api/prices',        pricesRouter)
@@ -32,6 +33,7 @@ app.use('/api/institutions',  institutionsRouter)
 app.use('/api/profile',       profileRouter)
 app.use('/api/reports',       reportsRouter)
 app.use('/api/newsletter',    newsletterRouter)
+app.use('/api/import',        importRouter)
 
 // Health — acessível em /api/health via Vercel routing
 app.get(['/health', '/api/health'], (_req, res) => {

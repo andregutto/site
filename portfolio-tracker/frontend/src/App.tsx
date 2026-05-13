@@ -15,6 +15,7 @@ import InstitutionPage from './pages/InstitutionPage'
 import InstitutionsPage from './pages/InstitutionsPage'
 import ClassesPage from './pages/ClassesPage'
 import ReportsPage from './pages/ReportsPage'
+import ImportB3Page from './pages/ImportB3Page'
 import AppLayout from './components/AppLayout'
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage'
 import TermsOfUsePage from './pages/TermsOfUsePage'
@@ -104,6 +105,7 @@ function AppRoutes() {
         <Route path="/institutions"   element={<InstitutionsPage />} />
         <Route path="/classes"        element={<ClassesPage />} />
         <Route path="/reports"        element={<ReportsPage />} />
+        <Route path="/import/b3"      element={<ImportB3Page />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
