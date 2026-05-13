@@ -496,23 +496,52 @@ export default function ImportB3Page() {
             {syncResult.errors > 0 && (() => {
               const failed = syncResult.details.filter(d => d.status === 'error' || d.status === 'empty')
               if (!failed.length) return null
+
+              const netQtyMap = new Map(
+                (parseResult?.asset_statuses ?? []).map(a => [a.ticker, a.net_qty])
+              )
+              const active   = failed.filter(d => (netQtyMap.get(d.code) ?? 0) > 0)
+              const inactive = failed.filter(d => (netQtyMap.get(d.code) ?? 0) <= 0)
+
               return (
-                <div className="border-t border-amber-200 pt-3 space-y-2">
+                <div className="border-t border-amber-200 pt-3 space-y-3">
                   <p className="text-xs font-semibold text-amber-900">
-                    {failed.length} ativo{failed.length > 1 ? 's' : ''} sem histórico de preços disponível:
+                    {failed.length} ativo{failed.length > 1 ? 's' : ''} sem histórico de preços disponível
                   </p>
-                  <div className="flex flex-wrap gap-2">
-                    {failed.map(d => (
-                      <span key={d.code} className="text-xs px-2.5 py-1 rounded-full bg-amber-100 border border-amber-300 text-amber-800 font-semibold">
-                        {d.code}
-                      </span>
-                    ))}
-                  </div>
-                  <p className="text-xs text-amber-700 leading-relaxed">
-                    Esses ativos foram importados corretamente, mas não foi possível obter o histórico de cotações (ativo delistado, sem cobertura na fonte, ou erro temporário).
-                    <strong> Impacto:</strong> os meses anteriores à data atual aparecerão com valor <strong>R$ 0</strong> na Performance para esses ativos.
-                    Para corrigir, você pode cadastrar o valor atual manualmente na página do ativo.
-                  </p>
+
+                  {active.length > 0 && (
+                    <div className="space-y-1.5">
+                      <p className="text-xs font-medium text-amber-800">Em carteira — impacto na Performance:</p>
+                      <div className="flex flex-wrap gap-2">
+                        {active.map(d => (
+                          <span key={d.code} className="text-xs px-2.5 py-1 rounded-full bg-amber-100 border border-amber-300 text-amber-800 font-semibold">
+                            {d.code}
+                          </span>
+                        ))}
+                      </div>
+                      <p className="text-xs text-amber-700 leading-relaxed">
+                        Esses ativos ainda estão em carteira mas sem cotação histórica (delistado, sem cobertura ou erro temporário).
+                        Os meses passados aparecerão com <strong>R$ 0</strong> na Performance.
+                        Você pode cadastrar o valor atual manualmente na página de cada ativo.
+                      </p>
+                    </div>
+                  )}
+
+                  {inactive.length > 0 && (
+                    <div className="space-y-1.5">
+                      <p className="text-xs font-medium text-gray-500">Já vendidos — sem impacto relevante:</p>
+                      <div className="flex flex-wrap gap-2">
+                        {inactive.map(d => (
+                          <span key={d.code} className="text-xs px-2.5 py-1 rounded-full bg-gray-100 border border-gray-200 text-gray-500 font-semibold">
+                            {d.code}
+                          </span>
+                        ))}
+                      </div>
+                      <p className="text-xs text-gray-400">
+                        Posição zerada — o histórico ausente afeta apenas períodos em que você os detinha, sem impacto no saldo atual.
+                      </p>
+                    </div>
+                  )}
                 </div>
               )
             })()}
