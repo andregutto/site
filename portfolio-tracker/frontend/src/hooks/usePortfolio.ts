@@ -2,10 +2,13 @@ import { useState, useEffect, useCallback } from 'react'
 import { apiFetch } from '../lib/api'
 import type { PortfolioValue, PerformanceSummary, PerformanceMonthly, PerformanceBenchmarks, AssetReturns, AssetDetail, ContributionRow } from '../lib/types'
 
-// Daily cache: stores data keyed by endpoint+params, expires at midnight
+// Daily cache v3 — bumped to bust stale data after price_history backfill (2026-05-14).
+// Stores results keyed by endpoint+params, expires at midnight.
+const CACHE_PREFIX = 'perf3_'
+
 function perfCacheGet<T>(key: string): T | null {
   try {
-    const raw = localStorage.getItem(`perf_${key}`)
+    const raw = localStorage.getItem(CACHE_PREFIX + key)
     if (!raw) return null
     const { date, data } = JSON.parse(raw)
     const today = new Date().toISOString().slice(0, 10)
@@ -15,7 +18,7 @@ function perfCacheGet<T>(key: string): T | null {
 
 function perfCacheSet(key: string, data: unknown) {
   try {
-    localStorage.setItem(`perf_${key}`, JSON.stringify({
+    localStorage.setItem(CACHE_PREFIX + key, JSON.stringify({
       date: new Date().toISOString().slice(0, 10),
       data,
     }))

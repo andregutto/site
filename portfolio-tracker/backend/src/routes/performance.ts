@@ -193,21 +193,26 @@ async function computePortfolioValueAtMonth(
   }
 
   // Dynamic limit: scales with portfolio size (240 months ≈ 20 years per asset).
-  const phByAsset: Record<number, Array<{ price: number; currency: string; ref_date: string }>> = {}
+  // Index price_history by asset + month (YYYY-MM), keeping latest entry per month.
+  // This enforces strict per-month pricing: October's price is never re-used for November.
+  type PriceEntry = { price: number; currency: string; ref_date: string }
+  const priceByMonth: Record<number, Record<string, PriceEntry>> = {}
   for (const p of prices) {
-    if (!phByAsset[p.asset_id]) phByAsset[p.asset_id] = []
-    phByAsset[p.asset_id].push(p)
+    const pym = p.ref_date.substring(0, 7)
+    const byMonth = (priceByMonth[p.asset_id] ??= {})
+    const cur = byMonth[pym]
+    if (!cur || p.ref_date > cur.ref_date) {
+      byMonth[pym] = { price: p.price, currency: p.currency, ref_date: p.ref_date }
+    }
   }
 
-  const priceMap: Record<number, { price: number; currency: string; ref_date: string }> = {}
-  for (const id of assetIds) {
-    const entries = phByAsset[id] ?? []
-    if (!entries.length) continue
-    let best = entries[0]
-    for (const e of entries) {
-      if (e.ref_date <= dateStr) best = e
-    }
-    priceMap[id] = { price: best.price, currency: best.currency, ref_date: best.ref_date }
+  // Strict lookup: exact month first; LOCF only if that month has no entry.
+  function getPrice(assetId: number, targetYM: string): PriceEntry | undefined {
+    const byMonth = priceByMonth[assetId]
+    if (!byMonth) return undefined
+    if (byMonth[targetYM]) return byMonth[targetYM]
+    const prior = Object.keys(byMonth).filter(k => k < targetYM).sort().pop()
+    return prior ? byMonth[prior] : undefined
   }
 
   const allMVByAsset: Record<number, ValPoint[]> = {}
@@ -254,10 +259,11 @@ async function computePortfolioValueAtMonth(
         const fiEarliestStart = fiStartDate ?? fiTranchesMap[a.id]?.[0]?.start_date ?? null
         if (fiEarliestStart && fiEarliestStart > dateStr) continue
 
-        // Use price_history LOCF if available (populated by backfill script) — fast DB lookup.
-        // Falls back to live BCB calculation only when no price_history entry exists.
-        const ph = priceMap[a.id]
-        if (ph) {
+        // Use price_history if there's an entry for this exact month — fast DB lookup.
+        // For the current/incomplete month, fall back to live BCB if no exact entry exists.
+        const ph = getPrice(a.id, ym)
+        const phIsExact = ph?.ref_date.substring(0, 7) === ym
+        if (ph && (phIsExact || !isCurrentOrFuture)) {
           const fx = ph.currency === 'BRL' ? 1 : await getFxRate(ph.currency)
           value = ph.price * fx
         } else {
@@ -271,7 +277,7 @@ async function computePortfolioValueAtMonth(
                 ticker_brapi: null, ticker_yahoo: null, coingecko_id: null,
               } as Asset, undefined, new Date(dateStr))
               value = result.price
-            } catch { value = fiPrincipal }
+            } catch { value = ph?.price ?? fiPrincipal }
           } else {
             const activeTranches = (fiTranchesMap[a.id] ?? []).filter(t => t.start_date <= dateStr)
             const principalSum = activeTranches.reduce((s, t) => s + t.principal, 0)
@@ -281,7 +287,7 @@ async function computePortfolioValueAtMonth(
                 ticker_brapi: null, ticker_yahoo: null, coingecko_id: null,
               } as Asset, activeTranches.length > 0 ? activeTranches : undefined, new Date(dateStr))
               value = result.price
-            } catch { value = principalSum }
+            } catch { value = ph?.price ?? principalSum }
           }
         }
       } else {
@@ -299,19 +305,16 @@ async function computePortfolioValueAtMonth(
               value = interp.value * fx
             }
           } else {
-            // No manual balance updates: use price_history (LOCF).
-            // For assets with missing/stale price_history, use the pre-fetched live price
-            // for ALL months — this prevents the May spike that occurs when historical
-            // months use cost-basis while the current month uses a higher live price.
-            const ph = priceMap[a.id]
+            // Strict per-month lookup: getPrice() returns the exact-month entry first.
+            // Only falls back to LOCF (prior month) when the current month has no entry.
+            const ph = getPrice(a.id, ym)
             if (!ph) {
-              // No price_history: use pre-fetched live price (same for all months = no spike)
+              // No price_history at all: use pre-fetched live price or cost basis
               const lp = data.livePrices[a.id]
               if (lp) {
                 const fx = lp.currency === 'BRL' ? 1 : await getFxRate(lp.currency)
                 value = holdings * lp.price * fx
               } else {
-                // brapi-only or live fetch failed: fall back to cost basis
                 const cost = costMap[a.id]
                 if (cost && cost.totalQty > 0) value = holdings * (cost.totalCost / cost.totalQty)
               }
@@ -321,13 +324,12 @@ async function computePortfolioValueAtMonth(
                 const fx = await getFxRate(ph.currency)
                 value = holdings * ph.price * fx
               } else {
-                // Stale for current month: use pre-fetched live price (same as other months)
+                // Current month has no exact entry — use live price if available
                 const lp = data.livePrices[a.id]
                 if (lp) {
                   const fx = lp.currency === 'BRL' ? 1 : await getFxRate(lp.currency)
                   value = holdings * lp.price * fx
                 } else {
-                  // Live fetch failed: use stale price_history as last resort
                   const fx = await getFxRate(ph.currency)
                   value = holdings * ph.price * fx
                 }
