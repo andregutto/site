@@ -7,6 +7,7 @@ interface Props {
   asset: PortfolioAsset
   onClose: () => void
   onSaved: () => void
+  initialMode?: Mode
 }
 
 const CURRENCIES = ['BRL', 'USD', 'EUR', 'GBP']
@@ -23,10 +24,10 @@ function fmtVal(v: number, cur: string) {
 
 type Mode = 'valorizacao' | 'aporte'
 
-export default function ManualValueModal({ asset, onClose, onSaved }: Props) {
+export default function ManualValueModal({ asset, onClose, onSaved, initialMode = 'valorizacao' }: Props) {
   const today = new Date().toISOString().split('T')[0]
 
-  const [mode, setMode] = useState<Mode>('valorizacao')
+  const [mode, setMode] = useState<Mode>(initialMode)
 
   const [history,  setHistory]  = useState<ManualValue[]>([])
   const [loadingH, setLoadingH] = useState(true)

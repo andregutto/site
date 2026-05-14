@@ -5,6 +5,8 @@ import { useCurrency } from '../contexts/CurrencyContext'
 import { apiFetch } from '../lib/api'
 import InstitutionSelect from '../components/InstitutionSelect'
 import MigrateToFIModal from '../components/MigrateToFIModal'
+import ManualValueModal from '../components/ManualValueModal'
+import type { PortfolioAsset } from '../lib/types'
 import {
   LineChart, Line, XAxis, YAxis, Tooltip,
   ResponsiveContainer, CartesianGrid, ReferenceLine,
@@ -66,6 +68,7 @@ export default function AssetDetailPage() {
   const [institutionValue,   setInstitutionValue]   = useState('')
   const [savingInstitution,  setSavingInstitution]  = useState(false)
   const [showMigrateModal,   setShowMigrateModal]   = useState(false)
+  const [showManualModal,    setShowManualModal]    = useState(false)
 
   async function handleArchive() {
     if (!id || !confirm('Arquivar este ativo? Ele vai sair do dashboard mas o histórico é mantido.')) return
@@ -213,12 +216,20 @@ export default function AssetDetailPage() {
             className="text-xs text-[#001A70] border border-[#001A70]/30 hover:bg-blue-50 rounded-lg px-2.5 py-1 transition-colors mt-1"
           >+ Aporte</Link>
           {data.asset_type === 'manual' && (
-            <button
-              onClick={() => setShowMigrateModal(true)}
-              className="text-xs text-blue-600 border border-blue-200 hover:bg-blue-50 rounded-lg px-2.5 py-1 transition-colors"
-            >
-              Converter para RF
-            </button>
+            <>
+              <button
+                onClick={() => setShowManualModal(true)}
+                className="text-xs text-[#001A70] border border-[#001A70]/30 hover:bg-blue-50 rounded-lg px-2.5 py-1 transition-colors font-medium"
+              >
+                Atualizar valor
+              </button>
+              <button
+                onClick={() => setShowMigrateModal(true)}
+                className="text-xs text-blue-600 border border-blue-200 hover:bg-blue-50 rounded-lg px-2.5 py-1 transition-colors"
+              >
+                Converter para RF
+              </button>
+            </>
           )}
           <button
             onClick={handleArchive}
@@ -389,12 +400,12 @@ export default function AssetDetailPage() {
             </p>
             <p className="text-xs text-amber-600 mt-0.5">Registre o valor atual para manter o portfolio preciso.</p>
           </div>
-          <Link
-            to={`/contributions?assetId=${id}&new=1`}
+          <button
+            onClick={() => setShowManualModal(true)}
             className="text-xs font-semibold text-amber-700 border border-amber-300 rounded-lg px-2.5 py-1 hover:bg-amber-100 transition-colors shrink-0"
           >
             Atualizar
-          </Link>
+          </button>
         </div>
       )}
 
@@ -475,6 +486,34 @@ export default function AssetDetailPage() {
           onSaved={() => { setShowMigrateModal(false); refresh() }}
         />
       )}
+
+      {showManualModal && (() => {
+        const assetForModal: PortfolioAsset = {
+          id:              data.id,
+          code:            data.code,
+          name:            data.name,
+          currency:        data.currency,
+          class_id:        null,
+          class_name:      data.class_name,
+          class_color:     data.class_color,
+          value_brl:       data.current_value_brl,
+          value_orig:      data.current_value_brl,
+          holdings:        data.holdings,
+          price:           data.current_price,
+          source:          'manual',
+          needs_manual:    false,
+          invested_brl:    data.invested_brl,
+          last_manual_date: null,
+        }
+        return (
+          <ManualValueModal
+            asset={assetForModal}
+            initialMode="valorizacao"
+            onClose={() => setShowManualModal(false)}
+            onSaved={() => { setShowManualModal(false); refresh() }}
+          />
+        )
+      })()}
 
       {/* Historico de valores manuais com rentabilidade entre entradas */}
       {isManual && manualEntries.length > 0 && (
