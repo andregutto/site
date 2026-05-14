@@ -3,7 +3,7 @@ import { requireAuth, AuthRequest } from '../_middleware/auth.js'
 import { supabaseAdmin } from '../_lib/supabase.js'
 import { getFxRate } from '../_lib/fx.js'
 import { getRates, SERIES } from '../_services/bcbService.js'
-import { getCurrentPrice, getMonthlyHistory, Asset } from '../_services/priceService.js'
+import { getCurrentPrice, Asset } from '../_services/priceService.js'
 import YahooFinance from 'yahoo-finance2'
 
 const yf = new YahooFinance({ suppressNotices: ['yahooSurvey', 'ripHistorical'] })
@@ -19,49 +19,6 @@ function localYM(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
 }
 
-// Detects ticker assets with missing price_history for the requested months
-// and auto-populates via getMonthlyHistory(). Called before any computation
-// so that historical months (e.g. April) use real prices instead of carry-forward.
-async function autoSyncHistory(
-  assets: Array<{ id: number; asset_type: string; currency: string; ticker_yahoo: string | null; ticker_brapi: string | null; coingecko_id: string | null; fi_principal: number | null; fi_start_date: string | null; fi_type: string | null; fi_rate: number | null; fi_spread: number | null }>,
-  neededYMs: string[]  // e.g. ['2026-01', '2026-04']
-) {
-  if (!assets.length || !neededYMs.length) return
-  const uniqueYMs = [...new Set(neededYMs)].sort()
-  const assetIds  = assets.map(a => a.id)
-
-  // Query by range to find any stored entry for each needed month (regardless of which day was stored).
-  const rangeFrom = uniqueYMs[0] + '-01'
-  const rangeTo   = uniqueYMs[uniqueYMs.length - 1] + '-31'
-  const { data: existing } = await supabaseAdmin
-    .from('price_history')
-    .select('asset_id, ref_date')
-    .in('asset_id', assetIds)
-    .gte('ref_date', rangeFrom)
-    .lte('ref_date', rangeTo)
-
-  // Key by asset_id|YYYY-MM so any stored day within the month counts.
-  const have = new Set((existing ?? []).map(p => `${p.asset_id}|${(p.ref_date as string).substring(0, 7)}`))
-  const toSync = assets.filter(a => uniqueYMs.some(ym => !have.has(`${a.id}|${ym}`)))
-  if (!toSync.length) return
-
-  await Promise.allSettled(toSync.map(async a => {
-    try {
-      const pts = await getMonthlyHistory(a as Asset, 72)
-      if (!pts.length) return
-      await supabaseAdmin.from('price_history').upsert(
-        pts.map(p => ({
-          asset_id: a.id,
-          ref_date:  p.date,  // use the actual date returned by the API (e.g. '2026-04-30')
-          price:     p.price,
-          currency:  p.currency,
-          source:    'auto',
-        })),
-        { onConflict: 'asset_id,ref_date' }
-      )
-    } catch { /* best effort — endpoint still returns data */ }
-  }))
-}
 
 async function getPortfolioValueAtMonth(
   userId: string,
@@ -193,30 +150,32 @@ async function getPortfolioValueAtMonth(
         const holdings = holdingsMap[a.id] ?? 0
         if (holdings > 0) {
           const ph = priceMap[a.id]
-          // For current month: use live price when history is absent or stale (from a previous month)
-          const phStale = ph && isCurrentOrFuture && ph.ref_date.substring(0, 7) < ym
-          if (ph && !phStale) {
-            const fx = await getFxRate(ph.currency)
-            value = holdings * ph.price * fx
-          } else if (isCurrentOrFuture) {
-            try {
-              const result = await getCurrentPrice(a as Asset)
-              const fx = result.currency === 'BRL' ? 1 : await getFxRate(result.currency)
-              value = holdings * result.price * fx
-            } catch {
-              if (ph) {
-                const fx = await getFxRate(ph.currency)
-                value = holdings * ph.price * fx
-              } else {
-                // No price history AND live price unavailable (delisted/renamed) → cost basis
-                const cost = costMap[a.id]
-                if (cost && cost.totalQty > 0) value = holdings * (cost.totalCost / cost.totalQty)
-              }
-            }
-          } else if (!ph) {
-            // Historical month with no price_history at all → use avg cost as proxy
+          if (!ph) {
+            // LOCF fallback: no price_history at all (unsync'd / delisted / renamed).
+            // Use avg cost price for EVERY month — including the current one — so the
+            // asset contributes a consistent value across all months and does not create
+            // a false gain when a live price becomes available only in the current month.
             const cost = costMap[a.id]
             if (cost && cost.totalQty > 0) value = holdings * (cost.totalCost / cost.totalQty)
+          } else {
+            // LOCF: ph already holds the most-recent price ≤ dateStr (or the earliest
+            // available future price if no past entry exists — carry-backward).
+            // For the current month, refresh stale history with a live price.
+            const phStale = isCurrentOrFuture && ph.ref_date.substring(0, 7) < ym
+            if (!phStale) {
+              const fx = await getFxRate(ph.currency)
+              value = holdings * ph.price * fx
+            } else {
+              try {
+                const result = await getCurrentPrice(a as Asset)
+                const fx = result.currency === 'BRL' ? 1 : await getFxRate(result.currency)
+                value = holdings * result.price * fx
+              } catch {
+                // Live price unavailable — fall back to stale history
+                const fx = await getFxRate(ph.currency)
+                value = holdings * ph.price * fx
+              }
+            }
           }
         }
       }
@@ -251,18 +210,6 @@ router.get('/summary', requireAuth, async (req, res: Response) => {
   const fromDateStr = `${fromY}-${String(fromM).padStart(2, '0')}-01`
   const toLastDay   = new Date(toY, toM, 0).getDate()
   const toDateStr   = `${toY}-${String(toM).padStart(2, '0')}-${toLastDay}`
-
-  // Sync ALL ticker assets (including sold/inactive) so their historical price_history
-  // is available for correct v_ini computation in getPortfolioValueAtMonth.
-  const { data: tickerAssetsSync } = await supabaseAdmin
-    .from('assets')
-    .select('id, asset_type, currency, ticker_yahoo, ticker_brapi, coingecko_id, fi_principal, fi_start_date, fi_type, fi_rate, fi_spread')
-    .eq('user_id', userId)
-    .eq('asset_type', 'ticker')
-  if (tickerAssetsSync?.length) {
-    const prevYM = `${prevY}-${String(prevM).padStart(2, '0')}`
-    await autoSyncHistory(tickerAssetsSync, [prevYM, toStr])
-  }
 
   // ALL assets (not just active): sold assets may have had contributions
   // within the period that must count in the Simple Dietz cash-flow term.
@@ -358,17 +305,6 @@ router.get('/monthly', requireAuth, async (req, res: Response) => {
   const { data: userAssets2 } = await supabaseAdmin
     .from('assets').select('id').eq('user_id', userId)
   const userAssetIds2 = (userAssets2 ?? []).map(a => a.id)
-
-  // Sync ALL ticker assets (active + sold) so historical months have correct prices
-  const { data: tickerAssetsForSync } = await supabaseAdmin
-    .from('assets')
-    .select('id, asset_type, currency, ticker_yahoo, ticker_brapi, coingecko_id, fi_principal, fi_start_date, fi_type, fi_rate, fi_spread')
-    .eq('user_id', userId)
-    .eq('asset_type', 'ticker')
-  if (tickerAssetsForSync?.length) {
-    // Include prevYM so the first row's prev_total has price data
-    await autoSyncHistory(tickerAssetsForSync, [prevYM, ...months.map(m => m.label)])
-  }
 
   const [prevMonthResult, valuesArr, contribsData] = await Promise.all([
     getPortfolioValueAtMonth(userId, prevY, prevM),
@@ -614,8 +550,7 @@ router.get('/asset-returns', requireAuth, async (req, res: Response) => {
   if (!assets?.length) { res.json({}); return }
   const assetIds = assets.map(a => a.id)
 
-  // Auto-sync: find assets with no price_history in the requested range, fetch and store
-  await autoSyncHistory(assets, [fromStr, toStr])
+
 
   // Fetch all history in one query for both start and oldest lookups
   const [{ data: endPricesRaw }, { data: allHistory }] = await Promise.all([
