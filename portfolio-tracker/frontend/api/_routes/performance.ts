@@ -48,8 +48,106 @@ function interpolateKnownPoints(points: ValPoint[], targetDate: string): ValPoin
   return { ref_date: targetDate, value, currency: before.currency }
 }
 
-async function getPortfolioValueAtMonth(
-  userId: string,
+type PrefetchedData = {
+  assets: Array<{
+    id: number; code: string; name: string; asset_type: string; currency: string; active: boolean
+    fi_principal: number | null; fi_start_date: string | null; fi_type: string | null
+    fi_rate: number | null; fi_spread: number | null
+    ticker_brapi: string | null; ticker_yahoo: string | null; coingecko_id: string | null
+  }>
+  contributions: Array<{
+    asset_id: number; type: string; quantity: number | null
+    value_brl: number | null; price_orig: number | null; fx_rate_brl: number | null
+    currency: string | null; date: string
+  }>
+  prices: Array<{ asset_id: number; price: number; currency: string; ref_date: string }>
+  manualValues: Array<{ asset_id: number; value: number; currency: string; ref_date: string }>
+  // Pre-fetched live prices for ticker assets with stale/missing price_history.
+  // Used for ALL months so historical months don't fall back to cost-basis while the
+  // current month uses live price — that asymmetry is the root cause of the May spike.
+  livePrices: Record<number, { price: number; currency: string }>
+}
+
+// Fetches all data needed for portfolio value computation in one round-trip (4 parallel DB queries).
+async function fetchPrefetchedData(userId: string): Promise<PrefetchedData> {
+  const { data: assets } = await supabaseAdmin
+    .from('assets')
+    .select('id, code, name, asset_type, currency, active, fi_principal, fi_start_date, fi_type, fi_rate, fi_spread, ticker_brapi, ticker_yahoo, coingecko_id')
+    .eq('user_id', userId)
+
+  if (!assets?.length) return { assets: [], contributions: [], prices: [], manualValues: [], livePrices: {} }
+
+  const assetIds = assets.map(a => a.id)
+  const phLimit = Math.max(10000, assetIds.length * 240)
+
+  const [{ data: contributions }, { data: prices }, { data: manualValues }] = await Promise.all([
+    supabaseAdmin.from('contributions')
+      .select('asset_id, type, quantity, value_brl, price_orig, fx_rate_brl, currency, date')
+      .in('asset_id', assetIds),
+    supabaseAdmin.from('price_history')
+      .select('asset_id, price, currency, ref_date')
+      .in('asset_id', assetIds)
+      .order('ref_date', { ascending: true })
+      .limit(phLimit),
+    supabaseAdmin.from('manual_values')
+      .select('asset_id, value, currency, ref_date')
+      .in('asset_id', assetIds)
+      .order('ref_date', { ascending: true }),
+  ])
+
+  // Find ticker assets whose price_history is missing or doesn't reach the current month.
+  // Fetch their live price once so all months can use the same value — eliminates the
+  // spike that occurs when historical months use cost-basis and the current month uses
+  // a live price that may be far above cost.
+  const currentYM = localYM(new Date())
+  const latestPhDate: Record<number, string> = {}
+  for (const p of (prices ?? [])) {
+    const cur = latestPhDate[p.asset_id]
+    if (!cur || p.ref_date > cur) latestPhDate[p.asset_id] = p.ref_date
+  }
+  const assetsMissingLivePrice = (assets as PrefetchedData['assets']).filter(a =>
+    a.asset_type === 'ticker' &&
+    !!(a.ticker_yahoo || a.coingecko_id) &&
+    (!(a.id in latestPhDate) || latestPhDate[a.id].substring(0, 7) < currentYM)
+  )
+  const livePrices: Record<number, { price: number; currency: string }> = {}
+  if (assetsMissingLivePrice.length > 0) {
+    await Promise.all(assetsMissingLivePrice.map(async (a) => {
+      try {
+        const result = await getCurrentPrice(a as Asset)
+        livePrices[a.id] = { price: result.price, currency: result.currency }
+      } catch {}
+    }))
+  }
+
+  return {
+    assets: assets as PrefetchedData['assets'],
+    contributions: (contributions ?? []) as PrefetchedData['contributions'],
+    prices: (prices ?? []) as PrefetchedData['prices'],
+    manualValues: (manualValues ?? []) as PrefetchedData['manualValues'],
+    livePrices,
+  }
+}
+
+function estimateContribValue(c: {
+  value_brl: number | null; price_orig: number | null
+  quantity: number | null; fx_rate_brl: number | null; currency: string | null
+}): number {
+  const vBrl = Number(c.value_brl)
+  if (vBrl > 0) return vBrl
+  const price = Number(c.price_orig)
+  const qty   = Number(c.quantity)
+  if (price > 0 && qty > 0) {
+    const fx = Number(c.fx_rate_brl) || (c.currency && c.currency !== 'BRL' ? 5.7 : 1)
+    return price * qty * fx
+  }
+  return 0
+}
+
+// Computes portfolio total and per-asset values for a given month using pre-fetched data.
+// No DB queries — all reads come from the PrefetchedData parameter.
+async function computePortfolioValueAtMonth(
+  data: PrefetchedData,
   year: number,
   month: number   // 1-based
 ): Promise<{ total: number; detail: Array<{ asset_id: number; value: number }> }> {
@@ -59,28 +157,18 @@ async function getPortfolioValueAtMonth(
   // Current month or future: allow live-price fallback for assets missing price_history
   const isCurrentOrFuture = ym >= localYM(new Date())
 
-  // Include ALL assets (active AND inactive): sold assets may have had holdings
-  // in past months and must be counted for correct historical portfolio value.
-  // Holdings computed from contributions (lte dateStr) naturally produce 0 for sold assets.
-  const { data: assets } = await supabaseAdmin
-    .from('assets')
-    .select('id, asset_type, currency, active, fi_principal, fi_start_date, fi_type, fi_rate, fi_spread, ticker_brapi, ticker_yahoo, coingecko_id')
-    .eq('user_id', userId)
+  const { assets, contributions: allContribs, prices, manualValues: allMVRaw } = data
+  if (!assets.length) return { total: 0, detail: [] }
 
-  if (!assets?.length) return { total: 0, detail: [] }
+  const assetIds = assets.map(a => a.id)
 
-  const assetIds = assets.map((a) => a.id)
-
-  const { data: contributions } = await supabaseAdmin
-    .from('contributions')
-    .select('asset_id, type, quantity, value_brl, price_orig, fx_rate_brl, currency, date')
-    .in('asset_id', assetIds)
-    .lte('date', dateStr)
+  // Filter contributions up to dateStr (replaces DB .lte('date', dateStr))
+  const contributions = allContribs.filter(c => c.date <= dateStr)
 
   const holdingsMap: Record<number, number> = {}
   // costMap: used as fallback price when price_history is missing (delisted/renamed tickers)
   const costMap: Record<number, { totalCost: number; totalQty: number }> = {}
-  for (const c of (contributions ?? [])) {
+  for (const c of contributions) {
     const qty = Number(c.quantity) || 0
     holdingsMap[c.asset_id] = (holdingsMap[c.asset_id] ?? 0) +
       (c.type === 'buy' ? qty : -qty)
@@ -101,7 +189,7 @@ async function getPortfolioValueAtMonth(
   // FI tranches from contributions up to dateStr — used by getCurrentPrice for fixed_income
   const fiAssetIds = assets.filter(a => a.asset_type === 'fixed_income').map(a => a.id)
   const fiTranchesMap: Record<number, FITranche[]> = {}
-  for (const c of (contributions ?? [])) {
+  for (const c of contributions) {
     if (!fiAssetIds.includes(c.asset_id)) continue
     if (c.type !== 'buy') continue
     const vBrl = Number(c.value_brl)
@@ -110,26 +198,13 @@ async function getPortfolioValueAtMonth(
     fiTranchesMap[c.asset_id].push({ principal: vBrl, start_date: c.date as string })
   }
 
-  // Fetch ALL price_history (no date filter) to enable carry-backward for assets
-  // that have no history before the query date (e.g. crypto added recently).
-  // Dynamic limit: assetIds.length * 240 (240 months ≈ 20 years) so the ceiling
-  // scales with portfolio size. Without an explicit limit Supabase JS defaults to
-  // 1000 rows, which silently truncates recent data.
-  const phLimit = Math.max(10000, assetIds.length * 240)
-  const { data: prices } = await supabaseAdmin
-    .from('price_history')
-    .select('asset_id, price, currency, ref_date')
-    .in('asset_id', assetIds)
-    .order('ref_date', { ascending: true }) // oldest first for carry-backward
-    .limit(phLimit)
-
+  // Build priceMap from pre-fetched prices (sorted asc, so LOCF = last entry <= dateStr)
   const phByAsset: Record<number, Array<{ price: number; currency: string; ref_date: string }>> = {}
-  for (const p of (prices ?? [])) {
+  for (const p of prices) {
     if (!phByAsset[p.asset_id]) phByAsset[p.asset_id] = []
     phByAsset[p.asset_id].push(p)
   }
 
-  // Best price: most recent <= dateStr, else oldest available (carry-backward from future)
   const priceMap: Record<number, { price: number; currency: string; ref_date: string }> = {}
   for (const id of assetIds) {
     const entries = phByAsset[id] ?? []
@@ -143,14 +218,8 @@ async function getPortfolioValueAtMonth(
 
   // Fetch manual_values for ALL asset types — enables interpolation for any asset
   // that has user-recorded balance updates (manual, delisted tickers, etc.)
-  const { data: allMVRaw } = await supabaseAdmin
-    .from('manual_values')
-    .select('asset_id, value, currency, ref_date')
-    .in('asset_id', assetIds)
-    .order('ref_date', { ascending: true })
-
   const allMVByAsset: Record<number, ValPoint[]> = {}
-  for (const mv of (allMVRaw ?? [])) {
+  for (const mv of allMVRaw) {
     if (!allMVByAsset[mv.asset_id]) allMVByAsset[mv.asset_id] = []
     allMVByAsset[mv.asset_id].push({ ref_date: mv.ref_date, value: mv.value, currency: mv.currency })
   }
@@ -158,7 +227,7 @@ async function getPortfolioValueAtMonth(
   // First-buy anchor per asset: used as the interpolation origin for ticker assets
   // (represents "at the time of first purchase, value = amount invested")
   const firstBuyMap: Record<number, ValPoint> = {}
-  for (const c of (contributions ?? [])) {
+  for (const c of contributions) {
     if (c.type !== 'buy') continue
     const vBrl = Number(c.value_brl) > 0
       ? Number(c.value_brl)
@@ -192,36 +261,39 @@ async function getPortfolioValueAtMonth(
         }
       } else if (a.asset_type === 'fixed_income') {
         if (!a.active) continue
-        // Use asset-level fi_start_date as cutoff — contribution dates may be entered retrospectively
-        const fiPrincipal  = Number(a.fi_principal)  || 0
         const fiStartDate  = (a.fi_start_date as string | null)
         const fiEarliestStart = fiStartDate ?? fiTranchesMap[a.id]?.[0]?.start_date ?? null
         if (fiEarliestStart && fiEarliestStart > dateStr) continue
 
-        // If fi_principal + fi_start_date are set, always compute CDI/IPCA from the declared start.
-        // Contributions may have been entered retroactively for tracking; using them would switch
-        // the calculation method on the contribution date and concentrate gains in that month.
-        const hasNativePrincipal = fiPrincipal > 0 && !!fiStartDate
-        if (hasNativePrincipal) {
-          try {
-            const result = await getCurrentPrice({
-              ...a,
-              fi_principal: fiPrincipal,   // ensure numeric (Supabase DECIMAL may come as string)
-              ticker_brapi: null, ticker_yahoo: null, coingecko_id: null,
-            } as Asset, undefined, new Date(dateStr))
-            value = result.price
-          } catch { value = fiPrincipal }
+        // Use price_history LOCF if available (populated by backfill script) — fast DB lookup.
+        // Falls back to live BCB calculation only when no price_history entry exists.
+        const ph = priceMap[a.id]
+        if (ph) {
+          const fx = ph.currency === 'BRL' ? 1 : await getFxRate(ph.currency)
+          value = ph.price * fx
         } else {
-          // No native principal: use contributions that have started by this date
-          const activeTranches = (fiTranchesMap[a.id] ?? []).filter(t => t.start_date <= dateStr)
-          const principalSum = activeTranches.reduce((s, t) => s + t.principal, 0)
-          try {
-            const result = await getCurrentPrice({
-              ...a,
-              ticker_brapi: null, ticker_yahoo: null, coingecko_id: null,
-            } as Asset, activeTranches.length > 0 ? activeTranches : undefined, new Date(dateStr))
-            value = result.price
-          } catch { value = principalSum }
+          const fiPrincipal = Number(a.fi_principal) || 0
+          const hasNativePrincipal = fiPrincipal > 0 && !!fiStartDate
+          if (hasNativePrincipal) {
+            try {
+              const result = await getCurrentPrice({
+                ...a,
+                fi_principal: fiPrincipal,
+                ticker_brapi: null, ticker_yahoo: null, coingecko_id: null,
+              } as Asset, undefined, new Date(dateStr))
+              value = result.price
+            } catch { value = fiPrincipal }
+          } else {
+            const activeTranches = (fiTranchesMap[a.id] ?? []).filter(t => t.start_date <= dateStr)
+            const principalSum = activeTranches.reduce((s, t) => s + t.principal, 0)
+            try {
+              const result = await getCurrentPrice({
+                ...a,
+                ticker_brapi: null, ticker_yahoo: null, coingecko_id: null,
+              } as Asset, activeTranches.length > 0 ? activeTranches : undefined, new Date(dateStr))
+              value = result.price
+            } catch { value = principalSum }
+          }
         }
       } else {
         const holdings = holdingsMap[a.id] ?? 0
@@ -240,23 +312,19 @@ async function getPortfolioValueAtMonth(
               value = interp.value * fx
             }
           } else {
-            // No manual balance updates: use price_history (LOCF) and live price for current month
+            // No manual balance updates: use price_history (LOCF).
+            // For assets with missing/stale price_history, use the pre-fetched live price
+            // for ALL months — this prevents the May spike that occurs when historical
+            // months use cost-basis while the current month uses a higher live price.
             const ph = priceMap[a.id]
             if (!ph) {
-              // No price_history at all.
-              // For brapi-only assets (no yahoo, no coingecko), brapi.dev may return stale
-              // prices for delisted tickers — use cost basis directly to avoid false values.
-              const hasReliableAutoSource = !!(a.ticker_yahoo || a.coingecko_id)
-              if (isCurrentOrFuture && hasReliableAutoSource) {
-                try {
-                  const result = await getCurrentPrice(a as Asset)
-                  const fx = result.currency === 'BRL' ? 1 : await getFxRate(result.currency)
-                  value = holdings * result.price * fx
-                } catch {
-                  const cost = costMap[a.id]
-                  if (cost && cost.totalQty > 0) value = holdings * (cost.totalCost / cost.totalQty)
-                }
+              // No price_history: use pre-fetched live price (same for all months = no spike)
+              const lp = data.livePrices[a.id]
+              if (lp) {
+                const fx = lp.currency === 'BRL' ? 1 : await getFxRate(lp.currency)
+                value = holdings * lp.price * fx
               } else {
+                // brapi-only or live fetch failed: fall back to cost basis
                 const cost = costMap[a.id]
                 if (cost && cost.totalQty > 0) value = holdings * (cost.totalCost / cost.totalQty)
               }
@@ -266,18 +334,15 @@ async function getPortfolioValueAtMonth(
                 const fx = await getFxRate(ph.currency)
                 value = holdings * ph.price * fx
               } else {
-                try {
-                  const result = await getCurrentPrice(a as Asset)
-                  const fx = result.currency === 'BRL' ? 1 : await getFxRate(result.currency)
-                  value = holdings * result.price * fx
-                } catch {
-                  const cost = costMap[a.id]
-                  if (cost && cost.totalQty > 0) {
-                    value = holdings * (cost.totalCost / cost.totalQty)
-                  } else {
-                    const fx = await getFxRate(ph.currency)
-                    value = holdings * ph.price * fx
-                  }
+                // Stale for current month: use pre-fetched live price (same as other months)
+                const lp = data.livePrices[a.id]
+                if (lp) {
+                  const fx = lp.currency === 'BRL' ? 1 : await getFxRate(lp.currency)
+                  value = holdings * lp.price * fx
+                } else {
+                  // Live fetch failed: use stale price_history as last resort
+                  const fx = await getFxRate(ph.currency)
+                  value = holdings * ph.price * fx
                 }
               }
             }
@@ -293,6 +358,16 @@ async function getPortfolioValueAtMonth(
   }
 
   return { total: Math.round(total * 100) / 100, detail }
+}
+
+// Convenience wrapper: fetches data and computes for a single month.
+async function getPortfolioValueAtMonth(
+  userId: string,
+  year: number,
+  month: number
+): Promise<{ total: number; detail: Array<{ asset_id: number; value: number }> }> {
+  const data = await fetchPrefetchedData(userId)
+  return computePortfolioValueAtMonth(data, year, month)
 }
 
 router.get('/summary', requireAuth, async (req, res: Response) => {
@@ -316,37 +391,6 @@ router.get('/summary', requireAuth, async (req, res: Response) => {
   const toLastDay   = new Date(toY, toM, 0).getDate()
   const toDateStr   = `${toY}-${String(toM).padStart(2, '0')}-${toLastDay}`
 
-  // ALL assets (not just active): sold assets may have had contributions
-  // within the period that must count in the Simple Dietz cash-flow term.
-  const { data: userAssets } = await supabaseAdmin
-    .from('assets').select('id').eq('user_id', userId)
-  const userAssetIds = (userAssets ?? []).map(a => a.id)
-
-  const { data: contributions } = await supabaseAdmin
-    .from('contributions')
-    .select('asset_id, date, value_brl, price_orig, quantity, fx_rate_brl, currency, type')
-    .in('asset_id', userAssetIds.length ? userAssetIds : [-1])
-    .gte('date', fromDateStr)
-    .lte('date', toDateStr)
-
-  function estimateContribValue(c: { value_brl: number | null; price_orig: number | null; quantity: number | null; fx_rate_brl: number | null; currency: string | null }): number {
-    const vBrl = Number(c.value_brl)
-    if (vBrl > 0) return vBrl
-    const price = Number(c.price_orig)
-    const qty   = Number(c.quantity)
-    if (price > 0 && qty > 0) {
-      const fx = Number(c.fx_rate_brl) || (c.currency && c.currency !== 'BRL' ? 5.7 : 1)
-      return price * qty * fx
-    }
-    return 0
-  }
-
-  const totalContribs = (contributions ?? []).reduce((s: number, c) => {
-    if (c.type === 'income') return s  // income is portfolio return, not a cash flow
-    const v = estimateContribValue(c as Parameters<typeof estimateContribValue>[0])
-    return s + (c.type === 'buy' ? v : -v)
-  }, 0)
-
   // Cap value_end to the current month: future months (e.g. Dec 2026 when viewing year 2026)
   // use the same live prices as the current month, so clamp to currentYM for a stable result
   // that matches the dashboard's total.
@@ -354,9 +398,21 @@ router.get('/summary', requireAuth, async (req, res: Response) => {
   const clampedToStr = toStr > currentYM ? currentYM : toStr
   const [clampedToY, clampedToM] = clampedToStr.split('-').map(Number)
 
+  // Pre-fetch all data once — shared across both computePortfolioValueAtMonth calls
+  const prefetched = await fetchPrefetchedData(userId)
+
+  // Contributions: filter in memory instead of a separate DB query
+  const totalContribs = prefetched.contributions
+    .filter(c => c.date >= fromDateStr && c.date <= toDateStr)
+    .reduce((s: number, c) => {
+      if (c.type === 'income') return s
+      const v = estimateContribValue(c)
+      return s + (c.type === 'buy' ? v : -v)
+    }, 0)
+
   const [start, end] = await Promise.all([
-    getPortfolioValueAtMonth(userId, prevY,       prevM),
-    getPortfolioValueAtMonth(userId, clampedToY,  clampedToM),
+    computePortfolioValueAtMonth(prefetched, prevY,      prevM),
+    computePortfolioValueAtMonth(prefetched, clampedToY, clampedToM),
   ])
 
   const v_ini = start.total
@@ -412,47 +468,41 @@ router.get('/monthly', requireAuth, async (req, res: Response) => {
   // Previous month for first-row prev_total
   const prevM = fromM === 1 ? 12 : fromM - 1
   const prevY = fromM === 1 ? fromY - 1 : fromY
-  const prevYM = `${prevY}-${String(prevM).padStart(2, '0')}`
 
-  const { data: userAssets2 } = await supabaseAdmin
-    .from('assets').select('id, code, name, asset_type, fi_principal, fi_start_date').eq('user_id', userId)
-  const userAssetIds2 = (userAssets2 ?? []).map(a => a.id)
+  // Pre-fetch all data once — eliminates N+1 DB round-trips (was N×4 queries, now 4 total)
+  const prefetched = await fetchPrefetchedData(userId)
+
   const assetInfo: Record<number, { code: string; name: string }> = {}
   // Native FI: fi_principal + fi_start_date are set — their CDI returns are already baked into
   // the value computation, so contributions entered for tracking should not be subtracted as
   // new cash flows in the per-asset gain formula.
   const nativeFIIds = new Set<number>()
-  for (const a of (userAssets2 ?? [])) {
-    assetInfo[a.id as number] = { code: a.code as string, name: a.name as string }
+  for (const a of prefetched.assets) {
+    assetInfo[a.id] = { code: a.code, name: a.name }
     if (a.asset_type === 'fixed_income' && Number(a.fi_principal) > 0 && a.fi_start_date) {
-      nativeFIIds.add(a.id as number)
+      nativeFIIds.add(a.id)
     }
   }
 
-  const [prevMonthResult, valuesArr, contribsData] = await Promise.all([
-    getPortfolioValueAtMonth(userId, prevY, prevM),
+  // Compute all months using pre-fetched data — no additional DB queries
+  const [prevMonthResult, valuesArr] = await Promise.all([
+    computePortfolioValueAtMonth(prefetched, prevY, prevM),
     Promise.all(
       months.map(async ({ year: y, month: m, label }) => {
-        const { total, detail } = await getPortfolioValueAtMonth(userId, y, m)
+        const { total, detail } = await computePortfolioValueAtMonth(prefetched, y, m)
         return { month: label, total, detail }
       })
     ),
-    // Fetch ALL contributions (no lower date bound) so every historical month shows
-    // its actual cash flows in the APORTES column regardless of the viewed period.
-    supabaseAdmin
-      .from('contributions')
-      .select('asset_id, date, value_brl, price_orig, quantity, fx_rate_brl, currency, type')
-      .in('asset_id', userAssetIds2.length ? userAssetIds2 : [-1])
-      .lte('date', rangeToDate),
   ])
 
-  if (contribsData.error) console.error('[monthly] contributions query error:', contribsData.error.message)
+  // Use pre-fetched contributions for per-month breakdown (no extra DB query)
+  const filteredContribs = prefetched.contributions.filter(c => c.date <= rangeToDate)
 
   const contribsByMonth: Record<string, number> = {}
   const contribsByAssetMonth: Record<string, Record<number, number>> = {}
-  for (const c of (contribsData.data ?? [])) {
+  for (const c of filteredContribs) {
     if (c.type === 'income') continue  // income is portfolio return, not a cash flow
-    const ym = (c.date as string).substring(0, 7)
+    const ym = c.date.substring(0, 7)
     // Use Number() to safely coerce Supabase DECIMAL fields (may arrive as strings)
     const vBrl = Number(c.value_brl) > 0
       ? Number(c.value_brl)

@@ -2,6 +2,26 @@ import { useState, useEffect, useCallback } from 'react'
 import { apiFetch } from '../lib/api'
 import type { PortfolioValue, PerformanceSummary, PerformanceMonthly, PerformanceBenchmarks, AssetReturns, AssetDetail, ContributionRow } from '../lib/types'
 
+// Daily cache: stores data keyed by endpoint+params, expires at midnight
+function perfCacheGet<T>(key: string): T | null {
+  try {
+    const raw = localStorage.getItem(`perf_${key}`)
+    if (!raw) return null
+    const { date, data } = JSON.parse(raw)
+    const today = new Date().toISOString().slice(0, 10)
+    return date === today ? (data as T) : null
+  } catch { return null }
+}
+
+function perfCacheSet(key: string, data: unknown) {
+  try {
+    localStorage.setItem(`perf_${key}`, JSON.stringify({
+      date: new Date().toISOString().slice(0, 10),
+      data,
+    }))
+  } catch {}
+}
+
 export function usePortfolioValue() {
   const [data, setData]     = useState<PortfolioValue | null>(null)
   const [loading, setLoading] = useState(true)
@@ -78,16 +98,29 @@ export function usePerformanceSummary(from: string, to: string) {
   const [loading, setLoading] = useState(true)
   const [error, setError]   = useState<string | null>(null)
 
-  useEffect(() => {
+  const doFetch = useCallback(async (force: boolean) => {
+    const key = `summary_${from}_${to}`
+    if (!force) {
+      const cached = perfCacheGet<PerformanceSummary>(key)
+      if (cached) { setData(cached); setLoading(false); return }
+    }
     setLoading(true)
     setError(null)
-    apiFetch<PerformanceSummary>(`/performance/summary?from=${from}&to=${to}`)
-      .then(setData)
-      .catch((err) => setError(err instanceof Error ? err.message : 'Erro'))
-      .finally(() => setLoading(false))
+    try {
+      const result = await apiFetch<PerformanceSummary>(`/performance/summary?from=${from}&to=${to}`)
+      setData(result)
+      perfCacheSet(key, result)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro')
+    } finally {
+      setLoading(false)
+    }
   }, [from, to])
 
-  return { data, loading, error }
+  const refresh = useCallback(() => doFetch(true), [doFetch])
+  useEffect(() => { doFetch(false) }, [doFetch])
+
+  return { data, loading, error, refresh }
 }
 
 export function usePerformanceMonthly(from: string, to: string) {
@@ -95,31 +128,57 @@ export function usePerformanceMonthly(from: string, to: string) {
   const [loading, setLoading] = useState(true)
   const [error, setError]   = useState<string | null>(null)
 
-  useEffect(() => {
+  const doFetch = useCallback(async (force: boolean) => {
+    const key = `monthly_${from}_${to}`
+    if (!force) {
+      const cached = perfCacheGet<PerformanceMonthly>(key)
+      if (cached) { setData(cached); setLoading(false); return }
+    }
     setLoading(true)
     setError(null)
-    apiFetch<PerformanceMonthly>(`/performance/monthly?from=${from}&to=${to}`)
-      .then(setData)
-      .catch((err) => setError(err instanceof Error ? err.message : 'Erro'))
-      .finally(() => setLoading(false))
+    try {
+      const result = await apiFetch<PerformanceMonthly>(`/performance/monthly?from=${from}&to=${to}`)
+      setData(result)
+      perfCacheSet(key, result)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro')
+    } finally {
+      setLoading(false)
+    }
   }, [from, to])
 
-  return { data, loading, error }
+  const refresh = useCallback(() => doFetch(true), [doFetch])
+  useEffect(() => { doFetch(false) }, [doFetch])
+
+  return { data, loading, error, refresh }
 }
 
 export function usePerformanceBenchmarks(from: string, to: string) {
   const [data, setData]     = useState<PerformanceBenchmarks | null>(null)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
+  const doFetch = useCallback(async (force: boolean) => {
+    const key = `benchmarks_${from}_${to}`
+    if (!force) {
+      const cached = perfCacheGet<PerformanceBenchmarks>(key)
+      if (cached) { setData(cached); setLoading(false); return }
+    }
     setLoading(true)
-    apiFetch<PerformanceBenchmarks>(`/performance/benchmarks?from=${from}&to=${to}`)
-      .then(setData)
-      .catch(() => setData(null))
-      .finally(() => setLoading(false))
+    try {
+      const result = await apiFetch<PerformanceBenchmarks>(`/performance/benchmarks?from=${from}&to=${to}`)
+      setData(result)
+      perfCacheSet(key, result)
+    } catch {
+      setData(null)
+    } finally {
+      setLoading(false)
+    }
   }, [from, to])
 
-  return { data, loading }
+  const refresh = useCallback(() => doFetch(true), [doFetch])
+  useEffect(() => { doFetch(false) }, [doFetch])
+
+  return { data, loading, refresh }
 }
 
 export function useAssetReturns(from: string | null, to: string | null) {

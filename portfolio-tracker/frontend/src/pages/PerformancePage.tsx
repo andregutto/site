@@ -74,9 +74,15 @@ export default function PerformancePage() {
 
   const { from, to, label: periodLabel } = derivePeriod()
 
-  const { data: summary,    loading: sLoading } = usePerformanceSummary(from, to)
-  const { data: monthly,    loading: mLoading } = usePerformanceMonthly(from, to)
-  const { data: benchmarks, loading: bLoading } = usePerformanceBenchmarks(from, to)
+  const { data: summary,    loading: sLoading, refresh: refreshSummary    } = usePerformanceSummary(from, to)
+  const { data: monthly,    loading: mLoading, refresh: refreshMonthly    } = usePerformanceMonthly(from, to)
+  const { data: benchmarks, loading: bLoading, refresh: refreshBenchmarks } = usePerformanceBenchmarks(from, to)
+
+  const handleRefresh = useCallback(() => {
+    refreshSummary()
+    refreshMonthly()
+    refreshBenchmarks()
+  }, [refreshSummary, refreshMonthly, refreshBenchmarks])
 
   const [showCDI,   setShowCDI]   = useState(true)
   const [showIBOV,  setShowIBOV]  = useState(false)
@@ -179,6 +185,17 @@ export default function PerformancePage() {
               }`}
             >{label}</button>
           ))}
+
+          <span className="text-gray-200 text-sm">|</span>
+
+          <button
+            onClick={handleRefresh}
+            disabled={isLoading}
+            title="Recalcular performance (limpa cache do dia)"
+            className="px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-200 text-gray-500 hover:border-[#001A70] hover:text-[#001A70] transition-colors disabled:opacity-40"
+          >
+            {isLoading ? 'Calculando...' : 'Recalcular'}
+          </button>
 
         </div>
       </div>
