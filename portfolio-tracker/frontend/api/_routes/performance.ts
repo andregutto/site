@@ -62,10 +62,6 @@ type PrefetchedData = {
   }>
   prices: Array<{ asset_id: number; price: number; currency: string; ref_date: string }>
   manualValues: Array<{ asset_id: number; value: number; currency: string; ref_date: string }>
-  // Pre-fetched live prices for ticker assets with stale/missing price_history.
-  // Used for ALL months so historical months don't fall back to cost-basis while the
-  // current month uses live price — that asymmetry is the root cause of the May spike.
-  livePrices: Record<number, { price: number; currency: string }>
 }
 
 // Fetches all data needed for portfolio value computation in one round-trip (4 parallel DB queries).
@@ -75,7 +71,7 @@ async function fetchPrefetchedData(userId: string): Promise<PrefetchedData> {
     .select('id, code, name, asset_type, currency, active, fi_principal, fi_start_date, fi_type, fi_rate, fi_spread, ticker_brapi, ticker_yahoo, coingecko_id')
     .eq('user_id', userId)
 
-  if (!assets?.length) return { assets: [], contributions: [], prices: [], manualValues: [], livePrices: {} }
+  if (!assets?.length) return { assets: [], contributions: [], prices: [], manualValues: [] }
 
   const assetIds = assets.map(a => a.id)
   const phLimit = Math.max(10000, assetIds.length * 240)
@@ -95,37 +91,11 @@ async function fetchPrefetchedData(userId: string): Promise<PrefetchedData> {
       .order('ref_date', { ascending: true }),
   ])
 
-  // Find ticker assets whose price_history is missing or doesn't reach the current month.
-  // Fetch their live price once so all months can use the same value — eliminates the
-  // spike that occurs when historical months use cost-basis and the current month uses
-  // a live price that may be far above cost.
-  const currentYM = localYM(new Date())
-  const latestPhDate: Record<number, string> = {}
-  for (const p of (prices ?? [])) {
-    const cur = latestPhDate[p.asset_id]
-    if (!cur || p.ref_date > cur) latestPhDate[p.asset_id] = p.ref_date
-  }
-  const assetsMissingLivePrice = (assets as PrefetchedData['assets']).filter(a =>
-    a.asset_type === 'ticker' &&
-    !!(a.ticker_yahoo || a.coingecko_id) &&
-    (!(a.id in latestPhDate) || latestPhDate[a.id].substring(0, 7) < currentYM)
-  )
-  const livePrices: Record<number, { price: number; currency: string }> = {}
-  if (assetsMissingLivePrice.length > 0) {
-    await Promise.all(assetsMissingLivePrice.map(async (a) => {
-      try {
-        const result = await getCurrentPrice(a as Asset)
-        livePrices[a.id] = { price: result.price, currency: result.currency }
-      } catch {}
-    }))
-  }
-
   return {
     assets: assets as PrefetchedData['assets'],
     contributions: (contributions ?? []) as PrefetchedData['contributions'],
     prices: (prices ?? []) as PrefetchedData['prices'],
     manualValues: (manualValues ?? []) as PrefetchedData['manualValues'],
-    livePrices,
   }
 }
 
@@ -317,34 +287,36 @@ async function computePortfolioValueAtMonth(
               value = interp.value * fx
             }
           } else {
-            // Strict per-month lookup: getPrice() returns the exact-month entry first.
-            // Only falls back to LOCF (prior month) when the current month has no entry.
             const ph = getPrice(a.id, ym)
-            if (!ph) {
-              // No price_history at all: use pre-fetched live price or cost basis
-              const lp = data.livePrices[a.id]
-              if (lp) {
-                const fx = lp.currency === 'BRL' ? 1 : await getFxRate(lp.currency)
-                value = holdings * lp.price * fx
-              } else {
-                const cost = costMap[a.id]
-                if (cost && cost.totalQty > 0) value = holdings * (cost.totalCost / cost.totalQty)
-              }
-            } else {
-              const phStale = isCurrentOrFuture && ph.ref_date.substring(0, 7) < ym
-              if (!phStale) {
+            if (isCurrentOrFuture) {
+              // Current month: prefer exact DB entry; fall back to live price; then LOCF; then cost basis
+              if (ph && ph.ref_date.substring(0, 7) === ym) {
                 const fx = await getFxRate(ph.currency)
                 value = holdings * ph.price * fx
               } else {
-                // Current month has no exact entry — use live price if available
-                const lp = data.livePrices[a.id]
-                if (lp) {
-                  const fx = lp.currency === 'BRL' ? 1 : await getFxRate(lp.currency)
-                  value = holdings * lp.price * fx
-                } else {
-                  const fx = await getFxRate(ph.currency)
-                  value = holdings * ph.price * fx
+                try {
+                  const result = await getCurrentPrice(a as Asset)
+                  const fx = result.currency === 'BRL' ? 1 : await getFxRate(result.currency)
+                  value = holdings * result.price * fx
+                } catch {
+                  if (ph) {
+                    const fx = await getFxRate(ph.currency)
+                    value = holdings * ph.price * fx
+                  } else {
+                    const cost = costMap[a.id]
+                    if (cost && cost.totalQty > 0) value = holdings * (cost.totalCost / cost.totalQty)
+                  }
                 }
+              }
+            } else {
+              // Historical month: ONLY use price_history (exact or LOCF from prior month) or cost basis.
+              // NEVER use today's live price for a past month.
+              if (ph) {
+                const fx = await getFxRate(ph.currency)
+                value = holdings * ph.price * fx
+              } else {
+                const cost = costMap[a.id]
+                if (cost && cost.totalQty > 0) value = holdings * (cost.totalCost / cost.totalQty)
               }
             }
           }

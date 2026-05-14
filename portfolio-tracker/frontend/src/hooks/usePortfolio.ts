@@ -2,9 +2,9 @@ import { useState, useEffect, useCallback } from 'react'
 import { apiFetch } from '../lib/api'
 import type { PortfolioValue, PerformanceSummary, PerformanceMonthly, PerformanceBenchmarks, AssetReturns, AssetDetail, ContributionRow } from '../lib/types'
 
-// Daily cache v3 — bumped to bust stale data after price_history backfill (2026-05-14).
+// Daily cache v4 — bumped to bust stale data after removing livePrices current-price bleed (2026-05-14).
 // Stores results keyed by endpoint+params, expires at midnight.
-const CACHE_PREFIX = 'perf3_'
+const CACHE_PREFIX = 'perf4_'
 
 function perfCacheGet<T>(key: string): T | null {
   try {
