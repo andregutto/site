@@ -250,41 +250,50 @@ router.post('/sync-history', requireAuth, async (req, res: Response) => {
 
   type Detail = { id: number; code: string; status: 'ok' | 'empty' | 'error'; points?: number; error?: string }
 
-  let synced = 0, errors = 0
-  const details: Detail[] = []
-
-  // brapi free tier: ~15 req/min → 1 request every 5s to stay safely within limit
-  for (let i = 0; i < assets.length; i++) {
-    const a = assets[i]
+  const syncOne = async (a: (typeof assets)[number], source: string): Promise<Detail> => {
     try {
       const history = await getMonthlyHistory(a as Asset, 72)
-      if (!history.length) {
-        details.push({ id: a.id, code: a.code, status: 'empty' })
-      } else {
-        const { error: upsertErr } = await supabaseAdmin.from('price_history').upsert(
-          history.map((p) => ({ asset_id: a.id, ref_date: p.date, price: p.price, currency: p.currency, source: 'sync' })),
-          { onConflict: 'asset_id,ref_date' }
-        )
-        if (upsertErr) throw new Error(`DB upsert: ${upsertErr.message}`)
-        synced++
-        details.push({ id: a.id, code: a.code, status: 'ok', points: history.length })
-      }
+      if (!history.length) return { id: a.id, code: a.code, status: 'empty' }
+      const { error: upsertErr } = await supabaseAdmin.from('price_history').upsert(
+        history.map(p => ({ asset_id: a.id, ref_date: p.date, price: p.price, currency: p.currency, source })),
+        { onConflict: 'asset_id,ref_date' }
+      )
+      if (upsertErr) throw new Error(`DB upsert: ${upsertErr.message}`)
+      return { id: a.id, code: a.code, status: 'ok', points: history.length }
     } catch (err) {
-      errors++
       const msg = err instanceof Error ? err.message : String(err)
-      console.warn(`[sync-history] Erro em ${a.code}:`, msg)
-      details.push({ id: a.id, code: a.code, status: 'error', error: msg })
+      console.warn(`[sync-history] ${a.code}:`, msg)
+      return { id: a.id, code: a.code, status: 'error', error: msg }
     }
-    if (i + 1 < assets.length) await new Promise(r => setTimeout(r, 5000))
   }
 
-  res.json({ synced, errors, total: assets.length, details })
+  // Yahoo and CoinGecko have no tight rate limits — process in parallel before responding.
+  // brapi free tier (~15 req/min) would require 4 s/req × N assets which exceeds Vercel's
+  // serverless timeout, so brapi runs fire-and-forget after the response is sent.
+  const fastAssets  = assets.filter(a => a.ticker_yahoo || a.coingecko_id)
+  const brapiAssets = assets.filter(a => a.ticker_brapi && !a.ticker_yahoo && !a.coingecko_id)
+
+  const fastResults = await Promise.all(fastAssets.map(a => syncOne(a, 'sync')))
+  const synced = fastResults.filter(r => r.status === 'ok').length
+  const errors  = fastResults.filter(r => r.status === 'error').length
+
+  res.json({ synced, errors, total: assets.length, details: fastResults })
+
+  // Brapi: sequential with 4 s delay — fire-and-forget (may not complete on Vercel)
+  ;(async () => {
+    for (let i = 0; i < brapiAssets.length; i++) {
+      await syncOne(brapiAssets[i], 'sync')
+      if (i + 1 < brapiAssets.length) await new Promise(r => setTimeout(r, 4000))
+    }
+  })().catch(() => {})
 })
 
 // ─── POST /api/portfolio/reset-price-history ─────────────────────────────────
-// Purges price_history from a given date (default 2025-01-01) then re-syncs
-// ALL ticker assets (active + inactive) in batches. Fixes stale / off-by-one
-// data that accumulated from previous syncs and the brapi timezone bug.
+// Purges all price_history for the user's ticker assets, then re-syncs.
+// Yahoo + CoinGecko assets are synced synchronously before responding (parallel,
+// fast enough for Vercel's serverless timeout). Brapi-only assets are synced
+// fire-and-forget after the response — they may not complete on Vercel due to
+// the 15 req/min rate limit; re-run the backend sync script for full coverage.
 
 router.post('/reset-price-history', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
@@ -299,46 +308,53 @@ router.post('/reset-price-history', requireAuth, async (req, res: Response) => {
 
   const assetIds = assets.map(a => a.id as number)
 
-  // Delete ALL price_history synchronously before returning so the client sees
-  // zeroed-out data immediately, avoiding stale/wrong values during the re-sync.
   const { count: deleted } = await supabaseAdmin
     .from('price_history')
     .delete({ count: 'exact' })
     .in('asset_id', assetIds)
 
-  // Clear in-memory cache so brapi / yahoo return fresh data (not stale cached responses)
+  // Clear in-memory cache so requests fetch fresh data
   cache.deletePattern('brapi:history:')
   cache.deletePattern('yahoo:history:')
   cache.deletePattern('coingecko:history:')
 
-  // Return immediately — the HTTP connection closes and the frontend unblocks.
-  // The sequential sync continues in the background (~5 min for 77 assets at 5s/req).
+  const syncOne = async (a: (typeof assets)[number], source: string) => {
+    try {
+      const history = await getMonthlyHistory(a as Asset, 72)
+      if (history.length) {
+        const { error: upsertErr } = await supabaseAdmin.from('price_history').upsert(
+          history.map(p => ({ asset_id: a.id, ref_date: p.date, price: p.price, currency: p.currency, source })),
+          { onConflict: 'asset_id,ref_date' }
+        )
+        if (upsertErr) console.warn(`[reset] DB upsert ${a.code}:`, upsertErr.message)
+        else console.log(`[reset] ${a.code} ok (${history.length} pts)`)
+      } else {
+        console.log(`[reset] ${a.code} empty`)
+      }
+    } catch (err) {
+      console.warn(`[reset] ${a.code} error:`, err instanceof Error ? err.message : String(err))
+    }
+  }
+
+  // Yahoo + CoinGecko: sync in parallel synchronously before responding.
+  // These complete well within Vercel's serverless timeout.
+  const fastAssets  = assets.filter(a => a.ticker_yahoo || a.coingecko_id)
+  const brapiAssets = assets.filter(a => a.ticker_brapi && !a.ticker_yahoo && !a.coingecko_id)
+
+  await Promise.all(fastAssets.map(a => syncOne(a, 'reset')))
+
+  // Yahoo + CoinGecko data is now in DB — respond so the UI unblocks
   res.json({ status: 'started', deleted: deleted ?? 0, total: assets.length })
 
-  // Fire-and-forget background sync (not awaited — runs after response is sent)
-  const runSync = async () => {
-    for (let i = 0; i < assets.length; i++) {
-      const a = assets[i]
-      try {
-        const history = await getMonthlyHistory(a as Asset, 72)
-        if (history.length) {
-          const { error: upsertErr } = await supabaseAdmin.from('price_history').upsert(
-            history.map((p) => ({ asset_id: a.id, ref_date: p.date, price: p.price, currency: p.currency, source: 'reset' })),
-            { onConflict: 'asset_id,ref_date' }
-          )
-          if (upsertErr) console.warn(`[reset] DB upsert ${a.code}:`, upsertErr.message)
-          else console.log(`[reset] ${a.code} ok (${history.length} pts)`)
-        } else {
-          console.log(`[reset] ${a.code} empty`)
-        }
-      } catch (err) {
-        console.warn(`[reset] ${a.code} error:`, err instanceof Error ? err.message : String(err))
-      }
-      if (i + 1 < assets.length) await new Promise(r => setTimeout(r, 5000))
+  // Brapi: fire-and-forget — may not complete on Vercel; use the backend sync script
+  // (tsx scripts/sync-price-history.ts) for full Brazilian-stock coverage.
+  ;(async () => {
+    for (let i = 0; i < brapiAssets.length; i++) {
+      await syncOne(brapiAssets[i], 'reset')
+      if (i + 1 < brapiAssets.length) await new Promise(r => setTimeout(r, 4000))
     }
-    console.log('[reset-price-history] background sync complete')
-  }
-  runSync().catch(err => console.error('[reset-price-history] fatal:', err))
+    console.log('[reset-price-history] brapi background sync complete')
+  })().catch(err => console.error('[reset-price-history] fatal:', err))
 })
 
 router.post('/reset-baseline', requireAuth, async (req, res: Response) => {

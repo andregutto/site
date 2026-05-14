@@ -196,44 +196,46 @@ router.post('/sync-history', requireAuth, async (req, res: Response) => {
     .from('assets')
     .select('id,code,asset_type,currency,ticker_brapi,ticker_yahoo,coingecko_id,fi_principal,fi_start_date,fi_type,fi_rate,fi_spread')
     .eq('user_id', userId)
-    .eq('active', true)
     .eq('asset_type', 'ticker')
 
   if (!assets?.length) { res.json({ synced: 0, errors: 0, total: 0, details: [] }); return }
 
-  let synced = 0, errors = 0
-  const details: Array<{ id: number; code: string; status: 'ok' | 'empty' | 'error'; points?: number; error?: string }> = []
+  type Detail = { id: number; code: string; status: 'ok' | 'empty' | 'error'; points?: number; error?: string }
 
-  for (const a of assets) {
+  const syncOne = async (a: (typeof assets)[number]): Promise<Detail> => {
     try {
-      const history = await getMonthlyHistory(a as Asset, 24)
-      if (history.length > 0) {
-        const { error: upsertErr } = await supabaseAdmin.from('price_history').upsert(
-          history.map((p) => ({
-            asset_id: a.id,
-            ref_date:  p.date,
-            price:     p.price,
-            currency:  p.currency,
-            source:    'sync',
-          })),
-          { onConflict: 'asset_id,ref_date' }
-        )
-        if (upsertErr) throw new Error(`DB upsert: ${upsertErr.message}`)
-        synced++
-        details.push({ id: a.id, code: a.code, status: 'ok', points: history.length })
-      } else {
-        details.push({ id: a.id, code: a.code, status: 'empty' })
-      }
+      const history = await getMonthlyHistory(a as Asset, 72)
+      if (!history.length) return { id: a.id, code: a.code, status: 'empty' }
+      const { error: upsertErr } = await supabaseAdmin.from('price_history').upsert(
+        history.map(p => ({ asset_id: a.id, ref_date: p.date, price: p.price, currency: p.currency, source: 'sync' })),
+        { onConflict: 'asset_id,ref_date' }
+      )
+      if (upsertErr) throw new Error(`DB upsert: ${upsertErr.message}`)
+      return { id: a.id, code: a.code, status: 'ok', points: history.length }
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
-      console.warn(`[sync-history] Erro em ${a.code} (${a.id}):`, msg)
-      errors++
-      details.push({ id: a.id, code: a.code, status: 'error', error: msg })
+      console.warn(`[sync-history] ${a.code}:`, msg)
+      return { id: a.id, code: a.code, status: 'error', error: msg }
     }
-    await new Promise((r) => setTimeout(r, 150))
   }
 
-  res.json({ synced, errors, total: assets.length, details })
+  // Yahoo and CoinGecko: process in parallel (no rate-limit constraints)
+  const fastAssets  = assets.filter(a => a.ticker_yahoo || a.coingecko_id)
+  const brapiAssets = assets.filter(a => a.ticker_brapi && !a.ticker_yahoo && !a.coingecko_id)
+
+  const fastResults = await Promise.all(fastAssets.map(syncOne))
+  const synced = fastResults.filter(r => r.status === 'ok').length
+  const errors  = fastResults.filter(r => r.status === 'error').length
+
+  res.json({ synced, errors, total: assets.length, details: fastResults })
+
+  // Brapi: sequential 4 s delay — fire-and-forget (express server stays alive, so this completes)
+  ;(async () => {
+    for (let i = 0; i < brapiAssets.length; i++) {
+      await syncOne(brapiAssets[i])
+      if (i + 1 < brapiAssets.length) await new Promise(r => setTimeout(r, 4000))
+    }
+  })().catch(() => {})
 })
 
 // POST /api/portfolio/reset-baseline
