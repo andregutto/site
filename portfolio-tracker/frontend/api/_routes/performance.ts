@@ -175,39 +175,31 @@ async function getPortfolioValueAtMonth(
         if (!a.active) continue
         const anchor = firstBuyMap[a.id]
         const mvPts = allMVByAsset[a.id] ?? []
-        // Interpolate if we have at least one anchor (buy or manual_value).
-        // Without the mvPts.length guard, months before the first manual_value
-        // also get a value (buy → carry-forward or buy → interpolation),
-        // distributing returns across months instead of concentrating them.
         if (anchor || mvPts.length > 0) {
           const pts: ValPoint[] = anchor ? [anchor, ...mvPts] : [...mvPts]
           pts.sort((x, y) => x.ref_date.localeCompare(y.ref_date))
-          // Zero value for months before the first anchor (asset didn't exist yet)
-          if (pts[0].ref_date <= dateStr) {
-            const interp = interpolateKnownPoints(pts, dateStr)
-            if (interp) {
-              const fx = interp.currency === 'BRL' ? 1 : await getFxRate(interp.currency)
-              value = interp.value * fx
-            }
+          // Allow carry-backward: if data was entered after dateStr, use it as the starting value
+          const interp = interpolateKnownPoints(pts, dateStr)
+          if (interp) {
+            const fx = interp.currency === 'BRL' ? 1 : await getFxRate(interp.currency)
+            value = interp.value * fx
           }
         }
       } else if (a.asset_type === 'fixed_income') {
         if (!a.active) continue
-        // Skip months before the investment started (fi_start_date or first tranche)
-        const fiEarliestStart = fiTranchesMap[a.id]?.[0]?.start_date ?? (a.fi_start_date as string | null)
+        // Use asset-level fi_start_date as cutoff — contribution dates may be entered retrospectively
+        const fiEarliestStart = (a.fi_start_date as string | null) ?? fiTranchesMap[a.id]?.[0]?.start_date ?? null
         if (fiEarliestStart && fiEarliestStart > dateStr) continue
 
-        // Sum of principals invested up to this date (contributions or fi_principal fallback)
-        const principalSum = (fiTranchesMap[a.id] ?? [])
-          .filter(t => t.start_date <= dateStr)
-          .reduce((s, t) => s + t.principal, 0) || (Number(a.fi_principal) || 0)
+        // Only count tranches that had started by this date; fall back to fi_principal
+        const activeTranches = (fiTranchesMap[a.id] ?? []).filter(t => t.start_date <= dateStr)
+        const principalSum = activeTranches.reduce((s, t) => s + t.principal, 0) || (Number(a.fi_principal) || 0)
 
         try {
-          const tranches = fiTranchesMap[a.id]
           const result = await getCurrentPrice({
             ...a,
             ticker_brapi: null, ticker_yahoo: null, coingecko_id: null,
-          } as Asset, tranches, new Date(dateStr))
+          } as Asset, activeTranches.length > 0 ? activeTranches : undefined, new Date(dateStr))
           value = result.price
         } catch { value = principalSum }
       } else {
