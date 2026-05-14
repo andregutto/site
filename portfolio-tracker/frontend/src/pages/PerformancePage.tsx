@@ -81,8 +81,12 @@ export default function PerformancePage() {
   const [showCDI,   setShowCDI]   = useState(true)
   const [showIBOV,  setShowIBOV]  = useState(false)
   const [showSP500, setShowSP500] = useState(false)
-  const [expandedMonth, setExpandedMonth] = useState<string | null>(null)
-  const toggleMonth = useCallback((m: string) => setExpandedMonth(prev => prev === m ? null : m), [])
+  const [expandedMonths, setExpandedMonths] = useState<Set<string>>(new Set())
+  const toggleMonth = useCallback((m: string) => setExpandedMonths(prev => {
+    const next = new Set(prev)
+    next.has(m) ? next.delete(m) : next.add(m)
+    return next
+  }), [])
 
   const benchmarkMap = new Map(
     (benchmarks?.monthly ?? []).map(b => [b.month, b])
@@ -324,7 +328,7 @@ export default function PerformancePage() {
                       const gain      = m.prev_total > 0 ? m.total - m.prev_total - cf : null
                       const denom     = m.prev_total + 0.5 * cf
                       const gainPct   = gain != null && denom > 0 ? (gain / denom) * 100 : null
-                      const isExpanded = expandedMonth === m.month
+                      const isExpanded = expandedMonths.has(m.month)
                       const hasDetail  = (m.detail?.length ?? 0) > 0
                       return (
                         <>
