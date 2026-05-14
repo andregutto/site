@@ -128,11 +128,13 @@ export default function AssetDetailPage() {
   }))
 
   const isManual = data.asset_type === 'manual'
+  // Tickers sem preço ao vivo (delisted/cost_basis) também suportam atualização manual de valor
+  const canUpdateManualValue = isManual || data.price_source === 'cost_basis' || data.price_source === 'manual'
   const lastHistoryDate = data.history.length > 0 ? data.history[data.history.length - 1].date : null
   const daysSinceUpdate = lastHistoryDate
     ? Math.floor((Date.now() - new Date(lastHistoryDate + 'T12:00:00').getTime()) / (1000 * 60 * 60 * 24))
     : null
-  const isStale = isManual && (daysSinceUpdate === null || daysSinceUpdate > 30)
+  const isStale = canUpdateManualValue && (daysSinceUpdate === null || daysSinceUpdate > 30)
 
   const manualEntries = isManual
     ? data.history.map((h, i) => {
@@ -215,21 +217,21 @@ export default function AssetDetailPage() {
             to={`/contributions?assetId=${id}&new=1`}
             className="text-xs text-[#001A70] border border-[#001A70]/30 hover:bg-blue-50 rounded-lg px-2.5 py-1 transition-colors mt-1"
           >+ Aporte</Link>
-          {data.asset_type === 'manual' && (
-            <>
-              <button
-                onClick={() => setShowManualModal(true)}
-                className="text-xs text-[#001A70] border border-[#001A70]/30 hover:bg-blue-50 rounded-lg px-2.5 py-1 transition-colors font-medium"
-              >
-                Atualizar valor
-              </button>
-              <button
-                onClick={() => setShowMigrateModal(true)}
-                className="text-xs text-blue-600 border border-blue-200 hover:bg-blue-50 rounded-lg px-2.5 py-1 transition-colors"
-              >
-                Converter para RF
-              </button>
-            </>
+          {canUpdateManualValue && (
+            <button
+              onClick={() => setShowManualModal(true)}
+              className="text-xs text-[#001A70] border border-[#001A70]/30 hover:bg-blue-50 rounded-lg px-2.5 py-1 transition-colors font-medium"
+            >
+              Atualizar valor
+            </button>
+          )}
+          {isManual && (
+            <button
+              onClick={() => setShowMigrateModal(true)}
+              className="text-xs text-blue-600 border border-blue-200 hover:bg-blue-50 rounded-lg px-2.5 py-1 transition-colors"
+            >
+              Converter para RF
+            </button>
           )}
           <button
             onClick={handleArchive}
@@ -487,7 +489,7 @@ export default function AssetDetailPage() {
         />
       )}
 
-      {showManualModal && (() => {
+      {showManualModal && canUpdateManualValue && (() => {
         const assetForModal: PortfolioAsset = {
           id:              data.id,
           code:            data.code,
