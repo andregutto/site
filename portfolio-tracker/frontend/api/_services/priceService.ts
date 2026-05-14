@@ -31,7 +31,7 @@ export interface PricePoint {
 
 export { FITranche }
 
-export async function getCurrentPrice(asset: Asset, tranches?: FITranche[]): Promise<PriceResult> {
+export async function getCurrentPrice(asset: Asset, tranches?: FITranche[], refDate?: Date): Promise<PriceResult> {
   if (asset.asset_type === 'fixed_income') {
     if (!asset.fi_type || (asset.fi_type !== 'ipca_plus' && asset.fi_rate == null)) {
       throw new Error(`Dados de RF incompletos para asset ${asset.id}`)
@@ -39,7 +39,7 @@ export async function getCurrentPrice(asset: Asset, tranches?: FITranche[]): Pro
     if (!tranches?.length && (!asset.fi_principal || !asset.fi_start_date)) {
       throw new Error(`Dados de RF incompletos para asset ${asset.id}`)
     }
-    const value = await calculateCurrentValue(asset as FixedIncomeAsset, tranches)
+    const value = await calculateCurrentValue(asset as FixedIncomeAsset, tranches, refDate)
     return { price: value, currency: asset.currency, source: 'bcb' }
   }
 

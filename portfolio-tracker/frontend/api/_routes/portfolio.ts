@@ -53,6 +53,21 @@ router.get('/value', requireAuth, async (req, res: Response) => {
     rfTranchesMap[c.asset_id].push({ principal: c.value_brl, start_date: c.date })
   }
 
+  // Brapi-only assets (no yahoo, no coingecko) that have never had price_history synced
+  // may return stale prices from brapi.dev for delisted tickers. Use cost basis for these.
+  const brapiOnlyIds = assets
+    .filter(a => a.asset_type === 'ticker' && a.ticker_brapi && !a.ticker_yahoo && !a.coingecko_id)
+    .map(a => a.id)
+  const syncedBrapiIds = new Set<number>()
+  if (brapiOnlyIds.length > 0) {
+    const { data: phRows } = await supabaseAdmin
+      .from('price_history')
+      .select('asset_id')
+      .in('asset_id', brapiOnlyIds)
+      .limit(brapiOnlyIds.length * 2)
+    for (const row of (phRows ?? [])) syncedBrapiIds.add(row.asset_id)
+  }
+
   const manualMap: Record<number, { value: number; currency: string; last_date: string }> = {}
   if (assetIds.length > 0) {
     const { data: manualValues } = await supabaseAdmin
@@ -137,11 +152,24 @@ router.get('/value', requireAuth, async (req, res: Response) => {
 
           // manual_value is a hard override: user explicitly set the position value
           const mvOverride = manualMap[a.id]
+          // brapi-only asset with no synced price_history = may be delisted; skip live price
+          const brapiOnlyUnsynced = !!a.ticker_brapi && !a.ticker_yahoo && !a.coingecko_id
+            && !syncedBrapiIds.has(a.id)
+
           if (mvOverride) {
             value_orig = mvOverride.value
             currency   = mvOverride.currency
             source     = 'manual'
             value_brl  = currency === 'BRL' ? value_orig : value_orig * await getFxRate(currency)
+          } else if (brapiOnlyUnsynced) {
+            // Never synced → brapi.dev price is unreliable; use cost basis until user syncs or sets manual value
+            const invested = investedMap[a.id]
+            if (invested != null && invested > 0) {
+              value_brl = invested; value_orig = invested; source = 'cost_basis'
+            } else {
+              byAsset.push({ ...base, value_brl: 0, value_orig: 0, currency: a.currency || 'BRL', holdings, price: null, source: 'error', needs_manual: true, invested_brl: null, last_manual_date: null })
+              return
+            }
           } else {
             try {
               const result = await getCurrentPrice(a as Asset)

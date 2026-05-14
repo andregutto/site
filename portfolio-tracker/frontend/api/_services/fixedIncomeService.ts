@@ -182,7 +182,11 @@ export async function calculateTrancheProfits(
   throw new Error(`Tipo de RF desconhecido: ${asset.fi_type}`)
 }
 
-export async function calculateCurrentValue(asset: FixedIncomeAsset, tranches?: FITranche[]): Promise<number> {
+export async function calculateCurrentValue(
+  asset: FixedIncomeAsset,
+  tranches?: FITranche[],
+  refDate?: Date,   // if provided, compute value AS OF this date (for historical months)
+): Promise<number> {
   const effectiveTranches: FITranche[] = tranches?.length
     ? tranches
     : (() => {
@@ -192,14 +196,14 @@ export async function calculateCurrentValue(asset: FixedIncomeAsset, tranches?: 
         return [{ principal: asset.fi_principal, start_date: asset.fi_start_date }]
       })()
 
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
+  const refDay = new Date(refDate ?? new Date())
+  refDay.setHours(0, 0, 0, 0)
 
   switch (asset.fi_type) {
-    case 'pos_cdi':   return calcPosCDI(effectiveTranches, asset.fi_rate!, today)
-    case 'selic':     return calcSelic(effectiveTranches, asset.fi_rate ?? 1, today)
-    case 'pre':       return calcPre(effectiveTranches, asset.fi_rate!, today)
-    case 'ipca_plus': return calcIPCAPlus(effectiveTranches, asset.fi_spread ?? 0, today)
+    case 'pos_cdi':   return calcPosCDI(effectiveTranches, asset.fi_rate!, refDay)
+    case 'selic':     return calcSelic(effectiveTranches, asset.fi_rate ?? 1, refDay)
+    case 'pre':       return calcPre(effectiveTranches, asset.fi_rate!, refDay)
+    case 'ipca_plus': return calcIPCAPlus(effectiveTranches, asset.fi_spread ?? 0, refDay)
     default:          throw new Error(`Tipo de RF desconhecido: ${asset.fi_type}`)
   }
 }

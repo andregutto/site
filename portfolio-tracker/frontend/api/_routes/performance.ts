@@ -183,12 +183,15 @@ async function getPortfolioValueAtMonth(
         }
       } else if (a.asset_type === 'fixed_income') {
         if (!a.active) continue
+        // Skip months before the investment started (fi_start_date or first tranche)
+        const fiEarliestStart = fiTranchesMap[a.id]?.[0]?.start_date ?? (a.fi_start_date as string | null)
+        if (fiEarliestStart && fiEarliestStart > dateStr) continue
         try {
           const tranches = fiTranchesMap[a.id]
           const result = await getCurrentPrice({
             ...a,
             ticker_brapi: null, ticker_yahoo: null, coingecko_id: null,
-          } as Asset, tranches)
+          } as Asset, tranches, new Date(dateStr))   // compute value AS OF this month
           value = result.price
         } catch { value = 0 }
       } else {
@@ -211,8 +214,11 @@ async function getPortfolioValueAtMonth(
             // No manual balance updates: use price_history (LOCF) and live price for current month
             const ph = priceMap[a.id]
             if (!ph) {
-              // No price_history at all: for current/future, try live price before cost basis
-              if (isCurrentOrFuture) {
+              // No price_history at all.
+              // For brapi-only assets (no yahoo, no coingecko), brapi.dev may return stale
+              // prices for delisted tickers — use cost basis directly to avoid false values.
+              const hasReliableAutoSource = !!(a.ticker_yahoo || a.coingecko_id)
+              if (isCurrentOrFuture && hasReliableAutoSource) {
                 try {
                   const result = await getCurrentPrice(a as Asset)
                   const fx = result.currency === 'BRL' ? 1 : await getFxRate(result.currency)
