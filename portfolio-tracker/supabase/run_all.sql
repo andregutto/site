@@ -79,7 +79,7 @@ CREATE TABLE contributions (
   id           SERIAL PRIMARY KEY,
   asset_id     INTEGER     NOT NULL REFERENCES assets(id) ON DELETE CASCADE,
   date         DATE        NOT NULL,
-  type         VARCHAR(4)  NOT NULL DEFAULT 'buy' CHECK (type IN ('buy','sell')),
+  type         VARCHAR(20) NOT NULL DEFAULT 'buy' CHECK (type IN ('buy','sell','income')),
   quantity     DECIMAL(18,6) NOT NULL,
   price_orig   DECIMAL(18,6),         -- preço unitário na moeda do ativo
   currency     VARCHAR(5),
