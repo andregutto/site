@@ -211,8 +211,20 @@ async function getPortfolioValueAtMonth(
             // No manual balance updates: use price_history (LOCF) and live price for current month
             const ph = priceMap[a.id]
             if (!ph) {
-              const cost = costMap[a.id]
-              if (cost && cost.totalQty > 0) value = holdings * (cost.totalCost / cost.totalQty)
+              // No price_history at all: for current/future, try live price before cost basis
+              if (isCurrentOrFuture) {
+                try {
+                  const result = await getCurrentPrice(a as Asset)
+                  const fx = result.currency === 'BRL' ? 1 : await getFxRate(result.currency)
+                  value = holdings * result.price * fx
+                } catch {
+                  const cost = costMap[a.id]
+                  if (cost && cost.totalQty > 0) value = holdings * (cost.totalCost / cost.totalQty)
+                }
+              } else {
+                const cost = costMap[a.id]
+                if (cost && cost.totalQty > 0) value = holdings * (cost.totalCost / cost.totalQty)
+              }
             } else {
               const phStale = isCurrentOrFuture && ph.ref_date.substring(0, 7) < ym
               if (!phStale) {

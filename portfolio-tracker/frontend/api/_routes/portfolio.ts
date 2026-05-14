@@ -134,24 +134,25 @@ router.get('/value', requireAuth, async (req, res: Response) => {
           holdings = holdingsMap[a.id] ?? 0
           const hasAutoSource = !!(a.ticker_yahoo || a.coingecko_id)
           if (holdings <= 0 && hasAutoSource) return
-          try {
-            const result = await getCurrentPrice(a as Asset)
-            price      = result.price
-            currency   = result.currency
-            source     = result.source
-            value_orig = holdings * price
+
+          // manual_value is a hard override: user explicitly set the position value
+          const mvOverride = manualMap[a.id]
+          if (mvOverride) {
+            value_orig = mvOverride.value
+            currency   = mvOverride.currency
+            source     = 'manual'
             value_brl  = currency === 'BRL' ? value_orig : value_orig * await getFxRate(currency)
-          } catch {
-            const mv = manualMap[a.id]
-            if (mv) {
-              value_orig = mv.value
-              currency   = mv.currency
-              source     = 'manual'
+          } else {
+            try {
+              const result = await getCurrentPrice(a as Asset)
+              price      = result.price
+              currency   = result.currency
+              source     = result.source
+              value_orig = holdings * price
               value_brl  = currency === 'BRL' ? value_orig : value_orig * await getFxRate(currency)
-            } else {
+            } catch {
               const invested = investedMap[a.id]
               if (invested != null && invested > 0) {
-                // No live price and no manual value: show cost basis so value = invested, rentab = 0%
                 value_brl  = invested
                 value_orig = invested
                 source     = 'cost_basis'

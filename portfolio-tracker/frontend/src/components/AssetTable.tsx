@@ -183,12 +183,22 @@ export default function AssetTable({ assets, onAssetClick }: Props) {
               const isOpen   = expanded.has(group.name)
               const groupPct = portfolioTotal > 0 ? (group.total / portfolioTotal) * 100 : 0
 
-              const assetsWithRet = returns
-                ? group.assets.filter(a => !a.needs_manual && a.value_brl > 0 && returns[a.id] != null)
-                : []
+              const assetsWithRet = group.assets.filter(a =>
+                !a.needs_manual && a.value_brl > 0 && (
+                  (returns && returns[a.id] != null) ||
+                  (a.invested_brl != null && a.invested_brl > 0)
+                )
+              )
               const totalRetWeight = assetsWithRet.reduce((s, a) => s + a.value_brl, 0)
               const groupRentab = totalRetWeight > 0
-                ? assetsWithRet.reduce((s, a) => s + (returns![a.id]! * a.value_brl), 0) / totalRetWeight
+                ? assetsWithRet.reduce((s, a) => {
+                    const r = (returns && returns[a.id] != null)
+                      ? returns[a.id]!
+                      : (a.invested_brl != null && a.invested_brl > 0)
+                        ? (a.value_brl - a.invested_brl) / a.invested_brl * 100
+                        : 0
+                    return s + r * a.value_brl
+                  }, 0) / totalRetWeight
                 : null
 
               return (
