@@ -101,11 +101,15 @@ async function getPortfolioValueAtMonth(
     fiTranchesMap[c.asset_id].push({ principal: vBrl, start_date: c.date as string })
   }
 
+  // Limit 10000: ~84 assets × 73 months ≈ 6000 rows max.
+  // Supabase JS defaults to 1000, which silently truncates recent data and causes
+  // all recent gains to concentrate in the current month (old LOCF vs live price).
   const { data: prices } = await supabaseAdmin
     .from('price_history')
     .select('asset_id, price, currency, ref_date')
     .in('asset_id', assetIds)
     .order('ref_date', { ascending: true })
+    .limit(10000)
 
   const phByAsset: Record<number, Array<{ price: number; currency: string; ref_date: string }>> = {}
   for (const p of (prices ?? [])) {
@@ -649,9 +653,9 @@ router.get('/asset-returns', requireAuth, async (req, res: Response) => {
 
   const [{ data: endPricesRaw }, { data: allHistory }] = await Promise.all([
     supabaseAdmin.from('price_history').select('asset_id, price, ref_date')
-      .in('asset_id', assetIds).lte('ref_date', toDate).order('ref_date', { ascending: false }),
+      .in('asset_id', assetIds).lte('ref_date', toDate).order('ref_date', { ascending: false }).limit(10000),
     supabaseAdmin.from('price_history').select('asset_id, price, ref_date')
-      .in('asset_id', assetIds).order('ref_date', { ascending: true }),
+      .in('asset_id', assetIds).order('ref_date', { ascending: true }).limit(10000),
   ])
 
   const startMap:  Record<number, number> = {}
