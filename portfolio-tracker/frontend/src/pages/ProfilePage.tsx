@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { useCurrency, type Currency } from '../contexts/CurrencyContext'
 import LanguageSelector from '../components/LanguageSelector'
 import { supabase } from '../lib/supabase'
+import { useResetPriceHistory } from '../hooks/usePortfolio'
 
 interface ProfileData {
   email:                string
@@ -89,6 +90,9 @@ export default function ProfilePage() {
   const [deleteConfirm,   setDeleteConfirm]   = useState('')
   const [deleting,        setDeleting]        = useState(false)
   const [deleteError,     setDeleteError]     = useState<string | null>(null)
+
+  const { reset: rebuildHistory, loading: rebuilding, result: rebuildResult } = useResetPriceHistory()
+  const [showRebuildConfirm, setShowRebuildConfirm] = useState(false)
 
   useEffect(() => {
     apiFetch<ProfileData>('/profile')
@@ -357,17 +361,58 @@ export default function ProfilePage() {
             </button>
           </form>
 
-          {/* Excluir conta */}
-          <div className="bg-white border border-red-100 rounded-2xl p-6 shadow-sm space-y-3">
+          {/* Zona de perigo */}
+          <div className="bg-white border border-red-100 rounded-2xl p-6 shadow-sm space-y-4">
             <h2 className="font-semibold text-red-700">Zona de perigo</h2>
-            <p className="text-xs text-gray-500">A exclusao e permanente e remove todos os seus dados: ativos, aportes, historico de precos e configuracoes. Esta acao nao pode ser desfeita.</p>
-            <button
-              type="button"
-              onClick={() => { setShowDeleteModal(true); setDeleteConfirm(''); setDeleteError(null) }}
-              className="px-4 py-2 text-sm font-semibold text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors"
-            >
-              Excluir minha conta
-            </button>
+
+            <div className="space-y-2">
+              <p className="text-xs font-medium text-gray-700">Reconstruir todo o histórico</p>
+              <p className="text-xs text-gray-500">Apaga o histórico de cotações e sincroniza todos os ativos do zero. Necessário após importações da B3. O processo roda em segundo plano (5-10 min).</p>
+              {!showRebuildConfirm ? (
+                <button
+                  type="button"
+                  disabled={rebuilding}
+                  onClick={() => setShowRebuildConfirm(true)}
+                  className="px-4 py-2 text-sm font-semibold text-amber-700 border border-amber-200 rounded-lg hover:bg-amber-50 disabled:opacity-50 transition-colors"
+                >
+                  {rebuilding ? 'Processando...' : 'Reconstruir Todo o Histórico'}
+                </button>
+              ) : (
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs text-amber-700 font-medium">Isso apaga e rebusca todo o histórico. Confirma?</span>
+                  <button
+                    type="button"
+                    onClick={() => { rebuildHistory(); setShowRebuildConfirm(false) }}
+                    className="px-3 py-1.5 text-xs font-semibold text-white bg-amber-600 rounded-lg hover:bg-amber-700 transition-colors"
+                  >
+                    Confirmar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowRebuildConfirm(false)}
+                    className="px-3 py-1.5 text-xs font-semibold text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              )}
+              {rebuildResult && !rebuilding && (
+                <p className="text-xs text-blue-600">
+                  Sincronização iniciada — {rebuildResult.total} ativos sendo processados em segundo plano.
+                </p>
+              )}
+            </div>
+
+            <div className="border-t border-red-100 pt-4 space-y-2">
+              <p className="text-xs text-gray-500">A exclusao e permanente e remove todos os seus dados: ativos, aportes, historico de precos e configuracoes. Esta acao nao pode ser desfeita.</p>
+              <button
+                type="button"
+                onClick={() => { setShowDeleteModal(true); setDeleteConfirm(''); setDeleteError(null) }}
+                className="px-4 py-2 text-sm font-semibold text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors"
+              >
+                Excluir minha conta
+              </button>
+            </div>
           </div>
 
           {/* Modal de confirmacao de exclusao */}

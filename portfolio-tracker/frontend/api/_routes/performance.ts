@@ -3,7 +3,7 @@ import { requireAuth, AuthRequest } from '../_middleware/auth.js'
 import { supabaseAdmin } from '../_lib/supabase.js'
 import { getFxRate } from '../_lib/fx.js'
 import { getRates, SERIES } from '../_services/bcbService.js'
-import { getCurrentPrice, Asset } from '../_services/priceService.js'
+import { getCurrentPrice, Asset, FITranche } from '../_services/priceService.js'
 import YahooFinance from 'yahoo-finance2'
 
 const yf = new YahooFinance({ suppressNotices: ['yahooSurvey', 'ripHistorical'] })
@@ -45,7 +45,7 @@ async function getPortfolioValueAtMonth(
 
   const { data: contributions } = await supabaseAdmin
     .from('contributions')
-    .select('asset_id, type, quantity, value_brl, price_orig, fx_rate_brl, currency')
+    .select('asset_id, type, quantity, value_brl, price_orig, fx_rate_brl, currency, date')
     .in('asset_id', assetIds)
     .lte('date', dateStr)
 
@@ -53,22 +53,33 @@ async function getPortfolioValueAtMonth(
   // costMap: used as fallback price when price_history is missing (delisted/renamed tickers)
   const costMap: Record<number, { totalCost: number; totalQty: number }> = {}
   for (const c of (contributions ?? [])) {
+    const qty = Number(c.quantity) || 0
     holdingsMap[c.asset_id] = (holdingsMap[c.asset_id] ?? 0) +
-      (c.type === 'buy' ? c.quantity : -c.quantity)
-    if (c.type === 'buy') {
-      const qty = c.quantity ?? 0
-      if (qty > 0) {
-        const vBrl = c.value_brl ??
-          (c.price_orig != null
-            ? c.price_orig * qty * (c.fx_rate_brl ?? (c.currency && c.currency !== 'BRL' ? 5.7 : 1))
-            : 0)
-        if (vBrl > 0) {
-          if (!costMap[c.asset_id]) costMap[c.asset_id] = { totalCost: 0, totalQty: 0 }
-          costMap[c.asset_id].totalCost += vBrl
-          costMap[c.asset_id].totalQty  += qty
-        }
+      (c.type === 'buy' ? qty : -qty)
+    if (c.type === 'buy' && qty > 0) {
+      const vBrl = Number(c.value_brl) > 0
+        ? Number(c.value_brl)
+        : (Number(c.price_orig) > 0
+          ? Number(c.price_orig) * qty * (Number(c.fx_rate_brl) || (c.currency && c.currency !== 'BRL' ? 5.7 : 1))
+          : 0)
+      if (vBrl > 0) {
+        if (!costMap[c.asset_id]) costMap[c.asset_id] = { totalCost: 0, totalQty: 0 }
+        costMap[c.asset_id].totalCost += vBrl
+        costMap[c.asset_id].totalQty  += qty
       }
     }
+  }
+
+  // FI tranches from contributions up to dateStr — used by getCurrentPrice for fixed_income
+  const fiAssetIds = assets.filter(a => a.asset_type === 'fixed_income').map(a => a.id)
+  const fiTranchesMap: Record<number, FITranche[]> = {}
+  for (const c of (contributions ?? [])) {
+    if (!fiAssetIds.includes(c.asset_id)) continue
+    if (c.type !== 'buy') continue
+    const vBrl = Number(c.value_brl)
+    if (vBrl <= 0) continue
+    if (!fiTranchesMap[c.asset_id]) fiTranchesMap[c.asset_id] = []
+    fiTranchesMap[c.asset_id].push({ principal: vBrl, start_date: c.date as string })
   }
 
   // Fetch ALL price_history (no date filter) to enable carry-backward for assets
@@ -138,12 +149,13 @@ async function getPortfolioValueAtMonth(
           value = mv.value * fx
         }
       } else if (a.asset_type === 'fixed_income') {
-        if (!a.active) continue  // inactive fixed_income assets are not valued historically
+        if (!a.active) continue
         try {
+          const tranches = fiTranchesMap[a.id]
           const result = await getCurrentPrice({
             ...a,
             ticker_brapi: null, ticker_yahoo: null, coingecko_id: null,
-          } as Asset)
+          } as Asset, tranches)
           value = result.price
         } catch { value = 0 }
       } else {

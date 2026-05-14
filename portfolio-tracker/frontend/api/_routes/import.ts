@@ -2,6 +2,7 @@ import { Router, Response } from 'express'
 import * as XLSX from 'xlsx'
 import { requireAuth, AuthRequest } from '../_middleware/auth.js'
 import { supabaseAdmin } from '../_lib/supabase.js'
+import { getMonthlyHistory, Asset } from '../_services/priceService.js'
 
 const router = Router()
 
@@ -315,6 +316,34 @@ router.post('/b3/execute', requireAuth, async (req, res: Response) => {
     skipped_tickers:        tickers.filter(t => !assetMap.has(t)),
     asset_positions,
   })
+
+  // Background: sync price history for all imported ticker assets (fire-and-forget)
+  ;(async () => {
+    const { data: tickerAssets } = await supabaseAdmin
+      .from('assets')
+      .select('id, code, asset_type, currency, ticker_brapi, ticker_yahoo, coingecko_id, fi_principal, fi_start_date, fi_type, fi_rate, fi_spread')
+      .eq('user_id', userId)
+      .eq('asset_type', 'ticker')
+      .in('id', importAssetIds)
+    const syncAssets = (tickerAssets ?? []).filter(a => a.ticker_brapi || a.ticker_yahoo || a.coingecko_id)
+    console.log(`[import-sync] starting background sync for ${syncAssets.length} assets`)
+    for (let i = 0; i < syncAssets.length; i++) {
+      const a = syncAssets[i]
+      try {
+        const history = await getMonthlyHistory(a as Asset, 72)
+        if (history.length) {
+          await supabaseAdmin.from('price_history').upsert(
+            history.map(h => ({ asset_id: a.id, ref_date: h.date, price: h.price, currency: a.currency || 'BRL' })),
+            { onConflict: 'asset_id,ref_date' }
+          )
+        }
+      } catch (err) {
+        console.warn(`[import-sync] ${a.code} error:`, err instanceof Error ? err.message : err)
+      }
+      if (i + 1 < syncAssets.length) await new Promise(r => setTimeout(r, 5000))
+    }
+    console.log('[import-sync] background sync complete for', syncAssets.length, 'assets')
+  })().catch(err => console.error('[import-sync] fatal:', err))
 })
 
 export default router
