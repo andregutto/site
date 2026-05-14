@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { usePerformanceSummary, usePerformanceMonthly, usePerformanceBenchmarks, usePerformanceInception } from '../hooks/usePortfolio'
 import {
   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend
@@ -81,6 +81,8 @@ export default function PerformancePage() {
   const [showCDI,   setShowCDI]   = useState(true)
   const [showIBOV,  setShowIBOV]  = useState(false)
   const [showSP500, setShowSP500] = useState(false)
+  const [expandedMonth, setExpandedMonth] = useState<string | null>(null)
+  const toggleMonth = useCallback((m: string) => setExpandedMonth(prev => prev === m ? null : m), [])
 
   const benchmarkMap = new Map(
     (benchmarks?.monthly ?? []).map(b => [b.month, b])
@@ -236,7 +238,7 @@ export default function PerformancePage() {
               <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
                 <h2 className="font-semibold text-gray-800">Rentabilidade Acumulada · {periodLabel}</h2>
                 <div className="flex items-center gap-2">
-                  {([['CDI', showCDI, setShowCDI, '#16a34a'], ['IBOV', showIBOV, setShowIBOV, '#dc2626'], ['S&P500', showSP500, setShowSP500, '#f59e0b']] as const).map(
+                  {([['CDI', showCDI, setShowCDI, '#16a34a'], ['IBOV', showIBOV, setShowIBOV, '#7c3aed'], ['S&P500', showSP500, setShowSP500, '#f59e0b']] as const).map(
                     ([lbl, active, setter, color]) => (
                       <button
                         key={lbl}
@@ -266,7 +268,7 @@ export default function PerformancePage() {
                     <Legend wrapperStyle={{ fontSize: 11 }} />
                     <Line type="monotone" dataKey="portfolio" name="Carteira"  stroke="#001A70" strokeWidth={2}   dot={{ r: 3, fill: '#001A70' }} activeDot={{ r: 5 }} />
                     {showCDI   && <Line type="monotone" dataKey="cdi"   name="CDI"    stroke="#16a34a" strokeWidth={1.5} dot={false} strokeDasharray="4 2" connectNulls />}
-                    {showIBOV  && <Line type="monotone" dataKey="ibov"  name="IBOV"   stroke="#dc2626" strokeWidth={1.5} dot={false} strokeDasharray="4 2" connectNulls />}
+                    {showIBOV  && <Line type="monotone" dataKey="ibov"  name="IBOV"   stroke="#7c3aed" strokeWidth={1.5} dot={false} strokeDasharray="4 2" connectNulls />}
                     {showSP500 && <Line type="monotone" dataKey="sp500" name="S&P500" stroke="#f59e0b" strokeWidth={1.5} dot={false} strokeDasharray="4 2" connectNulls />}
                   </LineChart>
                 </ResponsiveContainer>
@@ -287,7 +289,7 @@ export default function PerformancePage() {
               {[
                 { label: 'Carteira',  value: portfolioAccum, text: 'text-[#001A70]' },
                 { label: 'CDI',       value: cdiAccum,       text: 'text-green-600' },
-                { label: 'IBOV',      value: ibovAccum,      text: 'text-red-600'   },
+                { label: 'IBOV',      value: ibovAccum,      text: 'text-violet-700' },
                 { label: 'S&P500',    value: sp500Accum,     text: 'text-amber-600' },
               ].map(({ label, value, text }) => (
                 <div key={label} className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm">
@@ -318,32 +320,89 @@ export default function PerformancePage() {
                   </thead>
                   <tbody className="divide-y divide-gray-50">
                     {monthly.monthly.map((m) => {
-                      const cf      = m.contributions ?? 0
-                      const gain    = m.prev_total > 0 ? m.total - m.prev_total - cf : null
-                      const denom   = m.prev_total + 0.5 * cf
-                      const gainPct = gain != null && denom > 0 ? (gain / denom) * 100 : null
+                      const cf        = m.contributions ?? 0
+                      const gain      = m.prev_total > 0 ? m.total - m.prev_total - cf : null
+                      const denom     = m.prev_total + 0.5 * cf
+                      const gainPct   = gain != null && denom > 0 ? (gain / denom) * 100 : null
+                      const isExpanded = expandedMonth === m.month
+                      const hasDetail  = (m.detail?.length ?? 0) > 0
                       return (
-                        <tr key={m.month} className="hover:bg-gray-50">
-                          <td className="px-4 py-3 font-medium text-gray-700">{fmtMonth(m.month)}</td>
-                          <td className="px-4 py-3 text-right text-gray-900">
-                            {m.total > 0 ? fmtBRL(m.total) : '—'}
-                          </td>
-                          <td className="px-4 py-3 text-right text-gray-500 text-xs">
-                            {cf !== 0 ? `${cf > 0 ? '+' : ''}${fmtBRL(cf)}` : '—'}
-                          </td>
-                          <td className={`px-4 py-3 text-right font-medium ${
-                            gain == null ? 'text-gray-400' :
-                            gain >= 0 ? 'text-green-600' : 'text-red-600'
-                          }`}>
-                            {gain != null ? `${gain >= 0 ? '+' : ''}${fmtBRL(gain)}` : '—'}
-                          </td>
-                          <td className={`px-4 py-3 text-right text-xs font-semibold ${
-                            gainPct == null ? 'text-gray-300' :
-                            gainPct >= 0 ? 'text-green-600' : 'text-red-600'
-                          }`}>
-                            {gainPct != null ? `${gainPct >= 0 ? '+' : ''}${gainPct.toFixed(2)}%` : '—'}
-                          </td>
-                        </tr>
+                        <>
+                          <tr
+                            key={m.month}
+                            onClick={() => hasDetail && toggleMonth(m.month)}
+                            className={`${hasDetail ? 'cursor-pointer' : ''} hover:bg-gray-50 transition-colors`}
+                          >
+                            <td className="px-4 py-3 font-medium text-gray-700">
+                              <span className="flex items-center gap-1.5">
+                                {hasDetail && (
+                                  <span className={`text-gray-400 text-xs transition-transform inline-block ${isExpanded ? 'rotate-90' : ''}`}>▶</span>
+                                )}
+                                {fmtMonth(m.month)}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-right text-gray-900">
+                              {m.total > 0 ? fmtBRL(m.total) : '—'}
+                            </td>
+                            <td className="px-4 py-3 text-right text-gray-500 text-xs">
+                              {cf !== 0 ? `${cf > 0 ? '+' : ''}${fmtBRL(cf)}` : '—'}
+                            </td>
+                            <td className={`px-4 py-3 text-right font-medium ${
+                              gain == null ? 'text-gray-400' :
+                              gain >= 0 ? 'text-green-600' : 'text-red-600'
+                            }`}>
+                              {gain != null ? `${gain >= 0 ? '+' : ''}${fmtBRL(gain)}` : '—'}
+                            </td>
+                            <td className={`px-4 py-3 text-right text-xs font-semibold ${
+                              gainPct == null ? 'text-gray-300' :
+                              gainPct >= 0 ? 'text-green-600' : 'text-red-600'
+                            }`}>
+                              {gainPct != null ? `${gainPct >= 0 ? '+' : ''}${gainPct.toFixed(2)}%` : '—'}
+                            </td>
+                          </tr>
+                          {isExpanded && m.detail && (
+                            <tr key={`${m.month}-detail`} className="bg-gray-50/70">
+                              <td colSpan={5} className="px-6 pb-3 pt-1">
+                                <table className="w-full text-xs">
+                                  <thead>
+                                    <tr className="text-gray-400 border-b border-gray-200">
+                                      <th className="py-1.5 text-left font-medium">Ativo</th>
+                                      <th className="py-1.5 text-right font-medium">Valor final</th>
+                                      <th className="py-1.5 text-right font-medium">Aportes</th>
+                                      <th className="py-1.5 text-right font-medium">Ganho/Perda</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="divide-y divide-gray-100">
+                                    {m.detail.filter(d => d.value > 0 || d.contributions !== 0).map(d => (
+                                      <tr key={d.asset_id}>
+                                        <td className="py-1.5 text-gray-700">
+                                          <span className="font-semibold">{d.code}</span>
+                                          {d.name && d.name !== d.code && (
+                                            <span className="text-gray-400 ml-1 truncate max-w-[140px] inline-block align-bottom">{d.name}</span>
+                                          )}
+                                        </td>
+                                        <td className="py-1.5 text-right text-gray-800">
+                                          {d.value > 0 ? fmtBRL(d.value) : '—'}
+                                        </td>
+                                        <td className="py-1.5 text-right text-gray-500">
+                                          {d.contributions !== 0 ? `${d.contributions > 0 ? '+' : ''}${fmtBRL(d.contributions)}` : '—'}
+                                        </td>
+                                        <td className={`py-1.5 text-right font-medium ${
+                                          d.prev_value === 0 ? 'text-gray-400' :
+                                          d.gain >= 0 ? 'text-green-600' : 'text-red-600'
+                                        }`}>
+                                          {d.prev_value > 0
+                                            ? `${d.gain >= 0 ? '+' : ''}${fmtBRL(d.gain)}`
+                                            : '—'}
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </td>
+                            </tr>
+                          )}
+                        </>
                       )
                     })}
                   </tbody>

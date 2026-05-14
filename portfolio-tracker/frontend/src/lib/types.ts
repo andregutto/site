@@ -68,11 +68,22 @@ export interface PerformanceSummary {
   note?: string
 }
 
+export interface MonthlyDetailItem {
+  asset_id: number
+  code: string
+  name: string
+  value: number
+  prev_value: number
+  contributions: number
+  gain: number
+}
+
 export interface MonthlyPerf {
   month: string
   total: number
   prev_total: number
   contributions: number
+  detail?: MonthlyDetailItem[]
 }
 
 export interface PerformanceMonthly {

@@ -4,7 +4,6 @@ import { usePortfolioValue } from '../hooks/usePortfolio'
 import ValueCards from '../components/ValueCards'
 import AllocationChart from '../components/AllocationChart'
 import AssetTable from '../components/AssetTable'
-import ManualValueModal from '../components/ManualValueModal'
 import FixedIncomeSetupModal from '../components/FixedIncomeSetupModal'
 import type { PortfolioAsset } from '../lib/types'
 
@@ -15,9 +14,7 @@ export default function DashboardPage() {
 
   function handleAssetClick(asset: PortfolioAsset) {
     if (asset.needs_manual && asset.source === 'fixed_income') {
-      setSelectedAsset(asset)  // FixedIncomeSetupModal
-    } else if (asset.source === 'manual' || asset.source === 'cost_basis' || asset.needs_manual) {
-      setSelectedAsset(asset)  // ManualValueModal (includes balance updates for delisted tickers)
+      setSelectedAsset(asset)  // FixedIncomeSetupModal para RF sem configuração
     } else {
       navigate(`/assets/${asset.id}`, { state: { total_brl: data?.total_brl ?? 0 } })
     }
@@ -25,9 +22,6 @@ export default function DashboardPage() {
 
   function handleModalClose() { setSelectedAsset(null) }
   function handleSaved() { setSelectedAsset(null); refresh() }
-
-  // Qual modal abrir
-  const isFixedIncome = selectedAsset?.needs_manual === true && selectedAsset?.source === 'fixed_income'
 
   if (loading) {
     return (
@@ -84,15 +78,8 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Modais */}
-      {selectedAsset && !isFixedIncome && (
-        <ManualValueModal
-          asset={selectedAsset}
-          onClose={handleModalClose}
-          onSaved={handleSaved}
-        />
-      )}
-      {selectedAsset && isFixedIncome && (
+      {/* Modal apenas para RF sem configuração */}
+      {selectedAsset && (
         <FixedIncomeSetupModal
           asset={selectedAsset}
           onClose={handleModalClose}

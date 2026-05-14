@@ -417,7 +417,9 @@ router.get('/:id/detail', requireAuth, async (req, res: Response) => {
     }
   }
   const holdings    = Math.max(0, totalQty)
-  const investedBrl = totalCostBrl
+  const investedBrl = totalCostBrl > 0
+    ? totalCostBrl
+    : (asset.asset_type === 'fixed_income' && asset.fi_principal ? asset.fi_principal : 0)
   const avgCostBrl  = holdings > 0 && totalCostBrl > 0 ? totalCostBrl / holdings : null
 
   // Build tranches from buy contributions (RF assets)
@@ -450,6 +452,43 @@ router.get('/:id/detail', requireAuth, async (req, res: Response) => {
         priceCurrency   = mv.currency
         priceSource     = 'manual'
       }
+    } else if (asset.asset_type === 'ticker') {
+      // Manual value overrides live price (same priority as portfolio dashboard)
+      const { data: mvLatest } = await supabaseAdmin
+        .from('manual_values')
+        .select('value, currency')
+        .eq('asset_id', assetId)
+        .order('ref_date', { ascending: false })
+        .limit(1).maybeSingle()
+
+      if (mvLatest) {
+        const fx = mvLatest.currency === 'BRL' ? 1 : await getFxRate(mvLatest.currency)
+        currentValueBrl = mvLatest.currency === 'BRL' ? mvLatest.value : mvLatest.value * fx
+        priceCurrency   = mvLatest.currency
+        priceSource     = 'manual'
+      } else {
+        // Brapi-only with no price_history → stale data risk, use cost_basis
+        const isBrapiOnly = !!asset.ticker_brapi && !asset.ticker_yahoo && !asset.coingecko_id
+        let brapiOnlyUnsynced = false
+        if (isBrapiOnly) {
+          const { count } = await supabaseAdmin
+            .from('price_history')
+            .select('asset_id', { count: 'exact', head: true })
+            .eq('asset_id', assetId)
+          brapiOnlyUnsynced = (count ?? 0) === 0
+        }
+        if (brapiOnlyUnsynced) {
+          currentValueBrl = investedBrl
+          priceSource     = 'cost_basis'
+        } else {
+          const result = await getCurrentPrice(asset as Asset)
+          currentPrice    = result.price
+          priceCurrency   = result.currency
+          priceSource     = result.source
+          const fx = result.currency === 'BRL' ? 1 : await getFxRate(result.currency)
+          currentValueBrl = holdings * result.price * fx
+        }
+      }
     } else {
       const result = await getCurrentPrice(
         asset as Asset,
@@ -466,7 +505,6 @@ router.get('/:id/detail', requireAuth, async (req, res: Response) => {
       }
     }
   } catch {
-    // No price source available: use cost basis so value = invested, gain/loss = 0
     if (asset.asset_type === 'ticker' && investedBrl > 0) {
       currentValueBrl = investedBrl
       priceSource     = 'cost_basis'
@@ -491,37 +529,189 @@ router.get('/:id/detail', requireAuth, async (req, res: Response) => {
   type HistoryPoint = { date: string; price: number; value_brl: number }
   let history: HistoryPoint[] = []
 
+  // Shared interpolation helper used by both ticker (no price_history) and manual branches
+  type InterpPt = { ref_date: string; value: number; currency: string }
+  function buildMonthlyInterp(pts: InterpPt[]): void {
+    if (pts.length === 0) return
+    const mi = (s: string) => { const [y, m] = s.substring(0, 7).split('-').map(Number); return y * 12 + m }
+    const interpAt = (dateStr: string): InterpPt => {
+      const last = pts[pts.length - 1]
+      if (dateStr >= last.ref_date) return { ...last }
+      if (dateStr <  pts[0].ref_date) return { ...pts[0] }
+      let before = pts[0], after = pts[1]
+      for (let i = 0; i < pts.length - 1; i++) {
+        if (pts[i].ref_date <= dateStr && pts[i + 1].ref_date > dateStr) {
+          before = pts[i]; after = pts[i + 1]; break
+        }
+      }
+      const mB = mi(before.ref_date), mA = mi(after.ref_date), mT = mi(dateStr)
+      const span = mA - mB, elapsed = mT - mB
+      if (span <= 0 || elapsed <= 0) return { ...before }
+      const v = (before.value > 0 && after.value > 0)
+        ? before.value * Math.pow(after.value / before.value, elapsed / span)
+        : before.value + (after.value - before.value) * (elapsed / span)
+      return { ref_date: dateStr, value: v, currency: before.currency }
+    }
+    const todayYM = new Date().toISOString().substring(0, 7)
+    let [curY, curM] = pts[0].ref_date.substring(0, 7).split('-').map(Number)
+    const [endY, endM] = todayYM.split('-').map(Number)
+    while (curY < endY || (curY === endY && curM <= endM)) {
+      const lastDay = new Date(curY, curM, 0).getDate()
+      const ds = `${curY}-${String(curM).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
+      const { value: v, currency: cur } = interpAt(ds)
+      const fx = cur === 'BRL' ? 1 : getFxRate(cur).then(r => r).catch(() => 5.70) as unknown as number
+      history.push({ date: ds, price: v, value_brl: Math.round(v * (cur === 'BRL' ? 1 : 5.70) * 100) / 100 })
+      if (curM === 12) { curY++; curM = 1 } else { curM++ }
+    }
+  }
+
+  // Proper async version used by both branches
+  async function buildMonthlyInterpAsync(pts: InterpPt[]): Promise<void> {
+    if (pts.length === 0) return
+    const mi = (s: string) => { const [y, m] = s.substring(0, 7).split('-').map(Number); return y * 12 + m }
+    const interpAt = (dateStr: string): InterpPt => {
+      const last = pts[pts.length - 1]
+      if (dateStr >= last.ref_date) return { ...last }
+      if (dateStr <  pts[0].ref_date) return { ...pts[0] }
+      let before = pts[0], after = pts[1]
+      for (let i = 0; i < pts.length - 1; i++) {
+        if (pts[i].ref_date <= dateStr && pts[i + 1].ref_date > dateStr) {
+          before = pts[i]; after = pts[i + 1]; break
+        }
+      }
+      const mB = mi(before.ref_date), mA = mi(after.ref_date), mT = mi(dateStr)
+      const span = mA - mB, elapsed = mT - mB
+      if (span <= 0 || elapsed <= 0) return { ...before }
+      const v = (before.value > 0 && after.value > 0)
+        ? before.value * Math.pow(after.value / before.value, elapsed / span)
+        : before.value + (after.value - before.value) * (elapsed / span)
+      return { ref_date: dateStr, value: v, currency: before.currency }
+    }
+    const todayYM = new Date().toISOString().substring(0, 7)
+    let [curY, curM] = pts[0].ref_date.substring(0, 7).split('-').map(Number)
+    const [endY, endM] = todayYM.split('-').map(Number)
+    while (curY < endY || (curY === endY && curM <= endM)) {
+      const lastDay = new Date(curY, curM, 0).getDate()
+      const ds = `${curY}-${String(curM).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
+      const { value: v, currency: cur } = interpAt(ds)
+      const fx = cur === 'BRL' ? 1 : await getFxRate(cur).catch(() => 5.70)
+      history.push({ date: ds, price: v, value_brl: Math.round(v * fx * 100) / 100 })
+      if (curM === 12) { curY++; curM = 1 } else { curM++ }
+    }
+  }
+
+  function prependBuyAnchor(pts: InterpPt[]): void {
+    const firstBuyContrib = contribs.find(c => c.type === 'buy' &&
+      (Number(c.value_brl) > 0 || Number(c.price_orig) > 0))
+    if (!firstBuyContrib) return
+    const firstBuyVal = Number(firstBuyContrib.value_brl) > 0
+      ? Number(firstBuyContrib.value_brl)
+      : Number(firstBuyContrib.price_orig) * (Number(firstBuyContrib.quantity) || 1) * (Number(firstBuyContrib.fx_rate_brl) || 1)
+    if (firstBuyVal > 0 && (pts.length === 0 || firstBuyContrib.date < pts[0].ref_date)) {
+      pts.unshift({ ref_date: firstBuyContrib.date, value: firstBuyVal, currency: 'BRL' })
+    }
+  }
+  void buildMonthlyInterp  // suppress unused warning
+
   if (asset.asset_type === 'ticker') {
     const today = new Date().toISOString().split('T')[0]
-    const { data: ph } = await supabaseAdmin
-      .from('price_history')
-      .select('ref_date, price, currency')
-      .eq('asset_id', assetId)
-      .lte('ref_date', today)
-      .order('ref_date', { ascending: true })
+    const [phRes, mvRes] = await Promise.all([
+      supabaseAdmin
+        .from('price_history')
+        .select('ref_date, price, currency')
+        .eq('asset_id', assetId)
+        .lte('ref_date', today)
+        .order('ref_date', { ascending: true }),
+      supabaseAdmin
+        .from('manual_values')
+        .select('ref_date, value, currency')
+        .eq('asset_id', assetId)
+        .order('ref_date', { ascending: true }),
+    ])
+    const ph = phRes.data
+    const mv = mvRes.data
 
     const fxApprox = priceCurrency === 'BRL' ? 1 : await getFxRate(priceCurrency).catch(() => 5.70)
-    history = (ph ?? []).map((p) => {
-      let qtyAt = 0
-      for (const c of contribs) {
-        if (c.date <= p.ref_date) qtyAt += c.type === 'buy' ? (c.quantity ?? 0) : -(c.quantity ?? 0)
-      }
-      qtyAt = Math.max(0, qtyAt)
-      return {
-        date:      p.ref_date,
-        price:     p.price,
-        value_brl: Math.round(qtyAt * p.price * fxApprox * 100) / 100,
-      }
-    })
+
+    if (ph && ph.length > 0) {
+      const phDates = new Set(ph.map(p => p.ref_date))
+      const phPoints: HistoryPoint[] = ph.map((p) => {
+        let qtyAt = 0
+        for (const c of contribs) {
+          if (c.date <= p.ref_date) qtyAt += c.type === 'buy' ? (c.quantity ?? 0) : -(c.quantity ?? 0)
+        }
+        qtyAt = Math.max(0, qtyAt)
+        return { date: p.ref_date, price: p.price, value_brl: Math.round(qtyAt * p.price * fxApprox * 100) / 100 }
+      })
+      const mvPoints: HistoryPoint[] = (mv ?? [])
+        .filter(m => !phDates.has(m.ref_date))
+        .map(m => {
+          const fx = m.currency === 'BRL' ? 1 : fxApprox
+          return { date: m.ref_date, price: m.value, value_brl: Math.round(m.value * fx * 100) / 100 }
+        })
+      history = [...phPoints, ...mvPoints].sort((a, b) => a.date.localeCompare(b.date))
+    } else if (mv && mv.length > 0) {
+      // No price_history — treat like manual: interpolate monthly from buy to today
+      const pts: InterpPt[] = mv.map(m => ({ ref_date: m.ref_date, value: m.value, currency: m.currency }))
+      prependBuyAnchor(pts)
+      pts.sort((a, b) => a.ref_date.localeCompare(b.ref_date))
+      await buildMonthlyInterpAsync(pts)
+    }
   } else if (asset.asset_type === 'manual') {
     const { data: mv } = await supabaseAdmin
       .from('manual_values')
       .select('ref_date, value, currency')
       .eq('asset_id', assetId)
       .order('ref_date', { ascending: true })
-    for (const m of (mv ?? [])) {
-      const fx = m.currency === 'BRL' ? 1 : await getFxRate(m.currency).catch(() => 5.70)
-      history.push({ date: m.ref_date, price: m.value, value_brl: Math.round(m.value * fx * 100) / 100 })
+
+    type Pt = { ref_date: string; value: number; currency: string }
+    const pts: Pt[] = (mv ?? []).map(m => ({ ref_date: m.ref_date, value: m.value, currency: m.currency }))
+
+    // Prepend first buy as anchor — handles null value_brl via price_orig*qty fallback
+    const firstBuyContrib = contribs.find(c => c.type === 'buy' &&
+      (Number(c.value_brl) > 0 || Number(c.price_orig) > 0))
+    if (firstBuyContrib) {
+      const firstBuyVal = Number(firstBuyContrib.value_brl) > 0
+        ? Number(firstBuyContrib.value_brl)
+        : Number(firstBuyContrib.price_orig) * (Number(firstBuyContrib.quantity) || 1) * (Number(firstBuyContrib.fx_rate_brl) || 1)
+      if (firstBuyVal > 0 && (pts.length === 0 || firstBuyContrib.date < pts[0].ref_date)) {
+        pts.unshift({ ref_date: firstBuyContrib.date, value: firstBuyVal, currency: 'BRL' })
+      }
+    }
+    pts.sort((a, b) => a.ref_date.localeCompare(b.ref_date))
+
+    if (pts.length > 0) {
+      const mi = (s: string) => { const [y, m] = s.substring(0, 7).split('-').map(Number); return y * 12 + m }
+      function interpAt(dateStr: string): Pt {
+        const last = pts[pts.length - 1]
+        if (dateStr >= last.ref_date) return { ...last }
+        if (dateStr <  pts[0].ref_date) return { ...pts[0] }
+        let before = pts[0], after = pts[1]
+        for (let i = 0; i < pts.length - 1; i++) {
+          if (pts[i].ref_date <= dateStr && pts[i + 1].ref_date > dateStr) {
+            before = pts[i]; after = pts[i + 1]; break
+          }
+        }
+        const mB = mi(before.ref_date), mA = mi(after.ref_date), mT = mi(dateStr)
+        const span = mA - mB, elapsed = mT - mB
+        if (span <= 0 || elapsed <= 0) return { ...before }
+        const v = (before.value > 0 && after.value > 0)
+          ? before.value * Math.pow(after.value / before.value, elapsed / span)
+          : before.value + (after.value - before.value) * (elapsed / span)
+        return { ref_date: dateStr, value: v, currency: before.currency }
+      }
+
+      const todayYM = new Date().toISOString().substring(0, 7)
+      let [curY, curM] = pts[0].ref_date.substring(0, 7).split('-').map(Number)
+      const [endY, endM] = todayYM.split('-').map(Number)
+      while (curY < endY || (curY === endY && curM <= endM)) {
+        const lastDay = new Date(curY, curM, 0).getDate()
+        const dateStr = `${curY}-${String(curM).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
+        const { value: v, currency: cur } = interpAt(dateStr)
+        const fx = cur === 'BRL' ? 1 : await getFxRate(cur).catch(() => 5.70)
+        history.push({ date: dateStr, price: v, value_brl: Math.round(v * fx * 100) / 100 })
+        if (curM === 12) { curY++; curM = 1 } else { curM++ }
+      }
     }
   }
 

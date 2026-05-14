@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom'
 import { useAssetDetail } from '../hooks/usePortfolio'
 import { useCurrency } from '../contexts/CurrencyContext'
@@ -6,7 +6,7 @@ import { apiFetch } from '../lib/api'
 import InstitutionSelect from '../components/InstitutionSelect'
 import MigrateToFIModal from '../components/MigrateToFIModal'
 import ManualValueModal from '../components/ManualValueModal'
-import type { PortfolioAsset } from '../lib/types'
+import type { PortfolioAsset, ManualValue } from '../lib/types'
 import {
   LineChart, Line, XAxis, YAxis, Tooltip,
   ResponsiveContainer, CartesianGrid, ReferenceLine,
@@ -69,6 +69,15 @@ export default function AssetDetailPage() {
   const [savingInstitution,  setSavingInstitution]  = useState(false)
   const [showMigrateModal,   setShowMigrateModal]   = useState(false)
   const [showManualModal,    setShowManualModal]    = useState(false)
+  const [manualValueHistory, setManualValueHistory] = useState<ManualValue[]>([])
+  const [chartPeriod,        setChartPeriod]        = useState<number | null>(12)
+
+  useEffect(() => {
+    if (!id) return
+    apiFetch<ManualValue[]>(`/assets/${id}/manual-values`)
+      .then(setManualValueHistory)
+      .catch(() => {})
+  }, [id])
 
   async function handleArchive() {
     if (!id || !confirm('Arquivar este ativo? Ele vai sair do dashboard mas o histórico é mantido.')) return
@@ -77,6 +86,15 @@ export default function AssetDetailPage() {
       await apiFetch(`/assets/${id}/archive`, { method: 'POST' })
       navigate(-1)
     } catch { setArchiving(false) }
+  }
+
+  async function handleDeleteManualValue(valueId: number) {
+    if (!id || !confirm('Remover esta atualização de valor?')) return
+    try {
+      await apiFetch(`/assets/${id}/manual-value/${valueId}`, { method: 'DELETE' })
+      setManualValueHistory(h => h.filter(v => v.id !== valueId))
+      refresh()
+    } catch { /* ignore */ }
   }
 
   async function handleSaveInstitution() {
@@ -122,30 +140,51 @@ export default function AssetDetailPage() {
     ? `${data.price_currency} ${fmtNum(data.current_price, 2)}`
     : '—'
 
-  const chartData = data.history.map(h => ({
+  const allChartData = data.history.map(h => ({
     month: fmtMonth(h.date),
     value: convert(h.value_brl),
   }))
 
+  const CHART_PERIODS = [
+    { label: '1M',   months: 1 },
+    { label: '3M',   months: 3 },
+    { label: '6M',   months: 6 },
+    { label: '1A',   months: 12 },
+    { label: '2A',   months: 24 },
+    { label: 'Tudo', months: null },
+  ]
+  const chartData = chartPeriod == null ? allChartData : allChartData.slice(-chartPeriod)
+
   const isManual = data.asset_type === 'manual'
-  // Tickers sem preço ao vivo (delisted/cost_basis) também suportam atualização manual de valor
   const canUpdateManualValue = isManual || data.price_source === 'cost_basis' || data.price_source === 'manual'
-  const lastHistoryDate = data.history.length > 0 ? data.history[data.history.length - 1].date : null
-  const daysSinceUpdate = lastHistoryDate
-    ? Math.floor((Date.now() - new Date(lastHistoryDate + 'T12:00:00').getTime()) / (1000 * 60 * 60 * 24))
+  const lastManualDate = manualValueHistory.length > 0
+    ? manualValueHistory[manualValueHistory.length - 1].ref_date
+    : null
+  const daysSinceUpdate = lastManualDate
+    ? Math.floor((Date.now() - new Date(lastManualDate + 'T12:00:00').getTime()) / (1000 * 60 * 60 * 24))
     : null
   const isStale = canUpdateManualValue && (daysSinceUpdate === null || daysSinceUpdate > 30)
 
-  const manualEntries = isManual
-    ? data.history.map((h, i) => {
-        const prev = i > 0 ? data.history[i - 1] : null
-        const changeAbs = prev != null ? h.value_brl - prev.value_brl : null
-        const changePct = prev != null && prev.value_brl > 0
-          ? ((h.value_brl - prev.value_brl) / prev.value_brl) * 100
-          : null
-        return { ...h, changeAbs, changePct }
-      }).reverse()
-    : []
+  // First buy contribution as anchor for the first manual_value comparison
+  const firstBuyValue = (() => {
+    const buys = [...data.contributions]
+      .filter(c => c.type === 'buy' && (c.value_brl ?? 0) > 0)
+      .sort((a, b) => a.date.localeCompare(b.date))
+    return buys.length > 0 ? (buys[0].value_brl ?? null) : null
+  })()
+
+  // manual_values sorted ascending → compare first entry against first buy anchor
+  const mvEntriesWithChange = [...manualValueHistory]
+    .sort((a, b) => a.ref_date.localeCompare(b.ref_date))
+    .map((entry, i, arr) => {
+      const prevValue = i > 0 ? arr[i - 1].value : firstBuyValue
+      const changeAbs = prevValue != null ? entry.value - prevValue : null
+      const changePct = prevValue != null && prevValue > 0
+        ? ((entry.value - prevValue) / prevValue) * 100
+        : null
+      return { ...entry, changeAbs, changePct }
+    })
+    .reverse()
 
   return (
     <div className="space-y-6">
@@ -179,6 +218,39 @@ export default function AssetDetailPage() {
             )}
           </div>
           <p className="text-sm text-gray-500 mt-0.5 truncate">{data.name}</p>
+          {/* Action buttons — horizontal row below the name */}
+          <div className="flex flex-wrap items-center gap-1.5 mt-2">
+            <Link
+              to={`/contributions?assetId=${id}&new=1`}
+              className="text-xs text-[#001A70] border border-[#001A70]/30 hover:bg-blue-50 rounded-lg px-2.5 py-1 transition-colors"
+            >+ Aporte</Link>
+            {canUpdateManualValue && (
+              <button
+                onClick={() => setShowManualModal(true)}
+                className="text-xs text-[#001A70] border border-[#001A70]/30 hover:bg-blue-50 rounded-lg px-2.5 py-1 transition-colors font-medium"
+              >
+                Atualizar valor
+              </button>
+            )}
+            {isManual && (
+              <button
+                onClick={() => setShowMigrateModal(true)}
+                className="text-xs text-blue-600 border border-blue-200 hover:bg-blue-50 rounded-lg px-2.5 py-1 transition-colors"
+              >
+                Converter para RF
+              </button>
+            )}
+            <button
+              onClick={handleArchive}
+              disabled={archiving}
+              className="text-xs text-red-400 border border-red-200 hover:bg-red-50 rounded-lg px-2.5 py-1 transition-colors disabled:opacity-50 flex items-center gap-1"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5">
+                <path d="M2 3.5A1.5 1.5 0 0 1 3.5 2h9A1.5 1.5 0 0 1 14 3.5v.5H2v-.5ZM2 5.5h12v7A1.5 1.5 0 0 1 12.5 14h-9A1.5 1.5 0 0 1 2 12.5v-7Zm4.5 2a.5.5 0 0 0 0 1h3a.5.5 0 0 0 0-1h-3Z" />
+              </svg>
+              Arquivar
+            </button>
+          </div>
         </div>
         <div className="shrink-0 flex flex-col items-end gap-1">
           {data.current_price != null && (
@@ -213,33 +285,6 @@ export default function AssetDetailPage() {
               {data.exchange || 'Sem instituição'}
             </button>
           )}
-          <Link
-            to={`/contributions?assetId=${id}&new=1`}
-            className="text-xs text-[#001A70] border border-[#001A70]/30 hover:bg-blue-50 rounded-lg px-2.5 py-1 transition-colors mt-1"
-          >+ Aporte</Link>
-          {canUpdateManualValue && (
-            <button
-              onClick={() => setShowManualModal(true)}
-              className="text-xs text-[#001A70] border border-[#001A70]/30 hover:bg-blue-50 rounded-lg px-2.5 py-1 transition-colors font-medium"
-            >
-              Atualizar valor
-            </button>
-          )}
-          {isManual && (
-            <button
-              onClick={() => setShowMigrateModal(true)}
-              className="text-xs text-blue-600 border border-blue-200 hover:bg-blue-50 rounded-lg px-2.5 py-1 transition-colors"
-            >
-              Converter para RF
-            </button>
-          )}
-          <button
-            onClick={handleArchive}
-            disabled={archiving}
-            className="text-xs text-gray-400 hover:text-red-500 transition-colors disabled:opacity-50"
-          >
-            Arquivar
-          </button>
         </div>
       </div>
 
@@ -428,9 +473,24 @@ export default function AssetDetailPage() {
       )}
 
       {/* Gráfico de evolução */}
-      {chartData.length > 1 && (
+      {allChartData.length > 1 && (
         <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
-          <h2 className="font-semibold text-gray-800 mb-4">Evolução do valor</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-semibold text-gray-800">Evolução do valor</h2>
+            <div className="flex gap-1">
+              {CHART_PERIODS.filter(p => p.months == null || allChartData.length >= p.months).map(p => (
+                <button
+                  key={p.label}
+                  onClick={() => setChartPeriod(p.months)}
+                  className={`text-xs px-2.5 py-1 rounded-lg font-medium transition-colors ${
+                    chartPeriod === p.months
+                      ? 'bg-[#001A70] text-white'
+                      : 'text-gray-500 hover:bg-gray-100'
+                  }`}
+                >{p.label}</button>
+              ))}
+            </div>
+          </div>
           <div className="h-52">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData}>
@@ -517,11 +577,11 @@ export default function AssetDetailPage() {
         )
       })()}
 
-      {/* Historico de valores manuais com rentabilidade entre entradas */}
-      {isManual && manualEntries.length > 0 && (
+      {/* Histórico de atualizações de valor com delete (disponível para qualquer ativo com canUpdateManualValue) */}
+      {canUpdateManualValue && mvEntriesWithChange.length > 0 && (
         <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
           <div className="px-5 py-4 border-b border-gray-100">
-            <h2 className="font-semibold text-gray-800">Historico de valores ({manualEntries.length})</h2>
+            <h2 className="font-semibold text-gray-800">Atualizações de valor ({mvEntriesWithChange.length})</h2>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -529,15 +589,19 @@ export default function AssetDetailPage() {
                 <tr>
                   <th className="px-4 py-3 text-left">Data</th>
                   <th className="px-4 py-3 text-right">Valor</th>
-                  <th className="px-4 py-3 text-right">Variacao</th>
-                  <th className="px-4 py-3 text-right">Diferenca</th>
+                  <th className="px-4 py-3 text-right">Variação</th>
+                  <th className="px-4 py-3 text-right">Diferença</th>
+                  <th className="px-4 py-3 text-left">Notas</th>
+                  <th className="px-4 py-3" />
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {manualEntries.map((e, i) => (
-                  <tr key={e.date + i} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 text-gray-600">{fmtDate(e.date)}</td>
-                    <td className="px-4 py-3 text-right font-medium text-gray-900">{fmt(e.value_brl)}</td>
+                {mvEntriesWithChange.map(e => (
+                  <tr key={e.id} className="hover:bg-gray-50">
+                    <td className="px-4 py-3 text-gray-600">{fmtDate(e.ref_date)}</td>
+                    <td className="px-4 py-3 text-right font-medium text-gray-900">
+                      {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: e.currency, maximumFractionDigits: 2 }).format(e.value)}
+                    </td>
                     <td className="px-4 py-3 text-right">
                       {e.changePct != null ? (
                         <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
@@ -552,8 +616,16 @@ export default function AssetDetailPage() {
                     </td>
                     <td className="px-4 py-3 text-right text-gray-500 text-xs">
                       {e.changeAbs != null
-                        ? `${e.changeAbs >= 0 ? '+' : ''}${fmt(e.changeAbs)}`
+                        ? `${e.changeAbs >= 0 ? '+' : ''}${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: e.currency, maximumFractionDigits: 2 }).format(e.changeAbs)}`
                         : '—'}
+                    </td>
+                    <td className="px-4 py-3 text-xs text-gray-400 italic">{e.notes ?? ''}</td>
+                    <td className="px-4 py-3 text-center">
+                      <button
+                        onClick={() => handleDeleteManualValue(e.id)}
+                        className="text-gray-300 hover:text-red-500 transition-colors text-base leading-none"
+                        title="Remover esta atualização"
+                      >×</button>
                     </td>
                   </tr>
                 ))}

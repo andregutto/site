@@ -28,19 +28,25 @@ export async function getRates(
   startDate: Date,
   endDate: Date
 ): Promise<BCBRate[]> {
-  const key = `bcb:${series}:${fmtDate(startDate)}:${fmtDate(endDate)}`
-  return cache.getOrFetch(key, TTL.BCB_RATES, async () => {
+  const today = new Date()
+  today.setHours(23, 59, 59, 0)
+  // Cache key omits endDate: one BCB request covers the full range to today,
+  // shared across all months computed concurrently (Jan-May etc. all use the same fetch).
+  // Each caller receives only the rates up to its requested endDate.
+  const key = `bcb:${series}:${fmtDate(startDate)}`
+  const allRates = await cache.getOrFetch(key, TTL.BCB_RATES, async () => {
     const url = `${BASE}/bcdata.sgs.${series}/dados?formato=json` +
-                `&dataInicial=${fmtDate(startDate)}&dataFinal=${fmtDate(endDate)}`
+                `&dataInicial=${fmtDate(startDate)}&dataFinal=${fmtDate(today)}`
     const res = await fetch(url)
     if (!res.ok) throw new Error(`BCB API ${res.status} para série ${series}`)
-
     const data = await res.json() as Array<{ data: string; valor: string }>
     return data.map((row) => ({
       date:  parseDate(row.data),
       value: parseFloat(row.valor.replace(',', '.')),
     }))
   })
+  const cutoff = endDate > today ? today : endDate
+  return allRates.filter(r => r.date <= cutoff)
 }
 
 export async function getCDIRates(start: Date, end: Date): Promise<BCBRate[]> {

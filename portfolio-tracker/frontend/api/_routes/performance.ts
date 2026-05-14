@@ -173,12 +173,22 @@ async function getPortfolioValueAtMonth(
     try {
       if (a.asset_type === 'manual') {
         if (!a.active) continue
+        const anchor = firstBuyMap[a.id]
         const mvPts = allMVByAsset[a.id] ?? []
-        if (mvPts.length > 0) {
-          const interp = interpolateKnownPoints(mvPts, dateStr)
-          if (interp) {
-            const fx = interp.currency === 'BRL' ? 1 : await getFxRate(interp.currency)
-            value = interp.value * fx
+        // Interpolate if we have at least one anchor (buy or manual_value).
+        // Without the mvPts.length guard, months before the first manual_value
+        // also get a value (buy → carry-forward or buy → interpolation),
+        // distributing returns across months instead of concentrating them.
+        if (anchor || mvPts.length > 0) {
+          const pts: ValPoint[] = anchor ? [anchor, ...mvPts] : [...mvPts]
+          pts.sort((x, y) => x.ref_date.localeCompare(y.ref_date))
+          // Zero value for months before the first anchor (asset didn't exist yet)
+          if (pts[0].ref_date <= dateStr) {
+            const interp = interpolateKnownPoints(pts, dateStr)
+            if (interp) {
+              const fx = interp.currency === 'BRL' ? 1 : await getFxRate(interp.currency)
+              value = interp.value * fx
+            }
           }
         }
       } else if (a.asset_type === 'fixed_income') {
@@ -186,14 +196,20 @@ async function getPortfolioValueAtMonth(
         // Skip months before the investment started (fi_start_date or first tranche)
         const fiEarliestStart = fiTranchesMap[a.id]?.[0]?.start_date ?? (a.fi_start_date as string | null)
         if (fiEarliestStart && fiEarliestStart > dateStr) continue
+
+        // Sum of principals invested up to this date (contributions or fi_principal fallback)
+        const principalSum = (fiTranchesMap[a.id] ?? [])
+          .filter(t => t.start_date <= dateStr)
+          .reduce((s, t) => s + t.principal, 0) || (Number(a.fi_principal) || 0)
+
         try {
           const tranches = fiTranchesMap[a.id]
           const result = await getCurrentPrice({
             ...a,
             ticker_brapi: null, ticker_yahoo: null, coingecko_id: null,
-          } as Asset, tranches, new Date(dateStr))   // compute value AS OF this month
+          } as Asset, tranches, new Date(dateStr))
           value = result.price
-        } catch { value = 0 }
+        } catch { value = principalSum }
       } else {
         const holdings = holdingsMap[a.id] ?? 0
         if (holdings > 0) {
@@ -318,9 +334,16 @@ router.get('/summary', requireAuth, async (req, res: Response) => {
     return s + (c.type === 'buy' ? v : -v)
   }, 0)
 
+  // Cap value_end to the current month: future months (e.g. Dec 2026 when viewing year 2026)
+  // use the same live prices as the current month, so clamp to currentYM for a stable result
+  // that matches the dashboard's total.
+  const currentYM = localYM(new Date())
+  const clampedToStr = toStr > currentYM ? currentYM : toStr
+  const [clampedToY, clampedToM] = clampedToStr.split('-').map(Number)
+
   const [start, end] = await Promise.all([
-    getPortfolioValueAtMonth(userId, prevY, prevM),
-    getPortfolioValueAtMonth(userId, toY,   toM),
+    getPortfolioValueAtMonth(userId, prevY,       prevM),
+    getPortfolioValueAtMonth(userId, clampedToY,  clampedToM),
   ])
 
   const v_ini = start.total
@@ -379,22 +402,24 @@ router.get('/monthly', requireAuth, async (req, res: Response) => {
   const prevYM = `${prevY}-${String(prevM).padStart(2, '0')}`
 
   const { data: userAssets2 } = await supabaseAdmin
-    .from('assets').select('id').eq('user_id', userId)
+    .from('assets').select('id, code, name').eq('user_id', userId)
   const userAssetIds2 = (userAssets2 ?? []).map(a => a.id)
+  const assetInfo: Record<number, { code: string; name: string }> = {}
+  for (const a of (userAssets2 ?? [])) assetInfo[a.id as number] = { code: a.code as string, name: a.name as string }
 
   const [prevMonthResult, valuesArr, contribsData] = await Promise.all([
     getPortfolioValueAtMonth(userId, prevY, prevM),
     Promise.all(
       months.map(async ({ year: y, month: m, label }) => {
-        const { total } = await getPortfolioValueAtMonth(userId, y, m)
-        return { month: label, total }
+        const { total, detail } = await getPortfolioValueAtMonth(userId, y, m)
+        return { month: label, total, detail }
       })
     ),
     // Fetch ALL contributions (no lower date bound) so every historical month shows
     // its actual cash flows in the APORTES column regardless of the viewed period.
     supabaseAdmin
       .from('contributions')
-      .select('date, value_brl, price_orig, quantity, fx_rate_brl, currency, type')
+      .select('asset_id, date, value_brl, price_orig, quantity, fx_rate_brl, currency, type')
       .in('asset_id', userAssetIds2.length ? userAssetIds2 : [-1])
       .lte('date', rangeToDate),
   ])
@@ -402,6 +427,7 @@ router.get('/monthly', requireAuth, async (req, res: Response) => {
   if (contribsData.error) console.error('[monthly] contributions query error:', contribsData.error.message)
 
   const contribsByMonth: Record<string, number> = {}
+  const contribsByAssetMonth: Record<string, Record<number, number>> = {}
   for (const c of (contribsData.data ?? [])) {
     if (c.type === 'income') continue  // income is portfolio return, not a cash flow
     const ym = (c.date as string).substring(0, 7)
@@ -413,14 +439,38 @@ router.get('/monthly', requireAuth, async (req, res: Response) => {
         : 0)
     const delta = c.type === 'buy' ? vBrl : -vBrl
     contribsByMonth[ym] = (contribsByMonth[ym] ?? 0) + delta
+    if (!contribsByAssetMonth[ym]) contribsByAssetMonth[ym] = {}
+    const aid = c.asset_id as number
+    contribsByAssetMonth[ym][aid] = (contribsByAssetMonth[ym][aid] ?? 0) + delta
   }
 
-  const monthly = valuesArr.map((v, i) => ({
-    month:         v.month,
-    total:         v.total,
-    prev_total:    i > 0 ? valuesArr[i - 1].total : prevMonthResult.total,
-    contributions: contribsByMonth[v.month] ?? 0,
-  }))
+  const monthly = valuesArr.map((v, i) => {
+    const prevDetail = i > 0 ? valuesArr[i - 1].detail : prevMonthResult.detail
+    const prevByAsset: Record<number, number> = {}
+    for (const d of prevDetail) prevByAsset[d.asset_id] = d.value
+
+    const assetContribs = contribsByAssetMonth[v.month] ?? {}
+    const allIds = new Set<number>([
+      ...v.detail.map(d => d.asset_id),
+      ...Object.keys(assetContribs).map(Number),
+    ])
+    const detail = Array.from(allIds).map(assetId => {
+      const info = assetInfo[assetId] ?? { code: '?', name: '?' }
+      const value = v.detail.find(d => d.asset_id === assetId)?.value ?? 0
+      const prev_value = prevByAsset[assetId] ?? 0
+      const contributions = assetContribs[assetId] ?? 0
+      const gain = Math.round((value - prev_value - contributions) * 100) / 100
+      return { asset_id: assetId, code: info.code, name: info.name, value, prev_value, contributions, gain }
+    }).sort((a, b) => b.value - a.value)
+
+    return {
+      month:         v.month,
+      total:         v.total,
+      prev_total:    i > 0 ? valuesArr[i - 1].total : prevMonthResult.total,
+      contributions: contribsByMonth[v.month] ?? 0,
+      detail,
+    }
+  })
 
   res.json({ monthly })
 })

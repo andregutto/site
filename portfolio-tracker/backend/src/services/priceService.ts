@@ -1,8 +1,8 @@
-// Roteador unificado de preços — decide qual serviço usar por asset_type + tickers
 import * as brapi       from './brapiService.js'
 import * as yahoo       from './yahooService.js'
 import * as coingecko   from './coingeckoService.js'
-import { calculateCurrentValue, FixedIncomeAsset } from './fixedIncomeService.js'
+import { calculateCurrentValue } from './fixedIncomeService.js'
+import type { FixedIncomeAsset, FITranche } from './fixedIncomeService.js'
 
 export interface Asset {
   id:           number
@@ -30,14 +30,17 @@ export interface PricePoint {
   currency: string
 }
 
-// Retorna preço atual + moeda + fonte
-export async function getCurrentPrice(asset: Asset): Promise<PriceResult> {
+export type { FITranche }
+
+export async function getCurrentPrice(asset: Asset, tranches?: FITranche[], refDate?: Date): Promise<PriceResult> {
   if (asset.asset_type === 'fixed_income') {
-    if (!asset.fi_principal || !asset.fi_start_date || !asset.fi_type ||
-        (asset.fi_type !== 'ipca_plus' && asset.fi_rate == null)) {
+    if (!asset.fi_type || (asset.fi_type !== 'ipca_plus' && asset.fi_rate == null)) {
       throw new Error(`Dados de RF incompletos para asset ${asset.id}`)
     }
-    const value = await calculateCurrentValue(asset as FixedIncomeAsset)
+    if (!tranches?.length && (!asset.fi_principal || !asset.fi_start_date)) {
+      throw new Error(`Dados de RF incompletos para asset ${asset.id}`)
+    }
+    const value = await calculateCurrentValue(asset as FixedIncomeAsset, tranches, refDate)
     return { price: value, currency: asset.currency, source: 'bcb' }
   }
 
@@ -45,13 +48,12 @@ export async function getCurrentPrice(asset: Asset): Promise<PriceResult> {
     throw new Error('Ativos manuais não têm cotação automática')
   }
 
-  // ticker — tenta na ordem: brapi → yahoo → coingecko
   if (asset.ticker_brapi) {
     try {
       const price = await brapi.getCurrentPrice(asset.ticker_brapi)
       return { price, currency: 'BRL', source: 'brapi' }
     } catch {
-      // fallthrough para próxima fonte
+      // fallthrough
     }
   }
 
@@ -61,7 +63,7 @@ export async function getCurrentPrice(asset: Asset): Promise<PriceResult> {
       const price = await coingecko.getCurrentPrice(asset.coingecko_id, currency)
       return { price, currency: asset.currency || 'USD', source: 'coingecko' }
     } catch {
-      // fallthrough para yahoo
+      // fallthrough
     }
   }
 
@@ -77,10 +79,6 @@ export async function getCurrentPrice(asset: Asset): Promise<PriceResult> {
   throw new Error(`Asset ${asset.id}: nenhuma fonte de preço configurada`)
 }
 
-// Retorna histórico mensal de preços
-// Ordem: Yahoo primeiro (suporta B3/.SA, USA, cripto/BTC-USD sem token)
-//        → brapi fallback (B3 nativo, requer token para histórico)
-//        → coingecko fallback (cripto, free tier sem interval mensal)
 export async function getMonthlyHistory(asset: Asset, months = 24): Promise<PricePoint[]> {
   if (asset.asset_type !== 'ticker') {
     throw new Error('Histórico de preços só disponível para assets tipo ticker')
