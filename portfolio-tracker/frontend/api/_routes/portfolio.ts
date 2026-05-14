@@ -149,8 +149,16 @@ router.get('/value', requireAuth, async (req, res: Response) => {
               source     = 'manual'
               value_brl  = currency === 'BRL' ? value_orig : value_orig * await getFxRate(currency)
             } else {
-              byAsset.push({ ...base, value_brl: 0, value_orig: 0, currency: a.currency || 'BRL', holdings, price: null, source: 'error', needs_manual: true, invested_brl: investedMap[a.id] ?? null, last_manual_date: null })
-              return
+              const invested = investedMap[a.id]
+              if (invested != null && invested > 0) {
+                // No live price and no manual value: show cost basis so value = invested, rentab = 0%
+                value_brl  = invested
+                value_orig = invested
+                source     = 'cost_basis'
+              } else {
+                byAsset.push({ ...base, value_brl: 0, value_orig: 0, currency: a.currency || 'BRL', holdings, price: null, source: 'error', needs_manual: true, invested_brl: investedMap[a.id] ?? null, last_manual_date: null })
+                return
+              }
             }
           }
         }

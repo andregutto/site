@@ -183,9 +183,15 @@ async function getPortfolioValueAtMonth(
                 const fx = result.currency === 'BRL' ? 1 : await getFxRate(result.currency)
                 value = holdings * result.price * fx
               } catch {
-                // Live price unavailable — fall back to stale history
-                const fx = await getFxRate(ph.currency)
-                value = holdings * ph.price * fx
+                // Live price unavailable: prefer cost basis over stale market price
+                // (avoids showing wrong old price for delisted/renamed assets)
+                const cost = costMap[a.id]
+                if (cost && cost.totalQty > 0) {
+                  value = holdings * (cost.totalCost / cost.totalQty)
+                } else {
+                  const fx = await getFxRate(ph.currency)
+                  value = holdings * ph.price * fx
+                }
               }
             }
           }

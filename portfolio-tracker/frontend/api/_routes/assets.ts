@@ -465,7 +465,13 @@ router.get('/:id/detail', requireAuth, async (req, res: Response) => {
         currentValueBrl = holdings * result.price * fx
       }
     }
-  } catch { /* sem preço disponível */ }
+  } catch {
+    // No price source available: use cost basis so value = invested, gain/loss = 0
+    if (asset.asset_type === 'ticker' && investedBrl > 0) {
+      currentValueBrl = investedBrl
+      priceSource     = 'cost_basis'
+    }
+  }
 
   const gainLossBrl = currentValueBrl - investedBrl
   const gainLossPct = investedBrl > 0 ? (gainLossBrl / investedBrl) * 100 : null
