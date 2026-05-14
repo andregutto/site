@@ -188,20 +188,36 @@ async function getPortfolioValueAtMonth(
       } else if (a.asset_type === 'fixed_income') {
         if (!a.active) continue
         // Use asset-level fi_start_date as cutoff — contribution dates may be entered retrospectively
-        const fiEarliestStart = (a.fi_start_date as string | null) ?? fiTranchesMap[a.id]?.[0]?.start_date ?? null
+        const fiPrincipal  = Number(a.fi_principal)  || 0
+        const fiStartDate  = (a.fi_start_date as string | null)
+        const fiEarliestStart = fiStartDate ?? fiTranchesMap[a.id]?.[0]?.start_date ?? null
         if (fiEarliestStart && fiEarliestStart > dateStr) continue
 
-        // Only count tranches that had started by this date; fall back to fi_principal
-        const activeTranches = (fiTranchesMap[a.id] ?? []).filter(t => t.start_date <= dateStr)
-        const principalSum = activeTranches.reduce((s, t) => s + t.principal, 0) || (Number(a.fi_principal) || 0)
-
-        try {
-          const result = await getCurrentPrice({
-            ...a,
-            ticker_brapi: null, ticker_yahoo: null, coingecko_id: null,
-          } as Asset, activeTranches.length > 0 ? activeTranches : undefined, new Date(dateStr))
-          value = result.price
-        } catch { value = principalSum }
+        // If fi_principal + fi_start_date are set, always compute CDI/IPCA from the declared start.
+        // Contributions may have been entered retroactively for tracking; using them would switch
+        // the calculation method on the contribution date and concentrate gains in that month.
+        const hasNativePrincipal = fiPrincipal > 0 && !!fiStartDate
+        if (hasNativePrincipal) {
+          try {
+            const result = await getCurrentPrice({
+              ...a,
+              fi_principal: fiPrincipal,   // ensure numeric (Supabase DECIMAL may come as string)
+              ticker_brapi: null, ticker_yahoo: null, coingecko_id: null,
+            } as Asset, undefined, new Date(dateStr))
+            value = result.price
+          } catch { value = fiPrincipal }
+        } else {
+          // No native principal: use contributions that have started by this date
+          const activeTranches = (fiTranchesMap[a.id] ?? []).filter(t => t.start_date <= dateStr)
+          const principalSum = activeTranches.reduce((s, t) => s + t.principal, 0)
+          try {
+            const result = await getCurrentPrice({
+              ...a,
+              ticker_brapi: null, ticker_yahoo: null, coingecko_id: null,
+            } as Asset, activeTranches.length > 0 ? activeTranches : undefined, new Date(dateStr))
+            value = result.price
+          } catch { value = principalSum }
+        }
       } else {
         const holdings = holdingsMap[a.id] ?? 0
         if (holdings > 0) {
@@ -394,10 +410,19 @@ router.get('/monthly', requireAuth, async (req, res: Response) => {
   const prevYM = `${prevY}-${String(prevM).padStart(2, '0')}`
 
   const { data: userAssets2 } = await supabaseAdmin
-    .from('assets').select('id, code, name').eq('user_id', userId)
+    .from('assets').select('id, code, name, asset_type, fi_principal, fi_start_date').eq('user_id', userId)
   const userAssetIds2 = (userAssets2 ?? []).map(a => a.id)
   const assetInfo: Record<number, { code: string; name: string }> = {}
-  for (const a of (userAssets2 ?? [])) assetInfo[a.id as number] = { code: a.code as string, name: a.name as string }
+  // Native FI: fi_principal + fi_start_date are set — their CDI returns are already baked into
+  // the value computation, so contributions entered for tracking should not be subtracted as
+  // new cash flows in the per-asset gain formula.
+  const nativeFIIds = new Set<number>()
+  for (const a of (userAssets2 ?? [])) {
+    assetInfo[a.id as number] = { code: a.code as string, name: a.name as string }
+    if (a.asset_type === 'fixed_income' && Number(a.fi_principal) > 0 && a.fi_start_date) {
+      nativeFIIds.add(a.id as number)
+    }
+  }
 
   const [prevMonthResult, valuesArr, contribsData] = await Promise.all([
     getPortfolioValueAtMonth(userId, prevY, prevM),
@@ -450,7 +475,9 @@ router.get('/monthly', requireAuth, async (req, res: Response) => {
       const info = assetInfo[assetId] ?? { code: '?', name: '?' }
       const value = v.detail.find(d => d.asset_id === assetId)?.value ?? 0
       const prev_value = prevByAsset[assetId] ?? 0
-      const contributions = assetContribs[assetId] ?? 0
+      // Native FI assets compute CDI from fi_start_date; their contributions are tracking
+      // entries (not real monthly cash flows), so don't subtract them from the gain.
+      const contributions = nativeFIIds.has(assetId) ? 0 : (assetContribs[assetId] ?? 0)
       const gain = Math.round((value - prev_value - contributions) * 100) / 100
       return { asset_id: assetId, code: info.code, name: info.name, value, prev_value, contributions, gain }
     }).sort((a, b) => b.value - a.value)

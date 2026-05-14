@@ -370,33 +370,38 @@ export default function PerformancePage() {
                                       <th className="py-1.5 text-right font-medium">Valor final</th>
                                       <th className="py-1.5 text-right font-medium">Aportes</th>
                                       <th className="py-1.5 text-right font-medium">Ganho/Perda</th>
+                                      <th className="py-1.5 text-right font-medium">%</th>
                                     </tr>
                                   </thead>
                                   <tbody className="divide-y divide-gray-100">
-                                    {m.detail.filter(d => d.value > 0 || d.contributions !== 0).map(d => (
-                                      <tr key={d.asset_id}>
-                                        <td className="py-1.5 text-gray-700">
-                                          <span className="font-semibold">{d.code}</span>
-                                          {d.name && d.name !== d.code && (
-                                            <span className="text-gray-400 ml-1 truncate max-w-[140px] inline-block align-bottom">{d.name}</span>
-                                          )}
-                                        </td>
-                                        <td className="py-1.5 text-right text-gray-800">
-                                          {d.value > 0 ? fmtBRL(d.value) : '—'}
-                                        </td>
-                                        <td className="py-1.5 text-right text-gray-500">
-                                          {d.contributions !== 0 ? `${d.contributions > 0 ? '+' : ''}${fmtBRL(d.contributions)}` : '—'}
-                                        </td>
-                                        <td className={`py-1.5 text-right font-medium ${
-                                          d.prev_value === 0 ? 'text-gray-400' :
-                                          d.gain >= 0 ? 'text-green-600' : 'text-red-600'
-                                        }`}>
-                                          {d.prev_value > 0
-                                            ? `${d.gain >= 0 ? '+' : ''}${fmtBRL(d.gain)}`
-                                            : '—'}
-                                        </td>
-                                      </tr>
-                                    ))}
+                                    {m.detail
+                                      .filter(d => d.value > 0 && d.prev_value > 0 && d.gain !== 0)
+                                      .map(d => {
+                                        const denom = d.prev_value + 0.5 * d.contributions
+                                        const gainPct = denom > 0 ? (d.gain / denom) * 100 : null
+                                        return (
+                                          <tr key={d.asset_id}>
+                                            <td className="py-1.5 text-gray-700">
+                                              <span className="font-semibold">{d.code}</span>
+                                              {d.name && d.name !== d.code && (
+                                                <span className="text-gray-400 ml-1 truncate max-w-[120px] inline-block align-bottom">{d.name}</span>
+                                              )}
+                                            </td>
+                                            <td className="py-1.5 text-right text-gray-800">
+                                              {fmtBRL(d.value)}
+                                            </td>
+                                            <td className="py-1.5 text-right text-gray-500">
+                                              {d.contributions !== 0 ? `${d.contributions > 0 ? '+' : ''}${fmtBRL(d.contributions)}` : '—'}
+                                            </td>
+                                            <td className={`py-1.5 text-right font-medium ${d.gain >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                              {`${d.gain >= 0 ? '+' : ''}${fmtBRL(d.gain)}`}
+                                            </td>
+                                            <td className={`py-1.5 text-right font-semibold ${gainPct == null ? 'text-gray-300' : gainPct >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                              {gainPct != null ? `${gainPct >= 0 ? '+' : ''}${gainPct.toFixed(2)}%` : '—'}
+                                            </td>
+                                          </tr>
+                                        )
+                                      })}
                                   </tbody>
                                 </table>
                               </td>
