@@ -14,10 +14,10 @@ export default function DashboardPage() {
   const navigate = useNavigate()
 
   function handleAssetClick(asset: PortfolioAsset) {
-    // Ticker assets with pricing failure → go to detail page (archive or inspect)
-    // True manual/RF assets with missing data → open setup modal
-    if (asset.needs_manual && (asset.source === 'manual' || asset.source === 'fixed_income')) {
-      setSelectedAsset(asset)
+    if (asset.needs_manual && asset.source === 'fixed_income') {
+      setSelectedAsset(asset)  // FixedIncomeSetupModal
+    } else if (asset.source === 'manual' || asset.source === 'cost_basis' || asset.needs_manual) {
+      setSelectedAsset(asset)  // ManualValueModal (includes balance updates for delisted tickers)
     } else {
       navigate(`/assets/${asset.id}`, { state: { total_brl: data?.total_brl ?? 0 } })
     }
@@ -27,7 +27,7 @@ export default function DashboardPage() {
   function handleSaved() { setSelectedAsset(null); refresh() }
 
   // Qual modal abrir
-  const isFixedIncome = selectedAsset?.source === 'fixed_income'
+  const isFixedIncome = selectedAsset?.needs_manual === true && selectedAsset?.source === 'fixed_income'
 
   if (loading) {
     return (
