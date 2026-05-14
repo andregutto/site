@@ -375,10 +375,11 @@ export default function PerformancePage() {
                                   </thead>
                                   <tbody className="divide-y divide-gray-100">
                                     {m.detail
-                                      .filter(d => d.value > 0 && d.prev_value > 0 && d.gain !== 0)
+                                      .filter(d => d.value > 0)
                                       .map(d => {
+                                        const hasGainData = d.prev_value > 0
                                         const denom = d.prev_value + 0.5 * d.contributions
-                                        const gainPct = denom > 0 ? (d.gain / denom) * 100 : null
+                                        const gainPct = hasGainData && denom > 0 ? (d.gain / denom) * 100 : null
                                         return (
                                           <tr key={d.asset_id}>
                                             <td className="py-1.5 text-gray-700">
@@ -393,8 +394,8 @@ export default function PerformancePage() {
                                             <td className="py-1.5 text-right text-gray-500">
                                               {d.contributions !== 0 ? `${d.contributions > 0 ? '+' : ''}${fmtBRL(d.contributions)}` : '—'}
                                             </td>
-                                            <td className={`py-1.5 text-right font-medium ${d.gain >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                              {`${d.gain >= 0 ? '+' : ''}${fmtBRL(d.gain)}`}
+                                            <td className={`py-1.5 text-right font-medium ${!hasGainData ? 'text-gray-300' : d.gain >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                              {!hasGainData ? '—' : `${d.gain >= 0 ? '+' : ''}${fmtBRL(d.gain)}`}
                                             </td>
                                             <td className={`py-1.5 text-right font-semibold ${gainPct == null ? 'text-gray-300' : gainPct >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                                               {gainPct != null ? `${gainPct >= 0 ? '+' : ''}${gainPct.toFixed(2)}%` : '—'}
