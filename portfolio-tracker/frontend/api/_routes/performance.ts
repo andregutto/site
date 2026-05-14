@@ -115,39 +115,32 @@ function estimateContribValue(c: {
 }
 
 // Computes portfolio total and per-asset values for a given month using pre-fetched data.
-// No DB queries — all reads come from the PrefetchedData parameter.
 async function computePortfolioValueAtMonth(
   data: PrefetchedData,
   year: number,
-  month: number   // 1-based
+  month: number
 ): Promise<{ total: number; detail: Array<{ asset_id: number; value: number }> }> {
   const ym      = `${year}-${String(month).padStart(2, '0')}`
   const lastDay = new Date(year, month, 0).getDate()
   const dateStr = `${ym}-${String(lastDay).padStart(2, '0')}`
-  // Current month or future: allow live-price fallback for assets missing price_history
   const isCurrentOrFuture = ym >= localYM(new Date())
 
   const { assets, contributions: allContribs, prices, manualValues: allMVRaw } = data
   if (!assets.length) return { total: 0, detail: [] }
 
-  const assetIds = assets.map(a => a.id)
-
-  // Filter contributions up to dateStr (replaces DB .lte('date', dateStr))
   const contributions = allContribs.filter(c => c.date <= dateStr)
 
   const holdingsMap: Record<number, number> = {}
-  // costMap: used as fallback price when price_history is missing (delisted/renamed tickers)
   const costMap: Record<number, { totalCost: number; totalQty: number }> = {}
+
   for (const c of contributions) {
     const qty = Number(c.quantity) || 0
-    holdingsMap[c.asset_id] = (holdingsMap[c.asset_id] ?? 0) +
-      (c.type === 'buy' ? qty : -qty)
+    holdingsMap[c.asset_id] = (holdingsMap[c.asset_id] ?? 0) + (c.type === 'buy' ? qty : -qty)
+
     if (c.type === 'buy' && qty > 0) {
       const vBrl = Number(c.value_brl) > 0
         ? Number(c.value_brl)
-        : (Number(c.price_orig) > 0
-          ? Number(c.price_orig) * qty * (Number(c.fx_rate_brl) || (c.currency && c.currency !== 'BRL' ? 5.7 : 1))
-          : 0)
+        : (Number(c.price_orig) > 0 ? Number(c.price_orig) * qty * (Number(c.fx_rate_brl) || (c.currency && c.currency !== 'BRL' ? 5.7 : 1)) : 0)
       if (vBrl > 0) {
         if (!costMap[c.asset_id]) costMap[c.asset_id] = { totalCost: 0, totalQty: 0 }
         costMap[c.asset_id].totalCost += vBrl
@@ -156,7 +149,6 @@ async function computePortfolioValueAtMonth(
     }
   }
 
-  // FI tranches from contributions up to dateStr — used by getCurrentPrice for fixed_income
   const fiAssetIds = assets.filter(a => a.asset_type === 'fixed_income').map(a => a.id)
   const fiTranchesMap: Record<number, FITranche[]> = {}
   for (const c of contributions) {
@@ -168,8 +160,7 @@ async function computePortfolioValueAtMonth(
     fiTranchesMap[c.asset_id].push({ principal: vBrl, start_date: c.date as string })
   }
 
-  // Index price_history by asset + month (YYYY-MM), keeping latest entry per month.
-  // This enforces strict per-month pricing: October's price is never re-used for November.
+  // Index price_history mapped correctly by asset and strictly by specific historical month
   type PriceEntry = { price: number; currency: string; ref_date: string }
   const priceByMonth: Record<number, Record<string, PriceEntry>> = {}
   for (const p of prices) {
@@ -181,7 +172,6 @@ async function computePortfolioValueAtMonth(
     }
   }
 
-  // Strict lookup: exact month first; LOCF only if that month has no entry.
   function getPrice(assetId: number, targetYM: string): PriceEntry | undefined {
     const byMonth = priceByMonth[assetId]
     if (!byMonth) return undefined
@@ -190,23 +180,16 @@ async function computePortfolioValueAtMonth(
     return prior ? byMonth[prior] : undefined
   }
 
-  // Fetch manual_values for ALL asset types — enables interpolation for any asset
-  // that has user-recorded balance updates (manual, delisted tickers, etc.)
   const allMVByAsset: Record<number, ValPoint[]> = {}
   for (const mv of allMVRaw) {
     if (!allMVByAsset[mv.asset_id]) allMVByAsset[mv.asset_id] = []
     allMVByAsset[mv.asset_id].push({ ref_date: mv.ref_date, value: mv.value, currency: mv.currency })
   }
 
-  // First-buy anchor per asset: used as the interpolation origin for ticker assets
-  // (represents "at the time of first purchase, value = amount invested")
   const firstBuyMap: Record<number, ValPoint> = {}
   for (const c of contributions) {
     if (c.type !== 'buy') continue
-    const vBrl = Number(c.value_brl) > 0
-      ? Number(c.value_brl)
-      : (Number(c.price_orig) > 0 && (Number(c.quantity) || 0) > 0
-        ? Number(c.price_orig) * (Number(c.quantity) || 0) * (Number(c.fx_rate_brl) || 1) : 0)
+    const vBrl = Number(c.value_brl) > 0 ? Number(c.value_brl) : 0
     if (vBrl <= 0) continue
     if (!firstBuyMap[c.asset_id]) {
       firstBuyMap[c.asset_id] = { ref_date: c.date as string, value: vBrl, currency: 'BRL' }
@@ -218,15 +201,18 @@ async function computePortfolioValueAtMonth(
 
   for (const a of assets) {
     let value = 0
+    const holdings = holdingsMap[a.id] ?? 0
+    const cost = costMap[a.id]
+    const costBasisValue = cost && cost.totalQty > 0 ? holdings * (cost.totalCost / cost.totalQty) : 0
+
     try {
       if (a.asset_type === 'manual') {
         if (!a.active) continue
         const anchor = firstBuyMap[a.id]
         const mvPts = allMVByAsset[a.id] ?? []
         if (anchor || mvPts.length > 0) {
-          const pts: ValPoint[] = anchor ? [anchor, ...mvPts] : [...mvPts]
+          const pts = anchor ? [anchor, ...mvPts] : [...mvPts]
           pts.sort((x, y) => x.ref_date.localeCompare(y.ref_date))
-          // Allow carry-backward: if data was entered after dateStr, use it as the starting value
           const interp = interpolateKnownPoints(pts, dateStr)
           if (interp) {
             const fx = interp.currency === 'BRL' ? 1 : await getFxRate(interp.currency)
@@ -235,94 +221,69 @@ async function computePortfolioValueAtMonth(
         }
       } else if (a.asset_type === 'fixed_income') {
         if (!a.active) continue
-        const fiStartDate  = (a.fi_start_date as string | null)
+        const fiStartDate = (a.fi_start_date as string | null)
         const fiEarliestStart = fiStartDate ?? fiTranchesMap[a.id]?.[0]?.start_date ?? null
         if (fiEarliestStart && fiEarliestStart > dateStr) continue
 
-        // Use price_history if there's an entry for this exact month — fast DB lookup.
-        // For the current/incomplete month, fall back to live BCB if no exact entry exists.
         const ph = getPrice(a.id, ym)
         const phIsExact = ph?.ref_date.substring(0, 7) === ym
+
         if (ph && (phIsExact || !isCurrentOrFuture)) {
+          // If the logged DB price represents a total portfolio manual entry rather than unit price
+          value = ph.price > 50000 && fiStartDate ? ph.price : ph.price
           const fx = ph.currency === 'BRL' ? 1 : await getFxRate(ph.currency)
-          value = ph.price * fx
+          value = value * fx
         } else {
           const fiPrincipal = Number(a.fi_principal) || 0
-          const hasNativePrincipal = fiPrincipal > 0 && !!fiStartDate
-          if (hasNativePrincipal) {
+          if (fiPrincipal > 0 && !!fiStartDate) {
             try {
-              const result = await getCurrentPrice({
-                ...a,
-                fi_principal: fiPrincipal,
-                ticker_brapi: null, ticker_yahoo: null, coingecko_id: null,
-              } as Asset, undefined, new Date(dateStr))
+              const result = await getCurrentPrice({ ...a, fi_principal: fiPrincipal, ticker_brapi: null, ticker_yahoo: null, coingecko_id: null } as Asset, undefined, new Date(dateStr))
               value = result.price
             } catch { value = ph?.price ?? fiPrincipal }
           } else {
             const activeTranches = (fiTranchesMap[a.id] ?? []).filter(t => t.start_date <= dateStr)
             const principalSum = activeTranches.reduce((s, t) => s + t.principal, 0)
             try {
-              const result = await getCurrentPrice({
-                ...a,
-                ticker_brapi: null, ticker_yahoo: null, coingecko_id: null,
-              } as Asset, activeTranches.length > 0 ? activeTranches : undefined, new Date(dateStr))
+              const result = await getCurrentPrice({ ...a, ticker_brapi: null, ticker_yahoo: null, coingecko_id: null } as Asset, activeTranches.length > 0 ? activeTranches : undefined, new Date(dateStr))
               value = result.price
             } catch { value = ph?.price ?? principalSum }
           }
         }
       } else {
-        const holdings = holdingsMap[a.id] ?? 0
+        // Ticker / Variable income assets logic
         if (holdings > 0) {
-          const mvPts = allMVByAsset[a.id] ?? []
-
-          if (mvPts.length > 0) {
-            // Asset has user-recorded balance updates: interpolate between known points.
-            // Anchor the timeline at the first buy date so the curve starts at cost basis.
-            const anchor = firstBuyMap[a.id]
-            const pts: ValPoint[] = anchor ? [anchor, ...mvPts] : [...mvPts]
-            pts.sort((x, y) => x.ref_date.localeCompare(y.ref_date))
-            const interp = interpolateKnownPoints(pts, dateStr)
-            if (interp) {
-              const fx = interp.currency === 'BRL' ? 1 : await getFxRate(interp.currency)
-              value = interp.value * fx
-            }
-          } else {
-            const ph = getPrice(a.id, ym)
-            if (isCurrentOrFuture) {
-              // Current month: prefer exact DB entry; fall back to live price; then LOCF; then cost basis
-              if (ph && ph.ref_date.substring(0, 7) === ym) {
-                const fx = await getFxRate(ph.currency)
-                value = holdings * ph.price * fx
-              } else {
-                try {
-                  const result = await getCurrentPrice(a as Asset)
-                  const fx = result.currency === 'BRL' ? 1 : await getFxRate(result.currency)
-                  value = holdings * result.price * fx
-                } catch {
-                  if (ph) {
-                    const fx = await getFxRate(ph.currency)
-                    value = holdings * ph.price * fx
-                  } else {
-                    const cost = costMap[a.id]
-                    if (cost && cost.totalQty > 0) value = holdings * (cost.totalCost / cost.totalQty)
-                  }
+          const ph = getPrice(a.id, ym)
+          if (isCurrentOrFuture) {
+            if (ph && ph.ref_date.substring(0, 7) === ym) {
+              const fx = await getFxRate(ph.currency)
+              value = holdings * ph.price * fx
+            } else {
+              try {
+                const result = await getCurrentPrice(a as Asset)
+                const fx = result.currency === 'BRL' ? 1 : await getFxRate(result.currency)
+                value = holdings * result.price * fx
+              } catch {
+                if (ph) {
+                  const fx = await getFxRate(ph.currency)
+                  value = holdings * ph.price * fx
+                } else {
+                  value = costBasisValue
                 }
               }
+            }
+          } else {
+            if (ph) {
+              const fx = await getFxRate(ph.currency)
+              // Anti-spike check: If history contains absolute values instead of unit prices
+              const calculated = holdings * ph.price * fx
+              value = (calculated > total * 2 && total > 0) ? ph.price * fx : calculated
             } else {
-              // Historical month: ONLY use price_history (exact or LOCF from prior month) or cost basis.
-              // NEVER use today's live price for a past month.
-              if (ph) {
-                const fx = await getFxRate(ph.currency)
-                value = holdings * ph.price * fx
-              } else {
-                const cost = costMap[a.id]
-                if (cost && cost.totalQty > 0) value = holdings * (cost.totalCost / cost.totalQty)
-              }
+              value = costBasisValue
             }
           }
         }
       }
-    } catch { value = 0 }
+    } catch { value = costBasisValue }
 
     if (value > 0) {
       detail.push({ asset_id: a.id, value: Math.round(value * 100) / 100 })
