@@ -94,8 +94,8 @@ export default function DashboardPage() {
                   width={48}
                 />
                 <Tooltip
-                  formatter={(v: number) => [
-                    new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(v),
+                  formatter={(v) => [
+                    new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(typeof v === 'number' ? v : 0),
                     'Patrimônio',
                   ]}
                   contentStyle={{ borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 12 }}
