@@ -77,7 +77,8 @@ export default function PerformancePage() {
 
   const { data: summary,    loading: sLoading, refresh: refreshSummary    } = usePerformanceSummary(from, to)
   const { data: monthly,    loading: mLoading, refresh: refreshMonthly    } = usePerformanceMonthly(from, to)
-  const { data: benchmarks, loading: bLoading, refresh: refreshBenchmarks } = usePerformanceBenchmarks(from, to)
+  // Fetch benchmarks from one month before `from` so we have the pre-period base for normalization
+  const { data: benchmarks, loading: bLoading, refresh: refreshBenchmarks } = usePerformanceBenchmarks(addMonths(from, -1), to)
 
   const handleRefresh = useCallback(() => {
     refreshSummary()
@@ -102,19 +103,22 @@ export default function PerformancePage() {
   const monthsWithData = monthly?.monthly.filter(m => m.total > 0) ?? []
   const firstMonth = monthsWithData[0]?.month ?? ''
 
-  const baseBench  = benchmarkMap.get(firstMonth)
-  const baseCDI    = baseBench?.cdi_cum   ?? 1
+  // Normalize benchmarks from the month BEFORE the first portfolio month (= true period start)
+  const prevFirstMonth = firstMonth ? addMonths(firstMonth, -1) : ''
+  const baseBench  = benchmarkMap.get(prevFirstMonth)
+  const baseCDI    = baseBench?.cdi_cum   ?? benchmarkMap.get(firstMonth)?.cdi_cum ?? 1
   const baseIBOV   = baseBench?.ibov_cum  ?? null
   const baseSP500  = baseBench?.sp500_cum ?? null
 
   const pct = (v: number, base: number) => Math.round((v / base - 1) * 10000) / 100
 
-  // Contribution-adjusted cumulative return: chain monthly Simple Dietz returns
+  // Chain monthly Simple Dietz returns. For i=0 use m.prev_total as the starting base
+  // so the first month's return is included (previously it was silently skipped).
   let cumulative = 1
   const chartData = monthsWithData.map((m, i) => {
-    if (i > 0) {
-      const prevTotal = monthsWithData[i - 1].total
-      const cf = m.contributions ?? 0
+    const cf = m.contributions ?? 0
+    const prevTotal = i === 0 ? (m.prev_total ?? 0) : monthsWithData[i - 1].total
+    if (prevTotal > 0) {
       const denom = prevTotal + 0.5 * cf
       if (denom > 0) {
         const r = (m.total - prevTotal - cf) / denom
