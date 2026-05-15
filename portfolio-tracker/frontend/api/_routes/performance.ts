@@ -267,6 +267,7 @@ async function computePortfolioValueAtMonth(
         }
       } else {
         // Ticker / Variable income assets logic
+        if (!a.active) continue
         if (holdings > 0) {
           const ph = getPrice(a.id, ym)
           if (isCurrentOrFuture) {

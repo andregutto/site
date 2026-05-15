@@ -1,12 +1,9 @@
 import { useState, useCallback } from 'react'
-import { usePerformanceSummary, usePerformanceMonthly, usePerformanceBenchmarks, usePerformanceInception } from '../hooks/usePortfolio'
+import { usePerformanceSummary, usePerformanceMonthly, usePerformanceBenchmarks, usePortfolioValue } from '../hooks/usePortfolio'
+import { useCurrency } from '../contexts/CurrencyContext'
 import {
   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend
 } from 'recharts'
-
-function fmtBRL(v: number) {
-  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(v)
-}
 
 function fmtMonth(ym: string) {
   const [y, m] = ym.split('-')
@@ -24,7 +21,7 @@ function addMonths(ym: string, n: number): string {
   return localYM(d)
 }
 
-type PeriodMode = 'year' | 'current_month' | 'last_12' | 'custom' | 'since_inception'
+type PeriodMode = 'current_month' | 'last_30d' | 'last_12m' | 'ytd'
 
 function SummaryCard({ label, value, sub, positive }: {
   label: string; value: string; sub?: string; positive?: boolean | null
@@ -47,32 +44,36 @@ export default function PerformancePage() {
   const currentYear = now.getFullYear()
   const currentYM   = localYM(now)
 
-  const [mode, setMode]       = useState<PeriodMode>('year')
-  const [year, setYear]       = useState(currentYear)
-  const [customFrom, setCustomFrom] = useState(addMonths(currentYM, -5))
-  const [customTo,   setCustomTo]   = useState(currentYM)
-  const inception = usePerformanceInception()
+  const { convert, currency } = useCurrency()
+  const { data: livePortfolio } = usePortfolioValue()
 
-  function derivePeriod(): { from: string; to: string; label: string } {
+  function fmt(valueBrl: number) {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency', currency,
+      maximumFractionDigits: 0,
+    }).format(convert(valueBrl))
+  }
+
+  const [mode, setMode] = useState<PeriodMode>('ytd')
+
+  function derivePeriod(): { from: string; to: string } {
     switch (mode) {
-      case 'year':
-        return { from: `${year}-01`, to: `${year}-12`, label: String(year) }
-      case 'current_month':
-        return { from: currentYM, to: currentYM, label: fmtMonth(currentYM) }
-      case 'last_12': {
-        const f = addMonths(currentYM, -11)
-        return { from: f, to: currentYM, label: `${fmtMonth(f)} - ${fmtMonth(currentYM)}` }
-      }
-      case 'custom':
-        return { from: customFrom, to: customTo, label: `${fmtMonth(customFrom)} - ${fmtMonth(customTo)}` }
-      case 'since_inception': {
-        const f = inception ?? '2025-01'
-        return { from: f, to: currentYM, label: `${fmtMonth(f)} - ${fmtMonth(currentYM)}` }
-      }
+      case 'current_month': return { from: currentYM,                    to: currentYM }
+      case 'last_30d':      return { from: addMonths(currentYM, -1),     to: currentYM }
+      case 'last_12m':      return { from: addMonths(currentYM, -11),    to: currentYM }
+      case 'ytd':           return { from: `${currentYear}-01`,           to: currentYM }
     }
   }
 
-  const { from, to, label: periodLabel } = derivePeriod()
+  const { from, to } = derivePeriod()
+  const periodLabel = (() => {
+    switch (mode) {
+      case 'current_month': return fmtMonth(currentYM)
+      case 'last_30d':      return `${fmtMonth(addMonths(currentYM, -1))} – ${fmtMonth(currentYM)}`
+      case 'last_12m':      return `${fmtMonth(addMonths(currentYM, -11))} – ${fmtMonth(currentYM)}`
+      case 'ytd':           return `Jan/${currentYear.toString().slice(2)} – ${fmtMonth(currentYM)}`
+    }
+  })()
 
   const { data: summary,    loading: sLoading, refresh: refreshSummary    } = usePerformanceSummary(from, to)
   const { data: monthly,    loading: mLoading, refresh: refreshMonthly    } = usePerformanceMonthly(from, to)
@@ -137,13 +138,24 @@ export default function PerformancePage() {
   const ibovAccum      = lastPoint?.ibov      ?? null
   const sp500Accum     = lastPoint?.sp500     ?? null
 
+  // When the period ends at the current month, substitute the live portfolio total
+  // so this value matches the dashboard to the cent (both come from the same source).
+  const endsAtCurrentMonth = to === currentYM
+  const liveTotal = livePortfolio?.total_brl ?? null
+  const displayValueEnd = endsAtCurrentMonth && liveTotal !== null ? liveTotal : (summary?.value_end ?? 0)
+  const displayReturnAbs = summary
+    ? displayValueEnd - summary.value_start - summary.contributions
+    : 0
+  const dietzDenom = summary ? summary.value_start + 0.5 * summary.contributions : 0
+  const displayReturnPct = dietzDenom > 0 ? (displayReturnAbs / dietzDenom) * 100 : null
+
   const isLoading = sLoading || mLoading || bLoading
 
   const modeButtons: Array<{ key: PeriodMode; label: string }> = [
-    { key: 'current_month',   label: 'Mês atual'    },
-    { key: 'last_12',         label: 'Últ. 12 meses' },
-    { key: 'since_inception', label: 'Desde o início' },
-    { key: 'custom',          label: 'Personalizado' },
+    { key: 'current_month', label: 'Mês atual'  },
+    { key: 'last_30d',      label: 'Últ. 30d'   },
+    { key: 'last_12m',      label: 'Últ. 12m'   },
+    { key: 'ytd',           label: 'YTD'         },
   ]
 
   return (
@@ -152,28 +164,6 @@ export default function PerformancePage() {
         <h1 className="text-xl font-bold text-gray-900">Performance</h1>
 
         <div className="flex flex-wrap items-center gap-2">
-          {/* Year navigation */}
-          <div className={`flex items-center gap-1 ${mode !== 'year' ? 'opacity-40' : ''}`}>
-            <button
-              onClick={() => { setMode('year'); setYear(y => y - 1) }}
-              className="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center text-gray-500 hover:border-[#001A70] hover:text-[#001A70] transition-colors"
-            >‹</button>
-            <button
-              onClick={() => setMode('year')}
-              className={`font-semibold w-12 text-center text-sm px-1 py-1.5 rounded-lg transition-colors ${
-                mode === 'year' ? 'text-[#001A70] bg-blue-50 border border-[#001A70]/30' : 'text-gray-600 hover:text-[#001A70]'
-              }`}
-            >{year}</button>
-            <button
-              onClick={() => { setMode('year'); setYear(y => Math.min(y + 1, currentYear)) }}
-              disabled={mode === 'year' && year >= currentYear}
-              className="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center text-gray-500 hover:border-[#001A70] hover:text-[#001A70] transition-colors disabled:opacity-40"
-            >›</button>
-          </div>
-
-          <span className="text-gray-200 text-sm">|</span>
-
-          {/* Mode buttons */}
           {modeButtons.map(({ key, label }) => (
             <button
               key={key}
@@ -196,36 +186,8 @@ export default function PerformancePage() {
           >
             {isLoading ? 'Calculando...' : 'Recalcular'}
           </button>
-
         </div>
       </div>
-
-      {/* Custom period pickers */}
-      {mode === 'custom' && (
-        <div className="flex items-center gap-3 flex-wrap">
-          <div className="flex items-center gap-2">
-            <label className="text-xs text-gray-500">De</label>
-            <input
-              type="month"
-              value={customFrom}
-              max={customTo}
-              onChange={e => setCustomFrom(e.target.value)}
-              className="border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20"
-            />
-          </div>
-          <div className="flex items-center gap-2">
-            <label className="text-xs text-gray-500">até</label>
-            <input
-              type="month"
-              value={customTo}
-              min={customFrom}
-              max={currentYM}
-              onChange={e => setCustomTo(e.target.value)}
-              className="border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20"
-            />
-          </div>
-        </div>
-      )}
 
       {isLoading ? (
         <div className="text-center text-gray-400 text-sm py-12 animate-pulse">
@@ -237,19 +199,19 @@ export default function PerformancePage() {
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <SummaryCard
                 label="Início do período"
-                value={summary.value_start > 0 ? fmtBRL(summary.value_start) : '—'}
+                value={summary.value_start > 0 ? fmt(summary.value_start) : '—'}
               />
-              <SummaryCard label="Fim do período" value={fmtBRL(summary.value_end)} />
+              <SummaryCard label="Fim do período" value={fmt(displayValueEnd)} />
               <SummaryCard
                 label="Retorno absoluto"
-                value={`${summary.return_abs >= 0 ? '+' : ''}${fmtBRL(summary.return_abs)}`}
-                positive={summary.return_abs >= 0}
+                value={`${displayReturnAbs >= 0 ? '+' : ''}${fmt(displayReturnAbs)}`}
+                positive={displayReturnAbs >= 0}
               />
               <SummaryCard
                 label="Retorno %"
-                value={summary.return_pct != null ? `${summary.return_pct >= 0 ? '+' : ''}${summary.return_pct.toFixed(2)}%` : '—'}
+                value={displayReturnPct != null ? `${displayReturnPct >= 0 ? '+' : ''}${displayReturnPct.toFixed(2)}%` : '—'}
                 sub="Simple Dietz"
-                positive={summary.return_pct != null ? summary.return_pct >= 0 : null}
+                positive={displayReturnPct != null ? displayReturnPct >= 0 : null}
               />
             </div>
           )}
@@ -363,16 +325,16 @@ export default function PerformancePage() {
                               </span>
                             </td>
                             <td className="px-4 py-3 text-right text-gray-900">
-                              {m.total > 0 ? fmtBRL(m.total) : '—'}
+                              {m.total > 0 ? fmt(m.total) : '—'}
                             </td>
                             <td className="px-4 py-3 text-right text-gray-500 text-xs">
-                              {cf !== 0 ? `${cf > 0 ? '+' : ''}${fmtBRL(cf)}` : '—'}
+                              {cf !== 0 ? `${cf > 0 ? '+' : ''}${fmt(cf)}` : '—'}
                             </td>
                             <td className={`px-4 py-3 text-right font-medium ${
                               gain == null ? 'text-gray-400' :
                               gain >= 0 ? 'text-green-600' : 'text-red-600'
                             }`}>
-                              {gain != null ? `${gain >= 0 ? '+' : ''}${fmtBRL(gain)}` : '—'}
+                              {gain != null ? `${gain >= 0 ? '+' : ''}${fmt(gain)}` : '—'}
                             </td>
                             <td className={`px-4 py-3 text-right text-xs font-semibold ${
                               gainPct == null ? 'text-gray-300' :
@@ -410,13 +372,13 @@ export default function PerformancePage() {
                                               )}
                                             </td>
                                             <td className="py-1.5 text-right text-gray-800">
-                                              {fmtBRL(d.value)}
+                                              {fmt(d.value)}
                                             </td>
                                             <td className="py-1.5 text-right text-gray-500">
-                                              {d.contributions !== 0 ? `${d.contributions > 0 ? '+' : ''}${fmtBRL(d.contributions)}` : '—'}
+                                              {d.contributions !== 0 ? `${d.contributions > 0 ? '+' : ''}${fmt(d.contributions)}` : '—'}
                                             </td>
                                             <td className={`py-1.5 text-right font-medium ${!hasGainData ? 'text-gray-300' : d.gain >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                              {!hasGainData ? '—' : `${d.gain >= 0 ? '+' : ''}${fmtBRL(d.gain)}`}
+                                              {!hasGainData ? '—' : `${d.gain >= 0 ? '+' : ''}${fmt(d.gain)}`}
                                             </td>
                                             <td className={`py-1.5 text-right font-semibold ${gainPct == null ? 'text-gray-300' : gainPct >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                                               {gainPct != null ? `${gainPct >= 0 ? '+' : ''}${gainPct.toFixed(2)}%` : '—'}
