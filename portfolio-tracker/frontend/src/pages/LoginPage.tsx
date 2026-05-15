@@ -8,6 +8,41 @@ import LanguageSelector from '../components/LanguageSelector'
 type Mode = 'login' | 'register' | 'forgot'
 type Currency = 'BRL' | 'USD' | 'EUR'
 
+// Main site design tokens
+const BLUE   = '#1B2F4E'
+const BG     = '#FAFAF8'
+const DARK   = '#111110'
+const GRAY   = '#6B6B67'
+const BORDER = '#E0DDD5'
+const BORDEAUX = '#8B1A2F'
+
+const F_DISPLAY = "'Playfair Display', serif"
+const F_MONO    = "'DM Mono', monospace"
+const F_BODY    = "'DM Sans', sans-serif"
+
+const LABEL_STYLE: React.CSSProperties = {
+  display: 'block',
+  fontFamily: F_MONO,
+  fontSize: 10,
+  letterSpacing: '0.1em',
+  textTransform: 'uppercase',
+  color: GRAY,
+  marginBottom: 6,
+}
+
+const INPUT_STYLE: React.CSSProperties = {
+  width: '100%',
+  border: `1px solid ${BORDER}`,
+  borderRadius: 3,
+  padding: '12px 16px',
+  fontSize: 14,
+  fontFamily: F_BODY,
+  color: DARK,
+  background: '#fff',
+  outline: 'none',
+  transition: 'border-color 0.2s',
+}
+
 const COUNTRY_OPTIONS = [
   { value: '',            label: '—' },
   { value: 'Brasil',      label: 'Brasil' },
@@ -22,9 +57,6 @@ const COUNTRY_OPTIONS = [
   { value: 'Austrália',   label: 'Australia' },
   { value: 'Outro',       label: 'Outro / Other' },
 ]
-
-const INPUT_CLASS =
-  'w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20 focus:border-[#001A70] transition-colors bg-white'
 
 export default function LoginPage() {
   const { signIn, signUp } = useAuth()
@@ -106,61 +138,58 @@ export default function LoginPage() {
     : l.submitForgot
 
   const panelTitle =
-    mode === 'login'    ? 'Bem-vindo de volta' :
+    mode === 'login'    ? 'Acesse sua conta' :
     mode === 'register' ? 'Crie sua conta' :
                           'Recuperar senha'
 
   return (
-    <div className="min-h-screen flex" style={{ fontFamily: "'Inter', 'Space Grotesk', sans-serif" }}>
+    <div style={{ minHeight: '100vh', display: 'flex' }}>
 
-      {/* ── Left photo panel ── */}
+      {/* ── Painel esquerdo ── */}
       <div
-        className="hidden lg:flex lg:w-[42%] xl:w-[45%] relative flex-shrink-0 flex-col"
-        style={{ background: 'linear-gradient(160deg, #000c30 0%, #001A70 55%, #0d2e8a 100%)' }}
+        className="hidden lg:flex lg:w-[44%] xl:w-[46%] flex-shrink-0 flex-col relative"
+        style={{ background: 'linear-gradient(160deg, #0c1a2e 0%, #1B2F4E 100%)' }}
       >
         <div
           className="absolute inset-0 bg-cover bg-center"
           style={{
-            backgroundImage: `url('https://images.unsplash.com/photo-1545558014-8692077e9b5c?auto=format&fit=crop&w=1200&q=80')`,
-            opacity: 0.35,
+            backgroundImage: `url('https://images.unsplash.com/photo-1507842217343-583bb7270b66?auto=format&fit=crop&w=1200&q=80')`,
+            opacity: 0.38,
           }}
         />
-        {/* gradient at bottom for text legibility */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20" />
+        <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(10,20,40,0.65) 0%, transparent 55%)' }} />
 
-        <div className="relative z-10 flex flex-col h-full p-10">
+        <div className="relative z-10 flex flex-col h-full" style={{ padding: '44px 48px' }}>
           <a
             href="https://andregutto.com"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-white hover:opacity-75 transition-opacity self-start"
-            style={{ fontFamily: "'Playfair Display', serif", fontSize: 17, letterSpacing: '-0.2px', textDecoration: 'none' }}
+            className="hover:opacity-70 transition-opacity self-start"
+            style={{ fontFamily: F_DISPLAY, fontSize: 22, fontWeight: 400, color: '#fff', textDecoration: 'none', letterSpacing: '-0.2px' }}
           >
             André Gutto
           </a>
 
           <div className="mt-auto">
-            <p className="text-white text-[1.6rem] font-semibold leading-snug tracking-tight">
-              Inteligência financeira<br />ao seu alcance.
-            </p>
-            <p className="text-white/45 text-xs mt-4 tracking-wide uppercase">
-              Portfolio Tracker
+            <p style={{ fontFamily: F_DISPLAY, fontSize: '1.8rem', fontWeight: 400, lineHeight: 1.2, color: '#fff', marginBottom: 0 }}>
+              O seu dinheiro,<br />
+              <em style={{ fontStyle: 'italic', color: 'rgba(255,255,255,0.58)' }}>trabalhando por você.</em>
             </p>
           </div>
         </div>
       </div>
 
-      {/* ── Right form panel ── */}
-      <div className="flex-1 flex flex-col bg-white min-h-screen">
+      {/* ── Painel direito ── */}
+      <div className="flex-1 flex flex-col min-h-screen" style={{ background: BG }}>
 
-        {/* Top bar */}
-        <div className="flex items-center justify-between px-8 pt-7">
+        {/* Barra superior */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '28px 48px 0' }}>
           <a
             href="https://andregutto.com"
             target="_blank"
             rel="noopener noreferrer"
             className="lg:hidden hover:opacity-70 transition-opacity"
-            style={{ fontFamily: "'Playfair Display', serif", fontSize: 15, color: '#1B2F4E', textDecoration: 'none' }}
+            style={{ fontFamily: F_DISPLAY, fontSize: 17, color: BLUE, textDecoration: 'none' }}
           >
             André Gutto
           </a>
@@ -168,31 +197,49 @@ export default function LoginPage() {
           <LanguageSelector />
         </div>
 
-        {/* Centered form */}
-        <div className="flex-1 flex flex-col items-center justify-center px-8 py-10">
-          <div className="w-full max-w-[400px]">
+        {/* Formulário centralizado */}
+        <div className="flex-1 flex flex-col items-center justify-center" style={{ padding: '40px 48px' }}>
+          <div style={{ width: '100%', maxWidth: 360 }}>
 
-            <div className="mb-7">
-              <img src="/favicon.svg" alt="Logo" className="w-9 h-9" />
+            {/* Eyebrow */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 28 }}>
+              <div style={{ width: 6, height: 6, borderRadius: '50%', background: BORDEAUX, flexShrink: 0 }} />
+              <span style={{ fontFamily: F_MONO, fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: GRAY }}>
+                Portfolio Tracker
+              </span>
             </div>
 
-            <h1 className="text-[1.85rem] font-bold text-gray-900 mb-1.5 tracking-tight leading-tight">
+            {/* Título */}
+            <h1 style={{ fontFamily: F_DISPLAY, fontSize: '2rem', fontWeight: 400, lineHeight: 1.1, letterSpacing: '-0.5px', color: DARK, marginBottom: 8 }}>
               {panelTitle}
             </h1>
-            <p className="text-gray-400 text-sm mb-7">
+            <p style={{ fontFamily: F_BODY, fontSize: 14, color: GRAY, fontWeight: 300, marginBottom: 32, lineHeight: 1.6 }}>
               {mode === 'forgot' ? l.forgotDesc : l.subtitle}
             </p>
 
+            {/* Abas login / cadastro */}
             {mode !== 'forgot' && (
-              <div className="flex bg-gray-100 rounded-xl p-1 gap-1 mb-6">
+              <div style={{ display: 'flex', borderBottom: `1px solid ${BORDER}`, marginBottom: 28 }}>
                 {(['login', 'register'] as const).map(m => (
                   <button
                     key={m}
                     type="button"
                     onClick={() => switchMode(m)}
-                    className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
-                      mode === m ? 'bg-white shadow text-[#001A70]' : 'text-gray-500 hover:text-gray-700'
-                    }`}
+                    style={{
+                      padding: '8px 0',
+                      marginRight: 24,
+                      marginBottom: -1,
+                      background: 'none',
+                      border: 'none',
+                      borderBottom: mode === m ? `2px solid ${BLUE}` : '2px solid transparent',
+                      cursor: 'pointer',
+                      fontFamily: F_MONO,
+                      fontSize: 11,
+                      letterSpacing: '0.1em',
+                      textTransform: 'uppercase',
+                      color: mode === m ? BLUE : GRAY,
+                      transition: 'color 0.2s, border-color 0.2s',
+                    }}
                   >
                     {m === 'login' ? l.loginTab : l.registerTab}
                   </button>
@@ -204,29 +251,31 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={() => switchMode('login')}
-                className="text-xs text-[#001A70] hover:underline flex items-center gap-1 mb-6"
+                style={{ fontFamily: F_MONO, fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: BLUE, background: 'none', border: 'none', cursor: 'pointer', marginBottom: 24, display: 'flex', alignItems: 'center', gap: 6 }}
               >
                 ← {l.backToLogin}
               </button>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
+              {/* Cadastro: nome + sobrenome */}
               {mode === 'register' && (
-                <div className="grid grid-cols-2 gap-3">
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                   <div>
-                    <label className="block text-xs font-medium text-gray-500 mb-1.5">{l.firstName}</label>
-                    <input type="text" value={firstName} onChange={e => setFirstName(e.target.value)} placeholder="André" className={INPUT_CLASS} />
+                    <label style={LABEL_STYLE}>{l.firstName}</label>
+                    <input type="text" value={firstName} onChange={e => setFirstName(e.target.value)} placeholder="André" style={INPUT_STYLE} />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-500 mb-1.5">{l.lastName}</label>
-                    <input type="text" value={lastName} onChange={e => setLastName(e.target.value)} placeholder="Gutto" className={INPUT_CLASS} />
+                    <label style={LABEL_STYLE}>{l.lastName}</label>
+                    <input type="text" value={lastName} onChange={e => setLastName(e.target.value)} placeholder="Gutto" style={INPUT_STYLE} />
                   </div>
                 </div>
               )}
 
+              {/* Email */}
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1.5">{l.email}</label>
+                <label style={LABEL_STYLE}>{l.email}</label>
                 <input
                   type="email"
                   value={email}
@@ -234,14 +283,15 @@ export default function LoginPage() {
                   required
                   autoComplete="email"
                   placeholder="seu@email.com"
-                  className={INPUT_CLASS}
+                  style={INPUT_STYLE}
                 />
               </div>
 
+              {/* Senha */}
               {mode !== 'forgot' && (
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1.5">{l.password}</label>
-                  <div className="relative">
+                  <label style={LABEL_STYLE}>{l.password}</label>
+                  <div style={{ position: 'relative' }}>
                     <input
                       type={showPwd ? 'text' : 'password'}
                       value={password}
@@ -250,12 +300,12 @@ export default function LoginPage() {
                       minLength={6}
                       autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
                       placeholder="••••••••"
-                      className={`${INPUT_CLASS} pr-16`}
+                      style={{ ...INPUT_STYLE, paddingRight: 56 }}
                     />
                     <button
                       type="button"
                       onClick={() => setShowPwd(v => !v)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xs font-medium"
+                      style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: F_MONO, fontSize: 9, letterSpacing: '0.1em', textTransform: 'uppercase', color: GRAY }}
                       tabIndex={-1}
                     >
                       {showPwd ? l.hidePwd : l.showPwd}
@@ -265,7 +315,7 @@ export default function LoginPage() {
                     <button
                       type="button"
                       onClick={() => switchMode('forgot')}
-                      className="text-xs text-gray-400 hover:text-[#001A70] mt-2 block transition-colors"
+                      style={{ fontFamily: F_MONO, fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', color: GRAY, background: 'none', border: 'none', cursor: 'pointer', marginTop: 6, display: 'block', transition: 'color 0.2s' }}
                     >
                       {l.forgotPwd}
                     </button>
@@ -273,41 +323,50 @@ export default function LoginPage() {
                 </div>
               )}
 
+              {/* Campos extras de cadastro */}
               {mode === 'register' && (
                 <>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                     <div>
-                      <label className="block text-xs font-medium text-gray-500 mb-1.5">{t.profile.country}</label>
-                      <select value={country} onChange={e => setCountry(e.target.value)} className={INPUT_CLASS}>
+                      <label style={LABEL_STYLE}>{t.profile.country}</label>
+                      <select value={country} onChange={e => setCountry(e.target.value)} style={{ ...INPUT_STYLE, appearance: 'none' }}>
                         {COUNTRY_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                       </select>
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-gray-500 mb-1.5">{l.taxCountry}</label>
-                      <select value={taxCountry} onChange={e => setTaxCountry(e.target.value)} className={INPUT_CLASS}>
+                      <label style={LABEL_STYLE}>{l.taxCountry}</label>
+                      <select value={taxCountry} onChange={e => setTaxCountry(e.target.value)} style={{ ...INPUT_STYLE, appearance: 'none' }}>
                         {COUNTRY_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                       </select>
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-medium text-gray-500 mb-1.5">{l.birthdate}</label>
-                    <input type="date" value={birthdate} onChange={e => setBirthdate(e.target.value)} className={INPUT_CLASS} />
+                    <label style={LABEL_STYLE}>{l.birthdate}</label>
+                    <input type="date" value={birthdate} onChange={e => setBirthdate(e.target.value)} style={INPUT_STYLE} />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-medium text-gray-500 mb-1.5">{l.defaultCurrency}</label>
-                    <div className="flex gap-2">
+                    <label style={LABEL_STYLE}>{l.defaultCurrency}</label>
+                    <div style={{ display: 'flex', gap: 8 }}>
                       {(['BRL', 'USD', 'EUR'] as Currency[]).map(c => (
                         <button
                           key={c}
                           type="button"
                           onClick={() => setCurrency(c)}
-                          className={`flex-1 py-2.5 text-xs font-semibold rounded-xl border transition-colors ${
-                            currency === c
-                              ? 'bg-[#001A70] text-white border-[#001A70]'
-                              : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'
-                          }`}
+                          style={{
+                            flex: 1,
+                            padding: '10px 0',
+                            fontFamily: F_MONO,
+                            fontSize: 11,
+                            letterSpacing: '0.08em',
+                            border: `1px solid ${currency === c ? BLUE : BORDER}`,
+                            borderRadius: 3,
+                            cursor: 'pointer',
+                            background: currency === c ? BLUE : '#fff',
+                            color: currency === c ? BG : GRAY,
+                            transition: 'all 0.2s',
+                          }}
                         >
                           {c}
                         </button>
@@ -317,18 +376,48 @@ export default function LoginPage() {
                 </>
               )}
 
-              {error && <p className="text-sm px-4 py-3 rounded-xl bg-red-50 text-red-700">{error}</p>}
-              {info  && <p className="text-sm px-4 py-3 rounded-xl bg-blue-50 text-blue-700">{info}</p>}
+              {error && (
+                <p style={{ fontFamily: F_BODY, fontSize: 13, padding: '12px 16px', borderRadius: 3, background: '#fef2f2', color: '#991b1b', border: '1px solid #fecaca' }}>
+                  {error}
+                </p>
+              )}
+              {info && (
+                <p style={{ fontFamily: F_BODY, fontSize: 13, padding: '12px 16px', borderRadius: 3, background: '#eff6ff', color: '#1e3a5f', border: `1px solid ${BORDER}` }}>
+                  {info}
+                </p>
+              )}
 
+              {/* Botão de submit — estilo site principal */}
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-[#001A70] text-white py-3 rounded-xl font-semibold text-sm hover:bg-[#002494] transition-colors disabled:opacity-60 flex items-center justify-center gap-2 mt-1"
+                style={{
+                  width: '100%',
+                  padding: '14px 24px',
+                  background: BLUE,
+                  color: BG,
+                  fontFamily: F_MONO,
+                  fontSize: 11,
+                  letterSpacing: '0.1em',
+                  textTransform: 'uppercase',
+                  border: 'none',
+                  borderRadius: 3,
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                  opacity: loading ? 0.6 : 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8,
+                  transition: 'background 0.2s',
+                  marginTop: 4,
+                }}
+                onMouseEnter={e => { if (!loading) (e.currentTarget as HTMLButtonElement).style.background = '#2A4A72' }}
+                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = BLUE }}
               >
                 {loading && (
-                  <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="animate-spin">
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" opacity="0.25" />
+                    <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" opacity="0.75" />
                   </svg>
                 )}
                 {submitLabel}
@@ -337,7 +426,7 @@ export default function LoginPage() {
           </div>
         </div>
 
-        <div className="px-8 pb-7">
+        <div style={{ padding: '0 48px 28px' }}>
           <LoginFooter />
         </div>
       </div>
