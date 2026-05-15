@@ -1,16 +1,31 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { usePortfolioValue } from '../hooks/usePortfolio'
+import { usePortfolioValue, usePerformanceMonthly, usePerformanceInception } from '../hooks/usePortfolio'
 import ValueCards from '../components/ValueCards'
 import AllocationChart from '../components/AllocationChart'
 import AssetTable from '../components/AssetTable'
 import FixedIncomeSetupModal from '../components/FixedIncomeSetupModal'
 import type { PortfolioAsset } from '../lib/types'
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
+
+function fmtMonthLabel(ym: string) {
+  const [y, m] = ym.split('-')
+  const names = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
+  return `${names[parseInt(m) - 1]}/${y.slice(2)}`
+}
 
 export default function DashboardPage() {
   const { data, loading, error, refresh } = usePortfolioValue()
   const [selectedAsset, setSelectedAsset] = useState<PortfolioAsset | null>(null)
   const navigate = useNavigate()
+
+  const inception = usePerformanceInception()
+  const currentYM = new Date().toISOString().substring(0, 7)
+  const { data: perfData } = usePerformanceMonthly(inception ?? currentYM, currentYM)
+
+  const portfolioChartData = (perfData?.monthly ?? [])
+    .filter(m => m.total > 0)
+    .map(m => ({ month: fmtMonthLabel(m.month), value: m.total }))
 
   function handleAssetClick(asset: PortfolioAsset) {
     if (asset.needs_manual && asset.source === 'fixed_income') {
@@ -64,6 +79,33 @@ export default function DashboardPage() {
         total_eur={data.total_eur}
         generated_at={data.generated_at}
       />
+
+      {portfolioChartData.length > 1 && (
+        <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
+          <h2 className="font-semibold text-gray-800 mb-4">Evolução do portfólio</h2>
+          <div className="h-48">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={portfolioChartData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+                <XAxis dataKey="month" tick={{ fontSize: 10, fill: '#9ca3af' }} interval="preserveStartEnd" />
+                <YAxis
+                  tick={{ fontSize: 10, fill: '#9ca3af' }}
+                  tickFormatter={v => `${(v / 1000).toFixed(0)}k`}
+                  width={48}
+                />
+                <Tooltip
+                  formatter={(v: number) => [
+                    new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(v),
+                    'Patrimônio',
+                  ]}
+                  contentStyle={{ borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 12 }}
+                />
+                <Line type="monotone" dataKey="value" stroke="#001A70" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
 
       {data.by_class.length > 0 && (
         <AllocationChart data={data.by_class} />

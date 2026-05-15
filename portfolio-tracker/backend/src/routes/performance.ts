@@ -71,27 +71,43 @@ async function fetchPrefetchedData(userId: string): Promise<PrefetchedData> {
   if (!assets?.length) return { assets: [], contributions: [], prices: [], manualValues: [] }
 
   const assetIds = assets.map(a => a.id)
-  const phLimit = Math.max(10000, assetIds.length * 240)
 
-  const [{ data: contributions }, { data: prices }, { data: manualValues }] = await Promise.all([
+  // Fetch contributions and manual_values in parallel (row counts stay manageable)
+  const [{ data: contributions }, { data: manualValues }] = await Promise.all([
     supabaseAdmin.from('contributions')
       .select('asset_id, type, quantity, value_brl, price_orig, fx_rate_brl, currency, date')
-      .in('asset_id', assetIds),
-    supabaseAdmin.from('price_history')
-      .select('asset_id, price, currency, ref_date')
       .in('asset_id', assetIds)
-      .order('ref_date', { ascending: true })
-      .limit(phLimit),
+      .order('date', { ascending: true }),
     supabaseAdmin.from('manual_values')
       .select('asset_id, value, currency, ref_date')
       .in('asset_id', assetIds)
       .order('ref_date', { ascending: true }),
   ])
 
+  // Paginate price_history — Supabase PostgREST caps at 1000 rows by default.
+  // Portfolios with years of history easily exceed this; pagination ensures all rows are loaded.
+  const prices: PrefetchedData['prices'] = []
+  {
+    const pageSize = 1000
+    let from = 0
+    while (true) {
+      const { data: batch } = await supabaseAdmin
+        .from('price_history')
+        .select('asset_id, price, currency, ref_date')
+        .in('asset_id', assetIds)
+        .order('ref_date', { ascending: true })
+        .range(from, from + pageSize - 1)
+      if (!batch || batch.length === 0) break
+      prices.push(...(batch as PrefetchedData['prices']))
+      if (batch.length < pageSize) break
+      from += pageSize
+    }
+  }
+
   return {
     assets: assets as PrefetchedData['assets'],
     contributions: (contributions ?? []) as PrefetchedData['contributions'],
-    prices: (prices ?? []) as PrefetchedData['prices'],
+    prices,
     manualValues: (manualValues ?? []) as PrefetchedData['manualValues'],
   }
 }
@@ -271,9 +287,7 @@ async function computePortfolioValueAtMonth(
           } else {
             if (ph) {
               const fx = await getFxRate(ph.currency)
-              // Anti-spike check: If history contains absolute values instead of unit prices
-              const calculated = holdings * ph.price * fx
-              value = (calculated > total * 2 && total > 0) ? ph.price * fx : calculated
+              value = holdings * ph.price * fx
             } else {
               value = costBasisValue
             }

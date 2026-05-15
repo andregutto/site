@@ -242,6 +242,11 @@ export default function ImportB3Page() {
         // non-fatal — user can re-sync manually
       }
 
+      // Bust performance cache so the Performance page recomputes with updated data
+      for (const key of Object.keys(localStorage)) {
+        if (key.startsWith('perf')) localStorage.removeItem(key)
+      }
+
       setStep('done')
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Erro ao executar importação')

@@ -2,9 +2,9 @@ import { useState, useEffect, useCallback } from 'react'
 import { apiFetch } from '../lib/api'
 import type { PortfolioValue, PerformanceSummary, PerformanceMonthly, PerformanceBenchmarks, AssetReturns, AssetDetail, ContributionRow } from '../lib/types'
 
-// Daily cache v5 — bumped to bust stale data after anti-spike / unit-price fix (2026-05-14).
+// Daily cache v6 — bumped after paginated price_history fetch fix (2026-05-15).
 // Stores results keyed by endpoint+params, expires at midnight.
-const CACHE_PREFIX = 'perf5_'
+const CACHE_PREFIX = 'perf6_'
 
 function perfCacheGet<T>(key: string): T | null {
   try {

@@ -153,7 +153,12 @@ export default function AssetDetailPage() {
     { label: '2A',   months: 24 },
     { label: 'Tudo', months: null },
   ]
-  const chartData = chartPeriod == null ? allChartData : allChartData.slice(-chartPeriod)
+  const chartData = (() => {
+    if (chartPeriod !== null) return allChartData.slice(-chartPeriod)
+    // For "Tudo", skip leading zero-value entries to avoid a long flat line before first purchase
+    const firstNonZero = allChartData.findIndex(d => d.value > 0)
+    return firstNonZero > 0 ? allChartData.slice(firstNonZero) : allChartData
+  })()
 
   const isManual = data.asset_type === 'manual'
   const canUpdateManualValue = isManual || data.price_source === 'cost_basis' || data.price_source === 'manual'
