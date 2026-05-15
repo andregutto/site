@@ -137,7 +137,10 @@ export default function PerformancePage() {
   })
 
   const lastPoint      = chartData[chartData.length - 1]
-  const portfolioAccum = lastPoint?.portfolio ?? null
+  // Benchmarks have no cash flows so their period return = TWR = Simple Dietz.
+  // For the portfolio, use the same Simple Dietz as the top summary card so the
+  // comparison is apples-to-apples (not TWR vs simple period return).
+  const portfolioAccum = displayReturnPct
   const cdiAccum       = lastPoint?.cdi       ?? null
   const ibovAccum      = lastPoint?.ibov      ?? null
   const sp500Accum     = lastPoint?.sp500     ?? null
