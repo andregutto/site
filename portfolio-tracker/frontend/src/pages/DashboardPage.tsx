@@ -20,7 +20,7 @@ export default function DashboardPage() {
   const [selectedAsset, setSelectedAsset] = useState<PortfolioAsset | null>(null)
   const navigate = useNavigate()
 
-  const { convert, fmt, currency } = useCurrency()
+  const { convert, currency } = useCurrency()
 
   const inception = usePerformanceInception()
   const currentYM = new Date().toISOString().substring(0, 7)
