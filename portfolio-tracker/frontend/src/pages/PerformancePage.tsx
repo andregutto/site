@@ -134,27 +134,24 @@ export default function PerformancePage() {
     }
   })
 
-  const lastPoint      = chartData[chartData.length - 1]
-  // Benchmarks have no cash flows so their period return = TWR = Simple Dietz.
-  // For the portfolio, use the same Simple Dietz as the top summary card so the
-  // comparison is apples-to-apples (not TWR vs simple period return).
-  const portfolioAccum = displayReturnPct
-  const cdiAccum       = lastPoint?.cdi       ?? null
-  const ibovAccum      = lastPoint?.ibov      ?? null
-  const sp500Accum     = lastPoint?.sp500     ?? null
+  const lastPoint = chartData[chartData.length - 1]
+  const cdiAccum  = lastPoint?.cdi   ?? null
+  const ibovAccum = lastPoint?.ibov  ?? null
+  const sp500Accum = lastPoint?.sp500 ?? null
 
-  // "Fim do período" card: use live total when available so the displayed BRL amount
-  // matches the dashboard. This is the only place livePortfolio is used.
+  // "Fim do período" card: use live total when available so the BRL amount matches dashboard.
   const endsAtCurrentMonth = to === currentYM
   const liveTotal = livePortfolio?.total_brl ?? null
   const displayValueEnd = endsAtCurrentMonth && liveTotal !== null ? liveTotal : (summary?.value_end ?? 0)
 
-  // Return calculations always use summary.value_end — avoids race condition with
-  // livePortfolio loading late and causing the % to jump after the page renders.
+  // Return % always uses summary.value_end — stable, no race condition with livePortfolio.
   const summaryValueEnd  = summary?.value_end ?? 0
   const displayReturnAbs = summary ? summaryValueEnd - summary.value_start - summary.contributions : 0
   const dietzDenom       = summary ? summary.value_start + 0.5 * summary.contributions : 0
   const displayReturnPct = dietzDenom > 0 ? (displayReturnAbs / dietzDenom) * 100 : null
+
+  // portfolioAccum must be declared AFTER displayReturnPct
+  const portfolioAccum = displayReturnPct
 
   const isLoading = sLoading || mLoading || bLoading
 
