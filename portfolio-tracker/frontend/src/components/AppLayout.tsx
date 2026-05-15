@@ -42,20 +42,18 @@ export default function AppLayout() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <header className="bg-white border-b border-gray-100 sticky top-0 z-10">
-        <div className="max-w-6xl mx-auto px-4 h-14 grid items-center" style={{ gridTemplateColumns: '1fr auto 1fr' }}>
-          {/* Left — logo */}
-          <div className="flex items-center">
-            <a
-              href="https://andregutto.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="shrink-0 transition-opacity duration-200 hover:opacity-70 tracking-[-0.2px]"
-              style={{ fontFamily: "'Playfair Display', serif", fontSize: 19, fontWeight: 400, color: '#1B2F4E', textDecoration: 'none' }}
-            >André Gutto</a>
-          </div>
+        <div className="max-w-6xl mx-auto px-4 h-14 flex items-center relative">
+          {/* Logo — far left */}
+          <a
+            href="https://andregutto.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="shrink-0 transition-opacity duration-200 hover:opacity-70 tracking-[-0.2px]"
+            style={{ fontFamily: "'Playfair Display', serif", fontSize: 19, fontWeight: 400, color: '#1B2F4E', textDecoration: 'none' }}
+          >André Gutto</a>
 
-          {/* Center — nav */}
-          <nav className="hidden sm:flex items-center gap-1">
+          {/* Nav — absolutely centered */}
+          <nav className="hidden sm:flex items-center gap-1 absolute left-1/2 -translate-x-1/2">
             {navItems.map(({ to, label, icon, end }) => (
               <NavLink
                 key={to}
@@ -75,8 +73,8 @@ export default function AppLayout() {
             ))}
           </nav>
 
-          {/* Right — currency + user + sign out */}
-          <div className="flex items-center gap-2 justify-end">
+          {/* Right — currency + user + sign out — far right */}
+          <div className="flex items-center gap-3 ml-auto shrink-0">
             <div className="flex items-center bg-gray-100 rounded-lg p-0.5 gap-0.5">
               {CURRENCIES.map(c => (
                 <button
@@ -99,12 +97,12 @@ export default function AppLayout() {
               ) : (
                 <div className="w-7 h-7 rounded-full bg-[#001A70] text-white flex items-center justify-center text-[10px] font-bold">{avatarInitials}</div>
               )}
-              <span className="text-xs text-gray-400 hover:text-[#001A70] transition-colors truncate max-w-[100px]">{headerLabel}</span>
+              <span className="text-xs text-gray-400 hover:text-[#001A70] transition-colors">{headerLabel}</span>
             </Link>
 
             <button
               onClick={() => signOut()}
-              className="text-xs text-gray-500 hover:text-red-600 transition-colors"
+              className="text-xs text-gray-500 hover:text-red-600 transition-colors whitespace-nowrap"
             >
               {t.nav.signout}
             </button>
