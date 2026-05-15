@@ -56,7 +56,7 @@ nav {
 }
 
 .logo {
-  font-family: var(--f-logo);
+  font-family: var(--f-display);
   font-size: 19px;
   font-weight: 400;
   letter-spacing: -0.2px;
@@ -719,7 +719,7 @@ footer {
 }
 
 .footer-logo {
-  font-family: var(--f-logo);
+  font-family: var(--f-display);
   font-size: 17px;
   font-weight: 400;
   color: var(--blue);
