@@ -76,6 +76,11 @@
   },
   "login": {
     "subtitle":        "Suivez vos investissements mondiaux",
+    "panelLogin":      "Accéder à votre compte",
+    "panelRegister":   "Créer votre compte",
+    "panelForgot":     "Réinitialiser le mot de passe",
+    "tagline1":        "Votre argent,",
+    "tagline2":        "travaillant pour vous.",
     "loginTab":        "Se connecter",
     "registerTab":     "Créer un compte",
     "email":           "E-mail",

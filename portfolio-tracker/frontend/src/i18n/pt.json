@@ -76,6 +76,11 @@
   },
   "login": {
     "subtitle":        "Acompanhe seus investimentos globais",
+    "panelLogin":      "Acesse sua conta",
+    "panelRegister":   "Crie sua conta",
+    "panelForgot":     "Recuperar senha",
+    "tagline1":        "O seu dinheiro,",
+    "tagline2":        "trabalhando por você.",
     "loginTab":        "Entrar",
     "registerTab":     "Criar conta",
     "email":           "E-mail",

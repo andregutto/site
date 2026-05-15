@@ -76,6 +76,11 @@
   },
   "login": {
     "subtitle":        "Track your global investments",
+    "panelLogin":      "Access your account",
+    "panelRegister":   "Create your account",
+    "panelForgot":     "Reset password",
+    "tagline1":        "Your money,",
+    "tagline2":        "working for you.",
     "loginTab":        "Sign in",
     "registerTab":     "Create account",
     "email":           "Email",

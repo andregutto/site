@@ -138,9 +138,9 @@ export default function LoginPage() {
     : l.submitForgot
 
   const panelTitle =
-    mode === 'login'    ? 'Acesse sua conta' :
-    mode === 'register' ? 'Crie sua conta' :
-                          'Recuperar senha'
+    mode === 'login'    ? l.panelLogin :
+    mode === 'register' ? l.panelRegister :
+                          l.panelForgot
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex' }}>
@@ -165,15 +165,15 @@ export default function LoginPage() {
             target="_blank"
             rel="noopener noreferrer"
             className="hover:opacity-70 transition-opacity self-start"
-            style={{ fontFamily: F_DISPLAY, fontSize: 22, fontWeight: 400, color: '#fff', textDecoration: 'none', letterSpacing: '-0.2px' }}
+            style={{ fontFamily: F_DISPLAY, fontSize: 27, fontWeight: 400, color: '#fff', textDecoration: 'none', letterSpacing: '-0.2px' }}
           >
             André Gutto
           </a>
 
           <div className="mt-auto">
             <p style={{ fontFamily: F_DISPLAY, fontSize: '1.8rem', fontWeight: 400, lineHeight: 1.2, color: '#fff', marginBottom: 0 }}>
-              O seu dinheiro,<br />
-              <em style={{ fontStyle: 'italic', color: 'rgba(255,255,255,0.58)' }}>trabalhando por você.</em>
+              {l.tagline1}<br />
+              <em style={{ fontStyle: 'italic', color: 'rgba(255,255,255,0.58)' }}>{l.tagline2}</em>
             </p>
           </div>
         </div>
