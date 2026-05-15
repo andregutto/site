@@ -112,20 +112,18 @@ export default function PerformancePage() {
 
   const pct = (v: number, base: number) => Math.round((v / base - 1) * 10000) / 100
 
-  // Chain monthly Simple Dietz returns. For i=0 use m.prev_total as the starting base
-  // so the first month's return is included (previously it was silently skipped).
-  let cumulative = 1
-  const chartData = monthsWithData.map((m, i) => {
-    const cf = m.contributions ?? 0
-    const prevTotal = i === 0 ? (m.prev_total ?? 0) : monthsWithData[i - 1].total
-    if (prevTotal > 0) {
-      const denom = prevTotal + 0.5 * cf
-      if (denom > 0) {
-        const r = (m.total - prevTotal - cf) / denom
-        cumulative *= (1 + r)
-      }
-    }
-    const portfolioPct = Math.round((cumulative - 1) * 10000) / 100
+  // Running Simple Dietz from the period start: for each month compute
+  //   (total_i - periodStart - cfCumul_i) / (periodStart + 0.5 * cfCumul_i)
+  // At the last month this equals displayReturnPct exactly, so every chart point,
+  // the top summary card and the Carteira comparison card all use the same formula.
+  const periodStart = monthsWithData[0]?.prev_total ?? 0
+  let cfCumul = 0
+  const chartData = monthsWithData.map((m) => {
+    cfCumul += (m.contributions ?? 0)
+    const denom = periodStart + 0.5 * cfCumul
+    const portfolioPct = periodStart > 0 && denom > 0
+      ? Math.round(((m.total - periodStart - cfCumul) / denom) * 10000) / 100
+      : 0
     const b = benchmarkMap.get(m.month)
     return {
       month:     fmtMonth(m.month),
@@ -145,15 +143,17 @@ export default function PerformancePage() {
   const ibovAccum      = lastPoint?.ibov      ?? null
   const sp500Accum     = lastPoint?.sp500     ?? null
 
-  // When the period ends at the current month, substitute the live portfolio total
-  // so this value matches the dashboard to the cent (both come from the same source).
+  // "Fim do período" card: use live total when available so the displayed BRL amount
+  // matches the dashboard. This is the only place livePortfolio is used.
   const endsAtCurrentMonth = to === currentYM
   const liveTotal = livePortfolio?.total_brl ?? null
   const displayValueEnd = endsAtCurrentMonth && liveTotal !== null ? liveTotal : (summary?.value_end ?? 0)
-  const displayReturnAbs = summary
-    ? displayValueEnd - summary.value_start - summary.contributions
-    : 0
-  const dietzDenom = summary ? summary.value_start + 0.5 * summary.contributions : 0
+
+  // Return calculations always use summary.value_end — avoids race condition with
+  // livePortfolio loading late and causing the % to jump after the page renders.
+  const summaryValueEnd  = summary?.value_end ?? 0
+  const displayReturnAbs = summary ? summaryValueEnd - summary.value_start - summary.contributions : 0
+  const dietzDenom       = summary ? summary.value_start + 0.5 * summary.contributions : 0
   const displayReturnPct = dietzDenom > 0 ? (displayReturnAbs / dietzDenom) * 100 : null
 
   const isLoading = sLoading || mLoading || bLoading
