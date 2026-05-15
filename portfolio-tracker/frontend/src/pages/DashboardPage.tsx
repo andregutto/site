@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { usePortfolioValue, usePerformanceMonthly, usePerformanceInception } from '../hooks/usePortfolio'
+import { useCurrency } from '../contexts/CurrencyContext'
 import ValueCards from '../components/ValueCards'
 import AllocationChart from '../components/AllocationChart'
 import AssetTable from '../components/AssetTable'
@@ -19,13 +20,15 @@ export default function DashboardPage() {
   const [selectedAsset, setSelectedAsset] = useState<PortfolioAsset | null>(null)
   const navigate = useNavigate()
 
+  const { convert, fmt, currency } = useCurrency()
+
   const inception = usePerformanceInception()
   const currentYM = new Date().toISOString().substring(0, 7)
   const { data: perfData } = usePerformanceMonthly(inception ?? currentYM, currentYM)
 
   const portfolioChartData = (perfData?.monthly ?? [])
     .filter(m => m.total > 0)
-    .map(m => ({ month: fmtMonthLabel(m.month), value: m.total }))
+    .map(m => ({ month: fmtMonthLabel(m.month), value: convert(m.total) }))
 
   function handleAssetClick(asset: PortfolioAsset) {
     if (asset.needs_manual && asset.source === 'fixed_income') {
@@ -90,12 +93,17 @@ export default function DashboardPage() {
                 <XAxis dataKey="month" tick={{ fontSize: 10, fill: '#9ca3af' }} interval="preserveStartEnd" />
                 <YAxis
                   tick={{ fontSize: 10, fill: '#9ca3af' }}
-                  tickFormatter={v => `${(v / 1000).toFixed(0)}k`}
-                  width={48}
+                  tickFormatter={v => {
+                    const n = typeof v === 'number' ? v : 0
+                    return currency === 'BRL'
+                      ? `${(n / 1000).toFixed(0)}k`
+                      : n >= 1000 ? `${(n / 1000).toFixed(0)}k` : n.toFixed(0)
+                  }}
+                  width={52}
                 />
                 <Tooltip
                   formatter={(v) => [
-                    new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(typeof v === 'number' ? v : 0),
+                    new Intl.NumberFormat('pt-BR', { style: 'currency', currency, maximumFractionDigits: 0 }).format(typeof v === 'number' ? v : 0),
                     'Patrimônio',
                   ]}
                   contentStyle={{ borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 12 }}

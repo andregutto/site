@@ -121,7 +121,7 @@ export default function LoginPage() {
         <div
           className="absolute inset-0 bg-cover bg-center"
           style={{
-            backgroundImage: `url('https://images.unsplash.com/photo-1486325212027-8081e485255e?auto=format&fit=crop&w=900&q=80')`,
+            backgroundImage: `url('https://images.unsplash.com/photo-1545558014-8692077e9b5c?auto=format&fit=crop&w=1200&q=80')`,
             opacity: 0.35,
           }}
         />
@@ -134,7 +134,7 @@ export default function LoginPage() {
             target="_blank"
             rel="noopener noreferrer"
             className="text-white hover:opacity-75 transition-opacity self-start"
-            style={{ fontFamily: "'Libre Baskerville', serif", fontSize: 17, letterSpacing: '-0.2px', textDecoration: 'none' }}
+            style={{ fontFamily: "'Playfair Display', serif", fontSize: 17, letterSpacing: '-0.2px', textDecoration: 'none' }}
           >
             André Gutto
           </a>
@@ -160,7 +160,7 @@ export default function LoginPage() {
             target="_blank"
             rel="noopener noreferrer"
             className="lg:hidden hover:opacity-70 transition-opacity"
-            style={{ fontFamily: "'Libre Baskerville', serif", fontSize: 15, color: '#1B2F4E', textDecoration: 'none' }}
+            style={{ fontFamily: "'Playfair Display', serif", fontSize: 15, color: '#1B2F4E', textDecoration: 'none' }}
           >
             André Gutto
           </a>

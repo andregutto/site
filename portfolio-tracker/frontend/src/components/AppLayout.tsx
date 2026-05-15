@@ -49,7 +49,7 @@ export default function AppLayout() {
               target="_blank"
               rel="noopener noreferrer"
               className="shrink-0 transition-opacity duration-200 hover:opacity-70 tracking-[-0.2px]"
-              style={{ fontFamily: "'Libre Baskerville', serif", fontSize: 19, fontWeight: 400, color: '#1B2F4E', textDecoration: 'none' }}
+              style={{ fontFamily: "'Playfair Display', serif", fontSize: 19, fontWeight: 400, color: '#1B2F4E', textDecoration: 'none' }}
             >André Gutto</a>
             <nav className="hidden sm:flex items-center gap-1">
               {navItems.map(({ to, label, icon, end }) => (
