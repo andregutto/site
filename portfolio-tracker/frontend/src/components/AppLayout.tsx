@@ -42,8 +42,9 @@ export default function AppLayout() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <header className="bg-white border-b border-gray-100 sticky top-0 z-10">
-        <div className="max-w-6xl mx-auto px-4 h-14 flex items-center relative">
-          {/* Logo — far left */}
+        <div className="h-14 flex items-center px-6 gap-4">
+
+          {/* Logo — true left edge */}
           <a
             href="https://andregutto.com"
             target="_blank"
@@ -52,29 +53,30 @@ export default function AppLayout() {
             style={{ fontFamily: "'Playfair Display', serif", fontSize: 19, fontWeight: 400, color: '#1B2F4E', textDecoration: 'none' }}
           >André Gutto</a>
 
-          {/* Nav — absolutely centered */}
-          <nav className="hidden sm:flex items-center gap-1 absolute left-1/2 -translate-x-1/2">
-            {navItems.map(({ to, label, icon, end }) => (
-              <NavLink
-                key={to}
-                to={to}
-                end={end}
-                className={({ isActive }) =>
-                  `px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 ${
-                    isActive
-                      ? 'bg-[#001A70]/10 text-[#001A70]'
-                      : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
-                  }`
-                }
-              >
-                <span className="text-xs">{icon}</span>
-                {label}
-              </NavLink>
-            ))}
-          </nav>
+          {/* Nav — centered in remaining space via flex-1 wrapper */}
+          <div className="hidden sm:flex flex-1 justify-center min-w-0">
+            <nav className="flex items-center gap-0.5">
+              {navItems.map(({ to, label, end }) => (
+                <NavLink
+                  key={to}
+                  to={to}
+                  end={end}
+                  className={({ isActive }) =>
+                    `px-2.5 py-1.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
+                      isActive
+                        ? 'bg-[#001A70]/10 text-[#001A70]'
+                        : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
+                    }`
+                  }
+                >
+                  {label}
+                </NavLink>
+              ))}
+            </nav>
+          </div>
 
-          {/* Right — currency + user + sign out — far right */}
-          <div className="flex items-center gap-3 ml-auto shrink-0">
+          {/* Right — currency + user + sign out */}
+          <div className="flex items-center gap-3 shrink-0 ml-auto sm:ml-0">
             <div className="flex items-center bg-gray-100 rounded-lg p-0.5 gap-0.5">
               {CURRENCIES.map(c => (
                 <button
