@@ -42,8 +42,9 @@ export default function AppLayout() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <header className="bg-white border-b border-gray-100 sticky top-0 z-10">
-        <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-5 min-w-0">
+        <div className="max-w-6xl mx-auto px-4 h-14 grid items-center" style={{ gridTemplateColumns: '1fr auto 1fr' }}>
+          {/* Left — logo */}
+          <div className="flex items-center">
             <a
               href="https://andregutto.com"
               target="_blank"
@@ -51,29 +52,31 @@ export default function AppLayout() {
               className="shrink-0 transition-opacity duration-200 hover:opacity-70 tracking-[-0.2px]"
               style={{ fontFamily: "'Playfair Display', serif", fontSize: 19, fontWeight: 400, color: '#1B2F4E', textDecoration: 'none' }}
             >André Gutto</a>
-            <nav className="hidden sm:flex items-center gap-1">
-              {navItems.map(({ to, label, icon, end }) => (
-                <NavLink
-                  key={to}
-                  to={to}
-                  end={end}
-                  className={({ isActive }) =>
-                    `px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 ${
-                      isActive
-                        ? 'bg-[#001A70]/10 text-[#001A70]'
-                        : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
-                    }`
-                  }
-                >
-                  <span className="text-xs">{icon}</span>
-                  {label}
-                </NavLink>
-              ))}
-            </nav>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
-            {/* Currency selector */}
+          {/* Center — nav */}
+          <nav className="hidden sm:flex items-center gap-1">
+            {navItems.map(({ to, label, icon, end }) => (
+              <NavLink
+                key={to}
+                to={to}
+                end={end}
+                className={({ isActive }) =>
+                  `px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 ${
+                    isActive
+                      ? 'bg-[#001A70]/10 text-[#001A70]'
+                      : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
+                  }`
+                }
+              >
+                <span className="text-xs">{icon}</span>
+                {label}
+              </NavLink>
+            ))}
+          </nav>
+
+          {/* Right — currency + user + sign out */}
+          <div className="flex items-center gap-2 justify-end">
             <div className="flex items-center bg-gray-100 rounded-lg p-0.5 gap-0.5">
               {CURRENCIES.map(c => (
                 <button
@@ -98,6 +101,7 @@ export default function AppLayout() {
               )}
               <span className="text-xs text-gray-400 hover:text-[#001A70] transition-colors truncate max-w-[100px]">{headerLabel}</span>
             </Link>
+
             <button
               onClick={() => signOut()}
               className="text-xs text-gray-500 hover:text-red-600 transition-colors"
