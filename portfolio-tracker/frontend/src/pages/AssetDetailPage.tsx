@@ -563,6 +563,7 @@ export default function AssetDetailPage() {
           class_id:        null,
           class_name:      data.class_name,
           class_color:     data.class_color,
+          class_icon:      null,
           value_brl:       data.current_value_brl,
           value_orig:      data.current_value_brl,
           holdings:        data.holdings,
