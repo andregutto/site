@@ -7,9 +7,11 @@ import { useAssetReturns } from '../hooks/usePortfolio'
 interface Props {
   assets: PortfolioAsset[]
   onAssetClick?: (asset: PortfolioAsset) => void
+  favorites?: Set<number>
+  onToggleFavorite?: (id: number) => void
 }
 
-type SortKey = 'value_brl' | 'code'
+type SortKey = 'value_brl' | 'code' | 'pct' | 'return'
 type PeriodKey = 'current_month' | 'last_30d' | 'last_12' | 'ytd'
 
 function localYM(d: Date) {
@@ -37,7 +39,27 @@ function ChevronIcon({ open }: { open: boolean }) {
   )
 }
 
-export default function AssetTable({ assets, onAssetClick }: Props) {
+function StarButton({ filled, onClick }: { filled: boolean; onClick: (e: React.MouseEvent) => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className="p-1 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity shrink-0"
+      title={filled ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
+    >
+      <svg
+        className={`w-3.5 h-3.5 transition-colors ${filled ? 'text-amber-400' : 'text-gray-300 hover:text-amber-300'}`}
+        fill={filled ? 'currentColor' : 'none'}
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        strokeWidth={filled ? 0 : 2}
+      >
+        <path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.562.562 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" />
+      </svg>
+    </button>
+  )
+}
+
+export default function AssetTable({ assets, onAssetClick, favorites = new Set(), onToggleFavorite }: Props) {
   const { fmt, currency } = useCurrency()
   const { t } = useI18n()
   const d = t.dashboard
@@ -105,9 +127,18 @@ export default function AssetTable({ assets, onAssetClick }: Props) {
         const sorted = [...filtered].sort((a, b) => {
           if (a.needs_manual && !b.needs_manual) return 1
           if (!a.needs_manual && b.needs_manual) return -1
-          const va = sortKey === 'code' ? a.code : a.value_brl
-          const vb = sortKey === 'code' ? b.code : b.value_brl
-          const cmp = typeof va === 'string' ? va.localeCompare(vb as string) : (va as number) - (vb as number)
+          let cmp = 0
+          if (sortKey === 'code') {
+            cmp = a.code.localeCompare(b.code)
+          } else if (sortKey === 'pct') {
+            cmp = a.value_brl - b.value_brl
+          } else if (sortKey === 'return') {
+            const ra = returns?.[a.id] ?? -Infinity
+            const rb = returns?.[b.id] ?? -Infinity
+            cmp = ra - rb
+          } else {
+            cmp = a.value_brl - b.value_brl
+          }
           return sortDir === 'asc' ? cmp : -cmp
         })
         const total = g.assets.reduce((s, a) => s + (a.needs_manual ? 0 : a.value_brl), 0)
@@ -166,7 +197,7 @@ export default function AssetTable({ assets, onAssetClick }: Props) {
         <table className="w-full text-sm">
           <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
             <tr>
-              <th className="px-4 py-3 text-left cursor-pointer hover:text-gray-700 w-[40%]" onClick={() => toggleSort('code')}>
+              <th className="px-4 py-3 text-left cursor-pointer hover:text-gray-700 w-[36%]" onClick={() => toggleSort('code')}>
                 {d.assetsTitle} <SortIcon col="code" />
               </th>
               <th className="px-4 py-3 text-right">{d.colHoldings}</th>
@@ -174,8 +205,12 @@ export default function AssetTable({ assets, onAssetClick }: Props) {
               <th className="px-4 py-3 text-right cursor-pointer hover:text-gray-700" onClick={() => toggleSort('value_brl')}>
                 {d.colValue} {currency} <SortIcon col="value_brl" />
               </th>
-              <th className="px-4 py-3 text-right">{d.colPct}</th>
-              <th className="px-4 py-3 text-right text-[#001A70]">{d.colReturn}</th>
+              <th className="px-4 py-3 text-right cursor-pointer hover:text-gray-700" onClick={() => toggleSort('pct')}>
+                {d.colPct} <SortIcon col="pct" />
+              </th>
+              <th className="px-4 py-3 text-right text-[#001A70] cursor-pointer hover:text-[#001A70]/70" onClick={() => toggleSort('return')}>
+                {d.colReturn} <SortIcon col="return" />
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -211,10 +246,14 @@ export default function AssetTable({ assets, onAssetClick }: Props) {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <ChevronIcon open={isOpen} />
-                        <span
-                          className="w-3 h-3 rounded-full shrink-0"
-                          style={{ backgroundColor: group.color }}
-                        />
+                        {group.assets[0]?.class_icon ? (
+                          <span className="text-base leading-none shrink-0">{group.assets[0].class_icon}</span>
+                        ) : (
+                          <span
+                            className="w-3 h-3 rounded-full shrink-0"
+                            style={{ backgroundColor: group.color }}
+                          />
+                        )}
                         <span className="font-bold text-gray-900 text-base tracking-tight">{group.name}</span>
                         <span className="text-xs text-gray-400 font-normal">
                           {group.assets.length} {group.assets.length === 1 ? d.asset : d.assets}
@@ -249,7 +288,7 @@ export default function AssetTable({ assets, onAssetClick }: Props) {
                       <tr
                         key={asset.id}
                         onClick={() => onAssetClick?.(asset)}
-                        className={`border-t border-gray-50 transition-colors ${
+                        className={`group border-t border-gray-50 transition-colors ${
                           onAssetClick ? 'cursor-pointer' : ''
                         } ${
                           asset.needs_manual
@@ -258,18 +297,28 @@ export default function AssetTable({ assets, onAssetClick }: Props) {
                         }`}
                       >
                         <td className="px-4 py-3 pl-10">
-                          <div className="font-medium text-gray-900">{asset.code}</div>
-                          <div className="text-xs text-gray-400 truncate max-w-[200px]">{asset.name}</div>
-                          {!asset.needs_manual && asset.source === 'manual' && (() => {
-                            if (!asset.last_manual_date) return null
-                            const days = Math.floor((Date.now() - new Date(asset.last_manual_date).getTime()) / 86_400_000)
-                            if (days < 30) return null
-                            return (
-                              <span className="text-[10px] text-amber-500 font-medium" title={`Último valor registrado há ${days} dias`}>
-                                ⚠ desatualizado ({days}d)
-                              </span>
-                            )
-                          })()}
+                          <div className="flex items-center gap-1">
+                            {onToggleFavorite && (
+                              <StarButton
+                                filled={favorites.has(asset.id)}
+                                onClick={e => { e.stopPropagation(); onToggleFavorite(asset.id) }}
+                              />
+                            )}
+                            <div>
+                              <div className="font-medium text-gray-900">{asset.code}</div>
+                              <div className="text-xs text-gray-400 truncate max-w-[200px]">{asset.name}</div>
+                              {!asset.needs_manual && asset.source === 'manual' && (() => {
+                                if (!asset.last_manual_date) return null
+                                const days = Math.floor((Date.now() - new Date(asset.last_manual_date).getTime()) / 86_400_000)
+                                if (days < 30) return null
+                                return (
+                                  <span className="text-[10px] text-amber-500 font-medium" title={`Último valor registrado há ${days} dias`}>
+                                    ⚠ desatualizado ({days}d)
+                                  </span>
+                                )
+                              })()}
+                            </div>
+                          </div>
                         </td>
                         <td className="px-4 py-3 text-right text-gray-600">
                           {asset.holdings != null ? fmtNumber(asset.holdings, 6) : '—'}

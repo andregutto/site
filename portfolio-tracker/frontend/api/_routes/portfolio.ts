@@ -17,7 +17,7 @@ router.get('/value', requireAuth, async (req, res: Response) => {
       id, code, name, asset_type, currency, exchange,
       ticker_brapi, ticker_yahoo, coingecko_id,
       fi_principal, fi_start_date, fi_type, fi_rate, fi_spread, fi_maturity,
-      asset_classes ( id, name, color )
+      asset_classes ( id, name, color, icon )
     `)
     .eq('user_id', userId)
     .eq('active', true)
@@ -88,7 +88,7 @@ router.get('/value', requireAuth, async (req, res: Response) => {
   const byAsset: Array<{
     id: number; code: string; name: string
     value_brl: number; value_orig: number; currency: string
-    class_id: number | null; class_name: string; class_color: string
+    class_id: number | null; class_name: string; class_color: string; class_icon: string | null
     holdings: number | null; price: number | null; source: string
     needs_manual: boolean
     invested_brl: number | null
@@ -103,12 +103,13 @@ router.get('/value', requireAuth, async (req, res: Response) => {
 
   await Promise.allSettled(
     assets.map(async (a) => {
-      const cls = (a.asset_classes as unknown as { id: number; name: string; color: string } | null)
+      const cls = (a.asset_classes as unknown as { id: number; name: string; color: string; icon: string | null } | null)
       const base = {
         id: a.id, code: a.code, name: a.name,
         class_id:    cls?.id ?? null,
         class_name:  cls?.name ?? 'Sem classe',
         class_color: cls?.color ?? '#6B7280',
+        class_icon:  cls?.icon ?? null,
         exchange:    (a.exchange as string | null) ?? null,
       }
 

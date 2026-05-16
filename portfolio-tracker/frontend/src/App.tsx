@@ -18,6 +18,7 @@ import ReportsPage from './pages/ReportsPage'
 import ImportB3Page from './pages/ImportB3Page'
 import IndicesPage from './pages/IndicesPage'
 import IndexDetailPage from './pages/IndexDetailPage'
+import FavoritesPage from './pages/FavoritesPage'
 import AppLayout from './components/AppLayout'
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage'
 import TermsOfUsePage from './pages/TermsOfUsePage'
@@ -110,6 +111,7 @@ function AppRoutes() {
         <Route path="/import/b3"      element={<ImportB3Page />} />
         <Route path="/indices"        element={<IndicesPage />} />
         <Route path="/indices/:code"  element={<IndexDetailPage />} />
+        <Route path="/favorites"      element={<FavoritesPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

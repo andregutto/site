@@ -12,7 +12,7 @@ router.get('/', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const { data, error } = await supabaseAdmin
     .from('assets')
-    .select('id, code, name, asset_type, currency, exchange, fi_principal, fi_start_date, fi_type, fi_maturity, asset_classes(id, name, color)')
+    .select('id, code, name, asset_type, currency, exchange, fi_principal, fi_start_date, fi_type, fi_maturity, asset_classes(id, name, color, icon)')
     .eq('user_id', userId)
     .eq('active', true)
     .order('code')
@@ -65,7 +65,7 @@ router.get('/classes', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const { data, error } = await supabaseAdmin
     .from('asset_classes')
-    .select('id, name, color')
+    .select('id, name, color, icon')
     .eq('user_id', userId)
     .order('name')
   if (error) { res.status(500).json({ error: error.message }); return }
@@ -75,25 +75,26 @@ router.get('/classes', requireAuth, async (req, res: Response) => {
 // POST /api/assets/classes — create a class
 router.post('/classes', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
-  const { name, color } = req.body as { name: string; color?: string }
+  const { name, color, icon } = req.body as { name: string; color?: string; icon?: string }
   if (!name?.trim()) { res.status(400).json({ error: 'Nome obrigatorio' }); return }
   const { data, error } = await supabaseAdmin
     .from('asset_classes')
-    .insert({ user_id: userId, name: name.trim(), color: color ?? '#6B7280' })
-    .select('id, name, color')
+    .insert({ user_id: userId, name: name.trim(), color: color ?? '#6B7280', icon: icon ?? null })
+    .select('id, name, color, icon')
     .single()
   if (error) { res.status(500).json({ error: error.message }); return }
   res.status(201).json(data)
 })
 
-// PATCH /api/assets/classes/:id — rename or recolor
+// PATCH /api/assets/classes/:id — rename, recolor, or update icon
 router.patch('/classes/:id', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const classId = Number(req.params.id)
-  const { name, color } = req.body as { name?: string; color?: string }
-  const updates: Record<string, string> = {}
+  const { name, color, icon } = req.body as { name?: string; color?: string; icon?: string | null }
+  const updates: Record<string, string | null> = {}
   if (name) updates.name = name.trim()
   if (color) updates.color = color
+  if (icon !== undefined) updates.icon = icon
   if (!Object.keys(updates).length) { res.status(400).json({ error: 'Nada para atualizar' }); return }
   const { error } = await supabaseAdmin
     .from('asset_classes')

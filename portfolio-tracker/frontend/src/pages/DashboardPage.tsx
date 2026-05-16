@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { usePortfolioValue, usePerformanceMonthly, usePerformanceInception } from '../hooks/usePortfolio'
 import { useCurrency } from '../contexts/CurrencyContext'
+import { useFavorites } from '../hooks/useFavorites'
 import ValueCards from '../components/ValueCards'
 import AllocationChart from '../components/AllocationChart'
 import AssetTable from '../components/AssetTable'
@@ -17,6 +18,7 @@ function fmtMonthLabel(ym: string) {
 
 export default function DashboardPage() {
   const { data, loading, error, refresh } = usePortfolioValue()
+  const { favorites, toggleFavorite } = useFavorites()
   const [selectedAsset, setSelectedAsset] = useState<PortfolioAsset | null>(null)
   const navigate = useNavigate()
 
@@ -120,7 +122,12 @@ export default function DashboardPage() {
       )}
 
       {data.by_asset.length > 0 ? (
-        <AssetTable assets={data.by_asset} onAssetClick={handleAssetClick} />
+        <AssetTable
+          assets={data.by_asset}
+          onAssetClick={handleAssetClick}
+          favorites={favorites}
+          onToggleFavorite={toggleFavorite}
+        />
       ) : (
         <div className="bg-white border border-gray-100 rounded-2xl p-12 text-center text-gray-400">
           <p className="text-lg font-medium">Nenhum ativo com posição aberta</p>

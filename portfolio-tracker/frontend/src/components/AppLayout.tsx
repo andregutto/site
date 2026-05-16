@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { NavLink, Outlet, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useCurrency, type Currency } from '../contexts/CurrencyContext'
@@ -16,6 +16,19 @@ export default function AppLayout() {
   const { currency, setCurrency } = useCurrency()
   const { t } = useI18n()
   const [showOnboarding, setShowOnboarding] = useState(false)
+  const [showUserMenu, setShowUserMenu] = useState(false)
+  const userMenuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!showUserMenu) return
+    function handleClick(e: MouseEvent) {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setShowUserMenu(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [showUserMenu])
 
   useEffect(() => {
     if (localStorage.getItem(ONBOARDING_KEY)) return
@@ -94,14 +107,41 @@ export default function AppLayout() {
               ))}
             </div>
 
-            <Link to="/profile" className="hidden sm:flex items-center gap-2 hover:opacity-80 transition-opacity" title={headerLabel}>
-              {avatarUrl ? (
-                <img src={avatarUrl} alt="Avatar" className="w-7 h-7 rounded-full object-cover" />
-              ) : (
-                <div className="w-7 h-7 rounded-full bg-[#001A70] text-white flex items-center justify-center text-[10px] font-bold">{avatarInitials}</div>
+            <div ref={userMenuRef} className="relative hidden sm:block">
+              <button
+                onClick={() => setShowUserMenu(v => !v)}
+                className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+                title={headerLabel}
+              >
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt="Avatar" className="w-7 h-7 rounded-full object-cover" />
+                ) : (
+                  <div className="w-7 h-7 rounded-full bg-[#001A70] text-white flex items-center justify-center text-[10px] font-bold">{avatarInitials}</div>
+                )}
+                <span className="text-xs text-gray-400 hover:text-[#001A70] transition-colors max-w-[100px] truncate">{headerLabel}</span>
+                <svg className={`w-3 h-3 text-gray-400 transition-transform ${showUserMenu ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              {showUserMenu && (
+                <div className="absolute right-0 top-full mt-2 w-44 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-50">
+                  <Link
+                    to="/favorites"
+                    onClick={() => setShowUserMenu(false)}
+                    className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                  >
+                    <span>★</span> Favoritos
+                  </Link>
+                  <Link
+                    to="/profile"
+                    onClick={() => setShowUserMenu(false)}
+                    className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                  >
+                    <span>👤</span> Perfil
+                  </Link>
+                </div>
               )}
-              <span className="text-xs text-gray-400 hover:text-[#001A70] transition-colors">{headerLabel}</span>
-            </Link>
+            </div>
 
             <button
               onClick={() => signOut()}

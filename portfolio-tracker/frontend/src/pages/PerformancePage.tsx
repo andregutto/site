@@ -96,6 +96,18 @@ export default function PerformancePage() {
     return next
   }), [])
 
+  type DetailSortKey = 'value' | 'contributions' | 'gain' | 'pct'
+  const [detailSort, setDetailSort] = useState<DetailSortKey>('value')
+  const [detailDir,  setDetailDir]  = useState<'asc' | 'desc'>('desc')
+  function toggleDetailSort(key: DetailSortKey) {
+    if (detailSort === key) setDetailDir(d => d === 'asc' ? 'desc' : 'asc')
+    else { setDetailSort(key); setDetailDir('desc') }
+  }
+  function DetailSortIcon({ col }: { col: DetailSortKey }) {
+    if (detailSort !== col) return <span className="text-gray-300">↕</span>
+    return <span className="text-[#001A70]">{detailDir === 'asc' ? '↑' : '↓'}</span>
+  }
+
   const benchmarkMap = new Map(
     (benchmarks?.monthly ?? []).map(b => [b.month, b])
   )
@@ -354,15 +366,38 @@ export default function PerformancePage() {
                                   <thead>
                                     <tr className="text-gray-400 border-b border-gray-200">
                                       <th className="py-1.5 text-left font-medium">Ativo</th>
-                                      <th className="py-1.5 text-right font-medium">Valor final</th>
-                                      <th className="py-1.5 text-right font-medium">Aportes</th>
-                                      <th className="py-1.5 text-right font-medium">Ganho/Perda</th>
-                                      <th className="py-1.5 text-right font-medium">%</th>
+                                      <th className="py-1.5 text-right font-medium cursor-pointer hover:text-gray-600 select-none" onClick={() => toggleDetailSort('value')}>
+                                        Valor final <DetailSortIcon col="value" />
+                                      </th>
+                                      <th className="py-1.5 text-right font-medium cursor-pointer hover:text-gray-600 select-none" onClick={() => toggleDetailSort('contributions')}>
+                                        Aportes <DetailSortIcon col="contributions" />
+                                      </th>
+                                      <th className="py-1.5 text-right font-medium cursor-pointer hover:text-gray-600 select-none" onClick={() => toggleDetailSort('gain')}>
+                                        Ganho/Perda <DetailSortIcon col="gain" />
+                                      </th>
+                                      <th className="py-1.5 text-right font-medium cursor-pointer hover:text-gray-600 select-none" onClick={() => toggleDetailSort('pct')}>
+                                        % <DetailSortIcon col="pct" />
+                                      </th>
                                     </tr>
                                   </thead>
                                   <tbody className="divide-y divide-gray-100">
                                     {m.detail
                                       .filter(d => d.value > 0)
+                                      .slice()
+                                      .sort((a, b) => {
+                                        let cmp = 0
+                                        if (detailSort === 'value') cmp = a.value - b.value
+                                        else if (detailSort === 'contributions') cmp = a.contributions - b.contributions
+                                        else if (detailSort === 'gain') cmp = a.gain - b.gain
+                                        else {
+                                          const da = a.prev_value + 0.5 * a.contributions
+                                          const db = b.prev_value + 0.5 * b.contributions
+                                          const pa = da > 0 ? a.gain / da : -Infinity
+                                          const pb = db > 0 ? b.gain / db : -Infinity
+                                          cmp = pa - pb
+                                        }
+                                        return detailDir === 'asc' ? cmp : -cmp
+                                      })
                                       .map(d => {
                                         const hasGainData = d.prev_value > 0
                                         const denom = d.prev_value + 0.5 * d.contributions

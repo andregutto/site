@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { apiFetch } from '../lib/api'
 
-interface AssetClass { id: number; name: string; color: string }
+interface AssetClass { id: number; name: string; color: string; icon: string | null }
 
 interface AssetRow {
   id: number
@@ -11,6 +11,12 @@ interface AssetRow {
   currency: string
   asset_classes: { id: number; name: string; color: string } | null
 }
+
+const ICON_OPTIONS = [
+  '📊', '📈', '📉', '🏦', '🏢', '🏠', '🌍', '🌎', '🪙', '💰',
+  '💎', '🛢️', '🌾', '🥇', '🏭', '💵', '🚀', '⚡', '🛡️', '💼',
+  '🏪', '🏗️', '🎯', '🌊', '📋', '🔑', '⚙️', '🌱', '🏅', '🧩',
+]
 
 const COLOR_PALETTE = [
   '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6',
@@ -40,6 +46,33 @@ function ColorPicker({ value, onChange }: { value: string; onChange: (c: string)
   )
 }
 
+function IconPicker({ value, onChange }: { value: string | null; onChange: (i: string | null) => void }) {
+  return (
+    <div className="mt-2">
+      <div className="flex flex-wrap gap-1.5">
+        <button
+          type="button"
+          onClick={() => onChange(null)}
+          className={`w-8 h-8 rounded-lg text-xs border transition-all hover:scale-110 ${
+            value == null ? 'border-[#001A70] bg-[#001A70]/10 ring-1 ring-[#001A70]' : 'border-gray-200 bg-gray-50'
+          }`}
+          title="Sem ícone"
+        >—</button>
+        {ICON_OPTIONS.map(icon => (
+          <button
+            key={icon}
+            type="button"
+            onClick={() => onChange(icon)}
+            className={`w-8 h-8 rounded-lg text-base transition-all hover:scale-110 ${
+              value === icon ? 'ring-2 ring-[#001A70] bg-[#001A70]/10 scale-110' : 'hover:bg-gray-100'
+            }`}
+          >{icon}</button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export default function ClassesPage() {
   const [classes,  setClasses]  = useState<AssetClass[]>([])
   const [assets,   setAssets]   = useState<AssetRow[]>([])
@@ -49,6 +82,7 @@ export default function ClassesPage() {
   const [showCreate, setShowCreate] = useState(false)
   const [newName,    setNewName]    = useState('')
   const [newColor,   setNewColor]   = useState(COLOR_PALETTE[0])
+  const [newIcon,    setNewIcon]    = useState<string | null>(null)
   const [creating,   setCreating]   = useState(false)
   const [createErr,  setCreateErr]  = useState<string | null>(null)
 
@@ -56,6 +90,7 @@ export default function ClassesPage() {
   const [editId,    setEditId]    = useState<number | null>(null)
   const [editName,  setEditName]  = useState('')
   const [editColor, setEditColor] = useState('')
+  const [editIcon,  setEditIcon]  = useState<string | null>(null)
   const [savingId,  setSavingId]  = useState<number | null>(null)
   const [editErr,   setEditErr]   = useState<string | null>(null)
 
@@ -84,9 +119,9 @@ export default function ClassesPage() {
     try {
       await apiFetch<AssetClass>('/assets/classes', {
         method: 'POST',
-        body: JSON.stringify({ name: newName.trim(), color: newColor }),
+        body: JSON.stringify({ name: newName.trim(), color: newColor, icon: newIcon }),
       })
-      setNewName(''); setNewColor(COLOR_PALETTE[0]); setShowCreate(false)
+      setNewName(''); setNewColor(COLOR_PALETTE[0]); setNewIcon(null); setShowCreate(false)
       await load()
     } catch (e) {
       setCreateErr(e instanceof Error ? e.message : 'Erro ao criar')
@@ -96,7 +131,7 @@ export default function ClassesPage() {
   }
 
   function startEdit(cls: AssetClass) {
-    setEditId(cls.id); setEditName(cls.name); setEditColor(cls.color); setEditErr(null)
+    setEditId(cls.id); setEditName(cls.name); setEditColor(cls.color); setEditIcon(cls.icon); setEditErr(null)
   }
 
   async function handleSaveEdit(id: number) {
@@ -105,7 +140,7 @@ export default function ClassesPage() {
     try {
       await apiFetch(`/assets/classes/${id}`, {
         method: 'PATCH',
-        body: JSON.stringify({ name: editName.trim(), color: editColor }),
+        body: JSON.stringify({ name: editName.trim(), color: editColor, icon: editIcon }),
       })
       setEditId(null)
       await load()
@@ -189,6 +224,10 @@ export default function ClassesPage() {
                 autoFocus
               />
               <ColorPicker value={newColor} onChange={setNewColor} />
+              <div>
+                <p className="text-xs text-gray-500 mb-1">Ícone</p>
+                <IconPicker value={newIcon} onChange={setNewIcon} />
+              </div>
             </div>
           </div>
           {createErr && <p className="text-xs text-red-600">{createErr}</p>}
@@ -234,6 +273,10 @@ export default function ClassesPage() {
                             autoFocus
                           />
                           <ColorPicker value={editColor} onChange={setEditColor} />
+                          <div>
+                            <p className="text-xs text-gray-500 mb-1">Ícone</p>
+                            <IconPicker value={editIcon} onChange={setEditIcon} />
+                          </div>
                         </div>
                       </div>
                       {editErr && <p className="text-xs text-red-600">{editErr}</p>}
@@ -251,10 +294,14 @@ export default function ClassesPage() {
                     </div>
                   ) : (
                     <div className="flex items-center gap-3">
-                      <span
-                        className="w-4 h-4 rounded-full shrink-0"
-                        style={{ backgroundColor: cls.color }}
-                      />
+                      {cls.icon ? (
+                        <span className="text-lg leading-none shrink-0">{cls.icon}</span>
+                      ) : (
+                        <span
+                          className="w-4 h-4 rounded-full shrink-0"
+                          style={{ backgroundColor: cls.color }}
+                        />
+                      )}
                       <span className="font-medium text-gray-800 flex-1">{cls.name}</span>
                       <span className="text-xs text-gray-400 mr-2">
                         {count} {count === 1 ? 'ativo' : 'ativos'}
