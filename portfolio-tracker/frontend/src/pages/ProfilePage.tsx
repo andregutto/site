@@ -237,26 +237,46 @@ export default function ProfilePage() {
           </div>
 
           {/* XP / Level card */}
-          <Link to="/achievements" className="block bg-gradient-to-br from-[#0A0F1E] to-[#001A70] rounded-2xl p-5 shadow-sm hover:opacity-90 transition-opacity">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <span className="text-2xl">{level.emoji}</span>
+          <Link
+            to="/achievements"
+            className="block bg-white border border-gray-100 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group"
+          >
+            {/* accent bar */}
+            <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-[#001A70] to-[#C9A227] rounded-l-2xl" />
+
+            <div className="flex items-center justify-between mb-4 pl-3">
+              <div className="flex items-center gap-3">
+                <span className="text-3xl">{level.emoji}</span>
                 <div>
-                  <p className="text-[#C9A227] text-xs font-bold uppercase tracking-widest">{t.achievements.currentLevel}</p>
-                  <p className="text-white font-bold">{level.name}</p>
+                  <p className="text-[10px] text-[#001A70] font-bold uppercase tracking-widest">{t.achievements.currentLevel}</p>
+                  <p className="text-gray-900 font-bold text-base leading-tight">{level.name}</p>
                 </div>
               </div>
               <div className="text-right">
-                <p className="text-[#C9A227] font-bold text-xl">{totalXp} {t.achievements.xp}</p>
+                <p className="text-gray-900 font-bold text-xl">
+                  {totalXp} <span className="text-[#C9A227]">{t.achievements.xp}</span>
+                </p>
                 <p className="text-gray-400 text-xs">{earnedKeys.length}/{ACHIEVEMENT_DEFS.length} {t.achievements.subtitle}</p>
               </div>
             </div>
-            <div className="h-2 bg-white/10 rounded-full overflow-hidden">
-              <div className="h-full rounded-full bg-gradient-to-r from-[#2563EB] to-[#C9A227] transition-all duration-700" style={{ width: `${levelProgress}%` }} />
+
+            <div className="pl-3">
+              <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-[#001A70] to-[#C9A227] transition-all duration-700"
+                  style={{ width: `${levelProgress}%` }}
+                />
+              </div>
+              {nextLevel && (
+                <p className="text-gray-400 text-xs mt-1.5">
+                  {t.achievements.nextLevel}: {nextLevel.emoji} {nextLevel.name} · {nextLevel.minXp} {t.achievements.xp}
+                </p>
+              )}
             </div>
-            {nextLevel && (
-              <p className="text-gray-400 text-xs mt-2">{t.achievements.nextLevel}: {nextLevel.emoji} {nextLevel.name} ({nextLevel.minXp} {t.achievements.xp})</p>
-            )}
+
+            <svg className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300 group-hover:text-[#001A70] transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
           </Link>
 
           {/* Dados pessoais */}
