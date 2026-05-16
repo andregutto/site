@@ -69,7 +69,7 @@ function resizeImageToDataUrl(file: File, size = 128): Promise<string> {
 export default function ProfilePage() {
   const { user } = useAuth()
   const { currency, setCurrency } = useCurrency()
-  const { totalXp, earnedKeys } = useAchievementContext()
+  const { totalXp, earnedKeys, triggerCheck } = useAchievementContext()
   const level = getLevel(totalXp)
   const nextLevel = getNextLevel(totalXp)
   const levelProgress = getLevelProgress(totalXp)
@@ -138,6 +138,7 @@ export default function ProfilePage() {
       })
       setSaveOk(true)
       setTimeout(() => setSaveOk(false), 3000)
+      triggerCheck()
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Erro ao salvar')
     } finally { setSaving(false) }

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
 import { useContributions } from '../hooks/usePortfolio'
 import { useCurrency } from '../contexts/CurrencyContext'
+import { useAchievementContext } from '../contexts/AchievementContext'
 import { apiFetch } from '../lib/api'
 import { parseLocaleNum, inputCls } from '../lib/numparse'
 import InstitutionSelect from '../components/InstitutionSelect'
@@ -65,6 +66,7 @@ const SMALL_INPUT = 'w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text
 export default function ContributionsPage() {
   const { data: contributions, loading, error, refresh } = useContributions()
   const { fmt, fxRates } = useCurrency()
+  const { triggerCheck } = useAchievementContext()
   const [searchParams, setSearchParams] = useSearchParams()
 
   const [assets,  setAssets]  = useState<AssetOption[]>([])
@@ -236,7 +238,7 @@ export default function ContributionsPage() {
             description: description || undefined,
           }),
         })
-        setShowForm(false); resetForm(); refresh()
+        setShowForm(false); resetForm(); refresh(); triggerCheck()
       } catch (e) {
         setFormErr(e instanceof Error ? e.message : 'Erro ao salvar')
       } finally { setSaving(false) }
@@ -253,7 +255,7 @@ export default function ContributionsPage() {
           method: 'POST',
           body: JSON.stringify({ date, value_brl: vBrl, notes: description || undefined }),
         })
-        setShowForm(false); resetForm(); refresh()
+        setShowForm(false); resetForm(); refresh(); triggerCheck()
       } catch (e) {
         setFormErr(e instanceof Error ? e.message : 'Erro ao salvar')
       } finally { setSaving(false) }
@@ -274,7 +276,7 @@ export default function ContributionsPage() {
             description: description || undefined,
           }),
         })
-        setShowForm(false); resetForm(); refresh()
+        setShowForm(false); resetForm(); refresh(); triggerCheck()
       } catch (e) {
         setFormErr(e instanceof Error ? e.message : 'Erro ao salvar')
       } finally { setSaving(false) }
@@ -300,7 +302,7 @@ export default function ContributionsPage() {
           description: description || undefined,
         }),
       })
-      setShowForm(false); resetForm(); refresh()
+      setShowForm(false); resetForm(); refresh(); triggerCheck()
     } catch (e) {
       setFormErr(e instanceof Error ? e.message : 'Erro ao salvar')
     } finally { setSaving(false) }

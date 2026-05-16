@@ -3,11 +3,13 @@ import { ACHIEVEMENT_DEFS, LEVELS, getLevel, getNextLevel, getLevelProgress } fr
 import { useAchievementContext } from '../contexts/AchievementContext'
 import { usePortfolioValue } from '../hooks/usePortfolio'
 import Medal from '../components/Medal'
+import CelebrationModal from '../components/CelebrationModal'
 
 export default function AchievementsPage() {
   const { earned, earnedKeys, totalXp, loading, triggerCheck } = useAchievementContext()
   const { data: portfolio } = usePortfolioValue()
   const [checking, setChecking] = useState(false)
+  const [preview, setPreview] = useState(false)
 
   const level = getLevel(totalXp)
   const nextLevel = getNextLevel(totalXp)
@@ -35,12 +37,20 @@ export default function AchievementsPage() {
           <h1 className="text-xl font-bold text-gray-900">Conquistas</h1>
           <p className="text-sm text-gray-500 mt-0.5">{earnedKeys.length} de {ACHIEVEMENT_DEFS.length} desbloqueadas</p>
         </div>
-        {(loading || checking) && (
-          <div className="flex items-center gap-2 text-sm text-gray-400">
-            <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-[#001A70]" />
-            Verificando...
-          </div>
-        )}
+          <div className="flex items-center gap-3">
+          {(loading || checking) && (
+            <div className="flex items-center gap-2 text-sm text-gray-400">
+              <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-[#001A70]" />
+              Verificando...
+            </div>
+          )}
+          <button
+            onClick={() => setPreview(true)}
+            className="text-xs text-gray-400 hover:text-[#001A70] border border-gray-200 hover:border-[#001A70]/30 rounded-lg px-3 py-1.5 transition-colors"
+          >
+            Ver exemplo
+          </button>
+        </div>
       </div>
 
       {/* Level card */}
@@ -139,6 +149,13 @@ export default function AchievementsPage() {
           )
         })}
       </div>
+
+      {preview && (
+        <CelebrationModal
+          def={ACHIEVEMENT_DEFS.find(d => d.key === 'million_club')!}
+          onClose={() => setPreview(false)}
+        />
+      )}
     </div>
   )
 }
