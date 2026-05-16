@@ -8,7 +8,10 @@
     "classes":      "Classes",
     "ir":           "Tax",
     "indices":      "Indices",
-    "signout":      "Sign out"
+    "signout":      "Sign out",
+    "achievements": "Achievements",
+    "favorites":    "Favourites",
+    "profile":      "Profile"
   },
   "currency": {
     "label": "Currency"
@@ -228,5 +231,27 @@
     "locked":        "Locked",
     "unlocked":      "Achievement unlocked!",
     "amazing":       "Amazing!"
+  },
+  "achievementDefs": {
+    "first_step":      { "name": "First Step",         "desc": "Create account" },
+    "identity":        { "name": "Identity",            "desc": "Complete profile" },
+    "first_seed":      { "name": "First Seed",          "desc": "Register first contribution" },
+    "global_roots":    { "name": "Global Roots",        "desc": "Have an asset in foreign currency" },
+    "builder":         { "name": "Builder",             "desc": "Net worth above R$ 10,000" },
+    "five_digits":     { "name": "Five Digits",         "desc": "Net worth above R$ 100,000" },
+    "six_digits":      { "name": "Six Digits",          "desc": "Net worth above R$ 500,000" },
+    "million_club":    { "name": "Million Club",        "desc": "Net worth above R$ 1,000,000" },
+    "diversified":     { "name": "Diversified",         "desc": "Assets in 3 different classes" },
+    "crypto_native":   { "name": "Crypto Native",       "desc": "Have crypto in portfolio" },
+    "global_investor": { "name": "Global Investor",     "desc": "Assets in 3 currencies/countries" },
+    "expat":           { "name": "Expat",               "desc": "Accounts in 2 different currencies" },
+    "pension":         { "name": "Pension Secured",     "desc": "Have pension registered" },
+    "brick_by_brick":  { "name": "Brick by Brick",      "desc": "Have real estate registered" },
+    "discipline":      { "name": "Discipline",          "desc": "Contributions for 3 consecutive months" },
+    "consistency":     { "name": "Consistency",         "desc": "Contributions for 6 consecutive months" },
+    "historian":       { "name": "Historian",           "desc": "1 full year of history" },
+    "balancer":        { "name": "Balancer",            "desc": "Configure rebalancing targets" },
+    "tax_citizen":     { "name": "Tax Citizen",         "desc": "Generate first tax report" },
+    "multicurrency":   { "name": "Multicurrency",       "desc": "Assets in BRL, EUR and USD" }
   }
 }

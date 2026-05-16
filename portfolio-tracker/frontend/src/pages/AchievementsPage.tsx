@@ -129,10 +129,10 @@ export default function AchievementsPage() {
               <Medal def={def} earned={isEarned} size={80} />
 
               <p className={`mt-3 text-sm font-bold leading-tight ${isEarned ? 'text-gray-900' : 'text-gray-400'}`}>
-                {def.name}
+                {(t.achievementDefs as Record<string, { name: string; desc: string }>)[def.key]?.name ?? def.name}
               </p>
               <p className={`mt-1 text-xs leading-snug ${isEarned ? 'text-gray-500' : 'text-gray-400'}`}>
-                {def.description}
+                {(t.achievementDefs as Record<string, { name: string; desc: string }>)[def.key]?.desc ?? def.description}
               </p>
 
               {isEarned ? (

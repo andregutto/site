@@ -8,7 +8,10 @@
     "classes":      "Classes",
     "ir":           "Impôts",
     "indices":      "Indices",
-    "signout":      "Déconnexion"
+    "signout":      "Déconnexion",
+    "achievements": "Succès",
+    "favorites":    "Favoris",
+    "profile":      "Profil"
   },
   "currency": {
     "label": "Devise"
@@ -228,5 +231,27 @@
     "locked":        "Verrouillé",
     "unlocked":      "Succès débloqué !",
     "amazing":       "Incroyable !"
+  },
+  "achievementDefs": {
+    "first_step":      { "name": "Premier Pas",          "desc": "Créer un compte" },
+    "identity":        { "name": "Identité",             "desc": "Compléter le profil" },
+    "first_seed":      { "name": "Première Graine",      "desc": "Enregistrer le premier apport" },
+    "global_roots":    { "name": "Racines Mondiales",    "desc": "Avoir un actif en devise étrangère" },
+    "builder":         { "name": "Constructeur",         "desc": "Patrimoine supérieur à R$ 10 000" },
+    "five_digits":     { "name": "Cinq Chiffres",        "desc": "Patrimoine supérieur à R$ 100 000" },
+    "six_digits":      { "name": "Six Chiffres",         "desc": "Patrimoine supérieur à R$ 500 000" },
+    "million_club":    { "name": "Club du Million",      "desc": "Patrimoine supérieur à R$ 1 000 000" },
+    "diversified":     { "name": "Diversifié",           "desc": "Actifs dans 3 classes différentes" },
+    "crypto_native":   { "name": "Natif Crypto",         "desc": "Avoir de la crypto en portefeuille" },
+    "global_investor": { "name": "Investisseur Mondial", "desc": "Actifs dans 3 devises/pays différents" },
+    "expat":           { "name": "Expatrié",             "desc": "Comptes dans 2 devises différentes" },
+    "pension":         { "name": "Retraite Assurée",     "desc": "Avoir une pension enregistrée" },
+    "brick_by_brick":  { "name": "Pierre par Pierre",    "desc": "Avoir un bien immobilier enregistré" },
+    "discipline":      { "name": "Discipline",           "desc": "Apports pendant 3 mois consécutifs" },
+    "consistency":     { "name": "Constance",            "desc": "Apports pendant 6 mois consécutifs" },
+    "historian":       { "name": "Historien",            "desc": "1 année complète d'historique" },
+    "balancer":        { "name": "Équilibriste",         "desc": "Configurer les objectifs de rééquilibrage" },
+    "tax_citizen":     { "name": "Citoyen Fiscal",       "desc": "Générer le premier rapport fiscal" },
+    "multicurrency":   { "name": "Multidevise",          "desc": "Actifs en BRL, EUR et USD" }
   }
 }

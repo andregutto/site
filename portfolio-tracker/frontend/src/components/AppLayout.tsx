@@ -146,21 +146,21 @@ export default function AppLayout() {
                     onClick={() => setShowUserMenu(false)}
                     className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                   >
-                    <span>🏅</span> Conquistas
+                    <span>🏅</span> {t.nav.achievements}
                   </Link>
                   <Link
                     to="/favorites"
                     onClick={() => setShowUserMenu(false)}
                     className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                   >
-                    <span>★</span> Favoritos
+                    <span>★</span> {t.nav.favorites}
                   </Link>
                   <Link
                     to="/profile"
                     onClick={() => setShowUserMenu(false)}
                     className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                   >
-                    <span>👤</span> Perfil
+                    <span>👤</span> {t.nav.profile}
                   </Link>
                 </div>
               )}

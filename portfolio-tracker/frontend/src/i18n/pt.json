@@ -8,7 +8,10 @@
     "classes":      "Classes",
     "ir":           "IR",
     "indices":      "Índices",
-    "signout":      "Sair"
+    "signout":      "Sair",
+    "achievements": "Conquistas",
+    "favorites":    "Favoritos",
+    "profile":      "Perfil"
   },
   "currency": {
     "label": "Moeda"
@@ -228,5 +231,27 @@
     "locked":        "Bloqueado",
     "unlocked":      "Conquista desbloqueada!",
     "amazing":       "Incrível!"
+  },
+  "achievementDefs": {
+    "first_step":      { "name": "Primeiro Passo",        "desc": "Criar conta" },
+    "identity":        { "name": "Identidade",            "desc": "Completar perfil" },
+    "first_seed":      { "name": "Primeira Semente",      "desc": "Registrar primeiro aporte" },
+    "global_roots":    { "name": "Raízes Globais",        "desc": "Ter ativo em moeda estrangeira" },
+    "builder":         { "name": "Construtor",            "desc": "Patrimônio acima de R$ 10.000" },
+    "five_digits":     { "name": "Cinco Dígitos",         "desc": "Patrimônio acima de R$ 100.000" },
+    "six_digits":      { "name": "Seis Dígitos",          "desc": "Patrimônio acima de R$ 500.000" },
+    "million_club":    { "name": "Clube do Milhão",       "desc": "Patrimônio acima de R$ 1.000.000" },
+    "diversified":     { "name": "Diversificado",         "desc": "Ativos em 3 classes diferentes" },
+    "crypto_native":   { "name": "Crypto Nativo",         "desc": "Ter cripto na carteira" },
+    "global_investor": { "name": "Investidor Global",     "desc": "Ativos em 3 moedas/países" },
+    "expat":           { "name": "Expatriado",            "desc": "Contas em 2 moedas diferentes" },
+    "pension":         { "name": "Previdência Garantida", "desc": "Ter previdência cadastrada" },
+    "brick_by_brick":  { "name": "Tijolo por Tijolo",     "desc": "Ter imóvel cadastrado" },
+    "discipline":      { "name": "Disciplina",            "desc": "Aportes por 3 meses consecutivos" },
+    "consistency":     { "name": "Consistência",          "desc": "Aportes por 6 meses consecutivos" },
+    "historian":       { "name": "Historiador",           "desc": "1 ano completo de histórico" },
+    "balancer":        { "name": "Equilibrista",          "desc": "Configurar metas de balanceamento" },
+    "tax_citizen":     { "name": "Cidadão Fiscal",        "desc": "Gerar primeiro relatório de IR" },
+    "multicurrency":   { "name": "Multimoeda",            "desc": "Ativos em BRL, EUR e USD" }
   }
 }
