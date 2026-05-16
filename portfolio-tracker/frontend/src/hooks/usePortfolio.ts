@@ -200,13 +200,22 @@ export function useAssetReturns(from: string | null, to: string | null) {
   return { data, loading }
 }
 
+const INCEPTION_LS_KEY = 'perf_inception_v1'
+
 export function usePerformanceInception() {
-  const [inception, setInception] = useState<string | null>(null)
+  // Seed from localStorage so the monthly chart fetch starts in parallel on repeat visits
+  const [inception, setInception] = useState<string | null>(() => {
+    try { return localStorage.getItem(INCEPTION_LS_KEY) } catch { return null }
+  })
 
   useEffect(() => {
     apiFetch<{ inception: string | null }>('/performance/inception')
-      .then(r => setInception(r.inception))
-      .catch(() => setInception(null))
+      .then(r => {
+        setInception(r.inception)
+        if (r.inception) localStorage.setItem(INCEPTION_LS_KEY, r.inception)
+        else localStorage.removeItem(INCEPTION_LS_KEY)
+      })
+      .catch(() => {})
   }, [])
 
   return inception

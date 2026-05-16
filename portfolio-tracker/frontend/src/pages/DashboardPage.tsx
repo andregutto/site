@@ -26,7 +26,7 @@ export default function DashboardPage() {
 
   const inception = usePerformanceInception()
   const currentYM = new Date().toISOString().substring(0, 7)
-  const { data: perfData } = usePerformanceMonthly(inception ?? currentYM, currentYM)
+  const { data: perfData, loading: chartLoading } = usePerformanceMonthly(inception ?? currentYM, currentYM)
 
   const portfolioChartData = (perfData?.monthly ?? [])
     .filter(m => m.total > 0)
@@ -85,10 +85,17 @@ export default function DashboardPage() {
         generated_at={data.generated_at}
       />
 
-      {portfolioChartData.length > 1 && (
+      {(chartLoading || portfolioChartData.length > 1) && (
         <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
           <h2 className="font-semibold text-gray-800 mb-4">Evolução do portfólio</h2>
           <div className="h-48">
+          {chartLoading && portfolioChartData.length === 0 ? (
+            <div className="h-full flex items-end gap-1 px-2 pb-1">
+              {[40, 55, 48, 62, 58, 70, 65, 80, 75, 88, 82, 95].map((h, i) => (
+                <div key={i} className="flex-1 bg-gray-100 rounded-t animate-pulse" style={{ height: `${h}%` }} />
+              ))}
+            </div>
+          ) : (
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={portfolioChartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
@@ -113,6 +120,7 @@ export default function DashboardPage() {
                 <Line type="monotone" dataKey="value" stroke="#001A70" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
               </LineChart>
             </ResponsiveContainer>
+          )}
           </div>
         </div>
       )}
