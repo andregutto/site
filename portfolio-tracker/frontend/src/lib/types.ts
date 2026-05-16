@@ -18,7 +18,7 @@ export interface PortfolioAsset {
   class_id: number | null
   class_name: string
   class_color: string
-  class_icon: string | null
+  class_icon?: string | null
   holdings: number | null
   price: number | null
   source: string

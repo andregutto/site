@@ -12,7 +12,7 @@ router.get('/', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const { data, error } = await supabaseAdmin
     .from('assets')
-    .select('id, code, name, asset_type, currency, exchange, fi_principal, fi_start_date, fi_type, fi_maturity, asset_classes(id, name, color, icon)')
+    .select('id, code, name, asset_type, currency, exchange, fi_principal, fi_start_date, fi_type, fi_maturity, asset_classes(id, name, color)')
     .eq('user_id', userId)
     .eq('active', true)
     .order('code')

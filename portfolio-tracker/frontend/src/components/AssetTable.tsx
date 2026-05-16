@@ -28,6 +28,24 @@ function fmtNumber(v: number, decimals = 4) {
   return new Intl.NumberFormat('pt-BR', { maximumFractionDigits: decimals }).format(v)
 }
 
+const CLASS_ICON_MAP: [RegExp, string][] = [
+  [/ações?\s*brasil|brazil|b3/i,        '📊'],
+  [/ações?\s*exterior|eua|usa|intl|internacional/i, '🌍'],
+  [/fii|imobiliário|imobiliario/i,      '🏢'],
+  [/cripto|crypto|bitcoin/i,            '🪙'],
+  [/renda\s*fixa|fixed|tesouro|cdb|lci|lca/i, '🏦'],
+  [/previdên|previdencia|pgbl|vgbl/i,   '🛡️'],
+  [/imóveis|imoveis|real\s*estate/i,    '🏠'],
+  [/commodit/i,                          '🛢️'],
+  [/etf/i,                               '📊'],
+  [/caixa|cash/i,                        '💰'],
+]
+
+function inferIcon(name: string): string | null {
+  for (const [re, icon] of CLASS_ICON_MAP) if (re.test(name)) return icon
+  return null
+}
+
 function ChevronIcon({ open }: { open: boolean }) {
   return (
     <svg
@@ -246,14 +264,12 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <ChevronIcon open={isOpen} />
-                        {group.assets[0]?.class_icon ? (
-                          <span className="text-base leading-none shrink-0">{group.assets[0].class_icon}</span>
-                        ) : (
-                          <span
-                            className="w-3 h-3 rounded-full shrink-0"
-                            style={{ backgroundColor: group.color }}
-                          />
-                        )}
+                        {(() => {
+                          const icon = group.assets[0]?.class_icon ?? inferIcon(group.name)
+                          return icon
+                            ? <span className="text-base leading-none shrink-0">{icon}</span>
+                            : <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: group.color }} />
+                        })()}
                         <span className="font-bold text-gray-900 text-base tracking-tight">{group.name}</span>
                         <span className="text-xs text-gray-400 font-normal">
                           {group.assets.length} {group.assets.length === 1 ? d.asset : d.assets}

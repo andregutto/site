@@ -17,6 +17,7 @@ export default function AppLayout() {
   const { t } = useI18n()
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [showUserMenu, setShowUserMenu] = useState(false)
+  const [showMoreSheet, setShowMoreSheet] = useState(false)
   const userMenuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -152,33 +153,85 @@ export default function AppLayout() {
           </div>
         </div>
 
-        {/* Mobile nav */}
-        <nav className="sm:hidden flex border-t border-gray-100">
-          {navItems.map(({ to, label, icon, end }) => (
+      </header>
+
+      <main className="flex-1 max-w-6xl mx-auto w-full px-4 py-6 pb-24 sm:pb-6">
+        <Outlet />
+      </main>
+
+      <div className="hidden sm:block max-w-6xl mx-auto w-full px-4 pb-2">
+        <LoginFooter />
+      </div>
+
+      {/* Mobile bottom navigation bar */}
+      <nav className="sm:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 z-20 safe-bottom">
+        <div className="flex">
+          {[
+            { to: '/',               label: t.nav.dashboard,    icon: '▦', end: true  },
+            { to: '/performance',    label: t.nav.performance,  icon: '↗', end: false },
+            { to: '/contributions',  label: t.nav.contributions,icon: '⊕', end: false },
+            { to: '/by-institution', label: t.nav.institutions, icon: '⊟', end: false },
+          ].map(({ to, label, icon, end }) => (
             <NavLink
               key={to}
               to={to}
               end={end}
               className={({ isActive }) =>
-                `flex-1 py-2.5 text-xs font-medium flex flex-col items-center gap-0.5 transition-colors ${
+                `flex-1 py-2.5 flex flex-col items-center gap-0.5 transition-colors text-[11px] font-medium leading-tight ${
                   isActive ? 'text-[#001A70]' : 'text-gray-400'
                 }`
               }
             >
-              <span>{icon}</span>
-              {label}
+              <span className="text-base leading-none">{icon}</span>
+              <span className="truncate w-full text-center px-0.5">{label}</span>
             </NavLink>
           ))}
-        </nav>
-      </header>
+          <button
+            onClick={() => setShowMoreSheet(true)}
+            className="flex-1 py-2.5 flex flex-col items-center gap-0.5 text-gray-400 text-[11px] font-medium leading-tight"
+          >
+            <span className="text-base leading-none">≡</span>
+            <span>Mais</span>
+          </button>
+        </div>
+      </nav>
 
-      <main className="flex-1 max-w-6xl mx-auto w-full px-4 py-6">
-        <Outlet />
-      </main>
-
-      <div className="max-w-6xl mx-auto w-full px-4 pb-2">
-        <LoginFooter />
-      </div>
+      {/* "Mais" bottom sheet */}
+      {showMoreSheet && (
+        <div
+          className="sm:hidden fixed inset-0 z-30 bg-black/40"
+          onClick={() => setShowMoreSheet(false)}
+        >
+          <div
+            className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl pt-4 pb-8 px-6"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-5" />
+            <div className="grid grid-cols-4 gap-3">
+              {[
+                { to: '/rebalance', label: t.nav.rebalance,  icon: '⇌' },
+                { to: '/classes',   label: t.nav.classes,    icon: '◈' },
+                { to: '/reports',   label: t.nav.ir,         icon: '⊞' },
+                { to: '/indices',   label: t.nav.indices,    icon: '◎' },
+              ].map(({ to, label, icon }) => (
+                <NavLink
+                  key={to}
+                  to={to}
+                  onClick={() => setShowMoreSheet(false)}
+                  className={({ isActive }) =>
+                    `flex flex-col items-center gap-1.5 py-3 rounded-2xl transition-colors ${
+                      isActive ? 'bg-[#001A70]/10 text-[#001A70]' : 'text-gray-500 bg-gray-50'
+                    }`
+                  }
+                >
+                  <span className="text-xl leading-none">{icon}</span>
+                  <span className="text-[11px] font-medium">{label}</span>
+                </NavLink>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {showOnboarding && (
         <OnboardingOverlay onDone={() => setShowOnboarding(false)} />
