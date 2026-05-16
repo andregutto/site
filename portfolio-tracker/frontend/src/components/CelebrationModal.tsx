@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import type { AchievementDef } from '../lib/achievementDefs'
+import { useI18n } from '../contexts/I18nContext'
 import Medal from './Medal'
 
 interface Props {
@@ -36,6 +37,7 @@ function createParticle(container: HTMLDivElement) {
 }
 
 export default function CelebrationModal({ def, onClose }: Props) {
+  const { t } = useI18n()
   const confettiRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -74,7 +76,7 @@ export default function CelebrationModal({ def, onClose }: Props) {
         className="relative bg-[#0A0F1E] border border-[#C9A227]/30 rounded-3xl px-10 py-10 text-center shadow-2xl"
         style={{ maxWidth: 360, animation: 'celebration-pop 0.5s ease-out forwards' }}
       >
-        <p className="text-[#C9A227] text-xs font-bold uppercase tracking-widest mb-4">Conquista desbloqueada!</p>
+        <p className="text-[#C9A227] text-xs font-bold uppercase tracking-widest mb-4">{t.achievements.unlocked}</p>
 
         <div style={{ animation: 'medal-spin 1s ease-out forwards', display: 'inline-block' }}>
           <Medal def={def} earned animate size={120} />
@@ -85,14 +87,14 @@ export default function CelebrationModal({ def, onClose }: Props) {
 
         <div className="mt-4 inline-flex items-center gap-2 bg-[#C9A227]/10 border border-[#C9A227]/30 rounded-full px-4 py-1.5">
           <span className="text-[#C9A227] font-bold text-lg">+{def.xp}</span>
-          <span className="text-gray-400 text-sm">XP</span>
+          <span className="text-gray-400 text-sm">{t.achievements.xp}</span>
         </div>
 
         <button
           onClick={onClose}
           className="mt-6 w-full bg-[#C9A227] hover:bg-[#b8911f] text-black font-bold py-2.5 rounded-xl transition-colors"
         >
-          Incrível!
+          {t.achievements.amazing}
         </button>
       </div>
     </div>

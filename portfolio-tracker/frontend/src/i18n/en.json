@@ -214,5 +214,19 @@
     "doneTitle": "All set!",
     "doneBody": "Your portfolio is configured. Add assets and contributions from the Contributions tab at any time.",
     "gotoDashboard": "Go to Dashboard"
+  },
+  "achievements": {
+    "title":         "Achievements",
+    "subtitle":      "unlocked",
+    "of":            "of",
+    "currentLevel":  "Current level",
+    "nextLevel":     "Next",
+    "maxLevel":      "Max level!",
+    "xp":            "XP",
+    "checking":      "Checking...",
+    "preview":       "See example",
+    "locked":        "Locked",
+    "unlocked":      "Achievement unlocked!",
+    "amazing":       "Amazing!"
   }
 }

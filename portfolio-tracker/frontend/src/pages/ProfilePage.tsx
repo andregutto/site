@@ -4,6 +4,7 @@ import { apiFetch } from '../lib/api'
 import { useAuth } from '../contexts/AuthContext'
 import { useCurrency, type Currency } from '../contexts/CurrencyContext'
 import { useAchievementContext } from '../contexts/AchievementContext'
+import { useI18n } from '../contexts/I18nContext'
 import { getLevel, getNextLevel, getLevelProgress, ACHIEVEMENT_DEFS } from '../lib/achievementDefs'
 import LanguageSelector from '../components/LanguageSelector'
 import { supabase } from '../lib/supabase'
@@ -70,6 +71,7 @@ export default function ProfilePage() {
   const { user } = useAuth()
   const { currency, setCurrency } = useCurrency()
   const { totalXp, earnedKeys, triggerCheck } = useAchievementContext()
+  const { t } = useI18n()
   const level = getLevel(totalXp)
   const nextLevel = getNextLevel(totalXp)
   const levelProgress = getLevelProgress(totalXp)
@@ -179,11 +181,11 @@ export default function ProfilePage() {
 
   return (
     <div className="max-w-lg mx-auto space-y-6">
-      <h1 className="text-xl font-bold text-gray-900">Perfil</h1>
+      <h1 className="text-xl font-bold text-gray-900">{t.profile.title}</h1>
 
       {loading ? (
         <div className="bg-white border border-gray-100 rounded-2xl p-8 text-center text-gray-400 text-sm">
-          Carregando...
+          {t.common.loading}
         </div>
       ) : (
         <>
@@ -229,7 +231,7 @@ export default function ProfilePage() {
                 onClick={() => fileInputRef.current?.click()}
                 className="text-xs text-[#001A70] hover:underline mt-0.5"
               >
-                {avatarUrl ? 'Trocar foto' : 'Adicionar foto'}
+                {avatarUrl ? t.profile.changePhoto : t.profile.addPhoto}
               </button>
             </div>
           </div>
@@ -240,26 +242,26 @@ export default function ProfilePage() {
               <div className="flex items-center gap-2">
                 <span className="text-2xl">{level.emoji}</span>
                 <div>
-                  <p className="text-[#C9A227] text-xs font-bold uppercase tracking-widest">Nível</p>
+                  <p className="text-[#C9A227] text-xs font-bold uppercase tracking-widest">{t.achievements.currentLevel}</p>
                   <p className="text-white font-bold">{level.name}</p>
                 </div>
               </div>
               <div className="text-right">
-                <p className="text-[#C9A227] font-bold text-xl">{totalXp} XP</p>
-                <p className="text-gray-400 text-xs">{earnedKeys.length}/{ACHIEVEMENT_DEFS.length} conquistas</p>
+                <p className="text-[#C9A227] font-bold text-xl">{totalXp} {t.achievements.xp}</p>
+                <p className="text-gray-400 text-xs">{earnedKeys.length}/{ACHIEVEMENT_DEFS.length} {t.achievements.subtitle}</p>
               </div>
             </div>
             <div className="h-2 bg-white/10 rounded-full overflow-hidden">
               <div className="h-full rounded-full bg-gradient-to-r from-[#2563EB] to-[#C9A227] transition-all duration-700" style={{ width: `${levelProgress}%` }} />
             </div>
             {nextLevel && (
-              <p className="text-gray-400 text-xs mt-2">Próximo: {nextLevel.emoji} {nextLevel.name} ({nextLevel.minXp} XP)</p>
+              <p className="text-gray-400 text-xs mt-2">{t.achievements.nextLevel}: {nextLevel.emoji} {nextLevel.name} ({nextLevel.minXp} {t.achievements.xp})</p>
             )}
           </Link>
 
           {/* Dados pessoais */}
           <form onSubmit={handleSave} className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm space-y-4">
-            <h2 className="font-semibold text-gray-800">Dados pessoais</h2>
+            <h2 className="font-semibold text-gray-800">{t.profile.personalData}</h2>
 
             <div>
               <label className="block text-xs text-gray-500 mb-1">E-mail (somente leitura)</label>

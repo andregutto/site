@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import type { AchievementDef } from '../lib/achievementDefs'
+import { useI18n } from '../contexts/I18nContext'
 import Medal from './Medal'
 
 interface Props {
@@ -8,9 +9,10 @@ interface Props {
 }
 
 export default function AchievementToast({ def, onClose }: Props) {
+  const { t } = useI18n()
   useEffect(() => {
-    const t = setTimeout(onClose, 4000)
-    return () => clearTimeout(t)
+    const timer = setTimeout(onClose, 4000)
+    return () => clearTimeout(timer)
   }, [onClose])
 
   return (
@@ -20,9 +22,9 @@ export default function AchievementToast({ def, onClose }: Props) {
     >
       <Medal def={def} earned size={52} />
       <div>
-        <p className="text-xs text-[#C9A227] font-semibold uppercase tracking-widest">Conquista desbloqueada!</p>
+        <p className="text-xs text-[#C9A227] font-semibold uppercase tracking-widest">{t.achievements.unlocked}</p>
         <p className="text-white font-bold text-sm">{def.name}</p>
-        <p className="text-gray-400 text-xs">{def.description} · +{def.xp} XP</p>
+        <p className="text-gray-400 text-xs">{def.description} · +{def.xp} {t.achievements.xp}</p>
       </div>
       <button onClick={onClose} className="ml-auto text-gray-500 hover:text-white text-lg leading-none">×</button>
     </div>

@@ -13,7 +13,7 @@ export function useAchievements() {
 
   const reload = useCallback(async () => {
     try {
-      const data = await apiFetch<EarnedAchievement[]>('/api/achievements')
+      const data = await apiFetch<EarnedAchievement[]>('/achievements')
       setEarned(data)
     } catch {
       // ignore
@@ -29,7 +29,7 @@ export function useAchievements() {
 
   const checkAchievements = useCallback(async (total_brl?: number): Promise<string[]> => {
     try {
-      const res = await apiFetch<{ newly_earned: string[] }>('/api/achievements/check', {
+      const res = await apiFetch<{ newly_earned: string[] }>('/achievements/check', {
         method: 'POST',
         body: JSON.stringify({ total_brl }),
       })

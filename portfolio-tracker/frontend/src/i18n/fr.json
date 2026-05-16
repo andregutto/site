@@ -214,5 +214,19 @@
     "doneTitle": "Tout est prêt !",
     "doneBody": "Votre portefeuille est configuré. Ajoutez des actifs et des apports depuis l'onglet Apports à tout moment.",
     "gotoDashboard": "Aller au tableau de bord"
+  },
+  "achievements": {
+    "title":         "Succès",
+    "subtitle":      "débloqués",
+    "of":            "sur",
+    "currentLevel":  "Niveau actuel",
+    "nextLevel":     "Prochain",
+    "maxLevel":      "Niveau maximum !",
+    "xp":            "XP",
+    "checking":      "Vérification...",
+    "preview":       "Voir un exemple",
+    "locked":        "Verrouillé",
+    "unlocked":      "Succès débloqué !",
+    "amazing":       "Incroyable !"
   }
 }

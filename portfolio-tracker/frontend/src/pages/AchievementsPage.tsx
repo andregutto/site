@@ -2,6 +2,7 @@ import { useMemo, useEffect, useState } from 'react'
 import { ACHIEVEMENT_DEFS, LEVELS, getLevel, getNextLevel, getLevelProgress } from '../lib/achievementDefs'
 import { useAchievementContext } from '../contexts/AchievementContext'
 import { usePortfolioValue } from '../hooks/usePortfolio'
+import { useI18n } from '../contexts/I18nContext'
 import Medal from '../components/Medal'
 import CelebrationModal from '../components/CelebrationModal'
 
@@ -10,6 +11,7 @@ export default function AchievementsPage() {
   const { data: portfolio } = usePortfolioValue()
   const [checking, setChecking] = useState(false)
   const [preview, setPreview] = useState(false)
+  const { t } = useI18n()
 
   const level = getLevel(totalXp)
   const nextLevel = getNextLevel(totalXp)
@@ -34,21 +36,21 @@ export default function AchievementsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-gray-900">Conquistas</h1>
-          <p className="text-sm text-gray-500 mt-0.5">{earnedKeys.length} de {ACHIEVEMENT_DEFS.length} desbloqueadas</p>
+          <h1 className="text-xl font-bold text-gray-900">{t.achievements.title}</h1>
+          <p className="text-sm text-gray-500 mt-0.5">{earnedKeys.length} {t.achievements.of} {ACHIEVEMENT_DEFS.length} {t.achievements.subtitle}</p>
         </div>
-          <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3">
           {(loading || checking) && (
             <div className="flex items-center gap-2 text-sm text-gray-400">
               <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-[#001A70]" />
-              Verificando...
+              {t.achievements.checking}
             </div>
           )}
           <button
             onClick={() => setPreview(true)}
             className="text-xs text-gray-400 hover:text-[#001A70] border border-gray-200 hover:border-[#001A70]/30 rounded-lg px-3 py-1.5 transition-colors"
           >
-            Ver exemplo
+            {t.achievements.preview}
           </button>
         </div>
       </div>
@@ -59,7 +61,7 @@ export default function AchievementsPage() {
           <div className="flex items-center gap-2">
             <span className="text-3xl">{level.emoji}</span>
             <div>
-              <p className="text-[#C9A227] text-xs font-bold uppercase tracking-widest">Nível atual</p>
+              <p className="text-[#C9A227] text-xs font-bold uppercase tracking-widest">{t.achievements.currentLevel}</p>
               <p className="text-white font-bold text-lg">{level.name}</p>
             </div>
           </div>
@@ -79,8 +81,8 @@ export default function AchievementsPage() {
         <div className="flex justify-between mt-2 text-xs text-gray-400">
           <span>{level.minXp} XP</span>
           {nextLevel
-            ? <span>Próximo: {nextLevel.emoji} {nextLevel.name} · {nextLevel.minXp} XP</span>
-            : <span className="text-[#D4AF37]">Nível máximo!</span>
+            ? <span>{t.achievements.nextLevel}: {nextLevel.emoji} {nextLevel.name} · {nextLevel.minXp} {t.achievements.xp}</span>
+            : <span className="text-[#D4AF37]">{t.achievements.maxLevel}</span>
           }
         </div>
       </div>
@@ -135,15 +137,15 @@ export default function AchievementsPage() {
 
               {isEarned ? (
                 <div className="mt-2 flex items-center gap-1 flex-wrap justify-center">
-                  <span className="text-[#C9A227] text-xs font-bold">+{def.xp} XP</span>
+                  <span className="text-[#C9A227] text-xs font-bold">+{def.xp} {t.achievements.xp}</span>
                   {earnedAt && (
                     <span className="text-gray-400 text-xs">
-                      · {new Date(earnedAt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
+                      · {new Date(earnedAt).toLocaleDateString(undefined, { day: '2-digit', month: 'short' })}
                     </span>
                   )}
                 </div>
               ) : (
-                <span className="mt-2 text-gray-400 text-xs">🔒 {def.xp} XP</span>
+                <span className="mt-2 text-gray-400 text-xs">🔒 {def.xp} {t.achievements.xp}</span>
               )}
             </div>
           )

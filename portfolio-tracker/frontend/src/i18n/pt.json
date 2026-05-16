@@ -214,5 +214,19 @@
     "doneTitle": "Tudo pronto!",
     "doneBody": "Seu portfólio está configurado. Adicione ativos e aportes pela aba Aportes a qualquer momento.",
     "gotoDashboard": "Ir para o Dashboard"
+  },
+  "achievements": {
+    "title":         "Conquistas",
+    "subtitle":      "desbloqueadas",
+    "of":            "de",
+    "currentLevel":  "Nível atual",
+    "nextLevel":     "Próximo",
+    "maxLevel":      "Nível máximo!",
+    "xp":            "XP",
+    "checking":      "Verificando...",
+    "preview":       "Ver exemplo",
+    "locked":        "Bloqueado",
+    "unlocked":      "Conquista desbloqueada!",
+    "amazing":       "Incrível!"
   }
 }
