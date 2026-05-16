@@ -1,13 +1,25 @@
-import { useMemo } from 'react'
+import { useMemo, useEffect, useState } from 'react'
 import { ACHIEVEMENT_DEFS, LEVELS, getLevel, getNextLevel, getLevelProgress } from '../lib/achievementDefs'
 import { useAchievementContext } from '../contexts/AchievementContext'
+import { usePortfolioValue } from '../hooks/usePortfolio'
 import Medal from '../components/Medal'
 
 export default function AchievementsPage() {
-  const { earned, earnedKeys, totalXp, loading } = useAchievementContext()
+  const { earned, earnedKeys, totalXp, loading, triggerCheck } = useAchievementContext()
+  const { data: portfolio } = usePortfolioValue()
+  const [checking, setChecking] = useState(false)
+
   const level = getLevel(totalXp)
   const nextLevel = getNextLevel(totalXp)
   const progress = getLevelProgress(totalXp)
+
+  // Auto-check on mount once portfolio value is available
+  useEffect(() => {
+    if (portfolio?.total_brl == null) return
+    setChecking(true)
+    triggerCheck(portfolio.total_brl).finally(() => setChecking(false))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [portfolio?.total_brl])
 
   const earnedMap = useMemo(() => {
     const m: Record<string, string> = {}
@@ -15,76 +27,81 @@ export default function AchievementsPage() {
     return m
   }, [earned])
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-[#020817]">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-[#C9A227]" />
-      </div>
-    )
-  }
-
   return (
-    <div className="min-h-screen bg-[#020817] pb-16">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="bg-gradient-to-b from-[#0A0F1E] to-transparent px-6 pt-8 pb-6">
-        <h1 className="text-2xl font-bold text-white mb-1">Conquistas</h1>
-        <p className="text-gray-400 text-sm">{earnedKeys.length} de {ACHIEVEMENT_DEFS.length} desbloqueadas</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-bold text-gray-900">Conquistas</h1>
+          <p className="text-sm text-gray-500 mt-0.5">{earnedKeys.length} de {ACHIEVEMENT_DEFS.length} desbloqueadas</p>
+        </div>
+        {(loading || checking) && (
+          <div className="flex items-center gap-2 text-sm text-gray-400">
+            <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-[#001A70]" />
+            Verificando...
+          </div>
+        )}
+      </div>
 
-        {/* Level card */}
-        <div className="mt-5 bg-[#0A0F1E] border border-white/10 rounded-2xl p-5">
-          <div className="flex items-center justify-between mb-3">
+      {/* Level card */}
+      <div className="bg-gradient-to-br from-[#0A0F1E] to-[#001A70] rounded-2xl p-5 shadow-sm">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <span className="text-3xl">{level.emoji}</span>
             <div>
-              <span className="text-2xl mr-2">{level.emoji}</span>
-              <span className="text-white font-bold text-lg">{level.name}</span>
-            </div>
-            <div className="text-right">
-              <span className="text-[#C9A227] font-bold text-xl">{totalXp}</span>
-              <span className="text-gray-500 text-sm"> XP</span>
+              <p className="text-[#C9A227] text-xs font-bold uppercase tracking-widest">Nível atual</p>
+              <p className="text-white font-bold text-lg">{level.name}</p>
             </div>
           </div>
+          <div className="text-right">
+            <span className="text-[#C9A227] font-bold text-2xl">{totalXp}</span>
+            <span className="text-gray-400 text-sm"> XP</span>
+          </div>
+        </div>
 
-          <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+        <div className="h-2.5 bg-white/10 rounded-full overflow-hidden">
+          <div
+            className="h-full rounded-full transition-all duration-700"
+            style={{ width: `${progress}%`, background: 'linear-gradient(90deg, #2563EB, #C9A227)' }}
+          />
+        </div>
+
+        <div className="flex justify-between mt-2 text-xs text-gray-400">
+          <span>{level.minXp} XP</span>
+          {nextLevel
+            ? <span>Próximo: {nextLevel.emoji} {nextLevel.name} · {nextLevel.minXp} XP</span>
+            : <span className="text-[#D4AF37]">Nível máximo!</span>
+          }
+        </div>
+      </div>
+
+      {/* Level ladder */}
+      <div className="flex gap-2">
+        {LEVELS.map(l => {
+          const idx = LEVELS.indexOf(l)
+          const curIdx = LEVELS.indexOf(level)
+          const isActive = l.name === level.name
+          const isPast = idx < curIdx
+          return (
             <div
-              className="h-full rounded-full transition-all duration-700"
-              style={{ width: `${progress}%`, background: `linear-gradient(90deg, ${level.name === 'Liberdade' ? '#D4AF37, #FFD700' : '#2563EB, #C9A227'})` }}
-            />
-          </div>
-
-          <div className="flex justify-between mt-2 text-xs text-gray-500">
-            <span>{level.minXp} XP</span>
-            {nextLevel
-              ? <span>Próximo: {nextLevel.emoji} {nextLevel.name} ({nextLevel.minXp} XP)</span>
-              : <span className="text-[#D4AF37]">Nível máximo!</span>
-            }
-          </div>
-        </div>
-
-        {/* Level ladder */}
-        <div className="mt-4 flex gap-2">
-          {LEVELS.map(l => {
-            const isActive = l.name === level.name
-            const isPast = LEVELS.indexOf(l) < LEVELS.indexOf(level)
-            return (
-              <div
-                key={l.name}
-                className={`flex-1 rounded-lg py-2 text-center text-xs font-medium border transition-all ${
-                  isActive
-                    ? 'border-[#C9A227] bg-[#C9A227]/10 text-[#C9A227]'
-                    : isPast
-                    ? 'border-green-700/40 bg-green-900/10 text-green-400'
-                    : 'border-white/5 bg-white/3 text-gray-600'
-                }`}
-              >
-                <div className="text-base">{l.emoji}</div>
-                <div className="truncate px-1">{l.name}</div>
-              </div>
-            )
-          })}
-        </div>
+              key={l.name}
+              className={`flex-1 rounded-xl py-2.5 text-center text-xs font-medium border transition-all ${
+                isActive
+                  ? 'border-[#001A70] bg-[#001A70]/10 text-[#001A70]'
+                  : isPast
+                  ? 'border-green-200 bg-green-50 text-green-700'
+                  : 'border-gray-100 bg-gray-50 text-gray-400'
+              }`}
+            >
+              <div className="text-base">{l.emoji}</div>
+              <div className="truncate px-1 mt-0.5">{l.name}</div>
+            </div>
+          )
+        })}
       </div>
 
       {/* Achievements grid */}
-      <div className="px-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 mt-2">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
         {ACHIEVEMENT_DEFS.map(def => {
           const isEarned = earnedKeys.includes(def.key)
           const earnedAt = earnedMap[def.key]
@@ -93,32 +110,30 @@ export default function AchievementsPage() {
               key={def.key}
               className={`rounded-2xl border p-4 flex flex-col items-center text-center transition-all ${
                 isEarned
-                  ? 'border-white/20 bg-[#0A0F1E]'
-                  : 'border-white/5 bg-[#0A0F1E]/40'
+                  ? 'border-gray-200 bg-white shadow-sm'
+                  : 'border-gray-100 bg-gray-50'
               }`}
             >
               <Medal def={def} earned={isEarned} size={80} />
 
-              <p className={`mt-3 text-sm font-bold leading-tight ${isEarned ? 'text-white' : 'text-gray-600'}`}>
+              <p className={`mt-3 text-sm font-bold leading-tight ${isEarned ? 'text-gray-900' : 'text-gray-400'}`}>
                 {def.name}
               </p>
-              <p className={`mt-1 text-xs leading-snug ${isEarned ? 'text-gray-400' : 'text-gray-700'}`}>
+              <p className={`mt-1 text-xs leading-snug ${isEarned ? 'text-gray-500' : 'text-gray-400'}`}>
                 {def.description}
               </p>
 
               {isEarned ? (
-                <div className="mt-2 flex items-center gap-1">
+                <div className="mt-2 flex items-center gap-1 flex-wrap justify-center">
                   <span className="text-[#C9A227] text-xs font-bold">+{def.xp} XP</span>
                   {earnedAt && (
-                    <span className="text-gray-600 text-xs">
+                    <span className="text-gray-400 text-xs">
                       · {new Date(earnedAt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
                     </span>
                   )}
                 </div>
               ) : (
-                <div className="mt-2 flex items-center gap-1">
-                  <span className="text-gray-700 text-xs">🔒 {def.xp} XP</span>
-                </div>
+                <span className="mt-2 text-gray-400 text-xs">🔒 {def.xp} XP</span>
               )}
             </div>
           )
