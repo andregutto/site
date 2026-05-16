@@ -539,10 +539,26 @@ router.get('/benchmarks', requireAuth, async (req, res: Response) => {
     const p1 = `${fromY}-${String(fromM).padStart(2, '0')}-01`
     const p2 = today < `${toY}-${String(toM).padStart(2, '0')}-28` ? today : `${toY}-${String(toM).padStart(2, '0')}-28`
     const rows = await yf.historical(ticker, { period1: p1, period2: p2, interval: '1mo' })
-    return rows.map(r => ({
+    const pts = rows.map(r => ({
       ym:    localYM(r.date),
       price: r.close ?? r.adjClose ?? 0,
     })).filter(r => r.ym >= fromStr && r.ym <= toStr)
+
+    if (todayYM <= toStr) {
+      try {
+        const d2ago = localDate(new Date(Date.now() - 2 * 86400000))
+        const daily = await yf.historical(ticker, { period1: d2ago, period2: today, interval: '1d' })
+        if (daily.length > 0) {
+          const latestClose = daily[daily.length - 1].close ?? daily[daily.length - 1].adjClose
+          if (latestClose) {
+            const idx = pts.findIndex(p => p.ym === todayYM)
+            if (idx >= 0) pts[idx].price = latestClose
+            else pts.push({ ym: todayYM, price: latestClose })
+          }
+        }
+      } catch { /* fall back to monthly bar */ }
+    }
+    return pts
   }
 
   let ibovPct: number | null = null
