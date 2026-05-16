@@ -1,0 +1,64 @@
+export interface AchievementDef {
+  key: string
+  name: string
+  description: string
+  xp: number
+  gradient: [string, string]
+  ringColor: string
+}
+
+export const ACHIEVEMENT_DEFS: AchievementDef[] = [
+  { key: 'first_step',     name: 'Primeiro Passo',       description: 'Criar conta',                              xp: 10,  gradient: ['#001A70','#C9A227'], ringColor: '#C9A227' },
+  { key: 'identity',       name: 'Identidade',           description: 'Completar perfil',                         xp: 15,  gradient: ['#4C1D95','#2563EB'], ringColor: '#818CF8' },
+  { key: 'first_seed',     name: 'Primeira Semente',     description: 'Registrar primeiro aporte',                xp: 20,  gradient: ['#064E3B','#34D399'], ringColor: '#6EE7B7' },
+  { key: 'global_roots',   name: 'Raízes Globais',       description: 'Ter ativo em moeda estrangeira',           xp: 25,  gradient: ['#0C4A6E','#F59E0B'], ringColor: '#FCD34D' },
+  { key: 'builder',        name: 'Construtor',           description: 'Patrimônio acima de R$ 10.000',            xp: 30,  gradient: ['#92400E','#F59E0B'], ringColor: '#FCD34D' },
+  { key: 'five_digits',    name: 'Cinco Dígitos',        description: 'Patrimônio acima de R$ 100.000',           xp: 50,  gradient: ['#1E3A5F','#06B6D4'], ringColor: '#67E8F9' },
+  { key: 'six_digits',     name: 'Seis Dígitos',         description: 'Patrimônio acima de R$ 500.000',           xp: 75,  gradient: ['#2E1065','#C9A227'], ringColor: '#E2C17A' },
+  { key: 'million_club',   name: 'Clube do Milhão',      description: 'Patrimônio acima de R$ 1.000.000',         xp: 150, gradient: ['#1C1917','#D4AF37'], ringColor: '#D4AF37' },
+  { key: 'diversified',    name: 'Diversificado',        description: 'Ativos em 3 classes diferentes',           xp: 30,  gradient: ['#1E1B4B','#DB2777'], ringColor: '#F472B6' },
+  { key: 'crypto_native',  name: 'Crypto Nativo',        description: 'Ter cripto na carteira',                   xp: 20,  gradient: ['#18181B','#D97706'], ringColor: '#FCD34D' },
+  { key: 'global_investor',name: 'Investidor Global',    description: 'Ativos em 3 moedas/países diferentes',     xp: 35,  gradient: ['#075985','#7DD3FC'], ringColor: '#BAE6FD' },
+  { key: 'expat',          name: 'Expatriado',           description: 'Contas em 2 moedas diferentes',            xp: 30,  gradient: ['#14532D','#1D4ED8'], ringColor: '#93C5FD' },
+  { key: 'pension',        name: 'Previdência Garantida',description: 'Ter previdência cadastrada',                xp: 20,  gradient: ['#1E3A5F','#94A3B8'], ringColor: '#CBD5E1' },
+  { key: 'brick_by_brick', name: 'Tijolo por Tijolo',    description: 'Ter imóvel cadastrado',                    xp: 30,  gradient: ['#7C2D12','#D4A574'], ringColor: '#FBBF24' },
+  { key: 'discipline',     name: 'Disciplina',           description: 'Aportes por 3 meses consecutivos',         xp: 40,  gradient: ['#064E3B','#10B981'], ringColor: '#34D399' },
+  { key: 'consistency',    name: 'Consistência',         description: 'Aportes por 6 meses consecutivos',         xp: 60,  gradient: ['#78350F','#F59E0B'], ringColor: '#FCD34D' },
+  { key: 'historian',      name: 'Historiador',          description: '1 ano completo de histórico',              xp: 75,  gradient: ['#44200E','#B45309'], ringColor: '#D97706' },
+  { key: 'balancer',       name: 'Equilibrista',         description: 'Configurar metas de balanceamento',        xp: 20,  gradient: ['#1E3A5F','#64748B'], ringColor: '#94A3B8' },
+  { key: 'tax_citizen',    name: 'Cidadão Fiscal',       description: 'Gerar primeiro relatório de IR',           xp: 40,  gradient: ['#1E3A5F','#B45309'], ringColor: '#D97706' },
+  { key: 'multicurrency',  name: 'Multimoeda',           description: 'Ativos em BRL, EUR e USD',                 xp: 35,  gradient: ['#1E3A5F','#059669'], ringColor: '#34D399' },
+]
+
+export const LEVELS = [
+  { name: 'Semente',    emoji: '🌱', minXp: 0,    maxXp: 100  },
+  { name: 'Crescimento',emoji: '🌿', minXp: 101,  maxXp: 300  },
+  { name: 'Expansão',   emoji: '🌳', minXp: 301,  maxXp: 600  },
+  { name: 'Solidez',    emoji: '🏔️', minXp: 601,  maxXp: 1000 },
+  { name: 'Liberdade',  emoji: '🚀', minXp: 1001, maxXp: Infinity },
+]
+
+export function getLevel(xp: number) {
+  return LEVELS.find(l => xp >= l.minXp && xp <= l.maxXp) ?? LEVELS[0]
+}
+
+export function getNextLevel(xp: number) {
+  const idx = LEVELS.findIndex(l => xp >= l.minXp && xp <= l.maxXp)
+  return idx < LEVELS.length - 1 ? LEVELS[idx + 1] : null
+}
+
+export function getLevelProgress(xp: number): number {
+  const level = getLevel(xp)
+  if (level.maxXp === Infinity) return 100
+  const range = level.maxXp - level.minXp
+  const pos   = xp - level.minXp
+  return Math.min(100, Math.round((pos / range) * 100))
+}
+
+export function getTotalXp(earnedKeys: string[]): number {
+  return ACHIEVEMENT_DEFS
+    .filter(a => earnedKeys.includes(a.key))
+    .reduce((sum, a) => sum + a.xp, 0)
+}
+
+export const ACHIEVEMENT_MAP = Object.fromEntries(ACHIEVEMENT_DEFS.map(a => [a.key, a]))

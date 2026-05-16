@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { usePerformanceSummary, usePerformanceMonthly, usePerformanceBenchmarks, usePortfolioValue } from '../hooks/usePortfolio'
 import { useCurrency } from '../contexts/CurrencyContext'
 import {
@@ -44,6 +45,7 @@ export default function PerformancePage() {
   const currentYear = now.getFullYear()
   const currentYM   = localYM(now)
 
+  const navigate = useNavigate()
   const { convert, currency } = useCurrency()
   const { data: livePortfolio } = usePortfolioValue()
 
@@ -366,16 +368,16 @@ export default function PerformancePage() {
                                   <thead>
                                     <tr className="text-gray-400 border-b border-gray-200">
                                       <th className="py-1.5 text-left font-medium">Ativo</th>
-                                      <th className="py-1.5 text-right font-medium cursor-pointer hover:text-gray-600 select-none" onClick={() => toggleDetailSort('value')}>
+                                      <th className="py-1.5 text-right font-medium cursor-pointer hover:text-gray-600 select-none" onClick={e => { e.stopPropagation(); toggleDetailSort('value') }}>
                                         Valor final <DetailSortIcon col="value" />
                                       </th>
-                                      <th className="py-1.5 text-right font-medium cursor-pointer hover:text-gray-600 select-none" onClick={() => toggleDetailSort('contributions')}>
+                                      <th className="py-1.5 text-right font-medium cursor-pointer hover:text-gray-600 select-none" onClick={e => { e.stopPropagation(); toggleDetailSort('contributions') }}>
                                         Aportes <DetailSortIcon col="contributions" />
                                       </th>
-                                      <th className="py-1.5 text-right font-medium cursor-pointer hover:text-gray-600 select-none" onClick={() => toggleDetailSort('gain')}>
+                                      <th className="py-1.5 text-right font-medium cursor-pointer hover:text-gray-600 select-none" onClick={e => { e.stopPropagation(); toggleDetailSort('gain') }}>
                                         Ganho/Perda <DetailSortIcon col="gain" />
                                       </th>
-                                      <th className="py-1.5 text-right font-medium cursor-pointer hover:text-gray-600 select-none" onClick={() => toggleDetailSort('pct')}>
+                                      <th className="py-1.5 text-right font-medium cursor-pointer hover:text-gray-600 select-none" onClick={e => { e.stopPropagation(); toggleDetailSort('pct') }}>
                                         % <DetailSortIcon col="pct" />
                                       </th>
                                     </tr>
@@ -403,9 +405,13 @@ export default function PerformancePage() {
                                         const denom = d.prev_value + 0.5 * d.contributions
                                         const gainPct = hasGainData && denom > 0 ? (d.gain / denom) * 100 : null
                                         return (
-                                          <tr key={d.asset_id}>
+                                          <tr
+                                            key={d.asset_id}
+                                            onClick={() => navigate(`/assets/${d.asset_id}`)}
+                                            className="cursor-pointer hover:bg-[#001A70]/5 transition-colors rounded"
+                                          >
                                             <td className="py-1.5 text-gray-700">
-                                              <span className="font-semibold">{d.code}</span>
+                                              <span className="font-semibold hover:text-[#001A70] transition-colors">{d.code}</span>
                                               {d.name && d.name !== d.code && (
                                                 <span className="text-gray-400 ml-1 truncate max-w-[120px] inline-block align-bottom">{d.name}</span>
                                               )}

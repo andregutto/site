@@ -3,6 +3,8 @@ import { NavLink, Outlet, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useCurrency, type Currency } from '../contexts/CurrencyContext'
 import { useI18n } from '../contexts/I18nContext'
+import { useAchievementContext } from '../contexts/AchievementContext'
+import { getLevel, getLevelProgress } from '../lib/achievementDefs'
 import { apiFetch } from '../lib/api'
 import LoginFooter from './LoginFooter'
 import OnboardingOverlay from './OnboardingOverlay'
@@ -15,6 +17,9 @@ export default function AppLayout() {
   const { user, signOut } = useAuth()
   const { currency, setCurrency } = useCurrency()
   const { t } = useI18n()
+  const { totalXp } = useAchievementContext()
+  const level = getLevel(totalXp)
+  const levelProgress = getLevelProgress(totalXp)
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [showMoreSheet, setShowMoreSheet] = useState(false)
@@ -125,7 +130,24 @@ export default function AppLayout() {
                 </svg>
               </button>
               {showUserMenu && (
-                <div className="absolute right-0 top-full mt-2 w-44 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-50">
+                <div className="absolute right-0 top-full mt-2 w-52 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-50">
+                  {/* XP mini-bar */}
+                  <div className="px-4 py-2.5 border-b border-gray-100">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-xs text-gray-500">{level.emoji} {level.name}</span>
+                      <span className="text-xs font-bold text-[#001A70]">{totalXp} XP</span>
+                    </div>
+                    <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                      <div className="h-full bg-gradient-to-r from-[#001A70] to-[#C9A227] rounded-full transition-all" style={{ width: `${levelProgress}%` }} />
+                    </div>
+                  </div>
+                  <Link
+                    to="/achievements"
+                    onClick={() => setShowUserMenu(false)}
+                    className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                  >
+                    <span>🏅</span> Conquistas
+                  </Link>
                   <Link
                     to="/favorites"
                     onClick={() => setShowUserMenu(false)}
@@ -209,10 +231,12 @@ export default function AppLayout() {
             <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-5" />
             <div className="grid grid-cols-4 gap-3">
               {[
-                { to: '/rebalance', label: t.nav.rebalance,  icon: '⇌' },
-                { to: '/classes',   label: t.nav.classes,    icon: '◈' },
-                { to: '/reports',   label: t.nav.ir,         icon: '⊞' },
-                { to: '/indices',   label: t.nav.indices,    icon: '◎' },
+                { to: '/rebalance',    label: t.nav.rebalance,  icon: '⇌' },
+                { to: '/classes',      label: t.nav.classes,    icon: '◈' },
+                { to: '/reports',      label: t.nav.ir,         icon: '⊞' },
+                { to: '/indices',      label: t.nav.indices,    icon: '◎' },
+                { to: '/achievements', label: 'Conquistas',     icon: '🏅' },
+                { to: '/profile',      label: 'Perfil',         icon: '👤' },
               ].map(({ to, label, icon }) => (
                 <NavLink
                   key={to}

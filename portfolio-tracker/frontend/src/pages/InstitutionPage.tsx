@@ -4,6 +4,7 @@ import { usePortfolioValue } from '../hooks/usePortfolio'
 import { useCurrency } from '../contexts/CurrencyContext'
 import { apiFetch } from '../lib/api'
 import InstitutionSelect from '../components/InstitutionSelect'
+import InstitutionLogo from '../components/InstitutionLogo'
 
 export default function InstitutionPage() {
   const { data, loading, refresh } = usePortfolioValue()
@@ -84,16 +85,21 @@ export default function InstitutionPage() {
               onClick={toggle}
               className="w-full px-5 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors text-left"
             >
-              <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <h2 className="font-semibold text-gray-800">{group.name}</h2>
-                  <span className="text-gray-300 text-xs">{isOpen ? '▲' : '▼'}</span>
+              <div className="flex items-center gap-3 min-w-0">
+                {group.name !== 'Sem instituição' && (
+                  <InstitutionLogo name={group.name} size={36} />
+                )}
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <h2 className="font-semibold text-gray-800">{group.name}</h2>
+                    <span className="text-gray-300 text-xs">{isOpen ? '▲' : '▼'}</span>
+                  </div>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    {group.assets.length} ativo{group.assets.length !== 1 ? 's' : ''}
+                    {' · '}
+                    {data.total_brl > 0 ? ((group.total / data.total_brl) * 100).toFixed(1) : '0'}% da carteira
+                  </p>
                 </div>
-                <p className="text-xs text-gray-400 mt-0.5">
-                  {group.assets.length} ativo{group.assets.length !== 1 ? 's' : ''}
-                  {' · '}
-                  {data.total_brl > 0 ? ((group.total / data.total_brl) * 100).toFixed(1) : '0'}% da carteira
-                </p>
               </div>
               <div className="flex items-center gap-3 shrink-0 ml-4">
                 <p className="font-bold text-gray-900">{fmt(group.total)}</p>

@@ -59,13 +59,22 @@ router.get('/lookup', requireAuth, async (req, res: Response) => {
   }
 })
 
+function isColumnMissing(error: { code?: string; message?: string }): boolean {
+  return error.code === '42703' || Boolean(error.message?.includes('does not exist'))
+}
+
 router.get('/classes', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
-  const { data, error } = await supabaseAdmin
+  let { data, error } = await supabaseAdmin
     .from('asset_classes')
     .select('id, name, color, icon')
     .eq('user_id', userId)
     .order('name')
+  if (error && isColumnMissing(error)) {
+    const fb = await supabaseAdmin.from('asset_classes').select('id, name, color').eq('user_id', userId).order('name')
+    data = (fb.data ?? []).map(c => ({ ...c, icon: null })) as typeof data
+    error = fb.error
+  }
   if (error) { res.status(500).json({ error: error.message }); return }
   res.json(data ?? [])
 })
@@ -74,13 +83,21 @@ router.post('/classes', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const { name, color, icon } = req.body as { name: string; color?: string; icon?: string }
   if (!name?.trim()) { res.status(400).json({ error: 'Nome obrigatorio' }); return }
-  const { data, error } = await supabaseAdmin
+  let r = await supabaseAdmin
     .from('asset_classes')
     .insert({ user_id: userId, name: name.trim(), color: color ?? '#6B7280', icon: icon ?? null })
     .select('id, name, color, icon')
     .single()
-  if (error) { res.status(500).json({ error: error.message }); return }
-  res.status(201).json(data)
+  if (r.error && isColumnMissing(r.error)) {
+    const fb = await supabaseAdmin
+      .from('asset_classes')
+      .insert({ user_id: userId, name: name.trim(), color: color ?? '#6B7280' })
+      .select('id, name, color')
+      .single()
+    r = { data: fb.data ? { ...fb.data, icon: null } : null, error: fb.error } as typeof r
+  }
+  if (r.error) { res.status(500).json({ error: r.error.message }); return }
+  res.status(201).json(r.data)
 })
 
 router.patch('/classes/:id', requireAuth, async (req, res: Response) => {
@@ -92,11 +109,13 @@ router.patch('/classes/:id', requireAuth, async (req, res: Response) => {
   if (color) updates.color = color
   if (icon !== undefined) updates.icon = icon
   if (!Object.keys(updates).length) { res.status(400).json({ error: 'Nada para atualizar' }); return }
-  const { error } = await supabaseAdmin
-    .from('asset_classes')
-    .update(updates)
-    .eq('id', classId)
-    .eq('user_id', userId)
+  let { error } = await supabaseAdmin.from('asset_classes').update(updates).eq('id', classId).eq('user_id', userId)
+  if (error && isColumnMissing(error)) {
+    const { icon: _i, ...rest } = updates
+    error = Object.keys(rest).length
+      ? (await supabaseAdmin.from('asset_classes').update(rest).eq('id', classId).eq('user_id', userId)).error
+      : null
+  }
   if (error) { res.status(500).json({ error: error.message }); return }
   res.json({ ok: true })
 })
@@ -307,7 +326,7 @@ router.delete('/:id/manual-value/:valueId', requireAuth, async (req, res: Respon
   res.json({ ok: true })
 })
 
-const PATCHABLE = ['fi_principal', 'fi_start_date', 'fi_type', 'fi_rate', 'fi_spread', 'fi_maturity', 'exchange', 'name', 'notes', 'asset_class_id'] as const
+const PATCHABLE = ['fi_principal', 'fi_start_date', 'fi_type', 'fi_rate', 'fi_spread', 'fi_maturity', 'exchange', 'name', 'notes', 'asset_class_id', 'sector'] as const
 router.patch('/:id', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const assetId = Number(req.params.id)
@@ -670,6 +689,7 @@ router.get('/:id/detail', requireAuth, async (req, res: Response) => {
     asset_type:    asset.asset_type,
     currency:      asset.currency,
     exchange:      asset.exchange ?? null,
+    sector:        asset.sector ?? null,
     class_name:    cls?.name ?? 'Sem classe',
     class_color:   cls?.color ?? '#6B7280',
     fi_type:       asset.fi_type ?? null,

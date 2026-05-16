@@ -70,6 +70,9 @@ export default function AssetDetailPage() {
   const [editingInstitution, setEditingInstitution] = useState(false)
   const [institutionValue,   setInstitutionValue]   = useState('')
   const [savingInstitution,  setSavingInstitution]  = useState(false)
+  const [editingSector,      setEditingSector]      = useState(false)
+  const [sectorValue,        setSectorValue]        = useState('')
+  const [savingSector,       setSavingSector]       = useState(false)
   const [showMigrateModal,   setShowMigrateModal]   = useState(false)
   const [showManualModal,    setShowManualModal]    = useState(false)
   const [manualValueHistory, setManualValueHistory] = useState<ManualValue[]>([])
@@ -98,6 +101,21 @@ export default function AssetDetailPage() {
       setManualValueHistory(h => h.filter(v => v.id !== valueId))
       refresh()
     } catch { /* ignore */ }
+  }
+
+  async function handleSaveSector() {
+    if (!id) return
+    setSavingSector(true)
+    try {
+      await apiFetch(`/assets/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ sector: sectorValue.trim() || null }),
+      })
+      setEditingSector(false)
+      refresh()
+    } catch { /* keep editing open */ } finally {
+      setSavingSector(false)
+    }
   }
 
   async function handleSaveInstitution() {
@@ -236,10 +254,43 @@ export default function AssetDetailPage() {
                 Rendendo {fiIndexerLabel(data.fi_type, data.fi_rate, data.fi_spread)}
               </span>
             )}
+            {data.asset_type === 'manual' && (
+              <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 border border-gray-200 text-gray-500 font-medium">
+                Manual
+              </span>
+            )}
             {data.asset_type === 'ticker' && data.avg_cost_brl != null && (
               <span className="text-xs px-2.5 py-0.5 rounded-full bg-gray-100 border border-gray-200 text-gray-600 font-semibold">
                 PM {data.price_currency !== 'BRL' ? 'BRL' : data.price_currency} {fmtNum(data.avg_cost_brl, 2)}
               </span>
+            )}
+            {/* Tipo de ativo (sector) — editável */}
+            {editingSector ? (
+              <span className="flex items-center gap-1">
+                <input
+                  type="text"
+                  value={sectorValue}
+                  onChange={e => setSectorValue(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') handleSaveSector(); if (e.key === 'Escape') setEditingSector(false) }}
+                  placeholder="Ex: CDB, ETF, Ação..."
+                  className="text-xs border border-gray-300 rounded-lg px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-[#001A70]/30 w-36"
+                  autoFocus
+                />
+                <button onClick={handleSaveSector} disabled={savingSector} className="text-xs text-[#001A70] font-semibold disabled:opacity-50">OK</button>
+                <button onClick={() => setEditingSector(false)} className="text-xs text-gray-400">✕</button>
+              </span>
+            ) : (
+              <button
+                onClick={() => { setSectorValue(data.sector ?? ''); setEditingSector(true) }}
+                title="Clique para definir o tipo de ativo"
+                className={`text-xs px-2 py-0.5 rounded-full border font-medium transition-colors hover:border-[#001A70]/50 ${
+                  data.sector
+                    ? 'bg-teal-50 border-teal-200 text-teal-700'
+                    : 'border-dashed border-gray-300 text-gray-400 hover:text-gray-600'
+                }`}
+              >
+                {data.sector ?? '+ tipo'}
+              </button>
             )}
           </div>
           <p className="text-sm text-gray-500 mt-0.5 truncate">{data.name}</p>
@@ -660,8 +711,8 @@ export default function AssetDetailPage() {
         </div>
       )}
 
-      {/* Histórico de aportes */}
-      {(() => {
+      {/* Histórico de aportes — oculto para ativos manuais (valor rastreado em "Atualizações de valor") */}
+      {!isManual && (() => {
         // Preço atual por unidade em BRL para calcular lucro por aporte em tickers
         const currentPriceBrl = data.asset_type === 'ticker' && data.holdings != null && data.holdings > 0 && data.current_value_brl > 0
           ? data.current_value_brl / data.holdings
@@ -743,7 +794,7 @@ export default function AssetDetailPage() {
             )}
           </div>
         )
-      })()}
+      })() }
     </div>
   )
 }

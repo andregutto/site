@@ -18,6 +18,25 @@ const ICON_OPTIONS = [
   '🏪', '🏗️', '🎯', '🌊', '📋', '🔑', '⚙️', '🌱', '🏅', '🧩',
 ]
 
+const CLASS_ICON_MAP: [RegExp, string][] = [
+  [/ações?\s*brasil|brazil|b3/i, '📊'],
+  [/ações?\s*exterior|eua|usa|intl|internacional/i, '🌍'],
+  [/fii|imobiliário|imobiliario/i, '🏢'],
+  [/cripto|crypto|bitcoin/i, '💎'],
+  [/renda\s*fixa|fixed|tesouro|cdb|lci|lca/i, '🏦'],
+  [/previdên|previdencia|pgbl|vgbl/i, '🛡️'],
+  [/imóveis|imoveis|real\s*estate/i, '🏠'],
+  [/commodit/i, '🛢️'],
+  [/etf/i, '📊'],
+  [/caixa|cash/i, '💰'],
+]
+function inferIcon(name: string): string | null {
+  for (const [re, icon] of CLASS_ICON_MAP) {
+    if (re.test(name)) return icon
+  }
+  return null
+}
+
 const COLOR_PALETTE = [
   '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6',
   '#EC4899', '#06B6D4', '#F97316', '#84CC16', '#6366F1',
@@ -294,8 +313,8 @@ export default function ClassesPage() {
                     </div>
                   ) : (
                     <div className="flex items-center gap-3">
-                      {cls.icon ? (
-                        <span className="text-lg leading-none shrink-0">{cls.icon}</span>
+                      {(cls.icon ?? inferIcon(cls.name)) ? (
+                        <span className="text-lg leading-none shrink-0">{cls.icon ?? inferIcon(cls.name)}</span>
                       ) : (
                         <span
                           className="w-4 h-4 rounded-full shrink-0"

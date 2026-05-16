@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { usePortfolioValue, usePerformanceMonthly, usePerformanceInception } from '../hooks/usePortfolio'
 import { useCurrency } from '../contexts/CurrencyContext'
 import { useFavorites } from '../hooks/useFavorites'
+import { useAchievementContext } from '../contexts/AchievementContext'
 import ValueCards from '../components/ValueCards'
 import AllocationChart from '../components/AllocationChart'
 import AssetTable from '../components/AssetTable'
@@ -21,8 +22,16 @@ export default function DashboardPage() {
   const { favorites, toggleFavorite } = useFavorites()
   const [selectedAsset, setSelectedAsset] = useState<PortfolioAsset | null>(null)
   const navigate = useNavigate()
+  const { triggerCheck } = useAchievementContext()
 
   const { convert, currency } = useCurrency()
+
+  useEffect(() => {
+    if (data?.total_brl != null) {
+      triggerCheck(data.total_brl)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data?.total_brl])
 
   const inception = usePerformanceInception()
   const currentYM = new Date().toISOString().substring(0, 7)

@@ -1,7 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
+import { Link } from 'react-router-dom'
 import { apiFetch } from '../lib/api'
 import { useAuth } from '../contexts/AuthContext'
 import { useCurrency, type Currency } from '../contexts/CurrencyContext'
+import { useAchievementContext } from '../contexts/AchievementContext'
+import { getLevel, getNextLevel, getLevelProgress, ACHIEVEMENT_DEFS } from '../lib/achievementDefs'
 import LanguageSelector from '../components/LanguageSelector'
 import { supabase } from '../lib/supabase'
 import { useResetPriceHistory } from '../hooks/usePortfolio'
@@ -66,6 +69,10 @@ function resizeImageToDataUrl(file: File, size = 128): Promise<string> {
 export default function ProfilePage() {
   const { user } = useAuth()
   const { currency, setCurrency } = useCurrency()
+  const { totalXp, earnedKeys } = useAchievementContext()
+  const level = getLevel(totalXp)
+  const nextLevel = getNextLevel(totalXp)
+  const levelProgress = getLevelProgress(totalXp)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [loading,  setLoading]  = useState(true)
@@ -225,6 +232,29 @@ export default function ProfilePage() {
               </button>
             </div>
           </div>
+
+          {/* XP / Level card */}
+          <Link to="/achievements" className="block bg-gradient-to-br from-[#0A0F1E] to-[#001A70] rounded-2xl p-5 shadow-sm hover:opacity-90 transition-opacity">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-2xl">{level.emoji}</span>
+                <div>
+                  <p className="text-[#C9A227] text-xs font-bold uppercase tracking-widest">Nível</p>
+                  <p className="text-white font-bold">{level.name}</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-[#C9A227] font-bold text-xl">{totalXp} XP</p>
+                <p className="text-gray-400 text-xs">{earnedKeys.length}/{ACHIEVEMENT_DEFS.length} conquistas</p>
+              </div>
+            </div>
+            <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+              <div className="h-full rounded-full bg-gradient-to-r from-[#2563EB] to-[#C9A227] transition-all duration-700" style={{ width: `${levelProgress}%` }} />
+            </div>
+            {nextLevel && (
+              <p className="text-gray-400 text-xs mt-2">Próximo: {nextLevel.emoji} {nextLevel.name} ({nextLevel.minXp} XP)</p>
+            )}
+          </Link>
 
           {/* Dados pessoais */}
           <form onSubmit={handleSave} className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm space-y-4">

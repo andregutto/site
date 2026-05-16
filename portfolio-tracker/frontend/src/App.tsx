@@ -20,8 +20,10 @@ import IndicesPage from './pages/IndicesPage'
 import IndexDetailPage from './pages/IndexDetailPage'
 import FavoritesPage from './pages/FavoritesPage'
 import AppLayout from './components/AppLayout'
+import AchievementsPage from './pages/AchievementsPage'
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage'
 import TermsOfUsePage from './pages/TermsOfUsePage'
+import { AchievementProvider } from './contexts/AchievementContext'
 
 function EmailConfirmGate({ email }: { email: string }) {
   const { signOut } = useAuth()
@@ -80,7 +82,7 @@ function ProtectedRoutes() {
 
   if (!user.email_confirmed_at) return <EmailConfirmGate email={user.email ?? ''} />
 
-  return <AppLayout />
+  return <AchievementProvider><AppLayout /></AchievementProvider>
 }
 
 function AppRoutes() {
@@ -112,6 +114,7 @@ function AppRoutes() {
         <Route path="/indices"        element={<IndicesPage />} />
         <Route path="/indices/:code"  element={<IndexDetailPage />} />
         <Route path="/favorites"      element={<FavoritesPage />} />
+        <Route path="/achievements"   element={<AchievementsPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

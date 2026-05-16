@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useLocation } from 'react-router-dom'
 import { apiFetch } from '../lib/api'
 import { usePortfolioValue } from '../hooks/usePortfolio'
+import InstitutionLogo from '../components/InstitutionLogo'
 
 interface InstitutionProfile {
   official_name:  string
@@ -159,13 +160,18 @@ export default function InstitutionsPage() {
                   className="w-full px-5 py-4 flex items-center justify-between text-left hover:bg-gray-50 transition-colors"
                 >
                   <div className="flex items-center gap-3">
-                    <span className="font-semibold text-gray-800">{name}</span>
-                    {!isActive && (
-                      <span className="text-xs text-gray-400 border border-gray-200 rounded px-1.5 py-0.5">sem ativos</span>
-                    )}
-                    {hasData && (
-                      <span className="text-xs text-green-600 font-medium">✓ dados preenchidos</span>
-                    )}
+                    <InstitutionLogo name={name} size={32} />
+                    <div>
+                      <span className="font-semibold text-gray-800">{name}</span>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        {!isActive && (
+                          <span className="text-xs text-gray-400 border border-gray-200 rounded px-1.5 py-0.5">sem ativos</span>
+                        )}
+                        {hasData && (
+                          <span className="text-xs text-green-600 font-medium">✓ dados preenchidos</span>
+                        )}
+                      </div>
+                    </div>
                   </div>
                   <span className="text-gray-400 text-sm">{isOpen ? '▲' : '▼'}</span>
                 </button>
