@@ -29,6 +29,7 @@ interface MonthlyPerf {
 interface PortfolioValue {
   total_brl: number
   total_eur: number | null
+  total_usd: number | null
 }
 
 interface ChartPoint {
@@ -84,26 +85,64 @@ function buildPlanned(
   return result
 }
 
+// Derive per-currency rates from portfolio totals (rates[c] = units of c per 1 BRL)
+function deriveRates(portfolio: PortfolioValue): Record<string, number> {
+  const brl = portfolio.total_brl || 1
+  return {
+    BRL: 1,
+    EUR: portfolio.total_eur != null ? portfolio.total_eur / brl : 1 / 6.4,
+    USD: portfolio.total_usd != null ? portfolio.total_usd / brl : 1 / 5.7,
+  }
+}
+
+function convertAmt(value: string, from: string, to: string, rates: Record<string, number>): string {
+  if (from === to || !value) return value
+  const n = parseFloat(value)
+  if (isNaN(n) || !isFinite(n)) return value
+  const inBrl = n / (rates[from] ?? 1)
+  return String(Math.round(inBrl * (rates[to] ?? 1)))
+}
+
+function portfolioInCurrency(portfolio: PortfolioValue, currency: string, rates: Record<string, number>): string {
+  return String(Math.round(portfolio.total_brl * (rates[currency] ?? 1)))
+}
+
 // Simple form component
 interface PlanFormProps {
   initial: Partial<FreedomPlan>
-  currentEur: number
+  portfolio: PortfolioValue
   onSave: (data: Omit<FreedomPlan, 'id' | 'is_active' | 'created_at'>) => Promise<void>
   onCancel: () => void
   saving: boolean
 }
 
-function PlanForm({ initial, currentEur, onSave, onCancel, saving }: PlanFormProps) {
+function PlanForm({ initial, portfolio, onSave, onCancel, saving }: PlanFormProps) {
   const { t } = useI18n()
-  const [name,         setName]         = useState(initial.name ?? '')
-  const [capital,      setCapital]      = useState(String(initial.initial_capital ?? Math.round(currentEur)))
-  const [contrib,      setContrib]      = useState(String(initial.monthly_contribution ?? 0))
-  const [rate,         setRate]         = useState(String(((initial.monthly_return_rate ?? 0.006) * 100).toFixed(2)))
-  const [incomeRate,   setIncomeRate]   = useState(String(((initial.monthly_income_rate ?? 0.005) * 100).toFixed(2)))
-  const [target,       setTarget]       = useState(String(initial.target_amount ?? 0))
-  const [currency,     setCurrency]     = useState(initial.currency ?? 'EUR')
-  const [horizon,      setHorizon]      = useState(String(initial.horizon_years ?? 20))
-  const [notes,        setNotes]        = useState(initial.notes ?? '')
+  const isNew = !initial.id
+  const rates = deriveRates(portfolio)
+
+  const [currency,   setCurrencyState] = useState(initial.currency ?? 'EUR')
+  const [name,       setName]          = useState(initial.name ?? '')
+  const [capital,    setCapital]       = useState(
+    initial.initial_capital != null
+      ? String(initial.initial_capital)
+      : portfolioInCurrency(portfolio, initial.currency ?? 'EUR', rates)
+  )
+  const [contrib,    setContrib]    = useState(String(initial.monthly_contribution ?? 0))
+  const [rate,       setRate]       = useState(String(((initial.monthly_return_rate ?? 0.006) * 100).toFixed(2)))
+  const [incomeRate, setIncomeRate] = useState(String(((initial.monthly_income_rate ?? 0.005) * 100).toFixed(2)))
+  const [target,     setTarget]     = useState(String(initial.target_amount ?? 0))
+  const [horizon,    setHorizon]    = useState(String(initial.horizon_years ?? 20))
+  const [notes,      setNotes]      = useState(initial.notes ?? '')
+
+  function handleCurrencyChange(newCur: string) {
+    setCapital(prev => convertAmt(prev, currency, newCur, rates))
+    setContrib(prev => convertAmt(prev, currency, newCur, rates))
+    setTarget(prev  => convertAmt(prev, currency, newCur, rates))
+    setCurrencyState(newCur)
+  }
+
+  const portfolioSuggestion = portfolioInCurrency(portfolio, currency, rates)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -126,45 +165,96 @@ function PlanForm({ initial, currentEur, onSave, onCancel, saving }: PlanFormPro
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid grid-cols-2 gap-3">
+
+        {/* Name — full width */}
         <div className="col-span-2">
           <label className={labelCls}>{t.common.name}</label>
           <input required value={name} onChange={e => setName(e.target.value)} className={fieldCls} placeholder="Plano Mai/2026" />
         </div>
-        <div>
-          <label className={labelCls}>{t.finances.freedomCapital} ({currency})</label>
+
+        {/* Currency selector — full width, first monetary field */}
+        <div className="col-span-2">
+          <label className={labelCls}>{t.finances.freedomCurrency}</label>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center bg-gray-100 rounded-lg p-0.5 gap-0.5">
+              {['EUR', 'BRL', 'USD'].map(c => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => handleCurrencyChange(c)}
+                  className={`px-3 py-1.5 text-sm font-semibold rounded-md transition-colors ${
+                    currency === c
+                      ? 'bg-white text-[#001A70] shadow-sm'
+                      : 'text-gray-400 hover:text-gray-700'
+                  }`}
+                >
+                  {c}
+                </button>
+              ))}
+            </div>
+            <span className="text-xs text-gray-400">
+              Todos os valores serão em {currency}. Ao trocar, os campos são convertidos automaticamente.
+            </span>
+          </div>
+        </div>
+
+        {/* Capital inicial */}
+        <div className="col-span-2 sm:col-span-1">
+          <label className={labelCls}>
+            {t.finances.freedomCapital} ({currency})
+            {isNew && (
+              <span className="ml-1.5 text-gray-400">
+                — patrimônio atual:&nbsp;
+                <button
+                  type="button"
+                  className="text-[#001A70] hover:opacity-70 underline underline-offset-2 transition-opacity"
+                  onClick={() => setCapital(portfolioSuggestion)}
+                >
+                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(Number(portfolioSuggestion))}
+                </button>
+              </span>
+            )}
+          </label>
           <input required type="number" value={capital} onChange={e => setCapital(e.target.value)} className={fieldCls} placeholder="540000" />
         </div>
+
+        {/* Aporte mensal */}
         <div>
           <label className={labelCls}>{t.finances.freedomContrib} / mês ({currency})</label>
           <input required type="number" value={contrib} onChange={e => setContrib(e.target.value)} className={fieldCls} placeholder="13000" />
         </div>
+
+        {/* Taxa de retorno */}
         <div>
           <label className={labelCls}>{t.finances.freedomRate} % / mês</label>
           <input required type="number" step="0.01" value={rate} onChange={e => setRate(e.target.value)} className={fieldCls} placeholder="0.60" />
         </div>
+
+        {/* Taxa de renda passiva */}
         <div>
           <label className={labelCls}>{t.finances.freedomIncomeRate} % / mês</label>
           <input required type="number" step="0.01" value={incomeRate} onChange={e => setIncomeRate(e.target.value)} className={fieldCls} placeholder="0.50" />
         </div>
+
+        {/* Meta */}
         <div>
-          <label className={labelCls}>{t.finances.freedomTarget} ({currency})</label>
+          <label className={labelCls}>{t.finances.freedomGoal} ({currency})</label>
           <input required type="number" value={target} onChange={e => setTarget(e.target.value)} className={fieldCls} placeholder="5000000" />
         </div>
+
+        {/* Horizonte */}
         <div>
           <label className={labelCls}>{t.finances.freedomHorizon} (anos)</label>
           <input required type="number" value={horizon} onChange={e => setHorizon(e.target.value)} className={fieldCls} placeholder="20" />
         </div>
-        <div>
-          <label className={labelCls}>{t.finances.freedomCurrency}</label>
-          <select value={currency} onChange={e => setCurrency(e.target.value)} className={fieldCls}>
-            {['EUR','BRL','USD'].map(c => <option key={c} value={c}>{c}</option>)}
-          </select>
-        </div>
+
+        {/* Notas */}
         <div className="col-span-2">
           <label className={labelCls}>Notas (opcional)</label>
           <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} className={fieldCls} />
         </div>
       </div>
+
       <div className="flex gap-2">
         <button
           type="submit"
@@ -446,7 +536,7 @@ export default function FinancesFreedomPage() {
           </h3>
           <PlanForm
             initial={editingPlan ?? {}}
-            currentEur={portfolio?.total_eur ?? 0}
+            portfolio={portfolio ?? { total_brl: 0, total_eur: null, total_usd: null }}
             onSave={savePlan}
             onCancel={() => { setShowForm(false); setEditingPlan(null) }}
             saving={saving}

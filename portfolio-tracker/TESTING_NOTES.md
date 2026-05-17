@@ -107,6 +107,8 @@ URL: https://portfolio.andregutto.com
 - Ativo sem nenhum valor → banner "Nenhum valor registrado"
 - Ativo com entradas recentes (< 30 dias) → sem banner
 
+Nova ação: incluir o banner ambar de valor desatualizado e o botão de atualizar também onde esse ativo aparece no dashboard
+
 ---
 
 ### Item 10 - Ativos Manuais: Toggle Aporte vs Valorização
@@ -141,6 +143,8 @@ URL: https://portfolio.andregutto.com
 - "Historico de valores" deve ter a entrada inicial (valor de compra)
 - Testar com moeda BRL → campo equivalente não deve aparecer
 - Verificar que botão "Converter para RF" aparece (é ativo manual)
+
+Novas acoes: cadastrar o valor do aluguel desse imóvel caso ele seja alugado e esse valor deve entrar mensalmente na data indicada, usuário indica a data do mês que o aluguel é pago , esse aluguel pode ser tratado como dividendos no meu ponto de vista
 
 ---
 
@@ -218,6 +222,9 @@ ALTER TABLE contributions ADD CONSTRAINT contributions_type_check
 - Aviso legal deve aparecer no rodape de cada aba
 - Mudar de ano → dados recarregam automaticamente
 
+Novas acoes: mudar o pais deve mudar como o relatório é apresentado, adequado aos formulários que devem ser preenchidos para declaração de imposto de renda no brasil ou na frança
+
+
 ---
 
 ### Item 18 - i18n (pt.json, en.json, fr.json)
@@ -231,6 +238,8 @@ ALTER TABLE contributions ADD CONSTRAINT contributions_type_check
 - Abrir no celular → nav mobile tambem exibe os labels traduzidos
 - Clicar em 🇧🇷 → volta para portugues
 - Navegar entre paginas com idioma trocado → seletor permanece ativo no mesmo idioma
+
+Novas acoes: muitos trechos nao foram traduzidos principalmente nas paginas, confirme que tudo é traduzido para todos os idiomas disponíveis, quando traduz para o francês o menu do reader passa a ocupar mais de uma linha porque o texto é maior por exemplo tabela de board pro dashboard. Acho que vale espaçar mais os itens do reader
 
 ---
 
@@ -249,3 +258,5 @@ ALTER TABLE contributions ADD CONSTRAINT contributions_type_check
 - Login com credenciais corretas → redireciona para dashboard
 - Botao "Entrar" durante carregamento → spinner animado visivel
 - Rodape → link "andregutto.com" deve abrir em nova aba
+
+Novas acoes: quando um usuário que nao validou o email ainda tenta acessar ele esta recebendo a mensagem de erro em inglês, deve ser no idioma selecionado

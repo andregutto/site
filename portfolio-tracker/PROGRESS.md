@@ -372,9 +372,19 @@ Acessível pelo menu principal ou pelo dropdown do usuário.
   - Modo A: "Dado capital inicial X e aporte Y, quando e quanto terei?"
   - Modo B: "Para ter Z em N anos, quanto preciso aportar por mês?"
 
+### Múltiplos planos (histórico de revisões)
+O usuário pode salvar vários planos ao longo do tempo. Cada plano tem nome e data de criação.
+Um plano é marcado como "ativo". No gráfico:
+- Linha realizada (sólida) — única, sempre o patrimônio real
+- N linhas planejadas (tracejadas, cores diferentes) — uma por plano selecionado
+- Cada linha mostra a data em que o plano foi criado
+- Permite visualizar como as premissas evoluíram (ex: "Plano Jul/2022 vs Plano Mai/2025")
+
+Schema: `finance_freedom_plans (id, user_id, name, created_at, is_active, initial_capital,
+monthly_contribution, monthly_return_rate, target_amount, currency, horizon_years, notes)`
+
 ### Seed André
-- Meta: €5.000.000 | Prazo: 20 anos | Taxa: 0,6%/mês
-- Aporte alvo: €13.000/mês
+- Plano 1 — "Plano Mai/2026": capital €540k, aporte €13k/mês, taxa 0,6%/mês, meta €5M, 20 anos
 - Renda passiva projetada: €25.000/mês (€5M × 0,5%)
 
 **Deploy**: ✅ sim ao concluir
