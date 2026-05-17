@@ -29,21 +29,24 @@ router.post('/check', requireAuth, async (req, res: Response) => {
     { data: userRecord },
     { data: assets },
     { data: contribs },
-    { data: history },
   ] = await Promise.all([
     supabaseAdmin.auth.admin.getUserById(userId),
-    supabaseAdmin.from('assets').select('id, currency, asset_type, asset_class_id, asset_classes(name)').eq('user_id', userId).eq('active', true),
+    supabaseAdmin.from('assets').select('id, currency, asset_type, class_id, asset_classes(name)').eq('user_id', userId).eq('active', true),
     supabaseAdmin.from('contributions').select('date, asset_id, assets!inner(user_id)').eq('assets.user_id', userId).order('date'),
-    supabaseAdmin.from('price_history').select('date').eq('user_id', userId).order('date', { ascending: true }),
   ])
 
   const meta = userRecord?.user?.user_metadata ?? {}
-  type AssetRow = { id: number; currency: string; asset_type: string; asset_class_id: number | null; asset_classes: { name: string } | { name: string }[] | null }
+  type AssetRow = { id: number; currency: string; asset_type: string; class_id: number | null; asset_classes: { name: string } | { name: string }[] | null }
   const assetList = ((assets ?? []) as unknown) as AssetRow[]
   const currencies = new Set(assetList.map(a => a.currency))
-  const classIds = new Set(assetList.map(a => a.asset_class_id).filter(Boolean))
+  const classIds = new Set(assetList.map(a => a.class_id).filter(Boolean))
   const contribDates = (contribs ?? []).map((c: { date: string }) => c.date)
-  const historyRows = (history ?? []) as Array<{ date: string }>
+
+  const assetIds = assetList.map(a => a.id)
+  const { data: history } = assetIds.length > 0
+    ? await supabaseAdmin.from('price_history').select('ref_date').in('asset_id', assetIds).order('ref_date', { ascending: true })
+    : { data: [] as { ref_date: string }[] }
+  const historyRows = (history ?? []) as Array<{ ref_date: string }>
 
   const toAward: string[] = []
   const check = (key: string, cond: boolean) => { if (!earned.has(key) && cond) toAward.push(key) }
@@ -77,8 +80,8 @@ router.post('/check', requireAuth, async (req, res: Response) => {
   check('consistency', hasConsecutiveMonths(contribDates, 6))
 
   if (historyRows.length >= 2) {
-    const first = new Date(historyRows[0].date)
-    const last  = new Date(historyRows[historyRows.length - 1].date)
+    const first = new Date(historyRows[0].ref_date)
+    const last  = new Date(historyRows[historyRows.length - 1].ref_date)
     check('historian', (last.getTime() - first.getTime()) / 86_400_000 >= 365)
   }
 
