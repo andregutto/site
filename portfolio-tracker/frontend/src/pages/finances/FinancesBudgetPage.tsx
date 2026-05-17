@@ -34,6 +34,7 @@ function fmt(n: number, currency: string) {
 
 function EnvelopeBar({ env, expanded, onToggle, onEditCategory, onDeleteCategory, onAddCategory }:
   { env: Envelope; expanded: boolean; onToggle: () => void; onEditCategory: (c: Category) => void; onDeleteCategory: (id: number) => void; onAddCategory: (envId: number) => void }) {
+  const { t } = useI18n()
 
   const totalCategoryBudget = env.categories.reduce((s, c) => s + (c.budget_monthly ?? 0), 0)
   const allocated = totalCategoryBudget > 0 ? (totalCategoryBudget / env.budget_amount) * 100 : 0
@@ -59,8 +60,8 @@ function EnvelopeBar({ env, expanded, onToggle, onEditCategory, onDeleteCategory
             <div className="flex items-center gap-2">
               <span className="font-semibold text-gray-900 text-sm">{env.name}</span>
               <span className="text-xs text-gray-400 font-medium">{env.pct_target}%</span>
-              {isOver && <span className="text-xs bg-red-100 text-red-600 font-semibold px-1.5 py-0.5 rounded-full">Acima do limite</span>}
-              {isInvestment && allocated >= 100 && !isOver && <span className="text-xs bg-green-100 text-green-600 font-semibold px-1.5 py-0.5 rounded-full">Meta atingida ✓</span>}
+              {isOver && <span className="text-xs bg-red-100 text-red-600 font-semibold px-1.5 py-0.5 rounded-full">{t.finances.overLimit}</span>}
+              {isInvestment && allocated >= 100 && !isOver && <span className="text-xs bg-green-100 text-green-600 font-semibold px-1.5 py-0.5 rounded-full">{t.finances.goalReached}</span>}
             </div>
             <div className="text-right shrink-0 ml-3">
               <span className="text-xs font-semibold text-gray-700">{fmt(totalCategoryBudget, 'EUR')}</span>
@@ -87,7 +88,7 @@ function EnvelopeBar({ env, expanded, onToggle, onEditCategory, onDeleteCategory
       {expanded && (
         <div className="border-t border-gray-50">
           {env.categories.length === 0 ? (
-            <p className="px-5 py-3 text-xs text-gray-400">Nenhuma categoria neste envelope.</p>
+            <p className="px-5 py-3 text-xs text-gray-400">{t.finances.noCategories}</p>
           ) : (
             <ul className="divide-y divide-gray-50">
               {env.categories.map(cat => (
@@ -129,7 +130,7 @@ function EnvelopeBar({ env, expanded, onToggle, onEditCategory, onDeleteCategory
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5">
                 <path d="M8.75 3.75a.75.75 0 0 0-1.5 0v3.5h-3.5a.75.75 0 0 0 0 1.5h3.5v3.5a.75.75 0 0 0 1.5 0v-3.5h3.5a.75.75 0 0 0 0-1.5h-3.5v-3.5Z" />
               </svg>
-              Adicionar categoria
+              {t.finances.addCategory}
             </button>
           </div>
         </div>
@@ -235,14 +236,14 @@ export default function FinancesBudgetPage() {
   }
 
   async function deleteCategory(id: number) {
-    if (!confirm('Remover esta categoria?')) return
+    if (!confirm(t.finances.confirmDeleteCategory)) return
     await apiFetch(`/finances/categories/${id}`, { method: 'DELETE' })
     await load()
   }
 
   if (loading) return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-12 text-center text-gray-400 text-sm">
-      Carregando…
+      {t.common.loading}
     </div>
   )
   if (!data) return null
@@ -264,9 +265,9 @@ export default function FinancesBudgetPage() {
       {/* Income card */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
         <div className="flex items-center justify-between mb-1">
-          <span className="text-xs text-gray-500 uppercase tracking-wide font-medium">Renda mensal líquida</span>
+          <span className="text-xs text-gray-500 uppercase tracking-wide font-medium">{t.finances.income}</span>
           {!incomeEdit && (
-            <button onClick={() => setIncomeEdit(true)} className="text-xs text-[#001A70] hover:opacity-70 transition-opacity">Editar</button>
+            <button onClick={() => setIncomeEdit(true)} className="text-xs text-[#001A70] hover:opacity-70 transition-opacity">{t.common.edit}</button>
           )}
         </div>
         {incomeEdit ? (
@@ -286,14 +287,14 @@ export default function FinancesBudgetPage() {
               disabled={saving}
               className="px-3 py-1.5 bg-[#001A70] text-white text-xs rounded-lg hover:opacity-80 transition-opacity disabled:opacity-50"
             >
-              {saving ? '…' : 'Salvar'}
+              {saving ? '…' : t.common.save}
             </button>
-            <button onClick={() => setIncomeEdit(false)} className="px-3 py-1.5 text-gray-500 text-xs hover:text-gray-700 transition-colors">Cancelar</button>
+            <button onClick={() => setIncomeEdit(false)} className="px-3 py-1.5 text-gray-500 text-xs hover:text-gray-700 transition-colors">{t.common.cancel}</button>
           </div>
         ) : (
           <p className="text-2xl font-bold text-gray-900 mt-1">
             {fmt(data.income.monthly_net, data.income.currency)}
-            <span className="text-sm font-normal text-gray-400 ml-1">/ mês</span>
+            <span className="text-sm font-normal text-gray-400 ml-1">{t.finances.perMonth}</span>
           </p>
         )}
       </div>
@@ -314,7 +315,7 @@ export default function FinancesBudgetPage() {
               <div className="text-lg font-bold" style={{ color: over ? '#ef4444' : met ? '#10b981' : env.color }}>
                 {pctReal.toFixed(1)}%
               </div>
-              <div className="text-xs text-gray-400">meta: {env.pct_target}%</div>
+              <div className="text-xs text-gray-400">{t.finances.target}: {env.pct_target}%</div>
               <div className="mt-2 h-1 bg-gray-100 rounded-full overflow-hidden">
                 <div className="h-full rounded-full" style={{ width: `${Math.min(pctReal / env.pct_target * 100, 100)}%`, backgroundColor: over ? '#ef4444' : met ? '#10b981' : env.color }} />
               </div>
@@ -328,8 +329,8 @@ export default function FinancesBudgetPage() {
         <div className={`rounded-xl px-4 py-3 text-sm flex items-center gap-2 ${unallocated > 0 ? 'bg-amber-50 text-amber-700 border border-amber-100' : 'bg-red-50 text-red-600 border border-red-100'}`}>
           <span>{unallocated > 0 ? '⚠️' : '🚨'}</span>
           {unallocated > 0
-            ? `${fmt(unallocated, data.income.currency)} sem categoria atribuída`
-            : `Categorias excedem a renda em ${fmt(Math.abs(unallocated), data.income.currency)}`}
+            ? `${fmt(unallocated, data.income.currency)} ${t.finances.unallocatedBanner}`
+            : `${t.finances.overspentBanner} ${fmt(Math.abs(unallocated), data.income.currency)}`}
         </div>
       )}
 
@@ -350,7 +351,7 @@ export default function FinancesBudgetPage() {
 
       {/* Total row */}
       <div className="bg-gray-50 rounded-xl px-5 py-3 flex items-center justify-between">
-        <span className="text-sm text-gray-500">Total orçado</span>
+        <span className="text-sm text-gray-500">{t.finances.totalBudgeted}</span>
         <span className="text-sm font-semibold text-gray-900">{fmt(totalBudget, data.income.currency)}</span>
       </div>
 
@@ -359,11 +360,11 @@ export default function FinancesBudgetPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={() => setModal(null)}>
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6" onClick={e => e.stopPropagation()}>
             <h3 className="font-semibold text-gray-900 mb-4">
-              {modal.mode === 'add' ? 'Nova categoria' : 'Editar categoria'}
+              {modal.mode === 'add' ? t.finances.newCategory : t.finances.editCategory}
             </h3>
             <div className="space-y-3">
               <div>
-                <label className="block text-xs text-gray-500 mb-1">Nome</label>
+                <label className="block text-xs text-gray-500 mb-1">{t.finances.categoryName}</label>
                 <input
                   autoFocus
                   value={catName}
@@ -373,7 +374,7 @@ export default function FinancesBudgetPage() {
                 />
               </div>
               <div>
-                <label className="block text-xs text-gray-500 mb-1">Ícone</label>
+                <label className="block text-xs text-gray-500 mb-1">{t.finances.categoryIcon}</label>
                 <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
                   {EMOJI_OPTIONS.map(e => (
                     <button
@@ -385,7 +386,7 @@ export default function FinancesBudgetPage() {
                 </div>
               </div>
               <div>
-                <label className="block text-xs text-gray-500 mb-1">Budget mensal (opcional)</label>
+                <label className="block text-xs text-gray-500 mb-1">{t.finances.monthlyBudget}</label>
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-gray-500">{data.income.currency}</span>
                   <input
@@ -404,9 +405,9 @@ export default function FinancesBudgetPage() {
                 disabled={saving || !catName.trim()}
                 className="flex-1 bg-[#001A70] text-white text-sm py-2 rounded-xl hover:opacity-80 transition-opacity disabled:opacity-40"
               >
-                {saving ? 'Salvando…' : 'Salvar'}
+                {saving ? '…' : t.common.save}
               </button>
-              <button onClick={() => setModal(null)} className="px-4 text-sm text-gray-500 hover:text-gray-700 transition-colors">Cancelar</button>
+              <button onClick={() => setModal(null)} className="px-4 text-sm text-gray-500 hover:text-gray-700 transition-colors">{t.common.cancel}</button>
             </div>
           </div>
         </div>

@@ -128,8 +128,8 @@ function AppRoutes() {
           <Route path="transactions"  element={<FinancesTransactionsPage />} />
           <Route path="budget"        element={<FinancesBudgetPage />} />
           <Route path="accounts"      element={<FinancesAccountsPage />} />
-          <Route path="freedom"       element={<FinancesFreedomPage />} />
         </Route>
+        <Route path="/freedom"        element={<FinancesFreedomPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

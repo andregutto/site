@@ -4,11 +4,10 @@ import { useI18n } from '../../contexts/I18nContext'
 export default function FinancesLayout() {
   const { t } = useI18n()
   const tabs = [
-    { to: '/finances',          label: t.finances.navOverview,    end: true  },
-    { to: '/finances/budget',   label: t.finances.navBudget,      end: false },
-    { to: '/finances/transactions', label: t.finances.navTransactions, end: false },
-    { to: '/finances/accounts', label: t.finances.navAccounts,    end: false },
-    { to: '/finances/freedom',  label: t.finances.navFreedom,     end: false },
+    { to: '/finances',              label: t.finances.navOverview,     end: true  },
+    { to: '/finances/budget',       label: t.finances.navBudget,       end: false },
+    { to: '/finances/transactions', label: t.finances.navTransactions,  end: false },
+    { to: '/finances/accounts',     label: t.finances.navAccounts,     end: false },
   ]
 
   return (

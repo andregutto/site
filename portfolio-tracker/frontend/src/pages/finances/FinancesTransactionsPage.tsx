@@ -117,7 +117,7 @@ export default function FinancesTransactionsPage() {
   }
 
   async function deleteTransaction(id: number) {
-    if (!confirm('Remover esta transação?')) return
+    if (!confirm(t.finances.confirmDeleteTransaction)) return
     await apiFetch(`/finances/transactions/${id}`, { method: 'DELETE' })
     loadTransactions()
   }
@@ -166,8 +166,8 @@ export default function FinancesTransactionsPage() {
   }
 
   // Summary
-  const expenses = transactions.filter(t => t.amount < 0 && !t.is_internal_transfer).reduce((s, t) => s + t.amount, 0)
-  const income   = transactions.filter(t => t.amount > 0 && !t.is_internal_transfer).reduce((s, t) => s + t.amount, 0)
+  const expenses = transactions.filter(tx => tx.amount < 0 && !tx.is_internal_transfer).reduce((s, tx) => s + tx.amount, 0)
+  const income   = transactions.filter(tx => tx.amount > 0 && !tx.is_internal_transfer).reduce((s, tx) => s + tx.amount, 0)
 
   return (
     <div className="space-y-5">
@@ -184,14 +184,14 @@ export default function FinancesTransactionsPage() {
             className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 text-sm text-gray-600 rounded-lg hover:bg-gray-50 transition-colors"
           >
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4"><path d="M8.75 2.75a.75.75 0 0 0-1.5 0v5.69L5.03 6.22a.75.75 0 0 0-1.06 1.06l3.5 3.5a.75.75 0 0 0 1.06 0l3.5-3.5a.75.75 0 0 0-1.06-1.06L8.75 8.44V2.75Z" /><path d="M3.5 9.75a.75.75 0 0 0-1.5 0v1.5A2.75 2.75 0 0 0 4.75 14h6.5A2.75 2.75 0 0 0 14 11.25v-1.5a.75.75 0 0 0-1.5 0v1.5c0 .69-.56 1.25-1.25 1.25h-6.5c-.69 0-1.25-.56-1.25-1.25v-1.5Z" /></svg>
-            Importar CSV
+            {t.finances.importCSV}
           </button>
           <button
             onClick={() => setShowAdd(true)}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-[#001A70] text-white text-sm rounded-lg hover:opacity-80 transition-opacity"
           >
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4"><path d="M8.75 3.75a.75.75 0 0 0-1.5 0v3.5h-3.5a.75.75 0 0 0 0 1.5h3.5v3.5a.75.75 0 0 0 1.5 0v-3.5h3.5a.75.75 0 0 0 0-1.5h-3.5v-3.5Z" /></svg>
-            Adicionar
+            {t.finances.addTransaction}
           </button>
           <input ref={fileRef} type="file" accept=".csv,.txt" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) handleCSVFile(f); e.target.value = '' }} />
         </div>
@@ -200,7 +200,7 @@ export default function FinancesTransactionsPage() {
       {/* CSV currency selector */}
       {csvStep === 'idle' && (
         <div className="flex items-center gap-2 text-xs text-gray-500">
-          <span>Moeda padrão para importação:</span>
+          <span>{t.finances.csvCurrency}</span>
           <select value={csvCurrency} onChange={e => setCsvCurrency(e.target.value)} className="border border-gray-200 rounded px-2 py-0.5 text-xs">
             {['EUR','BRL','USD'].map(c => <option key={c}>{c}</option>)}
           </select>
@@ -219,17 +219,17 @@ export default function FinancesTransactionsPage() {
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           <div className="px-5 py-4 border-b border-gray-50 flex items-center justify-between">
             <div>
-              <h3 className="font-semibold text-gray-900 text-sm">Pré-visualização — {csvRows.length} transações</h3>
-              <p className="text-xs text-gray-400 mt-0.5">Revise as categorias antes de importar. Transferências para corretoras estão marcadas em amarelo.</p>
+              <h3 className="font-semibold text-gray-900 text-sm">{t.finances.csvPreview} — {csvRows.length} {t.finances.csvTransactions}</h3>
+              <p className="text-xs text-gray-400 mt-0.5">{t.finances.csvReview}</p>
             </div>
             <div className="flex items-center gap-2">
-              <button onClick={() => { setCsvStep('idle'); setCsvRows([]) }} className="text-xs text-gray-500 hover:text-gray-700 transition-colors">Cancelar</button>
+              <button onClick={() => { setCsvStep('idle'); setCsvRows([]) }} className="text-xs text-gray-500 hover:text-gray-700 transition-colors">{t.common.cancel}</button>
               <button
                 onClick={importCSV}
                 disabled={csvStep === 'importing'}
                 className="px-3 py-1.5 bg-[#001A70] text-white text-xs rounded-lg hover:opacity-80 transition-opacity disabled:opacity-50"
               >
-                {csvStep === 'importing' ? 'Importando…' : 'Confirmar importação'}
+                {csvStep === 'importing' ? t.finances.csvImporting : t.finances.csvConfirm}
               </button>
             </div>
           </div>
@@ -237,10 +237,10 @@ export default function FinancesTransactionsPage() {
             <table className="w-full text-sm">
               <thead className="bg-gray-50 text-gray-500 text-xs uppercase sticky top-0">
                 <tr>
-                  <th className="px-4 py-2 text-left">Data</th>
-                  <th className="px-4 py-2 text-left">Descrição</th>
-                  <th className="px-4 py-2 text-right">Valor</th>
-                  <th className="px-4 py-2 text-left">Categoria</th>
+                  <th className="px-4 py-2 text-left">{t.common.date}</th>
+                  <th className="px-4 py-2 text-left">{t.common.description}</th>
+                  <th className="px-4 py-2 text-right">{t.common.value}</th>
+                  <th className="px-4 py-2 text-left">{t.finances.category}</th>
                   <th className="px-4 py-2"></th>
                 </tr>
               </thead>
@@ -249,7 +249,7 @@ export default function FinancesTransactionsPage() {
                   <tr key={i} className={row.is_broker_transfer ? 'bg-amber-50' : ''}>
                     <td className="px-4 py-2 text-gray-600 whitespace-nowrap">{fmtDate(row.date)}</td>
                     <td className="px-4 py-2 text-gray-700 max-w-xs truncate">
-                      {row.is_broker_transfer && <span className="text-[10px] bg-amber-200 text-amber-800 rounded px-1 mr-1.5 font-medium">Corretora</span>}
+                      {row.is_broker_transfer && <span className="text-[10px] bg-amber-200 text-amber-800 rounded px-1 mr-1.5 font-medium">{t.finances.brokerTransfer}</span>}
                       {row.description}
                     </td>
                     <td className={`px-4 py-2 text-right font-medium whitespace-nowrap ${row.amount < 0 ? 'text-red-600' : 'text-green-600'}`}>
@@ -264,7 +264,7 @@ export default function FinancesTransactionsPage() {
                         }}
                         className="text-xs border border-gray-200 rounded px-2 py-1 max-w-[150px]"
                       >
-                        <option value="">Sem categoria</option>
+                        <option value="">{t.finances.noCategory}</option>
                         {categories.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
                       </select>
                     </td>
@@ -285,11 +285,11 @@ export default function FinancesTransactionsPage() {
       {!loading && transactions.length > 0 && csvStep === 'idle' && (
         <div className="grid grid-cols-2 gap-3">
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
-            <p className="text-xs text-gray-500 mb-1">Despesas</p>
+            <p className="text-xs text-gray-500 mb-1">{t.finances.expenses}</p>
             <p className="text-lg font-bold text-red-600">{fmt(expenses)}</p>
           </div>
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
-            <p className="text-xs text-gray-500 mb-1">Receitas</p>
+            <p className="text-xs text-gray-500 mb-1">{t.finances.incomeLabel}</p>
             <p className="text-lg font-bold text-green-600">{fmt(income)}</p>
           </div>
         </div>
@@ -299,59 +299,59 @@ export default function FinancesTransactionsPage() {
       {csvStep === 'idle' && (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           {loading ? (
-            <p className="text-center text-gray-400 py-12 text-sm">Carregando…</p>
+            <p className="text-center text-gray-400 py-12 text-sm">{t.common.loading}</p>
           ) : transactions.length === 0 ? (
             <div className="py-12 text-center">
               <p className="text-2xl mb-2">📋</p>
-              <p className="text-sm text-gray-500">Nenhuma transação neste mês</p>
-              <p className="text-xs text-gray-400 mt-1">Importe um extrato CSV ou adicione manualmente</p>
+              <p className="text-sm text-gray-500">{t.finances.noTransactions}</p>
+              <p className="text-xs text-gray-400 mt-1">{t.finances.noTransactionsHint}</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
                   <tr>
-                    <th className="px-4 py-3 text-left">Data</th>
-                    <th className="px-4 py-3 text-left">Descrição</th>
-                    <th className="px-4 py-3 text-right">Valor</th>
-                    <th className="px-4 py-3 text-left">Categoria</th>
+                    <th className="px-4 py-3 text-left">{t.common.date}</th>
+                    <th className="px-4 py-3 text-left">{t.common.description}</th>
+                    <th className="px-4 py-3 text-right">{t.common.value}</th>
+                    <th className="px-4 py-3 text-left">{t.finances.category}</th>
                     <th className="px-4 py-3"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
-                  {transactions.map(t => (
-                    <tr key={t.id} className={`hover:bg-gray-50 group ${t.is_internal_transfer ? 'opacity-50' : ''}`}>
-                      <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{fmtDate(t.date)}</td>
+                  {transactions.map(tx => (
+                    <tr key={tx.id} className={`hover:bg-gray-50 group ${tx.is_internal_transfer ? 'opacity-50' : ''}`}>
+                      <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{fmtDate(tx.date)}</td>
                       <td className="px-4 py-3 text-gray-800 max-w-xs">
-                        <span className="truncate block">{t.description || '—'}</span>
-                        {t.is_internal_transfer && <span className="text-[10px] text-gray-400">transferência interna</span>}
+                        <span className="truncate block">{tx.description || '—'}</span>
+                        {tx.is_internal_transfer && <span className="text-[10px] text-gray-400">{t.finances.internalTransfer}</span>}
                       </td>
-                      <td className={`px-4 py-3 text-right font-medium whitespace-nowrap ${t.amount < 0 ? 'text-red-600' : 'text-green-600'}`}>
-                        {fmt(t.amount, t.currency)}
+                      <td className={`px-4 py-3 text-right font-medium whitespace-nowrap ${tx.amount < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                        {fmt(tx.amount, tx.currency)}
                       </td>
                       <td className="px-4 py-3">
-                        {editingId === t.id ? (
+                        {editingId === tx.id ? (
                           <select
                             autoFocus
-                            defaultValue={t.category_id ?? ''}
-                            onBlur={e => updateCategory(t.id, e.target.value === '' ? null : Number(e.target.value))}
-                            onChange={e => updateCategory(t.id, e.target.value === '' ? null : Number(e.target.value))}
+                            defaultValue={tx.category_id ?? ''}
+                            onBlur={e => updateCategory(tx.id, e.target.value === '' ? null : Number(e.target.value))}
+                            onChange={e => updateCategory(tx.id, e.target.value === '' ? null : Number(e.target.value))}
                             className="text-xs border border-gray-200 rounded px-2 py-1 max-w-[150px]"
                           >
-                            <option value="">Sem categoria</option>
+                            <option value="">{t.finances.noCategory}</option>
                             {categories.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
                           </select>
                         ) : (
                           <button
-                            onClick={() => setEditingId(t.id)}
+                            onClick={() => setEditingId(tx.id)}
                             className="flex items-center gap-1.5 group/cat"
                           >
-                            {t.finance_categories ? (
-                              <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: t.finance_categories.color + '22', color: t.finance_categories.color }}>
-                                {t.finance_categories.icon} {t.finance_categories.name}
+                            {tx.finance_categories ? (
+                              <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: tx.finance_categories.color + '22', color: tx.finance_categories.color }}>
+                                {tx.finance_categories.icon} {tx.finance_categories.name}
                               </span>
                             ) : (
-                              <span className="text-xs text-gray-300 group-hover/cat:text-gray-500 transition-colors">+ categoria</span>
+                              <span className="text-xs text-gray-300 group-hover/cat:text-gray-500 transition-colors">+ {t.finances.category}</span>
                             )}
                           </button>
                         )}
@@ -359,13 +359,13 @@ export default function FinancesTransactionsPage() {
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button
-                            onClick={() => toggleInternal(t.id, t.is_internal_transfer)}
-                            title={t.is_internal_transfer ? 'Marcar como transação real' : 'Marcar como transferência interna'}
+                            onClick={() => toggleInternal(tx.id, tx.is_internal_transfer)}
+                            title={tx.is_internal_transfer ? 'Marcar como transação real' : 'Marcar como transferência interna'}
                             className="p-1 text-gray-300 hover:text-amber-500 transition-colors rounded"
                           >
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5"><path fillRule="evenodd" d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z" clipRule="evenodd" /></svg>
                           </button>
-                          <button onClick={() => deleteTransaction(t.id)} className="p-1 text-gray-300 hover:text-red-500 transition-colors rounded">
+                          <button onClick={() => deleteTransaction(tx.id)} className="p-1 text-gray-300 hover:text-red-500 transition-colors rounded">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5"><path fillRule="evenodd" d="M5 3.25V4H2.75a.75.75 0 0 0 0 1.5h.3l.815 8.15A1.5 1.5 0 0 0 5.357 15h5.285a1.5 1.5 0 0 0 1.493-1.35l.815-8.15h.3a.75.75 0 0 0 0-1.5H11v-.75A2.25 2.25 0 0 0 8.75 1h-1.5A2.25 2.25 0 0 0 5 3.25Zm2.25-.75a.75.75 0 0 0-.75.75V4h3v-.75a.75.75 0 0 0-.75-.75h-1.5ZM6.05 6a.75.75 0 0 1 .787.713l.275 5.5a.75.75 0 0 1-1.498.075l-.275-5.5A.75.75 0 0 1 6.05 6Zm3.9 0a.75.75 0 0 1 .712.787l-.275 5.5a.75.75 0 0 1-1.498-.075l.275-5.5a.75.75 0 0 1 .786-.712Z" clipRule="evenodd" /></svg>
                           </button>
                         </div>
@@ -383,18 +383,18 @@ export default function FinancesTransactionsPage() {
       {showAdd && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={() => setShowAdd(false)}>
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6" onClick={e => e.stopPropagation()}>
-            <h3 className="font-semibold text-gray-900 mb-4">Nova transação</h3>
+            <h3 className="font-semibold text-gray-900 mb-4">{t.finances.newTransaction}</h3>
             <div className="space-y-3">
               <div>
-                <label className="block text-xs text-gray-500 mb-1">Data</label>
+                <label className="block text-xs text-gray-500 mb-1">{t.common.date}</label>
                 <input type="date" value={addDate} onChange={e => setAddDate(e.target.value)} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20" />
               </div>
               <div>
-                <label className="block text-xs text-gray-500 mb-1">Descrição</label>
+                <label className="block text-xs text-gray-500 mb-1">{t.common.description}</label>
                 <input autoFocus value={addDesc} onChange={e => setAddDesc(e.target.value)} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20" placeholder="Ex: Supermercado" />
               </div>
               <div>
-                <label className="block text-xs text-gray-500 mb-1">Valor</label>
+                <label className="block text-xs text-gray-500 mb-1">{t.common.value}</label>
                 <div className="flex items-center gap-2">
                   <button onClick={() => setAddSign(s => s === '-' ? '+' : '-')} className={`px-2.5 py-2 rounded-lg text-sm font-bold border transition-colors ${addSign === '-' ? 'bg-red-50 border-red-200 text-red-600' : 'bg-green-50 border-green-200 text-green-600'}`}>
                     {addSign}
@@ -406,9 +406,9 @@ export default function FinancesTransactionsPage() {
                 </div>
               </div>
               <div>
-                <label className="block text-xs text-gray-500 mb-1">Categoria (opcional)</label>
+                <label className="block text-xs text-gray-500 mb-1">{t.finances.categoryOptional}</label>
                 <select value={addCat} onChange={e => setAddCat(e.target.value === '' ? '' : Number(e.target.value))} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
-                  <option value="">Sem categoria</option>
+                  <option value="">{t.finances.noCategory}</option>
                   {categories.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
                 </select>
               </div>
@@ -419,9 +419,9 @@ export default function FinancesTransactionsPage() {
                 disabled={saving || !addDesc.trim() || !addAmt}
                 className="flex-1 bg-[#001A70] text-white text-sm py-2 rounded-xl hover:opacity-80 transition-opacity disabled:opacity-40"
               >
-                {saving ? 'Salvando…' : 'Adicionar'}
+                {saving ? '…' : t.finances.addTransaction}
               </button>
-              <button onClick={() => setShowAdd(false)} className="px-4 text-sm text-gray-500 hover:text-gray-700 transition-colors">Cancelar</button>
+              <button onClick={() => setShowAdd(false)} className="px-4 text-sm text-gray-500 hover:text-gray-700 transition-colors">{t.common.cancel}</button>
             </div>
           </div>
         </div>

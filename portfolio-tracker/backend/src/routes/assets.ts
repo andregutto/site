@@ -434,9 +434,8 @@ router.get('/:id/detail', requireAuth, async (req, res: Response) => {
 
   const contribs = rawContribs ?? []
 
-  // Pre-fetch current FX rate for cost calculations (used before priceCurrency block below)
   const assetCurrency = asset.currency || 'BRL'
-  const fxApprox = assetCurrency === 'BRL' ? 1 : await getFxRate(assetCurrency).catch(() => 5.70)
+  let fxApprox = assetCurrency === 'BRL' ? 1 : 5.70  // updated to real rate inside ticker block
 
   let totalQty = 0
   let totalCostBrl = 0
@@ -631,6 +630,7 @@ router.get('/:id/detail', requireAuth, async (req, res: Response) => {
     ])
     const ph = phRes.data
     const mv = mvRes.data
+    fxApprox = priceCurrency === 'BRL' ? 1 : await getFxRate(priceCurrency).catch(() => 5.70)
 
     if (ph && ph.length > 0) {
       const phDates = new Set(ph.map(p => p.ref_date))

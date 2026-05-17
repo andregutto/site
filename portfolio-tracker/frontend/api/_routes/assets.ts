@@ -487,9 +487,7 @@ router.get('/:id/detail', requireAuth, async (req, res: Response) => {
   let currentPrice: number | null = null
   let priceCurrency = asset.currency || 'BRL'
   let priceSource   = ''
-
-  // Fetch current FX rate early so cost loop and contribution display are consistent
-  const fxApprox = priceCurrency === 'BRL' ? 1 : await getFxRate(priceCurrency).catch(() => 5.70)
+  let fxApprox      = priceCurrency === 'BRL' ? 1 : 5.70  // updated to real rate inside ticker block
 
   try {
     if (asset.asset_type === 'manual') {
@@ -682,6 +680,7 @@ router.get('/:id/detail', requireAuth, async (req, res: Response) => {
     ])
     const ph = phRes.data
     const mv = mvRes.data
+    fxApprox = priceCurrency === 'BRL' ? 1 : await getFxRate(priceCurrency).catch(() => 5.70)
 
     if (ph && ph.length > 0) {
       const phDates = new Set(ph.map(p => p.ref_date))

@@ -58,6 +58,7 @@ export default function AppLayout() {
     { to: '/classes',        label: t.nav.classes,       icon: '◈', end: false },
     { to: '/reports',        label: t.nav.ir,            icon: '⊞', end: false },
     { to: '/indices',        label: t.nav.indices,       icon: '◎', end: false },
+    { to: '/freedom',        label: t.nav.freedom,       icon: '🎯', end: false },
     { to: '/finances',       label: t.nav.finances,      icon: '₿', end: false },
   ]
 
