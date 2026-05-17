@@ -58,7 +58,6 @@ export default function AppLayout() {
     { to: '/classes',        label: t.nav.classes,       icon: '◈', end: false },
     { to: '/reports',        label: t.nav.ir,            icon: '⊞', end: false },
     { to: '/indices',        label: t.nav.indices,       icon: '◎', end: false },
-    { to: '/archived',       label: t.nav.archived,      icon: '⊘', end: false },
   ]
 
   return (
@@ -164,6 +163,13 @@ export default function AppLayout() {
                     <span>★</span> {t.nav.favorites}
                   </Link>
                   <Link
+                    to="/archived"
+                    onClick={() => setShowUserMenu(false)}
+                    className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                  >
+                    <span>⊘</span> {t.nav.archived}
+                  </Link>
+                  <Link
                     to="/profile"
                     onClick={() => setShowUserMenu(false)}
                     className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
@@ -244,8 +250,8 @@ export default function AppLayout() {
                 { to: '/reports',      label: t.nav.ir,         icon: '⊞' },
                 { to: '/indices',      label: t.nav.indices,    icon: '◎' },
                 { to: '/achievements', label: t.nav.achievements, icon: '🏅' },
-                { to: '/archived',     label: t.nav.archived,    icon: '⊘' },
-                { to: '/profile',      label: t.nav.profile,     icon: '👤' },
+                { to: '/archived',     label: t.nav.archived,   icon: '⊘' },
+                { to: '/profile',      label: t.nav.profile,    icon: '👤' },
               ].map(({ to, label, icon }) => (
                 <NavLink
                   key={to}
