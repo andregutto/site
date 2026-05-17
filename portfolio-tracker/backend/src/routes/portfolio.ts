@@ -200,11 +200,23 @@ router.post('/sync-history', requireAuth, async (req, res: Response) => {
 
   if (!assets?.length) { res.json({ synced: 0, errors: 0, total: 0, details: [] }); return }
 
+  const assetIds = assets.map(a => a.id as number)
+  const { data: earliest } = await supabaseAdmin
+    .from('contributions')
+    .select('date')
+    .in('asset_id', assetIds)
+    .order('date', { ascending: true })
+    .limit(1)
+    .single()
+  const monthsBack = earliest?.date
+    ? Math.max(3, Math.ceil((Date.now() - new Date(earliest.date).getTime()) / (1000 * 60 * 60 * 24 * 30)) + 1)
+    : 36
+
   type Detail = { id: number; code: string; status: 'ok' | 'empty' | 'error'; points?: number; error?: string }
 
   const syncOne = async (a: (typeof assets)[number]): Promise<Detail> => {
     try {
-      const history = await getMonthlyHistory(a as Asset, 72)
+      const history = await getMonthlyHistory(a as Asset, monthsBack)
       if (!history.length) return { id: a.id, code: a.code, status: 'empty' }
       const { error: upsertErr } = await supabaseAdmin.from('price_history').upsert(
         history.map(p => ({ asset_id: a.id, ref_date: p.date, price: p.price, currency: p.currency, source: 'sync' })),

@@ -248,11 +248,23 @@ router.post('/sync-history', requireAuth, async (req, res: Response) => {
 
   if (!assets?.length) { res.json({ synced: 0, errors: 0, total: 0, details: [] }); return }
 
+  const syncAssetIds = assets.map(a => a.id as number)
+  const { data: earliestContrib } = await supabaseAdmin
+    .from('contributions')
+    .select('date')
+    .in('asset_id', syncAssetIds)
+    .order('date', { ascending: true })
+    .limit(1)
+    .single()
+  const syncMonthsBack = earliestContrib?.date
+    ? Math.max(3, Math.ceil((Date.now() - new Date(earliestContrib.date).getTime()) / (1000 * 60 * 60 * 24 * 30)) + 1)
+    : 36
+
   type Detail = { id: number; code: string; status: 'ok' | 'empty' | 'error'; points?: number; error?: string }
 
   const syncOne = async (a: (typeof assets)[number], source: string): Promise<Detail> => {
     try {
-      const history = await getMonthlyHistory(a as Asset, 72)
+      const history = await getMonthlyHistory(a as Asset, syncMonthsBack)
       if (!history.length) return { id: a.id, code: a.code, status: 'empty' }
       const { error: upsertErr } = await supabaseAdmin.from('price_history').upsert(
         history.map(p => ({ asset_id: a.id, ref_date: p.date, price: p.price, currency: p.currency, source })),
@@ -308,6 +320,18 @@ router.post('/reset-price-history', requireAuth, async (req, res: Response) => {
 
   const assetIds = assets.map(a => a.id as number)
 
+  // Determine how many months back to fetch based on user's earliest contribution
+  const { data: earliest } = await supabaseAdmin
+    .from('contributions')
+    .select('date')
+    .in('asset_id', assetIds)
+    .order('date', { ascending: true })
+    .limit(1)
+    .single()
+  const monthsBack = earliest?.date
+    ? Math.max(3, Math.ceil((Date.now() - new Date(earliest.date).getTime()) / (1000 * 60 * 60 * 24 * 30)) + 1)
+    : 36
+
   const { count: deleted } = await supabaseAdmin
     .from('price_history')
     .delete({ count: 'exact' })
@@ -320,7 +344,7 @@ router.post('/reset-price-history', requireAuth, async (req, res: Response) => {
 
   const syncOne = async (a: (typeof assets)[number], source: string) => {
     try {
-      const history = await getMonthlyHistory(a as Asset, 72)
+      const history = await getMonthlyHistory(a as Asset, monthsBack)
       if (history.length) {
         const { error: upsertErr } = await supabaseAdmin.from('price_history').upsert(
           history.map(p => ({ asset_id: a.id, ref_date: p.date, price: p.price, currency: p.currency, source })),
