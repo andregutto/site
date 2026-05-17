@@ -6,7 +6,6 @@ import { useCurrency, type Currency } from '../contexts/CurrencyContext'
 import { useAchievementContext } from '../contexts/AchievementContext'
 import { useI18n } from '../contexts/I18nContext'
 import { getLevel, getNextLevel, getLevelProgress, ACHIEVEMENT_DEFS } from '../lib/achievementDefs'
-import LanguageSelector from '../components/LanguageSelector'
 import { supabase } from '../lib/supabase'
 import { useResetPriceHistory } from '../hooks/usePortfolio'
 
@@ -274,7 +273,7 @@ export default function ProfilePage() {
               )}
             </div>
 
-            <svg className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300 group-hover:text-[#001A70] transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg className="absolute right-4 top-4 w-3.5 h-3.5 text-gray-300 group-hover:text-[#001A70] transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
             </svg>
           </Link>
@@ -359,12 +358,7 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            <div>
-              <label className="block text-xs text-gray-500 mb-2">Idioma / Language</label>
-              <LanguageSelector />
-            </div>
-
-            {error    && <p className="text-xs text-red-600">{error}</p>}
+{error    && <p className="text-xs text-red-600">{error}</p>}
             {saveOk   && <p className="text-xs text-green-600">Salvo com sucesso.</p>}
 
             <button

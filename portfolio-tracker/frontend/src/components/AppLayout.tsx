@@ -8,6 +8,7 @@ import { getLevel, getLevelProgress } from '../lib/achievementDefs'
 import { apiFetch } from '../lib/api'
 import LoginFooter from './LoginFooter'
 import OnboardingOverlay from './OnboardingOverlay'
+import LanguageSelector from './LanguageSelector'
 
 const ONBOARDING_KEY = 'onboarding_v1_done'
 
@@ -131,6 +132,12 @@ export default function AppLayout() {
               </button>
               {showUserMenu && (
                 <div className="absolute right-0 top-full mt-2 w-52 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-50">
+                  {/* Language */}
+                  <div className="px-4 py-2.5 border-b border-gray-100 flex items-center justify-between">
+                    <span className="text-xs text-gray-500">Idioma</span>
+                    <LanguageSelector />
+                  </div>
+
                   {/* XP mini-bar */}
                   <div className="px-4 py-2.5 border-b border-gray-100">
                     <div className="flex items-center justify-between mb-1.5">

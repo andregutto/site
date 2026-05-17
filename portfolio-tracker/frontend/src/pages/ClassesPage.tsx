@@ -20,7 +20,7 @@ const ICON_OPTIONS = [
 
 const CLASS_ICON_MAP: [RegExp, string][] = [
   [/ações?\s*brasil|brazil|b3/i, '📊'],
-  [/ações?\s*exterior|eua|usa|intl|internacional/i, '🌍'],
+  [/exterior|eua|usa|intl|internacional|ações?\s*exterior/i, '🌍'],
   [/fii|imobiliário|imobiliario/i, '🏢'],
   [/cripto|crypto|bitcoin/i, '💎'],
   [/renda\s*fixa|fixed|tesouro|cdb|lci|lca/i, '🏦'],

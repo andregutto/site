@@ -70,8 +70,8 @@ router.post('/check', requireAuth, async (req, res: Response) => {
   check('crypto_native', assetList.some(a => /cripto|crypto|bitcoin|digital/i.test(className(a))))
   check('global_investor', currencies.size >= 3)
   check('expat', currencies.size >= 2)
-  check('pension', assetList.some(a => /previdên|previdencia|pgbl|vgbl/i.test(className(a))))
-  check('brick_by_brick', assetList.some(a => /imóv|imov|real.?estate/i.test(className(a))))
+  check('pension', assetList.some(a => /previd|pgbl|vgbl/i.test(className(a))))
+  check('brick_by_brick', assetList.some(a => /im[oó]v[ei]|real.?estate|imobi/i.test(className(a))))
   check('discipline', hasConsecutiveMonths(contribDates, 3))
   check('consistency', hasConsecutiveMonths(contribDates, 6))
 
@@ -87,13 +87,10 @@ router.post('/check', requireAuth, async (req, res: Response) => {
   let newlyEarned: string[] = []
   if (toAward.length > 0) {
     const rows = toAward.map(key => ({ user_id: userId, achievement_key: key }))
-    const { data: inserted, error: insertErr } = await supabaseAdmin
+    const { error: insertErr } = await supabaseAdmin
       .from('achievements')
       .upsert(rows, { onConflict: 'user_id,achievement_key', ignoreDuplicates: true })
-      .select('achievement_key')
-    if (!insertErr && inserted) {
-      newlyEarned = inserted.map((r: { achievement_key: string }) => r.achievement_key)
-    }
+    if (!insertErr) newlyEarned = toAward
   }
 
   res.json({ newly_earned: newlyEarned })
