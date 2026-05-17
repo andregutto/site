@@ -165,6 +165,102 @@ router.delete('/categories/:id', requireAuth, async (req, res: Response) => {
   res.json({ ok: true })
 })
 
+// ── Spending Summary ──────────────────────────────────────────────────────────
+
+router.get('/spending-summary', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const months = Math.min(parseInt(req.query.months as string) || 6, 24)
+
+  const since = new Date()
+  since.setMonth(since.getMonth() - months + 1)
+  since.setDate(1)
+  const sinceStr = since.toISOString().slice(0, 10)
+
+  const [txnRes, catRes, envRes, incomeRes] = await Promise.all([
+    supabaseAdmin
+      .from('finance_transactions')
+      .select('date, amount, category_id, is_internal_transfer')
+      .eq('user_id', userId)
+      .gte('date', sinceStr)
+      .order('date', { ascending: true }),
+    supabaseAdmin
+      .from('finance_categories')
+      .select('id, envelope_id, budget_monthly')
+      .eq('user_id', userId),
+    supabaseAdmin
+      .from('finance_envelopes')
+      .select('id, name, color, icon, pct_target, sort_order')
+      .eq('user_id', userId)
+      .order('sort_order'),
+    supabaseAdmin
+      .from('finance_income')
+      .select('monthly_net, currency')
+      .eq('user_id', userId)
+      .single(),
+  ])
+
+  const txns   = txnRes.data ?? []
+  const cats   = catRes.data ?? []
+  const envs   = envRes.data ?? []
+  const income = incomeRes.data ?? { monthly_net: 0, currency: 'EUR' }
+
+  const catToEnv     = new Map(cats.map((c: { id: number; envelope_id: number | null; budget_monthly: number | null }) => [c.id, c.envelope_id]))
+  const envMap       = new Map(envs.map((e: { id: number; name: string; color: string; icon: string; pct_target: number; sort_order: number }) => [e.id, e]))
+  const envCatBudget = new Map<number, number>()
+  for (const c of cats as { id: number; envelope_id: number | null; budget_monthly: number | null }[]) {
+    if (c.envelope_id != null && c.budget_monthly != null) {
+      envCatBudget.set(c.envelope_id, (envCatBudget.get(c.envelope_id) ?? 0) + c.budget_monthly)
+    }
+  }
+
+  void envMap
+
+  type MonthData = { income: number; expenses: number; byEnv: Map<number | null, number> }
+  const monthMap = new Map<string, MonthData>()
+
+  for (const tx of txns as { date: string; amount: number; category_id: number | null; is_internal_transfer: boolean }[]) {
+    const m = tx.date.slice(0, 7)
+    if (!monthMap.has(m)) monthMap.set(m, { income: 0, expenses: 0, byEnv: new Map() })
+    const md = monthMap.get(m)!
+    if (tx.is_internal_transfer) continue
+    if (tx.amount > 0) {
+      md.income += tx.amount
+    } else {
+      md.expenses += Math.abs(tx.amount)
+      const envId = tx.category_id ? (catToEnv.get(tx.category_id) ?? null) : null
+      md.byEnv.set(envId, (md.byEnv.get(envId) ?? 0) + Math.abs(tx.amount))
+    }
+  }
+
+  const resultMonths = []
+  for (let i = months - 1; i >= 0; i--) {
+    const d = new Date()
+    d.setMonth(d.getMonth() - i)
+    d.setDate(1)
+    const m = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+    const md = monthMap.get(m) ?? { income: 0, expenses: 0, byEnv: new Map() }
+    const byEnv = (envs as { id: number; name: string; color: string; icon: string; pct_target: number; sort_order: number }[]).map(env => ({
+      envelope_id: env.id,
+      name:  env.name,
+      color: env.color,
+      icon:  env.icon,
+      actual: Math.round((md.byEnv.get(env.id) ?? 0) * 100) / 100,
+      budget: Math.round((envCatBudget.get(env.id) ?? 0) * 100) / 100,
+    }))
+    const uncategorized = md.byEnv.get(null) ?? 0
+    if (uncategorized > 0) {
+      byEnv.push({ envelope_id: -1, name: 'Não categorizado', color: '#9CA3AF', icon: '❓', actual: Math.round(uncategorized * 100) / 100, budget: 0 })
+    }
+    resultMonths.push({ month: m, income: Math.round(md.income * 100) / 100, expenses: Math.round(md.expenses * 100) / 100, by_envelope: byEnv })
+  }
+
+  res.json({
+    months:        resultMonths,
+    income_config: income,
+    envelopes:     (envs as { id: number; name: string; color: string; icon: string; pct_target: number; sort_order: number }[]).map(e => ({ ...e, budget: envCatBudget.get(e.id) ?? 0 })),
+  })
+})
+
 // ── Transactions ───────────────────────────────────────────────────────────────
 
 // GET /api/finances/transactions?month=2026-05&category_id=3

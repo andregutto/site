@@ -339,7 +339,8 @@
     "freedomChartTitle":  "Trajectory: planned vs actual",
     "freedomAhead":       "Ahead of plan",
     "freedomBehind":      "Behind plan",
-    "freedomApprox":      "Historical BRL values converted at current rate."
+    "freedomApprox":      "Historical BRL values converted at current rate.",
+    "ofIncome":           "of income"
   },
   "archived": {
     "title":         "Archived",

@@ -339,7 +339,8 @@
     "freedomChartTitle":  "Trajetória: planejado vs realizado",
     "freedomAhead":       "Adiantado em relação ao plano",
     "freedomBehind":      "Atrasado em relação ao plano",
-    "freedomApprox":      "Valores históricos em BRL convertidos pela taxa atual."
+    "freedomApprox":      "Valores históricos em BRL convertidos pela taxa atual.",
+    "ofIncome":           "da renda"
   },
   "archived": {
     "title":         "Arquivados",
