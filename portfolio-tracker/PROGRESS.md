@@ -1,506 +1,15 @@
-# Portfolio Tracker — Histórico de Progresso
+# Portfolio Tracker — Progresso e Roadmap
 
-## Sessão 1 — Fundação (11/05/2026) ✅ CONCLUÍDA
-
-### Decisões arquiteturais tomadas
-
-**Escopo:** Ferramenta genérica para qualquer brasileiro no exterior — não limitada
-aos 57 ativos do André. Os ativos do André são seed de exemplo.
-
-**3 tipos de ativo:**
-| Tipo | `asset_type` | Fonte de valor |
-|---|---|---|
-| Ações, FIIs, ETFs, Cripto | `ticker` | API externa (brapi / Yahoo / CoinGecko) |
-| CDB, Tesouro, LCI, LCA | `fixed_income` | Cálculo via BCB (CDI/IPCA) |
-| NATIXIS, REVOLUT | `manual` | Usuário digita valor mensal |
-
-**Stack decidida:**
-- Frontend: Vite + React 19 + TypeScript + Tailwind CSS v4 + Recharts
-- Backend: Node.js + Express (TypeScript, ESM, tsx para dev)
-- Banco: PostgreSQL via Supabase (projeto `bkgpivxpzuzedezxtknd`)
-- Auth: Supabase Auth (email/senha)
-- Deploy futuro: Vercel (frontend) + Railway/Render (backend)
-
-**APIs externas:**
-- Ações Brasil / FIIs: brapi.dev
-- Ações USA / ETFs: yahoo-finance2 (npm)
-- Cripto: CoinGecko
-- Câmbio: AwesomeAPI (economia.awesomeapi.com.br) — via backend, não direto do browser
-- Renda Fixa: BCB (api.bcb.gov.br) — série 12 (CDI diário), 433 (IPCA mensal)
-
-**Renda Fixa — tipos e cálculo:**
-- `pos_cdi`: `principal × Π(1 + CDI_dia/100 × fi_rate)` — `fi_rate` = multiplicador (1.025 = 102,5% CDI)
-- `pre`: `principal × (1 + fi_rate)^(dias_úteis/252)`
-- `ipca_plus`: `principal × IPCA_acum × (1 + fi_spread)^(dias_úteis/252)`
-- `selic`: igual a pós-CDI mas usando série BCB 1178
+> Atualizado a cada etapa concluída. Deploy automático via Vercel no push para `main`.
+> Trabalho em etapas: concluir → deploy → próxima etapa.
 
 ---
 
-### O que foi construído
-
-#### Banco de dados (Supabase)
-- ✅ Migration `001_initial_schema.sql` rodada com sucesso
-- ✅ 9 tabelas criadas com RLS completo
-- ✅ Trigger: cria `profile` automaticamente ao registrar usuário
-- ✅ Seeds rodados para o usuário André (UUID: `453bc770-0cea-4c88-b72f-babf9e50437e`):
-  - 6 classes de ativos com cores e targets de alocação
-  - 57 ativos cadastrados (ticker / fixed_income / manual)
-  - Contribuições iniciais (posição histórica de compra)
-
-#### Frontend (`portfolio-tracker/frontend/`)
-- ✅ Vite + React 19 + TypeScript + Tailwind CSS v4
-- ✅ `.env` configurado (VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY)
-- ✅ `src/lib/supabase.ts` — cliente Supabase
-- ✅ `src/lib/fxService.ts` — funções de câmbio via `/api/fx` (backend)
-- ✅ Proxy Vite: `/api/*` → `http://localhost:3001`
-
-#### Backend (`portfolio-tracker/backend/`)
-- ✅ Express + TypeScript (ESM, tsx watch)
-- ✅ CORS configurado para `http://localhost:5174`
-- ✅ `src/routes/fx.ts` — 3 endpoints de câmbio via AwesomeAPI
-- ✅ Cache em memória (5 min atual, 1h histórico)
-- ✅ Backend rodando em `http://localhost:3001`
-
----
-
-## Sessão 2 — Serviços de preço + Backend completo (11/05/2026) ✅ CONCLUÍDA
-
-### O que foi construído
-
-#### Backend — infraestrutura
-- ✅ `src/lib/cache.ts` — cache TTL genérico usado por todos os serviços
-- ✅ `src/lib/supabase.ts` — clientes admin (service_role) e user-scoped
-- ✅ `src/middleware/auth.ts` — validação de JWT Supabase em cada request
-
-#### Backend — serviços de precificação
-- ✅ `src/services/brapiService.ts` — B3 via brapi.dev (cotação atual + histórico mensal)
-- ✅ `src/services/yahooService.ts` — USA/globais via yahoo-finance2 (instancia com `new YahooFinance()`)
-- ✅ `src/services/coingeckoService.ts` — Cripto via CoinGecko (batch getCurrentPrices)
-- ✅ `src/services/bcbService.ts` — BCB séries 12 (CDI), 433 (IPCA), 1178 (Selic)
-- ✅ `src/services/fixedIncomeService.ts` — calculadora: pos_cdi, pre, ipca_plus, selic
-- ✅ `src/services/priceService.ts` — roteador unificado por `asset_type` + tickers disponíveis
-
-#### Backend — rotas
-- ✅ `GET /api/prices/:id/current` — preço atual de um ativo (auth obrigatório)
-- ✅ `GET /api/prices/:id/history?months=24` — histórico, persiste em price_history
-- ✅ `GET /api/portfolio/value` — valor consolidado (total_brl/usd/eur, by_class, by_asset)
-- ✅ `GET /api/performance/summary?from=YYYY-MM&to=YYYY-MM` — Simple Dietz ajustado por aportes
-- ✅ `GET /api/performance/monthly?year=YYYY` — evolução mês a mês
-
-#### Verificações de APIs externas (curl direto)
-- ✅ BCB CDI — série 12 retorna taxas diárias corretamente
-- ✅ brapi.dev — PETR4 cotado em 46.25 BRL
-- ✅ CoinGecko — BTC cotado em ~81.898 USD
-- ✅ Yahoo Finance — META cotado em ~600.48 USD
-- ✅ Auth middleware — rejeita token inválido com 401
-
----
-
-## Sessão 3 — Frontend completo (11/05/2026) ✅ CONCLUÍDA
-
-### O que foi construído
-
-#### Frontend — autenticação
-- ✅ `src/contexts/AuthContext.tsx` — AuthProvider + useAuth hook
-- ✅ `src/pages/LoginPage.tsx` — login + cadastro (toggle)
-- ✅ `src/lib/api.ts` — cliente HTTP com JWT injetado automaticamente
-
-#### Frontend — Dashboard
-- ✅ `src/pages/DashboardPage.tsx` — página principal com refresh
-- ✅ `src/components/ValueCards.tsx` — cards BRL / USD / EUR
-- ✅ `src/components/AllocationChart.tsx` — pizza + barras por classe (Recharts)
-- ✅ `src/components/AssetTable.tsx` — tabela com filtro, ordenação, % por ativo
-
-#### Frontend — Performance
-- ✅ `src/pages/PerformancePage.tsx` — cards resumo + gráfico evolução + tabela mensal
-- ✅ `src/hooks/usePortfolio.ts` — hooks para portfolio/value, performance/summary, performance/monthly
-
-#### Frontend — Navegação
-- ✅ `src/components/AppLayout.tsx` — header fixo + nav (desktop + mobile)
-- ✅ `src/App.tsx` — BrowserRouter com rotas protegidas (ProtectedRoutes)
-- ✅ `src/lib/types.ts` — tipos TypeScript compartilhados
-- ✅ React Router v6 + Recharts instalados
-
----
-
-## Sessão 4 — Correções de bugs críticos (11/05/2026) ✅ CONCLUÍDA
-
-### Bugs corrigidos
-
-#### Bug 1 + 2: FX rate (AwesomeAPI 429) → USD/EUR como `—` + apenas 24/57 ativos visíveis
-Causa raiz: `getFxRate` em `portfolio.ts` usava cache key diferente de `fx.ts` (sem reaproveitamento) e ao receber 429 da AwesomeAPI lançava exceção — todos os ativos em USD/EUR eram silenciosamente descartados.
-
-- ✅ `portfolio.ts` — `getFxRate` refatorado: usa mesma URL como cache key do `fx.ts`; fallback chain: AwesomeAPI → tabela `fx_rates` → hardcoded (USD: 5.70, EUR: 6.40)
-- ✅ `portfolio.ts` — salva taxa bem-sucedida em `fx_rates` para uso futuro como fallback
-
-#### Bug 3: Aba Performance sem dados históricos
-Causa raiz: tabela `price_history` vazia — nunca populada.
-
-- ✅ `portfolio.ts` — novo endpoint `POST /api/portfolio/sync-history`: busca 24 meses de histórico de todos os ativos `ticker` e persiste em `price_history`
-- ✅ `PerformancePage.tsx` — banner âmbar com botão "Inicializar histórico" aparece quando `price_history` está vazio
-- ✅ `usePortfolio.ts` — hook `useSyncHistory` para acionar o sync
-
----
-
-## Sessão 5 — Ativos manuais + correções de sync (11/05/2026) ✅ CONCLUÍDA
-
-### O que foi construído
-
-#### Ativos manuais e renda fixa no dashboard
-Todos os 57 ativos agora aparecem no dashboard — incluindo os que precisam de input do usuário.
-
-- ✅ `portfolio.ts` — ativos `manual` sem `manual_values` e `fixed_income` com `fi_principal=NULL` retornam `needs_manual: true` em vez de serem silenciosamente ignorados
-- ✅ `portfolio.ts` — TARPON (ticker de fundo sem cotação pública, sem `ticker_yahoo`/`coingecko_id`): novo guard `hasAutoSource` evita skip prematuro por `holdings=0`; cai no catch → `needs_manual: true`
-- ✅ `portfolio.ts` — resposta inclui `fi_type` e `fi_start_date` nos ativos `fixed_income` para o modal pré-popular campos já cadastrados
-- ✅ `frontend/src/lib/types.ts` — `PortfolioAsset` recebe `fi_type?` e `fi_start_date?`
-
-#### Novos componentes frontend
-- ✅ `ManualValueModal.tsx` — modal para TARPON/NATIXIS/REVOLUT: registra/exclui histórico em `manual_values` (data, valor, moeda, notas)
-- ✅ `FixedIncomeSetupModal.tsx` — modal para CDB BTG / NTN-B: coleta `fi_principal` e `fi_start_date`; pré-popula `fi_start_date` quando já existe no banco; exibe tipo correto (IPCA+, Pós-fixado CDI etc.) via `fi_type`
-- ✅ `AssetTable.tsx` — badge "N aguardando valor", fundo âmbar para `needs_manual`, "Informar →" na coluna de preço, total exclui ativos sem valor
-- ✅ `DashboardPage.tsx` — `handleAssetClick` abre modal correto: `ManualValueModal` para `manual`/`error`, `FixedIncomeSetupModal` para `fixed_income`
-
-#### Nova rota backend
-- ✅ `backend/src/routes/assets.ts` — CRUD de valores manuais:
-  - `GET /api/assets/:id/manual-values` — histórico (últimas 24 entradas)
-  - `POST /api/assets/:id/manual-value` — upsert `{ ref_date, value, currency, notes }`
-  - `DELETE /api/assets/:id/manual-value/:valueId` — remove entrada
-  - `PATCH /api/assets/:id` — atualiza `fi_principal`, `fi_start_date`, `fi_type`, `fi_rate`, `fi_spread`
-
-### Bugs corrigidos nesta sessão
-
-#### Bug: sync-history reportava sucesso mas não gravava no banco
-Causa raiz: `supabaseAdmin.from('price_history').upsert(...)` nunca lança exceção — retorna `{ error }` no objeto. Código não checava esse campo e sempre incrementava `synced`.
-
-- ✅ `portfolio.ts` — upsert agora desestrutura `{ error: upsertErr }` e lança se houver erro; `synced` só incrementa após gravação confirmada
-
-#### Bug: `fi_rate=null` rejeitava NTN-B (IPCA+) incorretamente
-Causa raiz: validação antiga exigia `fi_rate != null` para todos os tipos de renda fixa, mas IPCA+ usa `fi_spread` (não `fi_rate`).
-
-- ✅ `fixedIncomeService.ts` — interface `FixedIncomeAsset.fi_rate` alterada para `number | null`; `calcPosCDI` e `calcPre` usam `fi_rate!` (garantido pelo guard anterior)
-- ✅ `priceService.ts` — validação corrigida: `fi_rate` obrigatório apenas para tipos não-IPCA+
-- ✅ `portfolio.ts` — `needs_manual` check: `(a.fi_type !== 'ipca_plus' && a.fi_rate == null)`
-
-#### Bug: BTC/ETH/SOL apareciam como "Informar →" após sync
-Causa raiz: CoinGecko sem try/catch em `getCurrentPrice` — rate limit após sync propagava exceção e nunca tentava Yahoo Finance como fallback.
-
-- ✅ `priceService.ts` — `getCurrentPrice` agora tem try/catch em torno de CoinGecko e Yahoo: `brapi → CoinGecko → Yahoo` com fallthrough completo
-
-#### Bug: sync-history usava apenas Yahoo para histórico (ordem errada)
-- ✅ `priceService.ts` — `getMonthlyHistory` reordenado: Yahoo primeiro (suporta B3/.SA sem token), depois brapi, depois CoinGecko. Resultado: 49/50 ativos sincronizados com sucesso (TARPON excluído — manual)
-
-### Estado atual do dashboard
-- ✅ 57/57 ativos visíveis
-- ✅ Ativos automáticos (ações, FIIs, ETFs, cripto, renda fixa completa): valor calculado
-- ✅ Ativos pendentes (TARPON, CDB BTG, NTN-B 35/P35/45, NATIXIS, REVOLUT): badge âmbar + modal ao clicar
-- ✅ Total BRL / USD / EUR nos cards superiores
-
----
-
-## Sessão 6 — Features completas: Detalhe, Moeda, Aportes, Perfil, Benchmarks (11/05/2026) ✅ CONCLUÍDA
-
-### O que foi construído
-
-#### Tela de detalhe do ativo (`AssetDetailPage.tsx` + `GET /api/assets/:id/detail`)
-- ✅ Cards: valor atual, investido, ganho/perda (com %), holdings, peso no portfólio
-- ✅ Gráfico de linha com histórico de preços (ticker: price_history; manual: manual_values)
-- ✅ Tabela de contribuições com badges buy/sell
-- ✅ Botão "Voltar" (navigate(-1))
-- ✅ Bug corrigido: `invested_brl` agora usa `price_orig × qty × (fx_rate_brl ?? 5.70)` quando `value_brl` é null (seeds de ações USA e cripto não tinham value_brl)
-- ✅ Bug corrigido: gráfico filtrado por `.lte('ref_date', today)` — remove pontos futuros (2026-05) gerados pelo sync
-
-#### Seletor de moeda base (`CurrencyContext.tsx`)
-- ✅ Context provider: `currency`, `setCurrency`, `fxRates`, `convert()`, `fmt()`
-- ✅ Persiste em `localStorage('preferredCurrency')`
-- ✅ Busca taxas do backend `/api/fx/current?pairs=USD-BRL,EUR-BRL`
-- ✅ Botões BRL/USD/EUR no header
-- ✅ Dashboard, AssetTable e ValueCards usam `fmt()` da moeda selecionada
-
-#### Tela de Aportes (`ContributionsPage.tsx` + `contributions.ts`)
-- ✅ `GET /api/contributions` — lista todos os aportes com info do ativo
-- ✅ `POST /api/contributions` — cria novo aporte
-- ✅ `DELETE /api/contributions/:id` — remove (valida posse via join)
-- ✅ Frontend: formulário + tabela com delete; seletor de ativo carregado do portfólio
-
-#### Autocomplete de Instituição (`InstitutionSelect.tsx` + `institutions.ts`)
-- ✅ `GET /api/institutions` — 3 grupos: Bancos BR (BrasilAPI, cache 24h), Internacional (estático), Personalizado (exchange únicos do banco)
-- ✅ Cache module-level no frontend; dropdown agrupado com "Adicionar X" quando sem match exato
-- ✅ Integrado ao `FixedIncomeSetupModal`
-
-#### Modal Renda Fixa melhorado (`FixedIncomeSetupModal.tsx`)
-- ✅ `fi_type` agora é selecionável via `<select>` (Pós-fixado CDI / Selic / Pré-fixado / IPCA+)
-- ✅ Troca de tipo limpa o campo correto: IPCA+ usa `fi_spread`, demais usam `fi_rate`; null é enviado para o campo inativo
-- ✅ Campo de taxa com label/placeholder/hint dinâmicos por tipo
-- ✅ Campos adicionados: taxa contratada, vencimento (opc.), instituição financeira
-
-#### Ponto zero da carteira (`POST /api/portfolio/reset-baseline`)
-- ✅ Endpoint deleta todas as contribuições de `2023-01-01` e recria em `2025-01-01`
-- ✅ Preços históricos reais via `yahoo.getPriceAtDate(ticker, '2025-01-01')` — consulta janela ±7 dias para pegar primeiro dia útil
-- ✅ Fetches em paralelo (`Promise.all`) para todos os ativos
-- ✅ Calcula `value_brl = price × qty × fx` para ativos USD/EUR
-- ✅ Botão com confirmação na PerformancePage (seção "Ferramentas avançadas")
-- ✅ `yahooService.ts` — nova função `getPriceAtDate(ticker, date)`
-
-#### Perfil do usuário (`ProfilePage.tsx` + `profile.ts`)
-- ✅ `GET/PATCH /api/profile` — lê e salva nome, país, data início portfólio em Supabase Auth `user_metadata`
-- ✅ `PATCH /api/profile/password` — troca senha via `supabaseAdmin.auth.admin.updateUserById`
-- ✅ Frontend: avatar com iniciais, formulário de dados pessoais, seletor de moeda padrão, seção de troca de senha
-- ✅ Email no header vira link para `/profile`
-
-#### Benchmarks na Performance (`GET /api/performance/benchmarks`)
-- ✅ CDI: agrega taxas diárias BCB série 12 em retorno mensal acumulado
-- ✅ IBOV: Yahoo Finance `^BVSP` histórico mensal — normalizado para índice (100 = jan)
-- ✅ S&P500: Yahoo Finance `^GSPC` histórico mensal — normalizado
-- ✅ Chart: botões toggle CDI/IBOV/S&P500 sobrepõem linhas tracejadas no eixo Y direito (%)
-- ✅ Cards de comparação: CDI%, IBOV%, S&P500% do ano abaixo do gráfico
-- ✅ `PerformanceBenchmarks` e `BenchmarkMonthly` adicionados em `types.ts`
-- ✅ Hook `usePerformanceBenchmarks(year)` adicionado em `usePortfolio.ts`
-
-#### NTN-B — fallback BrasilAPI (`bcbService.ts`)
-- ✅ `getIPCARates` agora tem try/catch: se BCB série 433 falhar, busca taxa anual atual em `brasilapi.com.br/api/taxas/v1/ipca` e gera série mensal aproximada (cache 6h)
-
-### Bugs corrigidos nesta sessão
-
-#### Bug: `invested_brl` mostrava "—" para ações USA e cripto
-Causa raiz: seed não preenchia `value_brl` para aportes em USD (sem `fx_rate_brl`). Backend usava `c.value_brl ?? 0`.
-- ✅ `assets.ts` — fallback: `c.value_brl ?? (c.price_orig != null ? c.price_orig * qty * (c.fx_rate_brl ?? 5.70) : 0)`
-
-#### Bug: gráfico de detalhe mostrava ponto futuro (Mai/26)
-Causa raiz: `sync-history` gravava o mês corrente (`2026-05-01`) na `price_history`.
-- ✅ `assets.ts` — query de price_history agora filtra `.lte('ref_date', today)`
-
-### Estado atual do sistema
-
-| Feature | Status |
-|---|---|
-| Dashboard 57 ativos | ✅ funcional |
-| Seletor moeda BRL/USD/EUR | ✅ funcional |
-| Detalhe do ativo (P&L + gráfico + aportes) | ✅ funcional |
-| Tela de Aportes (CRUD) | ✅ funcional |
-| Modal Renda Fixa (tipo selecionável + taxa + vencimento + instituição) | ✅ funcional |
-| Ponto zero 2025-01-01 com preços reais | ✅ endpoint pronto |
-| Perfil do usuário (nome, país, senha) | ✅ funcional |
-| Performance com benchmarks CDI/IBOV/S&P500 | ✅ funcional |
-
-### Pendências
-
-#### Dados a preencher pelo usuário (via modal)
-- [ ] TARPON — registrar valor atual em `manual_values`
-- [ ] CDB BTG — informar `fi_principal` e `fi_start_date` via modal
-- [ ] NTN-B 35 / NTN-B P35 / NTN-B 45 — informar `fi_principal`
-- [ ] NATIXIS — registrar valor atual em EUR via modal
-- [ ] REVOLUT — registrar saldo atual em EUR via modal
-- [ ] Acionar "Resetar 2023 → 2025" na aba Performance para recalcular ponto zero
-
-#### Features planejadas
-- [ ] Settings Page: targets de alocação por classe
-- [ ] Exportar CSV de aportes / extrato
-- [ ] Notificações / alertas de rebalanceamento
-
-#### Deploy
-- [x] ~~Deploy: Vercel (frontend) + Railway (backend)~~ → arquitetura mudou (ver Sessão 7)
-- [ ] Configurar subdomínio `portfolio.andregutto.com` no DNS
-- [ ] Confirmar que dashboard carrega em produção
-
----
-
----
-
-## Sessão 7 — Deploy Vercel + debugging API (12/05/2026) 🔧 EM PROGRESSO
-
-### Decisão arquitetural: Railway → Vercel Serverless
-
-O backend Express (antes em Railway) foi migrado para **Vercel Serverless Functions** dentro do mesmo projeto do frontend, eliminando Railway.
-
-**Nova estrutura:**
-```
-portfolio-tracker/frontend/
-├── src/              ← frontend Vite/React (serve via dist/)
-├── api/              ← serverless functions (Express via catch-all)
-│   ├── [...path].ts  ← entry point → exporta Express app
-│   ├── _app.ts       ← configura Express + rotas
-│   ├── _lib/         ← supabase, cache, fx
-│   ├── _middleware/  ← auth JWT
-│   ├── _routes/      ← todas as rotas do backend original
-│   └── _services/    ← brapi, yahoo, coingecko, bcb, etc.
-└── vercel.json       ← routing: /api/* → function, /* → SPA
-```
-
-### Problemas encontrados e corrigidos
-
-#### Build failures (TypeScript)
-- ✅ `AllocationChart.tsx`: `Legend` importado mas não usado
-- ✅ `AllocationChart.tsx`, `AssetDetailPage.tsx`, `PerformancePage.tsx`: `formatter={(v: number) => ...}` conflita com tipo `ValueType` do Recharts — corrigido com `Number(v)`
-- ✅ `CurrencyContext.tsx`: `ReactNode` precisava de `import type` por causa de `verbatimModuleSyntax: true`
-- ✅ `App.tsx` importava `InstitutionsPage.tsx` que não estava no git (arquivo novo local-only)
-
-#### Blank page (React não inicializava)
-- ✅ `src/lib/supabase.ts`: `throw new Error(...)` em nível de módulo crashava o bundle antes do React montar → substituído por `console.error` + placeholder URL
-- ✅ `AuthContext.tsx`: `getSession()` sem `.catch()` — se Supabase falha, `setLoading(false)` nunca é chamado → app congela em branco
-- ✅ `App.tsx`: `if (loading) return null` → tela branca; substituído por spinner
-
-#### 404 nas rotas de API
-- Causa: `"framework": "vite"` no `vercel.json` sobrescrevia o pipeline de routing do Vercel, impedindo `/api/*` de chegar às serverless functions
-- ✅ Removido `framework: "vite"`, substituído `rewrites` por `routes` explícitas:
-  ```json
-  { "src": "/api/(.*)", "dest": "/api/[...path]" },
-  { "handle": "filesystem" },
-  { "src": "/(.*)", "dest": "/index.html" }
-  ```
-
-#### 500 nas rotas de API (status atual)
-- `api/_lib/supabase.ts`: `throw new Error(...)` em módulo crashava toda a inicialização do Express → substituído por `console.error` + placeholder URL
-- `api/_middleware/auth.ts`: `requireAuth` sem try/catch → exceção de rede do Supabase causava 500 não formatado → adicionado try/catch com 503
-- `api/_app.ts`: sem error handler global → erros chegavam como stack trace ou 500 vazio → adicionado middleware `(err, req, res, next)` que retorna JSON
-- `api/_app.ts`: CORS fixo em `localhost:5174` → variabilizado via `FRONTEND_ORIGIN` (comma-separated)
-- ✅ `/api/health` adicionado com check de env vars: `{ status, env: { supabase_url, service_key, anon_key } }`
-
-### Commits da sessão
-| Hash | Descrição |
-|---|---|
-| `8bfc81b` | Fix TypeScript: Legend, formatters Recharts, import type |
-| `af824ec` | supabase.ts: throw → console.error + placeholder |
-| `1a20cbd` | vercel.json: buildCommand/outputDirectory explícitos |
-| `bd1267e` | AuthContext + App: resilientes a falha do Supabase |
-| `233c323` | Commita InstitutionsPage.tsx e outros arquivos faltando |
-| `15793fb` | vercel.json: routes explícitas, remove framework:vite |
-| `903108a` | api/_lib/supabase: sem throw, api/_app: error handler + CORS + health |
-| `c54c914` | requireAuth: try/catch para falha de rede do Supabase |
-
-### Estado atual das env vars no Vercel
-Configuradas para Production + Preview:
-- `VITE_SUPABASE_URL` — para o bundle do frontend
-- `VITE_SUPABASE_ANON_KEY` — para o bundle do frontend
-- `SUPABASE_URL` — para as serverless functions
-- `SUPABASE_ANON_KEY` — para as serverless functions
-- `SUPABASE_SERVICE_ROLE_KEY` — para as serverless functions (admin)
-- `FRONTEND_ORIGIN` — **não configurado ainda** (não crítico: mesma origem)
-
-### O que ainda falta para o dashboard funcionar
-
-#### Imediato — verificar após próximo deploy
-1. Acessar `/api/health` no Vercel e confirmar `env.supabase_url: true, env.service_key: true`
-2. Se health OK mas dashboard 500 → verificar Function Logs no Vercel para erro específico
-3. Se health mostra `false` → env vars não chegaram à runtime (scope errado ou redeploy sem cache)
-
-#### Subdomínio (a fazer)
-- Vercel: Project Settings > Domains → adicionar `portfolio.andregutto.com`
-- DNS: adicionar CNAME `portfolio → cname.vercel-dns.com`
-
-#### Melhorias pendentes (backlog)
-- [ ] `BRAPI_TOKEN` no Vercel (sem token fica rate-limited mas funciona)
-- [ ] Settings Page: targets de alocação por classe com sliders
-- [ ] Exportar CSV de aportes / extrato
-- [ ] Adicionar novo ativo via frontend (atualmente só via seed/SQL)
-- [ ] Notificações de rebalanceamento quando alocação desvia do target
-- [ ] Paginação na tabela de aportes (grande volume)
-- [ ] Modo escuro
-- [ ] PWA (instalável no celular)
-- [ ] Dados a preencher manualmente: TARPON, CDB BTG, NTN-Bs, NATIXIS, REVOLUT
-
----
-
-## Sessão 8 — Filtros de periodo + Formulario de aportes + Fix Performance (12/05/2026) ✅ CONCLUÍDA
-
-### Item 1: Filtros de período
-
-#### Dashboard — AssetTable
-- ✅ Adicionado periodo "Últ. 30d" (`last_30d`) ao seletor da coluna Rentab., ao lado de Mês atual, Últ. 12m e YTD
-- "Últ. 30d" usa `from = mes_anterior, to = mes_atual` (aproximacao mensal de 30 dias sobre price_history mensal)
-
-#### Performance — PerformancePage
-- ✅ Adicionado modo "Desde o início" (`since_inception`)
-- ✅ Novo endpoint `GET /api/performance/inception` — retorna `{ inception: 'YYYY-MM' }` com o mes da primeira contribuicao do usuario
-- ✅ Novo hook `usePerformanceInception()` em `usePortfolio.ts`
-- Botoes de modo agora: Mês atual | Últ. 12 meses | Desde o início | Personalizado (alem da navegacao por ano)
-
-#### Arquivos modificados
-- `api/_routes/performance.ts` — novo endpoint `/inception`
-- `src/hooks/usePortfolio.ts` — novo hook `usePerformanceInception`
-- `src/pages/PerformancePage.tsx` — tipo `since_inception`, `derivePeriod()` extendido, botao adicionado
-- `src/components/AssetTable.tsx` — tipo `last_30d`, nova opcao no seletor, `getPeriodRange()` extendido
-
-### Fix URGENTE: Bug de rentabilidade na Performance
-
-Tres bugs corrigidos no calculo de retorno:
-
-1. **Simple Dietz formula errada**: denominador era `v_ini - CF` → corrigido para `v_ini + 0.5 * CF`
-2. **v_ini usava o mes errado**: usava fim do proprio mes from → corrigido para fim do mes anterior (inicio real do periodo)
-3. **Grafico nao descontava aportes**: mostrava `(total_mes / total_primeiro_mes - 1)%` → corrigido para chaining de Simple Dietz mensal ajustado por CF
-4. Tabela mensal ganhou colunas separadas: Aportes / Ganho·Perda / Rentab. (antes so tinha "Variacao" que misturava os dois)
-5. `current_month` no derivePeriod usava from==to → corrigido para from=mes_anterior
-
-### Item 2: Formulario de aportes
-
-#### Backend
-- ✅ `GET /api/assets` — lista simples de ativos ativos (sem calculo de preco)
-- ✅ `GET /api/assets/classes` — lista de classes de ativos do usuario
-- ✅ `POST /api/assets` — criacao de novo ativo (code, name, asset_type, currency, asset_class_id, tickers)
-
-#### Frontend
-- ✅ ContributionsPage usa `/api/assets` em vez de `/portfolio/value` (mais rapido, sem precificacao)
-- ✅ Seletor de moeda (BRL/USD/EUR/GBP/CHF) no campo de preco com auto-calculo de value_brl via FX
-- ✅ Filtro de busca de ativo (por codigo ou nome) acima do `<select>`
-- ✅ Formulario inline "+ Ativo" para criar novo ativo sem sair da pagina
-- ✅ Le `?assetId=N&new=1` na URL para pre-selecionar ativo (usado pelo botao do AssetDetailPage)
-- ✅ Form simplificado para `manual` e `fixed_income` (sem campos qty/preco)
-- ✅ AssetDetailPage: botao "+ Aporte" que abre ContributionsPage pre-selecionado
-
----
-
-## Sessão 9 — Fixes críticos + Formulário de novo ativo (12/05/2026) ✅ CONCLUÍDA
-
-### Bugs corrigidos
-
-#### Build failure bloqueando todos os deploys desde f4d2726
-- Causa: `FxRates` sem index signature causava `TS2352` no `ContributionsPage`
-- ✅ `CurrencyContext.tsx` — adicionado `[key: string]: number` à interface `FxRates`
-- Impacto: todos os commits de correção (Simple Dietz, carry-backward, Item 2) nunca chegaram à produção; desabloqueados em bloco com este fix
-
-#### Performance — total não batia com Dashboard (~R$ 307k de diferença)
-Causa raiz: `getPortfolioValueAtMonth` tinha três divergências vs `/api/portfolio/value`:
-1. `getFx()` usava fallback 5.7 para qualquer moeda estrangeira (EUR correto: ~6.4)
-2. `price_history` com filtro `.lte('ref_date', dateStr)` zerava ativos sem histórico anterior à data
-3. BTC, ETH, SOL, TARPON têm zero entradas em `price_history` → valor 0 em todos os meses
-
-Correções aplicadas em `api/_routes/performance.ts`:
-- ✅ Substituído `getFx()` local por `getFxRate()` de `_lib/fx.js` (AwesomeAPI + fallback EUR=6.40)
-- ✅ `price_history` agora busca sem filtro de data + carry-backward: mais recente ≤ dateStr, senão o mais antigo disponível
-- ✅ Para o mês atual: se não há `price_history`, cai para `getCurrentPrice()` ao vivo (mesma fonte do Dashboard)
-- ✅ Select de assets expandido para incluir `ticker_brapi`, `ticker_yahoo`, `coingecko_id`
-
-#### Bug Instituições (Item 11) — resolvido pelo usuário via SQL/código
-- Exchange null não disparava PATCH corretamente
-- ✅ Corrigido fora desta sessão Claude
-
-#### Deploy Railway → correção imports .js — resolvido pelo usuário
-- ✅ Corrigido fora desta sessão Claude
-
-### Features entregues
-
-#### GET /api/assets/lookup — busca de nome automática
-- ✅ Endpoint novo: `GET /api/assets/lookup?code=PETR4&market=b3|intl|cripto`
-- B3: brapi.dev (`longName` / `shortName`)
-- Internacional: Yahoo Finance search API
-- Cripto: CoinGecko `/search` (retorna `name` + `coingecko_id`)
-
-#### Formulário de novo ativo melhorado (ContributionsPage)
-- ✅ Campo "Nome completo" readonly para tickers — preenchido 600ms após digitar o código (debounce)
-- ✅ Tipo de ativo expandido: Ativo B3 / Ativo Internacional / Cripto / Renda Fixa / Valor manual
-- ✅ Cada tipo pré-configura moeda, `ticker_brapi` / `ticker_yahoo` / `coingecko_id`
-- ✅ Botão "Venda" desabilitado enquanto formulário de novo ativo está aberto
-- ✅ Tipo forçado para "Compra" ao abrir o formulário de novo ativo
-
-#### Endpoint de diagnóstico
-- ✅ `GET /api/performance/debug-manual?ym=YYYY-MM` — retorna manual_values e resolução carry-backward para qualquer mês (requer auth)
-
-### Itens concluídos nesta sessão
-| Item | Status |
-|---|---|
-| Item 11: Bug Instituições | ✅ (usuário) |
-| Item 12: Performance total ≠ Dashboard | ✅ |
-| Item 1: Filtros de período | ✅ (Sessão 8) |
-| Item 2: Formulário de aportes | ✅ (Sessão 8) |
+## Legenda
+- ✅ Concluído e deployado
+- 🔄 Em andamento
+- ⏳ Próxima etapa
+- 📋 Backlog
 
 ---
 
@@ -509,22 +18,409 @@ Correções aplicadas em `api/_routes/performance.ts`:
 | Item | Valor |
 |---|---|
 | Supabase projeto | `bkgpivxpzuzedezxtknd` |
-| Supabase URL | `https://bkgpivxpzuzedezxtknd.supabase.co` |
-| UUID do usuário André | `453bc770-0cea-4c88-b72f-babf9e50437e` |
+| UUID André | `453bc770-0cea-4c88-b72f-babf9e50437e` |
 | Frontend dev | `http://localhost:5174` |
 | Backend dev | `http://localhost:3001` |
 | Credenciais | `frontend/.env` (não commitar) |
 
-## Como iniciar a próxima sessão
+---
 
-Cole no Claude Code:
+## Stack
 
+- **Frontend**: Vite + React 19 + TypeScript + Tailwind CSS + Recharts
+- **Backend**: Express serverless (Vercel Serverless Functions em `frontend/api/`)
+- **DB**: Supabase PostgreSQL + Auth
+- **Deploy**: Vercel (frontend + API no mesmo projeto)
+- **APIs**: brapi.dev (B3), yahoo-finance2 (USA/ETFs), CoinGecko (cripto), BCB (CDI/IPCA), AwesomeAPI (câmbio), GoCardless (bancos europeus — fase futura), Claude Haiku (AI categorização — fase futura)
+
+---
+
+## Arquitetura dual-server
+
+Toda mudança de backend deve ser feita em **dois arquivos**:
+- `frontend/api/_routes/ROTA.ts` → produção (Vercel)
+- `backend/src/routes/ROTA.ts` → desenvolvimento local
+
+---
+
+# SEÇÃO: INVESTIMENTOS
+
+## Funcionalidades concluídas ✅
+
+### Core
+- Dashboard: patrimônio total, alocação por classe, retorno por ativo, filtro por período
+- Performance histórica: Simple Dietz ajustado, gráfico mensal, YTD, 12m, 30d, desde o início, benchmarks CDI/IBOV/S&P500
+- Aportes: cadastro de compras/vendas, renda fixa, imóveis, cripto, novo ativo inline
+- Rebalanceamento com targets por classe
+- Detalhe do ativo: P&L, gráfico histórico, tabela de aportes
+- Instituições (agrupamento por banco/corretora)
+- Classes de ativos com cores e CRUD
+- Relatório de IR (Brasil e França): ganhos de capital, rendimentos, bens e direitos
+- Índices de referência (IBOV, S&P500, etc.)
+- Favoritos
+- Arquivados: posições encerradas com histórico completo e P&L, botão reativar
+- Conquistas: sistema de XP e níveis com 24 conquistas, verificação automática
+- Onboarding guiado para novos usuários
+- Suporte a 3 idiomas: PT / EN / FR
+- Autenticação Supabase + perfil com foto, aniversário, país
+- Seletor de moeda base: BRL / USD / EUR
+
+### Infraestrutura
+- Sync histórico: janela dinâmica baseada na data do primeiro aporte
+- Reset price history: botão no Perfil reconstrói todo o histórico
+- Dual-server: Vercel (produção) + Express local (desenvolvimento)
+- FX rates: AwesomeAPI → fallback tabela fx_rates → fallback hardcoded (nunca trava)
+
+---
+
+## Pendente (Investimentos) 📋
+
+### URGENTE — executar manualmente
+- [ ] Executar `supabase/seeds/example_andre/006_avenue_history.sql` no Supabase SQL Editor
+  → importa histórico completo Avenue Nov/2020–Mai/2023 com splits ajustados (GOOGL 20:1, AMZN 20:1, TSLA 3:1)
+  → deleta contribuições placeholder 2023-01-01 dos 23 ativos IB
+  → adiciona BABA como ativo inativo (arquivado)
+- [ ] Após SQL: abrir Perfil → clicar "Rebuild history" para repopular price_history desde Nov/2020
+
+### Features backlog
+- [ ] Exportar CSV de aportes / extrato
+- [ ] Modo escuro
+- [ ] PWA (instalável no celular)
+- [ ] Notificações de rebalanceamento quando alocação desvia do target
+
+---
+
+## Liberdade Financeira (tela no Portfolio) 📋
+
+**O que é**: você define uma meta de patrimônio e prazo. O app calcula onde o patrimônio
+*deveria estar* a cada mês para atingir a meta e sobrepõe com o *patrimônio real* do histórico.
+
+- Linha real acima da planejada → adiantado ✅
+- Linha real abaixo → app recalcula o aporte necessário para voltar ao trilho sem mudar o prazo
+
+**Inputs** (configuráveis):
+- Patrimônio inicial → pré-preenchido com valor atual do portfolio
+- Aporte mensal → pré-preenchido com média histórica dos aportes
+- Taxa de retorno mensal estimada (%)
+- Horizonte em anos
+- Meta de patrimônio (€/R$)
+
+**Visualização**:
+- Gráfico: linha planejada (tracejada) vs realizada (sólida, do price_history)
+- Cards: Patrimônio hoje | Meta | Distância | Renda passiva projetada ao atingir meta
+- Simulador: "E se eu aportar X a mais por mês?"
+- Dois modos: "Dado X e Y, quanto terei?" e "Para ter Z, quanto aportar?"
+
+**Seed André** (da aba Liberdade Financeira do Excel):
+- Capital inicial: €540.000 | Aporte: €13.000/mês | Taxa: 0,6%/mês | Meta: €5.000.000 | Prazo: 20 anos
+- Renda passiva ao atingir meta: €5.000.000 × 0,5% = €25.000/mês
+
+---
+
+# SEÇÃO: FINANÇAS (nova — a implementar)
+
+## Conceitos-chave
+
+| Conceito | Definição |
+|---|---|
+| **Envelopes** | Grupos de budget de alto nível (50/30/10/10). Ex: Essenciais, Futuro, Reserva, Livre |
+| **Categorias** | Categorias granulares de despesa vinculadas a um envelope. Ex: Moradia, Netflix, Farmácia |
+| **Renda mensal** | Renda líquida mensal configurada pelo usuário — base para os % dos envelopes |
+| **Transações** | Despesas e receitas importadas via banco (GoCardless) ou CSV |
+
+## Envelopes padrão (todos os novos usuários)
+
+| Envelope | % | Tipo | Visual ao exceder/atingir |
+|---|---|---|---|
+| Essenciais | 50% | essencial | Barra vermelha se exceder teto |
+| Futuro | 30% | investimento | Barra verde ao atingir meta ✅ |
+| Reserva | 10% | poupança | Barra vermelha se exceder teto |
+| Livre | 10% | livre | Barra vermelha se exceder teto |
+
+## Categorias padrão (novos usuários — exemplos)
+
+| Categoria | Envelope | Ícone |
+|---|---|---|
+| Moradia | Essenciais | 🏠 |
+| Mercado | Essenciais | 🛒 |
+| Saúde | Essenciais | 💊 |
+| Transporte | Essenciais | 🚇 |
+| Celular | Essenciais | 📱 |
+| Investimentos | Futuro | 📈 |
+| Poupança | Reserva | 🏦 |
+| Restaurantes | Livre | 🍽️ |
+| Lazer | Livre | 🎭 |
+| Streaming | Livre | 🎬 |
+| Viagem | Livre | ✈️ |
+| Compras | Livre | 🛍️ |
+
+## Categorias pré-populadas para André (do Excel)
+
+| Categoria | Envelope | Valor mensal (€) |
+|---|---|---|
+| Aluguel + IPTU | Essenciais | 1.500 |
+| Energia | Essenciais | 100 |
+| Internet | Essenciais | 50 |
+| Mercado | Essenciais | 150 |
+| Farmácia | Essenciais | 50 |
+| Celular | Essenciais | 25 |
+| Transporte (Navigo) | Essenciais | 91 |
+| Investimentos | Futuro | 1.000 |
+| Poupança | Reserva | 0 |
+| Bares e Restaurantes | Livre | 200 |
+| Balada | Livre | 100 |
+| Viagem | Livre | 400 |
+| Compras | Livre | 100 |
+| Lazer | Livre | 100 |
+| Presentes | Livre | 50 |
+| Streaming | Livre | 10 |
+| Cuidados Pessoais | Livre | 50 |
+| Educação | Livre | 100 |
+
+Renda líquida mensal André: **€3.500** (salário bruto €70k, ~35% impostos, /13 meses)
+
+## Corretoras detectadas para lembrete de aportes
+
+**Brasil**: XP Investimentos, Clear, BTG Pactual, Nu Invest, Rico, Modal, Genial, Ágora, Guide,
+Easynvest, Inter Invest, Órama, C6 Invest, Avenue, Toro, Itaú Corretora, Bradesco Corretora,
+BB DTVM, Santander Corretora
+
+**Europa / Internacional**: Interactive Brokers, Bourse Direct, Trading 212, Trade Republic,
+Boursorama, Degiro, Saxo Bank, Scalable Capital, Fortuneo, Lynx, eToro, Swissquote,
+Revolut Securities, Freestoxx
+
+---
+
+# ETAPAS DE IMPLEMENTAÇÃO — FINANÇAS
+
+---
+
+## Etapa F1 — Fundação: DB + Navegação ⏳
+
+**Objetivo**: estrutura de banco de dados e switcher de contexto no header.
+
+### Migrations SQL
+
+```sql
+finance_income (
+  id, user_id, monthly_net NUMERIC, currency VARCHAR, updated_at
+)
+
+finance_envelopes (
+  id, user_id, name VARCHAR, pct_target NUMERIC,
+  color VARCHAR, type VARCHAR,  -- essential|investment|savings|free
+  icon VARCHAR, sort_order INT
+)
+
+finance_categories (
+  id, user_id, name VARCHAR, color VARCHAR, icon VARCHAR,
+  envelope_id INT FK, budget_monthly NUMERIC,
+  keyword_rules JSONB  -- ex: ["netflix","spotify"] → auto-categoriza
+)
+
+finance_bank_connections (
+  id, user_id, institution_id VARCHAR, institution_name VARCHAR,
+  requisition_id VARCHAR, status VARCHAR, expires_at TIMESTAMPTZ
+)
+
+finance_bank_accounts (
+  id, user_id, connection_id INT FK, account_id VARCHAR,
+  name VARCHAR, currency VARCHAR, balance NUMERIC,
+  last_synced TIMESTAMPTZ, linked_asset_id INT FK assets
+)
+
+finance_transactions (
+  id, user_id, account_id INT FK, external_id VARCHAR,
+  date DATE, amount NUMERIC, currency VARCHAR,
+  description VARCHAR, category_id INT FK,
+  is_internal_transfer BOOLEAN, source VARCHAR,  -- gocardless|csv|manual
+  raw_data JSONB
+)
 ```
-Projeto: Portfolio Tracker genérico (brasileiro no exterior, multi-moeda)
-Stack: React + Vite + Tailwind (frontend Vite :5174), Express serverless (Vercel api/), Supabase
-Progresso: portfolio-tracker/PROGRESS.md
-Sessões 1-7 — sistema completo, deploy Vercel em progresso (API retornando 500)
-Próximo objetivo: verificar /api/health no Vercel, corrigir 500 e confirmar dashboard funcionando
-UUID André: 453bc770-0cea-4c88-b72f-babf9e50437e
-URL Vercel: ver último deploy em vercel.com/andreguttos-projects/portfolio-tracker
-```
+
+### Frontend
+- Pill switcher "Investimentos / Finanças" no header (desktop + mobile)
+- Layout/sub-nav da seção Finanças: Visão Geral | Transações | Budget | Contas
+- Páginas stub com placeholder para cada rota
+
+### Seeds André
+- 4 envelopes com % e valores do Excel
+- 18 categorias mapeadas acima com budget mensais
+- Renda líquida €3.500 configurada
+
+**Deploy**: ✅ sim ao concluir
+
+---
+
+## Etapa F2 — Envelopes & Categorias 📋
+
+**Objetivo**: configuração completa do budget.
+
+- CRUD de envelopes (nome, %, cor, tipo, ícone)
+- CRUD de categorias (nome, cor, ícone, envelope pai, regras de palavra-chave, budget mensal)
+- Tela de configuração de renda mensal líquida
+- Tela Budget:
+  - Barras por envelope: real vs meta (% da renda)
+  - Expand por envelope para ver categorias filhas
+  - Essenciais/Reserva/Livre: vermelho ao exceder
+  - Futuro: verde ao atingir, amarelo abaixo
+  - Resumo 50/30/10/10: comparativo real vs meta em %
+
+**Deploy**: ✅ sim ao concluir
+
+---
+
+## Etapa F3 — Transações 📋
+
+**Objetivo**: carregar e categorizar despesas.
+
+- Lista de transações (data, descrição, valor, categoria, conta)
+- Adição manual de transação
+- Upload CSV com AI parsing:
+  - Claude Haiku detecta automaticamente colunas (data, descrição, valor, tipo)
+  - Suporta qualquer banco brasileiro sem parser específico
+- Categorização automática via Claude Haiku:
+  - Envia descrições em batch com lista de categorias do usuário
+  - IA restrita às categorias existentes (nunca inventa novas)
+  - Retorna sugestão por transação
+- Revisão/correção manual de categorias
+- Aprendizado: após correção, salva regra em `keyword_rules`
+- Lembrete de corretoras: detecta transferências para corretoras conhecidas e sugere registrar aportes em Investimentos
+
+**Deploy**: ✅ sim ao concluir
+
+---
+
+## Etapa F4 — GoCardless (Bancos Europeus) 📋
+
+**Objetivo**: conexão bancária automática para bancos europeus.
+
+- Fluxo de conexão: escolher banco → redirect GoCardless → callback → listar contas
+- Tela Contas: lista contas conectadas com status, saldo e data do último sync
+- Botão desconectar por conta
+- Sync de saldo → atualiza `manual_values` do ativo vinculado no portfolio (Opção A)
+  - Ao conectar: pergunta se quer criar ativo ou vincular a existente
+- Sync de transações → importa para `finance_transactions`
+- Banner de aviso quando conexão expira em < 7 dias
+- Cron Vercel semanal: verifica expirações + dispara sync automático de saldo e transações
+
+**Deploy**: ✅ sim ao concluir
+
+---
+
+## Etapa F5 — Visão Geral & Relatórios 📋
+
+**Objetivo**: dashboards e histórico de despesas.
+
+### Visão Geral (tela principal de Finanças)
+- Saldo das contas conectadas
+- Gastos do mês por envelope com barras 50/30/10/10
+- Top categorias do mês
+- Gráfico de pizza: distribuição real vs meta
+- Indicador do mês: "Você está dentro do planejado / excedeu em X"
+
+### Relatório histórico
+- Gráfico de barras empilhadas por mês, cor por envelope
+- Filtro por envelope, categoria e período
+- Comparativo mês a mês: gasto vs budget vs mês anterior
+
+**Deploy**: ✅ sim ao concluir
+
+---
+
+# ETAPAS DE IMPLEMENTAÇÃO — LIBERDADE FINANCEIRA
+
+---
+
+## Etapa LF1 — Tela de Liberdade Financeira (Portfolio) 📋
+
+**Objetivo**: simulador de longo prazo com acompanhamento do plano real.
+
+### Localização
+Nova rota `/freedom` dentro da seção Investimentos (não Finanças).
+Acessível pelo menu principal ou pelo dropdown do usuário.
+
+### Funcionalidades
+- Formulário de configuração (inputs):
+  - Patrimônio inicial → pré-preenchido com valor atual do portfolio
+  - Aporte mensal → pré-preenchido com média histórica dos aportes reais
+  - Taxa de retorno mensal estimada (%)
+  - Horizonte em anos
+  - Meta de patrimônio (€/R$/USD, configurável)
+
+- Gráfico de projeção vs realizado:
+  - Linha planejada (tracejada) — trajetória necessária para atingir a meta
+  - Linha realizada (sólida) — patrimônio real do price_history mês a mês
+  - Destaque quando realizado supera o planejado
+
+- Cards de resumo:
+  - Patrimônio hoje
+  - Meta
+  - Distância
+  - Previsão de atingir no prazo atual
+  - Renda passiva mensal ao atingir meta (meta × taxa)
+
+- Indicadores de saúde do plano:
+  - "Adiantado X meses" ou "Atrasado X meses"
+  - Aporte necessário para voltar ao trilho sem alterar o prazo
+
+- Simulador de cenário:
+  - Slider "E se eu aportar €X a mais por mês?"
+  - Atualiza gráfico em tempo real
+
+- Dois modos (como o Excel):
+  - Modo A: "Dado capital inicial X e aporte Y, quando e quanto terei?"
+  - Modo B: "Para ter Z em N anos, quanto preciso aportar por mês?"
+
+### Seed André
+- Meta: €5.000.000 | Prazo: 20 anos | Taxa: 0,6%/mês
+- Aporte alvo: €13.000/mês
+- Renda passiva projetada: €25.000/mês (€5M × 0,5%)
+
+**Deploy**: ✅ sim ao concluir
+
+---
+
+# HISTÓRICO DE SESSÕES
+
+## Sessão 1 — Fundação (11/05/2026) ✅
+DB schema, seeds André, stack decidida, APIs externas configuradas.
+
+## Sessão 2 — Serviços de preço + Backend (11/05/2026) ✅
+brapi, Yahoo, CoinGecko, BCB, renda fixa, FX. Todos os endpoints core.
+
+## Sessão 3 — Frontend completo (11/05/2026) ✅
+Dashboard, Performance, Aportes, AppLayout, autenticação, tipos compartilhados.
+
+## Sessão 4 — Correções críticas (11/05/2026) ✅
+FX rate 429 → fallback chain. price_history vazio → sync-history endpoint.
+
+## Sessão 5 — Ativos manuais + modais (11/05/2026) ✅
+ManualValueModal, FixedIncomeSetupModal, 57/57 ativos visíveis.
+
+## Sessão 6 — Features completas (11/05/2026) ✅
+Detalhe do ativo, seletor moeda, benchmarks, ponto zero, perfil, CRUD aportes.
+
+## Sessão 7 — Deploy Vercel (12/05/2026) ✅
+Railway → Vercel Serverless. Debug de rotas, CORS, error handlers.
+
+## Sessão 8 — Filtros de período + Fix Simple Dietz (12/05/2026) ✅
+"Desde o início", "Últimos 30d". Correção da fórmula de rentabilidade.
+
+## Sessão 9 — Formulário novo ativo + fixes (12/05/2026) ✅
+Lookup de nome por ticker. Tipo de ativo no formulário. Fix carry-backward.
+
+## Sessão 10 — Features avançadas (data posterior) ✅
+Rebalanceamento, importação B3, índices, relatório IR, i18n PT/EN/FR, onboarding.
+
+## Sessão 11 — Conquistas + histórico Avenue (17/05/2026) ✅
+- 24 conquistas com XP e níveis
+- Correção bugs DB (class_id, ref_date, price_history sem user_id)
+- Novas conquistas: fii_investor, three_million, five_million, ten_million
+- Separação FII vs imóvel físico
+- Análise de 8 CSVs Avenue (Nov/2020–Abr/2025), SQL gerado aguardando execução
+- Conquista Identidade: exige foto + aniversário + nome + país
+- Campo birthdate adicionado ao formulário de perfil
+- Arquivados: nova tela no dropdown do usuário com histórico e P&L
+- Sync histórico: janela dinâmica (não mais 72 meses fixo)
+- Ícone Arquivados consistente com botão na tela do ativo
