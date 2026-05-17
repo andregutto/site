@@ -58,10 +58,13 @@ router.post('/check', requireAuth, async (req, res: Response) => {
   check('global_roots', assetList.some(a => a.currency !== 'BRL'))
 
   if (total_brl !== undefined) {
-    check('builder',      total_brl >= 10_000)
-    check('five_digits',  total_brl >= 100_000)
-    check('six_digits',   total_brl >= 500_000)
-    check('million_club', total_brl >= 1_000_000)
+    check('builder',       total_brl >= 10_000)
+    check('five_digits',   total_brl >= 100_000)
+    check('six_digits',    total_brl >= 500_000)
+    check('million_club',  total_brl >= 1_000_000)
+    check('three_million', total_brl >= 3_000_000)
+    check('five_million',  total_brl >= 5_000_000)
+    check('ten_million',   total_brl >= 10_000_000)
   }
 
   const className = (a: AssetRow) => {

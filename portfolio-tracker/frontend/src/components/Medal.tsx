@@ -85,6 +85,33 @@ const ICONS: Record<string, (c: string) => React.ReactElement> = {
       <line x1="65" y1="52" x2="68" y2="72" stroke="white" strokeWidth="0.8" fillOpacity={0.5} fill="none"/>
     </g>
   ),
+  three_million: (c) => (
+    <g fill={c} fillOpacity={0.95}>
+      <text x="60" y="60" textAnchor="middle" fontSize="11" fontWeight="bold" fill={c}>R$</text>
+      <text x="60" y="73" textAnchor="middle" fontSize="16" fontWeight="bold" fill={c}>3M</text>
+      <circle cx="60" cy="65" r="20" fill="none" stroke={c} strokeWidth="1.5" strokeOpacity={0.4}/>
+      <path d="M44 82 L76 82" stroke={c} strokeWidth="2.5" strokeLinecap="round" fill="none" fillOpacity={0.5}/>
+      <path d="M48 86 L72 86" stroke={c} strokeWidth="1.5" strokeLinecap="round" fill="none" fillOpacity={0.3}/>
+    </g>
+  ),
+  five_million: (c) => (
+    <g fill={c} fillOpacity={0.95}>
+      <text x="60" y="60" textAnchor="middle" fontSize="11" fontWeight="bold" fill={c}>R$</text>
+      <text x="60" y="73" textAnchor="middle" fontSize="16" fontWeight="bold" fill={c}>5M</text>
+      <circle cx="60" cy="65" r="20" fill="none" stroke={c} strokeWidth="1.5" strokeOpacity={0.4}/>
+      <path d="M44 82 L76 82" stroke={c} strokeWidth="2.5" strokeLinecap="round" fill="none" fillOpacity={0.5}/>
+      <path d="M48 86 L72 86" stroke={c} strokeWidth="1.5" strokeLinecap="round" fill="none" fillOpacity={0.3}/>
+    </g>
+  ),
+  ten_million: (c) => (
+    <g fill={c} fillOpacity={0.95}>
+      <text x="60" y="60" textAnchor="middle" fontSize="11" fontWeight="bold" fill={c}>R$</text>
+      <text x="60" y="73" textAnchor="middle" fontSize="16" fontWeight="bold" fill={c}>10M</text>
+      <circle cx="60" cy="65" r="20" fill="none" stroke={c} strokeWidth="1.5" strokeOpacity={0.4}/>
+      <path d="M44 82 L76 82" stroke={c} strokeWidth="2.5" strokeLinecap="round" fill="none" fillOpacity={0.5}/>
+      <path d="M48 86 L72 86" stroke={c} strokeWidth="1.5" strokeLinecap="round" fill="none" fillOpacity={0.3}/>
+    </g>
+  ),
   diversified: (c) => (
     <g>
       <path d="M60 65 L60 44 A21 21 0 0 1 78 76 Z" fill={c} fillOpacity={0.9}/>
