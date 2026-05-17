@@ -7,12 +7,14 @@ export default function FinancesLayout() {
     { to: '/finances',              label: t.finances.navOverview,     end: true  },
     { to: '/finances/budget',       label: t.finances.navBudget,       end: false },
     { to: '/finances/transactions', label: t.finances.navTransactions,  end: false },
+    { to: '/finances/moments',      label: t.finances.navMoments,      end: false },
+    { to: '/finances/freedom',      label: t.finances.navFreedom,      end: false },
     { to: '/finances/accounts',     label: t.finances.navAccounts,     end: false },
   ]
 
   return (
     <div className="space-y-5">
-      <nav className="flex gap-0.5 bg-gray-100 rounded-xl p-1 w-fit">
+      <nav className="flex gap-0.5 bg-gray-100 rounded-xl p-1 w-fit overflow-x-auto max-w-full">
         {tabs.map(({ to, label, end }) => (
           <NavLink
             key={to}

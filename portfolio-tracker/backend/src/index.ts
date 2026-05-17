@@ -14,6 +14,7 @@ import newsletterRouter    from './routes/newsletter.js'
 import indicesRouter        from './routes/indices.js'
 import achievementsRouter   from './routes/achievements.js'
 import financesRouter       from './routes/finances.js'
+import banksRouter          from './routes/banks.js'
 
 const app  = express()
 const PORT = process.env.PORT || 3001
@@ -33,6 +34,7 @@ app.use('/api/newsletter',    newsletterRouter)
 app.use('/api/indices',        indicesRouter)
 app.use('/api/achievements',  achievementsRouter)
 app.use('/api/finances',      financesRouter)
+app.use('/api/banks',         banksRouter)
 
 app.get('/health', (_req, res) => res.json({ status: 'ok', ts: new Date().toISOString() }))
 

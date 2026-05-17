@@ -14,7 +14,10 @@
     "profile":      "Profile",
     "archived":     "Archived",
     "finances":     "Finances",
-    "freedom":      "Freedom"
+    "freedom":      "Freedom",
+    "portfolio":    "Portfolio",
+    "moments":      "Moments",
+    "banks":        "Accounts"
   },
   "currency": {
     "label": "Currency"
@@ -265,6 +268,7 @@
   "finances": {
     "navOverview":      "Overview",
     "navBudget":        "Budget",
+    "navMoments":       "Moments",
     "navTransactions":  "Transactions",
     "navAccounts":      "Accounts",
     "navFreedom":       "Freedom",
@@ -340,7 +344,32 @@
     "freedomAhead":       "Ahead of plan",
     "freedomBehind":      "Behind plan",
     "freedomApprox":      "Historical BRL values converted at current rate.",
-    "ofIncome":           "of income"
+    "ofIncome":           "of income",
+    "momentsTitle":       "Moments",
+    "momentsSubtitle":    "Group expenses from trips, parties and special events",
+    "newMoment":          "New Moment",
+    "editMoment":         "Edit Moment",
+    "momentIcon":         "Icon",
+    "momentColor":        "Color",
+    "momentDates":        "Period (optional)",
+    "momentEmptyTitle":   "No Moments yet",
+    "momentEmptyBody":    "Create a Moment to group all expenses from a trip, party or special event.",
+    "momentCreateFirst":  "Create first Moment",
+    "momentTotal":        "Total spent",
+    "momentTransactions": "transactions",
+    "momentConfirmDelete":"Delete this Moment? Transactions will be unlinked but not deleted.",
+    "assignMoment":       "Add to Moment",
+    "noMoment":           "No Moment",
+    "banksTitle":         "Bank Accounts",
+    "banksSubtitle":      "Connect your European banks to automatically import transactions",
+    "connectBank":        "Connect bank",
+    "banksEmpty":         "No accounts connected",
+    "banksEmptyBody":     "Connect your Revolut or another European bank account to automatically import transactions.",
+    "syncNow":            "Sync now",
+    "lastSync":           "Last sync",
+    "disconnect":         "Disconnect",
+    "syncing":            "Syncing...",
+    "importedN":          "transactions imported"
   },
   "archived": {
     "title":         "Archived",

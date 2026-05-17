@@ -14,7 +14,10 @@
     "profile":      "Profil",
     "archived":     "Archivés",
     "finances":     "Finances",
-    "freedom":      "Liberté"
+    "freedom":      "Liberté",
+    "portfolio":    "Portefeuille",
+    "moments":      "Moments",
+    "banks":        "Comptes"
   },
   "currency": {
     "label": "Devise"
@@ -265,6 +268,7 @@
   "finances": {
     "navOverview":      "Vue d'ensemble",
     "navBudget":        "Budget",
+    "navMoments":       "Moments",
     "navTransactions":  "Transactions",
     "navAccounts":      "Comptes",
     "navFreedom":       "Liberté",
@@ -340,7 +344,32 @@
     "freedomAhead":       "En avance sur le plan",
     "freedomBehind":      "En retard sur le plan",
     "freedomApprox":      "Valeurs historiques en BRL converties au taux actuel.",
-    "ofIncome":           "du revenu"
+    "ofIncome":           "du revenu",
+    "momentsTitle":       "Moments",
+    "momentsSubtitle":    "Regroupez les dépenses de voyages, fêtes et événements spéciaux",
+    "newMoment":          "Nouveau Moment",
+    "editMoment":         "Modifier le Moment",
+    "momentIcon":         "Icône",
+    "momentColor":        "Couleur",
+    "momentDates":        "Période (optionnel)",
+    "momentEmptyTitle":   "Aucun Moment créé",
+    "momentEmptyBody":    "Créez un Moment pour regrouper toutes les dépenses d'un voyage, d'une fête ou d'un événement spécial.",
+    "momentCreateFirst":  "Créer le premier Moment",
+    "momentTotal":        "Total dépensé",
+    "momentTransactions": "transactions",
+    "momentConfirmDelete":"Supprimer ce Moment ? Les transactions seront dissociées mais pas supprimées.",
+    "assignMoment":       "Ajouter au Moment",
+    "noMoment":           "Sans Moment",
+    "banksTitle":         "Comptes bancaires",
+    "banksSubtitle":      "Connectez vos banques européennes pour importer automatiquement vos transactions",
+    "connectBank":        "Connecter une banque",
+    "banksEmpty":         "Aucun compte connecté",
+    "banksEmptyBody":     "Connectez votre compte Revolut ou une autre banque européenne pour importer automatiquement les transactions.",
+    "syncNow":            "Synchroniser",
+    "lastSync":           "Dernière sync",
+    "disconnect":         "Déconnecter",
+    "syncing":            "Synchronisation...",
+    "importedN":          "transactions importées"
   },
   "archived": {
     "title":         "Archivés",

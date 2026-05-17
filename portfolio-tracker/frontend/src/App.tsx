@@ -26,6 +26,7 @@ import FinancesTransactionsPage from './pages/finances/FinancesTransactionsPage'
 import FinancesBudgetPage from './pages/finances/FinancesBudgetPage'
 import FinancesAccountsPage from './pages/finances/FinancesAccountsPage'
 import FinancesFreedomPage from './pages/finances/FinancesFreedomPage'
+import FinancesMomentsPage from './pages/finances/FinancesMomentsPage'
 import AppLayout from './components/AppLayout'
 import AchievementsPage from './pages/AchievementsPage'
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage'
@@ -127,9 +128,10 @@ function AppRoutes() {
           <Route index                element={<FinancesOverviewPage />} />
           <Route path="transactions"  element={<FinancesTransactionsPage />} />
           <Route path="budget"        element={<FinancesBudgetPage />} />
+          <Route path="moments"       element={<FinancesMomentsPage />} />
+          <Route path="freedom"       element={<FinancesFreedomPage />} />
           <Route path="accounts"      element={<FinancesAccountsPage />} />
         </Route>
-        <Route path="/freedom"        element={<FinancesFreedomPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

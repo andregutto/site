@@ -20,7 +20,29 @@
       "Bash(npx tsc *)",
       "Bash(sips *)",
       "Bash(pkill -f \"next dev\")",
-      "Bash(kill 4320)"
+      "Bash(kill 4320)",
+      "Bash(textutil -convert txt -stdout /Users/andregutto/Documents/AndreGutto/site/portfolio-tracker/briefing_portfolio_app.md)",
+      "Bash(npm create *)",
+      "Bash(curl -s http://localhost:5174)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5174)",
+      "Bash(pkill -f \"vite --port 5174\")",
+      "Bash(pkill -f \"tsx watch src/index.ts\")",
+      "Bash(curl -s http://localhost:3001/health)",
+      "Bash(curl *)",
+      "Bash(pkill -f \"tsx watch\")",
+      "Bash(pkill -f \"node.*3001\")",
+      "Bash(lsof -ti:3001)",
+      "Bash(xargs kill *)",
+      "Bash(python3 *)",
+      "Bash(lsof -ti:5174)",
+      "Bash(npx vercel *)",
+      "Bash(vercel --prod)",
+      "Read(//Users/andregutto/node_modules/.bin/**)",
+      "Read(//usr/local/bin/**)",
+      "Read(//Users/andregutto/.npm/bin/**)",
+      "Bash(gh run *)",
+      "Bash(gh api *)",
+      "Bash(cat ~/.vercel/auth.json 2>/dev/null | head -3 || echo \"no auth file\")"
     ]
   }
 }

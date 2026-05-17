@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { NavLink, Outlet, Link } from 'react-router-dom'
+import { NavLink, Outlet, Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useCurrency, type Currency } from '../contexts/CurrencyContext'
 import { useI18n } from '../contexts/I18nContext'
@@ -11,31 +11,47 @@ import OnboardingOverlay from './OnboardingOverlay'
 import LanguageSelector from './LanguageSelector'
 
 const ONBOARDING_KEY = 'onboarding_v1_done'
-
 const CURRENCIES: Currency[] = ['BRL', 'USD', 'EUR']
+
+function useClickOutside(ref: React.RefObject<HTMLElement | null>, cb: () => void, active: boolean) {
+  useEffect(() => {
+    if (!active) return
+    function handler(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) cb()
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [ref, cb, active])
+}
 
 export default function AppLayout() {
   const { user, signOut } = useAuth()
   const { currency, setCurrency } = useCurrency()
   const { t } = useI18n()
   const { totalXp } = useAchievementContext()
+  const location = useLocation()
   const level = getLevel(totalXp)
   const levelProgress = getLevelProgress(totalXp)
-  const [showOnboarding, setShowOnboarding] = useState(false)
-  const [showUserMenu, setShowUserMenu] = useState(false)
-  const [showMoreSheet, setShowMoreSheet] = useState(false)
-  const userMenuRef = useRef<HTMLDivElement>(null)
+
+  const [showOnboarding,   setShowOnboarding]   = useState(false)
+  const [showUserMenu,     setShowUserMenu]     = useState(false)
+  const [showMoreSheet,    setShowMoreSheet]    = useState(false)
+  const [showPortfolioMenu,setShowPortfolioMenu]= useState(false)
+  const [showFinancesMenu, setShowFinancesMenu] = useState(false)
+
+  const userMenuRef      = useRef<HTMLDivElement>(null)
+  const portfolioMenuRef = useRef<HTMLDivElement>(null)
+  const financesMenuRef  = useRef<HTMLDivElement>(null)
+
+  useClickOutside(userMenuRef,      () => setShowUserMenu(false),      showUserMenu)
+  useClickOutside(portfolioMenuRef, () => setShowPortfolioMenu(false), showPortfolioMenu)
+  useClickOutside(financesMenuRef,  () => setShowFinancesMenu(false),  showFinancesMenu)
 
   useEffect(() => {
-    if (!showUserMenu) return
-    function handleClick(e: MouseEvent) {
-      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
-        setShowUserMenu(false)
-      }
-    }
-    document.addEventListener('mousedown', handleClick)
-    return () => document.removeEventListener('mousedown', handleClick)
-  }, [showUserMenu])
+    setShowPortfolioMenu(false)
+    setShowFinancesMenu(false)
+    setShowUserMenu(false)
+  }, [location.pathname])
 
   useEffect(() => {
     if (localStorage.getItem(ONBOARDING_KEY)) return
@@ -49,25 +65,37 @@ export default function AppLayout() {
   const avatarUrl = meta.avatar_url as string | undefined
   const avatarInitials = headerLabel.slice(0, 2).toUpperCase()
 
-  const navItems = [
-    { to: '/',               label: t.nav.dashboard,     icon: '▦', end: true },
-    { to: '/performance',    label: t.nav.performance,   icon: '↗', end: false },
-    { to: '/contributions',  label: t.nav.contributions, icon: '⊕', end: false },
-    { to: '/rebalance',      label: t.nav.rebalance,     icon: '⇌', end: false },
-    { to: '/by-institution', label: t.nav.institutions,  icon: '⊟', end: false },
-    { to: '/classes',        label: t.nav.classes,       icon: '◈', end: false },
-    { to: '/reports',        label: t.nav.ir,            icon: '⊞', end: false },
-    { to: '/indices',        label: t.nav.indices,       icon: '◎', end: false },
-    { to: '/freedom',        label: t.nav.freedom,       icon: '🎯', end: false },
-    { to: '/finances',       label: t.nav.finances,      icon: '₿', end: false },
+  // Detect active group for dropdown highlight
+  const portfolioRoutes = ['/rebalance', '/by-institution', '/classes', '/reports', '/indices']
+  const inPortfolio = portfolioRoutes.some(r => location.pathname.startsWith(r))
+  const inFinances  = location.pathname.startsWith('/finances')
+
+  const portfolioItems = [
+    { to: '/rebalance',      label: t.nav.rebalance    },
+    { to: '/by-institution', label: t.nav.institutions },
+    { to: '/classes',        label: t.nav.classes       },
+    { to: '/reports',        label: t.nav.ir            },
+    { to: '/indices',        label: t.nav.indices       },
   ]
+
+  const financesItems = [
+    { to: '/finances',              label: t.finances.navOverview,    end: true  },
+    { to: '/finances/budget',       label: t.finances.navBudget,      end: false },
+    { to: '/finances/transactions', label: t.finances.navTransactions, end: false },
+    { to: '/finances/moments',      label: t.finances.navMoments,     end: false },
+    { to: '/finances/freedom',      label: t.finances.navFreedom,     end: false },
+    { to: '/finances/accounts',     label: t.finances.navAccounts,    end: false },
+  ]
+
+  const dropdownItemCls = 'flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors whitespace-nowrap'
+  const dropdownCls = 'absolute top-full mt-1.5 left-0 bg-white rounded-xl shadow-lg border border-gray-100 py-1.5 z-50 min-w-[160px]'
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <header className="bg-white border-b border-gray-100 sticky top-0 z-10">
         <div className="h-14 flex items-center px-6 gap-4">
 
-          {/* Logo — true left edge */}
+          {/* Logo */}
           <a
             href="https://andregutto.com"
             target="_blank"
@@ -76,29 +104,78 @@ export default function AppLayout() {
             style={{ fontFamily: "'Playfair Display', serif", fontSize: 19, fontWeight: 400, color: '#1B2F4E', textDecoration: 'none' }}
           >André Gutto</a>
 
-          {/* Nav — centered in remaining space via flex-1 wrapper */}
+          {/* Desktop nav */}
           <div className="hidden sm:flex flex-1 justify-center min-w-0">
             <nav className="flex items-center gap-0.5">
-              {navItems.map(({ to, label, end }) => (
+
+              {/* Direct links */}
+              {[
+                { to: '/',              label: t.nav.dashboard,    end: true  },
+                { to: '/performance',   label: t.nav.performance,  end: false },
+                { to: '/contributions', label: t.nav.contributions,end: false },
+              ].map(({ to, label, end }) => (
                 <NavLink
-                  key={to}
-                  to={to}
-                  end={end}
+                  key={to} to={to} end={end}
                   className={({ isActive }) =>
                     `px-2.5 py-1.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
-                      isActive
-                        ? 'bg-[#001A70]/10 text-[#001A70]'
-                        : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
+                      isActive ? 'bg-[#001A70]/10 text-[#001A70]' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
                     }`
                   }
-                >
-                  {label}
-                </NavLink>
+                >{label}</NavLink>
               ))}
+
+              {/* Portfólio dropdown */}
+              <div ref={portfolioMenuRef} className="relative">
+                <button
+                  onClick={() => { setShowPortfolioMenu(v => !v); setShowFinancesMenu(false) }}
+                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
+                    inPortfolio ? 'bg-[#001A70]/10 text-[#001A70]' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
+                  }`}
+                >
+                  {t.nav.portfolio}
+                  <svg className={`w-3 h-3 transition-transform ${showPortfolioMenu ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                {showPortfolioMenu && (
+                  <div className={dropdownCls}>
+                    {portfolioItems.map(({ to, label }) => (
+                      <NavLink key={to} to={to} className={({ isActive }) => `${dropdownItemCls} ${isActive ? 'bg-[#001A70]/5 text-[#001A70] font-medium' : ''}`}>
+                        {label}
+                      </NavLink>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Finanças dropdown */}
+              <div ref={financesMenuRef} className="relative">
+                <button
+                  onClick={() => { setShowFinancesMenu(v => !v); setShowPortfolioMenu(false) }}
+                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
+                    inFinances ? 'bg-[#001A70]/10 text-[#001A70]' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
+                  }`}
+                >
+                  {t.nav.finances}
+                  <svg className={`w-3 h-3 transition-transform ${showFinancesMenu ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                {showFinancesMenu && (
+                  <div className={dropdownCls}>
+                    {financesItems.map(({ to, label, end }) => (
+                      <NavLink key={to} to={to} end={end} className={({ isActive }) => `${dropdownItemCls} ${isActive ? 'bg-[#001A70]/5 text-[#001A70] font-medium' : ''}`}>
+                        {label}
+                      </NavLink>
+                    ))}
+                  </div>
+                )}
+              </div>
+
             </nav>
           </div>
 
-          {/* Right — currency + user + sign out */}
+          {/* Right — currency + user */}
           <div className="flex items-center gap-3 shrink-0 ml-auto sm:ml-0">
             <div className="flex items-center bg-gray-100 rounded-lg p-0.5 gap-0.5">
               {CURRENCIES.map(c => (
@@ -106,13 +183,9 @@ export default function AppLayout() {
                   key={c}
                   onClick={() => setCurrency(c)}
                   className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-colors ${
-                    currency === c
-                      ? 'bg-white text-[#001A70] shadow-sm'
-                      : 'text-gray-400 hover:text-gray-700'
+                    currency === c ? 'bg-white text-[#001A70] shadow-sm' : 'text-gray-400 hover:text-gray-700'
                   }`}
-                >
-                  {c}
-                </button>
+                >{c}</button>
               ))}
             </div>
 
@@ -134,13 +207,10 @@ export default function AppLayout() {
               </button>
               {showUserMenu && (
                 <div className="absolute right-0 top-full mt-2 w-52 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-50">
-                  {/* Language */}
                   <div className="px-4 py-2.5 border-b border-gray-100 flex items-center justify-between">
                     <span className="text-xs text-gray-500">Idioma</span>
                     <LanguageSelector />
                   </div>
-
-                  {/* XP mini-bar */}
                   <div className="px-4 py-2.5 border-b border-gray-100">
                     <div className="flex items-center justify-between mb-1.5">
                       <span className="text-xs text-gray-500">{level.emoji} {level.name}</span>
@@ -150,35 +220,19 @@ export default function AppLayout() {
                       <div className="h-full bg-gradient-to-r from-[#001A70] to-[#C9A227] rounded-full transition-all" style={{ width: `${levelProgress}%` }} />
                     </div>
                   </div>
-                  <Link
-                    to="/achievements"
-                    onClick={() => setShowUserMenu(false)}
-                    className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                  >
+                  <Link to="/achievements" onClick={() => setShowUserMenu(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
                     <span>🏅</span> {t.nav.achievements}
                   </Link>
-                  <Link
-                    to="/favorites"
-                    onClick={() => setShowUserMenu(false)}
-                    className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                  >
+                  <Link to="/favorites" onClick={() => setShowUserMenu(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
                     <span>★</span> {t.nav.favorites}
                   </Link>
-                  <Link
-                    to="/archived"
-                    onClick={() => setShowUserMenu(false)}
-                    className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                  >
+                  <Link to="/archived" onClick={() => setShowUserMenu(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4 shrink-0">
                       <path d="M2 3.5A1.5 1.5 0 0 1 3.5 2h9A1.5 1.5 0 0 1 14 3.5v.5H2v-.5ZM2 5.5h12v7A1.5 1.5 0 0 1 12.5 14h-9A1.5 1.5 0 0 1 2 12.5v-7Zm4.5 2a.5.5 0 0 0 0 1h3a.5.5 0 0 0 0-1h-3Z" />
                     </svg>
                     {t.nav.archived}
                   </Link>
-                  <Link
-                    to="/profile"
-                    onClick={() => setShowUserMenu(false)}
-                    className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                  >
+                  <Link to="/profile" onClick={() => setShowUserMenu(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
                     <span>👤</span> {t.nav.profile}
                   </Link>
                 </div>
@@ -193,7 +247,6 @@ export default function AppLayout() {
             </button>
           </div>
         </div>
-
       </header>
 
       <main className="flex-1 max-w-6xl mx-auto w-full px-4 py-6 pb-24 sm:pb-6">
@@ -204,19 +257,17 @@ export default function AppLayout() {
         <LoginFooter />
       </div>
 
-      {/* Mobile bottom navigation bar */}
+      {/* Mobile bottom navigation */}
       <nav className="sm:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 z-20 safe-bottom">
         <div className="flex">
           {[
             { to: '/',               label: t.nav.dashboard,    icon: '▦', end: true  },
             { to: '/performance',    label: t.nav.performance,  icon: '↗', end: false },
             { to: '/contributions',  label: t.nav.contributions,icon: '⊕', end: false },
-            { to: '/by-institution', label: t.nav.institutions, icon: '⊟', end: false },
+            { to: '/finances',       label: t.nav.finances,     icon: '₿', end: false },
           ].map(({ to, label, icon, end }) => (
             <NavLink
-              key={to}
-              to={to}
-              end={end}
+              key={to} to={to} end={end}
               className={({ isActive }) =>
                 `flex-1 py-2.5 flex flex-col items-center gap-0.5 transition-colors text-[11px] font-medium leading-tight ${
                   isActive ? 'text-[#001A70]' : 'text-gray-400'
@@ -237,29 +288,24 @@ export default function AppLayout() {
         </div>
       </nav>
 
-      {/* "Mais" bottom sheet */}
+      {/* Mobile "Mais" bottom sheet */}
       {showMoreSheet && (
-        <div
-          className="sm:hidden fixed inset-0 z-30 bg-black/40"
-          onClick={() => setShowMoreSheet(false)}
-        >
-          <div
-            className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl pt-4 pb-8 px-6"
-            onClick={e => e.stopPropagation()}
-          >
+        <div className="sm:hidden fixed inset-0 z-30 bg-black/40" onClick={() => setShowMoreSheet(false)}>
+          <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl pt-4 pb-8 px-6" onClick={e => e.stopPropagation()}>
             <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-5" />
             <div className="grid grid-cols-4 gap-3">
               {[
-                { to: '/rebalance',    label: t.nav.rebalance,    icon: '⇌' },
-                { to: '/classes',      label: t.nav.classes,      icon: '◈' },
-                { to: '/reports',      label: t.nav.ir,           icon: '⊞' },
-                { to: '/indices',      label: t.nav.indices,      icon: '◎' },
-                { to: '/achievements', label: t.nav.achievements, icon: '🏅' },
-                { to: '/profile',      label: t.nav.profile,      icon: '👤' },
+                { to: '/rebalance',          label: t.nav.rebalance,      icon: '⇌' },
+                { to: '/classes',            label: t.nav.classes,        icon: '◈' },
+                { to: '/reports',            label: t.nav.ir,             icon: '⊞' },
+                { to: '/indices',            label: t.nav.indices,        icon: '◎' },
+                { to: '/finances/moments',   label: t.nav.moments,        icon: '✨' },
+                { to: '/finances/freedom',   label: t.nav.freedom,        icon: '🎯' },
+                { to: '/achievements',       label: t.nav.achievements,   icon: '🏅' },
+                { to: '/profile',            label: t.nav.profile,        icon: '👤' },
               ].map(({ to, label, icon }) => (
                 <NavLink
-                  key={to}
-                  to={to}
+                  key={to} to={to}
                   onClick={() => setShowMoreSheet(false)}
                   className={({ isActive }) =>
                     `flex flex-col items-center gap-1.5 py-3 rounded-2xl transition-colors ${
@@ -268,7 +314,7 @@ export default function AppLayout() {
                   }
                 >
                   <span className="text-xl leading-none">{icon}</span>
-                  <span className="text-[11px] font-medium">{label}</span>
+                  <span className="text-[11px] font-medium text-center">{label}</span>
                 </NavLink>
               ))}
               <NavLink
@@ -290,9 +336,7 @@ export default function AppLayout() {
         </div>
       )}
 
-      {showOnboarding && (
-        <OnboardingOverlay onDone={() => setShowOnboarding(false)} />
-      )}
+      {showOnboarding && <OnboardingOverlay onDone={() => setShowOnboarding(false)} />}
     </div>
   )
 }

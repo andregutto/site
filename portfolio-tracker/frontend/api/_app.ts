@@ -15,6 +15,7 @@ import importRouter        from './_routes/import.js'
 import indicesRouter        from './_routes/indices.js'
 import achievementsRouter   from './_routes/achievements.js'
 import financesRouter       from './_routes/finances.js'
+import banksRouter          from './_routes/banks.js'
 
 const app = express()
 
@@ -40,6 +41,7 @@ app.use('/api/import',        importRouter)
 app.use('/api/indices',        indicesRouter)
 app.use('/api/achievements',  achievementsRouter)
 app.use('/api/finances',      financesRouter)
+app.use('/api/banks',         banksRouter)
 
 // Health — acessível em /api/health via Vercel routing
 app.get(['/health', '/api/health'], (_req, res) => {

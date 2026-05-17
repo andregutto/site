@@ -592,4 +592,74 @@ router.delete('/freedom-plans/:id', requireAuth, async (req, res: Response) => {
   res.json({ ok: true })
 })
 
+// ── Momentos ──────────────────────────────────────────────────────────────────
+
+router.get('/moments', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const { data, error } = await supabaseAdmin
+    .from('finance_moments').select('*').eq('user_id', userId).order('created_at', { ascending: false })
+  if (error) { res.status(500).json({ error: error.message }); return }
+  res.json(data)
+})
+
+router.get('/moments-for-picker', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const { data, error } = await supabaseAdmin
+    .from('finance_moments').select('id, name, icon, color').eq('user_id', userId).order('created_at', { ascending: false })
+  if (error) { res.status(500).json({ error: error.message }); return }
+  res.json(data)
+})
+
+router.get('/moments/:id', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const momentId = Number(req.params.id)
+  const [momentRes, txRes] = await Promise.all([
+    supabaseAdmin.from('finance_moments').select('*').eq('id', momentId).eq('user_id', userId).single(),
+    supabaseAdmin.from('finance_transactions')
+      .select('id, date, description, amount, currency, finance_categories(id, name, icon, color)')
+      .eq('moment_id', momentId).eq('user_id', userId).order('date', { ascending: false }),
+  ])
+  if (momentRes.error || !momentRes.data) { res.status(404).json({ error: 'Not found' }); return }
+  const transactions = txRes.data ?? []
+  const total = transactions.reduce((sum, tx) => sum + (tx.amount < 0 ? Math.abs(tx.amount) : 0), 0)
+  const catMap: Record<string, { name: string; icon: string; color: string; total: number }> = {}
+  for (const tx of transactions) {
+    if (tx.amount >= 0) continue
+    const cat = tx.finance_categories as { id: number; name: string; icon: string; color: string } | null
+    const key = cat ? String(cat.id) : 'none'
+    if (!catMap[key]) catMap[key] = { name: cat?.name ?? 'Sem categoria', icon: cat?.icon ?? '❓', color: cat?.color ?? '#9CA3AF', total: 0 }
+    catMap[key].total += Math.abs(tx.amount)
+  }
+  res.json({ moment: momentRes.data, transactions, summary: { total: Math.round(total * 100) / 100, by_category: Object.values(catMap).sort((a, b) => b.total - a.total) } })
+})
+
+router.post('/moments', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const { name, description, icon, color, start_date, end_date } = req.body
+  const { data, error } = await supabaseAdmin
+    .from('finance_moments')
+    .insert({ user_id: userId, name, description, icon: icon ?? '✨', color: color ?? '#7C3AED', start_date: start_date ?? null, end_date: end_date ?? null })
+    .select().single()
+  if (error) { res.status(500).json({ error: error.message }); return }
+  res.json(data)
+})
+
+router.patch('/moments/:id', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const momentId = Number(req.params.id)
+  const { data, error } = await supabaseAdmin
+    .from('finance_moments').update(req.body).eq('id', momentId).eq('user_id', userId).select().single()
+  if (error) { res.status(500).json({ error: error.message }); return }
+  res.json(data)
+})
+
+router.delete('/moments/:id', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const momentId = Number(req.params.id)
+  await supabaseAdmin.from('finance_transactions').update({ moment_id: null }).eq('moment_id', momentId).eq('user_id', userId)
+  const { error } = await supabaseAdmin.from('finance_moments').delete().eq('id', momentId).eq('user_id', userId)
+  if (error) { res.status(500).json({ error: error.message }); return }
+  res.json({ ok: true })
+})
+
 export default router
