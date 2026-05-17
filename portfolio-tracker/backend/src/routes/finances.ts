@@ -165,4 +165,257 @@ router.delete('/categories/:id', requireAuth, async (req, res: Response) => {
   res.json({ ok: true })
 })
 
+// ── Transactions ───────────────────────────────────────────────────────────────
+
+// GET /api/finances/transactions?month=2026-05&category_id=3
+router.get('/transactions', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const { month, category_id, account_id } = req.query as Record<string, string>
+
+  let query = supabaseAdmin
+    .from('finance_transactions')
+    .select('id, date, description, amount, currency, category_id, account_id, is_internal_transfer, source, finance_categories(id, name, icon, color)')
+    .eq('user_id', userId)
+    .order('date', { ascending: false })
+    .order('id', { ascending: false })
+
+  if (month) {
+    const [y, m] = month.split('-').map(Number)
+    const start = `${y}-${String(m).padStart(2, '0')}-01`
+    const end   = new Date(y, m, 0).toISOString().split('T')[0]
+    query = query.gte('date', start).lte('date', end)
+  }
+  if (category_id) query = query.eq('category_id', category_id)
+  if (account_id)  query = query.eq('account_id', account_id)
+
+  const { data, error } = await query
+  if (error) { res.status(500).json({ error: error.message }); return }
+  res.json(data ?? [])
+})
+
+// POST /api/finances/transactions — create manual
+router.post('/transactions', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const { date, description, amount, currency, category_id, account_id, is_internal_transfer } = req.body
+  if (!date || amount == null) { res.status(400).json({ error: 'date and amount required' }); return }
+  const { data, error } = await supabaseAdmin
+    .from('finance_transactions')
+    .insert({
+      user_id: userId,
+      date, description: description ?? '',
+      amount: Number(amount),
+      currency: currency ?? 'EUR',
+      category_id: category_id ?? null,
+      account_id: account_id ?? null,
+      is_internal_transfer: is_internal_transfer ?? false,
+      source: 'manual',
+    })
+    .select()
+    .single()
+  if (error) { res.status(500).json({ error: error.message }); return }
+  res.json(data)
+})
+
+// PATCH /api/finances/transactions/:id
+router.patch('/transactions/:id', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const { id } = req.params
+  const { category_id, is_internal_transfer, description, amount } = req.body
+  const update: Record<string, unknown> = {}
+  if (category_id          !== undefined) update.category_id         = category_id
+  if (is_internal_transfer !== undefined) update.is_internal_transfer = is_internal_transfer
+  if (description          != null) update.description = description
+  if (amount               != null) update.amount      = amount
+  const { error } = await supabaseAdmin
+    .from('finance_transactions')
+    .update(update)
+    .eq('id', id)
+    .eq('user_id', userId)
+  if (error) { res.status(500).json({ error: error.message }); return }
+  res.json({ ok: true })
+})
+
+// DELETE /api/finances/transactions/:id
+router.delete('/transactions/:id', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const { id } = req.params
+  const { error } = await supabaseAdmin
+    .from('finance_transactions')
+    .delete()
+    .eq('id', id)
+    .eq('user_id', userId)
+  if (error) { res.status(500).json({ error: error.message }); return }
+  res.json({ ok: true })
+})
+
+// ── CSV helpers ────────────────────────────────────────────────────────────────
+
+function parseAmount(raw: string): number {
+  if (!raw) return 0
+  const s = raw.trim().replace(/\s/g, '')
+  // Brazilian: "1.234,56" or "-1.234,56"
+  if (/\d{1,3}(\.\d{3})*,\d{2}$/.test(s)) return parseFloat(s.replace(/\./g, '').replace(',', '.'))
+  // European: "1 234,56" or "1.234,56"
+  if (/,\d{1,2}$/.test(s) && !s.includes('.')) return parseFloat(s.replace(',', '.'))
+  // Strip currency symbols and parse standard float
+  return parseFloat(s.replace(/[^0-9.\-+]/g, '')) || 0
+}
+
+function parseDate(raw: string): string | null {
+  if (!raw) return null
+  const s = raw.trim()
+  // ISO: 2024-01-15
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10)
+  // DD/MM/YYYY or DD-MM-YYYY
+  const dmy = s.match(/^(\d{2})[\/\-](\d{2})[\/\-](\d{4})/)
+  if (dmy) return `${dmy[3]}-${dmy[2]}-${dmy[1]}`
+  // MM/DD/YYYY (US)
+  const mdy = s.match(/^(\d{2})[\/\-](\d{2})[\/\-](\d{4})/)
+  if (mdy) return `${mdy[3]}-${mdy[1]}-${mdy[2]}`
+  return null
+}
+
+function detectColumn(headers: string[], keywords: string[]): number {
+  const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim()
+  for (const kw of keywords) {
+    const idx = headers.findIndex(h => norm(h).includes(norm(kw)))
+    if (idx >= 0) return idx
+  }
+  return -1
+}
+
+function parseCSV(text: string): string[][] {
+  const rows: string[][] = []
+  const lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n')
+  for (const line of lines) {
+    if (!line.trim()) continue
+    const cells: string[] = []
+    let cur = '', inQ = false
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i]
+      if (ch === '"') { inQ = !inQ }
+      else if ((ch === ',' || ch === ';') && !inQ) { cells.push(cur.trim()); cur = '' }
+      else cur += ch
+    }
+    cells.push(cur.trim())
+    rows.push(cells)
+  }
+  return rows
+}
+
+const BROKER_KEYWORDS = [
+  'interactive brokers', 'bourse direct', 'trade republic', 'trading 212', 'degiro',
+  'xp invest', 'clear corretora', 'btg', 'avenue', 'nu invest', 'rico', 'modal',
+  'genial', 'guide invest', 'orama', 'toro', 'c6 invest', 'itau corretora',
+  'bradesco corretora', 'bb dtvm', 'revolut securities', 'scalable', 'etoro',
+  'saxo bank', 'swissquote', 'fortuneo', 'lynx broker', 'boursorama',
+]
+
+function detectBroker(description: string): string | null {
+  const d = description.toLowerCase()
+  return BROKER_KEYWORDS.find(b => d.includes(b)) ?? null
+}
+
+// POST /api/finances/transactions/csv-parse
+// Parses CSV text and returns preview rows with auto-suggested categories
+router.post('/transactions/csv-parse', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const { csv, currency = 'EUR' } = req.body as { csv: string; currency?: string }
+  if (!csv) { res.status(400).json({ error: 'csv required' }); return }
+
+  // Load user categories for keyword matching
+  const { data: cats } = await supabaseAdmin
+    .from('finance_categories')
+    .select('id, name, icon, color, keyword_rules')
+    .eq('user_id', userId)
+
+  const categories = (cats ?? []) as { id: number; name: string; icon: string; color: string; keyword_rules: string[] }[]
+
+  function matchCategory(description: string): { id: number; name: string; icon: string; color: string } | null {
+    const d = description.toLowerCase()
+    for (const cat of categories) {
+      const rules: string[] = Array.isArray(cat.keyword_rules) ? cat.keyword_rules : []
+      if (rules.some(kw => d.includes(kw.toLowerCase()))) return cat
+    }
+    return null
+  }
+
+  const rows = parseCSV(csv)
+  if (rows.length < 2) { res.status(400).json({ error: 'CSV must have at least a header row and one data row' }); return }
+
+  const headers = rows[0]
+  const dateIdx  = detectColumn(headers, ['date','data','fecha','datum'])
+  const descIdx  = detectColumn(headers, ['description','descricao','historico','lancamento','memo','libelle','beneficiary','name','merchant'])
+  const amtIdx   = detectColumn(headers, ['amount','valor','importe','betrag','montant','value','credit','debito','credito','charge'])
+  const typeIdx  = detectColumn(headers, ['type','tipo','transaction type'])
+
+  if (dateIdx < 0 || amtIdx < 0) {
+    res.status(422).json({ error: 'Could not detect date or amount columns', headers, detected: { dateIdx, descIdx, amtIdx } })
+    return
+  }
+
+  const transactions = []
+  for (let i = 1; i < rows.length; i++) {
+    const row = rows[i]
+    if (row.every(c => !c.trim())) continue
+    const rawDate = row[dateIdx] ?? ''
+    const rawAmt  = row[amtIdx]  ?? ''
+    const rawDesc = descIdx >= 0 ? (row[descIdx] ?? '') : ''
+    const rawType = typeIdx >= 0 ? (row[typeIdx] ?? '') : ''
+
+    const date   = parseDate(rawDate)
+    if (!date) continue
+    let amount = parseAmount(rawAmt)
+    if (!amount) continue
+
+    // Revolut and some banks: separate debit/credit columns or type column
+    if (typeIdx >= 0 && rawType.toLowerCase().includes('debit')) amount = -Math.abs(amount)
+    if (typeIdx >= 0 && rawType.toLowerCase().includes('credit')) amount = Math.abs(amount)
+
+    const category  = matchCategory(rawDesc)
+    const broker    = detectBroker(rawDesc)
+
+    transactions.push({
+      date,
+      description: rawDesc,
+      amount,
+      currency,
+      suggested_category: category,
+      is_broker_transfer: !!broker,
+      broker_name: broker,
+    })
+  }
+
+  res.json({ transactions, total: transactions.length, headers, detected: { dateIdx, descIdx, amtIdx } })
+})
+
+// POST /api/finances/transactions/csv-import — bulk insert parsed rows
+router.post('/transactions/csv-import', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const { transactions } = req.body as {
+    transactions: { date: string; description: string; amount: number; currency: string; category_id?: number | null; account_id?: number | null; is_internal_transfer?: boolean }[]
+  }
+  if (!Array.isArray(transactions) || transactions.length === 0) {
+    res.status(400).json({ error: 'transactions array required' }); return
+  }
+  const rows = transactions.map(t => ({
+    user_id: userId,
+    date:        t.date,
+    description: t.description ?? '',
+    amount:      t.amount,
+    currency:    t.currency ?? 'EUR',
+    category_id: t.category_id ?? null,
+    account_id:  t.account_id  ?? null,
+    is_internal_transfer: t.is_internal_transfer ?? false,
+    source: 'csv',
+  }))
+  // Ignore duplicates (same user + date + description + amount)
+  const { data, error } = await supabaseAdmin
+    .from('finance_transactions')
+    .insert(rows)
+    .select('id')
+  if (error) { res.status(500).json({ error: error.message }); return }
+  res.json({ imported: data?.length ?? 0 })
+})
+
 export default router
