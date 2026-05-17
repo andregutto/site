@@ -12,7 +12,8 @@
     "achievements": "Succès",
     "favorites":    "Favoris",
     "profile":      "Profil",
-    "archived":     "Archivés"
+    "archived":     "Archivés",
+    "finances":     "Finances"
   },
   "currency": {
     "label": "Devise"
@@ -258,6 +259,23 @@
     "balancer":        { "name": "Équilibriste",         "desc": "Configurer les objectifs de rééquilibrage" },
     "tax_citizen":     { "name": "Citoyen Fiscal",       "desc": "Générer le premier rapport fiscal" },
     "multicurrency":   { "name": "Multidevise",          "desc": "Actifs en BRL, EUR et USD" }
+  },
+  "finances": {
+    "navOverview":      "Vue d'ensemble",
+    "navBudget":        "Budget",
+    "navTransactions":  "Transactions",
+    "navAccounts":      "Comptes",
+    "navFreedom":       "Liberté",
+    "overviewTitle":    "Finances",
+    "overviewSubtitle": "Résumé de vos finances personnelles",
+    "transactionsTitle":"Transactions",
+    "transactionsSubtitle": "Historique des dépenses et revenus",
+    "budgetTitle":      "Budget",
+    "budgetSubtitle":   "Enveloppes et catégories de dépenses",
+    "accountsTitle":    "Comptes",
+    "accountsSubtitle": "Comptes bancaires connectés",
+    "freedomTitle":     "Liberté Financière",
+    "freedomSubtitle":  "Planification à long terme"
   },
   "archived": {
     "title":         "Archivés",

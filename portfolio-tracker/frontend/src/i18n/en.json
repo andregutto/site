@@ -12,7 +12,8 @@
     "achievements": "Achievements",
     "favorites":    "Favourites",
     "profile":      "Profile",
-    "archived":     "Archived"
+    "archived":     "Archived",
+    "finances":     "Finances"
   },
   "currency": {
     "label": "Currency"
@@ -258,6 +259,23 @@
     "balancer":        { "name": "Balancer",            "desc": "Configure rebalancing targets" },
     "tax_citizen":     { "name": "Tax Citizen",         "desc": "Generate first tax report" },
     "multicurrency":   { "name": "Multicurrency",       "desc": "Assets in BRL, EUR and USD" }
+  },
+  "finances": {
+    "navOverview":      "Overview",
+    "navBudget":        "Budget",
+    "navTransactions":  "Transactions",
+    "navAccounts":      "Accounts",
+    "navFreedom":       "Freedom",
+    "overviewTitle":    "Finances",
+    "overviewSubtitle": "Summary of your personal finances",
+    "transactionsTitle":"Transactions",
+    "transactionsSubtitle": "Expenses and income history",
+    "budgetTitle":      "Budget",
+    "budgetSubtitle":   "Envelopes and expense categories",
+    "accountsTitle":    "Accounts",
+    "accountsSubtitle": "Connected bank accounts",
+    "freedomTitle":     "Financial Freedom",
+    "freedomSubtitle":  "Long-term planning"
   },
   "archived": {
     "title":         "Archived",

@@ -20,6 +20,12 @@ import IndicesPage from './pages/IndicesPage'
 import IndexDetailPage from './pages/IndexDetailPage'
 import FavoritesPage from './pages/FavoritesPage'
 import ArchivedPage from './pages/ArchivedPage'
+import FinancesLayout from './pages/finances/FinancesLayout'
+import FinancesOverviewPage from './pages/finances/FinancesOverviewPage'
+import FinancesTransactionsPage from './pages/finances/FinancesTransactionsPage'
+import FinancesBudgetPage from './pages/finances/FinancesBudgetPage'
+import FinancesAccountsPage from './pages/finances/FinancesAccountsPage'
+import FinancesFreedomPage from './pages/finances/FinancesFreedomPage'
 import AppLayout from './components/AppLayout'
 import AchievementsPage from './pages/AchievementsPage'
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage'
@@ -117,6 +123,13 @@ function AppRoutes() {
         <Route path="/favorites"      element={<FavoritesPage />} />
         <Route path="/achievements"   element={<AchievementsPage />} />
         <Route path="/archived"       element={<ArchivedPage />} />
+        <Route path="/finances"       element={<FinancesLayout />}>
+          <Route index                element={<FinancesOverviewPage />} />
+          <Route path="transactions"  element={<FinancesTransactionsPage />} />
+          <Route path="budget"        element={<FinancesBudgetPage />} />
+          <Route path="accounts"      element={<FinancesAccountsPage />} />
+          <Route path="freedom"       element={<FinancesFreedomPage />} />
+        </Route>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
