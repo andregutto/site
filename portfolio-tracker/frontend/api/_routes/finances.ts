@@ -418,4 +418,88 @@ router.post('/transactions/csv-import', requireAuth, async (req, res: Response) 
   res.json({ imported: data?.length ?? 0 })
 })
 
+// ── Financial Freedom Plans ────────────────────────────────────────────────────
+
+// GET /api/finances/freedom-plans
+router.get('/freedom-plans', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const { data, error } = await supabaseAdmin
+    .from('finance_freedom_plans')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: true })
+  if (error) { res.status(500).json({ error: error.message }); return }
+  res.json(data ?? [])
+})
+
+// POST /api/finances/freedom-plans
+router.post('/freedom-plans', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const {
+    name, initial_capital, monthly_contribution, monthly_return_rate,
+    monthly_income_rate, target_amount, currency, horizon_years, notes,
+  } = req.body as {
+    name: string; initial_capital: number; monthly_contribution: number
+    monthly_return_rate: number; monthly_income_rate: number; target_amount: number
+    currency: string; horizon_years: number; notes?: string
+  }
+  if (!name || !initial_capital || !target_amount) {
+    res.status(400).json({ error: 'name, initial_capital, target_amount required' }); return
+  }
+  // Set new plan as active, deactivate others
+  await supabaseAdmin
+    .from('finance_freedom_plans')
+    .update({ is_active: false })
+    .eq('user_id', userId)
+  const { data, error } = await supabaseAdmin
+    .from('finance_freedom_plans')
+    .insert({
+      user_id: userId, name, is_active: true,
+      initial_capital, monthly_contribution, monthly_return_rate,
+      monthly_income_rate: monthly_income_rate ?? 0.005,
+      target_amount, currency: currency ?? 'EUR',
+      horizon_years, notes: notes ?? null,
+    })
+    .select()
+    .single()
+  if (error) { res.status(500).json({ error: error.message }); return }
+  res.json(data)
+})
+
+// PATCH /api/finances/freedom-plans/:id
+router.patch('/freedom-plans/:id', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const planId = Number(req.params.id)
+  const updates = req.body as Record<string, unknown>
+  // If setting as active, deactivate others first
+  if (updates.is_active === true) {
+    await supabaseAdmin
+      .from('finance_freedom_plans')
+      .update({ is_active: false })
+      .eq('user_id', userId)
+  }
+  const { data, error } = await supabaseAdmin
+    .from('finance_freedom_plans')
+    .update(updates)
+    .eq('id', planId)
+    .eq('user_id', userId)
+    .select()
+    .single()
+  if (error) { res.status(500).json({ error: error.message }); return }
+  res.json(data)
+})
+
+// DELETE /api/finances/freedom-plans/:id
+router.delete('/freedom-plans/:id', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const planId = Number(req.params.id)
+  const { error } = await supabaseAdmin
+    .from('finance_freedom_plans')
+    .delete()
+    .eq('id', planId)
+    .eq('user_id', userId)
+  if (error) { res.status(500).json({ error: error.message }); return }
+  res.json({ ok: true })
+})
+
 export default router
