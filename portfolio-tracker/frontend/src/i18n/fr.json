@@ -235,7 +235,7 @@
   },
   "achievementDefs": {
     "first_step":      { "name": "Premier Pas",          "desc": "Créer un compte" },
-    "identity":        { "name": "Identité",             "desc": "Compléter le profil" },
+    "identity":        { "name": "Identité",             "desc": "Compléter le profil avec photo" },
     "first_seed":      { "name": "Première Graine",      "desc": "Enregistrer le premier apport" },
     "global_roots":    { "name": "Racines Mondiales",    "desc": "Avoir un actif en devise étrangère" },
     "builder":         { "name": "Constructeur",         "desc": "Patrimoine supérieur à R$ 10 000" },

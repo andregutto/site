@@ -235,7 +235,7 @@
   },
   "achievementDefs": {
     "first_step":      { "name": "First Step",         "desc": "Create account" },
-    "identity":        { "name": "Identity",            "desc": "Complete profile" },
+    "identity":        { "name": "Identity",            "desc": "Complete profile with photo" },
     "first_seed":      { "name": "First Seed",          "desc": "Register first contribution" },
     "global_roots":    { "name": "Global Roots",        "desc": "Have an asset in foreign currency" },
     "builder":         { "name": "Builder",             "desc": "Net worth above R$ 10,000" },
