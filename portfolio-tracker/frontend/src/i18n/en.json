@@ -11,7 +11,8 @@
     "signout":      "Sign out",
     "achievements": "Achievements",
     "favorites":    "Favourites",
-    "profile":      "Profile"
+    "profile":      "Profile",
+    "archived":     "Archived"
   },
   "currency": {
     "label": "Currency"
@@ -257,5 +258,16 @@
     "balancer":        { "name": "Balancer",            "desc": "Configure rebalancing targets" },
     "tax_citizen":     { "name": "Tax Citizen",         "desc": "Generate first tax report" },
     "multicurrency":   { "name": "Multicurrency",       "desc": "Assets in BRL, EUR and USD" }
+  },
+  "archived": {
+    "title":         "Archived",
+    "subtitle":      "Closed positions",
+    "empty":         "No archived assets",
+    "invested":      "Invested",
+    "received":      "Received",
+    "pnl":           "P&L",
+    "period":        "Period",
+    "contributions": "Transactions",
+    "reactivate":    "Reactivate"
   }
 }

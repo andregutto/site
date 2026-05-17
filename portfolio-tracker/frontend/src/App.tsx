@@ -19,6 +19,7 @@ import ImportB3Page from './pages/ImportB3Page'
 import IndicesPage from './pages/IndicesPage'
 import IndexDetailPage from './pages/IndexDetailPage'
 import FavoritesPage from './pages/FavoritesPage'
+import ArchivedPage from './pages/ArchivedPage'
 import AppLayout from './components/AppLayout'
 import AchievementsPage from './pages/AchievementsPage'
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage'
@@ -115,6 +116,7 @@ function AppRoutes() {
         <Route path="/indices/:code"  element={<IndexDetailPage />} />
         <Route path="/favorites"      element={<FavoritesPage />} />
         <Route path="/achievements"   element={<AchievementsPage />} />
+        <Route path="/archived"       element={<ArchivedPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

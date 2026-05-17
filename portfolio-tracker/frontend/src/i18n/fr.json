@@ -11,7 +11,8 @@
     "signout":      "Déconnexion",
     "achievements": "Succès",
     "favorites":    "Favoris",
-    "profile":      "Profil"
+    "profile":      "Profil",
+    "archived":     "Archivés"
   },
   "currency": {
     "label": "Devise"
@@ -257,5 +258,16 @@
     "balancer":        { "name": "Équilibriste",         "desc": "Configurer les objectifs de rééquilibrage" },
     "tax_citizen":     { "name": "Citoyen Fiscal",       "desc": "Générer le premier rapport fiscal" },
     "multicurrency":   { "name": "Multidevise",          "desc": "Actifs en BRL, EUR et USD" }
+  },
+  "archived": {
+    "title":         "Archivés",
+    "subtitle":      "Positions clôturées",
+    "empty":         "Aucun actif archivé",
+    "invested":      "Investi",
+    "received":      "Reçu",
+    "pnl":           "Résultat",
+    "period":        "Période",
+    "contributions": "Opérations",
+    "reactivate":    "Réactiver"
   }
 }

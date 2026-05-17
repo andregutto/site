@@ -11,7 +11,8 @@
     "signout":      "Sair",
     "achievements": "Conquistas",
     "favorites":    "Favoritos",
-    "profile":      "Perfil"
+    "profile":      "Perfil",
+    "archived":     "Arquivados"
   },
   "currency": {
     "label": "Moeda"
@@ -257,5 +258,16 @@
     "balancer":        { "name": "Equilibrista",          "desc": "Configurar metas de balanceamento" },
     "tax_citizen":     { "name": "Cidadão Fiscal",        "desc": "Gerar primeiro relatório de IR" },
     "multicurrency":   { "name": "Multimoeda",            "desc": "Ativos em BRL, EUR e USD" }
+  },
+  "archived": {
+    "title":         "Arquivados",
+    "subtitle":      "Posições encerradas",
+    "empty":         "Nenhum ativo arquivado",
+    "invested":      "Investido",
+    "received":      "Recebido",
+    "pnl":           "Resultado",
+    "period":        "Período",
+    "contributions": "Operações",
+    "reactivate":    "Reativar"
   }
 }

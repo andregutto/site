@@ -58,6 +58,7 @@ export default function AppLayout() {
     { to: '/classes',        label: t.nav.classes,       icon: '◈', end: false },
     { to: '/reports',        label: t.nav.ir,            icon: '⊞', end: false },
     { to: '/indices',        label: t.nav.indices,       icon: '◎', end: false },
+    { to: '/archived',       label: t.nav.archived,      icon: '⊘', end: false },
   ]
 
   return (
@@ -242,8 +243,9 @@ export default function AppLayout() {
                 { to: '/classes',      label: t.nav.classes,    icon: '◈' },
                 { to: '/reports',      label: t.nav.ir,         icon: '⊞' },
                 { to: '/indices',      label: t.nav.indices,    icon: '◎' },
-                { to: '/achievements', label: 'Conquistas',     icon: '🏅' },
-                { to: '/profile',      label: 'Perfil',         icon: '👤' },
+                { to: '/achievements', label: t.nav.achievements, icon: '🏅' },
+                { to: '/archived',     label: t.nav.archived,    icon: '⊘' },
+                { to: '/profile',      label: t.nav.profile,     icon: '👤' },
               ].map(({ to, label, icon }) => (
                 <NavLink
                   key={to}

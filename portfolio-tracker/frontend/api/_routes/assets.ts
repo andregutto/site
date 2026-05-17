@@ -383,17 +383,44 @@ router.post('/:id/unarchive', requireAuth, async (req, res: Response) => {
   res.json({ ok: true })
 })
 
-// GET /api/assets/archived — list inactive assets
+// GET /api/assets/archived — list inactive assets with aggregated contribution history
 router.get('/archived', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
-  const { data, error } = await supabaseAdmin
+  const { data: archivedAssets, error } = await supabaseAdmin
     .from('assets')
     .select('id, code, name, asset_type, currency, asset_classes(name, color)')
     .eq('user_id', userId)
     .eq('active', false)
     .order('name')
   if (error) { res.status(500).json({ error: error.message }); return }
-  res.json(data ?? [])
+  if (!archivedAssets?.length) { res.json([]); return }
+
+  const assetIds = archivedAssets.map(a => a.id as number)
+  const { data: contribs } = await supabaseAdmin
+    .from('contributions')
+    .select('asset_id, type, quantity, price_orig, currency, date')
+    .in('asset_id', assetIds)
+    .order('date', { ascending: true })
+
+  const contribsByAsset = new Map<number, typeof contribs>()
+  for (const c of (contribs ?? [])) {
+    const arr = contribsByAsset.get(c.asset_id) ?? []
+    arr.push(c)
+    contribsByAsset.set(c.asset_id, arr)
+  }
+
+  const result = archivedAssets.map(a => {
+    const cs = contribsByAsset.get(a.id as number) ?? []
+    const buys  = cs.filter(c => c.type === 'buy')
+    const sells = cs.filter(c => c.type === 'sell')
+    const totalInvested = buys.reduce((s, c)  => s + (c.quantity ?? 0) * (c.price_orig ?? 0), 0)
+    const totalReceived = sells.reduce((s, c) => s + (c.quantity ?? 0) * (c.price_orig ?? 0), 0)
+    const firstDate = cs.length > 0 ? cs[0].date : null
+    const lastDate  = cs.length > 0 ? cs[cs.length - 1].date : null
+    return { ...a, contributions: cs, totalInvested, totalReceived, pnl: totalReceived - totalInvested, firstDate, lastDate }
+  })
+
+  res.json(result)
 })
 
 router.get('/:id/detail', requireAuth, async (req, res: Response) => {
