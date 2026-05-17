@@ -434,14 +434,19 @@ router.get('/:id/detail', requireAuth, async (req, res: Response) => {
 
   const contribs = rawContribs ?? []
 
+  // Pre-fetch current FX rate for cost calculations (used before priceCurrency block below)
+  const assetCurrency = asset.currency || 'BRL'
+  const fxApprox = assetCurrency === 'BRL' ? 1 : await getFxRate(assetCurrency).catch(() => 5.70)
+
   let totalQty = 0
   let totalCostBrl = 0
   let totalIncomeBrl = 0
   for (const c of contribs) {
     const qty = c.quantity ?? 0
+    const cFx = c.fx_rate_brl ?? (c.currency === 'BRL' ? 1 : fxApprox)
     const costBrl = c.value_brl != null
       ? c.value_brl
-      : (c.price_orig != null ? c.price_orig * qty * (c.fx_rate_brl ?? 5.70) : 0)
+      : (c.price_orig != null ? c.price_orig * qty * cFx : 0)
     if (c.type === 'income') {
       totalIncomeBrl += c.value_brl ?? 0
     } else if (c.type === 'buy') {
@@ -627,8 +632,6 @@ router.get('/:id/detail', requireAuth, async (req, res: Response) => {
     const ph = phRes.data
     const mv = mvRes.data
 
-    const fxApprox = priceCurrency === 'BRL' ? 1 : await getFxRate(priceCurrency).catch(() => 5.70)
-
     if (ph && ph.length > 0) {
       const phDates = new Set(ph.map(p => p.ref_date))
       const phPoints: HistoryPoint[] = ph.map((p) => {
@@ -735,10 +738,17 @@ router.get('/:id/detail', requireAuth, async (req, res: Response) => {
     gain_loss_pct:  gainLossPct !== null ? Math.round(gainLossPct * 100) / 100 : null,
     total_income_brl: Math.round(totalIncomeBrl * 100) / 100,
     history,
-    contributions: contribs.slice().reverse().map(c => ({
-      ...c,
-      profit_brl: profitByContribId.has(c.id) ? profitByContribId.get(c.id)! : null,
-    })),
+    contributions: contribs.slice().reverse().map(c => {
+      const cFx = c.fx_rate_brl ?? (c.currency === 'BRL' ? 1 : fxApprox)
+      const valueBrl = c.value_brl ?? (c.price_orig != null
+        ? Math.round(c.price_orig * (c.quantity ?? 0) * cFx * 100) / 100
+        : null)
+      return {
+        ...c,
+        value_brl: valueBrl,
+        profit_brl: profitByContribId.has(c.id) ? profitByContribId.get(c.id)! : null,
+      }
+    }),
   })
 })
 
