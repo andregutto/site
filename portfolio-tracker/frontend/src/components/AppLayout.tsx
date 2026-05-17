@@ -167,7 +167,10 @@ export default function AppLayout() {
                     onClick={() => setShowUserMenu(false)}
                     className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                   >
-                    <span>⊘</span> {t.nav.archived}
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4 shrink-0">
+                      <path d="M2 3.5A1.5 1.5 0 0 1 3.5 2h9A1.5 1.5 0 0 1 14 3.5v.5H2v-.5ZM2 5.5h12v7A1.5 1.5 0 0 1 12.5 14h-9A1.5 1.5 0 0 1 2 12.5v-7Zm4.5 2a.5.5 0 0 0 0 1h3a.5.5 0 0 0 0-1h-3Z" />
+                    </svg>
+                    {t.nav.archived}
                   </Link>
                   <Link
                     to="/profile"
@@ -245,13 +248,12 @@ export default function AppLayout() {
             <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-5" />
             <div className="grid grid-cols-4 gap-3">
               {[
-                { to: '/rebalance',    label: t.nav.rebalance,  icon: '⇌' },
-                { to: '/classes',      label: t.nav.classes,    icon: '◈' },
-                { to: '/reports',      label: t.nav.ir,         icon: '⊞' },
-                { to: '/indices',      label: t.nav.indices,    icon: '◎' },
+                { to: '/rebalance',    label: t.nav.rebalance,    icon: '⇌' },
+                { to: '/classes',      label: t.nav.classes,      icon: '◈' },
+                { to: '/reports',      label: t.nav.ir,           icon: '⊞' },
+                { to: '/indices',      label: t.nav.indices,      icon: '◎' },
                 { to: '/achievements', label: t.nav.achievements, icon: '🏅' },
-                { to: '/archived',     label: t.nav.archived,   icon: '⊘' },
-                { to: '/profile',      label: t.nav.profile,    icon: '👤' },
+                { to: '/profile',      label: t.nav.profile,      icon: '👤' },
               ].map(({ to, label, icon }) => (
                 <NavLink
                   key={to}
@@ -267,6 +269,20 @@ export default function AppLayout() {
                   <span className="text-[11px] font-medium">{label}</span>
                 </NavLink>
               ))}
+              <NavLink
+                to="/archived"
+                onClick={() => setShowMoreSheet(false)}
+                className={({ isActive }) =>
+                  `flex flex-col items-center gap-1.5 py-3 rounded-2xl transition-colors ${
+                    isActive ? 'bg-[#001A70]/10 text-[#001A70]' : 'text-gray-500 bg-gray-50'
+                  }`
+                }
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-5 h-5">
+                  <path d="M2 3.5A1.5 1.5 0 0 1 3.5 2h9A1.5 1.5 0 0 1 14 3.5v.5H2v-.5ZM2 5.5h12v7A1.5 1.5 0 0 1 12.5 14h-9A1.5 1.5 0 0 1 2 12.5v-7Zm4.5 2a.5.5 0 0 0 0 1h3a.5.5 0 0 0 0-1h-3Z" />
+                </svg>
+                <span className="text-[11px] font-medium">{t.nav.archived}</span>
+              </NavLink>
             </div>
           </div>
         </div>
