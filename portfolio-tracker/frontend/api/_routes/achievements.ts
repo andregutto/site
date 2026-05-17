@@ -32,13 +32,13 @@ router.post('/check', requireAuth, async (req, res: Response) => {
     { data: history },
   ] = await Promise.all([
     supabaseAdmin.auth.admin.getUserById(userId),
-    supabaseAdmin.from('assets').select('id, currency, asset_class_id, asset_classes(name)').eq('user_id', userId).eq('active', true),
+    supabaseAdmin.from('assets').select('id, currency, asset_type, asset_class_id, asset_classes(name)').eq('user_id', userId).eq('active', true),
     supabaseAdmin.from('contributions').select('date, asset_id, assets!inner(user_id)').eq('assets.user_id', userId).order('date'),
     supabaseAdmin.from('price_history').select('date').eq('user_id', userId).order('date', { ascending: true }),
   ])
 
   const meta = userRecord?.user?.user_metadata ?? {}
-  type AssetRow = { id: number; currency: string; asset_class_id: number | null; asset_classes: { name: string } | { name: string }[] | null }
+  type AssetRow = { id: number; currency: string; asset_type: string; asset_class_id: number | null; asset_classes: { name: string } | { name: string }[] | null }
   const assetList = ((assets ?? []) as unknown) as AssetRow[]
   const currencies = new Set(assetList.map(a => a.currency))
   const classIds = new Set(assetList.map(a => a.asset_class_id).filter(Boolean))
@@ -73,8 +73,10 @@ router.post('/check', requireAuth, async (req, res: Response) => {
   check('expat', currencies.size >= 2)
   // pension: classe com nome Previdência/PGBL/VGBL
   check('pension', assetList.some(a => /previd|pgbl|vgbl/i.test(className(a))))
-  // brick: imóvel/imobiliário físico (não FII — FII tem outro padrão)
-  check('brick_by_brick', assetList.some(a => /im[oó]v[ei]|real.?estate|imobi/i.test(className(a))))
+  // brick: imóvel físico = classe com nome de imóvel E asset_type manual (não ticker/FII)
+  check('brick_by_brick', assetList.some(a => /im[oó]v[ei]|real.?estate/i.test(className(a)) && a.asset_type === 'manual'))
+  // fii: classe com nome fii/imobiliário/reit OU classe de imóvel com ativo ticker (FII negociado em bolsa)
+  check('fii_investor',   assetList.some(a => /\bfii\b|imobili[aá]rio|reit/i.test(className(a)) || (/im[oó]v[ei]|real.?estate/i.test(className(a)) && a.asset_type === 'ticker')))
   check('discipline', hasConsecutiveMonths(contribDates, 3))
   check('consistency', hasConsecutiveMonths(contribDates, 6))
 

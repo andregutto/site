@@ -193,6 +193,30 @@ const ICONS: Record<string, (c: string) => React.ReactElement> = {
       <path d="M64 76 L67 79 L73 73" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
     </g>
   ),
+  fii_investor: (c) => (
+    <g fill={c} fillOpacity={0.95}>
+      {/* Left building */}
+      <rect x="42" y="62" width="14" height="24" rx="1.5"/>
+      <rect x="44" y="64" width="4" height="4" rx="0.5" fill="white" fillOpacity={0.3}/>
+      <rect x="50" y="64" width="4" height="4" rx="0.5" fill="white" fillOpacity={0.3}/>
+      <rect x="44" y="71" width="4" height="4" rx="0.5" fill="white" fillOpacity={0.3}/>
+      <rect x="50" y="71" width="4" height="4" rx="0.5" fill="white" fillOpacity={0.3}/>
+      {/* Center tower */}
+      <rect x="58" y="52" width="14" height="34" rx="1.5"/>
+      <rect x="60" y="55" width="4" height="5" rx="0.5" fill="white" fillOpacity={0.3}/>
+      <rect x="66" y="55" width="4" height="5" rx="0.5" fill="white" fillOpacity={0.3}/>
+      <rect x="60" y="63" width="4" height="5" rx="0.5" fill="white" fillOpacity={0.3}/>
+      <rect x="66" y="63" width="4" height="5" rx="0.5" fill="white" fillOpacity={0.3}/>
+      <rect x="60" y="71" width="4" height="5" rx="0.5" fill="white" fillOpacity={0.3}/>
+      <rect x="66" y="71" width="4" height="5" rx="0.5" fill="white" fillOpacity={0.3}/>
+      {/* Right building */}
+      <rect x="74" y="58" width="5" height="28" rx="1"/>
+      {/* Ground */}
+      <rect x="40" y="86" width="42" height="2.5" rx="1.25" fillOpacity={0.6}/>
+      {/* Upward arrow */}
+      <path d="M54 52 L57 45 L60 52" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fillOpacity={0}/>
+    </g>
+  ),
   multicurrency: (c) => (
     <g fill={c} fillOpacity={0.95}>
       <circle cx="50" cy="65" r="13" fill={c} fillOpacity={0.5} stroke={c} strokeWidth="1.5"/>
