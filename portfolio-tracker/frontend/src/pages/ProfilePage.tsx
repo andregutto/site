@@ -10,13 +10,13 @@ import { supabase } from '../lib/supabase'
 import { useResetPriceHistory } from '../hooks/usePortfolio'
 
 interface ProfileData {
-  email:                string
-  first_name:           string
-  last_name:            string
-  country:              string
-  portfolio_start_date: string
-  allocation_targets:   Record<string, number>
-  avatar_url:           string
+  email:              string
+  first_name:         string
+  last_name:          string
+  country:            string
+  birthdate:          string
+  allocation_targets: Record<string, number>
+  avatar_url:         string
 }
 
 const COUNTRY_OPTIONS = [
@@ -84,7 +84,7 @@ export default function ProfilePage() {
   const [firstName,  setFirstName]  = useState('')
   const [lastName,   setLastName]   = useState('')
   const [country,    setCountry]    = useState('')
-  const [startDate,  setStartDate]  = useState('')
+  const [birthdate,  setBirthdate]  = useState('')
   const [email,      setEmail]      = useState('')
   const [avatarUrl,  setAvatarUrl]  = useState('')
 
@@ -109,7 +109,7 @@ export default function ProfilePage() {
         setFirstName(d.first_name)
         setLastName(d.last_name)
         setCountry(d.country)
-        setStartDate(d.portfolio_start_date)
+        setBirthdate(d.birthdate ?? '')
         setAvatarUrl(d.avatar_url)
       })
       .catch(e => setError(e instanceof Error ? e.message : 'Erro ao carregar perfil'))
@@ -133,7 +133,7 @@ export default function ProfilePage() {
         method: 'PATCH',
         body: JSON.stringify({
           first_name: firstName, last_name: lastName,
-          country, portfolio_start_date: startDate,
+          country, birthdate: birthdate || undefined,
           avatar_url: avatarUrl || undefined,
         }),
       })
@@ -329,11 +329,11 @@ export default function ProfilePage() {
             </div>
 
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Inicio do portfolio</label>
+              <label className="block text-xs text-gray-500 mb-1">{t.profile.birthdate}</label>
               <input
                 type="date"
-                value={startDate}
-                onChange={e => setStartDate(e.target.value)}
+                value={birthdate}
+                onChange={e => setBirthdate(e.target.value)}
                 className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20"
               />
             </div>
