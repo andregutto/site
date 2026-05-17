@@ -25,7 +25,7 @@
     "firstName":      "Prénom",
     "lastName":       "Nom",
     "country":        "Pays de résidence",
-    "portfolioStart": "Début du portefeuille",
+    "birthdate":      "Date de naissance",
     "defaultCurrency":"Devise d'affichage par défaut",
     "save":           "Enregistrer les modifications",
     "saving":         "Enregistrement...",
