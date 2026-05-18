@@ -112,12 +112,13 @@ function portfolioInCurrency(portfolio: PortfolioValue, currency: string, rates:
 interface PlanFormProps {
   initial: Partial<FreedomPlan>
   portfolio: PortfolioValue
+  ipcaAnnual?: number | null
   onSave: (data: Omit<FreedomPlan, 'id' | 'is_active' | 'created_at'>) => Promise<void>
   onCancel: () => void
   saving: boolean
 }
 
-function PlanForm({ initial, portfolio, onSave, onCancel, saving }: PlanFormProps) {
+function PlanForm({ initial, portfolio, ipcaAnnual, onSave, onCancel, saving }: PlanFormProps) {
   const { t } = useI18n()
   const isNew = !initial.id
   const rates = deriveRates(portfolio)
@@ -140,7 +141,11 @@ function PlanForm({ initial, portfolio, onSave, onCancel, saving }: PlanFormProp
   const [notes,          setNotes]         = useState(initial.notes ?? '')
   const [goalMode,       setGoalMode]      = useState<'capital' | 'income'>('capital')
   const [desiredIncome,  setDesiredIncome] = useState('')
-  const [inflation,      setInflation]     = useState('2')
+  const [inflation,      setInflation]     = useState(
+    !initial.id && (initial.currency ?? 'EUR') === 'BRL' && ipcaAnnual != null
+      ? String(ipcaAnnual)
+      : '2'
+  )
 
   function handleCurrencyChange(newCur: string) {
     setCapital(prev => convertAmt(prev, currency, newCur, rates))
@@ -313,6 +318,14 @@ function PlanForm({ initial, portfolio, onSave, onCancel, saving }: PlanFormProp
                 <div>
                   <label className={labelCls}>{t.finances.freedomInflation}</label>
                   <input required type="number" step="0.1" value={inflation} onChange={e => setInflation(e.target.value)} className={fieldCls} placeholder="2" />
+                  {ipcaAnnual != null && (
+                    <p className="text-[11px] text-gray-400 mt-1">
+                      IPCA 12m:&nbsp;
+                      <button type="button" onClick={() => setInflation(String(ipcaAnnual))} className="text-[#001A70] underline underline-offset-2 hover:opacity-70 transition-opacity">
+                        {ipcaAnnual}%
+                      </button>
+                    </p>
+                  )}
                 </div>
               </div>
               <p className="text-[11px] text-gray-400 leading-snug">{t.finances.freedomDesiredIncomeHint}</p>
@@ -377,6 +390,7 @@ export default function FinancesFreedomPage() {
   const [plans,        setPlans]        = useState<FreedomPlan[]>([])
   const [perf,         setPerf]         = useState<MonthlyPerf[]>([])
   const [portfolio,    setPortfolio]    = useState<PortfolioValue | null>(null)
+  const [ipcaM12,      setIpcaM12]      = useState<number | null>(null)
   const [loading,      setLoading]      = useState(true)
   const [showForm,     setShowForm]     = useState(false)
   const [editingPlan,  setEditingPlan]  = useState<FreedomPlan | null>(null)
@@ -387,12 +401,15 @@ export default function FinancesFreedomPage() {
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const [plansData, portfolioData] = await Promise.all([
+      const [plansData, portfolioData, indicesData] = await Promise.all([
         apiFetch<FreedomPlan[]>('/finances/freedom-plans'),
         apiFetch<PortfolioValue>('/portfolio/value'),
+        apiFetch<{ code: string; m12_pct: number | null }[]>('/indices'),
       ])
       setPlans(plansData)
       setPortfolio(portfolioData)
+      const ipca = indicesData.find(i => i.code === 'IPCA')
+      if (ipca?.m12_pct != null) setIpcaM12(Math.round(ipca.m12_pct * 10) / 10)
       // Fetch monthly performance for actual trajectory
       const now = currentMonth()
       const from = '2020-01'
@@ -633,6 +650,7 @@ export default function FinancesFreedomPage() {
           <PlanForm
             initial={editingPlan ?? {}}
             portfolio={portfolio ?? { total_brl: 0, total_eur: null, total_usd: null }}
+            ipcaAnnual={ipcaM12}
             onSave={savePlan}
             onCancel={() => { setShowForm(false); setEditingPlan(null) }}
             saving={saving}
