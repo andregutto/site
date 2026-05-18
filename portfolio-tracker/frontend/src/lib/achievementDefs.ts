@@ -32,6 +32,15 @@ export const ACHIEVEMENT_DEFS: AchievementDef[] = [
   { key: 'balancer',       name: 'Equilibrista',         description: 'Configurar metas de balanceamento',        xp: 20,  gradient: ['#1E3A5F','#64748B'], ringColor: '#94A3B8' },
   { key: 'tax_citizen',    name: 'Cidadão Fiscal',       description: 'Gerar primeiro relatório de IR',           xp: 40,  gradient: ['#1E3A5F','#B45309'], ringColor: '#D97706' },
   { key: 'multicurrency',  name: 'Multimoeda',           description: 'Ativos em BRL, EUR e USD',                 xp: 35,  gradient: ['#1E3A5F','#059669'], ringColor: '#34D399' },
+  // Finance module
+  { key: 'fin_first_txn',      name: 'Controle Financeiro',   description: 'Registrar a primeira transação de finanças',       xp: 15, gradient: ['#0F172A','#6366F1'], ringColor: '#A5B4FC' },
+  { key: 'fin_csv_import',     name: 'Importador',            description: 'Importar extrato via CSV pela primeira vez',       xp: 20, gradient: ['#0F4C75','#38BDF8'], ringColor: '#7DD3FC' },
+  { key: 'fin_first_account',  name: 'Conta Ativa',           description: 'Criar a primeira conta de finanças',               xp: 15, gradient: ['#134E4A','#0D9488'], ringColor: '#5EEAD4' },
+  { key: 'fin_budget_ready',   name: 'Orçamento Pronto',      description: 'Configurar envelopes e categorias de orçamento',   xp: 25, gradient: ['#78350F','#F59E0B'], ringColor: '#FCD34D' },
+  { key: 'fin_first_moment',   name: 'Memória Guardada',      description: 'Criar o primeiro Momento financeiro',              xp: 20, gradient: ['#4C1D95','#EC4899'], ringColor: '#F9A8D4' },
+  { key: 'fin_freedom',        name: 'Visionário',            description: 'Criar um plano de liberdade financeira',           xp: 30, gradient: ['#1E3A5F','#C9A227'], ringColor: '#FDE68A' },
+  { key: 'fin_hundred_txn',    name: 'Historiador Financeiro',description: 'Registrar mais de 100 transações',                 xp: 40, gradient: ['#1F2937','#9CA3AF'], ringColor: '#D1D5DB' },
+  { key: 'fin_categorized',    name: 'Organizado',            description: 'Categorizar mais de 50 transações',                xp: 35, gradient: ['#14532D','#22C55E'], ringColor: '#86EFAC' },
 ]
 
 export const LEVELS = [

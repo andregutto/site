@@ -91,6 +91,28 @@ router.post('/check', requireAuth, async (req, res: Response) => {
   check('balancer', Object.keys(meta.allocation_targets ?? {}).length > 0)
   check('multicurrency', currencies.has('BRL') && currencies.has('EUR') && currencies.has('USD'))
 
+  // Finance module checks
+  const needsFinance = ['fin_first_txn','fin_csv_import','fin_first_account','fin_budget_ready',
+    'fin_first_moment','fin_freedom','fin_hundred_txn','fin_categorized'].some(k => !earned.has(k))
+  if (needsFinance) {
+    const [txnRes, accountRes, momentRes, planRes, envelopeRes] = await Promise.all([
+      supabaseAdmin.from('finance_transactions').select('id, source, category_id').eq('user_id', userId),
+      supabaseAdmin.from('finance_accounts').select('id').eq('user_id', userId).limit(1),
+      supabaseAdmin.from('finance_moments').select('id').eq('user_id', userId).limit(1),
+      supabaseAdmin.from('finance_freedom_plans').select('id').eq('user_id', userId).limit(1),
+      supabaseAdmin.from('finance_envelopes').select('id').eq('user_id', userId).limit(1),
+    ])
+    const txns = txnRes.data ?? []
+    check('fin_first_txn',     txns.length > 0)
+    check('fin_csv_import',    txns.some((t: { source: string }) => t.source?.startsWith('csv:')))
+    check('fin_first_account', (accountRes.data ?? []).length > 0)
+    check('fin_budget_ready',  (envelopeRes.data ?? []).length > 0)
+    check('fin_first_moment',  (momentRes.data ?? []).length > 0)
+    check('fin_freedom',       (planRes.data ?? []).length > 0)
+    check('fin_hundred_txn',   txns.length >= 100)
+    check('fin_categorized',   txns.filter((t: { category_id: number | null }) => t.category_id != null).length >= 50)
+  }
+
   let newlyEarned: string[] = []
   if (toAward.length > 0) {
     const rows = toAward.map(key => ({ user_id: userId, achievement_key: key }))
