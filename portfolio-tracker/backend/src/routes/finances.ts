@@ -602,10 +602,16 @@ router.post('/transactions/csv-parse', requireAuth, async (req, res: Response) =
   let transferCat = categories.find(c => norm(c.name).includes('transfer'))
 
   function matchCategory(description: string): { id: number; name: string; icon: string; color: string } | null {
-    const d = description.toLowerCase()
+    const d = norm(description)
+    // First pass: explicit keyword rules
     for (const cat of categories) {
       const rules: string[] = Array.isArray(cat.keyword_rules) ? cat.keyword_rules : []
-      if (rules.some(kw => d.includes(kw.toLowerCase()))) return cat
+      if (rules.some(kw => d.includes(norm(kw)))) return cat
+    }
+    // Second pass: category name appears in description (≥4 chars to avoid noise)
+    for (const cat of categories) {
+      const catName = norm(cat.name)
+      if (catName.length >= 4 && d.includes(catName)) return cat
     }
     return null
   }
