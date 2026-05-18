@@ -35,7 +35,6 @@ export default function AppLayout() {
 
   const [showOnboarding,   setShowOnboarding]   = useState(false)
   const [showUserMenu,     setShowUserMenu]     = useState(false)
-  const [showMoreSheet,    setShowMoreSheet]    = useState(false)
   const [showPortfolioMenu,setShowPortfolioMenu]= useState(false)
   const [showFinancesMenu, setShowFinancesMenu] = useState(false)
 
@@ -260,11 +259,32 @@ export default function AppLayout() {
       <nav className="sm:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 z-20 safe-bottom">
         <div className="flex">
           {[
-            { to: '/',           label: t.nav.dashboard,  icon: '▦', end: true  },
-            { to: '/performance',label: t.nav.performance,icon: '↗', end: false },
-            { to: '/portfolio',  label: t.nav.portfolio,  icon: '⊕', end: false },
-            { to: '/finances',   label: t.nav.finances,   icon: '₿', end: false },
-          ].map(({ to, label, icon, end }) => (
+            { to: '/',            label: t.nav.dashboard,  end: true,  icon: (
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+              </svg>
+            )},
+            { to: '/performance', label: t.nav.performance, end: false, icon: (
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+              </svg>
+            )},
+            { to: '/portfolio',   label: t.nav.portfolio,  end: false, icon: (
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.5l7.5-7.5 4 4L21 4.5M3 20.5h18" />
+              </svg>
+            )},
+            { to: '/finances',    label: t.nav.finances,   end: false, icon: (
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75" />
+              </svg>
+            )},
+            { to: '/profile',     label: t.nav.profile,    end: false, icon: (
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+              </svg>
+            )},
+          ].map(({ to, label, end, icon }) => (
             <NavLink
               key={to} to={to} end={end}
               className={({ isActive }) =>
@@ -273,67 +293,12 @@ export default function AppLayout() {
                 }`
               }
             >
-              <span className="text-base leading-none">{icon}</span>
+              {icon}
               <span className="truncate w-full text-center px-0.5">{label}</span>
             </NavLink>
           ))}
-          <button
-            onClick={() => setShowMoreSheet(true)}
-            className="flex-1 py-2.5 flex flex-col items-center gap-0.5 text-gray-400 text-[11px] font-medium leading-tight"
-          >
-            <span className="text-base leading-none">≡</span>
-            <span>Mais</span>
-          </button>
         </div>
       </nav>
-
-      {/* Mobile "Mais" bottom sheet */}
-      {showMoreSheet && (
-        <div className="sm:hidden fixed inset-0 z-30 bg-black/40" onClick={() => setShowMoreSheet(false)}>
-          <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl pt-4 pb-8 px-6" onClick={e => e.stopPropagation()}>
-            <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-5" />
-            <div className="grid grid-cols-4 gap-3">
-              {[
-                { to: '/portfolio/rebalance',    label: t.nav.rebalance,    icon: '⇌' },
-                { to: '/portfolio/classes',      label: t.nav.classes,      icon: '◈' },
-                { to: '/portfolio/reports',      label: t.nav.ir,           icon: '⊞' },
-                { to: '/portfolio/indices',      label: t.nav.indices,      icon: '◎' },
-                { to: '/finances/moments',       label: t.nav.moments,      icon: '✨' },
-                { to: '/finances/freedom',       label: t.nav.freedom,      icon: '🎯' },
-                { to: '/achievements',           label: t.nav.achievements, icon: '🏅' },
-                { to: '/profile',                label: t.nav.profile,      icon: '👤' },
-              ].map(({ to, label, icon }) => (
-                <NavLink
-                  key={to} to={to}
-                  onClick={() => setShowMoreSheet(false)}
-                  className={({ isActive }) =>
-                    `flex flex-col items-center gap-1.5 py-3 rounded-2xl transition-colors ${
-                      isActive ? 'bg-[#001A70]/10 text-[#001A70]' : 'text-gray-500 bg-gray-50'
-                    }`
-                  }
-                >
-                  <span className="text-xl leading-none">{icon}</span>
-                  <span className="text-[11px] font-medium text-center">{label}</span>
-                </NavLink>
-              ))}
-              <NavLink
-                to="/archived"
-                onClick={() => setShowMoreSheet(false)}
-                className={({ isActive }) =>
-                  `flex flex-col items-center gap-1.5 py-3 rounded-2xl transition-colors ${
-                    isActive ? 'bg-[#001A70]/10 text-[#001A70]' : 'text-gray-500 bg-gray-50'
-                  }`
-                }
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-5 h-5">
-                  <path d="M2 3.5A1.5 1.5 0 0 1 3.5 2h9A1.5 1.5 0 0 1 14 3.5v.5H2v-.5ZM2 5.5h12v7A1.5 1.5 0 0 1 12.5 14h-9A1.5 1.5 0 0 1 2 12.5v-7Zm4.5 2a.5.5 0 0 0 0 1h3a.5.5 0 0 0 0-1h-3Z" />
-                </svg>
-                <span className="text-[11px] font-medium">{t.nav.archived}</span>
-              </NavLink>
-            </div>
-          </div>
-        </div>
-      )}
 
       {showOnboarding && <OnboardingOverlay onDone={() => setShowOnboarding(false)} />}
     </div>
