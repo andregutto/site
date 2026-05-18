@@ -69,6 +69,15 @@ function fmtMonth(m: string) {
   return new Date(Number(y), Number(mo) - 1).toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' })
 }
 
+function ageAtDate(birthdate: string, targetIso: string): number {
+  const b = new Date(birthdate + 'T00:00:00')
+  const tgt = new Date(targetIso + 'T00:00:00')
+  let age = tgt.getFullYear() - b.getFullYear()
+  const m = tgt.getMonth() - b.getMonth()
+  if (m < 0 || (m === 0 && tgt.getDate() < b.getDate())) age--
+  return age
+}
+
 // Build planned trajectory: array of monthly wealth values
 function buildPlanned(
   initial: number,
@@ -113,12 +122,13 @@ interface PlanFormProps {
   initial: Partial<FreedomPlan>
   portfolio: PortfolioValue
   ipcaAnnual?: number | null
+  birthdate?: string | null
   onSave: (data: Omit<FreedomPlan, 'id' | 'is_active' | 'created_at'>) => Promise<void>
   onCancel: () => void
   saving: boolean
 }
 
-function PlanForm({ initial, portfolio, ipcaAnnual, onSave, onCancel, saving }: PlanFormProps) {
+function PlanForm({ initial, portfolio, ipcaAnnual, birthdate, onSave, onCancel, saving }: PlanFormProps) {
   const { t } = useI18n()
   const isNew = !initial.id
   const rates = deriveRates(portfolio)
@@ -150,19 +160,29 @@ function PlanForm({ initial, portfolio, ipcaAnnual, onSave, onCancel, saving }: 
   function handleCurrencyChange(newCur: string) {
     setCapital(prev => convertAmt(prev, currency, newCur, rates))
     setContrib(prev => convertAmt(prev, currency, newCur, rates))
-    setTarget(prev  => convertAmt(prev, currency, newCur, rates))
+    setTarget(prev => convertAmt(prev, currency, newCur, rates))
+    setDesiredIncome(prev => convertAmt(prev, currency, newCur, rates))
     setCurrencyState(newCur)
   }
 
   const portfolioSuggestion = portfolioInCurrency(portfolio, currency, rates)
 
   const horizonMonths = parseInt(horizon) * 12
-  const targetDate = (() => {
+  const targetDateISO = (() => {
     try {
       const d = new Date(startDate + 'T12:00:00')
       d.setMonth(d.getMonth() + horizonMonths)
-      return d.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
-    } catch { return '' }
+      return d.toISOString().slice(0, 10)
+    } catch { return null }
+  })()
+  const targetDate = targetDateISO
+    ? new Date(targetDateISO + 'T12:00:00').toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
+    : ''
+
+  const annualRatePct = (() => {
+    const r = parseFloat(rate)
+    if (isNaN(r) || r <= 0) return null
+    return ((Math.pow(1 + r / 100, 12) - 1) * 100).toFixed(1)
   })()
 
   // Mode 2: compute target_amount from desired monthly income + inflation
@@ -212,7 +232,7 @@ function PlanForm({ initial, portfolio, ipcaAnnual, onSave, onCancel, saving }: 
 
         {/* Start date */}
         <div className="col-span-2 sm:col-span-1">
-          <label className={labelCls}>Data de início do plano</label>
+          <label className={labelCls}>{t.finances.freedomPlanStartDate}</label>
           <input type="date" required value={startDate} onChange={e => setStartDate(e.target.value)} className={fieldCls} />
         </div>
 
@@ -235,7 +255,7 @@ function PlanForm({ initial, portfolio, ipcaAnnual, onSave, onCancel, saving }: 
               </button>
             ))}
           </div>
-          <p className="text-[11px] text-gray-400 mt-1">Ao trocar, os valores são convertidos.</p>
+          <p className="text-[11px] text-gray-400 mt-1">{t.finances.freedomCurrencyHint}</p>
         </div>
 
 
@@ -269,7 +289,12 @@ function PlanForm({ initial, portfolio, ipcaAnnual, onSave, onCancel, saving }: 
         <div>
           <label className={labelCls}>{t.finances.freedomRate} % / mês</label>
           <input required type="number" step="0.01" value={rate} onChange={e => setRate(e.target.value)} className={fieldCls} placeholder="0.60" />
-          <p className="text-[11px] text-gray-400 mt-1 leading-snug">{t.finances.freedomRateHint}</p>
+          <p className="text-[11px] text-gray-400 mt-1 leading-snug">
+            {annualRatePct != null && (
+              <><strong className="text-gray-600">≈ {annualRatePct}% {t.finances.freedomRateAnnual}</strong>{' · '}</>
+            )}
+            {t.finances.freedomRateHint}
+          </p>
         </div>
 
         {/* Taxa de renda passiva */}
@@ -283,7 +308,14 @@ function PlanForm({ initial, portfolio, ipcaAnnual, onSave, onCancel, saving }: 
         <div>
           <label className={labelCls}>{t.finances.freedomHorizon} (anos)</label>
           <input required type="number" value={horizon} onChange={e => setHorizon(e.target.value)} className={fieldCls} placeholder="20" />
-          {targetDate && <p className="text-[11px] text-gray-400 mt-1">Meta em: <strong>{targetDate}</strong></p>}
+          {targetDate && (
+            <p className="text-[11px] text-gray-400 mt-1">
+              {t.finances.freedomMetaEm}: <strong>{targetDate}</strong>
+              {birthdate && targetDateISO && (
+                <span className="ml-1.5">· {ageAtDate(birthdate, targetDateISO)} {t.finances.freedomAgeAtTarget}</span>
+              )}
+            </p>
+          )}
         </div>
 
         {/* Meta — toggle entre dois modos */}
@@ -309,13 +341,13 @@ function PlanForm({ initial, portfolio, ipcaAnnual, onSave, onCancel, saving }: 
           {goalMode === 'capital' ? (
             <div>
               <input required type="number" value={target} onChange={e => setTarget(e.target.value)} className={fieldCls} placeholder="5000000" />
-              <p className="text-[11px] text-gray-400 mt-1 leading-snug">Valor <strong>nominal</strong> — não ajustado pela inflação. A renda passiva que esse capital gera também será nominal.</p>
+              <p className="text-[11px] text-gray-400 mt-1 leading-snug">{t.finances.freedomCapitalNominalHint}</p>
             </div>
           ) : (
             <div className="space-y-2">
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className={labelCls}>{t.finances.freedomDesiredIncome} em poder de compra de hoje ({currency})</label>
+                  <label className={labelCls}>{t.finances.freedomDesiredIncome} {t.finances.freedomIncomeToday} ({currency})</label>
                   <input required type="number" value={desiredIncome} onChange={e => setDesiredIncome(e.target.value)} className={fieldCls} placeholder="5000" />
                 </div>
                 <div>
@@ -339,9 +371,9 @@ function PlanForm({ initial, portfolio, ipcaAnnual, onSave, onCancel, saving }: 
                     {new Intl.NumberFormat('pt-BR', { style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(computedTarget)}
                   </p>
                   <p className="text-[10px] text-gray-500">
-                    Renda <strong>nominal</strong> em {parseInt(horizon) || 20} anos:&nbsp;
+                    Renda <strong>nominal</strong> em {parseInt(horizon) || 20} {t.finances.freedomAgeAtTarget}:&nbsp;
                     <strong>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(Math.round(parseFloat(desiredIncome || '0') * Math.pow(1 + parseFloat(inflation || '2') / 100, parseInt(horizon || '20'))))}/mês</strong>
-                    &nbsp;— equivalente a {new Intl.NumberFormat('pt-BR', { style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(parseFloat(desiredIncome || '0'))}/mês de hoje
+                    &nbsp;— {t.finances.freedomIncomeToday}: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(parseFloat(desiredIncome || '0'))}/mês
                   </p>
                 </div>
               )}
@@ -351,7 +383,7 @@ function PlanForm({ initial, portfolio, ipcaAnnual, onSave, onCancel, saving }: 
 
         {/* Notas */}
         <div className="col-span-2">
-          <label className={labelCls}>Notas (opcional)</label>
+          <label className={labelCls}>{t.finances.freedomNotes}</label>
           <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} className={fieldCls} />
         </div>
       </div>
@@ -396,6 +428,7 @@ export default function FinancesFreedomPage() {
   const [perf,         setPerf]         = useState<MonthlyPerf[]>([])
   const [portfolio,    setPortfolio]    = useState<PortfolioValue | null>(null)
   const [ipcaM12,      setIpcaM12]      = useState<number | null>(null)
+  const [userBirthdate, setUserBirthdate] = useState<string | null>(null)
   const [loading,      setLoading]      = useState(true)
   const [showForm,     setShowForm]     = useState(false)
   const [editingPlan,  setEditingPlan]  = useState<FreedomPlan | null>(null)
@@ -406,15 +439,17 @@ export default function FinancesFreedomPage() {
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const [plansData, portfolioData, indicesData] = await Promise.all([
+      const [plansData, portfolioData, indicesData, profileData] = await Promise.all([
         apiFetch<FreedomPlan[]>('/finances/freedom-plans'),
         apiFetch<PortfolioValue>('/portfolio/value'),
         apiFetch<{ code: string; m12_pct: number | null }[]>('/indices'),
+        apiFetch<{ birthdate?: string }>('/profile'),
       ])
       setPlans(plansData)
       setPortfolio(portfolioData)
       const ipca = indicesData.find(i => i.code === 'IPCA')
       if (ipca?.m12_pct != null) setIpcaM12(Math.round(ipca.m12_pct * 10) / 10)
+      if (profileData.birthdate) setUserBirthdate(profileData.birthdate)
       // Fetch monthly performance for actual trajectory
       const now = currentMonth()
       const from = '2020-01'
@@ -676,6 +711,7 @@ export default function FinancesFreedomPage() {
             initial={editingPlan ?? {}}
             portfolio={portfolio ?? { total_brl: 0, total_eur: null, total_usd: null }}
             ipcaAnnual={ipcaM12}
+            birthdate={userBirthdate}
             onSave={savePlan}
             onCancel={() => { setShowForm(false); setEditingPlan(null) }}
             saving={saving}
@@ -704,13 +740,13 @@ export default function FinancesFreedomPage() {
             </div>
             <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
               <p className="text-xs text-gray-500 mb-1">{t.finances.freedomPassive} / mês</p>
-              <p className="text-base font-bold text-emerald-600">{fmt(passiveIncome, currency, true)}</p>
-              <p className="text-[10px] text-gray-400">{(activePlan!.monthly_income_rate * 100).toFixed(1)}% × meta · nominal</p>
-              {passiveIncomeReal != null && (
-                <p className="text-[10px] text-gray-500 mt-0.5">
-                  ≈ {fmt(passiveIncomeReal, currency, true)} hoje
-                </p>
-              )}
+              <div className="flex items-baseline gap-2 flex-wrap">
+                <p className="text-base font-bold text-emerald-600">{fmt(passiveIncome, currency, true)}</p>
+                {passiveIncomeReal != null && passiveIncomeReal !== passiveIncome && (
+                  <p className="text-sm font-semibold text-emerald-500">≈ {fmt(passiveIncomeReal, currency, true)} {t.finances.freedomRealToday}</p>
+                )}
+              </div>
+              <p className="text-[10px] text-gray-400">{(activePlan!.monthly_income_rate * 100).toFixed(1)}% {t.finances.freedomIncomeNominalTag}</p>
             </div>
             <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
               <p className="text-xs text-gray-500 mb-1">{t.finances.freedomTarget}</p>
@@ -719,7 +755,10 @@ export default function FinancesFreedomPage() {
                   {new Date(reachMonth + '-01').toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })}
                 </p>
               )}
-              <p className="text-[10px] text-gray-400">{activePlan!.horizon_years} anos de plano</p>
+              <p className="text-[10px] text-gray-400">
+                {activePlan!.horizon_years} {t.finances.freedomPlanYears}
+                {userBirthdate && reachMonth && ` · ${ageAtDate(userBirthdate, reachMonth + '-01')} ${t.finances.freedomAgeAtTarget}`}
+              </p>
               {reachDiffYears != null && reachDiffYears > 0 && (
                 <p className="text-[10px] text-emerald-600 mt-0.5">{reachDiffYears} anos antes do prazo</p>
               )}

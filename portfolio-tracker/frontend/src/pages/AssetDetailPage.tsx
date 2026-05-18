@@ -73,6 +73,14 @@ export default function AssetDetailPage() {
   const [editingSector,      setEditingSector]      = useState(false)
   const [sectorValue,        setSectorValue]        = useState('')
   const [savingSector,       setSavingSector]       = useState(false)
+  const [editingName,        setEditingName]        = useState(false)
+  const [nameValue,          setNameValue]          = useState('')
+  const [savingName,         setSavingName]         = useState(false)
+  const [editingFiRate,      setEditingFiRate]      = useState(false)
+  const [fiTypeValue,        setFiTypeValue]        = useState('')
+  const [fiRateValue,        setFiRateValue]        = useState('')
+  const [fiSpreadValue,      setFiSpreadValue]      = useState('')
+  const [savingFiRate,       setSavingFiRate]       = useState(false)
   const [showMigrateModal,   setShowMigrateModal]   = useState(false)
   const [showManualModal,    setShowManualModal]    = useState(false)
   const [manualValueHistory, setManualValueHistory] = useState<ManualValue[]>([])
@@ -115,6 +123,39 @@ export default function AssetDetailPage() {
       refresh()
     } catch { /* keep editing open */ } finally {
       setSavingSector(false)
+    }
+  }
+
+  async function handleSaveName() {
+    if (!id) return
+    setSavingName(true)
+    try {
+      await apiFetch(`/assets/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ name: nameValue.trim() || null }),
+      })
+      setEditingName(false)
+      refresh()
+    } catch { /* keep editing open */ } finally {
+      setSavingName(false)
+    }
+  }
+
+  async function handleSaveFiRate() {
+    if (!id) return
+    setSavingFiRate(true)
+    try {
+      const body: Record<string, unknown> = { fi_type: fiTypeValue }
+      if (fiTypeValue === 'ipca_plus') {
+        body.fi_spread = parseFloat(fiSpreadValue) / 100
+      } else {
+        body.fi_rate = parseFloat(fiRateValue) / 100
+      }
+      await apiFetch(`/assets/${id}`, { method: 'PATCH', body: JSON.stringify(body) })
+      setEditingFiRate(false)
+      refresh()
+    } catch { /* keep editing open */ } finally {
+      setSavingFiRate(false)
     }
   }
 
@@ -293,11 +334,32 @@ export default function AssetDetailPage() {
               </button>
             )}
           </div>
-          <p className="text-sm text-gray-500 mt-0.5 truncate">{data.name}</p>
+          {editingName ? (
+            <span className="flex items-center gap-1 mt-0.5">
+              <input
+                type="text"
+                value={nameValue}
+                onChange={e => setNameValue(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') handleSaveName(); if (e.key === 'Escape') setEditingName(false) }}
+                className="text-sm border border-gray-300 rounded-lg px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-[#001A70]/30 flex-1 min-w-0"
+                autoFocus
+              />
+              <button onClick={handleSaveName} disabled={savingName} className="text-xs text-[#001A70] font-semibold disabled:opacity-50">OK</button>
+              <button onClick={() => setEditingName(false)} className="text-xs text-gray-400">✕</button>
+            </span>
+          ) : (
+            <button
+              onClick={() => { setNameValue(data.name); setEditingName(true) }}
+              title="Clique para editar o nome"
+              className="text-sm text-gray-500 mt-0.5 truncate text-left max-w-full hover:text-[#001A70] transition-colors"
+            >
+              {data.name}
+            </button>
+          )}
           {/* Action buttons — horizontal row below the name */}
           <div className="flex flex-wrap items-center gap-1.5 mt-2">
             <Link
-              to={`/contributions?assetId=${id}&new=1`}
+              to={`/portfolio?assetId=${id}&new=1`}
               className="text-xs text-[#001A70] border border-[#001A70]/30 hover:bg-blue-50 rounded-lg px-2.5 py-1 transition-colors"
             >+ Aporte</Link>
             {canUpdateManualValue && (
@@ -467,47 +529,113 @@ export default function AssetDetailPage() {
       )}
 
       {/* Rentabilidade do Indexador (apenas RF) */}
-      {data.asset_type === 'fixed_income' && (data.gain_loss_pct != null || fiIndexerLabel(data.fi_type, data.fi_rate, data.fi_spread)) && (
+      {data.asset_type === 'fixed_income' && (
         <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4">
-          <h2 className="font-semibold text-blue-900 text-sm mb-3">Rentabilidade do Indexador</h2>
-          <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
-            <div>
-              <p className="text-xs text-blue-500 uppercase tracking-wide mb-0.5">Indexador contratado</p>
-              <p className="font-bold text-blue-900 text-sm">
-                {fiIndexerLabel(data.fi_type, data.fi_rate, data.fi_spread) ?? '—'}
-              </p>
-            </div>
-            <div className="w-px h-8 bg-blue-200 hidden sm:block" />
-            <div>
-              <p className="text-xs text-blue-500 uppercase tracking-wide mb-0.5">Rendimento acumulado</p>
-              <p className={`font-bold text-sm ${
-                data.gain_loss_pct == null ? 'text-blue-900' :
-                data.gain_loss_pct >= 0   ? 'text-green-700' : 'text-red-600'
-              }`}>
-                {data.gain_loss_pct != null
-                  ? `${data.gain_loss_pct >= 0 ? '+' : ''}${data.gain_loss_pct.toFixed(2)}%`
-                  : '—'}
-              </p>
-            </div>
-            <div className="w-px h-8 bg-blue-200 hidden sm:block" />
-            <div>
-              <p className="text-xs text-blue-500 uppercase tracking-wide mb-0.5">Lucro total</p>
-              <p className={`font-bold text-sm ${
-                data.gain_loss_brl >= 0 ? 'text-green-700' : 'text-red-600'
-              }`}>
-                {data.gain_loss_brl >= 0 ? '+' : ''}{fmt(data.gain_loss_brl)}
-              </p>
-            </div>
-            {data.fi_start_date && (
-              <>
-                <div className="w-px h-8 bg-blue-200 hidden sm:block" />
-                <div>
-                  <p className="text-xs text-blue-500 uppercase tracking-wide mb-0.5">Desde</p>
-                  <p className="font-bold text-blue-900 text-sm">{fmtDate(data.fi_start_date)}</p>
-                </div>
-              </>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-semibold text-blue-900 text-sm">Rentabilidade do Indexador</h2>
+            {!editingFiRate ? (
+              <button
+                onClick={() => {
+                  setFiTypeValue(data.fi_type ?? 'pos_cdi')
+                  setFiRateValue(data.fi_rate != null ? (data.fi_rate * 100).toFixed(1) : '')
+                  setFiSpreadValue(data.fi_spread != null ? (data.fi_spread * 100).toFixed(2) : '')
+                  setEditingFiRate(true)
+                }}
+                className="text-xs text-blue-600 border border-blue-200 rounded-lg px-2.5 py-1 hover:bg-blue-100 transition-colors"
+              >Editar</button>
+            ) : (
+              <button onClick={() => setEditingFiRate(false)} className="text-xs text-gray-400 hover:text-gray-600">✕</button>
             )}
           </div>
+          {editingFiRate ? (
+            <div className="flex flex-wrap gap-3 items-end">
+              <div>
+                <p className="text-[10px] text-blue-500 uppercase mb-1">Tipo</p>
+                <select
+                  value={fiTypeValue}
+                  onChange={e => setFiTypeValue(e.target.value)}
+                  className="text-sm border border-blue-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-300 bg-white"
+                >
+                  <option value="pos_cdi">% do CDI</option>
+                  <option value="selic">% da Selic</option>
+                  <option value="pre">% a.a. (pré)</option>
+                  <option value="ipca_plus">IPCA+</option>
+                </select>
+              </div>
+              {fiTypeValue === 'ipca_plus' ? (
+                <div>
+                  <p className="text-[10px] text-blue-500 uppercase mb-1">Spread % a.a.</p>
+                  <input
+                    type="number" step="0.01"
+                    value={fiSpreadValue}
+                    onChange={e => setFiSpreadValue(e.target.value)}
+                    className="w-24 text-sm border border-blue-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-300"
+                    placeholder="6.50"
+                  />
+                </div>
+              ) : (
+                <div>
+                  <p className="text-[10px] text-blue-500 uppercase mb-1">
+                    {fiTypeValue === 'pre' ? 'Taxa % a.a.' : 'Taxa % CDI/Selic'}
+                  </p>
+                  <input
+                    type="number" step="0.1"
+                    value={fiRateValue}
+                    onChange={e => setFiRateValue(e.target.value)}
+                    className="w-28 text-sm border border-blue-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-300"
+                    placeholder="102.5"
+                  />
+                </div>
+              )}
+              <button
+                onClick={handleSaveFiRate}
+                disabled={savingFiRate}
+                className="text-xs text-white bg-blue-600 rounded-lg px-3 py-1.5 hover:bg-blue-700 disabled:opacity-50 transition-colors"
+              >
+                {savingFiRate ? '…' : 'Salvar'}
+              </button>
+            </div>
+          ) : (
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+              <div>
+                <p className="text-xs text-blue-500 uppercase tracking-wide mb-0.5">Indexador contratado</p>
+                <p className="font-bold text-blue-900 text-sm">
+                  {fiIndexerLabel(data.fi_type, data.fi_rate, data.fi_spread) ?? '—'}
+                </p>
+              </div>
+              {(data.gain_loss_pct != null) && (
+                <>
+                  <div className="w-px h-8 bg-blue-200 hidden sm:block" />
+                  <div>
+                    <p className="text-xs text-blue-500 uppercase tracking-wide mb-0.5">Rendimento acumulado</p>
+                    <p className={`font-bold text-sm ${
+                      data.gain_loss_pct >= 0 ? 'text-green-700' : 'text-red-600'
+                    }`}>
+                      {data.gain_loss_pct >= 0 ? '+' : ''}{data.gain_loss_pct.toFixed(2)}%
+                    </p>
+                  </div>
+                  <div className="w-px h-8 bg-blue-200 hidden sm:block" />
+                  <div>
+                    <p className="text-xs text-blue-500 uppercase tracking-wide mb-0.5">Lucro total</p>
+                    <p className={`font-bold text-sm ${
+                      data.gain_loss_brl >= 0 ? 'text-green-700' : 'text-red-600'
+                    }`}>
+                      {data.gain_loss_brl >= 0 ? '+' : ''}{fmt(data.gain_loss_brl)}
+                    </p>
+                  </div>
+                </>
+              )}
+              {data.fi_start_date && (
+                <>
+                  <div className="w-px h-8 bg-blue-200 hidden sm:block" />
+                  <div>
+                    <p className="text-xs text-blue-500 uppercase tracking-wide mb-0.5">Desde</p>
+                    <p className="font-bold text-blue-900 text-sm">{fmtDate(data.fi_start_date)}</p>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
         </div>
       )}
 
