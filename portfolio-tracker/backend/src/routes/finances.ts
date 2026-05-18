@@ -36,14 +36,39 @@ router.patch('/income', requireAuth, async (req, res: Response) => {
 // GET /api/finances/budget
 router.get('/budget', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
+  const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+
   const [incomeRes, envelopesRes, categoriesRes] = await Promise.all([
     supabaseAdmin.from('finance_income').select('monthly_net, currency').eq('user_id', userId).single(),
     supabaseAdmin.from('finance_envelopes').select('*').eq('user_id', userId).order('sort_order'),
     supabaseAdmin.from('finance_categories').select('*').eq('user_id', userId).order('name'),
   ])
-  const income     = incomeRes.data ?? { monthly_net: 0, currency: 'EUR' }
-  const envelopes  = envelopesRes.data ?? []
-  const categories = categoriesRes.data ?? []
+  const income = incomeRes.data ?? { monthly_net: 0, currency: 'EUR' }
+  let envelopes  = envelopesRes.data ?? []
+  let categories = categoriesRes.data ?? []
+
+  // Ensure "Rendas" income envelope + default income categories exist
+  const incomeEnv = envelopes.find(e => e.type === 'income')
+  let incomeEnvId: number | null = incomeEnv?.id ?? null
+  if (!incomeEnvId) {
+    const { data: newEnv } = await supabaseAdmin.from('finance_envelopes').insert({
+      user_id: userId, name: 'Rendas', pct_target: 0,
+      color: '#10b981', type: 'income', icon: '💰', sort_order: 999,
+    }).select('*').single()
+    if (newEnv) { incomeEnvId = newEnv.id; envelopes = [...envelopes, newEnv] }
+  }
+  if (incomeEnvId) {
+    const hasTransfer = categories.some(c => norm(c.name).includes('transfer'))
+    const hasSalario  = categories.some(c => norm(c.name).includes('salari') || norm(c.name).includes('salary'))
+    const toCreate = [
+      ...(!hasTransfer ? [{ user_id: userId, name: 'Transferência', icon: '↔️', color: '#6B7280', keyword_rules: [], envelope_id: incomeEnvId }] : []),
+      ...(!hasSalario  ? [{ user_id: userId, name: 'Salário',       icon: '💼', color: '#3b82f6', keyword_rules: [], envelope_id: incomeEnvId }] : []),
+    ]
+    if (toCreate.length > 0) {
+      const { data: created } = await supabaseAdmin.from('finance_categories').insert(toCreate).select('*')
+      if (created) categories = [...categories, ...created]
+    }
+  }
 
   // Attach categories to envelopes
   const result = envelopes.map(env => ({
@@ -574,35 +599,7 @@ router.post('/transactions/csv-parse', requireAuth, async (req, res: Response) =
 
   const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
 
-  // Find or create "Rendas" income envelope
-  const { data: existingIncomeEnv } = await supabaseAdmin
-    .from('finance_envelopes').select('id').eq('user_id', userId).eq('type', 'income').maybeSingle()
-  let incomeEnvId: number | null = existingIncomeEnv?.id ?? null
-  if (!incomeEnvId) {
-    const { data: newEnv } = await supabaseAdmin.from('finance_envelopes').insert({
-      user_id: userId, name: 'Rendas', pct_target: 0,
-      color: '#10b981', type: 'income', icon: '💰', sort_order: 999,
-    }).select('id').single()
-    incomeEnvId = newEnv?.id ?? null
-  }
-
-  // Find or create "Transferência" + "Salário" inside the income envelope
   let transferCat = categories.find(c => norm(c.name).includes('transfer'))
-  if (!transferCat) {
-    const { data: newCat } = await supabaseAdmin.from('finance_categories').insert({
-      user_id: userId, name: 'Transferência', icon: '↔️', color: '#6B7280',
-      keyword_rules: [], envelope_id: incomeEnvId,
-    }).select('id, name, icon, color, keyword_rules').single()
-    if (newCat) { transferCat = newCat; categories = [...categories, newCat] }
-  }
-  const hasSalario = categories.some(c => norm(c.name).includes('salari') || norm(c.name).includes('salary'))
-  if (!hasSalario && incomeEnvId) {
-    const { data: newSal } = await supabaseAdmin.from('finance_categories').insert({
-      user_id: userId, name: 'Salário', icon: '💼', color: '#3b82f6',
-      keyword_rules: [], envelope_id: incomeEnvId,
-    }).select('id, name, icon, color, keyword_rules').single()
-    if (newSal) categories = [...categories, newSal]
-  }
 
   function matchCategory(description: string): { id: number; name: string; icon: string; color: string } | null {
     const d = description.toLowerCase()
