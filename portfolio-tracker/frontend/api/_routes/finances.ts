@@ -283,7 +283,7 @@ router.get('/transactions', requireAuth, async (req, res: Response) => {
 
   let query = supabaseAdmin
     .from('finance_transactions')
-    .select('id, date, description, amount, currency, category_id, account_id, is_internal_transfer, source, finance_categories(id, name, icon, color)')
+    .select('id, date, description, amount, currency, category_id, account_id, is_internal_transfer, source, moment_id, finance_categories(id, name, icon, color), finance_moments(id, name, icon, color)')
     .eq('user_id', userId)
     .order('date', { ascending: false })
     .order('id', { ascending: false })
