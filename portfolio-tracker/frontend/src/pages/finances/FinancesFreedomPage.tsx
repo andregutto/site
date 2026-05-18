@@ -132,12 +132,15 @@ function PlanForm({ initial, portfolio, onSave, onCancel, saving }: PlanFormProp
       ? String(initial.initial_capital)
       : portfolioInCurrency(portfolio, initial.currency ?? 'EUR', rates)
   )
-  const [contrib,    setContrib]    = useState(String(initial.monthly_contribution ?? 0))
-  const [rate,       setRate]       = useState(String(((initial.monthly_return_rate ?? 0.006) * 100).toFixed(2)))
-  const [incomeRate, setIncomeRate] = useState(String(((initial.monthly_income_rate ?? 0.005) * 100).toFixed(2)))
-  const [target,     setTarget]     = useState(String(initial.target_amount ?? 0))
-  const [horizon,    setHorizon]    = useState(String(initial.horizon_years ?? 20))
-  const [notes,      setNotes]      = useState(initial.notes ?? '')
+  const [contrib,        setContrib]       = useState(String(initial.monthly_contribution ?? 0))
+  const [rate,           setRate]          = useState(String(((initial.monthly_return_rate ?? 0.006) * 100).toFixed(2)))
+  const [incomeRate,     setIncomeRate]    = useState(String(((initial.monthly_income_rate ?? 0.005) * 100).toFixed(2)))
+  const [target,         setTarget]        = useState(String(initial.target_amount ?? 0))
+  const [horizon,        setHorizon]       = useState(String(initial.horizon_years ?? 20))
+  const [notes,          setNotes]         = useState(initial.notes ?? '')
+  const [goalMode,       setGoalMode]      = useState<'capital' | 'income'>('capital')
+  const [desiredIncome,  setDesiredIncome] = useState('')
+  const [inflation,      setInflation]     = useState('2')
 
   function handleCurrencyChange(newCur: string) {
     setCapital(prev => convertAmt(prev, currency, newCur, rates))
@@ -157,6 +160,22 @@ function PlanForm({ initial, portfolio, onSave, onCancel, saving }: PlanFormProp
     } catch { return '' }
   })()
 
+  // Mode 2: compute target_amount from desired monthly income + inflation
+  const computedTarget = (() => {
+    if (goalMode !== 'income') return null
+    const income = parseFloat(desiredIncome)
+    const inf    = parseFloat(inflation) / 100
+    const years  = parseInt(horizon)
+    const ir     = parseFloat(incomeRate) / 100
+    if (!income || !ir || isNaN(years)) return null
+    const futureIncome = income * Math.pow(1 + inf, years)
+    return Math.round(futureIncome / ir)
+  })()
+
+  const effectiveTarget = goalMode === 'income' && computedTarget != null
+    ? String(computedTarget)
+    : target
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     await onSave({
@@ -166,7 +185,7 @@ function PlanForm({ initial, portfolio, onSave, onCancel, saving }: PlanFormProp
       monthly_contribution:  parseFloat(contrib),
       monthly_return_rate:   parseFloat(rate) / 100,
       monthly_income_rate:   parseFloat(incomeRate) / 100,
-      target_amount:         parseFloat(target),
+      target_amount:         parseFloat(effectiveTarget),
       currency,
       horizon_years:         parseInt(horizon),
       notes: notes || null,
@@ -255,17 +274,61 @@ function PlanForm({ initial, portfolio, onSave, onCancel, saving }: PlanFormProp
           <p className="text-[11px] text-gray-400 mt-1 leading-snug">{t.finances.freedomIncomeRateHint}</p>
         </div>
 
-        {/* Meta */}
-        <div>
-          <label className={labelCls}>{t.finances.freedomGoal} ({currency})</label>
-          <input required type="number" value={target} onChange={e => setTarget(e.target.value)} className={fieldCls} placeholder="5000000" />
-        </div>
-
         {/* Horizonte */}
         <div>
           <label className={labelCls}>{t.finances.freedomHorizon} (anos)</label>
           <input required type="number" value={horizon} onChange={e => setHorizon(e.target.value)} className={fieldCls} placeholder="20" />
           {targetDate && <p className="text-[11px] text-gray-400 mt-1">Meta em: <strong>{targetDate}</strong></p>}
+        </div>
+
+        {/* Meta — toggle entre dois modos */}
+        <div className="col-span-2">
+          <div className="flex items-center gap-1 mb-2">
+            <span className="text-xs text-gray-500 mr-1">{t.finances.freedomGoal}:</span>
+            {(['capital', 'income'] as const).map(mode => (
+              <button
+                key={mode}
+                type="button"
+                onClick={() => setGoalMode(mode)}
+                className={`px-2.5 py-1 text-xs rounded-md transition-colors ${
+                  goalMode === mode
+                    ? 'bg-[#001A70] text-white'
+                    : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                }`}
+              >
+                {mode === 'capital' ? t.finances.freedomGoalModeCapital : t.finances.freedomGoalModeIncome}
+              </button>
+            ))}
+          </div>
+
+          {goalMode === 'capital' ? (
+            <input required type="number" value={target} onChange={e => setTarget(e.target.value)} className={fieldCls} placeholder="5000000" />
+          ) : (
+            <div className="space-y-2">
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className={labelCls}>{t.finances.freedomDesiredIncome} ({currency})</label>
+                  <input required type="number" value={desiredIncome} onChange={e => setDesiredIncome(e.target.value)} className={fieldCls} placeholder="5000" />
+                </div>
+                <div>
+                  <label className={labelCls}>{t.finances.freedomInflation}</label>
+                  <input required type="number" step="0.1" value={inflation} onChange={e => setInflation(e.target.value)} className={fieldCls} placeholder="2" />
+                </div>
+              </div>
+              <p className="text-[11px] text-gray-400 leading-snug">{t.finances.freedomDesiredIncomeHint}</p>
+              {computedTarget != null && (
+                <div className="bg-indigo-50 border border-indigo-100 rounded-lg px-3 py-2">
+                  <p className="text-xs text-gray-500">{t.finances.freedomComputedGoal}</p>
+                  <p className="text-base font-bold text-[#001A70]">
+                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(computedTarget)}
+                  </p>
+                  <p className="text-[10px] text-gray-400 mt-0.5">
+                    Renda futura ajustada: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(Math.round(parseFloat(desiredIncome || '0') * Math.pow(1 + parseFloat(inflation || '2') / 100, parseInt(horizon || '20'))))} / mês
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Notas */}
