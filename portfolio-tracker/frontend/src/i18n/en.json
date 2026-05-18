@@ -263,7 +263,15 @@
     "historian":       { "name": "Historian",           "desc": "1 full year of history" },
     "balancer":        { "name": "Balancer",            "desc": "Configure rebalancing targets" },
     "tax_citizen":     { "name": "Tax Citizen",         "desc": "Generate first tax report" },
-    "multicurrency":   { "name": "Multicurrency",       "desc": "Assets in BRL, EUR and USD" }
+    "multicurrency":   { "name": "Multicurrency",       "desc": "Assets in BRL, EUR and USD" },
+    "fin_first_txn":   { "name": "Financial Control",   "desc": "Record your first finance transaction" },
+    "fin_csv_import":  { "name": "Importer",            "desc": "Import a bank statement via CSV" },
+    "fin_first_account":{ "name": "Active Account",     "desc": "Create your first finance account" },
+    "fin_budget_ready":{ "name": "Budget Ready",        "desc": "Set up budget envelopes and categories" },
+    "fin_first_moment":{ "name": "Memory Saved",        "desc": "Create your first financial Moment" },
+    "fin_freedom":     { "name": "Visionary",           "desc": "Create a financial freedom plan" },
+    "fin_hundred_txn": { "name": "Finance Historian",   "desc": "Record more than 100 transactions" },
+    "fin_categorized": { "name": "Organised",           "desc": "Categorise more than 50 transactions" }
   },
   "finances": {
     "navOverview":      "Overview",

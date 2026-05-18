@@ -535,12 +535,6 @@ export default function FinancesFreedomPage() {
     return Math.round(passiveIncome / Math.pow(1 + inflationRate, years))
   })()
 
-  // How many months early (positive) or late (negative) reachMonth is vs plan end
-  const planEndMonth = activePlan ? addMonths(planStart, activePlan.horizon_years * 12) : null
-  const reachDiffYears = (reachMonth && planEndMonth)
-    ? Math.round(monthsBetween(reachMonth, planEndMonth) / 12 * 10) / 10
-    : null
-
   // What the plan projects at the current month
   const plannedAtCurrentMonth = (() => {
     if (!activePlan) return 0
@@ -568,6 +562,12 @@ export default function FinancesFreedomPage() {
     }
     return planEnd
   })()
+
+  // How many years early (positive) or late (negative) reachMonth is vs plan end
+  const planEndMonth = activePlan ? addMonths(planStart, activePlan.horizon_years * 12) : null
+  const reachDiffYears = (reachMonth && planEndMonth)
+    ? Math.round(monthsBetween(reachMonth, planEndMonth) / 12 * 10) / 10
+    : null
 
   // How many months ahead/behind is actual vs plan?
   const latestActualMonth = perf.length > 0 ? perf[perf.length - 1].month : null

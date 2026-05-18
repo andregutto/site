@@ -254,6 +254,91 @@ const ICONS: Record<string, (c: string) => React.ReactElement> = {
       <text x="76" y="69" textAnchor="middle" fontSize="9" fontWeight="bold" fill="white">$</text>
     </g>
   ),
+
+  // ── Finance achievements ──────────────────────────────────────────────────
+  fin_first_txn: (c) => (
+    <g fill={c} fillOpacity={0.95}>
+      <rect x="44" y="48" width="32" height="38" rx="3" fill={c} fillOpacity={0.18} stroke={c} strokeWidth="2"/>
+      <line x1="50" y1="60" x2="70" y2="60" stroke={c} strokeWidth="2" strokeLinecap="round" fill="none"/>
+      <line x1="50" y1="67" x2="70" y2="67" stroke={c} strokeWidth="2" strokeLinecap="round" fill="none"/>
+      <line x1="50" y1="74" x2="62" y2="74" stroke={c} strokeWidth="2" strokeLinecap="round" fill="none"/>
+      <circle cx="68" cy="78" r="8" fill={c} fillOpacity={0.9}/>
+      <line x1="68" y1="74" x2="68" y2="82" stroke="white" strokeWidth="2" strokeLinecap="round" fill="none"/>
+      <line x1="64" y1="78" x2="72" y2="78" stroke="white" strokeWidth="2" strokeLinecap="round" fill="none"/>
+    </g>
+  ),
+  fin_csv_import: (c) => (
+    <g fill={c} fillOpacity={0.95}>
+      <rect x="44" y="46" width="32" height="36" rx="3" fill={c} fillOpacity={0.18} stroke={c} strokeWidth="2"/>
+      <line x1="50" y1="58" x2="70" y2="58" stroke={c} strokeWidth="1.5" strokeLinecap="round" fill="none"/>
+      <line x1="50" y1="63" x2="70" y2="63" stroke={c} strokeWidth="1.5" strokeLinecap="round" fill="none"/>
+      <line x1="50" y1="68" x2="70" y2="68" stroke={c} strokeWidth="1.5" strokeLinecap="round" fill="none"/>
+      <path d="M60 78 L60 92" stroke={c} strokeWidth="3" strokeLinecap="round" fill="none"/>
+      <path d="M53 86 L60 93 L67 86" fill="none" stroke={c} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+    </g>
+  ),
+  fin_first_account: (c) => (
+    <g fill={c} fillOpacity={0.95}>
+      <rect x="40" y="55" width="40" height="28" rx="5" fill={c} fillOpacity={0.2} stroke={c} strokeWidth="2.5"/>
+      <rect x="40" y="62" width="40" height="6" fill={c} fillOpacity={0.5}/>
+      <rect x="46" y="70" width="10" height="5" rx="1.5" fill={c} fillOpacity={0.7}/>
+      <path d="M52 47 L60 38 L68 47" fill="none" stroke={c} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+      <line x1="60" y1="38" x2="60" y2="56" stroke={c} strokeWidth="2.5" strokeLinecap="round" fill="none"/>
+    </g>
+  ),
+  fin_budget_ready: (c) => (
+    <g fill={c} fillOpacity={0.95}>
+      <rect x="42" y="50" width="36" height="36" rx="3" fill={c} fillOpacity={0.15} stroke={c} strokeWidth="2"/>
+      <rect x="42" y="50" width="36" height="9" rx="3" fill={c} fillOpacity={0.7}/>
+      <rect x="46" y="64" width="10" height="8" rx="1.5" fill={c} fillOpacity={0.6}/>
+      <rect x="59" y="64" width="15" height="3" rx="1" fill={c} fillOpacity={0.4}/>
+      <rect x="59" y="69" width="11" height="3" rx="1" fill={c} fillOpacity={0.4}/>
+      <rect x="46" y="75" width="10" height="8" rx="1.5" fill={c} fillOpacity={0.45}/>
+      <rect x="59" y="75" width="15" height="3" rx="1" fill={c} fillOpacity={0.3}/>
+    </g>
+  ),
+  fin_first_moment: (c) => (
+    <g fill={c} fillOpacity={0.95}>
+      <circle cx="60" cy="60" r="18" fill={c} fillOpacity={0.18} stroke={c} strokeWidth="2"/>
+      <path d="M52 60 Q60 50 68 60 Q60 70 52 60 Z" fill={c} fillOpacity={0.7}/>
+      <circle cx="60" cy="60" r="4" fill={c}/>
+      <path d="M60 44 L60 48" stroke={c} strokeWidth="2.5" strokeLinecap="round" fill="none"/>
+      <path d="M60 72 L60 76" stroke={c} strokeWidth="2.5" strokeLinecap="round" fill="none"/>
+      <path d="M44 60 L48 60" stroke={c} strokeWidth="2.5" strokeLinecap="round" fill="none"/>
+      <path d="M72 60 L76 60" stroke={c} strokeWidth="2.5" strokeLinecap="round" fill="none"/>
+      <path d="M60 88 L57 84 L63 84 Z" fill={c} fillOpacity={0.6}/>
+      <rect x="55" y="84" width="10" height="5" rx="1" fill={c} fillOpacity={0.5}/>
+    </g>
+  ),
+  fin_freedom: (c) => (
+    <g fill={c} fillOpacity={0.95}>
+      <path d="M42 68 Q42 50 60 46 Q78 50 78 68" fill="none" stroke={c} strokeWidth="2.5"/>
+      <path d="M42 68 Q50 62 60 65 Q70 62 78 68" fill={c} fillOpacity={0.4}/>
+      <path d="M42 68 Q50 72 60 70 Q70 72 78 68 Q78 80 60 84 Q42 80 42 68 Z" fill={c} fillOpacity={0.25}/>
+      <circle cx="60" cy="56" r="6" fill={c} fillOpacity={0.8}/>
+      <path d="M54 56 L60 50 L66 56" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    </g>
+  ),
+  fin_hundred_txn: (c) => (
+    <g fill={c} fillOpacity={0.95}>
+      <text x="60" y="62" textAnchor="middle" fontSize="22" fontWeight="bold" fill={c}>100</text>
+      <line x1="44" y1="68" x2="76" y2="68" stroke={c} strokeWidth="1.5" strokeLinecap="round" fill="none" strokeOpacity={0.5}/>
+      <text x="60" y="80" textAnchor="middle" fontSize="10" fontWeight="500" fill={c} fillOpacity={0.7}>transações</text>
+      <circle cx="60" cy="65" r="22" fill="none" stroke={c} strokeWidth="1.5" strokeOpacity={0.3}/>
+    </g>
+  ),
+  fin_categorized: (c) => (
+    <g fill={c} fillOpacity={0.95}>
+      <rect x="42" y="48" width="16" height="16" rx="3" fill={c} fillOpacity={0.7}/>
+      <rect x="62" y="48" width="16" height="16" rx="3" fill={c} fillOpacity={0.5}/>
+      <rect x="42" y="68" width="16" height="16" rx="3" fill={c} fillOpacity={0.45}/>
+      <rect x="62" y="68" width="16" height="16" rx="3" fill={c} fillOpacity={0.35}/>
+      <path d="M45 56 L48 59 L54 53" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M65 56 L68 59 L74 53" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M45 76 L48 79 L54 73" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      <line x1="65" y1="76" x2="75" y2="76" stroke="white" strokeWidth="2" strokeLinecap="round" fill="none"/>
+    </g>
+  ),
 }
 
 export default function Medal({ def, earned, size = 88, animate = false }: MedalProps) {

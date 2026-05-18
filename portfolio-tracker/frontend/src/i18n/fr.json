@@ -263,7 +263,15 @@
     "historian":       { "name": "Historien",            "desc": "1 année complète d'historique" },
     "balancer":        { "name": "Équilibriste",         "desc": "Configurer les objectifs de rééquilibrage" },
     "tax_citizen":     { "name": "Citoyen Fiscal",       "desc": "Générer le premier rapport fiscal" },
-    "multicurrency":   { "name": "Multidevise",          "desc": "Actifs en BRL, EUR et USD" }
+    "multicurrency":   { "name": "Multidevise",          "desc": "Actifs en BRL, EUR et USD" },
+    "fin_first_txn":   { "name": "Contrôle Financier",  "desc": "Enregistrer la première transaction financière" },
+    "fin_csv_import":  { "name": "Importateur",         "desc": "Importer un relevé via CSV pour la première fois" },
+    "fin_first_account":{ "name": "Compte Actif",       "desc": "Créer le premier compte financier" },
+    "fin_budget_ready":{ "name": "Budget Prêt",         "desc": "Configurer les enveloppes et catégories de budget" },
+    "fin_first_moment":{ "name": "Mémoire Gardée",      "desc": "Créer le premier Moment financier" },
+    "fin_freedom":     { "name": "Visionnaire",         "desc": "Créer un plan de liberté financière" },
+    "fin_hundred_txn": { "name": "Historien Financier", "desc": "Enregistrer plus de 100 transactions" },
+    "fin_categorized": { "name": "Organisé",            "desc": "Catégoriser plus de 50 transactions" }
   },
   "finances": {
     "navOverview":      "Vue d'ensemble",
