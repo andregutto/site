@@ -80,13 +80,14 @@ export default function FinancesTransactionsPage() {
   const momentDropdownRef                   = useRef<HTMLDivElement>(null)
 
   // Add form state
-  const [addDate, setAddDate]       = useState(today.toISOString().split('T')[0])
-  const [addDesc, setAddDesc]       = useState('')
-  const [addAmt, setAddAmt]         = useState('')
-  const [addSign, setAddSign]       = useState<'-' | '+'>('-')
-  const [addCat, setAddCat]         = useState<number | ''>('')
-  const [addCur, setAddCur]         = useState('EUR')
-  const [saving, setSaving]         = useState(false)
+  const [addDate, setAddDate]           = useState(today.toISOString().split('T')[0])
+  const [addDesc, setAddDesc]           = useState('')
+  const [addAmt, setAddAmt]             = useState('')
+  const [addSign, setAddSign]           = useState<'-' | '+'>('-')
+  const [addCat, setAddCat]             = useState<number | ''>('')
+  const [addCur, setAddCur]             = useState('EUR')
+  const [addAccountId, setAddAccountId] = useState<number | null>(null)
+  const [saving, setSaving]             = useState(false)
 
   // Inline category edit
   const [editingId, setEditingId]   = useState<number | null>(null)
@@ -169,10 +170,10 @@ export default function FinancesTransactionsPage() {
       const amount = parseFloat(addAmt) * (addSign === '-' ? -1 : 1)
       await apiFetch('/finances/transactions', {
         method: 'POST',
-        body: JSON.stringify({ date: addDate, description: addDesc.trim(), amount, currency: addCur, category_id: addCat || null }),
+        body: JSON.stringify({ date: addDate, description: addDesc.trim(), amount, currency: addCur, category_id: addCat || null, account_id: addAccountId }),
       })
       setShowAdd(false)
-      setAddDesc(''); setAddAmt(''); setAddCat('')
+      setAddDesc(''); setAddAmt(''); setAddCat(''); setAddAccountId(null)
       await loadTransactions()
     } finally {
       setSaving(false)
@@ -592,6 +593,15 @@ export default function FinancesTransactionsPage() {
                   {categories.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
                 </select>
               </div>
+              {accounts.length > 0 && (
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">{t.finances.csvAccount}</label>
+                  <select value={addAccountId ?? ''} onChange={e => setAddAccountId(e.target.value === '' ? null : Number(e.target.value))} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
+                    <option value="">{t.finances.csvAccountNone}</option>
+                    {accounts.map(a => <option key={a.id} value={a.id}>{a.icon} {a.name}</option>)}
+                  </select>
+                </div>
+              )}
             </div>
             <div className="flex gap-2 mt-5">
               <button
