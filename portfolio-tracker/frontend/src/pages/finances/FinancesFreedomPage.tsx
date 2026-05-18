@@ -202,9 +202,9 @@ function PlanForm({ initial, portfolio, onSave, onCancel, saving }: PlanFormProp
         <div className="col-span-2 sm:col-span-1">
           <label className={labelCls}>
             {t.finances.freedomCapital} ({currency})
-            {isNew && (
+            {isNew && Number(portfolioSuggestion) > 0 && (
               <span className="ml-1.5 text-gray-400">
-                — patrimônio atual:&nbsp;
+                — {t.finances.freedomCapitalHint}&nbsp;
                 <button
                   type="button"
                   className="text-[#001A70] hover:opacity-70 underline underline-offset-2 transition-opacity"
@@ -228,12 +228,14 @@ function PlanForm({ initial, portfolio, onSave, onCancel, saving }: PlanFormProp
         <div>
           <label className={labelCls}>{t.finances.freedomRate} % / mês</label>
           <input required type="number" step="0.01" value={rate} onChange={e => setRate(e.target.value)} className={fieldCls} placeholder="0.60" />
+          <p className="text-[11px] text-gray-400 mt-1 leading-snug">{t.finances.freedomRateHint}</p>
         </div>
 
         {/* Taxa de renda passiva */}
         <div>
           <label className={labelCls}>{t.finances.freedomIncomeRate} % / mês</label>
           <input required type="number" step="0.01" value={incomeRate} onChange={e => setIncomeRate(e.target.value)} className={fieldCls} placeholder="0.50" />
+          <p className="text-[11px] text-gray-400 mt-1 leading-snug">{t.finances.freedomIncomeRateHint}</p>
         </div>
 
         {/* Meta */}
@@ -306,7 +308,7 @@ export default function FinancesFreedomPage() {
     try {
       const [plansData, portfolioData] = await Promise.all([
         apiFetch<FreedomPlan[]>('/finances/freedom-plans'),
-        apiFetch<PortfolioValue>('/portfolio'),
+        apiFetch<PortfolioValue>('/portfolio/value'),
       ])
       setPlans(plansData)
       setPortfolio(portfolioData)
