@@ -197,7 +197,7 @@ function MomentForm({ initial, onSave, onCancel, saving, userId }: FormProps) {
 
 // ── Share modal ───────────────────────────────────────────────────────────────
 
-const EXPIRY_VALUES = [7, 30, 90, null] as const
+
 
 interface ShareModalProps {
   moment: Moment

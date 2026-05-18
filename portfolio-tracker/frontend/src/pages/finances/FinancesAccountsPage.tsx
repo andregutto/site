@@ -211,10 +211,6 @@ export default function FinancesAccountsPage() {
     setFormMode({ mode: 'new', prefill: name })
   }
 
-  const totalBalance = accounts.reduce((sum, a) => {
-    if (a.currency === 'EUR') return sum + a.balance
-    return sum
-  }, 0)
 
   return (
     <div className="space-y-6">

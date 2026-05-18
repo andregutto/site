@@ -29,7 +29,7 @@ router.get('/moments/:token', async (req, res: Response) => {
 
   const catMap: Record<string, { name: string; icon: string; color: string; total: number }> = {}
   for (const tx of expenses) {
-    const cat = tx.finance_categories as { id: number; name: string; icon: string; color: string } | null
+    const cat = tx.finance_categories as unknown as { id: number; name: string; icon: string; color: string } | null
     const key = cat ? String(cat.id) : 'none'
     if (!catMap[key]) catMap[key] = { name: cat?.name ?? 'Sem categoria', icon: cat?.icon ?? '❓', color: cat?.color ?? '#9CA3AF', total: 0 }
     catMap[key].total += Math.abs(tx.amount)
