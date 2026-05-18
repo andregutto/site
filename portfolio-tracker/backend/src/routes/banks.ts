@@ -51,7 +51,7 @@ router.get('/auth', requireAuth, async (req, res: Response) => {
   url.searchParams.set('scope', 'accounts balance transactions')
   url.searchParams.set('redirect_uri', ruri)
   url.searchParams.set('state', state)
-  url.searchParams.set('providers', isSandbox ? 'mock' : 'ob-revolut ob-monzo uk-ob-all ie-ob-all fr-ob-all')
+  if (isSandbox) url.searchParams.set('providers', 'mock')
   res.json({ url: url.toString() })
 })
 
