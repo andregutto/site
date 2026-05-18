@@ -4,6 +4,7 @@ import { useI18n } from '../../contexts/I18nContext'
 
 interface Category { id: number; name: string; icon: string; color: string }
 interface MomentRef  { id: number; name: string; icon: string; color: string }
+interface FinanceAccount { id: number; name: string; icon: string; currency: string }
 interface Transaction {
   id: number
   date: string
@@ -68,6 +69,8 @@ export default function FinancesTransactionsPage() {
   const [csvRows, setCsvRows]           = useState<ParsedRow[]>([])
   const [csvError, setCsvError]         = useState('')
   const [csvCurrency, setCsvCurrency]   = useState('EUR')
+  const [csvAccountId, setCsvAccountId] = useState<number | null>(null)
+  const [accounts, setAccounts]         = useState<FinanceAccount[]>([])
   const fileRef = useRef<HTMLInputElement>(null)
 
   // Multi-select
@@ -104,6 +107,9 @@ export default function FinancesTransactionsPage() {
       .catch(() => {})
     apiFetch<MomentRef[]>('/finances/moments-for-picker')
       .then(setMoments)
+      .catch(() => {})
+    apiFetch<FinanceAccount[]>('/finances/accounts')
+      .then(setAccounts)
       .catch(() => {})
   }, [])
 
@@ -220,7 +226,10 @@ export default function FinancesTransactionsPage() {
 
       const result = await apiFetch<{ imported: number; skipped: number; total: number }>('/finances/transactions/csv-import', {
         method: 'POST',
-        body: JSON.stringify({ transactions: toImport, learn_rules }),
+        body: JSON.stringify({
+          transactions: toImport.map(r => ({ ...r, account_id: csvAccountId })),
+          learn_rules,
+        }),
       })
       setCsvStep('idle'); setCsvRows([])
       const msg = result.skipped > 0
@@ -284,12 +293,25 @@ export default function FinancesTransactionsPage() {
       {/* CSV Preview */}
       {csvStep !== 'idle' && csvRows.length > 0 && (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="px-5 py-4 border-b border-gray-50 flex items-center justify-between">
+          <div className="px-5 py-4 border-b border-gray-50 flex items-center justify-between flex-wrap gap-3">
             <div>
               <h3 className="font-semibold text-gray-900 text-sm">{t.finances.csvPreview} — {csvRows.length} {t.finances.csvTransactions}</h3>
               <p className="text-xs text-gray-400 mt-0.5">{t.finances.csvReview}</p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3 flex-wrap">
+              {accounts.length > 0 && (
+                <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                  <span>{t.finances.csvAccount}</span>
+                  <select
+                    value={csvAccountId ?? ''}
+                    onChange={e => setCsvAccountId(e.target.value === '' ? null : Number(e.target.value))}
+                    className="border border-gray-200 rounded px-2 py-1 text-xs"
+                  >
+                    <option value="">{t.finances.csvAccountNone}</option>
+                    {accounts.map(a => <option key={a.id} value={a.id}>{a.icon} {a.name}</option>)}
+                  </select>
+                </div>
+              )}
               <button onClick={() => { setCsvStep('idle'); setCsvRows([]) }} className="text-xs text-gray-500 hover:text-gray-700 transition-colors">{t.common.cancel}</button>
               <button onClick={importCSV} disabled={csvStep === 'importing'} className="px-3 py-1.5 bg-[#001A70] text-white text-xs rounded-lg hover:opacity-80 transition-opacity disabled:opacity-50">
                 {csvStep === 'importing' ? t.finances.csvImporting : t.finances.csvConfirm}

@@ -306,6 +306,8 @@
     "csvCurrency":      "Default import currency:",
     "csvPreview":       "Preview",
     "csvTransactions":  "transactions",
+    "csvAccount":       "Account:",
+    "csvAccountNone":   "No account",
     "csvReview":        "Review categories before importing.",
     "csvConfirm":       "Confirm import",
     "csvImporting":     "Importing…",
