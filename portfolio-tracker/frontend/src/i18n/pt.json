@@ -311,6 +311,7 @@
     "noAccountBanner":  "Crie uma conta para organizar suas transações por fonte.",
     "noAccountCta":     "Criar conta →",
     "csvReview":        "Revise as categorias antes de importar.",
+    "csvAiSuggested":   "sugeridas por IA",
     "csvConfirm":       "Confirmar importação",
     "csvImporting":     "Importando…",
     "noTransactions":   "Nenhuma transação neste mês",

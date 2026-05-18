@@ -311,6 +311,7 @@
     "noAccountBanner":  "Create an account to organise your transactions by source.",
     "noAccountCta":     "Create account →",
     "csvReview":        "Review categories before importing.",
+    "csvAiSuggested":   "suggested by AI",
     "csvConfirm":       "Confirm import",
     "csvImporting":     "Importing…",
     "noTransactions":   "No transactions this month",

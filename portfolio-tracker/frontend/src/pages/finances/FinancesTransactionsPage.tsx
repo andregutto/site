@@ -25,6 +25,7 @@ interface ParsedRow {
   amount: number
   currency: string
   suggested_category: Category | null
+  suggested_by: 'keyword' | 'ai' | null
   is_broker_transfer: boolean
   broker_name: string | null
   category_id?: number | null
@@ -234,8 +235,9 @@ export default function FinancesTransactionsPage() {
     setCsvStep('importing')
     try {
       const toImport = csvRows.filter(r => !r.is_broker_transfer || r.category_id)
+      // Save keyword rules for: (a) manually changed categories, (b) accepted AI suggestions (so next import skips the API call)
       const learn_rules = toImport
-        .filter(r => r.category_id != null && r.category_id !== r.suggested_category_id)
+        .filter(r => r.category_id != null && (r.category_id !== r.suggested_category_id || r.suggested_by === 'ai'))
         .map(r => ({ category_id: r.category_id as number, keyword: r.description.toLowerCase().trim() }))
 
       const result = await apiFetch<{ imported: number; skipped: number; total: number }>('/finances/transactions/csv-import', {
@@ -322,7 +324,12 @@ export default function FinancesTransactionsPage() {
           <div className="px-5 py-4 border-b border-gray-50 flex items-center justify-between flex-wrap gap-3">
             <div>
               <h3 className="font-semibold text-gray-900 text-sm">{t.finances.csvPreview} — {csvRows.length} {t.finances.csvTransactions}</h3>
-              <p className="text-xs text-gray-400 mt-0.5">{t.finances.csvReview}</p>
+              <p className="text-xs text-gray-400 mt-0.5">
+                {t.finances.csvReview}
+                {csvRows.filter(r => r.suggested_by === 'ai').length > 0 && (
+                  <span className="ml-2 text-violet-500">✦ {csvRows.filter(r => r.suggested_by === 'ai').length} {t.finances.csvAiSuggested}</span>
+                )}
+              </p>
             </div>
             <div className="flex items-center gap-3 flex-wrap">
               {accounts.length > 0 && (
@@ -367,17 +374,22 @@ export default function FinancesTransactionsPage() {
                       {fmt(row.amount, row.currency)}
                     </td>
                     <td className="px-4 py-2">
-                      <select
-                        value={row.category_id ?? ''}
-                        onChange={e => {
-                          const val = e.target.value === '' ? null : Number(e.target.value)
-                          setCsvRows(prev => prev.map((r, j) => j === i ? { ...r, category_id: val } : r))
-                        }}
-                        className="text-xs border border-gray-200 rounded px-2 py-1 max-w-[150px]"
-                      >
-                        <option value="">{t.finances.noCategory}</option>
-                        {categories.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
-                      </select>
+                      <div className="flex items-center gap-1">
+                        {row.suggested_by === 'ai' && row.category_id === row.suggested_category_id && (
+                          <span title="Sugerido por IA" className="text-[10px] bg-violet-100 text-violet-600 rounded px-1 font-medium shrink-0">✦ IA</span>
+                        )}
+                        <select
+                          value={row.category_id ?? ''}
+                          onChange={e => {
+                            const val = e.target.value === '' ? null : Number(e.target.value)
+                            setCsvRows(prev => prev.map((r, j) => j === i ? { ...r, category_id: val } : r))
+                          }}
+                          className="text-xs border border-gray-200 rounded px-2 py-1 max-w-[150px]"
+                        >
+                          <option value="">{t.finances.noCategory}</option>
+                          {categories.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
+                        </select>
+                      </div>
                     </td>
                     <td className="px-4 py-2">
                       <button onClick={() => setCsvRows(prev => prev.filter((_, j) => j !== i))} className="text-gray-300 hover:text-red-400 transition-colors">

@@ -1,7 +1,10 @@
 import { Router, Response } from 'express'
 import crypto from 'crypto'
+import Anthropic from '@anthropic-ai/sdk'
 import { requireAuth, AuthRequest } from '../middleware/auth.js'
 import { supabaseAdmin } from '../lib/supabase.js'
+
+const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
 const router = Router()
 
@@ -493,6 +496,38 @@ const BROKER_KEYWORDS = [
   'fortuneo', 'lynx broker', 'boursorama',
 ]
 
+type CatRow = { id: number; name: string; icon: string; color: string }
+
+async function aiCategorize(
+  descriptions: string[],
+  categories: CatRow[]
+): Promise<Record<string, number | null>> {
+  if (!process.env.ANTHROPIC_API_KEY || descriptions.length === 0) return {}
+  const catList = categories.map(c => `${c.id}: ${c.name}`).join('\n')
+  const descList = descriptions.map((d, i) => `${i}: ${d}`).join('\n')
+  const prompt = `You are a financial transaction categorizer. Given the categories and transaction descriptions below, assign the most appropriate category to each description. Reply with ONLY a valid JSON object mapping each index (as a string key) to the category id (integer) or null if no category fits. No extra text.
+
+Categories:
+${catList}
+
+Descriptions:
+${descList}`
+
+  try {
+    const msg = await anthropic.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 1024,
+      messages: [{ role: 'user', content: prompt }],
+    })
+    const text = msg.content[0].type === 'text' ? msg.content[0].text.trim() : ''
+    const jsonMatch = text.match(/\{[\s\S]*\}/)
+    if (!jsonMatch) return {}
+    return JSON.parse(jsonMatch[0]) as Record<string, number | null>
+  } catch {
+    return {}
+  }
+}
+
 function detectBroker(description: string): string | null {
   const d = description.toLowerCase()
   return BROKER_KEYWORDS.find(b => d.includes(b)) ?? null
@@ -577,10 +612,28 @@ router.post('/transactions/csv-parse', requireAuth, async (req, res: Response) =
       amount,
       currency,
       suggested_category: category,
+      suggested_by: category ? 'keyword' : null,
       is_broker_transfer: !!broker,
       is_internal_transfer: isInternal,
       broker_name: broker,
     })
+  }
+
+  // AI categorization for rows without a keyword match
+  const unmatched = transactions.filter(t => !t.suggested_category && !t.is_broker_transfer)
+  if (unmatched.length > 0) {
+    const uniqueDescs = [...new Set(unmatched.map(t => t.description))]
+    const aiMap = await aiCategorize(uniqueDescs, categories)
+    const catById = Object.fromEntries(categories.map(c => [c.id, c]))
+    for (const t of transactions) {
+      if (t.suggested_category || t.is_broker_transfer) continue
+      const idx = uniqueDescs.indexOf(t.description)
+      const catId = aiMap[String(idx)]
+      if (catId != null && catById[catId]) {
+        t.suggested_category = catById[catId]
+        t.suggested_by = 'ai'
+      }
+    }
   }
 
   res.json({ transactions, total: transactions.length, skipped_invalid: skippedInvalid, headers, detected: { dateIdx, descIdx, amtIdx, stateIdx } })
