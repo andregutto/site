@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { Link } from 'react-router-dom'
 import { apiFetch } from '../../lib/api'
 import { useI18n } from '../../contexts/I18nContext'
 
@@ -69,8 +70,9 @@ export default function FinancesTransactionsPage() {
   const [csvRows, setCsvRows]           = useState<ParsedRow[]>([])
   const [csvError, setCsvError]         = useState('')
   const [csvCurrency, setCsvCurrency]   = useState('EUR')
-  const [csvAccountId, setCsvAccountId] = useState<number | null>(null)
-  const [accounts, setAccounts]         = useState<FinanceAccount[]>([])
+  const [csvAccountId, setCsvAccountId]   = useState<number | null>(null)
+  const [accounts, setAccounts]           = useState<FinanceAccount[]>([])
+  const [accountsLoaded, setAccountsLoaded] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
   // Multi-select
@@ -110,8 +112,15 @@ export default function FinancesTransactionsPage() {
       .then(setMoments)
       .catch(() => {})
     apiFetch<FinanceAccount[]>('/finances/accounts')
-      .then(setAccounts)
-      .catch(() => {})
+      .then(data => {
+        setAccounts(data)
+        if (data.length === 1) {
+          setCsvAccountId(data[0].id)
+          setAddAccountId(data[0].id)
+        }
+        setAccountsLoaded(true)
+      })
+      .catch(() => setAccountsLoaded(true))
   }, [])
 
   useEffect(() => { loadTransactions() }, [loadTransactions])
@@ -250,6 +259,16 @@ export default function FinancesTransactionsPage() {
 
   return (
     <div className="space-y-5">
+      {/* No-account banner */}
+      {accountsLoaded && accounts.length === 0 && (
+        <div className="flex items-center justify-between gap-3 bg-indigo-50 border border-indigo-100 rounded-xl px-4 py-3">
+          <p className="text-sm text-indigo-700">{t.finances.noAccountBanner}</p>
+          <Link to="/finances/accounts" className="shrink-0 text-sm font-medium text-indigo-600 hover:text-indigo-800 transition-colors whitespace-nowrap">
+            {t.finances.noAccountCta}
+          </Link>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div>

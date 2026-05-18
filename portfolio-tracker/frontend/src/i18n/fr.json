@@ -308,6 +308,8 @@
     "csvTransactions":  "transactions",
     "csvAccount":       "Compte :",
     "csvAccountNone":   "Sans compte",
+    "noAccountBanner":  "Créez un compte pour organiser vos transactions par source.",
+    "noAccountCta":     "Créer un compte →",
     "csvReview":        "Vérifiez les catégories avant d'importer.",
     "csvConfirm":       "Confirmer l'import",
     "csvImporting":     "Import en cours…",
