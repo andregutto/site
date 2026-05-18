@@ -48,17 +48,10 @@ router.get('/auth', requireAuth, async (req, res: Response) => {
   const url = new URL(`${TL_AUTH}/`)
   url.searchParams.set('response_type', 'code')
   url.searchParams.set('client_id', process.env.TRUELAYER_CLIENT_ID)
-  url.searchParams.set('scope', 'info accounts balance transactions offline_access')
+  url.searchParams.set('scope', 'accounts balance transactions offline_access')
   url.searchParams.set('redirect_uri', ruri)
   url.searchParams.set('state', state)
-  if (isSandbox) {
-    url.searchParams.set('enable_mock', 'true')
-    url.searchParams.set('enable_oauth_providers', 'false')
-    url.searchParams.set('enable_open_banking_providers', 'false')
-    url.searchParams.set('enable_credentials_sharing_providers', 'false')
-  } else {
-    url.searchParams.set('providers', 'ob-revolut ob-monzo uk-ob-all ie-ob-all fr-ob-all')
-  }
+  url.searchParams.set('providers', isSandbox ? 'mock' : 'ob-revolut ob-monzo uk-ob-all ie-ob-all fr-ob-all')
   res.json({ url: url.toString() })
 })
 
