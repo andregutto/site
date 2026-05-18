@@ -13,7 +13,16 @@ interface Moment {
   start_date: string | null
   end_date: string | null
   cover_image_url: string | null
+  share_token: string | null
+  share_expires_at: string | null
+  share_hide_descriptions: boolean
   created_at: string
+}
+
+interface ShareInfo {
+  share_token: string
+  share_expires_at: string | null
+  share_hide_descriptions: boolean
 }
 
 interface MomentDetail {
@@ -39,9 +48,11 @@ function fmtDate(d: string) {
 
 // ── Form ──────────────────────────────────────────────────────────────────────
 
+type MomentFormData = Omit<Moment, 'id' | 'created_at' | 'share_token' | 'share_expires_at' | 'share_hide_descriptions'>
+
 interface FormProps {
   initial?: Partial<Moment>
-  onSave: (data: Omit<Moment, 'id' | 'created_at'>) => Promise<void>
+  onSave: (data: MomentFormData) => Promise<void>
   onCancel: () => void
   saving: boolean
   userId: string
@@ -184,6 +195,161 @@ function MomentForm({ initial, onSave, onCancel, saving, userId }: FormProps) {
   )
 }
 
+// ── Share modal ───────────────────────────────────────────────────────────────
+
+const EXPIRY_OPTIONS = [
+  { label: '7 dias',  value: 7   },
+  { label: '30 dias', value: 30  },
+  { label: '90 dias', value: 90  },
+  { label: 'Sem prazo', value: null },
+]
+
+interface ShareModalProps {
+  moment: Moment
+  onClose: () => void
+  onRevoke: () => void
+  onUpdate: (info: ShareInfo) => void
+}
+
+function ShareModal({ moment, onClose, onRevoke, onUpdate }: ShareModalProps) {
+  const baseUrl = window.location.origin
+  const [info,       setInfo]       = useState<ShareInfo | null>(
+    moment.share_token ? { share_token: moment.share_token, share_expires_at: moment.share_expires_at, share_hide_descriptions: moment.share_hide_descriptions } : null
+  )
+  const [loading,    setLoading]    = useState(!moment.share_token)
+  const [copied,     setCopied]     = useState(false)
+  const [revoking,   setRevoking]   = useState(false)
+
+  const shareUrl = info ? `${baseUrl}/share/momento/${info.share_token}` : ''
+
+  useEffect(() => {
+    if (info) return
+    // auto-generate on open
+    apiFetch<ShareInfo>(`/finances/moments/${moment.id}/share`, {
+      method: 'POST',
+      body: JSON.stringify({ hide_descriptions: false, expires_in_days: 30 }),
+    }).then(d => {
+      setInfo(d)
+      setLoading(false)
+      copyToClipboard(`${baseUrl}/share/momento/${d.share_token}`)
+      onUpdate(d)
+    })
+  }, [])
+
+  function copyToClipboard(url: string) {
+    navigator.clipboard.writeText(url).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2500)
+    })
+  }
+
+  async function updateSetting(patch: Partial<{ hide_descriptions: boolean; expires_in_days: number | null }>) {
+    if (!info) return
+    const updated = await apiFetch<ShareInfo>(`/finances/moments/${moment.id}/share`, {
+      method: 'PATCH',
+      body: JSON.stringify(patch),
+    })
+    setInfo(updated)
+    onUpdate(updated)
+  }
+
+  async function revoke() {
+    if (!confirm('Revogar o link? Quem tiver o link antigo não conseguirá mais acessar.')) return
+    setRevoking(true)
+    await apiFetch(`/finances/moments/${moment.id}/share`, { method: 'DELETE' })
+    onRevoke()
+    onClose()
+  }
+
+  const currentExpiry = info?.share_expires_at
+    ? Math.round((new Date(info.share_expires_at).getTime() - Date.now()) / 86_400_000)
+    : null
+
+  const selectedDays = EXPIRY_OPTIONS.find(o => {
+    if (o.value === null && currentExpiry === null) return true
+    if (o.value !== null && currentExpiry !== null && Math.abs(o.value - currentExpiry) <= 3) return true
+    return false
+  })?.value ?? 30
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/40 flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={onClose}>
+      <div className="bg-white w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl shadow-xl p-6 space-y-5" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between">
+          <h3 className="font-semibold text-gray-900">Compartilhar {moment.icon} {moment.name}</h3>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
+        </div>
+
+        {loading ? (
+          <div className="text-center py-4 text-sm text-gray-400 animate-pulse">Gerando link…</div>
+        ) : (
+          <>
+            {/* Link */}
+            <div>
+              <p className="text-xs text-gray-500 mb-1.5">Link de compartilhamento</p>
+              <div className="flex items-center gap-2">
+                <input readOnly value={shareUrl} className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-xs text-gray-600 bg-gray-50 truncate focus:outline-none" />
+                <button
+                  onClick={() => copyToClipboard(shareUrl)}
+                  className={`px-3 py-2 rounded-lg text-xs font-medium transition-colors shrink-0 ${copied ? 'bg-emerald-100 text-emerald-700' : 'bg-[#001A70] text-white hover:opacity-80'}`}
+                >
+                  {copied ? '✓ Copiado' : 'Copiar'}
+                </button>
+              </div>
+            </div>
+
+            {/* Hide descriptions */}
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={info?.share_hide_descriptions ?? false}
+                onChange={e => updateSetting({ hide_descriptions: e.target.checked })}
+                className="mt-0.5 w-4 h-4 accent-[#001A70]"
+              />
+              <div>
+                <p className="text-sm text-gray-700 font-medium">Ocultar descrições das transações</p>
+                <p className="text-xs text-gray-400 mt-0.5">Mostra apenas categorias e totais, sem nomes de estabelecimentos</p>
+              </div>
+            </label>
+
+            {/* Expiry */}
+            <div>
+              <p className="text-xs text-gray-500 mb-2">Validade do link</p>
+              <div className="flex flex-wrap gap-2">
+                {EXPIRY_OPTIONS.map(opt => (
+                  <button
+                    key={String(opt.value)}
+                    onClick={() => updateSetting({ expires_in_days: opt.value })}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                      selectedDays === opt.value
+                        ? 'bg-[#001A70] text-white border-[#001A70]'
+                        : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Revoke */}
+            <div className="pt-2 border-t border-gray-100">
+              <button
+                onClick={revoke}
+                disabled={revoking}
+                className="text-xs text-red-500 hover:text-red-700 transition-colors disabled:opacity-50"
+              >
+                🔴 Revogar link
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
+
 // ── Assign to moment modal ────────────────────────────────────────────────────
 
 interface AssignModalProps {
@@ -253,6 +419,7 @@ export default function FinancesMomentsPage() {
   const [detailLoading, setDetailLoading] = useState(false)
   const [pickerMoments, setPickerMoments] = useState<MomentPickerRow[]>([])
   const [assignTarget,  setAssignTarget]  = useState<{ txId: number; currentMomentId: number | null } | null>(null)
+  const [sharingMoment, setSharingMoment] = useState<Moment | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -291,7 +458,7 @@ export default function FinancesMomentsPage() {
     }
   }
 
-  async function saveMoment(data: Omit<Moment, 'id' | 'created_at'>) {
+  async function saveMoment(data: MomentFormData) {
     setSaving(true)
     try {
       if (editing) {
@@ -405,6 +572,15 @@ export default function FinancesMomentsPage() {
               </div>
               <div className="flex items-center gap-2 shrink-0">
                 <button
+                  onClick={e => { e.stopPropagation(); setSharingMoment(m) }}
+                  className={`p-1.5 transition-colors rounded-lg hover:bg-gray-100 ${m.share_token ? 'text-[#001A70]' : 'text-gray-400 hover:text-gray-700'}`}
+                  title="Compartilhar"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                  </svg>
+                </button>
+                <button
                   onClick={e => { e.stopPropagation(); setEditing(m); setShowForm(true) }}
                   className="p-1.5 text-gray-400 hover:text-gray-700 transition-colors rounded-lg hover:bg-gray-100"
                 >
@@ -503,6 +679,21 @@ export default function FinancesMomentsPage() {
           </div>
         ))}
       </div>
+
+      {/* Share modal */}
+      {sharingMoment && (
+        <ShareModal
+          moment={sharingMoment}
+          onClose={() => setSharingMoment(null)}
+          onRevoke={() => {
+            setMoments(ms => ms.map(m => m.id === sharingMoment.id ? { ...m, share_token: null, share_expires_at: null } : m))
+          }}
+          onUpdate={info => {
+            setMoments(ms => ms.map(m => m.id === sharingMoment.id ? { ...m, ...info } : m))
+            setSharingMoment(prev => prev ? { ...prev, ...info } : null)
+          }}
+        />
+      )}
 
       {/* Assign modal */}
       {assignTarget && (

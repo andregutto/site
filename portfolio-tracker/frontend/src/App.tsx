@@ -32,6 +32,7 @@ import AppLayout from './components/AppLayout'
 import AchievementsPage from './pages/AchievementsPage'
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage'
 import TermsOfUsePage from './pages/TermsOfUsePage'
+import PublicMomentPage from './pages/PublicMomentPage'
 import { AchievementProvider } from './contexts/AchievementContext'
 
 function EmailConfirmGate({ email }: { email: string }) {
@@ -106,8 +107,9 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/login"   element={user ? <Navigate to="/" replace /> : <LoginPage />} />
-      <Route path="/privacy" element={<PrivacyPolicyPage />} />
-      <Route path="/terms"   element={<TermsOfUsePage />} />
+      <Route path="/privacy"                element={<PrivacyPolicyPage />} />
+      <Route path="/terms"                  element={<TermsOfUsePage />} />
+      <Route path="/share/momento/:token"   element={<PublicMomentPage />} />
       <Route element={<ProtectedRoutes />}>
         <Route path="/"               element={<DashboardPage />} />
         <Route path="/performance"    element={<PerformancePage />} />

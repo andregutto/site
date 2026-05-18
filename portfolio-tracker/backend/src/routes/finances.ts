@@ -1,4 +1,5 @@
 import { Router, Response } from 'express'
+import crypto from 'crypto'
 import { requireAuth, AuthRequest } from '../middleware/auth.js'
 import { supabaseAdmin } from '../lib/supabase.js'
 
@@ -635,10 +636,10 @@ router.get('/moments/:id', requireAuth, async (req, res: Response) => {
 
 router.post('/moments', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
-  const { name, description, icon, color, start_date, end_date } = req.body
+  const { name, description, icon, color, start_date, end_date, cover_image_url } = req.body
   const { data, error } = await supabaseAdmin
     .from('finance_moments')
-    .insert({ user_id: userId, name, description, icon: icon ?? '✨', color: color ?? '#7C3AED', start_date: start_date ?? null, end_date: end_date ?? null })
+    .insert({ user_id: userId, name, description, icon: icon ?? '✨', color: color ?? '#7C3AED', start_date: start_date ?? null, end_date: end_date ?? null, cover_image_url: cover_image_url ?? null })
     .select().single()
   if (error) { res.status(500).json({ error: error.message }); return }
   res.json(data)
@@ -659,6 +660,44 @@ router.delete('/moments/:id', requireAuth, async (req, res: Response) => {
   await supabaseAdmin.from('finance_transactions').update({ moment_id: null }).eq('moment_id', momentId).eq('user_id', userId)
   const { error } = await supabaseAdmin.from('finance_moments').delete().eq('id', momentId).eq('user_id', userId)
   if (error) { res.status(500).json({ error: error.message }); return }
+  res.json({ ok: true })
+})
+
+// POST /finances/moments/:id/share
+router.post('/moments/:id/share', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const id = Number(req.params.id)
+  const { hide_descriptions = false, expires_in_days = 30 } = req.body ?? {}
+  const expiresAt = expires_in_days === null ? null : new Date(Date.now() + Number(expires_in_days) * 86_400_000).toISOString()
+  const { data, error } = await supabaseAdmin
+    .from('finance_moments')
+    .update({ share_token: crypto.randomUUID(), share_expires_at: expiresAt, share_hide_descriptions: hide_descriptions })
+    .eq('id', id).eq('user_id', userId)
+    .select('share_token, share_expires_at, share_hide_descriptions').single()
+  if (error || !data) { res.status(404).json({ error: 'Not found' }); return }
+  res.json(data)
+})
+
+// PATCH /finances/moments/:id/share
+router.patch('/moments/:id/share', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const id = Number(req.params.id)
+  const { hide_descriptions, expires_in_days } = req.body ?? {}
+  const updates: Record<string, unknown> = {}
+  if (hide_descriptions !== undefined) updates.share_hide_descriptions = hide_descriptions
+  if (expires_in_days !== undefined) updates.share_expires_at = expires_in_days === null ? null : new Date(Date.now() + Number(expires_in_days) * 86_400_000).toISOString()
+  const { data, error } = await supabaseAdmin
+    .from('finance_moments').update(updates).eq('id', id).eq('user_id', userId)
+    .select('share_token, share_expires_at, share_hide_descriptions').single()
+  if (error || !data) { res.status(404).json({ error: 'Not found' }); return }
+  res.json(data)
+})
+
+// DELETE /finances/moments/:id/share
+router.delete('/moments/:id/share', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const id = Number(req.params.id)
+  await supabaseAdmin.from('finance_moments').update({ share_token: null, share_expires_at: null }).eq('id', id).eq('user_id', userId)
   res.json({ ok: true })
 })
 
