@@ -48,9 +48,14 @@ router.get('/value', requireAuth, async (req, res: Response) => {
   const rfTranchesMap: Record<number, FITranche[]> = {}
   for (const c of (contributions ?? [])) {
     if (!rfAssetIds.includes(c.asset_id)) continue
-    if (c.type !== 'buy' || !c.value_brl || c.value_brl <= 0) continue
-    if (!rfTranchesMap[c.asset_id]) rfTranchesMap[c.asset_id] = []
-    rfTranchesMap[c.asset_id].push({ principal: c.value_brl, start_date: c.date })
+    if (!c.value_brl || c.value_brl <= 0) continue
+    if (c.type === 'buy') {
+      if (!rfTranchesMap[c.asset_id]) rfTranchesMap[c.asset_id] = []
+      rfTranchesMap[c.asset_id].push({ principal: c.value_brl, start_date: c.date })
+    } else if (c.type === 'sell') {
+      if (!rfTranchesMap[c.asset_id]) rfTranchesMap[c.asset_id] = []
+      rfTranchesMap[c.asset_id].push({ principal: -c.value_brl, start_date: c.date })
+    }
   }
 
   // Brapi-only assets (no yahoo, no coingecko) that have never had price_history synced

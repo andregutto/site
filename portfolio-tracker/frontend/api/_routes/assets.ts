@@ -471,14 +471,22 @@ router.get('/:id/detail', requireAuth, async (req, res: Response) => {
     : (asset.asset_type === 'fixed_income' && asset.fi_principal ? asset.fi_principal : 0)
   const avgCostBrl  = holdings > 0 && totalCostBrl > 0 ? totalCostBrl / holdings : null
 
-  // Build tranches from buy contributions (RF assets)
+  // rfBuyTranches: buy-only, for per-tranche profit display
+  // rfTranches: buy + sell (negative principal), for calculateCurrentValue
+  const rfBuyTranches: FITranche[] = []
   const rfTranches: FITranche[] = []
   if (asset.asset_type === 'fixed_income') {
     for (const c of contribs) {
-      if (c.type !== 'buy' || !c.value_brl || c.value_brl <= 0) continue
-      rfTranches.push({ principal: c.value_brl, start_date: c.date })
+      if (!c.value_brl || c.value_brl <= 0) continue
+      if (c.type === 'buy') {
+        rfBuyTranches.push({ principal: c.value_brl, start_date: c.date })
+        rfTranches.push({ principal: c.value_brl, start_date: c.date })
+      } else if (c.type === 'sell') {
+        rfTranches.push({ principal: -c.value_brl, start_date: c.date })
+      }
     }
-    if (rfTranches.length === 0 && asset.fi_principal && asset.fi_start_date) {
+    if (rfBuyTranches.length === 0 && asset.fi_principal && asset.fi_start_date) {
+      rfBuyTranches.push({ principal: asset.fi_principal, start_date: asset.fi_start_date })
       rfTranches.push({ principal: asset.fi_principal, start_date: asset.fi_start_date })
     }
   }
@@ -566,9 +574,9 @@ router.get('/:id/detail', requireAuth, async (req, res: Response) => {
 
   // Per-contribution profit for RF assets (fetches BCB rates once, applies per tranche)
   const profitByContribId = new Map<number, number>()
-  if (asset.asset_type === 'fixed_income' && rfTranches.length > 0) {
+  if (asset.asset_type === 'fixed_income' && rfBuyTranches.length > 0) {
     try {
-      const trancheResults = await calculateTrancheProfits(asset as unknown as FixedIncomeAsset, rfTranches)
+      const trancheResults = await calculateTrancheProfits(asset as unknown as FixedIncomeAsset, rfBuyTranches)
       const buyContribs = contribs.filter(c => c.type === 'buy' && c.value_brl && c.value_brl > 0)
       buyContribs.forEach((c, i) => {
         if (trancheResults[i] != null) profitByContribId.set(c.id, trancheResults[i].profit_brl)
