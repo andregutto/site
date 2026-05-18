@@ -66,8 +66,7 @@ export default function FinancesTransactionsPage() {
 
   const [month, setMonth]               = useState(defaultMonth)
   const [transactions, setTransactions] = useState<Transaction[]>([])
-  const [categories, setCategories]         = useState<Category[]>([])
-  const [incomeCategories, setIncomeCategories] = useState<Category[]>([])
+  const [incomeCategories, setIncomeCategories]   = useState<Category[]>([])
   const [expenseCategories, setExpenseCategories] = useState<Category[]>([])
   const [moments, setMoments]           = useState<MomentRef[]>([])
   const [loading, setLoading]           = useState(true)
@@ -115,12 +114,8 @@ export default function FinancesTransactionsPage() {
   useEffect(() => {
     apiFetch<{ envelopes: { type: string; categories: Category[] }[] }>('/finances/budget')
       .then(d => {
-        const all     = d.envelopes.flatMap(e => e.categories)
-        const income  = d.envelopes.filter(e => e.type === 'income').flatMap(e => e.categories)
-        const expense = d.envelopes.filter(e => e.type !== 'income').flatMap(e => e.categories)
-        setCategories(all)
-        setIncomeCategories(income)
-        setExpenseCategories(expense)
+        setIncomeCategories(d.envelopes.filter(e => e.type === 'income').flatMap(e => e.categories))
+        setExpenseCategories(d.envelopes.filter(e => e.type !== 'income').flatMap(e => e.categories))
       })
       .catch(() => {})
     apiFetch<MomentRef[]>('/finances/moments-for-picker')
