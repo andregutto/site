@@ -691,11 +691,11 @@ router.post('/freedom-plans', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const {
     name, initial_capital, monthly_contribution, monthly_return_rate,
-    monthly_income_rate, target_amount, currency, horizon_years, notes,
+    monthly_income_rate, target_amount, currency, horizon_years, notes, start_date,
   } = req.body as {
     name: string; initial_capital: number; monthly_contribution: number
     monthly_return_rate: number; monthly_income_rate: number; target_amount: number
-    currency: string; horizon_years: number; notes?: string
+    currency: string; horizon_years: number; notes?: string; start_date?: string
   }
   if (!name || !initial_capital || !target_amount) {
     res.status(400).json({ error: 'name, initial_capital, target_amount required' }); return
@@ -713,6 +713,7 @@ router.post('/freedom-plans', requireAuth, async (req, res: Response) => {
       monthly_income_rate: monthly_income_rate ?? 0.005,
       target_amount, currency: currency ?? 'EUR',
       horizon_years, notes: notes ?? null,
+      start_date: start_date ?? null,
     })
     .select()
     .single()

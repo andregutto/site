@@ -19,6 +19,7 @@ interface FreedomPlan {
   horizon_years: number
   notes: string | null
   created_at: string
+  start_date: string | null
 }
 
 interface MonthlyPerf {
@@ -123,6 +124,9 @@ function PlanForm({ initial, portfolio, onSave, onCancel, saving }: PlanFormProp
 
   const [currency,   setCurrencyState] = useState(initial.currency ?? 'EUR')
   const [name,       setName]          = useState(initial.name ?? '')
+  const [startDate,  setStartDate]     = useState(
+    initial.start_date?.slice(0, 10) ?? initial.created_at?.slice(0, 10) ?? new Date().toISOString().slice(0, 10)
+  )
   const [capital,    setCapital]       = useState(
     initial.initial_capital != null
       ? String(initial.initial_capital)
@@ -144,10 +148,20 @@ function PlanForm({ initial, portfolio, onSave, onCancel, saving }: PlanFormProp
 
   const portfolioSuggestion = portfolioInCurrency(portfolio, currency, rates)
 
+  const horizonMonths = parseInt(horizon) * 12
+  const targetDate = (() => {
+    try {
+      const d = new Date(startDate + 'T12:00:00')
+      d.setMonth(d.getMonth() + horizonMonths)
+      return d.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
+    } catch { return '' }
+  })()
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     await onSave({
       name,
+      start_date:            startDate || null,
       initial_capital:       parseFloat(capital),
       monthly_contribution:  parseFloat(contrib),
       monthly_return_rate:   parseFloat(rate) / 100,
@@ -172,31 +186,34 @@ function PlanForm({ initial, portfolio, onSave, onCancel, saving }: PlanFormProp
           <input required value={name} onChange={e => setName(e.target.value)} className={fieldCls} placeholder="Plano Mai/2026" />
         </div>
 
-        {/* Currency selector — full width, first monetary field */}
-        <div className="col-span-2">
-          <label className={labelCls}>{t.finances.freedomCurrency}</label>
-          <div className="flex items-center gap-2">
-            <div className="flex items-center bg-gray-100 rounded-lg p-0.5 gap-0.5">
-              {['EUR', 'BRL', 'USD'].map(c => (
-                <button
-                  key={c}
-                  type="button"
-                  onClick={() => handleCurrencyChange(c)}
-                  className={`px-3 py-1.5 text-sm font-semibold rounded-md transition-colors ${
-                    currency === c
-                      ? 'bg-white text-[#001A70] shadow-sm'
-                      : 'text-gray-400 hover:text-gray-700'
-                  }`}
-                >
-                  {c}
-                </button>
-              ))}
-            </div>
-            <span className="text-xs text-gray-400">
-              Todos os valores serão em {currency}. Ao trocar, os campos são convertidos automaticamente.
-            </span>
-          </div>
+        {/* Start date */}
+        <div className="col-span-2 sm:col-span-1">
+          <label className={labelCls}>Data de início do plano</label>
+          <input type="date" required value={startDate} onChange={e => setStartDate(e.target.value)} className={fieldCls} />
         </div>
+
+        {/* Currency selector */}
+        <div className="col-span-2 sm:col-span-1">
+          <label className={labelCls}>{t.finances.freedomCurrency}</label>
+          <div className="flex items-center bg-gray-100 rounded-lg p-0.5 gap-0.5 w-fit">
+            {['EUR', 'BRL', 'USD'].map(c => (
+              <button
+                key={c}
+                type="button"
+                onClick={() => handleCurrencyChange(c)}
+                className={`px-3 py-1.5 text-sm font-semibold rounded-md transition-colors ${
+                  currency === c
+                    ? 'bg-white text-[#001A70] shadow-sm'
+                    : 'text-gray-400 hover:text-gray-700'
+                }`}
+              >
+                {c}
+              </button>
+            ))}
+          </div>
+          <p className="text-[11px] text-gray-400 mt-1">Ao trocar, os valores são convertidos.</p>
+        </div>
+
 
         {/* Capital inicial */}
         <div className="col-span-2 sm:col-span-1">
@@ -248,6 +265,7 @@ function PlanForm({ initial, portfolio, onSave, onCancel, saving }: PlanFormProp
         <div>
           <label className={labelCls}>{t.finances.freedomHorizon} (anos)</label>
           <input required type="number" value={horizon} onChange={e => setHorizon(e.target.value)} className={fieldCls} placeholder="20" />
+          {targetDate && <p className="text-[11px] text-gray-400 mt-1">Meta em: <strong>{targetDate}</strong></p>}
         </div>
 
         {/* Notas */}
@@ -359,6 +377,11 @@ export default function FinancesFreedomPage() {
     await load()
   }
 
+  // Plan start date (use explicit start_date if set, otherwise created_at)
+  const planStart = activePlan
+    ? (activePlan.start_date?.slice(0, 7) ?? activePlan.created_at.slice(0, 7))
+    : currentMonth()
+
   // Compute chart data
   const chartData: ChartPoint[] = []
   if (activePlan) {
@@ -373,15 +396,13 @@ export default function FinancesFreedomPage() {
       const valueEur = p.total * fxToEur
       const value = currency === 'EUR' ? valueEur
         : currency === 'BRL' ? p.total
-        : valueEur / 1.08  // rough USD approximation
+        : valueEur / 1.08
       actualMap.set(p.month, Math.round(value))
     }
 
-    // Plan start = plan creation month
-    const planStart = activePlan.created_at.slice(0, 7)
     const horizonMonths = activePlan.horizon_years * 12
-    const planEnd = addMonths(planStart, horizonMonths)
     const chartStart = planStart
+    const planEnd = addMonths(planStart, horizonMonths)
     const chartEnd = planEnd
 
     // Build planned trajectory
@@ -419,10 +440,21 @@ export default function FinancesFreedomPage() {
     ? activePlan.target_amount * activePlan.monthly_income_rate
     : 0
 
+  // What the plan projects at the current month
+  const plannedAtCurrentMonth = (() => {
+    if (!activePlan) return 0
+    const monthsElapsed = monthsBetween(planStart, currentMonth())
+    if (monthsElapsed < 0) return activePlan.initial_capital
+    let w = activePlan.initial_capital
+    for (let i = 0; i < monthsElapsed; i++) {
+      w = w * (1 + activePlan.monthly_return_rate) + activePlan.monthly_contribution
+    }
+    return Math.round(w)
+  })()
+
   // When will the plan line reach the target?
   const reachMonth = (() => {
     if (!activePlan) return null
-    const planStart = activePlan.created_at.slice(0, 7)
     const horizonMonths = activePlan.horizon_years * 12
     let w = activePlan.initial_capital
     for (let i = 0; i <= horizonMonths; i++) {
@@ -444,15 +476,14 @@ export default function FinancesFreedomPage() {
     const actualNow = activePlan.currency === 'EUR'
       ? latestPerf.total * fxToEur
       : latestPerf.total
-    const planStart = activePlan.created_at.slice(0, 7)
     const monthsElapsed = monthsBetween(planStart, latestActualMonth)
     if (monthsElapsed < 0) return null
-    let plannedNow = activePlan.initial_capital
+    let planned = activePlan.initial_capital
     for (let i = 0; i < monthsElapsed; i++) {
-      plannedNow = plannedNow * (1 + activePlan.monthly_return_rate) + activePlan.monthly_contribution
+      planned = planned * (1 + activePlan.monthly_return_rate) + activePlan.monthly_contribution
     }
-    const diff = actualNow - plannedNow
-    const pct = plannedNow > 0 ? (diff / plannedNow) * 100 : 0
+    const diff = actualNow - planned
+    const pct = planned > 0 ? (diff / planned) * 100 : 0
     return { diff: Math.round(diff), pct: pct.toFixed(1), ahead: diff >= 0 }
   })()
 
@@ -546,19 +577,28 @@ export default function FinancesFreedomPage() {
         </div>
       ) : (
         <>
-          {/* Summary cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {/* Summary cards — row 1: current comparison */}
+          <div className="grid grid-cols-2 gap-3">
             <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
               <p className="text-xs text-gray-500 mb-1">{t.finances.freedomToday}</p>
               <p className="text-lg font-bold text-gray-900">{fmt(currentValue, currency, true)}</p>
+              <p className="text-[10px] text-gray-400 mt-0.5">patrimônio real agora</p>
             </div>
+            <div className={`rounded-xl border shadow-sm p-4 ${planStatusText?.ahead ? 'bg-emerald-50 border-emerald-100' : planStatusText ? 'bg-amber-50 border-amber-100' : 'bg-white border-gray-100'}`}>
+              <p className="text-xs text-gray-500 mb-1">Previsto para hoje</p>
+              <p className="text-lg font-bold text-gray-900">{fmt(plannedAtCurrentMonth, currency, true)}</p>
+              <p className="text-[10px] text-gray-400 mt-0.5">segundo o plano</p>
+            </div>
+          </div>
+          {/* Summary cards — row 2: goal metrics */}
+          <div className="grid grid-cols-3 gap-3">
             <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
               <p className="text-xs text-gray-500 mb-1">{t.finances.freedomGoal}</p>
-              <p className="text-lg font-bold text-[#001A70]">{fmt(activePlan!.target_amount, currency, true)}</p>
+              <p className="text-base font-bold text-[#001A70]">{fmt(activePlan!.target_amount, currency, true)}</p>
             </div>
             <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
               <p className="text-xs text-gray-500 mb-1">{t.finances.freedomPassive} / mês</p>
-              <p className="text-lg font-bold text-emerald-600">{fmt(passiveIncome, currency, true)}</p>
+              <p className="text-base font-bold text-emerald-600">{fmt(passiveIncome, currency, true)}</p>
               <p className="text-[10px] text-gray-400">{(activePlan!.monthly_income_rate * 100).toFixed(1)}% × meta</p>
             </div>
             <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
