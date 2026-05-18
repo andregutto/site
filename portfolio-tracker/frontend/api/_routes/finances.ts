@@ -6,8 +6,6 @@ import { supabaseAdmin } from '../_lib/supabase.js'
 
 const router = Router()
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
-
 // ── Income ────────────────────────────────────────────────────────────────────
 
 // GET /api/finances/income
@@ -534,6 +532,7 @@ Descriptions:
 ${descList}`
 
   try {
+    const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
     const msg = await anthropic.messages.create({
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 1024,
