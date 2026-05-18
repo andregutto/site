@@ -32,6 +32,8 @@ interface ParsedRow {
   suggested_category_id?: number | null
 }
 
+interface AiDebug { ran: boolean; assigned: number; unmatched: number; error: string | null }
+
 function fmt(n: number, currency = 'EUR') {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency, minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n)
 }
@@ -69,6 +71,7 @@ export default function FinancesTransactionsPage() {
   const [showAdd, setShowAdd]           = useState(false)
   const [csvStep, setCsvStep]           = useState<'idle' | 'preview' | 'importing'>('idle')
   const [csvRows, setCsvRows]           = useState<ParsedRow[]>([])
+  const [csvAiDebug, setCsvAiDebug]     = useState<AiDebug | null>(null)
   const [csvError, setCsvError]         = useState('')
   const [csvCurrency, setCsvCurrency]   = useState('EUR')
   const [csvAccountId, setCsvAccountId]   = useState<number | null>(null)
@@ -211,11 +214,12 @@ export default function FinancesTransactionsPage() {
     setCsvError('')
     const text = await file.text()
     try {
-      const result = await apiFetch<{ transactions: ParsedRow[]; total: number; error?: string }>(
+      const result = await apiFetch<{ transactions: ParsedRow[]; total: number; error?: string; ai_debug?: AiDebug }>(
         '/finances/transactions/csv-parse',
         { method: 'POST', body: JSON.stringify({ csv: text, currency: csvCurrency }) }
       )
       if (result.error) { setCsvError(result.error); return }
+      setCsvAiDebug(result.ai_debug ?? null)
       setCsvRows(
         [...result.transactions]
           .sort((a, b) => b.date.localeCompare(a.date))
@@ -329,6 +333,15 @@ export default function FinancesTransactionsPage() {
                 {csvRows.filter(r => r.suggested_by === 'ai').length > 0 && (
                   <span className="ml-2 text-violet-500">✦ {csvRows.filter(r => r.suggested_by === 'ai').length} {t.finances.csvAiSuggested}</span>
                 )}
+                {csvAiDebug && (
+                  csvAiDebug.error === 'no_key'
+                    ? <span className="ml-2 text-red-400">⚠ ANTHROPIC_API_KEY não encontrada</span>
+                    : csvAiDebug.error
+                      ? <span className="ml-2 text-red-400">⚠ IA erro: {csvAiDebug.error}</span>
+                      : csvAiDebug.unmatched > 0 && csvAiDebug.assigned === 0
+                        ? <span className="ml-2 text-amber-500">⚠ IA rodou mas não encontrou categorias para {csvAiDebug.unmatched} itens</span>
+                        : null
+                )}
               </p>
             </div>
             <div className="flex items-center gap-3 flex-wrap">
@@ -345,7 +358,7 @@ export default function FinancesTransactionsPage() {
                   </select>
                 </div>
               )}
-              <button onClick={() => { setCsvStep('idle'); setCsvRows([]) }} className="text-xs text-gray-500 hover:text-gray-700 transition-colors">{t.common.cancel}</button>
+              <button onClick={() => { setCsvStep('idle'); setCsvRows([]); setCsvAiDebug(null) }} className="text-xs text-gray-500 hover:text-gray-700 transition-colors">{t.common.cancel}</button>
               <button onClick={importCSV} disabled={csvStep === 'importing'} className="px-3 py-1.5 bg-[#001A70] text-white text-xs rounded-lg hover:opacity-80 transition-opacity disabled:opacity-50">
                 {csvStep === 'importing' ? t.finances.csvImporting : t.finances.csvConfirm}
               </button>

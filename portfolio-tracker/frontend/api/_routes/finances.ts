@@ -516,13 +516,15 @@ function detectBroker(description: string): string | null {
 
 type CatRow = { id: number; name: string; icon: string; color: string }
 
-async function aiCategorize(
+const AI_BATCH_SIZE = 30
+
+async function aiCategorizeBatch(
   descriptions: string[],
-  categories: CatRow[]
+  categories: CatRow[],
+  offset: number
 ): Promise<Record<string, number | null>> {
-  if (!process.env.ANTHROPIC_API_KEY || descriptions.length === 0) return {}
-  const catList = categories.map(c => `${c.id}: ${c.name}`).join('\n')
-  const descList = descriptions.map((d, i) => `${i}: ${d}`).join('\n')
+  const catList  = categories.map(c => `${c.id}: ${c.name}`).join('\n')
+  const descList = descriptions.map((d, i) => `${offset + i}: ${d}`).join('\n')
   const prompt = `You are a financial transaction categorizer. Given the categories and transaction descriptions below, assign the most appropriate category to each description. Reply with ONLY a valid JSON object mapping each index (as a string key) to the category id (integer) or null if no category fits. No extra text.
 
 Categories:
@@ -531,19 +533,35 @@ ${catList}
 Descriptions:
 ${descList}`
 
+  const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+  const msg = await anthropic.messages.create({
+    model:      'claude-haiku-4-5-20251001',
+    max_tokens: 2048,
+    messages:   [{ role: 'user', content: prompt }],
+  })
+  const text = msg.content[0].type === 'text' ? msg.content[0].text.trim() : ''
+  const jsonMatch = text.match(/\{[\s\S]*\}/)
+  if (!jsonMatch) return {}
+  return JSON.parse(jsonMatch[0]) as Record<string, number | null>
+}
+
+async function aiCategorize(
+  descriptions: string[],
+  categories: CatRow[]
+): Promise<{ map: Record<string, number | null>; error?: string }> {
+  if (!process.env.ANTHROPIC_API_KEY) return { map: {}, error: 'no_key' }
+  if (descriptions.length === 0 || categories.length === 0) return { map: {} }
+
+  const result: Record<string, number | null> = {}
   try {
-    const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
-    const msg = await anthropic.messages.create({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 1024,
-      messages: [{ role: 'user', content: prompt }],
-    })
-    const text = msg.content[0].type === 'text' ? msg.content[0].text.trim() : ''
-    const jsonMatch = text.match(/\{[\s\S]*\}/)
-    if (!jsonMatch) return {}
-    return JSON.parse(jsonMatch[0]) as Record<string, number | null>
-  } catch {
-    return {}
+    for (let i = 0; i < descriptions.length; i += AI_BATCH_SIZE) {
+      const batch = descriptions.slice(i, i + AI_BATCH_SIZE)
+      const batchResult = await aiCategorizeBatch(batch, categories, i)
+      Object.assign(result, batchResult)
+    }
+    return { map: result }
+  } catch (e) {
+    return { map: result, error: e instanceof Error ? e.message : 'unknown' }
   }
 }
 
@@ -640,10 +658,13 @@ router.post('/transactions/csv-parse', requireAuth, async (req, res: Response) =
   }
 
   // AI categorization for rows without a keyword match
+  let aiError: string | undefined
+  let aiAssigned = 0
   const unmatched = transactions.filter(t => !t.suggested_category && !t.is_broker_transfer)
   if (unmatched.length > 0) {
     const uniqueDescs = [...new Set(unmatched.map(t => t.description))]
-    const aiMap = await aiCategorize(uniqueDescs, categories)
+    const { map: aiMap, error } = await aiCategorize(uniqueDescs, categories)
+    aiError = error
     const catById = Object.fromEntries(categories.map(c => [c.id, c]))
     for (const t of transactions) {
       if (t.suggested_category || t.is_broker_transfer) continue
@@ -652,11 +673,19 @@ router.post('/transactions/csv-parse', requireAuth, async (req, res: Response) =
       if (catId != null && catById[catId]) {
         t.suggested_category = catById[catId]
         t.suggested_by = 'ai'
+        aiAssigned++
       }
     }
   }
 
-  res.json({ transactions, total: transactions.length, skipped_invalid: skippedInvalid, headers, detected: { dateIdx, descIdx, amtIdx, stateIdx } })
+  res.json({
+    transactions,
+    total: transactions.length,
+    skipped_invalid: skippedInvalid,
+    headers,
+    detected: { dateIdx, descIdx, amtIdx, stateIdx },
+    ai_debug: { ran: !aiError && unmatched.length > 0, assigned: aiAssigned, unmatched: unmatched.length, error: aiError ?? null },
+  })
 })
 
 function csvSourceKey(t: { date: string; description: string; amount: number; currency: string }): string {
