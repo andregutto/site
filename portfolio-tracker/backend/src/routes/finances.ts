@@ -262,6 +262,90 @@ router.get('/spending-summary', requireAuth, async (req, res: Response) => {
   })
 })
 
+// ── Finance Accounts ──────────────────────────────────────────────────────────
+
+// GET /api/finances/accounts
+router.get('/accounts', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+
+  const [acctRes, txRes, connRes] = await Promise.all([
+    supabaseAdmin.from('finance_accounts').select('*').eq('user_id', userId).eq('is_active', true).order('created_at'),
+    supabaseAdmin.from('finance_transactions').select('account_id, amount').eq('user_id', userId).eq('is_internal_transfer', false).not('account_id', 'is', null),
+    supabaseAdmin.from('finance_bank_connections').select('id, display_name, last_synced_at, finance_account_id').eq('user_id', userId),
+  ])
+
+  const balanceMap = new Map<number, number>()
+  for (const tx of txRes.data ?? []) {
+    if (tx.account_id != null) balanceMap.set(tx.account_id, (balanceMap.get(tx.account_id) ?? 0) + Number(tx.amount))
+  }
+  const connMap = new Map<number, { id: number; display_name: string | null; last_synced_at: string | null }>()
+  for (const c of connRes.data ?? []) {
+    if (c.finance_account_id != null) connMap.set(c.finance_account_id, c)
+  }
+
+  const result = (acctRes.data ?? []).map(a => ({
+    ...a,
+    balance: Math.round((balanceMap.get(a.id) ?? 0) * 100) / 100,
+    bank_connection: connMap.get(a.id) ?? null,
+  }))
+  res.json(result)
+})
+
+// GET /api/finances/accounts/portfolio-institutions
+router.get('/accounts/portfolio-institutions', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const [assetsRes, acctRes] = await Promise.all([
+    supabaseAdmin.from('assets').select('exchange').eq('user_id', userId).not('exchange', 'is', null),
+    supabaseAdmin.from('finance_accounts').select('institution_name').eq('user_id', userId).not('institution_name', 'is', null),
+  ])
+  const linked = new Set((acctRes.data ?? []).map(a => a.institution_name!.toLowerCase()))
+  const institutions = [...new Set((assetsRes.data ?? []).map(a => a.exchange as string).filter(Boolean))]
+    .filter(ex => !linked.has(ex.toLowerCase()))
+    .sort()
+  res.json(institutions)
+})
+
+// POST /api/finances/accounts
+router.post('/accounts', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const { name, currency, institution_name, color, icon } = req.body
+  if (!name) { res.status(400).json({ error: 'name required' }); return }
+  const { data, error } = await supabaseAdmin.from('finance_accounts').insert({
+    user_id: userId, name, currency: currency ?? 'EUR',
+    institution_name: institution_name ?? null,
+    color: color ?? '#6366f1', icon: icon ?? '🏦',
+  }).select().single()
+  if (error) { res.status(500).json({ error: error.message }); return }
+  res.json(data)
+})
+
+// PATCH /api/finances/accounts/:id
+router.patch('/accounts/:id', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const id = Number(req.params.id)
+  const { name, currency, institution_name, color, icon, linked_asset_id } = req.body
+  const update: Record<string, unknown> = {}
+  if (name             != null) update.name             = name
+  if (currency         != null) update.currency         = currency
+  if (institution_name !== undefined) update.institution_name = institution_name
+  if (color            != null) update.color            = color
+  if (icon             != null) update.icon             = icon
+  if (linked_asset_id  !== undefined) update.linked_asset_id = linked_asset_id
+  const { error } = await supabaseAdmin.from('finance_accounts').update(update).eq('id', id).eq('user_id', userId)
+  if (error) { res.status(500).json({ error: error.message }); return }
+  res.json({ ok: true })
+})
+
+// DELETE /api/finances/accounts/:id
+router.delete('/accounts/:id', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const id = Number(req.params.id)
+  await supabaseAdmin.from('finance_transactions').update({ account_id: null }).eq('account_id', id).eq('user_id', userId)
+  const { error } = await supabaseAdmin.from('finance_accounts').delete().eq('id', id).eq('user_id', userId)
+  if (error) { res.status(500).json({ error: error.message }); return }
+  res.json({ ok: true })
+})
+
 // ── Transactions ───────────────────────────────────────────────────────────────
 
 // GET /api/finances/transactions?month=2026-05&category_id=3
@@ -445,29 +529,43 @@ router.post('/transactions/csv-parse', requireAuth, async (req, res: Response) =
   const descIdx  = detectColumn(headers, ['description','descricao','historico','lancamento','memo','libelle','beneficiary','name','merchant'])
   const amtIdx   = detectColumn(headers, ['amount','valor','importe','betrag','montant','value','credit','debito','credito','charge'])
   const typeIdx  = detectColumn(headers, ['type','tipo','transaction type'])
+  const stateIdx = detectColumn(headers, ['état','etat','state','status','estado','estatuto'])
 
   if (dateIdx < 0 || amtIdx < 0) {
     res.status(422).json({ error: 'Could not detect date or amount columns', headers, detected: { dateIdx, descIdx, amtIdx } })
     return
   }
 
+  const SKIP_STATUSES = new Set(['renvoyé', 'renvoye', 'annulé', 'annule', 'cancelled', 'canceled', 'declined', 'failed', 'reverted', 'en attente', 'pending'])
+  const INTERNAL_TYPES = ['topup', 'exchange', 'transfer to savings', 'savings', 'changes', 'echange', 'transfert vers']
+  const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+
   const transactions = []
+  let skippedInvalid = 0
   for (let i = 1; i < rows.length; i++) {
     const row = rows[i]
     if (row.every(c => !c.trim())) continue
+
+    if (stateIdx >= 0) {
+      const state = norm(row[stateIdx] ?? '')
+      if (SKIP_STATUSES.has(state)) { skippedInvalid++; continue }
+    }
+
     const rawDate = row[dateIdx] ?? ''
     const rawAmt  = row[amtIdx]  ?? ''
     const rawDesc = descIdx >= 0 ? (row[descIdx] ?? '') : ''
     const rawType = typeIdx >= 0 ? (row[typeIdx] ?? '') : ''
+    const rawTypeNorm = norm(rawType)
 
     const date   = parseDate(rawDate)
     if (!date) continue
     let amount = parseAmount(rawAmt)
     if (!amount) continue
 
-    // Revolut and some banks: separate debit/credit columns or type column
-    if (typeIdx >= 0 && rawType.toLowerCase().includes('debit')) amount = -Math.abs(amount)
-    if (typeIdx >= 0 && rawType.toLowerCase().includes('credit')) amount = Math.abs(amount)
+    if (rawTypeNorm.includes('debit'))  amount = -Math.abs(amount)
+    if (rawTypeNorm.includes('credit')) amount =  Math.abs(amount)
+
+    const isInternal = INTERNAL_TYPES.some(t => rawTypeNorm.includes(t))
 
     const category  = matchCategory(rawDesc)
     const broker    = detectBroker(rawDesc)
@@ -479,40 +577,77 @@ router.post('/transactions/csv-parse', requireAuth, async (req, res: Response) =
       currency,
       suggested_category: category,
       is_broker_transfer: !!broker,
+      is_internal_transfer: isInternal,
       broker_name: broker,
     })
   }
 
-  res.json({ transactions, total: transactions.length, headers, detected: { dateIdx, descIdx, amtIdx } })
+  res.json({ transactions, total: transactions.length, skipped_invalid: skippedInvalid, headers, detected: { dateIdx, descIdx, amtIdx, stateIdx } })
 })
 
-// POST /api/finances/transactions/csv-import — bulk insert parsed rows
+function csvSourceKey(t: { date: string; description: string; amount: number; currency: string }): string {
+  const payload = `${t.date}|${t.description}|${t.amount}|${t.currency}`
+  return 'csv:' + crypto.createHash('sha256').update(payload).digest('hex').slice(0, 16)
+}
+
+// POST /api/finances/transactions/csv-import — insert parsed rows, skipping duplicates
 router.post('/transactions/csv-import', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
-  const { transactions } = req.body as {
+  const { transactions, learn_rules } = req.body as {
     transactions: { date: string; description: string; amount: number; currency: string; category_id?: number | null; account_id?: number | null; is_internal_transfer?: boolean }[]
+    learn_rules?: { category_id: number; keyword: string }[]
   }
   if (!Array.isArray(transactions) || transactions.length === 0) {
     res.status(400).json({ error: 'transactions array required' }); return
   }
-  const rows = transactions.map(t => ({
-    user_id: userId,
-    date:        t.date,
-    description: t.description ?? '',
-    amount:      t.amount,
-    currency:    t.currency ?? 'EUR',
-    category_id: t.category_id ?? null,
-    account_id:  t.account_id  ?? null,
-    is_internal_transfer: t.is_internal_transfer ?? false,
-    source: 'csv',
-  }))
-  // Ignore duplicates (same user + date + description + amount)
-  const { data, error } = await supabaseAdmin
-    .from('finance_transactions')
-    .insert(rows)
-    .select('id')
-  if (error) { res.status(500).json({ error: error.message }); return }
-  res.json({ imported: data?.length ?? 0 })
+
+  let imported = 0
+  let skipped = 0
+  for (const t of transactions) {
+    const source = csvSourceKey(t)
+    const { error } = await supabaseAdmin.from('finance_transactions').insert({
+      user_id: userId,
+      date:        t.date,
+      description: t.description ?? '',
+      amount:      t.amount,
+      currency:    t.currency ?? 'EUR',
+      category_id: t.category_id ?? null,
+      account_id:  t.account_id  ?? null,
+      is_internal_transfer: t.is_internal_transfer ?? false,
+      source,
+    })
+    if (error) { skipped++ } else { imported++ }
+  }
+
+  // Learn category rules from manual assignments in preview
+  if (Array.isArray(learn_rules) && learn_rules.length > 0) {
+    const grouped = new Map<number, string[]>()
+    for (const rule of learn_rules) {
+      const kw = rule.keyword?.toLowerCase().trim()
+      if (!rule.category_id || !kw) continue
+      if (!grouped.has(rule.category_id)) grouped.set(rule.category_id, [])
+      grouped.get(rule.category_id)!.push(kw)
+    }
+    for (const [catId, newKws] of grouped) {
+      const { data: cat } = await supabaseAdmin
+        .from('finance_categories')
+        .select('keyword_rules')
+        .eq('id', catId)
+        .eq('user_id', userId)
+        .single()
+      if (!cat) continue
+      const existing: string[] = Array.isArray(cat.keyword_rules) ? cat.keyword_rules : []
+      const toAdd = newKws.filter(kw => !existing.some(e => e.toLowerCase() === kw))
+      if (toAdd.length === 0) continue
+      await supabaseAdmin
+        .from('finance_categories')
+        .update({ keyword_rules: [...existing, ...toAdd] })
+        .eq('id', catId)
+        .eq('user_id', userId)
+    }
+  }
+
+  res.json({ imported, skipped, total: transactions.length })
 })
 
 // ── Financial Freedom Plans ────────────────────────────────────────────────────

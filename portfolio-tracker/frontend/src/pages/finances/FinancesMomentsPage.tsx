@@ -185,7 +185,7 @@ function MomentForm({ initial, onSave, onCancel, saving, userId }: FormProps) {
       <div className="flex gap-2">
         <button type="submit" disabled={saving || uploading}
           className="flex-1 bg-[#001A70] text-white text-sm py-2 rounded-xl hover:opacity-80 transition-opacity disabled:opacity-40">
-          {uploading ? 'Enviando foto…' : saving ? '…' : t.common.save}
+          {uploading ? t.finances.uploadingPhoto : saving ? '…' : t.common.save}
         </button>
         <button type="button" onClick={onCancel} className="px-4 text-sm text-gray-500 hover:text-gray-700 transition-colors">
           {t.common.cancel}
@@ -197,12 +197,7 @@ function MomentForm({ initial, onSave, onCancel, saving, userId }: FormProps) {
 
 // ── Share modal ───────────────────────────────────────────────────────────────
 
-const EXPIRY_OPTIONS = [
-  { label: '7 dias',  value: 7   },
-  { label: '30 dias', value: 30  },
-  { label: '90 dias', value: 90  },
-  { label: 'Sem prazo', value: null },
-]
+const EXPIRY_VALUES = [7, 30, 90, null] as const
 
 interface ShareModalProps {
   moment: Moment
@@ -212,7 +207,14 @@ interface ShareModalProps {
 }
 
 function ShareModal({ moment, onClose, onRevoke, onUpdate }: ShareModalProps) {
+  const { t } = useI18n()
   const baseUrl = window.location.origin
+  const EXPIRY_OPTIONS = [
+    { label: t.finances.shareExpiry7,    value: 7    },
+    { label: t.finances.shareExpiry30,   value: 30   },
+    { label: t.finances.shareExpiry90,   value: 90   },
+    { label: t.finances.shareExpiryNone, value: null },
+  ] as const
   const [info,       setInfo]       = useState<ShareInfo | null>(
     moment.share_token ? { share_token: moment.share_token, share_expires_at: moment.share_expires_at, share_hide_descriptions: moment.share_hide_descriptions } : null
   )
@@ -254,7 +256,7 @@ function ShareModal({ moment, onClose, onRevoke, onUpdate }: ShareModalProps) {
   }
 
   async function revoke() {
-    if (!confirm('Revogar o link? Quem tiver o link antigo não conseguirá mais acessar.')) return
+    if (!confirm(t.finances.shareRevokeConfirm)) return
     setRevoking(true)
     await apiFetch(`/finances/moments/${moment.id}/share`, { method: 'DELETE' })
     onRevoke()
@@ -275,26 +277,26 @@ function ShareModal({ moment, onClose, onRevoke, onUpdate }: ShareModalProps) {
     <div className="fixed inset-0 z-50 bg-black/40 flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={onClose}>
       <div className="bg-white w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl shadow-xl p-6 space-y-5" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between">
-          <h3 className="font-semibold text-gray-900">Compartilhar {moment.icon} {moment.name}</h3>
+          <h3 className="font-semibold text-gray-900">{t.finances.shareTitle} {moment.icon} {moment.name}</h3>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </div>
 
         {loading ? (
-          <div className="text-center py-4 text-sm text-gray-400 animate-pulse">Gerando link…</div>
+          <div className="text-center py-4 text-sm text-gray-400 animate-pulse">{t.finances.shareGenerating}</div>
         ) : (
           <>
             {/* Link */}
             <div>
-              <p className="text-xs text-gray-500 mb-1.5">Link de compartilhamento</p>
+              <p className="text-xs text-gray-500 mb-1.5">{t.finances.shareLink}</p>
               <div className="flex items-center gap-2">
                 <input readOnly value={shareUrl} className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-xs text-gray-600 bg-gray-50 truncate focus:outline-none" />
                 <button
                   onClick={() => copyToClipboard(shareUrl)}
                   className={`px-3 py-2 rounded-lg text-xs font-medium transition-colors shrink-0 ${copied ? 'bg-emerald-100 text-emerald-700' : 'bg-[#001A70] text-white hover:opacity-80'}`}
                 >
-                  {copied ? '✓ Copiado' : 'Copiar'}
+                  {copied ? t.finances.shareCopied : t.finances.shareCopy}
                 </button>
               </div>
             </div>
@@ -308,14 +310,14 @@ function ShareModal({ moment, onClose, onRevoke, onUpdate }: ShareModalProps) {
                 className="mt-0.5 w-4 h-4 accent-[#001A70]"
               />
               <div>
-                <p className="text-sm text-gray-700 font-medium">Ocultar descrições das transações</p>
-                <p className="text-xs text-gray-400 mt-0.5">Mostra apenas categorias e totais, sem nomes de estabelecimentos</p>
+                <p className="text-sm text-gray-700 font-medium">{t.finances.shareHideDesc}</p>
+                <p className="text-xs text-gray-400 mt-0.5">{t.finances.shareHideDescSub}</p>
               </div>
             </label>
 
             {/* Expiry */}
             <div>
-              <p className="text-xs text-gray-500 mb-2">Validade do link</p>
+              <p className="text-xs text-gray-500 mb-2">{t.finances.shareExpiry}</p>
               <div className="flex flex-wrap gap-2">
                 {EXPIRY_OPTIONS.map(opt => (
                   <button
@@ -340,7 +342,7 @@ function ShareModal({ moment, onClose, onRevoke, onUpdate }: ShareModalProps) {
                 disabled={revoking}
                 className="text-xs text-red-500 hover:text-red-700 transition-colors disabled:opacity-50"
               >
-                🔴 Revogar link
+                🔴 {t.finances.shareRevoke}
               </button>
             </div>
           </>

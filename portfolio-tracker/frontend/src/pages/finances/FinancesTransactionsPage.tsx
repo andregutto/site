@@ -26,6 +26,7 @@ interface ParsedRow {
   is_broker_transfer: boolean
   broker_name: string | null
   category_id?: number | null
+  suggested_category_id?: number | null
 }
 
 function fmt(n: number, currency = 'EUR') {
@@ -198,7 +199,11 @@ export default function FinancesTransactionsPage() {
         { method: 'POST', body: JSON.stringify({ csv: text, currency: csvCurrency }) }
       )
       if (result.error) { setCsvError(result.error); return }
-      setCsvRows(result.transactions.map(r => ({ ...r, category_id: r.suggested_category?.id ?? null })))
+      setCsvRows(result.transactions.map(r => ({
+        ...r,
+        category_id: r.suggested_category?.id ?? null,
+        suggested_category_id: r.suggested_category?.id ?? null,
+      })))
       setCsvStep('preview')
     } catch (e: unknown) {
       setCsvError(e instanceof Error ? e.message : 'Erro ao processar CSV')
@@ -208,12 +213,20 @@ export default function FinancesTransactionsPage() {
   async function importCSV() {
     setCsvStep('importing')
     try {
-      const result = await apiFetch<{ imported: number }>('/finances/transactions/csv-import', {
+      const toImport = csvRows.filter(r => !r.is_broker_transfer || r.category_id)
+      const learn_rules = toImport
+        .filter(r => r.category_id != null && r.category_id !== r.suggested_category_id)
+        .map(r => ({ category_id: r.category_id as number, keyword: r.description.toLowerCase().trim() }))
+
+      const result = await apiFetch<{ imported: number; skipped: number; total: number }>('/finances/transactions/csv-import', {
         method: 'POST',
-        body: JSON.stringify({ transactions: csvRows.filter(r => !r.is_broker_transfer || r.category_id) }),
+        body: JSON.stringify({ transactions: toImport, learn_rules }),
       })
       setCsvStep('idle'); setCsvRows([])
-      alert(`${result.imported} transação(ões) importada(s) com sucesso.`)
+      const msg = result.skipped > 0
+        ? `${result.imported} transação(ões) importada(s). ${result.skipped} ignorada(s) por já existirem.`
+        : `${result.imported} transação(ões) importada(s) com sucesso.`
+      alert(msg)
       loadTransactions()
     } catch {
       setCsvStep('preview')
