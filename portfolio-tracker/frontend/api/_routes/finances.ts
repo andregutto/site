@@ -585,7 +585,17 @@ router.post('/transactions/csv-parse', requireAuth, async (req, res: Response) =
     .select('id, name, icon, color, keyword_rules')
     .eq('user_id', userId)
 
-  const categories = (cats ?? []) as { id: number; name: string; icon: string; color: string; keyword_rules: string[] }[]
+  let categories = (cats ?? []) as { id: number; name: string; icon: string; color: string; keyword_rules: string[] }[]
+
+  // Find or create a "Transferência" category — used for all detected transfers
+  const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+  let transferCat = categories.find(c => norm(c.name).includes('transfer'))
+  if (!transferCat) {
+    const { data: newCat } = await supabaseAdmin.from('finance_categories').insert({
+      user_id: userId, name: 'Transferência', icon: '↔️', color: '#6B7280', keyword_rules: [],
+    }).select('id, name, icon, color, keyword_rules').single()
+    if (newCat) { transferCat = newCat; categories = [...categories, newCat] }
+  }
 
   function matchCategory(description: string): { id: number; name: string; icon: string; color: string } | null {
     const d = description.toLowerCase()
@@ -595,6 +605,18 @@ router.post('/transactions/csv-parse', requireAuth, async (req, res: Response) =
     }
     return null
   }
+
+  // Detect transfers in type column (EN + FR + PT)
+  const TRANSFER_TYPE_PATTERNS = [
+    // EN
+    'topup', 'top-up', 'exchange', 'transfer', 'savings',
+    // FR
+    'virement', 'echange', 'echanges', 'rechargement', 'envoi',
+    // PT
+    'transferencia', 'transferencia bancaria', 'pix', 'ted', 'doc',
+  ]
+  // Detect P2P transfers in description: "To/À/Para [Capitalized Name]" in any language
+  const P2P_DESC_RE = /^(to|à|a |para|envoyé à|envoye a|paiement envoyé à|paiement reçu de|reçu de|recu de|recebido de|enviado para|transferido para|virement de|virement vers)\s+[A-ZÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ]/i
 
   const rows = parseCSV(csv)
   if (rows.length < 2) { res.status(400).json({ error: 'CSV must have at least a header row and one data row' }); return }
@@ -614,11 +636,6 @@ router.post('/transactions/csv-parse', requireAuth, async (req, res: Response) =
   // Statuses that mean the transaction was reversed, cancelled or not yet settled — skip them
   const SKIP_STATUSES = new Set(['renvoyé', 'renvoye', 'annulé', 'annule', 'cancelled', 'canceled', 'declined', 'failed', 'reverted', 'en attente', 'pending'])
 
-  // Internal transfer type keywords (EN + FR Revolut)
-  const INTERNAL_TYPES = ['topup', 'exchange', 'transfer to savings', 'savings', 'changes', 'echange', 'transfert vers']
-
-  const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
-
   const transactions = []
   let skippedInvalid = 0
   for (let i = 1; i < rows.length; i++) {
@@ -636,6 +653,7 @@ router.post('/transactions/csv-parse', requireAuth, async (req, res: Response) =
     const rawDesc = descIdx >= 0 ? (row[descIdx] ?? '') : ''
     const rawType = typeIdx >= 0 ? (row[typeIdx] ?? '') : ''
     const rawTypeNorm = norm(rawType)
+    const rawDescNorm = norm(rawDesc)
 
     const date   = parseDate(rawDate)
     if (!date) continue
@@ -646,10 +664,16 @@ router.post('/transactions/csv-parse', requireAuth, async (req, res: Response) =
     if (rawTypeNorm.includes('debit'))  amount = -Math.abs(amount)
     if (rawTypeNorm.includes('credit')) amount =  Math.abs(amount)
 
-    const isInternal = INTERNAL_TYPES.some(t => rawTypeNorm.includes(t))
+    const isTransferByType = TRANSFER_TYPE_PATTERNS.some(t => rawTypeNorm.includes(t))
+    const isTransferByDesc = P2P_DESC_RE.test(rawDesc) || P2P_DESC_RE.test(rawDescNorm)
+    const isTransfer = isTransferByType || isTransferByDesc
 
-    const category = matchCategory(rawDesc)
-    const broker   = detectBroker(rawDesc)
+    const broker = detectBroker(rawDesc)
+
+    // Transfers always get the transfer category; keyword match for everything else
+    const category = isTransfer
+      ? (transferCat ?? null)
+      : matchCategory(rawDesc)
 
     transactions.push({
       date,
@@ -657,9 +681,9 @@ router.post('/transactions/csv-parse', requireAuth, async (req, res: Response) =
       amount,
       currency,
       suggested_category: category,
-      suggested_by: category ? 'keyword' : null,
+      suggested_by: category ? (isTransfer ? 'transfer' : 'keyword') : null,
       is_broker_transfer: !!broker,
-      is_internal_transfer: isInternal,
+      is_internal_transfer: isTransfer,
       broker_name: broker,
     })
   }
@@ -667,7 +691,7 @@ router.post('/transactions/csv-parse', requireAuth, async (req, res: Response) =
   // AI categorization for rows without a keyword match
   let aiError: string | undefined
   let aiAssigned = 0
-  const unmatched = transactions.filter(t => !t.suggested_category && !t.is_broker_transfer)
+  const unmatched = transactions.filter(t => !t.suggested_category && !t.is_broker_transfer && !t.is_internal_transfer)
   if (unmatched.length > 0) {
     // Deduplicate by description, keeping the most representative sign
     const uniqueMap = new Map<string, '+' | '-'>()

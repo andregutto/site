@@ -25,8 +25,9 @@ interface ParsedRow {
   amount: number
   currency: string
   suggested_category: Category | null
-  suggested_by: 'keyword' | 'ai' | null
+  suggested_by: 'keyword' | 'ai' | 'transfer' | null
   is_broker_transfer: boolean
+  is_internal_transfer: boolean
   broker_name: string | null
   category_id?: number | null
   suggested_category_id?: number | null
@@ -201,7 +202,20 @@ export default function FinancesTransactionsPage() {
   }
 
   async function updateCategory(id: number, categoryId: number | null) {
+    const tx = transactions.find(t => t.id === id)
+    const sameDesc = tx ? transactions.filter(t => t.id !== id && t.description === tx.description) : []
+
     await apiFetch(`/finances/transactions/${id}`, { method: 'PATCH', body: JSON.stringify({ category_id: categoryId }) })
+
+    if (sameDesc.length > 0) {
+      const applyAll = window.confirm(`${sameDesc.length} outra(s) transação(ões) com a descrição "${tx!.description}". Alterar todas?`)
+      if (applyAll) {
+        await Promise.all(sameDesc.map(t =>
+          apiFetch(`/finances/transactions/${t.id}`, { method: 'PATCH', body: JSON.stringify({ category_id: categoryId }) })
+        ))
+      }
+    }
+
     setEditingId(null)
     loadTransactions()
   }
@@ -415,6 +429,7 @@ export default function FinancesTransactionsPage() {
                       <td className="px-4 py-2 text-gray-600 whitespace-nowrap">{fmtDate(row.date)}</td>
                       <td className="px-4 py-2 text-gray-700 max-w-xs truncate">
                         {row.is_broker_transfer && <span className="text-[10px] bg-amber-200 text-amber-800 rounded px-1 mr-1.5 font-medium">{t.finances.brokerTransfer}</span>}
+                        {row.suggested_by === 'transfer' && <span className="text-[10px] bg-blue-100 text-blue-700 rounded px-1 mr-1.5 font-medium">↔ Transferência</span>}
                         {row.description}
                         {sameDescCount > 1 && <span className="ml-1.5 text-[10px] text-gray-400">×{sameDescCount}</span>}
                       </td>
