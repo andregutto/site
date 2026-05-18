@@ -1,5 +1,7 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { apiFetch } from '../../lib/api'
+import { supabase } from '../../lib/supabase'
+import { useAuth } from '../../contexts/AuthContext'
 import { useI18n } from '../../contexts/I18nContext'
 
 interface Moment {
@@ -10,6 +12,7 @@ interface Moment {
   color: string
   start_date: string | null
   end_date: string | null
+  cover_image_url: string | null
   created_at: string
 }
 
@@ -41,20 +44,53 @@ interface FormProps {
   onSave: (data: Omit<Moment, 'id' | 'created_at'>) => Promise<void>
   onCancel: () => void
   saving: boolean
+  userId: string
 }
 
-function MomentForm({ initial, onSave, onCancel, saving }: FormProps) {
+function MomentForm({ initial, onSave, onCancel, saving, userId }: FormProps) {
   const { t } = useI18n()
-  const [name,       setName]       = useState(initial?.name ?? '')
-  const [description,setDescription]= useState(initial?.description ?? '')
-  const [icon,       setIcon]       = useState(initial?.icon ?? '✨')
-  const [color,      setColor]      = useState(initial?.color ?? '#7C3AED')
-  const [startDate,  setStartDate]  = useState(initial?.start_date ?? '')
-  const [endDate,    setEndDate]    = useState(initial?.end_date ?? '')
+  const [name,         setName]         = useState(initial?.name ?? '')
+  const [description,  setDescription]  = useState(initial?.description ?? '')
+  const [icon,         setIcon]         = useState(initial?.icon ?? '✨')
+  const [color,        setColor]        = useState(initial?.color ?? '#7C3AED')
+  const [startDate,    setStartDate]    = useState(initial?.start_date ?? '')
+  const [endDate,      setEndDate]      = useState(initial?.end_date ?? '')
+  const [photoPreview, setPhotoPreview] = useState<string | null>(initial?.cover_image_url ?? null)
+  const [photoFile,    setPhotoFile]    = useState<File | null>(null)
+  const [uploading,    setUploading]    = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  function onFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setPhotoFile(file)
+    setPhotoPreview(URL.createObjectURL(file))
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    await onSave({ name, description: description || null, icon, color, start_date: startDate || null, end_date: endDate || null })
+    let coverImageUrl = initial?.cover_image_url ?? null
+
+    if (photoFile) {
+      setUploading(true)
+      try {
+        const ext = photoFile.name.split('.').pop() ?? 'jpg'
+        const path = `${userId}/${Date.now()}.${ext}`
+        const { error } = await supabase.storage.from('moment-photos').upload(path, photoFile, { upsert: true })
+        if (!error) {
+          const { data } = supabase.storage.from('moment-photos').getPublicUrl(path)
+          coverImageUrl = data.publicUrl
+        }
+      } finally {
+        setUploading(false)
+      }
+    }
+
+    await onSave({
+      name, description: description || null, icon, color,
+      start_date: startDate || null, end_date: endDate || null,
+      cover_image_url: coverImageUrl,
+    })
   }
 
   const fieldCls = 'w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20'
@@ -71,6 +107,31 @@ function MomentForm({ initial, onSave, onCancel, saving }: FormProps) {
         <div className="col-span-2">
           <label className={labelCls}>{t.common.description} (opcional)</label>
           <input value={description} onChange={e => setDescription(e.target.value)} className={fieldCls} />
+        </div>
+
+        {/* Photo */}
+        <div className="col-span-2">
+          <label className={labelCls}>Foto (opcional)</label>
+          <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={onFileChange} />
+          {photoPreview ? (
+            <div className="relative group w-full h-32 rounded-xl overflow-hidden">
+              <img src={photoPreview} alt="Capa" className="w-full h-full object-cover" />
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
+                <button type="button" onClick={() => fileInputRef.current?.click()}
+                  className="text-xs text-white bg-black/50 rounded-lg px-3 py-1.5">Trocar</button>
+                <button type="button" onClick={() => { setPhotoPreview(null); setPhotoFile(null) }}
+                  className="text-xs text-white bg-red-500/70 rounded-lg px-3 py-1.5">Remover</button>
+              </div>
+            </div>
+          ) : (
+            <button type="button" onClick={() => fileInputRef.current?.click()}
+              className="w-full h-20 border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center gap-1 text-gray-400 hover:border-[#001A70]/40 hover:text-[#001A70] transition-colors">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M13.5 12a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
+              </svg>
+              <span className="text-xs">Adicionar foto</span>
+            </button>
+          )}
         </div>
 
         <div className="col-span-2">
@@ -111,9 +172,9 @@ function MomentForm({ initial, onSave, onCancel, saving }: FormProps) {
       </div>
 
       <div className="flex gap-2">
-        <button type="submit" disabled={saving}
+        <button type="submit" disabled={saving || uploading}
           className="flex-1 bg-[#001A70] text-white text-sm py-2 rounded-xl hover:opacity-80 transition-opacity disabled:opacity-40">
-          {saving ? '…' : t.common.save}
+          {uploading ? 'Enviando foto…' : saving ? '…' : t.common.save}
         </button>
         <button type="button" onClick={onCancel} className="px-4 text-sm text-gray-500 hover:text-gray-700 transition-colors">
           {t.common.cancel}
@@ -181,6 +242,7 @@ function AssignModal({ momentId: _momentId, moments, transactionId, currentMomen
 
 export default function FinancesMomentsPage() {
   const { t } = useI18n()
+  const { user } = useAuth()
   const [moments,     setMoments]     = useState<Moment[]>([])
   const [loading,     setLoading]     = useState(true)
   const [showForm,    setShowForm]    = useState(false)
@@ -287,6 +349,7 @@ export default function FinancesMomentsPage() {
             onSave={saveMoment}
             onCancel={() => { setShowForm(false); setEditing(null) }}
             saving={saving}
+            userId={user?.id ?? ''}
           />
         </div>
       )}
@@ -310,6 +373,12 @@ export default function FinancesMomentsPage() {
       <div className="space-y-3">
         {moments.map(m => (
           <div key={m.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            {/* Cover photo */}
+            {m.cover_image_url && (
+              <div className="h-28 overflow-hidden">
+                <img src={m.cover_image_url} alt={m.name} className="w-full h-full object-cover" />
+              </div>
+            )}
             {/* Moment header */}
             <div
               className="flex items-center gap-3 px-5 py-4 cursor-pointer hover:bg-gray-50 transition-colors"
