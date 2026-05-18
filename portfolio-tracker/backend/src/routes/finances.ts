@@ -70,14 +70,22 @@ router.get('/budget', requireAuth, async (req, res: Response) => {
     }
   }
 
-  // Attach categories to envelopes
+  // Derive effective monthly income from income category budgets (sum of budget_monthly)
+  const incomeEnvId2 = envelopes.find(e => e.type === 'income')?.id ?? null
+  const incomeCatTotal = categories
+    .filter(c => c.envelope_id === incomeEnvId2 && c.budget_monthly != null)
+    .reduce((s, c) => s + (c.budget_monthly as number), 0)
+  const effectiveIncome = incomeCatTotal > 0 ? incomeCatTotal : income.monthly_net
+  const fromCategories  = incomeCatTotal > 0
+
+  // Attach categories to envelopes; expense envelopes use effective income for budget_amount
   const result = envelopes.map(env => ({
     ...env,
-    budget_amount: income.monthly_net * (env.pct_target / 100),
+    budget_amount: env.type === 'income' ? 0 : effectiveIncome * (env.pct_target / 100),
     categories: categories.filter(c => c.envelope_id === env.id),
   }))
 
-  res.json({ income, envelopes: result })
+  res.json({ income: { ...income, monthly_net: effectiveIncome, from_categories: fromCategories }, envelopes: result })
 })
 
 // ── Envelopes CRUD ─────────────────────────────────────────────────────────────
@@ -226,10 +234,17 @@ router.get('/spending-summary', requireAuth, async (req, res: Response) => {
       .single(),
   ])
 
-  const txns   = txnRes.data ?? []
-  const cats   = catRes.data ?? []
-  const envs   = (envRes.data ?? []).filter(e => e.type !== 'income')
-  const income = incomeRes.data ?? { monthly_net: 0, currency: 'EUR' }
+  const txns    = txnRes.data ?? []
+  const cats    = catRes.data ?? []
+  const allEnvs = envRes.data ?? []
+  const envs      = allEnvs.filter(e => e.type !== 'income')
+  const incomeRaw = incomeRes.data ?? { monthly_net: 0, currency: 'EUR' }
+  // Use sum of income category budgets as effective income (same logic as /budget)
+  const incomeEnvIdSS = allEnvs.find((e: { type: string }) => e.type === 'income')?.id ?? null
+  const incomeCatSum  = (cats as { envelope_id: number | null; budget_monthly: number | null }[])
+    .filter(c => c.envelope_id === incomeEnvIdSS && c.budget_monthly != null)
+    .reduce((s, c) => s + (c.budget_monthly as number), 0)
+  const income = { ...incomeRaw, monthly_net: incomeCatSum > 0 ? incomeCatSum : incomeRaw.monthly_net }
 
   const catToEnv     = new Map(cats.map((c: { id: number; envelope_id: number | null; budget_monthly: number | null }) => [c.id, c.envelope_id]))
   const envMap       = new Map(envs.map((e: { id: number; name: string; color: string; icon: string; pct_target: number; sort_order: number }) => [e.id, e]))

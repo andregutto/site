@@ -24,7 +24,7 @@ interface Envelope {
 }
 
 interface BudgetData {
-  income: { monthly_net: number; currency: string }
+  income: { monthly_net: number; currency: string; from_categories: boolean }
   envelopes: Envelope[]
 }
 
@@ -265,101 +265,111 @@ export default function FinancesBudgetPage() {
         </div>
       </div>
 
-      {/* Income card */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-        <div className="flex items-center justify-between mb-1">
-          <span className="text-xs text-gray-500 uppercase tracking-wide font-medium">{t.finances.income}</span>
-          {!incomeEdit && (
-            <button onClick={() => setIncomeEdit(true)} className="text-xs text-[#001A70] hover:opacity-70 transition-opacity">{t.common.edit}</button>
-          )}
-        </div>
-        {incomeEdit ? (
-          <div className="flex items-center gap-2 mt-2">
-            <select value={incomeCur} onChange={e => setIncomeCur(e.target.value)} className="border border-gray-200 rounded-lg px-2 py-1.5 text-sm">
-              {['EUR','BRL','USD'].map(c => <option key={c}>{c}</option>)}
-            </select>
-            <input
-              type="number"
-              value={incomeVal}
-              onChange={e => setIncomeVal(e.target.value)}
-              className="flex-1 border border-gray-200 rounded-lg px-3 py-1.5 text-sm"
-              placeholder="3500"
-            />
-            <button
-              onClick={saveIncome}
-              disabled={saving}
-              className="px-3 py-1.5 bg-[#001A70] text-white text-xs rounded-lg hover:opacity-80 transition-opacity disabled:opacity-50"
-            >
-              {saving ? '…' : t.common.save}
-            </button>
-            <button onClick={() => setIncomeEdit(false)} className="px-3 py-1.5 text-gray-500 text-xs hover:text-gray-700 transition-colors">{t.common.cancel}</button>
-          </div>
-        ) : (
-          <p className="text-2xl font-bold text-gray-900 mt-1">
-            {fmt(data.income.monthly_net, data.income.currency)}
-            <span className="text-sm font-normal text-gray-400 ml-1">{t.finances.perMonth}</span>
-          </p>
-        )}
-      </div>
-
-      {/* Income categories section */}
-      {incomeEnvelopes.length > 0 && (
+      {/* Income card — unified with income envelope categories */}
+      {incomeEnvelopes.length > 0 ? (
         <div className="space-y-3">
           <p className="text-xs text-gray-400 uppercase tracking-wide font-medium px-1">{t.finances.incomeLabel}</p>
-          {incomeEnvelopes.map(env => (
-            <div key={env.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-              <button
-                onClick={() => toggleEnvelope(env.id)}
-                className="w-full px-5 py-4 flex items-center gap-3 hover:bg-gray-50 transition-colors text-left"
-              >
-                <span className="text-2xl leading-none w-8 shrink-0">{env.icon}</span>
-                <span className="flex-1 font-semibold text-gray-900 text-sm">{env.name}</span>
-                <span className="text-xs text-gray-400">{env.categories.length} {t.finances.category.toLowerCase()}</span>
-                <svg
-                  className={`w-4 h-4 text-gray-400 shrink-0 transition-transform ${expandedIds.has(env.id) ? 'rotate-180' : ''}`}
-                  fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+          {incomeEnvelopes.map(env => {
+            const envTotal = env.categories.reduce((s, c) => s + (c.budget_monthly ?? 0), 0)
+            return (
+              <div key={env.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                {/* Header: envelope name + total */}
+                <button
+                  onClick={() => toggleEnvelope(env.id)}
+                  className="w-full px-5 py-4 flex items-center gap-3 hover:bg-gray-50 transition-colors text-left"
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-              {expandedIds.has(env.id) && (
-                <div className="border-t border-gray-50">
-                  {env.categories.length === 0 ? (
-                    <p className="px-5 py-3 text-xs text-gray-400">{t.finances.noCategories}</p>
-                  ) : (
-                    <ul className="divide-y divide-gray-50">
-                      {env.categories.map(cat => (
-                        <li key={cat.id} className="px-5 py-2.5 flex items-center gap-3 group">
-                          <span className="text-base leading-none w-6 shrink-0">{cat.icon}</span>
-                          <span className="flex-1 text-sm text-gray-700">{cat.name}</span>
-                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button onClick={() => openEditCategory(cat)} className="p-1 text-gray-400 hover:text-[#001A70] transition-colors rounded">
-                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5">
-                                <path d="M13.488 2.513a1.75 1.75 0 0 0-2.475 0L6.75 6.774a2.75 2.75 0 0 0-.596.892l-.848 2.047a.75.75 0 0 0 .98.98l2.047-.848a2.75 2.75 0 0 0 .892-.596l4.261-4.263a1.75 1.75 0 0 0 0-2.474ZM4.75 14a.75.75 0 0 0 0-1.5H3.5a.5.5 0 0 1-.5-.5V4a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v1.25a.75.75 0 0 0 1.5 0V4a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h1.25Z" />
-                              </svg>
-                            </button>
-                            <button onClick={() => deleteCategory(cat.id)} className="p-1 text-gray-400 hover:text-red-500 transition-colors rounded">
-                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5">
-                                <path fillRule="evenodd" d="M5 3.25V4H2.75a.75.75 0 0 0 0 1.5h.3l.815 8.15A1.5 1.5 0 0 0 5.357 15h5.285a1.5 1.5 0 0 0 1.493-1.35l.815-8.15h.3a.75.75 0 0 0 0-1.5H11v-.75A2.25 2.25 0 0 0 8.75 1h-1.5A2.25 2.25 0 0 0 5 3.25Zm2.25-.75a.75.75 0 0 0-.75.75V4h3v-.75a.75.75 0 0 0-.75-.75h-1.5ZM6.05 6a.75.75 0 0 1 .787.713l.275 5.5a.75.75 0 0 1-1.498.075l-.275-5.5A.75.75 0 0 1 6.05 6Zm3.9 0a.75.75 0 0 1 .712.787l-.275 5.5a.75.75 0 0 1-1.498-.075l.275-5.5a.75.75 0 0 1 .786-.712Z" clipRule="evenodd" />
-                              </svg>
-                            </button>
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                  <div className="px-5 py-2.5">
-                    <button onClick={() => openAddCategory(env.id)} className="flex items-center gap-1.5 text-xs text-[#001A70] hover:opacity-70 transition-opacity font-medium">
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5">
-                        <path d="M8.75 3.75a.75.75 0 0 0-1.5 0v3.5h-3.5a.75.75 0 0 0 0 1.5h3.5v3.5a.75.75 0 0 0 1.5 0v-3.5h3.5a.75.75 0 0 0 0-1.5h-3.5v-3.5Z" />
-                      </svg>
-                      {t.finances.addCategory}
-                    </button>
+                  <span className="text-2xl leading-none w-8 shrink-0">{env.icon}</span>
+                  <div className="flex-1 min-w-0">
+                    <span className="font-semibold text-gray-900 text-sm">{env.name}</span>
                   </div>
-                </div>
-              )}
+                  <div className="text-right shrink-0 ml-3">
+                    <span className="text-sm font-semibold text-emerald-600">{fmt(envTotal, data.income.currency)}</span>
+                    <span className="text-xs text-gray-400 ml-1">{t.finances.perMonth}</span>
+                  </div>
+                  <svg
+                    className={`w-4 h-4 text-gray-400 shrink-0 transition-transform ${expandedIds.has(env.id) ? 'rotate-180' : ''}`}
+                    fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+
+                {/* Categories with budget amounts */}
+                {expandedIds.has(env.id) && (
+                  <div className="border-t border-gray-50">
+                    {env.categories.length === 0 ? (
+                      <p className="px-5 py-3 text-xs text-gray-400">{t.finances.noCategories}</p>
+                    ) : (
+                      <ul className="divide-y divide-gray-50">
+                        {env.categories.map(cat => (
+                          <li key={cat.id} className="px-5 py-2.5 flex items-center gap-3 group">
+                            <span className="text-base leading-none w-6 shrink-0">{cat.icon}</span>
+                            <span className="flex-1 text-sm text-gray-700">{cat.name}</span>
+                            {cat.budget_monthly != null && (
+                              <span className="text-sm font-medium text-gray-600">{fmt(cat.budget_monthly, data.income.currency)}</span>
+                            )}
+                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button onClick={() => openEditCategory(cat)} className="p-1 text-gray-400 hover:text-[#001A70] transition-colors rounded">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5">
+                                  <path d="M13.488 2.513a1.75 1.75 0 0 0-2.475 0L6.75 6.774a2.75 2.75 0 0 0-.596.892l-.848 2.047a.75.75 0 0 0 .98.98l2.047-.848a2.75 2.75 0 0 0 .892-.596l4.261-4.263a1.75 1.75 0 0 0 0-2.474ZM4.75 14a.75.75 0 0 0 0-1.5H3.5a.5.5 0 0 1-.5-.5V4a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v1.25a.75.75 0 0 0 1.5 0V4a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h1.25Z" />
+                                </svg>
+                              </button>
+                              <button onClick={() => deleteCategory(cat.id)} className="p-1 text-gray-400 hover:text-red-500 transition-colors rounded">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5">
+                                  <path fillRule="evenodd" d="M5 3.25V4H2.75a.75.75 0 0 0 0 1.5h.3l.815 8.15A1.5 1.5 0 0 0 5.357 15h5.285a1.5 1.5 0 0 0 1.493-1.35l.815-8.15h.3a.75.75 0 0 0 0-1.5H11v-.75A2.25 2.25 0 0 0 8.75 1h-1.5A2.25 2.25 0 0 0 5 3.25Zm2.25-.75a.75.75 0 0 0-.75.75V4h3v-.75a.75.75 0 0 0-.75-.75h-1.5ZM6.05 6a.75.75 0 0 1 .787.713l.275 5.5a.75.75 0 0 1-1.498.075l-.275-5.5A.75.75 0 0 1 6.05 6Zm3.9 0a.75.75 0 0 1 .712.787l-.275 5.5a.75.75 0 0 1-1.498-.075l.275-5.5a.75.75 0 0 1 .786-.712Z" clipRule="evenodd" />
+                                </svg>
+                              </button>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    <div className="px-5 py-2.5">
+                      <button onClick={() => openAddCategory(env.id)} className="flex items-center gap-1.5 text-xs text-[#001A70] hover:opacity-70 transition-opacity font-medium">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5">
+                          <path d="M8.75 3.75a.75.75 0 0 0-1.5 0v3.5h-3.5a.75.75 0 0 0 0 1.5h3.5v3.5a.75.75 0 0 0 1.5 0v-3.5h3.5a.75.75 0 0 0 0-1.5h-3.5v-3.5Z" />
+                        </svg>
+                        {t.finances.addCategory}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      ) : (
+        /* Fallback: manual income input when no income envelope exists yet */
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-xs text-gray-500 uppercase tracking-wide font-medium">{t.finances.income}</span>
+            {!incomeEdit && (
+              <button onClick={() => setIncomeEdit(true)} className="text-xs text-[#001A70] hover:opacity-70 transition-opacity">{t.common.edit}</button>
+            )}
+          </div>
+          {incomeEdit ? (
+            <div className="flex items-center gap-2 mt-2">
+              <select value={incomeCur} onChange={e => setIncomeCur(e.target.value)} className="border border-gray-200 rounded-lg px-2 py-1.5 text-sm">
+                {['EUR','BRL','USD'].map(c => <option key={c}>{c}</option>)}
+              </select>
+              <input
+                type="number"
+                value={incomeVal}
+                onChange={e => setIncomeVal(e.target.value)}
+                className="flex-1 border border-gray-200 rounded-lg px-3 py-1.5 text-sm"
+                placeholder="3500"
+              />
+              <button onClick={saveIncome} disabled={saving} className="px-3 py-1.5 bg-[#001A70] text-white text-xs rounded-lg hover:opacity-80 transition-opacity disabled:opacity-50">
+                {saving ? '…' : t.common.save}
+              </button>
+              <button onClick={() => setIncomeEdit(false)} className="px-3 py-1.5 text-gray-500 text-xs hover:text-gray-700 transition-colors">{t.common.cancel}</button>
             </div>
-          ))}
+          ) : (
+            <p className="text-2xl font-bold text-gray-900 mt-1">
+              {fmt(data.income.monthly_net, data.income.currency)}
+              <span className="text-sm font-normal text-gray-400 ml-1">{t.finances.perMonth}</span>
+            </p>
+          )}
         </div>
       )}
 
