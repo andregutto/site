@@ -1,4 +1,4 @@
-import { Router, Response } from 'express'
+import { Router, Request, Response } from 'express'
 import crypto from 'crypto'
 import { requireAuth, AuthRequest } from '../_middleware/auth.js'
 import { supabaseAdmin } from '../_lib/supabase.js'
@@ -31,7 +31,7 @@ function verifyState(state: string): string | null {
   } catch { return null }
 }
 
-function redirectUri(req: Parameters<typeof router.get>[1] extends (req: infer R, ...a: unknown[]) => unknown ? R : never): string {
+function getRedirectUri(req: Request): string {
   return process.env.TRUELAYER_REDIRECT_URI
     ?? `${req.protocol}://${req.get('host')}/api/banks/callback`
 }
@@ -43,7 +43,7 @@ router.get('/auth', requireAuth, async (req, res: Response) => {
     res.status(503).json({ error: 'TrueLayer not configured' }); return
   }
   const state = createState(userId)
-  const ruri  = redirectUri(req)
+  const ruri  = getRedirectUri(req)
   const providers = isSandbox ? 'mock' : 'ob-revolut ob-monzo uk-ob-all ie-ob-all fr-ob-all'
   const url = new URL(`${TL_AUTH}/`)
   url.searchParams.set('response_type', 'code')
@@ -52,7 +52,7 @@ router.get('/auth', requireAuth, async (req, res: Response) => {
   url.searchParams.set('redirect_uri', ruri)
   url.searchParams.set('state', state)
   url.searchParams.set('providers', providers)
-  res.json({ url: url.toString() })
+  res.json({ url: url.toString(), _debug_redirect_uri: ruri })
 })
 
 // GET /api/banks/callback — TrueLayer OAuth callback
@@ -67,7 +67,7 @@ router.get('/callback', async (req, res: Response) => {
   const userId = verifyState(state)
   if (!userId) { res.redirect(`${frontend}/finances/accounts?error=invalid_state`); return }
 
-  const ruri = redirectUri(req)
+  const ruri = getRedirectUri(req)
   const tokenRes = await fetch(`${TL_AUTH}/connect/token`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
