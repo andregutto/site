@@ -533,15 +533,19 @@ export default function FinancesFreedomPage() {
   })()
 
   // When will the plan line reach the target?
+  // Always returns a date within [planStart, planStart+horizon].
+  // If initial_capital already exceeds target, return plan end date (not planStart).
   const reachMonth = (() => {
     if (!activePlan) return null
     const horizonMonths = activePlan.horizon_years * 12
+    const planEnd = addMonths(planStart, horizonMonths)
+    if (activePlan.initial_capital >= activePlan.target_amount) return planEnd
     let w = activePlan.initial_capital
-    for (let i = 0; i <= horizonMonths; i++) {
-      if (w >= activePlan.target_amount) return addMonths(planStart, i)
+    for (let i = 1; i <= horizonMonths; i++) {
       w = w * (1 + activePlan.monthly_return_rate) + activePlan.monthly_contribution
+      if (w >= activePlan.target_amount) return addMonths(planStart, i)
     }
-    return addMonths(planStart, horizonMonths)
+    return planEnd
   })()
 
   // How many months ahead/behind is actual vs plan?
