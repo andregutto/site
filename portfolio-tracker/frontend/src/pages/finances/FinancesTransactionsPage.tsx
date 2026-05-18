@@ -66,7 +66,9 @@ export default function FinancesTransactionsPage() {
 
   const [month, setMonth]               = useState(defaultMonth)
   const [transactions, setTransactions] = useState<Transaction[]>([])
-  const [categories, setCategories]     = useState<Category[]>([])
+  const [categories, setCategories]         = useState<Category[]>([])
+  const [incomeCategories, setIncomeCategories] = useState<Category[]>([])
+  const [expenseCategories, setExpenseCategories] = useState<Category[]>([])
   const [moments, setMoments]           = useState<MomentRef[]>([])
   const [loading, setLoading]           = useState(true)
   const [showAdd, setShowAdd]           = useState(false)
@@ -111,8 +113,15 @@ export default function FinancesTransactionsPage() {
   }, [month])
 
   useEffect(() => {
-    apiFetch<{ envelopes: { categories: Category[] }[] }>('/finances/budget')
-      .then(d => setCategories(d.envelopes.flatMap(e => e.categories)))
+    apiFetch<{ envelopes: { type: string; categories: Category[] }[] }>('/finances/budget')
+      .then(d => {
+        const all     = d.envelopes.flatMap(e => e.categories)
+        const income  = d.envelopes.filter(e => e.type === 'income').flatMap(e => e.categories)
+        const expense = d.envelopes.filter(e => e.type !== 'income').flatMap(e => e.categories)
+        setCategories(all)
+        setIncomeCategories(income)
+        setExpenseCategories(expense)
+      })
       .catch(() => {})
     apiFetch<MomentRef[]>('/finances/moments-for-picker')
       .then(setMoments)
@@ -288,6 +297,8 @@ export default function FinancesTransactionsPage() {
     }
   }
 
+  const catsForAmount = (amount: number) => amount > 0 ? incomeCategories : expenseCategories
+
   const expenses = transactions.filter(tx => tx.amount < 0 && !tx.is_internal_transfer).reduce((s, tx) => s + tx.amount, 0)
   const income   = transactions.filter(tx => tx.amount > 0 && !tx.is_internal_transfer).reduce((s, tx) => s + tx.amount, 0)
   const allSelected = transactions.length > 0 && selected.size === transactions.length
@@ -457,7 +468,7 @@ export default function FinancesTransactionsPage() {
                             className="text-xs border border-gray-200 rounded px-2 py-1 max-w-[150px]"
                           >
                             <option value="">{t.finances.noCategory}</option>
-                            {categories.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
+                            {catsForAmount(row.amount).map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
                           </select>
                         </div>
                       </td>
@@ -557,7 +568,7 @@ export default function FinancesTransactionsPage() {
                               className="text-xs border border-gray-200 rounded px-2 py-1 max-w-[150px]"
                             >
                               <option value="">{t.finances.noCategory}</option>
-                              {categories.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
+                              {catsForAmount(tx.amount).map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
                             </select>
                           ) : (
                             <button onClick={() => setEditingId(tx.id)} className="flex items-center gap-1.5 group/cat">
@@ -698,7 +709,7 @@ export default function FinancesTransactionsPage() {
                 <label className="block text-xs text-gray-500 mb-1">{t.finances.categoryOptional}</label>
                 <select value={addCat} onChange={e => setAddCat(e.target.value === '' ? '' : Number(e.target.value))} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
                   <option value="">{t.finances.noCategory}</option>
-                  {categories.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
+                  {catsForAmount(addSign === '+' ? 1 : -1).map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
                 </select>
               </div>
               {accounts.length > 0 && (

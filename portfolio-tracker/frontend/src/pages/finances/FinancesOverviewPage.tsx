@@ -36,12 +36,12 @@ function fmt(n: number, currency: string, compact = false) {
   }).format(n)
 }
 
-function fmtMonth(m: string) {
+function fmtMonth(m: string, locale = 'pt-BR') {
   const [y, mo] = m.split('-')
-  return new Date(Number(y), Number(mo) - 1).toLocaleDateString('pt-BR', { month: 'short' })
+  return new Date(Number(y), Number(mo) - 1).toLocaleDateString(locale, { month: 'short' })
 }
 
-function MonthPicker({ value, onChange }: { value: string; onChange: (m: string) => void }) {
+function MonthPicker({ value, onChange, locale }: { value: string; onChange: (m: string) => void; locale: string }) {
   const months = Array.from({ length: 12 }, (_, i) => {
     const d = new Date()
     d.setDate(1)
@@ -52,7 +52,7 @@ function MonthPicker({ value, onChange }: { value: string; onChange: (m: string)
     <select value={value} onChange={e => onChange(e.target.value)} className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm bg-white">
       {months.map(m => {
         const [y, mo] = m.split('-')
-        return <option key={m} value={m}>{new Date(Number(y), Number(mo) - 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}</option>
+        return <option key={m} value={m}>{new Date(Number(y), Number(mo) - 1).toLocaleDateString(locale, { month: 'long', year: 'numeric' })}</option>
       })}
     </select>
   )
@@ -84,7 +84,8 @@ function ChartTooltip({ active, payload, label, currency }: {
 }
 
 export default function FinancesOverviewPage() {
-  const { t } = useI18n()
+  const { t, locale } = useI18n()
+  const browserLocale = locale === 'pt' ? 'pt-BR' : locale === 'fr' ? 'fr-FR' : 'en-GB'
 
   const today = new Date()
   const defaultMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`
@@ -158,7 +159,7 @@ export default function FinancesOverviewPage() {
 
   // 6-month stacked chart data
   const chartData = data.months.map(ms => {
-    const row: Record<string, number | string> = { month: fmtMonth(ms.month) }
+    const row: Record<string, number | string> = { month: fmtMonth(ms.month, browserLocale) }
     for (const env of ms.by_envelope.filter(e => e.envelope_id !== -1 && e.actual > 0)) {
       row[env.name] = env.actual
     }
@@ -175,7 +176,7 @@ export default function FinancesOverviewPage() {
           <h1 className="text-xl font-semibold text-gray-900">{t.finances.overviewTitle}</h1>
           <p className="text-sm text-gray-400 mt-0.5">{t.finances.overviewSubtitle}</p>
         </div>
-        <MonthPicker value={month} onChange={setMonth} />
+        <MonthPicker value={month} onChange={setMonth} locale={browserLocale} />
       </div>
 
       {/* Summary cards */}
@@ -184,24 +185,24 @@ export default function FinancesOverviewPage() {
           <p className="text-xs text-gray-500 mb-1">{t.finances.income}</p>
           <p className="text-lg font-bold text-gray-900">{fmt(configuredIncome, currency, true)}</p>
           {receivedIncome > 0 && (
-            <p className="text-[10px] text-gray-400 mt-0.5">recebido {fmt(receivedIncome, currency, true)}</p>
+            <p className="text-[10px] text-gray-400 mt-0.5">{t.finances.overviewReceived} {fmt(receivedIncome, currency, true)}</p>
           )}
         </div>
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
           <p className="text-xs text-gray-500 mb-1">{t.finances.expenses}</p>
           <p className="text-lg font-bold text-red-600">{fmt(totalExpenses, currency, true)}</p>
-          <p className="text-[10px] text-gray-400 mt-0.5">orçado {fmt(totalBudgeted, currency, true)}</p>
+          <p className="text-[10px] text-gray-400 mt-0.5">{t.finances.overviewBudgeted} {fmt(totalBudgeted, currency, true)}</p>
         </div>
         <div className={`rounded-xl border shadow-sm p-4 ${receivedIncome > 0 ? (netBalance >= 0 ? 'bg-white border-gray-100' : 'bg-red-50 border-red-100') : 'bg-white border-gray-100'}`}>
-          <p className="text-xs text-gray-500 mb-1">Saldo do mês</p>
+          <p className="text-xs text-gray-500 mb-1">{t.finances.overviewBalance}</p>
           <p className={`text-lg font-bold ${receivedIncome > 0 && netBalance < 0 ? 'text-red-600' : 'text-emerald-600'}`}>
             {receivedIncome > 0 ? fmt(netBalance, currency, true) : '—'}
           </p>
         </div>
         <div className={`rounded-xl border shadow-sm p-4 ${isWithinBudget ? 'bg-emerald-50 border-emerald-100' : 'bg-red-50 border-red-100'}`}>
-          <p className="text-xs text-gray-500 mb-1">Status</p>
+          <p className="text-xs text-gray-500 mb-1">{t.finances.overviewStatus}</p>
           <p className={`text-sm font-semibold ${isWithinBudget ? 'text-emerald-700' : 'text-red-600'}`}>
-            {totalExpenses === 0 ? '—' : isWithinBudget ? '✅ No planejado' : '⚠️ Excedeu'}
+            {totalExpenses === 0 ? '—' : isWithinBudget ? t.finances.overviewOnTrack : t.finances.overviewOverspent}
           </p>
           {overspentAmount > 0 && (
             <p className="text-[10px] text-red-500 mt-0.5">+{fmt(overspentAmount, currency, true)}</p>
@@ -212,7 +213,7 @@ export default function FinancesOverviewPage() {
       {/* Envelope spending vs budget */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         <div className="px-5 py-4 border-b border-gray-50 flex items-center justify-between">
-          <h2 className="font-semibold text-gray-800 text-sm">Gastos vs Budget</h2>
+          <h2 className="font-semibold text-gray-800 text-sm">{t.finances.overviewSpendingVsBudget}</h2>
           <Link to="/finances/budget" className="text-xs text-[#001A70] hover:opacity-70 transition-opacity">
             {t.finances.navBudget} →
           </Link>
@@ -256,7 +257,7 @@ export default function FinancesOverviewPage() {
       {topEnvelopes.length > 0 && (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           <div className="px-5 py-4 border-b border-gray-50 flex items-center justify-between">
-            <h2 className="font-semibold text-gray-800 text-sm">Top categorias</h2>
+            <h2 className="font-semibold text-gray-800 text-sm">{t.finances.overviewTopCategories}</h2>
             <Link to="/finances/transactions" className="text-xs text-[#001A70] hover:opacity-70 transition-opacity">
               {t.finances.navTransactions} →
             </Link>
@@ -288,7 +289,7 @@ export default function FinancesOverviewPage() {
       {/* 6-month historical trend */}
       {hasHistory && (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-          <h2 className="font-semibold text-gray-800 text-sm mb-4">Histórico — últimos 6 meses</h2>
+          <h2 className="font-semibold text-gray-800 text-sm mb-4">{t.finances.overviewHistory}</h2>
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={chartData} margin={{ top: 5, right: 5, bottom: 5, left: 0 }}>
               <XAxis dataKey="month" tick={{ fontSize: 11 }} />
@@ -312,7 +313,7 @@ export default function FinancesOverviewPage() {
       {/* Empty state / next steps */}
       {!hasHistory && (
         <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-5">
-          <h3 className="font-semibold text-indigo-900 text-sm mb-2">Próximos passos</h3>
+          <h3 className="font-semibold text-indigo-900 text-sm mb-2">{t.finances.overviewNextSteps}</h3>
           <ul className="space-y-1.5">
             <li className="flex items-center gap-2 text-xs text-indigo-700">
               <span>📋</span>
@@ -320,11 +321,11 @@ export default function FinancesOverviewPage() {
             </li>
             <li className="flex items-center gap-2 text-xs text-indigo-700">
               <span>📊</span>
-              <Link to="/finances/budget" className="hover:underline">Revise seu budget por categoria</Link>
+              <Link to="/finances/budget" className="hover:underline">{t.finances.overviewReviewBudget}</Link>
             </li>
             <li className="flex items-center gap-2 text-xs text-indigo-700">
               <span>🎯</span>
-              <Link to="/freedom" className="hover:underline">Configure seu plano de Liberdade Financeira</Link>
+              <Link to="/freedom" className="hover:underline">{t.finances.overviewFreedomPlan}</Link>
             </li>
           </ul>
         </div>

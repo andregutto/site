@@ -218,7 +218,7 @@ router.get('/spending-summary', requireAuth, async (req, res: Response) => {
       .eq('user_id', userId),
     supabaseAdmin
       .from('finance_envelopes')
-      .select('id, name, color, icon, pct_target, sort_order')
+      .select('id, name, color, icon, pct_target, sort_order, type')
       .eq('user_id', userId)
       .order('sort_order'),
     supabaseAdmin
@@ -230,7 +230,7 @@ router.get('/spending-summary', requireAuth, async (req, res: Response) => {
 
   const txns    = txnRes.data ?? []
   const cats    = catRes.data ?? []
-  const envs    = envRes.data ?? []
+  const envs    = (envRes.data ?? []).filter(e => e.type !== 'income')
   const income  = incomeRes.data ?? { monthly_net: 0, currency: 'EUR' }
 
   // Build lookup maps
@@ -625,15 +625,9 @@ router.post('/transactions/csv-parse', requireAuth, async (req, res: Response) =
     return null
   }
 
-  // Detect transfers in type column (EN + FR + PT)
-  const TRANSFER_TYPE_PATTERNS = [
-    // EN
-    'topup', 'top-up', 'exchange', 'transfer', 'savings',
-    // FR
-    'virement', 'echange', 'echanges', 'rechargement', 'envoi',
-    // PT
-    'transferencia', 'transferencia bancaria', 'pix', 'ted', 'doc',
-  ]
+  // Only "topup"/"top-up" (self-funded account addition) is detectable from the type column.
+  // "transfer"/"virement" etc. are too broad — they match regular bill payments via bank transfer.
+  const TRANSFER_TYPE_PATTERNS = ['topup', 'top-up']
   // Detect P2P transfers in description: "To/À/Para [Capitalized Name]" in any language
   const P2P_DESC_RE = /^(to|à|a |para|envoyé à|envoye a|paiement envoyé à|paiement reçu de|reçu de|recu de|recebido de|enviado para|transferido para|virement de|virement vers)\s+[A-ZÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ]/i
 
