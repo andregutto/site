@@ -208,7 +208,7 @@ export default function FinancesTransactionsPage() {
     await apiFetch(`/finances/transactions/${id}`, { method: 'PATCH', body: JSON.stringify({ category_id: categoryId }) })
 
     if (sameDesc.length > 0) {
-      const applyAll = window.confirm(`${sameDesc.length} outra(s) transação(ões) com a descrição "${tx!.description}". Alterar todas?`)
+      const applyAll = window.confirm(t.finances.csvSameDescConfirm.replace('{n}', String(sameDesc.length)).replace('{desc}', tx!.description))
       if (applyAll) {
         await Promise.all(sameDesc.map(t =>
           apiFetch(`/finances/transactions/${t.id}`, { method: 'PATCH', body: JSON.stringify({ category_id: categoryId }) })
@@ -248,7 +248,7 @@ export default function FinancesTransactionsPage() {
       )
       setCsvStep('preview')
     } catch (e: unknown) {
-      setCsvError(e instanceof Error ? e.message : 'Erro ao processar CSV')
+      setCsvError(e instanceof Error ? e.message : t.finances.csvAiError.replace('{msg}', 'CSV'))
       setCsvStep('idle')
     }
   }
@@ -279,8 +279,8 @@ export default function FinancesTransactionsPage() {
       })
       setCsvStep('idle'); setCsvRows([])
       const msg = result.skipped > 0
-        ? `${result.imported} transação(ões) importada(s). ${result.skipped} ignorada(s) por já existirem.`
-        : `${result.imported} transação(ões) importada(s) com sucesso.`
+        ? t.finances.csvImportedSkipped.replace('{imported}', String(result.imported)).replace('{skipped}', String(result.skipped))
+        : t.finances.csvImportedOk.replace('{imported}', String(result.imported))
       alert(msg)
       loadTransactions()
     } catch {
@@ -356,8 +356,8 @@ export default function FinancesTransactionsPage() {
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/>
           </svg>
-          <p className="text-sm font-medium text-gray-700">Processando e categorizando com IA…</p>
-          <p className="text-xs text-gray-400">Pode levar alguns segundos para CSVs grandes</p>
+          <p className="text-sm font-medium text-gray-700">{t.finances.csvParsingTitle}</p>
+          <p className="text-xs text-gray-400">{t.finances.csvParsingHint}</p>
         </div>
       )}
 
@@ -374,11 +374,11 @@ export default function FinancesTransactionsPage() {
                 )}
                 {csvAiDebug && (
                   csvAiDebug.error === 'no_key'
-                    ? <span className="ml-2 text-red-400">⚠ ANTHROPIC_API_KEY não encontrada</span>
+                    ? <span className="ml-2 text-red-400">⚠ {t.finances.csvNoKeyError}</span>
                     : csvAiDebug.error
-                      ? <span className="ml-2 text-red-400">⚠ IA erro: {csvAiDebug.error}</span>
+                      ? <span className="ml-2 text-red-400">⚠ {t.finances.csvAiError.replace('{msg}', csvAiDebug.error)}</span>
                       : csvAiDebug.unmatched > 0 && csvAiDebug.assigned === 0
-                        ? <span className="ml-2 text-amber-500">⚠ IA rodou mas não encontrou categorias para {csvAiDebug.unmatched} itens</span>
+                        ? <span className="ml-2 text-amber-500">⚠ {t.finances.csvAiNoMatch.replace('{n}', String(csvAiDebug.unmatched))}</span>
                         : null
                 )}
               </p>
@@ -388,7 +388,9 @@ export default function FinancesTransactionsPage() {
                 onClick={() => setCsvFilterUncategorized(v => !v)}
                 className={`text-xs px-2.5 py-1 rounded-lg border transition-colors ${csvFilterUncategorized ? 'bg-amber-50 border-amber-300 text-amber-700' : 'border-gray-200 text-gray-500 hover:bg-gray-50'}`}
               >
-                {csvFilterUncategorized ? `Sem categoria (${csvRows.filter(r => !r.category_id).length})` : 'Mostrar sem categoria'}
+                {csvFilterUncategorized
+                  ? t.finances.csvUncategorizedCount.replace('{n}', String(csvRows.filter(r => !r.category_id).length))
+                  : t.finances.csvShowUncategorized}
               </button>
               {accounts.length > 0 && (
                 <div className="flex items-center gap-1.5 text-xs text-gray-500">
@@ -429,7 +431,7 @@ export default function FinancesTransactionsPage() {
                       <td className="px-4 py-2 text-gray-600 whitespace-nowrap">{fmtDate(row.date)}</td>
                       <td className="px-4 py-2 text-gray-700 max-w-xs truncate">
                         {row.is_broker_transfer && <span className="text-[10px] bg-amber-200 text-amber-800 rounded px-1 mr-1.5 font-medium">{t.finances.brokerTransfer}</span>}
-                        {row.suggested_by === 'transfer' && <span className="text-[10px] bg-blue-100 text-blue-700 rounded px-1 mr-1.5 font-medium">↔ Transferência</span>}
+                        {row.suggested_by === 'transfer' && <span className="text-[10px] bg-blue-100 text-blue-700 rounded px-1 mr-1.5 font-medium">{t.finances.csvTransferBadge}</span>}
                         {row.description}
                         {sameDescCount > 1 && <span className="ml-1.5 text-[10px] text-gray-400">×{sameDescCount}</span>}
                       </td>
@@ -446,7 +448,7 @@ export default function FinancesTransactionsPage() {
                             onChange={e => {
                               const val = e.target.value === '' ? null : Number(e.target.value)
                               if (sameDescCount > 1) {
-                                const apply = window.confirm(`Aplicar esta categoria a todas as ${sameDescCount} ocorrências de "${row.description}"?`)
+                                const apply = window.confirm(t.finances.csvApplyAllConfirm.replace('{n}', String(sameDescCount)).replace('{desc}', row.description))
                                 changeCsvRowCategory(i, val, apply)
                               } else {
                                 changeCsvRowCategory(i, val, false)
