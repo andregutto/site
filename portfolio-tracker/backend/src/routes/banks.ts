@@ -48,7 +48,7 @@ router.get('/auth', requireAuth, async (req, res: Response) => {
   const url = new URL(`${TL_AUTH}/`)
   url.searchParams.set('response_type', 'code')
   url.searchParams.set('client_id', process.env.TRUELAYER_CLIENT_ID)
-  url.searchParams.set('scope', 'accounts balance transactions offline_access')
+  url.searchParams.set('scope', 'accounts balance transactions')
   url.searchParams.set('redirect_uri', ruri)
   url.searchParams.set('state', state)
   url.searchParams.set('providers', isSandbox ? 'mock' : 'ob-revolut ob-monzo uk-ob-all ie-ob-all fr-ob-all')
