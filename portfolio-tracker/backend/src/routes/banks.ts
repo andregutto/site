@@ -171,19 +171,38 @@ router.post('/sync/:id', requireAuth, async (req, res: Response) => {
   }
 
   let imported = 0
+  let merged = 0
   for (const tx of tlTxns) {
-    const { error } = await supabaseAdmin.from('finance_transactions').insert({
-      user_id: userId, date: tx.timestamp.slice(0, 10),
-      description: tx.description, amount: tx.amount,
-      currency: tx.currency, source: `truelayer:${tx.transaction_id}`,
-    })
-    if (!error) imported++
+    const source = `truelayer:${tx.transaction_id}`
+    const date   = tx.timestamp.slice(0, 10)
+
+    const { data: existing } = await supabaseAdmin
+      .from('finance_transactions')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('date', date)
+      .eq('amount', tx.amount)
+      .eq('currency', tx.currency)
+      .eq('source', 'csv')
+
+    if (existing && existing.length === 1) {
+      await supabaseAdmin.from('finance_transactions')
+        .update({ source })
+        .eq('id', existing[0].id)
+      merged++
+    } else {
+      const { error } = await supabaseAdmin.from('finance_transactions').insert({
+        user_id: userId, date, description: tx.description,
+        amount: tx.amount, currency: tx.currency, source,
+      })
+      if (!error) imported++
+    }
   }
 
   await supabaseAdmin.from('finance_bank_connections')
     .update({ last_synced_at: new Date().toISOString() }).eq('id', connId)
 
-  res.json({ imported, total: tlTxns.length })
+  res.json({ imported, merged, total: tlTxns.length })
 })
 
 // DELETE /api/banks/connections/:id
