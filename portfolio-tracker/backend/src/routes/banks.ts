@@ -32,8 +32,9 @@ function verifyState(state: string): string | null {
 }
 
 function getRedirectUri(req: Request): string {
-  return process.env.TRUELAYER_REDIRECT_URI
-    ?? `${req.protocol}://${req.get('host')}/api/banks/callback`
+  if (process.env.TRUELAYER_REDIRECT_URI) return process.env.TRUELAYER_REDIRECT_URI
+  const proto = (req.headers['x-forwarded-proto'] as string | undefined)?.split(',')[0].trim() ?? req.protocol
+  return `${proto}://${req.get('host')}/api/banks/callback`
 }
 
 // GET /api/banks/auth

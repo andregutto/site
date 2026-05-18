@@ -32,9 +32,25 @@ function verifyState(state: string): string | null {
 }
 
 function getRedirectUri(req: Request): string {
-  return process.env.TRUELAYER_REDIRECT_URI
-    ?? `${req.protocol}://${req.get('host')}/api/banks/callback`
+  if (process.env.TRUELAYER_REDIRECT_URI) return process.env.TRUELAYER_REDIRECT_URI
+  const proto = (req.headers['x-forwarded-proto'] as string | undefined)?.split(',')[0].trim() ?? req.protocol
+  return `${proto}://${req.get('host')}/api/banks/callback`
 }
+
+// GET /api/banks/config — diagnóstico público (sem credenciais sensíveis)
+router.get('/config', async (req, res: Response) => {
+  const ruri = getRedirectUri(req)
+  res.json({
+    redirect_uri: ruri,
+    client_id_prefix: (process.env.TRUELAYER_CLIENT_ID ?? '').slice(0, 20) || '(não definido)',
+    is_sandbox: isSandbox,
+    env_redirect_uri_set: !!process.env.TRUELAYER_REDIRECT_URI,
+    env_redirect_uri_value: process.env.TRUELAYER_REDIRECT_URI || '(vazio — usando fallback dinâmico)',
+    host: req.get('host'),
+    x_forwarded_proto: req.headers['x-forwarded-proto'] ?? '(não presente)',
+    req_protocol: req.protocol,
+  })
+})
 
 // GET /api/banks/auth — generate TrueLayer auth URL
 router.get('/auth', requireAuth, async (req, res: Response) => {
