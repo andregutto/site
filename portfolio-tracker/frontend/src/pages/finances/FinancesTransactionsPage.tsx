@@ -69,10 +69,11 @@ export default function FinancesTransactionsPage() {
   const [moments, setMoments]           = useState<MomentRef[]>([])
   const [loading, setLoading]           = useState(true)
   const [showAdd, setShowAdd]           = useState(false)
-  const [csvStep, setCsvStep]           = useState<'idle' | 'preview' | 'importing'>('idle')
+  const [csvStep, setCsvStep]           = useState<'idle' | 'preview' | 'importing' | 'parsing'>('idle')
   const [csvRows, setCsvRows]           = useState<ParsedRow[]>([])
   const [csvAiDebug, setCsvAiDebug]     = useState<AiDebug | null>(null)
   const [csvError, setCsvError]         = useState('')
+  const [csvFilterUncategorized, setCsvFilterUncategorized] = useState(false)
   const [csvCurrency, setCsvCurrency]   = useState('EUR')
   const [csvAccountId, setCsvAccountId]   = useState<number | null>(null)
   const [accounts, setAccounts]           = useState<FinanceAccount[]>([])
@@ -212,14 +213,16 @@ export default function FinancesTransactionsPage() {
 
   async function handleCSVFile(file: File) {
     setCsvError('')
+    setCsvStep('parsing')
     const text = await file.text()
     try {
       const result = await apiFetch<{ transactions: ParsedRow[]; total: number; error?: string; ai_debug?: AiDebug }>(
         '/finances/transactions/csv-parse',
         { method: 'POST', body: JSON.stringify({ csv: text, currency: csvCurrency }) }
       )
-      if (result.error) { setCsvError(result.error); return }
+      if (result.error) { setCsvError(result.error); setCsvStep('idle'); return }
       setCsvAiDebug(result.ai_debug ?? null)
+      setCsvFilterUncategorized(false)
       setCsvRows(
         [...result.transactions]
           .sort((a, b) => b.date.localeCompare(a.date))
@@ -232,7 +235,16 @@ export default function FinancesTransactionsPage() {
       setCsvStep('preview')
     } catch (e: unknown) {
       setCsvError(e instanceof Error ? e.message : 'Erro ao processar CSV')
+      setCsvStep('idle')
     }
+  }
+
+  function changeCsvRowCategory(idx: number, val: number | null, applyToAll: boolean) {
+    setCsvRows(prev => prev.map((r, j) => {
+      if (j === idx) return { ...r, category_id: val }
+      if (applyToAll && r.description === prev[idx].description) return { ...r, category_id: val }
+      return r
+    }))
   }
 
   async function importCSV() {
@@ -289,7 +301,8 @@ export default function FinancesTransactionsPage() {
           <MonthPicker value={month} onChange={setMonth} />
           {accountsLoaded && accounts.length > 0 && (<>
             <button
-              onClick={() => { setCsvStep('idle'); setCsvRows([]); setCsvError(''); fileRef.current?.click() }}
+              onClick={() => { setCsvStep('idle'); setCsvRows([]); setCsvError(''); setCsvAiDebug(null); fileRef.current?.click() }}
+              disabled={csvStep === 'parsing'}
               className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 text-sm text-gray-600 rounded-lg hover:bg-gray-50 transition-colors"
             >
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4"><path d="M8.75 2.75a.75.75 0 0 0-1.5 0v5.69L5.03 6.22a.75.75 0 0 0-1.06 1.06l3.5 3.5a.75.75 0 0 0 1.06 0l3.5-3.5a.75.75 0 0 0-1.06-1.06L8.75 8.44V2.75Z" /><path d="M3.5 9.75a.75.75 0 0 0-1.5 0v1.5A2.75 2.75 0 0 0 4.75 14h6.5A2.75 2.75 0 0 0 14 11.25v-1.5a.75.75 0 0 0-1.5 0v1.5c0 .69-.56 1.25-1.25 1.25h-6.5c-.69 0-1.25-.56-1.25-1.25v-1.5Z" /></svg>
@@ -322,8 +335,20 @@ export default function FinancesTransactionsPage() {
         <div className="bg-red-50 border border-red-100 rounded-xl px-4 py-3 text-sm text-red-600">{csvError}</div>
       )}
 
+      {/* CSV Parsing loader */}
+      {csvStep === 'parsing' && (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-8 flex flex-col items-center gap-3">
+          <svg className="animate-spin w-7 h-7 text-[#001A70]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/>
+          </svg>
+          <p className="text-sm font-medium text-gray-700">Processando e categorizando com IA…</p>
+          <p className="text-xs text-gray-400">Pode levar alguns segundos para CSVs grandes</p>
+        </div>
+      )}
+
       {/* CSV Preview */}
-      {csvStep !== 'idle' && csvRows.length > 0 && (
+      {csvStep !== 'idle' && csvStep !== 'parsing' && csvRows.length > 0 && (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           <div className="px-5 py-4 border-b border-gray-50 flex items-center justify-between flex-wrap gap-3">
             <div>
@@ -345,6 +370,12 @@ export default function FinancesTransactionsPage() {
               </p>
             </div>
             <div className="flex items-center gap-3 flex-wrap">
+              <button
+                onClick={() => setCsvFilterUncategorized(v => !v)}
+                className={`text-xs px-2.5 py-1 rounded-lg border transition-colors ${csvFilterUncategorized ? 'bg-amber-50 border-amber-300 text-amber-700' : 'border-gray-200 text-gray-500 hover:bg-gray-50'}`}
+              >
+                {csvFilterUncategorized ? `Sem categoria (${csvRows.filter(r => !r.category_id).length})` : 'Mostrar sem categoria'}
+              </button>
               {accounts.length > 0 && (
                 <div className="flex items-center gap-1.5 text-xs text-gray-500">
                   <span>{t.finances.csvAccount}</span>
@@ -376,41 +407,51 @@ export default function FinancesTransactionsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {csvRows.map((row, i) => (
-                  <tr key={i} className={row.is_broker_transfer ? 'bg-amber-50' : ''}>
-                    <td className="px-4 py-2 text-gray-600 whitespace-nowrap">{fmtDate(row.date)}</td>
-                    <td className="px-4 py-2 text-gray-700 max-w-xs truncate">
-                      {row.is_broker_transfer && <span className="text-[10px] bg-amber-200 text-amber-800 rounded px-1 mr-1.5 font-medium">{t.finances.brokerTransfer}</span>}
-                      {row.description}
-                    </td>
-                    <td className={`px-4 py-2 text-right font-medium whitespace-nowrap ${row.amount < 0 ? 'text-red-600' : 'text-green-600'}`}>
-                      {fmt(row.amount, row.currency)}
-                    </td>
-                    <td className="px-4 py-2">
-                      <div className="flex items-center gap-1">
-                        {row.suggested_by === 'ai' && row.category_id === row.suggested_category_id && (
-                          <span title="Sugerido por IA" className="text-[10px] bg-violet-100 text-violet-600 rounded px-1 font-medium shrink-0">✦ IA</span>
-                        )}
-                        <select
-                          value={row.category_id ?? ''}
-                          onChange={e => {
-                            const val = e.target.value === '' ? null : Number(e.target.value)
-                            setCsvRows(prev => prev.map((r, j) => j === i ? { ...r, category_id: val } : r))
-                          }}
-                          className="text-xs border border-gray-200 rounded px-2 py-1 max-w-[150px]"
-                        >
-                          <option value="">{t.finances.noCategory}</option>
-                          {categories.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
-                        </select>
-                      </div>
-                    </td>
-                    <td className="px-4 py-2">
-                      <button onClick={() => setCsvRows(prev => prev.filter((_, j) => j !== i))} className="text-gray-300 hover:text-red-400 transition-colors">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5"><path d="M5.28 4.22a.75.75 0 0 0-1.06 1.06L6.94 8l-2.72 2.72a.75.75 0 1 0 1.06 1.06L8 9.06l2.72 2.72a.75.75 0 1 0 1.06-1.06L9.06 8l2.72-2.72a.75.75 0 0 0-1.06-1.06L8 6.94 5.28 4.22Z" /></svg>
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                {csvRows.map((row, i) => {
+                  if (csvFilterUncategorized && row.category_id) return null
+                  const sameDescCount = csvRows.filter(r => r.description === row.description).length
+                  return (
+                    <tr key={i} className={row.is_broker_transfer ? 'bg-amber-50' : ''}>
+                      <td className="px-4 py-2 text-gray-600 whitespace-nowrap">{fmtDate(row.date)}</td>
+                      <td className="px-4 py-2 text-gray-700 max-w-xs truncate">
+                        {row.is_broker_transfer && <span className="text-[10px] bg-amber-200 text-amber-800 rounded px-1 mr-1.5 font-medium">{t.finances.brokerTransfer}</span>}
+                        {row.description}
+                        {sameDescCount > 1 && <span className="ml-1.5 text-[10px] text-gray-400">×{sameDescCount}</span>}
+                      </td>
+                      <td className={`px-4 py-2 text-right font-medium whitespace-nowrap ${row.amount < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                        {fmt(row.amount, row.currency)}
+                      </td>
+                      <td className="px-4 py-2">
+                        <div className="flex items-center gap-1">
+                          {row.suggested_by === 'ai' && row.category_id === row.suggested_category_id && (
+                            <span title="Sugerido por IA" className="text-[10px] bg-violet-100 text-violet-600 rounded px-1 font-medium shrink-0">✦ IA</span>
+                          )}
+                          <select
+                            value={row.category_id ?? ''}
+                            onChange={e => {
+                              const val = e.target.value === '' ? null : Number(e.target.value)
+                              if (sameDescCount > 1) {
+                                const apply = window.confirm(`Aplicar esta categoria a todas as ${sameDescCount} ocorrências de "${row.description}"?`)
+                                changeCsvRowCategory(i, val, apply)
+                              } else {
+                                changeCsvRowCategory(i, val, false)
+                              }
+                            }}
+                            className="text-xs border border-gray-200 rounded px-2 py-1 max-w-[150px]"
+                          >
+                            <option value="">{t.finances.noCategory}</option>
+                            {categories.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
+                          </select>
+                        </div>
+                      </td>
+                      <td className="px-4 py-2">
+                        <button onClick={() => setCsvRows(prev => prev.filter((_, j) => j !== i))} className="text-gray-300 hover:text-red-400 transition-colors">
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5"><path d="M5.28 4.22a.75.75 0 0 0-1.06 1.06L6.94 8l-2.72 2.72a.75.75 0 1 0 1.06 1.06L8 9.06l2.72 2.72a.75.75 0 1 0 1.06-1.06L9.06 8l2.72-2.72a.75.75 0 0 0-1.06-1.06L8 6.94 5.28 4.22Z" /></svg>
+                        </button>
+                      </td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>

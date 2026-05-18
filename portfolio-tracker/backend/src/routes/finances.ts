@@ -498,19 +498,26 @@ type CatRow = { id: number; name: string; icon: string; color: string }
 
 const AI_BATCH_SIZE = 30
 
+interface AiItem { description: string; sign: '+' | '-' }
+
 async function aiCategorizeBatch(
-  descriptions: string[],
+  items: AiItem[],
   categories: CatRow[],
   offset: number
 ): Promise<Record<string, number | null>> {
   const catList  = categories.map(c => `${c.id}: ${c.name}`).join('\n')
-  const descList = descriptions.map((d, i) => `${offset + i}: ${d}`).join('\n')
-  const prompt = `You are a financial transaction categorizer. Given the categories and transaction descriptions below, assign the most appropriate category to each description. Reply with ONLY a valid JSON object mapping each index (as a string key) to the category id (integer) or null if no category fits. No extra text.
+  const descList = items.map((it, i) =>
+    `${offset + i}: [${it.sign === '+' ? 'INCOME' : 'EXPENSE'}] ${it.description}`
+  ).join('\n')
+
+  const prompt = `You are a financial transaction categorizer for a personal finance app. Each transaction is labeled [INCOME] or [EXPENSE]. Use this to improve accuracy (e.g. a payment FROM a company = salary/income, not an expense; a transport company = transport, not personal care).
+
+Assign the most appropriate category from the list below to each transaction. Reply with ONLY a valid JSON object mapping each index (string key) to the category id (integer) or null if truly no category fits. No extra text.
 
 Categories:
 ${catList}
 
-Descriptions:
+Transactions:
 ${descList}`
 
   const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
@@ -526,16 +533,16 @@ ${descList}`
 }
 
 async function aiCategorize(
-  descriptions: string[],
+  items: AiItem[],
   categories: CatRow[]
 ): Promise<{ map: Record<string, number | null>; error?: string }> {
   if (!process.env.ANTHROPIC_API_KEY) return { map: {}, error: 'no_key' }
-  if (descriptions.length === 0 || categories.length === 0) return { map: {} }
+  if (items.length === 0 || categories.length === 0) return { map: {} }
 
   const result: Record<string, number | null> = {}
   try {
-    for (let i = 0; i < descriptions.length; i += AI_BATCH_SIZE) {
-      const batch = descriptions.slice(i, i + AI_BATCH_SIZE)
+    for (let i = 0; i < items.length; i += AI_BATCH_SIZE) {
+      const batch = items.slice(i, i + AI_BATCH_SIZE)
       const batchResult = await aiCategorizeBatch(batch, categories, i)
       Object.assign(result, batchResult)
     }
@@ -639,12 +646,16 @@ router.post('/transactions/csv-parse', requireAuth, async (req, res: Response) =
   // AI categorization for rows without a keyword match
   const unmatched = transactions.filter(t => !t.suggested_category && !t.is_broker_transfer)
   if (unmatched.length > 0) {
-    const uniqueDescs = [...new Set(unmatched.map(t => t.description))]
-    const { map: aiMap } = await aiCategorize(uniqueDescs, categories)
+    const uniqueMap = new Map<string, '+' | '-'>()
+    for (const t of unmatched) {
+      if (!uniqueMap.has(t.description)) uniqueMap.set(t.description, t.amount >= 0 ? '+' : '-')
+    }
+    const uniqueItems: AiItem[] = Array.from(uniqueMap.entries()).map(([description, sign]) => ({ description, sign }))
+    const { map: aiMap } = await aiCategorize(uniqueItems, categories)
     const catById = Object.fromEntries(categories.map(c => [c.id, c]))
     for (const t of transactions) {
       if (t.suggested_category || t.is_broker_transfer) continue
-      const idx = uniqueDescs.indexOf(t.description)
+      const idx = uniqueItems.findIndex(u => u.description === t.description)
       const catId = aiMap[String(idx)]
       if (catId != null && catById[catId]) {
         t.suggested_category = catById[catId]
