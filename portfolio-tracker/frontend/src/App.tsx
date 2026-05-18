@@ -20,6 +20,7 @@ import IndicesPage from './pages/IndicesPage'
 import IndexDetailPage from './pages/IndexDetailPage'
 import FavoritesPage from './pages/FavoritesPage'
 import ArchivedPage from './pages/ArchivedPage'
+import PortfolioLayout from './pages/portfolio/PortfolioLayout'
 import FinancesLayout from './pages/finances/FinancesLayout'
 import FinancesOverviewPage from './pages/finances/FinancesOverviewPage'
 import FinancesTransactionsPage from './pages/finances/FinancesTransactionsPage'
@@ -111,16 +112,18 @@ function AppRoutes() {
         <Route path="/"               element={<DashboardPage />} />
         <Route path="/performance"    element={<PerformancePage />} />
         <Route path="/assets/:id"     element={<AssetDetailPage />} />
-        <Route path="/contributions"  element={<ContributionsPage />} />
         <Route path="/profile"        element={<ProfilePage />} />
-        <Route path="/rebalance"      element={<RebalancePage />} />
-        <Route path="/by-institution" element={<InstitutionPage />} />
         <Route path="/institutions"   element={<InstitutionsPage />} />
-        <Route path="/classes"        element={<ClassesPage />} />
-        <Route path="/reports"        element={<ReportsPage />} />
         <Route path="/import/b3"      element={<ImportB3Page />} />
-        <Route path="/indices"        element={<IndicesPage />} />
-        <Route path="/indices/:code"  element={<IndexDetailPage />} />
+        <Route path="/portfolio"      element={<PortfolioLayout />}>
+          <Route index                element={<ContributionsPage />} />
+          <Route path="rebalance"     element={<RebalancePage />} />
+          <Route path="institutions"  element={<InstitutionPage />} />
+          <Route path="classes"       element={<ClassesPage />} />
+          <Route path="reports"       element={<ReportsPage />} />
+          <Route path="indices"       element={<IndicesPage />} />
+          <Route path="indices/:code" element={<IndexDetailPage />} />
+        </Route>
         <Route path="/favorites"      element={<FavoritesPage />} />
         <Route path="/achievements"   element={<AchievementsPage />} />
         <Route path="/archived"       element={<ArchivedPage />} />

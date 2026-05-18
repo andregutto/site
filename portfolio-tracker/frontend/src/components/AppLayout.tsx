@@ -66,16 +66,16 @@ export default function AppLayout() {
   const avatarInitials = headerLabel.slice(0, 2).toUpperCase()
 
   // Detect active group for dropdown highlight
-  const portfolioRoutes = ['/rebalance', '/by-institution', '/classes', '/reports', '/indices']
-  const inPortfolio = portfolioRoutes.some(r => location.pathname.startsWith(r))
+  const inPortfolio = location.pathname.startsWith('/portfolio')
   const inFinances  = location.pathname.startsWith('/finances')
 
   const portfolioItems = [
-    { to: '/rebalance',      label: t.nav.rebalance    },
-    { to: '/by-institution', label: t.nav.institutions },
-    { to: '/classes',        label: t.nav.classes       },
-    { to: '/reports',        label: t.nav.ir            },
-    { to: '/indices',        label: t.nav.indices       },
+    { to: '/portfolio',              label: t.nav.contributions },
+    { to: '/portfolio/rebalance',    label: t.nav.rebalance     },
+    { to: '/portfolio/institutions', label: t.nav.institutions  },
+    { to: '/portfolio/classes',      label: t.nav.classes       },
+    { to: '/portfolio/reports',      label: t.nav.ir            },
+    { to: '/portfolio/indices',      label: t.nav.indices       },
   ]
 
   const financesItems = [
@@ -110,9 +110,8 @@ export default function AppLayout() {
 
               {/* Direct links */}
               {[
-                { to: '/',              label: t.nav.dashboard,    end: true  },
-                { to: '/performance',   label: t.nav.performance,  end: false },
-                { to: '/contributions', label: t.nav.contributions,end: false },
+                { to: '/',            label: t.nav.dashboard,   end: true  },
+                { to: '/performance', label: t.nav.performance, end: false },
               ].map(({ to, label, end }) => (
                 <NavLink
                   key={to} to={to} end={end}
@@ -261,10 +260,10 @@ export default function AppLayout() {
       <nav className="sm:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 z-20 safe-bottom">
         <div className="flex">
           {[
-            { to: '/',               label: t.nav.dashboard,    icon: '▦', end: true  },
-            { to: '/performance',    label: t.nav.performance,  icon: '↗', end: false },
-            { to: '/contributions',  label: t.nav.contributions,icon: '⊕', end: false },
-            { to: '/finances',       label: t.nav.finances,     icon: '₿', end: false },
+            { to: '/',           label: t.nav.dashboard,  icon: '▦', end: true  },
+            { to: '/performance',label: t.nav.performance,icon: '↗', end: false },
+            { to: '/portfolio',  label: t.nav.portfolio,  icon: '⊕', end: false },
+            { to: '/finances',   label: t.nav.finances,   icon: '₿', end: false },
           ].map(({ to, label, icon, end }) => (
             <NavLink
               key={to} to={to} end={end}
@@ -295,14 +294,14 @@ export default function AppLayout() {
             <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-5" />
             <div className="grid grid-cols-4 gap-3">
               {[
-                { to: '/rebalance',          label: t.nav.rebalance,      icon: '⇌' },
-                { to: '/classes',            label: t.nav.classes,        icon: '◈' },
-                { to: '/reports',            label: t.nav.ir,             icon: '⊞' },
-                { to: '/indices',            label: t.nav.indices,        icon: '◎' },
-                { to: '/finances/moments',   label: t.nav.moments,        icon: '✨' },
-                { to: '/finances/freedom',   label: t.nav.freedom,        icon: '🎯' },
-                { to: '/achievements',       label: t.nav.achievements,   icon: '🏅' },
-                { to: '/profile',            label: t.nav.profile,        icon: '👤' },
+                { to: '/portfolio/rebalance',    label: t.nav.rebalance,    icon: '⇌' },
+                { to: '/portfolio/classes',      label: t.nav.classes,      icon: '◈' },
+                { to: '/portfolio/reports',      label: t.nav.ir,           icon: '⊞' },
+                { to: '/portfolio/indices',      label: t.nav.indices,      icon: '◎' },
+                { to: '/finances/moments',       label: t.nav.moments,      icon: '✨' },
+                { to: '/finances/freedom',       label: t.nav.freedom,      icon: '🎯' },
+                { to: '/achievements',           label: t.nav.achievements, icon: '🏅' },
+                { to: '/profile',                label: t.nav.profile,      icon: '👤' },
               ].map(({ to, label, icon }) => (
                 <NavLink
                   key={to} to={to}
