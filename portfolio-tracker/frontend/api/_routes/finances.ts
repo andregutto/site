@@ -587,14 +587,36 @@ router.post('/transactions/csv-parse', requireAuth, async (req, res: Response) =
 
   let categories = (cats ?? []) as { id: number; name: string; icon: string; color: string; keyword_rules: string[] }[]
 
-  // Find or create a "Transferência" category — used for all detected transfers
   const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+
+  // Find or create "Rendas" income envelope
+  const { data: existingIncomeEnv } = await supabaseAdmin
+    .from('finance_envelopes').select('id').eq('user_id', userId).eq('type', 'income').maybeSingle()
+  let incomeEnvId: number | null = existingIncomeEnv?.id ?? null
+  if (!incomeEnvId) {
+    const { data: newEnv } = await supabaseAdmin.from('finance_envelopes').insert({
+      user_id: userId, name: 'Rendas', pct_target: 0,
+      color: '#10b981', type: 'income', icon: '💰', sort_order: 999,
+    }).select('id').single()
+    incomeEnvId = newEnv?.id ?? null
+  }
+
+  // Find or create "Transferência" + "Salário" categories inside the income envelope
   let transferCat = categories.find(c => norm(c.name).includes('transfer'))
   if (!transferCat) {
     const { data: newCat } = await supabaseAdmin.from('finance_categories').insert({
-      user_id: userId, name: 'Transferência', icon: '↔️', color: '#6B7280', keyword_rules: [],
+      user_id: userId, name: 'Transferência', icon: '↔️', color: '#6B7280',
+      keyword_rules: [], envelope_id: incomeEnvId,
     }).select('id, name, icon, color, keyword_rules').single()
     if (newCat) { transferCat = newCat; categories = [...categories, newCat] }
+  }
+  const hasSalario = categories.some(c => norm(c.name).includes('salari') || norm(c.name).includes('salary'))
+  if (!hasSalario && incomeEnvId) {
+    const { data: newSal } = await supabaseAdmin.from('finance_categories').insert({
+      user_id: userId, name: 'Salário', icon: '💼', color: '#3b82f6',
+      keyword_rules: [], envelope_id: incomeEnvId,
+    }).select('id, name, icon, color, keyword_rules').single()
+    if (newSal) categories = [...categories, newSal]
   }
 
   function matchCategory(description: string): { id: number; name: string; icon: string; color: string } | null {
