@@ -27,6 +27,18 @@ function fmtNum(v: number, d = 4) {
   return new Intl.NumberFormat('pt-BR', { maximumFractionDigits: d }).format(v)
 }
 
+function priceSourceLabel(source: string | null | undefined): string {
+  switch (source) {
+    case 'bcb':        return 'Calculado via CDI · Banco Central'
+    case 'brapi':      return 'Cotação B3 · Brapi'
+    case 'yahoo':      return 'Cotação · Yahoo Finance'
+    case 'coingecko':  return 'Cotação · CoinGecko'
+    case 'manual':     return 'Valor inserido manualmente'
+    case 'cost_basis': return 'Estimado pelo custo médio'
+    default:           return source ?? ''
+  }
+}
+
 function fiIndexerLabel(fi_type: string | null, fi_rate: number | null, fi_spread: number | null): string | null {
   if (!fi_type) return null
   if (fi_type === 'pos_cdi' && fi_rate != null) return `${(fi_rate * 100).toFixed(1)}% do CDI`
@@ -394,7 +406,7 @@ export default function AssetDetailPage() {
           {data.current_price != null && (
             <>
               <p className="font-bold text-gray-900">{priceLabel}</p>
-              <p className="text-xs text-gray-400">{data.price_source}</p>
+              <p className="text-xs text-gray-400">{priceSourceLabel(data.price_source)}</p>
             </>
           )}
           {/* Instituição */}
@@ -501,7 +513,7 @@ export default function AssetDetailPage() {
                   <p className="font-bold text-indigo-900 text-sm">
                     {data.price_currency} {fmtNum(data.current_price, 2)}
                   </p>
-                  <p className="text-xs text-indigo-400">{data.price_source}</p>
+                  <p className="text-xs text-indigo-400">{priceSourceLabel(data.price_source)}</p>
                 </div>
                 <div className="w-px h-8 bg-indigo-200 hidden sm:block" />
               </>
