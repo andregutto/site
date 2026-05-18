@@ -373,10 +373,14 @@ export default function FinancesMomentsPage() {
       <div className="space-y-3">
         {moments.map(m => (
           <div key={m.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-            {/* Cover photo */}
-            {m.cover_image_url && (
+            {/* Cover photo or color gradient */}
+            {m.cover_image_url ? (
               <div className="h-28 overflow-hidden">
                 <img src={m.cover_image_url} alt={m.name} className="w-full h-full object-cover" />
+              </div>
+            ) : (
+              <div className="h-16 flex items-center justify-center text-3xl" style={{ background: `linear-gradient(135deg, ${m.color}30 0%, ${m.color}60 100%)` }}>
+                {m.icon}
               </div>
             )}
             {/* Moment header */}
