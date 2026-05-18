@@ -215,11 +215,15 @@ export default function FinancesTransactionsPage() {
         { method: 'POST', body: JSON.stringify({ csv: text, currency: csvCurrency }) }
       )
       if (result.error) { setCsvError(result.error); return }
-      setCsvRows(result.transactions.map(r => ({
-        ...r,
-        category_id: r.suggested_category?.id ?? null,
-        suggested_category_id: r.suggested_category?.id ?? null,
-      })))
+      setCsvRows(
+        [...result.transactions]
+          .sort((a, b) => b.date.localeCompare(a.date))
+          .map(r => ({
+            ...r,
+            category_id: r.suggested_category?.id ?? null,
+            suggested_category_id: r.suggested_category?.id ?? null,
+          }))
+      )
       setCsvStep('preview')
     } catch (e: unknown) {
       setCsvError(e instanceof Error ? e.message : 'Erro ao processar CSV')

@@ -381,7 +381,7 @@ export default function FinancesFreedomPage() {
     const planStart = activePlan.created_at.slice(0, 7)
     const horizonMonths = activePlan.horizon_years * 12
     const planEnd = addMonths(planStart, horizonMonths)
-    const chartStart = perf.length > 0 ? perf[0].month : planStart
+    const chartStart = planStart
     const chartEnd = planEnd
 
     // Build planned trajectory

@@ -486,10 +486,11 @@ function parseCSV(text: string): string[][] {
 
 const BROKER_KEYWORDS = [
   'interactive brokers', 'bourse direct', 'trade republic', 'trading 212', 'degiro',
-  'xp invest', 'clear corretora', 'btg', 'avenue', 'nu invest', 'rico', 'modal',
-  'genial', 'guide invest', 'orama', 'toro', 'c6 invest', 'itau corretora',
-  'bradesco corretora', 'bb dtvm', 'revolut securities', 'scalable', 'etoro',
-  'saxo bank', 'swissquote', 'fortuneo', 'lynx broker', 'boursorama',
+  'xp invest', 'clear corretora', 'btg pactual', 'avenue securities', 'nu invest',
+  'rico invest', 'modal mais', 'genial invest', 'guide invest', 'orama invest',
+  'toro invest', 'c6 invest', 'itau corretora', 'bradesco corretora', 'bb dtvm',
+  'revolut securities', 'scalable capital', 'etoro', 'saxo bank', 'swissquote',
+  'fortuneo', 'lynx broker', 'boursorama',
 ]
 
 function detectBroker(description: string): string | null {
