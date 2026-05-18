@@ -307,12 +307,15 @@ function PlanForm({ initial, portfolio, ipcaAnnual, onSave, onCancel, saving }: 
           </div>
 
           {goalMode === 'capital' ? (
-            <input required type="number" value={target} onChange={e => setTarget(e.target.value)} className={fieldCls} placeholder="5000000" />
+            <div>
+              <input required type="number" value={target} onChange={e => setTarget(e.target.value)} className={fieldCls} placeholder="5000000" />
+              <p className="text-[11px] text-gray-400 mt-1 leading-snug">Valor <strong>nominal</strong> — não ajustado pela inflação. A renda passiva que esse capital gera também será nominal.</p>
+            </div>
           ) : (
             <div className="space-y-2">
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className={labelCls}>{t.finances.freedomDesiredIncome} ({currency})</label>
+                  <label className={labelCls}>{t.finances.freedomDesiredIncome} em poder de compra de hoje ({currency})</label>
                   <input required type="number" value={desiredIncome} onChange={e => setDesiredIncome(e.target.value)} className={fieldCls} placeholder="5000" />
                 </div>
                 <div>
@@ -330,13 +333,15 @@ function PlanForm({ initial, portfolio, ipcaAnnual, onSave, onCancel, saving }: 
               </div>
               <p className="text-[11px] text-gray-400 leading-snug">{t.finances.freedomDesiredIncomeHint}</p>
               {computedTarget != null && (
-                <div className="bg-indigo-50 border border-indigo-100 rounded-lg px-3 py-2">
+                <div className="bg-indigo-50 border border-indigo-100 rounded-lg px-3 py-2 space-y-1">
                   <p className="text-xs text-gray-500">{t.finances.freedomComputedGoal}</p>
                   <p className="text-base font-bold text-[#001A70]">
                     {new Intl.NumberFormat('pt-BR', { style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(computedTarget)}
                   </p>
-                  <p className="text-[10px] text-gray-400 mt-0.5">
-                    Renda futura ajustada: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(Math.round(parseFloat(desiredIncome || '0') * Math.pow(1 + parseFloat(inflation || '2') / 100, parseInt(horizon || '20'))))} / mês
+                  <p className="text-[10px] text-gray-500">
+                    Renda <strong>nominal</strong> em {parseInt(horizon) || 20} anos:&nbsp;
+                    <strong>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(Math.round(parseFloat(desiredIncome || '0') * Math.pow(1 + parseFloat(inflation || '2') / 100, parseInt(horizon || '20'))))}/mês</strong>
+                    &nbsp;— equivalente a {new Intl.NumberFormat('pt-BR', { style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(parseFloat(desiredIncome || '0'))}/mês de hoje
                   </p>
                 </div>
               )}
@@ -520,6 +525,22 @@ export default function FinancesFreedomPage() {
     ? activePlan.target_amount * activePlan.monthly_income_rate
     : 0
 
+  // Real (today's purchasing power) passive income, deflated by estimated annual inflation
+  const passiveIncomeReal = (() => {
+    if (!activePlan || passiveIncome === 0) return null
+    const inflationRate = activePlan.currency === 'BRL'
+      ? (ipcaM12 ?? 5) / 100
+      : 0.02
+    const years = activePlan.horizon_years
+    return Math.round(passiveIncome / Math.pow(1 + inflationRate, years))
+  })()
+
+  // How many months early (positive) or late (negative) reachMonth is vs plan end
+  const planEndMonth = activePlan ? addMonths(planStart, activePlan.horizon_years * 12) : null
+  const reachDiffYears = (reachMonth && planEndMonth)
+    ? Math.round(monthsBetween(reachMonth, planEndMonth) / 12 * 10) / 10
+    : null
+
   // What the plan projects at the current month
   const plannedAtCurrentMonth = (() => {
     if (!activePlan) return 0
@@ -684,7 +705,12 @@ export default function FinancesFreedomPage() {
             <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
               <p className="text-xs text-gray-500 mb-1">{t.finances.freedomPassive} / mês</p>
               <p className="text-base font-bold text-emerald-600">{fmt(passiveIncome, currency, true)}</p>
-              <p className="text-[10px] text-gray-400">{(activePlan!.monthly_income_rate * 100).toFixed(1)}% × meta</p>
+              <p className="text-[10px] text-gray-400">{(activePlan!.monthly_income_rate * 100).toFixed(1)}% × meta · nominal</p>
+              {passiveIncomeReal != null && (
+                <p className="text-[10px] text-gray-500 mt-0.5">
+                  ≈ {fmt(passiveIncomeReal, currency, true)} hoje
+                </p>
+              )}
             </div>
             <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
               <p className="text-xs text-gray-500 mb-1">{t.finances.freedomTarget}</p>
@@ -694,6 +720,12 @@ export default function FinancesFreedomPage() {
                 </p>
               )}
               <p className="text-[10px] text-gray-400">{activePlan!.horizon_years} anos de plano</p>
+              {reachDiffYears != null && reachDiffYears > 0 && (
+                <p className="text-[10px] text-emerald-600 mt-0.5">{reachDiffYears} anos antes do prazo</p>
+              )}
+              {reachDiffYears != null && reachDiffYears < 0 && (
+                <p className="text-[10px] text-amber-600 mt-0.5">{Math.abs(reachDiffYears)} anos de atraso</p>
+              )}
             </div>
           </div>
 
