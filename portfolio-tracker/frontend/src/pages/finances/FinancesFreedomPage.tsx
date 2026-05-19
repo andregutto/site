@@ -607,12 +607,10 @@ export default function FinancesFreedomPage() {
     return null
   })()
 
-  // How many years early (positive) or late (negative) forecast is vs plan deadline
-  const planEndMonth = activePlan ? addMonths(planStart, activePlan.horizon_years * 12) : null
-  const reachDiffYears = (reachMonth && planEndMonth)
-    ? Math.round(monthsBetween(reachMonth, planEndMonth) / 12 * 10) / 10
+  // Years from TODAY until the forecast date (positive = future, negative = past)
+  const reachYearsFromNow = reachMonth
+    ? Math.round(monthsBetween(currentMonth(), reachMonth) / 12 * 10) / 10
     : null
-  // reachDiffYears > 0 → will reach before deadline; < 0 → will reach after deadline
 
   // How many months ahead/behind is actual vs plan?
   const latestActualMonth = perf.length > 0 ? perf[perf.length - 1].month : null
@@ -763,15 +761,9 @@ export default function FinancesFreedomPage() {
                 <p className="text-base font-bold text-gray-400">—</p>
               )}
               <p className="text-[10px] text-gray-400">
-                {activePlan!.horizon_years} {t.finances.freedomPlanYears}
+                {reachYearsFromNow != null && `em ${reachYearsFromNow} anos`}
                 {userBirthdate && reachMonth && ` · ${ageAtDate(userBirthdate, reachMonth + '-01')} ${t.finances.freedomAgeAtTarget}`}
               </p>
-              {reachDiffYears != null && reachDiffYears > 0 && (
-                <p className="text-[10px] text-emerald-600 mt-0.5">{reachDiffYears} anos antes do prazo</p>
-              )}
-              {reachDiffYears != null && reachDiffYears < 0 && (
-                <p className="text-[10px] text-amber-600 mt-0.5">{Math.abs(reachDiffYears)} anos após o prazo</p>
-              )}
               <p className="text-[10px] text-gray-300 mt-0.5">baseado no patrimônio atual</p>
             </div>
           </div>
