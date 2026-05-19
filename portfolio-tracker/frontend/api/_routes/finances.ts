@@ -581,15 +581,40 @@ Transactions:
 ${descList}`
 
   const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
-  const msg = await anthropic.messages.create({
-    model:      'claude-haiku-4-5-20251001',
-    max_tokens: 2048,
-    messages:   [{ role: 'user', content: prompt }],
-  })
-  const text = msg.content[0].type === 'text' ? msg.content[0].text.trim() : ''
-  const jsonMatch = text.match(/\{[\s\S]*\}/)
-  if (!jsonMatch) return {}
-  return JSON.parse(jsonMatch[0]) as Record<string, number | null>
+
+  // Retry up to 3 times on 529 overloaded with exponential backoff
+  const MAX_RETRIES = 3
+  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+    try {
+      const msg = await anthropic.messages.create({
+        model:      'claude-haiku-4-5-20251001',
+        max_tokens: 2048,
+        messages:   [{ role: 'user', content: prompt }],
+      })
+      const text = msg.content[0].type === 'text' ? msg.content[0].text.trim() : ''
+      const jsonMatch = text.match(/\{[\s\S]*\}/)
+      if (!jsonMatch) return {}
+      return JSON.parse(jsonMatch[0]) as Record<string, number | null>
+    } catch (e: unknown) {
+      const status = (e as { status?: number }).status
+      if (status === 529 && attempt < MAX_RETRIES - 1) {
+        await new Promise(r => setTimeout(r, (attempt + 1) * 2000))
+        continue
+      }
+      throw e
+    }
+  }
+  return {}
+}
+
+function friendlyAiError(e: unknown): string {
+  const status = (e as { status?: number }).status
+  if (status === 529) return 'API sobrecarregada — tente novamente em alguns segundos'
+  if (status === 401) return 'API key inválida'
+  if (status === 429) return 'Limite de requisições atingido — tente novamente'
+  const msg = e instanceof Error ? e.message : String(e)
+  // Strip raw JSON from SDK error messages
+  return msg.replace(/\{[\s\S]*\}/, '').trim().slice(0, 120) || 'Erro desconhecido'
 }
 
 async function aiCategorize(
@@ -608,7 +633,7 @@ async function aiCategorize(
     }
     return { map: result }
   } catch (e) {
-    return { map: result, error: e instanceof Error ? e.message : 'unknown' }
+    return { map: result, error: friendlyAiError(e) }
   }
 }
 
