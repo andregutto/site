@@ -6,6 +6,14 @@ import {
 import { apiFetch } from '../../lib/api'
 import { useI18n } from '../../contexts/I18nContext'
 
+interface CategorySummary {
+  id: number
+  name: string
+  icon: string
+  color: string
+  actual: number
+}
+
 interface EnvelopeSummary {
   envelope_id: number
   name: string
@@ -13,6 +21,7 @@ interface EnvelopeSummary {
   icon: string
   actual: number
   budget: number
+  categories: CategorySummary[]
 }
 
 interface MonthSummary {
@@ -90,17 +99,34 @@ export default function FinancesOverviewPage() {
   const today = new Date()
   const defaultMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`
 
-  const [month,   setMonth]   = useState(defaultMonth)
-  const [data,    setData]    = useState<SpendingSummary | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [month,          setMonth]          = useState(defaultMonth)
+  const [historyMonths,  setHistoryMonths]  = useState<6 | 12 | 24>(6)
+  const [data,           setData]           = useState<SpendingSummary | null>(null)
+  const [loading,        setLoading]        = useState(true)
+  const [expandedEnvIds, setExpandedEnvIds] = useState<Set<number>>(new Set())
 
   useEffect(() => {
     setLoading(true)
-    apiFetch<SpendingSummary>('/finances/spending-summary?months=6')
+    apiFetch<SpendingSummary>(`/finances/spending-summary?months=${historyMonths}`)
       .then(setData)
       .catch(() => {})
       .finally(() => setLoading(false))
-  }, [])
+  }, [historyMonths])
+
+  const historyLabel = (n: 6 | 12 | 24) => {
+    if (n === 6) return '6M'
+    if (n === 12) return locale === 'en' ? '1Y' : '1A'
+    return locale === 'pt' ? 'Tudo' : locale === 'fr' ? 'Tout' : 'All'
+  }
+
+  const toggleEnv = (id: number) => {
+    setExpandedEnvIds(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
 
   if (loading) return (
     <div className="space-y-6">
@@ -143,23 +169,32 @@ export default function FinancesOverviewPage() {
 
   // Envelope bars for current month
   const envelopeBars = data.envelopes.map(env => {
-    const actual = currentMonthData.by_envelope.find(e => e.envelope_id === env.id)?.actual ?? 0
-    const budget = env.budget
+    const envData = currentMonthData.by_envelope.find(e => e.envelope_id === env.id)
+    const actual     = envData?.actual ?? 0
+    const categories = envData?.categories ?? []
+    const budget     = env.budget
     const pctOfIncome = configuredIncome > 0 ? (actual / configuredIncome) * 100 : 0
     const over = budget > 0 && actual > budget
-    return { ...env, actual, budget, pctOfIncome, over }
+    return { ...env, actual, budget, pctOfIncome, over, categories }
   })
 
   const totalBudgeted   = envelopeBars.reduce((s, e) => s + e.budget, 0)
   const isWithinBudget  = totalExpenses === 0 || totalExpenses <= totalBudgeted
   const overspentAmount = totalExpenses > totalBudgeted ? totalExpenses - totalBudgeted : 0
 
-  // Top envelopes by spending
-  const topEnvelopes = [...envelopeBars].filter(e => e.actual > 0).sort((a, b) => b.actual - a.actual)
+  // Top categories from current month (actual categories, not envelopes)
+  const topCategories = currentMonthData.by_envelope
+    .flatMap(e => e.categories ?? [])
+    .filter(c => c.actual > 0)
+    .sort((a, b) => b.actual - a.actual)
+    .slice(0, 5)
 
-  // 6-month stacked chart data
+  // Chart data
   const chartData = data.months.map(ms => {
-    const row: Record<string, number | string> = { month: fmtMonth(ms.month, browserLocale) }
+    const row: Record<string, number | string> = {
+      month:    fmtMonth(ms.month, browserLocale),
+      rawMonth: ms.month,
+    }
     for (const env of ms.by_envelope.filter(e => e.envelope_id !== -1 && e.actual > 0)) {
       row[env.name] = env.actual
     }
@@ -181,24 +216,34 @@ export default function FinancesOverviewPage() {
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+        {/* Received income — highlight actual, show planned as subtitle */}
+        <div className={`rounded-xl border shadow-sm p-4 ${receivedIncome > 0 ? 'bg-emerald-50 border-emerald-100' : 'bg-white border-gray-100'}`}>
           <p className="text-xs text-gray-500 mb-1">{t.finances.income}</p>
-          <p className="text-lg font-bold text-gray-900">{fmt(configuredIncome, currency, true)}</p>
-          {receivedIncome > 0 && (
-            <p className="text-[10px] text-gray-400 mt-0.5">{t.finances.overviewReceived} {fmt(receivedIncome, currency, true)}</p>
-          )}
+          <p className={`text-lg font-bold ${receivedIncome > 0 ? 'text-emerald-700' : 'text-gray-400'}`}>
+            {receivedIncome > 0 ? fmt(receivedIncome, currency, true) : '—'}
+          </p>
+          <p className="text-[10px] text-gray-400 mt-0.5">
+            {t.finances.overviewPlanned} {fmt(configuredIncome, currency, true)}
+          </p>
         </div>
+        {/* Expenses — highlight actual, show planned as subtitle */}
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
           <p className="text-xs text-gray-500 mb-1">{t.finances.expenses}</p>
-          <p className="text-lg font-bold text-red-600">{fmt(totalExpenses, currency, true)}</p>
-          <p className="text-[10px] text-gray-400 mt-0.5">{t.finances.overviewBudgeted} {fmt(totalBudgeted, currency, true)}</p>
+          <p className={`text-lg font-bold ${totalExpenses > totalBudgeted && totalBudgeted > 0 ? 'text-red-600' : 'text-gray-900'}`}>
+            {totalExpenses > 0 ? fmt(totalExpenses, currency, true) : '—'}
+          </p>
+          {totalBudgeted > 0 && (
+            <p className="text-[10px] text-gray-400 mt-0.5">{t.finances.overviewPlanned} {fmt(totalBudgeted, currency, true)}</p>
+          )}
         </div>
+        {/* Balance */}
         <div className={`rounded-xl border shadow-sm p-4 ${receivedIncome > 0 ? (netBalance >= 0 ? 'bg-white border-gray-100' : 'bg-red-50 border-red-100') : 'bg-white border-gray-100'}`}>
           <p className="text-xs text-gray-500 mb-1">{t.finances.overviewBalance}</p>
           <p className={`text-lg font-bold ${receivedIncome > 0 && netBalance < 0 ? 'text-red-600' : 'text-emerald-600'}`}>
             {receivedIncome > 0 ? fmt(netBalance, currency, true) : '—'}
           </p>
         </div>
+        {/* Status */}
         <div className={`rounded-xl border shadow-sm p-4 ${isWithinBudget ? 'bg-emerald-50 border-emerald-100' : 'bg-red-50 border-red-100'}`}>
           <p className="text-xs text-gray-500 mb-1">{t.finances.overviewStatus}</p>
           <p className={`text-sm font-semibold ${isWithinBudget ? 'text-emerald-700' : 'text-red-600'}`}>
@@ -220,41 +265,78 @@ export default function FinancesOverviewPage() {
         </div>
         <div className="divide-y divide-gray-50">
           {envelopeBars.map(env => (
-            <div key={env.id} className="px-5 py-3 flex items-center gap-3">
-              <span className="text-xl leading-none w-7 shrink-0">{env.icon}</span>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm text-gray-700">{env.name}</span>
-                  <div className="text-right shrink-0 ml-3">
-                    <span className={`text-xs font-semibold ${env.over ? 'text-red-500' : 'text-gray-700'}`}>
-                      {fmt(env.actual, currency, true)}
-                    </span>
-                    {env.budget > 0 && (
-                      <span className="text-xs text-gray-400"> / {fmt(env.budget, currency, true)}</span>
-                    )}
+            <div key={env.id}>
+              <div
+                className={`px-5 py-3 flex items-center gap-3 transition-colors ${env.categories.length > 0 ? 'cursor-pointer hover:bg-gray-50' : ''}`}
+                onClick={() => env.categories.length > 0 && toggleEnv(env.id)}
+              >
+                <span className="text-xl leading-none w-7 shrink-0">{env.icon}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-sm text-gray-700">{env.name}</span>
+                      {env.categories.length > 0 && (
+                        <span className="text-[10px] text-gray-400 leading-none">
+                          {expandedEnvIds.has(env.id) ? '▲' : '▼'}
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-right shrink-0 ml-3">
+                      <span className={`text-xs font-semibold ${env.over ? 'text-red-500' : 'text-gray-700'}`}>
+                        {fmt(env.actual, currency, true)}
+                      </span>
+                      {env.budget > 0 && (
+                        <span className="text-xs text-gray-400"> / {fmt(env.budget, currency, true)}</span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                    <div
+                      className="h-full rounded-full transition-all duration-500"
+                      style={{
+                        width: env.budget > 0 ? `${Math.min((env.actual / env.budget) * 100, 100)}%` : '0%',
+                        backgroundColor: env.over ? '#ef4444' : env.actual === 0 ? '#e5e7eb' : env.color,
+                      }}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between mt-0.5">
+                    <span className="text-[10px] text-gray-400">{env.pctOfIncome.toFixed(1)}% {t.finances.ofIncome}</span>
+                    <span className="text-[10px] text-gray-400">{t.finances.target}: {env.pct_target}%</span>
                   </div>
                 </div>
-                <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                  <div
-                    className="h-full rounded-full transition-all duration-500"
-                    style={{
-                      width: env.budget > 0 ? `${Math.min((env.actual / env.budget) * 100, 100)}%` : '0%',
-                      backgroundColor: env.over ? '#ef4444' : env.actual === 0 ? '#e5e7eb' : env.color,
-                    }}
-                  />
-                </div>
-                <div className="flex items-center justify-between mt-0.5">
-                  <span className="text-[10px] text-gray-400">{env.pctOfIncome.toFixed(1)}% {t.finances.ofIncome}</span>
-                  <span className="text-[10px] text-gray-400">{t.finances.target}: {env.pct_target}%</span>
-                </div>
               </div>
+              {/* Expanded categories */}
+              {expandedEnvIds.has(env.id) && env.categories.length > 0 && (
+                <div className="bg-gray-50 border-t border-gray-100">
+                  {env.categories.map(cat => {
+                    const pct = env.actual > 0 ? (cat.actual / env.actual) * 100 : 0
+                    return (
+                      <div key={cat.id} className="px-5 py-2 flex items-center gap-3 pl-14">
+                        <span className="text-base leading-none w-5 shrink-0">{cat.icon}</span>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-gray-600 truncate">{cat.name}</span>
+                            <span className="text-xs font-medium text-gray-700 shrink-0 ml-2">
+                              {fmt(cat.actual, currency, true)}
+                            </span>
+                          </div>
+                          <div className="mt-0.5 h-1 bg-gray-200 rounded-full overflow-hidden">
+                            <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: cat.color }} />
+                          </div>
+                        </div>
+                        <span className="text-[10px] text-gray-400 w-7 text-right shrink-0">{pct.toFixed(0)}%</span>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
             </div>
           ))}
         </div>
       </div>
 
-      {/* Top envelopes this month */}
-      {topEnvelopes.length > 0 && (
+      {/* Top categories this month */}
+      {topCategories.length > 0 && (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           <div className="px-5 py-4 border-b border-gray-50 flex items-center justify-between">
             <h2 className="font-semibold text-gray-800 text-sm">{t.finances.overviewTopCategories}</h2>
@@ -263,19 +345,19 @@ export default function FinancesOverviewPage() {
             </Link>
           </div>
           <div className="divide-y divide-gray-50">
-            {topEnvelopes.slice(0, 5).map((env, i) => {
-              const pct = totalExpenses > 0 ? (env.actual / totalExpenses) * 100 : 0
+            {topCategories.map((cat, i) => {
+              const pct = totalExpenses > 0 ? (cat.actual / totalExpenses) * 100 : 0
               return (
-                <div key={env.id} className="px-5 py-2.5 flex items-center gap-3">
+                <div key={cat.id} className="px-5 py-2.5 flex items-center gap-3">
                   <span className="text-xs text-gray-300 w-4 shrink-0">{i + 1}</span>
-                  <span className="text-base leading-none w-6 shrink-0">{env.icon}</span>
+                  <span className="text-base leading-none w-6 shrink-0">{cat.icon}</span>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-700 truncate">{env.name}</span>
-                      <span className="text-sm font-medium text-gray-900 shrink-0 ml-2">{fmt(env.actual, currency, true)}</span>
+                      <span className="text-sm text-gray-700 truncate">{cat.name}</span>
+                      <span className="text-sm font-medium text-gray-900 shrink-0 ml-2">{fmt(cat.actual, currency, true)}</span>
                     </div>
                     <div className="mt-1 h-1 bg-gray-100 rounded-full overflow-hidden">
-                      <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: env.color }} />
+                      <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: cat.color }} />
                     </div>
                   </div>
                   <span className="text-xs text-gray-400 w-8 text-right shrink-0">{pct.toFixed(0)}%</span>
@@ -286,12 +368,39 @@ export default function FinancesOverviewPage() {
         </div>
       )}
 
-      {/* 6-month historical trend */}
+      {/* Historical trend with time range toggle */}
       {hasHistory && (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-          <h2 className="font-semibold text-gray-800 text-sm mb-4">{t.finances.overviewHistory}</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-semibold text-gray-800 text-sm">{t.finances.overviewHistory}</h2>
+            <div className="flex gap-1">
+              {([6, 12, 24] as const).map(n => (
+                <button
+                  key={n}
+                  onClick={() => setHistoryMonths(n)}
+                  className={`px-2.5 py-1 text-xs rounded-lg transition-colors font-medium ${
+                    historyMonths === n
+                      ? 'bg-[#001A70] text-white'
+                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  {historyLabel(n)}
+                </button>
+              ))}
+            </div>
+          </div>
           <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={chartData} margin={{ top: 5, right: 5, bottom: 5, left: 0 }}>
+            <BarChart
+              data={chartData}
+              margin={{ top: 5, right: 5, bottom: 5, left: 0 }}
+              style={{ cursor: 'pointer' }}
+              onClick={(d) => {
+                if (d?.activeLabel) {
+                  const raw = chartData.find(r => r.month === d.activeLabel)?.rawMonth
+                  if (raw) setMonth(raw as string)
+                }
+              }}
+            >
               <XAxis dataKey="month" tick={{ fontSize: 11 }} />
               <YAxis tickFormatter={v => fmt(v, currency, true)} tick={{ fontSize: 10 }} width={70} />
               <Tooltip content={<ChartTooltip currency={currency} />} />

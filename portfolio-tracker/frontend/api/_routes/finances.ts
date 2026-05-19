@@ -127,14 +127,15 @@ router.post('/envelopes', requireAuth, async (req, res: Response) => {
 router.patch('/envelopes/:id', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const { id } = req.params
-  const { name, pct_target, color, type, icon, sort_order } = req.body
+  const { name, pct_target, color, type, icon, sort_order, description } = req.body
   const update: Record<string, unknown> = {}
-  if (name       != null) update.name        = name
-  if (pct_target != null) update.pct_target  = pct_target
-  if (color      != null) update.color       = color
-  if (type       != null) update.type        = type
-  if (icon       != null) update.icon        = icon
-  if (sort_order != null) update.sort_order  = sort_order
+  if (name        != null) update.name        = name
+  if (pct_target  != null) update.pct_target  = pct_target
+  if (color       != null) update.color       = color
+  if (type        != null) update.type        = type
+  if (icon        != null) update.icon        = icon
+  if (sort_order  != null) update.sort_order  = sort_order
+  if (description != null) update.description = description
   const { error } = await supabaseAdmin
     .from('finance_envelopes')
     .update(update)
@@ -220,10 +221,10 @@ router.delete('/categories/:id', requireAuth, async (req, res: Response) => {
 
 // ── Spending Summary ──────────────────────────────────────────────────────────
 
-// GET /api/finances/spending-summary?months=6
+// GET /api/finances/spending-summary?months=6|12|24
 router.get('/spending-summary', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
-  const months = Math.min(parseInt(req.query.months as string) || 6, 24)
+  const months = Math.min(parseInt(req.query.months as string) || 6, 120)
 
   // Date range: from the start of (months) months ago to today
   const since = new Date()
@@ -240,7 +241,7 @@ router.get('/spending-summary', requireAuth, async (req, res: Response) => {
       .order('date', { ascending: true }),
     supabaseAdmin
       .from('finance_categories')
-      .select('id, envelope_id, budget_monthly')
+      .select('id, name, icon, color, envelope_id, budget_monthly')
       .eq('user_id', userId),
     supabaseAdmin
       .from('finance_envelopes')
@@ -255,20 +256,17 @@ router.get('/spending-summary', requireAuth, async (req, res: Response) => {
   ])
 
   const txns    = txnRes.data ?? []
-  const cats    = catRes.data ?? []
+  const cats    = (catRes.data ?? []) as { id: number; name: string; icon: string; color: string; envelope_id: number | null; budget_monthly: number | null }[]
   const allEnvs = envRes.data ?? []
   const envs    = allEnvs.filter(e => e.type !== 'income')
   const incomeRaw = incomeRes.data ?? { monthly_net: 0, currency: 'EUR' }
-  // Use sum of income category budgets as effective income (same logic as /budget)
   const incomeEnvId = allEnvs.find(e => e.type === 'income')?.id ?? null
   const incomeCatSum = cats
     .filter(c => c.envelope_id === incomeEnvId && c.budget_monthly != null)
     .reduce((s, c) => s + (c.budget_monthly as number), 0)
   const income = { ...incomeRaw, monthly_net: incomeCatSum > 0 ? incomeCatSum : incomeRaw.monthly_net }
 
-  // Build lookup maps
   const catToEnv     = new Map(cats.map(c => [c.id, c.envelope_id]))
-  const envMap       = new Map(envs.map(e => [e.id, e]))
   const envCatBudget = new Map<number, number>()
   for (const c of cats) {
     if (c.envelope_id != null && c.budget_monthly != null) {
@@ -276,61 +274,68 @@ router.get('/spending-summary', requireAuth, async (req, res: Response) => {
     }
   }
 
-  // Aggregate transactions by month → envelope
-  type MonthData = { income: number; expenses: number; byEnv: Map<number | null, number> }
+  // Aggregate transactions by month → envelope and category
+  type MonthData = { income: number; expenses: number; byEnv: Map<number | null, number>; byCat: Map<number | null, number> }
   const monthMap = new Map<string, MonthData>()
 
   for (const tx of txns) {
     const m = (tx.date as string).slice(0, 7)
-    if (!monthMap.has(m)) monthMap.set(m, { income: 0, expenses: 0, byEnv: new Map() })
+    if (!monthMap.has(m)) monthMap.set(m, { income: 0, expenses: 0, byEnv: new Map(), byCat: new Map() })
     const md = monthMap.get(m)!
-
     if (tx.is_internal_transfer) continue
-
     if (tx.amount > 0) {
       md.income += tx.amount
     } else {
       md.expenses += Math.abs(tx.amount)
       const envId = tx.category_id ? (catToEnv.get(tx.category_id) ?? null) : null
       md.byEnv.set(envId, (md.byEnv.get(envId) ?? 0) + Math.abs(tx.amount))
+      md.byCat.set(tx.category_id, (md.byCat.get(tx.category_id) ?? 0) + Math.abs(tx.amount))
     }
   }
 
-  // Build response months (fill gaps for months with no transactions)
+  // Build response months
   const resultMonths = []
   for (let i = months - 1; i >= 0; i--) {
     const d = new Date()
     d.setMonth(d.getMonth() - i)
     d.setDate(1)
     const m = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
-    const md = monthMap.get(m) ?? { income: 0, expenses: 0, byEnv: new Map() }
+    const md = monthMap.get(m) ?? { income: 0, expenses: 0, byEnv: new Map(), byCat: new Map() }
 
-    const byEnv = envs.map(env => ({
-      envelope_id: env.id,
-      name:        env.name,
-      color:       env.color,
-      icon:        env.icon,
-      actual:      Math.round((md.byEnv.get(env.id) ?? 0) * 100) / 100,
-      budget:      Math.round((envCatBudget.get(env.id) ?? 0) * 100) / 100,
-    }))
+    const byEnv = envs.map(env => {
+      const envCats = cats
+        .filter(c => c.envelope_id === env.id)
+        .map(c => ({ id: c.id, name: c.name, icon: c.icon, color: c.color, actual: Math.round((md.byCat.get(c.id) ?? 0) * 100) / 100 }))
+        .filter(c => c.actual > 0)
+        .sort((a, b) => b.actual - a.actual)
+      return {
+        envelope_id: env.id,
+        name:        env.name,
+        color:       env.color,
+        icon:        env.icon,
+        actual:      Math.round((md.byEnv.get(env.id) ?? 0) * 100) / 100,
+        budget:      Math.round((envCatBudget.get(env.id) ?? 0) * 100) / 100,
+        categories:  envCats,
+      }
+    })
 
     const uncategorized = md.byEnv.get(null) ?? 0
     if (uncategorized > 0) {
-      byEnv.push({ envelope_id: -1, name: 'Não categorizado', color: '#9CA3AF', icon: '❓', actual: Math.round(uncategorized * 100) / 100, budget: 0 })
+      byEnv.push({ envelope_id: -1, name: 'Não categorizado', color: '#9CA3AF', icon: '❓', actual: Math.round(uncategorized * 100) / 100, budget: 0, categories: [] })
     }
 
     resultMonths.push({
-      month:    m,
-      income:   Math.round(md.income * 100) / 100,
-      expenses: Math.round(md.expenses * 100) / 100,
+      month:       m,
+      income:      Math.round(md.income * 100) / 100,
+      expenses:    Math.round(md.expenses * 100) / 100,
       by_envelope: byEnv,
     })
   }
 
   res.json({
-    months:       resultMonths,
+    months:        resultMonths,
     income_config: income,
-    envelopes:    envs.map(e => ({ ...e, budget: envCatBudget.get(e.id) ?? 0 })),
+    envelopes:     envs.map(e => ({ ...e, budget: envCatBudget.get(e.id) ?? 0 })),
   })
 })
 
@@ -422,10 +427,10 @@ router.delete('/accounts/:id', requireAuth, async (req, res: Response) => {
 
 // ── Transactions ───────────────────────────────────────────────────────────────
 
-// GET /api/finances/transactions?month=2026-05&category_id=3
+// GET /api/finances/transactions?month=2026-05&category_id=3&limit=1
 router.get('/transactions', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
-  const { month, category_id, account_id } = req.query as Record<string, string>
+  const { month, category_id, account_id, limit } = req.query as Record<string, string>
 
   let query = supabaseAdmin
     .from('finance_transactions')
@@ -442,6 +447,7 @@ router.get('/transactions', requireAuth, async (req, res: Response) => {
   }
   if (category_id) query = query.eq('category_id', category_id)
   if (account_id)  query = query.eq('account_id', account_id)
+  if (limit)       query = query.limit(Number(limit))
 
   const { data, error } = await query
   if (error) { res.status(500).json({ error: error.message }); return }

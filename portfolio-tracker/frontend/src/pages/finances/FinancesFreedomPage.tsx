@@ -449,22 +449,20 @@ export default function FinancesFreedomPage() {
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const [plansData, portfolioData, indicesData, profileData] = await Promise.all([
+      const now = currentMonth()
+      const [plansData, portfolioData, indicesData, profileData, monthlyData] = await Promise.all([
         apiFetch<FreedomPlan[]>('/finances/freedom-plans'),
         apiFetch<PortfolioValue>('/portfolio/value'),
         apiFetch<{ code: string; m12_pct: number | null }[]>('/indices'),
         apiFetch<{ birthdate?: string }>('/profile'),
+        apiFetch<{ monthly: MonthlyPerf[] }>(`/performance/monthly?from=2020-01&to=${now}`),
       ])
       setPlans(plansData)
       setPortfolio(portfolioData)
       const ipca = indicesData.find(i => i.code === 'IPCA')
       if (ipca?.m12_pct != null) setIpcaM12(Math.round(ipca.m12_pct * 10) / 10)
       if (profileData.birthdate) setUserBirthdate(profileData.birthdate)
-      // Fetch monthly performance for actual trajectory
-      const now = currentMonth()
-      const from = '2020-01'
-      const monthly = await apiFetch<{ monthly: MonthlyPerf[] }>(`/performance/monthly?from=${from}&to=${now}`)
-      setPerf(monthly.monthly ?? [])
+      setPerf(monthlyData.monthly ?? [])
     } catch {
       // ignore
     } finally {

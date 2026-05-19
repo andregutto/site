@@ -20,6 +20,7 @@ interface Envelope {
   pct_target: number
   type: string
   budget_amount: number
+  description?: string | null
   categories: Category[]
 }
 
@@ -32,9 +33,11 @@ function fmt(n: number, currency: string) {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n)
 }
 
-function EnvelopeBar({ env, expanded, onToggle, onEditCategory, onDeleteCategory, onAddCategory }:
-  { env: Envelope; expanded: boolean; onToggle: () => void; onEditCategory: (c: Category) => void; onDeleteCategory: (id: number) => void; onAddCategory: (envId: number) => void }) {
+function EnvelopeBar({ env, expanded, onToggle, onEditCategory, onDeleteCategory, onAddCategory, onSaveDescription }:
+  { env: Envelope; expanded: boolean; onToggle: () => void; onEditCategory: (c: Category) => void; onDeleteCategory: (id: number) => void; onAddCategory: (envId: number) => void; onSaveDescription: (id: number, desc: string) => void }) {
   const { t } = useI18n()
+  const [editingDesc, setEditingDesc] = useState(false)
+  const [descInput,   setDescInput]   = useState(env.description ?? '')
 
   const totalCategoryBudget = env.categories.reduce((s, c) => s + (c.budget_monthly ?? 0), 0)
   const allocated = totalCategoryBudget > 0 ? (totalCategoryBudget / env.budget_amount) * 100 : 0
@@ -46,6 +49,11 @@ function EnvelopeBar({ env, expanded, onToggle, onEditCategory, onDeleteCategory
     : isInvestment && allocated >= 100
       ? '#10b981'
       : env.color
+
+  function saveDesc() {
+    setEditingDesc(false)
+    onSaveDescription(env.id, descInput)
+  }
 
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
@@ -83,6 +91,40 @@ function EnvelopeBar({ env, expanded, onToggle, onEditCategory, onDeleteCategory
           <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
         </svg>
       </button>
+      {/* Description — editable inline */}
+      <div className="px-5 pb-3 -mt-1 group flex items-start gap-1.5" onClick={e => e.stopPropagation()}>
+        {editingDesc ? (
+          <div className="flex-1 flex flex-col gap-1">
+            <textarea
+              autoFocus
+              value={descInput}
+              onChange={e => setDescInput(e.target.value)}
+              onBlur={saveDesc}
+              onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); saveDesc() } if (e.key === 'Escape') setEditingDesc(false) }}
+              rows={2}
+              className="w-full text-xs text-gray-600 border border-gray-200 rounded-lg px-2 py-1 resize-none focus:outline-none focus:ring-1 focus:ring-[#001A70]/30"
+              placeholder={t.finances.envelopeDescPlaceholder}
+            />
+          </div>
+        ) : (
+          <>
+            <p
+              className={`flex-1 text-xs italic leading-relaxed cursor-pointer ${env.description ? 'text-gray-500' : 'text-gray-300'}`}
+              onClick={() => { setDescInput(env.description ?? ''); setEditingDesc(true) }}
+            >
+              {env.description || t.finances.envelopeDescPlaceholder}
+            </p>
+            <button
+              onClick={() => { setDescInput(env.description ?? ''); setEditingDesc(true) }}
+              className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 text-gray-400 hover:text-[#001A70] shrink-0 mt-0.5"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3">
+                <path d="M13.488 2.513a1.75 1.75 0 0 0-2.475 0L6.75 6.774a2.75 2.75 0 0 0-.596.892l-.848 2.047a.75.75 0 0 0 .98.98l2.047-.848a2.75 2.75 0 0 0 .892-.596l4.261-4.263a1.75 1.75 0 0 0 0-2.474ZM4.75 14a.75.75 0 0 0 0-1.5H3.5a.5.5 0 0 1-.5-.5V4a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v1.25a.75.75 0 0 0 1.5 0V4a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h1.25Z" />
+              </svg>
+            </button>
+          </>
+        )}
+      </div>
 
       {/* Categories */}
       {expanded && (
@@ -238,6 +280,11 @@ export default function FinancesBudgetPage() {
   async function deleteCategory(id: number) {
     if (!confirm(t.finances.confirmDeleteCategory)) return
     await apiFetch(`/finances/categories/${id}`, { method: 'DELETE' })
+    await load()
+  }
+
+  async function saveDescription(envId: number, description: string) {
+    await apiFetch(`/finances/envelopes/${envId}`, { method: 'PATCH', body: JSON.stringify({ description }) })
     await load()
   }
 
@@ -424,6 +471,7 @@ export default function FinancesBudgetPage() {
             onEditCategory={openEditCategory}
             onDeleteCategory={deleteCategory}
             onAddCategory={openAddCategory}
+            onSaveDescription={saveDescription}
           />
         ))}
       </div>
