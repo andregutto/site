@@ -536,7 +536,8 @@ const BROKER_KEYWORDS = [
 
 type CatRow = { id: number; name: string; icon: string; color: string }
 
-const AI_BATCH_SIZE = 30
+const AI_BATCH_SIZE   = 50  // larger batch = fewer API calls
+const AI_BATCH_DELAY  = 600 // ms between batches to avoid 529 overload
 
 interface AiItem { description: string; sign: '+' | '-' }
 
@@ -578,7 +579,7 @@ ${descList}`
     } catch (e: unknown) {
       const status = (e as { status?: number }).status
       if (status === 529 && attempt < MAX_RETRIES - 1) {
-        await new Promise(r => setTimeout(r, (attempt + 1) * 2000))
+        await new Promise(r => setTimeout(r, (attempt + 1) * 4000))
         continue
       }
       throw e
@@ -606,6 +607,7 @@ async function aiCategorize(
   const result: Record<string, number | null> = {}
   try {
     for (let i = 0; i < items.length; i += AI_BATCH_SIZE) {
+      if (i > 0) await new Promise(r => setTimeout(r, AI_BATCH_DELAY))
       const batch = items.slice(i, i + AI_BATCH_SIZE)
       const batchResult = await aiCategorizeBatch(batch, categories, i)
       Object.assign(result, batchResult)
