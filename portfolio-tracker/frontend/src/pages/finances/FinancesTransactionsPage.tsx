@@ -367,13 +367,25 @@ export default function FinancesTransactionsPage() {
         .filter(r => r.category_id != null && (r.category_id !== r.suggested_category_id || r.suggested_by === 'ai'))
         .map(r => ({ category_id: r.category_id as number, keyword: r.description.toLowerCase().trim() }))
 
-      const result = await apiFetch<{ imported: number; skipped: number; total: number }>('/finances/transactions/csv-import', {
-        method: 'POST',
-        body: JSON.stringify({
-          transactions: toImport.map(r => ({ ...r, account_id: csvAccountId })),
-          learn_rules,
-        }),
-      })
+      const CHUNK = 300
+      let totalImported = 0, totalSkipped = 0
+      for (let start = 0; start < toImport.length; start += CHUNK) {
+        const chunk = toImport.slice(start, start + CHUNK)
+        const result = await apiFetch<{ imported: number; skipped: number; total: number }>('/finances/transactions/csv-import', {
+          method: 'POST',
+          body: JSON.stringify({
+            transactions: chunk.map(r => ({
+              date: r.date, description: r.description, amount: r.amount, currency: r.currency,
+              category_id: r.category_id ?? null, account_id: csvAccountId,
+              is_internal_transfer: r.is_internal_transfer,
+            })),
+            learn_rules: start === 0 ? learn_rules : [],
+          }),
+        })
+        totalImported += result.imported
+        totalSkipped += result.skipped
+      }
+      const result = { imported: totalImported, skipped: totalSkipped }
 
       // After import, jump to the most recent month present in the imported data
       const mostRecentDate = toImport.reduce((max, r) => r.date > max ? r.date : max, toImport[0]?.date ?? '')

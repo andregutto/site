@@ -786,13 +786,13 @@ router.post('/transactions/csv-parse', requireAuth, async (req, res: Response) =
     })
   }
 
-  // Mark already-imported rows so the frontend can hide them from preview
-  const allSources = transactions.map(t => csvSourceKey(t))
+  // Mark already-imported rows so the frontend can hide them from preview.
+  // Fetch all csv-sourced rows for user at once (avoids huge .in() URL with thousands of items).
   const { data: existingRows } = await supabaseAdmin
     .from('finance_transactions')
     .select('source')
     .eq('user_id', userId)
-    .in('source', allSources)
+    .like('source', 'csv:%')
   const existingSet = new Set((existingRows ?? []).map((r: { source: string }) => r.source))
   const taggedTransactions = transactions.map(t => {
     const source = csvSourceKey(t)
