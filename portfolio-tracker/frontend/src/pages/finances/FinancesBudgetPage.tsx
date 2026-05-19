@@ -213,6 +213,7 @@ export default function FinancesBudgetPage() {
   const [catName, setCatName]         = useState('')
   const [catIcon, setCatIcon]         = useState('🏷️')
   const [catBudget, setCatBudget]     = useState('')
+  const [catEnvelopeId, setCatEnvelopeId] = useState<number>(0)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -253,6 +254,7 @@ export default function FinancesBudgetPage() {
 
   function openAddCategory(envId: number) {
     setCatName(''); setCatIcon('🏷️'); setCatBudget('')
+    setCatEnvelopeId(envId)
     setModal({ mode: 'add', envelopeId: envId })
   }
 
@@ -260,6 +262,7 @@ export default function FinancesBudgetPage() {
     setCatName(cat.name)
     setCatIcon(cat.icon)
     setCatBudget(cat.budget_monthly != null ? String(cat.budget_monthly) : '')
+    setCatEnvelopeId(cat.envelope_id ?? 0)
     setModal({ mode: 'edit', envelopeId: cat.envelope_id ?? 0, category: cat })
   }
 
@@ -271,7 +274,7 @@ export default function FinancesBudgetPage() {
         name: catName.trim(),
         icon: catIcon,
         budget_monthly: catBudget ? parseFloat(catBudget) : null,
-        envelope_id: modal.envelopeId,
+        envelope_id: catEnvelopeId || modal.envelopeId,
       }
       if (modal.mode === 'add') {
         await apiFetch('/finances/categories', { method: 'POST', body: JSON.stringify(payload) })
@@ -498,6 +501,20 @@ export default function FinancesBudgetPage() {
               {modal.mode === 'add' ? t.finances.newCategory : t.finances.editCategory}
             </h3>
             <div className="space-y-3">
+              {modal.mode === 'edit' && data && (
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">Envelope</label>
+                  <select
+                    value={catEnvelopeId}
+                    onChange={e => setCatEnvelopeId(Number(e.target.value))}
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20"
+                  >
+                    {data.envelopes.map(env => (
+                      <option key={env.id} value={env.id}>{env.icon} {env.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
               <div>
                 <label className="block text-xs text-gray-500 mb-1">{t.finances.categoryName}</label>
                 <input

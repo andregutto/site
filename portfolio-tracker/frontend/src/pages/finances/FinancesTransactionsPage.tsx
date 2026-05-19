@@ -15,7 +15,7 @@ interface Transaction {
   category_id: number | null
   moment_id: number | null
   finance_categories: Category | null
-  finance_moments: MomentRef | null
+  moments: MomentRef[]
   is_internal_transfer: boolean
   source: string
   notes: string | null
@@ -110,15 +110,32 @@ export default function FinancesTransactionsPage() {
   const [editingNotesId, setEditingNotesId] = useState<number | null>(null)
   const [notesInput, setNotesInput]         = useState('')
 
+  // Date range mode
+  const [dateMode, setDateMode]   = useState<'month' | 'range'>('month')
+  const [dateFrom, setDateFrom]   = useState(`${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-01`)
+  const [dateTo, setDateTo]       = useState(today.toISOString().split('T')[0])
+  // Filters
+  const [filterCatId, setFilterCatId]       = useState<number | ''>('')
+  const [filterMomentId, setFilterMomentId] = useState<number | ''>('')
+
   const loadTransactions = useCallback(async () => {
     setLoading(true)
     try {
-      const data = await apiFetch<Transaction[]>(`/finances/transactions?month=${month}`)
+      const params = new URLSearchParams()
+      if (dateMode === 'month') {
+        params.set('month', month)
+      } else {
+        if (dateFrom) params.set('date_from', dateFrom)
+        if (dateTo)   params.set('date_to', dateTo)
+      }
+      if (filterCatId)    params.set('category_id', String(filterCatId))
+      if (filterMomentId) params.set('moment_id', String(filterMomentId))
+      const data = await apiFetch<Transaction[]>(`/finances/transactions?${params}`)
       setTransactions(data)
     } finally {
       setLoading(false)
     }
-  }, [month])
+  }, [month, dateMode, dateFrom, dateTo, filterCatId, filterMomentId])
 
   useEffect(() => {
     apiFetch<{ envelopes: { type: string; categories: Category[] }[] }>('/finances/budget')
@@ -170,8 +187,8 @@ export default function FinancesTransactionsPage() {
     return () => document.removeEventListener('mousedown', handler)
   }, [showMomentDropdown])
 
-  // Clear selection on month change
-  useEffect(() => { setSelected(new Set()) }, [month])
+  // Clear selection on date/filter change
+  useEffect(() => { setSelected(new Set()) }, [month, dateMode, dateFrom, dateTo, filterCatId, filterMomentId])
 
   function toggleSelect(id: number) {
     setSelected(prev => {
@@ -189,14 +206,26 @@ export default function FinancesTransactionsPage() {
     }
   }
 
-  async function bulkAssignMoment(momentId: number | null) {
+  async function bulkToggleMoment(momentId: number | null) {
     setAssigning(true)
     setShowMomentDropdown(false)
     try {
+      const allHaveIt = momentId !== null && Array.from(selected).every(id => {
+        const tx = transactions.find(t => t.id === id)
+        return tx?.moments.some(m => m.id === momentId)
+      })
       await Promise.all(
-        Array.from(selected).map(id =>
-          apiFetch(`/finances/transactions/${id}`, { method: 'PATCH', body: JSON.stringify({ moment_id: momentId }) })
-        )
+        Array.from(selected).map(id => {
+          const tx = transactions.find(t => t.id === id)
+          let newIds: number[]
+          if (momentId === null) {
+            newIds = []
+          } else {
+            const cur = tx?.moments.map(m => m.id) ?? []
+            newIds = allHaveIt ? cur.filter(mid => mid !== momentId) : [...new Set([...cur, momentId])]
+          }
+          return apiFetch(`/finances/transactions/${id}`, { method: 'PATCH', body: JSON.stringify({ moment_ids: newIds }) })
+        })
       )
       setSelected(new Set())
       await loadTransactions()
@@ -429,7 +458,31 @@ export default function FinancesTransactionsPage() {
           <p className="text-sm text-gray-400 mt-0.5">{t.finances.transactionsSubtitle}</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          <MonthPicker value={month} onChange={setMonth} />
+          {dateMode === 'month' ? (
+            <div className="flex items-center gap-1">
+              <MonthPicker value={month} onChange={setMonth} />
+              <button
+                onClick={() => setDateMode('range')}
+                title="Período personalizado"
+                className="p-1.5 text-gray-400 hover:text-gray-600 border border-gray-200 rounded-lg transition-colors"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4"><path d="M5.75 7.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5ZM8 7.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm2.25 0a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5ZM5.75 10a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5ZM8 10a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm2.25 0a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5ZM4.75 2a.75.75 0 0 1 .75.75V4h5V2.75a.75.75 0 0 1 1.5 0V4h.25A2.75 2.75 0 0 1 15 6.75v6.5A2.75 2.75 0 0 1 12.25 16H3.75A2.75 2.75 0 0 1 1 13.25v-6.5A2.75 2.75 0 0 1 3.75 4H4V2.75A.75.75 0 0 1 4.75 2ZM2.5 7.5v5.75c0 .69.56 1.25 1.25 1.25h8.5c.69 0 1.25-.56 1.25-1.25V7.5h-11Z"/></svg>
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-1.5">
+              <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm" />
+              <span className="text-gray-400 text-xs">→</span>
+              <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className="border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm" />
+              <button
+                onClick={() => setDateMode('month')}
+                className="p-1.5 text-gray-400 hover:text-gray-600 border border-gray-200 rounded-lg transition-colors"
+                title="Voltar para seleção por mês"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4"><path d="M5.28 4.22a.75.75 0 0 0-1.06 1.06L6.94 8l-2.72 2.72a.75.75 0 1 0 1.06 1.06L8 9.06l2.72 2.72a.75.75 0 1 0 1.06-1.06L9.06 8l2.72-2.72a.75.75 0 0 0-1.06-1.06L8 6.94 5.28 4.22Z" /></svg>
+              </button>
+            </div>
+          )}
           {accountsLoaded && accounts.length > 0 && (<>
             <button
               onClick={() => { setCsvStep('idle'); setCsvRows([]); setCsvDuplicateCount(0); setCsvError(''); setCsvAiDebug(null); fileRef.current?.click() }}
@@ -450,6 +503,40 @@ export default function FinancesTransactionsPage() {
           <input ref={fileRef} type="file" accept=".csv,.txt" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) handleCSVFile(f); e.target.value = '' }} />
         </div>
       </div>
+
+      {/* Filter strip */}
+      {csvStep === 'idle' && (allCategories.length > 0 || moments.length > 0) && (
+        <div className="flex items-center gap-2 flex-wrap">
+          {allCategories.length > 0 && (
+            <select
+              value={filterCatId}
+              onChange={e => setFilterCatId(e.target.value === '' ? '' : Number(e.target.value))}
+              className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm bg-white"
+            >
+              <option value="">Todas as categorias</option>
+              {allCategories.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
+            </select>
+          )}
+          {moments.length > 0 && (
+            <select
+              value={filterMomentId}
+              onChange={e => setFilterMomentId(e.target.value === '' ? '' : Number(e.target.value))}
+              className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm bg-white"
+            >
+              <option value="">Todos os momentos</option>
+              {moments.map(m => <option key={m.id} value={m.id}>{m.icon} {m.name}</option>)}
+            </select>
+          )}
+          {(filterCatId !== '' || filterMomentId !== '') && (
+            <button
+              onClick={() => { setFilterCatId(''); setFilterMomentId('') }}
+              className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              Limpar filtros
+            </button>
+          )}
+        </div>
+      )}
 
       {/* CSV currency selector */}
       {csvStep === 'idle' && accounts.length > 0 && (
@@ -716,16 +803,24 @@ export default function FinancesTransactionsPage() {
                         </td>
                         {/* Moment badge */}
                         <td className="px-3 py-3">
-                          {tx.finance_moments ? (
-                            <span
-                              className="text-xs px-2 py-0.5 rounded-full font-medium cursor-pointer hover:opacity-80"
-                              style={{ backgroundColor: tx.finance_moments.color + '22', color: tx.finance_moments.color }}
-                              onClick={() => { setSelected(new Set([tx.id])); setShowMomentDropdown(true) }}
-                            >
-                              {tx.finance_moments.icon} {tx.finance_moments.name}
-                            </span>
+                          {tx.moments.length > 0 ? (
+                            <div className="flex items-center gap-1 flex-wrap">
+                              {tx.moments.map(m => (
+                                <span
+                                  key={m.id}
+                                  className="text-xs px-2 py-0.5 rounded-full font-medium cursor-pointer hover:opacity-80"
+                                  style={{ backgroundColor: m.color + '22', color: m.color }}
+                                  onClick={() => { setSelected(new Set([tx.id])); setShowMomentDropdown(true) }}
+                                >
+                                  {m.icon} {m.name}
+                                </span>
+                              ))}
+                            </div>
                           ) : (
-                            <span className="text-xs text-gray-200 group-hover:text-gray-400 transition-colors">—</span>
+                            <span
+                              className="text-xs text-gray-200 group-hover:text-gray-400 transition-colors cursor-pointer"
+                              onClick={() => { setSelected(new Set([tx.id])); setShowMomentDropdown(true) }}
+                            >—</span>
                           )}
                         </td>
                         <td className="px-3 py-3">
@@ -733,9 +828,9 @@ export default function FinancesTransactionsPage() {
                             <button
                               onClick={() => { setEditingNotesId(tx.id); setNotesInput(tx.notes ?? '') }}
                               title={t.finances.notesPlaceholder}
-                              className={`p-1 transition-colors rounded ${tx.notes ? 'text-[#001A70]/40 hover:text-[#001A70]' : 'text-gray-300 hover:text-[#001A70]/60'}`}
+                              className={`p-1.5 transition-colors rounded ${tx.notes ? 'text-[#001A70]/40 hover:text-[#001A70]' : 'text-gray-300 hover:text-[#001A70]/60'}`}
                             >
-                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5"><path d="M13.488 2.513a1.75 1.75 0 0 0-2.475 0L6.75 6.774a2.75 2.75 0 0 0-.596.892l-.471 1.179a.75.75 0 0 0 .98.98l1.179-.471a2.75 2.75 0 0 0 .892-.596l4.262-4.263a1.75 1.75 0 0 0 0-2.475ZM3.5 4.75A.75.75 0 0 1 4.25 4h3a.75.75 0 0 1 0 1.5h-3a.75.75 0 0 1-.75-.75Zm0 3A.75.75 0 0 1 4.25 7h1.5a.75.75 0 0 1 0 1.5h-1.5A.75.75 0 0 1 3.5 7.75ZM2 3.5A1.5 1.5 0 0 1 3.5 2h9A1.5 1.5 0 0 1 14 3.5V5a.75.75 0 0 1-1.5 0V3.5a.75.75 0 0 0-.75-.75h-9A.75.75 0 0 0 2 3.5V12a.75.75 0 0 0 .75.75H6a.75.75 0 0 1 0 1.5H2.75A1.5 1.5 0 0 1 2 12.75V3.5Z"/></svg>
+                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4"><path d="M13.488 2.513a1.75 1.75 0 0 0-2.475 0L6.75 6.774a2.75 2.75 0 0 0-.596.892l-.471 1.179a.75.75 0 0 0 .98.98l1.179-.471a2.75 2.75 0 0 0 .892-.596l4.262-4.263a1.75 1.75 0 0 0 0-2.475ZM3.5 4.75A.75.75 0 0 1 4.25 4h3a.75.75 0 0 1 0 1.5h-3a.75.75 0 0 1-.75-.75Zm0 3A.75.75 0 0 1 4.25 7h1.5a.75.75 0 0 1 0 1.5h-1.5A.75.75 0 0 1 3.5 7.75ZM2 3.5A1.5 1.5 0 0 1 3.5 2h9A1.5 1.5 0 0 1 14 3.5V5a.75.75 0 0 1-1.5 0V3.5a.75.75 0 0 0-.75-.75h-9A.75.75 0 0 0 2 3.5V12a.75.75 0 0 0 .75.75H6a.75.75 0 0 1 0 1.5H2.75A1.5 1.5 0 0 1 2 12.75V3.5Z"/></svg>
                             </button>
                             <button
                               onClick={() => toggleInternal(tx.id, tx.is_internal_transfer)}
@@ -784,20 +879,29 @@ export default function FinancesTransactionsPage() {
                 {moments.length === 0 ? (
                   <p className="px-4 py-2 text-xs text-gray-400">Nenhum Momento criado ainda</p>
                 ) : (
-                  moments.map(m => (
-                    <button
-                      key={m.id}
-                      onClick={() => bulkAssignMoment(m.id)}
-                      className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                    >
-                      <span className="text-base">{m.icon}</span>
-                      <span>{m.name}</span>
-                    </button>
-                  ))
+                  moments.map(m => {
+                    const assignedCount = Array.from(selected).filter(id =>
+                      transactions.find(t => t.id === id)?.moments.some(mom => mom.id === m.id)
+                    ).length
+                    const allHave  = assignedCount === selected.size
+                    const someHave = assignedCount > 0 && !allHave
+                    return (
+                      <button
+                        key={m.id}
+                        onClick={() => bulkToggleMoment(m.id)}
+                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                      >
+                        <span className="text-base">{m.icon}</span>
+                        <span className="flex-1 text-left">{m.name}</span>
+                        {allHave  && <span className="text-[10px] text-emerald-500 font-bold">✓ todos</span>}
+                        {someHave && <span className="text-[10px] text-gray-400">− parcial</span>}
+                      </button>
+                    )
+                  })
                 )}
                 <div className="border-t border-gray-100 mt-1 pt-1">
                   <button
-                    onClick={() => bulkAssignMoment(null)}
+                    onClick={() => bulkToggleMoment(null)}
                     className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-400 hover:bg-gray-50 transition-colors"
                   >
                     <span>✕</span>

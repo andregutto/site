@@ -294,6 +294,19 @@ export default function FinancesOverviewPage() {
                           <span className="text-xs text-gray-400">{fmt(env.budget, currency, true)}</span>
                         </div>
                       )}
+                      {env.budget > 0 && env.actual > 0 && (
+                        <div>
+                          {(() => {
+                            const pct = Math.round((env.actual - env.budget) / env.budget * 100)
+                            const over = pct > 0
+                            return (
+                              <span className={`text-[10px] font-medium ${over ? 'text-red-500' : 'text-emerald-600'}`}>
+                                {over ? `+${pct}%` : `${pct}%`} da meta
+                              </span>
+                            )
+                          })()}
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">

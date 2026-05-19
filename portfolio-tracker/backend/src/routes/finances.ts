@@ -428,11 +428,11 @@ router.delete('/accounts/:id', requireAuth, async (req, res: Response) => {
 // GET /api/finances/transactions?month=2026-05&category_id=3&limit=1
 router.get('/transactions', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
-  const { month, category_id, account_id, limit } = req.query as Record<string, string>
+  const { month, category_id, account_id, limit, date_from, date_to, moment_id } = req.query as Record<string, string>
 
   let query = supabaseAdmin
     .from('finance_transactions')
-    .select('id, date, description, amount, currency, category_id, account_id, is_internal_transfer, source, moment_id, notes, finance_categories(id, name, icon, color), finance_moments(id, name, icon, color)')
+    .select('id, date, description, amount, currency, category_id, account_id, is_internal_transfer, source, moment_id, notes, finance_categories(id, name, icon, color), finance_transaction_moments(moment_id, finance_moments(id, name, icon, color))')
     .eq('user_id', userId)
     .order('date', { ascending: false })
     .order('id', { ascending: false })
@@ -442,14 +442,26 @@ router.get('/transactions', requireAuth, async (req, res: Response) => {
     const start = `${y}-${String(m).padStart(2, '0')}-01`
     const end   = new Date(y, m, 0).toISOString().split('T')[0]
     query = query.gte('date', start).lte('date', end)
+  } else if (date_from && date_to) {
+    query = query.gte('date', date_from).lte('date', date_to)
   }
   if (category_id) query = query.eq('category_id', category_id)
+  if (moment_id)   query = query.eq('moment_id', moment_id)
   if (account_id)  query = query.eq('account_id', account_id)
   if (limit)       query = query.limit(Number(limit))
 
   const { data, error } = await query
   if (error) { res.status(500).json({ error: error.message }); return }
-  res.json(data ?? [])
+  const result = (data ?? []).map((tx: any) => {
+    const { finance_transaction_moments, ...rest } = tx
+    return {
+      ...rest,
+      moments: (finance_transaction_moments ?? [])
+        .map((m: any) => m.finance_moments)
+        .filter(Boolean),
+    }
+  })
+  res.json(result)
 })
 
 // GET /api/finances/transactions/months — distinct YYYY-MM months with data, desc
@@ -493,19 +505,35 @@ router.post('/transactions', requireAuth, async (req, res: Response) => {
 router.patch('/transactions/:id', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const { id } = req.params
-  const { category_id, is_internal_transfer, description, amount, notes } = req.body
+  const { category_id, is_internal_transfer, description, amount, notes, moment_id, moment_ids } = req.body
   const update: Record<string, unknown> = {}
   if (category_id          !== undefined) update.category_id         = category_id
   if (is_internal_transfer !== undefined) update.is_internal_transfer = is_internal_transfer
   if (description          != null) update.description = description
   if (amount               != null) update.amount      = amount
   if (notes                !== undefined) update.notes = notes ?? null
-  const { error } = await supabaseAdmin
-    .from('finance_transactions')
-    .update(update)
-    .eq('id', id)
-    .eq('user_id', userId)
-  if (error) { res.status(500).json({ error: error.message }); return }
+
+  if (moment_ids !== undefined || moment_id !== undefined) {
+    const ids: number[] = moment_ids !== undefined
+      ? moment_ids
+      : (moment_id === null ? [] : [moment_id])
+    await supabaseAdmin.from('finance_transaction_moments')
+      .delete().eq('transaction_id', id).eq('user_id', userId)
+    if (ids.length > 0) {
+      await supabaseAdmin.from('finance_transaction_moments')
+        .insert(ids.map((mid: number) => ({ transaction_id: Number(id), moment_id: mid, user_id: userId })))
+    }
+    update.moment_id = ids[0] ?? null
+  }
+
+  if (Object.keys(update).length > 0) {
+    const { error } = await supabaseAdmin
+      .from('finance_transactions')
+      .update(update)
+      .eq('id', id)
+      .eq('user_id', userId)
+    if (error) { res.status(500).json({ error: error.message }); return }
+  }
   res.json({ ok: true })
 })
 
@@ -859,7 +887,16 @@ router.post('/transactions/csv-import', requireAuth, async (req, res: Response) 
     .eq('user_id', userId)
     .like('source', 'csv:%')
   const existingSet = new Set((existingRows ?? []).map((r: { source: string }) => r.source))
-  const newRows = rows.filter(r => !existingSet.has(r.source))
+  const dbNewRows = rows.filter(r => !existingSet.has(r.source))
+
+  // Deduplicate within the incoming rows themselves (identical source hash → unique index
+  // rejects entire INSERT batch silently)
+  const seenSources = new Set<string>()
+  const newRows = dbNewRows.filter(r => {
+    if (seenSources.has(r.source)) return false
+    seenSources.add(r.source)
+    return true
+  })
 
   let imported = 0
   let skipped = rows.length - newRows.length
@@ -871,6 +908,7 @@ router.post('/transactions/csv-import', requireAuth, async (req, res: Response) 
       .insert(chunk)
       .select('id')
     if (error) {
+      console.error('[csv-import] insert error:', error.message, 'chunk size:', chunk.length)
       skipped += chunk.length
     } else {
       imported += (data ?? []).length
