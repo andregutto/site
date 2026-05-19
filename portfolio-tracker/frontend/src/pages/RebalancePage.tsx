@@ -55,7 +55,10 @@ export default function RebalancePage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-gray-900">Balanceamento</h1>
+        <div>
+          <h1 className="text-xl font-bold text-gray-900">Balanceamento</h1>
+          <p className="text-sm text-gray-400 mt-0.5">Metas de alocação por classe</p>
+        </div>
         <div className="flex items-center gap-3">
           {saveOk && <span className="text-xs text-green-600">Salvo.</span>}
           <button

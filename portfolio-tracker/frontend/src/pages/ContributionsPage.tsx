@@ -513,7 +513,10 @@ export default function ContributionsPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-3">
-        <h1 className="text-xl font-bold text-gray-900">Aportes</h1>
+        <div>
+          <h1 className="text-xl font-bold text-gray-900">Aportes</h1>
+          <p className="text-sm text-gray-400 mt-0.5">Histórico de compras e vendas</p>
+        </div>
         <div className="flex items-center gap-2">
           <Link
             to="/import/b3"

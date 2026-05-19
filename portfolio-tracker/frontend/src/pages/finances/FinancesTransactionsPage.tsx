@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { apiFetch } from '../../lib/api'
 import { useI18n } from '../../contexts/I18nContext'
 
@@ -64,6 +64,7 @@ function MonthPicker({ value, onChange }: { value: string; onChange: (m: string)
 
 export default function FinancesTransactionsPage() {
   const { t } = useI18n()
+  const [searchParams] = useSearchParams()
   const today = new Date()
   const defaultMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`
 
@@ -115,7 +116,10 @@ export default function FinancesTransactionsPage() {
   const [dateFrom, setDateFrom]   = useState(`${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-01`)
   const [dateTo, setDateTo]       = useState(today.toISOString().split('T')[0])
   // Filters
-  const [filterCatId, setFilterCatId]       = useState<number | ''>('')
+  const [filterCatId, setFilterCatId]       = useState<number | ''>(() => {
+    const p = searchParams.get('category_id')
+    return p ? Number(p) : ''
+  })
   const [filterMomentId, setFilterMomentId] = useState<number | ''>('')
 
   const loadTransactions = useCallback(async () => {

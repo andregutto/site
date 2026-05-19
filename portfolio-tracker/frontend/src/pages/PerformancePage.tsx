@@ -179,7 +179,10 @@ export default function PerformancePage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-bold text-gray-900">Performance</h1>
+        <div>
+          <h1 className="text-xl font-bold text-gray-900">Performance</h1>
+          <p className="text-sm text-gray-400 mt-0.5">Rentabilidade e evolução do portfólio</p>
+        </div>
 
         <div className="flex flex-wrap items-center gap-2">
           {modeButtons.map(({ key, label }) => (

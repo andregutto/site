@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts'
 import { apiFetch } from '../../lib/api'
 import { useI18n } from '../../contexts/I18nContext'
+import { useCurrency } from '../../contexts/CurrencyContext'
 
 interface CategorySummary {
   id: number
@@ -94,6 +95,8 @@ function ChartTooltip({ active, payload, label, currency }: {
 
 export default function FinancesOverviewPage() {
   const { t, locale } = useI18n()
+  const navigate = useNavigate()
+  const { currency: displayCurrency, fxRates } = useCurrency()
   const browserLocale = locale === 'pt' ? 'pt-BR' : locale === 'fr' ? 'fr-FR' : 'en-GB'
 
   const today = new Date()
@@ -157,7 +160,17 @@ export default function FinancesOverviewPage() {
     </div>
   )
 
-  const currency = data.income_config.currency
+  const incomeCurrency = data.income_config.currency
+  const currency = displayCurrency
+  // Convert from income currency to display currency via BRL as pivot
+  const cx = (n: number): number => {
+    if (incomeCurrency === displayCurrency) return n
+    const toRate = (fxRates as Record<string, number>)[incomeCurrency] ?? 1
+    const brl = n * toRate
+    if (displayCurrency === 'BRL') return brl
+    const fromRate = (fxRates as Record<string, number>)[displayCurrency] ?? 1
+    return brl / fromRate
+  }
   const configuredIncome = data.income_config.monthly_net
 
   const currentMonthData = data.months.find(m => m.month === month)
@@ -220,27 +233,27 @@ export default function FinancesOverviewPage() {
         <div className={`rounded-xl border shadow-sm p-4 ${receivedIncome > 0 ? 'bg-emerald-50 border-emerald-100' : 'bg-white border-gray-100'}`}>
           <p className="text-xs text-gray-500 mb-1">{t.finances.income}</p>
           <p className={`text-lg font-bold ${receivedIncome > 0 ? 'text-emerald-700' : 'text-gray-400'}`}>
-            {receivedIncome > 0 ? fmt(receivedIncome, currency, true) : '—'}
+            {receivedIncome > 0 ? fmt(cx(receivedIncome), currency, true) : '—'}
           </p>
           <p className="text-[10px] text-gray-400 mt-0.5">
-            {t.finances.overviewPlanned} {fmt(configuredIncome, currency, true)}
+            {t.finances.overviewPlanned} {fmt(cx(configuredIncome), currency, true)}
           </p>
         </div>
         {/* Expenses — highlight actual, show planned as subtitle */}
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
           <p className="text-xs text-gray-500 mb-1">{t.finances.expenses}</p>
           <p className={`text-lg font-bold ${totalExpenses > totalBudgeted && totalBudgeted > 0 ? 'text-red-600' : 'text-gray-900'}`}>
-            {totalExpenses > 0 ? fmt(totalExpenses, currency, true) : '—'}
+            {totalExpenses > 0 ? fmt(cx(totalExpenses), currency, true) : '—'}
           </p>
           {totalBudgeted > 0 && (
-            <p className="text-[10px] text-gray-400 mt-0.5">{t.finances.overviewPlanned} {fmt(totalBudgeted, currency, true)}</p>
+            <p className="text-[10px] text-gray-400 mt-0.5">{t.finances.overviewPlanned} {fmt(cx(totalBudgeted), currency, true)}</p>
           )}
         </div>
         {/* Balance */}
         <div className={`rounded-xl border shadow-sm p-4 ${receivedIncome > 0 ? (netBalance >= 0 ? 'bg-white border-gray-100' : 'bg-red-50 border-red-100') : 'bg-white border-gray-100'}`}>
           <p className="text-xs text-gray-500 mb-1">{t.finances.overviewBalance}</p>
           <p className={`text-lg font-bold ${receivedIncome > 0 && netBalance < 0 ? 'text-red-600' : 'text-emerald-600'}`}>
-            {receivedIncome > 0 ? fmt(netBalance, currency, true) : '—'}
+            {receivedIncome > 0 ? fmt(cx(netBalance), currency, true) : '—'}
           </p>
         </div>
         {/* Status */}
@@ -250,7 +263,7 @@ export default function FinancesOverviewPage() {
             {totalExpenses === 0 ? '—' : isWithinBudget ? t.finances.overviewOnTrack : t.finances.overviewOverspent}
           </p>
           {overspentAmount > 0 && (
-            <p className="text-[10px] text-red-500 mt-0.5">+{fmt(overspentAmount, currency, true)}</p>
+            <p className="text-[10px] text-red-500 mt-0.5">+{fmt(cx(overspentAmount), currency, true)}</p>
           )}
         </div>
       </div>
@@ -285,13 +298,13 @@ export default function FinancesOverviewPage() {
                       <div>
                         <span className="text-[10px] text-gray-400 mr-1">{t.finances.overviewSpent}</span>
                         <span className={`text-xs font-semibold ${env.over ? 'text-red-500' : 'text-gray-700'}`}>
-                          {fmt(env.actual, currency, true)}
+                          {fmt(cx(env.actual), currency, true)}
                         </span>
                       </div>
                       {env.budget > 0 && (
                         <div>
                           <span className="text-[10px] text-gray-400 mr-1">{t.finances.overviewBudgeted}</span>
-                          <span className="text-xs text-gray-400">{fmt(env.budget, currency, true)}</span>
+                          <span className="text-xs text-gray-400">{fmt(cx(env.budget), currency, true)}</span>
                         </div>
                       )}
                       {env.budget > 0 && env.actual > 0 && (
@@ -330,13 +343,13 @@ export default function FinancesOverviewPage() {
                   {env.categories.map(cat => {
                     const pct = env.actual > 0 ? (cat.actual / env.actual) * 100 : 0
                     return (
-                      <div key={cat.id} className="px-5 py-2 flex items-center gap-3 pl-14">
+                      <div key={cat.id} className="px-5 py-2 flex items-center gap-3 pl-14 cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => navigate(`/finances/transactions?category_id=${cat.id}`)}>
                         <span className="text-base leading-none w-5 shrink-0">{cat.icon}</span>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between">
                             <span className="text-xs text-gray-600 truncate">{cat.name}</span>
                             <span className="text-xs font-medium text-gray-700 shrink-0 ml-2">
-                              {fmt(cat.actual, currency, true)}
+                              {fmt(cx(cat.actual), currency, true)}
                             </span>
                           </div>
                           <div className="mt-0.5 h-1 bg-gray-200 rounded-full overflow-hidden">
@@ -367,13 +380,13 @@ export default function FinancesOverviewPage() {
             {topCategories.map((cat, i) => {
               const pct = totalExpenses > 0 ? (cat.actual / totalExpenses) * 100 : 0
               return (
-                <div key={cat.id} className="px-5 py-2.5 flex items-center gap-3">
+                <div key={cat.id} className="px-5 py-2.5 flex items-center gap-3 cursor-pointer hover:bg-gray-50 transition-colors" onClick={() => navigate(`/finances/transactions?category_id=${cat.id}`)}>
                   <span className="text-xs text-gray-300 w-4 shrink-0">{i + 1}</span>
                   <span className="text-base leading-none w-6 shrink-0">{cat.icon}</span>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-gray-700 truncate">{cat.name}</span>
-                      <span className="text-sm font-medium text-gray-900 shrink-0 ml-2">{fmt(cat.actual, currency, true)}</span>
+                      <span className="text-sm font-medium text-gray-900 shrink-0 ml-2">{fmt(cx(cat.actual), currency, true)}</span>
                     </div>
                     <div className="mt-1 h-1 bg-gray-100 rounded-full overflow-hidden">
                       <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: cat.color }} />
@@ -425,7 +438,7 @@ export default function FinancesOverviewPage() {
                 tick={{ fontSize: 11 }}
                 interval={historyMonths <= 12 ? 0 : Math.ceil(historyMonths / 8) - 1}
               />
-              <YAxis tickFormatter={v => fmt(v, currency, true)} tick={{ fontSize: 10 }} width={70} />
+              <YAxis tickFormatter={v => fmt(cx(v as number), currency, true)} tick={{ fontSize: 10 }} width={70} />
               <Tooltip content={<ChartTooltip currency={currency} />} />
               <Legend wrapperStyle={{ fontSize: 11 }} />
               {data.envelopes.map((env, i) => (

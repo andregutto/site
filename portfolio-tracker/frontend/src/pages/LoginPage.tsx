@@ -183,7 +183,7 @@ export default function LoginPage() {
       <div className="flex-1 flex flex-col min-h-screen" style={{ background: BG }}>
 
         {/* Barra superior */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '28px 48px 0' }}>
+        <div className="flex items-center justify-between px-4 pt-7 sm:px-12" style={{ display: 'flex' }}>
           <a
             href="https://andregutto.com"
             target="_blank"
@@ -198,7 +198,7 @@ export default function LoginPage() {
         </div>
 
         {/* Formulário centralizado */}
-        <div className="flex-1 flex flex-col items-center justify-center" style={{ padding: '40px 48px' }}>
+        <div className="flex-1 flex flex-col items-center justify-center px-4 py-10 sm:px-12">
           <div style={{ width: '100%', maxWidth: 360 }}>
 
             {/* Eyebrow */}
