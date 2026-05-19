@@ -589,8 +589,10 @@ async function aiCategorize(
   if (items.length === 0 || categories.length === 0) return { map: {} }
 
   const result: Record<string, number | null> = {}
+  const deadline = Date.now() + 20_000
   try {
     for (let i = 0; i < items.length; i += AI_BATCH_SIZE) {
+      if (Date.now() > deadline) break
       const batch = items.slice(i, i + AI_BATCH_SIZE)
       const batchResult = await aiCategorizeBatch(batch, categories, i)
       Object.assign(result, batchResult)
