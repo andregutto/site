@@ -368,6 +368,18 @@ router.get('/accounts', requireAuth, async (req, res: Response) => {
   res.json(result)
 })
 
+const KNOWN_INSTITUTIONS = [
+  'BNP Paribas', 'Société Générale', 'Crédit Agricole', 'LCL', 'Caisse d\'Épargne', 'Banque Populaire',
+  'La Banque Postale', 'Crédit Mutuel', 'CIC', 'HSBC France', 'ING France', 'Boursorama',
+  'Fortuneo', 'Hello bank!', 'Monabanq', 'N26', 'Revolut', 'Wise',
+  'Degiro', 'Trade Republic', 'eToro',
+  'Charles Schwab', 'Fidelity', 'Vanguard', 'TD Ameritrade', 'E*TRADE', 'Robinhood',
+  'Interactive Brokers', 'Merrill Lynch', 'Morgan Stanley', 'JPMorgan Chase',
+  'Bank of America', 'Wells Fargo', 'Citibank', 'Goldman Sachs',
+  'XP Investimentos', 'Rico', 'Clear', 'BTG Pactual', 'Itaú', 'Bradesco', 'Santander',
+  'Banco do Brasil', 'Caixa Econômica Federal', 'Nubank', 'C6 Bank', 'Inter',
+  'Avenue', 'Órama', 'Genial', 'Warren', 'Vitreo', 'Kinea',
+]
 // GET /api/finances/accounts/portfolio-institutions
 router.get('/accounts/portfolio-institutions', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
@@ -376,10 +388,11 @@ router.get('/accounts/portfolio-institutions', requireAuth, async (req, res: Res
     supabaseAdmin.from('finance_accounts').select('institution_name').eq('user_id', userId).not('institution_name', 'is', null),
   ])
   const linked = new Set((acctRes.data ?? []).map(a => a.institution_name!.toLowerCase()))
-  const institutions = [...new Set((assetsRes.data ?? []).map(a => a.exchange as string).filter(Boolean))]
+  const fromAssets = [...new Set((assetsRes.data ?? []).map(a => a.exchange as string).filter(Boolean))]
+  const allInstitutions = [...new Set([...fromAssets, ...KNOWN_INSTITUTIONS])]
     .filter(ex => !linked.has(ex.toLowerCase()))
-    .sort()
-  res.json(institutions)
+    .sort((a, b) => a.localeCompare(b))
+  res.json(allInstitutions)
 })
 
 // POST /api/finances/accounts
@@ -587,20 +600,26 @@ function detectColumn(headers: string[], keywords: string[]): number {
 }
 
 function parseCSV(text: string): string[][] {
+  const lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n').filter(l => l.trim())
+  if (lines.length === 0) return []
+  const sample = lines.slice(0, 5).join('\n')
+  const delim = sample.includes('\t') ? '\t' : sample.includes(';') ? ';' : ','
   const rows: string[][] = []
-  const lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n')
   for (const line of lines) {
-    if (!line.trim()) continue
-    const cells: string[] = []
-    let cur = '', inQ = false
-    for (let i = 0; i < line.length; i++) {
-      const ch = line[i]
-      if (ch === '"') { inQ = !inQ }
-      else if ((ch === ',' || ch === ';') && !inQ) { cells.push(cur.trim()); cur = '' }
-      else cur += ch
+    if (delim === '\t') {
+      rows.push(line.split('\t').map(c => c.trim().replace(/^"|"$/g, '')))
+    } else {
+      const cells: string[] = []
+      let cur = '', inQ = false
+      for (let i = 0; i < line.length; i++) {
+        const ch = line[i]
+        if (ch === '"') { inQ = !inQ }
+        else if (ch === delim && !inQ) { cells.push(cur.trim()); cur = '' }
+        else cur += ch
+      }
+      cells.push(cur.trim())
+      rows.push(cells)
     }
-    cells.push(cur.trim())
-    rows.push(cells)
   }
   return rows
 }
@@ -749,10 +768,19 @@ router.post('/transactions/csv-parse', requireAuth, async (req, res: Response) =
   const rows = parseCSV(csv)
   if (rows.length < 2) { res.status(400).json({ error: 'CSV must have at least a header row and one data row' }); return }
 
-  const headers = rows[0]
-  const dateIdx  = detectColumn(headers, ['date','data','fecha','datum'])
+  const DATE_KWS   = ['date','data','fecha','datum']
+  const AMT_KWS    = ['amount','valor','importe','betrag','montant','value','credit','debito','credito','charge']
+  let headerRowIdx = 0
+  for (let r = 0; r < Math.min(rows.length - 1, 5); r++) {
+    const hasDate = detectColumn(rows[r], DATE_KWS) >= 0
+    const hasAmt  = detectColumn(rows[r], AMT_KWS)  >= 0
+    if (hasDate && hasAmt) { headerRowIdx = r; break }
+  }
+
+  const headers = rows[headerRowIdx]
+  const dateIdx  = detectColumn(headers, DATE_KWS)
   const descIdx  = detectColumn(headers, ['description','descricao','historico','lancamento','memo','libelle','beneficiary','name','merchant'])
-  const amtIdx   = detectColumn(headers, ['amount','valor','importe','betrag','montant','value','credit','debito','credito','charge'])
+  const amtIdx   = detectColumn(headers, AMT_KWS)
   const typeIdx  = detectColumn(headers, ['type','tipo','transaction type'])
   const stateIdx = detectColumn(headers, ['état','etat','state','status','estado','estatuto'])
 
@@ -765,7 +793,7 @@ router.post('/transactions/csv-parse', requireAuth, async (req, res: Response) =
 
   const transactions = []
   let skippedInvalid = 0
-  for (let i = 1; i < rows.length; i++) {
+  for (let i = headerRowIdx + 1; i < rows.length; i++) {
     const row = rows[i]
     if (row.every(c => !c.trim())) continue
 

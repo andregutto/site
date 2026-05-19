@@ -556,10 +556,13 @@ router.get('/:id/detail', requireAuth, async (req, res: Response) => {
         }
       }
     } else {
-      const result = await getCurrentPrice(
-        asset as Asset,
-        asset.asset_type === 'fixed_income' && rfTranches.length ? rfTranches : undefined
-      )
+      const result = await Promise.race([
+        getCurrentPrice(
+          asset as Asset,
+          asset.asset_type === 'fixed_income' && rfTranches.length ? rfTranches : undefined
+        ),
+        new Promise<never>((_, rej) => setTimeout(() => rej(new Error('price_timeout')), 10000)),
+      ])
       currentPrice  = result.price
       priceCurrency = result.currency
       priceSource   = result.source
@@ -571,7 +574,7 @@ router.get('/:id/detail', requireAuth, async (req, res: Response) => {
       }
     }
   } catch {
-    if (asset.asset_type === 'ticker' && investedBrl > 0) {
+    if (investedBrl > 0) {
       currentValueBrl = investedBrl
       priceSource     = 'cost_basis'
     }

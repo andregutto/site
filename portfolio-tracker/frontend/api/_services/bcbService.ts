@@ -37,7 +37,7 @@ export async function getRates(
   const allRates = await cache.getOrFetch(key, TTL.BCB_RATES, async () => {
     const url = `${BASE}/bcdata.sgs.${series}/dados?formato=json` +
                 `&dataInicial=${fmtDate(startDate)}&dataFinal=${fmtDate(today)}`
-    const res = await fetch(url)
+    const res = await fetch(url, { signal: AbortSignal.timeout(8000) })
     if (!res.ok) throw new Error(`BCB API ${res.status} para série ${series}`)
     const data = await res.json() as Array<{ data: string; valor: string }>
     return data.map((row) => ({
@@ -58,7 +58,7 @@ export async function getIPCARates(start: Date, end: Date): Promise<BCBRate[]> {
     return await getRates(SERIES.IPCA, start, end)
   } catch {
     const annualPct = await cache.getOrFetch('brasilapi:ipca_current', 6 * 60 * 60 * 1000, async () => {
-      const res = await fetch('https://brasilapi.com.br/api/taxas/v1/ipca')
+      const res = await fetch('https://brasilapi.com.br/api/taxas/v1/ipca', { signal: AbortSignal.timeout(6000) })
       if (!res.ok) throw new Error(`BrasilAPI taxas ${res.status}`)
       const json = await res.json() as { nome: string; valor: number }
       return json.valor

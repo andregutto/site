@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
+import * as XLSX from 'xlsx'
 import { apiFetch } from '../../lib/api'
 import { useI18n } from '../../contexts/I18nContext'
 
@@ -297,7 +298,19 @@ export default function FinancesTransactionsPage() {
     setCsvAiDebug(null)
     setCsvDuplicateCount(0)
     setCsvStep('parsing')
-    const text = await file.text()
+
+    let text: string
+    const isXLS = /\.(xlsx?|ods)$/i.test(file.name)
+    if (isXLS) {
+      const buf = await file.arrayBuffer()
+      const wb  = XLSX.read(buf, { type: 'array' })
+      const ws  = wb.Sheets[wb.SheetNames[0]]
+      // SheetJS csv_to_sheet: use FS='\t' so commas in cell values don't break parsing
+      text = XLSX.utils.sheet_to_csv(ws, { FS: '\t' })
+      // Re-join as tab-separated so the server parseCSV sees clean columns
+    } else {
+      text = await file.text()
+    }
     try {
       const result = await apiFetch<{ transactions: ParsedRow[]; total: number; duplicate_count?: number; error?: string; ai_debug?: AiDebug }>(
         '/finances/transactions/csv-parse',
@@ -504,7 +517,7 @@ export default function FinancesTransactionsPage() {
               {t.finances.addTransaction}
             </button>
           </>)}
-          <input ref={fileRef} type="file" accept=".csv,.txt" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) handleCSVFile(f); e.target.value = '' }} />
+          <input ref={fileRef} type="file" accept=".csv,.txt,.xls,.xlsx,.ods" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) handleCSVFile(f); e.target.value = '' }} />
         </div>
       </div>
 
@@ -786,7 +799,7 @@ export default function FinancesTransactionsPage() {
                             <select
                               autoFocus
                               defaultValue={tx.category_id ?? ''}
-                              onBlur={e => updateCategory(tx.id, e.target.value === '' ? null : Number(e.target.value))}
+                              onBlur={() => setEditingId(null)}
                               onChange={e => updateCategory(tx.id, e.target.value === '' ? null : Number(e.target.value))}
                               className="text-xs border border-gray-200 rounded px-2 py-1 max-w-[150px]"
                             >
