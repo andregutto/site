@@ -794,22 +794,33 @@ router.post('/transactions/csv-import', requireAuth, async (req, res: Response) 
     res.status(400).json({ error: 'transactions array required' }); return
   }
 
+  const rows = transactions.map(t => ({
+    user_id: userId,
+    date:        t.date,
+    description: t.description ?? '',
+    amount:      t.amount,
+    currency:    t.currency ?? 'EUR',
+    category_id: t.category_id ?? null,
+    account_id:  t.account_id  ?? null,
+    is_internal_transfer: t.is_internal_transfer ?? false,
+    source: csvSourceKey(t),
+  }))
+
   let imported = 0
   let skipped = 0
-  for (const t of transactions) {
-    const source = csvSourceKey(t)
-    const { error } = await supabaseAdmin.from('finance_transactions').insert({
-      user_id: userId,
-      date:        t.date,
-      description: t.description ?? '',
-      amount:      t.amount,
-      currency:    t.currency ?? 'EUR',
-      category_id: t.category_id ?? null,
-      account_id:  t.account_id  ?? null,
-      is_internal_transfer: t.is_internal_transfer ?? false,
-      source,
-    })
-    if (error) { skipped++ } else { imported++ }
+  const BATCH = 500
+  for (let i = 0; i < rows.length; i += BATCH) {
+    const chunk = rows.slice(i, i + BATCH)
+    const { data, error } = await supabaseAdmin
+      .from('finance_transactions')
+      .upsert(chunk, { onConflict: 'user_id,source', ignoreDuplicates: true })
+      .select('id')
+    if (error) {
+      skipped += chunk.length
+    } else {
+      imported += (data ?? []).length
+      skipped  += chunk.length - (data ?? []).length
+    }
   }
 
   // Learn category rules from manual assignments in preview

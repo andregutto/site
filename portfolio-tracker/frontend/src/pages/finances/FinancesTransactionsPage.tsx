@@ -342,6 +342,7 @@ export default function FinancesTransactionsPage() {
 
   async function importCSV() {
     setCsvStep('importing')
+    setCsvError('')
     try {
       const toImport = csvRows.filter(r => !r.is_broker_transfer || r.category_id)
       // Save keyword rules for: (a) manually changed categories, (b) accepted AI suggestions (so next import skips the API call)
@@ -356,13 +357,19 @@ export default function FinancesTransactionsPage() {
           learn_rules,
         }),
       })
+
+      // After import, jump to the most recent month present in the imported data
+      const mostRecentDate = toImport.reduce((max, r) => r.date > max ? r.date : max, toImport[0]?.date ?? '')
+      if (mostRecentDate) setMonth(mostRecentDate.slice(0, 7))
+
       setCsvStep('idle'); setCsvRows([])
       const msg = result.skipped > 0
         ? t.finances.csvImportedSkipped.replace('{imported}', String(result.imported)).replace('{skipped}', String(result.skipped))
         : t.finances.csvImportedOk.replace('{imported}', String(result.imported))
       alert(msg)
       loadTransactions()
-    } catch {
+    } catch (e) {
+      setCsvError(e instanceof Error ? e.message : t.finances.csvAiError.replace('{msg}', 'import'))
       setCsvStep('preview')
     }
   }
