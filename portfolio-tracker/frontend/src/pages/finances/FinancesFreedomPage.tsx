@@ -727,12 +727,12 @@ export default function FinancesFreedomPage() {
             <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
               <p className="text-xs text-gray-500 mb-1">{t.finances.freedomToday}</p>
               <p className="text-lg font-bold text-gray-900">{fmt(currentValue, currency, true)}</p>
-              <p className="text-[10px] text-gray-400 mt-0.5">patrimônio real agora</p>
+              <p className="text-[10px] text-gray-400 mt-0.5">{t.finances.freedomActualNow}</p>
             </div>
             <div className={`rounded-xl border shadow-sm p-4 ${planStatusText?.ahead ? 'bg-emerald-50 border-emerald-100' : planStatusText ? 'bg-amber-50 border-amber-100' : 'bg-white border-gray-100'}`}>
-              <p className="text-xs text-gray-500 mb-1">Previsto para hoje</p>
+              <p className="text-xs text-gray-500 mb-1">{t.finances.freedomPlannedToday}</p>
               <p className="text-lg font-bold text-gray-900">{fmt(plannedAtCurrentMonth, currency, true)}</p>
-              <p className="text-[10px] text-gray-400 mt-0.5">segundo o plano</p>
+              <p className="text-[10px] text-gray-400 mt-0.5">{t.finances.freedomAccordingToPlan}</p>
             </div>
           </div>
           {/* Summary cards — row 2: goal metrics */}
@@ -761,10 +761,10 @@ export default function FinancesFreedomPage() {
                 <p className="text-base font-bold text-gray-400">—</p>
               )}
               <p className="text-[10px] text-gray-400">
-                {reachYearsFromNow != null && `em ${reachYearsFromNow} anos`}
+                {reachYearsFromNow != null && `${t.finances.freedomIn} ${reachYearsFromNow} ${t.finances.freedomAgeAtTarget}`}
                 {userBirthdate && reachMonth && ` · ${ageAtDate(userBirthdate, reachMonth + '-01')} ${t.finances.freedomAgeAtTarget}`}
               </p>
-              <p className="text-[10px] text-gray-300 mt-0.5">baseado no patrimônio atual</p>
+              <p className="text-[10px] text-gray-300 mt-0.5">{t.finances.freedomBasedOnCurrent}</p>
             </div>
           </div>
 
