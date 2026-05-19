@@ -608,7 +608,9 @@ async function aiCategorize(
   let lastError: unknown = null
   let failedBatches = 0
   const totalBatches = Math.ceil(items.length / AI_BATCH_SIZE)
+  const deadline = Date.now() + 22_000
   for (let i = 0; i < items.length; i += AI_BATCH_SIZE) {
+    if (Date.now() >= deadline) break
     if (i > 0) await new Promise(r => setTimeout(r, AI_BATCH_DELAY))
     const batch = items.slice(i, i + AI_BATCH_SIZE)
     try {
@@ -617,7 +619,6 @@ async function aiCategorize(
     } catch (e) {
       lastError = e
       failedBatches++
-      // Continue remaining batches — partial categorization beats none
     }
   }
   if (failedBatches > 0 && failedBatches === totalBatches) {
@@ -739,11 +740,34 @@ router.post('/transactions/csv-parse', requireAuth, async (req, res: Response) =
     })
   }
 
-  // AI categorization for rows without a keyword match (skip transfers — already categorized)
+  // History matching: reuse categories from previously categorized transactions
   const unmatched = transactions.filter(t => !t.suggested_category && !t.is_broker_transfer && !t.is_internal_transfer)
   if (unmatched.length > 0) {
+    const unmatchedDescs = [...new Set(unmatched.map(t => t.description))]
+    const { data: historyRows } = await supabaseAdmin
+      .from('finance_transactions')
+      .select('description, category_id, finance_categories(id, name, icon, color)')
+      .eq('user_id', userId)
+      .not('category_id', 'is', null)
+      .in('description', unmatchedDescs)
+    const historyMap = new Map<string, { id: number; name: string; icon: string; color: string }>()
+    for (const tx of historyRows ?? []) {
+      if (!historyMap.has(tx.description) && tx.finance_categories) {
+        historyMap.set(tx.description, tx.finance_categories as unknown as { id: number; name: string; icon: string; color: string })
+      }
+    }
+    for (const t of transactions) {
+      if (t.suggested_category || t.is_broker_transfer) continue
+      const cat = historyMap.get(t.description)
+      if (cat) { t.suggested_category = cat; t.suggested_by = 'history' }
+    }
+  }
+
+  // AI only for descriptions never seen before
+  const stillUnmatched = transactions.filter(t => !t.suggested_category && !t.is_broker_transfer && !t.is_internal_transfer)
+  if (stillUnmatched.length > 0) {
     const uniqueMap = new Map<string, '+' | '-'>()
-    for (const t of unmatched) {
+    for (const t of stillUnmatched) {
       if (!uniqueMap.has(t.description)) uniqueMap.set(t.description, t.amount >= 0 ? '+' : '-')
     }
     const uniqueItems: AiItem[] = Array.from(uniqueMap.entries()).map(([description, sign]) => ({ description, sign }))
