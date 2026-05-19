@@ -6,6 +6,12 @@ import { supabaseAdmin } from '../lib/supabase.js'
 
 const router = Router()
 
+const DEFAULT_NAMES: Record<string, { income: string; transfer: string; salary: string }> = {
+  pt: { income: 'Rendas',  transfer: 'Transferência', salary: 'Salário'  },
+  en: { income: 'Income',  transfer: 'Transfer',      salary: 'Salary'   },
+  fr: { income: 'Revenus', transfer: 'Virement',      salary: 'Salaire'  },
+}
+
 // ── Income ────────────────────────────────────────────────────────────────────
 
 // GET /api/finances/income
@@ -35,7 +41,8 @@ router.patch('/income', requireAuth, async (req, res: Response) => {
 
 // GET /api/finances/budget
 router.get('/budget', requireAuth, async (req, res: Response) => {
-  const { userId } = req as AuthRequest
+  const { userId, userLocale } = req as AuthRequest
+  const names = DEFAULT_NAMES[userLocale] ?? DEFAULT_NAMES.pt
   const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
 
   const [incomeRes, envelopesRes, categoriesRes] = await Promise.all([
@@ -47,22 +54,22 @@ router.get('/budget', requireAuth, async (req, res: Response) => {
   let envelopes  = envelopesRes.data ?? []
   let categories = categoriesRes.data ?? []
 
-  // Ensure "Rendas" income envelope + default income categories exist
+  // Ensure income envelope + default income categories exist
   const incomeEnv = envelopes.find(e => e.type === 'income')
   let incomeEnvId: number | null = incomeEnv?.id ?? null
   if (!incomeEnvId) {
     const { data: newEnv } = await supabaseAdmin.from('finance_envelopes').insert({
-      user_id: userId, name: 'Rendas', pct_target: 0,
+      user_id: userId, name: names.income, pct_target: 0,
       color: '#10b981', type: 'income', icon: '💰', sort_order: 999,
     }).select('*').single()
     if (newEnv) { incomeEnvId = newEnv.id; envelopes = [...envelopes, newEnv] }
   }
   if (incomeEnvId) {
-    const hasTransfer = categories.some(c => norm(c.name).includes('transfer'))
+    const hasTransfer = categories.some(c => { const n = norm(c.name); return n.includes('transfer') || n.includes('virement') })
     const hasSalario  = categories.some(c => norm(c.name).includes('salari') || norm(c.name).includes('salary'))
     const toCreate = [
-      ...(!hasTransfer ? [{ user_id: userId, name: 'Transferência', icon: '↔️', color: '#6B7280', keyword_rules: [], envelope_id: incomeEnvId }] : []),
-      ...(!hasSalario  ? [{ user_id: userId, name: 'Salário',       icon: '💼', color: '#3b82f6', keyword_rules: [], envelope_id: incomeEnvId }] : []),
+      ...(!hasTransfer ? [{ user_id: userId, name: names.transfer, icon: '↔️', color: '#6B7280', keyword_rules: [], envelope_id: incomeEnvId }] : []),
+      ...(!hasSalario  ? [{ user_id: userId, name: names.salary,   icon: '💼', color: '#3b82f6', keyword_rules: [], envelope_id: incomeEnvId }] : []),
     ]
     if (toCreate.length > 0) {
       const { data: created } = await supabaseAdmin.from('finance_categories').insert(toCreate).select('*')
@@ -407,7 +414,7 @@ router.get('/transactions', requireAuth, async (req, res: Response) => {
 
   let query = supabaseAdmin
     .from('finance_transactions')
-    .select('id, date, description, amount, currency, category_id, account_id, is_internal_transfer, source, moment_id, finance_categories(id, name, icon, color), finance_moments(id, name, icon, color)')
+    .select('id, date, description, amount, currency, category_id, account_id, is_internal_transfer, source, moment_id, notes, finance_categories(id, name, icon, color), finance_moments(id, name, icon, color)')
     .eq('user_id', userId)
     .order('date', { ascending: false })
     .order('id', { ascending: false })
@@ -429,7 +436,7 @@ router.get('/transactions', requireAuth, async (req, res: Response) => {
 // POST /api/finances/transactions — create manual
 router.post('/transactions', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
-  const { date, description, amount, currency, category_id, account_id, is_internal_transfer } = req.body
+  const { date, description, amount, currency, category_id, account_id, is_internal_transfer, notes } = req.body
   if (!date || amount == null) { res.status(400).json({ error: 'date and amount required' }); return }
   const { data, error } = await supabaseAdmin
     .from('finance_transactions')
@@ -441,6 +448,7 @@ router.post('/transactions', requireAuth, async (req, res: Response) => {
       category_id: category_id ?? null,
       account_id: account_id ?? null,
       is_internal_transfer: is_internal_transfer ?? false,
+      notes: notes ?? null,
       source: 'manual',
     })
     .select()
@@ -453,12 +461,13 @@ router.post('/transactions', requireAuth, async (req, res: Response) => {
 router.patch('/transactions/:id', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const { id } = req.params
-  const { category_id, is_internal_transfer, description, amount } = req.body
+  const { category_id, is_internal_transfer, description, amount, notes } = req.body
   const update: Record<string, unknown> = {}
   if (category_id          !== undefined) update.category_id         = category_id
   if (is_internal_transfer !== undefined) update.is_internal_transfer = is_internal_transfer
   if (description          != null) update.description = description
   if (amount               != null) update.amount      = amount
+  if (notes                !== undefined) update.notes = notes ?? null
   const { error } = await supabaseAdmin
     .from('finance_transactions')
     .update(update)
@@ -628,7 +637,8 @@ function detectBroker(description: string): string | null {
 // POST /api/finances/transactions/csv-parse
 // Parses CSV text and returns preview rows with auto-suggested categories
 router.post('/transactions/csv-parse', requireAuth, async (req, res: Response) => {
-  const { userId } = req as AuthRequest
+  const { userId, userLocale } = req as AuthRequest
+  const csvNames = DEFAULT_NAMES[userLocale] ?? DEFAULT_NAMES.pt
   const reqDeadline = Date.now() + 25_000 // 25s budget — 5s buffer before Cloudflare's 30s wall
   const { csv, currency = 'EUR' } = req.body as { csv: string; currency?: string }
   if (!csv) { res.status(400).json({ error: 'csv required' }); return }
@@ -643,12 +653,13 @@ router.post('/transactions/csv-parse', requireAuth, async (req, res: Response) =
 
   const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
 
-  let transferCat = categories.find(c => norm(c.name).includes('transfer'))
+  let transferCat = categories.find(c => { const n = norm(c.name); return n.includes('transfer') || n.includes('virement') })
+  // Ensure transfer category exists — create it if not
   if (!transferCat) {
     const { data: incomeEnv } = await supabaseAdmin
       .from('finance_envelopes').select('id').eq('user_id', userId).eq('type', 'income').maybeSingle()
     const { data: newCat } = await supabaseAdmin.from('finance_categories').insert({
-      user_id: userId, name: 'Transferência', icon: '↔️', color: '#6B7280',
+      user_id: userId, name: csvNames.transfer, icon: '↔️', color: '#6B7280',
       keyword_rules: [], envelope_id: incomeEnv?.id ?? null,
     }).select('id, name, icon, color, keyword_rules').single()
     if (newCat) { transferCat = newCat; categories = [...categories, newCat] }
@@ -656,15 +667,16 @@ router.post('/transactions/csv-parse', requireAuth, async (req, res: Response) =
 
   function matchCategory(description: string): { id: number; name: string; icon: string; color: string } | null {
     const d = norm(description)
-    // First pass: explicit keyword rules
-    for (const cat of categories) {
-      const rules: string[] = Array.isArray(cat.keyword_rules) ? cat.keyword_rules : []
-      if (rules.some(kw => d.includes(norm(kw)))) return cat
-    }
-    // Second pass: category name appears in description (≥4 chars to avoid noise)
+    // Pass 1: category name appears in description — direct name match wins over keyword rules
+    // (prevents a "Viagem" keyword "airbnb" from overriding the "Airbnb" income category)
     for (const cat of categories) {
       const catName = norm(cat.name)
       if (catName.length >= 4 && d.includes(catName)) return cat
+    }
+    // Pass 2: explicit keyword rules
+    for (const cat of categories) {
+      const rules: string[] = Array.isArray(cat.keyword_rules) ? cat.keyword_rules : []
+      if (rules.some(kw => d.includes(norm(kw)))) return cat
     }
     return null
   }

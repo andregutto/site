@@ -4,6 +4,7 @@ import { supabaseAdmin } from '../_lib/supabase.js'
 export interface AuthRequest extends Request {
   userId: string
   jwt: string
+  userLocale: string
 }
 
 export async function requireAuth(req: Request, res: Response, next: NextFunction) {
@@ -19,8 +20,12 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
       res.status(401).json({ error: 'Token inválido ou expirado' })
       return
     }
-    (req as AuthRequest).userId = user.id
-    ;(req as AuthRequest).jwt   = token
+    const validLocales = ['pt', 'en', 'fr']
+    const meta = user.user_metadata as Record<string, string> | undefined
+    const locale = validLocales.includes(meta?.preferred_locale ?? '') ? meta!.preferred_locale : 'pt'
+    ;(req as AuthRequest).userId     = user.id
+    ;(req as AuthRequest).jwt        = token
+    ;(req as AuthRequest).userLocale = locale
     next()
   } catch (err) {
     console.error('[requireAuth] Supabase error:', err)

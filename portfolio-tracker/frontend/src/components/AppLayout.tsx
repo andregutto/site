@@ -86,8 +86,8 @@ export default function AppLayout() {
     { to: '/finances/accounts',     label: t.finances.navAccounts,    end: false },
   ]
 
-  const dropdownItemCls = 'flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors whitespace-nowrap'
-  const dropdownCls = 'absolute top-full mt-1.5 left-0 bg-white rounded-xl shadow-lg border border-gray-100 py-1.5 z-50 min-w-[160px]'
+  const dropdownItemCls = 'flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors whitespace-nowrap rounded-lg'
+  const dropdownCls = 'absolute top-full mt-1.5 left-0 bg-white rounded-xl shadow-lg border border-gray-100 p-1.5 z-50'
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -137,11 +137,13 @@ export default function AppLayout() {
                 </button>
                 {showPortfolioMenu && (
                   <div className={dropdownCls}>
-                    {portfolioItems.map(({ to, label }) => (
-                      <NavLink key={to} to={to} className={({ isActive }) => `${dropdownItemCls} ${isActive ? 'bg-[#001A70]/5 text-[#001A70] font-medium' : ''}`}>
-                        {label}
-                      </NavLink>
-                    ))}
+                    <div className="grid grid-cols-2 gap-0.5">
+                      {portfolioItems.map(({ to, label }) => (
+                        <NavLink key={to} to={to} className={({ isActive }) => `${dropdownItemCls} ${isActive ? 'bg-[#001A70]/5 text-[#001A70] font-medium' : ''}`}>
+                          {label}
+                        </NavLink>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
@@ -161,11 +163,13 @@ export default function AppLayout() {
                 </button>
                 {showFinancesMenu && (
                   <div className={dropdownCls}>
-                    {financesItems.map(({ to, label, end }) => (
-                      <NavLink key={to} to={to} end={end} className={({ isActive }) => `${dropdownItemCls} ${isActive ? 'bg-[#001A70]/5 text-[#001A70] font-medium' : ''}`}>
-                        {label}
-                      </NavLink>
-                    ))}
+                    <div className="grid grid-cols-2 gap-0.5">
+                      {financesItems.map(({ to, label, end }) => (
+                        <NavLink key={to} to={to} end={end} className={({ isActive }) => `${dropdownItemCls} ${isActive ? 'bg-[#001A70]/5 text-[#001A70] font-medium' : ''}`}>
+                          {label}
+                        </NavLink>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>

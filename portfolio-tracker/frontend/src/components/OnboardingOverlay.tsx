@@ -4,26 +4,47 @@ import { useI18n } from '../contexts/I18nContext'
 
 const STORAGE_KEY = 'onboarding_v1_done'
 
-const DEFAULT_CLASSES = [
-  { name: 'Ações Brasil',   color: '#10b981' },
-  { name: 'Ações Exterior', color: '#3b82f6' },
-  { name: 'FIIs',           color: '#f59e0b' },
-  { name: 'Cripto',         color: '#f97316' },
-  { name: 'Renda Fixa',     color: '#06b6d4' },
-  { name: 'Previdência',    color: '#8b5cf6' },
-  { name: 'Imóveis',        color: '#ef4444' },
-]
+const CLASSES_BY_LOCALE: Record<string, { name: string; color: string }[]> = {
+  pt: [
+    { name: 'Ações Brasil',   color: '#10b981' },
+    { name: 'Ações Exterior', color: '#3b82f6' },
+    { name: 'FIIs',           color: '#f59e0b' },
+    { name: 'Cripto',         color: '#f97316' },
+    { name: 'Renda Fixa',     color: '#06b6d4' },
+    { name: 'Previdência',    color: '#8b5cf6' },
+    { name: 'Imóveis',        color: '#ef4444' },
+  ],
+  en: [
+    { name: 'Brazilian Stocks',    color: '#10b981' },
+    { name: 'International Stocks',color: '#3b82f6' },
+    { name: 'REITs',               color: '#f59e0b' },
+    { name: 'Crypto',              color: '#f97316' },
+    { name: 'Fixed Income',        color: '#06b6d4' },
+    { name: 'Pension',             color: '#8b5cf6' },
+    { name: 'Real Estate',         color: '#ef4444' },
+  ],
+  fr: [
+    { name: 'Actions brésiliennes',  color: '#10b981' },
+    { name: 'Actions mondiales',     color: '#3b82f6' },
+    { name: 'ETF / SCPI',            color: '#f59e0b' },
+    { name: 'Crypto',                color: '#f97316' },
+    { name: 'Revenu fixe',           color: '#06b6d4' },
+    { name: 'Épargne retraite',      color: '#8b5cf6' },
+    { name: 'Immobilier',            color: '#ef4444' },
+  ],
+}
 
 interface Props {
   onDone: () => void
 }
 
 export default function OnboardingOverlay({ onDone }: Props) {
-  const { t } = useI18n()
+  const { t, locale } = useI18n()
   const navigate = useNavigate()
   const [step, setStep] = useState(0)
   const o = t.onboarding
   const TOTAL_STEPS = 3
+  const defaultClasses = CLASSES_BY_LOCALE[locale] ?? CLASSES_BY_LOCALE.pt
 
   function finish() {
     localStorage.setItem(STORAGE_KEY, '1')
@@ -101,7 +122,7 @@ export default function OnboardingOverlay({ onDone }: Props) {
                 <p className="text-gray-500 mt-1 text-sm leading-relaxed">{o.classesBody}</p>
               </div>
               <div className="grid grid-cols-2 gap-2">
-                {DEFAULT_CLASSES.map(c => (
+                {defaultClasses.map(c => (
                   <div key={c.name} className="flex items-center gap-2 bg-gray-50 border border-gray-100 rounded-lg px-3 py-2.5">
                     <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: c.color }} />
                     <span className="text-sm font-medium text-gray-700">{c.name}</span>

@@ -18,6 +18,7 @@ interface Transaction {
   finance_moments: MomentRef | null
   is_internal_transfer: boolean
   source: string
+  notes: string | null
 }
 interface ParsedRow {
   date: string
@@ -102,6 +103,9 @@ export default function FinancesTransactionsPage() {
 
   // Inline category edit
   const [editingId, setEditingId]   = useState<number | null>(null)
+  // Inline notes edit
+  const [editingNotesId, setEditingNotesId] = useState<number | null>(null)
+  const [notesInput, setNotesInput]         = useState('')
 
   const loadTransactions = useCallback(async () => {
     setLoading(true)
@@ -232,6 +236,13 @@ export default function FinancesTransactionsPage() {
   async function toggleInternal(id: number, current: boolean) {
     await apiFetch(`/finances/transactions/${id}`, { method: 'PATCH', body: JSON.stringify({ is_internal_transfer: !current }) })
     loadTransactions()
+  }
+
+  async function saveNotes(id: number, notes: string) {
+    const value = notes.trim() || null
+    await apiFetch(`/finances/transactions/${id}`, { method: 'PATCH', body: JSON.stringify({ notes: value }) })
+    setTransactions(prev => prev.map(tx => tx.id === id ? { ...tx, notes: value } : tx))
+    setEditingNotesId(null)
   }
 
   async function handleCSVFile(file: File) {
@@ -617,6 +628,23 @@ export default function FinancesTransactionsPage() {
                         <td className="px-3 py-3 text-gray-800 max-w-xs">
                           <span className="truncate block">{tx.description || '—'}</span>
                           {tx.is_internal_transfer && <span className="text-[10px] text-gray-400">{t.finances.internalTransfer}</span>}
+                          {editingNotesId === tx.id ? (
+                            <input
+                              autoFocus
+                              type="text"
+                              value={notesInput}
+                              onChange={e => setNotesInput(e.target.value)}
+                              onBlur={() => saveNotes(tx.id, notesInput)}
+                              onKeyDown={e => { if (e.key === 'Enter') saveNotes(tx.id, notesInput); if (e.key === 'Escape') setEditingNotesId(null) }}
+                              placeholder={t.finances.notesPlaceholder}
+                              className="mt-1 w-full text-xs text-gray-500 border-b border-gray-300 bg-transparent outline-none placeholder-gray-300"
+                            />
+                          ) : tx.notes ? (
+                            <span
+                              className="block text-[11px] text-gray-400 italic mt-0.5 truncate cursor-pointer hover:text-gray-600"
+                              onClick={() => { setEditingNotesId(tx.id); setNotesInput(tx.notes ?? '') }}
+                            >{tx.notes}</span>
+                          ) : null}
                         </td>
                         <td className={`px-3 py-3 text-right font-medium whitespace-nowrap ${tx.amount < 0 ? 'text-red-600' : 'text-green-600'}`}>
                           {fmt(tx.amount, tx.currency)}
@@ -662,8 +690,15 @@ export default function FinancesTransactionsPage() {
                         <td className="px-3 py-3">
                           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                             <button
+                              onClick={() => { setEditingNotesId(tx.id); setNotesInput(tx.notes ?? '') }}
+                              title={t.finances.notesPlaceholder}
+                              className={`p-1 transition-colors rounded ${tx.notes ? 'text-[#001A70]/40 hover:text-[#001A70]' : 'text-gray-300 hover:text-[#001A70]/60'}`}
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5"><path d="M13.488 2.513a1.75 1.75 0 0 0-2.475 0L6.75 6.774a2.75 2.75 0 0 0-.596.892l-.471 1.179a.75.75 0 0 0 .98.98l1.179-.471a2.75 2.75 0 0 0 .892-.596l4.262-4.263a1.75 1.75 0 0 0 0-2.475ZM3.5 4.75A.75.75 0 0 1 4.25 4h3a.75.75 0 0 1 0 1.5h-3a.75.75 0 0 1-.75-.75Zm0 3A.75.75 0 0 1 4.25 7h1.5a.75.75 0 0 1 0 1.5h-1.5A.75.75 0 0 1 3.5 7.75ZM2 3.5A1.5 1.5 0 0 1 3.5 2h9A1.5 1.5 0 0 1 14 3.5V5a.75.75 0 0 1-1.5 0V3.5a.75.75 0 0 0-.75-.75h-9A.75.75 0 0 0 2 3.5V12a.75.75 0 0 0 .75.75H6a.75.75 0 0 1 0 1.5H2.75A1.5 1.5 0 0 1 2 12.75V3.5Z"/></svg>
+                            </button>
+                            <button
                               onClick={() => toggleInternal(tx.id, tx.is_internal_transfer)}
-                              title={tx.is_internal_transfer ? 'Marcar como transação real' : 'Marcar como transferência interna'}
+                              title={tx.is_internal_transfer ? t.finances.markAsReal : t.finances.markAsTransfer}
                               className="p-1 text-gray-300 hover:text-amber-500 transition-colors rounded"
                             >
                               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5"><path fillRule="evenodd" d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z" clipRule="evenodd" /></svg>
