@@ -100,7 +100,7 @@ export default function FinancesOverviewPage() {
   const defaultMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`
 
   const [month,          setMonth]          = useState(defaultMonth)
-  const [historyMonths,  setHistoryMonths]  = useState<6 | 12 | 24>(6)
+  const [historyMonths,  setHistoryMonths]  = useState<6 | 12 | 60>(6)
   const [data,           setData]           = useState<SpendingSummary | null>(null)
   const [loading,        setLoading]        = useState(true)
   const [expandedEnvIds, setExpandedEnvIds] = useState<Set<number>>(new Set())
@@ -113,7 +113,7 @@ export default function FinancesOverviewPage() {
       .finally(() => setLoading(false))
   }, [historyMonths])
 
-  const historyLabel = (n: 6 | 12 | 24) => {
+  const historyLabel = (n: 6 | 12 | 60) => {
     if (n === 6) return '6M'
     if (n === 12) return locale === 'en' ? '1Y' : '1A'
     return locale === 'pt' ? 'Tudo' : locale === 'fr' ? 'Tout' : 'All'
@@ -393,7 +393,7 @@ export default function FinancesOverviewPage() {
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-semibold text-gray-800 text-sm">{t.finances.overviewHistory}</h2>
             <div className="flex gap-1">
-              {([6, 12, 24] as const).map(n => (
+              {([6, 12, 60] as const).map(n => (
                 <button
                   key={n}
                   onClick={() => setHistoryMonths(n)}
@@ -420,7 +420,11 @@ export default function FinancesOverviewPage() {
                 }
               }}
             >
-              <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+              <XAxis
+                dataKey="month"
+                tick={{ fontSize: 11 }}
+                interval={historyMonths <= 12 ? 0 : Math.ceil(historyMonths / 8) - 1}
+              />
               <YAxis tickFormatter={v => fmt(v, currency, true)} tick={{ fontSize: 10 }} width={70} />
               <Tooltip content={<ChartTooltip currency={currency} />} />
               <Legend wrapperStyle={{ fontSize: 11 }} />

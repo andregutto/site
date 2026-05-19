@@ -744,7 +744,7 @@ router.post('/transactions/csv-parse', requireAuth, async (req, res: Response) =
   // Only clearly-internal Revolut operations — everything else goes to keyword/AI
   const TRANSFER_TYPE_PATTERNS = ['topup', 'top-up', 'savings', 'exchange']
   // P2P by description: require salutation for bare "to/à" to avoid catching company names
-  const P2P_DESC_RE = /^(?:to\s+(?:m|mr|mrs|ms|mme|dr)\.?\s+|(?:à|a)\s+|para\s+|envoyé\s+à\s+|envoye\s+a\s+|paiement\s+envoyé\s+à\s+|paiement\s+re(?:ç|c)u\s+de\s+|re(?:ç|c)u\s+de\s+|recebido\s+de\s+|enviado\s+para\s+|transferido\s+para\s+|pix\s+para\s+|ted\s+(?:de|para)\s+|virement\s+(?:de|vers|(?:à|a))\s+|envoi\s+(?:à|a)\s+)[A-ZÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ]/i
+  const P2P_DESC_RE = /^(?:to\s+(?:m|mr|mrs|ms|mme|dr)\.?\s+|(?:à|a)\s+|para\s+|envoyé\s+à\s+|envoye\s+a\s+|paiement\s+envoyé\s+à\s+|enviado\s+para\s+|transferido\s+para\s+|pix\s+para\s+|ted\s+para\s+|virement\s+(?:vers|(?:à|a))\s+|envoi\s+(?:à|a)\s+)[A-ZÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ]/i
 
   const rows = parseCSV(csv)
   if (rows.length < 2) { res.status(400).json({ error: 'CSV must have at least a header row and one data row' }); return }
