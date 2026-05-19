@@ -253,36 +253,58 @@ export default function FinancesTransactionsPage() {
       setCsvRows(rows)
       setCsvStep('preview')
 
-      // AI categorization in a separate request so parse is always fast
+      // AI categorization: runs in chunks of 90 after preview loads so each chunk
+      // gets its own fresh 25s Cloudflare budget — covers all unique descriptions
       const unmatched = result.transactions.filter(r => !r.suggested_category && !r.is_broker_transfer && !r.is_internal_transfer)
-      if (unmatched.length > 0 && process.env.NODE_ENV !== 'test') {
-        const uniqueMap = new Map<string, '+' | '-'>()
+      if (unmatched.length > 0) {
+        // Build unique list sorted by frequency (most common merchants first)
+        const freqMap = new Map<string, number>()
+        const signMap = new Map<string, '+' | '-'>()
         for (const r of unmatched) {
-          if (!uniqueMap.has(r.description)) uniqueMap.set(r.description, r.amount >= 0 ? '+' : '-')
+          freqMap.set(r.description, (freqMap.get(r.description) ?? 0) + 1)
+          if (!signMap.has(r.description)) signMap.set(r.description, r.amount >= 0 ? '+' : '-')
         }
-        const uniqueItems = Array.from(uniqueMap.entries()).map(([description, sign]) => ({ description, sign }))
+        const uniqueItems = Array.from(signMap.entries())
+          .map(([description, sign]) => ({ description, sign }))
+          .sort((a, b) => (freqMap.get(b.description) ?? 0) - (freqMap.get(a.description) ?? 0))
+
+        const AI_CHUNK = 90 // 3 batches × 30 items — fits comfortably in 25s even if API is slow
+        const descToCatId = new Map<string, number | null>()
+        const catById = Object.fromEntries([...incomeCategories, ...expenseCategories].map(c => [c.id, c]))
+        let totalAssigned = 0
+        let lastError: string | null = null
 
         setCsvAiLoading(true)
         try {
-          const aiResult = await apiFetch<{ map: Record<string, number | null>; error: string | null }>(
-            '/finances/transactions/ai-categorize',
-            { method: 'POST', body: JSON.stringify({ items: uniqueItems }) }
-          )
-          const catById = Object.fromEntries([...incomeCategories, ...expenseCategories].map(c => [c.id, c]))
-          let aiAssigned = 0
+          for (let start = 0; start < uniqueItems.length; start += AI_CHUNK) {
+            const chunk = uniqueItems.slice(start, start + AI_CHUNK)
+            try {
+              const aiResult = await apiFetch<{ map: Record<string, number | null>; error: string | null }>(
+                '/finances/transactions/ai-categorize',
+                { method: 'POST', body: JSON.stringify({ items: chunk }) }
+              )
+              if (aiResult.error) lastError = aiResult.error
+              chunk.forEach((item, idx) => {
+                const catId = aiResult.map[String(idx)]
+                if (catId !== undefined) descToCatId.set(item.description, catId)
+              })
+            } catch {
+              lastError = 'Erro ao contactar IA'
+              break
+            }
+          }
+
           setCsvRows(prev => prev.map(r => {
             if (r.suggested_category || r.is_broker_transfer || r.is_internal_transfer) return r
-            const idx = uniqueItems.findIndex(u => u.description === r.description)
-            const catId = aiResult.map[String(idx)]
+            if (!descToCatId.has(r.description)) return r
+            const catId = descToCatId.get(r.description)
             if (catId != null && catById[catId]) {
-              aiAssigned++
+              totalAssigned++
               return { ...r, suggested_category: catById[catId], suggested_by: 'ai' as const, category_id: catId, suggested_category_id: catId }
             }
             return r
           }))
-          setCsvAiDebug({ ran: true, assigned: aiAssigned, unmatched: uniqueItems.length, error: aiResult.error })
-        } catch {
-          setCsvAiDebug({ ran: false, assigned: 0, unmatched: uniqueItems.length, error: 'Erro ao contactar IA' })
+          setCsvAiDebug({ ran: true, assigned: totalAssigned, unmatched: uniqueItems.length, error: lastError })
         } finally {
           setCsvAiLoading(false)
         }

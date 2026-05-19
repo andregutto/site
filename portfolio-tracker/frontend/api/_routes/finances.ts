@@ -739,10 +739,12 @@ router.post('/transactions/csv-parse', requireAuth, async (req, res: Response) =
 
     const broker = detectBroker(rawDesc)
 
-    // Transfers always get the transfer category; keyword match for everything else
-    const category = isTransfer
-      ? (transferCat ?? null)
-      : matchCategory(rawDesc)
+    // Keyword match takes priority over transfer type — e.g. Airbnb income has Revolut type
+    // TRANSFER but the description matches the Airbnb income category via keyword/name rules.
+    const keywordCat = matchCategory(rawDesc)
+    // Only treat as internal transfer if nothing more specific matched by keyword
+    const effectiveIsTransfer = isTransfer && !keywordCat
+    const category = keywordCat ?? (effectiveIsTransfer ? (transferCat ?? null) : null)
 
     transactions.push({
       date,
@@ -750,9 +752,9 @@ router.post('/transactions/csv-parse', requireAuth, async (req, res: Response) =
       amount,
       currency,
       suggested_category: category,
-      suggested_by: category ? (isTransfer ? 'transfer' : 'keyword') : null,
+      suggested_by: category ? (effectiveIsTransfer ? 'transfer' : 'keyword') : null,
       is_broker_transfer: !!broker,
-      is_internal_transfer: isTransfer,
+      is_internal_transfer: effectiveIsTransfer,
       broker_name: broker,
     })
   }
