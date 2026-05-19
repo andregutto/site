@@ -852,13 +852,12 @@ router.post('/transactions/csv-import', requireAuth, async (req, res: Response) 
     source: csvSourceKey(t),
   }))
 
-  // Deduplicate: fetch existing source keys, filter out already-imported rows
-  const allSources = rows.map(r => r.source)
+  // Deduplicate: fetch all csv-sourced rows for user at once to avoid .in() URL limits
   const { data: existingRows } = await supabaseAdmin
     .from('finance_transactions')
     .select('source')
     .eq('user_id', userId)
-    .in('source', allSources)
+    .like('source', 'csv:%')
   const existingSet = new Set((existingRows ?? []).map((r: { source: string }) => r.source))
   const newRows = rows.filter(r => !existingSet.has(r.source))
 
