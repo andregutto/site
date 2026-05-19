@@ -556,8 +556,7 @@ function detectBroker(description: string): string | null {
 
 type CatRow = { id: number; name: string; icon: string; color: string }
 
-const AI_BATCH_SIZE   = 50   // larger batch = fewer API calls
-const AI_BATCH_DELAY  = 1000 // ms between batches to avoid 529 overload
+const AI_BATCH_SIZE = 30
 
 interface AiItem { description: string; sign: '+' | '-' }
 
@@ -582,30 +581,15 @@ Transactions:
 ${descList}`
 
   const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
-
-  // Retry up to 5 times on 529 with exponential backoff: 4s, 8s, 16s, 32s
-  const MAX_RETRIES = 5
-  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
-    try {
-      const msg = await anthropic.messages.create({
-        model:      'claude-haiku-4-5-20251001',
-        max_tokens: 2048,
-        messages:   [{ role: 'user', content: prompt }],
-      })
-      const text = msg.content[0].type === 'text' ? msg.content[0].text.trim() : ''
-      const jsonMatch = text.match(/\{[\s\S]*\}/)
-      if (!jsonMatch) return {}
-      return JSON.parse(jsonMatch[0]) as Record<string, number | null>
-    } catch (e: unknown) {
-      const status = (e as { status?: number }).status
-      if (status === 529 && attempt < MAX_RETRIES - 1) {
-        await new Promise(r => setTimeout(r, Math.min(4000 * Math.pow(2, attempt), 32000)))
-        continue
-      }
-      throw e
-    }
-  }
-  return {}
+  const msg = await anthropic.messages.create({
+    model:      'claude-haiku-4-5-20251001',
+    max_tokens: 2048,
+    messages:   [{ role: 'user', content: prompt }],
+  })
+  const text = msg.content[0].type === 'text' ? msg.content[0].text.trim() : ''
+  const jsonMatch = text.match(/\{[\s\S]*\}/)
+  if (!jsonMatch) return {}
+  return JSON.parse(jsonMatch[0]) as Record<string, number | null>
 }
 
 function friendlyAiError(e: unknown): string {
@@ -614,7 +598,6 @@ function friendlyAiError(e: unknown): string {
   if (status === 401) return 'API key inválida'
   if (status === 429) return 'Limite de requisições atingido — tente novamente'
   const msg = e instanceof Error ? e.message : String(e)
-  // Strip raw JSON from SDK error messages
   return msg.replace(/\{[\s\S]*\}/, '').trim().slice(0, 120) || 'Erro desconhecido'
 }
 
@@ -626,27 +609,16 @@ async function aiCategorize(
   if (items.length === 0 || categories.length === 0) return { map: {} }
 
   const result: Record<string, number | null> = {}
-  let lastError: unknown = null
-  let failedBatches = 0
-  const totalBatches = Math.ceil(items.length / AI_BATCH_SIZE)
-  const deadline = Date.now() + 22_000 // 22s budget — stay under Cloudflare's 30s gateway timeout
-  for (let i = 0; i < items.length; i += AI_BATCH_SIZE) {
-    if (Date.now() >= deadline) break // return partial results rather than timing out
-    if (i > 0) await new Promise(r => setTimeout(r, AI_BATCH_DELAY))
-    const batch = items.slice(i, i + AI_BATCH_SIZE)
-    try {
+  try {
+    for (let i = 0; i < items.length; i += AI_BATCH_SIZE) {
+      const batch = items.slice(i, i + AI_BATCH_SIZE)
       const batchResult = await aiCategorizeBatch(batch, categories, i)
       Object.assign(result, batchResult)
-    } catch (e) {
-      lastError = e
-      failedBatches++
-      // Continue remaining batches — partial categorization beats none
     }
+    return { map: result }
+  } catch (e) {
+    return { map: result, error: friendlyAiError(e) }
   }
-  if (failedBatches > 0 && failedBatches === totalBatches) {
-    return { map: result, error: friendlyAiError(lastError) }
-  }
-  return { map: result }
 }
 
 // POST /api/finances/transactions/csv-parse
@@ -667,6 +639,16 @@ router.post('/transactions/csv-parse', requireAuth, async (req, res: Response) =
   const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
 
   let transferCat = categories.find(c => norm(c.name).includes('transfer'))
+  // Ensure Transferência category exists — create it if not (fix: transfers get proper category)
+  if (!transferCat) {
+    const { data: incomeEnv } = await supabaseAdmin
+      .from('finance_envelopes').select('id').eq('user_id', userId).eq('type', 'income').maybeSingle()
+    const { data: newCat } = await supabaseAdmin.from('finance_categories').insert({
+      user_id: userId, name: 'Transferência', icon: '↔️', color: '#6B7280',
+      keyword_rules: [], envelope_id: incomeEnv?.id ?? null,
+    }).select('id, name, icon, color').single()
+    if (newCat) { transferCat = newCat; categories = [...categories, newCat] }
+  }
 
   function matchCategory(description: string): { id: number; name: string; icon: string; color: string } | null {
     const d = norm(description)
@@ -683,14 +665,14 @@ router.post('/transactions/csv-parse', requireAuth, async (req, res: Response) =
     return null
   }
 
-  // Specific Revolut/bank type values that are true internal moves, not bill payments.
-  // Do NOT add 'transfer' or 'virement' — those match regular SEPA bill payments in Revolut.
+  // Transfer type patterns: broad enough to cover Revolut/bank internal moves
   const TRANSFER_TYPE_PATTERNS = [
-    'topup', 'top-up',       // account funding
-    'exchange',               // currency swap inside Revolut
-    'transfer to savings',    // Revolut savings pot
-    'savings',                // savings pot movements
-    'echange', 'transfert vers', // FR Revolut internal
+    // EN
+    'topup', 'top-up', 'exchange', 'transfer', 'savings',
+    // FR
+    'virement', 'echange', 'echanges', 'rechargement', 'envoi',
+    // PT
+    'transferencia', 'transferencia bancaria', 'pix', 'ted', 'doc',
   ]
   // Detect P2P transfers in description: "To/À/Para [Capitalized Name]" in any language
   const P2P_DESC_RE = /^(to|à|a |para|envoyé à|envoye a|paiement envoyé à|paiement reçu de|reçu de|recu de|recebido de|enviado para|transferido para|virement de|virement vers)\s+[A-ZÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ]/i
@@ -765,36 +747,13 @@ router.post('/transactions/csv-parse', requireAuth, async (req, res: Response) =
     })
   }
 
-  // History matching: reuse categories from previously categorized transactions
-  const unmatched = transactions.filter(t => !t.suggested_category && !t.is_broker_transfer && !t.is_internal_transfer)
-  if (unmatched.length > 0) {
-    const unmatchedDescs = [...new Set(unmatched.map(t => t.description))]
-    const { data: historyRows } = await supabaseAdmin
-      .from('finance_transactions')
-      .select('description, category_id, finance_categories(id, name, icon, color)')
-      .eq('user_id', userId)
-      .not('category_id', 'is', null)
-      .in('description', unmatchedDescs)
-    const historyMap = new Map<string, { id: number; name: string; icon: string; color: string }>()
-    for (const tx of historyRows ?? []) {
-      if (!historyMap.has(tx.description) && tx.finance_categories) {
-        historyMap.set(tx.description, tx.finance_categories as unknown as { id: number; name: string; icon: string; color: string })
-      }
-    }
-    for (const t of transactions) {
-      if (t.suggested_category || t.is_broker_transfer) continue
-      const cat = historyMap.get(t.description)
-      if (cat) { t.suggested_category = cat; t.suggested_by = 'history' }
-    }
-  }
-
-  // AI categorization only for descriptions never seen before
+  // AI categorization for rows without a keyword match (skip transfers — already categorized)
   let aiError: string | undefined
   let aiAssigned = 0
-  const stillUnmatched = transactions.filter(t => !t.suggested_category && !t.is_broker_transfer && !t.is_internal_transfer)
-  if (stillUnmatched.length > 0) {
+  const unmatched = transactions.filter(t => !t.suggested_category && !t.is_broker_transfer && !t.is_internal_transfer)
+  if (unmatched.length > 0) {
     const uniqueMap = new Map<string, '+' | '-'>()
-    for (const t of stillUnmatched) {
+    for (const t of unmatched) {
       if (!uniqueMap.has(t.description)) uniqueMap.set(t.description, t.amount >= 0 ? '+' : '-')
     }
     const uniqueItems: AiItem[] = Array.from(uniqueMap.entries()).map(([description, sign]) => ({ description, sign }))
