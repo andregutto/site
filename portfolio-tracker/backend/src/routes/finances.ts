@@ -583,18 +583,24 @@ function friendlyAiError(e: unknown): string {
 
 async function aiCategorize(
   items: AiItem[],
-  categories: CatRow[]
+  categories: CatRow[],
+  deadline: number
 ): Promise<{ map: Record<string, number | null>; error?: string }> {
   if (!process.env.ANTHROPIC_API_KEY) return { map: {}, error: 'no_key' }
   if (items.length === 0 || categories.length === 0) return { map: {} }
 
   const result: Record<string, number | null> = {}
-  const deadline = Date.now() + 20_000
   try {
     for (let i = 0; i < items.length; i += AI_BATCH_SIZE) {
-      if (Date.now() > deadline) break
+      const remaining = deadline - Date.now()
+      if (remaining <= 1000) break
       const batch = items.slice(i, i + AI_BATCH_SIZE)
-      const batchResult = await aiCategorizeBatch(batch, categories, i)
+      const batchResult = await Promise.race([
+        aiCategorizeBatch(batch, categories, i),
+        new Promise<Record<string, number | null>>(resolve =>
+          setTimeout(() => resolve({}), remaining - 500)
+        ),
+      ])
       Object.assign(result, batchResult)
     }
     return { map: result }
@@ -612,6 +618,7 @@ function detectBroker(description: string): string | null {
 // Parses CSV text and returns preview rows with auto-suggested categories
 router.post('/transactions/csv-parse', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
+  const reqDeadline = Date.now() + 25_000 // 25s budget — 5s buffer before Cloudflare's 30s wall
   const { csv, currency = 'EUR' } = req.body as { csv: string; currency?: string }
   if (!csv) { res.status(400).json({ error: 'csv required' }); return }
 
@@ -732,7 +739,7 @@ router.post('/transactions/csv-parse', requireAuth, async (req, res: Response) =
       if (!uniqueMap.has(t.description)) uniqueMap.set(t.description, t.amount >= 0 ? '+' : '-')
     }
     const uniqueItems: AiItem[] = Array.from(uniqueMap.entries()).map(([description, sign]) => ({ description, sign }))
-    const { map: aiMap } = await aiCategorize(uniqueItems, categories)
+    const { map: aiMap } = await aiCategorize(uniqueItems, categories, reqDeadline)
     const catById = Object.fromEntries(categories.map(c => [c.id, c]))
     for (const t of transactions) {
       if (t.suggested_category || t.is_broker_transfer) continue
