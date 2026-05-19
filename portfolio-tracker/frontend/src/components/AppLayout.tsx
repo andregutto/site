@@ -86,8 +86,8 @@ export default function AppLayout() {
     { to: '/finances/accounts',     label: t.finances.navAccounts,    end: false },
   ]
 
-  const dropdownItemCls = 'flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors whitespace-nowrap rounded-lg'
-  const dropdownCls = 'absolute top-full mt-1.5 left-0 bg-white rounded-xl shadow-lg border border-gray-100 p-1.5 z-50'
+  const dropdownItemCls = 'flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors rounded-lg'
+  const dropdownCls = 'absolute top-full mt-1.5 left-0 bg-white rounded-xl shadow-lg border border-gray-100 p-1.5 z-50 w-[320px]'
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
