@@ -159,6 +159,25 @@ export default function ContributionsPage() {
     setNewName(''); setNewCode(''); setNewCoingeckoId(''); setNewNameLoading(false)
   }, [newFormType])
 
+  // Auto-suggest name for fixed income based on type/rate/maturity
+  useEffect(() => {
+    if (newFormType !== 'fixed_income') return
+    const rate = parseLocaleNum(newFiRate)
+    const year = newFiMaturity ? new Date(newFiMaturity + 'T12:00:00').getFullYear() : null
+    const fmtRate = (r: number) => r.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })
+    let suggested = ''
+    if (newFiType === 'ipca_plus') {
+      suggested = `Tesouro IPCA+${rate ? ` ${fmtRate(rate)}%` : ''}${year ? ` ${year}` : ''}`
+    } else if (newFiType === 'selic') {
+      suggested = `Tesouro SELIC${year ? ` ${year}` : ''}`
+    } else if (newFiType === 'pre') {
+      suggested = `Tesouro Prefixado${rate ? ` ${fmtRate(rate)}%` : ''}${year ? ` ${year}` : ''}`
+    } else if (newFiType === 'pos_cdi') {
+      suggested = rate ? `CDB ${fmtRate(rate)}% CDI${newFiInstitution ? ` — ${newFiInstitution}` : ''}` : ''
+    }
+    if (suggested) setNewName(suggested)
+  }, [newFormType, newFiType, newFiRate, newFiMaturity, newFiInstitution])
+
   // Auto-fetch ticker name
   useEffect(() => {
     const config = FORM_TYPES.find(t => t.value === newFormType)
@@ -405,6 +424,12 @@ export default function ContributionsPage() {
       setPriceCurrency(created.currency)
       setShowNewAsset(false)
       resetNewAsset()
+      // RF: initial investment already saved as contribution — close the whole form
+      if (isRfNew) {
+        setShowForm(false)
+        resetForm()
+        refresh()
+      }
     } catch (e) {
       setNewAssetErr(e instanceof Error ? e.message : 'Erro ao criar ativo')
     } finally {
@@ -570,12 +595,18 @@ export default function ContributionsPage() {
 
                   {/* Code */}
                   <div>
-                    <label className="block text-xs text-gray-500 mb-1">Codigo</label>
+                    <label className="block text-xs text-gray-500 mb-1">
+                      {newFormType === 'fixed_income' ? 'Apelido único' : 'Código'}
+                    </label>
                     <input
                       type="text"
                       value={newCode}
                       onChange={e => setNewCode(newFormType === 'fixed_income' ? e.target.value : e.target.value.toUpperCase())}
-                      placeholder={newFormType === 'cripto' ? 'ex: BTC' : newFormType === 'ticker_intl' ? 'ex: AAPL' : newFormType === 'fixed_income' ? 'ex: CDB-NUBANK' : newFormType === 'imovel' ? 'ex: APTO-PARIS' : 'ex: PETR4'}
+                      placeholder={
+                        newFormType === 'cripto'        ? 'ex: BTC' :
+                        newFormType === 'ticker_intl'   ? 'ex: AAPL' :
+                        newFormType === 'fixed_income'  ? 'ex: TD-IPCA-2035 ou CDB-NUBANK-102' :
+                        newFormType === 'imovel'        ? 'ex: APTO-PARIS' : 'ex: PETR4'}
                       className={SMALL_INPUT}
                     />
                   </div>
@@ -604,11 +635,14 @@ export default function ContributionsPage() {
                   {/* Name */}
                   <div className="col-span-2">
                     <label className="block text-xs text-gray-500 mb-1">
-                      Nome completo
+                      {newFormType === 'fixed_income' ? 'Descrição do título' : 'Nome completo'}
                       {isTickerForm && (
                         <span className="ml-1 text-gray-400">
                           {newNameLoading ? '· buscando...' : newName ? '· preenchido automaticamente' : newCode ? '· nao encontrado' : '· preenchido apos digitar o codigo'}
                         </span>
+                      )}
+                      {newFormType === 'fixed_income' && newName && (
+                        <span className="ml-1 text-blue-400">· sugestão automática</span>
                       )}
                     </label>
                     <input
@@ -618,7 +652,7 @@ export default function ContributionsPage() {
                       onChange={isTickerForm ? undefined : e => setNewName(e.target.value)}
                       placeholder={isTickerForm
                         ? newNameLoading ? 'Buscando...' : newCode ? 'Nao encontrado' : 'Preenchido automaticamente'
-                        : newFormType === 'fixed_income' ? 'ex: CDB Nubank 102% CDI' : newFormType === 'imovel' ? 'ex: Apartamento Paris 11e' : 'ex: Fundo X'}
+                        : newFormType === 'fixed_income' ? 'Preenchido ao escolher tipo e taxa' : newFormType === 'imovel' ? 'ex: Apartamento Paris 11e' : 'ex: Fundo X'}
                       className={`w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20 ${isTickerForm ? 'bg-gray-50 text-gray-500 cursor-default' : 'bg-white'}`}
                     />
                   </div>
@@ -743,6 +777,10 @@ export default function ContributionsPage() {
                       <div className="col-span-2">
                         <label className="block text-xs text-gray-500 mb-1">Instituicao (opc.)</label>
                         <InstitutionSelect value={newFiInstitution} onChange={setNewFiInstitution} />
+                      </div>
+
+                      <div className="col-span-2 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2 text-[11px] text-blue-700 leading-relaxed">
+                        <strong>Cada título com taxa diferente é um ativo separado.</strong> Ex: Tesouro IPCA+ 6,5% 2035 e Tesouro IPCA+ 5,8% 2045 são dois ativos distintos. Use o <em>Apelido único</em> para distingui-los (ex: <em>TD-IPCA-2035</em>). O aporte inicial é registrado automaticamente ao criar o ativo.
                       </div>
                     </>
                   )}
