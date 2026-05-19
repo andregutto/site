@@ -69,24 +69,24 @@ export default function AppLayout() {
   const inFinances  = location.pathname.startsWith('/finances')
 
   const portfolioItems = [
-    { to: '/portfolio',              label: t.nav.contributions },
-    { to: '/portfolio/rebalance',    label: t.nav.rebalance     },
-    { to: '/portfolio/institutions', label: t.nav.institutions  },
-    { to: '/portfolio/classes',      label: t.nav.classes       },
-    { to: '/portfolio/reports',      label: t.nav.ir            },
-    { to: '/portfolio/indices',      label: t.nav.indices       },
+    { to: '/portfolio',              label: t.nav.contributions, icon: '📊' },
+    { to: '/portfolio/rebalance',    label: t.nav.rebalance,     icon: '⚖️' },
+    { to: '/portfolio/institutions', label: t.nav.institutions,  icon: '🏦' },
+    { to: '/portfolio/classes',      label: t.nav.classes,       icon: '🏷️' },
+    { to: '/portfolio/reports',      label: t.nav.ir,            icon: '📋' },
+    { to: '/portfolio/indices',      label: t.nav.indices,       icon: '📈' },
   ]
 
   const financesItems = [
-    { to: '/finances',              label: t.finances.navOverview,    end: true  },
-    { to: '/finances/budget',       label: t.finances.navBudget,      end: false },
-    { to: '/finances/transactions', label: t.finances.navTransactions, end: false },
-    { to: '/finances/moments',      label: t.finances.navMoments,     end: false },
-    { to: '/finances/freedom',      label: t.finances.navFreedom,     end: false },
-    { to: '/finances/accounts',     label: t.finances.navAccounts,    end: false },
+    { to: '/finances',              label: t.finances.navOverview,     icon: '🏠', end: true  },
+    { to: '/finances/budget',       label: t.finances.navBudget,       icon: '🎯', end: false },
+    { to: '/finances/transactions', label: t.finances.navTransactions,  icon: '💳', end: false },
+    { to: '/finances/moments',      label: t.finances.navMoments,       icon: '✨', end: false },
+    { to: '/finances/freedom',      label: t.finances.navFreedom,       icon: '🌅', end: false },
+    { to: '/finances/accounts',     label: t.finances.navAccounts,      icon: '🏧', end: false },
   ]
 
-  const dropdownItemCls = 'flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors rounded-lg'
+  const dropdownItemCls = 'flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors rounded-lg'
   const dropdownCls = 'absolute top-full mt-1.5 left-0 bg-white rounded-xl shadow-lg border border-gray-100 p-1.5 z-50 w-[320px]'
 
   return (
@@ -138,9 +138,10 @@ export default function AppLayout() {
                 {showPortfolioMenu && (
                   <div className={dropdownCls}>
                     <div className="grid grid-cols-2 gap-0.5">
-                      {portfolioItems.map(({ to, label }) => (
+                      {portfolioItems.map(({ to, label, icon }) => (
                         <NavLink key={to} to={to} className={({ isActive }) => `${dropdownItemCls} ${isActive ? 'bg-[#001A70]/5 text-[#001A70] font-medium' : ''}`}>
-                          {label}
+                          <span className="text-base leading-none shrink-0">{icon}</span>
+                          <span>{label}</span>
                         </NavLink>
                       ))}
                     </div>
@@ -164,9 +165,10 @@ export default function AppLayout() {
                 {showFinancesMenu && (
                   <div className={dropdownCls}>
                     <div className="grid grid-cols-2 gap-0.5">
-                      {financesItems.map(({ to, label, end }) => (
+                      {financesItems.map(({ to, label, icon, end }) => (
                         <NavLink key={to} to={to} end={end} className={({ isActive }) => `${dropdownItemCls} ${isActive ? 'bg-[#001A70]/5 text-[#001A70] font-medium' : ''}`}>
-                          {label}
+                          <span className="text-base leading-none shrink-0">{icon}</span>
+                          <span>{label}</span>
                         </NavLink>
                       ))}
                     </div>
