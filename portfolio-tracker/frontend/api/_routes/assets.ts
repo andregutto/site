@@ -132,7 +132,7 @@ router.delete('/classes/:id', requireAuth, async (req, res: Response) => {
   const { count } = await supabaseAdmin
     .from('assets')
     .select('id', { count: 'exact', head: true })
-    .eq('asset_class_id', classId)
+    .eq('class_id', classId)
     .eq('user_id', userId)
     .eq('active', true)
   if (count && count > 0) {
@@ -165,7 +165,7 @@ router.post('/', requireAuth, async (req, res: Response) => {
       name:           name.trim(),
       asset_type,
       currency,
-      asset_class_id: asset_class_id ?? null,
+      class_id: asset_class_id ?? null,
       ticker_yahoo:   ticker_yahoo   ?? null,
       ticker_brapi:   ticker_brapi   ?? null,
       coingecko_id:   coingecko_id   ?? null,
@@ -343,7 +343,9 @@ router.patch('/:id', requireAuth, async (req, res: Response) => {
     res.status(404).json({ error: 'Ativo não encontrado' }); return
   }
   const updates = Object.fromEntries(
-    Object.entries(req.body as Record<string, unknown>).filter(([k]) => PATCHABLE.includes(k as typeof PATCHABLE[number]))
+    Object.entries(req.body as Record<string, unknown>)
+      .filter(([k]) => PATCHABLE.includes(k as typeof PATCHABLE[number]))
+      .map(([k, v]) => [k === 'asset_class_id' ? 'class_id' : k, v])
   )
   if (Object.keys(updates).length === 0) {
     res.status(400).json({ error: 'Nenhum campo válido para atualizar' }); return

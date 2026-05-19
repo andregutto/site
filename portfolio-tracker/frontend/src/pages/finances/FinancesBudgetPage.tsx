@@ -33,11 +33,19 @@ function fmt(n: number, currency: string) {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n)
 }
 
+const DEFAULT_DESCRIPTIONS: Record<string, string> = {
+  essential:  'Despesas fixas e inadiáveis de moradia, saúde, transporte e alimentação basilar.',
+  investment: 'Parcela agressiva focada no longo prazo para a construção de patrimônio.',
+  savings:    'Despesas variáveis do dia a dia que não mudam a sobrevivência.',
+  free:       'Dinheiro de uso totalmente livre (lazer, hobbies e jantares).',
+}
+
 function EnvelopeBar({ env, expanded, onToggle, onEditCategory, onDeleteCategory, onAddCategory, onSaveDescription }:
   { env: Envelope; expanded: boolean; onToggle: () => void; onEditCategory: (c: Category) => void; onDeleteCategory: (id: number) => void; onAddCategory: (envId: number) => void; onSaveDescription: (id: number, desc: string) => void }) {
   const { t } = useI18n()
+  const defaultDesc = DEFAULT_DESCRIPTIONS[env.type] ?? ''
   const [editingDesc, setEditingDesc] = useState(false)
-  const [descInput,   setDescInput]   = useState(env.description ?? '')
+  const [descInput,   setDescInput]   = useState(env.description ?? defaultDesc)
 
   const totalCategoryBudget = env.categories.reduce((s, c) => s + (c.budget_monthly ?? 0), 0)
   const allocated = totalCategoryBudget > 0 ? (totalCategoryBudget / env.budget_amount) * 100 : 0
@@ -109,13 +117,13 @@ function EnvelopeBar({ env, expanded, onToggle, onEditCategory, onDeleteCategory
         ) : (
           <>
             <p
-              className={`flex-1 text-xs italic leading-relaxed cursor-pointer ${env.description ? 'text-gray-500' : 'text-gray-300'}`}
-              onClick={() => { setDescInput(env.description ?? ''); setEditingDesc(true) }}
+              className={`flex-1 text-xs italic leading-relaxed cursor-pointer ${env.description ? 'text-gray-500' : 'text-gray-400'}`}
+              onClick={() => { setDescInput(env.description ?? defaultDesc); setEditingDesc(true) }}
             >
-              {env.description || t.finances.envelopeDescPlaceholder}
+              {env.description || defaultDesc || t.finances.envelopeDescPlaceholder}
             </p>
             <button
-              onClick={() => { setDescInput(env.description ?? ''); setEditingDesc(true) }}
+              onClick={() => { setDescInput(env.description ?? defaultDesc); setEditingDesc(true) }}
               className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 text-gray-400 hover:text-[#001A70] shrink-0 mt-0.5"
             >
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3">

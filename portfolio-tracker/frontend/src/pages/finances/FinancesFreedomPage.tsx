@@ -440,29 +440,40 @@ export default function FinancesFreedomPage() {
   const [ipcaM12,      setIpcaM12]      = useState<number | null>(null)
   const [userBirthdate, setUserBirthdate] = useState<string | null>(null)
   const [loading,      setLoading]      = useState(true)
+  const [perfLoading,  setPerfLoading]  = useState(true)
   const [showForm,     setShowForm]     = useState(false)
   const [editingPlan,  setEditingPlan]  = useState<FreedomPlan | null>(null)
   const [saving,       setSaving]       = useState(false)
 
   const activePlan = plans.find(p => p.is_active) ?? plans[0] ?? null
 
+  const loadPerf = useCallback(async () => {
+    setPerfLoading(true)
+    try {
+      const now = currentMonth()
+      const monthlyData = await apiFetch<{ monthly: MonthlyPerf[] }>(`/performance/monthly?from=2020-01&to=${now}`)
+      setPerf(monthlyData.monthly ?? [])
+    } catch {
+      // ignore
+    } finally {
+      setPerfLoading(false)
+    }
+  }, [])
+
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const now = currentMonth()
-      const [plansData, portfolioData, indicesData, profileData, monthlyData] = await Promise.all([
+      const [plansData, portfolioData, indicesData, profileData] = await Promise.all([
         apiFetch<FreedomPlan[]>('/finances/freedom-plans'),
         apiFetch<PortfolioValue>('/portfolio/value'),
         apiFetch<{ code: string; m12_pct: number | null }[]>('/indices'),
         apiFetch<{ birthdate?: string }>('/profile'),
-        apiFetch<{ monthly: MonthlyPerf[] }>(`/performance/monthly?from=2020-01&to=${now}`),
       ])
       setPlans(plansData)
       setPortfolio(portfolioData)
       const ipca = indicesData.find(i => i.code === 'IPCA')
       if (ipca?.m12_pct != null) setIpcaM12(Math.round(ipca.m12_pct * 10) / 10)
       if (profileData.birthdate) setUserBirthdate(profileData.birthdate)
-      setPerf(monthlyData.monthly ?? [])
     } catch {
       // ignore
     } finally {
@@ -470,7 +481,10 @@ export default function FinancesFreedomPage() {
     }
   }, [])
 
-  useEffect(() => { load() }, [load])
+  useEffect(() => {
+    load()
+    loadPerf()
+  }, [load, loadPerf])
 
   async function savePlan(data: Omit<FreedomPlan, 'id' | 'is_active' | 'created_at'>) {
     setSaving(true)
@@ -783,7 +797,12 @@ export default function FinancesFreedomPage() {
           )}
 
           {/* Chart */}
-          {chartData.length > 0 && (
+          {perfLoading && (
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-center justify-center h-40">
+              <div className="animate-spin h-6 w-6 rounded-full border-2 border-[#001A70] border-t-transparent" />
+            </div>
+          )}
+          {!perfLoading && chartData.length > 0 && (
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
               <h3 className="text-sm font-semibold text-gray-700 mb-4">{t.finances.freedomChartTitle}</h3>
               <ResponsiveContainer width="100%" height={320}>

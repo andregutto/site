@@ -452,6 +452,19 @@ router.get('/transactions', requireAuth, async (req, res: Response) => {
   res.json(data ?? [])
 })
 
+// GET /api/finances/transactions/months — distinct YYYY-MM months with data, desc
+router.get('/transactions/months', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const { data } = await supabaseAdmin
+    .from('finance_transactions')
+    .select('date')
+    .eq('user_id', userId)
+    .order('date', { ascending: false })
+  const seen = new Set<string>()
+  for (const r of (data ?? [])) seen.add((r.date as string).slice(0, 7))
+  res.json([...seen])
+})
+
 // POST /api/finances/transactions — create manual
 router.post('/transactions', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest

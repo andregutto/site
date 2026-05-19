@@ -282,11 +282,17 @@ export default function FinancesOverviewPage() {
                       )}
                     </div>
                     <div className="text-right shrink-0 ml-3">
-                      <span className={`text-xs font-semibold ${env.over ? 'text-red-500' : 'text-gray-700'}`}>
-                        {fmt(env.actual, currency, true)}
-                      </span>
+                      <div>
+                        <span className="text-[10px] text-gray-400 mr-1">{t.finances.overviewSpent}</span>
+                        <span className={`text-xs font-semibold ${env.over ? 'text-red-500' : 'text-gray-700'}`}>
+                          {fmt(env.actual, currency, true)}
+                        </span>
+                      </div>
                       {env.budget > 0 && (
-                        <span className="text-xs text-gray-400"> / {fmt(env.budget, currency, true)}</span>
+                        <div>
+                          <span className="text-[10px] text-gray-400 mr-1">{t.finances.overviewBudgeted}</span>
+                          <span className="text-xs text-gray-400">{fmt(env.budget, currency, true)}</span>
+                        </div>
                       )}
                     </div>
                   </div>

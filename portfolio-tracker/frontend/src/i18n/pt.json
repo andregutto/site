@@ -441,6 +441,7 @@
     "csvAiNoMatch": "IA rodou mas não encontrou categorias para {n} itens",
     "overviewReceived": "recebido",
     "overviewBudgeted": "orçado",
+    "overviewSpent": "gasto",
     "overviewPlanned": "Planejado:",
     "overviewBalance": "Saldo do mês",
     "overviewStatus": "Status",

@@ -144,19 +144,16 @@ export default function FinancesTransactionsPage() {
 
   useEffect(() => { loadTransactions() }, [loadTransactions])
 
-  // On first load: if current month is empty, auto-jump to the most recent month with data
-  const autoJumpedRef = useRef(false)
+  // On mount: fetch all months with data and jump to most recent if current is empty
   useEffect(() => {
-    if (loading || autoJumpedRef.current) return
-    autoJumpedRef.current = true
-    if (transactions.length === 0) {
-      apiFetch<Transaction[]>('/finances/transactions?limit=1')
-        .then(latest => {
-          if (latest.length > 0) setMonth(latest[0].date.slice(0, 7))
-        })
-        .catch(() => {})
-    }
-  }, [loading, transactions.length])
+    apiFetch<string[]>('/finances/transactions/months')
+      .then(months => {
+        if (months.length > 0 && !months.includes(defaultMonth)) {
+          setMonth(months[0])
+        }
+      })
+      .catch(() => {})
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Close moment dropdown on outside click
   useEffect(() => {

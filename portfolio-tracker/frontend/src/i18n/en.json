@@ -441,6 +441,7 @@
     "csvAiNoMatch": "AI ran but found no categories for {n} items",
     "overviewReceived": "received",
     "overviewBudgeted": "budgeted",
+    "overviewSpent": "spent",
     "overviewPlanned": "Planned:",
     "overviewBalance": "Month balance",
     "overviewStatus": "Status",
