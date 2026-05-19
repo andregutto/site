@@ -536,8 +536,8 @@ const BROKER_KEYWORDS = [
 
 type CatRow = { id: number; name: string; icon: string; color: string }
 
-const AI_BATCH_SIZE   = 50  // larger batch = fewer API calls
-const AI_BATCH_DELAY  = 600 // ms between batches to avoid 529 overload
+const AI_BATCH_SIZE   = 50   // larger batch = fewer API calls
+const AI_BATCH_DELAY  = 1000 // ms between batches to avoid 529 overload
 
 interface AiItem { description: string; sign: '+' | '-' }
 
@@ -563,8 +563,8 @@ ${descList}`
 
   const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
-  // Retry up to 3 times on 529 overloaded with exponential backoff
-  const MAX_RETRIES = 3
+  // Retry up to 5 times on 529 with exponential backoff: 4s, 8s, 16s, 32s
+  const MAX_RETRIES = 5
   for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
     try {
       const msg = await anthropic.messages.create({
@@ -579,7 +579,7 @@ ${descList}`
     } catch (e: unknown) {
       const status = (e as { status?: number }).status
       if (status === 529 && attempt < MAX_RETRIES - 1) {
-        await new Promise(r => setTimeout(r, (attempt + 1) * 4000))
+        await new Promise(r => setTimeout(r, Math.min(4000 * Math.pow(2, attempt), 32000)))
         continue
       }
       throw e
@@ -605,17 +605,25 @@ async function aiCategorize(
   if (items.length === 0 || categories.length === 0) return { map: {} }
 
   const result: Record<string, number | null> = {}
-  try {
-    for (let i = 0; i < items.length; i += AI_BATCH_SIZE) {
-      if (i > 0) await new Promise(r => setTimeout(r, AI_BATCH_DELAY))
-      const batch = items.slice(i, i + AI_BATCH_SIZE)
+  let lastError: unknown = null
+  let failedBatches = 0
+  const totalBatches = Math.ceil(items.length / AI_BATCH_SIZE)
+  for (let i = 0; i < items.length; i += AI_BATCH_SIZE) {
+    if (i > 0) await new Promise(r => setTimeout(r, AI_BATCH_DELAY))
+    const batch = items.slice(i, i + AI_BATCH_SIZE)
+    try {
       const batchResult = await aiCategorizeBatch(batch, categories, i)
       Object.assign(result, batchResult)
+    } catch (e) {
+      lastError = e
+      failedBatches++
+      // Continue remaining batches — partial categorization beats none
     }
-    return { map: result }
-  } catch (e) {
-    return { map: result, error: friendlyAiError(e) }
   }
+  if (failedBatches > 0 && failedBatches === totalBatches) {
+    return { map: result, error: friendlyAiError(lastError) }
+  }
+  return { map: result }
 }
 
 function detectBroker(description: string): string | null {
