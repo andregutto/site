@@ -74,6 +74,7 @@ export default function FinancesTransactionsPage() {
   const [csvStep, setCsvStep]           = useState<'idle' | 'preview' | 'importing' | 'parsing'>('idle')
   const [csvRows, setCsvRows]           = useState<ParsedRow[]>([])
   const [csvAiDebug, setCsvAiDebug]     = useState<AiDebug | null>(null)
+  const [csvAiLoading, setCsvAiLoading] = useState(false)
   const [csvError, setCsvError]         = useState('')
   const [csvFilterUncategorized, setCsvFilterUncategorized] = useState(false)
   const [csvCurrency, setCsvCurrency]   = useState('EUR')
@@ -231,6 +232,7 @@ export default function FinancesTransactionsPage() {
 
   async function handleCSVFile(file: File) {
     setCsvError('')
+    setCsvAiDebug(null)
     setCsvStep('parsing')
     const text = await file.text()
     try {
@@ -239,18 +241,54 @@ export default function FinancesTransactionsPage() {
         { method: 'POST', body: JSON.stringify({ csv: text, currency: csvCurrency }) }
       )
       if (result.error) { setCsvError(result.error); setCsvStep('idle'); return }
-      setCsvAiDebug(result.ai_debug ?? null)
       setCsvFilterUncategorized(false)
-      setCsvRows(
-        [...result.transactions]
-          .sort((a, b) => b.date.localeCompare(a.date))
-          .map(r => ({
-            ...r,
-            category_id: r.suggested_category?.id ?? null,
-            suggested_category_id: r.suggested_category?.id ?? null,
-          }))
-      )
+
+      const rows = [...result.transactions]
+        .sort((a, b) => b.date.localeCompare(a.date))
+        .map(r => ({
+          ...r,
+          category_id: r.suggested_category?.id ?? null,
+          suggested_category_id: r.suggested_category?.id ?? null,
+        }))
+      setCsvRows(rows)
       setCsvStep('preview')
+
+      // AI categorization in a separate request so parse is always fast
+      const unmatched = result.transactions.filter(r => !r.suggested_category && !r.is_broker_transfer && !r.is_internal_transfer)
+      if (unmatched.length > 0 && process.env.NODE_ENV !== 'test') {
+        const uniqueMap = new Map<string, '+' | '-'>()
+        for (const r of unmatched) {
+          if (!uniqueMap.has(r.description)) uniqueMap.set(r.description, r.amount >= 0 ? '+' : '-')
+        }
+        const uniqueItems = Array.from(uniqueMap.entries()).map(([description, sign]) => ({ description, sign }))
+
+        setCsvAiLoading(true)
+        try {
+          const aiResult = await apiFetch<{ map: Record<string, number | null>; error: string | null }>(
+            '/finances/transactions/ai-categorize',
+            { method: 'POST', body: JSON.stringify({ items: uniqueItems }) }
+          )
+          const catById = Object.fromEntries([...incomeCategories, ...expenseCategories].map(c => [c.id, c]))
+          let aiAssigned = 0
+          setCsvRows(prev => prev.map(r => {
+            if (r.suggested_category || r.is_broker_transfer || r.is_internal_transfer) return r
+            const idx = uniqueItems.findIndex(u => u.description === r.description)
+            const catId = aiResult.map[String(idx)]
+            if (catId != null && catById[catId]) {
+              aiAssigned++
+              return { ...r, suggested_category: catById[catId], suggested_by: 'ai' as const, category_id: catId, suggested_category_id: catId }
+            }
+            return r
+          }))
+          setCsvAiDebug({ ran: true, assigned: aiAssigned, unmatched: uniqueItems.length, error: aiResult.error })
+        } catch {
+          setCsvAiDebug({ ran: false, assigned: 0, unmatched: uniqueItems.length, error: 'Erro ao contactar IA' })
+        } finally {
+          setCsvAiLoading(false)
+        }
+      } else {
+        setCsvAiDebug({ ran: false, assigned: 0, unmatched: 0, error: null })
+      }
     } catch (e: unknown) {
       setCsvError(e instanceof Error ? e.message : t.finances.csvAiError.replace('{msg}', 'CSV'))
       setCsvStep('idle')
@@ -375,17 +413,18 @@ export default function FinancesTransactionsPage() {
               <h3 className="font-semibold text-gray-900 text-sm">{t.finances.csvPreview} — {csvRows.length} {t.finances.csvTransactions}</h3>
               <p className="text-xs text-gray-400 mt-0.5">
                 {t.finances.csvReview}
-                {csvRows.filter(r => r.suggested_by === 'ai').length > 0 && (
+                {csvAiLoading && (
+                  <span className="ml-2 text-violet-500 animate-pulse">✦ {t.finances.csvAiCategorizando}</span>
+                )}
+                {!csvAiLoading && csvRows.filter(r => r.suggested_by === 'ai').length > 0 && (
                   <span className="ml-2 text-violet-500">✦ {csvRows.filter(r => r.suggested_by === 'ai').length} {t.finances.csvAiSuggested}</span>
                 )}
-                {csvAiDebug && (
+                {!csvAiLoading && csvAiDebug && (
                   csvAiDebug.error === 'no_key'
                     ? <span className="ml-2 text-red-400">⚠ {t.finances.csvNoKeyError}</span>
                     : csvAiDebug.error
                       ? <span className="ml-2 text-red-400">⚠ {t.finances.csvAiError.replace('{msg}', csvAiDebug.error)}</span>
-                      : csvAiDebug.unmatched > 0 && csvAiDebug.assigned === 0
-                        ? <span className="ml-2 text-amber-500">⚠ {t.finances.csvAiNoMatch.replace('{n}', String(csvAiDebug.unmatched))}</span>
-                        : null
+                      : null
                 )}
               </p>
             </div>
@@ -463,7 +502,7 @@ export default function FinancesTransactionsPage() {
                             className="text-xs border border-gray-200 rounded px-2 py-1 max-w-[150px]"
                           >
                             <option value="">{t.finances.noCategory}</option>
-                            {catsForAmount(row.amount).map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
+                            {(row.is_internal_transfer ? [...incomeCategories, ...expenseCategories] : catsForAmount(row.amount)).map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
                           </select>
                         </div>
                       </td>

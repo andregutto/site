@@ -757,30 +757,8 @@ router.post('/transactions/csv-parse', requireAuth, async (req, res: Response) =
     })
   }
 
-  // AI categorization for rows without a keyword match (skip transfers — already categorized)
-  let aiError: string | undefined
-  let aiAssigned = 0
-  const unmatched = transactions.filter(t => !t.suggested_category && !t.is_broker_transfer && !t.is_internal_transfer)
-  if (unmatched.length > 0) {
-    const uniqueMap = new Map<string, '+' | '-'>()
-    for (const t of unmatched) {
-      if (!uniqueMap.has(t.description)) uniqueMap.set(t.description, t.amount >= 0 ? '+' : '-')
-    }
-    const uniqueItems: AiItem[] = Array.from(uniqueMap.entries()).map(([description, sign]) => ({ description, sign }))
-    const { map: aiMap, error } = await aiCategorize(uniqueItems, categories, reqDeadline)
-    aiError = error
-    const catById = Object.fromEntries(categories.map(c => [c.id, c]))
-    for (const t of transactions) {
-      if (t.suggested_category || t.is_broker_transfer) continue
-      const idx = uniqueItems.findIndex(u => u.description === t.description)
-      const catId = aiMap[String(idx)]
-      if (catId != null && catById[catId]) {
-        t.suggested_category = catById[catId]
-        t.suggested_by = 'ai'
-        aiAssigned++
-      }
-    }
-  }
+  // AI runs separately via /transactions/ai-categorize — just report how many need it
+  const unmatchedCount = transactions.filter(t => !t.suggested_category && !t.is_broker_transfer && !t.is_internal_transfer).length
 
   res.json({
     transactions,
@@ -788,8 +766,26 @@ router.post('/transactions/csv-parse', requireAuth, async (req, res: Response) =
     skipped_invalid: skippedInvalid,
     headers,
     detected: { dateIdx, descIdx, amtIdx, stateIdx },
-    ai_debug: { ran: !aiError && unmatched.length > 0, assigned: aiAssigned, unmatched: unmatched.length, error: aiError ?? null },
+    ai_debug: { ran: false, assigned: 0, unmatched: unmatchedCount, error: null },
   })
+})
+
+// POST /api/finances/transactions/ai-categorize
+// Separate endpoint so AI can have its own 25s budget independent of the parse request
+router.post('/transactions/ai-categorize', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const reqDeadline = Date.now() + 25_000
+  const { items } = req.body as { items: AiItem[] }
+  if (!items || !Array.isArray(items) || items.length === 0) { res.json({ map: {}, error: null }); return }
+
+  const { data: cats } = await supabaseAdmin
+    .from('finance_categories')
+    .select('id, name, icon, color')
+    .eq('user_id', userId)
+  const categories = (cats ?? []) as CatRow[]
+
+  const { map, error } = await aiCategorize(items, categories, reqDeadline)
+  res.json({ map, error: error ?? null })
 })
 
 function csvSourceKey(t: { date: string; description: string; amount: number; currency: string }): string {
