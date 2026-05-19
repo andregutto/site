@@ -347,7 +347,7 @@ router.get('/accounts', requireAuth, async (req, res: Response) => {
 
   const [acctRes, txRes, connRes] = await Promise.all([
     supabaseAdmin.from('finance_accounts').select('*').eq('user_id', userId).eq('is_active', true).order('created_at'),
-    supabaseAdmin.from('finance_transactions').select('account_id, amount').eq('user_id', userId).eq('is_internal_transfer', false).not('account_id', 'is', null).limit(50000),
+    supabaseAdmin.from('finance_transactions').select('account_id, amount').eq('user_id', userId).not('account_id', 'is', null).limit(50000),
     supabaseAdmin.from('finance_bank_connections').select('id, display_name, last_synced_at, finance_account_id').eq('user_id', userId),
   ])
 
