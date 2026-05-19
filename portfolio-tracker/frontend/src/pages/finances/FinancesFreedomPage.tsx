@@ -124,11 +124,12 @@ interface PlanFormProps {
   ipcaAnnual?: number | null
   birthdate?: string | null
   onSave: (data: Omit<FreedomPlan, 'id' | 'is_active' | 'created_at'>) => Promise<void>
+  onDelete?: () => void
   onCancel: () => void
   saving: boolean
 }
 
-function PlanForm({ initial, portfolio, ipcaAnnual, birthdate, onSave, onCancel, saving }: PlanFormProps) {
+function PlanForm({ initial, portfolio, ipcaAnnual, birthdate, onSave, onDelete, onCancel, saving }: PlanFormProps) {
   const { t } = useI18n()
   const isNew = !initial.id
   const rates = deriveRates(portfolio)
@@ -388,7 +389,7 @@ function PlanForm({ initial, portfolio, ipcaAnnual, birthdate, onSave, onCancel,
         </div>
       </div>
 
-      <div className="flex gap-2">
+      <div className="flex gap-2 items-center">
         <button
           type="submit"
           disabled={saving}
@@ -399,6 +400,15 @@ function PlanForm({ initial, portfolio, ipcaAnnual, birthdate, onSave, onCancel,
         <button type="button" onClick={onCancel} className="px-4 text-sm text-gray-500 hover:text-gray-700 transition-colors">
           {t.common.cancel}
         </button>
+        {onDelete && (
+          <button
+            type="button"
+            onClick={onDelete}
+            className="px-3 text-sm text-red-400 hover:text-red-600 transition-colors ml-auto"
+          >
+            {t.common.delete ?? 'Excluir'}
+          </button>
+        )}
       </div>
     </form>
   )
@@ -582,27 +592,27 @@ export default function FinancesFreedomPage() {
     return Math.round(w)
   })()
 
-  // When will the plan line reach the target?
-  // Always returns a date within [planStart, planStart+horizon].
-  // If initial_capital already exceeds target, return plan end date (not planStart).
+  // Forecast when target will be reached based on CURRENT actual value.
+  // Starts from today's portfolio and applies plan's return rate + contribution.
   const reachMonth = (() => {
-    if (!activePlan) return null
-    const horizonMonths = activePlan.horizon_years * 12
-    const planEnd = addMonths(planStart, horizonMonths)
-    if (activePlan.initial_capital >= activePlan.target_amount) return planEnd
-    let w = activePlan.initial_capital
-    for (let i = 1; i <= horizonMonths; i++) {
+    if (!activePlan || currentValue <= 0) return null
+    if (currentValue >= activePlan.target_amount) return currentMonth()
+    const now = currentMonth()
+    const maxSearch = activePlan.horizon_years * 3 * 12 // search up to 3× horizon
+    let w = currentValue
+    for (let i = 1; i <= maxSearch; i++) {
       w = w * (1 + activePlan.monthly_return_rate) + activePlan.monthly_contribution
-      if (w >= activePlan.target_amount) return addMonths(planStart, i)
+      if (w >= activePlan.target_amount) return addMonths(now, i)
     }
-    return planEnd
+    return null
   })()
 
-  // How many years early (positive) or late (negative) reachMonth is vs plan end
+  // How many years early (positive) or late (negative) forecast is vs plan deadline
   const planEndMonth = activePlan ? addMonths(planStart, activePlan.horizon_years * 12) : null
   const reachDiffYears = (reachMonth && planEndMonth)
     ? Math.round(monthsBetween(reachMonth, planEndMonth) / 12 * 10) / 10
     : null
+  // reachDiffYears > 0 → will reach before deadline; < 0 → will reach after deadline
 
   // How many months ahead/behind is actual vs plan?
   const latestActualMonth = perf.length > 0 ? perf[perf.length - 1].month : null
@@ -665,24 +675,18 @@ export default function FinancesFreedomPage() {
 
       {/* Plan selector */}
       {plans.length > 1 && (
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-1.5 flex-wrap">
           {plans.map(p => (
             <button
               key={p.id}
-              onClick={() => setActive(p.id)}
+              onClick={() => !p.is_active && setActive(p.id)}
               className={`px-3 py-1 text-xs rounded-full border transition-colors ${
                 p.is_active
-                  ? 'bg-[#001A70] text-white border-[#001A70]'
+                  ? 'bg-[#001A70] text-white border-[#001A70] cursor-default'
                   : 'border-gray-200 text-gray-500 hover:border-[#001A70] hover:text-[#001A70]'
               }`}
             >
               {p.name}
-              {plans.length > 1 && (
-                <span
-                  onClick={e => { e.stopPropagation(); deletePlan(p.id) }}
-                  className="ml-1.5 text-current opacity-50 hover:opacity-100"
-                >×</span>
-              )}
             </button>
           ))}
         </div>
@@ -713,6 +717,7 @@ export default function FinancesFreedomPage() {
             ipcaAnnual={ipcaM12}
             birthdate={userBirthdate}
             onSave={savePlan}
+            onDelete={editingPlan ? () => deletePlan(editingPlan.id) : undefined}
             onCancel={() => { setShowForm(false); setEditingPlan(null) }}
             saving={saving}
           />
@@ -750,10 +755,12 @@ export default function FinancesFreedomPage() {
             </div>
             <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
               <p className="text-xs text-gray-500 mb-1">{t.finances.freedomTarget}</p>
-              {reachMonth && (
+              {reachMonth ? (
                 <p className="text-base font-bold text-gray-900">
                   {new Date(reachMonth + '-01').toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })}
                 </p>
+              ) : (
+                <p className="text-base font-bold text-gray-400">—</p>
               )}
               <p className="text-[10px] text-gray-400">
                 {activePlan!.horizon_years} {t.finances.freedomPlanYears}
@@ -763,8 +770,9 @@ export default function FinancesFreedomPage() {
                 <p className="text-[10px] text-emerald-600 mt-0.5">{reachDiffYears} anos antes do prazo</p>
               )}
               {reachDiffYears != null && reachDiffYears < 0 && (
-                <p className="text-[10px] text-amber-600 mt-0.5">{Math.abs(reachDiffYears)} anos de atraso</p>
+                <p className="text-[10px] text-amber-600 mt-0.5">{Math.abs(reachDiffYears)} anos após o prazo</p>
               )}
+              <p className="text-[10px] text-gray-300 mt-0.5">baseado no patrimônio atual</p>
             </div>
           </div>
 
