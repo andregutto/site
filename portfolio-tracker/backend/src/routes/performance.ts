@@ -691,51 +691,107 @@ router.get('/asset-returns', requireAuth, async (req, res: Response) => {
     .select('id, asset_type, currency, ticker_brapi, ticker_yahoo, coingecko_id, fi_principal, fi_start_date, fi_type, fi_rate, fi_spread')
     .eq('user_id', userId)
     .eq('active', true)
-    .eq('asset_type', 'ticker')
+    .in('asset_type', ['ticker', 'manual'])
 
   if (!assets?.length) { res.json({}); return }
-  const assetIds = assets.map(a => a.id)
 
-  const phLimit2 = Math.max(10000, assetIds.length * 240)
-  const [{ data: endPricesRaw }, { data: allHistory }] = await Promise.all([
-    supabaseAdmin.from('price_history').select('asset_id, price, ref_date')
-      .in('asset_id', assetIds).lte('ref_date', toDate).order('ref_date', { ascending: false }).limit(phLimit2),
-    supabaseAdmin.from('price_history').select('asset_id, price, ref_date')
-      .in('asset_id', assetIds).order('ref_date', { ascending: true }).limit(phLimit2),
-  ])
-
-  const startMap:  Record<number, number> = {}
-  const oldestMap: Record<number, number> = {}
-  for (const p of (allHistory ?? [])) {
-    if (!(p.asset_id in oldestMap)) oldestMap[p.asset_id] = p.price
-    if (p.ref_date < fromDate) startMap[p.asset_id] = p.price
-  }
-
-  const endMap: Record<number, { price: number; ref_date: string }> = {}
-  for (const p of (endPricesRaw ?? [])) {
-    if (!(p.asset_id in endMap)) endMap[p.asset_id] = { price: p.price, ref_date: p.ref_date }
-  }
-
-  if (isCurrentPeriod) {
-    await Promise.all(assets.map(async (a) => {
-      const entry = endMap[a.id]
-      if (!entry || entry.ref_date.substring(0, 7) < currentYM) {
-        try {
-          const result = await getCurrentPrice(a as Asset)
-          endMap[a.id] = { price: result.price, ref_date: currentYM + '-01' }
-        } catch { /* keep stale or absent */ }
-      }
-    }))
-  }
+  const tickerAssets = assets.filter(a => a.asset_type === 'ticker')
+  const manualAssets = assets.filter(a => a.asset_type === 'manual')
+  const tickerIds    = tickerAssets.map(a => a.id)
+  const manualIds    = manualAssets.map(a => a.id)
 
   const returns: Record<number, number | null> = {}
-  for (const a of assets) {
-    const ps = startMap[a.id] ?? oldestMap[a.id]
-    const pe = endMap[a.id]?.price
-    returns[a.id] = (ps != null && pe != null && ps > 0 && ps !== pe)
-      ? Math.round((pe / ps - 1) * 10000) / 100
-      : (ps != null && pe != null && ps === pe) ? 0
-      : null
+
+  // ── Ticker assets: price_history ────────────────────────────────────────────
+  if (tickerIds.length > 0) {
+    const phLimit2 = Math.max(10000, tickerIds.length * 240)
+    const [{ data: endPricesRaw }, { data: allHistory }] = await Promise.all([
+      supabaseAdmin.from('price_history').select('asset_id, price, ref_date')
+        .in('asset_id', tickerIds).lte('ref_date', toDate).order('ref_date', { ascending: false }).limit(phLimit2),
+      supabaseAdmin.from('price_history').select('asset_id, price, ref_date')
+        .in('asset_id', tickerIds).order('ref_date', { ascending: true }).limit(phLimit2),
+    ])
+
+    const startMap:  Record<number, number> = {}
+    const oldestMap: Record<number, number> = {}
+    for (const p of (allHistory ?? [])) {
+      if (!(p.asset_id in oldestMap)) oldestMap[p.asset_id] = p.price
+      if (p.ref_date < fromDate) startMap[p.asset_id] = p.price
+    }
+
+    const endMap: Record<number, { price: number; ref_date: string }> = {}
+    for (const p of (endPricesRaw ?? [])) {
+      if (!(p.asset_id in endMap)) endMap[p.asset_id] = { price: p.price, ref_date: p.ref_date }
+    }
+
+    if (isCurrentPeriod) {
+      await Promise.all(tickerAssets.map(async (a) => {
+        const entry = endMap[a.id]
+        if (!entry || entry.ref_date.substring(0, 7) < currentYM) {
+          try {
+            const result = await getCurrentPrice(a as Asset)
+            endMap[a.id] = { price: result.price, ref_date: currentYM + '-01' }
+          } catch { /* keep stale or absent */ }
+        }
+      }))
+    }
+
+    for (const a of tickerAssets) {
+      const ps = startMap[a.id] ?? oldestMap[a.id]
+      const pe = endMap[a.id]?.price
+      returns[a.id] = (ps != null && pe != null && ps > 0 && ps !== pe)
+        ? Math.round((pe / ps - 1) * 10000) / 100
+        : (ps != null && pe != null && ps === pe) ? 0
+        : null
+    }
+  }
+
+  // ── Manual assets: interpolate manual_values ────────────────────────────────
+  if (manualIds.length > 0) {
+    const [{ data: mvRows }, { data: firstBuys }] = await Promise.all([
+      supabaseAdmin.from('manual_values').select('asset_id, value, currency, ref_date')
+        .in('asset_id', manualIds).order('ref_date', { ascending: true }),
+      supabaseAdmin.from('contributions').select('asset_id, value_brl, date')
+        .in('asset_id', manualIds).eq('type', 'buy').order('date', { ascending: true }),
+    ])
+
+    const mvByAsset: Record<number, ValPoint[]> = {}
+    for (const mv of (mvRows ?? [])) {
+      if (!mvByAsset[mv.asset_id]) mvByAsset[mv.asset_id] = []
+      mvByAsset[mv.asset_id].push({ ref_date: mv.ref_date, value: mv.value, currency: mv.currency })
+    }
+
+    const firstBuyByAsset: Record<number, ValPoint> = {}
+    for (const c of (firstBuys ?? [])) {
+      const aid = c.asset_id as number
+      if (!firstBuyByAsset[aid] && Number(c.value_brl) > 0) {
+        firstBuyByAsset[aid] = { ref_date: c.date as string, value: Number(c.value_brl), currency: 'BRL' }
+      }
+    }
+
+    for (const a of manualAssets) {
+      const anchor = firstBuyByAsset[a.id]
+      const mvPts  = mvByAsset[a.id] ?? []
+      if (!anchor && mvPts.length === 0) { returns[a.id] = null; continue }
+
+      const pts: ValPoint[] = anchor ? [anchor, ...mvPts] : [...mvPts]
+      pts.sort((x, y) => x.ref_date.localeCompare(y.ref_date))
+
+      const endDateForInterp = isCurrentPeriod ? localDate(new Date()) : toDate
+      const startPt = interpolateKnownPoints(pts, fromDate)
+      const endPt   = interpolateKnownPoints(pts, endDateForInterp)
+
+      if (!startPt || !endPt || startPt.value <= 0) { returns[a.id] = null; continue }
+
+      const fxS = startPt.currency === 'BRL' ? 1 : await getFxRate(startPt.currency)
+      const fxE = endPt.currency   === 'BRL' ? 1 : await getFxRate(endPt.currency)
+      const vs  = startPt.value * fxS
+      const ve  = endPt.value   * fxE
+
+      returns[a.id] = vs > 0 && Math.abs(ve - vs) > 0.01
+        ? Math.round((ve / vs - 1) * 10000) / 100
+        : (Math.abs(ve - vs) <= 0.01 ? 0 : null)
+    }
   }
 
   res.json(returns)
