@@ -786,10 +786,24 @@ router.post('/transactions/csv-parse', requireAuth, async (req, res: Response) =
     })
   }
 
-  // AI runs separately via /transactions/ai-categorize — just report how many need it
-  const unmatchedCount = transactions.filter(t => !t.suggested_category && !t.is_broker_transfer && !t.is_internal_transfer).length
+  // Mark already-imported rows so the frontend can hide them from preview
+  const allSources = transactions.map(t => csvSourceKey(t))
+  const { data: existingRows } = await supabaseAdmin
+    .from('finance_transactions')
+    .select('source')
+    .eq('user_id', userId)
+    .in('source', allSources)
+  const existingSet = new Set((existingRows ?? []).map((r: { source: string }) => r.source))
+  const taggedTransactions = transactions.map(t => {
+    const source = csvSourceKey(t)
+    return { ...t, source, is_duplicate: existingSet.has(source) }
+  })
+  const duplicateCount = taggedTransactions.filter(t => t.is_duplicate).length
 
-  res.json({ transactions, total: transactions.length, skipped_invalid: skippedInvalid, headers, detected: { dateIdx, descIdx, amtIdx, stateIdx }, ai_debug: { ran: false, assigned: 0, unmatched: unmatchedCount, error: null } })
+  // AI runs separately via /transactions/ai-categorize — just report how many need it
+  const unmatchedCount = taggedTransactions.filter(t => !t.is_duplicate && !t.suggested_category && !t.is_broker_transfer && !t.is_internal_transfer).length
+
+  res.json({ transactions: taggedTransactions, total: taggedTransactions.length, duplicate_count: duplicateCount, skipped_invalid: skippedInvalid, headers, detected: { dateIdx, descIdx, amtIdx, stateIdx }, ai_debug: { ran: false, assigned: 0, unmatched: unmatchedCount, error: null } })
 })
 
 // POST /api/finances/transactions/ai-categorize

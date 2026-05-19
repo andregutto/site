@@ -32,6 +32,8 @@ interface ParsedRow {
   broker_name: string | null
   category_id?: number | null
   suggested_category_id?: number | null
+  source?: string
+  is_duplicate?: boolean
 }
 
 interface AiDebug { ran: boolean; assigned: number; unmatched: number; error: string | null }
@@ -75,6 +77,7 @@ export default function FinancesTransactionsPage() {
   const [showAdd, setShowAdd]           = useState(false)
   const [csvStep, setCsvStep]           = useState<'idle' | 'preview' | 'importing' | 'parsing'>('idle')
   const [csvRows, setCsvRows]           = useState<ParsedRow[]>([])
+  const [csvDuplicateCount, setCsvDuplicateCount] = useState(0)
   const [csvAiDebug, setCsvAiDebug]     = useState<AiDebug | null>(null)
   const [csvAiLoading, setCsvAiLoading] = useState(false)
   const [csvError, setCsvError]         = useState('')
@@ -259,17 +262,20 @@ export default function FinancesTransactionsPage() {
   async function handleCSVFile(file: File) {
     setCsvError('')
     setCsvAiDebug(null)
+    setCsvDuplicateCount(0)
     setCsvStep('parsing')
     const text = await file.text()
     try {
-      const result = await apiFetch<{ transactions: ParsedRow[]; total: number; error?: string; ai_debug?: AiDebug }>(
+      const result = await apiFetch<{ transactions: ParsedRow[]; total: number; duplicate_count?: number; error?: string; ai_debug?: AiDebug }>(
         '/finances/transactions/csv-parse',
         { method: 'POST', body: JSON.stringify({ csv: text, currency: csvCurrency }) }
       )
       if (result.error) { setCsvError(result.error); setCsvStep('idle'); return }
       setCsvFilterUncategorized(false)
+      setCsvDuplicateCount(result.duplicate_count ?? 0)
 
       const rows = [...result.transactions]
+        .filter(r => !r.is_duplicate)
         .sort((a, b) => b.date.localeCompare(a.date))
         .map(r => ({
           ...r,
@@ -373,7 +379,7 @@ export default function FinancesTransactionsPage() {
       const mostRecentDate = toImport.reduce((max, r) => r.date > max ? r.date : max, toImport[0]?.date ?? '')
       if (mostRecentDate) setMonth(mostRecentDate.slice(0, 7))
 
-      setCsvStep('idle'); setCsvRows([])
+      setCsvStep('idle'); setCsvRows([]); setCsvDuplicateCount(0)
       const msg = result.skipped > 0
         ? t.finances.csvImportedSkipped.replace('{imported}', String(result.imported)).replace('{skipped}', String(result.skipped))
         : t.finances.csvImportedOk.replace('{imported}', String(result.imported))
@@ -414,7 +420,7 @@ export default function FinancesTransactionsPage() {
           <MonthPicker value={month} onChange={setMonth} />
           {accountsLoaded && accounts.length > 0 && (<>
             <button
-              onClick={() => { setCsvStep('idle'); setCsvRows([]); setCsvError(''); setCsvAiDebug(null); fileRef.current?.click() }}
+              onClick={() => { setCsvStep('idle'); setCsvRows([]); setCsvDuplicateCount(0); setCsvError(''); setCsvAiDebug(null); fileRef.current?.click() }}
               disabled={csvStep === 'parsing'}
               className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 text-sm text-gray-600 rounded-lg hover:bg-gray-50 transition-colors"
             >
@@ -465,7 +471,12 @@ export default function FinancesTransactionsPage() {
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           <div className="px-5 py-4 border-b border-gray-50 flex items-center justify-between flex-wrap gap-3">
             <div>
-              <h3 className="font-semibold text-gray-900 text-sm">{t.finances.csvPreview} — {csvRows.length} {t.finances.csvTransactions}</h3>
+              <h3 className="font-semibold text-gray-900 text-sm">
+                {t.finances.csvPreview} — {csvRows.length} {t.finances.csvTransactions}
+                {csvDuplicateCount > 0 && (
+                  <span className="ml-2 text-xs font-normal text-gray-400">({csvDuplicateCount} já importadas, ocultadas)</span>
+                )}
+              </h3>
               <p className="text-xs text-gray-400 mt-0.5">
                 {t.finances.csvReview}
                 {csvAiLoading && (
@@ -508,7 +519,7 @@ export default function FinancesTransactionsPage() {
                   </select>
                 </div>
               )}
-              <button onClick={() => { setCsvStep('idle'); setCsvRows([]); setCsvAiDebug(null) }} className="text-xs text-gray-500 hover:text-gray-700 transition-colors">{t.common.cancel}</button>
+              <button onClick={() => { setCsvStep('idle'); setCsvRows([]); setCsvDuplicateCount(0); setCsvAiDebug(null) }} className="text-xs text-gray-500 hover:text-gray-700 transition-colors">{t.common.cancel}</button>
               <button onClick={importCSV} disabled={csvStep === 'importing'} className="px-3 py-1.5 bg-[#001A70] text-white text-xs rounded-lg hover:opacity-80 transition-opacity disabled:opacity-50">
                 {csvStep === 'importing' ? t.finances.csvImporting : t.finances.csvConfirm}
               </button>
