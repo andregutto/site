@@ -152,6 +152,17 @@ router.delete('/envelopes/:id', requireAuth, async (req, res: Response) => {
 
 // ── Categories CRUD ─────────────────────────────────────────────────────────────
 
+// GET /api/finances/categories — all categories regardless of envelope
+router.get('/categories', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const { data } = await supabaseAdmin
+    .from('finance_categories')
+    .select('id, name, icon, color')
+    .eq('user_id', userId)
+    .order('name')
+  res.json(data ?? [])
+})
+
 // POST /api/finances/categories
 router.post('/categories', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest

@@ -68,6 +68,7 @@ export default function FinancesTransactionsPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [incomeCategories, setIncomeCategories]   = useState<Category[]>([])
   const [expenseCategories, setExpenseCategories] = useState<Category[]>([])
+  const [allCategories, setAllCategories]         = useState<Category[]>([])
   const [moments, setMoments]           = useState<MomentRef[]>([])
   const [loading, setLoading]           = useState(true)
   const [showAdd, setShowAdd]           = useState(false)
@@ -118,6 +119,9 @@ export default function FinancesTransactionsPage() {
         setIncomeCategories(d.envelopes.filter(e => e.type === 'income').flatMap(e => e.categories))
         setExpenseCategories(d.envelopes.filter(e => e.type !== 'income').flatMap(e => e.categories))
       })
+      .catch(() => {})
+    apiFetch<Category[]>('/finances/categories')
+      .then(setAllCategories)
       .catch(() => {})
     apiFetch<MomentRef[]>('/finances/moments-for-picker')
       .then(setMoments)
@@ -436,7 +440,10 @@ export default function FinancesTransactionsPage() {
               <p className="text-xs text-gray-400 mt-0.5">
                 {t.finances.csvReview}
                 {csvAiLoading && (
-                  <span className="ml-2 text-violet-500 animate-pulse">✦ {t.finances.csvAiCategorizando}</span>
+                  <span className="ml-2 text-violet-500 inline-flex items-center gap-1">
+                    <svg className="animate-spin w-3 h-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg>
+                    {t.finances.csvAiCategorizando}
+                  </span>
                 )}
                 {!csvAiLoading && csvRows.filter(r => r.suggested_by === 'ai').length > 0 && (
                   <span className="ml-2 text-violet-500">✦ {csvRows.filter(r => r.suggested_by === 'ai').length} {t.finances.csvAiSuggested}</span>
@@ -478,7 +485,7 @@ export default function FinancesTransactionsPage() {
               </button>
             </div>
           </div>
-          <div className="overflow-x-auto max-h-96 overflow-y-auto">
+          <div className={`overflow-x-auto max-h-96 overflow-y-auto transition-opacity ${csvAiLoading ? 'opacity-50 pointer-events-none select-none' : ''}`}>
             <table className="w-full text-sm">
               <thead className="bg-gray-50 text-gray-500 text-xs uppercase sticky top-0">
                 <tr>
@@ -524,7 +531,7 @@ export default function FinancesTransactionsPage() {
                             className="text-xs border border-gray-200 rounded px-2 py-1 max-w-[150px]"
                           >
                             <option value="">{t.finances.noCategory}</option>
-                            {(row.is_internal_transfer ? [...incomeCategories, ...expenseCategories] : catsForAmount(row.amount)).map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
+                            {(row.is_internal_transfer ? allCategories : catsForAmount(row.amount)).map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
                           </select>
                         </div>
                       </td>
