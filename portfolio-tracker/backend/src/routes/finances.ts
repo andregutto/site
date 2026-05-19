@@ -665,9 +665,15 @@ router.post('/transactions/csv-parse', requireAuth, async (req, res: Response) =
     return null
   }
 
-  // Only "topup"/"top-up" (self-funded account addition) is detectable from the type column.
-  // "transfer"/"virement" etc. are too broad — they match regular bill payments via bank transfer.
-  const TRANSFER_TYPE_PATTERNS = ['topup', 'top-up']
+  // Specific Revolut/bank type values that are true internal moves, not bill payments.
+  // Do NOT add 'transfer' or 'virement' — those match regular SEPA bill payments in Revolut.
+  const TRANSFER_TYPE_PATTERNS = [
+    'topup', 'top-up',       // account funding
+    'exchange',               // currency swap inside Revolut
+    'transfer to savings',    // Revolut savings pot
+    'savings',                // savings pot movements
+    'echange', 'transfert vers', // FR Revolut internal
+  ]
   const P2P_DESC_RE = /^(to|à|a |para|envoyé à|envoye a|paiement envoyé à|paiement reçu de|reçu de|recu de|recebido de|enviado para|transferido para|virement de|virement vers)\s+[A-ZÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ]/i
 
   const rows = parseCSV(csv)
