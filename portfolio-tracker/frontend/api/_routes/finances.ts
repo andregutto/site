@@ -853,20 +853,29 @@ router.post('/transactions/csv-import', requireAuth, async (req, res: Response) 
     source: csvSourceKey(t),
   }))
 
+  // Deduplicate: fetch existing source keys, filter out already-imported rows
+  const allSources = rows.map(r => r.source)
+  const { data: existingRows } = await supabaseAdmin
+    .from('finance_transactions')
+    .select('source')
+    .eq('user_id', userId)
+    .in('source', allSources)
+  const existingSet = new Set((existingRows ?? []).map((r: { source: string }) => r.source))
+  const newRows = rows.filter(r => !existingSet.has(r.source))
+
   let imported = 0
-  let skipped = 0
+  let skipped = rows.length - newRows.length
   const BATCH = 500
-  for (let i = 0; i < rows.length; i += BATCH) {
-    const chunk = rows.slice(i, i + BATCH)
+  for (let i = 0; i < newRows.length; i += BATCH) {
+    const chunk = newRows.slice(i, i + BATCH)
     const { data, error } = await supabaseAdmin
       .from('finance_transactions')
-      .upsert(chunk, { onConflict: 'user_id,source', ignoreDuplicates: true })
+      .insert(chunk)
       .select('id')
     if (error) {
       skipped += chunk.length
     } else {
       imported += (data ?? []).length
-      skipped  += chunk.length - (data ?? []).length
     }
   }
 
