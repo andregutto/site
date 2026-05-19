@@ -791,7 +791,16 @@ export default function FinancesTransactionsPage() {
                               className="text-xs border border-gray-200 rounded px-2 py-1 max-w-[150px]"
                             >
                               <option value="">{t.finances.noCategory}</option>
-                              {catsForAmount(tx.amount).map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
+                              {incomeCategories.length > 0 && (
+                                <optgroup label="Renda">
+                                  {incomeCategories.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
+                                </optgroup>
+                              )}
+                              {expenseCategories.length > 0 && (
+                                <optgroup label="Despesas">
+                                  {expenseCategories.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
+                                </optgroup>
+                              )}
                             </select>
                           ) : (
                             <button onClick={() => setEditingId(tx.id)} className="flex items-center gap-1.5 group/cat">
