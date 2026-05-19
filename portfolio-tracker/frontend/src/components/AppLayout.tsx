@@ -206,7 +206,7 @@ export default function AppLayout() {
               {showUserMenu && (
                 <div className="absolute right-0 top-full mt-2 w-52 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-50">
                   <div className="px-4 py-2.5 border-b border-gray-100 flex items-center justify-between">
-                    <span className="text-xs text-gray-500">Idioma</span>
+                    <span className="text-xs text-gray-500">{t.common.language}</span>
                     <LanguageSelector />
                   </div>
                   <div className="px-4 py-2.5 border-b border-gray-100">
