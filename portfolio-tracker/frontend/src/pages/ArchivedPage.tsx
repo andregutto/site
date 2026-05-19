@@ -42,6 +42,7 @@ export default function ArchivedPage() {
   const [loading, setLoading] = useState(true)
   const [expanded, setExpanded] = useState<Set<number>>(new Set())
   const [reactivating, setReactivating] = useState<number | null>(null)
+  const [deleting, setDeleting]         = useState<number | null>(null)
 
   useEffect(() => {
     apiFetch<ArchivedAsset[]>('/assets/archived')
@@ -67,6 +68,19 @@ export default function ArchivedPage() {
       // ignore
     } finally {
       setReactivating(null)
+    }
+  }
+
+  async function handleDelete(id: number, code: string) {
+    if (!window.confirm(`Excluir permanentemente "${code}"? Isso remove o ativo, aportes e histórico de rentabilidade. Essa ação não pode ser desfeita.`)) return
+    setDeleting(id)
+    try {
+      await apiFetch(`/assets/${id}`, { method: 'DELETE' })
+      setAssets(prev => prev.filter(a => a.id !== id))
+    } catch {
+      alert('Erro ao excluir ativo.')
+    } finally {
+      setDeleting(null)
     }
   }
 
@@ -173,10 +187,17 @@ export default function ArchivedPage() {
                       ))}
                     </div>
 
-                    <div className="pt-2 flex justify-end">
+                    <div className="pt-2 flex justify-end gap-2">
+                      <button
+                        onClick={() => handleDelete(a.id, a.code)}
+                        disabled={deleting === a.id || reactivating === a.id}
+                        className="text-xs text-red-500 hover:text-red-600 disabled:opacity-50 border border-red-200 hover:border-red-300 rounded-lg px-3 py-1.5 transition-colors"
+                      >
+                        {deleting === a.id ? '...' : 'Excluir permanentemente'}
+                      </button>
                       <button
                         onClick={() => handleReactivate(a.id)}
-                        disabled={reactivating === a.id}
+                        disabled={reactivating === a.id || deleting === a.id}
                         className="text-xs text-blue-600 hover:text-blue-700 disabled:opacity-50 border border-blue-200 hover:border-blue-300 rounded-lg px-3 py-1.5 transition-colors"
                       >
                         {reactivating === a.id ? '...' : t.archived.reactivate}

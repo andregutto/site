@@ -374,6 +374,21 @@ router.post('/:id/unarchive', requireAuth, async (req, res: Response) => {
   res.json({ ok: true })
 })
 
+router.delete('/:id', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const assetId = Number(req.params.id)
+  const { data: asset } = await supabaseAdmin
+    .from('assets').select('id, active').eq('id', assetId).eq('user_id', userId).single()
+  if (!asset) { res.status(404).json({ error: 'Ativo não encontrado' }); return }
+  if (asset.active) { res.status(400).json({ error: 'Arquive o ativo antes de excluí-lo definitivamente' }); return }
+  await supabaseAdmin.from('price_history').delete().eq('asset_id', assetId)
+  await supabaseAdmin.from('contributions').delete().eq('asset_id', assetId)
+  await supabaseAdmin.from('manual_values').delete().eq('asset_id', assetId)
+  const { error } = await supabaseAdmin.from('assets').delete().eq('id', assetId).eq('user_id', userId)
+  if (error) { res.status(500).json({ error: error.message }); return }
+  res.json({ ok: true })
+})
+
 router.get('/archived', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const { data: archivedAssets, error } = await supabaseAdmin
@@ -527,7 +542,12 @@ router.get('/:id/detail', requireAuth, async (req, res: Response) => {
           currentValueBrl = investedBrl
           priceSource     = 'cost_basis'
         } else {
-          const result = await getCurrentPrice(asset as Asset)
+          // Cap at 7s to avoid 504: if all sources time out fall back to cost_basis
+          const priceRace = Promise.race([
+            getCurrentPrice(asset as Asset),
+            new Promise<never>((_, rej) => setTimeout(() => rej(new Error('price_timeout')), 7000)),
+          ])
+          const result = await priceRace
           currentPrice    = result.price
           priceCurrency   = result.currency
           priceSource     = result.source
@@ -563,7 +583,10 @@ router.get('/:id/detail', requireAuth, async (req, res: Response) => {
   const profitByContribId = new Map<number, number>()
   if (asset.asset_type === 'fixed_income' && rfBuyTranches.length > 0) {
     try {
-      const trancheResults = await calculateTrancheProfits(asset as unknown as FixedIncomeAsset, rfBuyTranches)
+      // Run in parallel — calculateTrancheProfits uses BCB data already cached by calculateCurrentValue
+      const [trancheResults] = await Promise.all([
+        calculateTrancheProfits(asset as unknown as FixedIncomeAsset, rfBuyTranches),
+      ])
       const buyContribs = contribs.filter(c => c.type === 'buy' && c.value_brl && c.value_brl > 0)
       buyContribs.forEach((c, i) => {
         if (trancheResults[i] != null) profitByContribId.set(c.id, trancheResults[i].profit_brl)
@@ -747,17 +770,23 @@ router.get('/:id/detail', requireAuth, async (req, res: Response) => {
     gain_loss_pct:  gainLossPct !== null ? Math.round(gainLossPct * 100) / 100 : null,
     total_income_brl: Math.round(totalIncomeBrl * 100) / 100,
     history,
-    contributions: contribs.slice().reverse().map(c => {
-      const cFx = c.fx_rate_brl ?? (c.currency === 'BRL' ? 1 : fxApprox)
-      const valueBrl = c.value_brl ?? (c.price_orig != null
-        ? Math.round(c.price_orig * (c.quantity ?? 0) * cFx * 100) / 100
-        : null)
-      return {
-        ...c,
-        value_brl: valueBrl,
-        profit_brl: profitByContribId.has(c.id) ? profitByContribId.get(c.id)! : null,
-      }
-    }),
+    contributions: (() => {
+      // If RF asset has no contributions but has fi_principal/fi_start_date, synthesise the initial row
+      const displayContribs = contribs.length === 0 && asset.asset_type === 'fixed_income' && asset.fi_principal && asset.fi_start_date
+        ? [{ id: -1, date: asset.fi_start_date, type: 'buy', quantity: 1, price_orig: asset.fi_principal, currency: 'BRL', fx_rate_brl: 1, value_brl: asset.fi_principal, description: 'Aporte inicial (cadastro)' }]
+        : contribs.slice().reverse()
+      return displayContribs.map(c => {
+        const cFx = (c as typeof contribs[0]).fx_rate_brl ?? (c.currency === 'BRL' ? 1 : fxApprox)
+        const valueBrl = c.value_brl ?? (c.price_orig != null
+          ? Math.round(c.price_orig * (c.quantity ?? 0) * cFx * 100) / 100
+          : null)
+        return {
+          ...c,
+          value_brl: valueBrl,
+          profit_brl: profitByContribId.has(c.id) ? profitByContribId.get(c.id)! : null,
+        }
+      })
+    })(),
   })
 })
 
