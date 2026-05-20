@@ -146,6 +146,7 @@ export interface AssetDetail {
   currency: string
   exchange: string | null
   sector: string | null
+  class_id: number | null
   class_name: string
   class_color: string
   fi_type: string | null

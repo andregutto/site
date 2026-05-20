@@ -811,6 +811,7 @@ router.get('/:id/detail', requireAuth, async (req, res: Response) => {
     currency:      asset.currency,
     exchange:      asset.exchange ?? null,
     sector:        asset.sector ?? null,
+    class_id:      cls?.id ?? null,
     class_name:    cls?.name ?? 'Sem classe',
     class_color:   cls?.color ?? '#6B7280',
     fi_type:       asset.fi_type ?? null,
