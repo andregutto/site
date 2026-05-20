@@ -9,7 +9,8 @@ import * as yahoo from '../services/yahooService.js'
 const router = Router()
 
 // GET /api/portfolio/value
-router.get('/value', requireAuth, async (req, res: Response) => {
+router.get('/value', requireAuth, async (req, res: Response, next) => {
+  try {
   const { userId } = req as AuthRequest
 
   // 1. Busca todos ativos ativos do usuário com classe
@@ -190,6 +191,7 @@ router.get('/value', requireAuth, async (req, res: Response) => {
     by_asset: byAsset.sort((a, b) => b.value_brl - a.value_brl),
     generated_at: new Date().toISOString(),
   })
+  } catch (err) { next(err) }
 })
 
 // POST /api/portfolio/sync-history — popula price_history para todos os ativos ticker

@@ -8,7 +8,8 @@ import * as yahoo from '../_services/yahooService.js'
 
 const router = Router()
 
-router.get('/value', requireAuth, async (req, res: Response) => {
+router.get('/value', requireAuth, async (req, res: Response, next) => {
+  try {
   const { userId } = req as AuthRequest
 
   const { data: assets, error: assetsErr } = await supabaseAdmin
@@ -238,6 +239,7 @@ router.get('/value', requireAuth, async (req, res: Response) => {
     by_asset: byAsset.sort((a, b) => b.value_brl - a.value_brl),
     generated_at: new Date().toISOString(),
   })
+  } catch (err) { next(err) }
 })
 
 router.post('/sync-history', requireAuth, async (req, res: Response) => {

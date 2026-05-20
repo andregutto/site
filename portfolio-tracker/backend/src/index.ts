@@ -44,4 +44,9 @@ app.use('/api/reports',     reportsRouter)
 
 app.get('/health', (_req, res) => res.json({ status: 'ok', ts: new Date().toISOString() }))
 
+app.use((err: Error, _req: import('express').Request, res: import('express').Response, _next: import('express').NextFunction) => {
+  console.error('[api error]', err.message, err.stack)
+  res.status(500).json({ error: err.message ?? 'Internal server error' })
+})
+
 app.listen(PORT, () => console.log(`Backend em http://localhost:${PORT}`))
