@@ -107,45 +107,18 @@ export default function DashboardPage() {
           ? ((currentMonthEntry.total - currentMonthEntry.prev_total - currentMonthEntry.contributions) / currentMonthEntry.prev_total) * 100
           : null
 
-        const posColor = 'text-emerald-700'
-        const negColor = 'text-red-600'
-        const posBg = 'bg-emerald-50 border-emerald-100'
-        const negBg = 'bg-red-50 border-red-100'
-        const neutralBg = 'bg-white border-gray-100'
-
-        const pctCard = (label: string, value: number | null) => (
-          <div className={`border rounded-2xl p-5 shadow-sm flex flex-col justify-between h-full ${value == null ? neutralBg : value >= 0 ? posBg : negBg}`}>
-            <p className="text-gray-400 text-xs uppercase tracking-wide">{label}</p>
-            <p className={`text-2xl font-bold mt-2 ${value == null ? 'text-gray-300' : value >= 0 ? posColor : negColor}`}>
-              {value == null
-                ? (chartLoading ? '...' : '—')
-                : `${value >= 0 ? '+' : ''}${value.toFixed(1)}%`}
-            </p>
-          </div>
-        )
-
         return (
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-            <div className="col-span-2 md:col-span-3">
-              <ValueCards
-                total_brl={data.total_brl}
-                generated_at={data.generated_at}
-                invested_brl={hasInvested ? totalInvestedBrl : null}
-                gain_brl={gainLossBrl}
-                gain_pct={gainLossPct}
-              />
-            </div>
-            {hasInvested && (
-              <>
-                <div className="col-span-1 md:col-span-1">
-                  {pctCard('Mês atual', monthReturn)}
-                </div>
-                <div className="col-span-1 md:col-span-1">
-                  {pctCard(`Ano ${currentYearStr}`, ytdReturn)}
-                </div>
-              </>
-            )}
-          </div>
+          <ValueCards
+            total_brl={data.total_brl}
+            generated_at={data.generated_at}
+            invested_brl={hasInvested ? totalInvestedBrl : null}
+            gain_brl={gainLossBrl}
+            gain_pct={gainLossPct}
+            month_pct={hasInvested ? monthReturn : null}
+            ytd_pct={hasInvested ? ytdReturn : null}
+            ytd_year={currentYearStr}
+            chartLoading={chartLoading}
+          />
         )
       })()}
 
