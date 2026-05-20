@@ -33,23 +33,14 @@ export default function AppLayout() {
   const level = getLevel(totalXp)
   const levelProgress = getLevelProgress(totalXp)
 
-  const [showOnboarding,   setShowOnboarding]   = useState(false)
-  const [showUserMenu,     setShowUserMenu]     = useState(false)
-  const [showPortfolioMenu,setShowPortfolioMenu]= useState(false)
-  const [showFinancesMenu, setShowFinancesMenu] = useState(false)
-  const [showMobileMenu,   setShowMobileMenu]   = useState(false)
+  const [showOnboarding, setShowOnboarding] = useState(false)
+  const [showUserMenu,   setShowUserMenu]   = useState(false)
+  const [showMobileMenu, setShowMobileMenu] = useState(false)
 
-  const userMenuRef      = useRef<HTMLDivElement>(null)
-  const portfolioMenuRef = useRef<HTMLDivElement>(null)
-  const financesMenuRef  = useRef<HTMLDivElement>(null)
-
-  useClickOutside(userMenuRef,      () => setShowUserMenu(false),      showUserMenu)
-  useClickOutside(portfolioMenuRef, () => setShowPortfolioMenu(false), showPortfolioMenu)
-  useClickOutside(financesMenuRef,  () => setShowFinancesMenu(false),  showFinancesMenu)
+  const userMenuRef = useRef<HTMLDivElement>(null)
+  useClickOutside(userMenuRef, () => setShowUserMenu(false), showUserMenu)
 
   useEffect(() => {
-    setShowPortfolioMenu(false)
-    setShowFinancesMenu(false)
     setShowUserMenu(false)
     setShowMobileMenu(false)
   }, [location.pathname])
@@ -66,87 +57,99 @@ export default function AppLayout() {
   const avatarUrl = meta.avatar_url as string | undefined
   const avatarInitials = headerLabel.slice(0, 2).toUpperCase()
 
-  // Detect active group for dropdown highlight
-  const inPortfolio = location.pathname.startsWith('/portfolio')
-  const inFinances  = location.pathname.startsWith('/finances')
+  const inInvestimentos = location.pathname === '/' ||
+    location.pathname.startsWith('/performance') ||
+    location.pathname.startsWith('/portfolio')
+  const inFinances = location.pathname.startsWith('/finances')
 
-  const portfolioItems = [
-    { to: '/portfolio',              label: t.nav.contributions, icon: (
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4">
+  const investimentosItems = [
+    { to: '/', label: t.nav.dashboard, end: true, icon: (
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
         <rect x="1" y="9" width="3" height="6" rx=".5"/><rect x="6.5" y="5.5" width="3" height="9.5" rx=".5"/><rect x="12" y="2" width="3" height="13" rx=".5"/>
       </svg>
     )},
-    { to: '/portfolio/rebalance',    label: t.nav.rebalance, icon: (
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4">
+    { to: '/performance', label: t.nav.performance, end: false, icon: (
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M1 12l4-4 3 3 7-7M11.5 4H15v3.5"/>
+      </svg>
+    )},
+    { to: '/portfolio', label: t.nav.contributions, end: true, icon: (
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M8 1v14M1 8h14"/>
+      </svg>
+    )},
+    { to: '/portfolio/rebalance', label: t.nav.rebalance, end: false, icon: (
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
         <path strokeLinecap="round" strokeLinejoin="round" d="M8 2v12M4 14h8M4 6l-3 4h6L4 6zM12 4l-3 4h6l-3-4z"/>
       </svg>
     )},
-    { to: '/portfolio/institutions', label: t.nav.institutions, icon: (
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4">
+    { to: '/portfolio/institutions', label: t.nav.institutions, end: false, icon: (
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
         <path strokeLinecap="round" strokeLinejoin="round" d="M1.5 14.5h13M3 14.5V7.5M7 14.5V7.5M10 14.5V7.5M13 14.5V7.5M1 6.5L8 1.5l7 5"/>
       </svg>
     )},
-    { to: '/portfolio/classes',      label: t.nav.classes, icon: (
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4">
+    { to: '/portfolio/classes', label: t.nav.classes, end: false, icon: (
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
         <path strokeLinecap="round" strokeLinejoin="round" d="M9.5 1.5H14v4.5L8 12a1.4 1.4 0 01-2 0L2 8a1.4 1.4 0 010-2l6-4.5z"/>
         <circle cx="11.5" cy="4.5" r="1" fill="currentColor" stroke="none"/>
       </svg>
     )},
-    { to: '/portfolio/reports',      label: t.nav.ir, icon: (
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4">
+    { to: '/portfolio/reports', label: t.nav.ir, end: false, icon: (
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
         <path strokeLinecap="round" strokeLinejoin="round" d="M3 1.5h6.5L13 5v9.5H3zM9 1.5V5h4M5 8h6M5 11h4"/>
       </svg>
     )},
-    { to: '/portfolio/indices',      label: t.nav.indices, icon: (
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4">
+    { to: '/portfolio/indices', label: t.nav.indices, end: false, icon: (
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
         <path strokeLinecap="round" strokeLinejoin="round" d="M1 12l4-4 3 3 7-7M11.5 4H15v3.5"/>
       </svg>
     )},
   ]
 
   const financesItems = [
-    { to: '/finances',              label: t.finances.navOverview, end: true, icon: (
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4">
+    { to: '/finances', label: t.finances.navOverview, end: true, icon: (
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
         <path strokeLinecap="round" strokeLinejoin="round" d="M1.5 7.5L8 2l6.5 5.5V14.5H10V10H6v4.5H1.5z"/>
       </svg>
     )},
-    { to: '/finances/budget',       label: t.finances.navBudget, end: false, icon: (
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4">
+    { to: '/finances/budget', label: t.finances.navBudget, end: false, icon: (
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
         <circle cx="8" cy="8" r="6.5"/><circle cx="8" cy="8" r="3"/>
         <circle cx="8" cy="8" r=".75" fill="currentColor" stroke="none"/>
       </svg>
     )},
     { to: '/finances/transactions', label: t.finances.navTransactions, end: false, icon: (
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
         <rect x="1" y="3" width="14" height="10" rx="1.5"/><path strokeLinecap="round" d="M1 6.5h14M4 10h2M9 10h3"/>
       </svg>
     )},
-    { to: '/finances/moments',      label: t.finances.navMoments, end: false, icon: (
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4">
+    { to: '/finances/moments', label: t.finances.navMoments, end: false, icon: (
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
         <circle cx="8" cy="8" r="2.5"/>
         <path strokeLinecap="round" d="M8 1.5V3M8 13v1.5M1.5 8H3M13 8h1.5M3.4 3.4l1.1 1.1M11.5 11.5l1.1 1.1M3.4 12.6l1.1-1.1M11.5 4.5l1.1-1.1"/>
       </svg>
     )},
-    { to: '/finances/freedom',      label: t.finances.navFreedom, end: false, icon: (
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4">
+    { to: '/finances/freedom', label: t.finances.navFreedom, end: false, icon: (
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
         <path strokeLinecap="round" strokeLinejoin="round" d="M1 12.5a7 7 0 0114 0"/>
         <path strokeLinecap="round" strokeLinejoin="round" d="M8 9V5M5.5 6.5L8 5l2.5 1.5"/>
       </svg>
     )},
-    { to: '/finances/accounts',     label: t.finances.navAccounts, end: false, icon: (
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4">
+    { to: '/finances/accounts', label: t.finances.navAccounts, end: false, icon: (
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
         <rect x="1" y="4" width="14" height="9" rx="1.5"/><path strokeLinecap="round" d="M1 7.5h14"/>
         <circle cx="11.5" cy="10" r="1" fill="currentColor" stroke="none"/>
       </svg>
     )},
   ]
 
-  const dropdownItemCls = 'flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors rounded-lg'
-  const dropdownCls = 'absolute top-full mt-1.5 left-0 bg-white rounded-xl shadow-lg border border-gray-100 p-1.5 z-50 w-[320px]'
+  const activeSubItems = inInvestimentos ? investimentosItems : inFinances ? financesItems : []
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <header className="bg-white border-b border-gray-100 sticky top-0 z-10">
+
+        {/* ── Main bar ── */}
         <div className="h-14 flex items-center px-6 gap-4">
 
           {/* Logo */}
@@ -158,81 +161,25 @@ export default function AppLayout() {
             style={{ fontFamily: "'Playfair Display', serif", fontSize: 19, fontWeight: 400, color: '#1B2F4E', textDecoration: 'none' }}
           >André Gutto</a>
 
-          {/* Desktop nav */}
-          <div className="hidden sm:flex flex-1 justify-center min-w-0">
-            <nav className="flex items-center gap-0.5">
-
-              {/* Direct links */}
-              {[
-                { to: '/',            label: t.nav.dashboard,   end: true  },
-                { to: '/performance', label: t.nav.performance, end: false },
-              ].map(({ to, label, end }) => (
-                <NavLink
-                  key={to} to={to} end={end}
-                  className={({ isActive }) =>
-                    `px-2.5 py-1.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
-                      isActive ? 'bg-[#001A70]/10 text-[#001A70]' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
-                    }`
-                  }
-                >{label}</NavLink>
-              ))}
-
-              {/* Portfólio dropdown */}
-              <div ref={portfolioMenuRef} className="relative">
-                <button
-                  onClick={() => { setShowPortfolioMenu(v => !v); setShowFinancesMenu(false) }}
-                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
-                    inPortfolio ? 'bg-[#001A70]/10 text-[#001A70]' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
-                  }`}
-                >
-                  {t.nav.portfolio}
-                  <svg className={`w-3 h-3 transition-transform ${showPortfolioMenu ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-                {showPortfolioMenu && (
-                  <div className={dropdownCls}>
-                    <div className="grid grid-cols-2 gap-0.5">
-                      {portfolioItems.map(({ to, label, icon }) => (
-                        <NavLink key={to} to={to} className={({ isActive }) => `${dropdownItemCls} ${isActive ? 'bg-[#001A70]/5 text-[#001A70] font-medium' : ''}`}>
-                          <span className="w-4 h-4 shrink-0 text-gray-400 flex items-center justify-center">{icon}</span>
-                          <span>{label}</span>
-                        </NavLink>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Finanças dropdown */}
-              <div ref={financesMenuRef} className="relative">
-                <button
-                  onClick={() => { setShowFinancesMenu(v => !v); setShowPortfolioMenu(false) }}
-                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
-                    inFinances ? 'bg-[#001A70]/10 text-[#001A70]' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
-                  }`}
-                >
-                  {t.nav.finances}
-                  <svg className={`w-3 h-3 transition-transform ${showFinancesMenu ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-                {showFinancesMenu && (
-                  <div className={dropdownCls}>
-                    <div className="grid grid-cols-2 gap-0.5">
-                      {financesItems.map(({ to, label, icon, end }) => (
-                        <NavLink key={to} to={to} end={end} className={({ isActive }) => `${dropdownItemCls} ${isActive ? 'bg-[#001A70]/5 text-[#001A70] font-medium' : ''}`}>
-                          <span className="w-4 h-4 shrink-0 text-gray-400 flex items-center justify-center">{icon}</span>
-                          <span>{label}</span>
-                        </NavLink>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-            </nav>
-          </div>
+          {/* Desktop — two section tabs */}
+          <nav className="hidden sm:flex flex-1 justify-center gap-1">
+            <NavLink
+              to="/"
+              className={() =>
+                `px-4 py-1.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
+                  inInvestimentos ? 'bg-[#001A70]/10 text-[#001A70] font-semibold' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
+                }`
+              }
+            >{t.nav.investments}</NavLink>
+            <NavLink
+              to="/finances"
+              className={() =>
+                `px-4 py-1.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
+                  inFinances ? 'bg-[#001A70]/10 text-[#001A70] font-semibold' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
+                }`
+              }
+            >{t.nav.finances}</NavLink>
+          </nav>
 
           {/* Mobile hamburger */}
           <button
@@ -252,7 +199,7 @@ export default function AppLayout() {
           </button>
 
           {/* Right — currency + user */}
-          <div className="flex items-center gap-3 shrink-0 sm:ml-0">
+          <div className="flex items-center gap-3 shrink-0">
             <div className="hidden sm:flex items-center bg-gray-100 rounded-lg p-0.5 gap-0.5">
               {CURRENCIES.map(c => (
                 <button
@@ -311,50 +258,58 @@ export default function AppLayout() {
                   <Link to="/profile" onClick={() => setShowUserMenu(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
                     <span>👤</span> {t.nav.profile}
                   </Link>
+                  <button onClick={() => signOut()} className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors">
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4 shrink-0">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 11.5L14 8l-3.5-3.5M14 8H6M6 2.5H3A1.5 1.5 0 0 0 1.5 4v8A1.5 1.5 0 0 0 3 13.5h3"/>
+                    </svg>
+                    {t.nav.signout}
+                  </button>
                 </div>
               )}
             </div>
-
-            <button
-              onClick={() => signOut()}
-              className="hidden sm:block text-xs text-gray-500 hover:text-red-600 transition-colors whitespace-nowrap"
-            >
-              {t.nav.signout}
-            </button>
           </div>
         </div>
 
-        {/* Mobile full-screen drawer */}
+        {/* ── Sub-nav bar (desktop only, always visible when in a section) ── */}
+        {activeSubItems.length > 0 && (
+          <div className="hidden sm:block border-t border-gray-100 bg-gray-50/60">
+            <div className="flex items-center gap-0.5 px-6 py-1.5 overflow-x-auto">
+              {activeSubItems.map(({ to, label, end, icon }) => (
+                <NavLink
+                  key={to} to={to} end={end}
+                  className={({ isActive }) =>
+                    `flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${
+                      isActive
+                        ? 'bg-white text-[#001A70] shadow-sm border border-gray-100'
+                        : 'text-gray-500 hover:text-gray-800 hover:bg-white/70'
+                    }`
+                  }
+                >
+                  <span className="text-gray-400 flex items-center">{icon}</span>
+                  {label}
+                </NavLink>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── Mobile drawer ── */}
         {showMobileMenu && (
           <div className="sm:hidden absolute top-full left-0 right-0 bg-white border-b border-gray-100 shadow-lg z-40 max-h-[85vh] overflow-y-auto">
             <div className="px-4 py-3 space-y-1">
 
-              {/* Direct links */}
-              {[
-                { to: '/',            label: t.nav.dashboard,   end: true  },
-                { to: '/performance', label: t.nav.performance, end: false },
-              ].map(({ to, label, end }) => (
-                <NavLink key={to} to={to} end={end}
-                  className={({ isActive }) =>
-                    `flex items-center px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-                      isActive ? 'bg-[#001A70]/10 text-[#001A70]' : 'text-gray-700 hover:bg-gray-50'
-                    }`
-                  }
-                >{label}</NavLink>
-              ))}
-
-              {/* Portfolio section */}
-              <div className="pt-1">
-                <p className="px-3 py-1.5 text-[11px] font-semibold text-gray-400 uppercase tracking-wide">{t.nav.portfolio}</p>
-                {portfolioItems.map(({ to, label, icon }) => (
-                  <NavLink key={to} to={to}
+              {/* Investimentos section */}
+              <div>
+                <p className="px-3 py-1.5 text-[11px] font-semibold text-gray-400 uppercase tracking-wide">{t.nav.investments}</p>
+                {investimentosItems.map(({ to, label, end, icon }) => (
+                  <NavLink key={to} to={to} end={end}
                     className={({ isActive }) =>
                       `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-colors ${
                         isActive ? 'bg-[#001A70]/10 text-[#001A70] font-medium' : 'text-gray-700 hover:bg-gray-50'
                       }`
                     }
                   >
-                    <span className="w-4 h-4 shrink-0 text-gray-400">{icon}</span>
+                    <span className="w-4 h-4 shrink-0 text-gray-400 flex items-center">{icon}</span>
                     {label}
                   </NavLink>
                 ))}
@@ -363,7 +318,7 @@ export default function AppLayout() {
               {/* Finanças section */}
               <div className="pt-1">
                 <p className="px-3 py-1.5 text-[11px] font-semibold text-gray-400 uppercase tracking-wide">{t.nav.finances}</p>
-                {financesItems.map(({ to, label, icon, end }) => (
+                {financesItems.map(({ to, label, end, icon }) => (
                   <NavLink key={to} to={to} end={end}
                     className={({ isActive }) =>
                       `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-colors ${
@@ -371,7 +326,7 @@ export default function AppLayout() {
                       }`
                     }
                   >
-                    <span className="w-4 h-4 shrink-0 text-gray-400">{icon}</span>
+                    <span className="w-4 h-4 shrink-0 text-gray-400 flex items-center">{icon}</span>
                     {label}
                   </NavLink>
                 ))}
@@ -453,37 +408,27 @@ export default function AppLayout() {
       <nav className="sm:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 z-20 safe-bottom">
         <div className="flex">
           {[
-            { to: '/',            label: t.nav.dashboard,  end: true,  icon: (
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-              </svg>
-            )},
-            { to: '/performance', label: t.nav.performance, end: false, icon: (
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-              </svg>
-            )},
-            { to: '/portfolio',   label: t.nav.portfolio,  end: false, icon: (
+            { to: '/', label: t.nav.investments, end: false, match: inInvestimentos, icon: (
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.5l7.5-7.5 4 4L21 4.5M3 20.5h18" />
               </svg>
             )},
-            { to: '/finances',    label: t.nav.finances,   end: false, icon: (
+            { to: '/finances', label: t.nav.finances, end: false, match: inFinances, icon: (
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75" />
               </svg>
             )},
-            { to: '/profile',     label: t.nav.profile,    end: false, icon: (
+            { to: '/profile', label: t.nav.profile, end: false, match: location.pathname.startsWith('/profile'), icon: (
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
               </svg>
             )},
-          ].map(({ to, label, end, icon }) => (
+          ].map(({ to, label, end: _end, match, icon }) => (
             <NavLink
-              key={to} to={to} end={end}
-              className={({ isActive }) =>
+              key={to} to={to}
+              className={() =>
                 `flex-1 py-2.5 flex flex-col items-center gap-0.5 transition-colors text-[11px] font-medium leading-tight ${
-                  isActive ? 'text-[#001A70]' : 'text-gray-400'
+                  match ? 'text-[#001A70]' : 'text-gray-400'
                 }`
               }
             >
@@ -491,6 +436,16 @@ export default function AppLayout() {
               <span className="truncate w-full text-center px-0.5">{label}</span>
             </NavLink>
           ))}
+          {/* Menu button */}
+          <button
+            onClick={() => setShowMobileMenu(v => !v)}
+            className={`flex-1 py-2.5 flex flex-col items-center gap-0.5 transition-colors text-[11px] font-medium leading-tight ${showMobileMenu ? 'text-[#001A70]' : 'text-gray-400'}`}
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+            </svg>
+            <span>Menu</span>
+          </button>
         </div>
       </nav>
 
