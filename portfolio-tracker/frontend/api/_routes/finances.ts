@@ -6,10 +6,10 @@ import { supabaseAdmin } from '../_lib/supabase.js'
 
 const router = Router()
 
-const DEFAULT_NAMES: Record<string, { income: string; transfer: string; salary: string }> = {
-  pt: { income: 'Rendas',  transfer: 'Transferência', salary: 'Salário'  },
-  en: { income: 'Income',  transfer: 'Transfer',      salary: 'Salary'   },
-  fr: { income: 'Revenus', transfer: 'Virement',      salary: 'Salaire'  },
+const DEFAULT_NAMES: Record<string, { income: string; transfer: string; salary: string; essential: string; investment: string; savings: string; free: string }> = {
+  pt: { income: 'Rendas',  transfer: 'Transferência', salary: 'Salário',  essential: 'Gastos Essenciais',      investment: 'Investimentos',    savings: 'Reserva', free: 'Lazer'    },
+  en: { income: 'Income',  transfer: 'Transfer',      salary: 'Salary',   essential: 'Essential Expenses',     investment: 'Investments',      savings: 'Savings', free: 'Fun Money' },
+  fr: { income: 'Revenus', transfer: 'Virement',      salary: 'Salaire',  essential: 'Dépenses Essentielles',  investment: 'Investissements',  savings: 'Épargne', free: 'Loisirs'  },
 }
 
 // ── Income ────────────────────────────────────────────────────────────────────
@@ -75,6 +75,18 @@ router.get('/budget', requireAuth, async (req, res: Response) => {
       const { data: created } = await supabaseAdmin.from('finance_categories').insert(toCreate).select('*')
       if (created) categories = [...categories, ...created]
     }
+  }
+
+  // Ensure default expense envelopes exist for first-time users
+  if (!envelopes.some(e => e.type !== 'income')) {
+    const defaultExpense = [
+      { user_id: userId, name: names.essential,  icon: '🏠', color: '#3b82f6', type: 'essential',  pct_target: 50, sort_order: 1 },
+      { user_id: userId, name: names.investment, icon: '📈', color: '#10b981', type: 'investment', pct_target: 30, sort_order: 2 },
+      { user_id: userId, name: names.savings,    icon: '🏦', color: '#f59e0b', type: 'savings',    pct_target: 10, sort_order: 3 },
+      { user_id: userId, name: names.free,       icon: '🎉', color: '#a855f7', type: 'free',       pct_target: 10, sort_order: 4 },
+    ]
+    const { data: newExpEnvs } = await supabaseAdmin.from('finance_envelopes').insert(defaultExpense).select('*')
+    if (newExpEnvs) envelopes = [...envelopes, ...newExpEnvs]
   }
 
   // Derive effective monthly income from income category budgets (sum of budget_monthly)
