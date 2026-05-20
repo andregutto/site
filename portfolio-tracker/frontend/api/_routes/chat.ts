@@ -421,10 +421,14 @@ router.post('/', requireAuth, async (req, res: Response) => {
 
   try {
     for (let iter = 0; iter < 5; iter++) {
+      const todayISO  = new Date().toISOString().split('T')[0]
+      const todayFull = new Date().toLocaleDateString('pt-BR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+      const systemWithDate = `Today is ${todayISO} (${todayFull}). When the user asks about "yesterday", "last week", "this month" etc., compute the exact dates from this.\n\n${SYSTEM_PROMPT}`
+
       const stream = anthropic.messages.stream({
         model:      'claude-haiku-4-5-20251001',
         max_tokens: 1024,
-        system:     SYSTEM_PROMPT,
+        system:     systemWithDate,
         tools:      TOOLS,
         messages:   runMessages,
       })
