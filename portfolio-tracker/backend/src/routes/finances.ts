@@ -891,16 +891,17 @@ router.post('/transactions/csv-parse', requireAuth, async (req, res: Response) =
     if (rawTypeNorm.includes('credit')) amount =  Math.abs(amount)
 
     const isTransferByType = TRANSFER_TYPE_PATTERNS.some(t => rawTypeNorm.includes(t))
-    const isTransferByDesc = P2P_DESC_RE.test(rawDesc) || P2P_DESC_RE.test(rawDescNorm) || SEPA_VIREMENT_RE.test(rawDesc)
-    const isTransfer = isTransferByType || isTransferByDesc
+    const isTransferByP2P  = P2P_DESC_RE.test(rawDesc) || P2P_DESC_RE.test(rawDescNorm)
+    const isTransferBySEPA = SEPA_VIREMENT_RE.test(rawDesc)
+    const isTransfer = isTransferByType || isTransferByP2P || isTransferBySEPA
 
     const broker = detectBroker(rawDesc)
 
-    // Keyword match takes priority over transfer type — e.g. Airbnb income has Revolut type
-    // TRANSFER but the description matches the Airbnb income category via keyword/name rules.
     const keywordCat = matchCategory(rawDesc)
-    const effectiveIsTransfer = isTransfer && !keywordCat
-    const category = keywordCat ?? (effectiveIsTransfer ? (transferCat ?? null) : null)
+    // SEPA viremements always win — description may contain bank/person names that match a user
+    // category (e.g. "REVOLUT" in a Transport rule). Ambiguous transfers let keyword win.
+    const effectiveIsTransfer = isTransferBySEPA || ((isTransferByType || isTransferByP2P) && !keywordCat)
+    const category = effectiveIsTransfer ? (transferCat ?? null) : (keywordCat ?? null)
 
     transactions.push({
       date,
