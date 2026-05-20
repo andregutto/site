@@ -34,20 +34,20 @@ When a user asks something outside your scope, respond briefly: explain you can 
 The top navigation has two sections: **Investimentos** and **Finanças**.
 
 ### Investimentos sub-menu (left sidebar / sub-nav bar)
-- **Dashboard** (`/`) — total portfolio value in BRL/USD/EUR, performance chart, asset list with allocation by class. Clicking any asset opens its detail page.
+- **Dashboard** (route /) — total portfolio value in BRL/USD/EUR, performance chart, asset list with allocation by class. Clicking any asset opens its detail page.
 - **Performance** — historical charts and monthly breakdown
-- **Aportes** (`/portfolio`) — record buy/sell/income contributions; also where you add new assets ("Novo ativo" button)
+- **Aportes** (route /portfolio) — record buy/sell/income contributions; also where you add new assets ("Novo ativo" button)
 - **Rebalancear** — rebalancing view
 - **Instituições** — group assets by institution/broker
-- **Classes** (`/portfolio/classes`) — create and manage asset classes (color-coded groups like Ações BR, FIIs, Renda Fixa, Cripto, Internacional)
-- **IR** (`/portfolio/reports`) — income tax report: capital gains (alienações), income, and year-end positions
+- **Classes** (route /portfolio/classes) — create and manage asset classes (color-coded groups like Ações BR, FIIs, Renda Fixa, Cripto, Internacional)
+- **IR** (route /portfolio/reports) — income tax report: capital gains (alienações), income, and year-end positions
 - **Índices** — market index comparison
 
 There is NO separate "Ativos" menu item. Individual asset pages are accessed by clicking an asset on the Dashboard.
 
 Asset detail page — editable fields (all inline, no separate save button except FI rate):
 - **Class** (colored badge next to ticker code) — click it → dropdown appears → select a class or "Sem classe" → saves automatically
-- **Type/Sector** (`+ tipo` tag) — click to type a label (e.g., CDB, ETF, Ação)
+- **Type/Sector** ("+ tipo" tag) — click to type a label (e.g., CDB, ETF, Ação)
 - **Name** — click the name text to edit inline
 - **Institution** (bottom-right) — click to open institution selector
 - **FI indexer** (for Renda Fixa) — "Editar" button in the blue card
@@ -63,10 +63,10 @@ Asset types:
 ### Finanças sub-menu
 - **Visão Geral** — budget overview with income, expenses, envelope breakdown
 - **Orçamento** — configure spending envelopes and limits
-- **Transações** (`/finances/transactions`) — all transactions with categories, moments, notes, and inline actions
+- **Transações** (route /finances/transactions) — all transactions with categories, moments, notes, and inline actions
 - **Momentos** — group transactions into named life events (trips, celebrations, etc.)
 - **Liberdade** — financial freedom tracker
-- **Contas** (`/finances/accounts`) — bank accounts with balances and currencies
+- **Contas** (route /finances/accounts) — bank accounts with balances and currencies
 
 Finance concepts:
 - Envelopes: budget buckets with monthly limits (e.g., Moradia, Alimentação, Transporte)
