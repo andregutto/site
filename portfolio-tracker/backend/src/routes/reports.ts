@@ -1,6 +1,6 @@
 import { Router, Response } from 'express'
-import { requireAuth, AuthRequest } from '../_middleware/auth.js'
-import { supabaseAdmin } from '../_lib/supabase.js'
+import { requireAuth, AuthRequest } from '../middleware/auth.js'
+import { supabaseAdmin } from '../lib/supabase.js'
 
 const router = Router()
 
@@ -14,7 +14,6 @@ router.get('/:year', requireAuth, async (req, res: Response) => {
 
   const endOfYear = `${year}-12-31`
 
-  // Get all user assets upfront — contributions filter through these IDs
   const { data: assets, error: ae } = await supabaseAdmin
     .from('assets')
     .select('id, code, name, asset_type, currency, exchange')
@@ -30,7 +29,6 @@ router.get('/:year', requireAuth, async (req, res: Response) => {
 
   const assetMap = Object.fromEntries((assets ?? []).map(a => [a.id, a]))
 
-  // Contributions in the year (for sells and income)
   const { data: contribs, error: ce } = await supabaseAdmin
     .from('contributions')
     .select('id, asset_id, type, date, quantity, price_orig, value_brl, description')
@@ -41,7 +39,6 @@ router.get('/:year', requireAuth, async (req, res: Response) => {
 
   if (ce) { res.status(500).json({ error: ce.message }); return }
 
-  // All buys up to end of year — for avg cost basis
   const { data: allBuys, error: be } = await supabaseAdmin
     .from('contributions')
     .select('asset_id, quantity, value_brl, price_orig, date')
@@ -52,7 +49,6 @@ router.get('/:year', requireAuth, async (req, res: Response) => {
 
   if (be) { res.status(500).json({ error: be.message }); return }
 
-  // Build cost basis map: asset_id -> { totalQty, totalCost }
   const basis: Record<number, { totalQty: number; totalCost: number }> = {}
   for (const b of (allBuys ?? [])) {
     if (!basis[b.asset_id]) basis[b.asset_id] = { totalQty: 0, totalCost: 0 }
@@ -62,7 +58,7 @@ router.get('/:year', requireAuth, async (req, res: Response) => {
     basis[b.asset_id].totalCost += cost
   }
 
-  // Sells in the year — gain/loss using avg cost (only ticker assets qualify for capital gains)
+  // Only ticker assets qualify for Ganho de Capital
   const sells = (contribs ?? []).filter(c => c.type === 'sell' && assetMap[c.asset_id]?.asset_type === 'ticker').map(c => {
     const b = basis[c.asset_id] ?? { totalQty: 0, totalCost: 0 }
     const avgCostPerUnit = b.totalQty > 0 ? b.totalCost / b.totalQty : 0
@@ -80,7 +76,6 @@ router.get('/:year', requireAuth, async (req, res: Response) => {
     }
   })
 
-  // Income in the year
   const income = (contribs ?? []).filter(c => c.type === 'income').map(c => {
     const asset = assetMap[c.asset_id]
     return {
@@ -91,7 +86,6 @@ router.get('/:year', requireAuth, async (req, res: Response) => {
     }
   })
 
-  // All contributions up to end of year — for position calculation
   const { data: allContribs, error: ace } = await supabaseAdmin
     .from('contributions')
     .select('asset_id, type, quantity, value_brl, price_orig')

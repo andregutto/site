@@ -519,6 +519,21 @@ router.post('/transactions', requireAuth, async (req, res: Response) => {
   res.json(data)
 })
 
+// PATCH /api/finances/transactions/bulk-category — update category for ALL transactions with matching description
+router.patch('/transactions/bulk-category', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const { description, category_id } = req.body as { description: string; category_id: number | null }
+  if (!description) { res.status(400).json({ error: 'description required' }); return }
+  const { error, count } = await supabaseAdmin
+    .from('finance_transactions')
+    .update({ category_id: category_id ?? null })
+    .eq('user_id', userId)
+    .eq('description', description)
+    .select('id', { count: 'exact', head: true })
+  if (error) { res.status(500).json({ error: error.message }); return }
+  res.json({ ok: true, updated: count ?? 0 })
+})
+
 // PATCH /api/finances/transactions/:id
 router.patch('/transactions/:id', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
@@ -1275,7 +1290,7 @@ router.get('/moments/:id', requireAuth, async (req, res: Response) => {
   const [momentRes, txRes] = await Promise.all([
     supabaseAdmin.from('finance_moments').select('*').eq('id', momentId).eq('user_id', userId).single(),
     supabaseAdmin.from('finance_transactions')
-      .select('id, date, description, amount, currency, finance_categories(id, name, icon, color)')
+      .select('id, date, description, amount, currency, notes, finance_categories(id, name, icon, color)')
       .eq('moment_id', momentId).eq('user_id', userId).order('date', { ascending: false }),
   ])
   if (momentRes.error || !momentRes.data) { res.status(404).json({ error: 'Not found' }); return }

@@ -27,7 +27,7 @@ interface ShareInfo {
 
 interface MomentDetail {
   moment: Moment
-  transactions: { id: number; date: string; description: string; amount: number; currency: string; finance_categories: { name: string; icon: string; color: string } | null }[]
+  transactions: { id: number; date: string; description: string; amount: number; currency: string; notes: string | null; finance_categories: { name: string; icon: string; color: string } | null }[]
   summary: { total: number; by_category: { name: string; icon: string; color: string; total: number }[] }
 }
 
@@ -652,8 +652,11 @@ export default function FinancesMomentsPage() {
                           <div key={tx.id} className={`flex items-center gap-3 px-4 py-2.5 text-sm ${i > 0 ? 'border-t border-gray-50' : ''}`}>
                             <span className="text-gray-400 text-xs w-16 shrink-0">{fmtDate(tx.date)}</span>
                             <span className="text-xs">{tx.finance_categories?.icon ?? '❓'}</span>
-                            <span className="flex-1 text-gray-700 truncate text-xs">{tx.description}</span>
-                            <span className={`text-xs font-semibold ${tx.amount < 0 ? 'text-gray-900' : 'text-emerald-600'}`}>
+                            <div className="flex-1 min-w-0">
+                              <span className="text-gray-700 truncate text-xs block">{tx.description}</span>
+                              {tx.notes && <span className="text-[10px] text-gray-400 italic truncate block">{tx.notes}</span>}
+                            </div>
+                            <span className={`text-xs font-semibold shrink-0 ${tx.amount < 0 ? 'text-gray-900' : 'text-emerald-600'}`}>
                               {fmt(Math.abs(tx.amount), tx.currency)}
                             </span>
                             <button

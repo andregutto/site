@@ -297,16 +297,15 @@ export default function FinancesTransactionsPage() {
 
   async function updateCategory(id: number, categoryId: number | null) {
     const tx = transactions.find(t => t.id === id)
-    const sameDesc = tx ? transactions.filter(t => t.id !== id && t.description === tx.description) : []
-
     await apiFetch(`/finances/transactions/${id}`, { method: 'PATCH', body: JSON.stringify({ category_id: categoryId }) })
 
-    if (sameDesc.length > 0) {
-      const applyAll = window.confirm(t.finances.csvSameDescConfirm.replace('{n}', String(sameDesc.length)).replace('{desc}', tx!.description))
+    if (tx) {
+      const applyAll = window.confirm(`Aplicar esta categoria a todas as transações com a descrição "${tx.description}"?\n\nIsso inclui transações de outros períodos e meses.`)
       if (applyAll) {
-        await Promise.all(sameDesc.map(t =>
-          apiFetch(`/finances/transactions/${t.id}`, { method: 'PATCH', body: JSON.stringify({ category_id: categoryId }) })
-        ))
+        await apiFetch('/finances/transactions/bulk-category', {
+          method: 'PATCH',
+          body: JSON.stringify({ description: tx.description, category_id: categoryId }),
+        })
       }
     }
 
@@ -1037,30 +1036,38 @@ export default function FinancesTransactionsPage() {
                           )}
                         </td>
                         <td className="px-3 py-3">
-                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className={`flex items-center gap-0.5 transition-opacity ${tx.exclude_from_stats ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                            {/* Note */}
                             <button
                               onClick={() => { setEditingNotesId(tx.id); setNotesInput(tx.notes ?? '') }}
                               title={t.finances.notesPlaceholder}
-                              className={`p-1.5 transition-colors rounded ${tx.notes ? 'text-[#001A70]/40 hover:text-[#001A70]' : 'text-gray-300 hover:text-[#001A70]/60'}`}
+                              className={`p-1.5 rounded transition-colors ${tx.notes ? 'text-[#001A70] hover:bg-[#001A70]/10' : 'text-gray-300 hover:text-[#001A70] hover:bg-[#001A70]/10'}`}
                             >
                               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4"><path d="M13.488 2.513a1.75 1.75 0 0 0-2.475 0L6.75 6.774a2.75 2.75 0 0 0-.596.892l-.471 1.179a.75.75 0 0 0 .98.98l1.179-.471a2.75 2.75 0 0 0 .892-.596l4.262-4.263a1.75 1.75 0 0 0 0-2.475ZM3.5 4.75A.75.75 0 0 1 4.25 4h3a.75.75 0 0 1 0 1.5h-3a.75.75 0 0 1-.75-.75Zm0 3A.75.75 0 0 1 4.25 7h1.5a.75.75 0 0 1 0 1.5h-1.5A.75.75 0 0 1 3.5 7.75ZM2 3.5A1.5 1.5 0 0 1 3.5 2h9A1.5 1.5 0 0 1 14 3.5V5a.75.75 0 0 1-1.5 0V3.5a.75.75 0 0 0-.75-.75h-9A.75.75 0 0 0 2 3.5V12a.75.75 0 0 0 .75.75H6a.75.75 0 0 1 0 1.5H2.75A1.5 1.5 0 0 1 2 12.75V3.5Z"/></svg>
                             </button>
+                            {/* Exclude/include from stats */}
                             <button
                               onClick={() => toggleExclude(tx.id, tx.exclude_from_stats)}
                               title={tx.exclude_from_stats ? t.finances.includeInStats : t.finances.excludeFromStats}
-                              className={`p-1 transition-colors rounded ${tx.exclude_from_stats ? 'text-gray-400 hover:text-gray-600' : 'text-gray-300 hover:text-gray-500'}`}
+                              className={`p-1.5 rounded transition-colors ${tx.exclude_from_stats ? 'text-amber-500 hover:text-amber-700 hover:bg-amber-50' : 'text-gray-300 hover:text-amber-500 hover:bg-amber-50'}`}
                             >
-                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5"><path d="M3.28 2.22a.75.75 0 0 0-1.06 1.06l10.5 10.5a.75.75 0 1 0 1.06-1.06l-1.36-1.36A7.5 7.5 0 0 0 14.47 8a7.5 7.5 0 0 0-9.74-4.71L3.28 2.22ZM7.53 6.47l2 2A2 2 0 0 1 7.53 6.47ZM8 3.5c.98 0 1.91.22 2.74.62L9.47 5.39A4.5 4.5 0 0 0 3.54 9.46l-1.45 1.45A7.5 7.5 0 0 1 1.53 8 7.5 7.5 0 0 1 8 3.5ZM4.5 8c0-.46.08-.9.23-1.31l4.58 4.58A3.5 3.5 0 0 1 4.5 8Z"/></svg>
+                              {tx.exclude_from_stats ? (
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4"><path d="M8 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"/><path d="M1.38 8a6.998 6.998 0 0 1 13.24 0 7 7 0 0 1-13.24 0ZM8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5Z"/></svg>
+                              ) : (
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4"><path d="M3.28 2.22a.75.75 0 0 0-1.06 1.06l10.5 10.5a.75.75 0 1 0 1.06-1.06l-1.36-1.36A7.5 7.5 0 0 0 14.47 8a7.5 7.5 0 0 0-9.74-4.71L3.28 2.22ZM7.53 6.47l2 2A2 2 0 0 1 7.53 6.47ZM8 3.5c.98 0 1.91.22 2.74.62L9.47 5.39A4.5 4.5 0 0 0 3.54 9.46l-1.45 1.45A7.5 7.5 0 0 1 1.53 8 7.5 7.5 0 0 1 8 3.5ZM4.5 8c0-.46.08-.9.23-1.31l4.58 4.58A3.5 3.5 0 0 1 4.5 8Z"/></svg>
+                              )}
                             </button>
+                            {/* Transfer toggle */}
                             <button
                               onClick={() => toggleInternal(tx.id, tx.is_internal_transfer)}
                               title={tx.is_internal_transfer ? t.finances.markAsReal : t.finances.markAsTransfer}
-                              className="p-1 text-gray-300 hover:text-amber-500 transition-colors rounded"
+                              className={`p-1.5 rounded transition-colors ${tx.is_internal_transfer ? 'text-blue-500 hover:bg-blue-50' : 'text-gray-300 hover:text-blue-500 hover:bg-blue-50'}`}
                             >
-                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5"><path fillRule="evenodd" d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z" clipRule="evenodd" /></svg>
+                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z" clipRule="evenodd" /></svg>
                             </button>
-                            <button onClick={() => deleteTransaction(tx.id)} className="p-1 text-gray-300 hover:text-red-500 transition-colors rounded">
-                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5"><path fillRule="evenodd" d="M5 3.25V4H2.75a.75.75 0 0 0 0 1.5h.3l.815 8.15A1.5 1.5 0 0 0 5.357 15h5.285a1.5 1.5 0 0 0 1.493-1.35l.815-8.15h.3a.75.75 0 0 0 0-1.5H11v-.75A2.25 2.25 0 0 0 8.75 1h-1.5A2.25 2.25 0 0 0 5 3.25Zm2.25-.75a.75.75 0 0 0-.75.75V4h3v-.75a.75.75 0 0 0-.75-.75h-1.5ZM6.05 6a.75.75 0 0 1 .787.713l.275 5.5a.75.75 0 0 1-1.498.075l-.275-5.5A.75.75 0 0 1 6.05 6Zm3.9 0a.75.75 0 0 1 .712.787l-.275 5.5a.75.75 0 0 1-1.498-.075l.275-5.5a.75.75 0 0 1 .786-.712Z" clipRule="evenodd" /></svg>
+                            {/* Delete */}
+                            <button onClick={() => deleteTransaction(tx.id)} title="Excluir transação" className="p-1.5 rounded text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors">
+                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M5 3.25V4H2.75a.75.75 0 0 0 0 1.5h.3l.815 8.15A1.5 1.5 0 0 0 5.357 15h5.285a1.5 1.5 0 0 0 1.493-1.35l.815-8.15h.3a.75.75 0 0 0 0-1.5H11v-.75A2.25 2.25 0 0 0 8.75 1h-1.5A2.25 2.25 0 0 0 5 3.25Zm2.25-.75a.75.75 0 0 0-.75.75V4h3v-.75a.75.75 0 0 0-.75-.75h-1.5ZM6.05 6a.75.75 0 0 1 .787.713l.275 5.5a.75.75 0 0 1-1.498.075l-.275-5.5A.75.75 0 0 1 6.05 6Zm3.9 0a.75.75 0 0 1 .712.787l-.275 5.5a.75.75 0 0 1-1.498-.075l.275-5.5a.75.75 0 0 1 .786-.712Z" clipRule="evenodd" /></svg>
                             </button>
                           </div>
                         </td>
