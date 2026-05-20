@@ -1198,6 +1198,72 @@ router.delete('/reimbursement-groups/:id', requireAuth, async (req, res: Respons
   res.json({ ok: true })
 })
 
+// POST /api/finances/detect-reimbursements
+router.post('/detect-reimbursements', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+
+  type TxRow = { id: number; date: string; amount: number; description: string; currency: string; account_id: number | null }
+  const { data: txs } = await supabaseAdmin
+    .from('finance_transactions')
+    .select('id, date, amount, description, currency, account_id')
+    .eq('user_id', userId)
+    .is('reimbursement_group_id', null)
+
+  if (!txs?.length) { res.json({ created: 0 }); return }
+
+  const byKey = new Map<string, TxRow[]>()
+  for (const tx of txs as TxRow[]) {
+    const key = `${tx.account_id ?? 'null'}|${tx.date}|${tx.currency}`
+    if (!byKey.has(key)) byKey.set(key, [])
+    byKey.get(key)!.push(tx)
+  }
+
+  const RETRO_PREFIXES = ['retrocession', 'remise', 'remboursement', 'regularisation', 'regularization', 'refund', 'credit note']
+
+  const usedIds = new Set<number>()
+  const groupsToCreate: { name: string; ids: [number, number] }[] = []
+
+  for (const [, dayTxs] of byKey) {
+    for (let i = 0; i < dayTxs.length; i++) {
+      if (usedIds.has(dayTxs[i].id)) continue
+      for (let j = i + 1; j < dayTxs.length; j++) {
+        if (usedIds.has(dayTxs[j].id)) continue
+        const a = dayTxs[i], b = dayTxs[j]
+        if (Math.abs(a.amount + b.amount) >= 0.02) continue
+
+        usedIds.add(a.id); usedIds.add(b.id)
+
+        const aLower = a.description.toLowerCase()
+        const bLower = b.description.toLowerCase()
+        let baseName: string
+        if (RETRO_PREFIXES.some(p => aLower.startsWith(p))) {
+          baseName = b.description
+        } else if (RETRO_PREFIXES.some(p => bLower.startsWith(p))) {
+          baseName = a.description
+        } else {
+          baseName = (a.amount < 0 ? a : b).description
+        }
+        groupsToCreate.push({ name: `auto: ${baseName.slice(0, 80)}`, ids: [a.id, b.id] })
+        break
+      }
+    }
+  }
+
+  let created = 0
+  for (const g of groupsToCreate) {
+    const { data: group, error } = await supabaseAdmin
+      .from('reimbursement_groups').insert({ user_id: userId, name: g.name }).select().single()
+    if (!error && group) {
+      await supabaseAdmin.from('finance_transactions')
+        .update({ reimbursement_group_id: group.id, exclude_from_stats: true })
+        .in('id', g.ids).eq('user_id', userId)
+      created++
+    }
+  }
+
+  res.json({ created })
+})
+
 // ── Financial Freedom Plans ────────────────────────────────────────────────────
 
 // GET /api/finances/freedom-plans

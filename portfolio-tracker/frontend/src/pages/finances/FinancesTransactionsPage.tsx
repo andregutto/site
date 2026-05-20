@@ -105,6 +105,15 @@ export default function FinancesTransactionsPage() {
   const [detecting, setDetecting]           = useState(false)
   const [detectResult, setDetectResult]     = useState<string | null>(null)
 
+  // Detect reimbursements
+  const [detectingReimb, setDetectingReimb]         = useState(false)
+  const [detectReimbResult, setDetectReimbResult]   = useState<string | null>(null)
+
+  // Group editing
+  const [editingGroupId, setEditingGroupId]         = useState<string | null>(null)
+  const [editingGroupNameInput, setEditingGroupNameInput] = useState('')
+  const [showAutoGroups, setShowAutoGroups]         = useState(false)
+
   // Reimbursement groups
   const [groups, setGroups]                 = useState<ReimbursementGroup[]>([])
   const [showGroupModal, setShowGroupModal] = useState(false)
@@ -389,6 +398,36 @@ export default function FinancesTransactionsPage() {
     loadTransactions()
   }
 
+  async function reloadGroups() {
+    const data = await apiFetch<ReimbursementGroup[]>('/finances/reimbursement-groups')
+    setGroups(data)
+  }
+
+  async function detectReimbursements() {
+    setDetectingReimb(true)
+    setDetectReimbResult(null)
+    try {
+      const r = await apiFetch<{ created: number }>('/finances/detect-reimbursements', { method: 'POST' })
+      setDetectReimbResult(r.created > 0 ? `${r.created} grupo(s) criado(s)` : 'Nenhum par encontrado')
+      if (r.created > 0) { await reloadGroups(); loadTransactions() }
+    } finally {
+      setDetectingReimb(false)
+    }
+  }
+
+  async function renameGroup(id: string, name: string) {
+    if (!name.trim()) return
+    await apiFetch(`/finances/reimbursement-groups/${id}`, { method: 'PATCH', body: JSON.stringify({ name: name.trim() }) })
+    setGroups(prev => prev.map(g => g.id === id ? { ...g, name: name.trim() } : g))
+    setEditingGroupId(null)
+  }
+
+  async function removeFromGroup(groupId: string, txId: number) {
+    await apiFetch(`/finances/reimbursement-groups/${groupId}`, { method: 'PATCH', body: JSON.stringify({ remove_ids: [txId] }) })
+    await reloadGroups()
+    loadTransactions()
+  }
+
   async function saveNotes(id: number, notes: string) {
     const value = notes.trim() || null
     await apiFetch(`/finances/transactions/${id}`, { method: 'PATCH', body: JSON.stringify({ notes: value }) })
@@ -636,6 +675,15 @@ export default function FinancesTransactionsPage() {
             >
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M4 4a.75.75 0 0 1 .75-.75h6.5a.75.75 0 0 1 0 1.5h-6.5A.75.75 0 0 1 4 4Zm-1.5 4A.75.75 0 0 1 3.25 7.25h9.5a.75.75 0 0 1 0 1.5h-9.5A.75.75 0 0 1 2.5 8Zm3 4a.75.75 0 0 1 .75-.75h3.5a.75.75 0 0 1 0 1.5h-3.5A.75.75 0 0 1 5.5 12Z" clipRule="evenodd"/></svg>
               {detecting ? t.finances.detectingTransfers : (detectResult ?? t.finances.detectTransfers)}
+            </button>
+            <button
+              onClick={detectReimbursements}
+              disabled={detectingReimb}
+              title={detectReimbResult ?? 'Detectar reembolsos automáticos'}
+              className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 text-sm text-gray-500 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+            >
+              <span className="text-base leading-none">↩</span>
+              {detectingReimb ? 'Detectando…' : (detectReimbResult ?? 'Detectar reembolsos')}
             </button>
             <button
               onClick={() => { setCsvStep('idle'); setCsvRows([]); setCsvDuplicateCount(0); setCsvError(''); setCsvAiDebug(null); fileRef.current?.click() }}
@@ -1267,7 +1315,7 @@ export default function FinancesTransactionsPage() {
         </div>
       )}
 
-      {/* Reimbursement group help card — always available */}
+      {/* Reimbursement groups management panel */}
       {csvStep === 'idle' && (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           <button
@@ -1278,29 +1326,147 @@ export default function FinancesTransactionsPage() {
             <span className="text-xs text-gray-400">{groups.length > 0 ? `${groups.length} grupo(s)` : 'Como funciona?'}</span>
             <svg className={`w-4 h-4 text-gray-400 transition-transform ${showGroupHelp ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7"/></svg>
           </button>
+
           {showGroupHelp && (
             <div className="border-t border-gray-50">
-              <div className="px-5 py-4 space-y-3 text-sm text-gray-600">
-                <p>
-                  Quando você adianta um gasto — para um amigo, para o trabalho ou para qualquer outra pessoa — duas transações aparecem no extrato: a <strong>despesa original</strong> e o <strong>reembolso recebido</strong>. Sem agrupamento, isso distorce suas estatísticas: a despesa inflaciona seus gastos do mês, e o reembolso inflaciona sua receita, mesmo que o resultado real tenha sido zero.
-                </p>
-                <p>
-                  Com um <strong>grupo de reembolso</strong>, você conecta essas transações. Elas somem individualmente dos cálculos mensais, e apenas o <strong>valor líquido do grupo</strong> conta — que normalmente é zero ou próximo disso.
-                </p>
-                <div className="bg-gray-50 rounded-xl p-3 space-y-1.5 text-xs text-gray-500">
-                  <p className="font-semibold text-gray-600 mb-1">Exemplos de uso</p>
-                  <p>• Você pagou um jantar de €120 por um amigo e recebeu de volta → groupe a despesa e o crédito</p>
-                  <p>• Você adiantou voo + hotel + alimentação de uma viagem de trabalho e recebeu um reembolso único → groupe todas as despesas com o reembolso</p>
-                  <p>• Você comprou algo para revender e recebeu o valor de volta → groupe compra e entrada</p>
-                </div>
-                <div className="bg-blue-50 rounded-xl p-3 text-xs text-blue-700 space-y-1">
-                  <p className="font-semibold mb-1">Como criar um grupo</p>
-                  <p>1. Selecione as transações usando as caixas de seleção na lista acima</p>
-                  <p>2. Na barra flutuante que aparece, clique em <strong>Criar grupo de reembolso</strong></p>
-                  <p>3. Dê um nome descritivo (ex: "Jantar Charles", "Viagem Lisboa trabalho")</p>
-                  <p>4. O grupo aparece na lista como uma linha colapsável — clique para ver as transações individuais</p>
-                </div>
-              </div>
+              {/* Manual groups */}
+              {(() => {
+                const isAuto = (g: ReimbursementGroup) => g.name.startsWith('auto: ')
+                const displayName = (g: ReimbursementGroup) => isAuto(g) ? g.name.slice(6) : g.name
+                const manualGroups = groups.filter(g => !isAuto(g))
+                const autoGroups   = groups.filter(g =>  isAuto(g))
+
+                return (
+                  <div className="divide-y divide-gray-50">
+                    {manualGroups.length === 0 && autoGroups.length === 0 && (
+                      <div className="px-5 py-4 space-y-3 text-sm text-gray-600">
+                        <p>Agrupe transações relacionadas para que <strong>apenas o valor líquido</strong> entre nos cálculos — ideal para adiantamentos, reembolsos de trabalho e cotizações bancárias.</p>
+                        <div className="bg-blue-50 rounded-xl p-3 text-xs text-blue-700 space-y-1">
+                          <p className="font-semibold mb-1">Como criar um grupo</p>
+                          <p>1. Use o botão <strong>Detectar reembolsos</strong> para detecção automática</p>
+                          <p>2. Ou selecione as transações na lista e clique em <strong>↩ Criar grupo de reembolso</strong></p>
+                        </div>
+                      </div>
+                    )}
+
+                    {manualGroups.map(g => (
+                      <div key={g.id} className="px-5 py-3">
+                        <div className="flex items-center gap-2 mb-2">
+                          {editingGroupId === g.id ? (
+                            <input
+                              autoFocus
+                              value={editingGroupNameInput}
+                              onChange={e => setEditingGroupNameInput(e.target.value)}
+                              onBlur={() => renameGroup(g.id, editingGroupNameInput)}
+                              onKeyDown={e => {
+                                if (e.key === 'Enter') renameGroup(g.id, editingGroupNameInput)
+                                if (e.key === 'Escape') setEditingGroupId(null)
+                              }}
+                              className="flex-1 text-sm font-medium border-b border-[#001A70] bg-transparent outline-none"
+                            />
+                          ) : (
+                            <button
+                              onClick={() => { setEditingGroupId(g.id); setEditingGroupNameInput(g.name) }}
+                              className="flex-1 text-sm font-medium text-gray-800 text-left hover:text-[#001A70] transition-colors"
+                              title="Clique para renomear"
+                            >
+                              {displayName(g)}
+                            </button>
+                          )}
+                          <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${Math.abs(g.net) < 0.01 ? 'bg-gray-100 text-gray-500' : g.net > 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-600'}`}>
+                            {g.net >= 0 ? '+' : ''}{fmt(g.net, g.transactions[0]?.currency ?? 'EUR')}
+                          </span>
+                          <button
+                            onClick={() => deleteGroup(g.id)}
+                            title="Excluir grupo"
+                            className="p-1 text-gray-300 hover:text-red-400 transition-colors"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5"><path fillRule="evenodd" d="M5 3.25V4H2.75a.75.75 0 0 0 0 1.5h.3l.815 8.15A1.5 1.5 0 0 0 5.357 15h5.285a1.5 1.5 0 0 0 1.493-1.35l.815-8.15h.3a.75.75 0 0 0 0-1.5H11v-.75A2.25 2.25 0 0 0 8.75 1h-1.5A2.25 2.25 0 0 0 5 3.25Z" clipRule="evenodd"/></svg>
+                          </button>
+                        </div>
+                        <div className="space-y-1">
+                          {g.transactions.map(tx => (
+                            <div key={tx.id} className="flex items-center gap-2 text-xs text-gray-500 pl-2">
+                              <span className="text-gray-300">·</span>
+                              <span className="flex-1 truncate">{tx.description}</span>
+                              <span className={`font-medium ${tx.amount < 0 ? 'text-red-500' : 'text-emerald-600'}`}>{fmt(tx.amount, tx.currency)}</span>
+                              <button
+                                onClick={() => removeFromGroup(g.id, tx.id)}
+                                title="Remover do grupo"
+                                className="p-0.5 text-gray-200 hover:text-red-400 transition-colors"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3"><path d="M5.28 4.22a.75.75 0 0 0-1.06 1.06L6.94 8l-2.72 2.72a.75.75 0 1 0 1.06 1.06L8 9.06l2.72 2.72a.75.75 0 1 0 1.06-1.06L9.06 8l2.72-2.72a.75.75 0 0 0-1.06-1.06L8 6.94 5.28 4.22Z"/></svg>
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+
+                    {autoGroups.length > 0 && (
+                      <div className="px-5 py-3">
+                        <button
+                          onClick={() => setShowAutoGroups(v => !v)}
+                          className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 transition-colors"
+                        >
+                          <svg className={`w-3 h-3 transition-transform ${showAutoGroups ? 'rotate-90' : ''}`} fill="currentColor" viewBox="0 0 16 16"><path d="M6 3.5L10.5 8 6 12.5V3.5z"/></svg>
+                          {showAutoGroups ? 'Ocultar' : 'Mostrar'} {autoGroups.length} grupo(s) auto-detectado(s)
+                        </button>
+                        {showAutoGroups && (
+                          <div className="mt-3 divide-y divide-gray-50">
+                            {autoGroups.map(g => (
+                              <div key={g.id} className="py-3 first:pt-0">
+                                <div className="flex items-center gap-2 mb-2">
+                                  {editingGroupId === g.id ? (
+                                    <input
+                                      autoFocus
+                                      value={editingGroupNameInput}
+                                      onChange={e => setEditingGroupNameInput(e.target.value)}
+                                      onBlur={() => renameGroup(g.id, editingGroupNameInput)}
+                                      onKeyDown={e => {
+                                        if (e.key === 'Enter') renameGroup(g.id, editingGroupNameInput)
+                                        if (e.key === 'Escape') setEditingGroupId(null)
+                                      }}
+                                      className="flex-1 text-sm font-medium border-b border-[#001A70] bg-transparent outline-none"
+                                    />
+                                  ) : (
+                                    <button
+                                      onClick={() => { setEditingGroupId(g.id); setEditingGroupNameInput(displayName(g)) }}
+                                      className="flex-1 text-sm font-medium text-gray-500 text-left hover:text-[#001A70] transition-colors flex items-center gap-1.5"
+                                      title="Clique para renomear (remove a marcação automática)"
+                                    >
+                                      <span className="text-[10px] bg-gray-100 text-gray-400 rounded px-1 py-0.5 font-medium shrink-0">auto</span>
+                                      {displayName(g)}
+                                    </button>
+                                  )}
+                                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${Math.abs(g.net) < 0.01 ? 'bg-gray-100 text-gray-500' : g.net > 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-600'}`}>
+                                    {g.net >= 0 ? '+' : ''}{fmt(g.net, g.transactions[0]?.currency ?? 'EUR')}
+                                  </span>
+                                  <button onClick={() => deleteGroup(g.id)} title="Excluir grupo" className="p-1 text-gray-300 hover:text-red-400 transition-colors">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5"><path fillRule="evenodd" d="M5 3.25V4H2.75a.75.75 0 0 0 0 1.5h.3l.815 8.15A1.5 1.5 0 0 0 5.357 15h5.285a1.5 1.5 0 0 0 1.493-1.35l.815-8.15h.3a.75.75 0 0 0 0-1.5H11v-.75A2.25 2.25 0 0 0 8.75 1h-1.5A2.25 2.25 0 0 0 5 3.25Z" clipRule="evenodd"/></svg>
+                                  </button>
+                                </div>
+                                <div className="space-y-1">
+                                  {g.transactions.map(tx => (
+                                    <div key={tx.id} className="flex items-center gap-2 text-xs text-gray-500 pl-2">
+                                      <span className="text-gray-300">·</span>
+                                      <span className="flex-1 truncate">{tx.description}</span>
+                                      <span className={`font-medium ${tx.amount < 0 ? 'text-red-500' : 'text-emerald-600'}`}>{fmt(tx.amount, tx.currency)}</span>
+                                      <button onClick={() => removeFromGroup(g.id, tx.id)} title="Remover do grupo" className="p-0.5 text-gray-200 hover:text-red-400 transition-colors">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3"><path d="M5.28 4.22a.75.75 0 0 0-1.06 1.06L6.94 8l-2.72 2.72a.75.75 0 1 0 1.06 1.06L8 9.06l2.72 2.72a.75.75 0 1 0 1.06-1.06L9.06 8l2.72-2.72a.75.75 0 0 0-1.06-1.06L8 6.94 5.28 4.22Z"/></svg>
+                                      </button>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )
+              })()}
             </div>
           )}
         </div>
