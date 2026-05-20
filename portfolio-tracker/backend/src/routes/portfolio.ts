@@ -29,20 +29,25 @@ router.get('/value', requireAuth, async (req, res: Response) => {
 
   const assetIds = assets.map((a) => a.id)
 
-  // 2. Holdings por ativo (ticker): soma de compras - vendas
+  // 2. Holdings e invested por ativo
   const { data: contributions } = await supabaseAdmin
     .from('contributions')
-    .select('asset_id, type, quantity')
+    .select('asset_id, type, quantity, value_brl')
     .in('asset_id', assetIds)
 
   const holdingsMap: Record<number, number> = {}
+  const investedMap: Record<number, number> = {}
   for (const c of (contributions ?? [])) {
+    if (c.type === 'income') continue
     holdingsMap[c.asset_id] = (holdingsMap[c.asset_id] ?? 0) +
       (c.type === 'buy' ? c.quantity : -c.quantity)
+    if (c.type === 'buy' && c.value_brl && c.value_brl > 0) {
+      investedMap[c.asset_id] = (investedMap[c.asset_id] ?? 0) + c.value_brl
+    }
   }
 
   // 3. Último valor manual — cobre todos os asset_types (fallback para tickers sem preço público)
-  const manualMap: Record<number, { value: number; currency: string }> = {}
+  const manualMap: Record<number, { value: number; currency: string; last_date: string }> = {}
   if (assetIds.length > 0) {
     const { data: manualValues } = await supabaseAdmin
       .from('manual_values')
@@ -53,7 +58,7 @@ router.get('/value', requireAuth, async (req, res: Response) => {
     const seen = new Set<number>()
     for (const mv of (manualValues ?? [])) {
       if (!seen.has(mv.asset_id)) {
-        manualMap[mv.asset_id] = { value: mv.value, currency: mv.currency }
+        manualMap[mv.asset_id] = { value: mv.value, currency: mv.currency, last_date: mv.ref_date }
         seen.add(mv.asset_id)
       }
     }
@@ -66,6 +71,8 @@ router.get('/value', requireAuth, async (req, res: Response) => {
     class_id: number | null; class_name: string; class_color: string; class_icon?: string | null
     holdings: number | null; price: number | null; source: string
     needs_manual: boolean
+    invested_brl: number | null
+    last_manual_date: string | null
     fi_type?: string | null
     fi_start_date?: string | null
     fi_rate?: number | null
@@ -96,8 +103,7 @@ router.get('/value', requireAuth, async (req, res: Response) => {
         if (a.asset_type === 'manual') {
           const mv = manualMap[a.id]
           if (!mv) {
-            // Sem valor ainda — aparece no dashboard com botão de input
-            byAsset.push({ ...base, value_brl: 0, value_orig: 0, currency: a.currency || 'EUR', holdings: null, price: null, source: 'manual', needs_manual: true })
+            byAsset.push({ ...base, value_brl: 0, value_orig: 0, currency: a.currency || 'EUR', holdings: null, price: null, source: 'manual', needs_manual: true, invested_brl: investedMap[a.id] ?? null, last_manual_date: null })
             return
           }
           value_orig = mv.value
@@ -106,9 +112,8 @@ router.get('/value', requireAuth, async (req, res: Response) => {
           value_brl  = currency === 'BRL' ? value_orig : value_orig * await getFxRate(currency)
 
         } else if (a.asset_type === 'fixed_income') {
-          // Dados incompletos no cadastro → aparece com botão de completar dados
           if (!a.fi_principal || !a.fi_start_date || !a.fi_type || (a.fi_type !== 'ipca_plus' && a.fi_rate == null)) {
-            byAsset.push({ ...base, value_brl: 0, value_orig: 0, currency: a.currency || 'BRL', holdings: null, price: null, source: 'fixed_income', needs_manual: true, fi_type: a.fi_type, fi_start_date: a.fi_start_date, fi_rate: a.fi_rate, fi_spread: a.fi_spread, fi_maturity: a.fi_maturity ?? null })
+            byAsset.push({ ...base, value_brl: 0, value_orig: 0, currency: a.currency || 'BRL', holdings: null, price: null, source: 'fixed_income', needs_manual: true, invested_brl: investedMap[a.id] ?? null, last_manual_date: null, fi_type: a.fi_type, fi_start_date: a.fi_start_date, fi_rate: a.fi_rate, fi_spread: a.fi_spread, fi_maturity: a.fi_maturity ?? null })
             return
           }
           const result = await getCurrentPrice(a as Asset)
@@ -120,8 +125,6 @@ router.get('/value', requireAuth, async (req, res: Response) => {
         } else {
           // ticker
           holdings = holdingsMap[a.id] ?? 0
-          // Só pula se tem fonte automática de preço — tickers sem yahoo/coingecko
-          // (ex: fundos BTG como TARPON) precisam de valor manual mesmo sem holdings
           const hasAutoSource = !!(a.ticker_yahoo || a.coingecko_id)
           if (holdings <= 0 && hasAutoSource) return
           try {
@@ -132,7 +135,6 @@ router.get('/value', requireAuth, async (req, res: Response) => {
             value_orig = holdings * price
             value_brl  = currency === 'BRL' ? value_orig : value_orig * await getFxRate(currency)
           } catch {
-            // API pública falhou — tenta valor manual (ex: TARPON)
             const mv = manualMap[a.id]
             if (mv) {
               value_orig = mv.value
@@ -140,7 +142,7 @@ router.get('/value', requireAuth, async (req, res: Response) => {
               source     = 'manual'
               value_brl  = currency === 'BRL' ? value_orig : value_orig * await getFxRate(currency)
             } else {
-              byAsset.push({ ...base, value_brl: 0, value_orig: 0, currency: a.currency || 'BRL', holdings, price: null, source: 'error', needs_manual: true })
+              byAsset.push({ ...base, value_brl: 0, value_orig: 0, currency: a.currency || 'BRL', holdings, price: null, source: 'error', needs_manual: true, invested_brl: investedMap[a.id] ?? null, last_manual_date: null })
               return
             }
           }
@@ -152,6 +154,8 @@ router.get('/value', requireAuth, async (req, res: Response) => {
           value_orig: Math.round(value_orig * 100) / 100,
           currency, holdings, price, source,
           needs_manual: false,
+          invested_brl: investedMap[a.id] != null ? Math.round(investedMap[a.id] * 100) / 100 : null,
+          last_manual_date: source === 'manual' ? (manualMap[a.id]?.last_date ?? null) : null,
         })
       } catch (err) {
         console.warn(`[portfolio] Erro ao calcular ${a.code}:`, err)

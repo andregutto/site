@@ -464,6 +464,9 @@ router.get('/:id/detail', requireAuth, async (req, res: Response) => {
 
   const contribs = rawContribs ?? []
 
+  const assetCurrency = asset.currency || 'BRL'
+  let fxApprox = assetCurrency === 'BRL' ? 1 : 5.70
+
   let totalQty = 0
   let totalCostBrl = 0
   let totalIncomeBrl = 0
@@ -511,9 +514,8 @@ router.get('/:id/detail', requireAuth, async (req, res: Response) => {
 
   let currentValueBrl = 0
   let currentPrice: number | null = null
-  let priceCurrency = asset.currency || 'BRL'
+  let priceCurrency = assetCurrency
   let priceSource   = ''
-  let fxApprox      = priceCurrency === 'BRL' ? 1 : 5.70  // updated to real rate inside ticker block
 
   try {
     if (asset.asset_type === 'manual') {

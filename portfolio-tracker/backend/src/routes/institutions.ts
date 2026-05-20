@@ -7,12 +7,24 @@ import { cache } from '../lib/cache.js'
 const router = Router()
 
 const INTERNATIONAL: string[] = [
-  'Interactive Brokers', 'Avenue', 'Revolut', 'Wise',
+  // France
+  'BNP Paribas', 'Société Générale', 'Crédit Agricole', 'LCL', 'Caisse d\'Épargne',
+  'Banque Populaire', 'La Banque Postale', 'Crédit Mutuel', 'CIC', 'HSBC France',
+  'ING France', 'Boursorama', 'Fortuneo', 'Hello bank!', 'Monabanq',
+  // Europe / global neobanks
+  'N26', 'Revolut', 'Wise', 'Trade Republic', 'Scalable Capital', 'Lightyear',
+  'Degiro', 'Saxo Bank', 'Swissquote', 'eToro', '212',
+  // Crypto
   'Binance', 'Coinbase', 'Exodus', 'Kraken',
-  'Natixis', 'Trade Republic', '212', 'Degiro',
-  'Saxo Bank', 'Swissquote', 'eToro', 'Lightyear',
-  'Scalable Capital', 'Fidelity', 'Charles Schwab',
-  'TD Ameritrade', 'XP Investments',
+  // USA
+  'Interactive Brokers', 'Fidelity', 'Charles Schwab', 'TD Ameritrade',
+  'Merrill Lynch', 'Morgan Stanley', 'JPMorgan Chase', 'Bank of America',
+  'Wells Fargo', 'Citibank', 'Goldman Sachs', 'Robinhood', 'E*TRADE',
+  // Brazil / LatAm
+  'Avenue', 'XP Investments', 'XP Investimentos', 'Rico', 'Clear', 'BTG Pactual',
+  'Órama', 'Genial', 'Warren', 'Vitreo', 'Kinea',
+  'Itaú', 'Bradesco', 'Santander', 'Banco do Brasil', 'Caixa Econômica Federal',
+  'Nubank', 'C6 Bank', 'Inter',
 ]
 
 const BRASIL_API_URL = 'https://brasilapi.com.br/api/banks/v1'

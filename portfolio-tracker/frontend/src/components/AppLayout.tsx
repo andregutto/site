@@ -256,7 +256,7 @@ export default function AppLayout() {
         {/* ── Sub-nav bar (desktop only, always visible when in a section) ── */}
         {activeSubItems.length > 0 && (
           <div className="border-t border-gray-100 bg-gray-50/60">
-            <div className="flex items-center gap-0.5 px-4 sm:px-6 py-1.5 overflow-x-auto scrollbar-none">
+            <div className="flex items-center justify-center gap-0.5 px-4 sm:px-6 py-1.5 overflow-x-auto scrollbar-none">
               {activeSubItems.map(({ to, label, end, icon }) => (
                 <NavLink
                   key={to} to={to} end={end}

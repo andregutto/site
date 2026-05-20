@@ -117,6 +117,9 @@ export default function ContributionsPage() {
   const [newImvPurchaseDate,  setNewImvPurchaseDate]  = useState('')
   const [newImvPurchaseValue, setNewImvPurchaseValue] = useState('')
   const [newImvPurchaseBrl,   setNewImvPurchaseBrl]   = useState('')
+  // Manual-specific new asset fields
+  const [newManualValue, setNewManualValue] = useState('')
+  const [newManualDate,  setNewManualDate]  = useState('')
 
   const today = new Date().toISOString().split('T')[0]
 
@@ -228,6 +231,7 @@ export default function ContributionsPage() {
     setNewFiType('pos_cdi'); setNewFiRate(''); setNewFiPrincipal('')
     setNewFiStartDate(''); setNewFiMaturity(''); setNewFiInstitution('')
     setNewImvPurchaseDate(''); setNewImvPurchaseValue(''); setNewImvPurchaseBrl('')
+    setNewManualValue(''); setNewManualDate('')
     setNewAssetErr(null)
   }
 
@@ -291,7 +295,7 @@ export default function ContributionsPage() {
           method: 'POST',
           body: JSON.stringify({
             asset_id: Number(assetId), date, type,
-            quantity: 1, value_brl: vBrl,
+            quantity: 1, value_brl: vBrl, currency: 'BRL',
             description: description || undefined,
           }),
         })
@@ -330,8 +334,9 @@ export default function ContributionsPage() {
   async function handleCreateAsset() {
     const config = FORM_TYPES.find(t => t.value === newFormType)
     const isTickerType = config?.market != null
-    const isRfNew  = newFormType === 'fixed_income'
-    const isImvNew = newFormType === 'imovel'
+    const isRfNew    = newFormType === 'fixed_income'
+    const isImvNew   = newFormType === 'imovel'
+    const isManualNew = newFormType === 'manual'
 
     if (!newCode.trim()) { setNewAssetErr('Informe o codigo do ativo.'); return }
     if (isTickerType && newNameLoading) { setNewAssetErr('Aguarde a busca do nome.'); return }
@@ -393,7 +398,7 @@ export default function ContributionsPage() {
           method: 'POST',
           body: JSON.stringify({
             asset_id: created.id, date: newFiStartDate, type: 'buy',
-            quantity: 1, value_brl: principal, description: 'Aplicacao inicial',
+            quantity: 1, value_brl: principal, currency: 'BRL', description: 'Aplicacao inicial',
           }),
         })
       }
@@ -414,9 +419,27 @@ export default function ContributionsPage() {
           method: 'POST',
           body: JSON.stringify({
             asset_id: created.id, date: newImvPurchaseDate, type: 'buy',
-            quantity: 1, value_brl: purchaseBrl, description: 'Compra do imovel',
+            quantity: 1, value_brl: purchaseBrl, currency: newCurrency, description: 'Compra do imovel',
           }),
         })
+      }
+
+      if (isManualNew) {
+        const initVal = parseLocaleNum(newManualValue)
+        const initDate = newManualDate || today
+        if (initVal && initVal > 0) {
+          await apiFetch(`/assets/${created.id}/manual-value`, {
+            method: 'POST',
+            body: JSON.stringify({ ref_date: initDate, value: initVal, currency: 'BRL', notes: 'Valor inicial' }),
+          })
+          await apiFetch('/contributions', {
+            method: 'POST',
+            body: JSON.stringify({
+              asset_id: created.id, date: initDate, type: 'buy',
+              quantity: 1, value_brl: initVal, currency: 'BRL', description: 'Valor inicial',
+            }),
+          })
+        }
       }
 
       await loadAssets()
@@ -424,8 +447,8 @@ export default function ContributionsPage() {
       setPriceCurrency(created.currency)
       setShowNewAsset(false)
       resetNewAsset()
-      // RF: initial investment already saved as contribution — close the whole form
-      if (isRfNew) {
+      // RF and manual: initial data saved — close the whole form
+      if (isRfNew || (isManualNew && parseLocaleNum(newManualValue) != null)) {
         setShowForm(false)
         resetForm()
         refresh()
@@ -668,6 +691,39 @@ export default function ContributionsPage() {
                       {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                     </select>
                   </div>
+
+                  {/* Manual-specific fields */}
+                  {newFormType === 'manual' && (
+                    <>
+                      <div className="col-span-2 border-t border-blue-200 pt-2">
+                        <p className="text-xs font-semibold text-[#001A70] mb-2">Valor inicial (opcional)</p>
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-500 mb-1">Valor atual (R$)</label>
+                        <input
+                          type="text"
+                          inputMode="decimal"
+                          value={newManualValue}
+                          onChange={e => setNewManualValue(e.target.value)}
+                          placeholder="ex: 15.000,00"
+                          className={SMALL_INPUT}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-500 mb-1">Data de referência</label>
+                        <input
+                          type="date"
+                          value={newManualDate || today}
+                          max={today}
+                          onChange={e => setNewManualDate(e.target.value)}
+                          className={SMALL_INPUT}
+                        />
+                      </div>
+                      <div className="col-span-2 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2 text-[11px] text-blue-700 leading-relaxed">
+                        Informe o valor atual para que o ativo já apareça no Dashboard. Você pode atualizar o valor manualmente a qualquer momento na página do ativo.
+                      </div>
+                    </>
+                  )}
 
                   {/* Imóvel-specific fields */}
                   {newFormType === 'imovel' && (
