@@ -851,9 +851,11 @@ router.post('/transactions/csv-parse', requireAuth, async (req, res: Response) =
   // ("To M Andre" = person; "To IDM Conseil" = company → no salutation → not caught)
   const P2P_DESC_RE = /^(?:to\s+(?:m|mr|mrs|ms|mme|dr)\.?\s+|(?:à|a)\s+(?!l[ae]?\s|l'|les\s)|para\s+|envoyé\s+à\s+|envoye\s+a\s+|paiement\s+envoyé\s+à\s+|enviado\s+para\s+|transferido\s+para\s+|pix\s+para\s+|ted\s+para\s+|virement\s+(?:vers|(?:à|a))\s+|envoi\s+(?:à|a)\s+)[A-ZÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ]/i
   // SEPA / FR banking viremennts (BNP, Boursorama, etc.) and BR bank transfers (TED, PIX, DOC, TEF)
-  // "VIR SEPA EMIS VERS...", "VIR INTERNE...", "VIREMENT SEPA...", "TED 123...", "PIX 456..."
-  // keyword match still wins via effectiveIsTransfer below — this just seeds the candidate flag
-  const SEPA_VIREMENT_RE = /^(?:vir(?:ement)?\s+(?:sepa|interne|permanent|euros?|emis|recu|vers\b)|ted\s|pix\s|doc\s|tef\s)/i
+  // Matches: "VIREMENT INSTANTANE RECU/EMIS ...", "VIR SEPA ...", "VIR INTERNE ...", "TED ...", "PIX ..."
+  // "VIREMENT INSTANTANE" is BNP's instant SEPA transfer — always bank-to-bank, never a merchant payment
+  // "VIREMENT /DE SPB" (bare VIREMENT without qualifier) is NOT matched — could be salary/income
+  // keyword match still wins via effectiveIsTransfer guard below
+  const SEPA_VIREMENT_RE = /^(?:vir(?:ement)?\s+instantane\b|vir(?:ement)?\s+(?:sepa|interne|permanent|euros?|emis|recu|vers\b)|ted\s|pix\s|doc\s|tef\s)/i
 
   const rows = parseCSV(csv)
   if (rows.length < 2) { res.status(400).json({ error: 'CSV must have at least a header row and one data row' }); return }
