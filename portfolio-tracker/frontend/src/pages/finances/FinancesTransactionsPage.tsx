@@ -168,6 +168,9 @@ export default function FinancesTransactionsPage() {
   const [showAccountAssign, setShowAccountAssign] = useState(false)
   const [assigningAccount, setAssigningAccount]   = useState(false)
 
+  // Import modal
+  const [showImportModal, setShowImportModal] = useState(false)
+
   const loadTransactions = useCallback(async () => {
     setLoading(true)
     try {
@@ -686,7 +689,7 @@ export default function FinancesTransactionsPage() {
               {detectingReimb ? 'Detectando…' : (detectReimbResult ?? 'Detectar reembolsos')}
             </button>
             <button
-              onClick={() => { setCsvStep('idle'); setCsvRows([]); setCsvDuplicateCount(0); setCsvError(''); setCsvAiDebug(null); fileRef.current?.click() }}
+              onClick={() => { setCsvStep('idle'); setCsvRows([]); setCsvDuplicateCount(0); setCsvError(''); setCsvAiDebug(null); setShowImportModal(true) }}
               disabled={csvStep === 'parsing'}
               className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 text-sm text-gray-600 rounded-lg hover:bg-gray-50 transition-colors"
             >
@@ -701,7 +704,7 @@ export default function FinancesTransactionsPage() {
               {t.finances.addTransaction}
             </button>
           </>)}
-          <input ref={fileRef} type="file" accept=".csv,.txt,.xls,.xlsx,.ods" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) handleCSVFile(f); e.target.value = '' }} />
+          <input ref={fileRef} type="file" accept=".csv,.txt,.xls,.xlsx,.ods" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) { setShowImportModal(false); handleCSVFile(f) } e.target.value = '' }} />
         </div>
       </div>
 
@@ -753,15 +756,6 @@ export default function FinancesTransactionsPage() {
         </div>
       )}
 
-      {/* CSV currency selector */}
-      {csvStep === 'idle' && accounts.length > 0 && (
-        <div className="flex items-center gap-2 text-xs text-gray-500">
-          <span>{t.finances.csvCurrency}</span>
-          <select value={csvCurrency} onChange={e => setCsvCurrency(e.target.value)} className="border border-gray-200 rounded px-2 py-0.5 text-xs">
-            {['EUR','BRL','USD'].map(c => <option key={c}>{c}</option>)}
-          </select>
-        </div>
-      )}
 
       {/* CSV Error */}
       {csvError && (
@@ -1469,6 +1463,82 @@ export default function FinancesTransactionsPage() {
               })()}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Import modal */}
+      {showImportModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
+          onClick={() => setShowImportModal(false)}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6"
+            onClick={e => e.stopPropagation()}
+          >
+            <h3 className="font-semibold text-gray-900 mb-5">Importar extrato</h3>
+
+            {/* Account selector */}
+            {accounts.length > 0 && (
+              <div className="mb-4">
+                <label className="block text-xs text-gray-500 mb-1.5">{t.finances.csvAccount}</label>
+                <select
+                  value={csvAccountId ?? ''}
+                  onChange={e => setCsvAccountId(e.target.value === '' ? null : Number(e.target.value))}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
+                >
+                  <option value="">{t.finances.csvAccountNone}</option>
+                  {accounts.map(a => <option key={a.id} value={a.id}>{a.icon} {a.name}</option>)}
+                </select>
+              </div>
+            )}
+
+            {/* Currency */}
+            <div className="mb-5">
+              <label className="block text-xs text-gray-500 mb-1.5">{t.finances.csvCurrency}</label>
+              <div className="flex gap-2">
+                {['EUR', 'BRL', 'USD'].map(c => (
+                  <button
+                    key={c}
+                    onClick={() => setCsvCurrency(c)}
+                    className={`flex-1 py-2 text-sm font-medium rounded-lg border transition-colors ${
+                      csvCurrency === c
+                        ? 'bg-[#001A70] text-white border-[#001A70]'
+                        : 'bg-white text-gray-600 border-gray-200 hover:border-[#001A70] hover:text-[#001A70]'
+                    }`}
+                  >
+                    {c}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Drop zone */}
+            <div
+              className="border-2 border-dashed border-gray-200 rounded-xl p-8 text-center cursor-pointer hover:border-[#001A70] hover:bg-[#001A70]/5 transition-colors"
+              onClick={() => fileRef.current?.click()}
+              onDragOver={e => { e.preventDefault(); e.stopPropagation() }}
+              onDrop={e => {
+                e.preventDefault(); e.stopPropagation()
+                const f = e.dataTransfer.files?.[0]
+                if (f) { setShowImportModal(false); handleCSVFile(f) }
+              }}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8 text-gray-300 mx-auto mb-2">
+                <path fillRule="evenodd" d="M11.47 2.47a.75.75 0 0 1 1.06 0l4.5 4.5a.75.75 0 0 1-1.06 1.06l-3.22-3.22V16.5a.75.75 0 0 1-1.5 0V4.81L8.03 8.03a.75.75 0 0 1-1.06-1.06l4.5-4.5ZM3 15.75a.75.75 0 0 1 .75.75v2.25a1.5 1.5 0 0 0 1.5 1.5h13.5a1.5 1.5 0 0 0 1.5-1.5V16.5a.75.75 0 0 1 1.5 0v2.25a3 3 0 0 1-3 3H5.25a3 3 0 0 1-3-3V16.5a.75.75 0 0 1 .75-.75Z" clipRule="evenodd" />
+              </svg>
+              <p className="text-sm text-gray-500 font-medium">Arraste o arquivo aqui</p>
+              <p className="text-xs text-gray-400 mt-1">ou clique para selecionar</p>
+              <p className="text-[10px] text-gray-300 mt-2">CSV · XLS · XLSX · ODS</p>
+            </div>
+
+            <button
+              onClick={() => setShowImportModal(false)}
+              className="mt-4 w-full text-sm text-gray-400 hover:text-gray-600 transition-colors py-1"
+            >
+              {t.common.cancel}
+            </button>
+          </div>
         </div>
       )}
 
