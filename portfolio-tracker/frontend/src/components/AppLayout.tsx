@@ -9,6 +9,7 @@ import { apiFetch } from '../lib/api'
 import LoginFooter from './LoginFooter'
 import OnboardingOverlay from './OnboardingOverlay'
 import LanguageSelector from './LanguageSelector'
+import ChatWidget from './ChatWidget'
 
 const ONBOARDING_KEY = 'onboarding_v1_done'
 const CURRENCIES: Currency[] = ['BRL', 'USD', 'EUR']
@@ -438,6 +439,7 @@ export default function AppLayout() {
       </nav>
 
       {showOnboarding && <OnboardingOverlay onDone={() => setShowOnboarding(false)} />}
+      <ChatWidget />
     </div>
   )
 }

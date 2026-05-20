@@ -17,6 +17,7 @@ import achievementsRouter   from './_routes/achievements.js'
 import financesRouter       from './_routes/finances.js'
 import banksRouter          from './_routes/banks.js'
 import publicRouter         from './_routes/public.js'
+import chatRouter           from './_routes/chat.js'
 
 const app = express()
 
@@ -44,6 +45,7 @@ app.use('/api/achievements',  achievementsRouter)
 app.use('/api/finances',      financesRouter)
 app.use('/api/banks',         banksRouter)
 app.use('/api/public',        publicRouter)
+app.use('/api/chat',         chatRouter)
 
 // Health — acessível em /api/health via Vercel routing
 app.get(['/health', '/api/health'], (_req, res) => {
