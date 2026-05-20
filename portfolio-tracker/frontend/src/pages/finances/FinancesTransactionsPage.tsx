@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import * as XLSX from 'xlsx'
 import { apiFetch } from '../../lib/api'
@@ -107,8 +107,18 @@ export default function FinancesTransactionsPage() {
   // Reimbursement groups
   const [groups, setGroups]                 = useState<ReimbursementGroup[]>([])
   const [showGroupModal, setShowGroupModal] = useState(false)
+  const [showGroupHelp, setShowGroupHelp]   = useState(false)
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
   const [groupName, setGroupName]           = useState('')
   const [savingGroup, setSavingGroup]       = useState(false)
+
+  function toggleExpandGroup(id: string) {
+    setExpandedGroups(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
 
   // Multi-select
   const [selected, setSelected]             = useState<Set<number>>(new Set())
@@ -527,6 +537,29 @@ export default function FinancesTransactionsPage() {
   const allSelected = transactions.length > 0 && selected.size === transactions.length
   const someSelected = selected.size > 0 && !allSelected
 
+  type DisplayItem =
+    | { kind: 'tx'; tx: Transaction }
+    | { kind: 'group'; groupId: string; name: string; txs: Transaction[]; net: number }
+
+  const displayItems = useMemo((): DisplayItem[] => {
+    const items: DisplayItem[] = []
+    const seenGroups = new Set<string>()
+    for (const tx of transactions) {
+      if (tx.reimbursement_group_id) {
+        if (!seenGroups.has(tx.reimbursement_group_id)) {
+          seenGroups.add(tx.reimbursement_group_id)
+          const groupTxs = transactions.filter(t => t.reimbursement_group_id === tx.reimbursement_group_id)
+          const net = groupTxs.reduce((s, t) => s + t.amount, 0)
+          const name = groups.find(g => g.id === tx.reimbursement_group_id)?.name ?? t.finances.reimbursementGroup
+          items.push({ kind: 'group', groupId: tx.reimbursement_group_id, name, txs: groupTxs, net })
+        }
+      } else {
+        items.push({ kind: 'tx', tx })
+      }
+    }
+    return items
+  }, [transactions, groups, t])
+
   return (
     <div className="space-y-5">
       {/* No-account banner */}
@@ -834,7 +867,59 @@ export default function FinancesTransactionsPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
-                  {transactions.map(tx => {
+                  {displayItems.map(item => {
+                    if (item.kind === 'group') {
+                      const expanded = expandedGroups.has(item.groupId)
+                      return (
+                        <>
+                          <tr key={`group-${item.groupId}`} className="bg-amber-50/40 hover:bg-amber-50/60 transition-colors cursor-pointer" onClick={() => toggleExpandGroup(item.groupId)}>
+                            <td className="pl-4 pr-2 py-2.5 w-8" />
+                            <td colSpan={6} className="px-3 py-2.5">
+                              <div className="flex items-center gap-2.5">
+                                <svg className={`w-3 h-3 text-amber-500 transition-transform shrink-0 ${expanded ? 'rotate-90' : ''}`} fill="currentColor" viewBox="0 0 16 16">
+                                  <path d="M6 3.5L10.5 8 6 12.5V3.5z"/>
+                                </svg>
+                                <span className="text-xs font-semibold text-amber-700">↩</span>
+                                <span className="text-sm font-medium text-gray-800">{item.name}</span>
+                                <span className="text-xs text-gray-400">{item.txs.length} transações</span>
+                                <span className={`ml-auto text-sm font-semibold ${Math.abs(item.net) < 0.01 ? 'text-gray-400' : item.net > 0 ? 'text-green-600' : 'text-red-500'}`}>
+                                  {t.finances.reimbursementGroupNet}: {fmt(item.net, item.txs[0]?.currency)}
+                                </span>
+                                <button
+                                  onClick={e => { e.stopPropagation(); deleteGroup(item.groupId) }}
+                                  title={t.finances.reimbursementGroupDelete}
+                                  className="p-1 text-gray-300 hover:text-red-400 transition-colors"
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5"><path fillRule="evenodd" d="M5 3.25V4H2.75a.75.75 0 0 0 0 1.5h.3l.815 8.15A1.5 1.5 0 0 0 5.357 15h5.285a1.5 1.5 0 0 0 1.493-1.35l.815-8.15h.3a.75.75 0 0 0 0-1.5H11v-.75A2.25 2.25 0 0 0 8.75 1h-1.5A2.25 2.25 0 0 0 5 3.25Z" clipRule="evenodd"/></svg>
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                          {expanded && item.txs.map(tx => (
+                            <tr key={tx.id} className="bg-amber-50/20 hover:bg-amber-50/40 transition-colors">
+                              <td className="pl-4 pr-2 py-2 w-8" />
+                              <td className="px-3 py-2 text-gray-400 whitespace-nowrap text-xs pl-8">{fmtDate(tx.date)}</td>
+                              <td className="px-3 py-2 text-gray-600 max-w-xs text-xs pl-8">
+                                <span className="truncate block">{tx.description || '—'}</span>
+                              </td>
+                              <td className={`px-3 py-2 text-right text-xs font-medium whitespace-nowrap ${tx.amount < 0 ? 'text-red-500' : 'text-green-500'}`}>
+                                {fmt(tx.amount, tx.currency)}
+                              </td>
+                              <td className="px-3 py-2">
+                                {tx.finance_categories && (
+                                  <span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ backgroundColor: tx.finance_categories.color + '22', color: tx.finance_categories.color }}>
+                                    {tx.finance_categories.icon} {tx.finance_categories.name}
+                                  </span>
+                                )}
+                              </td>
+                              <td colSpan={2} />
+                            </tr>
+                          ))}
+                        </>
+                      )
+                    }
+
+                    const tx = item.tx
                     const isSelected = selected.has(tx.id)
                     return (
                       <tr
@@ -983,6 +1068,7 @@ export default function FinancesTransactionsPage() {
                     )
                   })}
                 </tbody>
+
               </table>
             </div>
           )}
@@ -1093,28 +1179,42 @@ export default function FinancesTransactionsPage() {
         </div>
       )}
 
-      {/* Reimbursement groups list */}
-      {groups.length > 0 && csvStep === 'idle' && (
+      {/* Reimbursement group help card — always available */}
+      {csvStep === 'idle' && (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="px-5 py-3 border-b border-gray-50">
-            <h3 className="text-sm font-semibold text-gray-700">{t.finances.reimbursementGroup}</h3>
-          </div>
-          <div className="divide-y divide-gray-50">
-            {groups.map(g => (
-              <div key={g.id} className="px-5 py-3 flex items-center gap-3">
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-800">{g.name}</p>
-                  <p className="text-xs text-gray-400">{g.transactions.length} transações</p>
+          <button
+            onClick={() => setShowGroupHelp(v => !v)}
+            className="w-full px-5 py-3 flex items-center gap-2 text-left hover:bg-gray-50 transition-colors"
+          >
+            <span className="text-sm font-semibold text-gray-700 flex-1">{t.finances.reimbursementGroup}</span>
+            <span className="text-xs text-gray-400">{groups.length > 0 ? `${groups.length} grupo(s)` : 'Como funciona?'}</span>
+            <svg className={`w-4 h-4 text-gray-400 transition-transform ${showGroupHelp ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7"/></svg>
+          </button>
+          {showGroupHelp && (
+            <div className="border-t border-gray-50">
+              <div className="px-5 py-4 space-y-3 text-sm text-gray-600">
+                <p>
+                  Quando você adianta um gasto — para um amigo, para o trabalho ou para qualquer outra pessoa — duas transações aparecem no extrato: a <strong>despesa original</strong> e o <strong>reembolso recebido</strong>. Sem agrupamento, isso distorce suas estatísticas: a despesa inflaciona seus gastos do mês, e o reembolso inflaciona sua receita, mesmo que o resultado real tenha sido zero.
+                </p>
+                <p>
+                  Com um <strong>grupo de reembolso</strong>, você conecta essas transações. Elas somem individualmente dos cálculos mensais, e apenas o <strong>valor líquido do grupo</strong> conta — que normalmente é zero ou próximo disso.
+                </p>
+                <div className="bg-gray-50 rounded-xl p-3 space-y-1.5 text-xs text-gray-500">
+                  <p className="font-semibold text-gray-600 mb-1">Exemplos de uso</p>
+                  <p>• Você pagou um jantar de €120 por um amigo e recebeu de volta → groupe a despesa e o crédito</p>
+                  <p>• Você adiantou voo + hotel + alimentação de uma viagem de trabalho e recebeu um reembolso único → groupe todas as despesas com o reembolso</p>
+                  <p>• Você comprou algo para revender e recebeu o valor de volta → groupe compra e entrada</p>
                 </div>
-                <span className={`text-sm font-semibold ${Math.abs(g.net) < 0.01 ? 'text-gray-400' : g.net > 0 ? 'text-green-600' : 'text-red-500'}`}>
-                  {t.finances.reimbursementGroupNet}: {fmt(g.net)}
-                </span>
-                <button onClick={() => deleteGroup(g.id)} title={t.finances.reimbursementGroupDelete} className="text-gray-300 hover:text-red-400 transition-colors p-1">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M5 3.25V4H2.75a.75.75 0 0 0 0 1.5h.3l.815 8.15A1.5 1.5 0 0 0 5.357 15h5.285a1.5 1.5 0 0 0 1.493-1.35l.815-8.15h.3a.75.75 0 0 0 0-1.5H11v-.75A2.25 2.25 0 0 0 8.75 1h-1.5A2.25 2.25 0 0 0 5 3.25Z" clipRule="evenodd"/></svg>
-                </button>
+                <div className="bg-blue-50 rounded-xl p-3 text-xs text-blue-700 space-y-1">
+                  <p className="font-semibold mb-1">Como criar um grupo</p>
+                  <p>1. Selecione as transações usando as caixas de seleção na lista acima</p>
+                  <p>2. Na barra flutuante que aparece, clique em <strong>Criar grupo de reembolso</strong></p>
+                  <p>3. Dê um nome descritivo (ex: "Jantar Charles", "Viagem Lisboa trabalho")</p>
+                  <p>4. O grupo aparece na lista como uma linha colapsável — clique para ver as transações individuais</p>
+                </div>
               </div>
-            ))}
-          </div>
+            </div>
+          )}
         </div>
       )}
 
