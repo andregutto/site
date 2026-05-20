@@ -18,8 +18,18 @@ interface Transaction {
   finance_categories: Category | null
   moments: MomentRef[]
   is_internal_transfer: boolean
+  linked_transfer_id: number | null
+  exclude_from_stats: boolean
+  reimbursement_group_id: string | null
   source: string
   notes: string | null
+}
+
+interface ReimbursementGroup {
+  id: string
+  name: string
+  transactions: { id: number; date: string; description: string; amount: number; currency: string }[]
+  net: number
 }
 interface ParsedRow {
   date: string
@@ -90,6 +100,16 @@ export default function FinancesTransactionsPage() {
   const [accountsLoaded, setAccountsLoaded] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
+  // Detect transfers
+  const [detecting, setDetecting]           = useState(false)
+  const [detectResult, setDetectResult]     = useState<string | null>(null)
+
+  // Reimbursement groups
+  const [groups, setGroups]                 = useState<ReimbursementGroup[]>([])
+  const [showGroupModal, setShowGroupModal] = useState(false)
+  const [groupName, setGroupName]           = useState('')
+  const [savingGroup, setSavingGroup]       = useState(false)
+
   // Multi-select
   const [selected, setSelected]             = useState<Set<number>>(new Set())
   const [showMomentDropdown, setShowMomentDropdown] = useState(false)
@@ -154,6 +174,9 @@ export default function FinancesTransactionsPage() {
       .catch(() => {})
     apiFetch<MomentRef[]>('/finances/moments-for-picker')
       .then(setMoments)
+      .catch(() => {})
+    apiFetch<ReimbursementGroup[]>('/finances/reimbursement-groups')
+      .then(setGroups)
       .catch(() => {})
     apiFetch<FinanceAccount[]>('/finances/accounts')
       .then(data => {
@@ -283,6 +306,53 @@ export default function FinancesTransactionsPage() {
 
   async function toggleInternal(id: number, current: boolean) {
     await apiFetch(`/finances/transactions/${id}`, { method: 'PATCH', body: JSON.stringify({ is_internal_transfer: !current }) })
+    loadTransactions()
+  }
+
+  async function toggleExclude(id: number, current: boolean) {
+    await apiFetch(`/finances/transactions/${id}`, { method: 'PATCH', body: JSON.stringify({ exclude_from_stats: !current }) })
+    loadTransactions()
+  }
+
+  async function unlinkTransfer(id: number) {
+    await apiFetch(`/finances/transactions/${id}/unlink-transfer`, { method: 'POST' })
+    loadTransactions()
+  }
+
+  async function detectTransfers() {
+    setDetecting(true)
+    setDetectResult(null)
+    try {
+      const r = await apiFetch<{ linked: number }>('/finances/detect-transfers', { method: 'POST' })
+      setDetectResult(t.finances.detectTransfersResult.replace('{n}', String(r.linked)))
+      loadTransactions()
+    } finally {
+      setDetecting(false)
+    }
+  }
+
+  async function createReimbursementGroup() {
+    if (!groupName.trim() || selected.size === 0) return
+    setSavingGroup(true)
+    try {
+      const group = await apiFetch<ReimbursementGroup>('/finances/reimbursement-groups', {
+        method: 'POST',
+        body: JSON.stringify({ name: groupName.trim(), transaction_ids: Array.from(selected) }),
+      })
+      setGroups(prev => [{ ...group, transactions: [], net: 0 }, ...prev])
+      setShowGroupModal(false)
+      setGroupName('')
+      setSelected(new Set())
+      loadTransactions()
+    } finally {
+      setSavingGroup(false)
+    }
+  }
+
+  async function deleteGroup(id: string) {
+    if (!confirm('Excluir grupo? As transações voltarão a aparecer nos cálculos.')) return
+    await apiFetch(`/finances/reimbursement-groups/${id}`, { method: 'DELETE' })
+    setGroups(prev => prev.filter(g => g.id !== id))
     loadTransactions()
   }
 
@@ -451,8 +521,9 @@ export default function FinancesTransactionsPage() {
 
   const catsForAmount = (amount: number) => amount > 0 ? incomeCategories : expenseCategories
 
-  const expenses = transactions.filter(tx => tx.amount < 0 && !tx.is_internal_transfer).reduce((s, tx) => s + tx.amount, 0)
-  const income   = transactions.filter(tx => tx.amount > 0 && !tx.is_internal_transfer).reduce((s, tx) => s + tx.amount, 0)
+  const isHidden = (tx: Transaction) => tx.is_internal_transfer || tx.exclude_from_stats || tx.reimbursement_group_id != null
+  const expenses = transactions.filter(tx => tx.amount < 0 && !isHidden(tx)).reduce((s, tx) => s + tx.amount, 0)
+  const income   = transactions.filter(tx => tx.amount > 0 && !isHidden(tx)).reduce((s, tx) => s + tx.amount, 0)
   const allSelected = transactions.length > 0 && selected.size === transactions.length
   const someSelected = selected.size > 0 && !allSelected
 
@@ -501,6 +572,15 @@ export default function FinancesTransactionsPage() {
             </div>
           )}
           {accountsLoaded && accounts.length > 0 && (<>
+            <button
+              onClick={detectTransfers}
+              disabled={detecting}
+              title={detectResult ?? t.finances.detectTransfers}
+              className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 text-sm text-gray-500 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M4 4a.75.75 0 0 1 .75-.75h6.5a.75.75 0 0 1 0 1.5h-6.5A.75.75 0 0 1 4 4Zm-1.5 4A.75.75 0 0 1 3.25 7.25h9.5a.75.75 0 0 1 0 1.5h-9.5A.75.75 0 0 1 2.5 8Zm3 4a.75.75 0 0 1 .75-.75h3.5a.75.75 0 0 1 0 1.5h-3.5A.75.75 0 0 1 5.5 12Z" clipRule="evenodd"/></svg>
+              {detecting ? t.finances.detectingTransfers : (detectResult ?? t.finances.detectTransfers)}
+            </button>
             <button
               onClick={() => { setCsvStep('idle'); setCsvRows([]); setCsvDuplicateCount(0); setCsvError(''); setCsvAiDebug(null); fileRef.current?.click() }}
               disabled={csvStep === 'parsing'}
@@ -759,7 +839,7 @@ export default function FinancesTransactionsPage() {
                     return (
                       <tr
                         key={tx.id}
-                        className={`group transition-colors ${tx.is_internal_transfer ? 'opacity-50' : ''} ${isSelected ? 'bg-[#001A70]/5' : 'hover:bg-gray-50'}`}
+                        className={`group transition-colors ${isHidden(tx) ? 'opacity-40' : ''} ${isSelected ? 'bg-[#001A70]/5' : 'hover:bg-gray-50'}`}
                       >
                         <td className="pl-4 pr-2 py-3 w-8">
                           <input
@@ -772,7 +852,29 @@ export default function FinancesTransactionsPage() {
                         <td className="px-3 py-3 text-gray-500 whitespace-nowrap">{fmtDate(tx.date)}</td>
                         <td className="px-3 py-3 text-gray-800 max-w-xs">
                           <span className="truncate block">{tx.description || '—'}</span>
-                          {tx.is_internal_transfer && <span className="text-[10px] text-gray-400">{t.finances.internalTransfer}</span>}
+                          <div className="flex items-center gap-1 flex-wrap mt-0.5">
+                            {tx.is_internal_transfer && !tx.linked_transfer_id && (
+                              <span className="text-[10px] text-gray-400">{t.finances.internalTransfer}</span>
+                            )}
+                            {tx.linked_transfer_id && (
+                              <span className="inline-flex items-center gap-0.5 text-[10px] bg-blue-50 text-blue-600 rounded px-1.5 py-0.5 font-medium">
+                                {t.finances.linkedTransfer}
+                                <button
+                                  onClick={e => { e.stopPropagation(); unlinkTransfer(tx.id) }}
+                                  title={t.finances.unlinkTransfer}
+                                  className="ml-0.5 hover:text-red-500 transition-colors leading-none"
+                                >×</button>
+                              </span>
+                            )}
+                            {tx.exclude_from_stats && !tx.reimbursement_group_id && (
+                              <span className="text-[10px] bg-gray-100 text-gray-500 rounded px-1.5 py-0.5 font-medium">{t.finances.excludedBadge}</span>
+                            )}
+                            {tx.reimbursement_group_id && (
+                              <span className="text-[10px] bg-amber-50 text-amber-600 rounded px-1.5 py-0.5 font-medium">
+                                {groups.find(g => g.id === tx.reimbursement_group_id)?.name ?? t.finances.reimbursementGroup}
+                              </span>
+                            )}
+                          </div>
                           {editingNotesId === tx.id ? (
                             <input
                               autoFocus
@@ -859,6 +961,13 @@ export default function FinancesTransactionsPage() {
                               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4"><path d="M13.488 2.513a1.75 1.75 0 0 0-2.475 0L6.75 6.774a2.75 2.75 0 0 0-.596.892l-.471 1.179a.75.75 0 0 0 .98.98l1.179-.471a2.75 2.75 0 0 0 .892-.596l4.262-4.263a1.75 1.75 0 0 0 0-2.475ZM3.5 4.75A.75.75 0 0 1 4.25 4h3a.75.75 0 0 1 0 1.5h-3a.75.75 0 0 1-.75-.75Zm0 3A.75.75 0 0 1 4.25 7h1.5a.75.75 0 0 1 0 1.5h-1.5A.75.75 0 0 1 3.5 7.75ZM2 3.5A1.5 1.5 0 0 1 3.5 2h9A1.5 1.5 0 0 1 14 3.5V5a.75.75 0 0 1-1.5 0V3.5a.75.75 0 0 0-.75-.75h-9A.75.75 0 0 0 2 3.5V12a.75.75 0 0 0 .75.75H6a.75.75 0 0 1 0 1.5H2.75A1.5 1.5 0 0 1 2 12.75V3.5Z"/></svg>
                             </button>
                             <button
+                              onClick={() => toggleExclude(tx.id, tx.exclude_from_stats)}
+                              title={tx.exclude_from_stats ? t.finances.includeInStats : t.finances.excludeFromStats}
+                              className={`p-1 transition-colors rounded ${tx.exclude_from_stats ? 'text-gray-400 hover:text-gray-600' : 'text-gray-300 hover:text-gray-500'}`}
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5"><path d="M3.28 2.22a.75.75 0 0 0-1.06 1.06l10.5 10.5a.75.75 0 1 0 1.06-1.06l-1.36-1.36A7.5 7.5 0 0 0 14.47 8a7.5 7.5 0 0 0-9.74-4.71L3.28 2.22ZM7.53 6.47l2 2A2 2 0 0 1 7.53 6.47ZM8 3.5c.98 0 1.91.22 2.74.62L9.47 5.39A4.5 4.5 0 0 0 3.54 9.46l-1.45 1.45A7.5 7.5 0 0 1 1.53 8 7.5 7.5 0 0 1 8 3.5ZM4.5 8c0-.46.08-.9.23-1.31l4.58 4.58A3.5 3.5 0 0 1 4.5 8Z"/></svg>
+                            </button>
+                            <button
                               onClick={() => toggleInternal(tx.id, tx.is_internal_transfer)}
                               title={tx.is_internal_transfer ? t.finances.markAsReal : t.finances.markAsTransfer}
                               className="p-1 text-gray-300 hover:text-amber-500 transition-colors rounded"
@@ -940,11 +1049,72 @@ export default function FinancesTransactionsPage() {
 
           <div className="w-px h-4 bg-white/20" />
           <button
+            onClick={() => setShowGroupModal(true)}
+            className="flex items-center gap-1.5 text-sm bg-white/10 hover:bg-white/20 transition-colors px-3 py-1.5 rounded-xl"
+          >
+            <span>↩</span>
+            {t.finances.createReimbursementGroup}
+          </button>
+          <div className="w-px h-4 bg-white/20" />
+          <button
             onClick={() => setSelected(new Set())}
             className="text-sm text-white/60 hover:text-white transition-colors"
           >
             {t.common.cancel}
           </button>
+        </div>
+      )}
+
+      {/* Reimbursement group modal */}
+      {showGroupModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={() => setShowGroupModal(false)}>
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6" onClick={e => e.stopPropagation()}>
+            <h3 className="font-semibold text-gray-900 mb-1">{t.finances.createReimbursementGroup}</h3>
+            <p className="text-xs text-gray-400 mb-4">{selected.size} transação(ões) selecionada(s)</p>
+            <input
+              autoFocus
+              value={groupName}
+              onChange={e => setGroupName(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && createReimbursementGroup()}
+              placeholder={t.finances.reimbursementGroupNamePlaceholder}
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20 mb-4"
+            />
+            <div className="flex gap-2">
+              <button
+                onClick={createReimbursementGroup}
+                disabled={savingGroup || !groupName.trim()}
+                className="flex-1 bg-[#001A70] text-white text-sm py-2 rounded-xl hover:opacity-80 transition-opacity disabled:opacity-40"
+              >
+                {savingGroup ? '…' : t.finances.createReimbursementGroup}
+              </button>
+              <button onClick={() => setShowGroupModal(false)} className="px-4 text-sm text-gray-500 hover:text-gray-700">{t.common.cancel}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reimbursement groups list */}
+      {groups.length > 0 && csvStep === 'idle' && (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="px-5 py-3 border-b border-gray-50">
+            <h3 className="text-sm font-semibold text-gray-700">{t.finances.reimbursementGroup}</h3>
+          </div>
+          <div className="divide-y divide-gray-50">
+            {groups.map(g => (
+              <div key={g.id} className="px-5 py-3 flex items-center gap-3">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-800">{g.name}</p>
+                  <p className="text-xs text-gray-400">{g.transactions.length} transações</p>
+                </div>
+                <span className={`text-sm font-semibold ${Math.abs(g.net) < 0.01 ? 'text-gray-400' : g.net > 0 ? 'text-green-600' : 'text-red-500'}`}>
+                  {t.finances.reimbursementGroupNet}: {fmt(g.net)}
+                </span>
+                <button onClick={() => deleteGroup(g.id)} title={t.finances.reimbursementGroupDelete} className="text-gray-300 hover:text-red-400 transition-colors p-1">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M5 3.25V4H2.75a.75.75 0 0 0 0 1.5h.3l.815 8.15A1.5 1.5 0 0 0 5.357 15h5.285a1.5 1.5 0 0 0 1.493-1.35l.815-8.15h.3a.75.75 0 0 0 0-1.5H11v-.75A2.25 2.25 0 0 0 8.75 1h-1.5A2.25 2.25 0 0 0 5 3.25Z" clipRule="evenodd"/></svg>
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 

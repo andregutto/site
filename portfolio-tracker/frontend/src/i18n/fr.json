@@ -580,7 +580,20 @@
     "connectError": "Erreur de connexion. Veuillez réessayer.",
     "notesPlaceholder": "Ajouter une note...",
     "markAsReal": "Marquer comme transaction réelle",
-    "markAsTransfer": "Marquer comme virement interne"
+    "markAsTransfer": "Marquer comme virement interne",
+    "linkedTransfer": "↔ Lié",
+    "unlinkTransfer": "Dissocier le virement",
+    "excludeFromStats": "Masquer des calculs",
+    "includeInStats": "Inclure dans les calculs",
+    "excludedBadge": "Masqué",
+    "detectTransfers": "Détecter les virements",
+    "detectingTransfers": "Détection…",
+    "detectTransfersResult": "{n} paire(s) liée(s)",
+    "reimbursementGroup": "Groupe de remboursement",
+    "createReimbursementGroup": "Créer un groupe de remboursement",
+    "reimbursementGroupNamePlaceholder": "Nom du groupe (ex : Dîner Charles)",
+    "reimbursementGroupNet": "Net",
+    "reimbursementGroupDelete": "Supprimer le groupe"
   },
   "archived": {
     "title": "Archivés",

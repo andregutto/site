@@ -580,7 +580,20 @@
     "connectError": "Connection error. Please try again.",
     "notesPlaceholder": "Add note...",
     "markAsReal": "Mark as real transaction",
-    "markAsTransfer": "Mark as internal transfer"
+    "markAsTransfer": "Mark as internal transfer",
+    "linkedTransfer": "↔ Linked",
+    "unlinkTransfer": "Unlink transfer",
+    "excludeFromStats": "Hide from calculations",
+    "includeInStats": "Include in calculations",
+    "excludedBadge": "Hidden",
+    "detectTransfers": "Detect transfers",
+    "detectingTransfers": "Detecting…",
+    "detectTransfersResult": "{n} pair(s) linked",
+    "reimbursementGroup": "Reimbursement group",
+    "createReimbursementGroup": "Create reimbursement group",
+    "reimbursementGroupNamePlaceholder": "Group name (e.g. Dinner with Charles)",
+    "reimbursementGroupNet": "Net",
+    "reimbursementGroupDelete": "Delete group"
   },
   "archived": {
     "title": "Archived",

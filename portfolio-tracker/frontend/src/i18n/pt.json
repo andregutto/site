@@ -580,7 +580,20 @@
     "connectError": "Erro ao conectar. Tente novamente.",
     "notesPlaceholder": "Adicionar nota...",
     "markAsReal": "Marcar como transação real",
-    "markAsTransfer": "Marcar como transferência interna"
+    "markAsTransfer": "Marcar como transferência interna",
+    "linkedTransfer": "↔ Vinculada",
+    "unlinkTransfer": "Desvincular",
+    "excludeFromStats": "Ocultar dos cálculos",
+    "includeInStats": "Incluir nos cálculos",
+    "excludedBadge": "Oculto",
+    "detectTransfers": "Detectar transferências",
+    "detectingTransfers": "Detectando…",
+    "detectTransfersResult": "{n} par(es) vinculado(s)",
+    "reimbursementGroup": "Grupo de reembolso",
+    "createReimbursementGroup": "Criar grupo de reembolso",
+    "reimbursementGroupNamePlaceholder": "Nome do grupo (ex: Jantar Charles)",
+    "reimbursementGroupNet": "Líquido",
+    "reimbursementGroupDelete": "Excluir grupo"
   },
   "archived": {
     "title": "Arquivados",

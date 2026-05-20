@@ -235,7 +235,7 @@ router.get('/spending-summary', requireAuth, async (req, res: Response) => {
   const [txnRes, catRes, envRes, incomeRes] = await Promise.all([
     supabaseAdmin
       .from('finance_transactions')
-      .select('date, amount, category_id, is_internal_transfer')
+      .select('date, amount, category_id, is_internal_transfer, exclude_from_stats')
       .eq('user_id', userId)
       .gte('date', sinceStr)
       .order('date', { ascending: true }),
@@ -282,7 +282,7 @@ router.get('/spending-summary', requireAuth, async (req, res: Response) => {
     const m = (tx.date as string).slice(0, 7)
     if (!monthMap.has(m)) monthMap.set(m, { income: 0, expenses: 0, byEnv: new Map(), byCat: new Map() })
     const md = monthMap.get(m)!
-    if (tx.is_internal_transfer) continue
+    if (tx.is_internal_transfer || tx.exclude_from_stats) continue
     if (tx.amount > 0) {
       md.income += tx.amount
     } else {
@@ -445,7 +445,7 @@ router.get('/transactions', requireAuth, async (req, res: Response) => {
 
   let query = supabaseAdmin
     .from('finance_transactions')
-    .select('id, date, description, amount, currency, category_id, account_id, is_internal_transfer, source, moment_id, notes, finance_categories(id, name, icon, color), finance_transaction_moments(moment_id, finance_moments(id, name, icon, color))')
+    .select('id, date, description, amount, currency, category_id, account_id, is_internal_transfer, linked_transfer_id, exclude_from_stats, reimbursement_group_id, source, moment_id, notes, finance_categories(id, name, icon, color), finance_transaction_moments(moment_id, finance_moments(id, name, icon, color))')
     .eq('user_id', userId)
     .order('date', { ascending: false })
     .order('id', { ascending: false })
@@ -518,10 +518,12 @@ router.post('/transactions', requireAuth, async (req, res: Response) => {
 router.patch('/transactions/:id', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const { id } = req.params
-  const { category_id, is_internal_transfer, description, amount, notes, moment_id, moment_ids } = req.body
+  const { category_id, is_internal_transfer, description, amount, notes, moment_id, moment_ids, exclude_from_stats, reimbursement_group_id } = req.body
   const update: Record<string, unknown> = {}
-  if (category_id          !== undefined) update.category_id         = category_id
-  if (is_internal_transfer !== undefined) update.is_internal_transfer = is_internal_transfer
+  if (category_id          !== undefined) update.category_id          = category_id
+  if (is_internal_transfer !== undefined) update.is_internal_transfer  = is_internal_transfer
+  if (exclude_from_stats   !== undefined) update.exclude_from_stats    = exclude_from_stats
+  if (reimbursement_group_id !== undefined) update.reimbursement_group_id = reimbursement_group_id
   if (description          != null) update.description = description
   if (amount               != null) update.amount      = amount
   if (notes                !== undefined) update.notes = notes ?? null
@@ -711,6 +713,74 @@ async function aiCategorize(
 function detectBroker(description: string): string | null {
   const d = description.toLowerCase()
   return BROKER_KEYWORDS.find(b => d.includes(b)) ?? null
+}
+
+// ── Transfer pair detection ────────────────────────────────────────────────────
+
+const TRANSFER_KWS = [
+  'virement','vir sepa','sepa','topup','top-up','top up',
+  'transferencia','transferência','ted ','doc ','pix ','tef ',
+  'transfer','wire',
+  'revolut','wise','n26','bnp','lydia','paypal','c6 bank','nubank',
+  'inter ','itaú','itau','bradesco','boursorama','fortuneo',
+]
+
+function hasTransferKw(desc: string): boolean {
+  const d = desc.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+  return TRANSFER_KWS.some(kw => d.includes(kw))
+}
+
+type TxRow = { id: number; date: string; amount: number; description: string; account_id: number | null }
+
+async function detectTransferPairs(userId: string): Promise<number> {
+  const cutoff = new Date()
+  cutoff.setFullYear(cutoff.getFullYear() - 2)
+
+  const { data } = await supabaseAdmin
+    .from('finance_transactions')
+    .select('id, date, amount, description, account_id')
+    .eq('user_id', userId)
+    .is('linked_transfer_id', null)
+    .gte('date', cutoff.toISOString().slice(0, 10))
+    .order('date', { ascending: true })
+
+  const txns = (data ?? []) as TxRow[]
+  if (txns.length < 2) return 0
+
+  const negMap = new Map<string, TxRow[]>()
+  for (const tx of txns) {
+    if (tx.amount >= 0) continue
+    const key = Math.abs(tx.amount).toFixed(2)
+    if (!negMap.has(key)) negMap.set(key, [])
+    negMap.get(key)!.push(tx)
+  }
+
+  const usedIds = new Set<number>()
+  const pairs: [number, number][] = []
+
+  for (const pos of txns) {
+    if (pos.amount <= 0 || usedIds.has(pos.id)) continue
+    const candidates = negMap.get(pos.amount.toFixed(2)) ?? []
+    for (const neg of candidates) {
+      if (usedIds.has(neg.id)) continue
+      if (neg.account_id !== null && pos.account_id !== null && neg.account_id === pos.account_id) continue
+      const dayDiff = Math.abs((new Date(pos.date).getTime() - new Date(neg.date).getTime()) / 86400000)
+      if (dayDiff > 3) continue
+      if (!hasTransferKw(pos.description) && !hasTransferKw(neg.description)) continue
+      pairs.push([pos.id, neg.id])
+      usedIds.add(pos.id)
+      usedIds.add(neg.id)
+      break
+    }
+  }
+
+  if (pairs.length > 0) {
+    await Promise.all(pairs.flatMap(([a, b]) => [
+      supabaseAdmin.from('finance_transactions').update({ linked_transfer_id: b, is_internal_transfer: true }).eq('id', a).eq('user_id', userId),
+      supabaseAdmin.from('finance_transactions').update({ linked_transfer_id: a, is_internal_transfer: true }).eq('id', b).eq('user_id', userId),
+    ]))
+  }
+  return pairs.length
 }
 
 // POST /api/finances/transactions/csv-parse
@@ -971,7 +1041,89 @@ router.post('/transactions/csv-import', requireAuth, async (req, res: Response) 
     }
   }
 
+  detectTransferPairs(userId).catch(() => {})
+
   res.json({ imported, skipped, total: transactions.length })
+})
+
+// POST /api/finances/detect-transfers
+router.post('/detect-transfers', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const linked = await detectTransferPairs(userId)
+  res.json({ linked })
+})
+
+// POST /api/finances/transactions/:id/unlink-transfer
+router.post('/transactions/:id/unlink-transfer', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const id = Number(req.params.id)
+  const { data: tx } = await supabaseAdmin
+    .from('finance_transactions').select('linked_transfer_id').eq('id', id).eq('user_id', userId).single()
+  if (!tx) { res.status(404).json({ error: 'Not found' }); return }
+  await Promise.all([
+    supabaseAdmin.from('finance_transactions').update({ linked_transfer_id: null }).eq('id', id).eq('user_id', userId),
+    tx.linked_transfer_id
+      ? supabaseAdmin.from('finance_transactions').update({ linked_transfer_id: null }).eq('id', tx.linked_transfer_id).eq('user_id', userId)
+      : Promise.resolve(),
+  ])
+  res.json({ ok: true })
+})
+
+// ── Reimbursement groups ───────────────────────────────────────────────────────
+
+router.get('/reimbursement-groups', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const [groupsRes, txRes] = await Promise.all([
+    supabaseAdmin.from('reimbursement_groups').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
+    supabaseAdmin.from('finance_transactions').select('id, date, description, amount, currency, reimbursement_group_id').eq('user_id', userId).not('reimbursement_group_id', 'is', null),
+  ])
+  const txByGroup = new Map<string, { id: number; date: string; description: string; amount: number; currency: string }[]>()
+  for (const tx of txRes.data ?? []) {
+    const gid = tx.reimbursement_group_id as string
+    if (!txByGroup.has(gid)) txByGroup.set(gid, [])
+    txByGroup.get(gid)!.push(tx)
+  }
+  const result = (groupsRes.data ?? []).map(g => ({
+    ...g,
+    transactions: txByGroup.get(g.id) ?? [],
+    net: (txByGroup.get(g.id) ?? []).reduce((s, t) => s + Number(t.amount), 0),
+  }))
+  res.json(result)
+})
+
+router.post('/reimbursement-groups', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const { name, transaction_ids } = req.body as { name: string; transaction_ids?: number[] }
+  if (!name) { res.status(400).json({ error: 'name required' }); return }
+  const { data: group, error } = await supabaseAdmin.from('reimbursement_groups').insert({ user_id: userId, name }).select().single()
+  if (error || !group) { res.status(500).json({ error: error?.message }); return }
+  if (Array.isArray(transaction_ids) && transaction_ids.length > 0) {
+    await supabaseAdmin.from('finance_transactions')
+      .update({ reimbursement_group_id: group.id, exclude_from_stats: true })
+      .in('id', transaction_ids).eq('user_id', userId)
+  }
+  res.json(group)
+})
+
+router.patch('/reimbursement-groups/:id', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const { id } = req.params
+  const { add_ids, remove_ids, name } = req.body as { add_ids?: number[]; remove_ids?: number[]; name?: string }
+  if (name) await supabaseAdmin.from('reimbursement_groups').update({ name }).eq('id', id).eq('user_id', userId)
+  if (Array.isArray(add_ids) && add_ids.length > 0)
+    await supabaseAdmin.from('finance_transactions').update({ reimbursement_group_id: id, exclude_from_stats: true }).in('id', add_ids).eq('user_id', userId)
+  if (Array.isArray(remove_ids) && remove_ids.length > 0)
+    await supabaseAdmin.from('finance_transactions').update({ reimbursement_group_id: null }).in('id', remove_ids).eq('user_id', userId)
+  res.json({ ok: true })
+})
+
+router.delete('/reimbursement-groups/:id', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const { id } = req.params
+  await supabaseAdmin.from('finance_transactions').update({ reimbursement_group_id: null }).eq('reimbursement_group_id', id).eq('user_id', userId)
+  const { error } = await supabaseAdmin.from('reimbursement_groups').delete().eq('id', id).eq('user_id', userId)
+  if (error) { res.status(500).json({ error: error.message }); return }
+  res.json({ ok: true })
 })
 
 // ── Financial Freedom Plans ────────────────────────────────────────────────────
