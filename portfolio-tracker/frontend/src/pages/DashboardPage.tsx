@@ -24,7 +24,7 @@ export default function DashboardPage() {
   const navigate = useNavigate()
   const { triggerCheck } = useAchievementContext()
 
-  const { convert, currency, fmt } = useCurrency()
+  const { convert, currency } = useCurrency()
 
   useEffect(() => {
     if (data?.total_brl != null) {
