@@ -114,6 +114,17 @@ const TOOLS: Anthropic.Tool[] = [
     },
   },
   {
+    name: 'list_merchants',
+    description: 'List the most frequent merchant names in the user\'s transactions. Use when get_merchant_spending finds nothing — helps identify the actual name used in the bank statement.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        limit: { type: 'number', description: 'Max merchants to return (default 40)' },
+        type:  { type: 'string', enum: ['expense', 'income'] },
+      },
+    },
+  },
+  {
     name: 'get_financial_summary',
     description: 'Monthly income vs expense summary. Use when the user asks about cash flow, savings, or monthly balance.',
     input_schema: {
@@ -239,19 +250,42 @@ async function executeTool(
 
       case 'get_merchant_spending': {
         const inp = input as { merchant: string; from_date?: string; to_date?: string }
-        let q = supabaseAdmin
-          .from('finance_transactions')
-          .select('date, description, amount_brl, type')
-          .eq('user_id', userId)
-          .ilike('description', `%${inp.merchant}%`)
-          .order('date', { ascending: true })
-          .limit(500)
-        if (inp.from_date) q = q.gte('date', inp.from_date)
-        if (inp.to_date)   q = q.lte('date', inp.to_date)
 
-        const { data: txns } = await q
-        if (!txns?.length) return `No transactions found matching "${inp.merchant}".`
+        // Build a list of search terms from longest to shortest (min 3 chars) for fuzzy fallback
+        const base = inp.merchant.trim()
+        const candidates = Array.from(new Set([
+          base,
+          ...(base.length > 6 ? [base.slice(0, 6)] : []),
+          ...(base.length > 4 ? [base.slice(0, 4)] : []),
+          ...(base.length > 3 ? [base.slice(0, 3)] : []),
+        ]))
 
+        type TxnRow = { date: string; description: string; amount_brl: number | null; type: string }
+        let txns: TxnRow[] | null = null
+        let matchedTerm = base
+
+        for (const term of candidates) {
+          const build = () => {
+            let q = supabaseAdmin
+              .from('finance_transactions')
+              .select('date, description, amount_brl, type')
+              .eq('user_id', userId)
+              .ilike('description', `%${term}%`)
+              .order('date', { ascending: true })
+              .limit(500)
+            if (inp.from_date) q = q.gte('date', inp.from_date)
+            if (inp.to_date)   q = q.lte('date', inp.to_date)
+            return q
+          }
+          const { data } = await build()
+          if (data && data.length > 0) { txns = data as TxnRow[]; matchedTerm = term; break }
+        }
+
+        if (!txns?.length) {
+          return `No transactions found matching "${base}" (also tried shorter variants). The merchant may use a different name in the bank statement. Use list_merchants to browse available merchant names.`
+        }
+
+        const fuzzyNote = matchedTerm !== base ? ` (matched on "${matchedTerm}" — broader search)` : ''
         const expenses = txns.filter(t => t.type === 'expense')
         const incomes  = txns.filter(t => t.type === 'income')
         const totalExpense = expenses.reduce((s, t) => s + Math.abs(t.amount_brl ?? 0), 0)
@@ -263,15 +297,42 @@ async function executeTool(
           `${t.date} | ${t.type === 'expense' ? '↓' : '↑'} R$${Math.abs(t.amount_brl ?? 0).toFixed(2)} | ${t.description}`
         )
 
-        const summary = [
-          `Merchant: "${inp.merchant}" | ${txns.length} transaction(s) | ${firstDate} → ${lastDate}`,
+        return [
+          `Merchant: "${base}"${fuzzyNote} | ${txns.length} transaction(s) | ${firstDate} → ${lastDate}`,
           expenses.length > 0 ? `Total expenses: R$${totalExpense.toFixed(2)} (${expenses.length} txns)` : '',
           incomes.length  > 0 ? `Total income: R$${totalIncome.toFixed(2)} (${incomes.length} txns)` : '',
           '',
           ...lines,
-        ].filter(Boolean)
+        ].filter(Boolean).join('\n')
+      }
 
-        return summary.join('\n')
+      case 'list_merchants': {
+        const inp = input as { limit?: number; type?: string }
+        let q = supabaseAdmin
+          .from('finance_transactions')
+          .select('description, amount_brl, type')
+          .eq('user_id', userId)
+          .not('description', 'is', null)
+          .limit(2000)
+        if (inp.type) q = q.eq('type', inp.type)
+
+        const { data: rows } = await q
+        if (!rows?.length) return 'No transactions found.'
+
+        // Extract first meaningful word(s) from each description as a "merchant" proxy
+        const freq = new Map<string, { count: number; total: number }>()
+        for (const r of rows) {
+          const key = (r.description as string).split(/\s+/).slice(0, 3).join(' ').toUpperCase()
+          const cur = freq.get(key) ?? { count: 0, total: 0 }
+          freq.set(key, { count: cur.count + 1, total: cur.total + Math.abs(r.amount_brl ?? 0) })
+        }
+
+        const sorted = [...freq.entries()]
+          .sort((a, b) => b[1].count - a[1].count)
+          .slice(0, inp.limit ?? 40)
+          .map(([name, d]) => `${name} (${d.count}x, R$${d.total.toFixed(0)})`)
+
+        return `Top merchants by frequency:\n${sorted.join('\n')}`
       }
 
       case 'get_financial_summary': {
