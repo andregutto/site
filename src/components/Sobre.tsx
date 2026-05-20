@@ -10,7 +10,7 @@ export default function Sobre() {
           Uma vida em construção,<br /><em>ao vivo.</em>
         </h2>
         <p className="body-text">
-          Sou brasileiro, moro em Paris com meu parceiro francês e trabalho com energia renovável na Europa. Invisto nos dois países, fiz saída fiscal do Brasil e ainda estou descobrindo o que tudo isso significa na prática.
+          Sou brasileiro, moro em Paris e trabalho com energia renovável na Europa. Invisto nos dois países, fiz saída fiscal do Brasil e ainda estou descobrindo o que tudo isso significa na prática.
         </p>
         <p className="body-text">
           Este canal existe porque eu queria acompanhar alguém passando por isso de verdade. Como ninguém estava fazendo, resolvi ser essa pessoa.
