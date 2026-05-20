@@ -51,6 +51,14 @@ function fmtMonth(m: string, locale = 'pt-BR') {
   return new Date(Number(y), Number(mo) - 1).toLocaleDateString(locale, { month: 'short' })
 }
 
+function fmtMonthYear(m: string, locale = 'pt-BR') {
+  const [y, mo] = m.split('-')
+  const name = new Date(Number(y), Number(mo) - 1)
+    .toLocaleDateString(locale, { month: 'short' })
+    .replace('.', '')
+  return `${name}/${y.slice(2)}`
+}
+
 function MonthPicker({ value, onChange, locale }: { value: string; onChange: (m: string) => void; locale: string }) {
   const months = Array.from({ length: 12 }, (_, i) => {
     const d = new Date()
@@ -205,7 +213,7 @@ export default function FinancesOverviewPage() {
   // Chart data
   const chartData = data.months.map(ms => {
     const row: Record<string, number | string> = {
-      month:    fmtMonth(ms.month, browserLocale),
+      month:    historyMonths > 12 ? fmtMonthYear(ms.month, browserLocale) : fmtMonth(ms.month, browserLocale),
       rawMonth: ms.month,
     }
     for (const env of ms.by_envelope.filter(e => e.envelope_id !== -1 && e.actual > 0)) {
