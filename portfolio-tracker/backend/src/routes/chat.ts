@@ -88,7 +88,7 @@ const TOOLS: Anthropic.Tool[] = [
   },
   {
     name: 'get_transactions',
-    description: 'Get recent transactions with optional filters. Use when the user asks about specific transactions or spending history.',
+    description: 'Get transactions with optional filters. Use for browsing recent transactions. For "how much did I spend with X", use get_merchant_spending instead.',
     input_schema: {
       type: 'object' as const,
       properties: {
@@ -96,7 +96,21 @@ const TOOLS: Anthropic.Tool[] = [
         from_date: { type: 'string', description: 'Start date YYYY-MM-DD' },
         to_date:   { type: 'string', description: 'End date YYYY-MM-DD' },
         type:      { type: 'string', enum: ['expense', 'income'] },
+        search:    { type: 'string', description: 'Search in description (case-insensitive). When provided, returns up to 200 rows.' },
       },
+    },
+  },
+  {
+    name: 'get_merchant_spending',
+    description: 'Total spending with a specific merchant/company across all time or a date range. Use when the user asks "how much did I spend with X", "total spent at Y", "all Prixtel charges", etc.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        merchant:  { type: 'string', description: 'Merchant or company name to search (partial match)' },
+        from_date: { type: 'string', description: 'Start date YYYY-MM-DD (optional, defaults to all time)' },
+        to_date:   { type: 'string', description: 'End date YYYY-MM-DD (optional)' },
+      },
+      required: ['merchant'],
     },
   },
   {
@@ -199,16 +213,18 @@ async function executeTool(
       }
 
       case 'get_transactions': {
-        const inp = input as { limit?: number; from_date?: string; to_date?: string; type?: string }
+        const inp = input as { limit?: number; from_date?: string; to_date?: string; type?: string; search?: string }
+        const rowLimit = inp.search ? 200 : (inp.limit ?? 20)
         let q = supabaseAdmin
           .from('finance_transactions')
           .select('date, description, amount_brl, type, finance_categories(name), finance_accounts(name)')
           .eq('user_id', userId)
           .order('date', { ascending: false })
-          .limit(inp.limit ?? 20)
+          .limit(rowLimit)
         if (inp.from_date) q = q.gte('date', inp.from_date)
         if (inp.to_date)   q = q.lte('date', inp.to_date)
         if (inp.type)      q = q.eq('type', inp.type)
+        if (inp.search)    q = q.ilike('description', `%${inp.search}%`)
 
         const { data: txns } = await q
         if (!txns?.length) return 'No transactions found.'
@@ -219,6 +235,43 @@ async function executeTool(
           return `${t.date} | ${t.type === 'expense' ? '↓' : '↑'} R$${(t.amount_brl ?? 0).toFixed(0)} | ${t.description} | ${cat} | ${acc}`
         })
         return `Transactions (${txns.length}):\n${lines.join('\n')}`
+      }
+
+      case 'get_merchant_spending': {
+        const inp = input as { merchant: string; from_date?: string; to_date?: string }
+        let q = supabaseAdmin
+          .from('finance_transactions')
+          .select('date, description, amount_brl, type')
+          .eq('user_id', userId)
+          .ilike('description', `%${inp.merchant}%`)
+          .order('date', { ascending: true })
+          .limit(500)
+        if (inp.from_date) q = q.gte('date', inp.from_date)
+        if (inp.to_date)   q = q.lte('date', inp.to_date)
+
+        const { data: txns } = await q
+        if (!txns?.length) return `No transactions found matching "${inp.merchant}".`
+
+        const expenses = txns.filter(t => t.type === 'expense')
+        const incomes  = txns.filter(t => t.type === 'income')
+        const totalExpense = expenses.reduce((s, t) => s + Math.abs(t.amount_brl ?? 0), 0)
+        const totalIncome  = incomes.reduce((s, t) => s + (t.amount_brl ?? 0), 0)
+        const firstDate = txns[0].date
+        const lastDate  = txns[txns.length - 1].date
+
+        const lines = txns.map(t =>
+          `${t.date} | ${t.type === 'expense' ? '↓' : '↑'} R$${Math.abs(t.amount_brl ?? 0).toFixed(2)} | ${t.description}`
+        )
+
+        const summary = [
+          `Merchant: "${inp.merchant}" | ${txns.length} transaction(s) | ${firstDate} → ${lastDate}`,
+          expenses.length > 0 ? `Total expenses: R$${totalExpense.toFixed(2)} (${expenses.length} txns)` : '',
+          incomes.length  > 0 ? `Total income: R$${totalIncome.toFixed(2)} (${incomes.length} txns)` : '',
+          '',
+          ...lines,
+        ].filter(Boolean)
+
+        return summary.join('\n')
       }
 
       case 'get_financial_summary': {
