@@ -41,24 +41,24 @@ export default function ValueCards({ total_brl, generated_at, invested_brl, gain
         <div className="mt-4 pt-4 border-t border-white/10 grid grid-cols-2 sm:grid-cols-4 gap-4">
           <div>
             <p className="text-blue-300 text-[10px] uppercase tracking-wide font-medium">Investido</p>
-            <p className="text-sm font-semibold mt-0.5">{fmt(invested_brl!, 0)}</p>
+            <p className="text-base font-semibold mt-0.5">{fmt(invested_brl!, 0)}</p>
           </div>
           <div>
             <p className="text-blue-300 text-[10px] uppercase tracking-wide font-medium">Resultado</p>
-            <p className={`text-sm font-semibold mt-0.5 ${gain_brl! >= 0 ? 'text-emerald-300' : 'text-red-300'}`}>
+            <p className={`text-base font-semibold mt-0.5 ${gain_brl! >= 0 ? 'text-emerald-300' : 'text-red-300'}`}>
               {gain_brl! >= 0 ? '+' : ''}{fmt(gain_brl!, 0)}
               {gain_pct != null && (
-                <span className="ml-1 text-[10px] opacity-75">({gain_brl! >= 0 ? '+' : ''}{gain_pct.toFixed(1)}%)</span>
+                <span className="ml-1 text-[11px] opacity-75">({gain_brl! >= 0 ? '+' : ''}{gain_pct.toFixed(1)}%)</span>
               )}
             </p>
           </div>
           <div>
             <p className="text-blue-300 text-[10px] uppercase tracking-wide font-medium">Mês atual</p>
-            <p className={`text-sm font-semibold mt-0.5 ${pctColor(month_pct)}`}>{pctText(month_pct)}</p>
+            <p className={`text-base font-semibold mt-0.5 ${pctColor(month_pct)}`}>{pctText(month_pct)}</p>
           </div>
           <div>
             <p className="text-blue-300 text-[10px] uppercase tracking-wide font-medium">Ano {ytd_year}</p>
-            <p className={`text-sm font-semibold mt-0.5 ${pctColor(ytd_pct)}`}>{pctText(ytd_pct)}</p>
+            <p className={`text-base font-semibold mt-0.5 ${pctColor(ytd_pct)}`}>{pctText(ytd_pct)}</p>
           </div>
         </div>
       )}
