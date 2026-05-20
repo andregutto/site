@@ -596,7 +596,7 @@ export default function FinancesTransactionsPage() {
 
   const catsForAmount = (amount: number) => amount > 0 ? incomeCategories : expenseCategories
 
-  const isHidden = (tx: Transaction) => tx.is_internal_transfer || tx.exclude_from_stats || tx.reimbursement_group_id != null
+  const isHidden = (tx: Transaction) => tx.is_internal_transfer || tx.exclude_from_stats
   const expenses = transactions.filter(tx => tx.amount < 0 && !isHidden(tx)).reduce((s, tx) => s + tx.amount, 0)
   const income   = transactions.filter(tx => tx.amount > 0 && !isHidden(tx)).reduce((s, tx) => s + tx.amount, 0)
   const allSelected = transactions.length > 0 && selected.size === transactions.length
