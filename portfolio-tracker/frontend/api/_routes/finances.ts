@@ -1211,9 +1211,18 @@ router.post('/detect-reimbursements', requireAuth, async (req, res: Response) =>
 
   if (!txs?.length) { res.json({ created: 0 }); return }
 
+  // Normalize: cast amount to Number (Supabase returns NUMERIC as string), trim date to YYYY-MM-DD
+  const normalized = (txs as TxRow[]).map(tx => ({
+    ...tx,
+    amount: Number(tx.amount),
+    date: String(tx.date).slice(0, 10),
+  }))
+
+  // Group by date+currency only — account_id is not required to match
+  // (transactions imported before accounts were set up have account_id=null)
   const byKey = new Map<string, TxRow[]>()
-  for (const tx of txs as TxRow[]) {
-    const key = `${tx.account_id ?? 'null'}|${tx.date}|${tx.currency}`
+  for (const tx of normalized) {
+    const key = `${tx.date}|${tx.currency}`
     if (!byKey.has(key)) byKey.set(key, [])
     byKey.get(key)!.push(tx)
   }
