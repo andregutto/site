@@ -127,7 +127,7 @@ function MomentForm({ initial, onSave, onCancel, saving, userId }: FormProps) {
           {photoPreview ? (
             <div className="relative group w-full h-32 rounded-xl overflow-hidden">
               <img src={photoPreview} alt="Capa" className="w-full h-full object-cover" />
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 [@media(hover:none)]:bg-black/30 transition-colors flex items-center justify-center gap-2 [@media(hover:none)]:opacity-100 opacity-0 group-hover:opacity-100">
                 <button type="button" onClick={() => fileInputRef.current?.click()}
                   className="text-xs text-white bg-black/50 rounded-lg px-3 py-1.5">Trocar</button>
                 <button type="button" onClick={() => { setPhotoPreview(null); setPhotoFile(null) }}

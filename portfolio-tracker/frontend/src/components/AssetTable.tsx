@@ -61,7 +61,7 @@ function StarButton({ filled, onClick }: { filled: boolean; onClick: (e: React.M
   return (
     <button
       onClick={onClick}
-      className="p-1 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity shrink-0"
+      className="p-1 [@media(hover:none)]:opacity-100 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity shrink-0"
       title={filled ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
     >
       <svg

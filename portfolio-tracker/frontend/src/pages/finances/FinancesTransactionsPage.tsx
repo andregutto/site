@@ -1088,7 +1088,7 @@ export default function FinancesTransactionsPage() {
                                   {tx.finance_categories.icon} {tx.finance_categories.name}
                                 </span>
                               ) : (
-                                <span className="text-xs text-gray-300 group-hover/cat:text-gray-500 transition-colors">+ {t.finances.category}</span>
+                                <span className="text-xs text-gray-400 [@media(hover:hover)]:text-gray-300 group-hover/cat:text-gray-500 transition-colors">+ {t.finances.category}</span>
                               )}
                             </button>
                           )}
@@ -1110,13 +1110,13 @@ export default function FinancesTransactionsPage() {
                             </div>
                           ) : (
                             <span
-                              className="text-xs text-gray-200 group-hover:text-gray-400 transition-colors cursor-pointer"
+                              className="text-xs text-gray-400 [@media(hover:hover)]:text-gray-200 group-hover:text-gray-400 transition-colors cursor-pointer"
                               onClick={() => { setSelected(new Set([tx.id])); setShowMomentDropdown(true) }}
                             >—</span>
                           )}
                         </td>
                         <td className="px-3 py-3">
-                          <div className={`flex items-center gap-0.5 transition-opacity ${tx.exclude_from_stats ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                          <div className={`flex items-center gap-0.5 transition-opacity ${tx.exclude_from_stats ? 'opacity-100' : '[@media(hover:none)]:opacity-100 opacity-0 group-hover:opacity-100'}`}>
                             {/* Note */}
                             <button
                               onClick={() => { setEditingNotesId(tx.id); setNotesInput(tx.notes ?? '') }}
