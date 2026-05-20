@@ -392,8 +392,7 @@ router.get('/accounts/portfolio-institutions', requireAuth, async (req, res: Res
     supabaseAdmin.from('finance_accounts').select('institution_name').eq('user_id', userId).not('institution_name', 'is', null),
   ])
   const linked = new Set((acctRes.data ?? []).map(a => a.institution_name!.toLowerCase()))
-  const fromAssets = [...new Set((assetsRes.data ?? []).map(a => a.exchange as string).filter(Boolean))]
-  const allInstitutions = [...new Set([...fromAssets, ...KNOWN_INSTITUTIONS])]
+  const allInstitutions = [...new Set((assetsRes.data ?? []).map(a => a.exchange as string).filter(Boolean))]
     .filter(ex => !linked.has(ex.toLowerCase()))
     .sort((a, b) => a.localeCompare(b))
   res.json(allInstitutions)
