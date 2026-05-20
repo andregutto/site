@@ -1166,16 +1166,25 @@ router.post('/detect-reimbursements', requireAuth, async (req, res: Response) =>
   const { userId } = req as AuthRequest
 
   type TxRow = { id: number; date: string; amount: number; description: string; currency: string; account_id: number | null }
-  const { data: txs } = await supabaseAdmin
-    .from('finance_transactions')
-    .select('id, date, amount, description, currency, account_id')
-    .eq('user_id', userId)
-    .is('reimbursement_group_id', null)
+  // Paginate to bypass Supabase PostgREST default 1000-row limit
+  const PAGE_SIZE = 1000
+  const allTxs: TxRow[] = []
+  for (let from = 0; ; from += PAGE_SIZE) {
+    const { data } = await supabaseAdmin
+      .from('finance_transactions')
+      .select('id, date, amount, description, currency, account_id')
+      .eq('user_id', userId)
+      .is('reimbursement_group_id', null)
+      .range(from, from + PAGE_SIZE - 1)
+    if (!data?.length) break
+    allTxs.push(...data)
+    if (data.length < PAGE_SIZE) break
+  }
 
-  if (!txs?.length) { res.json({ created: 0 }); return }
+  if (!allTxs.length) { res.json({ created: 0 }); return }
 
   // Normalize: cast amount to Number (Supabase returns NUMERIC as string), trim date to YYYY-MM-DD
-  const normalized = (txs as TxRow[]).map(tx => ({
+  const normalized = allTxs.map(tx => ({
     ...tx,
     amount: Number(tx.amount),
     date: String(tx.date).slice(0, 10),
@@ -1195,6 +1204,38 @@ router.post('/detect-reimbursements', requireAuth, async (req, res: Response) =>
   const usedIds = new Set<number>()
   const groupsToCreate: { name: string; ids: [number, number] }[] = []
 
+  // Strip retro prefix + any separator/parenthetical (e.g. "RETROCESSION - (REMISE) COTISATION..." → "COTISATION...")
+  const getDescBase = (desc: string): string | null => {
+    const lower = desc.toLowerCase()
+    for (const p of RETRO_PREFIXES) {
+      if (lower.startsWith(p)) {
+        return desc.slice(p.length).trimStart().replace(/^[-–:]?\s*(\([^)]+\))?\s*/, '').trim()
+      }
+    }
+    return null
+  }
+
+  // Pass 1: pair RETRO_PREFIX transactions with description-similar partners first,
+  // preventing greedy same-amount pairing from stealing a fee's match
+  for (const [, dayTxs] of byKey) {
+    for (let i = 0; i < dayTxs.length; i++) {
+      if (usedIds.has(dayTxs[i].id)) continue
+      const a = dayTxs[i]
+      const aBase = getDescBase(a.description)
+      if (aBase === null || aBase.length < 4) continue
+      for (let j = 0; j < dayTxs.length; j++) {
+        if (j === i || usedIds.has(dayTxs[j].id)) continue
+        const b = dayTxs[j]
+        if (Math.abs(a.amount + b.amount) >= 0.02) continue
+        if (!b.description.toLowerCase().includes(aBase.toLowerCase())) continue
+        usedIds.add(a.id); usedIds.add(b.id)
+        groupsToCreate.push({ name: `auto: ${b.description.slice(0, 80)}`, ids: [a.id, b.id] })
+        break
+      }
+    }
+  }
+
+  // Pass 2: generic same-amount matching for any remaining unmatched pairs
   for (const [, dayTxs] of byKey) {
     for (let i = 0; i < dayTxs.length; i++) {
       if (usedIds.has(dayTxs[i].id)) continue
@@ -1202,9 +1243,7 @@ router.post('/detect-reimbursements', requireAuth, async (req, res: Response) =>
         if (usedIds.has(dayTxs[j].id)) continue
         const a = dayTxs[i], b = dayTxs[j]
         if (Math.abs(a.amount + b.amount) >= 0.02) continue
-
         usedIds.add(a.id); usedIds.add(b.id)
-
         const aLower = a.description.toLowerCase()
         const bLower = b.description.toLowerCase()
         let baseName: string
@@ -1233,7 +1272,7 @@ router.post('/detect-reimbursements', requireAuth, async (req, res: Response) =>
     }
   }
 
-  res.json({ created })
+  res.json({ created, _debug: { fetched: allTxs.length, candidates: groupsToCreate.length } })
 })
 
 // ── Financial Freedom Plans ────────────────────────────────────────────────────
