@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { apiFetch } from '../../lib/api'
 import { useI18n } from '../../contexts/I18nContext'
-import { useCurrency } from '../../contexts/CurrencyContext'
 
 interface Category {
   id: number
@@ -33,17 +32,17 @@ function fmt(n: number, currency: string) {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n)
 }
 
-const DEFAULT_DESCRIPTIONS: Record<string, string> = {
-  essential:  'Despesas fixas e inadiáveis de moradia, saúde, transporte e alimentação basilar.',
-  investment: 'Parcela agressiva focada no longo prazo para a construção de patrimônio.',
-  savings:    'Despesas variáveis do dia a dia que não mudam a sobrevivência.',
-  free:       'Dinheiro de uso totalmente livre (lazer, hobbies e jantares).',
-}
 
-function EnvelopeBar({ env, expanded, onToggle, onEditCategory, onDeleteCategory, onAddCategory, onSaveDescription }:
-  { env: Envelope; expanded: boolean; onToggle: () => void; onEditCategory: (c: Category) => void; onDeleteCategory: (id: number) => void; onAddCategory: (envId: number) => void; onSaveDescription: (id: number, desc: string) => void }) {
+function EnvelopeBar({ env, expanded, onToggle, onEditCategory, onDeleteCategory, onAddCategory, onSaveDescription, actuals, currency }:
+  { env: Envelope; expanded: boolean; onToggle: () => void; onEditCategory: (c: Category) => void; onDeleteCategory: (id: number) => void; onAddCategory: (envId: number) => void; onSaveDescription: (id: number, desc: string) => void; actuals: Map<number, number>; currency: string }) {
   const { t } = useI18n()
-  const defaultDesc = DEFAULT_DESCRIPTIONS[env.type] ?? ''
+  const descByType: Record<string, string> = {
+    essential:  t.finances.descEssential,
+    investment: t.finances.descInvestment,
+    savings:    t.finances.descSavings,
+    free:       t.finances.descFree,
+  }
+  const defaultDesc = descByType[env.type] ?? ''
   const [editingDesc, setEditingDesc] = useState(false)
   const [descInput,   setDescInput]   = useState(env.description ?? defaultDesc)
 
@@ -80,8 +79,8 @@ function EnvelopeBar({ env, expanded, onToggle, onEditCategory, onDeleteCategory
               {isInvestment && allocated >= 100 && !isOver && <span className="text-xs bg-green-100 text-green-600 font-semibold px-1.5 py-0.5 rounded-full">{t.finances.goalReached}</span>}
             </div>
             <div className="text-right shrink-0 ml-3">
-              <span className="text-xs font-semibold text-gray-700">{fmt(totalCategoryBudget, 'EUR')}</span>
-              <span className="text-xs text-gray-400"> / {fmt(env.budget_amount, 'EUR')}</span>
+              <span className="text-xs font-semibold text-gray-700">{fmt(totalCategoryBudget, currency)}</span>
+              <span className="text-xs text-gray-400"> / {fmt(env.budget_amount, currency)}</span>
             </div>
           </div>
           {/* Progress bar */}
@@ -141,35 +140,57 @@ function EnvelopeBar({ env, expanded, onToggle, onEditCategory, onDeleteCategory
             <p className="px-5 py-3 text-xs text-gray-400">{t.finances.noCategories}</p>
           ) : (
             <ul className="divide-y divide-gray-50">
-              {env.categories.map(cat => (
-                <li key={cat.id} className="px-5 py-2.5 flex items-center gap-3 group">
-                  <span className="text-base leading-none w-6 shrink-0">{cat.icon}</span>
-                  <span className="flex-1 text-sm text-gray-700">{cat.name}</span>
-                  {cat.budget_monthly != null && (
-                    <span className="text-sm font-medium text-gray-600">{fmt(cat.budget_monthly, 'EUR')}</span>
-                  )}
-                  <div className="flex items-center gap-1 [@media(hover:none)]:opacity-100 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button
-                      onClick={() => onEditCategory(cat)}
-                      className="p-1 text-gray-400 hover:text-[#001A70] transition-colors rounded"
-                      title="Editar"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5">
-                        <path d="M13.488 2.513a1.75 1.75 0 0 0-2.475 0L6.75 6.774a2.75 2.75 0 0 0-.596.892l-.848 2.047a.75.75 0 0 0 .98.98l2.047-.848a2.75 2.75 0 0 0 .892-.596l4.261-4.263a1.75 1.75 0 0 0 0-2.474ZM4.75 14a.75.75 0 0 0 0-1.5H3.5a.5.5 0 0 1-.5-.5V4a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v1.25a.75.75 0 0 0 1.5 0V4a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h1.25Z" />
-                      </svg>
-                    </button>
-                    <button
-                      onClick={() => onDeleteCategory(cat.id)}
-                      className="p-1 text-gray-400 hover:text-red-500 transition-colors rounded"
-                      title="Remover"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5">
-                        <path fillRule="evenodd" d="M5 3.25V4H2.75a.75.75 0 0 0 0 1.5h.3l.815 8.15A1.5 1.5 0 0 0 5.357 15h5.285a1.5 1.5 0 0 0 1.493-1.35l.815-8.15h.3a.75.75 0 0 0 0-1.5H11v-.75A2.25 2.25 0 0 0 8.75 1h-1.5A2.25 2.25 0 0 0 5 3.25Zm2.25-.75a.75.75 0 0 0-.75.75V4h3v-.75a.75.75 0 0 0-.75-.75h-1.5ZM6.05 6a.75.75 0 0 1 .787.713l.275 5.5a.75.75 0 0 1-1.498.075l-.275-5.5A.75.75 0 0 1 6.05 6Zm3.9 0a.75.75 0 0 1 .712.787l-.275 5.5a.75.75 0 0 1-1.498-.075l.275-5.5a.75.75 0 0 1 .786-.712Z" clipRule="evenodd" />
-                      </svg>
-                    </button>
-                  </div>
-                </li>
-              ))}
+              {env.categories.map(cat => {
+                const actual = actuals.get(cat.id) ?? 0
+                const hasBudget = cat.budget_monthly != null && cat.budget_monthly > 0
+                const pct = hasBudget ? Math.min((actual / cat.budget_monthly!) * 100, 100) : 0
+                const over = hasBudget && actual > cat.budget_monthly!
+                return (
+                  <li key={cat.id} className="px-5 py-2.5 flex items-center gap-3 group">
+                    <span className="text-base leading-none w-6 shrink-0">{cat.icon}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-sm text-gray-700 truncate">{cat.name}</span>
+                        <div className="flex items-center gap-1 shrink-0">
+                          {actual > 0 && (
+                            <span className={`text-sm font-medium ${over ? 'text-red-500' : 'text-gray-700'}`}>
+                              {fmt(actual, currency)}
+                            </span>
+                          )}
+                          {hasBudget && (
+                            <span className="text-xs text-gray-400">/ {fmt(cat.budget_monthly!, currency)}</span>
+                          )}
+                        </div>
+                      </div>
+                      {hasBudget && (
+                        <div className="mt-0.5 h-1 bg-gray-100 rounded-full overflow-hidden">
+                          <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, backgroundColor: over ? '#ef4444' : '#3b82f6' }} />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1 [@media(hover:none)]:opacity-100 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        onClick={() => onEditCategory(cat)}
+                        className="p-1 text-gray-400 hover:text-[#001A70] transition-colors rounded"
+                        title="Editar"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5">
+                          <path d="M13.488 2.513a1.75 1.75 0 0 0-2.475 0L6.75 6.774a2.75 2.75 0 0 0-.596.892l-.848 2.047a.75.75 0 0 0 .98.98l2.047-.848a2.75 2.75 0 0 0 .892-.596l4.261-4.263a1.75 1.75 0 0 0 0-2.474ZM4.75 14a.75.75 0 0 0 0-1.5H3.5a.5.5 0 0 1-.5-.5V4a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v1.25a.75.75 0 0 0 1.5 0V4a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h1.25Z" />
+                        </svg>
+                      </button>
+                      <button
+                        onClick={() => onDeleteCategory(cat.id)}
+                        className="p-1 text-gray-400 hover:text-red-500 transition-colors rounded"
+                        title="Remover"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5">
+                          <path fillRule="evenodd" d="M5 3.25V4H2.75a.75.75 0 0 0 0 1.5h.3l.815 8.15A1.5 1.5 0 0 0 5.357 15h5.285a1.5 1.5 0 0 0 1.493-1.35l.815-8.15h.3a.75.75 0 0 0 0-1.5H11v-.75A2.25 2.25 0 0 0 8.75 1h-1.5A2.25 2.25 0 0 0 5 3.25Zm2.25-.75a.75.75 0 0 0-.75.75V4h3v-.75a.75.75 0 0 0-.75-.75h-1.5ZM6.05 6a.75.75 0 0 1 .787.713l.275 5.5a.75.75 0 0 1-1.498.075l-.275-5.5A.75.75 0 0 1 6.05 6Zm3.9 0a.75.75 0 0 1 .712.787l-.275 5.5a.75.75 0 0 1-1.498-.075l.275-5.5a.75.75 0 0 1 .786-.712Z" clipRule="evenodd" />
+                        </svg>
+                      </button>
+                    </div>
+                  </li>
+                )
+              })}
             </ul>
           )}
           <div className="px-5 py-2.5">
@@ -197,10 +218,13 @@ interface CategoryModal {
 
 const EMOJI_OPTIONS = ['🏠','🛒','💊','🚇','📱','📈','🏦','🍽️','🎶','✈️','🛍️','🎭','🎁','🎬','💆','📚','💡','🎮','🐾','🌿','🍔','☕','🚗','⚽','🎓','🏋️','💰','🎪']
 
+interface SpendingCat { id: number; actual: number }
+interface SpendingEnv { envelope_id: number; categories: SpendingCat[] }
+interface SpendingMonth { month: string; by_envelope: SpendingEnv[] }
+interface SpendingSummary { months: SpendingMonth[] }
+
 export default function FinancesBudgetPage() {
   const { t } = useI18n()
-  const { currency } = useCurrency()
-  void currency
 
   const [data, setData]               = useState<BudgetData | null>(null)
   const [loading, setLoading]         = useState(true)
@@ -214,16 +238,31 @@ export default function FinancesBudgetPage() {
   const [catIcon, setCatIcon]         = useState('🏷️')
   const [catBudget, setCatBudget]     = useState('')
   const [catEnvelopeId, setCatEnvelopeId] = useState<number>(0)
+  const [catActuals, setCatActuals]   = useState<Map<number, number>>(new Map())
 
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const d = await apiFetch<BudgetData>('/finances/budget')
+      const today = new Date()
+      const currentMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`
+      const [d, spending] = await Promise.all([
+        apiFetch<BudgetData>('/finances/budget'),
+        apiFetch<SpendingSummary>('/finances/spending-summary?months=1'),
+      ])
       setData(d)
       setIncomeVal(String(d.income.monthly_net))
       setIncomeCur(d.income.currency)
-      // Start all expanded
       setExpandedIds(new Set(d.envelopes.map(e => e.id)))
+      const monthData = spending.months.find(m => m.month === currentMonth)
+      const actMap = new Map<number, number>()
+      if (monthData) {
+        for (const env of monthData.by_envelope) {
+          for (const cat of env.categories) {
+            actMap.set(cat.id, cat.actual)
+          }
+        }
+      }
+      setCatActuals(actMap)
     } finally {
       setLoading(false)
     }
@@ -483,6 +522,8 @@ export default function FinancesBudgetPage() {
             onDeleteCategory={deleteCategory}
             onAddCategory={openAddCategory}
             onSaveDescription={saveDescription}
+            actuals={catActuals}
+            currency={data.income.currency}
           />
         ))}
       </div>

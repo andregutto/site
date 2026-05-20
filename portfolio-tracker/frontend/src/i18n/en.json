@@ -593,7 +593,16 @@
     "createReimbursementGroup": "Create reimbursement group",
     "reimbursementGroupNamePlaceholder": "Group name (e.g. Dinner with Charles)",
     "reimbursementGroupNet": "Net",
-    "reimbursementGroupDelete": "Delete group"
+    "reimbursementGroupDelete": "Delete group",
+    "allAccounts": "All accounts",
+    "allCategories": "All categories",
+    "allMoments": "All moments",
+    "clearFilters": "Clear filters",
+    "ofTarget": "of target",
+    "descEssential": "Fixed and unavoidable expenses: housing, health, transport and basic food.",
+    "descInvestment": "Aggressive long-term slice focused on building wealth.",
+    "descSavings": "Day-to-day variable expenses that do not affect your survival.",
+    "descFree": "Completely free-use money (leisure, hobbies and dinners)."
   },
   "archived": {
     "title": "Archived",

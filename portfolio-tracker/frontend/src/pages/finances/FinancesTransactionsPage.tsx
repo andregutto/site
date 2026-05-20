@@ -57,7 +57,10 @@ function fmtDate(d: string) {
   return new Date(d + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
-function MonthPicker({ value, onChange }: { value: string; onChange: (m: string) => void }) {
+const LOCALE_MAP: Record<string, string> = { pt: 'pt-BR', en: 'en-GB', fr: 'fr-FR' }
+
+function MonthPicker({ value, onChange, locale }: { value: string; onChange: (m: string) => void; locale: string }) {
+  const fmtLocale = LOCALE_MAP[locale] ?? 'pt-BR'
   const months = Array.from({ length: 36 }, (_, i) => {
     const d = new Date()
     d.setDate(1)
@@ -68,14 +71,14 @@ function MonthPicker({ value, onChange }: { value: string; onChange: (m: string)
     <select value={value} onChange={e => onChange(e.target.value)} className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm bg-white">
       {months.map(m => {
         const [y, mo] = m.split('-')
-        return <option key={m} value={m}>{new Date(Number(y), Number(mo) - 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}</option>
+        return <option key={m} value={m}>{new Date(Number(y), Number(mo) - 1).toLocaleDateString(fmtLocale, { month: 'long', year: 'numeric' })}</option>
       })}
     </select>
   )
 }
 
 export default function FinancesTransactionsPage() {
-  const { t } = useI18n()
+  const { t, locale } = useI18n()
   const [searchParams] = useSearchParams()
   const today = new Date()
   const defaultMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`
@@ -646,7 +649,7 @@ export default function FinancesTransactionsPage() {
         <div className="flex items-center gap-2 flex-wrap">
           {dateMode === 'month' ? (
             <div className="flex items-center gap-1">
-              <MonthPicker value={month} onChange={setMonth} />
+              <MonthPicker value={month} onChange={setMonth} locale={locale} />
               <button
                 onClick={() => setDateMode('range')}
                 title="Período personalizado"
@@ -720,8 +723,8 @@ export default function FinancesTransactionsPage() {
               }}
               className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm bg-white"
             >
-              <option value="">Todas as contas</option>
-              <option value="unassigned">Sem conta</option>
+              <option value="">{t.finances.allAccounts}</option>
+              <option value="unassigned">{t.finances.csvAccountNone}</option>
               {accounts.map(a => <option key={a.id} value={a.id}>{a.icon} {a.name}</option>)}
             </select>
           )}
@@ -731,7 +734,7 @@ export default function FinancesTransactionsPage() {
               onChange={e => setFilterCatId(e.target.value === '' ? '' : Number(e.target.value))}
               className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm bg-white"
             >
-              <option value="">Todas as categorias</option>
+              <option value="">{t.finances.allCategories}</option>
               {allCategories.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
             </select>
           )}
@@ -741,7 +744,7 @@ export default function FinancesTransactionsPage() {
               onChange={e => setFilterMomentId(e.target.value === '' ? '' : Number(e.target.value))}
               className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm bg-white"
             >
-              <option value="">Todos os momentos</option>
+              <option value="">{t.finances.allMoments}</option>
               {moments.map(m => <option key={m.id} value={m.id}>{m.icon} {m.name}</option>)}
             </select>
           )}
@@ -750,7 +753,7 @@ export default function FinancesTransactionsPage() {
               onClick={() => { setFilterCatId(''); setFilterMomentId(''); setFilterAccountId('') }}
               className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
             >
-              Limpar filtros
+              {t.finances.clearFilters}
             </button>
           )}
         </div>

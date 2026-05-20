@@ -593,7 +593,16 @@
     "createReimbursementGroup": "Créer un groupe de remboursement",
     "reimbursementGroupNamePlaceholder": "Nom du groupe (ex : Dîner Charles)",
     "reimbursementGroupNet": "Net",
-    "reimbursementGroupDelete": "Supprimer le groupe"
+    "reimbursementGroupDelete": "Supprimer le groupe",
+    "allAccounts": "Tous les comptes",
+    "allCategories": "Toutes les catégories",
+    "allMoments": "Tous les moments",
+    "clearFilters": "Effacer les filtres",
+    "ofTarget": "de l'objectif",
+    "descEssential": "Dépenses fixes et incontournables : logement, santé, transport et alimentation de base.",
+    "descInvestment": "Part agressive axée sur le long terme pour la constitution de patrimoine.",
+    "descSavings": "Dépenses variables du quotidien qui ne remettent pas en cause votre survie.",
+    "descFree": "Argent d'utilisation totalement libre (loisirs, hobbies et dîners)."
   },
   "archived": {
     "title": "Archivés",

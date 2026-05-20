@@ -593,7 +593,16 @@
     "createReimbursementGroup": "Criar grupo de reembolso",
     "reimbursementGroupNamePlaceholder": "Nome do grupo (ex: Jantar Charles)",
     "reimbursementGroupNet": "Líquido",
-    "reimbursementGroupDelete": "Excluir grupo"
+    "reimbursementGroupDelete": "Excluir grupo",
+    "allAccounts": "Todas as contas",
+    "allCategories": "Todas as categorias",
+    "allMoments": "Todos os momentos",
+    "clearFilters": "Limpar filtros",
+    "ofTarget": "da meta",
+    "descEssential": "Despesas fixas e inadiáveis de moradia, saúde, transporte e alimentação basilar.",
+    "descInvestment": "Parcela agressiva focada no longo prazo para a construção de patrimônio.",
+    "descSavings": "Despesas variáveis do dia a dia que não mudam a sobrevivência.",
+    "descFree": "Dinheiro de uso totalmente livre (lazer, hobbies e jantares)."
   },
   "archived": {
     "title": "Arquivados",

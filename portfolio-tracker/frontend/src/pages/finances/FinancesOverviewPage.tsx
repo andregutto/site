@@ -322,7 +322,7 @@ export default function FinancesOverviewPage() {
                             const over = pct > 0
                             return (
                               <span className={`text-[10px] font-medium ${over ? 'text-red-500' : 'text-emerald-600'}`}>
-                                {over ? `+${pct}%` : `${pct}%`} da meta
+                                {over ? `+${pct}%` : `${pct}%`} {t.finances.ofTarget}
                               </span>
                             )
                           })()}
@@ -340,8 +340,8 @@ export default function FinancesOverviewPage() {
                     />
                   </div>
                   <div className="flex items-center justify-between mt-0.5">
-                    <span className="text-[10px] text-gray-400">{env.pctOfIncome.toFixed(1)}% {t.finances.ofIncome}</span>
-                    <span className="text-[10px] text-gray-400">{t.finances.target}: {env.pct_target}%</span>
+                    <span className="text-[10px] text-gray-400">{env.pctOfIncome.toFixed(1)}% {t.finances.overviewSpent}</span>
+                    <span className="text-[10px] text-gray-400">{t.finances.target}: {env.pct_target}% {t.finances.ofIncome}</span>
                   </div>
                 </div>
               </div>
