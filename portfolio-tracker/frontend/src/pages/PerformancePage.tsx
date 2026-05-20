@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { usePerformanceSummary, usePerformanceMonthly, usePerformanceBenchmarks, usePortfolioValue } from '../hooks/usePortfolio'
+import { usePerformanceSummary, usePerformanceMonthly, usePerformanceBenchmarks, usePortfolioValue, usePerformanceInception } from '../hooks/usePortfolio'
 import { useCurrency } from '../contexts/CurrencyContext'
 import {
   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend
@@ -22,7 +22,7 @@ function addMonths(ym: string, n: number): string {
   return localYM(d)
 }
 
-type PeriodMode = 'current_month' | 'last_30d' | 'last_12m' | 'ytd'
+type PeriodMode = 'current_month' | 'last_30d' | 'last_12m' | 'ytd' | 'inception'
 
 function SummaryCard({ label, value, sub, positive }: {
   label: string; value: string; sub?: string; positive?: boolean | null
@@ -48,6 +48,7 @@ export default function PerformancePage() {
   const navigate = useNavigate()
   const { convert, currency } = useCurrency()
   const { data: livePortfolio } = usePortfolioValue()
+  const inceptionYM = usePerformanceInception()
 
   function fmt(valueBrl: number) {
     return new Intl.NumberFormat('pt-BR', {
@@ -64,6 +65,7 @@ export default function PerformancePage() {
       case 'last_30d':      return { from: addMonths(currentYM, -1),     to: currentYM }
       case 'last_12m':      return { from: addMonths(currentYM, -11),    to: currentYM }
       case 'ytd':           return { from: `${currentYear}-01`,           to: currentYM }
+      case 'inception':     return { from: inceptionYM ?? `${currentYear}-01`, to: currentYM }
     }
   }
 
@@ -74,6 +76,7 @@ export default function PerformancePage() {
       case 'last_30d':      return `${fmtMonth(addMonths(currentYM, -1))} – ${fmtMonth(currentYM)}`
       case 'last_12m':      return `${fmtMonth(addMonths(currentYM, -11))} – ${fmtMonth(currentYM)}`
       case 'ytd':           return `Jan/${currentYear.toString().slice(2)} – ${fmtMonth(currentYM)}`
+      case 'inception':     return inceptionYM ? `${fmtMonth(inceptionYM)} – ${fmtMonth(currentYM)}` : `– ${fmtMonth(currentYM)}`
     }
   })()
 
@@ -169,11 +172,12 @@ export default function PerformancePage() {
 
   const isLoading = sLoading || mLoading || bLoading
 
-  const modeButtons: Array<{ key: PeriodMode; label: string }> = [
+  const modeButtons: Array<{ key: PeriodMode; label: string; disabled?: boolean }> = [
     { key: 'current_month', label: 'Mês atual'  },
     { key: 'last_30d',      label: 'Últ. 30d'   },
     { key: 'last_12m',      label: 'Últ. 12m'   },
     { key: 'ytd',           label: 'YTD'         },
+    { key: 'inception',     label: 'Início',     disabled: !inceptionYM },
   ]
 
   return (
@@ -185,14 +189,17 @@ export default function PerformancePage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          {modeButtons.map(({ key, label }) => (
+          {modeButtons.map(({ key, label, disabled }) => (
             <button
               key={key}
-              onClick={() => setMode(key)}
+              onClick={() => !disabled && setMode(key)}
+              disabled={disabled}
               className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
-                mode === key
-                  ? 'bg-[#001A70] text-white border-[#001A70]'
-                  : 'bg-white text-gray-500 border-gray-200 hover:border-[#001A70] hover:text-[#001A70]'
+                disabled
+                  ? 'bg-white text-gray-300 border-gray-100 cursor-not-allowed'
+                  : mode === key
+                    ? 'bg-[#001A70] text-white border-[#001A70]'
+                    : 'bg-white text-gray-500 border-gray-200 hover:border-[#001A70] hover:text-[#001A70]'
               }`}
             >{label}</button>
           ))}

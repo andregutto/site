@@ -10,12 +10,12 @@ export default function ValueCards({ total_brl, generated_at }: Props) {
   const ts = new Date(generated_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
 
   return (
-    <div className="bg-[#001A70] text-white rounded-2xl p-6">
+    <div className="bg-[#001A70] text-white rounded-2xl p-4 flex flex-col justify-between">
       <p className="text-blue-200 text-xs font-medium uppercase tracking-wide">
         Total {currency}
       </p>
-      <p className="text-3xl font-bold mt-2">{fmt(total_brl, 0)}</p>
-      <p className="text-blue-300 text-xs mt-3">atualizado {ts}</p>
+      <p className="text-3xl font-bold mt-2 leading-tight">{fmt(total_brl, 0)}</p>
+      <p className="text-blue-300 text-[11px] mt-2">atualizado {ts}</p>
     </div>
   )
 }

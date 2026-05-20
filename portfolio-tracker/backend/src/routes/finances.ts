@@ -457,10 +457,11 @@ router.get('/transactions', requireAuth, async (req, res: Response) => {
   } else if (date_from && date_to) {
     query = query.gte('date', date_from).lte('date', date_to)
   }
-  if (category_id) query = query.eq('category_id', category_id)
-  if (moment_id)   query = query.eq('moment_id', moment_id)
-  if (account_id)  query = query.eq('account_id', account_id)
-  if (limit)       query = query.limit(Number(limit))
+  if (category_id)            query = query.eq('category_id', category_id)
+  if (moment_id)              query = query.eq('moment_id', moment_id)
+  if (account_id === 'unassigned') query = query.is('account_id', null)
+  else if (account_id)        query = query.eq('account_id', account_id)
+  if (limit)                  query = query.limit(Number(limit))
 
   const { data, error } = await query
   if (error) { res.status(500).json({ error: error.message }); return }
@@ -525,6 +526,22 @@ router.patch('/transactions/bulk-category', requireAuth, async (req, res: Respon
     .eq('description', description)
   if (error) { res.status(500).json({ error: error.message }); return }
   res.json({ ok: true })
+})
+
+// PATCH /api/finances/transactions/bulk-assign-account
+router.patch('/transactions/bulk-assign-account', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const { transaction_ids, account_id } = req.body as { transaction_ids: number[]; account_id: number | null }
+  if (!Array.isArray(transaction_ids) || transaction_ids.length === 0) {
+    res.status(400).json({ error: 'transaction_ids array required' }); return
+  }
+  const { error } = await supabaseAdmin
+    .from('finance_transactions')
+    .update({ account_id: account_id ?? null })
+    .in('id', transaction_ids)
+    .eq('user_id', userId)
+  if (error) { res.status(500).json({ error: error.message }); return }
+  res.json({ ok: true, updated: transaction_ids.length })
 })
 
 // PATCH /api/finances/transactions/:id

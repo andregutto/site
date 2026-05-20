@@ -14,6 +14,7 @@ interface Transaction {
   amount: number
   currency: string
   category_id: number | null
+  account_id: number | null
   moment_id: number | null
   finance_categories: Category | null
   moments: MomentRef[]
@@ -147,11 +148,16 @@ export default function FinancesTransactionsPage() {
   const [dateFrom, setDateFrom]   = useState(`${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-01`)
   const [dateTo, setDateTo]       = useState(today.toISOString().split('T')[0])
   // Filters
-  const [filterCatId, setFilterCatId]       = useState<number | ''>(() => {
+  const [filterCatId, setFilterCatId]         = useState<number | ''>(() => {
     const p = searchParams.get('category_id')
     return p ? Number(p) : ''
   })
-  const [filterMomentId, setFilterMomentId] = useState<number | ''>('')
+  const [filterMomentId, setFilterMomentId]   = useState<number | ''>('')
+  const [filterAccountId, setFilterAccountId] = useState<number | 'unassigned' | ''>('')
+
+  // Bulk assign account
+  const [showAccountAssign, setShowAccountAssign] = useState(false)
+  const [assigningAccount, setAssigningAccount]   = useState(false)
 
   const loadTransactions = useCallback(async () => {
     setLoading(true)
@@ -163,14 +169,15 @@ export default function FinancesTransactionsPage() {
         if (dateFrom) params.set('date_from', dateFrom)
         if (dateTo)   params.set('date_to', dateTo)
       }
-      if (filterCatId)    params.set('category_id', String(filterCatId))
-      if (filterMomentId) params.set('moment_id', String(filterMomentId))
+      if (filterCatId)                      params.set('category_id', String(filterCatId))
+      if (filterMomentId)                   params.set('moment_id', String(filterMomentId))
+      if (filterAccountId !== '')           params.set('account_id', String(filterAccountId))
       const data = await apiFetch<Transaction[]>(`/finances/transactions?${params}`)
       setTransactions(data)
     } finally {
       setLoading(false)
     }
-  }, [month, dateMode, dateFrom, dateTo, filterCatId, filterMomentId])
+  }, [month, dateMode, dateFrom, dateTo, filterCatId, filterMomentId, filterAccountId])
 
   useEffect(() => {
     apiFetch<{ envelopes: { type: string; categories: Category[] }[] }>('/finances/budget')
@@ -226,7 +233,7 @@ export default function FinancesTransactionsPage() {
   }, [showMomentDropdown])
 
   // Clear selection on date/filter change
-  useEffect(() => { setSelected(new Set()) }, [month, dateMode, dateFrom, dateTo, filterCatId, filterMomentId])
+  useEffect(() => { setSelected(new Set()) }, [month, dateMode, dateFrom, dateTo, filterCatId, filterMomentId, filterAccountId])
 
   function toggleSelect(id: number) {
     setSelected(prev => {
@@ -318,7 +325,24 @@ export default function FinancesTransactionsPage() {
     loadTransactions()
   }
 
+  async function bulkAssignAccount(accountId: number | null) {
+    setAssigningAccount(true)
+    setShowAccountAssign(false)
+    try {
+      const ids = Array.from(selected)
+      await apiFetch('/finances/transactions/bulk-assign-account', {
+        method: 'PATCH',
+        body: JSON.stringify({ transaction_ids: ids, account_id: accountId }),
+      })
+      setSelected(new Set())
+      loadTransactions()
+    } finally {
+      setAssigningAccount(false)
+    }
+  }
+
   async function toggleExclude(id: number, current: boolean) {
+    setTransactions(prev => prev.map(tx => tx.id === id ? { ...tx, exclude_from_stats: !current } : tx))
     await apiFetch(`/finances/transactions/${id}`, { method: 'PATCH', body: JSON.stringify({ exclude_from_stats: !current }) })
     loadTransactions()
   }
@@ -634,8 +658,22 @@ export default function FinancesTransactionsPage() {
       </div>
 
       {/* Filter strip */}
-      {csvStep === 'idle' && (allCategories.length > 0 || moments.length > 0) && (
+      {csvStep === 'idle' && (allCategories.length > 0 || moments.length > 0 || accounts.length > 0) && (
         <div className="flex items-center gap-2 flex-wrap">
+          {accounts.length > 0 && (
+            <select
+              value={filterAccountId === '' ? '' : String(filterAccountId)}
+              onChange={e => {
+                const v = e.target.value
+                setFilterAccountId(v === '' ? '' : v === 'unassigned' ? 'unassigned' : Number(v))
+              }}
+              className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm bg-white"
+            >
+              <option value="">Todas as contas</option>
+              <option value="unassigned">Sem conta</option>
+              {accounts.map(a => <option key={a.id} value={a.id}>{a.icon} {a.name}</option>)}
+            </select>
+          )}
           {allCategories.length > 0 && (
             <select
               value={filterCatId}
@@ -656,9 +694,9 @@ export default function FinancesTransactionsPage() {
               {moments.map(m => <option key={m.id} value={m.id}>{m.icon} {m.name}</option>)}
             </select>
           )}
-          {(filterCatId !== '' || filterMomentId !== '') && (
+          {(filterCatId !== '' || filterMomentId !== '' || filterAccountId !== '') && (
             <button
-              onClick={() => { setFilterCatId(''); setFilterMomentId('') }}
+              onClick={() => { setFilterCatId(''); setFilterMomentId(''); setFilterAccountId('') }}
               className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
             >
               Limpar filtros
@@ -1139,6 +1177,49 @@ export default function FinancesTransactionsPage() {
               </div>
             )}
           </div>
+
+          {accounts.length > 0 && (
+            <>
+              <div className="w-px h-4 bg-white/20" />
+              <div className="relative">
+                <button
+                  onClick={() => setShowAccountAssign(v => !v)}
+                  disabled={assigningAccount}
+                  className="flex items-center gap-1.5 text-sm bg-white/10 hover:bg-white/20 transition-colors px-3 py-1.5 rounded-xl disabled:opacity-50"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4"><path d="M14 3a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V3ZM2 8a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8Z"/></svg>
+                  {assigningAccount ? 'Atribuindo...' : 'Conta'}
+                  <svg className={`w-3 h-3 transition-transform ${showAccountAssign ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                {showAccountAssign && (
+                  <div className="absolute bottom-full mb-2 left-0 bg-white rounded-xl shadow-xl border border-gray-100 py-1.5 min-w-[180px] z-50">
+                    <p className="px-4 py-1.5 text-[10px] text-gray-400 uppercase tracking-wide font-medium">Atribuir conta</p>
+                    {accounts.map(a => (
+                      <button
+                        key={a.id}
+                        onClick={() => bulkAssignAccount(a.id)}
+                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                      >
+                        <span>{a.icon}</span>
+                        <span>{a.name}</span>
+                      </button>
+                    ))}
+                    <div className="border-t border-gray-100 mt-1 pt-1">
+                      <button
+                        onClick={() => bulkAssignAccount(null)}
+                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-400 hover:bg-gray-50 transition-colors"
+                      >
+                        <span>✕</span>
+                        <span>Remover conta</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
 
           <div className="w-px h-4 bg-white/20" />
           <button

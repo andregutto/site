@@ -87,70 +87,74 @@ export default function DashboardPage() {
         </button>
       </div>
 
-      <ValueCards
-        total_brl={data.total_brl}
-        generated_at={data.generated_at}
-      />
+      {/* Top cards row: total + performance */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+        <div className="col-span-2 md:col-span-1">
+          <ValueCards
+            total_brl={data.total_brl}
+            generated_at={data.generated_at}
+          />
+        </div>
 
-      {/* Performance cards */}
-      {(() => {
-        const totalInvestedBrl = data.by_asset.reduce((s, a) => s + (a.invested_brl ?? 0), 0)
-        if (totalInvestedBrl <= 0) return null
-        const gainLossBrl = data.total_brl - totalInvestedBrl
-        const gainLossPct = totalInvestedBrl > 0 ? (gainLossBrl / totalInvestedBrl) * 100 : null
+        {(() => {
+          const totalInvestedBrl = data.by_asset.reduce((s, a) => s + (a.invested_brl ?? 0), 0)
+          if (totalInvestedBrl <= 0) return null
+          const gainLossBrl = data.total_brl - totalInvestedBrl
+          const gainLossPct = totalInvestedBrl > 0 ? (gainLossBrl / totalInvestedBrl) * 100 : null
 
-        const currentYearStr = String(new Date().getFullYear())
-        const januaryData = (perfData?.monthly ?? []).find(m => m.month === `${currentYearStr}-01`)
-        const ytdStartValue = januaryData?.prev_total ?? 0
-        const yearMonthsWithData = (perfData?.monthly ?? []).filter(m => m.month.startsWith(currentYearStr) && m.total > 0)
-        const ytdEndValue = yearMonthsWithData.at(-1)?.total ?? 0
-        const ytdContribs = (perfData?.monthly ?? []).filter(m => m.month.startsWith(currentYearStr)).reduce((s, m) => s + m.contributions, 0)
-        const ytdReturn = ytdStartValue > 0 ? ((ytdEndValue - ytdStartValue - ytdContribs) / ytdStartValue) * 100 : null
+          const currentYearStr = String(new Date().getFullYear())
+          const januaryData = (perfData?.monthly ?? []).find(m => m.month === `${currentYearStr}-01`)
+          const ytdStartValue = januaryData?.prev_total ?? 0
+          const yearMonthsWithData = (perfData?.monthly ?? []).filter(m => m.month.startsWith(currentYearStr) && m.total > 0)
+          const ytdEndValue = yearMonthsWithData.at(-1)?.total ?? 0
+          const ytdContribs = (perfData?.monthly ?? []).filter(m => m.month.startsWith(currentYearStr)).reduce((s, m) => s + m.contributions, 0)
+          const ytdReturn = ytdStartValue > 0 ? ((ytdEndValue - ytdStartValue - ytdContribs) / ytdStartValue) * 100 : null
 
-        const currentMonthEntry = (perfData?.monthly ?? []).find(m => m.month === currentYM)
-        const monthReturn = currentMonthEntry && currentMonthEntry.prev_total > 0
-          ? ((currentMonthEntry.total - currentMonthEntry.prev_total - currentMonthEntry.contributions) / currentMonthEntry.prev_total) * 100
-          : null
+          const currentMonthEntry = (perfData?.monthly ?? []).find(m => m.month === currentYM)
+          const monthReturn = currentMonthEntry && currentMonthEntry.prev_total > 0
+            ? ((currentMonthEntry.total - currentMonthEntry.prev_total - currentMonthEntry.contributions) / currentMonthEntry.prev_total) * 100
+            : null
 
-        const posColor = 'text-emerald-700'
-        const negColor = 'text-red-600'
-        const posBg = 'bg-emerald-50 border-emerald-100'
-        const negBg = 'bg-red-50 border-red-100'
-        const neutralBg = 'bg-white border-gray-100'
+          const posColor = 'text-emerald-700'
+          const negColor = 'text-red-600'
+          const posBg = 'bg-emerald-50 border-emerald-100'
+          const negBg = 'bg-red-50 border-red-100'
+          const neutralBg = 'bg-white border-gray-100'
 
-        const pctCard = (label: string, value: number | null) => (
-          <div className={`border rounded-2xl p-4 shadow-sm ${value == null ? neutralBg : value >= 0 ? posBg : negBg}`}>
-            <p className="text-gray-400 text-xs uppercase tracking-wide">{label}</p>
-            <p className={`text-lg font-bold mt-1.5 ${value == null ? 'text-gray-300' : value >= 0 ? posColor : negColor}`}>
-              {value == null
-                ? (chartLoading ? '...' : '—')
-                : `${value >= 0 ? '+' : ''}${value.toFixed(1)}%`}
-            </p>
-          </div>
-        )
-
-        return (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm">
-              <p className="text-gray-400 text-xs uppercase tracking-wide">Investido</p>
-              <p className="text-lg font-bold text-gray-900 mt-1.5">{fmt(totalInvestedBrl, 0)}</p>
-            </div>
-            <div className={`border rounded-2xl p-4 shadow-sm ${gainLossBrl >= 0 ? posBg : negBg}`}>
-              <p className="text-gray-400 text-xs uppercase tracking-wide">Resultado</p>
-              <p className={`text-lg font-bold mt-1.5 ${gainLossBrl >= 0 ? posColor : negColor}`}>
-                {gainLossBrl >= 0 ? '+' : ''}{fmt(gainLossBrl, 0)}
+          const pctCard = (label: string, value: number | null) => (
+            <div className={`border rounded-2xl p-4 shadow-sm ${value == null ? neutralBg : value >= 0 ? posBg : negBg}`}>
+              <p className="text-gray-400 text-xs uppercase tracking-wide">{label}</p>
+              <p className={`text-base font-bold mt-1.5 ${value == null ? 'text-gray-300' : value >= 0 ? posColor : negColor}`}>
+                {value == null
+                  ? (chartLoading ? '...' : '—')
+                  : `${value >= 0 ? '+' : ''}${value.toFixed(1)}%`}
               </p>
-              {gainLossPct != null && (
-                <p className={`text-xs mt-0.5 ${gainLossBrl >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
-                  {gainLossBrl >= 0 ? '+' : ''}{gainLossPct.toFixed(1)}%
-                </p>
-              )}
             </div>
-            {pctCard('Mês atual', monthReturn)}
-            {pctCard(`Ano ${currentYearStr}`, ytdReturn)}
-          </div>
-        )
-      })()}
+          )
+
+          return (
+            <>
+              <div className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm">
+                <p className="text-gray-400 text-xs uppercase tracking-wide">Investido</p>
+                <p className="text-base font-bold text-gray-900 mt-1.5">{fmt(totalInvestedBrl, 0)}</p>
+              </div>
+              <div className={`border rounded-2xl p-4 shadow-sm ${gainLossBrl >= 0 ? posBg : negBg}`}>
+                <p className="text-gray-400 text-xs uppercase tracking-wide">Resultado</p>
+                <p className={`text-base font-bold mt-1.5 ${gainLossBrl >= 0 ? posColor : negColor}`}>
+                  {gainLossBrl >= 0 ? '+' : ''}{fmt(gainLossBrl, 0)}
+                </p>
+                {gainLossPct != null && (
+                  <p className={`text-xs mt-0.5 ${gainLossBrl >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+                    {gainLossBrl >= 0 ? '+' : ''}{gainLossPct.toFixed(1)}%
+                  </p>
+                )}
+              </div>
+              {pctCard('Mês atual', monthReturn)}
+              {pctCard(`Ano ${currentYearStr}`, ytdReturn)}
+            </>
+          )
+        })()}
+      </div>
 
       {(chartLoading || portfolioChartData.length > 1) && (
         <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
