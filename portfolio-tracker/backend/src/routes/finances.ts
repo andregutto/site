@@ -830,10 +830,12 @@ router.post('/transactions/csv-parse', requireAuth, async (req, res: Response) =
     return null
   }
 
-  // Only clearly-internal Revolut operations — everything else goes to keyword/AI
+  // Revolut-style type column values that indicate internal operations
   const TRANSFER_TYPE_PATTERNS = ['topup', 'top-up', 'savings', 'exchange']
   // P2P by description: require salutation for bare "to/à" to avoid catching company names
   const P2P_DESC_RE = /^(?:to\s+(?:m|mr|mrs|ms|mme|dr)\.?\s+|(?:à|a)\s+(?!l[ae]?\s|l'|les\s)|para\s+|envoyé\s+à\s+|envoye\s+a\s+|paiement\s+envoyé\s+à\s+|enviado\s+para\s+|transferido\s+para\s+|pix\s+para\s+|ted\s+para\s+|virement\s+(?:vers|(?:à|a))\s+|envoi\s+(?:à|a)\s+)[A-ZÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ]/i
+  // SEPA / FR banking viremennts (BNP, Boursorama, etc.) and BR bank transfers (TED, PIX, DOC, TEF)
+  const SEPA_VIREMENT_RE = /^(?:vir(?:ement)?\s+(?:sepa|interne|permanent|euros?|emis|recu|vers\b)|ted\s|pix\s|doc\s|tef\s)/i
 
   const rows = parseCSV(csv)
   if (rows.length < 2) { res.status(400).json({ error: 'CSV must have at least a header row and one data row' }); return }
@@ -888,7 +890,7 @@ router.post('/transactions/csv-parse', requireAuth, async (req, res: Response) =
     if (rawTypeNorm.includes('credit')) amount =  Math.abs(amount)
 
     const isTransferByType = TRANSFER_TYPE_PATTERNS.some(t => rawTypeNorm.includes(t))
-    const isTransferByDesc = P2P_DESC_RE.test(rawDesc) || P2P_DESC_RE.test(rawDescNorm)
+    const isTransferByDesc = P2P_DESC_RE.test(rawDesc) || P2P_DESC_RE.test(rawDescNorm) || SEPA_VIREMENT_RE.test(rawDesc)
     const isTransfer = isTransferByType || isTransferByDesc
 
     const broker = detectBroker(rawDesc)
