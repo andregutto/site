@@ -181,23 +181,6 @@ export default function AppLayout() {
             >{t.nav.finances}</NavLink>
           </nav>
 
-          {/* Mobile hamburger */}
-          <button
-            className="sm:hidden ml-auto p-1.5 text-gray-500 hover:text-gray-900 transition-colors"
-            onClick={() => setShowMobileMenu(v => !v)}
-            aria-label="Menu"
-          >
-            {showMobileMenu ? (
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
-                <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z"/>
-              </svg>
-            ) : (
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
-                <path fillRule="evenodd" d="M2 4.75A.75.75 0 0 1 2.75 4h14.5a.75.75 0 0 1 0 1.5H2.75A.75.75 0 0 1 2 4.75ZM2 10a.75.75 0 0 1 .75-.75h14.5a.75.75 0 0 1 0 1.5H2.75A.75.75 0 0 1 2 10Zm0 5.25a.75.75 0 0 1 .75-.75h14.5a.75.75 0 0 1 0 1.5H2.75a.75.75 0 0 1-.75-.75Z" clipRule="evenodd"/>
-              </svg>
-            )}
-          </button>
-
           {/* Right — currency + user */}
           <div className="flex items-center gap-3 shrink-0">
             <div className="hidden sm:flex items-center bg-gray-100 rounded-lg p-0.5 gap-0.5">
@@ -272,8 +255,8 @@ export default function AppLayout() {
 
         {/* ── Sub-nav bar (desktop only, always visible when in a section) ── */}
         {activeSubItems.length > 0 && (
-          <div className="hidden sm:block border-t border-gray-100 bg-gray-50/60">
-            <div className="flex items-center gap-0.5 px-6 py-1.5 overflow-x-auto">
+          <div className="border-t border-gray-100 bg-gray-50/60">
+            <div className="flex items-center gap-0.5 px-4 sm:px-6 py-1.5 overflow-x-auto scrollbar-none">
               {activeSubItems.map(({ to, label, end, icon }) => (
                 <NavLink
                   key={to} to={to} end={end}
@@ -298,8 +281,73 @@ export default function AppLayout() {
           <div className="sm:hidden absolute top-full left-0 right-0 bg-white border-b border-gray-100 shadow-lg z-40 max-h-[85vh] overflow-y-auto">
             <div className="px-4 py-3 space-y-1">
 
-              {/* Investimentos section */}
-              <div>
+              {/* User card */}
+              <div className="flex items-center gap-3 px-3 py-2.5">
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt="Avatar" className="w-9 h-9 rounded-full object-cover shrink-0" />
+                ) : (
+                  <div className="w-9 h-9 rounded-full bg-[#001A70] text-white flex items-center justify-center text-xs font-bold shrink-0">{avatarInitials}</div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-900 truncate">{headerLabel}</p>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <div className="flex-1 h-1 bg-gray-100 rounded-full overflow-hidden">
+                      <div className="h-full bg-gradient-to-r from-[#001A70] to-[#C9A227] rounded-full" style={{ width: `${levelProgress}%` }} />
+                    </div>
+                    <span className="text-[10px] font-bold text-[#001A70] shrink-0">{level.emoji} {totalXp} XP</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Settings row */}
+              <div className="flex items-center gap-2 px-3 py-1.5">
+                <span className="text-xs text-gray-400 mr-1">{t.common.language}</span>
+                <LanguageSelector />
+                <div className="flex-1" />
+                <span className="text-xs text-gray-400 mr-1">{t.currency?.label ?? 'Moeda'}</span>
+                <div className="flex items-center bg-gray-100 rounded-lg p-0.5 gap-0.5">
+                  {CURRENCIES.map(c => (
+                    <button key={c} onClick={() => setCurrency(c)}
+                      className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-colors ${
+                        currency === c ? 'bg-white text-[#001A70] shadow-sm' : 'text-gray-400 hover:text-gray-700'
+                      }`}
+                    >{c}</button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Profile links */}
+              <div className="border-t border-gray-100 pt-1">
+                {[
+                  { to: '/profile',      label: t.nav.profile,      icon: '👤' },
+                  { to: '/achievements', label: t.nav.achievements, icon: '🏅' },
+                  { to: '/favorites',    label: t.nav.favorites,    icon: '★'  },
+                  { to: '/archived',     label: t.nav.archived,     icon: '📦' },
+                ].map(({ to, label, icon }) => (
+                  <NavLink key={to} to={to}
+                    className={({ isActive }) =>
+                      `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-colors ${
+                        isActive ? 'bg-[#001A70]/10 text-[#001A70] font-medium' : 'text-gray-700 hover:bg-gray-50'
+                      }`
+                    }
+                  >
+                    <span className="w-4 text-center">{icon}</span>
+                    {label}
+                  </NavLink>
+                ))}
+                <button
+                  onClick={() => signOut()}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-red-500 hover:bg-red-50 transition-colors"
+                >
+                  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4 shrink-0">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 11.5L14 8l-3.5-3.5M14 8H6M6 2.5H3A1.5 1.5 0 0 0 1.5 4v8A1.5 1.5 0 0 0 3 13.5h3"/>
+                  </svg>
+                  {t.nav.signout}
+                </button>
+              </div>
+
+              {/* Navigation */}
+              <div className="border-t border-gray-100 pt-1">
                 <p className="px-3 py-1.5 text-[11px] font-semibold text-gray-400 uppercase tracking-wide">{t.nav.investments}</p>
                 {investimentosItems.map(({ to, label, end, icon }) => (
                   <NavLink key={to} to={to} end={end}
@@ -315,8 +363,7 @@ export default function AppLayout() {
                 ))}
               </div>
 
-              {/* Finanças section */}
-              <div className="pt-1">
+              <div className="border-t border-gray-100 pt-1">
                 <p className="px-3 py-1.5 text-[11px] font-semibold text-gray-400 uppercase tracking-wide">{t.nav.finances}</p>
                 {financesItems.map(({ to, label, end, icon }) => (
                   <NavLink key={to} to={to} end={end}
@@ -332,65 +379,6 @@ export default function AppLayout() {
                 ))}
               </div>
 
-              {/* User section */}
-              <div className="pt-1 border-t border-gray-100 mt-2">
-                <div className="flex items-center gap-3 px-3 py-2.5">
-                  {avatarUrl ? (
-                    <img src={avatarUrl} alt="Avatar" className="w-8 h-8 rounded-full object-cover shrink-0" />
-                  ) : (
-                    <div className="w-8 h-8 rounded-full bg-[#001A70] text-white flex items-center justify-center text-xs font-bold shrink-0">{avatarInitials}</div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">{headerLabel}</p>
-                    <div className="flex items-center gap-1.5 mt-0.5">
-                      <div className="flex-1 h-1 bg-gray-100 rounded-full overflow-hidden">
-                        <div className="h-full bg-gradient-to-r from-[#001A70] to-[#C9A227] rounded-full" style={{ width: `${levelProgress}%` }} />
-                      </div>
-                      <span className="text-[10px] font-bold text-[#001A70] shrink-0">{level.emoji} {totalXp} XP</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between px-3 py-2">
-                  <span className="text-xs text-gray-500">{t.common.language}</span>
-                  <LanguageSelector />
-                </div>
-                <div className="flex items-center justify-between px-3 py-2">
-                  <span className="text-xs text-gray-500">{t.currency?.label ?? 'Moeda'}</span>
-                  <div className="flex items-center bg-gray-100 rounded-lg p-0.5 gap-0.5">
-                    {CURRENCIES.map(c => (
-                      <button key={c} onClick={() => setCurrency(c)}
-                        className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-colors ${
-                          currency === c ? 'bg-white text-[#001A70] shadow-sm' : 'text-gray-400 hover:text-gray-700'
-                        }`}
-                      >{c}</button>
-                    ))}
-                  </div>
-                </div>
-                {[
-                  { to: '/achievements', label: t.nav.achievements, icon: '🏅' },
-                  { to: '/favorites',    label: t.nav.favorites,    icon: '★'  },
-                  { to: '/archived',     label: t.nav.archived,     icon: '📦' },
-                  { to: '/profile',      label: t.nav.profile,      icon: '👤' },
-                ].map(({ to, label, icon }) => (
-                  <NavLink key={to} to={to}
-                    className={({ isActive }) =>
-                      `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-colors ${
-                        isActive ? 'bg-[#001A70]/10 text-[#001A70] font-medium' : 'text-gray-700 hover:bg-gray-50'
-                      }`
-                    }
-                  >
-                    <span className="w-4 text-center">{icon}</span>
-                    {label}
-                  </NavLink>
-                ))}
-                <button
-                  onClick={() => signOut()}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-red-500 hover:bg-red-50 transition-colors mt-1"
-                >
-                  <span className="w-4 text-center">↩</span>
-                  {t.nav.signout}
-                </button>
-              </div>
             </div>
           </div>
         )}
