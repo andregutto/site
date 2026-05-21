@@ -273,31 +273,31 @@
     },
     "builder": {
       "name": "Construtor",
-      "desc": "Patrimônio acima de R$ 10.000"
+      "desc": "Patrimônio acima de {amount}"
     },
     "five_digits": {
       "name": "Cinco Dígitos",
-      "desc": "Patrimônio acima de 10.000 na sua moeda"
+      "desc": "Patrimônio acima de {amount}"
     },
     "six_digits": {
       "name": "Seis Dígitos",
-      "desc": "Patrimônio acima de 100.000 na sua moeda"
+      "desc": "Patrimônio acima de {amount}"
     },
     "million_club": {
       "name": "Clube do Milhão",
-      "desc": "Patrimônio acima de R$ 1.000.000"
+      "desc": "Patrimônio acima de {amount}"
     },
     "three_million": {
       "name": "Três Milhões",
-      "desc": "Patrimônio acima de R$ 3.000.000"
+      "desc": "Patrimônio acima de {amount}"
     },
     "five_million": {
       "name": "Cinco Milhões",
-      "desc": "Patrimônio acima de R$ 5.000.000"
+      "desc": "Patrimônio acima de {amount}"
     },
     "ten_million": {
       "name": "Dez Milhões",
-      "desc": "Patrimônio acima de R$ 10.000.000"
+      "desc": "Patrimônio acima de {amount}"
     },
     "diversified": {
       "name": "Diversificado",

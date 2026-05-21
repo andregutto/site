@@ -36,7 +36,7 @@ export default function AllocationChart({ data }: Props) {
                 ))}
               </Pie>
               <Tooltip
-                formatter={(value) => [fmtBRL(Number(value)), 'Valor']}
+                formatter={(value) => [fmtBRL(Number(value)), t.common.value]}
                 contentStyle={{ borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 12 }}
               />
             </PieChart>
@@ -49,7 +49,7 @@ export default function AllocationChart({ data }: Props) {
               <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: item.color }} />
               <div className="flex-1 min-w-0">
                 <div className="flex justify-between items-baseline">
-                  <span className="text-sm text-gray-700 truncate">{item.name}</span>
+                  <span className="text-sm text-gray-700 truncate">{item.name === 'Sem classe' ? t.classes.noClass : item.name}</span>
                   <span className="text-sm font-medium text-gray-900 ml-2 flex-shrink-0">
                     {item.pct.toFixed(1)}%
                   </span>

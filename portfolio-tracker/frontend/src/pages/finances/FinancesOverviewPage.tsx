@@ -14,6 +14,7 @@ interface CategorySummary {
   icon: string
   color: string
   actual: number
+  budget?: number
 }
 
 interface EnvelopeSummary {
@@ -382,22 +383,24 @@ export default function FinancesOverviewPage() {
               {expandedEnvIds.has(env.id) && env.categories.length > 0 && (
                 <div className="bg-gray-50 border-t border-gray-100">
                   {env.categories.map(cat => {
-                    const pct = env.actual > 0 ? (cat.actual / env.actual) * 100 : 0
+                    const catBudget = cat.budget ?? 0
+                    const pct = catBudget > 0 ? Math.min((cat.actual / catBudget) * 100, 100) : 0
+                    const over = catBudget > 0 && cat.actual > catBudget
                     return (
                       <div key={cat.id} className="px-5 py-2 flex items-center gap-3 pl-14 cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => navigate(`/finances/transactions?category_id=${cat.id}`)}>
                         <span className="text-base leading-none w-5 shrink-0">{cat.icon}</span>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between">
                             <span className="text-xs text-gray-600 truncate">{resolveKey(cat.name, cat.name_key, nameKeys)}</span>
-                            <span className="text-xs font-medium text-gray-700 shrink-0 ml-2">
-                              {fmt(cx(cat.actual), currency, true)}
-                            </span>
                           </div>
                           <div className="mt-0.5 h-1 bg-gray-200 rounded-full overflow-hidden">
-                            <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: cat.color }} />
+                            <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: over ? '#ef4444' : cat.color }} />
+                          </div>
+                          <div className="flex items-center justify-between mt-0.5">
+                            <span className="text-[10px] text-gray-400">{fmt(cx(cat.actual), currency, true)} {t.finances.overviewSpent}</span>
+                            {catBudget > 0 && <span className="text-[10px] text-gray-400">{t.finances.target}: {fmt(cx(catBudget), currency, true)}</span>}
                           </div>
                         </div>
-                        <span className="text-[10px] text-gray-400 w-7 text-right shrink-0">{pct.toFixed(0)}%</span>
                       </div>
                     )
                   })}

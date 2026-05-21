@@ -62,10 +62,10 @@ router.post('/check', requireAuth, async (req, res: Response) => {
     check('builder',       isBRL ? total_brl >= 10_000 : td >= 2_000)
     check('five_digits',   td >= 10_000)
     check('six_digits',    td >= 100_000)
-    check('million_club',  total_brl >= 1_000_000)
-    check('three_million', total_brl >= 3_000_000)
-    check('five_million',  total_brl >= 5_000_000)
-    check('ten_million',   total_brl >= 10_000_000)
+    check('million_club',  td >= 1_000_000)
+    check('three_million', td >= 3_000_000)
+    check('five_million',  td >= 5_000_000)
+    check('ten_million',   td >= 10_000_000)
   }
 
   const className = (a: AssetRow) => {

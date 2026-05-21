@@ -36,6 +36,29 @@ export default function AchievementsPage() {
     return m
   }, [earned])
 
+  const WEALTH_THRESHOLDS: Record<string, { brl: number; other: number }> = {
+    builder:       { brl: 10_000,      other: 2_000 },
+    five_digits:   { brl: 10_000,      other: 10_000 },
+    six_digits:    { brl: 100_000,     other: 100_000 },
+    million_club:  { brl: 1_000_000,   other: 1_000_000 },
+    three_million: { brl: 3_000_000,   other: 3_000_000 },
+    five_million:  { brl: 5_000_000,   other: 5_000_000 },
+    ten_million:   { brl: 10_000_000,  other: 10_000_000 },
+  }
+
+  const fmtAmount = (amount: number, currency: string) =>
+    new Intl.NumberFormat(undefined, { style: 'currency', currency, maximumFractionDigits: 0 }).format(amount)
+
+  const resolveDesc = (key: string, desc: string) => {
+    if (!desc.includes('{amount}')) return desc
+    const thresholds = WEALTH_THRESHOLDS[key]
+    if (!thresholds) return desc
+    const isBRL = !displayCurrency || displayCurrency === 'BRL'
+    const cur = isBRL ? 'BRL' : displayCurrency
+    const amount = isBRL ? thresholds.brl : thresholds.other
+    return desc.replace('{amount}', fmtAmount(amount, cur))
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -137,7 +160,7 @@ export default function AchievementsPage() {
                 {(t.achievementDefs as Record<string, { name: string; desc: string }>)[def.key]?.name ?? def.name}
               </p>
               <p className={`mt-1 text-xs leading-snug ${isEarned ? 'text-gray-500' : 'text-gray-400'}`}>
-                {(t.achievementDefs as Record<string, { name: string; desc: string }>)[def.key]?.desc ?? def.description}
+                {resolveDesc(def.key, (t.achievementDefs as Record<string, { name: string; desc: string }>)[def.key]?.desc ?? def.description)}
               </p>
 
               {isEarned ? (

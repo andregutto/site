@@ -317,7 +317,7 @@ router.get('/spending-summary', requireAuth, async (req, res: Response) => {
     const byEnv = envs.map(env => {
       const envCats = cats
         .filter(c => c.envelope_id === env.id)
-        .map(c => ({ id: c.id, name: c.name, name_key: c.name_key ?? null, icon: c.icon, color: c.color, actual: Math.round((md.byCat.get(c.id) ?? 0) * 100) / 100 }))
+        .map(c => ({ id: c.id, name: c.name, name_key: c.name_key ?? null, icon: c.icon, color: c.color, actual: Math.round((md.byCat.get(c.id) ?? 0) * 100) / 100, budget: Math.round((c.budget_monthly ?? 0) * 100) / 100 }))
         .filter(c => c.actual > 0)
         .sort((a, b) => b.actual - a.actual)
       return {
@@ -1059,13 +1059,21 @@ router.post('/transactions/csv-parse', requireAuth, async (req, res: Response) =
   }
 
   // Mark already-imported rows so the frontend can hide them from preview.
-  // Fetch all csv-sourced rows for user at once (avoids huge .in() URL with thousands of items).
-  const { data: existingRows } = await supabaseAdmin
-    .from('finance_transactions')
-    .select('source')
-    .eq('user_id', userId)
-    .like('source', 'csv:%')
-  const existingSet = new Set((existingRows ?? []).map((r: { source: string }) => r.source))
+  // Paginated fetch to bypass PostgREST 1000-row cap.
+  const existingSet = new Set<string>()
+  let csvOffset = 0
+  while (true) {
+    const { data: page } = await supabaseAdmin
+      .from('finance_transactions')
+      .select('source')
+      .eq('user_id', userId)
+      .like('source', 'csv:%')
+      .range(csvOffset, csvOffset + 999)
+    if (!page || page.length === 0) break
+    for (const r of page) existingSet.add(r.source)
+    if (page.length < 1000) break
+    csvOffset += 1000
+  }
   const sourceKeys = assignSourceKeys(transactions)
   const taggedTransactions = transactions.map((t, i) => {
     const source = sourceKeys[i]
@@ -1137,13 +1145,21 @@ router.post('/transactions/csv-import', requireAuth, async (req, res: Response) 
     source: t.source ?? sourceKeys[i],
   }))
 
-  // Deduplicate: fetch all csv-sourced rows for user at once to avoid .in() URL limits
-  const { data: existingRows } = await supabaseAdmin
-    .from('finance_transactions')
-    .select('source')
-    .eq('user_id', userId)
-    .like('source', 'csv:%')
-  const existingSet = new Set((existingRows ?? []).map((r: { source: string }) => r.source))
+  // Deduplicate: paginated fetch to bypass PostgREST 1000-row cap
+  const existingSet = new Set<string>()
+  let csvOffset2 = 0
+  while (true) {
+    const { data: page } = await supabaseAdmin
+      .from('finance_transactions')
+      .select('source')
+      .eq('user_id', userId)
+      .like('source', 'csv:%')
+      .range(csvOffset2, csvOffset2 + 999)
+    if (!page || page.length === 0) break
+    for (const r of page) existingSet.add(r.source)
+    if (page.length < 1000) break
+    csvOffset2 += 1000
+  }
   const dbNewRows = rows.filter(r => !existingSet.has(r.source))
 
   // Deduplicate within the incoming rows themselves (identical source hash → unique index
