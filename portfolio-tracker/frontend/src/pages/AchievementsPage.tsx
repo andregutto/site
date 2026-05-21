@@ -92,7 +92,7 @@ export default function AchievementsPage() {
             <span className="text-3xl">{level.emoji}</span>
             <div>
               <p className="text-[#C9A227] text-xs font-bold uppercase tracking-widest">{t.achievements.currentLevel}</p>
-              <p className="text-white font-bold text-lg">{level.name}</p>
+              <p className="text-white font-bold text-lg">{(t.levels as Record<string,string>)[level.key] ?? level.name}</p>
             </div>
           </div>
           <div className="text-right">
@@ -111,7 +111,7 @@ export default function AchievementsPage() {
         <div className="flex justify-between mt-2 text-xs text-gray-400">
           <span>{level.minXp} XP</span>
           {nextLevel
-            ? <span>{t.achievements.nextLevel}: {nextLevel.emoji} {nextLevel.name} · {nextLevel.minXp} {t.achievements.xp}</span>
+            ? <span>{t.achievements.nextLevel}: {nextLevel.emoji} {(t.levels as Record<string,string>)[nextLevel.key] ?? nextLevel.name} · {nextLevel.minXp} {t.achievements.xp}</span>
             : <span className="text-[#D4AF37]">{t.achievements.maxLevel}</span>
           }
         </div>
@@ -136,7 +136,7 @@ export default function AchievementsPage() {
               }`}
             >
               <div className="text-base">{l.emoji}</div>
-              <div className="truncate px-1 mt-0.5">{l.name}</div>
+              <div className="truncate px-1 mt-0.5">{(t.levels as Record<string,string>)[l.key] ?? l.name}</div>
             </div>
           )
         })}

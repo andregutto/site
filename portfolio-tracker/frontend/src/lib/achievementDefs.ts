@@ -47,11 +47,11 @@ export const ACHIEVEMENT_DEFS: AchievementDef[] = [
 ]
 
 export const LEVELS = [
-  { name: 'Semente',    emoji: '🌱', minXp: 0,    maxXp: 100  },
-  { name: 'Crescimento',emoji: '🌿', minXp: 101,  maxXp: 300  },
-  { name: 'Expansão',   emoji: '🌳', minXp: 301,  maxXp: 600  },
-  { name: 'Solidez',    emoji: '🏔️', minXp: 601,  maxXp: 1000 },
-  { name: 'Liberdade',  emoji: '🚀', minXp: 1001, maxXp: Infinity },
+  { key: 'semente',    name: 'Semente',    emoji: '🌱', minXp: 0,    maxXp: 150  },
+  { key: 'crescimento',name: 'Crescimento',emoji: '🌿', minXp: 151,  maxXp: 450  },
+  { key: 'expansao',   name: 'Expansão',   emoji: '🌳', minXp: 451,  maxXp: 900  },
+  { key: 'solidez',    name: 'Solidez',    emoji: '🏔️', minXp: 901,  maxXp: 1600 },
+  { key: 'liberdade',  name: 'Liberdade',  emoji: '🚀', minXp: 1601, maxXp: Infinity },
 ]
 
 export function getLevel(xp: number) {

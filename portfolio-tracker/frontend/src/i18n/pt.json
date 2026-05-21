@@ -961,5 +961,12 @@
     "errorRate": "Informe a taxa contratada.",
     "errorInstitution": "Informe a nova instituição.",
     "errorPortability": "Erro ao registrar portabilidade"
+  },
+  "levels": {
+    "semente": "Semente",
+    "crescimento": "Crescimento",
+    "expansao": "Expansão",
+    "solidez": "Solidez",
+    "liberdade": "Liberdade"
   }
 }

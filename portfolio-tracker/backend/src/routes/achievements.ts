@@ -97,7 +97,7 @@ router.post('/check', requireAuth, async (req, res: Response) => {
 
   // Finance module checks
   const needsFinance = ['fin_first_txn','fin_csv_import','fin_first_account','fin_budget_ready',
-    'fin_first_moment','fin_freedom','fin_hundred_txn','fin_categorized'].some(k => !earned.has(k))
+    'fin_first_moment','fin_freedom','fin_hundred_txn','fin_categorized','coruja'].some(k => !earned.has(k))
   if (needsFinance) {
     const [txnRes, accountRes, momentRes, planRes, envelopeRes] = await Promise.all([
       supabaseAdmin.from('finance_transactions').select('id, source, category_id').eq('user_id', userId),

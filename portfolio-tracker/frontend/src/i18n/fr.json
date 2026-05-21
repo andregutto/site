@@ -961,5 +961,12 @@
     "errorRate": "Saisissez le taux contracté.",
     "errorInstitution": "Saisissez le nouvel établissement.",
     "errorPortability": "Erreur lors de l'enregistrement du transfert"
+  },
+  "levels": {
+    "semente": "Graine",
+    "crescimento": "Croissance",
+    "expansao": "Expansion",
+    "solidez": "Solidité",
+    "liberdade": "Liberté"
   }
 }

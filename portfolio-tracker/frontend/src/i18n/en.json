@@ -961,5 +961,12 @@
     "errorRate": "Enter the contracted rate.",
     "errorInstitution": "Enter the new institution.",
     "errorPortability": "Error registering transfer"
+  },
+  "levels": {
+    "semente": "Seed",
+    "crescimento": "Growth",
+    "expansao": "Expansion",
+    "solidez": "Solidity",
+    "liberdade": "Freedom"
   }
 }
