@@ -453,6 +453,10 @@ export default function ContributionsPage() {
         resetForm()
         refresh()
       }
+      // Ticker assets need price history — fire sync in background, don't block UI
+      if (isTickerForm) {
+        apiFetch('/portfolio/sync-history', { method: 'POST' }).catch(() => {})
+      }
     } catch (e) {
       setNewAssetErr(e instanceof Error ? e.message : 'Erro ao criar ativo')
     } finally {

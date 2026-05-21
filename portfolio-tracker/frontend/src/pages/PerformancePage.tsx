@@ -1,7 +1,8 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { usePerformanceSummary, usePerformanceMonthly, usePerformanceBenchmarks, usePortfolioValue, usePerformanceInception } from '../hooks/usePortfolio'
 import { useCurrency } from '../contexts/CurrencyContext'
+import { apiFetch } from '../lib/api'
 import {
   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend
 } from 'recharts'
@@ -116,6 +117,20 @@ export default function PerformancePage() {
   const benchmarkMap = new Map(
     (benchmarks?.monthly ?? []).map(b => [b.month, b])
   )
+
+  // Auto-sync price history when chart would be empty but portfolio has value.
+  // Fires once per page load; covers users who added assets without B3 import.
+  const autoSynced = useRef(false)
+  useEffect(() => {
+    if (autoSynced.current) return
+    if (mLoading) return
+    if ((monthly?.monthly.filter(m => m.total > 0).length ?? 0) > 0) return
+    if (!livePortfolio?.total_brl || livePortfolio.total_brl <= 0) return
+    autoSynced.current = true
+    apiFetch('/portfolio/sync-history', { method: 'POST' })
+      .then(() => { refreshSummary(); refreshMonthly(); refreshBenchmarks() })
+      .catch(() => {})
+  }, [mLoading, monthly, livePortfolio?.total_brl, refreshSummary, refreshMonthly, refreshBenchmarks])
 
   const monthsWithData = monthly?.monthly.filter(m => m.total > 0) ?? []
   const firstMonth = monthsWithData[0]?.month ?? ''
