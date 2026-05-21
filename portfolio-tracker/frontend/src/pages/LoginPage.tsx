@@ -65,13 +65,16 @@ export default function LoginPage() {
   const l = t.login
   const [searchParams] = useSearchParams()
 
-  const [mode, setMode]         = useState<Mode>((searchParams.get('mode') as Mode) || 'login')
-  const [email, setEmail]       = useState('')
-  const [password, setPassword] = useState('')
-  const [showPwd, setShowPwd]   = useState(false)
-  const [error, setError]       = useState('')
-  const [info, setInfo]         = useState('')
-  const [loading, setLoading]   = useState(false)
+  const [mode, setMode]           = useState<Mode>((searchParams.get('mode') as Mode) || 'login')
+  const [email, setEmail]         = useState('')
+  const [password, setPassword]   = useState('')
+  const [confirmPwd, setConfirmPwd] = useState('')
+  const [showPwd, setShowPwd]     = useState(false)
+  const [acceptTerms, setAcceptTerms] = useState(false)
+  const [registered, setRegistered] = useState(false)
+  const [error, setError]         = useState('')
+  const [info, setInfo]           = useState('')
+  const [loading, setLoading]     = useState(false)
 
   const [firstName,  setFirstName]  = useState('')
   const [lastName,   setLastName]   = useState('')
@@ -83,6 +86,7 @@ export default function LoginPage() {
   function resetExtras() {
     setFirstName(''); setLastName(''); setCountry('')
     setTaxCountry(''); setBirthdate(''); setCurrency('BRL')
+    setConfirmPwd(''); setAcceptTerms(false)
   }
 
   function switchMode(m: Mode) {
@@ -93,6 +97,10 @@ export default function LoginPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError(''); setInfo('')
+    if (mode === 'register') {
+      if (password !== confirmPwd) { setError(l.passwordMismatch); return }
+      if (!acceptTerms) { setError(`${l.acceptTerms} ${l.termsLink}.`); return }
+    }
     setLoading(true)
     try {
       if (mode === 'login') {
@@ -108,7 +116,7 @@ export default function LoginPage() {
         }
         Object.keys(metadata).forEach(k => metadata[k] === undefined && delete metadata[k])
         await signUp(email, password, Object.keys(metadata).length ? metadata : undefined)
-        setInfo(l.confirmEmail)
+        setRegistered(true)
         localStorage.setItem('preferredCurrency', currency)
         fetch('/api/newsletter/subscribe', {
           method: 'POST',
@@ -202,6 +210,36 @@ export default function LoginPage() {
         {/* Formulário centralizado */}
         <div className="flex-1 flex flex-col items-center justify-center px-4 py-10 sm:px-12">
           <div style={{ width: '100%', maxWidth: 360 }}>
+
+            {/* Tela de sucesso após cadastro */}
+            {registered && (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 24, textAlign: 'center' }}>
+                <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#eff6ff', border: `1px solid ${BORDER}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28 }}>
+                  ✉️
+                </div>
+                <div>
+                  <h1 style={{ fontFamily: F_DISPLAY, fontSize: '1.8rem', fontWeight: 400, color: DARK, marginBottom: 12 }}>
+                    {l.registrationDone}
+                  </h1>
+                  <p style={{ fontFamily: F_BODY, fontSize: 14, color: GRAY, lineHeight: 1.6 }}>
+                    {l.registrationDoneBody.replace('{email}', email)}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => { setRegistered(false); switchMode('login') }}
+                  style={{
+                    width: '100%', padding: '14px 24px', background: BLUE, color: BG,
+                    fontFamily: F_MONO, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase',
+                    border: 'none', borderRadius: 3, cursor: 'pointer',
+                  }}
+                >
+                  {l.goToLogin}
+                </button>
+              </div>
+            )}
+
+            {!registered && (<>
 
             {/* Eyebrow */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 28 }}>
@@ -325,6 +363,22 @@ export default function LoginPage() {
                 </div>
               )}
 
+              {/* Confirmar senha (apenas cadastro) */}
+              {mode === 'register' && (
+                <div>
+                  <label style={LABEL_STYLE}>{l.confirmPwd}</label>
+                  <input
+                    type="password"
+                    value={confirmPwd}
+                    onChange={e => setConfirmPwd(e.target.value)}
+                    required
+                    autoComplete="new-password"
+                    placeholder="••••••••"
+                    style={{ ...INPUT_STYLE, borderColor: confirmPwd && confirmPwd !== password ? '#ef4444' : BORDER }}
+                  />
+                </div>
+              )}
+
               {/* Campos extras de cadastro */}
               {mode === 'register' && (
                 <>
@@ -375,6 +429,27 @@ export default function LoginPage() {
                       ))}
                     </div>
                   </div>
+
+                  {/* Aceitar termos */}
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={acceptTerms}
+                      onChange={e => setAcceptTerms(e.target.checked)}
+                      style={{ width: 16, height: 16, accentColor: BLUE, flexShrink: 0 }}
+                    />
+                    <span style={{ fontFamily: F_BODY, fontSize: 13, color: GRAY }}>
+                      {l.acceptTerms}{' '}
+                      <a
+                        href="/terms"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ color: BLUE, textDecoration: 'underline' }}
+                      >
+                        {l.termsLink}
+                      </a>
+                    </span>
+                  </label>
                 </>
               )}
 
@@ -425,6 +500,7 @@ export default function LoginPage() {
                 {submitLabel}
               </button>
             </form>
+            </>)}
           </div>
         </div>
 

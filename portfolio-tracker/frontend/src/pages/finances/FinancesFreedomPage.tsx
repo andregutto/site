@@ -117,7 +117,7 @@ function portfolioInCurrency(portfolio: PortfolioValue, currency: string, rates:
   return String(Math.round(portfolio.total_brl * (rates[currency] ?? 1)))
 }
 
-// Simple form component
+// Wizard form component
 interface PlanFormProps {
   initial: Partial<FreedomPlan>
   portfolio: PortfolioValue
@@ -134,29 +134,32 @@ function PlanForm({ initial, portfolio, ipcaAnnual, birthdate, onSave, onDelete,
   const isNew = !initial.id
   const rates = deriveRates(portfolio)
 
-  const [currency,   setCurrencyState] = useState(initial.currency ?? 'EUR')
-  const [name,       setName]          = useState(initial.name ?? '')
-  const [startDate,  setStartDate]     = useState(
+  // step: 0=goal(new only), 1=info, 2=capital, 3=target, 4=strategy
+  const [step, setStep]           = useState(isNew ? 0 : 1)
+  const [goalMode, setGoalMode]   = useState<'capital' | 'income'>('capital')
+  const [currency, setCurrencyState] = useState(initial.currency ?? 'EUR')
+  const [name, setName]           = useState(initial.name ?? '')
+  const [startDate, setStartDate] = useState(
     initial.start_date?.slice(0, 10) ?? initial.created_at?.slice(0, 10) ?? new Date().toISOString().slice(0, 10)
   )
-  const [capital,    setCapital]       = useState(
+  const [capital, setCapital]     = useState(
     initial.initial_capital != null
       ? String(initial.initial_capital)
       : portfolioInCurrency(portfolio, initial.currency ?? 'EUR', rates)
   )
-  const [contrib,        setContrib]       = useState(String(initial.monthly_contribution ?? 0))
-  const [rate,           setRate]          = useState(String(((initial.monthly_return_rate ?? 0.006) * 100).toFixed(2)))
-  const [incomeRate,     setIncomeRate]    = useState(String(((initial.monthly_income_rate ?? 0.005) * 100).toFixed(2)))
-  const [target,         setTarget]        = useState(String(initial.target_amount ?? 0))
-  const [horizon,        setHorizon]       = useState(String(initial.horizon_years ?? 20))
-  const [notes,          setNotes]         = useState(initial.notes ?? '')
-  const [goalMode,       setGoalMode]      = useState<'capital' | 'income'>('capital')
-  const [desiredIncome,  setDesiredIncome] = useState('')
-  const [inflation,      setInflation]     = useState(
+  const [contrib, setContrib]     = useState(String(initial.monthly_contribution ?? 0))
+  const [rate, setRate]           = useState(String(((initial.monthly_return_rate ?? 0.006) * 100).toFixed(2)))
+  const [incomeRate, setIncomeRate] = useState(String(((initial.monthly_income_rate ?? 0.005) * 100).toFixed(2)))
+  const [target, setTarget]       = useState(String(initial.target_amount ?? 0))
+  const [horizon, setHorizon]     = useState(String(initial.horizon_years ?? 20))
+  const [notes, setNotes]         = useState(initial.notes ?? '')
+  const [desiredIncome, setDesiredIncome] = useState('')
+  const [inflation, setInflation] = useState(
     !initial.id && (initial.currency ?? 'EUR') === 'BRL' && ipcaAnnual != null
       ? String(ipcaAnnual)
       : '2'
   )
+  const [showAdvanced, setShowAdvanced] = useState(false)
 
   function handleCurrencyChange(newCur: string) {
     setCapital(prev => convertAmt(prev, currency, newCur, rates))
@@ -186,7 +189,6 @@ function PlanForm({ initial, portfolio, ipcaAnnual, birthdate, onSave, onDelete,
     return ((Math.pow(1 + r / 100, 12) - 1) * 100).toFixed(1)
   })()
 
-  // Mode 2: compute target_amount from desired monthly income + inflation
   const computedTarget = (() => {
     if (goalMode !== 'income') return null
     const income = parseFloat(desiredIncome)
@@ -202,18 +204,17 @@ function PlanForm({ initial, portfolio, ipcaAnnual, birthdate, onSave, onDelete,
     ? String(computedTarget)
     : target
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
+  async function handleSave() {
     await onSave({
       name,
-      start_date:            startDate || null,
-      initial_capital:       parseFloat(capital),
-      monthly_contribution:  parseFloat(contrib),
-      monthly_return_rate:   parseFloat(rate) / 100,
-      monthly_income_rate:   parseFloat(incomeRate) / 100,
-      target_amount:         parseFloat(effectiveTarget),
+      start_date:           startDate || null,
+      initial_capital:      parseFloat(capital),
+      monthly_contribution: parseFloat(contrib),
+      monthly_return_rate:  parseFloat(rate) / 100,
+      monthly_income_rate:  parseFloat(incomeRate) / 100,
+      target_amount:        parseFloat(effectiveTarget),
       currency,
-      horizon_years:         parseInt(horizon),
+      horizon_years:        parseInt(horizon),
       notes: notes || null,
     })
   }
@@ -221,139 +222,209 @@ function PlanForm({ initial, portfolio, ipcaAnnual, birthdate, onSave, onDelete,
   const fieldCls = 'w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20'
   const labelCls = 'block text-xs text-gray-500 mb-1'
 
+  // Steps 0=goal(new only), 1=info, 2=capital, 3=target, 4=strategy
+  // Edit mode starts at step 1, so totalSteps = 4; new mode starts at 0, totalSteps = 5
+  const firstStep   = isNew ? 0 : 1
+  const lastStep    = 4
+  const isLastStep  = step === lastStep
+
+  // Indicator items: only show steps that are part of this flow
+  const stepDefs = [
+    { key: 0, label: t.finances.freedomStepGoal },
+    { key: 1, label: t.finances.freedomStepInfo },
+    { key: 2, label: t.finances.freedomStepStarting },
+    { key: 3, label: t.finances.freedomStepTarget },
+    { key: 4, label: t.finances.freedomStepStrategy },
+  ].filter(s => s.key >= firstStep)
+
+  const fmtCur = (n: number) =>
+    new Intl.NumberFormat('pt-BR', { style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n)
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="grid grid-cols-2 gap-3">
-
-        {/* Name — full width */}
-        <div className="col-span-2">
-          <label className={labelCls}>{t.common.name}</label>
-          <input required value={name} onChange={e => setName(e.target.value)} className={fieldCls} placeholder="Plano Mai/2026" />
-        </div>
-
-        {/* Start date */}
-        <div className="col-span-2 sm:col-span-1">
-          <label className={labelCls}>{t.finances.freedomPlanStartDate}</label>
-          <input type="date" required value={startDate} onChange={e => setStartDate(e.target.value)} className={fieldCls} />
-        </div>
-
-        {/* Currency selector */}
-        <div className="col-span-2 sm:col-span-1">
-          <label className={labelCls}>{t.finances.freedomCurrency}</label>
-          <div className="flex items-center bg-gray-100 rounded-lg p-0.5 gap-0.5 w-fit">
-            {['EUR', 'BRL', 'USD'].map(c => (
-              <button
-                key={c}
-                type="button"
-                onClick={() => handleCurrencyChange(c)}
-                className={`px-3 py-1.5 text-sm font-semibold rounded-md transition-colors ${
-                  currency === c
-                    ? 'bg-white text-[#001A70] shadow-sm'
-                    : 'text-gray-400 hover:text-gray-700'
-                }`}
-              >
-                {c}
-              </button>
-            ))}
+    <div className="space-y-6">
+      {/* Step indicator */}
+      <div className="flex items-center gap-0">
+        {stepDefs.map((s, idx) => (
+          <div key={s.key} className="flex items-center">
+            <div className="flex flex-col items-center">
+              <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${
+                s.key === step
+                  ? 'bg-[#001A70] text-white shadow-sm'
+                  : s.key < step
+                  ? 'bg-[#001A70]/20 text-[#001A70]'
+                  : 'bg-gray-100 text-gray-400'
+              }`}>
+                {s.key < step ? '✓' : idx + 1}
+              </div>
+              <span className={`text-[10px] mt-0.5 hidden sm:block max-w-[60px] text-center leading-tight ${
+                s.key === step ? 'text-[#001A70] font-semibold' : 'text-gray-400'
+              }`}>{s.label}</span>
+            </div>
+            {idx < stepDefs.length - 1 && (
+              <div className={`h-px w-6 mx-1 mb-3 sm:mb-0 transition-colors ${s.key < step ? 'bg-[#001A70]/30' : 'bg-gray-200'}`} />
+            )}
           </div>
-          <p className="text-[11px] text-gray-400 mt-1">{t.finances.freedomCurrencyHint}</p>
-        </div>
+        ))}
+      </div>
 
-
-        {/* Capital inicial */}
-        <div className="col-span-2 sm:col-span-1">
-          <label className={labelCls}>
-            {t.finances.freedomCapital} ({currency})
-            {isNew && Number(portfolioSuggestion) > 0 && (
-              <span className="ml-1.5 text-gray-400">
-                — {t.finances.freedomCapitalHint}&nbsp;
-                <button
-                  type="button"
-                  className="text-[#001A70] hover:opacity-70 underline underline-offset-2 transition-opacity"
-                  onClick={() => setCapital(portfolioSuggestion)}
-                >
-                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(Number(portfolioSuggestion))}
-                </button>
-              </span>
-            )}
-          </label>
-          <input required type="number" value={capital} onChange={e => setCapital(e.target.value)} className={fieldCls} placeholder="540000" />
-        </div>
-
-        {/* Aporte mensal */}
-        <div>
-          <label className={labelCls}>{t.finances.freedomContrib} / mês ({currency})</label>
-          <input required type="number" value={contrib} onChange={e => setContrib(e.target.value)} className={fieldCls} placeholder="13000" />
-        </div>
-
-        {/* Taxa de retorno */}
-        <div>
-          <label className={labelCls}>{t.finances.freedomRate} % / mês</label>
-          <input required type="number" step="0.01" value={rate} onChange={e => setRate(e.target.value)} className={fieldCls} placeholder="0.60" />
-          <p className="text-[11px] text-gray-400 mt-1 leading-snug">
-            {annualRatePct != null && (
-              <><strong className="text-gray-600">≈ {annualRatePct}% {t.finances.freedomRateAnnual}</strong>{' · '}</>
-            )}
-            {t.finances.freedomRateHint}
-          </p>
-        </div>
-
-        {/* Taxa de renda passiva */}
-        <div>
-          <label className={labelCls}>{t.finances.freedomIncomeRate} % / mês</label>
-          <input required type="number" step="0.01" value={incomeRate} onChange={e => setIncomeRate(e.target.value)} className={fieldCls} placeholder="0.50" />
-          <p className="text-[11px] text-gray-400 mt-1 leading-snug">{t.finances.freedomIncomeRateHint}</p>
-        </div>
-
-        {/* Horizonte */}
-        <div>
-          <label className={labelCls}>{t.finances.freedomHorizon} (anos)</label>
-          <input required type="number" value={horizon} onChange={e => setHorizon(e.target.value)} className={fieldCls} placeholder="20" />
-          {targetDate && (
-            <p className="text-[11px] text-gray-400 mt-1">
-              {t.finances.freedomMetaEm}: <strong>{targetDate}</strong>
-              {birthdate && targetDateISO && (
-                <span className="ml-1.5">· {ageAtDate(birthdate, targetDateISO)} {t.finances.freedomAgeAtTarget}</span>
-              )}
-            </p>
-          )}
-        </div>
-
-        {/* Meta — toggle entre dois modos */}
-        <div className="col-span-2">
-          <div className="flex items-center gap-1 mb-2">
-            <span className="text-xs text-gray-500 mr-1">{t.finances.freedomGoal}:</span>
-            {(['capital', 'income'] as const).map(mode => (
+      {/* ─── Step 0: Goal type (new plans only) ─── */}
+      {step === 0 && (
+        <div className="space-y-4">
+          <p className="text-sm text-gray-500">{t.finances.freedomStepGoal} — escolha o tipo de meta para este plano:</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {([
+              { mode: 'capital' as const, emoji: '🏦', title: t.finances.freedomGoalCardCapitalTitle, desc: t.finances.freedomGoalCardCapitalDesc },
+              { mode: 'income'  as const, emoji: '💰', title: t.finances.freedomGoalCardIncomeTitle,  desc: t.finances.freedomGoalCardIncomeDesc  },
+            ]).map(({ mode, emoji, title, desc }) => (
               <button
                 key={mode}
                 type="button"
-                onClick={() => setGoalMode(mode)}
-                className={`px-2.5 py-1 text-xs rounded-md transition-colors ${
+                onClick={() => { setGoalMode(mode); setStep(1) }}
+                className={`p-5 rounded-2xl border-2 text-left transition-all hover:shadow-md ${
                   goalMode === mode
-                    ? 'bg-[#001A70] text-white'
-                    : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                    ? 'border-[#001A70] bg-[#001A70]/5 shadow-sm'
+                    : 'border-gray-200 hover:border-[#001A70]/40'
                 }`}
               >
-                {mode === 'capital' ? t.finances.freedomGoalModeCapital : t.finances.freedomGoalModeIncome}
+                <div className="text-3xl mb-3">{emoji}</div>
+                <div className="font-semibold text-gray-900 mb-1">{title}</div>
+                <div className="text-xs text-gray-500 leading-relaxed">{desc}</div>
               </button>
             ))}
           </div>
+          <div className="flex justify-end pt-1">
+            <button type="button" onClick={onCancel} className="text-sm text-gray-400 hover:text-gray-600 transition-colors">
+              {t.common.cancel}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ─── Step 1: Info (name, currency, start date) ─── */}
+      {step === 1 && (
+        <div className="space-y-4">
+          <div>
+            <label className={labelCls}>{t.common.name}</label>
+            <input
+              autoFocus
+              value={name}
+              onChange={e => setName(e.target.value)}
+              className={fieldCls}
+              placeholder="Plano Mai/2026"
+            />
+          </div>
+          <div>
+            <label className={labelCls}>{t.finances.freedomCurrency}</label>
+            <div className="flex items-center bg-gray-100 rounded-lg p-0.5 gap-0.5 w-fit">
+              {['EUR', 'BRL', 'USD'].map(c => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => handleCurrencyChange(c)}
+                  className={`px-4 py-2 text-sm font-semibold rounded-md transition-colors ${
+                    currency === c
+                      ? 'bg-white text-[#001A70] shadow-sm'
+                      : 'text-gray-400 hover:text-gray-700'
+                  }`}
+                >
+                  {c}
+                </button>
+              ))}
+            </div>
+            <p className="text-[11px] text-gray-400 mt-1">{t.finances.freedomCurrencyHint}</p>
+          </div>
+          <div>
+            <label className={labelCls}>{t.finances.freedomPlanStartDate}</label>
+            <input
+              type="date"
+              value={startDate}
+              onChange={e => setStartDate(e.target.value)}
+              className={`${fieldCls} max-w-[200px]`}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* ─── Step 2: Initial capital ─── */}
+      {step === 2 && (
+        <div className="space-y-4">
+          <p className="text-sm text-gray-600">{t.finances.freedomStepStarting} — qual é o valor que você já possui hoje?</p>
+          <div>
+            <label className={labelCls}>{t.finances.freedomCapital} ({currency})</label>
+            {isNew && Number(portfolioSuggestion) > 0 && (
+              <div className="mb-2 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2.5 flex items-center justify-between">
+                <span className="text-xs text-gray-600">
+                  {t.finances.freedomCapitalHint}:&nbsp;
+                  <strong className="text-[#001A70]">{fmtCur(Number(portfolioSuggestion))}</strong>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setCapital(portfolioSuggestion)}
+                  className="text-xs text-[#001A70] font-semibold hover:opacity-70 transition-opacity ml-3 whitespace-nowrap"
+                >
+                  Usar este valor
+                </button>
+              </div>
+            )}
+            <input
+              autoFocus
+              type="number"
+              value={capital}
+              onChange={e => setCapital(e.target.value)}
+              className={fieldCls}
+              placeholder="50000"
+            />
+            <p className="text-[11px] text-gray-400 mt-1">Inclua investimentos, poupança e reservas que já fazem parte do seu plano.</p>
+          </div>
+        </div>
+      )}
+
+      {/* ─── Step 3: Target ─── */}
+      {step === 3 && (
+        <div className="space-y-4">
+          <p className="text-sm text-gray-600">
+            {goalMode === 'capital'
+              ? 'Qual patrimônio total você quer atingir?'
+              : 'Qual renda mensal você quer ter ao atingir a liberdade?'}
+          </p>
 
           {goalMode === 'capital' ? (
             <div>
-              <input required type="number" value={target} onChange={e => setTarget(e.target.value)} className={fieldCls} placeholder="5000000" />
+              <label className={labelCls}>{t.finances.freedomGoal} ({currency})</label>
+              <input
+                autoFocus
+                type="number"
+                value={target}
+                onChange={e => setTarget(e.target.value)}
+                className={fieldCls}
+                placeholder="1000000"
+              />
               <p className="text-[11px] text-gray-400 mt-1 leading-snug">{t.finances.freedomCapitalNominalHint}</p>
             </div>
           ) : (
-            <div className="space-y-2">
-              <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className={labelCls}>{t.finances.freedomDesiredIncome} {t.finances.freedomIncomeToday} ({currency})</label>
-                  <input required type="number" value={desiredIncome} onChange={e => setDesiredIncome(e.target.value)} className={fieldCls} placeholder="5000" />
+                  <label className={labelCls}>{t.finances.freedomDesiredIncome} hoje ({currency})</label>
+                  <input
+                    autoFocus
+                    type="number"
+                    value={desiredIncome}
+                    onChange={e => setDesiredIncome(e.target.value)}
+                    className={fieldCls}
+                    placeholder="5000"
+                  />
                 </div>
                 <div>
-                  <label className={labelCls}>{t.finances.freedomInflation}</label>
-                  <input required type="number" step="0.1" value={inflation} onChange={e => setInflation(e.target.value)} className={fieldCls} placeholder="2" />
+                  <label className={labelCls}>{t.finances.freedomInflation} % / ano</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={inflation}
+                    onChange={e => setInflation(e.target.value)}
+                    className={fieldCls}
+                    placeholder="2"
+                  />
                   {ipcaAnnual != null && (
                     <p className="text-[11px] text-gray-400 mt-1">
                       IPCA 12m:&nbsp;
@@ -366,51 +437,146 @@ function PlanForm({ initial, portfolio, ipcaAnnual, birthdate, onSave, onDelete,
               </div>
               <p className="text-[11px] text-gray-400 leading-snug">{t.finances.freedomDesiredIncomeHint}</p>
               {computedTarget != null && (
-                <div className="bg-indigo-50 border border-indigo-100 rounded-lg px-3 py-2 space-y-1">
+                <div className="bg-indigo-50 border border-indigo-100 rounded-xl px-4 py-3 space-y-1">
                   <p className="text-xs text-gray-500">{t.finances.freedomComputedGoal}</p>
-                  <p className="text-base font-bold text-[#001A70]">
-                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(computedTarget)}
-                  </p>
+                  <p className="text-xl font-bold text-[#001A70]">{fmtCur(computedTarget)}</p>
                   <p className="text-[10px] text-gray-500">
-                    Renda <strong>nominal</strong> em {parseInt(horizon) || 20} {t.finances.freedomAgeAtTarget}:&nbsp;
-                    <strong>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(Math.round(parseFloat(desiredIncome || '0') * Math.pow(1 + parseFloat(inflation || '2') / 100, parseInt(horizon || '20'))))}/mês</strong>
-                    &nbsp;— {t.finances.freedomIncomeToday}: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(parseFloat(desiredIncome || '0'))}/mês
+                    Renda nominal em {parseInt(horizon) || 20} anos:&nbsp;
+                    <strong>{fmtCur(Math.round(parseFloat(desiredIncome || '0') * Math.pow(1 + parseFloat(inflation || '2') / 100, parseInt(horizon || '20'))))}/mês</strong>
+                    &nbsp;— hoje: <strong>{fmtCur(parseFloat(desiredIncome || '0'))}/mês</strong>
                   </p>
                 </div>
               )}
             </div>
           )}
         </div>
+      )}
 
-        {/* Notas */}
-        <div className="col-span-2">
-          <label className={labelCls}>{t.finances.freedomNotes}</label>
-          <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} className={fieldCls} />
-        </div>
-      </div>
+      {/* ─── Step 4: Strategy ─── */}
+      {step === 4 && (
+        <div className="space-y-4">
+          <p className="text-sm text-gray-600">Como você vai chegar lá?</p>
 
-      <div className="flex gap-2 items-center">
-        <button
-          type="submit"
-          disabled={saving}
-          className="flex-1 bg-[#001A70] text-white text-sm py-2 rounded-xl hover:opacity-80 transition-opacity disabled:opacity-40"
-        >
-          {saving ? '…' : t.common.save}
-        </button>
-        <button type="button" onClick={onCancel} className="px-4 text-sm text-gray-500 hover:text-gray-700 transition-colors">
-          {t.common.cancel}
-        </button>
-        {onDelete && (
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className={labelCls}>{t.finances.freedomContrib} / mês ({currency})</label>
+              <input
+                autoFocus
+                type="number"
+                value={contrib}
+                onChange={e => setContrib(e.target.value)}
+                className={fieldCls}
+                placeholder="1000"
+              />
+            </div>
+            <div>
+              <label className={labelCls}>{t.finances.freedomRate} % / mês</label>
+              <input
+                type="number"
+                step="0.01"
+                value={rate}
+                onChange={e => setRate(e.target.value)}
+                className={fieldCls}
+                placeholder="0.60"
+              />
+              {annualRatePct != null && (
+                <p className="text-[11px] text-gray-400 mt-1">
+                  ≈ <strong className="text-gray-600">{annualRatePct}% {t.finances.freedomRateAnnual}</strong>
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div>
+            <label className={labelCls}>{t.finances.freedomHorizon} (anos)</label>
+            <input
+              type="number"
+              value={horizon}
+              onChange={e => setHorizon(e.target.value)}
+              className={`${fieldCls} max-w-[140px]`}
+              placeholder="20"
+            />
+            {targetDate && (
+              <p className="text-[11px] text-gray-400 mt-1">
+                Meta em <strong>{targetDate}</strong>
+                {birthdate && targetDateISO && (
+                  <span className="ml-1.5">· {ageAtDate(birthdate, targetDateISO)} {t.finances.freedomAgeAtTarget}</span>
+                )}
+              </p>
+            )}
+          </div>
+
+          {/* Advanced toggle */}
           <button
             type="button"
-            onClick={onDelete}
-            className="px-3 text-sm text-red-400 hover:text-red-600 transition-colors ml-auto"
+            onClick={() => setShowAdvanced(v => !v)}
+            className="text-xs text-gray-400 hover:text-gray-600 flex items-center gap-1 transition-colors"
           >
-            {t.common.delete ?? 'Excluir'}
+            <span>{showAdvanced ? '▾' : '▸'}</span>
+            {t.finances.freedomAdvanced}
           </button>
-        )}
-      </div>
-    </form>
+
+          {showAdvanced && (
+            <div className="grid grid-cols-2 gap-4 pl-3 border-l-2 border-gray-100">
+              <div>
+                <label className={labelCls}>{t.finances.freedomIncomeRate} % / mês</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={incomeRate}
+                  onChange={e => setIncomeRate(e.target.value)}
+                  className={fieldCls}
+                  placeholder="0.50"
+                />
+                <p className="text-[11px] text-gray-400 mt-1 leading-snug">{t.finances.freedomIncomeRateHint}</p>
+              </div>
+              <div>
+                <label className={labelCls}>{t.finances.freedomNotes}</label>
+                <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3} className={fieldCls} />
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ─── Navigation ─── */}
+      {step > 0 && (
+        <div className="flex items-center gap-3 pt-2">
+          <button
+            type="button"
+            onClick={() => setStep(s => s - 1)}
+            className="px-4 py-2 text-sm text-gray-500 hover:text-gray-700 border border-gray-200 rounded-lg transition-colors"
+          >
+            ← {t.finances.freedomBack}
+          </button>
+
+          <button
+            type="button"
+            onClick={isLastStep ? handleSave : () => setStep(s => s + 1)}
+            disabled={saving}
+            className="flex-1 bg-[#001A70] text-white text-sm py-2 rounded-xl hover:opacity-80 transition-opacity disabled:opacity-40"
+          >
+            {saving ? '…' : isLastStep ? t.common.save : `${t.finances.freedomNext} →`}
+          </button>
+
+          {step === firstStep && (
+            <button type="button" onClick={onCancel} className="text-sm text-gray-400 hover:text-gray-600 transition-colors">
+              {t.common.cancel}
+            </button>
+          )}
+
+          {onDelete && isLastStep && (
+            <button
+              type="button"
+              onClick={onDelete}
+              className="text-sm text-red-400 hover:text-red-600 transition-colors"
+            >
+              {t.common.delete ?? 'Excluir'}
+            </button>
+          )}
+        </div>
+      )}
+    </div>
   )
 }
 

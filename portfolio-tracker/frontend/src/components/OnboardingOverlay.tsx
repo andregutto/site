@@ -67,9 +67,14 @@ export default function OnboardingOverlay({ onDone }: Props) {
   const [incomeVal, setIncomeVal] = useState('')
   const [incomeCur, setIncomeCur] = useState('EUR')
   const [savingIncome, setSavingIncome] = useState(false)
+  const [creatingClasses, setCreatingClasses] = useState(false)
+  const [accountName, setAccountName] = useState('')
+  const [accountCurrency, setAccountCurrency] = useState('EUR')
+  const [accountInstitution, setAccountInstitution] = useState('')
+  const [savingAccount, setSavingAccount] = useState(false)
 
   const o = t.onboarding
-  const TOTAL_STEPS = 6
+  const TOTAL_STEPS = 7
   const defaultClasses   = CLASSES_BY_LOCALE[locale]   ?? CLASSES_BY_LOCALE.pt
   const defaultEnvelopes = ENVELOPES_BY_LOCALE[locale] ?? ENVELOPES_BY_LOCALE.pt
 
@@ -98,6 +103,25 @@ export default function OnboardingOverlay({ onDone }: Props) {
     navigate('/institutions')
   }
 
+  async function createClassesAndContinue() {
+    setCreatingClasses(true)
+    try {
+      await Promise.all(
+        defaultClasses.map(c =>
+          apiFetch('/assets/classes', {
+            method: 'POST',
+            body: JSON.stringify({ name: c.name, color: c.color }),
+          })
+        )
+      )
+    } catch {
+      // fail silently — user can add/edit classes later
+    } finally {
+      setCreatingClasses(false)
+    }
+    setStep(2)
+  }
+
   async function saveIncomeAndContinue() {
     const val = parseFloat(incomeVal)
     if (val > 0) {
@@ -114,6 +138,27 @@ export default function OnboardingOverlay({ onDone }: Props) {
       }
     }
     setStep(4)
+  }
+
+  async function createAccountAndContinue() {
+    if (!accountName.trim()) { setStep(5); return }
+    setSavingAccount(true)
+    try {
+      await apiFetch('/finances/accounts', {
+        method: 'POST',
+        body: JSON.stringify({
+          name: accountName.trim(),
+          currency: accountCurrency,
+          institution_name: accountInstitution.trim() || undefined,
+          create_asset: true,
+        }),
+      })
+    } catch {
+      // fail silently
+    } finally {
+      setSavingAccount(false)
+    }
+    setStep(5)
   }
 
   const ASSET_TYPES = [
@@ -192,10 +237,11 @@ export default function OnboardingOverlay({ onDone }: Props) {
               </div>
               <p className="text-xs text-gray-400 leading-relaxed">{o.classesNote}</p>
               <button
-                onClick={() => setStep(2)}
-                className="w-full bg-[#001A70] text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-[#001A70]/90 transition-colors"
+                onClick={createClassesAndContinue}
+                disabled={creatingClasses}
+                className="w-full bg-[#001A70] text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-[#001A70]/90 transition-colors disabled:opacity-60"
               >
-                {o.continue}
+                {creatingClasses ? '…' : o.continue}
               </button>
             </div>
           )}
@@ -278,8 +324,63 @@ export default function OnboardingOverlay({ onDone }: Props) {
             </div>
           )}
 
-          {/* Step 4: Default envelopes */}
+          {/* Step 4: First account (optional) */}
           {step === 4 && (
+            <div className="space-y-4">
+              <div>
+                <h2 className="text-lg font-bold text-gray-900">{o.accountTitle}</h2>
+                <p className="text-gray-500 mt-1 text-sm leading-relaxed">{o.accountBody}</p>
+              </div>
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs font-medium text-gray-500 block mb-1">{o.accountName}</label>
+                  <input
+                    type="text"
+                    value={accountName}
+                    onChange={e => setAccountName(e.target.value)}
+                    placeholder="Revolut EUR"
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-gray-500 block mb-1">{o.accountCurrency}</label>
+                  <select
+                    value={accountCurrency}
+                    onChange={e => setAccountCurrency(e.target.value)}
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#001A70]/20"
+                  >
+                    {['EUR', 'BRL', 'USD'].map(c => <option key={c}>{c}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-gray-500 block mb-1">{o.accountInstitution}</label>
+                  <input
+                    type="text"
+                    value={accountInstitution}
+                    onChange={e => setAccountInstitution(e.target.value)}
+                    placeholder="Revolut"
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20"
+                  />
+                </div>
+              </div>
+              <button
+                onClick={createAccountAndContinue}
+                disabled={!accountName.trim() || savingAccount}
+                className="w-full bg-[#001A70] text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-[#001A70]/90 transition-colors disabled:opacity-60"
+              >
+                {savingAccount ? '…' : o.accountCreate}
+              </button>
+              <button
+                onClick={() => setStep(5)}
+                className="w-full text-xs text-gray-400 hover:text-gray-600 py-1 transition-colors"
+              >
+                {o.accountSkip} →
+              </button>
+            </div>
+          )}
+
+          {/* Step 5: Default envelopes */}
+          {step === 5 && (
             <div className="space-y-4">
               <div>
                 <h2 className="text-lg font-bold text-gray-900">{o.financeEnvsTitle}</h2>
@@ -303,7 +404,7 @@ export default function OnboardingOverlay({ onDone }: Props) {
                 ))}
               </div>
               <button
-                onClick={() => setStep(5)}
+                onClick={() => setStep(6)}
                 className="w-full bg-[#001A70] text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-[#001A70]/90 transition-colors"
               >
                 {o.continue}
@@ -311,8 +412,8 @@ export default function OnboardingOverlay({ onDone }: Props) {
             </div>
           )}
 
-          {/* Step 5: Done */}
-          {step === 5 && (
+          {/* Step 6: Done */}
+          {step === 6 && (
             <div className="space-y-5 text-center">
               <div className="w-16 h-16 bg-emerald-50 border border-emerald-100 rounded-2xl flex items-center justify-center mx-auto">
                 <span className="text-3xl">✅</span>
@@ -344,8 +445,8 @@ export default function OnboardingOverlay({ onDone }: Props) {
             </div>
           )}
 
-          {/* Back button for steps 1–4 */}
-          {step > 0 && step < 5 && (
+          {/* Back button for steps 1–5 */}
+          {step > 0 && step < 6 && (
             <button
               onClick={() => setStep(s => s - 1)}
               className="mt-4 w-full text-xs text-gray-400 hover:text-gray-600 py-1 transition-colors"

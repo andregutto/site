@@ -12,6 +12,66 @@ const DEFAULT_NAMES: Record<string, { income: string; transfer: string; salary: 
   fr: { income: 'Revenus', transfer: 'Virement',      salary: 'Salaire',  essential: 'Dépenses Essentielles',  investment: 'Investissements',  savings: 'Épargne', free: 'Loisirs'  },
 }
 
+const DEFAULT_CAT_NAMES: Record<string, Record<string, { name: string; icon: string; color: string }[]>> = {
+  pt: {
+    envelopeEssential:  [
+      { name: 'Moradia',        icon: '🏠', color: '#3b82f6' },
+      { name: 'Alimentação',    icon: '🛒', color: '#10b981' },
+      { name: 'Transporte',     icon: '🚗', color: '#f59e0b' },
+      { name: 'Saúde',          icon: '💊', color: '#ef4444' },
+      { name: 'Utilidades',     icon: '💡', color: '#6366f1' },
+    ],
+    envelopeInvestment: [
+      { name: 'Ações / FII',    icon: '📈', color: '#10b981' },
+      { name: 'Renda Fixa',     icon: '📄', color: '#06b6d4' },
+    ],
+    envelopeSavings:    [{ name: 'Emergência',    icon: '🏦', color: '#f59e0b' }],
+    envelopeFree:       [
+      { name: 'Restaurante',    icon: '🍽️', color: '#f97316' },
+      { name: 'Viagem',         icon: '✈️', color: '#8b5cf6' },
+      { name: 'Entretenimento', icon: '🎬', color: '#ec4899' },
+    ],
+  },
+  en: {
+    envelopeEssential:  [
+      { name: 'Housing',        icon: '🏠', color: '#3b82f6' },
+      { name: 'Food',           icon: '🛒', color: '#10b981' },
+      { name: 'Transport',      icon: '🚗', color: '#f59e0b' },
+      { name: 'Health',         icon: '💊', color: '#ef4444' },
+      { name: 'Utilities',      icon: '💡', color: '#6366f1' },
+    ],
+    envelopeInvestment: [
+      { name: 'Stocks / ETF',   icon: '📈', color: '#10b981' },
+      { name: 'Fixed Income',   icon: '📄', color: '#06b6d4' },
+    ],
+    envelopeSavings:    [{ name: 'Emergency',     icon: '🏦', color: '#f59e0b' }],
+    envelopeFree:       [
+      { name: 'Restaurants',    icon: '🍽️', color: '#f97316' },
+      { name: 'Travel',         icon: '✈️', color: '#8b5cf6' },
+      { name: 'Entertainment',  icon: '🎬', color: '#ec4899' },
+    ],
+  },
+  fr: {
+    envelopeEssential:  [
+      { name: 'Logement',       icon: '🏠', color: '#3b82f6' },
+      { name: 'Alimentation',   icon: '🛒', color: '#10b981' },
+      { name: 'Transport',      icon: '🚗', color: '#f59e0b' },
+      { name: 'Santé',          icon: '💊', color: '#ef4444' },
+      { name: 'Services',       icon: '💡', color: '#6366f1' },
+    ],
+    envelopeInvestment: [
+      { name: 'Actions / ETF',  icon: '📈', color: '#10b981' },
+      { name: 'Revenu fixe',    icon: '📄', color: '#06b6d4' },
+    ],
+    envelopeSavings:    [{ name: 'Urgence',        icon: '🏦', color: '#f59e0b' }],
+    envelopeFree:       [
+      { name: 'Restaurants',    icon: '🍽️', color: '#f97316' },
+      { name: 'Voyages',        icon: '✈️', color: '#8b5cf6' },
+      { name: 'Divertissement', icon: '🎬', color: '#ec4899' },
+    ],
+  },
+}
+
 // ── Income ────────────────────────────────────────────────────────────────────
 
 // GET /api/finances/income
@@ -27,13 +87,42 @@ router.get('/income', requireAuth, async (req, res: Response) => {
 
 // PATCH /api/finances/income
 router.patch('/income', requireAuth, async (req, res: Response) => {
-  const { userId } = req as AuthRequest
+  const { userId, userLocale } = req as AuthRequest
+  const names = DEFAULT_NAMES[userLocale] ?? DEFAULT_NAMES.pt
+  const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
   const { monthly_net, currency } = req.body as { monthly_net: number; currency: string }
   if (!monthly_net || monthly_net <= 0) { res.status(400).json({ error: 'monthly_net required' }); return }
   const { error } = await supabaseAdmin
     .from('finance_income')
     .upsert({ user_id: userId, monthly_net, currency: currency ?? 'EUR', updated_at: new Date().toISOString() }, { onConflict: 'user_id' })
   if (error) { res.status(500).json({ error: error.message }); return }
+
+  // Also seed salary category with budget_monthly so planning reflects onboarding value
+  const [envelopesRes, categoriesRes] = await Promise.all([
+    supabaseAdmin.from('finance_envelopes').select('id').eq('user_id', userId).eq('type', 'income').single(),
+    supabaseAdmin.from('finance_categories').select('id, name, name_key').eq('user_id', userId),
+  ])
+  let incomeEnvId: number | null = envelopesRes.data?.id ?? null
+  if (!incomeEnvId) {
+    const { data: newEnv } = await supabaseAdmin.from('finance_envelopes').insert({
+      user_id: userId, name: names.income, name_key: 'envelopeIncome', pct_target: 0,
+      color: '#10b981', type: 'income', icon: '💰', sort_order: 999,
+    }).select('id').single()
+    incomeEnvId = newEnv?.id ?? null
+  }
+  if (incomeEnvId) {
+    const cats = (categoriesRes.data ?? []) as { id: number; name: string; name_key?: string }[]
+    const salaryCat = cats.find(c => c.name_key === 'categorySalary' || norm(c.name).includes('salari') || norm(c.name).includes('salary') || norm(c.name).includes('salaire'))
+    if (salaryCat) {
+      await supabaseAdmin.from('finance_categories').update({ budget_monthly: monthly_net }).eq('id', salaryCat.id).eq('user_id', userId)
+    } else {
+      await supabaseAdmin.from('finance_categories').insert({
+        user_id: userId, name: names.salary, name_key: 'categorySalary', icon: '💼', color: '#3b82f6',
+        keyword_rules: [], envelope_id: incomeEnvId, budget_monthly: monthly_net,
+      })
+    }
+  }
+
   res.json({ ok: true })
 })
 
@@ -86,7 +175,18 @@ router.get('/budget', requireAuth, async (req, res: Response) => {
       { user_id: userId, name: names.free,       name_key: 'envelopeFree',       icon: '🎉', color: '#a855f7', type: 'free',       pct_target: 10, sort_order: 4 },
     ]
     const { data: newExpEnvs } = await supabaseAdmin.from('finance_envelopes').insert(defaultExpense).select('*')
-    if (newExpEnvs) envelopes = [...envelopes, ...newExpEnvs]
+    if (newExpEnvs) {
+      envelopes = [...envelopes, ...newExpEnvs]
+      const catLocale = DEFAULT_CAT_NAMES[userLocale] ?? DEFAULT_CAT_NAMES.pt
+      const catsToCreate = (newExpEnvs as { id: number; name_key: string }[]).flatMap(env => {
+        const defs = catLocale[env.name_key] ?? []
+        return defs.map(c => ({ user_id: userId, name: c.name, icon: c.icon, color: c.color, keyword_rules: [], envelope_id: env.id }))
+      })
+      if (catsToCreate.length > 0) {
+        const { data: newCats } = await supabaseAdmin.from('finance_categories').insert(catsToCreate).select('*')
+        if (newCats) categories = [...categories, ...newCats]
+      }
+    }
   }
 
   // Derive effective monthly income from income category budgets (sum of budget_monthly)
@@ -437,7 +537,7 @@ router.post('/accounts', requireAuth, async (req, res: Response) => {
   }).select('id').single()
   if (error || !account) { res.status(500).json({ error: error?.message }); return }
   if (create_asset) {
-    const code = `CASH${Date.now().toString(36).toUpperCase()}`
+    const code = name.trim().toUpperCase().replace(/\s+/g, '-').replace(/[^A-Z0-9\-]/g, '').slice(0, 20) || `CASH-${Date.now().toString(36).toUpperCase().slice(-4)}`
     const { data: asset } = await supabaseAdmin.from('assets').insert({
       user_id: userId, code, name: name.trim(), asset_type: 'manual',
       currency: currency ?? 'EUR', exchange: institution_name?.trim() ?? null, active: true,
@@ -1561,18 +1661,18 @@ router.get('/moments/:id', requireAuth, async (req, res: Response) => {
   const [momentRes, txRes] = await Promise.all([
     supabaseAdmin.from('finance_moments').select('*').eq('id', momentId).eq('user_id', userId).single(),
     supabaseAdmin.from('finance_transactions')
-      .select('id, date, description, amount, currency, notes, finance_categories(id, name, icon, color)')
+      .select('id, date, description, amount, currency, notes, finance_categories(id, name, name_key, icon, color)')
       .eq('moment_id', momentId).eq('user_id', userId).order('date', { ascending: false }),
   ])
   if (momentRes.error || !momentRes.data) { res.status(404).json({ error: 'Not found' }); return }
   const transactions = txRes.data ?? []
   const total = transactions.reduce((sum, tx) => sum + (tx.amount < 0 ? Math.abs(tx.amount) : 0), 0)
-  const catMap: Record<string, { name: string; icon: string; color: string; total: number }> = {}
+  const catMap: Record<string, { name: string; name_key: string | null; icon: string; color: string; total: number }> = {}
   for (const tx of transactions) {
     if (tx.amount >= 0) continue
-    const cat = tx.finance_categories as unknown as { id: number; name: string; icon: string; color: string } | null
+    const cat = tx.finance_categories as unknown as { id: number; name: string; name_key: string | null; icon: string; color: string } | null
     const key = cat ? String(cat.id) : 'none'
-    if (!catMap[key]) catMap[key] = { name: cat?.name ?? 'Sem categoria', icon: cat?.icon ?? '❓', color: cat?.color ?? '#9CA3AF', total: 0 }
+    if (!catMap[key]) catMap[key] = { name: cat?.name ?? 'Sem categoria', name_key: cat?.name_key ?? null, icon: cat?.icon ?? '❓', color: cat?.color ?? '#9CA3AF', total: 0 }
     catMap[key].total += Math.abs(tx.amount)
   }
   res.json({ moment: momentRes.data, transactions, summary: { total: Math.round(total * 100) / 100, by_category: Object.values(catMap).sort((a, b) => b.total - a.total) } })
