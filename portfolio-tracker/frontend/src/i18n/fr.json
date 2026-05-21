@@ -135,7 +135,8 @@
     "filterPlaceholder": "Filtrer...",
     "noAssets": "Aucun actif trouvé",
     "enterValue": "Saisir →",
-    "manual": "(manuel)"
+    "manual": "(manuel)",
+    "allocationByClass": "Allocation par classe"
   },
   "footer": {
     "copyright": "Copyright © 2026 André Gutto",
@@ -272,15 +273,15 @@
     },
     "builder": {
       "name": "Constructeur",
-      "desc": "Patrimoine supérieur à R$ 10 000"
+      "desc": "Patrimoine supérieur à 2 000 € / £ / $"
     },
     "five_digits": {
       "name": "Cinq Chiffres",
-      "desc": "Patrimoine supérieur à R$ 100 000"
+      "desc": "Patrimoine supérieur à 10 000 dans votre devise"
     },
     "six_digits": {
       "name": "Six Chiffres",
-      "desc": "Patrimoine supérieur à R$ 500 000"
+      "desc": "Patrimoine supérieur à 100 000 dans votre devise"
     },
     "million_club": {
       "name": "Club du Million",
@@ -646,7 +647,71 @@
     "institutionsAssets": "actifs",
     "institutionsAccountSingular": "compte",
     "institutionsAccountPlural": "comptes",
-    "institutionsOfPortfolio": "du portefeuille"
+    "institutionsOfPortfolio": "du portefeuille",
+    "importStatement": "Importer un relevé",
+    "csvDragFile": "Déposez le fichier ici",
+    "csvClickToSelect": "ou cliquez pour sélectionner",
+    "csvFormats": "CSV · XLS · XLSX · ODS",
+    "csvAlreadyImported": "{n} déjà importées, masquées",
+    "detectRefunds": "Détecter les remboursements",
+    "detectRefundsResult": "{n} groupe(s) créé(s)",
+    "detectRefundsNone": "Aucune paire trouvée",
+    "detecting": "Détection…",
+    "envelopeNonEssential": "Dépenses Non Essentielles",
+    "envelopeTorrar": "Plaisirs",
+    "descNonEssential": "Dépenses variables non essentielles mais faisant partie de votre style de vie.",
+    "descTorrar": "Argent à dépenser sans culpabilité — pur plaisir et impulsion.",
+    "syncAfterLink": "Compte synchronisé avec le portefeuille ✓"
+  },
+  "classes": {
+    "title": "Classes d'actifs",
+    "newClass": "+ Nouvelle classe",
+    "cancel": "Annuler",
+    "newClassTitle": "Nouvelle classe",
+    "classNamePlaceholder": "Nom de la classe",
+    "icon": "Icône",
+    "noIcon": "Sans icône",
+    "creating": "Création…",
+    "create": "Créer",
+    "manage": "Gérer les classes",
+    "empty": "Aucune classe créée.",
+    "assetSingular": "actif",
+    "assetPlural": "actifs",
+    "edit": "Modifier",
+    "delete": "Supprimer",
+    "saving": "Enregistrement…",
+    "save": "Enregistrer",
+    "cannotDelete": "Déplacez les actifs avant de supprimer",
+    "assetsByClass": "Actifs par classe",
+    "assetsByClassHint": "Utilisez le sélecteur pour déplacer un actif vers une autre classe.",
+    "noAssetsInClass": "Aucun actif dans cette classe.",
+    "noClass": "Sans classe",
+    "nameRequired": "Veuillez saisir un nom.",
+    "loading": "Chargement…",
+    "showAssets": "Voir les actifs",
+    "hideAssets": "Masquer les actifs",
+    "fixedIncomeType": "Revenu fixe",
+    "manualType": "Manuel",
+    "moveHint": "Déplacer vers une autre classe"
+  },
+  "chat": {
+    "open": "Ouvrir l'assistant",
+    "title": "Assistant",
+    "poweredBy": "Powered by Claude",
+    "clear": "Effacer",
+    "greeting": "Bonjour ! Je peux vous aider avec vos finances et investissements.",
+    "placeholder": "Posez une question…",
+    "enterHint": "Entrée pour envoyer · Maj+Entrée pour nouvelle ligne",
+    "consulting": "Consultation des données…",
+    "s1": "Quelle est ma plus grande dépense ce mois-ci ?",
+    "s2": "Combien ai-je investi au total ?",
+    "s3": "Comment enregistrer un nouvel apport ?",
+    "s4": "Comment importer un relevé bancaire ?",
+    "toolPortfolio": "Consultation du portefeuille…",
+    "toolSpending": "Consultation des dépenses…",
+    "toolTransactions": "Récupération des transactions…",
+    "toolSummary": "Calcul du résumé…",
+    "toolAccounts": "Consultation des comptes…"
   },
   "archived": {
     "title": "Archivés",

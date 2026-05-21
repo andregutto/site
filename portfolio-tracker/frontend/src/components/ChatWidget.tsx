@@ -1,25 +1,11 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
+import { useI18n } from '../contexts/I18nContext'
 
 interface Message {
   role: 'user' | 'assistant'
   content: string
   loading?: boolean
-}
-
-const SUGGESTIONS = [
-  'Qual minha maior despesa este mês?',
-  'Quanto tenho investido no total?',
-  'Como registrar um novo aporte?',
-  'Como importar extrato bancário?',
-]
-
-const TOOL_LABELS: Record<string, string> = {
-  get_portfolio_summary:     'Consultando portfólio...',
-  get_spending_by_category:  'Consultando gastos...',
-  get_transactions:          'Buscando transações...',
-  get_financial_summary:     'Calculando resumo...',
-  get_accounts:              'Consultando contas...',
 }
 
 function renderText(text: string) {
@@ -39,6 +25,7 @@ function renderText(text: string) {
 }
 
 export default function ChatWidget() {
+  const { t } = useI18n()
   const [open, setOpen]       = useState(false)
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput]     = useState('')
@@ -46,6 +33,15 @@ export default function ChatWidget() {
   const [toolHint, setToolHint] = useState('')
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef  = useRef<HTMLTextAreaElement>(null)
+
+  const SUGGESTIONS = [t.chat.s1, t.chat.s2, t.chat.s3, t.chat.s4]
+  const TOOL_LABELS: Record<string, string> = {
+    get_portfolio_summary:     t.chat.toolPortfolio,
+    get_spending_by_category:  t.chat.toolSpending,
+    get_transactions:          t.chat.toolTransactions,
+    get_financial_summary:     t.chat.toolSummary,
+    get_accounts:              t.chat.toolAccounts,
+  }
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -107,7 +103,7 @@ export default function ChatWidget() {
                 return next
               })
             } else if (event.type === 'tool_call' && event.tool) {
-              setToolHint(TOOL_LABELS[event.tool] ?? 'Consultando dados...')
+              setToolHint(TOOL_LABELS[event.tool] ?? t.chat.consulting)
             } else if (event.type === 'done') {
               setToolHint('')
             } else if (event.type === 'error') {
@@ -150,7 +146,7 @@ export default function ChatWidget() {
       <button
         onClick={() => setOpen(o => !o)}
         className="fixed bottom-5 right-5 z-50 w-12 h-12 rounded-full bg-[#001A70] text-white shadow-lg flex items-center justify-center hover:bg-[#002494] transition-colors"
-        aria-label="Abrir assistente"
+        aria-label={t.chat.open}
       >
         {open ? (
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -174,15 +170,15 @@ export default function ChatWidget() {
               </svg>
             </div>
             <div className="min-w-0">
-              <p className="text-white text-sm font-semibold leading-none">Assistente</p>
-              <p className="text-white/60 text-[11px] mt-0.5">Powered by Claude</p>
+              <p className="text-white text-sm font-semibold leading-none">{t.chat.title}</p>
+              <p className="text-white/60 text-[11px] mt-0.5">{t.chat.poweredBy}</p>
             </div>
             {messages.length > 0 && (
               <button
                 onClick={() => setMessages([])}
                 className="ml-auto text-white/50 hover:text-white/80 text-[11px] transition-colors"
               >
-                Limpar
+                {t.chat.clear}
               </button>
             )}
           </div>
@@ -192,7 +188,7 @@ export default function ChatWidget() {
             {isEmpty ? (
               <div className="flex flex-col h-full">
                 <p className="text-gray-500 text-[13px] text-center mt-6 mb-4">
-                  Olá! Posso ajudar com suas finanças e investimentos.
+                  {t.chat.greeting}
                 </p>
                 <div className="grid grid-cols-1 gap-1.5 mt-auto mb-2">
                   {SUGGESTIONS.map(s => (
@@ -248,7 +244,7 @@ export default function ChatWidget() {
                 value={input}
                 onChange={e => setInput(e.target.value)}
                 onKeyDown={handleKey}
-                placeholder="Pergunte algo..."
+                placeholder={t.chat.placeholder}
                 disabled={loading}
                 className="flex-1 resize-none rounded-xl border border-gray-200 px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-[#001A70]/20 disabled:opacity-50 max-h-24 overflow-y-auto leading-relaxed"
                 style={{ minHeight: '36px' }}
@@ -263,7 +259,7 @@ export default function ChatWidget() {
                 </svg>
               </button>
             </div>
-            <p className="text-[10px] text-gray-400 text-center mt-1.5">Enter para enviar · Shift+Enter para nova linha</p>
+            <p className="text-[10px] text-gray-400 text-center mt-1.5">{t.chat.enterHint}</p>
           </div>
         </div>
       )}

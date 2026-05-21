@@ -3,12 +3,14 @@ import { ACHIEVEMENT_DEFS, LEVELS, getLevel, getNextLevel, getLevelProgress } fr
 import { useAchievementContext } from '../contexts/AchievementContext'
 import { usePortfolioValue } from '../hooks/usePortfolio'
 import { useI18n } from '../contexts/I18nContext'
+import { useCurrency } from '../contexts/CurrencyContext'
 import Medal from '../components/Medal'
 import CelebrationModal from '../components/CelebrationModal'
 
 export default function AchievementsPage() {
   const { earned, earnedKeys, totalXp, loading, triggerCheck } = useAchievementContext()
   const { data: portfolio } = usePortfolioValue()
+  const { currency: displayCurrency } = useCurrency()
   const [checking, setChecking] = useState(false)
   const [preview, setPreview] = useState(false)
   const { t } = useI18n()
@@ -20,8 +22,11 @@ export default function AchievementsPage() {
   // Auto-check on mount once portfolio value is available
   useEffect(() => {
     if (portfolio?.total_brl == null) return
+    const displayTotal = displayCurrency === 'EUR' ? (portfolio.total_eur ?? undefined)
+      : displayCurrency === 'USD' ? (portfolio.total_usd ?? undefined)
+      : undefined
     setChecking(true)
-    triggerCheck(portfolio.total_brl).finally(() => setChecking(false))
+    triggerCheck(portfolio.total_brl, displayTotal, displayCurrency).finally(() => setChecking(false))
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [portfolio?.total_brl])
 

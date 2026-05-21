@@ -1,5 +1,6 @@
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
 import type { PortfolioClass } from '../lib/types'
+import { useI18n } from '../contexts/I18nContext'
 
 interface Props {
   data: PortfolioClass[]
@@ -10,11 +11,12 @@ function fmtBRL(v: number) {
 }
 
 export default function AllocationChart({ data }: Props) {
+  const { t } = useI18n()
   if (!data.length) return null
 
   return (
     <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
-      <h2 className="font-semibold text-gray-800 mb-4">Alocação por Classe</h2>
+      <h2 className="font-semibold text-gray-800 mb-4">{t.dashboard.allocationByClass}</h2>
       <div className="flex flex-col lg:flex-row gap-6 items-center">
         <div className="w-full lg:w-64 h-64">
           <ResponsiveContainer width="100%" height="100%">

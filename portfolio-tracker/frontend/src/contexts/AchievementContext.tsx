@@ -10,7 +10,7 @@ interface AchievementContextValue {
   earnedKeys: string[]
   totalXp: number
   loading: boolean
-  triggerCheck: (total_brl?: number) => Promise<void>
+  triggerCheck: (total_brl?: number, total_display?: number, currency?: string) => Promise<void>
 }
 
 const AchievementContext = createContext<AchievementContextValue | null>(null)
@@ -21,11 +21,11 @@ export function AchievementProvider({ children }: { children: React.ReactNode })
   const [celebrateKey, setCelebrateKey] = useState<string | null>(null)
   const checking = useRef(false)
 
-  const triggerCheck = useCallback(async (total_brl?: number) => {
+  const triggerCheck = useCallback(async (total_brl?: number, total_display?: number, currency?: string) => {
     if (checking.current) return
     checking.current = true
     try {
-      const newKeys = await checkAchievements(total_brl)
+      const newKeys = await checkAchievements(total_brl, total_display, currency)
       if (newKeys.length > 0) {
         setCelebrateKey(newKeys[0])
         if (newKeys.length > 1) {

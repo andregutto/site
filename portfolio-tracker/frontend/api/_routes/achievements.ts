@@ -17,7 +17,7 @@ router.get('/', requireAuth, async (req, res: Response) => {
 
 router.post('/check', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
-  const { total_brl } = req.body as { total_brl?: number }
+  const { total_brl, total_display, currency: displayCurrency } = req.body as { total_brl?: number; total_display?: number; currency?: string }
 
   const { data: existing } = await supabaseAdmin
     .from('achievements')
@@ -58,9 +58,11 @@ router.post('/check', requireAuth, async (req, res: Response) => {
   check('global_roots', assetList.some(a => a.currency !== 'BRL'))
 
   if (total_brl !== undefined) {
-    check('builder',       total_brl >= 10_000)
-    check('five_digits',   total_brl >= 100_000)
-    check('six_digits',    total_brl >= 500_000)
+    const td = total_display ?? total_brl
+    const isBRL = !displayCurrency || displayCurrency === 'BRL'
+    check('builder',       isBRL ? total_brl >= 10_000 : td >= 2_000)
+    check('five_digits',   td >= 10_000)
+    check('six_digits',    td >= 100_000)
     check('million_club',  total_brl >= 1_000_000)
     check('three_million', total_brl >= 3_000_000)
     check('five_million',  total_brl >= 5_000_000)

@@ -1094,8 +1094,9 @@ router.post('/transactions/csv-parse', requireAuth, async (req, res: Response) =
     .eq('user_id', userId)
     .like('source', 'csv:%')
   const existingSet = new Set((existingRows ?? []).map((r: { source: string }) => r.source))
-  const taggedTransactions = transactions.map(t => {
-    const source = csvSourceKey(t)
+  const sourceKeys = assignSourceKeys(transactions)
+  const taggedTransactions = transactions.map((t, i) => {
+    const source = sourceKeys[i]
     return { ...t, source, is_duplicate: existingSet.has(source) }
   })
   const duplicateCount = taggedTransactions.filter(t => t.is_duplicate).length
@@ -1132,23 +1133,35 @@ router.post('/transactions/ai-categorize', requireAuth, async (req, res: Respons
   res.json({ map, error: error ?? null })
 })
 
-function csvSourceKey(t: { date: string; description: string; amount: number; currency: string }): string {
-  const payload = `${t.date}|${t.description}|${t.amount}|${t.currency}`
+function csvSourceKey(t: { date: string; description: string; amount: number; currency: string }, seq = 1): string {
+  const base = `${t.date}|${t.description}|${t.amount}|${t.currency}`
+  const payload = seq > 1 ? `${base}|#${seq}` : base
   return 'csv:' + crypto.createHash('sha256').update(payload).digest('hex').slice(0, 16)
+}
+
+function assignSourceKeys(transactions: { date: string; description: string; amount: number; currency: string }[]): string[] {
+  const seqMap = new Map<string, number>()
+  return transactions.map(t => {
+    const base = `${t.date}|${t.description}|${t.amount}|${t.currency}`
+    const n = (seqMap.get(base) ?? 0) + 1
+    seqMap.set(base, n)
+    return csvSourceKey(t, n)
+  })
 }
 
 // POST /api/finances/transactions/csv-import — insert parsed rows, skipping duplicates
 router.post('/transactions/csv-import', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const { transactions, learn_rules } = req.body as {
-    transactions: { date: string; description: string; amount: number; currency: string; category_id?: number | null; account_id?: number | null; is_internal_transfer?: boolean }[]
+    transactions: { date: string; description: string; amount: number; currency: string; category_id?: number | null; account_id?: number | null; is_internal_transfer?: boolean; source?: string }[]
     learn_rules?: { category_id: number; keyword: string }[]
   }
   if (!Array.isArray(transactions) || transactions.length === 0) {
     res.status(400).json({ error: 'transactions array required' }); return
   }
 
-  const rows = transactions.map(t => ({
+  const sourceKeys = assignSourceKeys(transactions)
+  const rows = transactions.map((t, i) => ({
     user_id: userId,
     date:        t.date,
     description: t.description ?? '',
@@ -1157,7 +1170,7 @@ router.post('/transactions/csv-import', requireAuth, async (req, res: Response) 
     category_id: t.category_id ?? null,
     account_id:  t.account_id  ?? null,
     is_internal_transfer: t.is_internal_transfer ?? false,
-    source: csvSourceKey(t),
+    source: t.source ?? sourceKeys[i],
   }))
 
   // Deduplicate: fetch all csv-sourced rows for user at once to avoid .in() URL limits

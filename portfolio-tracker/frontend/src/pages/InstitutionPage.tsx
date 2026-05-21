@@ -202,6 +202,7 @@ export default function InstitutionPage() {
       await apiFetch(`/finances/accounts/${accountId}`, { method: 'PATCH', body: JSON.stringify({ linked_asset_id: assetId }) })
       setLinkModal(null)
       loadAccounts()
+      syncToPortfolio(accountId)
     } finally { setLinkSaving(false) }
   }
 

@@ -135,7 +135,8 @@
     "filterPlaceholder": "Filter...",
     "noAssets": "No assets found",
     "enterValue": "Enter →",
-    "manual": "(manual)"
+    "manual": "(manual)",
+    "allocationByClass": "Allocation by Class"
   },
   "footer": {
     "copyright": "Copyright © 2026 André Gutto",
@@ -272,15 +273,15 @@
     },
     "builder": {
       "name": "Builder",
-      "desc": "Net worth above R$ 10,000"
+      "desc": "Net worth above £2,000 / €2,000 / $2,000"
     },
     "five_digits": {
       "name": "Five Digits",
-      "desc": "Net worth above R$ 100,000"
+      "desc": "Net worth above 10,000 in your currency"
     },
     "six_digits": {
       "name": "Six Digits",
-      "desc": "Net worth above R$ 500,000"
+      "desc": "Net worth above 100,000 in your currency"
     },
     "million_club": {
       "name": "Million Club",
@@ -646,7 +647,71 @@
     "institutionsAssets": "assets",
     "institutionsAccountSingular": "account",
     "institutionsAccountPlural": "accounts",
-    "institutionsOfPortfolio": "of portfolio"
+    "institutionsOfPortfolio": "of portfolio",
+    "importStatement": "Import statement",
+    "csvDragFile": "Drag file here",
+    "csvClickToSelect": "or click to select",
+    "csvFormats": "CSV · XLS · XLSX · ODS",
+    "csvAlreadyImported": "{n} already imported, hidden",
+    "detectRefunds": "Detect refunds",
+    "detectRefundsResult": "{n} group(s) created",
+    "detectRefundsNone": "No pairs found",
+    "detecting": "Detecting…",
+    "envelopeNonEssential": "Non-Essential Expenses",
+    "envelopeTorrar": "Fun Money",
+    "descNonEssential": "Variable expenses that are not essential but are part of your lifestyle.",
+    "descTorrar": "Money to spend guilt-free — pure pleasure and impulse.",
+    "syncAfterLink": "Account synced to portfolio ✓"
+  },
+  "classes": {
+    "title": "Asset Classes",
+    "newClass": "+ New class",
+    "cancel": "Cancel",
+    "newClassTitle": "New class",
+    "classNamePlaceholder": "Class name",
+    "icon": "Icon",
+    "noIcon": "No icon",
+    "creating": "Creating…",
+    "create": "Create",
+    "manage": "Manage classes",
+    "empty": "No classes created yet.",
+    "assetSingular": "asset",
+    "assetPlural": "assets",
+    "edit": "Edit",
+    "delete": "Delete",
+    "saving": "Saving…",
+    "save": "Save",
+    "cannotDelete": "Move assets before deleting",
+    "assetsByClass": "Assets by class",
+    "assetsByClassHint": "Use the selector to move an asset to another class.",
+    "noAssetsInClass": "No assets in this class.",
+    "noClass": "No class",
+    "nameRequired": "Please enter a name.",
+    "loading": "Loading…",
+    "showAssets": "Show assets",
+    "hideAssets": "Hide assets",
+    "fixedIncomeType": "Fixed income",
+    "manualType": "Manual",
+    "moveHint": "Move to another class"
+  },
+  "chat": {
+    "open": "Open assistant",
+    "title": "Assistant",
+    "poweredBy": "Powered by Claude",
+    "clear": "Clear",
+    "greeting": "Hi! I can help with your finances and investments.",
+    "placeholder": "Ask something…",
+    "enterHint": "Enter to send · Shift+Enter for new line",
+    "consulting": "Consulting data…",
+    "s1": "What is my biggest expense this month?",
+    "s2": "How much do I have invested in total?",
+    "s3": "How do I record a new contribution?",
+    "s4": "How do I import a bank statement?",
+    "toolPortfolio": "Consulting portfolio…",
+    "toolSpending": "Consulting spending…",
+    "toolTransactions": "Fetching transactions…",
+    "toolSummary": "Calculating summary…",
+    "toolAccounts": "Consulting accounts…"
   },
   "archived": {
     "title": "Archived",

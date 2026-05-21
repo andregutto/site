@@ -27,11 +27,11 @@ export function useAchievements() {
   const earnedKeys = earned.map(e => e.achievement_key)
   const totalXp = getTotalXp(earnedKeys)
 
-  const checkAchievements = useCallback(async (total_brl?: number): Promise<string[]> => {
+  const checkAchievements = useCallback(async (total_brl?: number, total_display?: number, currency?: string): Promise<string[]> => {
     try {
       const res = await apiFetch<{ newly_earned: string[] }>('/achievements/check', {
         method: 'POST',
-        body: JSON.stringify({ total_brl }),
+        body: JSON.stringify({ total_brl, total_display, currency }),
       })
       if (res.newly_earned.length > 0) {
         await reload()

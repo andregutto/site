@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { apiFetch } from '../lib/api'
+import { useI18n } from '../contexts/I18nContext'
 
 interface AssetClass { id: number; name: string; color: string; icon: string | null }
 
@@ -43,10 +44,13 @@ const COLOR_PALETTE = [
   '#14B8A6', '#F43F5E', '#A855F7', '#0EA5E9', '#22C55E',
 ]
 
-const TYPE_LABEL: Record<string, string> = {
-  ticker:       'Ticker',
-  fixed_income: 'Renda fixa',
-  manual:       'Manual',
+function useTypeLabel() {
+  const { t } = useI18n()
+  return (type: string): string => {
+    if (type === 'fixed_income') return t.classes.fixedIncomeType
+    if (type === 'manual') return t.classes.manualType
+    return type
+  }
 }
 
 function ColorPicker({ value, onChange }: { value: string; onChange: (c: string) => void }) {
@@ -75,7 +79,7 @@ function IconPicker({ value, onChange }: { value: string | null; onChange: (i: s
           className={`w-8 h-8 rounded-lg text-xs border transition-all hover:scale-110 ${
             value == null ? 'border-[#001A70] bg-[#001A70]/10 ring-1 ring-[#001A70]' : 'border-gray-200 bg-gray-50'
           }`}
-          title="Sem ícone"
+          title="—"
         >—</button>
         {ICON_OPTIONS.map(icon => (
           <button
@@ -93,9 +97,11 @@ function IconPicker({ value, onChange }: { value: string | null; onChange: (i: s
 }
 
 export default function ClassesPage() {
+  const { t } = useI18n()
   const [classes,  setClasses]  = useState<AssetClass[]>([])
   const [assets,   setAssets]   = useState<AssetRow[]>([])
   const [loading,  setLoading]  = useState(true)
+  const [showAssetsByClass, setShowAssetsByClass] = useState(false)
 
   // create form
   const [showCreate, setShowCreate] = useState(false)
@@ -133,7 +139,7 @@ export default function ClassesPage() {
   useEffect(() => { load() }, [load])
 
   async function handleCreate() {
-    if (!newName.trim()) { setCreateErr('Informe um nome.'); return }
+    if (!newName.trim()) { setCreateErr(t.classes.nameRequired); return }
     setCreating(true); setCreateErr(null)
     try {
       await apiFetch<AssetClass>('/assets/classes', {
@@ -154,7 +160,7 @@ export default function ClassesPage() {
   }
 
   async function handleSaveEdit(id: number) {
-    if (!editName.trim()) { setEditErr('Informe um nome.'); return }
+    if (!editName.trim()) { setEditErr(t.classes.nameRequired); return }
     setSavingId(id); setEditErr(null)
     try {
       await apiFetch(`/assets/classes/${id}`, {
@@ -208,25 +214,25 @@ export default function ClassesPage() {
   const unclassed = assets.filter(a => a.asset_classes == null)
 
   if (loading) {
-    return <div className="text-center text-gray-400 text-sm py-12 animate-pulse">Carregando...</div>
+    return <div className="text-center text-gray-400 text-sm py-12 animate-pulse">{t.classes.loading}</div>
   }
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-gray-900">Classes de Ativos</h1>
+        <h1 className="text-xl font-bold text-gray-900">{t.classes.title}</h1>
         <button
           onClick={() => { setShowCreate(v => !v); setCreateErr(null) }}
           className="px-4 py-2 bg-[#001A70] text-white text-sm font-semibold rounded-xl hover:bg-[#001A70]/90 transition-colors"
         >
-          {showCreate ? 'Cancelar' : '+ Nova classe'}
+          {showCreate ? t.classes.cancel : t.classes.newClass}
         </button>
       </div>
 
       {/* Create form */}
       {showCreate && (
         <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm space-y-3">
-          <h2 className="font-semibold text-gray-800 text-sm">Nova classe</h2>
+          <h2 className="font-semibold text-gray-800 text-sm">{t.classes.newClassTitle}</h2>
           <div className="flex gap-3 items-start">
             <div
               className="w-8 h-8 rounded-full shrink-0 mt-1 border-2 border-white shadow"
@@ -238,13 +244,13 @@ export default function ClassesPage() {
                 value={newName}
                 onChange={e => setNewName(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') handleCreate() }}
-                placeholder="Nome da classe"
+                placeholder={t.classes.classNamePlaceholder}
                 className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20"
                 autoFocus
               />
               <ColorPicker value={newColor} onChange={setNewColor} />
               <div>
-                <p className="text-xs text-gray-500 mb-1">Ícone</p>
+                <p className="text-xs text-gray-500 mb-1">{t.classes.icon}</p>
                 <IconPicker value={newIcon} onChange={setNewIcon} />
               </div>
             </div>
@@ -254,18 +260,18 @@ export default function ClassesPage() {
             onClick={handleCreate}
             disabled={creating}
             className="px-4 py-2 bg-[#001A70] text-white text-sm font-semibold rounded-xl hover:bg-[#001A70]/90 disabled:opacity-50 transition-colors"
-          >{creating ? 'Criando...' : 'Criar'}</button>
+          >{creating ? t.classes.creating : t.classes.create}</button>
         </div>
       )}
 
       {/* Classes list */}
       <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
         <div className="px-5 py-4 border-b border-gray-100">
-          <h2 className="font-semibold text-gray-800">Gerenciar classes</h2>
+          <h2 className="font-semibold text-gray-800">{t.classes.manage}</h2>
         </div>
 
         {classes.length === 0 ? (
-          <p className="text-center text-gray-400 text-sm py-8">Nenhuma classe criada ainda.</p>
+          <p className="text-center text-gray-400 text-sm py-8">{t.classes.empty}</p>
         ) : (
           <div className="divide-y divide-gray-50">
             {classes.map(cls => {
@@ -293,7 +299,7 @@ export default function ClassesPage() {
                           />
                           <ColorPicker value={editColor} onChange={setEditColor} />
                           <div>
-                            <p className="text-xs text-gray-500 mb-1">Ícone</p>
+                            <p className="text-xs text-gray-500 mb-1">{t.classes.icon}</p>
                             <IconPicker value={editIcon} onChange={setEditIcon} />
                           </div>
                         </div>
@@ -304,11 +310,11 @@ export default function ClassesPage() {
                           onClick={() => handleSaveEdit(cls.id)}
                           disabled={isSaving}
                           className="px-3 py-1.5 bg-[#001A70] text-white text-xs font-semibold rounded-lg disabled:opacity-50"
-                        >{isSaving ? 'Salvando...' : 'Salvar'}</button>
+                        >{isSaving ? t.classes.saving : t.classes.save}</button>
                         <button
                           onClick={() => setEditId(null)}
                           className="px-3 py-1.5 text-xs text-gray-500 hover:text-gray-700"
-                        >Cancelar</button>
+                        >{t.classes.cancel}</button>
                       </div>
                     </div>
                   ) : (
@@ -323,20 +329,20 @@ export default function ClassesPage() {
                       )}
                       <span className="font-medium text-gray-800 flex-1">{cls.name}</span>
                       <span className="text-xs text-gray-400 mr-2">
-                        {count} {count === 1 ? 'ativo' : 'ativos'}
+                        {count} {count === 1 ? t.classes.assetSingular : t.classes.assetPlural}
                       </span>
                       <button
                         onClick={() => startEdit(cls)}
                         className="text-xs text-[#001A70] hover:underline"
-                      >Editar</button>
+                      >{t.classes.edit}</button>
                       <button
                         onClick={() => handleDelete(cls.id, cls.name)}
                         className={`text-xs transition-colors ${
                           count > 0 ? 'text-gray-200 cursor-not-allowed' : 'text-gray-400 hover:text-red-500'
                         }`}
                         disabled={count > 0}
-                        title={count > 0 ? 'Mova os ativos antes de excluir' : 'Excluir'}
-                      >Excluir</button>
+                        title={count > 0 ? t.classes.cannotDelete : t.classes.delete}
+                      >{t.classes.delete}</button>
                     </div>
                   )}
                 </div>
@@ -348,11 +354,23 @@ export default function ClassesPage() {
 
       {/* Assets by class */}
       <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
-        <div className="px-5 py-4 border-b border-gray-100">
-          <h2 className="font-semibold text-gray-800">Ativos por classe</h2>
-          <p className="text-xs text-gray-400 mt-0.5">Use o seletor para mover um ativo para outra classe.</p>
-        </div>
+        <button
+          onClick={() => setShowAssetsByClass(v => !v)}
+          className="w-full px-5 py-4 border-b border-gray-100 text-left flex items-center justify-between hover:bg-gray-50/60 transition-colors"
+        >
+          <div>
+            <h2 className="font-semibold text-gray-800">{t.classes.assetsByClass}</h2>
+            <p className="text-xs text-gray-400 mt-0.5">{t.classes.assetsByClassHint}</p>
+          </div>
+          <svg
+            className={`w-4 h-4 text-gray-400 transition-transform ${showAssetsByClass ? 'rotate-180' : ''}`}
+            fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
 
+        {showAssetsByClass && <>
         {moveErr && (
           <div className="mx-5 mt-3 text-xs text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
             {moveErr}
@@ -369,7 +387,7 @@ export default function ClassesPage() {
                 <span className="text-xs text-gray-400">({groupAssets.length})</span>
               </div>
               {groupAssets.length === 0 ? (
-                <p className="px-5 py-3 text-xs text-gray-400 italic">Nenhum ativo nesta classe.</p>
+                <p className="px-5 py-3 text-xs text-gray-400 italic">{t.classes.noAssetsInClass}</p>
               ) : (
                 groupAssets.map(asset => (
                   <AssetClassRow
@@ -389,7 +407,7 @@ export default function ClassesPage() {
             <div>
               <div className="px-5 py-2.5 bg-gray-50/60 flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-gray-300" />
-                <span className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Sem classe</span>
+                <span className="text-xs font-semibold text-gray-600 uppercase tracking-wide">{t.classes.noClass}</span>
                 <span className="text-xs text-gray-400">({unclassed.length})</span>
               </div>
               {unclassed.map(asset => (
@@ -404,6 +422,7 @@ export default function ClassesPage() {
             </div>
           )}
         </div>
+        </>}
       </div>
     </div>
   )
@@ -417,6 +436,8 @@ function AssetClassRow({
   moving: boolean
   onMove: (assetId: number, classId: string) => void
 }) {
+  const { t } = useI18n()
+  const typeLabel = useTypeLabel()
   return (
     <div className="px-5 py-3 flex items-center gap-3 border-t border-gray-50 hover:bg-gray-50/50 transition-colors">
       <div className="flex-1 min-w-0">
@@ -424,7 +445,7 @@ function AssetClassRow({
         <div className="text-xs text-gray-400 truncate">{asset.name}</div>
       </div>
       <span className="text-xs text-gray-400 shrink-0 hidden sm:block">
-        {TYPE_LABEL[asset.asset_type] ?? asset.asset_type}
+        {typeLabel(asset.asset_type)}
       </span>
       <select
         value={asset.asset_classes?.id ?? ''}
@@ -432,7 +453,7 @@ function AssetClassRow({
         disabled={moving}
         className="border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-[#001A70]/20 bg-white disabled:opacity-50 shrink-0"
       >
-        <option value="">Sem classe</option>
+        <option value="">{t.classes.noClass}</option>
         {classes.map(c => (
           <option key={c.id} value={c.id}>{c.name}</option>
         ))}

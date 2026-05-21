@@ -63,10 +63,11 @@ function fmtMonthYear(m: string, locale = 'pt-BR') {
 }
 
 const ENV_TYPE_KEY: Record<string, string> = {
-  essential: 'envelopeEssential',
+  essential:  'envelopeEssential',
   investment: 'envelopeInvestment',
   savings:    'envelopeSavings',
   income:     'envelopeIncome',
+  free:       'envelopeFree',
 }
 
 function resolveEnvName(name: string, type: string | undefined, nameKey: string | null | undefined, keys: Record<string, string>): string {
@@ -128,13 +129,15 @@ export default function FinancesOverviewPage() {
   const { currency: displayCurrency, fxRates } = useCurrency()
   const browserLocale = locale === 'pt' ? 'pt-BR' : locale === 'fr' ? 'fr-FR' : 'en-GB'
   const nameKeys: Record<string, string> = {
-    envelopeEssential:  t.finances.envelopeEssential,
-    envelopeInvestment: t.finances.envelopeInvestment,
-    envelopeSavings:    t.finances.envelopeSavings,
-    envelopeFree:       t.finances.envelopeFree,
-    envelopeIncome:     t.finances.envelopeIncome,
-    categoryTransfer:   t.finances.categoryTransfer,
-    categorySalary:     t.finances.categorySalary,
+    envelopeEssential:     t.finances.envelopeEssential,
+    envelopeInvestment:    t.finances.envelopeInvestment,
+    envelopeSavings:       t.finances.envelopeSavings,
+    envelopeFree:          t.finances.envelopeFree,
+    envelopeIncome:        t.finances.envelopeIncome,
+    envelopeNonEssential:  t.finances.envelopeNonEssential,
+    envelopeTorrar:        t.finances.envelopeTorrar,
+    categoryTransfer:      t.finances.categoryTransfer,
+    categorySalary:        t.finances.categorySalary,
   }
 
   const today = new Date()

@@ -414,7 +414,7 @@ export default function FinancesTransactionsPage() {
     setDetectReimbResult(null)
     try {
       const r = await apiFetch<{ created: number }>('/finances/detect-reimbursements', { method: 'POST' })
-      setDetectReimbResult(r.created > 0 ? `${r.created} grupo(s) criado(s)` : 'Nenhum par encontrado')
+      setDetectReimbResult(r.created > 0 ? t.finances.detectRefundsResult.replace('{n}', String(r.created)) : t.finances.detectRefundsNone)
       if (r.created > 0) { await reloadGroups(); loadTransactions() }
     } finally {
       setDetectingReimb(false)
@@ -572,6 +572,7 @@ export default function FinancesTransactionsPage() {
               date: r.date, description: r.description, amount: r.amount, currency: r.currency,
               category_id: r.category_id ?? null, account_id: csvAccountId,
               is_internal_transfer: r.is_internal_transfer,
+              source: r.source,
             })),
             learn_rules: start === 0 ? learn_rules : [],
           }),
@@ -591,6 +592,7 @@ export default function FinancesTransactionsPage() {
         : t.finances.csvImportedOk.replace('{imported}', String(result.imported))
       alert(msg)
       loadTransactions()
+      detectReimbursements()
     } catch (e) {
       setCsvError(e instanceof Error ? e.message : t.finances.csvAiError.replace('{msg}', 'import'))
       setCsvStep('preview')
@@ -685,11 +687,11 @@ export default function FinancesTransactionsPage() {
             <button
               onClick={detectReimbursements}
               disabled={detectingReimb}
-              title={detectReimbResult ?? 'Detectar reembolsos automáticos'}
+              title={detectReimbResult ?? t.finances.detectRefunds}
               className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 text-sm text-gray-500 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
             >
               <span className="text-base leading-none">↩</span>
-              {detectingReimb ? 'Detectando…' : (detectReimbResult ?? 'Detectar reembolsos')}
+              {detectingReimb ? t.finances.detecting : (detectReimbResult ?? t.finances.detectRefunds)}
             </button>
             <button
               onClick={() => { setCsvStep('idle'); setCsvRows([]); setCsvDuplicateCount(0); setCsvError(''); setCsvAiDebug(null); setShowImportModal(true) }}
@@ -785,7 +787,7 @@ export default function FinancesTransactionsPage() {
               <h3 className="font-semibold text-gray-900 text-sm">
                 {t.finances.csvPreview} — {csvRows.length} {t.finances.csvTransactions}
                 {csvDuplicateCount > 0 && (
-                  <span className="ml-2 text-xs font-normal text-gray-400">({csvDuplicateCount} já importadas, ocultadas)</span>
+                  <span className="ml-2 text-xs font-normal text-gray-400">({t.finances.csvAlreadyImported.replace('{n}', String(csvDuplicateCount))})</span>
                 )}
               </h3>
               <p className="text-xs text-gray-400 mt-0.5">
@@ -1479,7 +1481,7 @@ export default function FinancesTransactionsPage() {
             className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6"
             onClick={e => e.stopPropagation()}
           >
-            <h3 className="font-semibold text-gray-900 mb-5">Importar extrato</h3>
+            <h3 className="font-semibold text-gray-900 mb-5">{t.finances.importStatement}</h3>
 
             {/* Account selector */}
             {accounts.length > 0 && (
@@ -1530,9 +1532,9 @@ export default function FinancesTransactionsPage() {
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8 text-gray-300 mx-auto mb-2">
                 <path fillRule="evenodd" d="M11.47 2.47a.75.75 0 0 1 1.06 0l4.5 4.5a.75.75 0 0 1-1.06 1.06l-3.22-3.22V16.5a.75.75 0 0 1-1.5 0V4.81L8.03 8.03a.75.75 0 0 1-1.06-1.06l4.5-4.5ZM3 15.75a.75.75 0 0 1 .75.75v2.25a1.5 1.5 0 0 0 1.5 1.5h13.5a1.5 1.5 0 0 0 1.5-1.5V16.5a.75.75 0 0 1 1.5 0v2.25a3 3 0 0 1-3 3H5.25a3 3 0 0 1-3-3V16.5a.75.75 0 0 1 .75-.75Z" clipRule="evenodd" />
               </svg>
-              <p className="text-sm text-gray-500 font-medium">Arraste o arquivo aqui</p>
-              <p className="text-xs text-gray-400 mt-1">ou clique para selecionar</p>
-              <p className="text-[10px] text-gray-300 mt-2">CSV · XLS · XLSX · ODS</p>
+              <p className="text-sm text-gray-500 font-medium">{t.finances.csvDragFile}</p>
+              <p className="text-xs text-gray-400 mt-1">{t.finances.csvClickToSelect}</p>
+              <p className="text-[10px] text-gray-300 mt-2">{t.finances.csvFormats}</p>
             </div>
 
             <button

@@ -57,13 +57,15 @@ function EnvelopeBar({ env, expanded, onToggle, onEditCategory, onDeleteCategory
   { env: Envelope; expanded: boolean; onToggle: () => void; onEditCategory: (c: Category) => void; onDeleteCategory: (id: number) => void; onAddCategory: (envId: number) => void; onSaveDescription: (id: number, desc: string) => void; actuals: Map<number, number>; currency: string }) {
   const { t } = useI18n()
   const nameKeys: Record<string, string> = {
-    envelopeEssential:  t.finances.envelopeEssential,
-    envelopeInvestment: t.finances.envelopeInvestment,
-    envelopeSavings:    t.finances.envelopeSavings,
-    envelopeFree:       t.finances.envelopeFree,
-    envelopeIncome:     t.finances.envelopeIncome,
-    categoryTransfer:   t.finances.categoryTransfer,
-    categorySalary:     t.finances.categorySalary,
+    envelopeEssential:    t.finances.envelopeEssential,
+    envelopeInvestment:   t.finances.envelopeInvestment,
+    envelopeSavings:      t.finances.envelopeSavings,
+    envelopeFree:         t.finances.envelopeFree,
+    envelopeIncome:       t.finances.envelopeIncome,
+    envelopeNonEssential: t.finances.envelopeNonEssential,
+    envelopeTorrar:       t.finances.envelopeTorrar,
+    categoryTransfer:     t.finances.categoryTransfer,
+    categorySalary:       t.finances.categorySalary,
   }
   const descByType: Record<string, string> = {
     essential:  t.finances.descEssential,
@@ -71,7 +73,11 @@ function EnvelopeBar({ env, expanded, onToggle, onEditCategory, onDeleteCategory
     savings:    t.finances.descSavings,
     free:       t.finances.descFree,
   }
-  const defaultDesc = descByType[env.type] ?? ''
+  const descByNameKey: Record<string, string> = {
+    envelopeNonEssential: t.finances.descNonEssential,
+    envelopeTorrar:       t.finances.descTorrar,
+  }
+  const defaultDesc = (env.name_key ? descByNameKey[env.name_key] : null) ?? descByType[env.type] ?? ''
   const [editingDesc, setEditingDesc] = useState(false)
   const [descInput,   setDescInput]   = useState(env.description ?? defaultDesc)
 

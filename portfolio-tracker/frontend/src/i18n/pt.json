@@ -135,7 +135,8 @@
     "filterPlaceholder": "Filtrar...",
     "noAssets": "Nenhum ativo encontrado",
     "enterValue": "Informar →",
-    "manual": "(manual)"
+    "manual": "(manual)",
+    "allocationByClass": "Alocação por Classe"
   },
   "footer": {
     "copyright": "Copyright © 2026 André Gutto",
@@ -276,11 +277,11 @@
     },
     "five_digits": {
       "name": "Cinco Dígitos",
-      "desc": "Patrimônio acima de R$ 100.000"
+      "desc": "Patrimônio acima de 10.000 na sua moeda"
     },
     "six_digits": {
       "name": "Seis Dígitos",
-      "desc": "Patrimônio acima de R$ 500.000"
+      "desc": "Patrimônio acima de 100.000 na sua moeda"
     },
     "million_club": {
       "name": "Clube do Milhão",
@@ -646,7 +647,71 @@
     "institutionsAssets": "ativos",
     "institutionsAccountSingular": "conta",
     "institutionsAccountPlural": "contas",
-    "institutionsOfPortfolio": "da carteira"
+    "institutionsOfPortfolio": "da carteira",
+    "importStatement": "Importar extrato",
+    "csvDragFile": "Arraste o arquivo aqui",
+    "csvClickToSelect": "ou clique para selecionar",
+    "csvFormats": "CSV · XLS · XLSX · ODS",
+    "csvAlreadyImported": "{n} já importadas, ocultadas",
+    "detectRefunds": "Detectar reembolsos",
+    "detectRefundsResult": "{n} grupo(s) criado(s)",
+    "detectRefundsNone": "Nenhum par encontrado",
+    "detecting": "Detectando…",
+    "envelopeNonEssential": "Gastos Não Essenciais",
+    "envelopeTorrar": "Torrar",
+    "descNonEssential": "Gastos variáveis que não são essenciais mas fazem parte do seu estilo de vida.",
+    "descTorrar": "Dinheiro para gastar sem culpa — puro prazer e impulso.",
+    "syncAfterLink": "Conta sincronizada com o portfólio ✓"
+  },
+  "classes": {
+    "title": "Classes de Ativos",
+    "newClass": "+ Nova classe",
+    "cancel": "Cancelar",
+    "newClassTitle": "Nova classe",
+    "classNamePlaceholder": "Nome da classe",
+    "icon": "Ícone",
+    "noIcon": "Sem ícone",
+    "creating": "Criando…",
+    "create": "Criar",
+    "manage": "Gerenciar classes",
+    "empty": "Nenhuma classe criada ainda.",
+    "assetSingular": "ativo",
+    "assetPlural": "ativos",
+    "edit": "Editar",
+    "delete": "Excluir",
+    "saving": "Salvando…",
+    "save": "Salvar",
+    "cannotDelete": "Mova os ativos antes de excluir",
+    "assetsByClass": "Ativos por classe",
+    "assetsByClassHint": "Use o seletor para mover um ativo para outra classe.",
+    "noAssetsInClass": "Nenhum ativo nesta classe.",
+    "noClass": "Sem classe",
+    "nameRequired": "Informe um nome.",
+    "loading": "Carregando…",
+    "showAssets": "Ver ativos",
+    "hideAssets": "Ocultar ativos",
+    "fixedIncomeType": "Renda fixa",
+    "manualType": "Manual",
+    "moveHint": "Mover para outra classe"
+  },
+  "chat": {
+    "open": "Abrir assistente",
+    "title": "Assistente",
+    "poweredBy": "Powered by Claude",
+    "clear": "Limpar",
+    "greeting": "Olá! Posso ajudar com suas finanças e investimentos.",
+    "placeholder": "Pergunte algo…",
+    "enterHint": "Enter para enviar · Shift+Enter para nova linha",
+    "consulting": "Consultando dados…",
+    "s1": "Qual minha maior despesa este mês?",
+    "s2": "Quanto tenho investido no total?",
+    "s3": "Como registrar um novo aporte?",
+    "s4": "Como importar extrato bancário?",
+    "toolPortfolio": "Consultando portfólio…",
+    "toolSpending": "Consultando gastos…",
+    "toolTransactions": "Buscando transações…",
+    "toolSummary": "Calculando resumo…",
+    "toolAccounts": "Consultando contas…"
   },
   "archived": {
     "title": "Arquivados",
