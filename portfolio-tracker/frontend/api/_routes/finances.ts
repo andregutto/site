@@ -359,15 +359,28 @@ router.get('/spending-summary', requireAuth, async (req, res: Response) => {
 router.get('/accounts', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
 
-  const [acctRes, txRes, connRes] = await Promise.all([
+  const [acctRes, connRes] = await Promise.all([
     supabaseAdmin.from('finance_accounts').select('*').eq('user_id', userId).eq('is_active', true).order('created_at'),
-    supabaseAdmin.from('finance_transactions').select('account_id, amount').eq('user_id', userId).not('account_id', 'is', null).limit(50000),
     supabaseAdmin.from('finance_bank_connections').select('id, display_name, last_synced_at, finance_account_id').eq('user_id', userId),
   ])
 
+  // Paginate to bypass PostgREST's server-side max_rows cap (default 1,000 rows).
+  // .limit(50000) is silently capped, causing wrong balances for accounts with >1,000 transactions.
   const balanceMap = new Map<number, number>()
-  for (const tx of txRes.data ?? []) {
-    if (tx.account_id != null) balanceMap.set(tx.account_id, (balanceMap.get(tx.account_id) ?? 0) + Number(tx.amount))
+  let offset = 0
+  while (true) {
+    const { data: page } = await supabaseAdmin
+      .from('finance_transactions')
+      .select('account_id, amount')
+      .eq('user_id', userId)
+      .not('account_id', 'is', null)
+      .range(offset, offset + 999)
+    if (!page || page.length === 0) break
+    for (const tx of page) {
+      if (tx.account_id != null) balanceMap.set(tx.account_id, (balanceMap.get(tx.account_id) ?? 0) + Number(tx.amount))
+    }
+    if (page.length < 1000) break
+    offset += 1000
   }
   const connMap = new Map<number, { id: number; display_name: string | null; last_synced_at: string | null }>()
   for (const c of connRes.data ?? []) {
@@ -494,13 +507,21 @@ router.post('/accounts/:id/sync-portfolio', requireAuth, async (req, res: Respon
     .single()
   if (accErr || !account) { res.status(404).json({ error: 'Conta não encontrada' }); return }
   if (!account.linked_asset_id) { res.status(400).json({ error: 'Conta não vinculada a nenhum ativo' }); return }
-  const { data: txData } = await supabaseAdmin
-    .from('finance_transactions')
-    .select('amount')
-    .eq('user_id', userId)
-    .eq('account_id', accountId)
-    .limit(50000)
-  const balance = Math.round(((txData ?? []).reduce((s, t) => s + Number(t.amount), 0)) * 100) / 100
+  let balance = 0
+  let syncOffset = 0
+  while (true) {
+    const { data: page } = await supabaseAdmin
+      .from('finance_transactions')
+      .select('amount')
+      .eq('user_id', userId)
+      .eq('account_id', accountId)
+      .range(syncOffset, syncOffset + 999)
+    if (!page || page.length === 0) break
+    balance += page.reduce((s, t) => s + Number(t.amount), 0)
+    if (page.length < 1000) break
+    syncOffset += 1000
+  }
+  balance = Math.round(balance * 100) / 100
   const today = new Date().toISOString().split('T')[0]
   const { error: mvErr } = await supabaseAdmin
     .from('manual_values')
@@ -979,6 +1000,7 @@ router.post('/transactions/csv-parse', requireAuth, async (req, res: Response) =
   const dateIdx  = detectColumn(headers, DATE_KWS)
   const descIdx  = detectColumn(headers, ['description','descricao','historico','lancamento','memo','libelle','beneficiary','name','merchant'])
   const amtIdx   = detectColumn(headers, AMT_KWS)
+  const feeIdx   = detectColumn(headers, ['frais','fee','fees','taxa','tarifa','commission','gebühr'])
   const typeIdx  = detectColumn(headers, ['type','tipo','transaction type'])
   const stateIdx = detectColumn(headers, ['état','etat','state','status','estado','estatuto'])
 
@@ -1045,6 +1067,23 @@ router.post('/transactions/csv-parse', requireAuth, async (req, res: Response) =
       is_internal_transfer: effectiveIsTransfer,
       broker_name: broker,
     })
+
+    if (feeIdx >= 0) {
+      const feeAmount = parseAmount(row[feeIdx] ?? '')
+      if (feeAmount > 0) {
+        transactions.push({
+          date,
+          description: `Frais: ${rawDesc}`,
+          amount: -feeAmount,
+          currency,
+          suggested_category: null,
+          suggested_by: null,
+          is_broker_transfer: false,
+          is_internal_transfer: false,
+          broker_name: null,
+        })
+      }
+    }
   }
 
   // Mark already-imported rows so the frontend can hide them from preview.
