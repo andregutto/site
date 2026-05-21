@@ -44,6 +44,7 @@ export interface ManualValue {
 
 export interface PortfolioClass {
   name: string
+  name_key?: string | null
   color: string
   value_brl: number
   pct: number

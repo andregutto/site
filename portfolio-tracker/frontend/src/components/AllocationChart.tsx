@@ -14,6 +14,13 @@ export default function AllocationChart({ data }: Props) {
   const { t } = useI18n()
   if (!data.length) return null
 
+  const classNames = t.classes.names as Record<string, string>
+  const resolveClassName = (item: PortfolioClass) => {
+    if (item.name_key && classNames[item.name_key]) return classNames[item.name_key]
+    if (item.name === 'Sem classe') return t.classes.noClass
+    return item.name
+  }
+
   return (
     <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
       <h2 className="font-semibold text-gray-800 mb-4">{t.dashboard.allocationByClass}</h2>
@@ -49,7 +56,7 @@ export default function AllocationChart({ data }: Props) {
               <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: item.color }} />
               <div className="flex-1 min-w-0">
                 <div className="flex justify-between items-baseline">
-                  <span className="text-sm text-gray-700 truncate">{item.name === 'Sem classe' ? t.classes.noClass : item.name}</span>
+                  <span className="text-sm text-gray-700 truncate">{resolveClassName(item)}</span>
                   <span className="text-sm font-medium text-gray-900 ml-2 flex-shrink-0">
                     {item.pct.toFixed(1)}%
                   </span>

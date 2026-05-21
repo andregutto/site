@@ -18,7 +18,7 @@ router.get('/value', requireAuth, async (req, res: Response, next) => {
       id, code, name, asset_type, currency, exchange,
       ticker_brapi, ticker_yahoo, coingecko_id,
       fi_principal, fi_start_date, fi_type, fi_rate, fi_spread, fi_maturity,
-      asset_classes ( id, name, color )
+      asset_classes ( id, name, color, name_key )
     `)
     .eq('user_id', userId)
     .eq('active', true)
@@ -109,13 +109,14 @@ router.get('/value', requireAuth, async (req, res: Response, next) => {
 
   await Promise.allSettled(
     assets.map(async (a) => {
-      const cls = (a.asset_classes as unknown as { id: number; name: string; color: string } | null)
+      const cls = (a.asset_classes as unknown as { id: number; name: string; color: string; name_key?: string | null } | null)
       const base = {
         id: a.id, code: a.code, name: a.name,
-        class_id:    cls?.id ?? null,
-        class_name:  cls?.name ?? 'Sem classe',
-        class_color: cls?.color ?? '#6B7280',
-        exchange:    (a.exchange as string | null) ?? null,
+        class_id:      cls?.id ?? null,
+        class_name:    cls?.name ?? 'Sem classe',
+        class_name_key: cls?.name_key ?? null,
+        class_color:   cls?.color ?? '#6B7280',
+        exchange:      (a.exchange as string | null) ?? null,
       }
 
       try {
@@ -214,10 +215,10 @@ router.get('/value', requireAuth, async (req, res: Response, next) => {
     })
   )
 
-  const classMap: Record<string, { name: string; color: string; value_brl: number }> = {}
+  const classMap: Record<string, { name: string; name_key: string | null; color: string; value_brl: number }> = {}
   for (const a of byAsset) {
     const key = a.class_name
-    if (!classMap[key]) classMap[key] = { name: a.class_name, color: a.class_color, value_brl: 0 }
+    if (!classMap[key]) classMap[key] = { name: a.class_name, name_key: a.class_name_key, color: a.class_color, value_brl: 0 }
     classMap[key].value_brl += a.value_brl
   }
 

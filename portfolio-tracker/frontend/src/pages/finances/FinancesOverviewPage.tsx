@@ -139,6 +139,25 @@ export default function FinancesOverviewPage() {
     envelopeTorrar:        t.finances.envelopeTorrar,
     categoryTransfer:      t.finances.categoryTransfer,
     categorySalary:        t.finances.categorySalary,
+    categoryUncategorized: t.finances.categoryUncategorized,
+    categoryGroceries:     t.finances.categoryGroceries,
+    categoryRestaurant:    t.finances.categoryRestaurant,
+    categoryTransport:     t.finances.categoryTransport,
+    categoryHealth:        t.finances.categoryHealth,
+    categoryEntertainment: t.finances.categoryEntertainment,
+    categoryHousing:       t.finances.categoryHousing,
+    categoryStreaming:      t.finances.categoryStreaming,
+    categorySubscriptions: t.finances.categorySubscriptions,
+    categoryPharmacy:      t.finances.categoryPharmacy,
+    categoryClothing:      t.finances.categoryClothing,
+    categoryTravel:        t.finances.categoryTravel,
+    categoryCoffee:        t.finances.categoryCoffee,
+    categoryUtilities:     t.finances.categoryUtilities,
+    categoryEducation:     t.finances.categoryEducation,
+    categoryPersonalCare:  t.finances.categoryPersonalCare,
+    categoryElectronics:   t.finances.categoryElectronics,
+    categoryAirbnb:        t.finances.categoryAirbnb,
+    categoryOther:         t.finances.categoryOther,
   }
 
   const today = new Date()
@@ -384,7 +403,8 @@ export default function FinancesOverviewPage() {
                 <div className="bg-gray-50 border-t border-gray-100">
                   {env.categories.map(cat => {
                     const catBudget = cat.budget ?? 0
-                    const pct = catBudget > 0 ? Math.min((cat.actual / catBudget) * 100, 100) : 0
+                    const budgetPct = catBudget > 0 ? Math.min((cat.actual / catBudget) * 100, 100) : 0
+                    const envPct = env.actual > 0 ? (cat.actual / env.actual) * 100 : 0
                     const over = catBudget > 0 && cat.actual > catBudget
                     return (
                       <div key={cat.id} className="px-5 py-2 flex items-center gap-3 pl-14 cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => navigate(`/finances/transactions?category_id=${cat.id}`)}>
@@ -392,13 +412,14 @@ export default function FinancesOverviewPage() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between">
                             <span className="text-xs text-gray-600 truncate">{resolveKey(cat.name, cat.name_key, nameKeys)}</span>
+                            <span className="text-[10px] text-gray-400 shrink-0 ml-2">{envPct.toFixed(0)}% {t.finances.ofEnvelope}</span>
                           </div>
                           <div className="mt-0.5 h-1 bg-gray-200 rounded-full overflow-hidden">
-                            <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: over ? '#ef4444' : cat.color }} />
+                            <div className="h-full rounded-full" style={{ width: catBudget > 0 ? `${budgetPct}%` : `${Math.min(envPct, 100)}%`, backgroundColor: over ? '#ef4444' : cat.color }} />
                           </div>
                           <div className="flex items-center justify-between mt-0.5">
                             <span className="text-[10px] text-gray-400">{fmt(cx(cat.actual), currency, true)} {t.finances.overviewSpent}</span>
-                            {catBudget > 0 && <span className="text-[10px] text-gray-400">{t.finances.target}: {fmt(cx(catBudget), currency, true)}</span>}
+                            {catBudget > 0 && <span className={`text-[10px] shrink-0 ${over ? 'text-red-400' : 'text-gray-400'}`}>{budgetPct.toFixed(0)}% {t.finances.ofBudget}</span>}
                           </div>
                         </div>
                       </div>

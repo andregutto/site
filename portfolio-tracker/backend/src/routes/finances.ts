@@ -335,7 +335,7 @@ router.get('/spending-summary', requireAuth, async (req, res: Response) => {
 
     const uncategorized = md.byEnv.get(null) ?? 0
     if (uncategorized > 0) {
-      byEnv.push({ envelope_id: -1, name: 'Não categorizado', name_key: null, type: '', color: '#9CA3AF', icon: '❓', actual: Math.round(uncategorized * 100) / 100, budget: 0, categories: [] })
+      byEnv.push({ envelope_id: -1, name: 'Não categorizado', name_key: 'categoryUncategorized', type: '', color: '#9CA3AF', icon: '❓', actual: Math.round(uncategorized * 100) / 100, budget: 0, categories: [] })
     }
 
     resultMonths.push({
