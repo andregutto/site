@@ -20,7 +20,7 @@ interface ProfileData {
 }
 
 const COUNTRY_OPTIONS = [
-  { value: '',            label: 'Selecione o país' },
+  { value: '',            label: '' },
   { value: 'Brasil',      label: 'Brasil' },
   { value: 'França',      label: 'França' },
   { value: 'Portugal',    label: 'Portugal' },
@@ -112,7 +112,7 @@ export default function ProfilePage() {
         setBirthdate(d.birthdate ?? '')
         setAvatarUrl(d.avatar_url)
       })
-      .catch(e => setError(e instanceof Error ? e.message : 'Erro ao carregar perfil'))
+      .catch(e => setError(e instanceof Error ? e.message : t.profile.errorLoad))
       .finally(() => setLoading(false))
   }, [])
 
@@ -122,7 +122,7 @@ export default function ProfilePage() {
     try {
       const dataUrl = await resizeImageToDataUrl(file)
       setAvatarUrl(dataUrl)
-    } catch { setError('Erro ao processar imagem') }
+    } catch { setError(t.profile.errorPhoto) }
   }
 
   async function handleSave(ev: React.FormEvent) {
@@ -141,14 +141,14 @@ export default function ProfilePage() {
       setTimeout(() => setSaveOk(false), 3000)
       triggerCheck()
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Erro ao salvar')
+      setError(e instanceof Error ? e.message : t.profile.errorSave)
     } finally { setSaving(false) }
   }
 
   async function handleChangePassword(ev: React.FormEvent) {
     ev.preventDefault()
-    if (newPassword !== confirmPwd) { setPwdError('As senhas nao coincidem'); return }
-    if (newPassword.length < 6)     { setPwdError('Minimo 6 caracteres'); return }
+    if (newPassword !== confirmPwd) { setPwdError(t.profile.passwordMismatch); return }
+    if (newPassword.length < 6)     { setPwdError(t.profile.passwordShort); return }
     setSavingPwd(true); setPwdError(null); setPwdOk(false)
     try {
       await apiFetch('/profile/password', {
@@ -176,7 +176,7 @@ export default function ProfilePage() {
 
   const emailForDisplay = email || user?.email || ''
   const avatarInitials  = initials(firstName, lastName, emailForDisplay)
-  const displayName     = [firstName, lastName].filter(Boolean).join(' ') || 'Sem nome'
+  const displayName     = [firstName, lastName].filter(Boolean).join(' ') || t.profile.noName
 
   return (
     <div className="max-w-lg mx-auto space-y-6">
@@ -210,9 +210,9 @@ export default function ProfilePage() {
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 className="absolute inset-0 rounded-full bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center"
-                title="Alterar foto"
+                title={t.profile.changeOverlay}
               >
-                <span className="text-white text-xs font-semibold opacity-0 group-hover:opacity-100 transition-opacity">Alterar</span>
+                <span className="text-white text-xs font-semibold opacity-0 group-hover:opacity-100 transition-opacity">{t.profile.changeOverlay}</span>
               </button>
               <input
                 ref={fileInputRef}
@@ -283,7 +283,7 @@ export default function ProfilePage() {
             <h2 className="font-semibold text-gray-800">{t.profile.personalData}</h2>
 
             <div>
-              <label className="block text-xs text-gray-500 mb-1">E-mail (somente leitura)</label>
+              <label className="block text-xs text-gray-500 mb-1">{t.profile.email}</label>
               <input
                 type="email"
                 value={emailForDisplay}
@@ -294,7 +294,7 @@ export default function ProfilePage() {
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs text-gray-500 mb-1">Nome</label>
+                <label className="block text-xs text-gray-500 mb-1">{t.profile.firstName}</label>
                 <input
                   type="text"
                   value={firstName}
@@ -304,7 +304,7 @@ export default function ProfilePage() {
                 />
               </div>
               <div>
-                <label className="block text-xs text-gray-500 mb-1">Sobrenome</label>
+                <label className="block text-xs text-gray-500 mb-1">{t.profile.lastName}</label>
                 <input
                   type="text"
                   value={lastName}
@@ -316,14 +316,14 @@ export default function ProfilePage() {
             </div>
 
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Pais de residencia</label>
+              <label className="block text-xs text-gray-500 mb-1">{t.profile.country}</label>
               <select
                 value={country}
                 onChange={e => setCountry(e.target.value)}
                 className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#001A70]/20"
               >
                 {COUNTRY_OPTIONS.map(o => (
-                  <option key={o.value} value={o.value}>{o.label}</option>
+                  <option key={o.value} value={o.value}>{o.value === '' ? t.profile.selectCountry : o.label}</option>
                 ))}
               </select>
             </div>
@@ -339,7 +339,7 @@ export default function ProfilePage() {
             </div>
 
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Moeda padrao de visualizacao</label>
+              <label className="block text-xs text-gray-500 mb-1">{t.profile.defaultCurrency}</label>
               <div className="flex gap-2">
                 {CURRENCIES.map(c => (
                   <button
@@ -359,62 +359,62 @@ export default function ProfilePage() {
             </div>
 
 {error    && <p className="text-xs text-red-600">{error}</p>}
-            {saveOk   && <p className="text-xs text-green-600">Salvo com sucesso.</p>}
+            {saveOk   && <p className="text-xs text-green-600">{t.profile.saved}</p>}
 
             <button
               type="submit"
               disabled={saving}
               className="w-full bg-[#001A70] text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-[#001A70]/90 disabled:opacity-50 transition-colors"
             >
-              {saving ? 'Salvando...' : 'Salvar alteracoes'}
+              {saving ? t.profile.saving : t.profile.save}
             </button>
           </form>
 
           {/* Alterar senha */}
           <form onSubmit={handleChangePassword} className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm space-y-4">
-            <h2 className="font-semibold text-gray-800">Alterar senha</h2>
+            <h2 className="font-semibold text-gray-800">{t.profile.changePassword}</h2>
 
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Nova senha</label>
+              <label className="block text-xs text-gray-500 mb-1">{t.profile.newPassword}</label>
               <input
                 type="password"
                 value={newPassword}
                 onChange={e => setNewPassword(e.target.value)}
-                placeholder="Minimo 6 caracteres"
+                placeholder={t.profile.passwordMin}
                 className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20"
               />
             </div>
 
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Confirmar senha</label>
+              <label className="block text-xs text-gray-500 mb-1">{t.profile.confirmPassword}</label>
               <input
                 type="password"
                 value={confirmPwd}
                 onChange={e => setConfirmPwd(e.target.value)}
-                placeholder="Repita a nova senha"
+                placeholder={t.profile.repeatPassword}
                 className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20"
               />
             </div>
 
             {pwdError && <p className="text-xs text-red-600">{pwdError}</p>}
-            {pwdOk    && <p className="text-xs text-green-600">Senha alterada com sucesso.</p>}
+            {pwdOk    && <p className="text-xs text-green-600">{t.profile.passwordSaved}</p>}
 
             <button
               type="submit"
               disabled={savingPwd}
               className="w-full border border-[#001A70] text-[#001A70] rounded-xl py-2.5 text-sm font-semibold hover:bg-[#001A70]/5 disabled:opacity-50 transition-colors"
             >
-              {savingPwd ? 'Alterando...' : 'Alterar senha'}
+              {savingPwd ? t.profile.changing : t.profile.changePassword}
             </button>
           </form>
 
           {/* Zona de perigo */}
           <div className="bg-white border border-red-100 rounded-2xl p-6 shadow-sm space-y-4">
-            <h2 className="font-semibold text-red-700">Zona de perigo</h2>
+            <h2 className="font-semibold text-red-700">{t.profile.dangerZone}</h2>
 
             <div className="space-y-2">
-              <p className="text-xs font-medium text-gray-700">Reconstruir todo o histórico</p>
-              <p className="text-xs text-gray-500">Apaga o histórico de cotações e sincroniza todos os ativos do zero. Necessário após importações da B3. O processo roda em segundo plano (5-10 min).</p>
+              <p className="text-xs font-medium text-gray-700">{t.profile.rebuildHistory}</p>
+              <p className="text-xs text-gray-500">{t.profile.rebuildDesc}</p>
               {!showRebuildConfirm ? (
                 <button
                   type="button"
@@ -422,42 +422,42 @@ export default function ProfilePage() {
                   onClick={() => setShowRebuildConfirm(true)}
                   className="px-4 py-2 text-sm font-semibold text-amber-700 border border-amber-200 rounded-lg hover:bg-amber-50 disabled:opacity-50 transition-colors"
                 >
-                  {rebuilding ? 'Processando...' : 'Reconstruir Todo o Histórico'}
+                  {rebuilding ? t.profile.rebuilding : t.profile.rebuildBtn}
                 </button>
               ) : (
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-xs text-amber-700 font-medium">Isso apaga e rebusca todo o histórico. Confirma?</span>
+                  <span className="text-xs text-amber-700 font-medium">{t.profile.rebuildConfirmText}</span>
                   <button
                     type="button"
                     onClick={() => { rebuildHistory(); setShowRebuildConfirm(false) }}
                     className="px-3 py-1.5 text-xs font-semibold text-white bg-amber-600 rounded-lg hover:bg-amber-700 transition-colors"
                   >
-                    Confirmar
+                    {t.common.confirm}
                   </button>
                   <button
                     type="button"
                     onClick={() => setShowRebuildConfirm(false)}
                     className="px-3 py-1.5 text-xs font-semibold text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
                   >
-                    Cancelar
+                    {t.common.cancel}
                   </button>
                 </div>
               )}
               {rebuildResult && !rebuilding && (
                 <p className="text-xs text-blue-600">
-                  Sincronização iniciada — {rebuildResult.total} ativos sendo processados em segundo plano.
+                  {t.profile.rebuildStarted.replace('{total}', String(rebuildResult.total))}
                 </p>
               )}
             </div>
 
             <div className="border-t border-red-100 pt-4 space-y-2">
-              <p className="text-xs text-gray-500">A exclusao e permanente e remove todos os seus dados: ativos, aportes, historico de precos e configuracoes. Esta acao nao pode ser desfeita.</p>
+              <p className="text-xs text-gray-500">{t.profile.deleteDesc}</p>
               <button
                 type="button"
                 onClick={() => { setShowDeleteModal(true); setDeleteConfirm(''); setDeleteError(null) }}
                 className="px-4 py-2 text-sm font-semibold text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors"
               >
-                Excluir minha conta
+                {t.profile.deleteBtn}
               </button>
             </div>
           </div>
@@ -466,16 +466,14 @@ export default function ProfilePage() {
           {showDeleteModal && (
             <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
               <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
-                <h3 className="text-lg font-bold text-gray-900">Confirmar exclusao</h3>
-                <p className="text-sm text-gray-500">
-                  Esta acao excluira permanentemente sua conta e todos os dados associados. Para confirmar, digite seu e-mail abaixo:
-                </p>
+                <h3 className="text-lg font-bold text-gray-900">{t.profile.deleteModalTitle}</h3>
+                <p className="text-sm text-gray-500">{t.profile.deleteModalDesc}</p>
                 <p className="text-xs font-mono bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-gray-700 select-all">{emailForDisplay}</p>
                 <input
                   type="email"
                   value={deleteConfirm}
                   onChange={e => setDeleteConfirm(e.target.value)}
-                  placeholder="Digite seu e-mail"
+                  placeholder={t.profile.deleteEmailPlaceholder}
                   className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-300"
                   autoFocus
                 />
@@ -487,7 +485,7 @@ export default function ProfilePage() {
                     disabled={deleting}
                     className="flex-1 py-2.5 text-sm font-semibold border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-50 transition-colors"
                   >
-                    Cancelar
+                    {t.common.cancel}
                   </button>
                   <button
                     type="button"
@@ -495,7 +493,7 @@ export default function ProfilePage() {
                     disabled={deleting || deleteConfirm.trim().toLowerCase() !== emailForDisplay.toLowerCase()}
                     className="flex-1 py-2.5 text-sm font-semibold bg-red-600 text-white rounded-xl hover:bg-red-700 disabled:opacity-40 transition-colors"
                   >
-                    {deleting ? 'Excluindo...' : 'Excluir conta'}
+                    {deleting ? t.profile.deleting : t.profile.deleteConfirmBtn}
                   </button>
                 </div>
               </div>
@@ -504,9 +502,9 @@ export default function ProfilePage() {
 
           {/* Termos */}
           <div className="bg-gray-50 border border-gray-100 rounded-2xl p-5 text-xs text-gray-400 space-y-1">
-            <p className="font-semibold text-gray-500">Termos de uso</p>
-            <p>Este sistema de rastreamento de portfolio e de uso estritamente pessoal e privado. Os dados sao armazenados de forma segura e nao sao compartilhados com terceiros.</p>
-            <p>As informacoes financeiras exibidas sao calculadas a partir dos dados que voce fornece e de fontes publicas (Banco Central do Brasil, brapi.dev, Yahoo Finance, CoinGecko). Nao constituem aconselhamento financeiro.</p>
+            <p className="font-semibold text-gray-500">{t.profile.terms}</p>
+            <p>{t.profile.termsBody}</p>
+            <p>{t.profile.termsDisclaimer}</p>
             <p className="text-gray-300 pt-1">portfolio.andregutto.com · v1.0</p>
           </div>
         </>
