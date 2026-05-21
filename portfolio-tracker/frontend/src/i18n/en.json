@@ -136,7 +136,19 @@
     "noAssets": "No assets found",
     "enterValue": "Enter →",
     "manual": "(manual)",
-    "allocationByClass": "Allocation by Class"
+    "allocationByClass": "Allocation by Class",
+    "refresh": "Refresh",
+    "updatedAt": "updated {time}",
+    "portfolioEvolution": "Portfolio evolution",
+    "patrimony": "Net worth",
+    "invested": "Invested",
+    "result": "Return",
+    "currentMonth": "This month",
+    "yearLabel": "Year {year}",
+    "noOpenPositions": "No assets with open positions",
+    "addAssetsHint": "Add assets and record your purchases to view the portfolio.",
+    "errorLoadingPortfolio": "Error loading portfolio",
+    "tryAgain": "Try again"
   },
   "footer": {
     "copyright": "Copyright © 2026 André Gutto",

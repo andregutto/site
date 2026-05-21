@@ -1,4 +1,5 @@
 import { useCurrency } from '../contexts/CurrencyContext'
+import { useI18n } from '../contexts/I18nContext'
 
 interface Props {
   total_brl: number
@@ -14,7 +15,8 @@ interface Props {
 
 export default function ValueCards({ total_brl, generated_at, invested_brl, gain_brl, gain_pct, month_pct, ytd_pct, ytd_year, chartLoading }: Props) {
   const { currency, fmt } = useCurrency()
-  const ts = new Date(generated_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+  const { t, locale } = useI18n()
+  const ts = new Date(generated_at).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })
   const showSecondary = invested_brl != null && gain_brl != null
 
   function pctText(val: number | null | undefined) {
@@ -34,17 +36,17 @@ export default function ValueCards({ total_brl, generated_at, invested_brl, gain
           <p className="text-blue-200 text-xs font-medium uppercase tracking-wide">Total {currency}</p>
           <p className="text-4xl font-bold mt-2 leading-tight">{fmt(total_brl, 0)}</p>
         </div>
-        <p className="text-blue-300 text-[11px] mt-1">atualizado {ts}</p>
+        <p className="text-blue-300 text-[11px] mt-1">{t.dashboard.updatedAt.replace('{time}', ts)}</p>
       </div>
 
       {showSecondary && (
         <div className="mt-4 pt-4 border-t border-white/10 grid grid-cols-2 sm:grid-cols-4 gap-4">
           <div>
-            <p className="text-blue-300 text-[10px] uppercase tracking-wide font-medium">Investido</p>
+            <p className="text-blue-300 text-[10px] uppercase tracking-wide font-medium">{t.dashboard.invested}</p>
             <p className="text-base font-semibold mt-0.5">{fmt(invested_brl!, 0)}</p>
           </div>
           <div>
-            <p className="text-blue-300 text-[10px] uppercase tracking-wide font-medium">Resultado</p>
+            <p className="text-blue-300 text-[10px] uppercase tracking-wide font-medium">{t.dashboard.result}</p>
             <p className={`text-base font-semibold mt-0.5 ${gain_brl! >= 0 ? 'text-emerald-300' : 'text-red-300'}`}>
               {gain_brl! >= 0 ? '+' : ''}{fmt(gain_brl!, 0)}
               {gain_pct != null && (
@@ -53,11 +55,11 @@ export default function ValueCards({ total_brl, generated_at, invested_brl, gain
             </p>
           </div>
           <div>
-            <p className="text-blue-300 text-[10px] uppercase tracking-wide font-medium">Mês atual</p>
+            <p className="text-blue-300 text-[10px] uppercase tracking-wide font-medium">{t.dashboard.currentMonth}</p>
             <p className={`text-base font-semibold mt-0.5 ${pctColor(month_pct)}`}>{pctText(month_pct)}</p>
           </div>
           <div>
-            <p className="text-blue-300 text-[10px] uppercase tracking-wide font-medium">Ano {ytd_year}</p>
+            <p className="text-blue-300 text-[10px] uppercase tracking-wide font-medium">{t.dashboard.yearLabel.replace('{year}', ytd_year ?? '')}</p>
             <p className={`text-base font-semibold mt-0.5 ${pctColor(ytd_pct)}`}>{pctText(ytd_pct)}</p>
           </div>
         </div>

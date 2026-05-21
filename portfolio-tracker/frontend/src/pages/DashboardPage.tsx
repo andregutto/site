@@ -4,6 +4,7 @@ import { usePortfolioValue, usePerformanceMonthly, usePerformanceInception } fro
 import { useCurrency } from '../contexts/CurrencyContext'
 import { useFavorites } from '../hooks/useFavorites'
 import { useAchievementContext } from '../contexts/AchievementContext'
+import { useI18n } from '../contexts/I18nContext'
 import ValueCards from '../components/ValueCards'
 import AllocationChart from '../components/AllocationChart'
 import AssetTable from '../components/AssetTable'
@@ -25,6 +26,7 @@ export default function DashboardPage() {
   const { triggerCheck } = useAchievementContext()
 
   const { convert, currency } = useCurrency()
+  const { t } = useI18n()
 
   useEffect(() => {
     if (data?.total_brl != null) {
@@ -63,9 +65,9 @@ export default function DashboardPage() {
   if (error) {
     return (
       <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-red-700">
-        <p className="font-medium">Erro ao carregar portfólio</p>
+        <p className="font-medium">{t.dashboard.errorLoadingPortfolio}</p>
         <p className="text-sm mt-1">{error}</p>
-        <button onClick={refresh} className="mt-3 text-sm underline">Tentar novamente</button>
+        <button onClick={refresh} className="mt-3 text-sm underline">{t.dashboard.tryAgain}</button>
       </div>
     )
   }
@@ -83,7 +85,7 @@ export default function DashboardPage() {
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
           </svg>
-          Atualizar
+          {t.dashboard.refresh}
         </button>
       </div>
 
@@ -124,7 +126,7 @@ export default function DashboardPage() {
 
       {(chartLoading || portfolioChartData.length > 1) && (
         <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
-          <h2 className="font-semibold text-gray-800 mb-4">Evolução do portfólio</h2>
+          <h2 className="font-semibold text-gray-800 mb-4">{t.dashboard.portfolioEvolution}</h2>
           <div className="h-48">
           {chartLoading && portfolioChartData.length === 0 ? (
             <div className="h-full flex items-end gap-1 px-2 pb-1">
@@ -150,7 +152,7 @@ export default function DashboardPage() {
                 <Tooltip
                   formatter={(v) => [
                     new Intl.NumberFormat('pt-BR', { style: 'currency', currency, maximumFractionDigits: 0 }).format(typeof v === 'number' ? v : 0),
-                    'Patrimônio',
+                    t.dashboard.patrimony,
                   ]}
                   contentStyle={{ borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 12 }}
                 />
@@ -175,8 +177,8 @@ export default function DashboardPage() {
         />
       ) : (
         <div className="bg-white border border-gray-100 rounded-2xl p-12 text-center text-gray-400">
-          <p className="text-lg font-medium">Nenhum ativo com posição aberta</p>
-          <p className="text-sm mt-1">Adicione ativos e registre suas compras para visualizar o portfólio.</p>
+          <p className="text-lg font-medium">{t.dashboard.noOpenPositions}</p>
+          <p className="text-sm mt-1">{t.dashboard.addAssetsHint}</p>
         </div>
       )}
 
