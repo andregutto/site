@@ -59,7 +59,7 @@ router.get('/budget', requireAuth, async (req, res: Response) => {
   let incomeEnvId: number | null = incomeEnv?.id ?? null
   if (!incomeEnvId) {
     const { data: newEnv } = await supabaseAdmin.from('finance_envelopes').insert({
-      user_id: userId, name: names.income, pct_target: 0,
+      user_id: userId, name: names.income, name_key: 'envelopeIncome', pct_target: 0,
       color: '#10b981', type: 'income', icon: '💰', sort_order: 999,
     }).select('*').single()
     if (newEnv) { incomeEnvId = newEnv.id; envelopes = [...envelopes, newEnv] }
@@ -68,8 +68,8 @@ router.get('/budget', requireAuth, async (req, res: Response) => {
     const hasTransfer = categories.some(c => { const n = norm(c.name); return n.includes('transfer') || n.includes('virement') })
     const hasSalario  = categories.some(c => norm(c.name).includes('salari') || norm(c.name).includes('salary'))
     const toCreate = [
-      ...(!hasTransfer ? [{ user_id: userId, name: names.transfer, icon: '↔️', color: '#6B7280', keyword_rules: [], envelope_id: incomeEnvId }] : []),
-      ...(!hasSalario  ? [{ user_id: userId, name: names.salary,   icon: '💼', color: '#3b82f6', keyword_rules: [], envelope_id: incomeEnvId }] : []),
+      ...(!hasTransfer ? [{ user_id: userId, name: names.transfer, name_key: 'categoryTransfer', icon: '↔️', color: '#6B7280', keyword_rules: [], envelope_id: incomeEnvId }] : []),
+      ...(!hasSalario  ? [{ user_id: userId, name: names.salary,   name_key: 'categorySalary',   icon: '💼', color: '#3b82f6', keyword_rules: [], envelope_id: incomeEnvId }] : []),
     ]
     if (toCreate.length > 0) {
       const { data: created } = await supabaseAdmin.from('finance_categories').insert(toCreate).select('*')
@@ -80,10 +80,10 @@ router.get('/budget', requireAuth, async (req, res: Response) => {
   // Ensure default expense envelopes exist for first-time users
   if (!envelopes.some(e => e.type !== 'income')) {
     const defaultExpense = [
-      { user_id: userId, name: names.essential,  icon: '🏠', color: '#3b82f6', type: 'essential',  pct_target: 50, sort_order: 1 },
-      { user_id: userId, name: names.investment, icon: '📈', color: '#10b981', type: 'investment', pct_target: 30, sort_order: 2 },
-      { user_id: userId, name: names.savings,    icon: '🏦', color: '#f59e0b', type: 'savings',    pct_target: 10, sort_order: 3 },
-      { user_id: userId, name: names.free,       icon: '🎉', color: '#a855f7', type: 'free',       pct_target: 10, sort_order: 4 },
+      { user_id: userId, name: names.essential,  name_key: 'envelopeEssential',  icon: '🏠', color: '#3b82f6', type: 'essential',  pct_target: 50, sort_order: 1 },
+      { user_id: userId, name: names.investment, name_key: 'envelopeInvestment', icon: '📈', color: '#10b981', type: 'investment', pct_target: 30, sort_order: 2 },
+      { user_id: userId, name: names.savings,    name_key: 'envelopeSavings',    icon: '🏦', color: '#f59e0b', type: 'savings',    pct_target: 10, sort_order: 3 },
+      { user_id: userId, name: names.free,       name_key: 'envelopeFree',       icon: '🎉', color: '#a855f7', type: 'free',       pct_target: 10, sort_order: 4 },
     ]
     const { data: newExpEnvs } = await supabaseAdmin.from('finance_envelopes').insert(defaultExpense).select('*')
     if (newExpEnvs) envelopes = [...envelopes, ...newExpEnvs]
@@ -253,11 +253,11 @@ router.get('/spending-summary', requireAuth, async (req, res: Response) => {
       .order('date', { ascending: true }),
     supabaseAdmin
       .from('finance_categories')
-      .select('id, name, icon, color, envelope_id, budget_monthly')
+      .select('id, name, name_key, icon, color, envelope_id, budget_monthly')
       .eq('user_id', userId),
     supabaseAdmin
       .from('finance_envelopes')
-      .select('id, name, color, icon, pct_target, sort_order, type')
+      .select('id, name, name_key, color, icon, pct_target, sort_order, type')
       .eq('user_id', userId)
       .order('sort_order'),
     supabaseAdmin
@@ -268,7 +268,7 @@ router.get('/spending-summary', requireAuth, async (req, res: Response) => {
   ])
 
   const txns    = txnRes.data ?? []
-  const cats    = (catRes.data ?? []) as { id: number; name: string; icon: string; color: string; envelope_id: number | null; budget_monthly: number | null }[]
+  const cats    = (catRes.data ?? []) as { id: number; name: string; name_key: string | null; icon: string; color: string; envelope_id: number | null; budget_monthly: number | null }[]
   const allEnvs = envRes.data ?? []
   const envs    = allEnvs.filter(e => e.type !== 'income')
   const incomeRaw = incomeRes.data ?? { monthly_net: 0, currency: 'EUR' }
@@ -317,12 +317,14 @@ router.get('/spending-summary', requireAuth, async (req, res: Response) => {
     const byEnv = envs.map(env => {
       const envCats = cats
         .filter(c => c.envelope_id === env.id)
-        .map(c => ({ id: c.id, name: c.name, icon: c.icon, color: c.color, actual: Math.round((md.byCat.get(c.id) ?? 0) * 100) / 100 }))
+        .map(c => ({ id: c.id, name: c.name, name_key: c.name_key ?? null, icon: c.icon, color: c.color, actual: Math.round((md.byCat.get(c.id) ?? 0) * 100) / 100 }))
         .filter(c => c.actual > 0)
         .sort((a, b) => b.actual - a.actual)
       return {
         envelope_id: env.id,
         name:        env.name,
+        name_key:    (env as { name_key?: string | null }).name_key ?? null,
+        type:        env.type,
         color:       env.color,
         icon:        env.icon,
         actual:      Math.round((md.byEnv.get(env.id) ?? 0) * 100) / 100,
@@ -333,7 +335,7 @@ router.get('/spending-summary', requireAuth, async (req, res: Response) => {
 
     const uncategorized = md.byEnv.get(null) ?? 0
     if (uncategorized > 0) {
-      byEnv.push({ envelope_id: -1, name: 'Não categorizado', color: '#9CA3AF', icon: '❓', actual: Math.round(uncategorized * 100) / 100, budget: 0, categories: [] })
+      byEnv.push({ envelope_id: -1, name: 'Não categorizado', name_key: null, type: '', color: '#9CA3AF', icon: '❓', actual: Math.round(uncategorized * 100) / 100, budget: 0, categories: [] })
     }
 
     resultMonths.push({
@@ -413,15 +415,25 @@ router.get('/accounts/portfolio-institutions', requireAuth, async (req, res: Res
 // POST /api/finances/accounts
 router.post('/accounts', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
-  const { name, currency, institution_name, color, icon } = req.body
+  const { name, currency, institution_name, color, icon, create_asset } = req.body
   if (!name) { res.status(400).json({ error: 'name required' }); return }
-  const { data, error } = await supabaseAdmin.from('finance_accounts').insert({
+  const { data: account, error } = await supabaseAdmin.from('finance_accounts').insert({
     user_id: userId, name, currency: currency ?? 'EUR',
     institution_name: institution_name ?? null,
     color: color ?? '#6366f1', icon: icon ?? '🏦',
-  }).select().single()
-  if (error) { res.status(500).json({ error: error.message }); return }
-  res.json(data)
+  }).select('id').single()
+  if (error || !account) { res.status(500).json({ error: error?.message }); return }
+  if (create_asset) {
+    const code = `CASH${Date.now().toString(36).toUpperCase()}`
+    const { data: asset } = await supabaseAdmin.from('assets').insert({
+      user_id: userId, code, name: name.trim(), asset_type: 'manual',
+      currency: currency ?? 'EUR', exchange: institution_name?.trim() ?? null, active: true,
+    }).select('id').single()
+    if (asset) {
+      await supabaseAdmin.from('finance_accounts').update({ linked_asset_id: asset.id }).eq('id', account.id)
+    }
+  }
+  res.status(201).json({ id: account.id })
 })
 
 // PATCH /api/finances/accounts/:id
@@ -450,6 +462,54 @@ router.delete('/accounts/:id', requireAuth, async (req, res: Response) => {
   const { error } = await supabaseAdmin.from('finance_accounts').delete().eq('id', id).eq('user_id', userId)
   if (error) { res.status(500).json({ error: error.message }); return }
   res.json({ ok: true })
+})
+
+// GET /api/finances/accounts/linked?asset_id=X
+// Returns the finance account that has linked_asset_id = X for the current user, or null
+router.get('/accounts/linked', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const assetId = Number(req.query.asset_id)
+  if (!assetId) { res.json(null); return }
+  const { data, error } = await supabaseAdmin
+    .from('finance_accounts')
+    .select('id, name, currency')
+    .eq('user_id', userId)
+    .eq('linked_asset_id', assetId)
+    .eq('is_active', true)
+    .maybeSingle()
+  if (error) { res.status(500).json({ error: error.message }); return }
+  res.json(data ?? null)
+})
+
+// POST /api/finances/accounts/:id/sync-portfolio
+// Reads account balance and upserts a manual_value for the linked asset
+router.post('/accounts/:id/sync-portfolio', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const accountId = Number(req.params.id)
+  const { data: account, error: accErr } = await supabaseAdmin
+    .from('finance_accounts')
+    .select('id, name, currency, linked_asset_id')
+    .eq('id', accountId)
+    .eq('user_id', userId)
+    .single()
+  if (accErr || !account) { res.status(404).json({ error: 'Conta não encontrada' }); return }
+  if (!account.linked_asset_id) { res.status(400).json({ error: 'Conta não vinculada a nenhum ativo' }); return }
+  const { data: txData } = await supabaseAdmin
+    .from('finance_transactions')
+    .select('amount')
+    .eq('user_id', userId)
+    .eq('account_id', accountId)
+    .limit(50000)
+  const balance = Math.round(((txData ?? []).reduce((s, t) => s + Number(t.amount), 0)) * 100) / 100
+  const today = new Date().toISOString().split('T')[0]
+  const { error: mvErr } = await supabaseAdmin
+    .from('manual_values')
+    .upsert(
+      { asset_id: account.linked_asset_id, ref_date: today, value: balance, currency: account.currency, notes: `Sincronizado de ${account.name}` },
+      { onConflict: 'asset_id,ref_date' }
+    )
+  if (mvErr) { res.status(500).json({ error: mvErr.message }); return }
+  res.json({ ok: true, value: balance, currency: account.currency })
 })
 
 // ── Transactions ───────────────────────────────────────────────────────────────

@@ -115,12 +115,13 @@ function AppRoutes() {
         <Route path="/performance"    element={<PerformancePage />} />
         <Route path="/assets/:id"     element={<AssetDetailPage />} />
         <Route path="/profile"        element={<ProfilePage />} />
-        <Route path="/institutions"   element={<InstitutionsPage />} />
+        <Route path="/institutions"          element={<InstitutionPage />} />
+        <Route path="/institutions/profiles" element={<InstitutionsPage />} />
         <Route path="/import/b3"      element={<ImportB3Page />} />
         <Route path="/portfolio"      element={<PortfolioLayout />}>
           <Route index                element={<ContributionsPage />} />
           <Route path="rebalance"     element={<RebalancePage />} />
-          <Route path="institutions"  element={<InstitutionPage />} />
+          <Route path="institutions"  element={<Navigate to="/institutions" replace />} />
           <Route path="classes"       element={<ClassesPage />} />
           <Route path="reports"       element={<ReportsPage />} />
           <Route path="indices"       element={<IndicesPage />} />
@@ -135,7 +136,7 @@ function AppRoutes() {
           <Route path="budget"        element={<FinancesBudgetPage />} />
           <Route path="moments"       element={<FinancesMomentsPage />} />
           <Route path="freedom"       element={<FinancesFreedomPage />} />
-          <Route path="accounts"      element={<FinancesAccountsPage />} />
+          <Route path="accounts"      element={<Navigate to="/institutions" replace />} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

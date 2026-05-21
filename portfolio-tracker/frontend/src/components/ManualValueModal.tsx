@@ -50,12 +50,35 @@ export default function ManualValueModal({ asset, onClose, onSaved, initialMode 
   const [saving, setSaving] = useState(false)
   const [error,  setError]  = useState<string | null>(null)
 
+  const [linkedAccount,    setLinkedAccount]    = useState<{ id: number; name: string; currency: string } | null>(null)
+  const [syncingAccount,   setSyncingAccount]   = useState(false)
+  const [syncAccountOk,    setSyncAccountOk]    = useState(false)
+
   useEffect(() => {
     apiFetch<ManualValue[]>(`/assets/${asset.id}/manual-values`)
       .then(setHistory)
       .catch(() => {})
       .finally(() => setLoadingH(false))
   }, [asset.id])
+
+  useEffect(() => {
+    apiFetch<{ id: number; name: string; currency: string } | null>(`/finances/accounts/linked?asset_id=${asset.id}`)
+      .then(acc => setLinkedAccount(acc))
+      .catch(() => {})
+  }, [asset.id])
+
+  async function handleSyncFromAccount() {
+    if (!linkedAccount) return
+    setSyncingAccount(true); setError(null)
+    try {
+      await apiFetch(`/finances/accounts/${linkedAccount.id}/sync-portfolio`, { method: 'POST' })
+      setSyncAccountOk(true)
+      setTimeout(() => setSyncAccountOk(false), 3000)
+      onSaved()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Erro ao sincronizar')
+    } finally { setSyncingAccount(false) }
+  }
 
   async function handleSaveValorizacao() {
     const v = parseLocaleNum(value)
@@ -204,6 +227,23 @@ export default function ManualValueModal({ asset, onClose, onSaved, initialMode 
                   className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20"
                 />
               </div>
+
+              {linkedAccount && (
+                <div className="bg-emerald-50 rounded-xl px-3 py-2.5 flex items-center justify-between gap-2">
+                  <span className="text-xs text-emerald-700">
+                    <svg className="w-3.5 h-3.5 inline mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
+                    Conta: <strong>{linkedAccount.name}</strong>
+                    {syncAccountOk && <span className="ml-1">· Sincronizado ✓</span>}
+                  </span>
+                  <button
+                    onClick={handleSyncFromAccount}
+                    disabled={syncingAccount}
+                    className="px-2.5 py-1 text-xs border border-emerald-200 rounded-lg text-emerald-700 hover:bg-emerald-100 transition-colors disabled:opacity-50 shrink-0"
+                  >
+                    {syncingAccount ? '…' : 'Sincronizar saldo'}
+                  </button>
+                </div>
+              )}
 
               {error && <p className="text-xs text-red-600">{error}</p>}
 

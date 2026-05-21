@@ -80,7 +80,7 @@ export default function OnboardingOverlay({ onDone }: Props) {
 
   function goToContributions() {
     finish()
-    navigate('/contributions')
+    navigate('/portfolio')
   }
 
   function goToDashboard() {
@@ -91,6 +91,11 @@ export default function OnboardingOverlay({ onDone }: Props) {
   function goToFinances() {
     finish()
     navigate('/finances')
+  }
+
+  function goToInstitutions() {
+    finish()
+    navigate('/institutions')
   }
 
   async function saveIncomeAndContinue() {
@@ -112,11 +117,12 @@ export default function OnboardingOverlay({ onDone }: Props) {
   }
 
   const ASSET_TYPES = [
-    { icon: '🇧🇷', label: o.assetB3,     desc: o.assetB3Desc     },
-    { icon: '🌎',  label: o.assetIntl,   desc: o.assetIntlDesc   },
-    { icon: '₿',   label: o.assetCrypto, desc: o.assetCryptoDesc },
-    { icon: '📄',  label: o.assetFi,     desc: o.assetFiDesc     },
-    { icon: '🏠',  label: o.assetImovel, desc: o.assetImovelDesc },
+    { icon: '💰',  label: o.assetCash,   desc: o.assetCashDesc,   action: goToInstitutions },
+    { icon: '🇧🇷', label: o.assetB3,     desc: o.assetB3Desc,     action: goToContributions },
+    { icon: '🌎',  label: o.assetIntl,   desc: o.assetIntlDesc,   action: goToContributions },
+    { icon: '₿',   label: o.assetCrypto, desc: o.assetCryptoDesc, action: goToContributions },
+    { icon: '📄',  label: o.assetFi,     desc: o.assetFiDesc,     action: goToContributions },
+    { icon: '🏠',  label: o.assetImovel, desc: o.assetImovelDesc, action: goToContributions },
   ]
 
   return (
@@ -205,7 +211,7 @@ export default function OnboardingOverlay({ onDone }: Props) {
                 {ASSET_TYPES.map(a => (
                   <button
                     key={a.label}
-                    onClick={goToContributions}
+                    onClick={a.action}
                     className="w-full flex items-center gap-3 bg-gray-50 hover:bg-blue-50 border border-gray-100 hover:border-[#001A70]/20 rounded-xl px-4 py-3 text-left transition-colors"
                   >
                     <span className="text-xl shrink-0">{a.icon}</span>
@@ -323,8 +329,14 @@ export default function OnboardingOverlay({ onDone }: Props) {
                   {o.gotoDashboard}
                 </button>
                 <button
-                  onClick={goToFinances}
+                  onClick={goToInstitutions}
                   className="w-full border border-[#001A70]/20 text-[#001A70] rounded-xl py-3 text-sm font-semibold hover:bg-[#001A70]/5 transition-colors"
+                >
+                  {o.gotoInstitutions}
+                </button>
+                <button
+                  onClick={goToFinances}
+                  className="w-full text-xs text-gray-400 hover:text-gray-600 py-1 transition-colors"
                 >
                   {o.gotoFinances}
                 </button>

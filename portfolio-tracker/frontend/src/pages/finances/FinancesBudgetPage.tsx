@@ -5,6 +5,7 @@ import { useI18n } from '../../contexts/I18nContext'
 interface Category {
   id: number
   name: string
+  name_key?: string | null
   icon: string
   color: string
   budget_monthly: number | null
@@ -14,6 +15,7 @@ interface Category {
 interface Envelope {
   id: number
   name: string
+  name_key?: string | null
   icon: string
   color: string
   pct_target: number
@@ -32,10 +34,37 @@ function fmt(n: number, currency: string) {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n)
 }
 
+const ENV_TYPE_KEY: Record<string, string> = {
+  essential: 'envelopeEssential',
+  investment: 'envelopeInvestment',
+  savings:    'envelopeSavings',
+  income:     'envelopeIncome',
+}
+
+function resolveEnvName(name: string, type: string, nameKey: string | null | undefined, keys: Record<string, string>): string {
+  const k = nameKey ?? ENV_TYPE_KEY[type] ?? null
+  if (!k) return name
+  return keys[k] ?? name
+}
+
+function resolveKey(name: string, nameKey: string | null | undefined, keys: Record<string, string>): string {
+  if (!nameKey) return name
+  return keys[nameKey] ?? name
+}
+
 
 function EnvelopeBar({ env, expanded, onToggle, onEditCategory, onDeleteCategory, onAddCategory, onSaveDescription, actuals, currency }:
   { env: Envelope; expanded: boolean; onToggle: () => void; onEditCategory: (c: Category) => void; onDeleteCategory: (id: number) => void; onAddCategory: (envId: number) => void; onSaveDescription: (id: number, desc: string) => void; actuals: Map<number, number>; currency: string }) {
   const { t } = useI18n()
+  const nameKeys: Record<string, string> = {
+    envelopeEssential:  t.finances.envelopeEssential,
+    envelopeInvestment: t.finances.envelopeInvestment,
+    envelopeSavings:    t.finances.envelopeSavings,
+    envelopeFree:       t.finances.envelopeFree,
+    envelopeIncome:     t.finances.envelopeIncome,
+    categoryTransfer:   t.finances.categoryTransfer,
+    categorySalary:     t.finances.categorySalary,
+  }
   const descByType: Record<string, string> = {
     essential:  t.finances.descEssential,
     investment: t.finances.descInvestment,
@@ -73,7 +102,7 @@ function EnvelopeBar({ env, expanded, onToggle, onEditCategory, onDeleteCategory
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between mb-1.5">
             <div className="flex items-center gap-2">
-              <span className="font-semibold text-gray-900 text-sm">{env.name}</span>
+              <span className="font-semibold text-gray-900 text-sm">{resolveEnvName(env.name, env.type, env.name_key, nameKeys)}</span>
               <span className="text-xs text-gray-400 font-medium">{env.pct_target}%</span>
               {isOver && <span className="text-xs bg-red-100 text-red-600 font-semibold px-1.5 py-0.5 rounded-full">{t.finances.overLimit}</span>}
               {isInvestment && allocated >= 100 && !isOver && <span className="text-xs bg-green-100 text-green-600 font-semibold px-1.5 py-0.5 rounded-full">{t.finances.goalReached}</span>}
@@ -116,13 +145,13 @@ function EnvelopeBar({ env, expanded, onToggle, onEditCategory, onDeleteCategory
         ) : (
           <>
             <p
-              className={`flex-1 text-xs italic leading-relaxed cursor-pointer ${env.description ? 'text-gray-500' : 'text-gray-400'}`}
-              onClick={() => { setDescInput(env.description ?? defaultDesc); setEditingDesc(true) }}
+              className={`flex-1 text-xs italic leading-relaxed cursor-pointer ${(env.name_key ? defaultDesc : env.description) ? 'text-gray-500' : 'text-gray-400'}`}
+              onClick={() => { setDescInput(env.name_key ? defaultDesc : (env.description ?? defaultDesc)); setEditingDesc(true) }}
             >
-              {env.description || defaultDesc || t.finances.envelopeDescPlaceholder}
+              {env.name_key ? (defaultDesc || t.finances.envelopeDescPlaceholder) : (env.description || defaultDesc || t.finances.envelopeDescPlaceholder)}
             </p>
             <button
-              onClick={() => { setDescInput(env.description ?? defaultDesc); setEditingDesc(true) }}
+              onClick={() => { setDescInput(env.name_key ? defaultDesc : (env.description ?? defaultDesc)); setEditingDesc(true) }}
               className="[@media(hover:none)]:opacity-100 opacity-0 group-hover:opacity-100 transition-opacity p-0.5 text-gray-400 hover:text-[#001A70] shrink-0 mt-0.5"
             >
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3">
@@ -150,7 +179,7 @@ function EnvelopeBar({ env, expanded, onToggle, onEditCategory, onDeleteCategory
                     <span className="text-base leading-none w-6 shrink-0">{cat.icon}</span>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2">
-                        <span className="text-sm text-gray-700 truncate">{cat.name}</span>
+                        <span className="text-sm text-gray-700 truncate">{resolveKey(cat.name, cat.name_key, nameKeys)}</span>
                         <div className="flex items-center gap-1 shrink-0">
                           {actual > 0 && (
                             <span className={`text-sm font-medium ${over ? 'text-red-500' : 'text-gray-700'}`}>
@@ -225,6 +254,15 @@ interface SpendingSummary { months: SpendingMonth[] }
 
 export default function FinancesBudgetPage() {
   const { t } = useI18n()
+  const nameKeys: Record<string, string> = {
+    envelopeEssential:  t.finances.envelopeEssential,
+    envelopeInvestment: t.finances.envelopeInvestment,
+    envelopeSavings:    t.finances.envelopeSavings,
+    envelopeFree:       t.finances.envelopeFree,
+    envelopeIncome:     t.finances.envelopeIncome,
+    categoryTransfer:   t.finances.categoryTransfer,
+    categorySalary:     t.finances.categorySalary,
+  }
 
   const [data, setData]               = useState<BudgetData | null>(null)
   const [loading, setLoading]         = useState(true)
@@ -377,7 +415,7 @@ export default function FinancesBudgetPage() {
                 >
                   <span className="text-2xl leading-none w-8 shrink-0">{env.icon}</span>
                   <div className="flex-1 min-w-0">
-                    <span className="font-semibold text-gray-900 text-sm">{env.name}</span>
+                    <span className="font-semibold text-gray-900 text-sm">{resolveEnvName(env.name, env.type, env.name_key, nameKeys)}</span>
                   </div>
                   <div className="text-right shrink-0 ml-3">
                     <span className="text-sm font-semibold text-emerald-600">{fmt(envTotal, data.income.currency)}</span>
@@ -401,7 +439,7 @@ export default function FinancesBudgetPage() {
                         {env.categories.map(cat => (
                           <li key={cat.id} className="px-5 py-2.5 flex items-center gap-3 group">
                             <span className="text-base leading-none w-6 shrink-0">{cat.icon}</span>
-                            <span className="flex-1 text-sm text-gray-700">{cat.name}</span>
+                            <span className="flex-1 text-sm text-gray-700">{resolveKey(cat.name, cat.name_key, nameKeys)}</span>
                             {cat.budget_monthly != null && (
                               <span className="text-sm font-medium text-gray-600">{fmt(cat.budget_monthly, data.income.currency)}</span>
                             )}
@@ -484,7 +522,7 @@ export default function FinancesBudgetPage() {
                 <div key={env.id} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
                   <div className="flex items-center gap-2 mb-2">
                     <span className="text-lg leading-none">{env.icon}</span>
-                    <span className="text-xs font-medium text-gray-600 truncate">{env.name}</span>
+                    <span className="text-xs font-medium text-gray-600 truncate">{resolveEnvName(env.name, env.type, env.name_key, nameKeys)}</span>
                   </div>
                   <div className="text-lg font-bold" style={{ color: over ? '#ef4444' : met ? '#10b981' : env.color }}>
                     {pctReal.toFixed(1)}%
@@ -551,7 +589,7 @@ export default function FinancesBudgetPage() {
                     className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20"
                   >
                     {data.envelopes.map(env => (
-                      <option key={env.id} value={env.id}>{env.icon} {env.name}</option>
+                      <option key={env.id} value={env.id}>{env.icon} {resolveEnvName(env.name, env.type, env.name_key, nameKeys)}</option>
                     ))}
                   </select>
                 </div>

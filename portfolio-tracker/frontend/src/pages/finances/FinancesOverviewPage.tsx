@@ -10,6 +10,7 @@ import { useCurrency } from '../../contexts/CurrencyContext'
 interface CategorySummary {
   id: number
   name: string
+  name_key?: string | null
   icon: string
   color: string
   actual: number
@@ -18,6 +19,8 @@ interface CategorySummary {
 interface EnvelopeSummary {
   envelope_id: number
   name: string
+  name_key?: string | null
+  type?: string
   color: string
   icon: string
   actual: number
@@ -35,7 +38,7 @@ interface MonthSummary {
 interface SpendingSummary {
   months: MonthSummary[]
   income_config: { monthly_net: number; currency: string }
-  envelopes: { id: number; name: string; color: string; icon: string; pct_target: number; budget: number }[]
+  envelopes: { id: number; name: string; name_key?: string | null; type?: string; color: string; icon: string; pct_target: number; budget: number }[]
 }
 
 function fmt(n: number, currency: string, compact = false) {
@@ -57,6 +60,24 @@ function fmtMonthYear(m: string, locale = 'pt-BR') {
     .toLocaleDateString(locale, { month: 'short' })
     .replace('.', '')
   return `${name}/${y.slice(2)}`
+}
+
+const ENV_TYPE_KEY: Record<string, string> = {
+  essential: 'envelopeEssential',
+  investment: 'envelopeInvestment',
+  savings:    'envelopeSavings',
+  income:     'envelopeIncome',
+}
+
+function resolveEnvName(name: string, type: string | undefined, nameKey: string | null | undefined, keys: Record<string, string>): string {
+  const k = nameKey ?? (type ? ENV_TYPE_KEY[type] : null) ?? null
+  if (!k) return name
+  return keys[k] ?? name
+}
+
+function resolveKey(name: string, nameKey: string | null | undefined, keys: Record<string, string>): string {
+  if (!nameKey) return name
+  return keys[nameKey] ?? name
 }
 
 function MonthPicker({ value, onChange, locale }: { value: string; onChange: (m: string) => void; locale: string }) {
@@ -106,6 +127,15 @@ export default function FinancesOverviewPage() {
   const navigate = useNavigate()
   const { currency: displayCurrency, fxRates } = useCurrency()
   const browserLocale = locale === 'pt' ? 'pt-BR' : locale === 'fr' ? 'fr-FR' : 'en-GB'
+  const nameKeys: Record<string, string> = {
+    envelopeEssential:  t.finances.envelopeEssential,
+    envelopeInvestment: t.finances.envelopeInvestment,
+    envelopeSavings:    t.finances.envelopeSavings,
+    envelopeFree:       t.finances.envelopeFree,
+    envelopeIncome:     t.finances.envelopeIncome,
+    categoryTransfer:   t.finances.categoryTransfer,
+    categorySalary:     t.finances.categorySalary,
+  }
 
   const today = new Date()
   const defaultMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`
@@ -295,7 +325,7 @@ export default function FinancesOverviewPage() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between mb-1">
                     <div className="flex items-center gap-1.5">
-                      <span className="text-sm text-gray-700">{env.name}</span>
+                      <span className="text-sm text-gray-700">{resolveEnvName(env.name, env.type, env.name_key, nameKeys)}</span>
                       {env.categories.length > 0 && (
                         <span className="text-[10px] text-gray-400 leading-none">
                           {expandedEnvIds.has(env.id) ? '▲' : '▼'}
@@ -355,7 +385,7 @@ export default function FinancesOverviewPage() {
                         <span className="text-base leading-none w-5 shrink-0">{cat.icon}</span>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between">
-                            <span className="text-xs text-gray-600 truncate">{cat.name}</span>
+                            <span className="text-xs text-gray-600 truncate">{resolveKey(cat.name, cat.name_key, nameKeys)}</span>
                             <span className="text-xs font-medium text-gray-700 shrink-0 ml-2">
                               {fmt(cx(cat.actual), currency, true)}
                             </span>
@@ -393,7 +423,7 @@ export default function FinancesOverviewPage() {
                   <span className="text-base leading-none w-6 shrink-0">{cat.icon}</span>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-700 truncate">{cat.name}</span>
+                      <span className="text-sm text-gray-700 truncate">{resolveKey(cat.name, cat.name_key, nameKeys)}</span>
                       <span className="text-sm font-medium text-gray-900 shrink-0 ml-2">{fmt(cx(cat.actual), currency, true)}</span>
                     </div>
                     <div className="mt-1 h-1 bg-gray-100 rounded-full overflow-hidden">
@@ -453,6 +483,7 @@ export default function FinancesOverviewPage() {
                 <Bar
                   key={env.id}
                   dataKey={env.name}
+                  name={resolveEnvName(env.name, env.type, env.name_key, nameKeys)}
                   stackId="a"
                   fill={env.color}
                   radius={i === data.envelopes.length - 1 ? [3, 3, 0, 0] : [0, 0, 0, 0]}

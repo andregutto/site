@@ -60,7 +60,8 @@ export default function AppLayout() {
 
   const inInvestimentos = location.pathname === '/' ||
     location.pathname.startsWith('/performance') ||
-    location.pathname.startsWith('/portfolio')
+    location.pathname.startsWith('/portfolio') ||
+    location.pathname.startsWith('/institutions')
   const inFinances = location.pathname.startsWith('/finances')
 
   const investimentosItems = [
@@ -84,7 +85,7 @@ export default function AppLayout() {
         <path strokeLinecap="round" strokeLinejoin="round" d="M8 2v12M4 14h8M4 6l-3 4h6L4 6zM12 4l-3 4h6l-3-4z"/>
       </svg>
     )},
-    { to: '/portfolio/institutions', label: t.nav.institutions, end: false, icon: (
+    { to: '/institutions', label: t.nav.institutions, end: false, icon: (
       <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
         <path strokeLinecap="round" strokeLinejoin="round" d="M1.5 14.5h13M3 14.5V7.5M7 14.5V7.5M10 14.5V7.5M13 14.5V7.5M1 6.5L8 1.5l7 5"/>
       </svg>
@@ -136,10 +137,9 @@ export default function AppLayout() {
         <path strokeLinecap="round" strokeLinejoin="round" d="M8 9V5M5.5 6.5L8 5l2.5 1.5"/>
       </svg>
     )},
-    { to: '/finances/accounts', label: t.finances.navAccounts, end: false, icon: (
+    { to: '/institutions', label: t.nav.institutions, end: false, icon: (
       <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
-        <rect x="1" y="4" width="14" height="9" rx="1.5"/><path strokeLinecap="round" d="M1 7.5h14"/>
-        <circle cx="11.5" cy="10" r="1" fill="currentColor" stroke="none"/>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M1.5 14.5h13M3 14.5V7.5M7 14.5V7.5M10 14.5V7.5M13 14.5V7.5M1 6.5L8 1.5l7 5"/>
       </svg>
     )},
   ]
