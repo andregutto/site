@@ -147,6 +147,8 @@ export default function InstitutionPage() {
   const [syncOkId,         setSyncOkId]         = useState<number | null>(null)
   const [connecting,       setConnecting]       = useState(false)
   const [syncingBank,      setSyncingBank]      = useState<number | null>(null)
+  const [linkModal,        setLinkModal]        = useState<number | null>(null)
+  const [linkSaving,       setLinkSaving]       = useState(false)
 
   const loadAccounts = useCallback(async () => {
     setAccountsLoading(true)
@@ -192,6 +194,15 @@ export default function InstitutionPage() {
   async function unlinkAccount(accountId: number) {
     await apiFetch(`/finances/accounts/${accountId}`, { method: 'PATCH', body: JSON.stringify({ linked_asset_id: null }) })
     loadAccounts()
+  }
+
+  async function linkToAsset(accountId: number, assetId: number) {
+    setLinkSaving(true)
+    try {
+      await apiFetch(`/finances/accounts/${accountId}`, { method: 'PATCH', body: JSON.stringify({ linked_asset_id: assetId }) })
+      setLinkModal(null)
+      loadAccounts()
+    } finally { setLinkSaving(false) }
   }
 
   async function deleteAccount(accountId: number) {
@@ -433,7 +444,10 @@ export default function InstitutionPage() {
                               </button>
                             </>
                           ) : (
-                            <span className="text-xs text-gray-400">{f.institutionsNotLinked}</span>
+                            <button
+                              onClick={() => setLinkModal(acc.id)}
+                              className="px-2.5 py-1 text-xs border border-gray-200 rounded-lg text-gray-500 hover:text-[#001A70] hover:border-[#001A70]/30 transition-colors"
+                            >{f.institutionsNotLinked} →</button>
                           )}
                           <button onClick={() => deleteAccount(acc.id)} className="p-1.5 text-gray-300 hover:text-red-500 transition-colors">
                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
@@ -492,6 +506,41 @@ export default function InstitutionPage() {
           onClose={() => setAddModal(null)}
           saving={addSaving}
         />
+      )}
+
+      {linkModal !== null && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={() => setLinkModal(null)}>
+          <div className="bg-white w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl shadow-xl p-6 space-y-4" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold text-gray-900">{f.institutionsLinked}</h3>
+              <button onClick={() => setLinkModal(null)} className="text-gray-400 hover:text-gray-600">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+            <p className="text-xs text-gray-400">{f.institutionsAutoAssetNote}</p>
+            <div className="space-y-1.5 max-h-64 overflow-y-auto">
+              {portfolio.by_asset.length === 0 ? (
+                <p className="text-sm text-gray-400 text-center py-4">{f.institutionsNone}</p>
+              ) : (
+                portfolio.by_asset.map(asset => (
+                  <button
+                    key={asset.id}
+                    onClick={() => linkToAsset(linkModal, asset.id)}
+                    disabled={linkSaving}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-blue-50 hover:border-[#001A70]/20 border border-gray-100 text-left transition-colors disabled:opacity-50"
+                  >
+                    <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: asset.class_color }} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-800">{asset.code}</p>
+                      <p className="text-xs text-gray-400 truncate">{asset.name}</p>
+                    </div>
+                    <p className="text-sm font-semibold text-gray-700 shrink-0">{fmt(asset.value_brl)}</p>
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )
