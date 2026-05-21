@@ -9,6 +9,7 @@ UPDATE asset_classes SET name_key = 'classCripto'        WHERE name_key IS NULL 
 UPDATE asset_classes SET name_key = 'classRendaFixa'     WHERE name_key IS NULL AND LOWER(name) IN ('renda fixa','fixed income','revenus fixes');
 UPDATE asset_classes SET name_key = 'classPrevidencia'   WHERE name_key IS NULL AND LOWER(name) IN ('previdência','previdencia','pension','prévoyance','prevoyance');
 UPDATE asset_classes SET name_key = 'classImoveis'       WHERE name_key IS NULL AND LOWER(name) IN ('imóveis','imoveis','real estate','immobilier');
+UPDATE asset_classes SET name_key = 'classCaixa'         WHERE name_key IS NULL AND LOWER(name) IN ('caixa','cash','liquidités','liquide');
 
 -- Backfill common finance categories (expand on migration 021)
 UPDATE finance_categories SET name_key = 'categoryGroceries'     WHERE name_key IS NULL AND LOWER(name) IN ('alimentação','alimentacao','mercado','supermercado','groceries','alimentation','courses','supermarché','supermarche');

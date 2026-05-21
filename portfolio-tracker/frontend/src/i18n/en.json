@@ -726,7 +726,8 @@
       "classCripto":        "Crypto",
       "classRendaFixa":     "Fixed Income",
       "classPrevidencia":   "Pension",
-      "classImoveis":       "Real Estate"
+      "classImoveis":       "Real Estate",
+      "classCaixa":         "Cash"
     },
     "nameRequired": "Please enter a name.",
     "loading": "Loading…",

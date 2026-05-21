@@ -67,12 +67,12 @@ router.get('/classes', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
   let { data, error } = await supabaseAdmin
     .from('asset_classes')
-    .select('id, name, color, icon')
+    .select('id, name, color, icon, name_key')
     .eq('user_id', userId)
     .order('name')
   if (error && isColumnMissing(error)) {
     const fb = await supabaseAdmin.from('asset_classes').select('id, name, color').eq('user_id', userId).order('name')
-    data = (fb.data ?? []).map(c => ({ ...c, icon: null })) as typeof data
+    data = (fb.data ?? []).map(c => ({ ...c, icon: null, name_key: null })) as typeof data
     error = fb.error
   }
   if (error) { res.status(500).json({ error: error.message }); return }

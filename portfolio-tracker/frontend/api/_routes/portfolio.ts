@@ -94,7 +94,7 @@ router.get('/value', requireAuth, async (req, res: Response, next) => {
   const byAsset: Array<{
     id: number; code: string; name: string
     value_brl: number; value_orig: number; currency: string
-    class_id: number | null; class_name: string; class_color: string; class_icon?: string | null
+    class_id: number | null; class_name: string; class_name_key: string | null; class_color: string; class_icon?: string | null
     holdings: number | null; price: number | null; source: string
     needs_manual: boolean
     invested_brl: number | null

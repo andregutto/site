@@ -126,12 +126,19 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
 
   const q = search.toLowerCase()
 
+  const classNames = t.classes.names as Record<string, string>
+  const resolveClassName = (name: string, nameKey?: string | null) => {
+    if (nameKey && classNames[nameKey]) return classNames[nameKey]
+    if (name === 'Sem classe') return t.classes.noClass
+    return name
+  }
+
   const groups = useMemo(() => {
-    const map = new Map<string, { name: string; color: string; assets: PortfolioAsset[] }>()
+    const map = new Map<string, { name: string; name_key: string | null; color: string; assets: PortfolioAsset[] }>()
 
     for (const asset of assets) {
       const key = asset.class_name
-      if (!map.has(key)) map.set(key, { name: key, color: asset.class_color, assets: [] })
+      if (!map.has(key)) map.set(key, { name: key, name_key: asset.class_name_key ?? null, color: asset.class_color, assets: [] })
       map.get(key)!.assets.push(asset)
     }
 
@@ -270,7 +277,7 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
                             ? <span className="text-base leading-none shrink-0">{icon}</span>
                             : <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: group.color }} />
                         })()}
-                        <span className="font-bold text-gray-900 text-base tracking-tight">{group.name}</span>
+                        <span className="font-bold text-gray-900 text-base tracking-tight">{resolveClassName(group.name, group.name_key)}</span>
                         <span className="text-xs text-gray-400 font-normal">
                           {group.assets.length} {group.assets.length === 1 ? d.asset : d.assets}
                         </span>

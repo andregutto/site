@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { apiFetch } from '../lib/api'
 import { useI18n } from '../contexts/I18nContext'
 
-interface AssetClass { id: number; name: string; color: string; icon: string | null }
+interface AssetClass { id: number; name: string; name_key?: string | null; color: string; icon: string | null }
 
 interface AssetRow {
   id: number
@@ -98,6 +98,12 @@ function IconPicker({ value, onChange }: { value: string | null; onChange: (i: s
 
 export default function ClassesPage() {
   const { t } = useI18n()
+  const classNames = t.classes.names as Record<string, string>
+  const resolveClassName = (cls: AssetClass) => {
+    if (cls.name_key && classNames[cls.name_key]) return classNames[cls.name_key]
+    if (cls.name === 'Sem classe') return t.classes.noClass
+    return cls.name
+  }
   const [classes,  setClasses]  = useState<AssetClass[]>([])
   const [assets,   setAssets]   = useState<AssetRow[]>([])
   const [loading,  setLoading]  = useState(true)
@@ -327,7 +333,7 @@ export default function ClassesPage() {
                           style={{ backgroundColor: cls.color }}
                         />
                       )}
-                      <span className="font-medium text-gray-800 flex-1">{cls.name}</span>
+                      <span className="font-medium text-gray-800 flex-1">{resolveClassName(cls)}</span>
                       <span className="text-xs text-gray-400 mr-2">
                         {count} {count === 1 ? t.classes.assetSingular : t.classes.assetPlural}
                       </span>
@@ -383,7 +389,7 @@ export default function ClassesPage() {
             <div key={cls.id}>
               <div className="px-5 py-2.5 bg-gray-50/60 flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: cls.color }} />
-                <span className="text-xs font-semibold text-gray-600 uppercase tracking-wide">{cls.name}</span>
+                <span className="text-xs font-semibold text-gray-600 uppercase tracking-wide">{resolveClassName(cls)}</span>
                 <span className="text-xs text-gray-400">({groupAssets.length})</span>
               </div>
               {groupAssets.length === 0 ? (

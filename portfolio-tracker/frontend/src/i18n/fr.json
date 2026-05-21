@@ -726,7 +726,8 @@
       "classCripto":        "Crypto",
       "classRendaFixa":     "Revenus Fixes",
       "classPrevidencia":   "Prévoyance",
-      "classImoveis":       "Immobilier"
+      "classImoveis":       "Immobilier",
+      "classCaixa":         "Liquidités"
     },
     "nameRequired": "Veuillez saisir un nom.",
     "loading": "Chargement…",

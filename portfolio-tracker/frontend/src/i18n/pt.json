@@ -726,7 +726,8 @@
       "classCripto":        "Cripto",
       "classRendaFixa":     "Renda Fixa",
       "classPrevidencia":   "Previdência",
-      "classImoveis":       "Imóveis"
+      "classImoveis":       "Imóveis",
+      "classCaixa":         "Caixa"
     },
     "nameRequired": "Informe um nome.",
     "loading": "Carregando…",

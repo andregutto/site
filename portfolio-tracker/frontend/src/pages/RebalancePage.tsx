@@ -1,11 +1,19 @@
 import { useState, useEffect } from 'react'
 import { usePortfolioValue } from '../hooks/usePortfolio'
 import { useCurrency } from '../contexts/CurrencyContext'
+import { useI18n } from '../contexts/I18nContext'
 import { apiFetch } from '../lib/api'
 
 export default function RebalancePage() {
   const { data, loading: portfolioLoading } = usePortfolioValue()
   const { fmt } = useCurrency()
+  const { t } = useI18n()
+  const classNames = t.classes.names as Record<string, string>
+  const resolveClassName = (name: string, nameKey?: string | null) => {
+    if (nameKey && classNames[nameKey]) return classNames[nameKey]
+    if (name === 'Sem classe') return t.classes.noClass
+    return name
+  }
 
   const [targets, setTargets]       = useState<Record<string, string>>({})
   const [profileLoading, setProfileLoading] = useState(true)
@@ -89,7 +97,7 @@ export default function RebalancePage() {
               <div key={cls.name} className="px-5 py-4">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: cls.color }} />
-                  <span className="font-medium text-gray-800 flex-1">{cls.name}</span>
+                  <span className="font-medium text-gray-800 flex-1">{resolveClassName(cls.name, cls.name_key)}</span>
                   <span className="text-sm text-gray-500">{fmt(cls.value_brl)}</span>
                 </div>
 
@@ -162,7 +170,7 @@ export default function RebalancePage() {
               return (
                 <div key={cls.name} className="px-5 py-3 flex items-center gap-3">
                   <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: cls.color }} />
-                  <span className="text-sm text-gray-700 flex-1">{cls.name}</span>
+                  <span className="text-sm text-gray-700 flex-1">{resolveClassName(cls.name, cls.name_key)}</span>
                   <span className={`text-sm font-semibold ${diff > 0 ? 'text-red-600' : 'text-green-600'}`}>
                     {diff > 0 ? 'Reduzir' : 'Aumentar'} {fmt(diffBrl)}
                   </span>
