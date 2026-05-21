@@ -14,7 +14,7 @@ export default function AllocationChart({ data }: Props) {
   const { t } = useI18n()
   if (!data.length) return null
 
-  const classNames = t.classes.names as Record<string, string>
+  const classNames = (t.classes.names as Record<string, string>) ?? {}
   const resolveClassName = (item: PortfolioClass) => {
     if (item.name_key && classNames[item.name_key]) return classNames[item.name_key]
     if (item.name === 'Sem classe') return t.classes.noClass

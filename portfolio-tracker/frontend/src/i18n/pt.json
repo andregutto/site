@@ -737,6 +737,23 @@
     "manualType": "Manual",
     "moveHint": "Mover para outra classe"
   },
+  "rebalance": {
+    "title": "Balanceamento",
+    "subtitle": "Metas de alocação por classe",
+    "saved": "Salvo.",
+    "saving": "Salvando...",
+    "saveTargets": "Salvar metas",
+    "allocationByClass": "Alocação por classe",
+    "totalTarget": "Meta total: {pct}%",
+    "mustSum100": "(deve somar 100%)",
+    "current": "Atual:",
+    "onTarget": "na meta",
+    "above": "acima",
+    "below": "abaixo",
+    "suggestedActions": "Ações sugeridas",
+    "reduce": "Reduzir",
+    "increase": "Aumentar"
+  },
   "chat": {
     "open": "Abrir assistente",
     "title": "Assistente",

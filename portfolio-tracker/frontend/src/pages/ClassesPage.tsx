@@ -98,7 +98,7 @@ function IconPicker({ value, onChange }: { value: string | null; onChange: (i: s
 
 export default function ClassesPage() {
   const { t } = useI18n()
-  const classNames = t.classes.names as Record<string, string>
+  const classNames = (t.classes.names as Record<string, string>) ?? {}
   const resolveClassName = (cls: AssetClass) => {
     if (cls.name_key && classNames[cls.name_key]) return classNames[cls.name_key]
     if (cls.name === 'Sem classe') return t.classes.noClass

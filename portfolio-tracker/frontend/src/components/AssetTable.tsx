@@ -126,7 +126,7 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
 
   const q = search.toLowerCase()
 
-  const classNames = t.classes.names as Record<string, string>
+  const classNames = (t.classes.names as Record<string, string>) ?? {}
   const resolveClassName = (name: string, nameKey?: string | null) => {
     if (nameKey && classNames[nameKey]) return classNames[nameKey]
     if (name === 'Sem classe') return t.classes.noClass

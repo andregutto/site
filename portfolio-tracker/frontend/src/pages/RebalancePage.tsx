@@ -8,7 +8,8 @@ export default function RebalancePage() {
   const { data, loading: portfolioLoading } = usePortfolioValue()
   const { fmt } = useCurrency()
   const { t } = useI18n()
-  const classNames = t.classes.names as Record<string, string>
+  const r = t.rebalance
+  const classNames = (t.classes.names as Record<string, string>) ?? {}
   const resolveClassName = (name: string, nameKey?: string | null) => {
     if (nameKey && classNames[nameKey]) return classNames[nameKey]
     if (name === 'Sem classe') return t.classes.noClass
@@ -55,7 +56,7 @@ export default function RebalancePage() {
   }
 
   if (portfolioLoading || profileLoading) {
-    return <div className="text-center text-gray-400 text-sm py-12 animate-pulse">Carregando...</div>
+    return <div className="text-center text-gray-400 text-sm py-12 animate-pulse">{t.classes.loading}</div>
   }
 
   const targetSumOk = Math.abs(totalTarget - 100) < 0.1
@@ -64,27 +65,27 @@ export default function RebalancePage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-gray-900">Balanceamento</h1>
-          <p className="text-sm text-gray-400 mt-0.5">Metas de alocação por classe</p>
+          <h1 className="text-xl font-bold text-gray-900">{r.title}</h1>
+          <p className="text-sm text-gray-400 mt-0.5">{r.subtitle}</p>
         </div>
         <div className="flex items-center gap-3">
-          {saveOk && <span className="text-xs text-green-600">Salvo.</span>}
+          {saveOk && <span className="text-xs text-green-600">{r.saved}</span>}
           <button
             onClick={handleSave}
             disabled={saving}
             className="px-4 py-2 bg-[#001A70] text-white rounded-xl text-sm font-semibold hover:bg-[#001A70]/90 disabled:opacity-50 transition-colors"
           >
-            {saving ? 'Salvando...' : 'Salvar metas'}
+            {saving ? r.saving : r.saveTargets}
           </button>
         </div>
       </div>
 
       <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
         <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-          <h2 className="font-semibold text-gray-800">Alocação por classe</h2>
+          <h2 className="font-semibold text-gray-800">{r.allocationByClass}</h2>
           {totalTarget > 0 && (
             <span className={`text-xs font-medium ${targetSumOk ? 'text-green-600' : 'text-amber-600'}`}>
-              Meta total: {totalTarget.toFixed(1)}%{!targetSumOk && ' (deve somar 100%)'}
+              {r.totalTarget.replace('{pct}', totalTarget.toFixed(1))}{!targetSumOk && ` ${r.mustSum100}`}
             </span>
           )}
         </div>
@@ -105,7 +106,7 @@ export default function RebalancePage() {
                   <div className="flex-1">
                     <div className="flex items-center justify-between text-xs mb-1.5">
                       <span className="text-gray-400">
-                        Atual: <span className="font-semibold text-gray-700">{cls.pct.toFixed(1)}%</span>
+                        {r.current} <span className="font-semibold text-gray-700">{cls.pct.toFixed(1)}%</span>
                       </span>
                       {diff != null && (
                         <span className={
@@ -113,7 +114,7 @@ export default function RebalancePage() {
                           diff > 0 ? 'text-red-500' : 'text-blue-500'
                         }>
                           {diff > 0 ? '+' : ''}{diff.toFixed(1)}%
-                          {' '}{Math.abs(diff) < 1 ? 'na meta' : diff > 0 ? 'acima' : 'abaixo'}
+                          {' '}{Math.abs(diff) < 1 ? r.onTarget : diff > 0 ? r.above : r.below}
                         </span>
                       )}
                     </div>
@@ -158,7 +159,7 @@ export default function RebalancePage() {
       }) && (
         <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
           <div className="px-5 py-4 border-b border-gray-100">
-            <h2 className="font-semibold text-gray-800">Ações sugeridas</h2>
+            <h2 className="font-semibold text-gray-800">{r.suggestedActions}</h2>
           </div>
           <div className="divide-y divide-gray-50">
             {classes.map(cls => {
@@ -172,7 +173,7 @@ export default function RebalancePage() {
                   <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: cls.color }} />
                   <span className="text-sm text-gray-700 flex-1">{resolveClassName(cls.name, cls.name_key)}</span>
                   <span className={`text-sm font-semibold ${diff > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                    {diff > 0 ? 'Reduzir' : 'Aumentar'} {fmt(diffBrl)}
+                    {diff > 0 ? r.reduce : r.increase} {fmt(diffBrl)}
                   </span>
                   <span className="text-xs text-gray-400">({Math.abs(diff).toFixed(1)}%)</span>
                 </div>

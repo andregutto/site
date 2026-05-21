@@ -1,4 +1,4 @@
-const CACHE = 'portfolio-v1'
+const CACHE = 'portfolio-v2'
 const STATIC = ['/', '/manifest.json', '/favicon.svg']
 
 self.addEventListener('install', e => {
@@ -19,6 +19,9 @@ self.addEventListener('fetch', e => {
   const { request } = e
   const url = new URL(request.url)
 
+  // Never intercept cross-origin requests (Supabase auth, external APIs)
+  if (url.origin !== self.location.origin) return
+
   // Network-first for API calls
   if (url.pathname.startsWith('/api/')) {
     e.respondWith(
@@ -27,12 +30,13 @@ self.addEventListener('fetch', e => {
     return
   }
 
-  // Cache-first for everything else (static assets)
+  // Cache-first for same-origin static assets (GET only)
+  if (request.method !== 'GET') return
   e.respondWith(
     caches.match(request).then(cached => {
       if (cached) return cached
       return fetch(request).then(res => {
-        if (res.ok && request.method === 'GET') {
+        if (res.ok) {
           const clone = res.clone()
           caches.open(CACHE).then(c => c.put(request, clone))
         }

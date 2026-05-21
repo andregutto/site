@@ -737,6 +737,23 @@
     "manualType": "Manual",
     "moveHint": "Move to another class"
   },
+  "rebalance": {
+    "title": "Rebalancing",
+    "subtitle": "Allocation targets by class",
+    "saved": "Saved.",
+    "saving": "Saving...",
+    "saveTargets": "Save targets",
+    "allocationByClass": "Allocation by class",
+    "totalTarget": "Total target: {pct}%",
+    "mustSum100": "(must sum to 100%)",
+    "current": "Current:",
+    "onTarget": "on target",
+    "above": "above",
+    "below": "below",
+    "suggestedActions": "Suggested actions",
+    "reduce": "Reduce",
+    "increase": "Increase"
+  },
   "chat": {
     "open": "Open assistant",
     "title": "Assistant",

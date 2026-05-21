@@ -737,6 +737,23 @@
     "manualType": "Manuel",
     "moveHint": "Déplacer vers une autre classe"
   },
+  "rebalance": {
+    "title": "Rééquilibrage",
+    "subtitle": "Objectifs d'allocation par classe",
+    "saved": "Enregistré.",
+    "saving": "Enregistrement...",
+    "saveTargets": "Enregistrer les objectifs",
+    "allocationByClass": "Allocation par classe",
+    "totalTarget": "Objectif total : {pct}%",
+    "mustSum100": "(doit faire 100%)",
+    "current": "Actuel :",
+    "onTarget": "dans l'objectif",
+    "above": "au-dessus",
+    "below": "en-dessous",
+    "suggestedActions": "Actions suggérées",
+    "reduce": "Réduire",
+    "increase": "Augmenter"
+  },
   "chat": {
     "open": "Ouvrir l'assistant",
     "title": "Assistant",
