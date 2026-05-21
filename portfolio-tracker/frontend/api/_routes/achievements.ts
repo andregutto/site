@@ -61,9 +61,11 @@ router.post('/check', requireAuth, async (req, res: Response) => {
     const td = total_display ?? total_brl
     const isBRL = !displayCurrency || displayCurrency === 'BRL'
     check('builder',       isBRL ? total_brl >= 10_000 : td >= 2_000)
-    check('five_digits',   td >= 10_000)
-    check('six_digits',    td >= 100_000)
-    check('million_club',  td >= 1_000_000)
+    check('five_digits',     td >= 10_000)
+    check('six_digits',      td >= 100_000)
+    check('quarter_million', td >= 250_000)
+    check('half_million',    td >= 500_000)
+    check('million_club',    td >= 1_000_000)
     check('three_million', td >= 3_000_000)
     check('five_million',  td >= 5_000_000)
     check('ten_million',   td >= 10_000_000)

@@ -83,8 +83,14 @@ function EnvelopeBar({ env, expanded, onToggle, onEditCategory, onDeleteCategory
     categoryEducation:     t.finances.categoryEducation,
     categoryPersonalCare:  t.finances.categoryPersonalCare,
     categoryElectronics:   t.finances.categoryElectronics,
-    categoryAirbnb:        t.finances.categoryAirbnb,
-    categoryOther:         t.finances.categoryOther,
+    categoryAirbnb:          t.finances.categoryAirbnb,
+    categoryOther:           t.finances.categoryOther,
+    categoryGifts:           t.finances.categoryGifts,
+    categoryShopping:        t.finances.categoryShopping,
+    categoryTaxes:           t.finances.categoryTaxes,
+    categoryFees:            t.finances.categoryFees,
+    categoryBarsRestaurants: t.finances.categoryBarsRestaurants,
+    categoryShowsParties:    t.finances.categoryShowsParties,
   }
   const descByType: Record<string, string> = {
     essential:  t.finances.descEssential,
