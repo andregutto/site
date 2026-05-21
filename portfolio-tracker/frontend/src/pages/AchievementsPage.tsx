@@ -37,13 +37,15 @@ export default function AchievementsPage() {
   }, [earned])
 
   const WEALTH_THRESHOLDS: Record<string, { brl: number; other: number }> = {
-    builder:       { brl: 10_000,      other: 2_000 },
-    five_digits:   { brl: 10_000,      other: 10_000 },
-    six_digits:    { brl: 100_000,     other: 100_000 },
-    million_club:  { brl: 1_000_000,   other: 1_000_000 },
-    three_million: { brl: 3_000_000,   other: 3_000_000 },
-    five_million:  { brl: 5_000_000,   other: 5_000_000 },
-    ten_million:   { brl: 10_000_000,  other: 10_000_000 },
+    builder:        { brl: 10_000,      other: 2_000 },
+    five_digits:    { brl: 10_000,      other: 10_000 },
+    six_digits:     { brl: 100_000,     other: 100_000 },
+    quarter_million:{ brl: 250_000,     other: 250_000 },
+    half_million:   { brl: 500_000,     other: 500_000 },
+    million_club:   { brl: 1_000_000,   other: 1_000_000 },
+    three_million:  { brl: 3_000_000,   other: 3_000_000 },
+    five_million:   { brl: 5_000_000,   other: 5_000_000 },
+    ten_million:    { brl: 10_000_000,  other: 10_000_000 },
   }
 
   const fmtAmount = (amount: number, currency: string) =>

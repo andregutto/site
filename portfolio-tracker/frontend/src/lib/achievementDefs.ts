@@ -43,6 +43,7 @@ export const ACHIEVEMENT_DEFS: AchievementDef[] = [
   { key: 'fin_freedom',        name: 'Visionário',            description: 'Criar um plano de liberdade financeira',           xp: 30, gradient: ['#1E3A5F','#C9A227'], ringColor: '#FDE68A' },
   { key: 'fin_hundred_txn',    name: 'Historiador Financeiro',description: 'Registrar mais de 100 transações',                 xp: 40, gradient: ['#1F2937','#9CA3AF'], ringColor: '#D1D5DB' },
   { key: 'fin_categorized',    name: 'Organizado',            description: 'Categorizar mais de 50 transações',                xp: 35, gradient: ['#14532D','#22C55E'], ringColor: '#86EFAC' },
+  { key: 'coruja',             name: 'Coruja',                description: 'Usar portfólio e finanças juntos',                  xp: 45, gradient: ['#1a1a2e','#6B21A8'], ringColor: '#D8B4FE' },
 ]
 
 export const LEVELS = [

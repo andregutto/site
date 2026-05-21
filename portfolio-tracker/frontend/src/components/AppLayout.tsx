@@ -58,14 +58,14 @@ export default function AppLayout() {
   const avatarUrl = meta.avatar_url as string | undefined
   const avatarInitials = headerLabel.slice(0, 2).toUpperCase()
 
-  const inInvestimentos = location.pathname === '/' ||
+  const inInvestimentos = location.pathname === '/dashboard' || location.pathname === '/' ||
     location.pathname.startsWith('/performance') ||
     location.pathname.startsWith('/portfolio') ||
     location.pathname.startsWith('/institutions')
   const inFinances = location.pathname.startsWith('/finances')
 
   const investimentosItems = [
-    { to: '/', label: t.nav.dashboard, end: true, icon: (
+    { to: '/dashboard', label: t.nav.dashboard, end: true, icon: (
       <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
         <rect x="1" y="9" width="3" height="6" rx=".5"/><rect x="6.5" y="5.5" width="3" height="9.5" rx=".5"/><rect x="12" y="2" width="3" height="13" rx=".5"/>
       </svg>
@@ -165,7 +165,7 @@ export default function AppLayout() {
           {/* Desktop — two section tabs */}
           <nav className="hidden sm:flex flex-1 justify-center gap-1">
             <NavLink
-              to="/"
+              to="/dashboard"
               className={() =>
                 `px-4 py-1.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
                   inInvestimentos ? 'bg-[#001A70]/10 text-[#001A70] font-semibold' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
@@ -397,7 +397,7 @@ export default function AppLayout() {
       <nav className="sm:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 z-20 safe-bottom">
         <div className="flex">
           {[
-            { to: '/', label: t.nav.investments, end: false, match: inInvestimentos, icon: (
+            { to: '/dashboard', label: t.nav.investments, end: false, match: inInvestimentos, icon: (
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.5l7.5-7.5 4 4L21 4.5M3 20.5h18" />
               </svg>

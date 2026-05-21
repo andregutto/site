@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
 import { useI18n } from '../contexts/I18nContext'
+import { useSearchParams } from 'react-router-dom'
 import LoginFooter from '../components/LoginFooter'
 import LanguageSelector from '../components/LanguageSelector'
 
@@ -62,8 +63,9 @@ export default function LoginPage() {
   const { signIn, signUp } = useAuth()
   const { t } = useI18n()
   const l = t.login
+  const [searchParams] = useSearchParams()
 
-  const [mode, setMode]         = useState<Mode>('login')
+  const [mode, setMode]         = useState<Mode>((searchParams.get('mode') as Mode) || 'login')
   const [email, setEmail]       = useState('')
   const [password, setPassword] = useState('')
   const [showPwd, setShowPwd]   = useState(false)

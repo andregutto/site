@@ -75,6 +75,22 @@ const ICONS: Record<string, (c: string) => React.ReactElement> = {
       <path d="M52 90 L68 90" stroke={c} strokeWidth="3" strokeLinecap="round" fill="none"/>
     </g>
   ),
+  quarter_million: (c) => (
+    <g fill={c} fillOpacity={0.95}>
+      <path d="M60 45 L65 60 L75 65 L65 70 L60 85 L55 70 L45 65 L55 60 Z" fillOpacity={0.9}/>
+      <path d="M60 50 L64 61 L73 65 L64 69 L60 80 L56 69 L47 65 L56 61 Z" fill="white" fillOpacity={0.15}/>
+      <text x="60" y="67" textAnchor="middle" fontSize="8" fontWeight="bold" fill={c} fillOpacity={0.7}>250K</text>
+      <path d="M48 88 L72 88" stroke={c} strokeWidth="2.5" strokeLinecap="round" fill="none" fillOpacity={0.5}/>
+    </g>
+  ),
+  half_million: (c) => (
+    <g fill={c} fillOpacity={0.95}>
+      <circle cx="60" cy="65" r="18" fill={c} fillOpacity={0.2} stroke={c} strokeWidth="2"/>
+      <path d="M52 60 L57 56 L57 74 L52 74 Z" fillOpacity={0.5}/>
+      <path d="M59 56 L64 56 Q68 56 68 62 Q68 67 63 67 Q68 67 68 73 Q68 74 64 74 L59 74 Z" fillOpacity={0.9}/>
+      <text x="60" y="91" textAnchor="middle" fontSize="8" fontWeight="bold" fill={c} fillOpacity={0.6}>500K</text>
+    </g>
+  ),
   million_club: (c) => (
     <g fill={c} fillOpacity={0.95}>
       <path d="M60 45 L47 58 L51 75 L60 82 L69 75 L73 58 Z"/>
@@ -337,6 +353,34 @@ const ICONS: Record<string, (c: string) => React.ReactElement> = {
       <path d="M65 56 L68 59 L74 53" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
       <path d="M45 76 L48 79 L54 73" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
       <line x1="65" y1="76" x2="75" y2="76" stroke="white" strokeWidth="2" strokeLinecap="round" fill="none"/>
+    </g>
+  ),
+  coruja: (c) => (
+    <g fill={c} fillOpacity={0.95}>
+      {/* body */}
+      <ellipse cx="60" cy="68" rx="14" ry="17" fillOpacity={0.85}/>
+      {/* wings */}
+      <path d="M46 64 Q38 60 40 74 Q44 72 46 70 Z" fillOpacity={0.6}/>
+      <path d="M74 64 Q82 60 80 74 Q76 72 74 70 Z" fillOpacity={0.6}/>
+      {/* head */}
+      <ellipse cx="60" cy="52" rx="11" ry="10" fillOpacity={0.9}/>
+      {/* ear tufts */}
+      <path d="M53 44 L51 37 L56 43 Z" fillOpacity={0.8}/>
+      <path d="M67 44 L69 37 L64 43 Z" fillOpacity={0.8}/>
+      {/* face disc */}
+      <ellipse cx="60" cy="53" rx="9" ry="8" fill="white" fillOpacity={0.15}/>
+      {/* eyes */}
+      <circle cx="55" cy="51" r="4" fill="white" fillOpacity={0.9}/>
+      <circle cx="65" cy="51" r="4" fill="white" fillOpacity={0.9}/>
+      <circle cx="55" cy="51" r="2.5" fill={c} fillOpacity={0.9}/>
+      <circle cx="65" cy="51" r="2.5" fill={c} fillOpacity={0.9}/>
+      <circle cx="54" cy="50" r="1" fill="white" fillOpacity={0.8}/>
+      <circle cx="64" cy="50" r="1" fill="white" fillOpacity={0.8}/>
+      {/* beak */}
+      <path d="M58 56 L62 56 L60 59 Z" fill={c} fillOpacity={0.6}/>
+      {/* feet */}
+      <path d="M53 84 L50 88 M53 84 L53 89 M53 84 L56 88" stroke={c} strokeWidth="1.5" strokeLinecap="round" fill="none" fillOpacity={0.6}/>
+      <path d="M67 84 L64 88 M67 84 L67 89 M67 84 L70 88" stroke={c} strokeWidth="1.5" strokeLinecap="round" fill="none" fillOpacity={0.6}/>
     </g>
   ),
 }

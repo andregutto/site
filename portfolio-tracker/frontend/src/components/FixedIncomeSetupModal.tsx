@@ -12,14 +12,6 @@ interface Props {
   onSaved: () => void
 }
 
-// Static fallback labels (used only before i18n loads)
-const FI_TYPE_LABELS: Record<string, string> = {
-  pos_cdi:   'Pós-fixado CDI',
-  pre:       'Pré-fixado',
-  ipca_plus: 'IPCA+',
-  selic:     'Selic',
-}
-
 // Rótulo e placeholder do campo de taxa por tipo
 function rateConfig(fiType: string | null | undefined) {
   switch (fiType) {

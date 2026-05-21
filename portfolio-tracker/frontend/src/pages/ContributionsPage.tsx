@@ -48,18 +48,6 @@ const FORM_TYPES = [
 ] as const
 type FormTypeValue = typeof FORM_TYPES[number]['value']
 
-const FI_TYPES = [
-  { value: 'pos_cdi',   label: 'Pos-fixado CDI'    },
-  { value: 'selic',     label: 'Selic'              },
-  { value: 'pre',       label: 'Pre-fixado'         },
-  { value: 'ipca_plus', label: 'IPCA+'              },
-]
-
-function rateLabel(fiType: string) {
-  if (fiType === 'pre')       return { label: 'Taxa (% a.a.)',        placeholder: 'ex: 12,5'  }
-  if (fiType === 'ipca_plus') return { label: 'Spread IPCA+ (% a.a.)', placeholder: 'ex: 6,5'  }
-  return                              { label: 'Taxa CDI/Selic (%)',   placeholder: 'ex: 102,5' }
-}
 
 const BASE_INPUT = 'w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2'
 const SMALL_INPUT = 'w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20 bg-white'

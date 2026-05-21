@@ -115,6 +115,7 @@ router.post('/check', requireAuth, async (req, res: Response) => {
     check('fin_freedom',       (planRes.data ?? []).length > 0)
     check('fin_hundred_txn',   txns.length >= 100)
     check('fin_categorized',   txns.filter((t: { category_id: number | null }) => t.category_id != null).length >= 50)
+    check('coruja',            assetList.length > 0 && txns.length > 0)
   }
 
   let newlyEarned: string[] = []

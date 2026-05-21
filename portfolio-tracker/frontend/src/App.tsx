@@ -33,6 +33,7 @@ import PrivacyPolicyPage from './pages/PrivacyPolicyPage'
 import TermsOfUsePage from './pages/TermsOfUsePage'
 import PublicMomentPage from './pages/PublicMomentPage'
 import { AchievementProvider } from './contexts/AchievementContext'
+import LandingPage from './pages/LandingPage'
 
 function EmailConfirmGate({ email }: { email: string }) {
   const { signOut } = useAuth()
@@ -87,7 +88,7 @@ function ProtectedRoutes() {
     )
   }
 
-  if (!user) return <Navigate to="/login" replace />
+  if (!user) return <Navigate to="/" replace />
 
   if (!user.email_confirmed_at) return <EmailConfirmGate email={user.email ?? ''} />
 
@@ -105,12 +106,13 @@ function AppRoutes() {
 
   return (
     <Routes>
-      <Route path="/login"   element={user ? <Navigate to="/" replace /> : <LoginPage />} />
+      <Route path="/login"   element={user ? <Navigate to="/dashboard" replace /> : <LoginPage />} />
+      <Route path="/"        element={user ? <Navigate to="/dashboard" replace /> : <LandingPage />} />
       <Route path="/privacy"                element={<PrivacyPolicyPage />} />
       <Route path="/terms"                  element={<TermsOfUsePage />} />
       <Route path="/share/momento/:token"   element={<PublicMomentPage />} />
       <Route element={<ProtectedRoutes />}>
-        <Route path="/"               element={<DashboardPage />} />
+        <Route path="/dashboard"      element={<DashboardPage />} />
         <Route path="/performance"    element={<PerformancePage />} />
         <Route path="/assets/:id"     element={<AssetDetailPage />} />
         <Route path="/profile"        element={<ProfilePage />} />
@@ -138,7 +140,7 @@ function AppRoutes() {
           <Route path="accounts"      element={<Navigate to="/institutions" replace />} />
         </Route>
       </Route>
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
   )
 }

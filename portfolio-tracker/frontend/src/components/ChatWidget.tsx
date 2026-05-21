@@ -145,7 +145,7 @@ export default function ChatWidget() {
       {/* Floating button */}
       <button
         onClick={() => setOpen(o => !o)}
-        className="fixed bottom-5 right-5 z-50 w-12 h-12 rounded-full bg-[#001A70] text-white shadow-lg flex items-center justify-center hover:bg-[#002494] transition-colors"
+        className="fixed bottom-20 right-5 z-50 w-12 h-12 rounded-full bg-[#001A70] text-white shadow-lg flex items-center justify-center hover:bg-[#002494] transition-colors sm:bottom-5"
         aria-label={t.chat.open}
       >
         {open ? (
@@ -161,7 +161,7 @@ export default function ChatWidget() {
 
       {/* Chat panel */}
       {open && (
-        <div className="fixed bottom-20 right-5 z-50 w-[360px] max-w-[calc(100vw-2.5rem)] h-[520px] max-h-[calc(100vh-6rem)] bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col overflow-hidden">
+        <div className="fixed bottom-36 right-5 z-50 w-[360px] max-w-[calc(100vw-2.5rem)] h-[520px] max-h-[calc(100vh-6rem)] bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col overflow-hidden sm:bottom-20">
           {/* Header */}
           <div className="flex items-center gap-2.5 px-4 py-3 border-b border-gray-100 bg-[#001A70] rounded-t-2xl">
             <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
