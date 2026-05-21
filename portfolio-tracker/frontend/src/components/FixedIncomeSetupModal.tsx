@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { apiFetch } from '../lib/api'
 import { parseLocaleNum, inputCls } from '../lib/numparse'
+import { useI18n } from '../contexts/I18nContext'
 import type { PortfolioAsset } from '../lib/types'
 import InstitutionSelect from './InstitutionSelect'
 
@@ -11,6 +12,7 @@ interface Props {
   onSaved: () => void
 }
 
+// Static fallback labels (used only before i18n loads)
 const FI_TYPE_LABELS: Record<string, string> = {
   pos_cdi:   'Pós-fixado CDI',
   pre:       'Pré-fixado',
@@ -40,6 +42,7 @@ function initialRate(asset: PortfolioAsset): string {
 
 export default function FixedIncomeSetupModal({ asset, onClose, onSaved }: Props) {
   const today = new Date().toISOString().split('T')[0]
+  const { t } = useI18n()
 
   const [fiType,      setFiType]      = useState(asset.fi_type ?? 'pos_cdi')
   const [principal,   setPrincipal]   = useState('')
@@ -62,14 +65,21 @@ export default function FixedIncomeSetupModal({ asset, onClose, onSaved }: Props
   const rateCfg  = rateConfig(fiType)
   const needsRate = true
 
+  const FI_TYPE_OPTIONS_LOCAL = [
+    { value: 'pos_cdi',   label: t.contributions.fiPosFixed },
+    { value: 'selic',     label: t.contributions.fiSelic    },
+    { value: 'pre',       label: t.contributions.fiPreFixed },
+    { value: 'ipca_plus', label: t.contributions.fiIpcaPlus },
+  ]
+
   async function handleSave() {
     const p = parseLocaleNum(principal)
-    if (p === null || p <= 0) { setError('Informe o valor principal investido.'); return }
-    if (!startDate)           { setError('Informe a data de inicio.'); return }
+    if (p === null || p <= 0) { setError(t.modals.errorPrincipal); return }
+    if (!startDate)           { setError(t.modals.errorStartDate); return }
 
     const rateVal = parseLocaleNum(rate)
     if (needsRate && (rateVal === null || rateVal <= 0)) {
-      setError('Informe a taxa contratada.'); return
+      setError(t.modals.errorRate); return
     }
 
     setSaving(true)
@@ -101,14 +111,14 @@ export default function FixedIncomeSetupModal({ asset, onClose, onSaved }: Props
       onSaved()
       onClose()
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Erro ao salvar')
+      setError(e instanceof Error ? e.message : t.modals.errorSave)
     } finally {
       setSaving(false)
     }
   }
 
   async function handlePortability() {
-    if (!portInstitution.trim()) { setPortError('Informe a nova instituicao.'); return }
+    if (!portInstitution.trim()) { setPortError(t.modals.errorInstitution); return }
     setSavingPortability(true); setPortError(null)
     try {
       await apiFetch(`/assets/${asset.id}`, {
@@ -119,7 +129,7 @@ export default function FixedIncomeSetupModal({ asset, onClose, onSaved }: Props
       setPortInstitution('')
       onSaved()
     } catch (e) {
-      setPortError(e instanceof Error ? e.message : 'Erro ao registrar portabilidade')
+      setPortError(e instanceof Error ? e.message : t.modals.errorPortability)
     } finally {
       setSavingPortability(false)
     }
@@ -139,27 +149,26 @@ export default function FixedIncomeSetupModal({ asset, onClose, onSaved }: Props
 
         <div className="overflow-y-auto flex-1 p-5 space-y-4">
           <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-amber-700 text-xs">
-            Informe os dados do título para o sistema calcular o rendimento automaticamente via{' '}
-            {fiType === 'ipca_plus' ? 'IPCA do Banco Central' : fiType === 'pre' ? 'taxa pré-fixada' : 'CDI do Banco Central'}.
+            {t.modals.fiHint}
           </div>
 
           {/* Tipo */}
           <div>
-            <label className="block text-xs text-gray-500 mb-1">Tipo de renda fixa</label>
+            <label className="block text-xs text-gray-500 mb-1">{t.modals.fiType}</label>
             <select
               value={fiType}
               onChange={e => setFiType(e.target.value)}
               className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20 bg-white"
             >
-              {Object.entries(FI_TYPE_LABELS).map(([v, label]) => (
-                <option key={v} value={v}>{label}</option>
+              {FI_TYPE_OPTIONS_LOCAL.map(opt => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
               ))}
             </select>
           </div>
 
           {/* Principal */}
           <div>
-            <label className="block text-xs text-gray-500 mb-1">Valor investido (R$)</label>
+            <label className="block text-xs text-gray-500 mb-1">{t.modals.investedBrl}</label>
             <input
               type="text"
               inputMode="decimal"
@@ -167,7 +176,7 @@ export default function FixedIncomeSetupModal({ asset, onClose, onSaved }: Props
               onChange={e => { setPrincipal(e.target.value); setPrincipalErr(undefined) }}
               onBlur={e => {
                 const raw = e.target.value.trim()
-                if (raw && parseLocaleNum(raw) === null) setPrincipalErr('Formato invalido')
+                if (raw && parseLocaleNum(raw) === null) setPrincipalErr(t.modals.invalidFormat)
               }}
               placeholder="ex: 50.000,00"
               className={inputCls('w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2', !!principalErr)}
@@ -186,7 +195,7 @@ export default function FixedIncomeSetupModal({ asset, onClose, onSaved }: Props
                 onChange={e => { setRate(e.target.value); setRateErr(undefined) }}
                 onBlur={e => {
                   const raw = e.target.value.trim()
-                  if (raw && parseLocaleNum(raw) === null) setRateErr('Formato invalido')
+                  if (raw && parseLocaleNum(raw) === null) setRateErr(t.modals.invalidFormat)
                 }}
                 placeholder={rateCfg.placeholder}
                 className={inputCls('w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2', !!rateErr)}
@@ -201,7 +210,7 @@ export default function FixedIncomeSetupModal({ asset, onClose, onSaved }: Props
           {/* Datas em linha */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Data de início</label>
+              <label className="block text-xs text-gray-500 mb-1">{t.modals.startDate}</label>
               <input
                 type="date"
                 value={startDate}
@@ -211,7 +220,7 @@ export default function FixedIncomeSetupModal({ asset, onClose, onSaved }: Props
               />
             </div>
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Vencimento (opc.)</label>
+              <label className="block text-xs text-gray-500 mb-1">{t.modals.maturityOpt}</label>
               <input
                 type="date"
                 value={maturity}
@@ -224,7 +233,7 @@ export default function FixedIncomeSetupModal({ asset, onClose, onSaved }: Props
 
           {/* Instituição */}
           <div>
-            <label className="block text-xs text-gray-500 mb-1">Instituição financeira</label>
+            <label className="block text-xs text-gray-500 mb-1">{t.modals.institution}</label>
             <InstitutionSelect
               value={institution}
               onChange={setInstitution}
@@ -238,14 +247,14 @@ export default function FixedIncomeSetupModal({ asset, onClose, onSaved }: Props
               onClick={onClose}
               className="flex-1 border border-gray-200 text-gray-600 rounded-xl py-2.5 text-sm font-medium hover:bg-gray-50 transition-colors"
             >
-              Cancelar
+              {t.common.cancel}
             </button>
             <button
               onClick={handleSave}
               disabled={saving}
               className="flex-1 bg-[#001A70] text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-[#001A70]/90 disabled:opacity-50 transition-colors"
             >
-              {saving ? 'Salvando...' : 'Salvar e calcular'}
+              {saving ? t.modals.saving : t.modals.saveAndCalculate}
             </button>
           </div>
 
@@ -256,23 +265,23 @@ export default function FixedIncomeSetupModal({ asset, onClose, onSaved }: Props
               onClick={() => { setShowPortability(v => !v); setPortError(null) }}
               className="text-xs text-[#001A70] hover:underline font-medium"
             >
-              {showPortability ? '↑ Fechar portabilidade' : '⇌ Registrar portabilidade'}
+              {showPortability ? t.modals.portabilityClose : t.modals.portabilityOpen}
             </button>
 
             {showPortability && (
               <div className="mt-3 space-y-3">
                 <p className="text-xs text-gray-500">
-                  Mova este titulo para outra instituicao. Atualiza o custodiante sem alterar os parametros financeiros.
+                  {t.modals.portabilityDesc}
                 </p>
                 {asset.exchange && (
-                  <p className="text-xs text-gray-400">Custodiante atual: <span className="font-medium text-gray-700">{asset.exchange}</span></p>
+                  <p className="text-xs text-gray-400">{t.modals.currentCustodian} <span className="font-medium text-gray-700">{asset.exchange}</span></p>
                 )}
                 <div>
-                  <label className="block text-xs text-gray-500 mb-1">Nova instituicao</label>
+                  <label className="block text-xs text-gray-500 mb-1">{t.modals.newInstitution}</label>
                   <InstitutionSelect value={portInstitution} onChange={setPortInstitution} />
                 </div>
                 <div>
-                  <label className="block text-xs text-gray-500 mb-1">Data da portabilidade</label>
+                  <label className="block text-xs text-gray-500 mb-1">{t.modals.portDate}</label>
                   <input
                     type="date"
                     value={portDate}
@@ -287,7 +296,7 @@ export default function FixedIncomeSetupModal({ asset, onClose, onSaved }: Props
                   disabled={savingPortability}
                   className="w-full border border-[#001A70] text-[#001A70] rounded-xl py-2 text-sm font-semibold hover:bg-[#001A70]/5 disabled:opacity-50 transition-colors"
                 >
-                  {savingPortability ? 'Registrando...' : 'Confirmar portabilidade'}
+                  {savingPortability ? t.modals.registering : t.modals.confirmPortability}
                 </button>
               </div>
             )}

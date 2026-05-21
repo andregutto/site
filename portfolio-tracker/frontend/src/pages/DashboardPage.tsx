@@ -57,7 +57,7 @@ export default function DashboardPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-gray-400 text-sm animate-pulse">Calculando portfólio...</div>
+        <div className="text-gray-400 text-sm animate-pulse">{t.dashboard.calculating}</div>
       </div>
     )
   }

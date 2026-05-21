@@ -107,7 +107,7 @@ export default function ChatWidget() {
             } else if (event.type === 'done') {
               setToolHint('')
             } else if (event.type === 'error') {
-              assistantText = event.message ?? 'Erro ao processar sua pergunta.'
+              assistantText = event.message ?? t.chat.errorProcessing
             }
           } catch { /* ignore malformed events */ }
         }
@@ -115,7 +115,7 @@ export default function ChatWidget() {
 
       setMessages(prev => {
         const next = [...prev]
-        next[next.length - 1] = { role: 'assistant', content: assistantText || 'Não consegui gerar uma resposta.', loading: false }
+        next[next.length - 1] = { role: 'assistant', content: assistantText || t.chat.errorNoResponse, loading: false }
         return next
       })
     } catch (err) {

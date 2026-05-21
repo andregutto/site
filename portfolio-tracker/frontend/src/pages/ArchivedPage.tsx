@@ -71,14 +71,14 @@ export default function ArchivedPage() {
     }
   }
 
-  async function handleDelete(id: number, code: string) {
-    if (!window.confirm(`Excluir permanentemente "${code}"? Isso remove o ativo, aportes e histórico de rentabilidade. Essa ação não pode ser desfeita.`)) return
+  async function handleDelete(id: number, name: string) {
+    if (!window.confirm(t.archived.deleteConfirm.replace('{name}', name))) return
     setDeleting(id)
     try {
       await apiFetch(`/assets/${id}`, { method: 'DELETE' })
       setAssets(prev => prev.filter(a => a.id !== id))
     } catch {
-      alert('Erro ao excluir ativo.')
+      alert(t.archived.errorDelete)
     } finally {
       setDeleting(null)
     }
@@ -189,11 +189,11 @@ export default function ArchivedPage() {
 
                     <div className="pt-2 flex justify-end gap-2">
                       <button
-                        onClick={() => handleDelete(a.id, a.code)}
+                        onClick={() => handleDelete(a.id, a.name)}
                         disabled={deleting === a.id || reactivating === a.id}
                         className="text-xs text-red-500 hover:text-red-600 disabled:opacity-50 border border-red-200 hover:border-red-300 rounded-lg px-3 py-1.5 transition-colors"
                       >
-                        {deleting === a.id ? '...' : 'Excluir permanentemente'}
+                        {deleting === a.id ? '...' : t.archived.deletePermanently}
                       </button>
                       <button
                         onClick={() => handleReactivate(a.id)}

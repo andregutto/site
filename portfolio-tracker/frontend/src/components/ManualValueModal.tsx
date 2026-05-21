@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { apiFetch } from '../lib/api'
 import { parseLocaleNum, inputCls } from '../lib/numparse'
+import { useI18n } from '../contexts/I18nContext'
 import type { PortfolioAsset, ManualValue } from '../lib/types'
 
 interface Props {
@@ -26,6 +27,7 @@ type Mode = 'valorizacao' | 'aporte'
 
 export default function ManualValueModal({ asset, onClose, onSaved, initialMode = 'valorizacao' }: Props) {
   const today = new Date().toISOString().split('T')[0]
+  const { t } = useI18n()
 
   const [mode, setMode] = useState<Mode>(initialMode)
 
@@ -76,13 +78,13 @@ export default function ManualValueModal({ asset, onClose, onSaved, initialMode 
       setTimeout(() => setSyncAccountOk(false), 3000)
       onSaved()
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Erro ao sincronizar')
+      setError(e instanceof Error ? e.message : t.modals.errorSync)
     } finally { setSyncingAccount(false) }
   }
 
   async function handleSaveValorizacao() {
     const v = parseLocaleNum(value)
-    if (v === null || v <= 0) { setError('Informe um valor valido maior que zero.'); return }
+    if (v === null || v <= 0) { setError(t.modals.invalidValue); return }
     setSaving(true); setError(null)
     try {
       await apiFetch(`/assets/${asset.id}/manual-value`, {
@@ -91,15 +93,15 @@ export default function ManualValueModal({ asset, onClose, onSaved, initialMode 
       })
       onSaved(); onClose()
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Erro ao salvar')
+      setError(e instanceof Error ? e.message : t.modals.errorSave)
     } finally { setSaving(false) }
   }
 
   async function handleSaveAporte() {
     const amount = parseLocaleNum(aportAmount)
-    if (amount === null || amount <= 0) { setError('Informe o valor aportado.'); return }
+    if (amount === null || amount <= 0) { setError(t.modals.invalidAmount); return }
     const total = aportTotal.trim() ? parseLocaleNum(aportTotal) : null
-    if (aportTotal.trim() && total === null) { setError('Formato do valor total invalido.'); return }
+    if (aportTotal.trim() && total === null) { setError(t.modals.invalidTotalFormat); return }
 
     setSaving(true); setError(null)
     try {
@@ -122,12 +124,12 @@ export default function ManualValueModal({ asset, onClose, onSaved, initialMode 
       }
       onSaved(); onClose()
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Erro ao salvar')
+      setError(e instanceof Error ? e.message : t.modals.errorSave)
     } finally { setSaving(false) }
   }
 
   async function handleDelete(valueId: number) {
-    if (!confirm('Remover esta entrada?')) return
+    if (!confirm(t.modals.removeEntry)) return
     try {
       await apiFetch(`/assets/${asset.id}/manual-value/${valueId}`, { method: 'DELETE' })
       setHistory(h => h.filter(v => v.id !== valueId))
@@ -159,7 +161,7 @@ export default function ManualValueModal({ asset, onClose, onSaved, initialMode 
                 mode === 'valorizacao' ? 'bg-white text-[#001A70] shadow-sm' : 'text-gray-500 hover:text-gray-700'
               }`}
             >
-              Valorizacao
+              {t.modals.valorizacao}
             </button>
             <button
               onClick={() => switchMode('aporte')}
@@ -167,19 +169,19 @@ export default function ManualValueModal({ asset, onClose, onSaved, initialMode 
                 mode === 'aporte' ? 'bg-white text-[#001A70] shadow-sm' : 'text-gray-500 hover:text-gray-700'
               }`}
             >
-              Aporte
+              {t.modals.aporte}
             </button>
           </div>
 
           {mode === 'valorizacao' ? (
             <div className="space-y-3">
               <p className="text-xs text-gray-500">
-                Atualize o valor de mercado do ativo. Nao altera o capital investido.
+                {t.modals.updateMarketValue}
               </p>
 
               <div className="flex gap-2">
                 <div className="flex-1">
-                  <label className="block text-xs text-gray-500 mb-1">Data de referencia</label>
+                  <label className="block text-xs text-gray-500 mb-1">{t.modals.refDate}</label>
                   <input
                     type="date"
                     value={refDate}
@@ -189,7 +191,7 @@ export default function ManualValueModal({ asset, onClose, onSaved, initialMode 
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-gray-500 mb-1">Moeda</label>
+                  <label className="block text-xs text-gray-500 mb-1">{t.modals.currency}</label>
                   <select
                     value={currency}
                     onChange={e => setCurrency(e.target.value)}
@@ -201,7 +203,7 @@ export default function ManualValueModal({ asset, onClose, onSaved, initialMode 
               </div>
 
               <div>
-                <label className="block text-xs text-gray-500 mb-1">Valor atual ({currency})</label>
+                <label className="block text-xs text-gray-500 mb-1">{t.modals.currentValue.replace('{currency}', currency)}</label>
                 <input
                   type="text"
                   inputMode="decimal"
@@ -209,7 +211,7 @@ export default function ManualValueModal({ asset, onClose, onSaved, initialMode 
                   onChange={e => { setValue(e.target.value); setValueError(undefined) }}
                   onBlur={e => {
                     const raw = e.target.value.trim()
-                    if (raw && parseLocaleNum(raw) === null) setValueError('Formato invalido')
+                    if (raw && parseLocaleNum(raw) === null) setValueError(t.modals.invalidFormat)
                   }}
                   placeholder="0,00"
                   className={inputCls('w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2', !!valueError)}
@@ -218,7 +220,7 @@ export default function ManualValueModal({ asset, onClose, onSaved, initialMode 
               </div>
 
               <div>
-                <label className="block text-xs text-gray-500 mb-1">Notas (opcional)</label>
+                <label className="block text-xs text-gray-500 mb-1">{t.modals.notesOptional}</label>
                 <input
                   type="text"
                   value={notes}
@@ -240,7 +242,7 @@ export default function ManualValueModal({ asset, onClose, onSaved, initialMode 
                     disabled={syncingAccount}
                     className="px-2.5 py-1 text-xs border border-emerald-200 rounded-lg text-emerald-700 hover:bg-emerald-100 transition-colors disabled:opacity-50 shrink-0"
                   >
-                    {syncingAccount ? '…' : 'Sincronizar saldo'}
+                    {syncingAccount ? '…' : t.modals.syncBalance}
                   </button>
                 </div>
               )}
@@ -252,17 +254,17 @@ export default function ManualValueModal({ asset, onClose, onSaved, initialMode 
                 disabled={saving}
                 className="w-full bg-[#001A70] text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-[#001A70]/90 disabled:opacity-50 transition-colors"
               >
-                {saving ? 'Salvando...' : 'Salvar valor'}
+                {saving ? t.modals.saving : t.modals.saveValue}
               </button>
             </div>
           ) : (
             <div className="space-y-3">
               <p className="text-xs text-gray-500">
-                Registra novo capital investido. Aumenta o custo de aquisicao do ativo.
+                {t.modals.newCapital}
               </p>
 
               <div>
-                <label className="block text-xs text-gray-500 mb-1">Data do aporte</label>
+                <label className="block text-xs text-gray-500 mb-1">{t.modals.contributionDate}</label>
                 <input
                   type="date"
                   value={aportDate}
@@ -273,7 +275,7 @@ export default function ManualValueModal({ asset, onClose, onSaved, initialMode 
               </div>
 
               <div>
-                <label className="block text-xs text-gray-500 mb-1">Valor aportado (R$)</label>
+                <label className="block text-xs text-gray-500 mb-1">{t.modals.contributedAmount}</label>
                 <input
                   type="text"
                   inputMode="decimal"
@@ -281,7 +283,7 @@ export default function ManualValueModal({ asset, onClose, onSaved, initialMode 
                   onChange={e => { setAportAmount(e.target.value); setAportAmountErr(undefined) }}
                   onBlur={e => {
                     const raw = e.target.value.trim()
-                    if (raw && parseLocaleNum(raw) === null) setAportAmountErr('Formato invalido')
+                    if (raw && parseLocaleNum(raw) === null) setAportAmountErr(t.modals.invalidFormat)
                   }}
                   placeholder="ex: 10.000,00"
                   className={inputCls('w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2', !!aportAmountErr)}
@@ -290,7 +292,7 @@ export default function ManualValueModal({ asset, onClose, onSaved, initialMode 
               </div>
 
               <div>
-                <label className="block text-xs text-gray-500 mb-1">Novo valor total (R$, opcional)</label>
+                <label className="block text-xs text-gray-500 mb-1">{t.modals.newTotalOptional}</label>
                 <input
                   type="text"
                   inputMode="decimal"
@@ -298,7 +300,7 @@ export default function ManualValueModal({ asset, onClose, onSaved, initialMode 
                   onChange={e => { setAportTotal(e.target.value); setAportTotalErr(undefined) }}
                   onBlur={e => {
                     const raw = e.target.value.trim()
-                    if (raw && parseLocaleNum(raw) === null) setAportTotalErr('Formato invalido')
+                    if (raw && parseLocaleNum(raw) === null) setAportTotalErr(t.modals.invalidFormat)
                   }}
                   placeholder="ex: 60.000,00 — atualiza o valor de mercado"
                   className={inputCls('w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2', !!aportTotalErr)}
@@ -307,7 +309,7 @@ export default function ManualValueModal({ asset, onClose, onSaved, initialMode 
               </div>
 
               <div>
-                <label className="block text-xs text-gray-500 mb-1">Notas (opcional)</label>
+                <label className="block text-xs text-gray-500 mb-1">{t.modals.notesOptional}</label>
                 <input
                   type="text"
                   value={aportNotes}
@@ -324,18 +326,18 @@ export default function ManualValueModal({ asset, onClose, onSaved, initialMode 
                 disabled={saving}
                 className="w-full bg-[#001A70] text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-[#001A70]/90 disabled:opacity-50 transition-colors"
               >
-                {saving ? 'Registrando...' : 'Registrar aporte'}
+                {saving ? t.modals.registering : t.modals.registerContrib}
               </button>
             </div>
           )}
 
           {/* Histórico de valores */}
           <div>
-            <h3 className="text-sm font-semibold text-gray-700 mb-2">Historico de valores</h3>
+            <h3 className="text-sm font-semibold text-gray-700 mb-2">{t.modals.valueHistory}</h3>
             {loadingH ? (
-              <p className="text-xs text-gray-400 animate-pulse">Carregando...</p>
+              <p className="text-xs text-gray-400 animate-pulse">{t.common.loading}</p>
             ) : history.length === 0 ? (
-              <p className="text-xs text-gray-400">Nenhum valor registrado ainda.</p>
+              <p className="text-xs text-gray-400">{t.modals.noValueHistory}</p>
             ) : (
               <div className="space-y-1">
                 {history.map(h => (

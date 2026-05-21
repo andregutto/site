@@ -3,6 +3,7 @@ import { useSearchParams, Link } from 'react-router-dom'
 import { useContributions } from '../hooks/usePortfolio'
 import { useCurrency } from '../contexts/CurrencyContext'
 import { useAchievementContext } from '../contexts/AchievementContext'
+import { useI18n } from '../contexts/I18nContext'
 import { apiFetch } from '../lib/api'
 import { parseLocaleNum, inputCls } from '../lib/numparse'
 import InstitutionSelect from '../components/InstitutionSelect'
@@ -67,6 +68,7 @@ export default function ContributionsPage() {
   const { data: contributions, loading, error, refresh } = useContributions()
   const { fmt, fxRates } = useCurrency()
   const { triggerCheck } = useAchievementContext()
+  const { t } = useI18n()
   const [searchParams, setSearchParams] = useSearchParams()
 
   const [assets,  setAssets]  = useState<AssetOption[]>([])
@@ -84,7 +86,7 @@ export default function ContributionsPage() {
   function validateField(field: 'quantity' | 'price' | 'valueBrl', raw: string) {
     const v = parseLocaleNum(raw)
     let msg: string | undefined
-    if (raw.trim() && (v === null || v < 0)) msg = 'Formato invalido'
+    if (raw.trim() && (v === null || v < 0)) msg = t.contributions.invalidFormat
     setFieldErrors(prev => ({ ...prev, [field]: msg }))
   }
 
@@ -242,7 +244,28 @@ export default function ContributionsPage() {
   const isIncome      = type === 'income'
   const sellDisabled  = showNewAsset
   const isTickerForm  = ['ticker_b3', 'ticker_intl', 'cripto'].includes(newFormType)
-  const rateCfg       = rateLabel(newFiType)
+
+  const FORM_TYPE_OPTIONS = [
+    { value: 'ticker_b3',    label: t.contributions.formTypeB3,         dbType: 'ticker',       currency: 'BRL', market: 'b3'     },
+    { value: 'ticker_intl',  label: t.contributions.formTypeIntl,       dbType: 'ticker',       currency: 'USD', market: 'intl'   },
+    { value: 'cripto',       label: t.contributions.formTypeCripto,      dbType: 'ticker',       currency: 'USD', market: 'cripto' },
+    { value: 'fixed_income', label: t.contributions.formTypeFixedIncome, dbType: 'fixed_income', currency: 'BRL', market: null     },
+    { value: 'manual',       label: t.contributions.formTypeManual,      dbType: 'manual',       currency: 'BRL', market: null     },
+    { value: 'imovel',       label: t.contributions.formTypeProperty,    dbType: 'manual',       currency: 'BRL', market: null     },
+  ] as const
+
+  const FI_TYPE_OPTIONS = [
+    { value: 'pos_cdi',   label: t.contributions.fiPosFixed },
+    { value: 'selic',     label: t.contributions.fiSelic    },
+    { value: 'pre',       label: t.contributions.fiPreFixed },
+    { value: 'ipca_plus', label: t.contributions.fiIpcaPlus },
+  ]
+
+  const rateCfg = (() => {
+    if (newFiType === 'pre')       return { label: t.contributions.ratePre,  placeholder: 'ex: 12,5'  }
+    if (newFiType === 'ipca_plus') return { label: t.contributions.rateIpca, placeholder: 'ex: 6,5'  }
+    return                                { label: t.contributions.rateCDI,   placeholder: 'ex: 102,5' }
+  })()
 
   async function handleSave() {
     if (!assetId) { setFormErr('Selecione um ativo.'); return }
@@ -541,21 +564,21 @@ export default function ContributionsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold text-gray-900">Aportes</h1>
-          <p className="text-sm text-gray-400 mt-0.5">Histórico de compras e vendas</p>
+          <h1 className="text-xl font-bold text-gray-900">{t.contributions.title}</h1>
+          <p className="text-sm text-gray-400 mt-0.5">{t.contributions.subtitle}</p>
         </div>
         <div className="flex items-center gap-2">
           <Link
             to="/import/b3"
             className="px-3 py-2 border border-gray-200 text-gray-600 text-sm font-medium rounded-xl hover:bg-gray-50 transition-colors"
           >
-            Importar B3
+            {t.contributions.importB3}
           </Link>
           <button
             onClick={() => { if (showForm) { cancelEdit() } else { setShowForm(true) } }}
             className="px-4 py-2 bg-[#001A70] text-white text-sm font-semibold rounded-xl hover:bg-[#001A70]/90 transition-colors"
           >
-            {showForm ? 'Cancelar' : '+ Novo aporte'}
+            {showForm ? t.common.cancel : t.contributions.newBtn}
           </button>
         </div>
       </div>
@@ -563,7 +586,7 @@ export default function ContributionsPage() {
       {showForm && (
         <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm space-y-4">
           <h2 className="font-semibold text-gray-800">
-            {editId ? 'Editar aporte' : 'Registrar aporte / resgate'}
+            {editId ? t.contributions.editTitle : t.contributions.registerTitle}
           </h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -572,7 +595,7 @@ export default function ContributionsPage() {
               <label className="block text-xs text-gray-500">Ativo</label>
               {editId ? (
                 <div className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-600">
-                  {selectedAsset ? `${selectedAsset.code} — ${selectedAsset.name}` : 'Ativo desconhecido'}
+                  {selectedAsset ? `${selectedAsset.code} — ${selectedAsset.name}` : t.contributions.unknownAsset}
                 </div>
               ) : (
                 <>
@@ -580,7 +603,7 @@ export default function ContributionsPage() {
                     type="text"
                     value={assetSearch}
                     onChange={e => setAssetSearch(e.target.value)}
-                    placeholder="Filtrar por codigo ou nome..."
+                    placeholder={t.contributions.filterAsset}
                     className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20"
                   />
                   <div className="flex gap-2">
@@ -589,7 +612,7 @@ export default function ContributionsPage() {
                       onChange={e => { setAssetId(e.target.value); setAssetSearch('') }}
                       className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20"
                     >
-                      <option value="">Selecione um ativo...</option>
+                      <option value="">{t.contributions.selectAsset}</option>
                       {filteredAssets.map(a => (
                         <option key={a.id} value={a.id}>
                           {a.code} — {a.name} ({a.currency})
@@ -600,7 +623,7 @@ export default function ContributionsPage() {
                       type="button"
                       onClick={() => { setShowNewAsset(v => !v); if (showNewAsset) resetNewAsset() }}
                       className="px-3 py-2 text-sm border border-gray-200 rounded-lg text-[#001A70] hover:bg-blue-50 transition-colors shrink-0"
-                    >+ Ativo</button>
+                    >{t.contributions.newAssetBtn}</button>
                   </div>
                 </>
               )}
@@ -609,24 +632,24 @@ export default function ContributionsPage() {
             {/* New asset inline form */}
             {showNewAsset && (
               <div className="sm:col-span-2 bg-blue-50 border border-blue-100 rounded-xl p-4 space-y-3">
-                <p className="text-xs font-semibold text-[#001A70]">Novo ativo</p>
+                <p className="text-xs font-semibold text-[#001A70]">{t.contributions.newAssetSection}</p>
                 <div className="grid grid-cols-2 gap-2">
                   {/* Type */}
                   <div className="col-span-2">
-                    <label className="block text-xs text-gray-500 mb-1">Tipo</label>
+                    <label className="block text-xs text-gray-500 mb-1">{t.contributions.typeLabel}</label>
                     <select
                       value={newFormType}
                       onChange={e => setNewFormType(e.target.value as FormTypeValue)}
                       className={SMALL_INPUT}
                     >
-                      {FORM_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                      {FORM_TYPE_OPTIONS.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
                     </select>
                   </div>
 
                   {/* Code */}
                   <div>
                     <label className="block text-xs text-gray-500 mb-1">
-                      {newFormType === 'fixed_income' ? 'Apelido único' : 'Código'}
+                      {newFormType === 'fixed_income' ? t.contributions.uniqueAlias : t.common.code}
                     </label>
                     <input
                       type="text"
@@ -665,14 +688,14 @@ export default function ContributionsPage() {
                   {/* Name */}
                   <div className="col-span-2">
                     <label className="block text-xs text-gray-500 mb-1">
-                      {newFormType === 'fixed_income' ? 'Descrição do título' : 'Nome completo'}
+                      {newFormType === 'fixed_income' ? t.contributions.titleDesc : t.contributions.fullName}
                       {isTickerForm && (
                         <span className="ml-1 text-gray-400">
-                          {newNameLoading ? '· buscando...' : newName ? '· preenchido automaticamente' : newCode ? '· nao encontrado' : '· preenchido apos digitar o codigo'}
+                          {newNameLoading ? t.contributions.fetchingName : newName ? t.contributions.nameAutoFilled : newCode ? t.contributions.nameNotFound : t.contributions.nameFillHint}
                         </span>
                       )}
                       {newFormType === 'fixed_income' && newName && (
-                        <span className="ml-1 text-blue-400">· sugestão automática</span>
+                        <span className="ml-1 text-blue-400">{t.contributions.autoSuggestion}</span>
                       )}
                     </label>
                     <input
@@ -681,7 +704,7 @@ export default function ContributionsPage() {
                       readOnly={isTickerForm}
                       onChange={isTickerForm ? undefined : e => setNewName(e.target.value)}
                       placeholder={isTickerForm
-                        ? newNameLoading ? 'Buscando...' : newCode ? 'Nao encontrado' : 'Preenchido automaticamente'
+                        ? newNameLoading ? t.common.loading : newCode ? t.contributions.nameNotFound.replace('· ', '') : t.contributions.nameAutoFilled.replace('· ', '')
                         : newFormType === 'fixed_income' ? 'Preenchido ao escolher tipo e taxa' : newFormType === 'imovel' ? 'ex: Apartamento Paris 11e' : 'ex: Fundo X'}
                       className={`w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20 ${isTickerForm ? 'bg-gray-50 text-gray-500 cursor-default' : 'bg-white'}`}
                     />
@@ -689,9 +712,9 @@ export default function ContributionsPage() {
 
                   {/* Class */}
                   <div className="col-span-2">
-                    <label className="block text-xs text-gray-500 mb-1">Classe</label>
+                    <label className="block text-xs text-gray-500 mb-1">{t.contributions.assetClass}</label>
                     <select value={newClassId} onChange={e => setNewClassId(e.target.value)} className={SMALL_INPUT}>
-                      <option value="">Sem classe</option>
+                      <option value="">{t.contributions.noClass}</option>
                       {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                     </select>
                   </div>
@@ -700,10 +723,10 @@ export default function ContributionsPage() {
                   {newFormType === 'manual' && (
                     <>
                       <div className="col-span-2 border-t border-blue-200 pt-2">
-                        <p className="text-xs font-semibold text-[#001A70] mb-2">Valor inicial (opcional)</p>
+                        <p className="text-xs font-semibold text-[#001A70] mb-2">{t.contributions.initialValueSection}</p>
                       </div>
                       <div>
-                        <label className="block text-xs text-gray-500 mb-1">Valor atual (R$)</label>
+                        <label className="block text-xs text-gray-500 mb-1">{t.contributions.currentValueBrl}</label>
                         <input
                           type="text"
                           inputMode="decimal"
@@ -714,7 +737,7 @@ export default function ContributionsPage() {
                         />
                       </div>
                       <div>
-                        <label className="block text-xs text-gray-500 mb-1">Data de referência</label>
+                        <label className="block text-xs text-gray-500 mb-1">{t.contributions.refDate}</label>
                         <input
                           type="date"
                           value={newManualDate || today}
@@ -724,7 +747,7 @@ export default function ContributionsPage() {
                         />
                       </div>
                       <div className="col-span-2 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2 text-[11px] text-blue-700 leading-relaxed">
-                        Informe o valor atual para que o ativo já apareça no Dashboard. Você pode atualizar o valor manualmente a qualquer momento na página do ativo.
+                        {t.contributions.manualHint}
                       </div>
                     </>
                   )}
@@ -733,10 +756,10 @@ export default function ContributionsPage() {
                   {newFormType === 'imovel' && (
                     <>
                       <div className="col-span-2 border-t border-blue-200 pt-2">
-                        <p className="text-xs font-semibold text-[#001A70] mb-2">Dados do imovel</p>
+                        <p className="text-xs font-semibold text-[#001A70] mb-2">{t.contributions.propertySection}</p>
                       </div>
                       <div>
-                        <label className="block text-xs text-gray-500 mb-1">Data de compra</label>
+                        <label className="block text-xs text-gray-500 mb-1">{t.contributions.purchaseDate}</label>
                         <input
                           type="date"
                           value={newImvPurchaseDate}
@@ -746,7 +769,7 @@ export default function ContributionsPage() {
                         />
                       </div>
                       <div>
-                        <label className="block text-xs text-gray-500 mb-1">Valor de compra ({newCurrency})</label>
+                        <label className="block text-xs text-gray-500 mb-1">{t.contributions.purchaseValue.replace('{currency}', newCurrency)}</label>
                         <input
                           type="text"
                           inputMode="decimal"
@@ -758,7 +781,7 @@ export default function ContributionsPage() {
                       </div>
                       {newCurrency !== 'BRL' && (
                         <div className="col-span-2">
-                          <label className="block text-xs text-gray-500 mb-1">Equivalente em BRL (na data de compra)</label>
+                          <label className="block text-xs text-gray-500 mb-1">{t.contributions.brlEquivalent}</label>
                           <input
                             type="text"
                             inputMode="decimal"
@@ -776,14 +799,14 @@ export default function ContributionsPage() {
                   {newFormType === 'fixed_income' && (
                     <>
                       <div className="col-span-2 border-t border-blue-200 pt-2">
-                        <p className="text-xs font-semibold text-[#001A70] mb-2">Configuracao da renda fixa</p>
+                        <p className="text-xs font-semibold text-[#001A70] mb-2">{t.contributions.fiSection}</p>
                       </div>
 
                       {/* fi_type */}
                       <div className="col-span-2">
-                        <label className="block text-xs text-gray-500 mb-1">Tipo</label>
+                        <label className="block text-xs text-gray-500 mb-1">{t.contributions.typeLabel}</label>
                         <select value={newFiType} onChange={e => setNewFiType(e.target.value)} className={SMALL_INPUT}>
-                          {FI_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                          {FI_TYPE_OPTIONS.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
                         </select>
                       </div>
 
@@ -802,7 +825,7 @@ export default function ContributionsPage() {
 
                       {/* fi_principal */}
                       <div>
-                        <label className="block text-xs text-gray-500 mb-1">Valor investido (R$)</label>
+                        <label className="block text-xs text-gray-500 mb-1">{t.contributions.investedBrl}</label>
                         <input
                           type="text"
                           inputMode="decimal"
@@ -815,7 +838,7 @@ export default function ContributionsPage() {
 
                       {/* fi_start_date */}
                       <div>
-                        <label className="block text-xs text-gray-500 mb-1">Data de inicio</label>
+                        <label className="block text-xs text-gray-500 mb-1">{t.contributions.startDate}</label>
                         <input
                           type="date"
                           value={newFiStartDate}
@@ -827,7 +850,7 @@ export default function ContributionsPage() {
 
                       {/* fi_maturity */}
                       <div>
-                        <label className="block text-xs text-gray-500 mb-1">Vencimento (opc.)</label>
+                        <label className="block text-xs text-gray-500 mb-1">{t.contributions.maturityOpt}</label>
                         <input
                           type="date"
                           value={newFiMaturity}
@@ -838,7 +861,7 @@ export default function ContributionsPage() {
 
                       {/* institution */}
                       <div className="col-span-2">
-                        <label className="block text-xs text-gray-500 mb-1">Instituicao (opc.)</label>
+                        <label className="block text-xs text-gray-500 mb-1">{t.contributions.institutionOpt}</label>
                         <InstitutionSelect value={newFiInstitution} onChange={setNewFiInstitution} />
                       </div>
 
@@ -857,19 +880,19 @@ export default function ContributionsPage() {
                     onClick={handleCreateAsset}
                     disabled={savingNewAsset || newNameLoading}
                     className="px-3 py-1.5 bg-[#001A70] text-white text-xs font-semibold rounded-lg disabled:opacity-50"
-                  >{savingNewAsset ? 'Criando...' : newFormType === 'fixed_income' ? 'Criar e configurar' : newFormType === 'imovel' ? 'Registrar imovel' : 'Criar ativo'}</button>
+                  >{savingNewAsset ? t.contributions.creating : newFormType === 'fixed_income' ? t.contributions.createAndConfigure : newFormType === 'imovel' ? t.contributions.registerProperty : t.contributions.createAsset}</button>
                   <button
                     type="button"
                     onClick={() => { setShowNewAsset(false); resetNewAsset() }}
                     className="px-3 py-1.5 text-xs text-gray-500 hover:text-gray-700"
-                  >Cancelar</button>
+                  >{t.common.cancel}</button>
                 </div>
               </div>
             )}
 
             {/* Date + Type */}
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Data</label>
+              <label className="block text-xs text-gray-500 mb-1">{t.contributions.date}</label>
               <input
                 type="date"
                 value={date}
@@ -879,13 +902,13 @@ export default function ContributionsPage() {
               />
             </div>
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Tipo</label>
+              <label className="block text-xs text-gray-500 mb-1">{t.contributions.opType}</label>
               <div className="flex gap-2">
                 {(['buy', 'sell', 'income'] as const).map(btnType => {
                   const isSellDisabled = btnType === 'sell' && sellDisabled
-                  const label = btnType === 'income' ? 'Rendimento'
-                    : isRfAsset ? (btnType === 'buy' ? 'Aporte' : 'Resgate')
-                    : (btnType === 'buy' ? 'Compra' : 'Venda')
+                  const label = btnType === 'income' ? t.contributions.incomeLabel
+                    : isRfAsset ? (btnType === 'buy' ? t.contributions.contributionLabel : t.contributions.redemptionLabel)
+                    : (btnType === 'buy' ? t.contributions.buyLabel : t.contributions.sellLabel)
                   const activeColor = btnType === 'buy' ? 'bg-green-600 text-white border-green-600'
                     : btnType === 'income' ? 'bg-purple-600 text-white border-purple-600'
                     : 'bg-red-600 text-white border-red-600'
@@ -909,11 +932,11 @@ export default function ContributionsPage() {
             {/* RF buy: show current principal info */}
             {isRfBuy && selectedAsset?.fi_principal != null && (
               <div className="sm:col-span-2 bg-blue-50 border border-blue-100 rounded-lg px-4 py-3 text-sm">
-                <p className="text-xs text-gray-500">Saldo atual (principal)</p>
+                <p className="text-xs text-gray-500">{t.contributions.currentPrincipal}</p>
                 <p className="font-semibold text-gray-800">{fmtBrl(selectedAsset.fi_principal)}</p>
                 {selectedAsset.fi_type && (
                   <p className="text-xs text-gray-400 mt-0.5">
-                    {FI_TYPES.find(t => t.value === selectedAsset.fi_type)?.label ?? selectedAsset.fi_type}
+                    {FI_TYPE_OPTIONS.find(opt => opt.value === selectedAsset.fi_type)?.label ?? selectedAsset.fi_type}
                     {selectedAsset.fi_start_date && ` · desde ${fmtDate(selectedAsset.fi_start_date)}`}
                     {selectedAsset.fi_maturity && ` · vence ${fmtDate(selectedAsset.fi_maturity)}`}
                   </p>
@@ -924,7 +947,7 @@ export default function ContributionsPage() {
             {/* Qty + Price (ticker only, not income) */}
             {!isSimpleAsset && !isIncome && (
               <div>
-                <label className="block text-xs text-gray-500 mb-1">Quantidade</label>
+                <label className="block text-xs text-gray-500 mb-1">{t.contributions.quantity}</label>
                 <input
                   type="text"
                   inputMode="decimal"
@@ -939,7 +962,7 @@ export default function ContributionsPage() {
             )}
             {!isSimpleAsset && !isIncome && (
               <div>
-                <label className="block text-xs text-gray-500 mb-1">Preco unitario</label>
+                <label className="block text-xs text-gray-500 mb-1">{t.contributions.unitPrice}</label>
                 <div className="flex gap-1.5">
                   <select
                     value={priceCurrency}
@@ -965,9 +988,9 @@ export default function ContributionsPage() {
             {/* Value BRL */}
             <div className="sm:col-span-2">
               <label className="block text-xs text-gray-500 mb-1">
-                {isIncome ? 'Valor recebido (R$)' : isRfBuy ? 'Valor do aporte adicional (R$)' : isRfAsset ? 'Valor resgatado (R$)' : isManualAsset ? 'Valor (R$)' : (
+                {isIncome ? t.contributions.receivedBrl : isRfBuy ? t.contributions.additionalContrib : isRfAsset ? t.contributions.redeemedBrl : isManualAsset ? t.contributions.valueBrl : (
                   <>
-                    Valor total em BRL
+                    {t.contributions.totalBrl}
                     {priceCurrency !== 'BRL' && (fxRates as Record<string, number>)[priceCurrency] && (
                       <span className="ml-1 text-gray-400">
                         (1 {priceCurrency} = {(fxRates as Record<string, number>)[priceCurrency].toFixed(2)} BRL)
@@ -991,7 +1014,7 @@ export default function ContributionsPage() {
             {/* Description */}
             <div className="sm:col-span-2">
               <label className="block text-xs text-gray-500 mb-1">
-                {isRfBuy ? 'Observacao (opcional)' : 'Descricao (opcional)'}
+                {isRfBuy ? t.contributions.noteOptional : t.contributions.descOptional}
               </label>
               <input
                 type="text"
@@ -1010,11 +1033,11 @@ export default function ContributionsPage() {
             disabled={saving}
             className="w-full bg-[#001A70] text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-[#001A70]/90 disabled:opacity-50 transition-colors"
           >
-            {saving ? 'Salvando...'
-              : editId ? 'Salvar alteracoes'
-              : isIncome ? 'Registrar rendimento'
-              : isRfBuy ? 'Registrar aporte'
-              : 'Registrar'}
+            {saving ? t.contributions.saving
+              : editId ? t.contributions.saveChanges
+              : isIncome ? t.contributions.registerIncome
+              : isRfBuy ? t.contributions.registerContrib
+              : t.contributions.register}
           </button>
         </div>
       )}
@@ -1023,24 +1046,24 @@ export default function ContributionsPage() {
       <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
         <div className="px-5 py-4 border-b border-gray-100">
           <h2 className="font-semibold text-gray-800">
-            Historico{contributions.length > 0 ? ` (${contributions.length})` : ''}
+            {t.contributions.historyTitle}{contributions.length > 0 ? ` (${contributions.length})` : ''}
           </h2>
         </div>
 
         {loading ? (
-          <p className="text-center text-gray-400 py-8 text-sm animate-pulse">Carregando...</p>
+          <p className="text-center text-gray-400 py-8 text-sm animate-pulse">{t.common.loading}</p>
         ) : error ? (
           <p className="text-center text-red-500 py-8 text-sm">{error}</p>
         ) : contributions.length === 0 ? (
-          <p className="text-center text-gray-400 py-8 text-sm">Nenhum aporte registrado.</p>
+          <p className="text-center text-gray-400 py-8 text-sm">{t.contributions.noContributions}</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
                 <tr>
-                  <th className="px-4 py-3 text-left">Data</th>
-                  <th className="px-4 py-3 text-left">Ativo</th>
-                  <th className="px-4 py-3 text-left">Tipo</th>
+                  <th className="px-4 py-3 text-left">{t.contributions.date}</th>
+                  <th className="px-4 py-3 text-left">{t.common.name}</th>
+                  <th className="px-4 py-3 text-left">{t.contributions.opType}</th>
                   <th className="px-4 py-3 text-right">Qtd</th>
                   <th className="px-4 py-3 text-right">Total BRL</th>
                   <th className="px-4 py-3"></th>
@@ -1065,7 +1088,7 @@ export default function ContributionsPage() {
                         c.type === 'income' ? 'bg-purple-100 text-purple-700' :
                         'bg-red-100 text-red-700'
                       }`}>
-                        {c.type === 'buy' ? 'Compra' : c.type === 'income' ? 'Rendimento' : 'Venda'}
+                        {c.type === 'buy' ? t.contributions.buyLabel : c.type === 'income' ? t.contributions.incomeLabel : t.contributions.sellLabel}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-right text-gray-600">{fmtNum(c.quantity, 6)}</td>
@@ -1078,11 +1101,11 @@ export default function ContributionsPage() {
                           <button
                             onClick={() => handleDelete(c.id)}
                             className="text-xs font-semibold text-red-600 hover:text-red-700 transition-colors"
-                          >Confirmar</button>
+                          >{t.common.confirm}</button>
                           <button
                             onClick={() => setConfirmDeleteId(null)}
                             className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
-                          >Cancelar</button>
+                          >{t.common.cancel}</button>
                         </div>
                       ) : (
                         <div className="flex items-center justify-end gap-2">

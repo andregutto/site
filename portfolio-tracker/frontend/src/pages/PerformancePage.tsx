@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { usePerformanceSummary, usePerformanceMonthly, usePerformanceBenchmarks, usePortfolioValue, usePerformanceInception } from '../hooks/usePortfolio'
 import { useCurrency } from '../contexts/CurrencyContext'
+import { useI18n } from '../contexts/I18nContext'
 import { apiFetch } from '../lib/api'
 import {
   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend
@@ -48,6 +49,7 @@ export default function PerformancePage() {
 
   const navigate = useNavigate()
   const { convert, currency } = useCurrency()
+  const { t } = useI18n()
   const { data: livePortfolio } = usePortfolioValue()
   const inceptionYM = usePerformanceInception()
 
@@ -234,7 +236,7 @@ export default function PerformancePage() {
 
       {isLoading ? (
         <div className="text-center text-gray-400 text-sm py-12 animate-pulse">
-          Carregando performance...
+          {t.performance.loading}
         </div>
       ) : (
         <>
@@ -339,7 +341,7 @@ export default function PerformancePage() {
                     <tr>
                       <th className="px-4 py-3 text-left">Mês</th>
                       <th className="px-4 py-3 text-right">Patrimônio</th>
-                      <th className="px-4 py-3 text-right">Aportes</th>
+                      <th className="px-4 py-3 text-right">{t.performance.contributions}</th>
                       <th className="px-4 py-3 text-right">Ganho/Perda</th>
                       <th className="px-4 py-3 text-right">Rentab.</th>
                     </tr>

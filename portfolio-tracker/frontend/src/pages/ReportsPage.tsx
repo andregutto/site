@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { apiFetch } from '../lib/api'
+import { useI18n } from '../contexts/I18nContext'
 
 interface SellRecord {
   id: number; date: string; code: string; name: string
@@ -83,6 +84,7 @@ export default function ReportsPage() {
 }
 
 function BrReport({ data }: { data: ReportData }) {
+  const { t } = useI18n()
   return (
     <div className="space-y-6">
 
@@ -100,12 +102,12 @@ function BrReport({ data }: { data: ReportData }) {
         ) : (
           <table className="w-full text-sm">
             <thead><tr className="text-xs text-gray-400 border-b border-gray-100">
-              <th className="text-left py-2 font-medium">Data</th>
-              <th className="text-left py-2 font-medium">Ativo</th>
+              <th className="text-left py-2 font-medium">{t.reports.colDate}</th>
+              <th className="text-left py-2 font-medium">{t.reports.colAsset}</th>
               <th className="text-right py-2 font-medium">Qtd</th>
               <th className="text-right py-2 font-medium">Custo medio</th>
-              <th className="text-right py-2 font-medium">Valor venda</th>
-              <th className="text-right py-2 font-medium">Ganho/Perda</th>
+              <th className="text-right py-2 font-medium">{t.reports.colSaleValue}</th>
+              <th className="text-right py-2 font-medium">{t.reports.colGainLoss}</th>
               <th className="text-right py-2 font-medium">%</th>
             </tr></thead>
             <tbody>
@@ -137,10 +139,10 @@ function BrReport({ data }: { data: ReportData }) {
         ) : (
           <table className="w-full text-sm">
             <thead><tr className="text-xs text-gray-400 border-b border-gray-100">
-              <th className="text-left py-2 font-medium">Data</th>
-              <th className="text-left py-2 font-medium">Ativo</th>
-              <th className="text-left py-2 font-medium">Descricao</th>
-              <th className="text-right py-2 font-medium">Valor (R$)</th>
+              <th className="text-left py-2 font-medium">{t.reports.colDate}</th>
+              <th className="text-left py-2 font-medium">{t.reports.colAsset}</th>
+              <th className="text-left py-2 font-medium">{t.common.description}</th>
+              <th className="text-right py-2 font-medium">{t.reports.colValue}</th>
             </tr></thead>
             <tbody>
               {data.income.map(r => (
