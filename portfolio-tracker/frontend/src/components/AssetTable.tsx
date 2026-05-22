@@ -227,6 +227,7 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
               </th>
               <th className="px-4 py-3 text-right">{d.colHoldings}</th>
               <th className="px-4 py-3 text-right">{d.colPrice}</th>
+              <th className="px-4 py-3 text-right">{d.colInvested}</th>
               <th className="px-4 py-3 text-right cursor-pointer hover:text-gray-700" onClick={() => toggleSort('value_brl')}>
                 {d.colValue} {currency} <SortIcon col="value_brl" />
               </th>
@@ -283,6 +284,7 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
                         </span>
                       </div>
                     </td>
+                    <td />
                     <td />
                     <td />
                     <td className="px-4 py-3 text-right font-bold text-gray-900 text-base tabular-nums">
@@ -346,13 +348,25 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
                         <td className="px-4 py-3 text-right text-gray-600">
                           {asset.holdings != null ? fmtNumber(asset.holdings, 6) : '—'}
                         </td>
+                        {/* Preço atual + PM subtext */}
+                        <td className="px-4 py-3 text-right text-gray-600">
+                          {asset.price != null ? (
+                            <div>
+                              <div>{asset.currency} {fmtNumber(asset.price, 2)}</div>
+                              {asset.invested_brl != null && asset.holdings != null && asset.holdings > 0 && (
+                                <div className="text-[11px] text-gray-400">
+                                  PM: {fmt(asset.invested_brl / asset.holdings)}
+                                </div>
+                              )}
+                            </div>
+                          ) : '—'}
+                        </td>
+                        {/* Investido */}
                         <td className="px-4 py-3 text-right text-gray-600">
                           {asset.needs_manual && asset.invested_brl == null ? (
                             <span className="text-xs text-amber-600 font-medium">{d.enterValue}</span>
                           ) : asset.invested_brl != null ? (
                             fmt(asset.invested_brl)
-                          ) : asset.price != null ? (
-                            `${asset.currency} ${fmtNumber(asset.price, 2)}`
                           ) : '—'}
                         </td>
                         <td className="px-4 py-3 text-right font-medium">
@@ -399,7 +413,7 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
           </tbody>
           <tfoot className="bg-gray-50 border-t border-gray-200">
             <tr>
-              <td colSpan={3} className="px-4 py-3 text-sm font-semibold text-gray-700">{t.common.total}</td>
+              <td colSpan={4} className="px-4 py-3 text-sm font-semibold text-gray-700">{t.common.total}</td>
               <td className="px-4 py-3 text-right font-bold text-gray-900">{fmt(portfolioTotal)}</td>
               <td className="px-4 py-3 text-right text-gray-500">100%</td>
               <td className="px-4 py-3" />
