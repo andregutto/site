@@ -5,33 +5,39 @@ import { apiFetch } from '../lib/api'
 
 const onboardingKey = (userId: string) => `onboarding_v1_done_${userId}`
 
-const CLASSES_BY_LOCALE: Record<string, { name: string; color: string }[]> = {
+const INSTITUTION_SUGGESTIONS = [
+  'Revolut', 'N26', 'Wise', 'BNP Paribas', 'Société Générale', 'Crédit Agricole',
+  'LCL', 'HSBC', 'Itaú', 'Bradesco', 'Nubank', 'C6 Bank', 'Inter', 'Santander',
+  'Caixa Econômica', 'Banco do Brasil', 'BTG Pactual', 'XP Investimentos',
+]
+
+const CLASSES_BY_LOCALE: Record<string, { name: string; color: string; nameKey: string }[]> = {
   pt: [
-    { name: 'Ações Brasil',   color: '#10b981' },
-    { name: 'Ações Exterior', color: '#3b82f6' },
-    { name: 'FIIs',           color: '#f59e0b' },
-    { name: 'Cripto',         color: '#f97316' },
-    { name: 'Renda Fixa',     color: '#06b6d4' },
-    { name: 'Previdência',    color: '#8b5cf6' },
-    { name: 'Imóveis',        color: '#ef4444' },
+    { name: 'Ações Brasil',   color: '#10b981', nameKey: 'classAcoesBrasil' },
+    { name: 'Ações Exterior', color: '#3b82f6', nameKey: 'classAcoesExterior' },
+    { name: 'FIIs',           color: '#f59e0b', nameKey: 'classFiis' },
+    { name: 'Cripto',         color: '#f97316', nameKey: 'classCripto' },
+    { name: 'Renda Fixa',     color: '#06b6d4', nameKey: 'classRendaFixa' },
+    { name: 'Previdência',    color: '#8b5cf6', nameKey: 'classPrevidencia' },
+    { name: 'Imóveis',        color: '#ef4444', nameKey: 'classImoveis' },
   ],
   en: [
-    { name: 'Brazilian Stocks',     color: '#10b981' },
-    { name: 'International Stocks', color: '#3b82f6' },
-    { name: 'REITs',                color: '#f59e0b' },
-    { name: 'Crypto',               color: '#f97316' },
-    { name: 'Fixed Income',         color: '#06b6d4' },
-    { name: 'Pension',              color: '#8b5cf6' },
-    { name: 'Real Estate',          color: '#ef4444' },
+    { name: 'Brazilian Stocks',     color: '#10b981', nameKey: 'classAcoesBrasil' },
+    { name: 'International Stocks', color: '#3b82f6', nameKey: 'classAcoesExterior' },
+    { name: 'REITs',                color: '#f59e0b', nameKey: 'classFiis' },
+    { name: 'Crypto',               color: '#f97316', nameKey: 'classCripto' },
+    { name: 'Fixed Income',         color: '#06b6d4', nameKey: 'classRendaFixa' },
+    { name: 'Pension',              color: '#8b5cf6', nameKey: 'classPrevidencia' },
+    { name: 'Real Estate',          color: '#ef4444', nameKey: 'classImoveis' },
   ],
   fr: [
-    { name: 'Actions brésiliennes', color: '#10b981' },
-    { name: 'Actions mondiales',    color: '#3b82f6' },
-    { name: 'ETF / SCPI',           color: '#f59e0b' },
-    { name: 'Crypto',               color: '#f97316' },
-    { name: 'Revenu fixe',          color: '#06b6d4' },
-    { name: 'Épargne retraite',     color: '#8b5cf6' },
-    { name: 'Immobilier',           color: '#ef4444' },
+    { name: 'Actions brésiliennes', color: '#10b981', nameKey: 'classAcoesBrasil' },
+    { name: 'Actions mondiales',    color: '#3b82f6', nameKey: 'classAcoesExterior' },
+    { name: 'ETF / SCPI',           color: '#f59e0b', nameKey: 'classFiis' },
+    { name: 'Crypto',               color: '#f97316', nameKey: 'classCripto' },
+    { name: 'Revenu fixe',          color: '#06b6d4', nameKey: 'classRendaFixa' },
+    { name: 'Épargne retraite',     color: '#8b5cf6', nameKey: 'classPrevidencia' },
+    { name: 'Immobilier',           color: '#ef4444', nameKey: 'classImoveis' },
   ],
 }
 
@@ -73,6 +79,7 @@ export default function OnboardingOverlay({ onDone, userId }: Props) {
   const [accountCurrency, setAccountCurrency] = useState('EUR')
   const [accountInstitution, setAccountInstitution] = useState('')
   const [savingAccount, setSavingAccount] = useState(false)
+  const [accountCreated, setAccountCreated] = useState(false)
 
   const o = t.onboarding
   const TOTAL_STEPS = 7
@@ -84,25 +91,10 @@ export default function OnboardingOverlay({ onDone, userId }: Props) {
     onDone()
   }
 
-  function goToContributions() {
-    finish()
-    navigate('/portfolio')
-  }
-
-  function goToDashboard() {
-    finish()
-    navigate('/')
-  }
-
-  function goToFinances() {
-    finish()
-    navigate('/finances')
-  }
-
-  function goToInstitutions() {
-    finish()
-    navigate('/institutions')
-  }
+  function goToDashboard() { finish(); navigate('/') }
+  function goToFinances()   { finish(); navigate('/finances') }
+  function goToInstitutions() { finish(); navigate('/institutions') }
+  function goToAccounts()   { finish(); navigate('/finances/accounts') }
 
   async function createClassesAndContinue() {
     setCreatingClasses(true)
@@ -111,7 +103,7 @@ export default function OnboardingOverlay({ onDone, userId }: Props) {
         defaultClasses.map(c =>
           apiFetch('/assets/classes', {
             method: 'POST',
-            body: JSON.stringify({ name: c.name, color: c.color }),
+            body: JSON.stringify({ name: c.name, color: c.color, name_key: c.nameKey }),
           })
         )
       )
@@ -133,16 +125,16 @@ export default function OnboardingOverlay({ onDone, userId }: Props) {
           body: JSON.stringify({ monthly_net: val, currency: incomeCur }),
         })
       } catch {
-        // fail silently — user can configure later in finances
+        // fail silently
       } finally {
         setSavingIncome(false)
       }
     }
-    setStep(4)
+    setStep(3)
   }
 
   async function createAccountAndContinue() {
-    if (!accountName.trim()) { setStep(5); return }
+    if (!accountName.trim()) { setStep(4); return }
     setSavingAccount(true)
     try {
       await apiFetch('/finances/accounts', {
@@ -154,21 +146,25 @@ export default function OnboardingOverlay({ onDone, userId }: Props) {
           create_asset: true,
         }),
       })
+      setAccountCreated(true)
     } catch {
       // fail silently
     } finally {
       setSavingAccount(false)
     }
-    setStep(5)
+    setStep(4)
   }
 
+  // Step layout:
+  // 0 Welcome → 1 Classes → 2 Income → 3 Account → 4 Asset Types (info) → 5 Envelopes → 6 Done
+
   const ASSET_TYPES = [
-    { icon: '💰',  label: o.assetCash,   desc: o.assetCashDesc,   action: goToInstitutions },
-    { icon: '🇧🇷', label: o.assetB3,     desc: o.assetB3Desc,     action: goToContributions },
-    { icon: '🌎',  label: o.assetIntl,   desc: o.assetIntlDesc,   action: goToContributions },
-    { icon: '₿',   label: o.assetCrypto, desc: o.assetCryptoDesc, action: goToContributions },
-    { icon: '📄',  label: o.assetFi,     desc: o.assetFiDesc,     action: goToContributions },
-    { icon: '🏠',  label: o.assetImovel, desc: o.assetImovelDesc, action: goToContributions },
+    { icon: '💰',  label: o.assetCash,   desc: o.assetCashDesc   },
+    { icon: '🇧🇷', label: o.assetB3,     desc: o.assetB3Desc     },
+    { icon: '🌎',  label: o.assetIntl,   desc: o.assetIntlDesc   },
+    { icon: '₿',   label: o.assetCrypto, desc: o.assetCryptoDesc },
+    { icon: '📄',  label: o.assetFi,     desc: o.assetFiDesc     },
+    { icon: '🏠',  label: o.assetImovel, desc: o.assetImovelDesc },
   ]
 
   return (
@@ -230,7 +226,7 @@ export default function OnboardingOverlay({ onDone, userId }: Props) {
               </div>
               <div className="grid grid-cols-2 gap-2">
                 {defaultClasses.map(c => (
-                  <div key={c.name} className="flex items-center gap-2 bg-gray-50 border border-gray-100 rounded-lg px-3 py-2.5">
+                  <div key={c.nameKey} className="flex items-center gap-2 bg-gray-50 border border-gray-100 rounded-lg px-3 py-2.5">
                     <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: c.color }} />
                     <span className="text-sm font-medium text-gray-700">{c.name}</span>
                   </div>
@@ -247,40 +243,8 @@ export default function OnboardingOverlay({ onDone, userId }: Props) {
             </div>
           )}
 
-          {/* Step 2: First asset */}
+          {/* Step 2: Monthly income */}
           {step === 2 && (
-            <div className="space-y-4">
-              <div>
-                <h2 className="text-lg font-bold text-gray-900">{o.assetsTitle}</h2>
-                <p className="text-gray-500 mt-1 text-sm">{o.assetsBody}</p>
-              </div>
-              <div className="space-y-2">
-                {ASSET_TYPES.map(a => (
-                  <button
-                    key={a.label}
-                    onClick={a.action}
-                    className="w-full flex items-center gap-3 bg-gray-50 hover:bg-blue-50 border border-gray-100 hover:border-[#001A70]/20 rounded-xl px-4 py-3 text-left transition-colors"
-                  >
-                    <span className="text-xl shrink-0">{a.icon}</span>
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-gray-900">{a.label}</p>
-                      <p className="text-xs text-gray-400 truncate">{a.desc}</p>
-                    </div>
-                    <span className="ml-auto text-gray-300 text-sm shrink-0">→</span>
-                  </button>
-                ))}
-              </div>
-              <button
-                onClick={() => setStep(3)}
-                className="w-full text-xs text-gray-400 hover:text-gray-600 py-1 transition-colors"
-              >
-                {o.assetsSkip} →
-              </button>
-            </div>
-          )}
-
-          {/* Step 3: Monthly income */}
-          {step === 3 && (
             <div className="space-y-4">
               <div>
                 <h2 className="text-lg font-bold text-gray-900">{o.financeIncomeTitle}</h2>
@@ -317,7 +281,7 @@ export default function OnboardingOverlay({ onDone, userId }: Props) {
                 {savingIncome ? '…' : o.continue}
               </button>
               <button
-                onClick={() => setStep(4)}
+                onClick={() => setStep(3)}
                 className="w-full text-xs text-gray-400 hover:text-gray-600 py-1 transition-colors"
               >
                 {o.financeIncomeSkip}
@@ -325,14 +289,28 @@ export default function OnboardingOverlay({ onDone, userId }: Props) {
             </div>
           )}
 
-          {/* Step 4: First account (optional) */}
-          {step === 4 && (
+          {/* Step 3: First account */}
+          {step === 3 && (
             <div className="space-y-4">
               <div>
                 <h2 className="text-lg font-bold text-gray-900">{o.accountTitle}</h2>
                 <p className="text-gray-500 mt-1 text-sm leading-relaxed">{o.accountBody}</p>
               </div>
               <div className="space-y-3">
+                <div>
+                  <label className="text-xs font-medium text-gray-500 block mb-1">{o.accountInstitution}</label>
+                  <input
+                    type="text"
+                    list="institution-suggestions"
+                    value={accountInstitution}
+                    onChange={e => setAccountInstitution(e.target.value)}
+                    placeholder="Revolut"
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20"
+                  />
+                  <datalist id="institution-suggestions">
+                    {INSTITUTION_SUGGESTIONS.map(s => <option key={s} value={s} />)}
+                  </datalist>
+                </div>
                 <div>
                   <label className="text-xs font-medium text-gray-500 block mb-1">{o.accountName}</label>
                   <input
@@ -353,29 +331,49 @@ export default function OnboardingOverlay({ onDone, userId }: Props) {
                     {['EUR', 'BRL', 'USD'].map(c => <option key={c}>{c}</option>)}
                   </select>
                 </div>
-                <div>
-                  <label className="text-xs font-medium text-gray-500 block mb-1">{o.accountInstitution}</label>
-                  <input
-                    type="text"
-                    value={accountInstitution}
-                    onChange={e => setAccountInstitution(e.target.value)}
-                    placeholder="Revolut"
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20"
-                  />
-                </div>
               </div>
               <button
                 onClick={createAccountAndContinue}
-                disabled={!accountName.trim() || savingAccount}
+                disabled={!accountName.trim() || !accountInstitution.trim() || savingAccount}
                 className="w-full bg-[#001A70] text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-[#001A70]/90 transition-colors disabled:opacity-60"
               >
                 {savingAccount ? '…' : o.accountCreate}
               </button>
               <button
-                onClick={() => setStep(5)}
+                onClick={() => setStep(4)}
                 className="w-full text-xs text-gray-400 hover:text-gray-600 py-1 transition-colors"
               >
                 {o.accountSkip} →
+              </button>
+            </div>
+          )}
+
+          {/* Step 4: Asset types — informational only */}
+          {step === 4 && (
+            <div className="space-y-4">
+              <div>
+                <h2 className="text-lg font-bold text-gray-900">{o.assetsTitle}</h2>
+                <p className="text-gray-500 mt-1 text-sm">{o.assetsBody}</p>
+              </div>
+              <div className="space-y-2">
+                {ASSET_TYPES.map(a => (
+                  <div
+                    key={a.label}
+                    className="w-full flex items-center gap-3 bg-gray-50 border border-gray-100 rounded-xl px-4 py-3"
+                  >
+                    <span className="text-xl shrink-0">{a.icon}</span>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-gray-900">{a.label}</p>
+                      <p className="text-xs text-gray-400 truncate">{a.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <button
+                onClick={() => setStep(5)}
+                className="w-full bg-[#001A70] text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-[#001A70]/90 transition-colors"
+              >
+                {o.continue}
               </button>
             </div>
           )}
@@ -430,12 +428,21 @@ export default function OnboardingOverlay({ onDone, userId }: Props) {
                 >
                   {o.gotoDashboard}
                 </button>
-                <button
-                  onClick={goToInstitutions}
-                  className="w-full border border-[#001A70]/20 text-[#001A70] rounded-xl py-3 text-sm font-semibold hover:bg-[#001A70]/5 transition-colors"
-                >
-                  {o.gotoInstitutions}
-                </button>
+                {accountCreated ? (
+                  <button
+                    onClick={goToAccounts}
+                    className="w-full border border-[#001A70]/20 text-[#001A70] rounded-xl py-3 text-sm font-semibold hover:bg-[#001A70]/5 transition-colors"
+                  >
+                    {o.gotoAccounts}
+                  </button>
+                ) : (
+                  <button
+                    onClick={goToInstitutions}
+                    className="w-full border border-[#001A70]/20 text-[#001A70] rounded-xl py-3 text-sm font-semibold hover:bg-[#001A70]/5 transition-colors"
+                  >
+                    {o.gotoInstitutions}
+                  </button>
+                )}
                 <button
                   onClick={goToFinances}
                   className="w-full text-xs text-gray-400 hover:text-gray-600 py-1 transition-colors"

@@ -414,9 +414,10 @@ export default function FinancesAccountsPage() {
                     <button
                       onClick={() => syncToPortfolio(acc.id)}
                       disabled={syncingPortfolio === acc.id}
+                      title={t.finances.syncBalanceTip}
                       className="px-2.5 py-1 text-xs border border-emerald-200 rounded-lg text-emerald-700 hover:bg-emerald-50 transition-colors disabled:opacity-50"
                     >
-                      {syncingPortfolio === acc.id ? '…' : 'Sincronizar saldo'}
+                      {syncingPortfolio === acc.id ? '…' : t.modals.syncBalance}
                     </button>
                     <button
                       onClick={() => unlinkFromAsset(acc.id)}

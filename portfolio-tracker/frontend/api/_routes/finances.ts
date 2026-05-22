@@ -12,62 +12,62 @@ const DEFAULT_NAMES: Record<string, { income: string; transfer: string; salary: 
   fr: { income: 'Revenus', transfer: 'Virement',      salary: 'Salaire',  essential: 'Dépenses Essentielles',  investment: 'Investissements',  savings: 'Épargne', free: 'Loisirs'  },
 }
 
-const DEFAULT_CAT_NAMES: Record<string, Record<string, { name: string; icon: string; color: string }[]>> = {
+const DEFAULT_CAT_NAMES: Record<string, Record<string, { name: string; icon: string; color: string; name_key: string }[]>> = {
   pt: {
     envelopeEssential:  [
-      { name: 'Moradia',        icon: '🏠', color: '#3b82f6' },
-      { name: 'Alimentação',    icon: '🛒', color: '#10b981' },
-      { name: 'Transporte',     icon: '🚗', color: '#f59e0b' },
-      { name: 'Saúde',          icon: '💊', color: '#ef4444' },
-      { name: 'Utilidades',     icon: '💡', color: '#6366f1' },
+      { name: 'Moradia',        icon: '🏠', color: '#3b82f6', name_key: 'categoryHousing' },
+      { name: 'Alimentação',    icon: '🛒', color: '#10b981', name_key: 'categoryGroceries' },
+      { name: 'Transporte',     icon: '🚗', color: '#f59e0b', name_key: 'categoryTransport' },
+      { name: 'Saúde',          icon: '💊', color: '#ef4444', name_key: 'categoryHealth' },
+      { name: 'Utilidades',     icon: '💡', color: '#6366f1', name_key: 'categoryUtilities' },
     ],
     envelopeInvestment: [
-      { name: 'Ações / FII',    icon: '📈', color: '#10b981' },
-      { name: 'Renda Fixa',     icon: '📄', color: '#06b6d4' },
+      { name: 'Ações / FII',    icon: '📈', color: '#10b981', name_key: 'categoryInvestment' },
+      { name: 'Renda Fixa',     icon: '📄', color: '#06b6d4', name_key: 'categoryBonds' },
     ],
-    envelopeSavings:    [{ name: 'Emergência',    icon: '🏦', color: '#f59e0b' }],
+    envelopeSavings:    [{ name: 'Emergência',    icon: '🏦', color: '#f59e0b', name_key: 'categoryEmergency' }],
     envelopeFree:       [
-      { name: 'Restaurante',    icon: '🍽️', color: '#f97316' },
-      { name: 'Viagem',         icon: '✈️', color: '#8b5cf6' },
-      { name: 'Entretenimento', icon: '🎬', color: '#ec4899' },
+      { name: 'Restaurante',    icon: '🍽️', color: '#f97316', name_key: 'categoryRestaurant' },
+      { name: 'Viagem',         icon: '✈️', color: '#8b5cf6', name_key: 'categoryTravel' },
+      { name: 'Entretenimento', icon: '🎬', color: '#ec4899', name_key: 'categoryEntertainment' },
     ],
   },
   en: {
     envelopeEssential:  [
-      { name: 'Housing',        icon: '🏠', color: '#3b82f6' },
-      { name: 'Food',           icon: '🛒', color: '#10b981' },
-      { name: 'Transport',      icon: '🚗', color: '#f59e0b' },
-      { name: 'Health',         icon: '💊', color: '#ef4444' },
-      { name: 'Utilities',      icon: '💡', color: '#6366f1' },
+      { name: 'Housing',        icon: '🏠', color: '#3b82f6', name_key: 'categoryHousing' },
+      { name: 'Food',           icon: '🛒', color: '#10b981', name_key: 'categoryGroceries' },
+      { name: 'Transport',      icon: '🚗', color: '#f59e0b', name_key: 'categoryTransport' },
+      { name: 'Health',         icon: '💊', color: '#ef4444', name_key: 'categoryHealth' },
+      { name: 'Utilities',      icon: '💡', color: '#6366f1', name_key: 'categoryUtilities' },
     ],
     envelopeInvestment: [
-      { name: 'Stocks / ETF',   icon: '📈', color: '#10b981' },
-      { name: 'Fixed Income',   icon: '📄', color: '#06b6d4' },
+      { name: 'Stocks / ETF',   icon: '📈', color: '#10b981', name_key: 'categoryInvestment' },
+      { name: 'Fixed Income',   icon: '📄', color: '#06b6d4', name_key: 'categoryBonds' },
     ],
-    envelopeSavings:    [{ name: 'Emergency',     icon: '🏦', color: '#f59e0b' }],
+    envelopeSavings:    [{ name: 'Emergency Fund', icon: '🏦', color: '#f59e0b', name_key: 'categoryEmergency' }],
     envelopeFree:       [
-      { name: 'Restaurants',    icon: '🍽️', color: '#f97316' },
-      { name: 'Travel',         icon: '✈️', color: '#8b5cf6' },
-      { name: 'Entertainment',  icon: '🎬', color: '#ec4899' },
+      { name: 'Restaurants',    icon: '🍽️', color: '#f97316', name_key: 'categoryRestaurant' },
+      { name: 'Travel',         icon: '✈️', color: '#8b5cf6', name_key: 'categoryTravel' },
+      { name: 'Entertainment',  icon: '🎬', color: '#ec4899', name_key: 'categoryEntertainment' },
     ],
   },
   fr: {
     envelopeEssential:  [
-      { name: 'Logement',       icon: '🏠', color: '#3b82f6' },
-      { name: 'Alimentation',   icon: '🛒', color: '#10b981' },
-      { name: 'Transport',      icon: '🚗', color: '#f59e0b' },
-      { name: 'Santé',          icon: '💊', color: '#ef4444' },
-      { name: 'Services',       icon: '💡', color: '#6366f1' },
+      { name: 'Logement',       icon: '🏠', color: '#3b82f6', name_key: 'categoryHousing' },
+      { name: 'Alimentation',   icon: '🛒', color: '#10b981', name_key: 'categoryGroceries' },
+      { name: 'Transport',      icon: '🚗', color: '#f59e0b', name_key: 'categoryTransport' },
+      { name: 'Santé',          icon: '💊', color: '#ef4444', name_key: 'categoryHealth' },
+      { name: 'Services',       icon: '💡', color: '#6366f1', name_key: 'categoryUtilities' },
     ],
     envelopeInvestment: [
-      { name: 'Actions / ETF',  icon: '📈', color: '#10b981' },
-      { name: 'Revenu fixe',    icon: '📄', color: '#06b6d4' },
+      { name: 'Actions / ETF',  icon: '📈', color: '#10b981', name_key: 'categoryInvestment' },
+      { name: 'Revenu fixe',    icon: '📄', color: '#06b6d4', name_key: 'categoryBonds' },
     ],
-    envelopeSavings:    [{ name: 'Urgence',        icon: '🏦', color: '#f59e0b' }],
+    envelopeSavings:    [{ name: 'Fonds d\'urgence', icon: '🏦', color: '#f59e0b', name_key: 'categoryEmergency' }],
     envelopeFree:       [
-      { name: 'Restaurants',    icon: '🍽️', color: '#f97316' },
-      { name: 'Voyages',        icon: '✈️', color: '#8b5cf6' },
-      { name: 'Divertissement', icon: '🎬', color: '#ec4899' },
+      { name: 'Restaurants',    icon: '🍽️', color: '#f97316', name_key: 'categoryRestaurant' },
+      { name: 'Voyages',        icon: '✈️', color: '#8b5cf6', name_key: 'categoryTravel' },
+      { name: 'Divertissement', icon: '🎬', color: '#ec4899', name_key: 'categoryEntertainment' },
     ],
   },
 }
@@ -180,7 +180,7 @@ router.get('/budget', requireAuth, async (req, res: Response) => {
       const catLocale = DEFAULT_CAT_NAMES[userLocale] ?? DEFAULT_CAT_NAMES.pt
       const catsToCreate = (newExpEnvs as { id: number; name_key: string }[]).flatMap(env => {
         const defs = catLocale[env.name_key] ?? []
-        return defs.map(c => ({ user_id: userId, name: c.name, icon: c.icon, color: c.color, keyword_rules: [], envelope_id: env.id }))
+        return defs.map(c => ({ user_id: userId, name: c.name, name_key: c.name_key, icon: c.icon, color: c.color, keyword_rules: [], envelope_id: env.id }))
       })
       if (catsToCreate.length > 0) {
         const { data: newCats } = await supabaseAdmin.from('finance_categories').insert(catsToCreate).select('*')
