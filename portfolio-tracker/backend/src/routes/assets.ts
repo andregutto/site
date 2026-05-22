@@ -83,17 +83,15 @@ router.post('/classes', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const { name, color, icon, name_key } = req.body as { name: string; color?: string; icon?: string; name_key?: string }
   if (!name?.trim()) { res.status(400).json({ error: 'Nome obrigatorio' }); return }
-  let r = await supabaseAdmin
-    .from('asset_classes')
-    .insert({ user_id: userId, name: name.trim(), color: color ?? '#6B7280', icon: icon ?? null, name_key: name_key ?? null })
-    .select('id, name, color, icon, name_key')
-    .single()
+  const payload = { user_id: userId, name: name.trim(), color: color ?? '#6B7280', icon: icon ?? null, name_key: name_key ?? null }
+  // When name_key is provided use upsert so onboarding can safely re-run for any locale
+  // (trigger creates PT classes with name_key; onboarding overwrites name with the user's locale)
+  let r = name_key
+    ? await supabaseAdmin.from('asset_classes').upsert(payload, { onConflict: 'user_id,name_key' }).select('id, name, color, icon, name_key').single()
+    : await supabaseAdmin.from('asset_classes').insert(payload).select('id, name, color, icon, name_key').single()
   if (r.error && isColumnMissing(r.error)) {
-    const fb = await supabaseAdmin
-      .from('asset_classes')
-      .insert({ user_id: userId, name: name.trim(), color: color ?? '#6B7280' })
-      .select('id, name, color')
-      .single()
+    const { icon: _i, name_key: _nk, ...base } = payload
+    const fb = await supabaseAdmin.from('asset_classes').insert(base).select('id, name, color').single()
     r = { data: fb.data ? { ...fb.data, icon: null, name_key: null } : null, error: fb.error } as typeof r
   }
   if (r.error) { res.status(500).json({ error: r.error.message }); return }

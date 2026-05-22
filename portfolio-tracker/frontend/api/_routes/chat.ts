@@ -303,23 +303,22 @@ async function executeTool(
         }
         const { data: txns } = await supabaseAdmin
           .from('finance_transactions')
-          .select('amount_brl, finance_categories(name, finance_envelopes(name))')
-          .eq('user_id', userId).eq('type', 'expense').eq('exclude_from_stats', false)
+          .select('amount, currency, finance_categories(name, finance_envelopes(name))')
+          .eq('user_id', userId).lt('amount', 0).eq('exclude_from_stats', false)
           .gte('date', fromDate).lte('date', toDate)
 
-        const byCategory: Record<string, { total: number; envelope: string }> = {}
+        const byCategory: Record<string, { total: number; envelope: string; currency: string }> = {}
         for (const t of txns ?? []) {
           const cat = (t.finance_categories as unknown as { name: string; finance_envelopes: { name: string } } | null)
           const catName = cat?.name ?? 'Uncategorized'
           const envName = cat?.finance_envelopes?.name ?? ''
-          if (!byCategory[catName]) byCategory[catName] = { total: 0, envelope: envName }
-          byCategory[catName].total += t.amount_brl ?? 0
+          if (!byCategory[catName]) byCategory[catName] = { total: 0, envelope: envName, currency: t.currency ?? '' }
+          byCategory[catName].total += Math.abs(t.amount ?? 0)
         }
-        const total = Object.values(byCategory).reduce((s, v) => s + v.total, 0)
         const sorted = Object.entries(byCategory)
           .sort((a, b) => b[1].total - a[1].total)
-          .map(([n, d]) => `${n} (${d.envelope}): R$${d.total.toFixed(0)}`)
-        return `Expenses by category (${fromDate} to ${toDate})\nTotal: R$${total.toFixed(0)}\n${sorted.join('\n')}`
+          .map(([n, d]) => `${n} (${d.envelope}): ${d.total.toFixed(2)} ${d.currency}`)
+        return `Expenses by category (${fromDate} to ${toDate})\n${sorted.join('\n')}`
       }
 
       case 'get_transactions': {
@@ -327,18 +326,20 @@ async function executeTool(
         const rowLimit = inp.search ? 200 : (inp.limit ?? 20)
         let q = supabaseAdmin
           .from('finance_transactions')
-          .select('date, description, amount_brl, type, finance_categories(name), finance_accounts(name)')
+          .select('date, description, amount, currency, finance_categories(name), finance_accounts(name)')
           .eq('user_id', userId).order('date', { ascending: false }).limit(rowLimit)
         if (inp.from_date) q = q.gte('date', inp.from_date)
         if (inp.to_date)   q = q.lte('date', inp.to_date)
-        if (inp.type)      q = q.eq('type', inp.type)
+        if (inp.type === 'expense') q = q.lt('amount', 0)
+        else if (inp.type === 'income') q = q.gt('amount', 0)
         if (inp.search)    q = q.ilike('description', `%${inp.search}%`)
         const { data: txns } = await q
         if (!txns?.length) return 'No transactions found.'
         const lines = txns.map(t => {
           const cat = (t.finance_categories as unknown as { name: string } | null)?.name ?? '—'
           const acc = (t.finance_accounts as unknown as { name: string } | null)?.name ?? '—'
-          return `${t.date} | ${t.type === 'expense' ? '↓' : '↑'} R$${(t.amount_brl ?? 0).toFixed(0)} | ${t.description} | ${cat} | ${acc}`
+          const dir = (t.amount ?? 0) < 0 ? '↓' : '↑'
+          return `${t.date} | ${dir} ${Math.abs(t.amount ?? 0).toFixed(2)} ${t.currency} | ${t.description} | ${cat} | ${acc}`
         })
         return `Transactions (${txns.length}):\n${lines.join('\n')}`
       }
@@ -351,14 +352,14 @@ async function executeTool(
         const words = base.split(/[\s\-_\/]+/).filter(w => w.length >= 3)
         const candidates = Array.from(new Set([base, ...words])).filter(c => c.length >= 3)
 
-        type TxRow = { date: string; description: string; amount_brl: number | null; type: string }
+        type TxRow = { date: string; description: string; amount: number | null; currency: string }
         let txns: TxRow[] | null = null
         let matchedTerm = base
 
         for (const term of candidates) {
           let q = supabaseAdmin
             .from('finance_transactions')
-            .select('date, description, amount_brl, type')
+            .select('date, description, amount, currency')
             .eq('user_id', userId).ilike('description', `%${term}%`)
             .order('date', { ascending: true }).limit(500)
           if (inp.from_date) q = q.gte('date', inp.from_date)
@@ -372,17 +373,18 @@ async function executeTool(
         }
 
         const fuzzyNote = matchedTerm !== base ? ` (matched on "${matchedTerm}")` : ''
-        const expenses = txns.filter(t => t.type === 'expense')
-        const incomes  = txns.filter(t => t.type === 'income')
-        const totalExpense = expenses.reduce((s, t) => s + Math.abs(t.amount_brl ?? 0), 0)
-        const totalIncome  = incomes.reduce((s, t) => s + (t.amount_brl ?? 0), 0)
+        const expenses = txns.filter(t => (t.amount ?? 0) < 0)
+        const incomes  = txns.filter(t => (t.amount ?? 0) > 0)
+        const totalExpense = expenses.reduce((s, t) => s + Math.abs(t.amount ?? 0), 0)
+        const totalIncome  = incomes.reduce((s, t) => s + (t.amount ?? 0), 0)
+        const currency = txns[0]?.currency ?? ''
         const lines = txns.map(t =>
-          `${t.date} | ${t.type === 'expense' ? '↓' : '↑'} R$${Math.abs(t.amount_brl ?? 0).toFixed(2)} | ${t.description}`
+          `${t.date} | ${(t.amount ?? 0) < 0 ? '↓' : '↑'} ${Math.abs(t.amount ?? 0).toFixed(2)} ${t.currency} | ${t.description}`
         )
         return [
           `"${base}"${fuzzyNote} — ${txns.length} transaction(s) | ${txns[0].date} → ${txns[txns.length - 1].date}`,
-          expenses.length > 0 ? `Total expenses: R$${totalExpense.toFixed(2)} (${expenses.length})` : '',
-          incomes.length  > 0 ? `Total income: R$${totalIncome.toFixed(2)} (${incomes.length})` : '',
+          expenses.length > 0 ? `Total expenses: ${totalExpense.toFixed(2)} ${currency} (${expenses.length})` : '',
+          incomes.length  > 0 ? `Total income: ${totalIncome.toFixed(2)} ${currency} (${incomes.length})` : '',
           '',
           ...lines,
         ].filter(Boolean).join('\n')
@@ -392,22 +394,23 @@ async function executeTool(
         const inp = input as { limit?: number; type?: string; search?: string }
         let q = supabaseAdmin
           .from('finance_transactions')
-          .select('description, amount_brl, type')
+          .select('description, amount, currency')
           .eq('user_id', userId).not('description', 'is', null).limit(3000)
-        if (inp.type)   q = q.eq('type', inp.type)
+        if (inp.type === 'expense') q = q.lt('amount', 0)
+        else if (inp.type === 'income') q = q.gt('amount', 0)
         if (inp.search) q = q.ilike('description', `%${inp.search}%`)
         const { data: rows } = await q
         if (!rows?.length) return 'No transactions found.'
-        const freq = new Map<string, { count: number; total: number }>()
+        const freq = new Map<string, { count: number; total: number; currency: string }>()
         for (const r of rows) {
           const key = (r.description as string).split(/\s+/).slice(0, 3).join(' ').toUpperCase()
-          const cur = freq.get(key) ?? { count: 0, total: 0 }
-          freq.set(key, { count: cur.count + 1, total: cur.total + Math.abs(r.amount_brl ?? 0) })
+          const cur = freq.get(key) ?? { count: 0, total: 0, currency: r.currency ?? '' }
+          freq.set(key, { count: cur.count + 1, total: cur.total + Math.abs(r.amount ?? 0), currency: cur.currency })
         }
         const sorted = [...freq.entries()]
           .sort((a, b) => b[1].count - a[1].count)
           .slice(0, inp.limit ?? 40)
-          .map(([name, d]) => `${name} (${d.count}x, R$${d.total.toFixed(0)})`)
+          .map(([name, d]) => `${name} (${d.count}x, ${d.total.toFixed(0)} ${d.currency})`)
         return `Top merchants:\n${sorted.join('\n')}`
       }
 
@@ -416,18 +419,18 @@ async function executeTool(
         const d = new Date(); d.setMonth(d.getMonth() - months)
         const { data: txns } = await supabaseAdmin
           .from('finance_transactions')
-          .select('date, amount_brl, type')
+          .select('date, amount, currency')
           .eq('user_id', userId).eq('exclude_from_stats', false)
           .gte('date', d.toISOString().split('T')[0])
-        const byMonth: Record<string, { income: number; expense: number }> = {}
+        const byMonth: Record<string, { income: number; expense: number; currency: string }> = {}
         for (const t of txns ?? []) {
           const m = t.date.slice(0, 7)
-          if (!byMonth[m]) byMonth[m] = { income: 0, expense: 0 }
-          if (t.type === 'income') byMonth[m].income += t.amount_brl ?? 0
-          else byMonth[m].expense += t.amount_brl ?? 0
+          if (!byMonth[m]) byMonth[m] = { income: 0, expense: 0, currency: t.currency ?? '' }
+          if ((t.amount ?? 0) > 0) byMonth[m].income += t.amount ?? 0
+          else byMonth[m].expense += Math.abs(t.amount ?? 0)
         }
         const lines = Object.entries(byMonth).sort((a, b) => a[0].localeCompare(b[0]))
-          .map(([m, v]) => `${m}: income R$${v.income.toFixed(0)} | expense R$${v.expense.toFixed(0)} | balance R$${(v.income - v.expense).toFixed(0)}`)
+          .map(([m, v]) => `${m}: income ${v.income.toFixed(0)} | expense ${v.expense.toFixed(0)} | balance ${(v.income - v.expense).toFixed(0)} ${v.currency}`)
         return `Monthly summary (last ${months} months):\n${lines.join('\n')}`
       }
 

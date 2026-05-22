@@ -155,7 +155,7 @@ router.get('/budget', requireAuth, async (req, res: Response) => {
   }
   if (incomeEnvId) {
     const hasTransfer = categories.some(c => { const n = norm(c.name); return n.includes('transfer') || n.includes('virement') })
-    const hasSalario  = categories.some(c => norm(c.name).includes('salari') || norm(c.name).includes('salary'))
+    const hasSalario  = categories.some(c => c.name_key === 'categorySalary' || norm(c.name).includes('salari') || norm(c.name).includes('salary') || norm(c.name).includes('salaire'))
     const toCreate = [
       ...(!hasTransfer ? [{ user_id: userId, name: names.transfer, name_key: 'categoryTransfer', icon: '↔️', color: '#6B7280', keyword_rules: [], envelope_id: incomeEnvId }] : []),
       ...(!hasSalario  ? [{ user_id: userId, name: names.salary,   name_key: 'categorySalary',   icon: '💼', color: '#3b82f6', keyword_rules: [], envelope_id: incomeEnvId }] : []),
@@ -555,7 +555,7 @@ router.post('/accounts', requireAuth, async (req, res: Response) => {
     const { data: asset } = await supabaseAdmin.from('assets').insert({
       user_id: userId, code, name: name.trim(), asset_type: 'manual',
       currency: currency ?? 'EUR', exchange: institution_name?.trim() ?? null, active: true,
-      ...(caixaClassId ? { asset_class_id: caixaClassId } : {}),
+      ...(caixaClassId ? { class_id: caixaClassId } : {}),
     }).select('id').single()
     if (asset) {
       await supabaseAdmin.from('finance_accounts').update({ linked_asset_id: asset.id }).eq('id', account.id)

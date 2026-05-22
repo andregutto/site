@@ -74,7 +74,6 @@ export default function OnboardingOverlay({ onDone, userId }: Props) {
   const [incomeVal, setIncomeVal] = useState('')
   const [incomeCur, setIncomeCur] = useState('EUR')
   const [savingIncome, setSavingIncome] = useState(false)
-  const [creatingClasses, setCreatingClasses] = useState(false)
   const [accountName, setAccountName] = useState('')
   const [accountCurrency, setAccountCurrency] = useState('EUR')
   const [accountInstitution, setAccountInstitution] = useState('')
@@ -96,22 +95,9 @@ export default function OnboardingOverlay({ onDone, userId }: Props) {
   function goToInstitutions() { finish(); navigate('/institutions') }
   function goToAccounts()   { finish(); navigate('/finances/accounts') }
 
-  async function createClassesAndContinue() {
-    setCreatingClasses(true)
-    try {
-      await Promise.all(
-        defaultClasses.map(c =>
-          apiFetch('/assets/classes', {
-            method: 'POST',
-            body: JSON.stringify({ name: c.name, color: c.color, name_key: c.nameKey }),
-          })
-        )
-      )
-    } catch {
-      // fail silently — user can add/edit classes later
-    } finally {
-      setCreatingClasses(false)
-    }
+  function createClassesAndContinue() {
+    // Classes are created by the DB trigger at signup (handle_new_user).
+    // This step is now informational only.
     setStep(2)
   }
 
@@ -235,10 +221,9 @@ export default function OnboardingOverlay({ onDone, userId }: Props) {
               <p className="text-xs text-gray-400 leading-relaxed">{o.classesNote}</p>
               <button
                 onClick={createClassesAndContinue}
-                disabled={creatingClasses}
-                className="w-full bg-[#001A70] text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-[#001A70]/90 transition-colors disabled:opacity-60"
+                className="w-full bg-[#001A70] text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-[#001A70]/90 transition-colors"
               >
-                {creatingClasses ? '…' : o.continue}
+                {o.continue}
               </button>
             </div>
           )}

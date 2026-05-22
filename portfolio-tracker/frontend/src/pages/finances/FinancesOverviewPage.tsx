@@ -282,9 +282,9 @@ export default function FinancesOverviewPage() {
     .slice(0, 5)
 
   // Chart data
-  const chartData = data.months.map(ms => {
+  let chartData = data.months.map(ms => {
     const row: Record<string, number | string> = {
-      month:    historyMonths > 12 ? fmtMonthYear(ms.month, browserLocale) : fmtMonth(ms.month, browserLocale),
+      month:    historyMonths >= 12 ? fmtMonthYear(ms.month, browserLocale) : fmtMonth(ms.month, browserLocale),
       rawMonth: ms.month,
     }
     for (const env of ms.by_envelope.filter(e => e.envelope_id !== -1 && e.actual > 0)) {
@@ -292,6 +292,11 @@ export default function FinancesOverviewPage() {
     }
     return row
   })
+  // For "Tudo", trim leading months with no data so the chart starts from first transaction
+  if (historyMonths > 12) {
+    const firstNonEmpty = chartData.findIndex(r => Object.keys(r).some(k => k !== 'month' && k !== 'rawMonth'))
+    if (firstNonEmpty > 0) chartData = chartData.slice(firstNonEmpty)
+  }
 
   const hasHistory = data.months.some(m => m.expenses > 0)
 
@@ -537,7 +542,7 @@ export default function FinancesOverviewPage() {
               <XAxis
                 dataKey="month"
                 tick={{ fontSize: 11 }}
-                interval={historyMonths <= 12 ? 0 : Math.ceil(historyMonths / 8) - 1}
+                interval={historyMonths <= 6 ? 0 : historyMonths <= 12 ? 1 : Math.max(0, Math.ceil(chartData.length / 8) - 1)}
               />
               <YAxis tickFormatter={v => fmt(cx(v as number), currency, true)} tick={{ fontSize: 10 }} width={70} />
               <Tooltip content={<ChartTooltip currency={currency} />} />
