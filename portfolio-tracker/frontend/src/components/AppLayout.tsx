@@ -11,7 +11,7 @@ import OnboardingOverlay from './OnboardingOverlay'
 import LanguageSelector from './LanguageSelector'
 import ChatWidget from './ChatWidget'
 
-const ONBOARDING_KEY = 'onboarding_v1_done'
+const onboardingKey = (userId: string) => `onboarding_v1_done_${userId}`
 const CURRENCIES: Currency[] = ['BRL', 'USD', 'EUR']
 
 function useClickOutside(ref: React.RefObject<HTMLElement | null>, cb: () => void, active: boolean) {
@@ -47,11 +47,12 @@ export default function AppLayout() {
   }, [location.pathname])
 
   useEffect(() => {
-    if (localStorage.getItem(ONBOARDING_KEY)) return
+    if (!user?.id) return
+    if (localStorage.getItem(onboardingKey(user.id))) return
     apiFetch<{ id: number }[]>('/assets')
       .then(assets => { if (assets.length === 0) setShowOnboarding(true) })
       .catch(() => {})
-  }, [])
+  }, [user?.id])
 
   const meta = user?.user_metadata ?? {}
   const headerLabel = [meta.first_name, meta.last_name].filter(Boolean).join(' ') || user?.email || ''
@@ -453,7 +454,7 @@ export default function AppLayout() {
         </div>
       </nav>
 
-      {showOnboarding && <OnboardingOverlay onDone={() => setShowOnboarding(false)} />}
+      {showOnboarding && user?.id && <OnboardingOverlay userId={user.id} onDone={() => setShowOnboarding(false)} />}
       <ChatWidget />
     </div>
   )

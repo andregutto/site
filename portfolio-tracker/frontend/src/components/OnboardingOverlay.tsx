@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useI18n } from '../contexts/I18nContext'
 import { apiFetch } from '../lib/api'
 
-const STORAGE_KEY = 'onboarding_v1_done'
+const onboardingKey = (userId: string) => `onboarding_v1_done_${userId}`
 
 const CLASSES_BY_LOCALE: Record<string, { name: string; color: string }[]> = {
   pt: [
@@ -58,9 +58,10 @@ const ENVELOPES_BY_LOCALE: Record<string, { name: string; icon: string; color: s
 
 interface Props {
   onDone: () => void
+  userId: string
 }
 
-export default function OnboardingOverlay({ onDone }: Props) {
+export default function OnboardingOverlay({ onDone, userId }: Props) {
   const { t, locale } = useI18n()
   const navigate = useNavigate()
   const [step, setStep] = useState(0)
@@ -79,7 +80,7 @@ export default function OnboardingOverlay({ onDone }: Props) {
   const defaultEnvelopes = ENVELOPES_BY_LOCALE[locale] ?? ENVELOPES_BY_LOCALE.pt
 
   function finish() {
-    localStorage.setItem(STORAGE_KEY, '1')
+    localStorage.setItem(onboardingKey(userId), '1')
     onDone()
   }
 
