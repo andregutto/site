@@ -205,30 +205,22 @@ function EnvelopeBar({ env, expanded, onToggle, onEditCategory, onDeleteCategory
               {env.categories.map(cat => {
                 const actual = actuals.get(cat.id) ?? 0
                 const hasBudget = cat.budget_monthly != null && cat.budget_monthly > 0
-                const pct = hasBudget ? Math.min((actual / cat.budget_monthly!) * 100, 100) : 0
                 const over = hasBudget && actual > cat.budget_monthly!
                 return (
                   <li key={cat.id} className="px-5 py-2.5 flex items-center gap-3 group">
                     <span className="text-base leading-none w-6 shrink-0">{cat.icon}</span>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-sm text-gray-700 truncate">{resolveKey(cat.name, cat.name_key, nameKeys)}</span>
-                        <div className="flex items-center gap-1 shrink-0">
-                          {actual > 0 && (
-                            <span className={`text-sm font-medium ${over ? 'text-red-500' : 'text-gray-700'}`}>
-                              {fmt(actual, currency)}
-                            </span>
-                          )}
-                          {hasBudget && (
-                            <span className="text-xs text-gray-400">/ {fmt(cat.budget_monthly!, currency)}</span>
-                          )}
-                        </div>
+                    <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
+                      <span className="text-sm text-gray-700 truncate">{resolveKey(cat.name, cat.name_key, nameKeys)}</span>
+                      <div className="flex items-center gap-1 shrink-0">
+                        {actual > 0 && (
+                          <span className={`text-sm font-medium ${over ? 'text-red-500' : 'text-gray-700'}`}>
+                            {fmt(actual, currency)}
+                          </span>
+                        )}
+                        {hasBudget && (
+                          <span className="text-xs text-gray-400">/ {fmt(cat.budget_monthly!, currency)}</span>
+                        )}
                       </div>
-                      {hasBudget && (
-                        <div className="mt-0.5 h-1 bg-gray-100 rounded-full overflow-hidden">
-                          <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, backgroundColor: over ? '#ef4444' : '#3b82f6' }} />
-                        </div>
-                      )}
                     </div>
                     <div className="flex items-center gap-1 [@media(hover:none)]:opacity-100 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button
