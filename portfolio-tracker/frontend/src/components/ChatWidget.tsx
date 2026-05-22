@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
+import { useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useI18n } from '../contexts/I18nContext'
 
@@ -25,7 +26,8 @@ function renderText(text: string) {
 }
 
 export default function ChatWidget() {
-  const { t } = useI18n()
+  const { t, locale } = useI18n()
+  const location = useLocation()
   const [open, setOpen]       = useState(false)
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput]     = useState('')
@@ -72,9 +74,10 @@ export default function ChatWidget() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'X-Locale': locale,
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({ messages: apiMessages }),
+        body: JSON.stringify({ messages: apiMessages, currentPath: location.pathname }),
       })
 
       if (!res.ok || !res.body) throw new Error(`HTTP ${res.status}`)

@@ -1322,7 +1322,7 @@ export default function FinancesTransactionsPage() {
             className="w-full px-5 py-3 flex items-center gap-2 text-left hover:bg-gray-50 transition-colors"
           >
             <span className="text-sm font-semibold text-gray-700 flex-1">{t.finances.reimbursementGroup}</span>
-            <span className="text-xs text-gray-400">{groups.length > 0 ? `${groups.length} grupo(s)` : 'Como funciona?'}</span>
+            <span className="text-xs text-gray-400">{groups.length > 0 ? t.finances.reimbursementGroupCount.replace('{n}', String(groups.length)) : t.finances.reimbursementHowWorks}</span>
             <svg className={`w-4 h-4 text-gray-400 transition-transform ${showGroupHelp ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7"/></svg>
           </button>
 
@@ -1339,11 +1339,11 @@ export default function FinancesTransactionsPage() {
                   <div className="divide-y divide-gray-50">
                     {manualGroups.length === 0 && autoGroups.length === 0 && (
                       <div className="px-5 py-4 space-y-3 text-sm text-gray-600">
-                        <p>Agrupe transações relacionadas para que <strong>apenas o valor líquido</strong> entre nos cálculos — ideal para adiantamentos, reembolsos de trabalho e cotizações bancárias.</p>
+                        <p dangerouslySetInnerHTML={{ __html: t.finances.reimbursementHelpBody }} />
                         <div className="bg-blue-50 rounded-xl p-3 text-xs text-blue-700 space-y-1">
-                          <p className="font-semibold mb-1">Como criar um grupo</p>
-                          <p>1. Use o botão <strong>Detectar reembolsos</strong> para detecção automática</p>
-                          <p>2. Ou selecione as transações na lista e clique em <strong>↩ Criar grupo de reembolso</strong></p>
+                          <p className="font-semibold mb-1">{t.finances.reimbursementHelpTitle}</p>
+                          <p>1. <span dangerouslySetInnerHTML={{ __html: t.finances.reimbursementHelpStep1 }} /></p>
+                          <p>2. <span dangerouslySetInnerHTML={{ __html: t.finances.reimbursementHelpStep2 }} /></p>
                         </div>
                       </div>
                     )}

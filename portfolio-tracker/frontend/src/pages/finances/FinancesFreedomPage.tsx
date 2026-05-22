@@ -39,8 +39,8 @@ interface ChartPoint {
   actual: number | null
 }
 
-function fmt(n: number, currency: string, compact = false) {
-  return new Intl.NumberFormat('pt-BR', {
+function fmt(n: number, currency: string, compact = false, locale = 'pt-BR') {
+  return new Intl.NumberFormat(locale, {
     style: 'currency', currency,
     notation: compact ? 'compact' : 'standard',
     minimumFractionDigits: 0, maximumFractionDigits: compact ? 1 : 0,
@@ -64,9 +64,9 @@ function currentMonth(): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
 }
 
-function fmtMonth(m: string) {
+function fmtMonth(m: string, locale = 'pt-BR') {
   const [y, mo] = m.split('-')
-  return new Date(Number(y), Number(mo) - 1).toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' })
+  return new Date(Number(y), Number(mo) - 1).toLocaleDateString(locale, { month: 'short', year: '2-digit' })
 }
 
 function ageAtDate(birthdate: string, targetIso: string): number {
@@ -130,9 +130,14 @@ interface PlanFormProps {
 }
 
 function PlanForm({ initial, portfolio, ipcaAnnual, birthdate, onSave, onDelete, onCancel, saving }: PlanFormProps) {
-  const { t } = useI18n()
+  const { t, locale } = useI18n()
+  const intlLocale = ({ pt: 'pt-BR', en: 'en-US', fr: 'fr-FR' } as Record<string, string>)[locale] ?? 'pt-BR'
   const isNew = !initial.id
   const rates = deriveRates(portfolio)
+
+  const currentAge = birthdate
+    ? Math.floor((Date.now() - new Date(birthdate + 'T00:00:00').getTime()) / (365.25 * 24 * 60 * 60 * 1000))
+    : null
 
   // step: 0=goal(new only), 1=info, 2=capital, 3=target, 4=strategy
   const [step, setStep]           = useState(isNew ? 0 : 1)
@@ -160,6 +165,14 @@ function PlanForm({ initial, portfolio, ipcaAnnual, birthdate, onSave, onDelete,
       : '2'
   )
   const [showAdvanced, setShowAdvanced] = useState(false)
+  // Strategy: 'fixContrib' = user sets contribution, horizon is calculated; 'fixHorizon' = user sets horizon, contrib is calculated
+  const [stratMode, setStratMode] = useState<'fixContrib' | 'fixHorizon'>('fixHorizon')
+  // Age mode: show target age instead of years for horizon
+  const [ageMode, setAgeMode]     = useState<boolean>(!!birthdate)
+  const [targetAge, setTargetAge] = useState<string>(() => {
+    if (!birthdate || currentAge == null) return ''
+    return String(currentAge + (initial.horizon_years ?? 20))
+  })
 
   function handleCurrencyChange(newCur: string) {
     setCapital(prev => convertAmt(prev, currency, newCur, rates))
@@ -171,31 +184,18 @@ function PlanForm({ initial, portfolio, ipcaAnnual, birthdate, onSave, onDelete,
 
   const portfolioSuggestion = portfolioInCurrency(portfolio, currency, rates)
 
-  const horizonMonths = parseInt(horizon) * 12
-  const targetDateISO = (() => {
-    try {
-      const d = new Date(startDate + 'T12:00:00')
-      d.setMonth(d.getMonth() + horizonMonths)
-      return d.toISOString().slice(0, 10)
-    } catch { return null }
-  })()
-  const targetDate = targetDateISO
-    ? new Date(targetDateISO + 'T12:00:00').toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
-    : ''
-
-  const annualRatePct = (() => {
-    const r = parseFloat(rate)
-    if (isNaN(r) || r <= 0) return null
-    return ((Math.pow(1 + r / 100, 12) - 1) * 100).toFixed(1)
-  })()
+  // Effective horizon in years from user input (age or years)
+  const horizonInputYears = ageMode && birthdate && targetAge && currentAge != null
+    ? Math.max(0, parseInt(targetAge) - currentAge)
+    : parseInt(horizon) || 0
 
   const computedTarget = (() => {
     if (goalMode !== 'income') return null
     const income = parseFloat(desiredIncome)
     const inf    = parseFloat(inflation) / 100
-    const years  = parseInt(horizon)
+    const years  = horizonInputYears
     const ir     = parseFloat(incomeRate) / 100
-    if (!income || !ir || isNaN(years)) return null
+    if (!income || !ir || !years) return null
     const futureIncome = income * Math.pow(1 + inf, years)
     return Math.round(futureIncome / ir)
   })()
@@ -204,17 +204,81 @@ function PlanForm({ initial, portfolio, ipcaAnnual, birthdate, onSave, onDelete,
     ? String(computedTarget)
     : target
 
+  // When stratMode === 'fixContrib': contrib is fixed, horizon is calculated
+  const calculatedHorizonMonths = (() => {
+    if (stratMode !== 'fixContrib') return null
+    const T = parseFloat(effectiveTarget)
+    const C = parseFloat(capital)
+    const r = parseFloat(rate) / 100
+    const A = parseFloat(contrib)
+    if (isNaN(T) || !T || isNaN(C) || isNaN(r) || r <= 0 || isNaN(A)) return null
+    const maxN = 600
+    let lo = 1, hi = maxN
+    for (let iter = 0; iter < 30; iter++) {
+      const mid = Math.floor((lo + hi) / 2)
+      const pow = Math.pow(1 + r, mid)
+      const val = C * pow + A * (pow - 1) / r
+      if (val >= T) hi = mid
+      else lo = mid + 1
+    }
+    const pow = Math.pow(1 + r, lo)
+    const val = C * pow + A * (pow - 1) / r
+    return val >= T ? lo : null
+  })()
+  const calculatedHorizonYears = calculatedHorizonMonths != null ? calculatedHorizonMonths / 12 : null
+
+  // When stratMode === 'fixHorizon': horizon is fixed, contrib is calculated
+  const calculatedContrib = (() => {
+    if (stratMode !== 'fixHorizon') return null
+    const T = parseFloat(effectiveTarget)
+    const C = parseFloat(capital)
+    const r = parseFloat(rate) / 100
+    const n = horizonInputYears * 12
+    if (isNaN(T) || !T || isNaN(C) || isNaN(r) || r <= 0 || !n) return null
+    const pow = Math.pow(1 + r, n)
+    if (pow <= 1) return null
+    return Math.max(0, Math.round((T - C * pow) * r / (pow - 1)))
+  })()
+
+  const effectiveHorizonYears = stratMode === 'fixContrib' && calculatedHorizonYears != null
+    ? Math.round(calculatedHorizonYears)
+    : horizonInputYears
+
+  const horizonMonths = effectiveHorizonYears * 12
+  const targetDateISO = (() => {
+    try {
+      const d = new Date(startDate + 'T12:00:00')
+      d.setMonth(d.getMonth() + horizonMonths)
+      return d.toISOString().slice(0, 10)
+    } catch { return null }
+  })()
+  const targetDate = targetDateISO
+    ? new Date(targetDateISO + 'T12:00:00').toLocaleDateString(intlLocale, { month: 'long', year: 'numeric' })
+    : ''
+
+  const annualRatePct = (() => {
+    const r = parseFloat(rate)
+    if (isNaN(r) || r <= 0) return null
+    return ((Math.pow(1 + r / 100, 12) - 1) * 100).toFixed(1)
+  })()
+
   async function handleSave() {
+    const savedContrib  = stratMode === 'fixHorizon' && calculatedContrib != null
+      ? calculatedContrib
+      : parseFloat(contrib)
+    const savedHorizon  = stratMode === 'fixContrib' && calculatedHorizonYears != null
+      ? Math.round(calculatedHorizonYears)
+      : effectiveHorizonYears
     await onSave({
       name,
       start_date:           startDate || null,
       initial_capital:      parseFloat(capital),
-      monthly_contribution: parseFloat(contrib),
+      monthly_contribution: isNaN(savedContrib) ? 0 : savedContrib,
       monthly_return_rate:  parseFloat(rate) / 100,
       monthly_income_rate:  parseFloat(incomeRate) / 100,
       target_amount:        parseFloat(effectiveTarget),
       currency,
-      horizon_years:        parseInt(horizon),
+      horizon_years:        savedHorizon || parseInt(horizon) || 20,
       notes: notes || null,
     })
   }
@@ -238,7 +302,7 @@ function PlanForm({ initial, portfolio, ipcaAnnual, birthdate, onSave, onDelete,
   ].filter(s => s.key >= firstStep)
 
   const fmtCur = (n: number) =>
-    new Intl.NumberFormat('pt-BR', { style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n)
+    new Intl.NumberFormat(intlLocale, { style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n)
 
   return (
     <div className="space-y-6">
@@ -270,7 +334,7 @@ function PlanForm({ initial, portfolio, ipcaAnnual, birthdate, onSave, onDelete,
       {/* ─── Step 0: Goal type (new plans only) ─── */}
       {step === 0 && (
         <div className="space-y-4">
-          <p className="text-sm text-gray-500">{t.finances.freedomStepGoal} — escolha o tipo de meta para este plano:</p>
+          <p className="text-sm text-gray-500">{t.finances.freedomStepGoal} — {t.finances.freedomStepGoalDesc}</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {([
               { mode: 'capital' as const, emoji: '🏦', title: t.finances.freedomGoalCardCapitalTitle, desc: t.finances.freedomGoalCardCapitalDesc },
@@ -348,7 +412,7 @@ function PlanForm({ initial, portfolio, ipcaAnnual, birthdate, onSave, onDelete,
       {/* ─── Step 2: Initial capital ─── */}
       {step === 2 && (
         <div className="space-y-4">
-          <p className="text-sm text-gray-600">{t.finances.freedomStepStarting} — qual é o valor que você já possui hoje?</p>
+          <p className="text-sm text-gray-600">{t.finances.freedomStepStarting} — {t.finances.freedomStepStartingDesc}</p>
           <div>
             <label className={labelCls}>{t.finances.freedomCapital} ({currency})</label>
             {isNew && Number(portfolioSuggestion) > 0 && (
@@ -362,7 +426,7 @@ function PlanForm({ initial, portfolio, ipcaAnnual, birthdate, onSave, onDelete,
                   onClick={() => setCapital(portfolioSuggestion)}
                   className="text-xs text-[#001A70] font-semibold hover:opacity-70 transition-opacity ml-3 whitespace-nowrap"
                 >
-                  Usar este valor
+                  {t.finances.freedomUseThisValue}
                 </button>
               </div>
             )}
@@ -374,7 +438,7 @@ function PlanForm({ initial, portfolio, ipcaAnnual, birthdate, onSave, onDelete,
               className={fieldCls}
               placeholder="50000"
             />
-            <p className="text-[11px] text-gray-400 mt-1">Inclua investimentos, poupança e reservas que já fazem parte do seu plano.</p>
+            <p className="text-[11px] text-gray-400 mt-1">{t.finances.freedomCapitalInclude}</p>
           </div>
         </div>
       )}
@@ -383,9 +447,7 @@ function PlanForm({ initial, portfolio, ipcaAnnual, birthdate, onSave, onDelete,
       {step === 3 && (
         <div className="space-y-4">
           <p className="text-sm text-gray-600">
-            {goalMode === 'capital'
-              ? 'Qual patrimônio total você quer atingir?'
-              : 'Qual renda mensal você quer ter ao atingir a liberdade?'}
+            {goalMode === 'capital' ? t.finances.freedomTargetCapitalDesc : t.finances.freedomTargetIncomeDesc}
           </p>
 
           {goalMode === 'capital' ? (
@@ -405,7 +467,7 @@ function PlanForm({ initial, portfolio, ipcaAnnual, birthdate, onSave, onDelete,
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className={labelCls}>{t.finances.freedomDesiredIncome} hoje ({currency})</label>
+                  <label className={labelCls}>{t.finances.freedomDesiredIncome} ({currency})</label>
                   <input
                     autoFocus
                     type="number"
@@ -416,7 +478,7 @@ function PlanForm({ initial, portfolio, ipcaAnnual, birthdate, onSave, onDelete,
                   />
                 </div>
                 <div>
-                  <label className={labelCls}>{t.finances.freedomInflation} % / ano</label>
+                  <label className={labelCls}>{t.finances.freedomInflation}</label>
                   <input
                     type="number"
                     step="0.1"
@@ -427,7 +489,7 @@ function PlanForm({ initial, portfolio, ipcaAnnual, birthdate, onSave, onDelete,
                   />
                   {ipcaAnnual != null && (
                     <p className="text-[11px] text-gray-400 mt-1">
-                      IPCA 12m:&nbsp;
+                      {t.finances.freedomIpcaLabel}&nbsp;
                       <button type="button" onClick={() => setInflation(String(ipcaAnnual))} className="text-[#001A70] underline underline-offset-2 hover:opacity-70 transition-opacity">
                         {ipcaAnnual}%
                       </button>
@@ -441,9 +503,9 @@ function PlanForm({ initial, portfolio, ipcaAnnual, birthdate, onSave, onDelete,
                   <p className="text-xs text-gray-500">{t.finances.freedomComputedGoal}</p>
                   <p className="text-xl font-bold text-[#001A70]">{fmtCur(computedTarget)}</p>
                   <p className="text-[10px] text-gray-500">
-                    Renda nominal em {parseInt(horizon) || 20} anos:&nbsp;
-                    <strong>{fmtCur(Math.round(parseFloat(desiredIncome || '0') * Math.pow(1 + parseFloat(inflation || '2') / 100, parseInt(horizon || '20'))))}/mês</strong>
-                    &nbsp;— hoje: <strong>{fmtCur(parseFloat(desiredIncome || '0'))}/mês</strong>
+                    {t.finances.freedomNominalInYear} {horizonInputYears || 20} {t.finances.freedomAgeAtTarget}:&nbsp;
+                    <strong>{fmtCur(Math.round(parseFloat(desiredIncome || '0') * Math.pow(1 + parseFloat(inflation || '2') / 100, horizonInputYears || 20)))}{t.finances.freedomPerMonth}</strong>
+                    &nbsp;— {t.finances.freedomRealToday}: <strong>{fmtCur(parseFloat(desiredIncome || '0'))}{t.finances.freedomPerMonth}</strong>
                   </p>
                 </div>
               )}
@@ -455,22 +517,52 @@ function PlanForm({ initial, portfolio, ipcaAnnual, birthdate, onSave, onDelete,
       {/* ─── Step 4: Strategy ─── */}
       {step === 4 && (
         <div className="space-y-4">
-          <p className="text-sm text-gray-600">Como você vai chegar lá?</p>
+          <p className="text-sm text-gray-600">{t.finances.freedomHowToGetThere}</p>
+
+          {/* Strategy mode toggle */}
+          <div className="flex gap-2">
+            {([
+              { mode: 'fixHorizon' as const, label: t.finances.freedomFixHorizonMode },
+              { mode: 'fixContrib' as const, label: t.finances.freedomFixContribMode },
+            ]).map(({ mode, label }) => (
+              <button
+                key={mode}
+                type="button"
+                onClick={() => setStratMode(mode)}
+                className={`flex-1 py-2 text-xs font-semibold rounded-lg border transition-colors ${
+                  stratMode === mode
+                    ? 'bg-[#001A70] text-white border-[#001A70]'
+                    : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
 
           <div className="grid grid-cols-2 gap-4">
+            {/* Contribution field */}
             <div>
-              <label className={labelCls}>{t.finances.freedomContrib} / mês ({currency})</label>
-              <input
-                autoFocus
-                type="number"
-                value={contrib}
-                onChange={e => setContrib(e.target.value)}
-                className={fieldCls}
-                placeholder="1000"
-              />
+              <label className={labelCls}>{t.finances.freedomContrib} {t.finances.freedomPerMonth} ({currency})</label>
+              {stratMode === 'fixContrib' ? (
+                <input
+                  autoFocus
+                  type="number"
+                  value={contrib}
+                  onChange={e => setContrib(e.target.value)}
+                  className={fieldCls}
+                  placeholder="1000"
+                />
+              ) : (
+                <div className={`${fieldCls} bg-gray-50 text-gray-700 flex items-center gap-1`}>
+                  <span>{calculatedContrib != null ? fmtCur(calculatedContrib) : '—'}</span>
+                  <span className="text-[10px] text-gray-400 ml-1">{t.finances.freedomCalcLabel}</span>
+                </div>
+              )}
             </div>
+            {/* Rate field — always editable */}
             <div>
-              <label className={labelCls}>{t.finances.freedomRate} % / mês</label>
+              <label className={labelCls}>{t.finances.freedomRate} % {t.finances.freedomPerMonth}</label>
               <input
                 type="number"
                 step="0.01"
@@ -487,22 +579,80 @@ function PlanForm({ initial, portfolio, ipcaAnnual, birthdate, onSave, onDelete,
             </div>
           </div>
 
+          {/* Horizon field with age/years toggle */}
           <div>
-            <label className={labelCls}>{t.finances.freedomHorizon} (anos)</label>
-            <input
-              type="number"
-              value={horizon}
-              onChange={e => setHorizon(e.target.value)}
-              className={`${fieldCls} max-w-[140px]`}
-              placeholder="20"
-            />
-            {targetDate && (
-              <p className="text-[11px] text-gray-400 mt-1">
-                Meta em <strong>{targetDate}</strong>
-                {birthdate && targetDateISO && (
-                  <span className="ml-1.5">· {ageAtDate(birthdate, targetDateISO)} {t.finances.freedomAgeAtTarget}</span>
+            <div className="flex items-center gap-2 mb-1">
+              <label className={`${labelCls} mb-0`}>{t.finances.freedomHorizon} ({t.finances.freedomAgeAtTarget})</label>
+              {birthdate && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!ageMode && currentAge != null) setTargetAge(String(currentAge + (parseInt(horizon) || 20)))
+                    setAgeMode(v => !v)
+                  }}
+                  className="text-[10px] text-[#001A70] hover:underline"
+                >
+                  {ageMode ? t.finances.freedomSwitchToYears : t.finances.freedomSwitchToAge}
+                </button>
+              )}
+            </div>
+
+            {ageMode && birthdate ? (
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <p className="text-[10px] text-gray-400 mb-1">{t.finances.freedomTargetAge}</p>
+                  {stratMode === 'fixHorizon' ? (
+                    <input
+                      autoFocus
+                      type="number"
+                      value={targetAge}
+                      onChange={e => setTargetAge(e.target.value)}
+                      className={fieldCls}
+                      placeholder={String((currentAge ?? 30) + 20)}
+                    />
+                  ) : (
+                    <div className={`${fieldCls} bg-gray-50 text-gray-700 flex items-center gap-1`}>
+                      <span>{calculatedHorizonYears != null && currentAge != null ? Math.round(currentAge + calculatedHorizonYears) : '—'}</span>
+                      <span className="text-[10px] text-gray-400 ml-1">{t.finances.freedomCalcLabel}</span>
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <p className="text-[10px] text-gray-400 mb-1">{t.finances.freedomAgeAtTarget}</p>
+                  <div className={`${fieldCls} bg-gray-50 text-gray-500`}>
+                    {stratMode === 'fixHorizon' && targetAge && currentAge != null
+                      ? `${Math.max(0, parseInt(targetAge) - currentAge)} ${t.finances.freedomAgeAtTarget}`
+                      : calculatedHorizonYears != null
+                      ? `${Math.round(calculatedHorizonYears)} ${t.finances.freedomAgeAtTarget}`
+                      : '—'}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <>
+                {stratMode === 'fixHorizon' ? (
+                  <input
+                    type="number"
+                    value={horizon}
+                    onChange={e => setHorizon(e.target.value)}
+                    className={`${fieldCls} max-w-[140px]`}
+                    placeholder="20"
+                  />
+                ) : (
+                  <div className={`${fieldCls} max-w-[200px] bg-gray-50 text-gray-700 flex items-center gap-1`}>
+                    <span>{calculatedHorizonYears != null ? `${Math.round(calculatedHorizonYears * 10) / 10} ${t.finances.freedomAgeAtTarget}` : '—'}</span>
+                    <span className="text-[10px] text-gray-400 ml-1">{t.finances.freedomCalcLabel}</span>
+                  </div>
                 )}
-              </p>
+                {targetDate && (
+                  <p className="text-[11px] text-gray-400 mt-1">
+                    {t.finances.freedomMetaEm} <strong>{targetDate}</strong>
+                    {birthdate && targetDateISO && (
+                      <span className="ml-1.5">· {ageAtDate(birthdate, targetDateISO)} {t.finances.freedomYearsOld}</span>
+                    )}
+                  </p>
+                )}
+              </>
             )}
           </div>
 
@@ -519,7 +669,7 @@ function PlanForm({ initial, portfolio, ipcaAnnual, birthdate, onSave, onDelete,
           {showAdvanced && (
             <div className="grid grid-cols-2 gap-4 pl-3 border-l-2 border-gray-100">
               <div>
-                <label className={labelCls}>{t.finances.freedomIncomeRate} % / mês</label>
+                <label className={labelCls}>{t.finances.freedomIncomeRate} % {t.finances.freedomPerMonth}</label>
                 <input
                   type="number"
                   step="0.01"
@@ -571,7 +721,7 @@ function PlanForm({ initial, portfolio, ipcaAnnual, birthdate, onSave, onDelete,
               onClick={onDelete}
               className="text-sm text-red-400 hover:text-red-600 transition-colors"
             >
-              {t.common.delete ?? 'Excluir'}
+              {t.common.delete}
             </button>
           )}
         </div>
@@ -598,7 +748,8 @@ function ChartTooltip({ active, payload, label, currency }: {
 }
 
 export default function FinancesFreedomPage() {
-  const { t } = useI18n()
+  const { t, locale } = useI18n()
+  const intlLocale = ({ pt: 'pt-BR', en: 'en-US', fr: 'fr-FR' } as Record<string, string>)[locale] ?? 'pt-BR'
 
   const [plans,        setPlans]        = useState<FreedomPlan[]>([])
   const [perf,         setPerf]         = useState<MonthlyPerf[]>([])
@@ -629,22 +780,26 @@ export default function FinancesFreedomPage() {
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const [plansData, portfolioData, indicesData, profileData] = await Promise.all([
+      const [plansData, portfolioData, profileData] = await Promise.all([
         apiFetch<FreedomPlan[]>('/finances/freedom-plans'),
         apiFetch<PortfolioValue>('/portfolio/value'),
-        apiFetch<{ code: string; m12_pct: number | null }[]>('/indices'),
         apiFetch<{ birthdate?: string }>('/profile'),
       ])
       setPlans(plansData)
       setPortfolio(portfolioData)
-      const ipca = indicesData.find(i => i.code === 'IPCA')
-      if (ipca?.m12_pct != null) setIpcaM12(Math.round(ipca.m12_pct * 10) / 10)
       if (profileData.birthdate) setUserBirthdate(profileData.birthdate)
     } catch {
       // ignore
     } finally {
       setLoading(false)
     }
+    // Non-blocking: fetch indices separately (slow external APIs)
+    apiFetch<{ code: string; m12_pct: number | null }[]>('/indices')
+      .then(indicesData => {
+        const ipca = indicesData.find(i => i.code === 'IPCA')
+        if (ipca?.m12_pct != null) setIpcaM12(Math.round(ipca.m12_pct * 10) / 10)
+      })
+      .catch(() => {})
   }, [])
 
   useEffect(() => {
@@ -673,7 +828,7 @@ export default function FinancesFreedomPage() {
   }
 
   async function deletePlan(id: number) {
-    if (!confirm('Excluir este plano?')) return
+    if (!confirm(t.finances.freedomDeleteConfirm)) return
     await apiFetch(`/finances/freedom-plans/${id}`, { method: 'DELETE' })
     await load()
   }
@@ -920,7 +1075,7 @@ export default function FinancesFreedomPage() {
               <p className="text-base font-bold text-[#001A70]">{fmt(activePlan!.target_amount, currency, true)}</p>
             </div>
             <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
-              <p className="text-xs text-gray-500 mb-1">{t.finances.freedomPassive} / mês</p>
+              <p className="text-xs text-gray-500 mb-1">{t.finances.freedomPassive} {t.finances.freedomPerMonth}</p>
               <div className="flex items-baseline gap-2 flex-wrap">
                 <p className="text-base font-bold text-emerald-600">{fmt(passiveIncome, currency, true)}</p>
                 {passiveIncomeReal != null && passiveIncomeReal !== passiveIncome && (
@@ -933,7 +1088,7 @@ export default function FinancesFreedomPage() {
               <p className="text-xs text-gray-500 mb-1">{t.finances.freedomTarget}</p>
               {reachMonth ? (
                 <p className="text-base font-bold text-gray-900">
-                  {new Date(reachMonth + '-01').toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })}
+                  {new Date(reachMonth + '-01').toLocaleDateString(intlLocale, { month: 'short', year: 'numeric' })}
                 </p>
               ) : (
                 <p className="text-base font-bold text-gray-400">—</p>
@@ -956,8 +1111,8 @@ export default function FinancesFreedomPage() {
               <span>{planStatusText.ahead ? '✅' : '⚠️'}</span>
               <span>
                 {planStatusText.ahead ? t.finances.freedomAhead : t.finances.freedomBehind}:&nbsp;
-                <strong>{fmt(Math.abs(planStatusText.diff), currency, true)}</strong>
-                &nbsp;({planStatusText.ahead ? '+' : ''}{planStatusText.pct}% vs plano)
+                <strong>{fmt(Math.abs(planStatusText.diff), currency, true, intlLocale)}</strong>
+                &nbsp;({planStatusText.ahead ? '+' : ''}{planStatusText.pct}% {t.finances.freedomVsPlanned})
               </span>
             </div>
           )}
@@ -975,7 +1130,7 @@ export default function FinancesFreedomPage() {
                 <LineChart data={chartData} margin={{ top: 5, right: 10, bottom: 5, left: 0 }}>
                   <XAxis
                     dataKey="month"
-                    tickFormatter={fmtMonth}
+                    tickFormatter={m => fmtMonth(m, intlLocale)}
                     tick={{ fontSize: 10 }}
                     interval={Math.floor(chartData.length / 8)}
                   />
@@ -1025,10 +1180,10 @@ export default function FinancesFreedomPage() {
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
               {[
                 { label: t.finances.freedomCapital, value: fmt(activePlan!.initial_capital, currency) },
-                { label: t.finances.freedomContrib + ' / mês', value: fmt(activePlan!.monthly_contribution, currency) },
-                { label: t.finances.freedomRate + ' / mês', value: (activePlan!.monthly_return_rate * 100).toFixed(2) + '%' },
-                { label: t.finances.freedomIncomeRate + ' / mês', value: (activePlan!.monthly_income_rate * 100).toFixed(2) + '%' },
-                { label: t.finances.freedomHorizon, value: activePlan!.horizon_years + ' anos' },
+                { label: `${t.finances.freedomContrib} ${t.finances.freedomPerMonth}`, value: fmt(activePlan!.monthly_contribution, currency, false, intlLocale) },
+                { label: `${t.finances.freedomRate} ${t.finances.freedomPerMonth}`, value: (activePlan!.monthly_return_rate * 100).toFixed(2) + '%' },
+                { label: `${t.finances.freedomIncomeRate} ${t.finances.freedomPerMonth}`, value: (activePlan!.monthly_income_rate * 100).toFixed(2) + '%' },
+                { label: t.finances.freedomHorizon, value: `${activePlan!.horizon_years} ${t.finances.freedomAgeAtTarget}` },
                 { label: t.finances.freedomCurrency, value: activePlan!.currency },
               ].map(({ label, value }) => (
                 <div key={label}>

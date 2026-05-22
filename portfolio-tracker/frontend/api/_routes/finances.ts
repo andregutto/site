@@ -537,10 +537,25 @@ router.post('/accounts', requireAuth, async (req, res: Response) => {
   }).select('id').single()
   if (error || !account) { res.status(500).json({ error: error?.message }); return }
   if (create_asset) {
+    const { userLocale } = req as AuthRequest
+    const caixaNames: Record<string, string> = { pt: 'Caixa', en: 'Cash', fr: 'Liquidités' }
+    const caixaName = caixaNames[userLocale] ?? caixaNames['pt']
+    let caixaClassId: string | null = null
+    const { data: existingClass } = await supabaseAdmin
+      .from('asset_classes').select('id').eq('user_id', userId).eq('name_key', 'classCaixa').maybeSingle()
+    if (existingClass) {
+      caixaClassId = existingClass.id
+    } else {
+      const { data: newClass } = await supabaseAdmin.from('asset_classes').insert({
+        user_id: userId, name: caixaName, color: '#6B7280', name_key: 'classCaixa',
+      }).select('id').single()
+      if (newClass) caixaClassId = newClass.id
+    }
     const code = name.trim().toUpperCase().replace(/\s+/g, '-').replace(/[^A-Z0-9\-]/g, '').slice(0, 20) || `CASH-${Date.now().toString(36).toUpperCase().slice(-4)}`
     const { data: asset } = await supabaseAdmin.from('assets').insert({
       user_id: userId, code, name: name.trim(), asset_type: 'manual',
       currency: currency ?? 'EUR', exchange: institution_name?.trim() ?? null, active: true,
+      ...(caixaClassId ? { asset_class_id: caixaClassId } : {}),
     }).select('id').single()
     if (asset) {
       await supabaseAdmin.from('finance_accounts').update({ linked_asset_id: asset.id }).eq('id', account.id)

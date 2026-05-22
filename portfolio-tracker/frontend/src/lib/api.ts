@@ -8,8 +8,10 @@ async function getToken(): Promise<string | null> {
 
 export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const token = await getToken()
+  const locale = localStorage.getItem('portfolio-locale') ?? 'pt'
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
+    'X-Locale': locale,
     ...(init?.headers as Record<string, string> ?? {}),
   }
   if (token) headers['Authorization'] = `Bearer ${token}`

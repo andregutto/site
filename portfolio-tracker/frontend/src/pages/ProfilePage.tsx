@@ -260,7 +260,7 @@ export default function ProfilePage() {
                 <span className="text-3xl">{level.emoji}</span>
                 <div>
                   <p className="text-[10px] text-[#001A70] font-bold uppercase tracking-widest">{t.achievements.currentLevel}</p>
-                  <p className="text-gray-900 font-bold text-base leading-tight">{level.name}</p>
+                  <p className="text-gray-900 font-bold text-base leading-tight">{t.levels[level.key as keyof typeof t.levels]}</p>
                 </div>
               </div>
               <div className="text-right">
@@ -280,7 +280,7 @@ export default function ProfilePage() {
               </div>
               {nextLevel && (
                 <p className="text-gray-400 text-xs mt-1.5">
-                  {t.achievements.nextLevel}: {nextLevel.emoji} {nextLevel.name} · {nextLevel.minXp} {t.achievements.xp}
+                  {t.achievements.nextLevel}: {nextLevel.emoji} {t.levels[nextLevel.key as keyof typeof t.levels]} · {nextLevel.minXp} {t.achievements.xp}
                 </p>
               )}
             </div>
@@ -335,7 +335,9 @@ export default function ProfilePage() {
                 className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#001A70]/20"
               >
                 {COUNTRY_OPTIONS.map(o => (
-                  <option key={o.value} value={o.value}>{o.value === '' ? t.profile.selectCountry : o.label}</option>
+                  <option key={o.value} value={o.value}>
+                    {o.value === '' ? t.countries.select : (t.countries[o.value as keyof typeof t.countries] ?? o.label)}
+                  </option>
                 ))}
               </select>
             </div>

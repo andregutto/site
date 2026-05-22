@@ -1,5 +1,6 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useState, useRef, useEffect } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { useAuth } from '../contexts/AuthContext'
 
 const BLUE    = '#1B2F4E'
 const BG      = '#FAFAF8'
@@ -99,8 +100,42 @@ const FAQS = [
 ]
 
 export default function LandingPage() {
-  const [openFaq, setOpenFaq] = useState<number | null>(null)
-  const [menuOpen, setMenuOpen] = useState(false)
+  const { signIn } = useAuth()
+  const navigate    = useNavigate()
+  const [openFaq, setOpenFaq]       = useState<number | null>(null)
+  const [menuOpen, setMenuOpen]     = useState(false)
+  const [loginOpen, setLoginOpen]   = useState(false)
+  const [loginEmail, setLoginEmail] = useState('')
+  const [loginPass,  setLoginPass]  = useState('')
+  const [loginErr,   setLoginErr]   = useState('')
+  const [loginLoading, setLoginLoading] = useState(false)
+  const [mobileLoginOpen, setMobileLoginOpen] = useState(false)
+  const loginRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!loginOpen) return
+    function onDown(e: MouseEvent) {
+      if (loginRef.current && !loginRef.current.contains(e.target as Node)) {
+        setLoginOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', onDown)
+    return () => document.removeEventListener('mousedown', onDown)
+  }, [loginOpen])
+
+  async function handleLogin(e: React.FormEvent) {
+    e.preventDefault()
+    setLoginErr('')
+    setLoginLoading(true)
+    try {
+      await signIn(loginEmail, loginPass)
+      navigate('/dashboard')
+    } catch (err) {
+      setLoginErr(err instanceof Error ? err.message : 'Credenciais inválidas')
+    } finally {
+      setLoginLoading(false)
+    }
+  }
 
   return (
     <div style={{ background: BG, color: DARK, fontFamily: F_BODY, minHeight: '100vh', overflowX: 'hidden' }}>
@@ -131,9 +166,66 @@ export default function LandingPage() {
           </nav>
 
           <div className="hidden md:flex" style={{ alignItems: 'center', gap: 12 }}>
-            <Link to="/login" style={{ fontFamily: F_MONO, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', color: BLUE, textDecoration: 'none' }}>
-              Entrar
-            </Link>
+
+            {/* Entrar → login popover */}
+            <div ref={loginRef} style={{ position: 'relative' }}>
+              <button
+                onClick={() => { setLoginOpen(o => !o); setLoginErr('') }}
+                style={{ fontFamily: F_MONO, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', color: BLUE, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+              >
+                Entrar
+              </button>
+
+              {loginOpen && (
+                <div style={{
+                  position: 'absolute', top: 'calc(100% + 12px)', right: 0,
+                  background: '#fff', border: `1px solid ${BORDER}`,
+                  borderRadius: 6, boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+                  padding: '24px 22px', width: 280, zIndex: 10,
+                }}>
+                  <p style={{ fontFamily: F_DISPLAY, fontSize: 16, fontWeight: 400, color: DARK, marginBottom: 18 }}>
+                    Entrar na sua conta
+                  </p>
+                  <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    <input
+                      type="email" required autoFocus
+                      placeholder="E-mail"
+                      value={loginEmail}
+                      onChange={e => setLoginEmail(e.target.value)}
+                      style={{ fontFamily: F_BODY, fontSize: 13, padding: '9px 12px', border: `1px solid ${BORDER}`, borderRadius: 4, outline: 'none', color: DARK, background: BG }}
+                    />
+                    <input
+                      type="password" required
+                      placeholder="Senha"
+                      value={loginPass}
+                      onChange={e => setLoginPass(e.target.value)}
+                      style={{ fontFamily: F_BODY, fontSize: 13, padding: '9px 12px', border: `1px solid ${BORDER}`, borderRadius: 4, outline: 'none', color: DARK, background: BG }}
+                    />
+                    {loginErr && (
+                      <p style={{ fontFamily: F_BODY, fontSize: 12, color: '#dc2626', margin: 0 }}>{loginErr}</p>
+                    )}
+                    <button
+                      type="submit"
+                      disabled={loginLoading}
+                      style={{ fontFamily: F_MONO, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', background: BLUE, color: '#fff', border: 'none', borderRadius: 4, padding: '10px 0', cursor: 'pointer', opacity: loginLoading ? 0.6 : 1, marginTop: 4 }}
+                    >
+                      {loginLoading ? 'Entrando…' : 'Entrar'}
+                    </button>
+                  </form>
+                  <div style={{ marginTop: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Link to="/login?mode=forgot" onClick={() => setLoginOpen(false)}
+                      style={{ fontFamily: F_MONO, fontSize: 10, letterSpacing: '0.08em', color: GRAY, textDecoration: 'none' }}>
+                      Esqueci a senha
+                    </Link>
+                    <Link to="/login?mode=register" onClick={() => setLoginOpen(false)}
+                      style={{ fontFamily: F_MONO, fontSize: 10, letterSpacing: '0.08em', color: BLUE, textDecoration: 'none' }}>
+                      Criar conta
+                    </Link>
+                  </div>
+                </div>
+              )}
+            </div>
+
             <Link to="/login?mode=register" style={{
               fontFamily: F_MONO, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase',
               background: BLUE, color: '#fff', textDecoration: 'none',
@@ -168,16 +260,48 @@ export default function LandingPage() {
                 {label}
               </a>
             ))}
-            <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
-              <Link to="/login" onClick={() => setMenuOpen(false)}
-                style={{ flex: 1, textAlign: 'center', padding: '12px 0', fontFamily: F_MONO, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', color: BLUE, textDecoration: 'none', border: `1px solid ${BORDER}`, borderRadius: 3 }}>
-                Entrar
-              </Link>
-              <Link to="/login?mode=register" onClick={() => setMenuOpen(false)}
-                style={{ flex: 1, textAlign: 'center', padding: '12px 0', fontFamily: F_MONO, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', background: BLUE, color: '#fff', textDecoration: 'none', borderRadius: 3 }}>
-                Começar grátis
-              </Link>
-            </div>
+            {!mobileLoginOpen ? (
+              <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
+                <button
+                  onClick={() => { setMobileLoginOpen(true); setLoginErr('') }}
+                  style={{ flex: 1, textAlign: 'center', padding: '12px 0', fontFamily: F_MONO, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', color: BLUE, background: 'none', border: `1px solid ${BORDER}`, borderRadius: 3, cursor: 'pointer' }}
+                >
+                  Entrar
+                </button>
+                <Link to="/login?mode=register" onClick={() => setMenuOpen(false)}
+                  style={{ flex: 1, textAlign: 'center', padding: '12px 0', fontFamily: F_MONO, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', background: BLUE, color: '#fff', textDecoration: 'none', borderRadius: 3 }}>
+                  Começar grátis
+                </Link>
+              </div>
+            ) : (
+              <form onSubmit={async e => { await handleLogin(e); if (!loginErr) setMenuOpen(false) }} style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <input
+                  type="email" required autoFocus
+                  placeholder="E-mail"
+                  value={loginEmail}
+                  onChange={e => setLoginEmail(e.target.value)}
+                  style={{ fontFamily: F_BODY, fontSize: 13, padding: '10px 12px', border: `1px solid ${BORDER}`, borderRadius: 4, color: DARK, background: BG }}
+                />
+                <input
+                  type="password" required
+                  placeholder="Senha"
+                  value={loginPass}
+                  onChange={e => setLoginPass(e.target.value)}
+                  style={{ fontFamily: F_BODY, fontSize: 13, padding: '10px 12px', border: `1px solid ${BORDER}`, borderRadius: 4, color: DARK, background: BG }}
+                />
+                {loginErr && <p style={{ fontFamily: F_BODY, fontSize: 12, color: '#dc2626', margin: 0 }}>{loginErr}</p>}
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <button type="button" onClick={() => setMobileLoginOpen(false)}
+                    style={{ flex: 1, padding: '11px 0', fontFamily: F_MONO, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', background: 'none', border: `1px solid ${BORDER}`, borderRadius: 3, cursor: 'pointer', color: GRAY }}>
+                    Voltar
+                  </button>
+                  <button type="submit" disabled={loginLoading}
+                    style={{ flex: 2, padding: '11px 0', fontFamily: F_MONO, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', background: BLUE, color: '#fff', border: 'none', borderRadius: 3, cursor: 'pointer', opacity: loginLoading ? 0.6 : 1 }}>
+                    {loginLoading ? 'Entrando…' : 'Entrar'}
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         )}
       </header>

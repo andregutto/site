@@ -22,8 +22,13 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
       return
     }
     const validLocales = ['pt', 'en', 'fr']
+    const headerLocale = req.headers['x-locale'] as string | undefined
     const meta = user.user_metadata as Record<string, string> | undefined
-    const locale = validLocales.includes(meta?.preferred_locale ?? '') ? meta!.preferred_locale : 'pt'
+    const locale = validLocales.includes(headerLocale ?? '')
+      ? headerLocale!
+      : validLocales.includes(meta?.preferred_locale ?? '')
+      ? meta!.preferred_locale
+      : 'pt'
     ;(req as AuthRequest).userId     = user.id
     ;(req as AuthRequest).jwt        = token
     ;(req as AuthRequest).userLocale = locale
