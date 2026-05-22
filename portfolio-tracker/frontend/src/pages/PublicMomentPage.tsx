@@ -10,8 +10,13 @@ interface PublicMoment {
 }
 interface PublicData {
   moment: PublicMoment
-  summary: { total: number; currency: string; by_category: { name: string | null; icon: string; color: string; total: number }[] }
-  transactions: { date: string; description: string | null; amount: number; currency: string; category: { name: string; icon: string; color: string } | null }[]
+  summary: { total: number; currency: string; by_category: { name: string | null; name_key: string | null; icon: string; color: string; total: number }[] }
+  transactions: { date: string; description: string | null; amount: number; currency: string; category: { name: string; name_key: string | null; icon: string; color: string } | null }[]
+}
+
+function resolveKey(name: string | null | undefined, nameKey: string | null | undefined, keys: Record<string, string>, fallback: string): string {
+  if (nameKey && keys[nameKey]) return keys[nameKey]
+  return name ?? fallback
 }
 
 function fmt(n: number, currency: string, locale: string) {
@@ -30,6 +35,23 @@ export default function PublicMomentPage() {
   const { token } = useParams<{ token: string }>()
   const { t, locale } = useI18n()
   const dateLocale = LOCALE_MAP[locale] ?? 'pt-BR'
+  const nameKeys: Record<string, string> = {
+    categoryTransfer: t.finances.categoryTransfer, categorySalary: t.finances.categorySalary,
+    categoryUncategorized: t.finances.categoryUncategorized, categoryGroceries: t.finances.categoryGroceries,
+    categoryRestaurant: t.finances.categoryRestaurant, categoryTransport: t.finances.categoryTransport,
+    categoryHealth: t.finances.categoryHealth, categoryEntertainment: t.finances.categoryEntertainment,
+    categoryHousing: t.finances.categoryHousing, categoryStreaming: t.finances.categoryStreaming,
+    categorySubscriptions: t.finances.categorySubscriptions, categoryPharmacy: t.finances.categoryPharmacy,
+    categoryClothing: t.finances.categoryClothing, categoryTravel: t.finances.categoryTravel,
+    categoryCoffee: t.finances.categoryCoffee, categoryUtilities: t.finances.categoryUtilities,
+    categoryEducation: t.finances.categoryEducation, categoryPersonalCare: t.finances.categoryPersonalCare,
+    categoryElectronics: t.finances.categoryElectronics, categoryAirbnb: t.finances.categoryAirbnb,
+    categoryOther: t.finances.categoryOther, categoryGifts: t.finances.categoryGifts,
+    categoryShopping: t.finances.categoryShopping, categoryTaxes: t.finances.categoryTaxes,
+    categoryFees: t.finances.categoryFees, categoryBarsRestaurants: t.finances.categoryBarsRestaurants,
+    categoryShowsParties: t.finances.categoryShowsParties, categoryPhone: t.finances.categoryPhone,
+    categoryInvestment: t.finances.categoryInvestment,
+  }
   const [data,    setData]    = useState<PublicData | null>(null)
   const [status,  setStatus]  = useState<'loading' | 'ok' | 'not_found' | 'expired'>('loading')
 
@@ -136,7 +158,7 @@ export default function PublicMomentPage() {
                 return (
                   <div key={cat.name} className="flex items-center gap-2">
                     <span className="text-sm w-5 text-center shrink-0">{cat.icon}</span>
-                    <span className="text-xs text-gray-600 w-28 truncate shrink-0">{cat.name ?? t.finances.noCategory}</span>
+                    <span className="text-xs text-gray-600 w-28 truncate shrink-0">{resolveKey(cat.name, cat.name_key, nameKeys, t.finances.noCategory)}</span>
                     <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
                       <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: cat.color }} />
                     </div>

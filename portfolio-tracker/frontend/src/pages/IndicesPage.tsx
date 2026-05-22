@@ -60,7 +60,7 @@ function MiniSparkBar({ pct }: { pct: number | null }) {
 }
 
 export default function IndicesPage() {
-  const { locale } = useI18n()
+  const { locale, t } = useI18n()
   const navigate = useNavigate()
   const [data, setData] = useState<IndexSnapshot[] | null>(null)
   const [loading, setLoading] = useState(true)
@@ -69,7 +69,7 @@ export default function IndicesPage() {
   useEffect(() => {
     apiFetch<IndexSnapshot[]>('/indices')
       .then(setData)
-      .catch(() => setError('Erro ao carregar índices'))
+      .catch(() => setError('error'))
       .finally(() => setLoading(false))
   }, [])
 
@@ -88,7 +88,7 @@ export default function IndicesPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-24">
-        <div className="text-gray-400 text-sm animate-pulse">Carregando índices...</div>
+        <div className="text-gray-400 text-sm animate-pulse">{t.indices.loading}</div>
       </div>
     )
   }
@@ -96,7 +96,7 @@ export default function IndicesPage() {
   if (error) {
     return (
       <div className="flex items-center justify-center py-24">
-        <div className="text-red-500 text-sm">{error}</div>
+        <div className="text-red-500 text-sm">{t.indices.error}</div>
       </div>
     )
   }
@@ -104,8 +104,8 @@ export default function IndicesPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-xl font-semibold text-gray-900">Índices de mercado</h1>
-        <p className="text-sm text-gray-400 mt-0.5">Desempenho dos principais índices e taxas</p>
+        <h1 className="text-xl font-semibold text-gray-900">{t.indices.title}</h1>
+        <p className="text-sm text-gray-400 mt-0.5">{t.indices.subtitle}</p>
       </div>
 
       {grouped.map(([category, items]) => (
@@ -135,7 +135,7 @@ export default function IndicesPage() {
                         {fmtValue(idx.value, idx.unit)}
                       </div>
                       <div className={`text-xs font-medium ${pctColor(dayPct)}`}>
-                        {fmtPct(dayPct)} mês
+                        {fmtPct(dayPct)} {t.indices.month}
                       </div>
                     </div>
                   </div>
@@ -176,9 +176,7 @@ export default function IndicesPage() {
         </section>
       ))}
 
-      <p className="text-[10px] text-gray-300 pb-2">
-        Fonte: Yahoo Finance · BCB · Atualizado em tempo real com cache de 15 min
-      </p>
+      <p className="text-[10px] text-gray-300 pb-2">{t.indices.source}</p>
     </div>
   )
 }

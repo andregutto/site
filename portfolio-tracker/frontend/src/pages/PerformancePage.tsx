@@ -190,11 +190,11 @@ export default function PerformancePage() {
   const isLoading = sLoading || mLoading || bLoading
 
   const modeButtons: Array<{ key: PeriodMode; label: string; disabled?: boolean }> = [
-    { key: 'current_month', label: 'Mês atual'  },
-    { key: 'last_30d',      label: 'Últ. 30d'   },
-    { key: 'last_12m',      label: 'Últ. 12m'   },
-    { key: 'ytd',           label: 'YTD'         },
-    { key: 'inception',     label: 'Início',     disabled: !inceptionYM },
+    { key: 'current_month', label: t.performance.currentMonth },
+    { key: 'last_30d',      label: t.performance.last30d      },
+    { key: 'last_12m',      label: t.performance.last12m      },
+    { key: 'ytd',           label: 'YTD'                      },
+    { key: 'inception',     label: t.performance.inception, disabled: !inceptionYM },
   ]
 
   return (
@@ -202,7 +202,7 @@ export default function PerformancePage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold text-gray-900">Performance</h1>
-          <p className="text-sm text-gray-400 mt-0.5">Rentabilidade e evolução do portfólio</p>
+          <p className="text-sm text-gray-400 mt-0.5">{t.performance.subtitle}</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -226,10 +226,10 @@ export default function PerformancePage() {
           <button
             onClick={handleRefresh}
             disabled={isLoading}
-            title="Recalcular performance (limpa cache do dia)"
+            title={t.performance.recalculateTitle}
             className="px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-200 text-gray-500 hover:border-[#001A70] hover:text-[#001A70] transition-colors disabled:opacity-40"
           >
-            {isLoading ? 'Calculando...' : 'Recalcular'}
+            {isLoading ? t.performance.calculating : t.performance.recalculate}
           </button>
         </div>
       </div>
@@ -243,19 +243,19 @@ export default function PerformancePage() {
           {summary && (
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <SummaryCard
-                label="Início do período"
+                label={t.performance.periodStart}
                 value={summary.value_start > 0 ? fmt(summary.value_start) : '—'}
               />
-              <SummaryCard label="Fim do período" value={fmt(displayValueEnd)} />
+              <SummaryCard label={t.performance.periodEnd} value={fmt(displayValueEnd)} />
               <SummaryCard
-                label="Retorno absoluto"
+                label={t.performance.absoluteReturn}
                 value={`${displayReturnAbs >= 0 ? '+' : ''}${fmt(displayReturnAbs)}`}
                 positive={displayReturnAbs >= 0}
               />
               <SummaryCard
-                label="Retorno %"
+                label={t.performance.returnPct}
                 value={displayReturnPct != null ? `${displayReturnPct >= 0 ? '+' : ''}${displayReturnPct.toFixed(2)}%` : '—'}
-                sub="Simple Dietz"
+                sub={t.performance.simpleDietz}
                 positive={displayReturnPct != null ? displayReturnPct >= 0 : null}
               />
             </div>
@@ -264,7 +264,7 @@ export default function PerformancePage() {
           {chartData.length > 0 ? (
             <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
               <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
-                <h2 className="font-semibold text-gray-800">Rentabilidade Acumulada · {periodLabel}</h2>
+                <h2 className="font-semibold text-gray-800">{t.performance.accumulatedReturn} · {periodLabel}</h2>
                 <div className="flex items-center gap-2">
                   {([['CDI', showCDI, setShowCDI, '#16a34a'], ['IBOV', showIBOV, setShowIBOV, '#7c3aed'], ['S&P500', showSP500, setShowSP500, '#f59e0b']] as const).map(
                     ([lbl, active, setter, color]) => (
@@ -294,7 +294,7 @@ export default function PerformancePage() {
                       contentStyle={{ borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 12 }}
                     />
                     <Legend wrapperStyle={{ fontSize: 11 }} />
-                    <Line type="monotone" dataKey="portfolio" name="Carteira"  stroke="#001A70" strokeWidth={2}   dot={{ r: 3, fill: '#001A70' }} activeDot={{ r: 5 }} />
+                    <Line type="monotone" dataKey="portfolio" name={t.performance.wallet}  stroke="#001A70" strokeWidth={2}   dot={{ r: 3, fill: '#001A70' }} activeDot={{ r: 5 }} />
                     {showCDI   && <Line type="monotone" dataKey="cdi"   name="CDI"    stroke="#16a34a" strokeWidth={1.5} dot={false} strokeDasharray="4 2" connectNulls />}
                     {showIBOV  && <Line type="monotone" dataKey="ibov"  name="IBOV"   stroke="#7c3aed" strokeWidth={1.5} dot={false} strokeDasharray="4 2" connectNulls />}
                     {showSP500 && <Line type="monotone" dataKey="sp500" name="S&P500" stroke="#f59e0b" strokeWidth={1.5} dot={false} strokeDasharray="4 2" connectNulls />}
@@ -304,10 +304,8 @@ export default function PerformancePage() {
             </div>
           ) : (
             <div className="bg-white border border-gray-100 rounded-2xl p-12 text-center text-gray-400 shadow-sm">
-              <p className="text-base font-medium text-gray-500">Sem dados de preço para o período</p>
-              <p className="text-sm mt-1">
-                Acesse o Dashboard para carregar os preços dos ativos.
-              </p>
+              <p className="text-base font-medium text-gray-500">{t.performance.noData}</p>
+              <p className="text-sm mt-1">{t.performance.visitDashboard}</p>
             </div>
           )}
 
@@ -315,7 +313,7 @@ export default function PerformancePage() {
           {chartData.length > 0 && (
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
               {[
-                { label: 'Carteira',  value: portfolioAccum, text: 'text-[#001A70]' },
+                { label: t.performance.wallet, value: portfolioAccum, text: 'text-[#001A70]' },
                 { label: 'CDI',       value: cdiAccum,       text: 'text-green-600' },
                 { label: 'IBOV',      value: ibovAccum,      text: 'text-violet-700' },
                 { label: 'S&P500',    value: sp500Accum,     text: 'text-amber-600' },
@@ -333,17 +331,17 @@ export default function PerformancePage() {
           {monthly && (
             <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
               <div className="px-6 py-4 border-b border-gray-100">
-                <h2 className="font-semibold text-gray-800">Evolução Mensal</h2>
+                <h2 className="font-semibold text-gray-800">{t.performance.monthlyEvolution}</h2>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
                     <tr>
-                      <th className="px-4 py-3 text-left">Mês</th>
-                      <th className="px-4 py-3 text-right">Patrimônio</th>
+                      <th className="px-4 py-3 text-left">{t.performance.month}</th>
+                      <th className="px-4 py-3 text-right">{t.performance.wealth}</th>
                       <th className="px-4 py-3 text-right">{t.performance.contributions}</th>
-                      <th className="px-4 py-3 text-right">Ganho/Perda</th>
-                      <th className="px-4 py-3 text-right">Rentab.</th>
+                      <th className="px-4 py-3 text-right">{t.performance.gainLoss}</th>
+                      <th className="px-4 py-3 text-right">{t.performance.returnAbbr}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
@@ -394,15 +392,15 @@ export default function PerformancePage() {
                                 <table className="w-full text-xs">
                                   <thead>
                                     <tr className="text-gray-400 border-b border-gray-200">
-                                      <th className="py-1.5 text-left font-medium">Ativo</th>
+                                      <th className="py-1.5 text-left font-medium">{t.performance.asset}</th>
                                       <th className="py-1.5 text-right font-medium cursor-pointer hover:text-gray-600 select-none" onClick={e => { e.stopPropagation(); toggleDetailSort('value') }}>
-                                        Valor final <DetailSortIcon col="value" />
+                                        {t.performance.finalValue} <DetailSortIcon col="value" />
                                       </th>
                                       <th className="py-1.5 text-right font-medium cursor-pointer hover:text-gray-600 select-none" onClick={e => { e.stopPropagation(); toggleDetailSort('contributions') }}>
-                                        Aportes <DetailSortIcon col="contributions" />
+                                        {t.performance.contributions} <DetailSortIcon col="contributions" />
                                       </th>
                                       <th className="py-1.5 text-right font-medium cursor-pointer hover:text-gray-600 select-none" onClick={e => { e.stopPropagation(); toggleDetailSort('gain') }}>
-                                        Ganho/Perda <DetailSortIcon col="gain" />
+                                        {t.performance.gainLoss} <DetailSortIcon col="gain" />
                                       </th>
                                       <th className="py-1.5 text-right font-medium cursor-pointer hover:text-gray-600 select-none" onClick={e => { e.stopPropagation(); toggleDetailSort('pct') }}>
                                         % <DetailSortIcon col="pct" />

@@ -82,7 +82,7 @@ function resolveKey(name: string, nameKey: string | null | undefined, keys: Reco
   return keys[nameKey] ?? name
 }
 
-function MonthPicker({ value, onChange, locale }: { value: string; onChange: (m: string) => void; locale: string }) {
+function MonthPicker({ value, onChange, locale, dark }: { value: string; onChange: (m: string) => void; locale: string; dark?: boolean }) {
   const months = Array.from({ length: 12 }, (_, i) => {
     const d = new Date()
     d.setDate(1)
@@ -90,10 +90,16 @@ function MonthPicker({ value, onChange, locale }: { value: string; onChange: (m:
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
   })
   return (
-    <select value={value} onChange={e => onChange(e.target.value)} className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm bg-white">
+    <select
+      value={value}
+      onChange={e => onChange(e.target.value)}
+      className={dark
+        ? 'bg-white/10 border border-white/20 text-white rounded-lg px-3 py-1.5 text-sm focus:outline-none'
+        : 'border border-gray-200 rounded-lg px-3 py-1.5 text-sm bg-white'}
+    >
       {months.map(m => {
         const [y, mo] = m.split('-')
-        return <option key={m} value={m}>{new Date(Number(y), Number(mo) - 1).toLocaleDateString(locale, { month: 'long', year: 'numeric' })}</option>
+        return <option key={m} value={m} className="text-gray-900 bg-white">{new Date(Number(y), Number(mo) - 1).toLocaleDateString(locale, { month: 'long', year: 'numeric' })}</option>
       })}
     </select>
   )
@@ -164,6 +170,8 @@ export default function FinancesOverviewPage() {
     categoryFees:            t.finances.categoryFees,
     categoryBarsRestaurants: t.finances.categoryBarsRestaurants,
     categoryShowsParties:    t.finances.categoryShowsParties,
+    categoryPhone:           t.finances.categoryPhone,
+    categoryInvestment:      t.finances.categoryInvestment,
   }
 
   const today = new Date()
@@ -286,52 +294,70 @@ export default function FinancesOverviewPage() {
   return (
     <div className="space-y-5">
       {/* Header */}
-      <div className="flex items-start justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-xl font-semibold text-gray-900">{t.finances.overviewTitle}</h1>
-          <p className="text-sm text-gray-400 mt-0.5">{t.finances.overviewSubtitle}</p>
-        </div>
-        <MonthPicker value={month} onChange={setMonth} locale={browserLocale} />
+      <div>
+        <h1 className="text-xl font-semibold text-gray-900">{t.finances.overviewTitle}</h1>
+        <p className="text-sm text-gray-400 mt-0.5">{t.finances.overviewSubtitle}</p>
       </div>
 
-      {/* Summary cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {/* Received income — highlight actual, show planned as subtitle */}
-        <div className={`rounded-xl border shadow-sm p-4 ${receivedIncome > 0 ? 'bg-emerald-50 border-emerald-100' : 'bg-white border-gray-100'}`}>
-          <p className="text-xs text-gray-500 mb-1">{t.finances.income}</p>
-          <p className={`text-lg font-bold ${receivedIncome > 0 ? 'text-emerald-700' : 'text-gray-400'}`}>
-            {receivedIncome > 0 ? fmt(cx(receivedIncome), currency, true) : '—'}
-          </p>
-          <p className="text-[10px] text-gray-400 mt-0.5">
-            {t.finances.overviewPlanned} {fmt(cx(configuredIncome), currency, true)}
-          </p>
-        </div>
-        {/* Expenses — highlight actual, show planned as subtitle */}
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
-          <p className="text-xs text-gray-500 mb-1">{t.finances.expenses}</p>
-          <p className={`text-lg font-bold ${totalExpenses > totalBudgeted && totalBudgeted > 0 ? 'text-red-600' : 'text-gray-900'}`}>
-            {totalExpenses > 0 ? fmt(cx(totalExpenses), currency, true) : '—'}
-          </p>
-          {totalBudgeted > 0 && (
-            <p className="text-[10px] text-gray-400 mt-0.5">{t.finances.overviewPlanned} {fmt(cx(totalBudgeted), currency, true)}</p>
-          )}
-        </div>
-        {/* Balance */}
-        <div className={`rounded-xl border shadow-sm p-4 ${receivedIncome > 0 ? (netBalance >= 0 ? 'bg-white border-gray-100' : 'bg-red-50 border-red-100') : 'bg-white border-gray-100'}`}>
-          <p className="text-xs text-gray-500 mb-1">{t.finances.overviewBalance}</p>
-          <p className={`text-lg font-bold ${receivedIncome > 0 && netBalance < 0 ? 'text-red-600' : 'text-emerald-600'}`}>
-            {receivedIncome > 0 ? fmt(cx(netBalance), currency, true) : '—'}
-          </p>
-        </div>
-        {/* Status */}
-        <div className={`rounded-xl border shadow-sm p-4 ${isWithinBudget ? 'bg-emerald-50 border-emerald-100' : 'bg-red-50 border-red-100'}`}>
-          <p className="text-xs text-gray-500 mb-1">{t.finances.overviewStatus}</p>
-          <p className={`text-sm font-semibold ${isWithinBudget ? 'text-emerald-700' : 'text-red-600'}`}>
-            {totalExpenses === 0 ? '—' : isWithinBudget ? t.finances.overviewOnTrack : t.finances.overviewOverspent}
-          </p>
-          {overspentAmount > 0 && (
-            <p className="text-[10px] text-red-500 mt-0.5">+{fmt(cx(overspentAmount), currency, true)}</p>
-          )}
+      {/* Hero card */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#001A70] via-[#002494] to-[#0d3aa8] text-white shadow-lg">
+        <div className="absolute -right-10 -top-10 w-48 h-48 rounded-full bg-white/5 pointer-events-none" />
+        <div className="absolute -right-4 bottom-0 w-32 h-32 rounded-full bg-white/5 pointer-events-none" />
+        <div className="relative p-5">
+          {/* Top row: month + status badge */}
+          <div className="flex items-start justify-between gap-3 mb-4">
+            <MonthPicker value={month} onChange={setMonth} locale={browserLocale} dark />
+            <div className={`shrink-0 px-3 py-1 rounded-full text-xs font-semibold ${
+              totalExpenses === 0 ? 'bg-white/10 text-white/60' :
+              isWithinBudget ? 'bg-emerald-400/25 text-emerald-300' : 'bg-red-400/25 text-red-300'
+            }`}>
+              {totalExpenses === 0 ? '—' : isWithinBudget ? t.finances.overviewOnTrack : t.finances.overviewOverspent}
+              {overspentAmount > 0 && ` +${fmt(cx(overspentAmount), currency, true)}`}
+            </div>
+          </div>
+
+          {/* Main: net balance */}
+          <div className="mb-5">
+            <p className="text-xs text-white/50 uppercase tracking-widest mb-1">{t.finances.overviewBalance}</p>
+            <p className={`text-3xl font-bold tabular-nums ${receivedIncome > 0 && netBalance < 0 ? 'text-red-300' : ''}`}>
+              {receivedIncome > 0 ? fmt(cx(netBalance), currency, true) : '—'}
+            </p>
+          </div>
+
+          {/* Bottom metrics row */}
+          <div className="grid grid-cols-3 gap-3 pt-4 border-t border-white/10">
+            <div>
+              <p className="text-[10px] text-white/50 uppercase tracking-wide mb-0.5">{t.finances.income}</p>
+              <p className="text-sm font-semibold tabular-nums">
+                {receivedIncome > 0 ? fmt(cx(receivedIncome), currency, true) : '—'}
+              </p>
+              <p className="text-[10px] text-white/40 mt-0.5">
+                {t.finances.overviewPlanned} {fmt(cx(configuredIncome), currency, true)}
+              </p>
+            </div>
+            <div>
+              <p className="text-[10px] text-white/50 uppercase tracking-wide mb-0.5">{t.finances.expenses}</p>
+              <p className={`text-sm font-semibold tabular-nums ${totalExpenses > totalBudgeted && totalBudgeted > 0 ? 'text-red-300' : ''}`}>
+                {totalExpenses > 0 ? fmt(cx(totalExpenses), currency, true) : '—'}
+              </p>
+              {totalBudgeted > 0 && (
+                <p className="text-[10px] text-white/40 mt-0.5">
+                  {t.finances.overviewPlanned} {fmt(cx(totalBudgeted), currency, true)}
+                </p>
+              )}
+            </div>
+            <div>
+              <p className="text-[10px] text-white/50 uppercase tracking-wide mb-0.5">{t.finances.heroSavingsRate}</p>
+              <p className="text-sm font-semibold tabular-nums">
+                {receivedIncome > 0 && netBalance >= 0 ? `${Math.round((netBalance / receivedIncome) * 100)}%` : '—'}
+              </p>
+              {receivedIncome > 0 && totalBudgeted > 0 && (
+                <p className="text-[10px] text-white/40 mt-0.5">
+                  {t.finances.overviewStatus}
+                </p>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 

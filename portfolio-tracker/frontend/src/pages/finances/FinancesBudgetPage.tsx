@@ -91,6 +91,8 @@ function EnvelopeBar({ env, expanded, onToggle, onEditCategory, onDeleteCategory
     categoryFees:            t.finances.categoryFees,
     categoryBarsRestaurants: t.finances.categoryBarsRestaurants,
     categoryShowsParties:    t.finances.categoryShowsParties,
+    categoryPhone:           t.finances.categoryPhone,
+    categoryInvestment:      t.finances.categoryInvestment,
   }
   const descByType: Record<string, string> = {
     essential:  t.finances.descEssential,
@@ -314,6 +316,8 @@ export default function FinancesBudgetPage() {
     categoryElectronics:   t.finances.categoryElectronics,
     categoryAirbnb:        t.finances.categoryAirbnb,
     categoryOther:         t.finances.categoryOther,
+    categoryPhone:         t.finances.categoryPhone,
+    categoryInvestment:    t.finances.categoryInvestment,
   }
 
   const [data, setData]               = useState<BudgetData | null>(null)

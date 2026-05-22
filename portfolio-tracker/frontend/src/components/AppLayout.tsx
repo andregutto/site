@@ -60,9 +60,9 @@ export default function AppLayout() {
 
   const inInvestimentos = location.pathname === '/dashboard' || location.pathname === '/' ||
     location.pathname.startsWith('/performance') ||
-    location.pathname.startsWith('/portfolio') ||
-    location.pathname.startsWith('/institutions')
+    location.pathname.startsWith('/portfolio')
   const inFinances = location.pathname.startsWith('/finances')
+  const inInstitutions = location.pathname.startsWith('/institutions')
 
   const investimentosItems = [
     { to: '/dashboard', label: t.nav.dashboard, end: true, icon: (
@@ -83,11 +83,6 @@ export default function AppLayout() {
     { to: '/portfolio/rebalance', label: t.nav.rebalance, end: false, icon: (
       <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
         <path strokeLinecap="round" strokeLinejoin="round" d="M8 2v12M4 14h8M4 6l-3 4h6L4 6zM12 4l-3 4h6l-3-4z"/>
-      </svg>
-    )},
-    { to: '/institutions', label: t.nav.institutions, end: false, icon: (
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M1.5 14.5h13M3 14.5V7.5M7 14.5V7.5M10 14.5V7.5M13 14.5V7.5M1 6.5L8 1.5l7 5"/>
       </svg>
     )},
     { to: '/portfolio/classes', label: t.nav.classes, end: false, icon: (
@@ -137,11 +132,6 @@ export default function AppLayout() {
         <path strokeLinecap="round" strokeLinejoin="round" d="M8 9V5M5.5 6.5L8 5l2.5 1.5"/>
       </svg>
     )},
-    { to: '/institutions', label: t.nav.institutions, end: false, icon: (
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M1.5 14.5h13M3 14.5V7.5M7 14.5V7.5M10 14.5V7.5M13 14.5V7.5M1 6.5L8 1.5l7 5"/>
-      </svg>
-    )},
   ]
 
   const activeSubItems = inInvestimentos ? investimentosItems : inFinances ? financesItems : []
@@ -162,7 +152,7 @@ export default function AppLayout() {
             style={{ fontFamily: "'Playfair Display', serif", fontSize: 19, fontWeight: 400, color: '#1B2F4E', textDecoration: 'none' }}
           >André Gutto</a>
 
-          {/* Desktop — two section tabs */}
+          {/* Desktop — three section tabs */}
           <nav className="hidden sm:flex flex-1 justify-center gap-1">
             <NavLink
               to="/dashboard"
@@ -180,6 +170,14 @@ export default function AppLayout() {
                 }`
               }
             >{t.nav.finances}</NavLink>
+            <NavLink
+              to="/institutions"
+              className={() =>
+                `px-4 py-1.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
+                  inInstitutions ? 'bg-[#001A70]/10 text-[#001A70] font-semibold' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
+                }`
+              }
+            >{t.nav.institutions}</NavLink>
           </nav>
 
           {/* Right — currency + user */}
@@ -220,7 +218,7 @@ export default function AppLayout() {
                   </div>
                   <div className="px-4 py-2.5 border-b border-gray-100">
                     <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-xs text-gray-500">{level.emoji} {level.name}</span>
+                      <span className="text-xs text-gray-500">{level.emoji} {(t.levels as Record<string, string>)[level.key] ?? level.name}</span>
                       <span className="text-xs font-bold text-[#001A70]">{totalXp} XP</span>
                     </div>
                     <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
@@ -378,6 +376,23 @@ export default function AppLayout() {
                     {label}
                   </NavLink>
                 ))}
+              </div>
+
+              <div className="border-t border-gray-100 pt-1">
+                <NavLink to="/institutions"
+                  className={({ isActive }) =>
+                    `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-colors ${
+                      isActive ? 'bg-[#001A70]/10 text-[#001A70] font-medium' : 'text-gray-700 hover:bg-gray-50'
+                    }`
+                  }
+                >
+                  <span className="w-4 h-4 shrink-0 text-gray-400 flex items-center">
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M1.5 14.5h13M3 14.5V7.5M7 14.5V7.5M10 14.5V7.5M13 14.5V7.5M1 6.5L8 1.5l7 5"/>
+                    </svg>
+                  </span>
+                  {t.nav.institutions}
+                </NavLink>
               </div>
 
             </div>

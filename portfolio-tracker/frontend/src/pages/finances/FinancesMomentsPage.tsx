@@ -27,8 +27,8 @@ interface ShareInfo {
 
 interface MomentDetail {
   moment: Moment
-  transactions: { id: number; date: string; description: string; amount: number; currency: string; notes: string | null; finance_categories: { name: string; icon: string; color: string } | null }[]
-  summary: { total: number; by_category: { name: string; icon: string; color: string; total: number }[] }
+  transactions: { id: number; date: string; description: string; amount: number; currency: string; notes: string | null; finance_categories: { name: string; name_key: string | null; icon: string; color: string } | null }[]
+  summary: { total: number; by_category: { name: string; name_key: string | null; icon: string; color: string; total: number }[] }
 }
 
 interface MomentPickerRow {
@@ -408,9 +408,31 @@ function AssignModal({ momentId: _momentId, moments, transactionId, currentMomen
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 
+function resolveKey(name: string, nameKey: string | null | undefined, keys: Record<string, string>): string {
+  if (!nameKey) return name
+  return keys[nameKey] ?? name
+}
+
 export default function FinancesMomentsPage() {
   const { t } = useI18n()
   const { user } = useAuth()
+  const nameKeys: Record<string, string> = {
+    categoryTransfer: t.finances.categoryTransfer, categorySalary: t.finances.categorySalary,
+    categoryUncategorized: t.finances.categoryUncategorized, categoryGroceries: t.finances.categoryGroceries,
+    categoryRestaurant: t.finances.categoryRestaurant, categoryTransport: t.finances.categoryTransport,
+    categoryHealth: t.finances.categoryHealth, categoryEntertainment: t.finances.categoryEntertainment,
+    categoryHousing: t.finances.categoryHousing, categoryStreaming: t.finances.categoryStreaming,
+    categorySubscriptions: t.finances.categorySubscriptions, categoryPharmacy: t.finances.categoryPharmacy,
+    categoryClothing: t.finances.categoryClothing, categoryTravel: t.finances.categoryTravel,
+    categoryCoffee: t.finances.categoryCoffee, categoryUtilities: t.finances.categoryUtilities,
+    categoryEducation: t.finances.categoryEducation, categoryPersonalCare: t.finances.categoryPersonalCare,
+    categoryElectronics: t.finances.categoryElectronics, categoryAirbnb: t.finances.categoryAirbnb,
+    categoryOther: t.finances.categoryOther, categoryGifts: t.finances.categoryGifts,
+    categoryShopping: t.finances.categoryShopping, categoryTaxes: t.finances.categoryTaxes,
+    categoryFees: t.finances.categoryFees, categoryBarsRestaurants: t.finances.categoryBarsRestaurants,
+    categoryShowsParties: t.finances.categoryShowsParties, categoryPhone: t.finances.categoryPhone,
+    categoryInvestment: t.finances.categoryInvestment,
+  }
   const [moments,     setMoments]     = useState<Moment[]>([])
   const [loading,     setLoading]     = useState(true)
   const [showForm,    setShowForm]    = useState(false)
@@ -632,7 +654,7 @@ export default function FinancesMomentsPage() {
                           return (
                             <div key={cat.name} className="flex items-center gap-2">
                               <span className="text-sm w-5 text-center">{cat.icon}</span>
-                              <span className="text-xs text-gray-600 w-28 truncate">{cat.name}</span>
+                              <span className="text-xs text-gray-600 w-28 truncate">{resolveKey(cat.name, cat.name_key, nameKeys)}</span>
                               <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
                                 <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: cat.color }} />
                               </div>

@@ -23,8 +23,8 @@ export default function AchievementToast({ def, onClose }: Props) {
       <Medal def={def} earned size={52} />
       <div>
         <p className="text-xs text-[#C9A227] font-semibold uppercase tracking-widest">{t.achievements.unlocked}</p>
-        <p className="text-white font-bold text-sm">{def.name}</p>
-        <p className="text-gray-400 text-xs">{def.description} · +{def.xp} {t.achievements.xp}</p>
+        <p className="text-white font-bold text-sm">{(t.achievementDefs as Record<string, {name: string; desc: string}>)[def.key]?.name ?? def.name}</p>
+        <p className="text-gray-400 text-xs">{(t.achievementDefs as Record<string, {name: string; desc: string}>)[def.key]?.desc ?? def.description} · +{def.xp} {t.achievements.xp}</p>
       </div>
       <button onClick={onClose} className="ml-auto text-gray-500 hover:text-white text-lg leading-none">×</button>
     </div>

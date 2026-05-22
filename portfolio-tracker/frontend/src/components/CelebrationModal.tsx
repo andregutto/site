@@ -82,8 +82,8 @@ export default function CelebrationModal({ def, onClose }: Props) {
           <Medal def={def} earned animate size={120} />
         </div>
 
-        <h2 className="text-white text-2xl font-bold mt-5">{def.name}</h2>
-        <p className="text-gray-400 text-sm mt-1">{def.description}</p>
+        <h2 className="text-white text-2xl font-bold mt-5">{(t.achievementDefs as Record<string, {name: string; desc: string}>)[def.key]?.name ?? def.name}</h2>
+        <p className="text-gray-400 text-sm mt-1">{(t.achievementDefs as Record<string, {name: string; desc: string}>)[def.key]?.desc ?? def.description}</p>
 
         <div className="mt-4 inline-flex items-center gap-2 bg-[#C9A227]/10 border border-[#C9A227]/30 rounded-full px-4 py-1.5">
           <span className="text-[#C9A227] font-bold text-lg">+{def.xp}</span>
