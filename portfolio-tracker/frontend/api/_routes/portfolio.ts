@@ -75,6 +75,7 @@ router.get('/value', requireAuth, async (req, res: Response, next) => {
   }
 
   const manualMap: Record<number, { value: number; currency: string; last_date: string }> = {}
+  const oldestManualMap: Record<number, { value: number; currency: string; ref_date: string }> = {}
   if (assetIds.length > 0) {
     const { data: manualValues } = await supabaseAdmin
       .from('manual_values')
@@ -88,8 +89,26 @@ router.get('/value', requireAuth, async (req, res: Response, next) => {
         manualMap[mv.asset_id] = { value: mv.value, currency: mv.currency, last_date: mv.ref_date }
         seen.add(mv.asset_id)
       }
+      // DESC order → last assignment per asset = oldest entry
+      oldestManualMap[mv.asset_id] = { value: mv.value, currency: mv.currency, ref_date: mv.ref_date }
     }
   }
+
+  // For manual assets: invested = oldest_manual_value_brl + contributions strictly after oldest date
+  await Promise.all(
+    assets
+      .filter(a => a.asset_type === 'manual')
+      .map(async (a) => {
+        const oldest = oldestManualMap[a.id]
+        if (!oldest) return
+        const fxRate = oldest.currency === 'BRL' ? 1 : await getFxRate(oldest.currency)
+        const oldestBrl = oldest.value * fxRate
+        const extraContribs = (contributions ?? [])
+          .filter(c => c.asset_id === a.id && c.type === 'buy' && c.value_brl && c.value_brl > 0 && c.date > oldest.ref_date)
+          .reduce((s, c) => s + (c.value_brl as number), 0)
+        investedMap[a.id] = Math.round((oldestBrl + extraContribs) * 100) / 100
+      })
+  )
 
   const byAsset: Array<{
     id: number; code: string; name: string
