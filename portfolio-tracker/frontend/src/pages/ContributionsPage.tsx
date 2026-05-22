@@ -84,8 +84,9 @@ export default function ContributionsPage() {
   const [type,          setType]          = useState<'buy' | 'sell' | 'income'>('buy')
   const [quantity,      setQuantity]      = useState('')
   const [priceOrig,     setPriceOrig]     = useState('')
-  const [priceCurrency, setPriceCurrency] = useState('BRL')
-  const [valueBrl,      setValueBrl]      = useState('')
+  const [priceCurrency,  setPriceCurrency]  = useState('BRL')
+  const [simpleCurrency, setSimpleCurrency] = useState('BRL')
+  const [valueBrl,       setValueBrl]       = useState('')
   const [description,   setDescription]  = useState('')
 
   // new asset form
@@ -139,7 +140,10 @@ export default function ContributionsPage() {
   const selectedAsset = assets.find(a => a.id === Number(assetId))
 
   useEffect(() => {
-    if (selectedAsset) setPriceCurrency(selectedAsset.currency)
+    if (selectedAsset) {
+      setPriceCurrency(selectedAsset.currency)
+      setSimpleCurrency(selectedAsset.currency)
+    }
   }, [assetId, selectedAsset])
 
   useEffect(() => {
@@ -211,7 +215,7 @@ export default function ContributionsPage() {
 
   function resetForm() {
     setAssetId(''); setDate(today); setType('buy')
-    setQuantity(''); setPriceOrig(''); setPriceCurrency('BRL'); setValueBrl(''); setDescription('')
+    setQuantity(''); setPriceOrig(''); setPriceCurrency('BRL'); setSimpleCurrency('BRL'); setValueBrl(''); setDescription('')
     setAssetSearch(''); setFormErr(null); setFieldErrors({})
   }
 
@@ -260,15 +264,18 @@ export default function ContributionsPage() {
     if (!date)    { setFormErr('Informe a data.'); return }
 
     if (isIncome) {
-      const vBrl = parseLocaleNum(valueBrl)
-      if (!vBrl || vBrl <= 0) { setFormErr('Informe o valor do rendimento.'); return }
+      const rawVal = parseLocaleNum(valueBrl)
+      if (!rawVal || rawVal <= 0) { setFormErr('Informe o valor do rendimento.'); return }
+      const fxRate = simpleCurrency === 'BRL' ? 1 : ((fxRates as Record<string, number>)[simpleCurrency] ?? null)
+      if (simpleCurrency !== 'BRL' && !fxRate) { setFormErr(`Taxa de câmbio para ${simpleCurrency} não disponível.`); return }
+      const vBrl = rawVal * (fxRate ?? 1)
       setSaving(true); setFormErr(null)
       try {
         await apiFetch('/contributions', {
           method: 'POST',
           body: JSON.stringify({
             asset_id: Number(assetId), date, type: 'income',
-            quantity: 0, value_brl: vBrl,
+            quantity: 0, value_brl: vBrl, currency: simpleCurrency,
             description: description || undefined,
           }),
         })
@@ -281,13 +288,16 @@ export default function ContributionsPage() {
 
     if (isRfBuy) {
       // RF aporte adicional
-      const vBrl = parseLocaleNum(valueBrl)
-      if (!vBrl || vBrl <= 0) { setFormErr('Informe o valor do aporte.'); return }
+      const rawVal = parseLocaleNum(valueBrl)
+      if (!rawVal || rawVal <= 0) { setFormErr('Informe o valor do aporte.'); return }
+      const fxRate = simpleCurrency === 'BRL' ? 1 : ((fxRates as Record<string, number>)[simpleCurrency] ?? null)
+      if (simpleCurrency !== 'BRL' && !fxRate) { setFormErr(`Taxa de câmbio para ${simpleCurrency} não disponível.`); return }
+      const vBrl = rawVal * (fxRate ?? 1)
       setSaving(true); setFormErr(null)
       try {
         await apiFetch(`/assets/${Number(assetId)}/fi-deposit`, {
           method: 'POST',
-          body: JSON.stringify({ date, value_brl: vBrl, notes: description || undefined }),
+          body: JSON.stringify({ date, value_brl: vBrl, currency: simpleCurrency, amount_orig: rawVal, notes: description || undefined }),
         })
         setShowForm(false); resetForm(); refresh(); triggerCheck()
       } catch (e) {
@@ -298,15 +308,18 @@ export default function ContributionsPage() {
 
     if (isSimpleAsset) {
       // manual or RF sell: record contribution with qty=1
-      const vBrl = parseLocaleNum(valueBrl)
-      if (!vBrl || vBrl <= 0) { setFormErr('Informe o valor.'); return }
+      const rawVal = parseLocaleNum(valueBrl)
+      if (!rawVal || rawVal <= 0) { setFormErr('Informe o valor.'); return }
+      const fxRate = simpleCurrency === 'BRL' ? 1 : ((fxRates as Record<string, number>)[simpleCurrency] ?? null)
+      if (simpleCurrency !== 'BRL' && !fxRate) { setFormErr(`Taxa de câmbio para ${simpleCurrency} não disponível.`); return }
+      const vBrl = rawVal * (fxRate ?? 1)
       setSaving(true); setFormErr(null)
       try {
         await apiFetch('/contributions', {
           method: 'POST',
           body: JSON.stringify({
             asset_id: Number(assetId), date, type,
-            quantity: 1, value_brl: vBrl, currency: 'BRL',
+            quantity: 1, value_brl: vBrl, currency: simpleCurrency,
             description: description || undefined,
           }),
         })
@@ -494,8 +507,19 @@ export default function ContributionsPage() {
     setType(c.type as 'buy' | 'sell' | 'income')
     setQuantity(c.quantity != null ? String(c.quantity).replace('.', ',') : '')
     setPriceOrig(c.price_orig != null ? String(c.price_orig).replace('.', ',') : '')
-    setPriceCurrency(c.currency ?? (assets.find(a => a.id === c.assets.id)?.currency ?? 'BRL'))
-    setValueBrl(c.value_brl != null ? String(c.value_brl).replace('.', ',') : '')
+    const editCur = c.currency ?? (assets.find(a => a.id === c.assets.id)?.currency ?? 'BRL')
+    setPriceCurrency(editCur)
+    setSimpleCurrency(editCur)
+    // For simple/income assets with non-BRL currency, show value in original currency
+    const asset = assets.find(a => a.id === c.assets.id)
+    const assetIsSimple = asset?.asset_type === 'fixed_income' || asset?.asset_type === 'manual'
+    const contribIsIncome = c.type === 'income'
+    let displayValueBrl = c.value_brl != null ? String(c.value_brl).replace('.', ',') : ''
+    if (editCur !== 'BRL' && (assetIsSimple || contribIsIncome) && c.value_brl != null) {
+      const rate = (fxRates as Record<string, number>)[editCur]
+      if (rate) displayValueBrl = (c.value_brl / rate).toFixed(2).replace('.', ',')
+    }
+    setValueBrl(displayValueBrl)
     setDescription(c.description ?? '')
     setAssetSearch('')
     setFormErr(null)
@@ -515,15 +539,23 @@ export default function ContributionsPage() {
     if (!editId) return
     if (!date) { setFormErr('Informe a data.'); return }
 
-    const vBrl = parseLocaleNum(valueBrl)
-    const qty  = parseLocaleNum(quantity)
+    const rawVal = parseLocaleNum(valueBrl)
+    const qty    = parseLocaleNum(quantity)
 
     if (isIncome || isSimpleAsset) {
-      if (!vBrl || vBrl <= 0) { setFormErr('Informe o valor.'); return }
+      if (!rawVal || rawVal <= 0) { setFormErr('Informe o valor.'); return }
     } else {
       if (!qty || qty <= 0) { setFormErr('Informe uma quantidade valida.'); return }
-      if (!vBrl || vBrl <= 0) { setFormErr('Informe o valor total em BRL.'); return }
+      if (!rawVal || rawVal <= 0) { setFormErr('Informe o valor total em BRL.'); return }
     }
+
+    const fxRate = (isIncome || isSimpleAsset) && simpleCurrency !== 'BRL'
+      ? ((fxRates as Record<string, number>)[simpleCurrency] ?? null)
+      : 1
+    if ((isIncome || isSimpleAsset) && simpleCurrency !== 'BRL' && !fxRate) {
+      setFormErr(`Taxa de câmbio para ${simpleCurrency} não disponível.`); return
+    }
+    const vBrl = (isIncome || isSimpleAsset) ? (rawVal ?? 0) * (fxRate ?? 1) : rawVal
 
     setSaving(true); setFormErr(null)
     try {
@@ -534,7 +566,7 @@ export default function ContributionsPage() {
           type,
           quantity:   (isIncome || isSimpleAsset) ? (qty ?? 0) : qty,
           price_orig: parseLocaleNum(priceOrig) ?? null,
-          currency:   priceCurrency || null,
+          currency:   (isIncome || isSimpleAsset) ? simpleCurrency : (priceCurrency || null),
           value_brl:  vBrl,
           description: description || null,
         }),
@@ -973,7 +1005,7 @@ export default function ContributionsPage() {
               </div>
             )}
 
-            {/* Value BRL */}
+            {/* Value */}
             <div className="sm:col-span-2">
               <label className="block text-xs text-gray-500 mb-1">
                 {isIncome ? t.contributions.receivedBrl : isRfBuy ? t.contributions.additionalContrib : isRfAsset ? t.contributions.redeemedBrl : isManualAsset ? t.contributions.valueBrl : (
@@ -986,16 +1018,32 @@ export default function ContributionsPage() {
                     )}
                   </>
                 )}
+                {(isIncome || isSimpleAsset) && simpleCurrency !== 'BRL' && (fxRates as Record<string, number>)[simpleCurrency] && (
+                  <span className="ml-1 text-gray-400">
+                    (1 {simpleCurrency} = {(fxRates as Record<string, number>)[simpleCurrency].toFixed(2)} BRL)
+                  </span>
+                )}
               </label>
-              <input
-                type="text"
-                inputMode="decimal"
-                value={valueBrl}
-                onChange={e => setValueBrl(e.target.value)}
-                onBlur={e => validateField('valueBrl', e.target.value)}
-                placeholder="0,00"
-                className={inputCls(BASE_INPUT, !!fieldErrors.valueBrl)}
-              />
+              <div className="flex gap-1.5">
+                {(isIncome || isSimpleAsset) && (
+                  <select
+                    value={simpleCurrency}
+                    onChange={e => setSimpleCurrency(e.target.value)}
+                    className="border border-gray-200 rounded-lg px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20 bg-white w-20 shrink-0"
+                  >
+                    {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                )}
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  value={valueBrl}
+                  onChange={e => setValueBrl(e.target.value)}
+                  onBlur={e => validateField('valueBrl', e.target.value)}
+                  placeholder="0,00"
+                  className={inputCls(`flex-1 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2`, !!fieldErrors.valueBrl)}
+                />
+              </div>
               {fieldErrors.valueBrl && <p className="text-xs text-red-500 mt-0.5">{fieldErrors.valueBrl}</p>}
             </div>
 

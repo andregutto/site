@@ -893,7 +893,7 @@ export default function AssetDetailPage() {
       )}
 
       {/* Contributions history */}
-      {!isManual && (() => {
+      {(() => {
         const currentPriceBrl = data.asset_type === 'ticker' && data.holdings != null && data.holdings > 0 && data.current_value_brl > 0
           ? data.current_value_brl / data.holdings
           : null
