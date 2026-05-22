@@ -320,6 +320,7 @@ export default function ContributionsPage() {
           body: JSON.stringify({
             asset_id: Number(assetId), date, type,
             quantity: 1, value_brl: vBrl, currency: simpleCurrency,
+            amount_orig: rawVal,
             description: description || undefined,
           }),
         })

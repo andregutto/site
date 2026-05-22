@@ -23,15 +23,16 @@ router.get('/', requireAuth, async (req, res: Response) => {
 
 router.post('/', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
-  const { asset_id, date, type, quantity, price_orig, currency, fx_rate_brl, value_brl, description } = req.body as {
-    asset_id:    number
-    date:        string
-    type:        'buy' | 'sell' | 'income'
-    quantity?:   number
-    price_orig?: number
-    currency?:   string
+  const { asset_id, date, type, quantity, price_orig, currency, fx_rate_brl, value_brl, amount_orig, description } = req.body as {
+    asset_id:     number
+    date:         string
+    type:         'buy' | 'sell' | 'income'
+    quantity?:    number
+    price_orig?:  number
+    currency?:    string
     fx_rate_brl?: number
-    value_brl?:  number
+    value_brl?:   number
+    amount_orig?: number
     description?: string
   }
 
@@ -45,7 +46,7 @@ router.post('/', requireAuth, async (req, res: Response) => {
 
   const { data: asset } = await supabaseAdmin
     .from('assets')
-    .select('id')
+    .select('id, asset_type, currency')
     .eq('id', asset_id)
     .eq('user_id', userId)
     .single()
@@ -65,6 +66,40 @@ router.post('/', requireAuth, async (req, res: Response) => {
     .single()
 
   if (error) { res.status(500).json({ error: error.message }); return }
+
+  // For manual assets with a buy, auto-update manual_values by adding the aporte
+  if (asset.asset_type === 'manual' && type === 'buy' && amount_orig != null && amount_orig > 0) {
+    const contribCurrency = currency ?? asset.currency ?? 'BRL'
+    const refDate = date.slice(0, 7) + '-01' // first of month
+
+    // Get the most recent manual_values (for base + existing month)
+    const { data: latestValues } = await supabaseAdmin
+      .from('manual_values')
+      .select('value, currency, ref_date')
+      .eq('asset_id', asset_id)
+      .order('ref_date', { ascending: false })
+      .limit(2)
+
+    const existingForMonth = latestValues?.find(v => v.ref_date === refDate)
+    const latestBefore = latestValues?.find(v => v.ref_date !== refDate) ?? latestValues?.[0]
+
+    const base = existingForMonth ?? latestBefore
+    // Only auto-update when currencies match; skip if mismatch to avoid corruption
+    if (base && base.currency !== contribCurrency) return res.status(201).json({ id: data.id, ok: true })
+    let newValue = amount_orig
+    if (base) newValue = (base.value as number) + amount_orig
+
+    await supabaseAdmin
+      .from('manual_values')
+      .upsert({
+        asset_id,
+        ref_date: refDate,
+        value: newValue,
+        currency: contribCurrency,
+        notes: `Aporte registrado em ${date}`,
+      }, { onConflict: 'asset_id,ref_date' })
+  }
+
   res.status(201).json({ id: data.id, ok: true })
 })
 
