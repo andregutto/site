@@ -430,10 +430,12 @@ export default function AssetDetailPage() {
           )}
           {/* Action buttons */}
           <div className="flex flex-wrap items-center gap-1.5 mt-2">
-            <Link
-              to={`/portfolio?assetId=${id}&new=1`}
-              className="text-xs text-[#001A70] border border-[#001A70]/30 hover:bg-blue-50 rounded-lg px-2.5 py-1 transition-colors"
-            >{d.addContrib}</Link>
+            {!isManual && (
+              <Link
+                to={`/portfolio?assetId=${id}&new=1`}
+                className="text-xs text-[#001A70] border border-[#001A70]/30 hover:bg-blue-50 rounded-lg px-2.5 py-1 transition-colors"
+              >{d.addContrib}</Link>
+            )}
             {canUpdateManualValue && (
               <button
                 onClick={() => setShowManualModal(true)}
@@ -892,8 +894,8 @@ export default function AssetDetailPage() {
         </div>
       )}
 
-      {/* Contributions history */}
-      {(() => {
+      {/* Contributions history — hidden for manual assets */}
+      {!isManual && (() => {
         const currentPriceBrl = data.asset_type === 'ticker' && data.holdings != null && data.holdings > 0 && data.current_value_brl > 0
           ? data.current_value_brl / data.holdings
           : null

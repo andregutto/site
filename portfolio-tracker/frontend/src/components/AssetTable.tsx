@@ -86,7 +86,17 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
   const [sortKey,  setSortKey]  = useState<SortKey>('value_brl')
   const [sortDir,  setSortDir]  = useState<'asc' | 'desc'>('desc')
   const [period,   setPeriod]   = useState<PeriodKey>('ytd')
-  const [expanded, setExpanded] = useState<Set<string>>(new Set())
+  const [expanded, setExpanded]       = useState<Set<string>>(new Set())
+  const [expandedAssets, setExpandedAssets] = useState<Set<number>>(new Set())
+
+  function toggleAssetExpand(id: number) {
+    setExpandedAssets(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
 
   const PERIOD_OPTIONS: Array<{ key: PeriodKey; label: string }> = [
     { key: 'current_month', label: d.periodCurrent },
@@ -217,8 +227,8 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
         </div>
       </div>
 
-      {/* Table */}
-      <div className="overflow-x-auto">
+      {/* Desktop table */}
+      <div className="hidden sm:block overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
             <tr>
@@ -422,6 +432,168 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
         </table>
         {groups.length === 0 && (
           <p className="text-center text-gray-400 py-8 text-sm">{d.noAssets}</p>
+        )}
+      </div>
+
+      {/* Mobile cards */}
+      <div className="sm:hidden divide-y divide-gray-100">
+        {groups.length === 0 && (
+          <p className="text-center text-gray-400 py-8 text-sm">{d.noAssets}</p>
+        )}
+        {groups.map(group => {
+          const isOpen   = expanded.has(group.name)
+          const groupPct = portfolioTotal > 0 ? (group.total / portfolioTotal) * 100 : 0
+
+          const assetsWithRetM = group.assets.filter(a =>
+            !a.needs_manual && a.value_brl > 0 && (
+              (returns && returns[a.id] != null) ||
+              (a.invested_brl != null && a.invested_brl > 0)
+            )
+          )
+          const totalRetWeightM = assetsWithRetM.reduce((s, a) => s + a.value_brl, 0)
+          const groupRentabM = totalRetWeightM > 0
+            ? assetsWithRetM.reduce((s, a) => {
+                const r = (returns && returns[a.id] != null)
+                  ? returns[a.id]!
+                  : (a.invested_brl != null && a.invested_brl > 0)
+                    ? (a.value_brl - a.invested_brl) / a.invested_brl * 100
+                    : 0
+                return s + r * a.value_brl
+              }, 0) / totalRetWeightM
+            : null
+
+          return (
+            <div key={group.name}>
+              {/* Group header */}
+              <div
+                onClick={() => toggleExpand(group.name)}
+                className="flex items-center gap-2 px-4 py-3 bg-gray-50/80 border-t border-gray-100 cursor-pointer select-none"
+              >
+                <ChevronIcon open={isOpen} />
+                {(() => {
+                  const icon = group.assets[0]?.class_icon ?? inferIcon(group.name)
+                  return icon
+                    ? <span className="text-base leading-none shrink-0">{icon}</span>
+                    : <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: group.color }} />
+                })()}
+                <span className="font-bold text-gray-900 flex-1 truncate text-sm">{resolveClassName(group.name, group.name_key)}</span>
+                {!returnsLoading && groupRentabM !== null && (
+                  <span className={`text-xs font-semibold ${groupRentabM >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {groupRentabM >= 0 ? '+' : ''}{groupRentabM.toFixed(2)}%
+                  </span>
+                )}
+                <span className="font-bold text-gray-900 text-sm tabular-nums">{fmt(group.total)}</span>
+                <span className="text-xs text-gray-400 w-10 text-right">{groupPct.toFixed(1)}%</span>
+              </div>
+
+              {/* Asset cards */}
+              {isOpen && (
+                <div className="divide-y divide-gray-50">
+                  {group.assets.map(asset => {
+                    const isCardExpanded = expandedAssets.has(asset.id)
+                    const ret = returns?.[asset.id] ?? null
+                    const displayRet = ret != null ? ret
+                      : (asset.invested_brl != null && asset.invested_brl > 0 && asset.value_brl > 0)
+                        ? (asset.value_brl - asset.invested_brl) / asset.invested_brl * 100
+                        : null
+
+                    return (
+                      <div
+                        key={asset.id}
+                        className={`group px-4 py-3 ${asset.needs_manual ? 'bg-amber-50/50' : 'bg-white'} ${onAssetClick ? 'cursor-pointer' : ''}`}
+                        onClick={() => onAssetClick?.(asset)}
+                      >
+                        <div className="flex items-center gap-2">
+                          {onToggleFavorite && (
+                            <StarButton
+                              filled={favorites.has(asset.id)}
+                              onClick={e => { e.stopPropagation(); onToggleFavorite(asset.id) }}
+                            />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium text-gray-900 text-sm">{asset.code}</div>
+                            <div className="text-xs text-gray-400 truncate">{asset.name}</div>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <div className="text-right">
+                              <div className="text-sm font-medium text-gray-900">
+                                {asset.needs_manual ? '—' : fmt(asset.value_brl)}
+                              </div>
+                              {!returnsLoading && displayRet != null && (
+                                <div className={`text-xs font-semibold ${displayRet >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                  {displayRet >= 0 ? '+' : ''}{displayRet.toFixed(2)}%
+                                </div>
+                              )}
+                            </div>
+                            <button
+                              onClick={e => { e.stopPropagation(); toggleAssetExpand(asset.id) }}
+                              className="p-1 text-gray-400 shrink-0"
+                              aria-label="Expandir detalhes"
+                            >
+                              <svg
+                                className={`w-4 h-4 transition-transform ${isCardExpanded ? 'rotate-180' : ''}`}
+                                fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+                              >
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                              </svg>
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Inline expanded props */}
+                        {isCardExpanded && (
+                          <div
+                            className="mt-2 pt-2 border-t border-gray-100 grid grid-cols-2 gap-x-6 gap-y-1 text-xs"
+                            onClick={e => e.stopPropagation()}
+                          >
+                            {asset.holdings != null && (
+                              <div className="flex justify-between gap-2">
+                                <span className="text-gray-400">{d.colHoldings}</span>
+                                <span className="text-gray-700 font-medium tabular-nums">{fmtNumber(asset.holdings, 6)}</span>
+                              </div>
+                            )}
+                            {asset.price != null && (
+                              <div className="flex justify-between gap-2">
+                                <span className="text-gray-400">{d.colPrice}</span>
+                                <span className="text-gray-700 font-medium tabular-nums">{asset.currency} {fmtNumber(asset.price, 2)}</span>
+                              </div>
+                            )}
+                            {asset.invested_brl != null && asset.holdings != null && asset.holdings > 0 && (
+                              <div className="flex justify-between gap-2">
+                                <span className="text-gray-400">PM</span>
+                                <span className="text-gray-700 font-medium tabular-nums">{fmt(asset.invested_brl / asset.holdings)}</span>
+                              </div>
+                            )}
+                            <div className="flex justify-between gap-2">
+                              <span className="text-gray-400">{d.colInvested}</span>
+                              <span className="text-gray-700 font-medium tabular-nums">
+                                {asset.needs_manual && asset.invested_brl == null
+                                  ? <span className="text-amber-600">{d.enterValue}</span>
+                                  : asset.invested_brl != null ? fmt(asset.invested_brl) : '—'}
+                              </span>
+                            </div>
+                            {!asset.needs_manual && portfolioTotal > 0 && (
+                              <div className="flex justify-between gap-2">
+                                <span className="text-gray-400">{d.colPct}</span>
+                                <span className="text-gray-700 font-medium">{((asset.value_brl / portfolioTotal) * 100).toFixed(1)}%</span>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          )
+        })}
+
+        {groups.length > 0 && (
+          <div className="flex justify-between items-center px-4 py-3 bg-gray-50 border-t border-gray-200">
+            <span className="text-sm font-semibold text-gray-700">{t.common.total}</span>
+            <span className="font-bold text-gray-900">{fmt(portfolioTotal)}</span>
+          </div>
         )}
       </div>
     </div>

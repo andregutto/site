@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { useSearchParams, Link } from 'react-router-dom'
+import { useSearchParams, Link, useNavigate } from 'react-router-dom'
 import { useContributions } from '../hooks/usePortfolio'
 import { useCurrency } from '../contexts/CurrencyContext'
 import { useAchievementContext } from '../contexts/AchievementContext'
@@ -53,6 +53,7 @@ const BASE_INPUT = 'w-full border rounded-lg px-3 py-2 text-sm focus:outline-non
 const SMALL_INPUT = 'w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20 bg-white'
 
 export default function ContributionsPage() {
+  const navigate = useNavigate()
   const { data: contributions, loading, error, refresh } = useContributions()
   const { fmt, fxRates } = useCurrency()
   const { triggerCheck } = useAchievementContext()
@@ -1108,7 +1109,11 @@ export default function ContributionsPage() {
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {contributions.map(c => (
-                  <tr key={c.id} className="hover:bg-gray-50">
+                  <tr
+                    key={c.id}
+                    className="hover:bg-gray-50 cursor-pointer"
+                    onClick={() => navigate(`/assets/${c.assets.id}`)}
+                  >
                     <td className="px-4 py-3 text-gray-500 text-xs whitespace-nowrap">{fmtDate(c.date)}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1.5">
@@ -1132,7 +1137,7 @@ export default function ContributionsPage() {
                     <td className="px-4 py-3 text-right font-medium text-gray-900">
                       {c.value_brl != null ? fmt(c.value_brl) : '—'}
                     </td>
-                    <td className="px-4 py-3 text-right">
+                    <td className="px-4 py-3 text-right" onClick={e => e.stopPropagation()}>
                       {confirmDeleteId === c.id ? (
                         <div className="flex items-center justify-end gap-2">
                           <button

@@ -28,7 +28,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false)
     })
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, sess) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, sess) => {
+      if (event === 'SIGNED_OUT' || event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+        try {
+          const keys: string[] = []
+          for (let i = 0; i < localStorage.length; i++) {
+            const k = localStorage.key(i)
+            if (k && (
+              k.startsWith('perf7_') ||
+              k.startsWith('perf6_') ||       // legacy — purge old format
+              k.startsWith('perf_inception_v1')
+            )) keys.push(k)
+          }
+          keys.forEach(k => localStorage.removeItem(k))
+        } catch {}
+      }
       setSession(sess)
       setUser(sess?.user ?? null)
     })

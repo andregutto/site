@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback } from 'react'
 import { apiFetch } from '../lib/api'
+import { useAuth } from '../contexts/AuthContext'
 import type { PortfolioValue, PerformanceSummary, PerformanceMonthly, PerformanceBenchmarks, AssetReturns, AssetDetail, ContributionRow } from '../lib/types'
 
-// Daily cache v6 — bumped after paginated price_history fetch fix (2026-05-15).
-// Stores results keyed by endpoint+params, expires at midnight.
-const CACHE_PREFIX = 'perf6_'
+// Daily cache v7 — bumped to invalidate pre-userId-scoping entries (2026-05-22).
+// Keys include userId so different users never share cached data.
+const CACHE_PREFIX = 'perf7_'
 
 function perfCacheGet<T>(key: string): T | null {
   try {
@@ -97,12 +98,15 @@ export function useResetPriceHistory() {
 }
 
 export function usePerformanceSummary(from: string, to: string) {
+  const { user } = useAuth()
+  const userId = user?.id ?? ''
   const [data, setData]     = useState<PerformanceSummary | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError]   = useState<string | null>(null)
 
   const doFetch = useCallback(async (force: boolean) => {
-    const key = `summary_${from}_${to}`
+    if (!userId) return
+    const key = `summary_${userId}_${from}_${to}`
     if (!force) {
       const cached = perfCacheGet<PerformanceSummary>(key)
       if (cached) { setData(cached); setLoading(false); return }
@@ -118,21 +122,25 @@ export function usePerformanceSummary(from: string, to: string) {
     } finally {
       setLoading(false)
     }
-  }, [from, to])
+  }, [from, to, userId])
 
   const refresh = useCallback(() => doFetch(true), [doFetch])
+  useEffect(() => { setData(null); setError(null) }, [userId])
   useEffect(() => { doFetch(false) }, [doFetch])
 
   return { data, loading, error, refresh }
 }
 
 export function usePerformanceMonthly(from: string, to: string) {
+  const { user } = useAuth()
+  const userId = user?.id ?? ''
   const [data, setData]     = useState<PerformanceMonthly | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError]   = useState<string | null>(null)
 
   const doFetch = useCallback(async (force: boolean) => {
-    const key = `monthly_${from}_${to}`
+    if (!userId) return
+    const key = `monthly_${userId}_${from}_${to}`
     if (!force) {
       const cached = perfCacheGet<PerformanceMonthly>(key)
       if (cached) { setData(cached); setLoading(false); return }
@@ -148,20 +156,24 @@ export function usePerformanceMonthly(from: string, to: string) {
     } finally {
       setLoading(false)
     }
-  }, [from, to])
+  }, [from, to, userId])
 
   const refresh = useCallback(() => doFetch(true), [doFetch])
+  useEffect(() => { setData(null); setError(null) }, [userId])
   useEffect(() => { doFetch(false) }, [doFetch])
 
   return { data, loading, error, refresh }
 }
 
 export function usePerformanceBenchmarks(from: string, to: string) {
+  const { user } = useAuth()
+  const userId = user?.id ?? ''
   const [data, setData]     = useState<PerformanceBenchmarks | null>(null)
   const [loading, setLoading] = useState(true)
 
   const doFetch = useCallback(async (force: boolean) => {
-    const key = `benchmarks_${from}_${to}`
+    if (!userId) return
+    const key = `benchmarks_${userId}_${from}_${to}`
     if (!force) {
       const cached = perfCacheGet<PerformanceBenchmarks>(key)
       if (cached) { setData(cached); setLoading(false); return }
@@ -176,9 +188,10 @@ export function usePerformanceBenchmarks(from: string, to: string) {
     } finally {
       setLoading(false)
     }
-  }, [from, to])
+  }, [from, to, userId])
 
   const refresh = useCallback(() => doFetch(true), [doFetch])
+  useEffect(() => { setData(null) }, [userId])
   useEffect(() => { doFetch(false) }, [doFetch])
 
   return { data, loading, refresh }
@@ -200,23 +213,28 @@ export function useAssetReturns(from: string | null, to: string | null) {
   return { data, loading }
 }
 
-const INCEPTION_LS_KEY = 'perf_inception_v1'
-
 export function usePerformanceInception() {
-  // Seed from localStorage so the monthly chart fetch starts in parallel on repeat visits
+  const { user } = useAuth()
+  const userId = user?.id ?? ''
+  const inceptionKey = userId ? `perf_inception_v1_${userId}` : null
+
   const [inception, setInception] = useState<string | null>(() => {
-    try { return localStorage.getItem(INCEPTION_LS_KEY) } catch { return null }
+    try { return inceptionKey ? localStorage.getItem(inceptionKey) : null } catch { return null }
   })
 
+  useEffect(() => { setInception(null) }, [userId])
+
   useEffect(() => {
+    if (!userId) return
     apiFetch<{ inception: string | null }>('/performance/inception')
       .then(r => {
         setInception(r.inception)
-        if (r.inception) localStorage.setItem(INCEPTION_LS_KEY, r.inception)
-        else localStorage.removeItem(INCEPTION_LS_KEY)
+        if (!inceptionKey) return
+        if (r.inception) localStorage.setItem(inceptionKey, r.inception)
+        else localStorage.removeItem(inceptionKey)
       })
       .catch(() => {})
-  }, [])
+  }, [userId, inceptionKey])
 
   return inception
 }
