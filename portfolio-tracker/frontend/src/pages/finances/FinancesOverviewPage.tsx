@@ -208,9 +208,12 @@ export default function FinancesOverviewPage() {
 
   if (loading) return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-semibold text-gray-900">{t.finances.overviewTitle}</h1>
-        <p className="text-sm text-gray-400 mt-0.5">{t.finances.overviewSubtitle}</p>
+      <div className="flex items-start justify-between flex-wrap gap-2">
+        <div>
+          <h1 className="text-xl font-semibold text-gray-900">{t.finances.overviewTitle}</h1>
+          <p className="text-sm text-gray-400 mt-0.5">{t.finances.overviewSubtitle}</p>
+        </div>
+        <MonthPicker value={month} onChange={setMonth} locale={browserLocale} />
       </div>
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-12 text-center text-gray-400 text-sm">
         {t.common.loading}
@@ -266,7 +269,8 @@ export default function FinancesOverviewPage() {
     return { ...env, actual, budget, pctOfIncome, over, categories }
   })
 
-  const totalBudgeted   = envelopeBars.reduce((s, e) => s + e.budget, 0)
+  // Exclude income-type envelopes from budget comparison (their budget is the salary target, not an expense cap)
+  const totalBudgeted   = envelopeBars.filter(e => e.type !== 'income').reduce((s, e) => s + e.budget, 0)
   const isWithinBudget  = totalExpenses === 0 || totalExpenses <= totalBudgeted
   const overspentAmount = totalExpenses > totalBudgeted ? totalExpenses - totalBudgeted : 0
 
@@ -293,70 +297,70 @@ export default function FinancesOverviewPage() {
 
   return (
     <div className="space-y-5">
-      {/* Header */}
-      <div>
-        <h1 className="text-xl font-semibold text-gray-900">{t.finances.overviewTitle}</h1>
-        <p className="text-sm text-gray-400 mt-0.5">{t.finances.overviewSubtitle}</p>
+      {/* Header with month picker */}
+      <div className="flex items-start justify-between flex-wrap gap-2">
+        <div>
+          <h1 className="text-xl font-semibold text-gray-900">{t.finances.overviewTitle}</h1>
+          <p className="text-sm text-gray-400 mt-0.5">{t.finances.overviewSubtitle}</p>
+        </div>
+        <MonthPicker value={month} onChange={setMonth} locale={browserLocale} />
       </div>
 
-      {/* Hero card */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#001A70] via-[#002494] to-[#0d3aa8] text-white shadow-lg">
-        <div className="absolute -right-10 -top-10 w-48 h-48 rounded-full bg-white/5 pointer-events-none" />
-        <div className="absolute -right-4 bottom-0 w-32 h-32 rounded-full bg-white/5 pointer-events-none" />
-        <div className="relative p-5">
-          {/* Top row: month + status badge */}
-          <div className="flex items-start justify-between gap-3 mb-4">
-            <MonthPicker value={month} onChange={setMonth} locale={browserLocale} dark />
-            <div className={`shrink-0 px-3 py-1 rounded-full text-xs font-semibold ${
-              totalExpenses === 0 ? 'bg-white/10 text-white/60' :
-              isWithinBudget ? 'bg-emerald-400/25 text-emerald-300' : 'bg-red-400/25 text-red-300'
-            }`}>
-              {totalExpenses === 0 ? '—' : isWithinBudget ? t.finances.overviewOnTrack : t.finances.overviewOverspent}
-              {overspentAmount > 0 && ` +${fmt(cx(overspentAmount), currency, true)}`}
-            </div>
-          </div>
-
-          {/* Main: net balance */}
-          <div className="mb-5">
-            <p className="text-xs text-white/50 uppercase tracking-widest mb-1">{t.finances.overviewBalance}</p>
-            <p className={`text-3xl font-bold tabular-nums ${receivedIncome > 0 && netBalance < 0 ? 'text-red-300' : ''}`}>
+      {/* Hero card — matches portfolio card style */}
+      <div className="bg-gradient-to-br from-[#0A0F1E] to-[#001A70] text-white rounded-2xl p-5 shadow-sm">
+        <div className="flex items-start justify-between">
+          <div>
+            <p className="text-blue-300 text-xs font-medium uppercase tracking-wide">{t.finances.overviewBalance}</p>
+            <p className={`text-4xl font-bold mt-2 leading-tight tabular-nums ${receivedIncome > 0 && netBalance < 0 ? 'text-red-300' : ''}`}>
               {receivedIncome > 0 ? fmt(cx(netBalance), currency, true) : '—'}
             </p>
           </div>
+          <div className={`shrink-0 px-3 py-1 rounded-full text-xs font-semibold ${
+            totalExpenses === 0 ? 'bg-white/10 text-white/60' :
+            isWithinBudget ? 'bg-emerald-400/25 text-emerald-300' : 'bg-red-400/25 text-red-300'
+          }`}>
+            {totalExpenses === 0 ? '—' : isWithinBudget ? t.finances.overviewOnTrack : t.finances.overviewOverspent}
+            {overspentAmount > 0 && ` +${fmt(cx(overspentAmount), currency, true)}`}
+          </div>
+        </div>
 
-          {/* Bottom metrics row */}
-          <div className="grid grid-cols-3 gap-3 pt-4 border-t border-white/10">
-            <div>
-              <p className="text-[10px] text-white/50 uppercase tracking-wide mb-0.5">{t.finances.income}</p>
-              <p className="text-sm font-semibold tabular-nums">
-                {receivedIncome > 0 ? fmt(cx(receivedIncome), currency, true) : '—'}
+        <div className="mt-4 pt-4 border-t border-white/10 grid grid-cols-3 gap-4">
+          <div>
+            <p className="text-blue-300 text-[10px] uppercase tracking-wide font-medium">{t.finances.income}</p>
+            <p className={`text-base font-semibold mt-0.5 tabular-nums ${
+              receivedIncome > 0 && receivedIncome >= configuredIncome ? 'text-emerald-300'
+              : receivedIncome > 0 ? 'text-amber-300'
+              : ''
+            }`}>
+              {receivedIncome > 0 ? fmt(cx(receivedIncome), currency, true) : '—'}
+            </p>
+            <p className="text-blue-300/60 text-[11px] mt-0.5">
+              {t.finances.overviewPlanned} {fmt(cx(configuredIncome), currency, true)}
+            </p>
+          </div>
+          <div>
+            <p className="text-blue-300 text-[10px] uppercase tracking-wide font-medium">{t.finances.expenses}</p>
+            <p className={`text-base font-semibold mt-0.5 tabular-nums ${totalExpenses > totalBudgeted && totalBudgeted > 0 ? 'text-red-300' : ''}`}>
+              {totalExpenses > 0 ? fmt(cx(totalExpenses), currency, true) : '—'}
+            </p>
+            {totalBudgeted > 0 && (
+              <p className="text-blue-300/60 text-[11px] mt-0.5">
+                {t.finances.overviewPlanned} {fmt(cx(totalBudgeted), currency, true)}
               </p>
-              <p className="text-[10px] text-white/40 mt-0.5">
-                {t.finances.overviewPlanned} {fmt(cx(configuredIncome), currency, true)}
-              </p>
-            </div>
-            <div>
-              <p className="text-[10px] text-white/50 uppercase tracking-wide mb-0.5">{t.finances.expenses}</p>
-              <p className={`text-sm font-semibold tabular-nums ${totalExpenses > totalBudgeted && totalBudgeted > 0 ? 'text-red-300' : ''}`}>
-                {totalExpenses > 0 ? fmt(cx(totalExpenses), currency, true) : '—'}
-              </p>
-              {totalBudgeted > 0 && (
-                <p className="text-[10px] text-white/40 mt-0.5">
-                  {t.finances.overviewPlanned} {fmt(cx(totalBudgeted), currency, true)}
-                </p>
-              )}
-            </div>
-            <div>
-              <p className="text-[10px] text-white/50 uppercase tracking-wide mb-0.5">{t.finances.heroSavingsRate}</p>
-              <p className="text-sm font-semibold tabular-nums">
-                {receivedIncome > 0 && netBalance >= 0 ? `${Math.round((netBalance / receivedIncome) * 100)}%` : '—'}
-              </p>
-              {receivedIncome > 0 && totalBudgeted > 0 && (
-                <p className="text-[10px] text-white/40 mt-0.5">
-                  {t.finances.overviewStatus}
-                </p>
-              )}
-            </div>
+            )}
+          </div>
+          <div>
+            <p className="text-blue-300 text-[10px] uppercase tracking-wide font-medium">{t.finances.heroSavingsRate}</p>
+            <p className={`text-base font-semibold mt-0.5 tabular-nums ${
+              receivedIncome > 0 && netBalance >= 0 ? 'text-emerald-300'
+              : receivedIncome > 0 ? 'text-red-300'
+              : ''
+            }`}>
+              {receivedIncome > 0 ? `${Math.round((netBalance / receivedIncome) * 100)}%` : '—'}
+            </p>
+            {receivedIncome > 0 && (
+              <p className="text-blue-300/60 text-[11px] mt-0.5">{t.finances.overviewStatus}</p>
+            )}
           </div>
         </div>
       </div>
