@@ -51,6 +51,7 @@ router.post('/check', requireAuth, async (req, res: Response) => {
   const toAward: string[] = []
   const check = (key: string, cond: boolean) => { if (!earned.has(key) && cond) toAward.push(key) }
 
+  check('first_step', true)
   check('identity', !!(meta.first_name && meta.last_name && meta.country && meta.birthdate && meta.avatar_url))
   check('first_seed', contribDates.length > 0)
   check('global_roots', assetList.some(a => a.currency !== 'BRL'))

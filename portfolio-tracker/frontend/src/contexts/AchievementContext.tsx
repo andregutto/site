@@ -21,15 +21,19 @@ export function AchievementProvider({ children }: { children: React.ReactNode })
   const [celebrateKey, setCelebrateKey] = useState<string | null>(null)
   const checking = useRef(false)
 
+  // Achievements awarded silently — no toast or celebration modal
+  const SILENT_ACHIEVEMENTS = new Set(['first_step'])
+
   const triggerCheck = useCallback(async (total_brl?: number, total_display?: number, currency?: string) => {
     if (checking.current) return
     checking.current = true
     try {
       const newKeys = await checkAchievements(total_brl, total_display, currency)
-      if (newKeys.length > 0) {
-        setCelebrateKey(newKeys[0])
-        if (newKeys.length > 1) {
-          setToastQueue(newKeys.slice(1))
+      const notifyKeys = newKeys.filter(k => !SILENT_ACHIEVEMENTS.has(k))
+      if (notifyKeys.length > 0) {
+        setCelebrateKey(notifyKeys[0])
+        if (notifyKeys.length > 1) {
+          setToastQueue(notifyKeys.slice(1))
         }
       }
     } finally {
