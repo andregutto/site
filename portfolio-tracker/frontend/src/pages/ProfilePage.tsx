@@ -119,10 +119,22 @@ export default function ProfilePage() {
   async function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
+    setSaving(true); setError(null); setSaveOk(false)
     try {
       const dataUrl = await resizeImageToDataUrl(file)
       setAvatarUrl(dataUrl)
-    } catch { setError(t.profile.errorPhoto) }
+      await apiFetch('/profile', {
+        method: 'PATCH',
+        body: JSON.stringify({ avatar_url: dataUrl }),
+      })
+      setSaveOk(true)
+      setTimeout(() => setSaveOk(false), 3000)
+      triggerCheck()
+    } catch {
+      setError(t.profile.errorPhoto)
+    } finally {
+      setSaving(false)
+    }
   }
 
   async function handleSave(ev: React.FormEvent) {
