@@ -333,7 +333,7 @@ export default function PerformancePage() {
               <div className="px-6 py-4 border-b border-gray-100">
                 <h2 className="font-semibold text-gray-800">{t.performance.monthlyEvolution}</h2>
               </div>
-              <div className="overflow-x-auto">
+              <div className="hidden sm:block overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
                     <tr>
@@ -466,6 +466,79 @@ export default function PerformancePage() {
                     })}
                   </tbody>
                 </table>
+              </div>
+
+              {/* Mobile card list */}
+              <div className="sm:hidden divide-y divide-gray-50">
+                {monthly.monthly.map((m) => {
+                  const cf      = m.contributions ?? 0
+                  const gain    = m.prev_total > 0 ? m.total - m.prev_total - cf : null
+                  const denom   = m.prev_total + 0.5 * cf
+                  const gainPct = gain != null && denom > 0 ? (gain / denom) * 100 : null
+                  const isExpanded = expandedMonths.has(m.month)
+                  const hasDetail  = (m.detail?.length ?? 0) > 0
+                  return (
+                    <div key={m.month}>
+                      <div
+                        onClick={() => hasDetail && toggleMonth(m.month)}
+                        className={`px-4 py-3 flex items-center gap-3 ${hasDetail ? 'cursor-pointer' : ''} hover:bg-gray-50 transition-colors`}
+                      >
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            {hasDetail && (
+                              <span className={`text-gray-400 text-xs transition-transform inline-block ${isExpanded ? 'rotate-90' : ''}`}>▶</span>
+                            )}
+                            <span className="font-medium text-gray-700 text-sm">{fmtMonth(m.month)}</span>
+                          </div>
+                          {cf !== 0 && (
+                            <div className="text-xs text-gray-400 mt-0.5">
+                              {t.performance.contributions}: {cf > 0 ? '+' : ''}{fmt(cf)}
+                            </div>
+                          )}
+                        </div>
+                        <div className="text-right shrink-0">
+                          <div className="text-sm font-medium text-gray-900">{m.total > 0 ? fmt(m.total) : '—'}</div>
+                          <div className="flex items-center justify-end gap-2 mt-0.5">
+                            {gain != null && (
+                              <span className={`text-xs font-medium ${gain >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                {gain >= 0 ? '+' : ''}{fmt(gain)}
+                              </span>
+                            )}
+                            <span className={`text-xs font-semibold ${gainPct == null ? 'text-gray-300' : gainPct >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                              {gainPct != null ? `${gainPct >= 0 ? '+' : ''}${gainPct.toFixed(2)}%` : '—'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      {isExpanded && m.detail && (
+                        <div className="bg-gray-50/70 px-4 pb-3">
+                          <div className="divide-y divide-gray-100">
+                            {m.detail.filter(d => d.value > 0).sort((a, b) => b.value - a.value).map(d => {
+                              const hasGainData = d.prev_value > 0
+                              const dd = d.prev_value + 0.5 * d.contributions
+                              const gp = hasGainData && dd > 0 ? (d.gain / dd) * 100 : null
+                              return (
+                                <div
+                                  key={d.asset_id}
+                                  onClick={() => navigate(`/assets/${d.asset_id}`)}
+                                  className="py-2 flex items-center justify-between cursor-pointer hover:opacity-80 transition-opacity"
+                                >
+                                  <span className="text-xs font-semibold text-gray-700">{d.code}</span>
+                                  <div className="text-right">
+                                    <div className="text-xs text-gray-800">{fmt(d.value)}</div>
+                                    <div className={`text-[11px] font-semibold ${gp == null ? 'text-gray-300' : gp >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                      {gp != null ? `${gp >= 0 ? '+' : ''}${gp.toFixed(2)}%` : '—'}
+                                    </div>
+                                  </div>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
               </div>
             </div>
           )}

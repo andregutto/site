@@ -1453,6 +1453,56 @@ router.delete('/reimbursement-groups/:id', requireAuth, async (req, res: Respons
   res.json({ ok: true })
 })
 
+// GET /api/finances/categories/monthly-history
+router.get('/categories/monthly-history', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const { from, to } = req.query as Record<string, string>
+
+  if (!from || !to) { res.status(400).json({ error: 'from and to are required (YYYY-MM)' }); return }
+
+  const dateFrom = `${from}-01`
+  const [toY, toM] = to.split('-').map(Number)
+  const dateTo = new Date(toY, toM, 0).toISOString().split('T')[0]
+
+  const { data, error } = await supabaseAdmin
+    .from('finance_transactions')
+    .select('date, amount, category_id, finance_categories(id, name, icon, color)')
+    .eq('user_id', userId)
+    .gte('date', dateFrom)
+    .lte('date', dateTo)
+    .eq('is_internal_transfer', false)
+    .eq('exclude_from_stats', false)
+    .not('category_id', 'is', null)
+    .lt('amount', 0)
+
+  if (error) { res.status(500).json({ error: error.message }); return }
+
+  type CatInfo = { id: number; name: string; icon: string; color: string }
+  const catMap = new Map<number, CatInfo>()
+  const monthlyMap = new Map<number, Map<string, number>>()
+
+  for (const row of (data ?? []) as any[]) {
+    const cat = row.finance_categories as CatInfo | null
+    if (!cat) continue
+    const catId = cat.id
+    if (!catMap.has(catId)) catMap.set(catId, cat)
+    const ym = (row.date as string).slice(0, 7)
+    if (!monthlyMap.has(catId)) monthlyMap.set(catId, new Map())
+    const cm = monthlyMap.get(catId)!
+    cm.set(ym, (cm.get(ym) ?? 0) + Math.abs(row.amount as number))
+  }
+
+  const result = Array.from(catMap.entries()).map(([catId, cat]) => {
+    const cm = monthlyMap.get(catId) ?? new Map()
+    const months = Array.from(cm.entries())
+      .map(([month, total]) => ({ month, total }))
+      .sort((a, b) => a.month.localeCompare(b.month))
+    return { ...cat, months }
+  }).sort((a, b) => a.name.localeCompare(b.name))
+
+  res.json(result)
+})
+
 // POST /api/finances/detect-reimbursements
 router.post('/detect-reimbursements', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest

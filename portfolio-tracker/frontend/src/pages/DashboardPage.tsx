@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { usePortfolioValue, usePerformanceMonthly, usePerformanceInception } from '../hooks/usePortfolio'
+import { usePortfolioValue, usePerformanceMonthly, usePerformanceInception, usePerformanceSummary } from '../hooks/usePortfolio'
 import { useCurrency } from '../contexts/CurrencyContext'
 import { useFavorites } from '../hooks/useFavorites'
 import { useAchievementContext } from '../contexts/AchievementContext'
@@ -16,6 +16,18 @@ function fmtMonthLabel(ym: string) {
   const [y, m] = ym.split('-')
   const names = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
   return `${names[parseInt(m) - 1]}/${y.slice(2)}`
+}
+
+type PeriodMode = 'current_month' | 'last_30d' | 'last_12m' | 'ytd' | 'inception'
+
+function localYM(d: Date) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+}
+
+function addMonths(ym: string, n: number): string {
+  const [y, m] = ym.split('-').map(Number)
+  const d = new Date(y, m - 1 + n, 1)
+  return localYM(d)
 }
 
 export default function DashboardPage() {
@@ -36,7 +48,36 @@ export default function DashboardPage() {
   }, [data?.total_brl])
 
   const inception = usePerformanceInception()
-  const currentYM = new Date().toISOString().substring(0, 7)
+  const now = new Date()
+  const currentYear = now.getFullYear()
+  const currentYM = localYM(now)
+
+  const [periodMode, setPeriodMode] = useState<PeriodMode>('ytd')
+
+  const perfFrom = (() => {
+    switch (periodMode) {
+      case 'current_month': return currentYM
+      case 'last_30d':      return addMonths(currentYM, -1)
+      case 'last_12m':      return addMonths(currentYM, -11)
+      case 'ytd':           return `${currentYear}-01`
+      case 'inception':     return inception ?? `${currentYear}-01`
+    }
+  })()
+  const perfTo = currentYM
+
+  const periodLabel = (() => {
+    switch (periodMode) {
+      case 'current_month': return t.performance.currentMonth
+      case 'last_30d':      return t.performance.last30d
+      case 'last_12m':      return t.performance.last12m
+      case 'ytd':           return 'YTD'
+      case 'inception':     return t.performance.inception
+    }
+  })()
+
+  const { data: periodSummary, loading: periodLoading } = usePerformanceSummary(perfFrom, perfTo)
+  const periodReturnPct = periodSummary?.return_pct ?? null
+
   const { data: perfData, loading: chartLoading } = usePerformanceMonthly(inception ?? currentYM, currentYM)
 
   const portfolioChartData = (perfData?.monthly ?? [])
@@ -76,17 +117,39 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-xl font-bold text-gray-900">Dashboard</h1>
-        <button
-          onClick={refresh}
-          className="text-sm text-gray-500 hover:text-[#001A70] flex items-center gap-1.5 transition-colors"
-        >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-          </svg>
-          {t.dashboard.refresh}
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          {([
+            { key: 'current_month' as PeriodMode, label: t.performance.currentMonth },
+            { key: 'last_30d'      as PeriodMode, label: t.performance.last30d },
+            { key: 'last_12m'      as PeriodMode, label: t.performance.last12m },
+            { key: 'ytd'           as PeriodMode, label: 'YTD' },
+            { key: 'inception'     as PeriodMode, label: t.performance.inception, disabled: !inception },
+          ] as Array<{ key: PeriodMode; label: string; disabled?: boolean }>).map(({ key, label, disabled }) => (
+            <button
+              key={key}
+              onClick={() => !disabled && setPeriodMode(key)}
+              disabled={disabled}
+              className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
+                disabled
+                  ? 'bg-white text-gray-300 border-gray-100 cursor-not-allowed'
+                  : periodMode === key
+                    ? 'bg-[#001A70] text-white border-[#001A70]'
+                    : 'bg-white text-gray-500 border-gray-200 hover:border-[#001A70] hover:text-[#001A70]'
+              }`}
+            >{label}</button>
+          ))}
+          <button
+            onClick={refresh}
+            className="text-sm text-gray-500 hover:text-[#001A70] flex items-center gap-1.5 transition-colors ml-1"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            {t.dashboard.refresh}
+          </button>
+        </div>
       </div>
 
       {/* Top cards row — Option A: main card (3 cols) + Mês + Ano */}
@@ -119,7 +182,9 @@ export default function DashboardPage() {
             month_pct={hasInvested ? monthReturn : null}
             ytd_pct={hasInvested ? ytdReturn : null}
             ytd_year={currentYearStr}
-            chartLoading={chartLoading}
+            chartLoading={chartLoading || periodLoading}
+            period_pct={hasInvested ? periodReturnPct : null}
+            period_label={periodLabel}
           />
         )
       })()}

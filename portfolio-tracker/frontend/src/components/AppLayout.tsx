@@ -253,10 +253,10 @@ export default function AppLayout() {
           </div>
         </div>
 
-        {/* ── Sub-nav bar (desktop only, always visible when in a section) ── */}
+        {/* ── Sub-nav bar (desktop only) ── */}
         {activeSubItems.length > 0 && (
-          <div className="border-t border-gray-100 bg-gray-50/60">
-            <div className="flex items-center justify-start sm:justify-center gap-0.5 px-4 sm:px-6 py-1.5 overflow-x-auto scrollbar-none">
+          <div className="hidden sm:block border-t border-gray-100 bg-gray-50/60">
+            <div className="flex items-center justify-center gap-0.5 px-6 py-1.5 overflow-x-auto scrollbar-none">
               {activeSubItems.map(({ to, label, end, icon }) => (
                 <NavLink
                   key={to} to={to} end={end}
@@ -423,9 +423,9 @@ export default function AppLayout() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75" />
               </svg>
             )},
-            { to: '/profile', label: t.nav.profile, end: false, match: location.pathname.startsWith('/profile'), icon: (
+            { to: '/institutions', label: t.nav.institutions, end: false, match: inInstitutions, icon: (
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.008v.008h-.008v-.008Zm0 3h.008v.008h-.008v-.008Zm0 3h.008v.008h-.008v-.008Z" />
               </svg>
             )},
           ].map(({ to, label, end: _end, match, icon }) => (

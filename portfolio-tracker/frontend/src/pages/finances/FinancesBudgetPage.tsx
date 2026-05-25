@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { apiFetch } from '../../lib/api'
 import { useI18n } from '../../contexts/I18nContext'
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
 
 interface Category {
   id: number
@@ -28,6 +29,11 @@ interface Envelope {
 interface BudgetData {
   income: { monthly_net: number; currency: string; from_categories: boolean }
   envelopes: Envelope[]
+}
+
+interface CatHistoryEntry {
+  id: number; name: string; icon: string; color: string
+  months: { month: string; total: number }[]
 }
 
 function fmt(n: number, currency: string) {
@@ -326,6 +332,31 @@ export default function FinancesBudgetPage() {
   const [catEnvelopeId, setCatEnvelopeId] = useState<number>(0)
   const [catActuals, setCatActuals]   = useState<Map<number, number>>(new Map())
 
+  // Category history chart
+  const [catHistory, setCatHistory]   = useState<CatHistoryEntry[]>([])
+  const [selectedCatId, setSelectedCatId] = useState<number | ''>('')
+  const [historyFrom, setHistoryFrom] = useState<string>(() => {
+    const d = new Date(); d.setMonth(d.getMonth() - 11)
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+  })
+  const [historyTo, setHistoryTo]     = useState<string>(() => {
+    const d = new Date()
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+  })
+  const [histLoading, setHistLoading] = useState(false)
+
+  const loadCategoryHistory = useCallback(async () => {
+    setHistLoading(true)
+    try {
+      const data = await apiFetch<CatHistoryEntry[]>(`/finances/categories/monthly-history?from=${historyFrom}&to=${historyTo}`)
+      setCatHistory(data)
+    } catch { /* ignore */ } finally {
+      setHistLoading(false)
+    }
+  }, [historyFrom, historyTo])
+
+  useEffect(() => { loadCategoryHistory() }, [loadCategoryHistory])
+
   const load = useCallback(async () => {
     setLoading(true)
     try {
@@ -619,6 +650,93 @@ export default function FinancesBudgetPage() {
         <span className="text-sm text-gray-500">{t.finances.totalBudgeted}</span>
         <span className="text-sm font-semibold text-gray-900">{fmt(totalBudget, data.income.currency)}</span>
       </div>
+
+      {/* Category history chart */}
+      {catHistory.length > 0 && (
+        <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+            <h2 className="font-semibold text-gray-800">{t.finances.categoryHistory}</h2>
+            <div className="flex items-center gap-2 flex-wrap">
+              <input
+                type="month"
+                value={historyFrom}
+                onChange={e => setHistoryFrom(e.target.value)}
+                className="border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm"
+              />
+              <span className="text-gray-400 text-xs">→</span>
+              <input
+                type="month"
+                value={historyTo}
+                onChange={e => setHistoryTo(e.target.value)}
+                className="border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm"
+              />
+              <select
+                value={selectedCatId}
+                onChange={e => setSelectedCatId(e.target.value === '' ? '' : Number(e.target.value))}
+                className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm bg-white"
+              >
+                <option value="">{t.finances.selectCategory}</option>
+                {catHistory.map(c => (
+                  <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          {histLoading ? (
+            <div className="h-48 flex items-end gap-1 px-2 pb-1">
+              {[60,45,70,55,80,65,50,75,60,85,70,55].map((h, i) => (
+                <div key={i} className="flex-1 bg-gray-100 rounded-t animate-pulse" style={{ height: `${h}%` }} />
+              ))}
+            </div>
+          ) : (() => {
+            const filtered = selectedCatId !== ''
+              ? catHistory.filter(c => c.id === selectedCatId)
+              : catHistory
+            if (filtered.length === 0) return <p className="text-center text-gray-400 text-sm py-8">{t.finances.selectCategory}</p>
+
+            const allMonths = Array.from(new Set(filtered.flatMap(c => c.months.map(m => m.month)))).sort()
+            const chartData = allMonths.map(month => {
+              const row: Record<string, string | number> = { month: month.slice(5) }
+              for (const cat of filtered) {
+                const m = cat.months.find(m2 => m2.month === month)
+                row[cat.name] = m?.total ?? 0
+              }
+              return row
+            })
+            const COLORS = ['#001A70','#C9A227','#10b981','#7c3aed','#f59e0b','#ef4444','#3b82f6','#14b8a6']
+            return (
+              <div className="h-48">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={chartData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+                    <XAxis dataKey="month" tick={{ fontSize: 10, fill: '#9ca3af' }} />
+                    <YAxis tick={{ fontSize: 10, fill: '#9ca3af' }} tickFormatter={v => `${(Number(v)/1000).toFixed(0)}k`} width={40} />
+                    <Tooltip
+                      formatter={(v, name) => [
+                        new Intl.NumberFormat('pt-BR', { style: 'currency', currency: data.income.currency, maximumFractionDigits: 0 }).format(Number(v)),
+                        name
+                      ]}
+                      contentStyle={{ borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 12 }}
+                    />
+                    {filtered.map((cat, i) => (
+                      <Line
+                        key={cat.id}
+                        type="monotone"
+                        dataKey={cat.name}
+                        stroke={COLORS[i % COLORS.length]}
+                        strokeWidth={2}
+                        dot={false}
+                        activeDot={{ r: 4 }}
+                        connectNulls
+                      />
+                    ))}
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            )
+          })()}
+        </div>
+      )}
 
       {/* Category modal */}
       {modal && (

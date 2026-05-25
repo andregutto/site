@@ -138,6 +138,9 @@ export default function FinancesTransactionsPage() {
   const [showMomentDropdown, setShowMomentDropdown] = useState(false)
   const [assigning, setAssigning]           = useState(false)
   const momentDropdownRef                   = useRef<HTMLDivElement>(null)
+  const [showGroupPicker, setShowGroupPicker] = useState(false)
+  const [addingToGroup, setAddingToGroup]     = useState(false)
+  const groupPickerRef                        = useRef<HTMLDivElement>(null)
 
   // Add form state
   const [addDate, setAddDate]           = useState(today.toISOString().split('T')[0])
@@ -246,6 +249,18 @@ export default function FinancesTransactionsPage() {
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [showMomentDropdown])
+
+  // Close group picker on outside click
+  useEffect(() => {
+    if (!showGroupPicker) return
+    function handler(e: MouseEvent) {
+      if (groupPickerRef.current && !groupPickerRef.current.contains(e.target as Node)) {
+        setShowGroupPicker(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [showGroupPicker])
 
   // Clear selection on date/filter change
   useEffect(() => { setSelected(new Set()) }, [month, dateMode, dateFrom, dateTo, filterCatId, filterMomentId, filterAccountId])
@@ -365,6 +380,31 @@ export default function FinancesTransactionsPage() {
   async function unlinkTransfer(id: number) {
     await apiFetch(`/finances/transactions/${id}/unlink-transfer`, { method: 'POST' })
     loadTransactions()
+  }
+
+  function setLast30Days() {
+    const d = new Date()
+    const from = new Date(d)
+    from.setDate(from.getDate() - 29)
+    setDateFrom(from.toISOString().split('T')[0])
+    setDateTo(d.toISOString().split('T')[0])
+    setDateMode('range')
+  }
+
+  async function addToGroup(groupId: string) {
+    setAddingToGroup(true)
+    setShowGroupPicker(false)
+    try {
+      await apiFetch(`/finances/reimbursement-groups/${groupId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ add_ids: Array.from(selected) }),
+      })
+      setSelected(new Set())
+      await reloadGroups()
+      await loadTransactions()
+    } finally {
+      setAddingToGroup(false)
+    }
   }
 
   async function detectTransfers() {
@@ -652,6 +692,11 @@ export default function FinancesTransactionsPage() {
           {dateMode === 'month' ? (
             <div className="flex items-center gap-1">
               <MonthPicker value={month} onChange={setMonth} locale={locale} />
+              <button
+                onClick={setLast30Days}
+                title={t.performance.last30d}
+                className="px-2.5 py-1.5 text-xs font-medium text-gray-500 border border-gray-200 rounded-lg hover:border-[#001A70] hover:text-[#001A70] transition-colors whitespace-nowrap"
+              >{t.performance.last30d}</button>
               <button
                 onClick={() => setDateMode('range')}
                 title="Período personalizado"
@@ -1276,6 +1321,32 @@ export default function FinancesTransactionsPage() {
             <span>↩</span>
             {t.finances.createReimbursementGroup}
           </button>
+          {groups.length > 0 && (
+            <div ref={groupPickerRef} className="relative">
+              <button
+                onClick={() => setShowGroupPicker(v => !v)}
+                disabled={addingToGroup}
+                className="flex items-center gap-1.5 text-sm bg-white/10 hover:bg-white/20 transition-colors px-3 py-1.5 rounded-xl disabled:opacity-50"
+              >
+                <span>+</span>
+                {addingToGroup ? '…' : t.finances.addToGroup}
+              </button>
+              {showGroupPicker && (
+                <div className="absolute bottom-full mb-1 left-0 min-w-[180px] bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-50">
+                  <p className="px-3 py-1.5 text-[11px] font-semibold text-gray-400 uppercase tracking-wide">{t.finances.addToGroupSelect}</p>
+                  {groups.map(g => (
+                    <button
+                      key={g.id}
+                      onClick={() => addToGroup(g.id)}
+                      className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors truncate"
+                    >
+                      {g.name}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
           <div className="w-px h-4 bg-white/20" />
           <button
             onClick={() => setSelected(new Set())}

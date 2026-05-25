@@ -1095,7 +1095,7 @@ export default function ContributionsPage() {
         ) : contributions.length === 0 ? (
           <p className="text-center text-gray-400 py-8 text-sm">{t.contributions.noContributions}</p>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="hidden sm:block overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
                 <tr>
@@ -1121,7 +1121,7 @@ export default function ContributionsPage() {
                           <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: c.assets.asset_classes.color }} />
                         )}
                         <span className="font-medium text-gray-900">{c.assets.code}</span>
-                        <span className="text-gray-400 text-xs hidden sm:inline truncate max-w-[120px]">{c.assets.name}</span>
+                        <span className="text-gray-400 text-xs truncate max-w-[120px]">{c.assets.name}</span>
                       </div>
                     </td>
                     <td className="px-4 py-3">
@@ -1172,6 +1172,37 @@ export default function ContributionsPage() {
                 ))}
               </tbody>
             </table>
+          </div>
+
+          {/* Mobile card list */}
+          <div className="sm:hidden divide-y divide-gray-100">
+            {contributions.map(c => (
+              <div
+                key={c.id}
+                className="px-4 py-3 flex items-center gap-3 cursor-pointer hover:bg-gray-50 transition-colors"
+                onClick={() => navigate(`/assets/${c.assets.id}`)}
+              >
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    {c.assets.asset_classes && (
+                      <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: c.assets.asset_classes.color }} />
+                    )}
+                    <span className="font-medium text-gray-900 text-sm">{c.assets.code}</span>
+                    <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${
+                      c.type === 'buy' ? 'bg-green-100 text-green-700' :
+                      c.type === 'income' ? 'bg-purple-100 text-purple-700' :
+                      'bg-red-100 text-red-700'
+                    }`}>
+                      {c.type === 'buy' ? t.contributions.buyLabel : c.type === 'income' ? t.contributions.incomeLabel : t.contributions.sellLabel}
+                    </span>
+                  </div>
+                  <div className="text-xs text-gray-400 mt-0.5">{fmtDate(c.date)} · {fmtNum(c.quantity, 4)}</div>
+                </div>
+                <div className="text-right shrink-0">
+                  <div className="text-sm font-medium text-gray-900">{c.value_brl != null ? fmt(c.value_brl) : '—'}</div>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>

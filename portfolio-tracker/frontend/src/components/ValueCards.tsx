@@ -11,9 +11,11 @@ interface Props {
   ytd_pct?: number | null
   ytd_year?: string
   chartLoading?: boolean
+  period_pct?: number | null
+  period_label?: string
 }
 
-export default function ValueCards({ total_brl, generated_at, invested_brl, gain_brl, gain_pct, month_pct, ytd_pct, ytd_year, chartLoading }: Props) {
+export default function ValueCards({ total_brl, generated_at, invested_brl, gain_brl, gain_pct, month_pct, ytd_pct, ytd_year, chartLoading, period_pct, period_label }: Props) {
   const { currency, fmt } = useCurrency()
   const { t, locale } = useI18n()
   const ts = new Date(generated_at).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })
@@ -59,8 +61,12 @@ export default function ValueCards({ total_brl, generated_at, invested_brl, gain
             <p className={`text-base font-semibold mt-0.5 ${pctColor(month_pct)}`}>{pctText(month_pct)}</p>
           </div>
           <div>
-            <p className="text-blue-300 text-[10px] uppercase tracking-wide font-medium">{t.dashboard.yearLabel.replace('{year}', ytd_year ?? '')}</p>
-            <p className={`text-base font-semibold mt-0.5 ${pctColor(ytd_pct)}`}>{pctText(ytd_pct)}</p>
+            <p className="text-blue-300 text-[10px] uppercase tracking-wide font-medium">
+              {period_label ?? t.dashboard.yearLabel.replace('{year}', ytd_year ?? '')}
+            </p>
+            <p className={`text-base font-semibold mt-0.5 ${pctColor(period_pct !== undefined ? period_pct : ytd_pct)}`}>
+              {pctText(period_pct !== undefined ? period_pct : ytd_pct)}
+            </p>
           </div>
         </div>
       )}
