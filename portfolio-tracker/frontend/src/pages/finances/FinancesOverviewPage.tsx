@@ -335,7 +335,7 @@ export default function FinancesOverviewPage() {
               {receivedIncome > 0 ? fmt(cx(netBalance), currency, true) : '—'}
             </p>
           </div>
-          <div style={{ shrink: 0, padding: '4px 12px', borderRadius: 999, fontSize: 11, fontFamily: "'Tenor Sans', sans-serif", letterSpacing: '0.06em',
+          <div style={{ flexShrink: 0, padding: '4px 12px', borderRadius: 999, fontSize: 11, fontFamily: "'Tenor Sans', sans-serif", letterSpacing: '0.06em',
             background: totalExpenses === 0 ? 'rgba(255,255,255,0.08)' : isWithinBudget ? 'rgba(31,138,91,0.20)' : 'rgba(214,59,47,0.20)',
             color: totalExpenses === 0 ? 'rgba(255,255,255,0.45)' : isWithinBudget ? 'var(--arvo-green-on-dark)' : '#f08070',
             border: `1px solid ${totalExpenses === 0 ? 'rgba(255,255,255,0.10)' : isWithinBudget ? 'rgba(31,138,91,0.30)' : 'rgba(214,59,47,0.30)'}`,
