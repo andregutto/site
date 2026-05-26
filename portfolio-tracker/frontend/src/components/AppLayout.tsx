@@ -253,10 +253,10 @@ export default function AppLayout() {
           </div>
         </div>
 
-        {/* ── Sub-nav bar ── */}
+        {/* ── Sub-nav bar — desktop only ── */}
         {activeSubItems.length > 0 && (
-          <div className="border-t border-gray-100 bg-gray-50/60">
-            <div className="flex items-center justify-start sm:justify-center gap-0.5 px-4 sm:px-6 py-1.5 overflow-x-auto scrollbar-none">
+          <div className="hidden sm:block border-t border-gray-100 bg-gray-50/60">
+            <div className="flex items-center justify-center gap-0.5 px-6 py-1.5">
               {activeSubItems.map(({ to, label, end, icon }) => (
                 <NavLink
                   key={to} to={to} end={end}
@@ -401,13 +401,36 @@ export default function AppLayout() {
         )}
       </header>
 
-      <main className="flex-1 max-w-6xl mx-auto w-full px-4 py-6 pb-24 sm:pb-6">
+      <main className="flex-1 max-w-6xl mx-auto w-full px-4 py-6 pb-28 sm:pb-6">
         <Outlet />
       </main>
 
       <div className="hidden sm:block max-w-6xl mx-auto w-full px-4 pb-2">
         <LoginFooter />
       </div>
+
+      {/* Mobile sub-nav — fixed just above the bottom nav */}
+      {activeSubItems.length > 0 && (
+        <nav className="sm:hidden fixed bottom-14 left-0 right-0 bg-white border-t border-gray-100 z-20">
+          <div className="flex items-center gap-0.5 px-3 py-1 overflow-x-auto scrollbar-none">
+            {activeSubItems.map(({ to, label, end, icon }) => (
+              <NavLink
+                key={to} to={to} end={end}
+                className={({ isActive }) =>
+                  `flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${
+                    isActive
+                      ? 'bg-[#001A70]/10 text-[#001A70] font-semibold'
+                      : 'text-gray-500 hover:text-gray-800 hover:bg-gray-100'
+                  }`
+                }
+              >
+                <span className="text-gray-400 flex items-center">{icon}</span>
+                {label}
+              </NavLink>
+            ))}
+          </div>
+        </nav>
+      )}
 
       {/* Mobile bottom navigation */}
       <nav className="sm:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 z-20 safe-bottom">
