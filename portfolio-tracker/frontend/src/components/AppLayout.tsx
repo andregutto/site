@@ -141,7 +141,7 @@ export default function AppLayout() {
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: 'var(--arvo-offwhite)' }}>
-      <header className="sticky top-0 z-10" style={{ background: 'rgba(242,237,228,0.88)', backdropFilter: 'blur(12px) saturate(1.05)', WebkitBackdropFilter: 'blur(12px) saturate(1.05)', borderBottom: '1px solid var(--arvo-border-soft)' }}>
+      <header className="sticky top-0 z-10" style={{ background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(12px) saturate(1.05)', WebkitBackdropFilter: 'blur(12px) saturate(1.05)', borderBottom: '1px solid var(--arvo-border-soft)' }}>
 
         {/* ── Main bar ── */}
         <div className="h-14 flex items-center px-6 gap-4">
@@ -261,7 +261,7 @@ export default function AppLayout() {
 
         {/* ── Sub-nav bar — desktop only ── */}
         {activeSubItems.length > 0 && (
-          <div className="hidden sm:block" style={{ borderTop: '1px solid var(--arvo-border-soft)', background: 'rgba(232,223,208,0.45)' }}>
+          <div className="hidden sm:block" style={{ borderTop: '1px solid var(--arvo-border-soft)', background: 'rgba(0,0,0,0.025)' }}>
             <div className="flex items-center justify-center gap-1 px-6 py-2">
               {activeSubItems.map(({ to, label, end }) => (
                 <NavLink
@@ -417,7 +417,7 @@ export default function AppLayout() {
 
       {/* Mobile sub-nav — fixed just above the bottom nav */}
       {activeSubItems.length > 0 && (
-        <nav className="sm:hidden fixed bottom-14 left-0 right-0 z-20" style={{ background: 'rgba(232,223,208,0.94)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', borderTop: '1px solid var(--arvo-border-soft)' }}>
+        <nav className="sm:hidden fixed bottom-14 left-0 right-0 z-20" style={{ background: 'rgba(255,255,255,0.96)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', borderTop: '1px solid var(--arvo-border-soft)' }}>
           <div className="flex items-center gap-1 px-3 py-1.5 overflow-x-auto scrollbar-none">
             {activeSubItems.map(({ to, label, end }) => (
               <NavLink
@@ -440,7 +440,7 @@ export default function AppLayout() {
       )}
 
       {/* Mobile bottom navigation */}
-      <nav className="sm:hidden fixed bottom-0 left-0 right-0 z-20 safe-bottom" style={{ background: 'rgba(242,237,228,0.96)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', borderTop: '1px solid var(--arvo-border-soft)' }}>
+      <nav className="sm:hidden fixed bottom-0 left-0 right-0 z-20 safe-bottom" style={{ background: 'rgba(255,255,255,0.96)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', borderTop: '1px solid var(--arvo-border-soft)' }}>
         <div className="flex">
           {[
             { to: '/dashboard', label: t.nav.investments, match: inInvestimentos, icon: (

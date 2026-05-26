@@ -376,7 +376,7 @@ export default function LoginPage() {
                     <div style={{ display: 'flex', gap: 8 }}>
                       {(['BRL', 'USD', 'EUR'] as Currency[]).map(c => (
                         <button key={c} type="button" onClick={() => setCurrency(c)}
-                          style={{ flex: 1, padding: '10px 0', fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.08em', border: `1px solid ${currency === c ? 'var(--arvo-black)' : 'var(--arvo-border)'}`, borderRadius: 3, cursor: 'pointer', background: currency === c ? 'var(--arvo-black)' : '#FFFFFF', color: currency === c ? '#F2EDE4' : 'var(--arvo-fg-muted)', transition: 'all 0.2s' }}
+                          style={{ flex: 1, padding: '10px 0', fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.08em', border: `1px solid ${currency === c ? 'var(--arvo-black)' : 'var(--arvo-border)'}`, borderRadius: 3, cursor: 'pointer', background: currency === c ? 'var(--arvo-black)' : '#FFFFFF', color: currency === c ? 'var(--arvo-offwhite)' : 'var(--arvo-fg-muted)', transition: 'all 0.2s' }}
                         >
                           {c}
                         </button>

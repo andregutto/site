@@ -87,29 +87,31 @@ export default function AchievementsPage() {
       </div>
 
       {/* Level card */}
-      <div className="rounded-2xl p-5" style={{ background: 'linear-gradient(135deg, #111 0%, #0D0D0D 100%)' }}>
-        <div className="flex items-center justify-between mb-3">
+      <div className="rounded-2xl p-5" style={{ background: '#FFFFFF', border: '1px solid rgba(200,184,154,0.30)', boxShadow: '0 4px 24px rgba(200,184,154,0.16)', position: 'relative', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', top: -80, right: -40, width: 260, height: 260, borderRadius: '50%', background: 'rgba(200,184,154,0.09)', filter: 'blur(60px)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 1, background: 'linear-gradient(to right, transparent, rgba(200,184,154,0.55), transparent)', pointerEvents: 'none' }} />
+        <div className="flex items-center justify-between mb-3" style={{ position: 'relative', zIndex: 1 }}>
           <div className="flex items-center gap-2">
             <span className="text-3xl">{level.emoji}</span>
             <div>
               <p className="text-xs uppercase tracking-widest" style={{ fontFamily: "'Tenor Sans', sans-serif", color: 'var(--arvo-gold)' }}>{t.achievements.currentLevel}</p>
-              <p className="text-white text-lg" style={{ fontFamily: "'Tenor Sans', sans-serif" }}>{(t.levels as Record<string,string>)[level.key] ?? level.name}</p>
+              <p style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 18, color: 'var(--arvo-black)' }}>{(t.levels as Record<string,string>)[level.key] ?? level.name}</p>
             </div>
           </div>
           <div className="text-right">
             <span className="font-bold text-2xl" style={{ fontFamily: "'Playfair Display', serif", fontStyle: 'italic', color: 'var(--arvo-gold)' }}>{totalXp}</span>
-            <span className="text-sm ml-1" style={{ color: 'rgba(200,184,154,0.5)', fontFamily: "'Tenor Sans', sans-serif" }}>XP</span>
+            <span className="text-sm ml-1" style={{ color: 'rgba(13,13,13,0.45)', fontFamily: "'Tenor Sans', sans-serif" }}>XP</span>
           </div>
         </div>
 
-        <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.1)' }}>
+        <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(13,13,13,0.08)', position: 'relative', zIndex: 1 }}>
           <div
             className="h-full rounded-full transition-all duration-700"
-            style={{ width: `${progress}%`, background: 'linear-gradient(90deg, var(--arvo-black), var(--arvo-gold))' }}
+            style={{ width: `${progress}%`, background: 'linear-gradient(90deg, var(--arvo-gold), var(--arvo-black))' }}
           />
         </div>
 
-        <div className="flex justify-between mt-2 text-xs" style={{ color: 'rgba(200,184,154,0.5)', fontFamily: "'Tenor Sans', sans-serif" }}>
+        <div className="flex justify-between mt-2 text-xs" style={{ color: 'rgba(13,13,13,0.45)', fontFamily: "'Tenor Sans', sans-serif", position: 'relative', zIndex: 1 }}>
           <span>{level.minXp} XP</span>
           {nextLevel
             ? <span>{t.achievements.nextLevel}: {nextLevel.emoji} {(t.levels as Record<string,string>)[nextLevel.key] ?? nextLevel.name} · {nextLevel.minXp} {t.achievements.xp}</span>

@@ -6,7 +6,7 @@ import LanguageSelector from '../components/LanguageSelector'
 
 const DARK  = '#0D0D0D'
 const GOLD  = '#C8B89A'
-const BG    = '#F2EDE4'
+const BG    = '#FFFFFF'
 const BORDER = 'rgba(13,13,13,0.09)'
 // Text hierarchy on beige/offwhite — NEVER use raw gray-* classes on light bg
 const T_PRIMARY   = 'rgba(13,13,13,0.92)'   // headings
@@ -85,7 +85,7 @@ export default function LandingPage() {
     <div style={{ background: BG, color: T_PRIMARY, fontFamily: F_SANS, minHeight: '100vh', overflowX: 'hidden' }}>
 
       {/* ── HEADER ── */}
-      <header style={{ position: 'sticky', top: 0, zIndex: 100, background: 'rgba(242,237,228,0.96)', backdropFilter: 'blur(16px)', borderBottom: `1px solid ${BORDER}` }}>
+      <header style={{ position: 'sticky', top: 0, zIndex: 100, background: 'rgba(255,255,255,0.96)', backdropFilter: 'blur(16px)', borderBottom: `1px solid ${BORDER}` }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
 
           <a href="#hero" style={{ textDecoration: 'none', flexShrink: 0, display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -163,7 +163,7 @@ export default function LandingPage() {
 
         {/* Mobile drawer */}
         {menuOpen && (
-          <div className="md:hidden" style={{ background: 'rgba(242,237,228,0.98)', borderTop: `1px solid ${BORDER}`, padding: '8px 24px 20px' }}>
+          <div className="md:hidden" style={{ background: 'rgba(255,255,255,0.98)', borderTop: `1px solid ${BORDER}`, padding: '8px 24px 20px' }}>
             {[[`#funcionalidades`, l.navFeatures],[`#como-funciona`, l.navHow],[`#faq`, l.navFaq]].map(([href, label]) => (
               <a key={href} href={href} onClick={() => setMenuOpen(false)}
                 style={{ display: 'flex', alignItems: 'center', padding: '15px 0', fontFamily: F_SANS, fontSize: 12, letterSpacing: '0.12em', textTransform: 'uppercase', color: T_SECONDARY, textDecoration: 'none', borderBottom: `1px solid ${BORDER}` }}>

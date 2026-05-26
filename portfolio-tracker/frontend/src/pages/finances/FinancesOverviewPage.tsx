@@ -72,11 +72,11 @@ const ENV_TYPE_KEY: Record<string, string> = {
 }
 
 const ARVO_ENV_COLORS: Record<string, string> = {
-  essential:  '#D4453C', // arara vermelha
-  investment: '#2E9E6B', // maritaca verde
+  essential:  '#1B4FD8', // azul arara
+  investment: '#7B4FCC', // índigo
   savings:    '#F0A030', // tucano âmbar
-  free:       '#1A8CD8', // arara azul
-  income:     '#7B4FCC', // roxo índigo
+  free:       '#C8B89A', // ouro arvo
+  income:     '#A36A52', // terracota
 }
 
 function resolveEnvName(name: string, type: string | undefined, nameKey: string | null | undefined, keys: Record<string, string>): string {
@@ -319,60 +319,60 @@ export default function FinancesOverviewPage() {
         <MonthPicker value={month} onChange={setMonth} locale={browserLocale} />
       </div>
 
-      {/* Hero card — same style as ValueCards */}
-      <div style={{ background: 'linear-gradient(135deg, #0D0D0D 0%, #1B1815 60%, #28221B 100%)', color: 'var(--arvo-fg-on-dark)', borderRadius: 16, padding: 24, position: 'relative', overflow: 'hidden', boxShadow: '0 4px 32px rgba(200,184,154,0.18), 0 0 0 1px rgba(200,184,154,0.12)' }}>
+      {/* Hero card — white with gold glow */}
+      <div style={{ background: '#FFFFFF', color: 'var(--arvo-fg)', borderRadius: 16, padding: 24, position: 'relative', overflow: 'hidden', border: '1px solid rgba(200,184,154,0.35)', boxShadow: '0 4px 24px rgba(200,184,154,0.18), 0 1px 0 rgba(200,184,154,0.22)' }}>
         {/* Gold glow — top-right */}
-        <div style={{ position: 'absolute', top: -100, right: -60, width: 340, height: 340, borderRadius: '50%', background: 'rgba(200,184,154,0.18)', filter: 'blur(72px)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', top: -100, right: -60, width: 320, height: 320, borderRadius: '50%', background: 'rgba(200,184,154,0.10)', filter: 'blur(60px)', pointerEvents: 'none' }} />
         {/* Gold glow — bottom-left */}
-        <div style={{ position: 'absolute', bottom: -70, left: -40, width: 200, height: 200, borderRadius: '50%', background: 'rgba(200,184,154,0.10)', filter: 'blur(50px)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', bottom: -70, left: -40, width: 180, height: 180, borderRadius: '50%', background: 'rgba(200,184,154,0.07)', filter: 'blur(48px)', pointerEvents: 'none' }} />
         {/* Gold shimmer line */}
-        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 1, background: 'linear-gradient(to right, transparent, rgba(200,184,154,0.38), transparent)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 1, background: 'linear-gradient(to right, transparent, rgba(200,184,154,0.65), transparent)', pointerEvents: 'none' }} />
 
         <div style={{ position: 'relative', zIndex: 2, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
           <div>
-            <p style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'rgba(200,184,154,0.65)', margin: 0 }}>{t.finances.overviewBalance}</p>
-            <p style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 42, letterSpacing: '0.02em', lineHeight: 1.05, marginTop: 10, color: receivedIncome > 0 && netBalance < 0 ? '#f08070' : 'var(--arvo-fg-on-dark)' }}>
+            <p style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'var(--arvo-gold)', margin: 0 }}>{t.finances.overviewBalance}</p>
+            <p style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 42, letterSpacing: '0.02em', lineHeight: 1.05, marginTop: 10, color: receivedIncome > 0 && netBalance < 0 ? 'var(--arvo-red)' : 'var(--arvo-black)' }}>
               {receivedIncome > 0 ? fmt(cx(netBalance), currency, true) : '—'}
             </p>
           </div>
           <div style={{ flexShrink: 0, padding: '4px 12px', borderRadius: 999, fontSize: 11, fontFamily: "'Tenor Sans', sans-serif", letterSpacing: '0.06em',
-            background: totalExpenses === 0 ? 'rgba(255,255,255,0.08)' : isWithinBudget ? 'rgba(31,138,91,0.20)' : 'rgba(214,59,47,0.20)',
-            color: totalExpenses === 0 ? 'rgba(255,255,255,0.45)' : isWithinBudget ? 'var(--arvo-green-on-dark)' : '#f08070',
-            border: `1px solid ${totalExpenses === 0 ? 'rgba(255,255,255,0.10)' : isWithinBudget ? 'rgba(31,138,91,0.30)' : 'rgba(214,59,47,0.30)'}`,
+            background: totalExpenses === 0 ? 'rgba(0,0,0,0.04)' : isWithinBudget ? 'rgba(31,138,91,0.10)' : 'rgba(214,59,47,0.10)',
+            color: totalExpenses === 0 ? 'rgba(13,13,13,0.40)' : isWithinBudget ? 'var(--arvo-green)' : 'var(--arvo-red)',
+            border: `1px solid ${totalExpenses === 0 ? 'rgba(0,0,0,0.08)' : isWithinBudget ? 'rgba(31,138,91,0.25)' : 'rgba(214,59,47,0.25)'}`,
           }}>
             {totalExpenses === 0 ? '—' : isWithinBudget ? t.finances.overviewOnTrack : t.finances.overviewOverspent}
             {overspentAmount > 0 && ` +${fmt(cx(overspentAmount), currency, true)}`}
           </div>
         </div>
 
-        <div style={{ position: 'relative', zIndex: 2, marginTop: 20, paddingTop: 18, borderTop: '1px solid rgba(200,184,154,0.16)', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
+        <div style={{ position: 'relative', zIndex: 2, marginTop: 20, paddingTop: 18, borderTop: '1px solid rgba(13,13,13,0.08)', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-            <span style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'rgba(200,184,154,0.60)' }}>{t.finances.income}</span>
-            <span style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 18, letterSpacing: '0.04em', color: receivedIncome > 0 && receivedIncome >= configuredIncome ? 'var(--arvo-green-on-dark)' : receivedIncome > 0 ? '#E8C87A' : 'var(--arvo-fg-on-dark)' }}>
+            <span style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.48)' }}>{t.finances.income}</span>
+            <span style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 18, letterSpacing: '0.04em', color: receivedIncome > 0 && receivedIncome >= configuredIncome ? 'var(--arvo-green)' : receivedIncome > 0 ? 'var(--arvo-ocre)' : 'var(--arvo-fg)' }}>
               {receivedIncome > 0 ? fmt(cx(receivedIncome), currency, true) : '—'}
             </span>
-            <span style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 10, color: 'rgba(200,184,154,0.40)' }}>
+            <span style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 10, color: 'rgba(13,13,13,0.38)' }}>
               {t.finances.overviewPlanned} {fmt(cx(configuredIncome), currency, true)}
             </span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-            <span style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'rgba(200,184,154,0.60)' }}>{t.finances.expenses}</span>
-            <span style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 18, letterSpacing: '0.04em', color: totalExpenses > totalBudgeted && totalBudgeted > 0 ? '#f08070' : 'var(--arvo-fg-on-dark)' }}>
+            <span style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.48)' }}>{t.finances.expenses}</span>
+            <span style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 18, letterSpacing: '0.04em', color: totalExpenses > totalBudgeted && totalBudgeted > 0 ? 'var(--arvo-red)' : 'var(--arvo-fg)' }}>
               {totalExpenses > 0 ? fmt(cx(totalExpenses), currency, true) : '—'}
             </span>
             {totalBudgeted > 0 && (
-              <span style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 10, color: 'rgba(200,184,154,0.40)' }}>
+              <span style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 10, color: 'rgba(13,13,13,0.38)' }}>
                 {t.finances.overviewPlanned} {fmt(cx(totalBudgeted), currency, true)}
               </span>
             )}
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-            <span style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'rgba(200,184,154,0.60)' }}>{t.finances.heroSavingsRate}</span>
-            <span style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 18, letterSpacing: '0.04em', color: receivedIncome > 0 && netBalance >= 0 ? 'var(--arvo-green-on-dark)' : receivedIncome > 0 ? '#f08070' : 'var(--arvo-fg-on-dark)' }}>
+            <span style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.48)' }}>{t.finances.heroSavingsRate}</span>
+            <span style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 18, letterSpacing: '0.04em', color: receivedIncome > 0 && netBalance >= 0 ? 'var(--arvo-green)' : receivedIncome > 0 ? 'var(--arvo-red)' : 'var(--arvo-fg)' }}>
               {receivedIncome > 0 ? `${Math.round((netBalance / receivedIncome) * 100)}%` : '—'}
             </span>
             {receivedIncome > 0 && (
-              <span style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 10, color: 'rgba(200,184,154,0.40)' }}>{t.finances.overviewStatus}</span>
+              <span style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 10, color: 'rgba(13,13,13,0.38)' }}>{t.finances.overviewStatus}</span>
             )}
           </div>
         </div>

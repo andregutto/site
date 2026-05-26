@@ -28,8 +28,8 @@ export default function ValueCards({ total_brl, generated_at, invested_brl, gain
   }
 
   function pctColor(val: number | null | undefined): string {
-    if (val == null) return 'rgba(200,184,154,0.6)'
-    return val >= 0 ? 'var(--arvo-green-on-dark)' : '#f08070'
+    if (val == null) return 'rgba(13,13,13,0.35)'
+    return val >= 0 ? 'var(--arvo-green)' : 'var(--arvo-red)'
   }
 
   const periodVal = period_pct !== undefined ? period_pct : ytd_pct
@@ -40,40 +40,40 @@ export default function ValueCards({ total_brl, generated_at, invested_brl, gain
     fontSize: 9,
     letterSpacing: '0.25em',
     textTransform: 'uppercase',
-    color: 'rgba(200,184,154,0.60)',
+    color: 'rgba(13,13,13,0.48)',
   }
 
   return (
-    <div style={{ background: 'linear-gradient(135deg, #0D0D0D 0%, #1B1815 60%, #28221B 100%)', color: 'var(--arvo-fg-on-dark)', borderRadius: 16, padding: 28, position: 'relative', overflow: 'hidden', boxShadow: '0 4px 32px rgba(200,184,154,0.18), 0 0 0 1px rgba(200,184,154,0.12)' }}>
+    <div style={{ background: '#FFFFFF', color: 'var(--arvo-fg)', borderRadius: 16, padding: 28, position: 'relative', overflow: 'hidden', border: '1px solid rgba(200,184,154,0.35)', boxShadow: '0 4px 24px rgba(200,184,154,0.18), 0 1px 0 rgba(200,184,154,0.22)' }}>
 
       {/* Gold glow — top-right */}
-      <div style={{ position: 'absolute', top: -100, right: -60, width: 380, height: 380, borderRadius: '50%', background: 'rgba(200,184,154,0.18)', filter: 'blur(72px)', pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', top: -120, right: -60, width: 360, height: 360, borderRadius: '50%', background: 'rgba(200,184,154,0.10)', filter: 'blur(70px)', pointerEvents: 'none' }} />
       {/* Gold glow — bottom-left */}
-      <div style={{ position: 'absolute', bottom: -80, left: -40, width: 240, height: 240, borderRadius: '50%', background: 'rgba(200,184,154,0.10)', filter: 'blur(56px)', pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', bottom: -80, left: -40, width: 220, height: 220, borderRadius: '50%', background: 'rgba(200,184,154,0.07)', filter: 'blur(50px)', pointerEvents: 'none' }} />
       {/* Gold shimmer line at top */}
-      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 1, background: 'linear-gradient(to right, transparent, rgba(200,184,154,0.40), transparent)', pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 1, background: 'linear-gradient(to right, transparent, rgba(200,184,154,0.65), transparent)', pointerEvents: 'none' }} />
 
       {/* Top row */}
       <div style={{ position: 'relative', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, zIndex: 2 }}>
         <div>
-          <p style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 10, letterSpacing: '0.30em', textTransform: 'uppercase', color: 'var(--arvo-gold)', opacity: 0.75, margin: 0 }}>
+          <p style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 10, letterSpacing: '0.30em', textTransform: 'uppercase', color: 'var(--arvo-gold)', margin: 0 }}>
             Total {currency}
           </p>
-          <p style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 56, letterSpacing: '0.02em', lineHeight: 1.05, marginTop: 12, color: 'var(--arvo-fg-on-dark)', margin: '12px 0 0' }}>
+          <p style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 56, letterSpacing: '0.02em', lineHeight: 1.05, color: 'var(--arvo-black)', margin: '12px 0 0' }}>
             {fmt(total_brl, 0)}
           </p>
         </div>
-        <p style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(200,184,154,0.50)', marginTop: 4, whiteSpace: 'nowrap' }}>
+        <p style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.38)', marginTop: 4, whiteSpace: 'nowrap' }}>
           {t.dashboard.updatedAt.replace('{time}', ts)}
         </p>
       </div>
 
       {/* KPI grid */}
       {showSecondary && (
-        <div style={{ position: 'relative', zIndex: 2, marginTop: 24, paddingTop: 22, borderTop: '1px solid rgba(200,184,154,0.18)', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 24 }}>
+        <div style={{ position: 'relative', zIndex: 2, marginTop: 24, paddingTop: 22, borderTop: '1px solid rgba(13,13,13,0.08)', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 24 }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             <span style={labelStyle}>{t.dashboard.invested}</span>
-            <span style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 18, letterSpacing: '0.04em', color: 'var(--arvo-fg-on-dark)' }}>{fmt(invested_brl!, 0)}</span>
+            <span style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 18, letterSpacing: '0.04em', color: 'var(--arvo-fg)' }}>{fmt(invested_brl!, 0)}</span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             <span style={labelStyle}>{t.dashboard.result}</span>

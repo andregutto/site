@@ -37,8 +37,8 @@
   /* ── BASE PALETTE — the backbone. Never changes. ───────────────────── */
   --arvo-black:       #0D0D0D;   /* landing, header, hero, video intros, logo */
   --arvo-gold:        #C8B89A;   /* the through-line — always present */
-  --arvo-offwhite:    #F2EDE4;   /* primary background of tools & content */
-  --arvo-beige:       #E8DFD0;   /* secondary surfaces, separators, cards */
+  --arvo-offwhite:    #FFFFFF;   /* primary background of tools & content */
+  --arvo-beige:       #F4F4F4;   /* secondary surfaces, separators, cards */
   --arvo-terracotta:  #A36A52;   /* warm accent, editorial details */
 
   /* ── ACCENT HIERARCHY — appears ONLY in data, actions and tags. ─────

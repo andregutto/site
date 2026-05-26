@@ -230,7 +230,7 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
       {/* Desktop table */}
       <div className="hidden sm:block overflow-x-auto">
         <table className="w-full text-sm">
-          <thead style={{ background: 'rgba(232,223,208,0.45)' }}>
+          <thead style={{ background: 'rgba(0,0,0,0.025)' }}>
             <tr>
               <th className="px-4 py-2.5 text-left cursor-pointer w-[36%]" style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.45)' }} onClick={() => toggleSort('code')}>
                 {d.assetsTitle} <SortIcon col="code" />
@@ -278,7 +278,7 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
                   <tr
                     onClick={() => toggleExpand(group.name)}
                     className="cursor-pointer select-none transition-colors"
-                    style={{ background: 'rgba(232,223,208,0.35)', borderTop: '1px solid var(--arvo-border-soft)' }}
+                    style={{ background: 'rgba(0,0,0,0.018)', borderTop: '1px solid var(--arvo-border-soft)' }}
                   >
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
@@ -418,7 +418,7 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
               )
             })}
           </tbody>
-          <tfoot style={{ background: 'rgba(232,223,208,0.45)', borderTop: '1px solid var(--arvo-border-soft)' }}>
+          <tfoot style={{ background: 'rgba(0,0,0,0.025)', borderTop: '1px solid var(--arvo-border-soft)' }}>
             <tr>
               <td colSpan={4} className="px-4 py-3 text-sm" style={{ fontFamily: "'Tenor Sans', sans-serif", color: 'var(--arvo-black)', letterSpacing: '0.06em' }}>{t.common.total}</td>
               <td className="px-4 py-3 text-right" style={{ fontFamily: "'Tenor Sans', sans-serif", fontWeight: 600, color: 'var(--arvo-black)' }}>{fmt(portfolioTotal)}</td>
@@ -465,7 +465,7 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
               <div
                 onClick={() => toggleExpand(group.name)}
                 className="flex items-center gap-2 px-4 py-3 cursor-pointer select-none"
-                style={{ background: 'rgba(232,223,208,0.35)', borderTop: '1px solid var(--arvo-border-soft)' }}
+                style={{ background: 'rgba(0,0,0,0.018)', borderTop: '1px solid var(--arvo-border-soft)' }}
               >
                 <ChevronIcon open={isOpen} />
                 {(() => {
@@ -590,7 +590,7 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
         })}
 
         {groups.length > 0 && (
-          <div className="flex justify-between items-center px-4 py-3" style={{ background: 'rgba(232,223,208,0.45)', borderTop: '1px solid var(--arvo-border-soft)' }}>
+          <div className="flex justify-between items-center px-4 py-3" style={{ background: 'rgba(0,0,0,0.025)', borderTop: '1px solid var(--arvo-border-soft)' }}>
             <span className="text-sm" style={{ fontFamily: "'Tenor Sans', sans-serif", color: 'var(--arvo-black)', letterSpacing: '0.06em' }}>{t.common.total}</span>
             <span style={{ fontFamily: "'Tenor Sans', sans-serif", fontWeight: 600, color: 'var(--arvo-black)' }}>{fmt(portfolioTotal)}</span>
           </div>
