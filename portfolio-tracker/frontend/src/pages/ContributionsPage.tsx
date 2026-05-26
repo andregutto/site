@@ -50,7 +50,7 @@ type FormTypeValue = typeof FORM_TYPES[number]['value']
 
 
 const BASE_INPUT = 'w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2'
-const SMALL_INPUT = 'w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20 bg-white'
+const SMALL_INPUT = 'w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20 bg-white'
 
 export default function ContributionsPage() {
   const navigate = useNavigate()
@@ -598,7 +598,7 @@ export default function ContributionsPage() {
           </Link>
           <button
             onClick={() => { if (showForm) { cancelEdit() } else { setShowForm(true) } }}
-            className="px-4 py-2 bg-[#001A70] text-white text-sm font-semibold rounded-xl hover:bg-[#001A70]/90 transition-colors"
+            className="px-4 py-2 bg-[#0D0D0D] text-white text-sm font-semibold rounded-xl hover:bg-[#0D0D0D]/90 transition-colors"
           >
             {showForm ? t.common.cancel : t.contributions.newBtn}
           </button>
@@ -626,13 +626,13 @@ export default function ContributionsPage() {
                     value={assetSearch}
                     onChange={e => setAssetSearch(e.target.value)}
                     placeholder={t.contributions.filterAsset}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20"
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20"
                   />
                   <div className="flex gap-2">
                     <select
                       value={assetId}
                       onChange={e => { setAssetId(e.target.value); setAssetSearch('') }}
-                      className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20"
+                      className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20"
                     >
                       <option value="">{t.contributions.selectAsset}</option>
                       {filteredAssets.map(a => (
@@ -644,7 +644,7 @@ export default function ContributionsPage() {
                     <button
                       type="button"
                       onClick={() => { setShowNewAsset(v => !v); if (showNewAsset) resetNewAsset() }}
-                      className="px-3 py-2 text-sm border border-gray-200 rounded-lg text-[#001A70] hover:bg-blue-50 transition-colors shrink-0"
+                      className="px-3 py-2 text-sm border border-gray-200 rounded-lg text-[#0D0D0D] hover:bg-blue-50 transition-colors shrink-0"
                     >{t.contributions.newAssetBtn}</button>
                   </div>
                 </>
@@ -654,7 +654,7 @@ export default function ContributionsPage() {
             {/* New asset inline form */}
             {showNewAsset && (
               <div className="sm:col-span-2 bg-blue-50 border border-blue-100 rounded-xl p-4 space-y-3">
-                <p className="text-xs font-semibold text-[#001A70]">{t.contributions.newAssetSection}</p>
+                <p className="text-xs font-semibold text-[#0D0D0D]">{t.contributions.newAssetSection}</p>
                 <div className="grid grid-cols-2 gap-2">
                   {/* Type */}
                   <div className="col-span-2">
@@ -728,7 +728,7 @@ export default function ContributionsPage() {
                       placeholder={isTickerForm
                         ? newNameLoading ? t.common.loading : newCode ? t.contributions.nameNotFound.replace('· ', '') : t.contributions.nameAutoFilled.replace('· ', '')
                         : newFormType === 'fixed_income' ? 'Preenchido ao escolher tipo e taxa' : newFormType === 'imovel' ? 'ex: Apartamento Paris 11e' : 'ex: Fundo X'}
-                      className={`w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20 ${isTickerForm ? 'bg-gray-50 text-gray-500 cursor-default' : 'bg-white'}`}
+                      className={`w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20 ${isTickerForm ? 'bg-gray-50 text-gray-500 cursor-default' : 'bg-white'}`}
                     />
                   </div>
 
@@ -745,7 +745,7 @@ export default function ContributionsPage() {
                   {newFormType === 'manual' && (
                     <>
                       <div className="col-span-2 border-t border-blue-200 pt-2">
-                        <p className="text-xs font-semibold text-[#001A70] mb-2">{t.contributions.initialValueSection}</p>
+                        <p className="text-xs font-semibold text-[#0D0D0D] mb-2">{t.contributions.initialValueSection}</p>
                       </div>
                       <div>
                         <label className="block text-xs text-gray-500 mb-1">{t.contributions.currentValueBrl}</label>
@@ -778,7 +778,7 @@ export default function ContributionsPage() {
                   {newFormType === 'imovel' && (
                     <>
                       <div className="col-span-2 border-t border-blue-200 pt-2">
-                        <p className="text-xs font-semibold text-[#001A70] mb-2">{t.contributions.propertySection}</p>
+                        <p className="text-xs font-semibold text-[#0D0D0D] mb-2">{t.contributions.propertySection}</p>
                       </div>
                       <div>
                         <label className="block text-xs text-gray-500 mb-1">{t.contributions.purchaseDate}</label>
@@ -821,7 +821,7 @@ export default function ContributionsPage() {
                   {newFormType === 'fixed_income' && (
                     <>
                       <div className="col-span-2 border-t border-blue-200 pt-2">
-                        <p className="text-xs font-semibold text-[#001A70] mb-2">{t.contributions.fiSection}</p>
+                        <p className="text-xs font-semibold text-[#0D0D0D] mb-2">{t.contributions.fiSection}</p>
                       </div>
 
                       {/* fi_type */}
@@ -901,7 +901,7 @@ export default function ContributionsPage() {
                     type="button"
                     onClick={handleCreateAsset}
                     disabled={savingNewAsset || newNameLoading}
-                    className="px-3 py-1.5 bg-[#001A70] text-white text-xs font-semibold rounded-lg disabled:opacity-50"
+                    className="px-3 py-1.5 bg-[#0D0D0D] text-white text-xs font-semibold rounded-lg disabled:opacity-50"
                   >{savingNewAsset ? t.contributions.creating : newFormType === 'fixed_income' ? t.contributions.createAndConfigure : newFormType === 'imovel' ? t.contributions.registerProperty : t.contributions.createAsset}</button>
                   <button
                     type="button"
@@ -920,7 +920,7 @@ export default function ContributionsPage() {
                 value={date}
                 max={today}
                 onChange={e => setDate(e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20"
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20"
               />
             </div>
             <div>
@@ -989,7 +989,7 @@ export default function ContributionsPage() {
                   <select
                     value={priceCurrency}
                     onChange={e => setPriceCurrency(e.target.value)}
-                    className="border border-gray-200 rounded-lg px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20 bg-white w-20 shrink-0"
+                    className="border border-gray-200 rounded-lg px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20 bg-white w-20 shrink-0"
                   >
                     {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
@@ -1031,7 +1031,7 @@ export default function ContributionsPage() {
                   <select
                     value={simpleCurrency}
                     onChange={e => setSimpleCurrency(e.target.value)}
-                    className="border border-gray-200 rounded-lg px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20 bg-white w-20 shrink-0"
+                    className="border border-gray-200 rounded-lg px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20 bg-white w-20 shrink-0"
                   >
                     {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
@@ -1059,7 +1059,7 @@ export default function ContributionsPage() {
                 value={description}
                 onChange={e => setDescription(e.target.value)}
                 placeholder={isRfBuy ? 'ex: aporte mensal' : 'ex: compra na corretora XP'}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20"
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20"
               />
             </div>
           </div>
@@ -1069,7 +1069,7 @@ export default function ContributionsPage() {
           <button
             onClick={editId ? handleUpdate : handleSave}
             disabled={saving}
-            className="w-full bg-[#001A70] text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-[#001A70]/90 disabled:opacity-50 transition-colors"
+            className="w-full bg-[#0D0D0D] text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-[#0D0D0D]/90 disabled:opacity-50 transition-colors"
           >
             {saving ? t.contributions.saving
               : editId ? t.contributions.saveChanges
@@ -1154,7 +1154,7 @@ export default function ContributionsPage() {
                         <div className="flex items-center justify-end gap-2">
                           <button
                             onClick={() => { setConfirmDeleteId(null); handleEditClick(c) }}
-                            className="text-gray-400 hover:text-[#001A70] transition-colors"
+                            className="text-gray-400 hover:text-[#0D0D0D] transition-colors"
                             title="Editar"
                           >
                             <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor">

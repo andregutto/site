@@ -7,7 +7,7 @@ const onboardingKey = (userId: string) => `onboarding_v1_done_${userId}`
 
 const INSTITUTION_SUGGESTIONS = [
   'Revolut', 'N26', 'Wise', 'BNP Paribas', 'Société Générale', 'Crédit Agricole',
-  'LCL', 'HSBC', 'Itaú', 'Bradesco', 'Nubank', 'C6 Bank', 'Inter', 'Santander',
+  'LCL', 'HSBC', 'Itaú', 'Bradesco', 'Nubank', 'C6 Bank', 'Tenor Sans', 'Santander',
   'Caixa Econômica', 'Banco do Brasil', 'BTG Pactual', 'XP Investimentos',
 ]
 
@@ -165,8 +165,8 @@ export default function OnboardingOverlay({ onDone, userId }: Props) {
                 <div
                   key={i}
                   className={`h-1.5 rounded-full transition-all duration-300 ${
-                    i === step ? 'w-6 bg-[#001A70]'
-                    : i < step  ? 'w-2.5 bg-[#001A70]/40'
+                    i === step ? 'w-6 bg-[#0D0D0D]'
+                    : i < step  ? 'w-2.5 bg-[#0D0D0D]/40'
                     :             'w-2.5 bg-gray-200'
                   }`}
                 />
@@ -187,16 +187,16 @@ export default function OnboardingOverlay({ onDone, userId }: Props) {
           {/* Step 0: Welcome */}
           {step === 0 && (
             <div className="space-y-5 text-center">
-              <div className="w-16 h-16 bg-[#001A70] rounded-2xl flex items-center justify-center mx-auto shadow-lg">
+              <div className="w-16 h-16 bg-[#0D0D0D] rounded-2xl flex items-center justify-center mx-auto shadow-lg">
                 <span className="text-white text-3xl">▦</span>
               </div>
               <div>
-                <h2 className="text-xl font-bold text-[#001A70]">{o.welcomeTitle}</h2>
+                <h2 className="text-xl font-bold text-[#0D0D0D]">{o.welcomeTitle}</h2>
                 <p className="text-gray-500 mt-2 text-sm leading-relaxed">{o.welcomeBody}</p>
               </div>
               <button
                 onClick={() => setStep(1)}
-                className="w-full bg-[#001A70] text-white rounded-xl py-3 text-sm font-semibold hover:bg-[#001A70]/90 transition-colors"
+                className="w-full bg-[#0D0D0D] text-white rounded-xl py-3 text-sm font-semibold hover:bg-[#0D0D0D]/90 transition-colors"
               >
                 {o.start}
               </button>
@@ -221,7 +221,7 @@ export default function OnboardingOverlay({ onDone, userId }: Props) {
               <p className="text-xs text-gray-400 leading-relaxed">{o.classesNote}</p>
               <button
                 onClick={createClassesAndContinue}
-                className="w-full bg-[#001A70] text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-[#001A70]/90 transition-colors"
+                className="w-full bg-[#0D0D0D] text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-[#0D0D0D]/90 transition-colors"
               >
                 {o.continue}
               </button>
@@ -241,7 +241,7 @@ export default function OnboardingOverlay({ onDone, userId }: Props) {
                   <select
                     value={incomeCur}
                     onChange={e => setIncomeCur(e.target.value)}
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#001A70]/20"
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20"
                   >
                     {['EUR', 'BRL', 'USD'].map(c => <option key={c}>{c}</option>)}
                   </select>
@@ -254,14 +254,14 @@ export default function OnboardingOverlay({ onDone, userId }: Props) {
                     value={incomeVal}
                     onChange={e => setIncomeVal(e.target.value)}
                     placeholder="3500"
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20"
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20"
                   />
                 </div>
               </div>
               <button
                 onClick={saveIncomeAndContinue}
                 disabled={savingIncome}
-                className="w-full bg-[#001A70] text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-[#001A70]/90 transition-colors disabled:opacity-60"
+                className="w-full bg-[#0D0D0D] text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-[#0D0D0D]/90 transition-colors disabled:opacity-60"
               >
                 {savingIncome ? '…' : o.continue}
               </button>
@@ -290,7 +290,7 @@ export default function OnboardingOverlay({ onDone, userId }: Props) {
                     value={accountInstitution}
                     onChange={e => setAccountInstitution(e.target.value)}
                     placeholder="Revolut"
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20"
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20"
                   />
                   <datalist id="institution-suggestions">
                     {INSTITUTION_SUGGESTIONS.map(s => <option key={s} value={s} />)}
@@ -303,7 +303,7 @@ export default function OnboardingOverlay({ onDone, userId }: Props) {
                     value={accountName}
                     onChange={e => setAccountName(e.target.value)}
                     placeholder="Revolut EUR"
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20"
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20"
                   />
                 </div>
                 <div>
@@ -311,7 +311,7 @@ export default function OnboardingOverlay({ onDone, userId }: Props) {
                   <select
                     value={accountCurrency}
                     onChange={e => setAccountCurrency(e.target.value)}
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#001A70]/20"
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20"
                   >
                     {['EUR', 'BRL', 'USD'].map(c => <option key={c}>{c}</option>)}
                   </select>
@@ -320,7 +320,7 @@ export default function OnboardingOverlay({ onDone, userId }: Props) {
               <button
                 onClick={createAccountAndContinue}
                 disabled={!accountName.trim() || !accountInstitution.trim() || savingAccount}
-                className="w-full bg-[#001A70] text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-[#001A70]/90 transition-colors disabled:opacity-60"
+                className="w-full bg-[#0D0D0D] text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-[#0D0D0D]/90 transition-colors disabled:opacity-60"
               >
                 {savingAccount ? '…' : o.accountCreate}
               </button>
@@ -356,7 +356,7 @@ export default function OnboardingOverlay({ onDone, userId }: Props) {
               </div>
               <button
                 onClick={() => setStep(5)}
-                className="w-full bg-[#001A70] text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-[#001A70]/90 transition-colors"
+                className="w-full bg-[#0D0D0D] text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-[#0D0D0D]/90 transition-colors"
               >
                 {o.continue}
               </button>
@@ -389,7 +389,7 @@ export default function OnboardingOverlay({ onDone, userId }: Props) {
               </div>
               <button
                 onClick={() => setStep(6)}
-                className="w-full bg-[#001A70] text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-[#001A70]/90 transition-colors"
+                className="w-full bg-[#0D0D0D] text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-[#0D0D0D]/90 transition-colors"
               >
                 {o.continue}
               </button>
@@ -409,21 +409,21 @@ export default function OnboardingOverlay({ onDone, userId }: Props) {
               <div className="space-y-2">
                 <button
                   onClick={goToDashboard}
-                  className="w-full bg-[#001A70] text-white rounded-xl py-3 text-sm font-semibold hover:bg-[#001A70]/90 transition-colors"
+                  className="w-full bg-[#0D0D0D] text-white rounded-xl py-3 text-sm font-semibold hover:bg-[#0D0D0D]/90 transition-colors"
                 >
                   {o.gotoDashboard}
                 </button>
                 {accountCreated ? (
                   <button
                     onClick={goToAccounts}
-                    className="w-full border border-[#001A70]/20 text-[#001A70] rounded-xl py-3 text-sm font-semibold hover:bg-[#001A70]/5 transition-colors"
+                    className="w-full border border-[#0D0D0D]/20 text-[#0D0D0D] rounded-xl py-3 text-sm font-semibold hover:bg-[#0D0D0D]/5 transition-colors"
                   >
                     {o.gotoAccounts}
                   </button>
                 ) : (
                   <button
                     onClick={goToInstitutions}
-                    className="w-full border border-[#001A70]/20 text-[#001A70] rounded-xl py-3 text-sm font-semibold hover:bg-[#001A70]/5 transition-colors"
+                    className="w-full border border-[#0D0D0D]/20 text-[#0D0D0D] rounded-xl py-3 text-sm font-semibold hover:bg-[#0D0D0D]/5 transition-colors"
                   >
                     {o.gotoInstitutions}
                   </button>

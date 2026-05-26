@@ -148,7 +148,10 @@ export default function ChatWidget() {
       {/* Floating button */}
       <button
         onClick={() => setOpen(o => !o)}
-        className="fixed bottom-20 right-5 z-50 w-12 h-12 rounded-full bg-[#001A70] text-white shadow-lg flex items-center justify-center hover:bg-[#002494] transition-colors sm:bottom-5"
+        className="fixed bottom-20 right-5 z-50 w-12 h-12 rounded-full text-white shadow-lg flex items-center justify-center transition-all sm:bottom-5"
+        style={{ background: 'var(--arvo-black)', border: '1px solid rgba(200,184,154,0.25)' }}
+        onMouseEnter={e => { e.currentTarget.style.border = '1px solid rgba(200,184,154,0.6)' }}
+        onMouseLeave={e => { e.currentTarget.style.border = '1px solid rgba(200,184,154,0.25)' }}
         aria-label={t.chat.open}
       >
         {open ? (
@@ -164,9 +167,9 @@ export default function ChatWidget() {
 
       {/* Chat panel */}
       {open && (
-        <div className="fixed bottom-36 right-5 z-50 w-[360px] max-w-[calc(100vw-2.5rem)] h-[520px] max-h-[calc(100vh-6rem)] bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col overflow-hidden sm:bottom-20">
+        <div className="fixed bottom-36 right-5 z-50 w-[360px] max-w-[calc(100vw-2.5rem)] h-[520px] max-h-[calc(100vh-6rem)] rounded-2xl shadow-2xl flex flex-col overflow-hidden sm:bottom-20" style={{ background: 'var(--arvo-offwhite)', border: '1px solid var(--arvo-border-soft)' }}>
           {/* Header */}
-          <div className="flex items-center gap-2.5 px-4 py-3 border-b border-gray-100 bg-[#001A70] rounded-t-2xl">
+          <div className="flex items-center gap-2.5 px-4 py-3 rounded-t-2xl" style={{ background: 'var(--arvo-black)', borderBottom: '1px solid rgba(200,184,154,0.15)' }}>
             <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
               <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23-.693L5 14.5m14.8.8l1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0112 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5" />
@@ -190,7 +193,7 @@ export default function ChatWidget() {
           <div className="flex-1 overflow-y-auto px-3 py-3 space-y-3 text-sm">
             {isEmpty ? (
               <div className="flex flex-col h-full">
-                <p className="text-gray-500 text-[13px] text-center mt-6 mb-4">
+                <p className="text-[13px] text-center mt-6 mb-4" style={{ color: 'rgba(13,13,13,0.45)', fontFamily: "'Tenor Sans', sans-serif" }}>
                   {t.chat.greeting}
                 </p>
                 <div className="grid grid-cols-1 gap-1.5 mt-auto mb-2">
@@ -198,7 +201,10 @@ export default function ChatWidget() {
                     <button
                       key={s}
                       onClick={() => sendMessage(s)}
-                      className="text-left text-[12px] text-[#001A70] bg-blue-50 hover:bg-blue-100 rounded-lg px-3 py-2 transition-colors leading-snug"
+                      className="text-left text-[12px] rounded-lg px-3 py-2 transition-all leading-snug"
+                      style={{ background: 'rgba(13,13,13,0.05)', color: 'var(--arvo-black)', fontFamily: "'Tenor Sans', sans-serif" }}
+                      onMouseEnter={e => { e.currentTarget.style.background = 'rgba(13,13,13,0.09)' }}
+                      onMouseLeave={e => { e.currentTarget.style.background = 'rgba(13,13,13,0.05)' }}
                     >
                       {s}
                     </button>
@@ -210,11 +216,10 @@ export default function ChatWidget() {
                 {messages.map((m, i) => (
                   <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                     <div
-                      className={`max-w-[85%] rounded-2xl px-3 py-2 text-[13px] leading-relaxed whitespace-pre-wrap ${
-                        m.role === 'user'
-                          ? 'bg-[#001A70] text-white rounded-br-sm'
-                          : 'bg-gray-100 text-gray-800 rounded-bl-sm'
-                      }`}
+                      className="max-w-[85%] rounded-2xl px-3 py-2 text-[13px] leading-relaxed whitespace-pre-wrap"
+                      style={m.role === 'user'
+                        ? { background: 'var(--arvo-black)', color: 'var(--arvo-offwhite)', borderBottomRightRadius: 4, fontFamily: "'Tenor Sans', sans-serif" }
+                        : { background: 'rgba(13,13,13,0.07)', color: 'var(--arvo-black)', borderBottomLeftRadius: 4, fontFamily: "'Tenor Sans', sans-serif" }}
                     >
                       {m.loading && !m.content ? (
                         <span className="flex gap-1 items-center h-4">
@@ -239,7 +244,7 @@ export default function ChatWidget() {
           </div>
 
           {/* Input */}
-          <div className="px-3 pb-3 pt-2 border-t border-gray-100">
+          <div className="px-3 pb-3 pt-2" style={{ borderTop: '1px solid var(--arvo-border-soft)' }}>
             <div className="flex items-end gap-2">
               <textarea
                 ref={inputRef}
@@ -249,20 +254,21 @@ export default function ChatWidget() {
                 onKeyDown={handleKey}
                 placeholder={t.chat.placeholder}
                 disabled={loading}
-                className="flex-1 resize-none rounded-xl border border-gray-200 px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-[#001A70]/20 disabled:opacity-50 max-h-24 overflow-y-auto leading-relaxed"
-                style={{ minHeight: '36px' }}
+                className="flex-1 resize-none rounded-xl px-3 py-2 text-[13px] focus:outline-none disabled:opacity-50 max-h-24 overflow-y-auto leading-relaxed bg-transparent"
+                style={{ minHeight: '36px', border: '1px solid var(--arvo-border-soft)', color: 'var(--arvo-black)', fontFamily: "'Tenor Sans', sans-serif" }}
               />
               <button
                 onClick={() => sendMessage(input)}
                 disabled={loading || !input.trim()}
-                className="flex-shrink-0 w-8 h-8 rounded-full bg-[#001A70] text-white flex items-center justify-center disabled:opacity-40 hover:bg-[#002494] transition-colors"
+                className="flex-shrink-0 w-8 h-8 rounded-full text-white flex items-center justify-center disabled:opacity-40 transition-all"
+                style={{ background: 'var(--arvo-black)' }}
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
                 </svg>
               </button>
             </div>
-            <p className="text-[10px] text-gray-400 text-center mt-1.5">{t.chat.enterHint}</p>
+            <p className="text-[10px] text-center mt-1.5" style={{ color: 'rgba(13,13,13,0.35)', fontFamily: "'Tenor Sans', sans-serif" }}>{t.chat.enterHint}</p>
           </div>
         </div>
       )}

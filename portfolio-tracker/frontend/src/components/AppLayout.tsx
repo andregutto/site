@@ -138,59 +138,53 @@ export default function AppLayout() {
   const activeSubItems = inInvestimentos ? investimentosItems : inFinances ? financesItems : []
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      <header className="bg-white border-b border-gray-100 sticky top-0 z-10">
+    <div className="min-h-screen flex flex-col" style={{ background: 'var(--arvo-offwhite)' }}>
+      <header className="sticky top-0 z-10" style={{ background: 'rgba(242,237,228,0.88)', backdropFilter: 'blur(12px) saturate(1.05)', WebkitBackdropFilter: 'blur(12px) saturate(1.05)', borderBottom: '1px solid var(--arvo-border-soft)' }}>
 
         {/* ── Main bar ── */}
         <div className="h-14 flex items-center px-6 gap-4">
 
-          {/* Logo */}
+          {/* Logo wordmark */}
           <a
             href="https://andregutto.com"
             target="_blank"
             rel="noopener noreferrer"
-            className="shrink-0 transition-opacity duration-200 hover:opacity-70 tracking-[-0.2px]"
-            style={{ fontFamily: "'Playfair Display', serif", fontSize: 19, fontWeight: 400, color: '#1B2F4E', textDecoration: 'none' }}
-          >André Gutto</a>
+            className="shrink-0 flex items-center gap-2.5 hover:opacity-70 transition-opacity"
+            style={{ textDecoration: 'none' }}
+          >
+            <img src="/brand/logo/arvo-symbol-black.svg" width="22" height="22" alt="" />
+            <span style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 16, letterSpacing: '0.30em', textIndent: '0.30em', color: 'var(--arvo-black)', lineHeight: 1 }}>arvo</span>
+          </a>
 
-          {/* Desktop — three section tabs */}
+          {/* Desktop — three section tabs (pill style) */}
           <nav className="hidden sm:flex flex-1 justify-center gap-1">
-            <NavLink
-              to="/dashboard"
-              className={() =>
-                `px-4 py-1.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
-                  inInvestimentos ? 'bg-[#001A70]/10 text-[#001A70] font-semibold' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
-                }`
-              }
-            >{t.nav.investments}</NavLink>
-            <NavLink
-              to="/finances"
-              className={() =>
-                `px-4 py-1.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
-                  inFinances ? 'bg-[#001A70]/10 text-[#001A70] font-semibold' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
-                }`
-              }
-            >{t.nav.finances}</NavLink>
-            <NavLink
-              to="/institutions"
-              className={() =>
-                `px-4 py-1.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
-                  inInstitutions ? 'bg-[#001A70]/10 text-[#001A70] font-semibold' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
-                }`
-              }
-            >{t.nav.institutions}</NavLink>
+            {([
+              { to: '/dashboard',    label: t.nav.investments, active: inInvestimentos },
+              { to: '/finances',     label: t.nav.finances,    active: inFinances },
+              { to: '/institutions', label: t.nav.institutions, active: inInstitutions },
+            ] as Array<{ to: string; label: string; active: boolean }>).map(({ to, label, active }) => (
+              <NavLink
+                key={to} to={to}
+                className={() => `px-4 py-1.5 rounded-full text-xs whitespace-nowrap transition-all`}
+                style={{ fontFamily: "'Tenor Sans', sans-serif", letterSpacing: '0.16em', textTransform: 'uppercase',
+                  background: active ? 'rgba(13,13,13,0.92)' : 'transparent',
+                  color: active ? 'var(--arvo-offwhite)' : 'rgba(13,13,13,0.55)',
+                  transition: 'all 280ms cubic-bezier(0.22,0.61,0.36,1)' }}
+              >{label}</NavLink>
+            ))}
           </nav>
 
           {/* Right — currency + user */}
           <div className="flex items-center gap-3 shrink-0">
-            <div className="hidden sm:flex items-center bg-gray-100 rounded-lg p-0.5 gap-0.5">
+            <div className="hidden sm:flex items-center rounded-full p-0.5 gap-0.5" style={{ background: 'rgba(13,13,13,0.07)' }}>
               {CURRENCIES.map(c => (
                 <button
                   key={c}
                   onClick={() => setCurrency(c)}
-                  className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-colors ${
-                    currency === c ? 'bg-white text-[#001A70] shadow-sm' : 'text-gray-400 hover:text-gray-700'
-                  }`}
+                  className="px-2.5 py-1 text-xs rounded-full transition-all"
+                  style={currency === c
+                    ? { fontFamily: "'Tenor Sans', sans-serif", background: 'var(--arvo-black)', color: 'var(--arvo-offwhite)', letterSpacing: '0.06em' }
+                    : { fontFamily: "'Tenor Sans', sans-serif", color: 'rgba(13,13,13,0.45)', letterSpacing: '0.06em' }}
                 >{c}</button>
               ))}
             </div>
@@ -204,44 +198,53 @@ export default function AppLayout() {
                 {avatarUrl ? (
                   <img src={avatarUrl} alt="Avatar" className="w-7 h-7 rounded-full object-cover" />
                 ) : (
-                  <div className="w-7 h-7 rounded-full bg-[#001A70] text-white flex items-center justify-center text-[10px] font-bold">{avatarInitials}</div>
+                  <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px]" style={{ background: 'var(--arvo-black)', color: 'var(--arvo-gold)', fontFamily: "'Tenor Sans', sans-serif", letterSpacing: '0.08em' }}>{avatarInitials}</div>
                 )}
-                <span className="text-xs text-gray-400 hover:text-[#001A70] transition-colors max-w-[100px] truncate">{headerLabel}</span>
+                <span className="text-xs max-w-[100px] truncate transition-colors" style={{ color: 'rgba(13,13,13,0.5)' }}>{headerLabel}</span>
                 <svg className={`w-3 h-3 text-gray-400 transition-transform ${showUserMenu ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                 </svg>
               </button>
               {showUserMenu && (
-                <div className="absolute right-0 top-full mt-2 w-52 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-50">
-                  <div className="px-4 py-2.5 border-b border-gray-100 flex items-center justify-between">
-                    <span className="text-xs text-gray-500">{t.common.language}</span>
+                <div className="absolute right-0 top-full mt-2 w-52 rounded-xl shadow-lg py-1 z-50" style={{ background: 'var(--arvo-offwhite)', border: '1px solid var(--arvo-border-soft)' }}>
+                  <div className="px-4 py-2.5 flex items-center justify-between" style={{ borderBottom: '1px solid var(--arvo-border-soft)' }}>
+                    <span className="text-xs" style={{ color: 'rgba(13,13,13,0.45)' }}>{t.common.language}</span>
                     <LanguageSelector />
                   </div>
-                  <div className="px-4 py-2.5 border-b border-gray-100">
+                  <div className="px-4 py-2.5" style={{ borderBottom: '1px solid var(--arvo-border-soft)' }}>
                     <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-xs text-gray-500">{level.emoji} {(t.levels as Record<string, string>)[level.key] ?? level.name}</span>
-                      <span className="text-xs font-bold text-[#001A70]">{totalXp} XP</span>
+                      <span className="text-xs" style={{ color: 'rgba(13,13,13,0.45)' }}>{(t.levels as Record<string, string>)[level.key] ?? level.name}</span>
+                      <span className="text-xs" style={{ fontFamily: "'Tenor Sans', sans-serif", color: 'var(--arvo-black)' }}>{totalXp} XP</span>
                     </div>
-                    <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                      <div className="h-full bg-gradient-to-r from-[#001A70] to-[#C9A227] rounded-full transition-all" style={{ width: `${levelProgress}%` }} />
+                    <div className="h-1 rounded-full overflow-hidden" style={{ background: 'rgba(13,13,13,0.08)' }}>
+                      <div className="h-full rounded-full transition-all" style={{ width: `${levelProgress}%`, background: 'linear-gradient(90deg, var(--arvo-black), var(--arvo-gold))' }} />
                     </div>
                   </div>
-                  <Link to="/achievements" onClick={() => setShowUserMenu(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
-                    <span>🏅</span> {t.nav.achievements}
+                  <Link to="/achievements" onClick={() => setShowUserMenu(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors" style={{ color: 'rgba(13,13,13,0.75)' }} onMouseEnter={e => (e.currentTarget.style.background='rgba(13,13,13,0.04)')} onMouseLeave={e => (e.currentTarget.style.background='')}>
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4 shrink-0">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M8 1.5l1.8 3.6 4 .6-2.9 2.8.7 4L8 10.4l-3.6 1.9.7-4L2.2 5.7l4-.6L8 1.5z"/>
+                    </svg>
+                    {t.nav.achievements}
                   </Link>
-                  <Link to="/favorites" onClick={() => setShowUserMenu(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
-                    <span>★</span> {t.nav.favorites}
+                  <Link to="/favorites" onClick={() => setShowUserMenu(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors" style={{ color: 'rgba(13,13,13,0.75)' }} onMouseEnter={e => (e.currentTarget.style.background='rgba(13,13,13,0.04)')} onMouseLeave={e => (e.currentTarget.style.background='')}>
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4 shrink-0">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M8 2.5c1.5-2 5.5-1.5 5.5 2.5 0 3-5.5 7.5-5.5 7.5S2.5 8 2.5 5C2.5 1 6.5.5 8 2.5z"/>
+                    </svg>
+                    {t.nav.favorites}
                   </Link>
-                  <Link to="/archived" onClick={() => setShowUserMenu(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4 shrink-0">
-                      <path d="M2 3.5A1.5 1.5 0 0 1 3.5 2h9A1.5 1.5 0 0 1 14 3.5v.5H2v-.5ZM2 5.5h12v7A1.5 1.5 0 0 1 12.5 14h-9A1.5 1.5 0 0 1 2 12.5v-7Zm4.5 2a.5.5 0 0 0 0 1h3a.5.5 0 0 0 0-1h-3Z" />
+                  <Link to="/archived" onClick={() => setShowUserMenu(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors" style={{ color: 'rgba(13,13,13,0.75)' }} onMouseEnter={e => (e.currentTarget.style.background='rgba(13,13,13,0.04)')} onMouseLeave={e => (e.currentTarget.style.background='')}>
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4 shrink-0">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M2 4.5h12v1.5H2zM3.5 6v7h9V6M6 9h4"/>
                     </svg>
                     {t.nav.archived}
                   </Link>
-                  <Link to="/profile" onClick={() => setShowUserMenu(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
-                    <span>👤</span> {t.nav.profile}
+                  <Link to="/profile" onClick={() => setShowUserMenu(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors" style={{ color: 'rgba(13,13,13,0.75)' }} onMouseEnter={e => (e.currentTarget.style.background='rgba(13,13,13,0.04)')} onMouseLeave={e => (e.currentTarget.style.background='')}>
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4 shrink-0">
+                      <circle cx="8" cy="5" r="2.5"/><path strokeLinecap="round" d="M2.5 14c0-3 2.5-5 5.5-5s5.5 2 5.5 5"/>
+                    </svg>
+                    {t.nav.profile}
                   </Link>
-                  <button onClick={() => signOut()} className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors">
+                  <button onClick={() => signOut()} className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors" style={{ color: 'var(--arvo-red)' }} onMouseEnter={e => (e.currentTarget.style.background='rgba(214,59,47,0.06)')} onMouseLeave={e => (e.currentTarget.style.background='')}>
                     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4 shrink-0">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 11.5L14 8l-3.5-3.5M14 8H6M6 2.5H3A1.5 1.5 0 0 0 1.5 4v8A1.5 1.5 0 0 0 3 13.5h3"/>
                     </svg>
@@ -255,20 +258,17 @@ export default function AppLayout() {
 
         {/* ── Sub-nav bar — desktop only ── */}
         {activeSubItems.length > 0 && (
-          <div className="hidden sm:block border-t border-gray-100 bg-gray-50/60">
+          <div className="hidden sm:block" style={{ borderTop: '1px solid var(--arvo-border-soft)', background: 'rgba(232,223,208,0.45)' }}>
             <div className="flex items-center justify-center gap-0.5 px-6 py-1.5">
               {activeSubItems.map(({ to, label, end, icon }) => (
                 <NavLink
                   key={to} to={to} end={end}
-                  className={({ isActive }) =>
-                    `flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${
-                      isActive
-                        ? 'bg-white text-[#001A70] shadow-sm border border-gray-100'
-                        : 'text-gray-500 hover:text-gray-800 hover:bg-white/70'
-                    }`
-                  }
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs whitespace-nowrap transition-all"
+                  style={({ isActive }) => isActive
+                    ? { fontFamily: "'Tenor Sans', sans-serif", background: 'var(--arvo-black)', color: 'var(--arvo-offwhite)', letterSpacing: '0.08em' }
+                    : { fontFamily: "'Tenor Sans', sans-serif", color: 'rgba(13,13,13,0.5)', letterSpacing: '0.08em' }}
                 >
-                  <span className="text-gray-400 flex items-center">{icon}</span>
+                  <span className="flex items-center" style={{ opacity: 0.7 }}>{icon}</span>
                   {label}
                 </NavLink>
               ))}
@@ -278,7 +278,7 @@ export default function AppLayout() {
 
         {/* ── Mobile drawer ── */}
         {showMobileMenu && (
-          <div className="sm:hidden absolute top-full left-0 right-0 bg-white border-b border-gray-100 shadow-lg z-40 max-h-[85vh] overflow-y-auto">
+          <div className="sm:hidden absolute top-full left-0 right-0 shadow-lg z-40 max-h-[85vh] overflow-y-auto" style={{ background: 'var(--arvo-offwhite)', borderBottom: '1px solid var(--arvo-border-soft)' }}>
             <div className="px-4 py-3 space-y-1">
 
               {/* User card */}
@@ -286,52 +286,54 @@ export default function AppLayout() {
                 {avatarUrl ? (
                   <img src={avatarUrl} alt="Avatar" className="w-9 h-9 rounded-full object-cover shrink-0" />
                 ) : (
-                  <div className="w-9 h-9 rounded-full bg-[#001A70] text-white flex items-center justify-center text-xs font-bold shrink-0">{avatarInitials}</div>
+                  <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs shrink-0" style={{ background: 'var(--arvo-black)', color: 'var(--arvo-gold)', fontFamily: "'Tenor Sans', sans-serif", letterSpacing: '0.08em' }}>{avatarInitials}</div>
                 )}
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">{headerLabel}</p>
+                  <p className="text-sm font-medium truncate" style={{ color: 'var(--arvo-black)' }}>{headerLabel}</p>
                   <div className="flex items-center gap-1.5 mt-0.5">
-                    <div className="flex-1 h-1 bg-gray-100 rounded-full overflow-hidden">
-                      <div className="h-full bg-gradient-to-r from-[#001A70] to-[#C9A227] rounded-full" style={{ width: `${levelProgress}%` }} />
+                    <div className="flex-1 h-1 rounded-full overflow-hidden" style={{ background: 'rgba(13,13,13,0.08)' }}>
+                      <div className="h-full rounded-full" style={{ width: `${levelProgress}%`, background: 'linear-gradient(90deg, var(--arvo-black), var(--arvo-gold))' }} />
                     </div>
-                    <span className="text-[10px] font-bold text-[#001A70] shrink-0">{level.emoji} {totalXp} XP</span>
+                    <span className="text-[10px] shrink-0" style={{ fontFamily: "'Tenor Sans', sans-serif", color: 'var(--arvo-black)' }}>{totalXp} XP</span>
                   </div>
                 </div>
               </div>
 
               {/* Settings row */}
               <div className="flex items-center gap-2 px-3 py-1.5">
-                <span className="text-xs text-gray-400 mr-1">{t.common.language}</span>
+                <span className="text-xs mr-1" style={{ color: 'rgba(13,13,13,0.45)' }}>{t.common.language}</span>
                 <LanguageSelector />
                 <div className="flex-1" />
-                <span className="text-xs text-gray-400 mr-1">{t.currency?.label ?? 'Moeda'}</span>
-                <div className="flex items-center bg-gray-100 rounded-lg p-0.5 gap-0.5">
+                <span className="text-xs mr-1" style={{ color: 'rgba(13,13,13,0.45)' }}>{t.currency?.label ?? 'Moeda'}</span>
+                <div className="flex items-center rounded-full p-0.5 gap-0.5" style={{ background: 'rgba(13,13,13,0.07)' }}>
                   {CURRENCIES.map(c => (
                     <button key={c} onClick={() => setCurrency(c)}
-                      className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-colors ${
-                        currency === c ? 'bg-white text-[#001A70] shadow-sm' : 'text-gray-400 hover:text-gray-700'
-                      }`}
+                      className="px-2.5 py-1 text-xs rounded-full transition-all"
+                      style={currency === c
+                        ? { fontFamily: "'Tenor Sans', sans-serif", background: 'var(--arvo-black)', color: 'var(--arvo-offwhite)', letterSpacing: '0.06em' }
+                        : { fontFamily: "'Tenor Sans', sans-serif", color: 'rgba(13,13,13,0.45)', letterSpacing: '0.06em' }}
                     >{c}</button>
                   ))}
                 </div>
               </div>
 
               {/* Profile links */}
-              <div className="border-t border-gray-100 pt-1">
+              <div className="pt-1" style={{ borderTop: '1px solid var(--arvo-border-soft)' }}>
                 {[
-                  { to: '/profile',      label: t.nav.profile,      icon: '👤' },
-                  { to: '/achievements', label: t.nav.achievements, icon: '🏅' },
-                  { to: '/favorites',    label: t.nav.favorites,    icon: '★'  },
-                  { to: '/archived',     label: t.nav.archived,     icon: '📦' },
+                  { to: '/profile',      label: t.nav.profile,      icon: <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4"><circle cx="8" cy="5" r="2.5"/><path strokeLinecap="round" d="M2.5 14c0-3 2.5-5 5.5-5s5.5 2 5.5 5"/></svg> },
+                  { to: '/achievements', label: t.nav.achievements, icon: <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="M8 1.5l1.8 3.6 4 .6-2.9 2.8.7 4L8 10.4l-3.6 1.9.7-4L2.2 5.7l4-.6L8 1.5z"/></svg> },
+                  { to: '/favorites',    label: t.nav.favorites,    icon: <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="M8 2.5c1.5-2 5.5-1.5 5.5 2.5 0 3-5.5 7.5-5.5 7.5S2.5 8 2.5 5C2.5 1 6.5.5 8 2.5z"/></svg> },
+                  { to: '/archived',     label: t.nav.archived,     icon: <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="M2 4.5h12v1.5H2zM3.5 6v7h9V6M6 9h4"/></svg> },
                 ].map(({ to, label, icon }) => (
                   <NavLink key={to} to={to}
                     className={({ isActive }) =>
-                      `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-colors ${
-                        isActive ? 'bg-[#001A70]/10 text-[#001A70] font-medium' : 'text-gray-700 hover:bg-gray-50'
-                      }`
+                      `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-colors ${isActive ? 'font-medium' : ''}`
                     }
+                    style={({ isActive }) => isActive
+                      ? { background: 'rgba(13,13,13,0.07)', color: 'var(--arvo-black)' }
+                      : { color: 'rgba(13,13,13,0.7)' }}
                   >
-                    <span className="w-4 text-center">{icon}</span>
+                    <span className="w-4 h-4 shrink-0 flex items-center">{icon}</span>
                     {label}
                   </NavLink>
                 ))}
@@ -347,47 +349,44 @@ export default function AppLayout() {
               </div>
 
               {/* Navigation */}
-              <div className="border-t border-gray-100 pt-1">
-                <p className="px-3 py-1.5 text-[11px] font-semibold text-gray-400 uppercase tracking-wide">{t.nav.investments}</p>
+              <div className="pt-1" style={{ borderTop: '1px solid var(--arvo-border-soft)' }}>
+                <p className="px-3 py-1.5 text-[10px] uppercase tracking-widest" style={{ fontFamily: "'Tenor Sans', sans-serif", color: 'rgba(13,13,13,0.35)' }}>{t.nav.investments}</p>
                 {investimentosItems.map(({ to, label, end, icon }) => (
                   <NavLink key={to} to={to} end={end}
-                    className={({ isActive }) =>
-                      `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-colors ${
-                        isActive ? 'bg-[#001A70]/10 text-[#001A70] font-medium' : 'text-gray-700 hover:bg-gray-50'
-                      }`
-                    }
+                    className={({ isActive }) => `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-colors ${isActive ? 'font-medium' : ''}`}
+                    style={({ isActive }) => isActive
+                      ? { background: 'rgba(13,13,13,0.07)', color: 'var(--arvo-black)' }
+                      : { color: 'rgba(13,13,13,0.7)' }}
                   >
-                    <span className="w-4 h-4 shrink-0 text-gray-400 flex items-center">{icon}</span>
+                    <span className="w-4 h-4 shrink-0 flex items-center" style={{ opacity: 0.55 }}>{icon}</span>
                     {label}
                   </NavLink>
                 ))}
               </div>
 
-              <div className="border-t border-gray-100 pt-1">
-                <p className="px-3 py-1.5 text-[11px] font-semibold text-gray-400 uppercase tracking-wide">{t.nav.finances}</p>
+              <div className="pt-1" style={{ borderTop: '1px solid var(--arvo-border-soft)' }}>
+                <p className="px-3 py-1.5 text-[10px] uppercase tracking-widest" style={{ fontFamily: "'Tenor Sans', sans-serif", color: 'rgba(13,13,13,0.35)' }}>{t.nav.finances}</p>
                 {financesItems.map(({ to, label, end, icon }) => (
                   <NavLink key={to} to={to} end={end}
-                    className={({ isActive }) =>
-                      `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-colors ${
-                        isActive ? 'bg-[#001A70]/10 text-[#001A70] font-medium' : 'text-gray-700 hover:bg-gray-50'
-                      }`
-                    }
+                    className={({ isActive }) => `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-colors ${isActive ? 'font-medium' : ''}`}
+                    style={({ isActive }) => isActive
+                      ? { background: 'rgba(13,13,13,0.07)', color: 'var(--arvo-black)' }
+                      : { color: 'rgba(13,13,13,0.7)' }}
                   >
-                    <span className="w-4 h-4 shrink-0 text-gray-400 flex items-center">{icon}</span>
+                    <span className="w-4 h-4 shrink-0 flex items-center" style={{ opacity: 0.55 }}>{icon}</span>
                     {label}
                   </NavLink>
                 ))}
               </div>
 
-              <div className="border-t border-gray-100 pt-1">
+              <div className="pt-1" style={{ borderTop: '1px solid var(--arvo-border-soft)' }}>
                 <NavLink to="/institutions"
-                  className={({ isActive }) =>
-                    `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-colors ${
-                      isActive ? 'bg-[#001A70]/10 text-[#001A70] font-medium' : 'text-gray-700 hover:bg-gray-50'
-                    }`
-                  }
+                  className={({ isActive }) => `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-colors ${isActive ? 'font-medium' : ''}`}
+                  style={({ isActive }) => isActive
+                    ? { background: 'rgba(13,13,13,0.07)', color: 'var(--arvo-black)' }
+                    : { color: 'rgba(13,13,13,0.7)' }}
                 >
-                  <span className="w-4 h-4 shrink-0 text-gray-400 flex items-center">
+                  <span className="w-4 h-4 shrink-0 flex items-center" style={{ opacity: 0.55 }}>
                     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M1.5 14.5h13M3 14.5V7.5M7 14.5V7.5M10 14.5V7.5M13 14.5V7.5M1 6.5L8 1.5l7 5"/>
                     </svg>
@@ -411,20 +410,17 @@ export default function AppLayout() {
 
       {/* Mobile sub-nav — fixed just above the bottom nav */}
       {activeSubItems.length > 0 && (
-        <nav className="sm:hidden fixed bottom-14 left-0 right-0 bg-white border-t border-gray-100 z-20">
+        <nav className="sm:hidden fixed bottom-14 left-0 right-0 z-20" style={{ background: 'rgba(232,223,208,0.94)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', borderTop: '1px solid var(--arvo-border-soft)' }}>
           <div className="flex items-center gap-0.5 px-3 py-1 overflow-x-auto scrollbar-none">
             {activeSubItems.map(({ to, label, end, icon }) => (
               <NavLink
                 key={to} to={to} end={end}
-                className={({ isActive }) =>
-                  `flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${
-                    isActive
-                      ? 'bg-[#001A70]/10 text-[#001A70] font-semibold'
-                      : 'text-gray-500 hover:text-gray-800 hover:bg-gray-100'
-                  }`
-                }
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs whitespace-nowrap transition-all"
+                style={({ isActive }) => isActive
+                  ? { fontFamily: "'Tenor Sans', sans-serif", background: 'var(--arvo-black)', color: 'var(--arvo-offwhite)', letterSpacing: '0.08em' }
+                  : { fontFamily: "'Tenor Sans', sans-serif", color: 'rgba(13,13,13,0.5)', letterSpacing: '0.08em' }}
               >
-                <span className="text-gray-400 flex items-center">{icon}</span>
+                <span className="flex items-center" style={{ opacity: 0.7 }}>{icon}</span>
                 {label}
               </NavLink>
             ))}
@@ -433,41 +429,38 @@ export default function AppLayout() {
       )}
 
       {/* Mobile bottom navigation */}
-      <nav className="sm:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 z-20 safe-bottom">
+      <nav className="sm:hidden fixed bottom-0 left-0 right-0 z-20 safe-bottom" style={{ background: 'rgba(242,237,228,0.96)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', borderTop: '1px solid var(--arvo-border-soft)' }}>
         <div className="flex">
           {[
-            { to: '/dashboard', label: t.nav.investments, end: false, match: inInvestimentos, icon: (
+            { to: '/dashboard', label: t.nav.investments, match: inInvestimentos, icon: (
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.5l7.5-7.5 4 4L21 4.5M3 20.5h18" />
               </svg>
             )},
-            { to: '/finances', label: t.nav.finances, end: false, match: inFinances, icon: (
+            { to: '/finances', label: t.nav.finances, match: inFinances, icon: (
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75" />
               </svg>
             )},
-            { to: '/institutions', label: t.nav.institutions, end: false, match: inInstitutions, icon: (
+            { to: '/institutions', label: t.nav.institutions, match: inInstitutions, icon: (
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.008v.008h-.008v-.008Zm0 3h.008v.008h-.008v-.008Zm0 3h.008v.008h-.008v-.008Z" />
               </svg>
             )},
-          ].map(({ to, label, end: _end, match, icon }) => (
+          ].map(({ to, label, match, icon }) => (
             <NavLink
               key={to} to={to}
-              className={() =>
-                `flex-1 py-2.5 flex flex-col items-center gap-0.5 transition-colors text-[11px] font-medium leading-tight ${
-                  match ? 'text-[#001A70]' : 'text-gray-400'
-                }`
-              }
+              className="flex-1 py-2.5 flex flex-col items-center gap-0.5 transition-colors text-[11px] leading-tight"
+              style={{ fontFamily: "'Tenor Sans', sans-serif", color: match ? 'var(--arvo-black)' : 'rgba(13,13,13,0.35)', letterSpacing: '0.06em' }}
             >
               {icon}
               <span className="truncate w-full text-center px-0.5">{label}</span>
             </NavLink>
           ))}
-          {/* Menu button */}
           <button
             onClick={() => setShowMobileMenu(v => !v)}
-            className={`flex-1 py-2.5 flex flex-col items-center gap-0.5 transition-colors text-[11px] font-medium leading-tight ${showMobileMenu ? 'text-[#001A70]' : 'text-gray-400'}`}
+            className="flex-1 py-2.5 flex flex-col items-center gap-0.5 transition-colors text-[11px] leading-tight"
+            style={{ fontFamily: "'Tenor Sans', sans-serif", color: showMobileMenu ? 'var(--arvo-black)' : 'rgba(13,13,13,0.35)', letterSpacing: '0.06em' }}
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />

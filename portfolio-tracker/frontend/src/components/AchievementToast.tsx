@@ -17,12 +17,12 @@ export default function AchievementToast({ def, onClose }: Props) {
 
   return (
     <div
-      className="fixed bottom-6 right-6 z-50 flex items-center gap-3 bg-[#0A0F1E] border border-[#C9A227]/40 rounded-2xl px-4 py-3 shadow-2xl animate-slide-in"
+      className="fixed bottom-6 right-6 z-50 flex items-center gap-3 bg-[#0A0F1E] border border-[#C8B89A]/40 rounded-2xl px-4 py-3 shadow-2xl animate-slide-in"
       style={{ minWidth: 280 }}
     >
       <Medal def={def} earned size={52} />
       <div>
-        <p className="text-xs text-[#C9A227] font-semibold uppercase tracking-widest">{t.achievements.unlocked}</p>
+        <p className="text-xs text-[#C8B89A] font-semibold uppercase tracking-widest">{t.achievements.unlocked}</p>
         <p className="text-white font-bold text-sm">{(t.achievementDefs as Record<string, {name: string; desc: string}>)[def.key]?.name ?? def.name}</p>
         <p className="text-gray-400 text-xs">{(t.achievementDefs as Record<string, {name: string; desc: string}>)[def.key]?.desc ?? def.description} · +{def.xp} {t.achievements.xp}</p>
       </div>

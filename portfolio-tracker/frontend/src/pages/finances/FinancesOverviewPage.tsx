@@ -231,7 +231,7 @@ export default function FinancesOverviewPage() {
         <p className="text-3xl mb-3">💰</p>
         <p className="text-gray-600 font-medium text-sm mb-1">{t.finances.configureIncome}</p>
         <p className="text-gray-400 text-xs mb-4">{t.finances.configureHint}</p>
-        <Link to="/finances/budget" className="inline-block bg-[#001A70] text-white text-sm px-5 py-2 rounded-xl hover:opacity-80 transition-opacity">
+        <Link to="/finances/budget" className="inline-block bg-[#0D0D0D] text-white text-sm px-5 py-2 rounded-xl hover:opacity-80 transition-opacity">
           {t.finances.configureBudget}
         </Link>
       </div>
@@ -312,7 +312,7 @@ export default function FinancesOverviewPage() {
       </div>
 
       {/* Hero card — matches portfolio card style */}
-      <div className="bg-gradient-to-br from-[#0A0F1E] to-[#001A70] text-white rounded-2xl p-5 shadow-sm">
+      <div className="bg-gradient-to-br from-[#0A0F1E] to-[#0D0D0D] text-white rounded-2xl p-5 shadow-sm">
         <div className="flex items-start justify-between">
           <div>
             <p className="text-blue-300 text-xs font-medium uppercase tracking-wide">{t.finances.overviewBalance}</p>
@@ -374,7 +374,7 @@ export default function FinancesOverviewPage() {
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         <div className="px-5 py-4 border-b border-gray-50 flex items-center justify-between">
           <h2 className="font-semibold text-gray-800 text-sm">{t.finances.overviewSpendingVsBudget}</h2>
-          <Link to="/finances/budget" className="text-xs text-[#001A70] hover:opacity-70 transition-opacity">
+          <Link to="/finances/budget" className="text-xs text-[#0D0D0D] hover:opacity-70 transition-opacity">
             {t.finances.navBudget} →
           </Link>
         </div>
@@ -478,7 +478,7 @@ export default function FinancesOverviewPage() {
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           <div className="px-5 py-4 border-b border-gray-50 flex items-center justify-between">
             <h2 className="font-semibold text-gray-800 text-sm">{t.finances.overviewTopCategories}</h2>
-            <Link to="/finances/transactions" className="text-xs text-[#001A70] hover:opacity-70 transition-opacity">
+            <Link to="/finances/transactions" className="text-xs text-[#0D0D0D] hover:opacity-70 transition-opacity">
               {t.finances.navTransactions} →
             </Link>
           </div>
@@ -518,7 +518,7 @@ export default function FinancesOverviewPage() {
                   onClick={() => setHistoryMonths(n)}
                   className={`px-2.5 py-1 text-xs rounded-lg transition-colors font-medium ${
                     historyMonths === n
-                      ? 'bg-[#001A70] text-white'
+                      ? 'bg-[#0D0D0D] text-white'
                       : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
                   }`}
                 >

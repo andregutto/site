@@ -695,7 +695,7 @@ export default function FinancesTransactionsPage() {
               <button
                 onClick={setLast30Days}
                 title={t.performance.last30d}
-                className="px-2.5 py-1.5 text-xs font-medium text-gray-500 border border-gray-200 rounded-lg hover:border-[#001A70] hover:text-[#001A70] transition-colors whitespace-nowrap"
+                className="px-2.5 py-1.5 text-xs font-medium text-gray-500 border border-gray-200 rounded-lg hover:border-[#0D0D0D] hover:text-[#0D0D0D] transition-colors whitespace-nowrap"
               >{t.performance.last30d}</button>
               <button
                 onClick={() => setDateMode('range')}
@@ -748,7 +748,7 @@ export default function FinancesTransactionsPage() {
             </button>
             <button
               onClick={() => setShowAdd(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#001A70] text-white text-sm rounded-lg hover:opacity-80 transition-opacity"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#0D0D0D] text-white text-sm rounded-lg hover:opacity-80 transition-opacity"
             >
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4"><path d="M8.75 3.75a.75.75 0 0 0-1.5 0v3.5h-3.5a.75.75 0 0 0 0 1.5h3.5v3.5a.75.75 0 0 0 1.5 0v-3.5h3.5a.75.75 0 0 0 0-1.5h-3.5v-3.5Z" /></svg>
               {t.finances.addTransaction}
@@ -815,7 +815,7 @@ export default function FinancesTransactionsPage() {
       {/* CSV Parsing loader */}
       {csvStep === 'parsing' && (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-8 flex flex-col items-center gap-3">
-          <svg className="animate-spin w-7 h-7 text-[#001A70]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <svg className="animate-spin w-7 h-7 text-[#0D0D0D]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/>
           </svg>
@@ -878,7 +878,7 @@ export default function FinancesTransactionsPage() {
                 </div>
               )}
               <button onClick={() => { setCsvStep('idle'); setCsvRows([]); setCsvDuplicateCount(0); setCsvAiDebug(null) }} className="text-xs text-gray-500 hover:text-gray-700 transition-colors">{t.common.cancel}</button>
-              <button onClick={importCSV} disabled={csvStep === 'importing'} className="px-3 py-1.5 bg-[#001A70] text-white text-xs rounded-lg hover:opacity-80 transition-opacity disabled:opacity-50">
+              <button onClick={importCSV} disabled={csvStep === 'importing'} className="px-3 py-1.5 bg-[#0D0D0D] text-white text-xs rounded-lg hover:opacity-80 transition-opacity disabled:opacity-50">
                 {csvStep === 'importing' ? t.finances.csvImporting : t.finances.csvConfirm}
               </button>
             </div>
@@ -984,7 +984,7 @@ export default function FinancesTransactionsPage() {
                         checked={allSelected}
                         ref={el => { if (el) el.indeterminate = someSelected }}
                         onChange={toggleSelectAll}
-                        className="rounded border-gray-300 text-[#001A70] focus:ring-[#001A70]/20 cursor-pointer"
+                        className="rounded border-gray-300 text-[#0D0D0D] focus:ring-[#0D0D0D]/20 cursor-pointer"
                       />
                     </th>
                     <th className="px-3 py-3 text-left">{t.common.date}</th>
@@ -1053,14 +1053,14 @@ export default function FinancesTransactionsPage() {
                     return (
                       <tr
                         key={tx.id}
-                        className={`group transition-colors ${isHidden(tx) ? 'opacity-40' : ''} ${isSelected ? 'bg-[#001A70]/5' : 'hover:bg-gray-50'}`}
+                        className={`group transition-colors ${isHidden(tx) ? 'opacity-40' : ''} ${isSelected ? 'bg-[#0D0D0D]/5' : 'hover:bg-gray-50'}`}
                       >
                         <td className="pl-4 pr-2 py-3 w-8">
                           <input
                             type="checkbox"
                             checked={isSelected}
                             onChange={() => toggleSelect(tx.id)}
-                            className="rounded border-gray-300 text-[#001A70] focus:ring-[#001A70]/20 cursor-pointer"
+                            className="rounded border-gray-300 text-[#0D0D0D] focus:ring-[#0D0D0D]/20 cursor-pointer"
                           />
                         </td>
                         <td className="px-3 py-3 text-gray-500 whitespace-nowrap">{fmtDate(tx.date)}</td>
@@ -1171,7 +1171,7 @@ export default function FinancesTransactionsPage() {
                             <button
                               onClick={() => { setEditingNotesId(tx.id); setNotesInput(tx.notes ?? '') }}
                               title={t.finances.notesPlaceholder}
-                              className={`p-1.5 rounded transition-colors ${tx.notes ? 'text-[#001A70] hover:bg-[#001A70]/10' : 'text-gray-300 hover:text-[#001A70] hover:bg-[#001A70]/10'}`}
+                              className={`p-1.5 rounded transition-colors ${tx.notes ? 'text-[#0D0D0D] hover:bg-[#0D0D0D]/10' : 'text-gray-300 hover:text-[#0D0D0D] hover:bg-[#0D0D0D]/10'}`}
                             >
                               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4"><path d="M13.488 2.513a1.75 1.75 0 0 0-2.475 0L6.75 6.774a2.75 2.75 0 0 0-.596.892l-.471 1.179a.75.75 0 0 0 .98.98l1.179-.471a2.75 2.75 0 0 0 .892-.596l4.262-4.263a1.75 1.75 0 0 0 0-2.475ZM3.5 4.75A.75.75 0 0 1 4.25 4h3a.75.75 0 0 1 0 1.5h-3a.75.75 0 0 1-.75-.75Zm0 3A.75.75 0 0 1 4.25 7h1.5a.75.75 0 0 1 0 1.5h-1.5A.75.75 0 0 1 3.5 7.75ZM2 3.5A1.5 1.5 0 0 1 3.5 2h9A1.5 1.5 0 0 1 14 3.5V5a.75.75 0 0 1-1.5 0V3.5a.75.75 0 0 0-.75-.75h-9A.75.75 0 0 0 2 3.5V12a.75.75 0 0 0 .75.75H6a.75.75 0 0 1 0 1.5H2.75A1.5 1.5 0 0 1 2 12.75V3.5Z"/></svg>
                             </button>
@@ -1369,13 +1369,13 @@ export default function FinancesTransactionsPage() {
               onChange={e => setGroupName(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && createReimbursementGroup()}
               placeholder={t.finances.reimbursementGroupNamePlaceholder}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20 mb-4"
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20 mb-4"
             />
             <div className="flex gap-2">
               <button
                 onClick={createReimbursementGroup}
                 disabled={savingGroup || !groupName.trim()}
-                className="flex-1 bg-[#001A70] text-white text-sm py-2 rounded-xl hover:opacity-80 transition-opacity disabled:opacity-40"
+                className="flex-1 bg-[#0D0D0D] text-white text-sm py-2 rounded-xl hover:opacity-80 transition-opacity disabled:opacity-40"
               >
                 {savingGroup ? '…' : t.finances.createReimbursementGroup}
               </button>
@@ -1432,12 +1432,12 @@ export default function FinancesTransactionsPage() {
                                 if (e.key === 'Enter') renameGroup(g.id, editingGroupNameInput)
                                 if (e.key === 'Escape') setEditingGroupId(null)
                               }}
-                              className="flex-1 text-sm font-medium border-b border-[#001A70] bg-transparent outline-none"
+                              className="flex-1 text-sm font-medium border-b border-[#0D0D0D] bg-transparent outline-none"
                             />
                           ) : (
                             <button
                               onClick={() => { setEditingGroupId(g.id); setEditingGroupNameInput(g.name) }}
-                              className="flex-1 text-sm font-medium text-gray-800 text-left hover:text-[#001A70] transition-colors"
+                              className="flex-1 text-sm font-medium text-gray-800 text-left hover:text-[#0D0D0D] transition-colors"
                               title="Clique para renomear"
                             >
                               {displayName(g)}
@@ -1497,12 +1497,12 @@ export default function FinancesTransactionsPage() {
                                         if (e.key === 'Enter') renameGroup(g.id, editingGroupNameInput)
                                         if (e.key === 'Escape') setEditingGroupId(null)
                                       }}
-                                      className="flex-1 text-sm font-medium border-b border-[#001A70] bg-transparent outline-none"
+                                      className="flex-1 text-sm font-medium border-b border-[#0D0D0D] bg-transparent outline-none"
                                     />
                                   ) : (
                                     <button
                                       onClick={() => { setEditingGroupId(g.id); setEditingGroupNameInput(displayName(g)) }}
-                                      className="flex-1 text-sm font-medium text-gray-500 text-left hover:text-[#001A70] transition-colors flex items-center gap-1.5"
+                                      className="flex-1 text-sm font-medium text-gray-500 text-left hover:text-[#0D0D0D] transition-colors flex items-center gap-1.5"
                                       title="Clique para renomear (remove a marcação automática)"
                                     >
                                       <span className="text-[10px] bg-gray-100 text-gray-400 rounded px-1 py-0.5 font-medium shrink-0">auto</span>
@@ -1579,8 +1579,8 @@ export default function FinancesTransactionsPage() {
                     onClick={() => setCsvCurrency(c)}
                     className={`flex-1 py-2 text-sm font-medium rounded-lg border transition-colors ${
                       csvCurrency === c
-                        ? 'bg-[#001A70] text-white border-[#001A70]'
-                        : 'bg-white text-gray-600 border-gray-200 hover:border-[#001A70] hover:text-[#001A70]'
+                        ? 'bg-[#0D0D0D] text-white border-[#0D0D0D]'
+                        : 'bg-white text-gray-600 border-gray-200 hover:border-[#0D0D0D] hover:text-[#0D0D0D]'
                     }`}
                   >
                     {c}
@@ -1591,7 +1591,7 @@ export default function FinancesTransactionsPage() {
 
             {/* Drop zone */}
             <div
-              className="border-2 border-dashed border-gray-200 rounded-xl p-8 text-center cursor-pointer hover:border-[#001A70] hover:bg-[#001A70]/5 transition-colors"
+              className="border-2 border-dashed border-gray-200 rounded-xl p-8 text-center cursor-pointer hover:border-[#0D0D0D] hover:bg-[#0D0D0D]/5 transition-colors"
               onClick={() => fileRef.current?.click()}
               onDragOver={e => { e.preventDefault(); e.stopPropagation() }}
               onDrop={e => {
@@ -1626,11 +1626,11 @@ export default function FinancesTransactionsPage() {
             <div className="space-y-3">
               <div>
                 <label className="block text-xs text-gray-500 mb-1">{t.common.date}</label>
-                <input type="date" value={addDate} onChange={e => setAddDate(e.target.value)} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20" />
+                <input type="date" value={addDate} onChange={e => setAddDate(e.target.value)} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20" />
               </div>
               <div>
                 <label className="block text-xs text-gray-500 mb-1">{t.common.description}</label>
-                <input autoFocus value={addDesc} onChange={e => setAddDesc(e.target.value)} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20" placeholder="Ex: Supermercado" />
+                <input autoFocus value={addDesc} onChange={e => setAddDesc(e.target.value)} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20" placeholder="Ex: Supermercado" />
               </div>
               <div>
                 <label className="block text-xs text-gray-500 mb-1">{t.common.value}</label>
@@ -1641,7 +1641,7 @@ export default function FinancesTransactionsPage() {
                   <select value={addCur} onChange={e => setAddCur(e.target.value)} className="border border-gray-200 rounded-lg px-2 py-2 text-sm">
                     {['EUR','BRL','USD'].map(c => <option key={c}>{c}</option>)}
                   </select>
-                  <input type="number" step="0.01" min="0" value={addAmt} onChange={e => setAddAmt(e.target.value)} className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20" placeholder="0.00" />
+                  <input type="number" step="0.01" min="0" value={addAmt} onChange={e => setAddAmt(e.target.value)} className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20" placeholder="0.00" />
                 </div>
               </div>
               <div>
@@ -1665,7 +1665,7 @@ export default function FinancesTransactionsPage() {
               <button
                 onClick={addTransaction}
                 disabled={saving || !addDesc.trim() || !addAmt}
-                className="flex-1 bg-[#001A70] text-white text-sm py-2 rounded-xl hover:opacity-80 transition-opacity disabled:opacity-40"
+                className="flex-1 bg-[#0D0D0D] text-white text-sm py-2 rounded-xl hover:opacity-80 transition-opacity disabled:opacity-40"
               >
                 {saving ? '…' : t.finances.addTransaction}
               </button>

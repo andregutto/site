@@ -159,14 +159,14 @@ export default function DashboardPage() {
                 disabled
                   ? 'bg-white text-gray-300 border-gray-100 cursor-not-allowed'
                   : periodMode === key
-                    ? 'bg-[#001A70] text-white border-[#001A70]'
-                    : 'bg-white text-gray-500 border-gray-200 hover:border-[#001A70] hover:text-[#001A70]'
+                    ? 'bg-[#0D0D0D] text-white border-[#0D0D0D]'
+                    : 'bg-white text-gray-500 border-gray-200 hover:border-[#0D0D0D] hover:text-[#0D0D0D]'
               }`}
             >{label}</button>
           ))}
           <button
             onClick={refresh}
-            className="text-sm text-gray-500 hover:text-[#001A70] flex items-center gap-1.5 transition-colors ml-1"
+            className="text-sm text-gray-500 hover:text-[#0D0D0D] flex items-center gap-1.5 transition-colors ml-1"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -245,7 +245,7 @@ export default function DashboardPage() {
                   ]}
                   contentStyle={{ borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 12 }}
                 />
-                <Line type="monotone" dataKey="value" stroke="#001A70" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
+                <Line type="monotone" dataKey="value" stroke="#0D0D0D" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
               </LineChart>
             </ResponsiveContainer>
           )}
@@ -263,7 +263,7 @@ export default function DashboardPage() {
               <button
                 onClick={() => syncDividends(true)}
                 disabled={syncing}
-                className="text-xs text-gray-400 hover:text-[#001A70] transition-colors disabled:opacity-40"
+                className="text-xs text-gray-400 hover:text-[#0D0D0D] transition-colors disabled:opacity-40"
               >
                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />

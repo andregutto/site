@@ -23,7 +23,7 @@ export default function PrivacyPolicyPage() {
     <div className="min-h-screen bg-gray-50 flex flex-col items-center py-10 px-4">
       <div className="w-full max-w-2xl space-y-6">
         <div className="flex items-center justify-between">
-          <Link to="/login" className="text-xs text-[#001A70] hover:underline flex items-center gap-1">
+          <Link to="/login" className="text-xs text-[#0D0D0D] hover:underline flex items-center gap-1">
             ← Login
           </Link>
           <LanguageSelector />
@@ -31,7 +31,7 @@ export default function PrivacyPolicyPage() {
 
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 space-y-6">
           <div>
-            <h1 className="text-2xl font-bold text-[#001A70]">{p.title}</h1>
+            <h1 className="text-2xl font-bold text-[#0D0D0D]">{p.title}</h1>
             <p className="text-xs text-gray-400 mt-1">{p.updated}</p>
           </div>
 

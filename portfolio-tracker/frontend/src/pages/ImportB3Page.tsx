@@ -261,7 +261,7 @@ export default function ImportB3Page() {
         <div className="flex items-center gap-3">
           <button
             onClick={() => navigate(-1)}
-            className="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center text-gray-500 hover:border-[#001A70] hover:text-[#001A70] transition-colors"
+            className="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center text-gray-500 hover:border-[#0D0D0D] hover:text-[#0D0D0D] transition-colors"
           >‹</button>
           <div>
             <h1 className="text-xl font-bold text-gray-900">Importar negociações B3</h1>
@@ -274,13 +274,13 @@ export default function ImportB3Page() {
           onDragLeave={() => setDragOver(false)}
           onDrop={onDrop}
           className={`relative border-2 border-dashed rounded-2xl p-12 text-center transition-colors ${
-            dragOver ? 'border-[#001A70] bg-blue-50' : 'border-gray-200 bg-white hover:border-gray-300'
+            dragOver ? 'border-[#0D0D0D] bg-blue-50' : 'border-gray-200 bg-white hover:border-gray-300'
           }`}
         >
           <div className="text-4xl mb-4">📊</div>
           <p className="font-semibold text-gray-700 mb-1">Arraste o arquivo .xlsx aqui</p>
           <p className="text-sm text-gray-400 mb-5">ou clique para selecionar</p>
-          <label className="cursor-pointer inline-flex items-center gap-2 px-5 py-2.5 bg-[#001A70] text-white rounded-xl text-sm font-semibold hover:bg-[#001A70]/90 transition-colors">
+          <label className="cursor-pointer inline-flex items-center gap-2 px-5 py-2.5 bg-[#0D0D0D] text-white rounded-xl text-sm font-semibold hover:bg-[#0D0D0D]/90 transition-colors">
             Selecionar arquivo
             <input type="file" accept=".xlsx" onChange={onInputChange} className="hidden" />
           </label>
@@ -329,7 +329,7 @@ export default function ImportB3Page() {
         <div className="flex items-center gap-3">
           <button
             onClick={() => setStep('upload')}
-            className="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center text-gray-500 hover:border-[#001A70] hover:text-[#001A70] transition-colors"
+            className="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center text-gray-500 hover:border-[#0D0D0D] hover:text-[#0D0D0D] transition-colors"
           >‹</button>
           <div>
             <h1 className="text-xl font-bold text-gray-900">Prévia da importação</h1>
@@ -412,7 +412,7 @@ export default function ImportB3Page() {
               placeholder="Filtrar ticker..."
               value={filterTicker}
               onChange={e => setFilterTicker(e.target.value)}
-              className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm w-36 focus:outline-none focus:ring-2 focus:ring-[#001A70]/20"
+              className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm w-36 focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20"
             />
           </div>
           <div className="overflow-x-auto">
@@ -461,7 +461,7 @@ export default function ImportB3Page() {
             <div className="px-4 py-3 border-t border-gray-50 text-center">
               <button
                 onClick={() => setShowAllOps(true)}
-                className="text-sm text-[#001A70] hover:underline"
+                className="text-sm text-[#0D0D0D] hover:underline"
               >
                 Ver todas ({visibleOps.length - 30} restantes)
               </button>
@@ -497,7 +497,7 @@ export default function ImportB3Page() {
           </p>
           <button
             onClick={handleExecute}
-            className="px-6 py-2.5 bg-[#001A70] text-white rounded-xl text-sm font-semibold hover:bg-[#001A70]/90 transition-colors shrink-0"
+            className="px-6 py-2.5 bg-[#0D0D0D] text-white rounded-xl text-sm font-semibold hover:bg-[#0D0D0D]/90 transition-colors shrink-0"
           >
             Confirmar importação
           </button>
@@ -519,11 +519,11 @@ export default function ImportB3Page() {
             {execPhase === 'syncing' && 'Isso pode levar até 1 minuto dependendo da quantidade de ativos.'}
           </p>
           <div className="flex items-center gap-2 justify-center">
-            <div className={`w-2 h-2 rounded-full ${execPhase === 'importing' ? 'bg-[#001A70] animate-pulse' : 'bg-green-500'}`} />
-            <span className={`text-xs ${execPhase === 'importing' ? 'text-[#001A70] font-medium' : 'text-gray-400'}`}>Importação</span>
+            <div className={`w-2 h-2 rounded-full ${execPhase === 'importing' ? 'bg-[#0D0D0D] animate-pulse' : 'bg-green-500'}`} />
+            <span className={`text-xs ${execPhase === 'importing' ? 'text-[#0D0D0D] font-medium' : 'text-gray-400'}`}>Importação</span>
             <div className="w-6 h-px bg-gray-200" />
-            <div className={`w-2 h-2 rounded-full ${execPhase === 'syncing' ? 'bg-[#001A70] animate-pulse' : 'bg-gray-200'}`} />
-            <span className={`text-xs ${execPhase === 'syncing' ? 'text-[#001A70] font-medium' : 'text-gray-400'}`}>Histórico</span>
+            <div className={`w-2 h-2 rounded-full ${execPhase === 'syncing' ? 'bg-[#0D0D0D] animate-pulse' : 'bg-gray-200'}`} />
+            <span className={`text-xs ${execPhase === 'syncing' ? 'text-[#0D0D0D] font-medium' : 'text-gray-400'}`}>Histórico</span>
           </div>
         </div>
       </div>
@@ -641,7 +641,7 @@ export default function ImportB3Page() {
         <div className="flex gap-3 justify-center">
           <button
             onClick={() => navigate('/')}
-            className="px-6 py-2.5 bg-[#001A70] text-white rounded-xl text-sm font-semibold hover:bg-[#001A70]/90 transition-colors"
+            className="px-6 py-2.5 bg-[#0D0D0D] text-white rounded-xl text-sm font-semibold hover:bg-[#0D0D0D]/90 transition-colors"
           >
             Ver Dashboard
           </button>

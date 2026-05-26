@@ -1,3 +1,4 @@
+import type React from 'react'
 import { useCurrency } from '../contexts/CurrencyContext'
 import { useI18n } from '../contexts/I18nContext'
 
@@ -26,30 +27,33 @@ export default function ValueCards({ total_brl, generated_at, invested_brl, gain
     return `${val >= 0 ? '+' : ''}${val.toFixed(1)}%`
   }
 
-  function pctColor(val: number | null | undefined) {
-    if (val == null) return 'text-blue-300'
-    return val >= 0 ? 'text-emerald-300' : 'text-red-300'
+  function pctStyle(val: number | null | undefined): React.CSSProperties {
+    if (val == null) return { color: 'rgba(200,184,154,0.6)' }
+    return { color: val >= 0 ? 'var(--arvo-green-on-dark)' : '#f08070' }
   }
 
+  const labelStyle: React.CSSProperties = { fontFamily: "'Tenor Sans', sans-serif", color: 'rgba(200,184,154,0.6)', fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase' }
+  const valueStyle: React.CSSProperties = { color: '#fff', fontFamily: "'Tenor Sans', sans-serif" }
+
   return (
-    <div className="bg-gradient-to-br from-[#0A0F1E] to-[#001A70] text-white rounded-2xl p-5 shadow-sm">
+    <div className="rounded-2xl p-5" style={{ background: 'linear-gradient(135deg, #111 0%, #0D0D0D 100%)', color: '#fff' }}>
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-blue-200 text-xs font-medium uppercase tracking-wide">Total {currency}</p>
-          <p className="text-4xl font-bold mt-2 leading-tight">{fmt(total_brl, 0)}</p>
+          <p style={labelStyle}>Total {currency}</p>
+          <p className="mt-2 leading-tight" style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 36, fontWeight: 700, color: '#fff' }}>{fmt(total_brl, 0)}</p>
         </div>
-        <p className="text-blue-300 text-[11px] mt-1">{t.dashboard.updatedAt.replace('{time}', ts)}</p>
+        <p className="text-[11px] mt-1" style={{ color: 'rgba(200,184,154,0.45)' }}>{t.dashboard.updatedAt.replace('{time}', ts)}</p>
       </div>
 
       {showSecondary && (
-        <div className="mt-4 pt-4 border-t border-white/10 grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="mt-4 pt-4 grid grid-cols-2 sm:grid-cols-4 gap-4" style={{ borderTop: '1px solid rgba(200,184,154,0.12)' }}>
           <div>
-            <p className="text-blue-300 text-[10px] uppercase tracking-wide font-medium">{t.dashboard.invested}</p>
-            <p className="text-base font-semibold mt-0.5">{fmt(invested_brl!, 0)}</p>
+            <p style={labelStyle}>{t.dashboard.invested}</p>
+            <p className="text-base mt-0.5" style={valueStyle}>{fmt(invested_brl!, 0)}</p>
           </div>
           <div>
-            <p className="text-blue-300 text-[10px] uppercase tracking-wide font-medium">{t.dashboard.result}</p>
-            <p className={`text-base font-semibold mt-0.5 ${gain_brl! >= 0 ? 'text-emerald-300' : 'text-red-300'}`}>
+            <p style={labelStyle}>{t.dashboard.result}</p>
+            <p className="text-base mt-0.5" style={{ ...pctStyle(gain_brl), fontFamily: "'Tenor Sans', sans-serif" }}>
               {gain_brl! >= 0 ? '+' : ''}{fmt(gain_brl!, 0)}
               {gain_pct != null && (
                 <span className="ml-1 text-[11px] opacity-75">({gain_brl! >= 0 ? '+' : ''}{gain_pct.toFixed(1)}%)</span>
@@ -57,14 +61,14 @@ export default function ValueCards({ total_brl, generated_at, invested_brl, gain
             </p>
           </div>
           <div>
-            <p className="text-blue-300 text-[10px] uppercase tracking-wide font-medium">{t.dashboard.currentMonth}</p>
-            <p className={`text-base font-semibold mt-0.5 ${pctColor(month_pct)}`}>{pctText(month_pct)}</p>
+            <p style={labelStyle}>{t.dashboard.currentMonth}</p>
+            <p className="text-base mt-0.5" style={{ ...pctStyle(month_pct), fontFamily: "'Tenor Sans', sans-serif" }}>{pctText(month_pct)}</p>
           </div>
           <div>
-            <p className="text-blue-300 text-[10px] uppercase tracking-wide font-medium">
+            <p style={labelStyle}>
               {period_label ?? t.dashboard.yearLabel.replace('{year}', ytd_year ?? '')}
             </p>
-            <p className={`text-base font-semibold mt-0.5 ${pctColor(period_pct !== undefined ? period_pct : ytd_pct)}`}>
+            <p className="text-base mt-0.5" style={{ ...pctStyle(period_pct !== undefined ? period_pct : ytd_pct), fontFamily: "'Tenor Sans', sans-serif" }}>
               {pctText(period_pct !== undefined ? period_pct : ytd_pct)}
             </p>
           </div>

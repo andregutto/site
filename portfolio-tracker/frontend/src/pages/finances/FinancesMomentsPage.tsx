@@ -104,7 +104,7 @@ function MomentForm({ initial, onSave, onCancel, saving, userId }: FormProps) {
     })
   }
 
-  const fieldCls = 'w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20'
+  const fieldCls = 'w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20'
   const labelCls = 'block text-xs text-gray-500 mb-1'
 
   return (
@@ -136,7 +136,7 @@ function MomentForm({ initial, onSave, onCancel, saving, userId }: FormProps) {
             </div>
           ) : (
             <button type="button" onClick={() => fileInputRef.current?.click()}
-              className="w-full h-20 border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center gap-1 text-gray-400 hover:border-[#001A70]/40 hover:text-[#001A70] transition-colors">
+              className="w-full h-20 border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center gap-1 text-gray-400 hover:border-[#0D0D0D]/40 hover:text-[#0D0D0D] transition-colors">
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M13.5 12a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
               </svg>
@@ -152,7 +152,7 @@ function MomentForm({ initial, onSave, onCancel, saving, userId }: FormProps) {
               <button
                 key={ic} type="button"
                 onClick={() => setIcon(ic)}
-                className={`text-lg w-9 h-9 rounded-lg flex items-center justify-center border-2 transition-colors ${icon === ic ? 'border-[#001A70] bg-[#001A70]/10' : 'border-transparent bg-gray-100'}`}
+                className={`text-lg w-9 h-9 rounded-lg flex items-center justify-center border-2 transition-colors ${icon === ic ? 'border-[#0D0D0D] bg-[#0D0D0D]/10' : 'border-transparent bg-gray-100'}`}
               >{ic}</button>
             ))}
           </div>
@@ -184,7 +184,7 @@ function MomentForm({ initial, onSave, onCancel, saving, userId }: FormProps) {
 
       <div className="flex gap-2">
         <button type="submit" disabled={saving || uploading}
-          className="flex-1 bg-[#001A70] text-white text-sm py-2 rounded-xl hover:opacity-80 transition-opacity disabled:opacity-40">
+          className="flex-1 bg-[#0D0D0D] text-white text-sm py-2 rounded-xl hover:opacity-80 transition-opacity disabled:opacity-40">
           {uploading ? t.finances.uploadingPhoto : saving ? '…' : t.common.save}
         </button>
         <button type="button" onClick={onCancel} className="px-4 text-sm text-gray-500 hover:text-gray-700 transition-colors">
@@ -294,7 +294,7 @@ function ShareModal({ moment, onClose, onRevoke, onUpdate }: ShareModalProps) {
                 <input readOnly value={shareUrl} className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-xs text-gray-600 bg-gray-50 truncate focus:outline-none" />
                 <button
                   onClick={() => copyToClipboard(shareUrl)}
-                  className={`px-3 py-2 rounded-lg text-xs font-medium transition-colors shrink-0 ${copied ? 'bg-emerald-100 text-emerald-700' : 'bg-[#001A70] text-white hover:opacity-80'}`}
+                  className={`px-3 py-2 rounded-lg text-xs font-medium transition-colors shrink-0 ${copied ? 'bg-emerald-100 text-emerald-700' : 'bg-[#0D0D0D] text-white hover:opacity-80'}`}
                 >
                   {copied ? t.finances.shareCopied : t.finances.shareCopy}
                 </button>
@@ -307,7 +307,7 @@ function ShareModal({ moment, onClose, onRevoke, onUpdate }: ShareModalProps) {
                 type="checkbox"
                 checked={info?.share_hide_descriptions ?? false}
                 onChange={e => updateSetting({ hide_descriptions: e.target.checked })}
-                className="mt-0.5 w-4 h-4 accent-[#001A70]"
+                className="mt-0.5 w-4 h-4 accent-[#0D0D0D]"
               />
               <div>
                 <p className="text-sm text-gray-700 font-medium">{t.finances.shareHideDesc}</p>
@@ -325,7 +325,7 @@ function ShareModal({ moment, onClose, onRevoke, onUpdate }: ShareModalProps) {
                     onClick={() => updateSetting({ expires_in_days: opt.value })}
                     className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
                       selectedDays === opt.value
-                        ? 'bg-[#001A70] text-white border-[#001A70]'
+                        ? 'bg-[#0D0D0D] text-white border-[#0D0D0D]'
                         : 'border-gray-200 text-gray-600 hover:border-gray-300'
                     }`}
                   >
@@ -385,7 +385,7 @@ function AssignModal({ momentId: _momentId, moments, transactionId, currentMomen
           {moments.map(m => (
             <button key={m.id} disabled={saving}
               onClick={() => assign(m.id === currentMomentId ? null : m.id)}
-              className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors ${m.id === currentMomentId ? 'bg-[#001A70]/10 text-[#001A70]' : 'hover:bg-gray-50 text-gray-700'}`}>
+              className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors ${m.id === currentMomentId ? 'bg-[#0D0D0D]/10 text-[#0D0D0D]' : 'hover:bg-gray-50 text-gray-700'}`}>
               <span className="text-base">{m.icon}</span>
               <span>{m.name}</span>
               {m.id === currentMomentId && <span className="ml-auto text-xs">✓</span>}
@@ -523,7 +523,7 @@ export default function FinancesMomentsPage() {
         </div>
         <button
           onClick={() => { setEditing(null); setShowForm(true) }}
-          className="px-3 py-1.5 bg-[#001A70] text-white text-sm rounded-lg hover:opacity-80 transition-opacity"
+          className="px-3 py-1.5 bg-[#0D0D0D] text-white text-sm rounded-lg hover:opacity-80 transition-opacity"
         >
           + {t.finances.newMoment}
         </button>
@@ -553,7 +553,7 @@ export default function FinancesMomentsPage() {
           <p className="text-sm text-gray-400 mb-5">{t.finances.momentEmptyBody}</p>
           <button
             onClick={() => setShowForm(true)}
-            className="px-5 py-2 bg-[#001A70] text-white text-sm rounded-xl hover:opacity-80 transition-opacity"
+            className="px-5 py-2 bg-[#0D0D0D] text-white text-sm rounded-xl hover:opacity-80 transition-opacity"
           >
             {t.finances.momentCreateFirst}
           </button>
@@ -597,7 +597,7 @@ export default function FinancesMomentsPage() {
               <div className="flex items-center gap-2 shrink-0">
                 <button
                   onClick={e => { e.stopPropagation(); setSharingMoment(m) }}
-                  className={`p-1.5 transition-colors rounded-lg hover:bg-gray-100 ${m.share_token ? 'text-[#001A70]' : 'text-gray-400 hover:text-gray-700'}`}
+                  className={`p-1.5 transition-colors rounded-lg hover:bg-gray-100 ${m.share_token ? 'text-[#0D0D0D]' : 'text-gray-400 hover:text-gray-700'}`}
                   title="Compartilhar"
                 >
                   <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -683,7 +683,7 @@ export default function FinancesMomentsPage() {
                             </span>
                             <button
                               onClick={() => setAssignTarget({ txId: tx.id, currentMomentId: m.id })}
-                              className="ml-1 p-1 text-gray-300 hover:text-[#001A70] transition-colors"
+                              className="ml-1 p-1 text-gray-300 hover:text-[#0D0D0D] transition-colors"
                               title={t.finances.assignMoment}
                             >
                               <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

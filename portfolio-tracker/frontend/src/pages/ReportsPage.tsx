@@ -63,13 +63,13 @@ export default function ReportsPage() {
           <select
             value={year}
             onChange={e => setYear(Number(e.target.value))}
-            className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#001A70]/20"
+            className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20"
           >
             {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
           </select>
           <div className="flex rounded-lg border border-gray-200 overflow-hidden text-sm">
-            <button onClick={() => setTab('br')} className={`px-4 py-1.5 font-medium transition-colors ${tab === 'br' ? 'bg-[#001A70] text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}>Brasil</button>
-            <button onClick={() => setTab('fr')} className={`px-4 py-1.5 font-medium transition-colors ${tab === 'fr' ? 'bg-[#001A70] text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}>França</button>
+            <button onClick={() => setTab('br')} className={`px-4 py-1.5 font-medium transition-colors ${tab === 'br' ? 'bg-[#0D0D0D] text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}>Brasil</button>
+            <button onClick={() => setTab('fr')} className={`px-4 py-1.5 font-medium transition-colors ${tab === 'fr' ? 'bg-[#0D0D0D] text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}>França</button>
           </div>
         </div>
       </div>

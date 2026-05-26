@@ -8,7 +8,7 @@ interface Props {
   onClose: () => void
 }
 
-const COLORS = ['#C9A227', '#FFD700', '#2563EB', '#10B981', '#F472B6', '#67E8F9', '#FB923C']
+const COLORS = ['#C8B89A', '#FFD700', '#2563EB', '#10B981', '#F472B6', '#67E8F9', '#FB923C']
 
 function createParticle(container: HTMLDivElement) {
   const el = document.createElement('div')
@@ -73,10 +73,10 @@ export default function CelebrationModal({ def, onClose }: Props) {
 
       {/* Modal */}
       <div
-        className="relative bg-[#0A0F1E] border border-[#C9A227]/30 rounded-3xl px-10 py-10 text-center shadow-2xl"
+        className="relative bg-[#0A0F1E] border border-[#C8B89A]/30 rounded-3xl px-10 py-10 text-center shadow-2xl"
         style={{ maxWidth: 360, animation: 'celebration-pop 0.5s ease-out forwards' }}
       >
-        <p className="text-[#C9A227] text-xs font-bold uppercase tracking-widest mb-4">{t.achievements.unlocked}</p>
+        <p className="text-[#C8B89A] text-xs font-bold uppercase tracking-widest mb-4">{t.achievements.unlocked}</p>
 
         <div style={{ animation: 'medal-spin 1s ease-out forwards', display: 'inline-block' }}>
           <Medal def={def} earned animate size={120} />
@@ -85,14 +85,14 @@ export default function CelebrationModal({ def, onClose }: Props) {
         <h2 className="text-white text-2xl font-bold mt-5">{(t.achievementDefs as Record<string, {name: string; desc: string}>)[def.key]?.name ?? def.name}</h2>
         <p className="text-gray-400 text-sm mt-1">{(t.achievementDefs as Record<string, {name: string; desc: string}>)[def.key]?.desc ?? def.description}</p>
 
-        <div className="mt-4 inline-flex items-center gap-2 bg-[#C9A227]/10 border border-[#C9A227]/30 rounded-full px-4 py-1.5">
-          <span className="text-[#C9A227] font-bold text-lg">+{def.xp}</span>
+        <div className="mt-4 inline-flex items-center gap-2 bg-[#C8B89A]/10 border border-[#C8B89A]/30 rounded-full px-4 py-1.5">
+          <span className="text-[#C8B89A] font-bold text-lg">+{def.xp}</span>
           <span className="text-gray-400 text-sm">{t.achievements.xp}</span>
         </div>
 
         <button
           onClick={onClose}
-          className="mt-6 w-full bg-[#C9A227] hover:bg-[#b8911f] text-black font-bold py-2.5 rounded-xl transition-colors"
+          className="mt-6 w-full bg-[#C8B89A] hover:bg-[#b8911f] text-black font-bold py-2.5 rounded-xl transition-colors"
         >
           {t.achievements.amazing}
         </button>

@@ -212,7 +212,7 @@ export default function ProfilePage() {
                 />
               ) : (
                 <div
-                  className="w-16 h-16 rounded-full bg-[#001A70] text-white flex items-center justify-center text-xl font-bold"
+                  className="w-16 h-16 rounded-full bg-[#0D0D0D] text-white flex items-center justify-center text-xl font-bold"
                   title={`${displayName} · ${emailForDisplay}`}
                 >
                   {avatarInitials}
@@ -240,7 +240,7 @@ export default function ProfilePage() {
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="text-xs text-[#001A70] hover:underline mt-0.5"
+                className="text-xs text-[#0D0D0D] hover:underline mt-0.5"
               >
                 {avatarUrl ? t.profile.changePhoto : t.profile.addPhoto}
               </button>
@@ -253,19 +253,19 @@ export default function ProfilePage() {
             className="block bg-white border border-gray-100 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group"
           >
             {/* accent bar */}
-            <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-[#001A70] to-[#C9A227] rounded-l-2xl" />
+            <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-[#0D0D0D] to-[#C8B89A] rounded-l-2xl" />
 
             <div className="flex items-center justify-between mb-4 pl-3">
               <div className="flex items-center gap-3">
                 <span className="text-3xl">{level.emoji}</span>
                 <div>
-                  <p className="text-[10px] text-[#001A70] font-bold uppercase tracking-widest">{t.achievements.currentLevel}</p>
+                  <p className="text-[10px] text-[#0D0D0D] font-bold uppercase tracking-widest">{t.achievements.currentLevel}</p>
                   <p className="text-gray-900 font-bold text-base leading-tight">{t.levels[level.key as keyof typeof t.levels]}</p>
                 </div>
               </div>
               <div className="text-right">
                 <p className="text-gray-900 font-bold text-xl">
-                  {totalXp} <span className="text-[#C9A227]">{t.achievements.xp}</span>
+                  {totalXp} <span className="text-[#C8B89A]">{t.achievements.xp}</span>
                 </p>
                 <p className="text-gray-400 text-xs">{earnedKeys.length}/{ACHIEVEMENT_DEFS.length} {t.achievements.subtitle}</p>
               </div>
@@ -274,7 +274,7 @@ export default function ProfilePage() {
             <div className="pl-3">
               <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-[#001A70] to-[#C9A227] transition-all duration-700"
+                  className="h-full rounded-full bg-gradient-to-r from-[#0D0D0D] to-[#C8B89A] transition-all duration-700"
                   style={{ width: `${levelProgress}%` }}
                 />
               </div>
@@ -285,7 +285,7 @@ export default function ProfilePage() {
               )}
             </div>
 
-            <svg className="absolute right-4 top-4 w-3.5 h-3.5 text-gray-300 group-hover:text-[#001A70] transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <svg className="absolute right-4 top-4 w-3.5 h-3.5 text-gray-300 group-hover:text-[#0D0D0D] transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
             </svg>
           </Link>
@@ -312,7 +312,7 @@ export default function ProfilePage() {
                   value={firstName}
                   onChange={e => setFirstName(e.target.value)}
                   placeholder="André"
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20"
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20"
                 />
               </div>
               <div>
@@ -322,7 +322,7 @@ export default function ProfilePage() {
                   value={lastName}
                   onChange={e => setLastName(e.target.value)}
                   placeholder="Gutto"
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20"
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20"
                 />
               </div>
             </div>
@@ -332,7 +332,7 @@ export default function ProfilePage() {
               <select
                 value={country}
                 onChange={e => setCountry(e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#001A70]/20"
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20"
               >
                 {COUNTRY_OPTIONS.map(o => (
                   <option key={o.value} value={o.value}>
@@ -348,7 +348,7 @@ export default function ProfilePage() {
                 type="date"
                 value={birthdate}
                 onChange={e => setBirthdate(e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20"
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20"
               />
             </div>
 
@@ -362,7 +362,7 @@ export default function ProfilePage() {
                     onClick={() => setCurrency(c)}
                     className={`flex-1 py-2 text-sm font-semibold rounded-lg border transition-colors ${
                       currency === c
-                        ? 'bg-[#001A70] text-white border-[#001A70]'
+                        ? 'bg-[#0D0D0D] text-white border-[#0D0D0D]'
                         : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'
                     }`}
                   >
@@ -378,7 +378,7 @@ export default function ProfilePage() {
             <button
               type="submit"
               disabled={saving}
-              className="w-full bg-[#001A70] text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-[#001A70]/90 disabled:opacity-50 transition-colors"
+              className="w-full bg-[#0D0D0D] text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-[#0D0D0D]/90 disabled:opacity-50 transition-colors"
             >
               {saving ? t.profile.saving : t.profile.save}
             </button>
@@ -395,7 +395,7 @@ export default function ProfilePage() {
                 value={newPassword}
                 onChange={e => setNewPassword(e.target.value)}
                 placeholder={t.profile.passwordMin}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20"
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20"
               />
             </div>
 
@@ -406,7 +406,7 @@ export default function ProfilePage() {
                 value={confirmPwd}
                 onChange={e => setConfirmPwd(e.target.value)}
                 placeholder={t.profile.repeatPassword}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20"
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20"
               />
             </div>
 
@@ -416,7 +416,7 @@ export default function ProfilePage() {
             <button
               type="submit"
               disabled={savingPwd}
-              className="w-full border border-[#001A70] text-[#001A70] rounded-xl py-2.5 text-sm font-semibold hover:bg-[#001A70]/5 disabled:opacity-50 transition-colors"
+              className="w-full border border-[#0D0D0D] text-[#0D0D0D] rounded-xl py-2.5 text-sm font-semibold hover:bg-[#0D0D0D]/5 disabled:opacity-50 transition-colors"
             >
               {savingPwd ? t.profile.changing : t.profile.changePassword}
             </button>

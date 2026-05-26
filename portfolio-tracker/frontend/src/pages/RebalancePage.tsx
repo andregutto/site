@@ -73,7 +73,7 @@ export default function RebalancePage() {
           <button
             onClick={handleSave}
             disabled={saving}
-            className="px-4 py-2 bg-[#001A70] text-white rounded-xl text-sm font-semibold hover:bg-[#001A70]/90 disabled:opacity-50 transition-colors"
+            className="px-4 py-2 bg-[#0D0D0D] text-white rounded-xl text-sm font-semibold hover:bg-[#0D0D0D]/90 disabled:opacity-50 transition-colors"
           >
             {saving ? r.saving : r.saveTargets}
           </button>
@@ -141,7 +141,7 @@ export default function RebalancePage() {
                       value={targets[cls.name] ?? ''}
                       onChange={e => setTargets(prev => ({ ...prev, [cls.name]: e.target.value }))}
                       placeholder="—"
-                      className="w-16 border border-gray-200 rounded-lg px-2 py-1.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-[#001A70]/20"
+                      className="w-16 border border-gray-200 rounded-lg px-2 py-1.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20"
                     />
                     <span className="text-xs text-gray-400">%</span>
                   </div>
