@@ -45,7 +45,7 @@ const inputBase: React.CSSProperties = {
   fontSize: 14,
   fontFamily: F_SANS,
   color: 'var(--arvo-fg)',
-  background: 'var(--arvo-offwhite)',
+  background: '#FFFFFF',
   outline: 'none',
   transition: 'border-color 0.2s, box-shadow 0.2s',
   boxSizing: 'border-box' as const,
@@ -155,27 +155,27 @@ export default function LoginPage() {
         style={{ background: 'var(--arvo-black)', color: 'var(--arvo-fg-on-dark)', padding: '64px 56px', justifyContent: 'space-between', position: 'relative', overflow: 'hidden' }}
       >
         {/* Photo bg */}
-        <div style={{ position: 'absolute', inset: 0, backgroundImage: "url('/brand/imagery/02-capins-dourados.jpg')", backgroundSize: 'cover', backgroundPosition: 'center', filter: 'brightness(0.30) sepia(0.40) saturate(1.20)' }} />
+        <div style={{ position: 'absolute', inset: 0, backgroundImage: "url('/brand/imagery/03-capins-dourados.jpg')", backgroundSize: 'cover', backgroundPosition: 'center 40%', filter: 'brightness(0.28) sepia(0.40) saturate(1.25)' }} />
         {/* Overlay */}
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom right, rgba(13,13,13,0.55), rgba(13,13,13,0.92))' }} />
         {/* Grain */}
         <div className="arvo-grain" />
 
         <div style={{ position: 'relative', zIndex: 2 }}>
-          <div style={{ fontFamily: F_SANS, fontSize: 20, letterSpacing: '0.30em', textIndent: '0.30em', color: 'var(--arvo-offwhite)', display: 'flex', alignItems: 'center', gap: 12 }}>
-            <img src="/brand/logo/arvo-symbol-gold.svg" width="24" height="25" alt="" />
-            arvo
-          </div>
-          <div style={{ fontFamily: F_DISPLAY, fontStyle: 'italic', fontSize: 36, lineHeight: 1.2, color: 'var(--arvo-gold)', maxWidth: 380, marginTop: 60 }}>
+          <a href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 12 }}>
+            <img src="/brand/logo/arvo-symbol-gold.svg" width="24" height="25" alt="arvo" />
+            <span style={{ fontFamily: F_SANS, fontSize: 20, letterSpacing: '0.30em', textIndent: '0.30em', color: 'var(--arvo-offwhite)' }}>arvo</span>
+          </a>
+          <div style={{ fontFamily: F_DISPLAY, fontStyle: 'italic', fontSize: 36, lineHeight: 1.22, color: 'var(--arvo-gold)', maxWidth: 380, marginTop: 64 }}>
             "{l.tagline1}"
           </div>
-          <div style={{ fontFamily: F_SANS, fontSize: 10, letterSpacing: '0.30em', textTransform: 'uppercase', color: 'rgba(242,237,228,0.45)', marginTop: 24 }}>
-            — manifesto, 2026
+          <div style={{ fontFamily: F_SANS, fontSize: 10, letterSpacing: '0.30em', textTransform: 'uppercase', color: 'rgba(242,237,228,0.40)', marginTop: 22 }}>
+            — arvo, 2026
           </div>
         </div>
 
-        <div style={{ fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.18em', color: 'rgba(242,237,228,0.5)', position: 'relative', zIndex: 2 }}>
-          cultive o que é seu
+        <div style={{ fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.20em', color: 'rgba(242,237,228,0.45)', position: 'relative', zIndex: 2 }}>
+          cultivate what is yours
         </div>
       </aside>
 
@@ -183,8 +183,12 @@ export default function LoginPage() {
       <main style={{ padding: '64px 72px', display: 'flex', flexDirection: 'column', justifyContent: 'center', background: 'var(--arvo-offwhite)' }}
         className="px-6 py-12 lg:px-[72px] lg:py-[64px]"
       >
-        {/* Lang selector row */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 40 }}>
+        {/* Top bar: logo → landing page + language selector */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 40 }}>
+          <a href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <img src="/brand/logo/arvo-symbol-black.svg" width="18" height="18" alt="arvo" />
+            <span style={{ fontFamily: F_SANS, fontSize: 13, letterSpacing: '0.28em', textIndent: '0.28em', color: 'var(--arvo-black)', lineHeight: 1 }}>arvo</span>
+          </a>
           <LanguageSelector />
         </div>
 
@@ -372,7 +376,7 @@ export default function LoginPage() {
                     <div style={{ display: 'flex', gap: 8 }}>
                       {(['BRL', 'USD', 'EUR'] as Currency[]).map(c => (
                         <button key={c} type="button" onClick={() => setCurrency(c)}
-                          style={{ flex: 1, padding: '10px 0', fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.08em', border: `1px solid ${currency === c ? 'var(--arvo-black)' : 'var(--arvo-border)'}`, borderRadius: 3, cursor: 'pointer', background: currency === c ? 'var(--arvo-black)' : 'var(--arvo-offwhite)', color: currency === c ? 'var(--arvo-offwhite)' : 'var(--arvo-fg-soft)', transition: 'all 0.2s' }}
+                          style={{ flex: 1, padding: '10px 0', fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.08em', border: `1px solid ${currency === c ? 'var(--arvo-black)' : 'var(--arvo-border)'}`, borderRadius: 3, cursor: 'pointer', background: currency === c ? 'var(--arvo-black)' : '#FFFFFF', color: currency === c ? '#F2EDE4' : 'var(--arvo-fg-muted)', transition: 'all 0.2s' }}
                         >
                           {c}
                         </button>

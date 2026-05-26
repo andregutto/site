@@ -122,7 +122,7 @@ export default function DashboardPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-gray-400 text-sm animate-pulse">{t.dashboard.calculating}</div>
+        <div className="text-sm animate-pulse" style={{ color: 'var(--arvo-fg-soft)' }}>{t.dashboard.calculating}</div>
       </div>
     )
   }
@@ -219,124 +219,53 @@ export default function DashboardPage() {
         )
       })()}
 
-      {(chartLoading || portfolioChartData.length > 1) && (
-        <div className="rounded-2xl p-5" style={{ background: 'white', border: '1px solid var(--arvo-border)' }}>
-          <h2 className="mb-1" style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 13, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--arvo-fg)' }}>{t.dashboard.portfolioEvolution}</h2>
-          <div className="h-48">
-          {chartLoading && portfolioChartData.length === 0 ? (
-            <div className="h-full flex items-end gap-1 px-2 pb-1">
-              {[40, 55, 48, 62, 58, 70, 65, 80, 75, 88, 82, 95].map((h, i) => (
-                <div key={i} className="flex-1 bg-gray-100 rounded-t animate-pulse" style={{ height: `${h}%` }} />
-              ))}
-            </div>
-          ) : (
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={portfolioChartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-                <XAxis dataKey="month" tick={{ fontSize: 10, fill: '#9ca3af' }} interval="preserveStartEnd" />
-                <YAxis
-                  tick={{ fontSize: 10, fill: '#9ca3af' }}
-                  tickFormatter={v => {
-                    const n = typeof v === 'number' ? v : 0
-                    return currency === 'BRL'
-                      ? `${(n / 1000).toFixed(0)}k`
-                      : n >= 1000 ? `${(n / 1000).toFixed(0)}k` : n.toFixed(0)
-                  }}
-                  width={52}
-                />
-                <Tooltip
-                  formatter={(v) => [
-                    new Intl.NumberFormat('pt-BR', { style: 'currency', currency, maximumFractionDigits: 0 }).format(typeof v === 'number' ? v : 0),
-                    t.dashboard.patrimony,
-                  ]}
-                  contentStyle={{ borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 12 }}
-                />
-                <Line type="monotone" dataKey="value" stroke="#0D0D0D" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
-              </LineChart>
-            </ResponsiveContainer>
-          )}
-          </div>
-        </div>
-      )}
-
-      {/* Dividend section */}
-      {(divLoading || (divSummary && divSummary.total_brl > 0)) && (
-        <div className="rounded-2xl p-5" style={{ background: 'white', border: '1px solid var(--arvo-border)' }}>
-          <div className="flex items-center justify-between mb-4">
-            <h2 style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 13, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--arvo-fg)' }}>{td.title ?? 'Dividendos'}</h2>
-            <div className="flex items-center gap-2">
-              {syncing && <span className="text-xs text-gray-400 animate-pulse">{td.autoSyncing ?? 'Atualizando...'}</span>}
-              <button
-                onClick={() => syncDividends(true)}
-                disabled={syncing}
-                className="text-xs text-gray-400 hover:text-[#0D0D0D] transition-colors disabled:opacity-40"
-              >
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-              </button>
-            </div>
-          </div>
-
-          {divLoading ? (
-            <div className="h-20 flex items-center justify-center">
-              <div className="text-xs text-gray-400 animate-pulse">{td.syncing ?? 'Carregando...'}</div>
-            </div>
-          ) : divSummary && divSummary.total_brl > 0 ? (
-            <div className="space-y-4">
-              {/* Total + top payers */}
-              <div className="flex flex-wrap gap-4">
-                <div className="flex-1 min-w-[140px]">
-                  <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">{td.totalReceived ?? 'Total recebido'}</p>
-                  <p className="text-2xl font-bold text-green-600">{fmt(convert(divSummary.total_brl))}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">{periodLabel}</p>
-                </div>
-                <div className="flex-1 min-w-[200px]">
-                  <p className="text-xs text-gray-400 uppercase tracking-wide mb-2">{td.topPayers ?? 'Maiores pagadores'}</p>
-                  <div className="space-y-1.5">
-                    {divSummary.by_asset.slice(0, 4).map(a => (
-                      <div key={a.asset_id} className="flex items-center justify-between gap-2">
-                        <span className="text-xs font-medium text-gray-700 truncate">{a.code}</span>
-                        <div className="flex items-center gap-2">
-                          <div className="w-24 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                            <div className="h-full bg-green-400 rounded-full" style={{ width: `${Math.min(100, (a.total_brl / divSummary.by_asset[0].total_brl) * 100)}%` }} />
-                          </div>
-                          <span className="text-xs text-gray-500 w-20 text-right">{fmt(convert(a.total_brl))}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+      {/* Evolution chart + Allocation side by side */}
+      <div className="flex flex-col lg:flex-row gap-4 items-start">
+        {(chartLoading || portfolioChartData.length > 0) && (
+          <div className="flex-1 min-w-0 rounded-2xl p-5" style={{ background: 'white', border: '1px solid var(--arvo-border)' }}>
+            <h2 className="mb-1" style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 13, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--arvo-fg)' }}>{t.dashboard.portfolioEvolution}</h2>
+            <div className="h-48">
+            {chartLoading && portfolioChartData.length === 0 ? (
+              <div className="h-full flex items-end gap-1 px-2 pb-1">
+                {[40, 55, 48, 62, 58, 70, 65, 80, 75, 88, 82, 95].map((h, i) => (
+                  <div key={i} className="flex-1 bg-gray-100 rounded-t animate-pulse" style={{ height: `${h}%` }} />
+                ))}
               </div>
-
-              {/* Monthly bar chart */}
-              {divSummary.by_month.length > 1 && (
-                <div className="h-28">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={divSummary.by_month.map(m => ({ month: m.month.slice(5), value: convert(m.total_brl) }))}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" vertical={false} />
-                      <XAxis dataKey="month" tick={{ fontSize: 10, fill: '#9ca3af' }} />
-                      <YAxis tick={{ fontSize: 10, fill: '#9ca3af' }} width={40}
-                        tickFormatter={v => currency === 'BRL' ? `${(v/1000).toFixed(0)}k` : String(Math.round(v))} />
-                      <Tooltip
-                        formatter={(v) => [new Intl.NumberFormat('pt-BR', { style: 'currency', currency, maximumFractionDigits: 0 }).format(typeof v === 'number' ? v : 0), td.title ?? 'Dividendos']}
-                        contentStyle={{ borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 12 }}
-                      />
-                      <Bar dataKey="value" fill="#16a34a" radius={[3, 3, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              )}
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={portfolioChartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+                  <XAxis dataKey="month" tick={{ fontSize: 10, fill: '#9ca3af' }} interval="preserveStartEnd" />
+                  <YAxis
+                    tick={{ fontSize: 10, fill: '#9ca3af' }}
+                    tickFormatter={v => {
+                      const n = typeof v === 'number' ? v : 0
+                      return currency === 'BRL'
+                        ? `${(n / 1000).toFixed(0)}k`
+                        : n >= 1000 ? `${(n / 1000).toFixed(0)}k` : n.toFixed(0)
+                    }}
+                    width={52}
+                  />
+                  <Tooltip
+                    formatter={(v) => [
+                      new Intl.NumberFormat('pt-BR', { style: 'currency', currency, maximumFractionDigits: 0 }).format(typeof v === 'number' ? v : 0),
+                      t.dashboard.patrimony,
+                    ]}
+                    contentStyle={{ borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 12 }}
+                  />
+                  <Line type="monotone" dataKey="value" stroke="#0D0D0D" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            )}
             </div>
-          ) : (
-            <p className="text-sm text-gray-400">{td.noData ?? 'Nenhum dividendo no período'}</p>
-          )}
-        </div>
-      )}
-
-      {data.by_class.length > 0 && (
-        <AllocationChart data={data.by_class} />
-      )}
+          </div>
+        )}
+        {data.by_class.length > 0 && (
+          <div className="w-full lg:w-72 xl:w-80 shrink-0">
+            <AllocationChart data={data.by_class} />
+          </div>
+        )}
+      </div>
 
       {data.by_asset.length > 0 ? (
         <AssetTable
@@ -349,6 +278,75 @@ export default function DashboardPage() {
         <div className="rounded-2xl p-12 text-center" style={{ background: 'white', border: '1px solid var(--arvo-border)' }}>
           <p style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 16, letterSpacing: '0.06em', color: 'var(--arvo-fg-soft)' }}>{t.dashboard.noOpenPositions}</p>
           <p className="text-sm mt-1" style={{ fontFamily: "'Playfair Display', serif", fontStyle: 'italic', color: 'var(--arvo-fg-soft)', opacity: 0.7 }}>{t.dashboard.addAssetsHint}</p>
+        </div>
+      )}
+
+      {/* Dividend section — compact, after assets */}
+      {(divLoading || (divSummary && divSummary.total_brl > 0)) && (
+        <div className="rounded-2xl p-5" style={{ background: 'white', border: '1px solid var(--arvo-border)' }}>
+          <div className="flex items-center justify-between mb-3">
+            <h2 style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 13, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--arvo-fg)' }}>{td.title ?? 'Dividendos'}</h2>
+            <div className="flex items-center gap-2">
+              {syncing && <span className="text-xs animate-pulse" style={{ color: 'var(--arvo-fg-soft)' }}>{td.autoSyncing ?? 'Atualizando...'}</span>}
+              <button
+                onClick={() => syncDividends(true)}
+                disabled={syncing}
+                className="transition-colors disabled:opacity-40"
+                style={{ color: 'var(--arvo-fg-soft)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, lineHeight: 0 }}
+              >
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          {divLoading ? (
+            <div className="h-14 flex items-center justify-center">
+              <div className="text-xs animate-pulse" style={{ color: 'var(--arvo-fg-soft)' }}>{td.syncing ?? 'Carregando...'}</div>
+            </div>
+          ) : divSummary && divSummary.total_brl > 0 ? (
+            <div className="flex flex-wrap gap-4 items-start">
+              <div className="shrink-0">
+                <p className="text-xs uppercase tracking-wide mb-0.5" style={{ color: 'var(--arvo-fg-soft)' }}>{td.totalReceived ?? 'Total recebido'}</p>
+                <p className="text-xl font-bold" style={{ color: 'var(--arvo-green)' }}>{fmt(convert(divSummary.total_brl))}</p>
+                <p className="text-xs mt-0.5" style={{ color: 'var(--arvo-fg-soft)' }}>{periodLabel}</p>
+              </div>
+              <div className="flex-1 min-w-[160px]">
+                <p className="text-xs uppercase tracking-wide mb-1.5" style={{ color: 'var(--arvo-fg-soft)' }}>{td.topPayers ?? 'Maiores pagadores'}</p>
+                <div className="space-y-1">
+                  {divSummary.by_asset.slice(0, 3).map(a => (
+                    <div key={a.asset_id} className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-medium truncate" style={{ color: 'var(--arvo-fg-muted)' }}>{a.code}</span>
+                      <div className="flex items-center gap-2">
+                        <div className="w-16 h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--arvo-border)' }}>
+                          <div className="h-full rounded-full" style={{ background: 'var(--arvo-green)', width: `${Math.min(100, (a.total_brl / divSummary.by_asset[0].total_brl) * 100)}%` }} />
+                        </div>
+                        <span className="text-xs w-16 text-right" style={{ color: 'var(--arvo-fg-muted)' }}>{fmt(convert(a.total_brl))}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              {divSummary.by_month.length > 1 && (
+                <div className="flex-1 min-w-[140px] h-20">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={divSummary.by_month.map(m => ({ month: m.month.slice(5), value: convert(m.total_brl) }))}>
+                      <XAxis dataKey="month" tick={{ fontSize: 9, fill: 'rgba(13,13,13,0.40)' }} />
+                      <YAxis hide />
+                      <Tooltip
+                        formatter={(v) => [new Intl.NumberFormat('pt-BR', { style: 'currency', currency, maximumFractionDigits: 0 }).format(typeof v === 'number' ? v : 0), td.title ?? 'Dividendos']}
+                        contentStyle={{ borderRadius: 8, border: '1px solid var(--arvo-border)', fontSize: 12 }}
+                      />
+                      <Bar dataKey="value" fill="#1F8A5B" radius={[3, 3, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+            </div>
+          ) : (
+            <p className="text-sm" style={{ color: 'var(--arvo-fg-soft)' }}>{td.noData ?? 'Nenhum dividendo no período'}</p>
+          )}
         </div>
       )}
 

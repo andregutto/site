@@ -96,7 +96,7 @@ export interface PerformanceMonthly {
 
 export interface BenchmarkMonthly {
   month:     string
-  cdi_cum:   number
+  cdi_cum:   number | null
   ibov_cum:  number | null
   sp500_cum: number | null
 }

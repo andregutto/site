@@ -152,8 +152,8 @@ export default function AchievementsPage() {
               key={def.key}
               className="rounded-2xl p-4 flex flex-col items-center text-center transition-all"
               style={isEarned
-                ? { border: '1px solid var(--arvo-border-soft)', background: 'var(--arvo-offwhite)' }
-                : { border: '1px solid var(--arvo-border-soft)', background: 'rgba(232,223,208,0.35)' }}
+                ? { border: '1px solid rgba(200,184,154,0.30)', background: '#FFFFFF', boxShadow: '0 1px 8px rgba(200,184,154,0.12)' }
+                : { border: '1px solid var(--arvo-border-soft)', background: 'rgba(232,223,208,0.20)', opacity: 0.55 }}
             >
               <Medal def={def} earned={isEarned} size={80} />
 

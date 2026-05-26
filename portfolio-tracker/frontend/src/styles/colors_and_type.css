@@ -236,6 +236,51 @@
   border: 0;
 }
 
+/* ── SURFACE UTILITIES — use instead of hardcoded Tailwind gray-* ──────── */
+/* Text on light (offwhite/beige) surfaces */
+.arvo-text           { color: var(--arvo-fg); }          /* primary: 0.92 */
+.arvo-text-muted     { color: var(--arvo-fg-muted); }    /* body: 0.65 */
+.arvo-text-soft      { color: var(--arvo-fg-soft); }     /* labels/meta: 0.45 */
+.arvo-text-faint     { color: var(--arvo-fg-faint); }    /* hairlines: 0.28 */
+
+/* Text on dark (black) surfaces */
+.arvo-text-on-dark       { color: var(--arvo-fg-on-dark); }
+.arvo-text-on-dark-muted { color: var(--arvo-fg-on-dark-muted); }
+.arvo-text-on-dark-soft  { color: var(--arvo-fg-on-dark-soft); }
+
+/* Cards / interactive surfaces — always white on offwhite page */
+.arvo-card {
+  background: var(--arvo-surface);
+  border: 1px solid var(--arvo-border);
+  border-radius: var(--arvo-radius-lg);
+  box-shadow: var(--arvo-shadow-sm);
+}
+.arvo-card-dark {
+  background: var(--arvo-surface-dark);
+  border: 1px solid var(--arvo-border-dark);
+  border-radius: var(--arvo-radius-lg);
+}
+
+/* Form inputs — always white, never beige */
+.arvo-input {
+  width: 100%;
+  background: #FFFFFF;
+  border: 1px solid var(--arvo-border);
+  border-radius: var(--arvo-radius-xs);
+  color: var(--arvo-fg);
+  font-family: var(--arvo-font-body);
+  padding: 12px 16px;
+  font-size: var(--arvo-text-small);
+  outline: none;
+  transition: border-color var(--arvo-dur-fast) var(--arvo-ease),
+              box-shadow   var(--arvo-dur-fast) var(--arvo-ease);
+  box-sizing: border-box;
+}
+.arvo-input:focus {
+  border-color: var(--arvo-gold);
+  box-shadow: 0 0 0 2px rgba(200,184,154,0.25);
+}
+
 /* Photograph treatment — apply the Arvo preset on every <img> in content */
 .arvo-photo {
   filter: var(--arvo-photo-filter);

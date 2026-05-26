@@ -512,8 +512,8 @@ router.get('/benchmarks', requireAuth, async (req, res: Response) => {
     res.json({ cdi_pct: null, ibov_pct: null, sp500_pct: null, monthly: [] }); return
   }
 
-  type Monthly = { month: string; cdi_cum: number; ibov_cum: number | null; sp500_cum: number | null }
-  const monthly: Monthly[] = months.map(m => ({ month: m, cdi_cum: 1, ibov_cum: null, sp500_cum: null }))
+  type Monthly = { month: string; cdi_cum: number | null; ibov_cum: number | null; sp500_cum: number | null }
+  const monthly: Monthly[] = months.map(m => ({ month: m, cdi_cum: null, ibov_cum: null, sp500_cum: null }))
 
   let cdiPct: number | null = null
   try {

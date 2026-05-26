@@ -37,7 +37,7 @@ export async function getRates(
   const allRates = await cache.getOrFetch(key, TTL.BCB_RATES, async () => {
     const url = `${BASE}/bcdata.sgs.${series}/dados?formato=json` +
                 `&dataInicial=${fmtDate(startDate)}&dataFinal=${fmtDate(today)}`
-    const res = await fetch(url, { signal: AbortSignal.timeout(8000) })
+    const res = await fetch(url, { signal: AbortSignal.timeout(15000) })
     if (!res.ok) throw new Error(`BCB API ${res.status} para série ${series}`)
     const data = await res.json() as Array<{ data: string; valor: string }>
     return data.map((row) => ({

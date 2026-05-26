@@ -50,8 +50,8 @@ function EmailConfirmGate({ email }: { email: string }) {
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 w-full max-w-sm p-8 space-y-5 text-center">
-        <div className="w-14 h-14 bg-[#001A70]/10 rounded-2xl flex items-center justify-center mx-auto">
-          <svg className="w-7 h-7 text-[#001A70]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <div className="w-14 h-14 bg-[#0D0D0D]/10 rounded-2xl flex items-center justify-center mx-auto">
+          <svg className="w-7 h-7 text-[#0D0D0D]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />
           </svg>
         </div>
@@ -65,7 +65,7 @@ function EmailConfirmGate({ email }: { email: string }) {
         <button
           onClick={resend}
           disabled={sending || sent}
-          className="w-full border border-[#001A70] text-[#001A70] rounded-xl py-2.5 text-sm font-semibold hover:bg-[#001A70]/5 disabled:opacity-50 transition-colors"
+          className="w-full border border-[#0D0D0D] text-[#0D0D0D] rounded-xl py-2.5 text-sm font-semibold hover:bg-[#0D0D0D]/5 disabled:opacity-50 transition-colors"
         >
           {sending ? 'Enviando...' : sent ? 'E-mail enviado' : 'Reenviar e-mail'}
         </button>

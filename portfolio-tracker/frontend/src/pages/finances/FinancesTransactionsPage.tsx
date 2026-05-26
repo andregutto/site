@@ -685,8 +685,8 @@ export default function FinancesTransactionsPage() {
       {/* Header */}
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-xl font-semibold text-gray-900">{t.finances.transactionsTitle}</h1>
-          <p className="text-sm text-gray-400 mt-0.5">{t.finances.transactionsSubtitle}</p>
+          <h1 style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 18, letterSpacing: '0.06em', color: 'var(--arvo-black)' }}>{t.finances.transactionsTitle}</h1>
+          <p className="text-sm mt-0.5" style={{ color: 'rgba(13,13,13,0.60)' }}>{t.finances.transactionsSubtitle}</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           {dateMode === 'month' ? (
@@ -695,12 +695,12 @@ export default function FinancesTransactionsPage() {
               <button
                 onClick={setLast30Days}
                 title={t.performance.last30d}
-                className="px-2.5 py-1.5 text-xs font-medium text-gray-500 border border-gray-200 rounded-lg hover:border-[#0D0D0D] hover:text-[#0D0D0D] transition-colors whitespace-nowrap"
+                className="px-2.5 py-1.5 bg-white text-xs font-medium text-gray-500 border border-gray-200 rounded-lg hover:border-[#0D0D0D] hover:text-[#0D0D0D] transition-colors whitespace-nowrap"
               >{t.performance.last30d}</button>
               <button
                 onClick={() => setDateMode('range')}
                 title="Período personalizado"
-                className="p-1.5 text-gray-400 hover:text-gray-600 border border-gray-200 rounded-lg transition-colors"
+                className="p-1.5 bg-white text-gray-400 hover:text-gray-600 border border-gray-200 rounded-lg transition-colors"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4"><path d="M5.75 7.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5ZM8 7.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm2.25 0a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5ZM5.75 10a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5ZM8 10a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm2.25 0a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5ZM4.75 2a.75.75 0 0 1 .75.75V4h5V2.75a.75.75 0 0 1 1.5 0V4h.25A2.75 2.75 0 0 1 15 6.75v6.5A2.75 2.75 0 0 1 12.25 16H3.75A2.75 2.75 0 0 1 1 13.25v-6.5A2.75 2.75 0 0 1 3.75 4H4V2.75A.75.75 0 0 1 4.75 2ZM2.5 7.5v5.75c0 .69.56 1.25 1.25 1.25h8.5c.69 0 1.25-.56 1.25-1.25V7.5h-11Z"/></svg>
               </button>
@@ -712,7 +712,7 @@ export default function FinancesTransactionsPage() {
               <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className="border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm" />
               <button
                 onClick={() => setDateMode('month')}
-                className="p-1.5 text-gray-400 hover:text-gray-600 border border-gray-200 rounded-lg transition-colors"
+                className="p-1.5 bg-white text-gray-400 hover:text-gray-600 border border-gray-200 rounded-lg transition-colors"
                 title="Voltar para seleção por mês"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4"><path d="M5.28 4.22a.75.75 0 0 0-1.06 1.06L6.94 8l-2.72 2.72a.75.75 0 1 0 1.06 1.06L8 9.06l2.72 2.72a.75.75 0 1 0 1.06-1.06L9.06 8l2.72-2.72a.75.75 0 0 0-1.06-1.06L8 6.94 5.28 4.22Z" /></svg>
@@ -724,7 +724,7 @@ export default function FinancesTransactionsPage() {
               onClick={detectTransfers}
               disabled={detecting}
               title={detectResult ?? t.finances.detectTransfers}
-              className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 text-sm text-gray-500 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 text-sm text-gray-500 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
             >
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M4 4a.75.75 0 0 1 .75-.75h6.5a.75.75 0 0 1 0 1.5h-6.5A.75.75 0 0 1 4 4Zm-1.5 4A.75.75 0 0 1 3.25 7.25h9.5a.75.75 0 0 1 0 1.5h-9.5A.75.75 0 0 1 2.5 8Zm3 4a.75.75 0 0 1 .75-.75h3.5a.75.75 0 0 1 0 1.5h-3.5A.75.75 0 0 1 5.5 12Z" clipRule="evenodd"/></svg>
               {detecting ? t.finances.detectingTransfers : (detectResult ?? t.finances.detectTransfers)}
@@ -733,7 +733,7 @@ export default function FinancesTransactionsPage() {
               onClick={detectReimbursements}
               disabled={detectingReimb}
               title={detectReimbResult ?? t.finances.detectRefunds}
-              className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 text-sm text-gray-500 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 text-sm text-gray-500 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
             >
               <span className="text-base leading-none">↩</span>
               {detectingReimb ? t.finances.detecting : (detectReimbResult ?? t.finances.detectRefunds)}
@@ -741,7 +741,7 @@ export default function FinancesTransactionsPage() {
             <button
               onClick={() => { setCsvStep('idle'); setCsvRows([]); setCsvDuplicateCount(0); setCsvError(''); setCsvAiDebug(null); setShowImportModal(true) }}
               disabled={csvStep === 'parsing'}
-              className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 text-sm text-gray-600 rounded-lg hover:bg-gray-50 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 text-sm text-gray-600 rounded-lg hover:bg-gray-50 transition-colors"
             >
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4"><path d="M8.75 2.75a.75.75 0 0 0-1.5 0v5.69L5.03 6.22a.75.75 0 0 0-1.06 1.06l3.5 3.5a.75.75 0 0 0 1.06 0l3.5-3.5a.75.75 0 0 0-1.06-1.06L8.75 8.44V2.75Z" /><path d="M3.5 9.75a.75.75 0 0 0-1.5 0v1.5A2.75 2.75 0 0 0 4.75 14h6.5A2.75 2.75 0 0 0 14 11.25v-1.5a.75.75 0 0 0-1.5 0v1.5c0 .69-.56 1.25-1.25 1.25h-6.5c-.69 0-1.25-.56-1.25-1.25v-1.5Z" /></svg>
               {t.finances.importCSV}
@@ -991,7 +991,7 @@ export default function FinancesTransactionsPage() {
                     <th className="px-3 py-3 text-left">{t.common.description}</th>
                     <th className="px-3 py-3 text-right">{t.common.value}</th>
                     <th className="px-3 py-3 text-left">{t.finances.category}</th>
-                    <th className="px-3 py-3 text-left">Momento</th>
+                    <th className="px-3 py-3 text-left">{t.finances.txMoment}</th>
                     <th className="px-3 py-3"></th>
                   </tr>
                 </thead>
@@ -1235,7 +1235,7 @@ export default function FinancesTransactionsPage() {
             {showMomentDropdown && (
               <div className="absolute bottom-full mb-2 left-0 bg-white rounded-xl shadow-xl border border-gray-100 py-1.5 min-w-[200px] z-50">
                 {moments.length === 0 ? (
-                  <p className="px-4 py-2 text-xs text-gray-400">Nenhum Momento criado ainda</p>
+                  <p className="px-4 py-2 text-xs" style={{ color: 'var(--arvo-fg-soft)' }}>{t.finances.txNoMoment}</p>
                 ) : (
                   moments.map(m => {
                     const assignedCount = Array.from(selected).filter(id =>

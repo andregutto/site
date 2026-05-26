@@ -8,15 +8,15 @@ export interface AchievementDef {
 }
 
 export const ACHIEVEMENT_DEFS: AchievementDef[] = [
-  { key: 'first_step',     name: 'Primeiro Passo',       description: 'Criar conta',                              xp: 10,  gradient: ['#001A70','#C9A227'], ringColor: '#C9A227' },
+  { key: 'first_step',     name: 'Primeiro Passo',       description: 'Criar conta',                              xp: 10,  gradient: ['#0D0D0D','#C8B89A'], ringColor: '#C8B89A' },
   { key: 'identity',       name: 'Identidade',           description: 'Completar perfil',                         xp: 15,  gradient: ['#4C1D95','#2563EB'], ringColor: '#818CF8' },
   { key: 'first_seed',     name: 'Primeira Semente',     description: 'Registrar primeiro aporte',                xp: 20,  gradient: ['#064E3B','#34D399'], ringColor: '#6EE7B7' },
   { key: 'global_roots',   name: 'Raízes Globais',       description: 'Ter ativo em moeda estrangeira',           xp: 25,  gradient: ['#0C4A6E','#F59E0B'], ringColor: '#FCD34D' },
   { key: 'builder',        name: 'Construtor',           description: 'Primeiro marco de patrimônio',             xp: 30,  gradient: ['#92400E','#F59E0B'], ringColor: '#FCD34D' },
   { key: 'five_digits',    name: 'Cinco Dígitos',        description: 'Portfólio acima de 10 mil',                xp: 50,  gradient: ['#1E3A5F','#06B6D4'], ringColor: '#67E8F9' },
-  { key: 'six_digits',     name: 'Seis Dígitos',         description: 'Portfólio acima de 100 mil',               xp: 75,  gradient: ['#2E1065','#C9A227'], ringColor: '#E2C17A' },
+  { key: 'six_digits',     name: 'Seis Dígitos',         description: 'Portfólio acima de 100 mil',               xp: 75,  gradient: ['#2E1065','#C8B89A'], ringColor: '#E2C17A' },
   { key: 'quarter_million',name: 'Quarto de Milhão',     description: 'Portfólio acima de 250 mil',               xp: 100, gradient: ['#1E3A5F','#8B5CF6'], ringColor: '#C4B5FD' },
-  { key: 'half_million',   name: 'Meio Milhão',          description: 'Portfólio acima de 500 mil',               xp: 125, gradient: ['#1C2E4A','#C9A227'], ringColor: '#FDE68A' },
+  { key: 'half_million',   name: 'Meio Milhão',          description: 'Portfólio acima de 500 mil',               xp: 125, gradient: ['#1C2E4A','#C8B89A'], ringColor: '#FDE68A' },
   { key: 'million_club',   name: 'Clube do Milhão',      description: 'Portfólio acima de 1 milhão',              xp: 150, gradient: ['#1C1917','#D4AF37'], ringColor: '#D4AF37' },
   { key: 'three_million',  name: 'Três Milhões',         description: 'Portfólio acima de 3 milhões',             xp: 200, gradient: ['#312E81','#6366F1'], ringColor: '#A5B4FC' },
   { key: 'five_million',   name: 'Cinco Milhões',        description: 'Portfólio acima de 5 milhões',             xp: 300, gradient: ['#134E4A','#0D9488'], ringColor: '#2DD4BF' },
@@ -40,7 +40,7 @@ export const ACHIEVEMENT_DEFS: AchievementDef[] = [
   { key: 'fin_first_account',  name: 'Conta Ativa',           description: 'Criar a primeira conta de finanças',               xp: 15, gradient: ['#134E4A','#0D9488'], ringColor: '#5EEAD4' },
   { key: 'fin_budget_ready',   name: 'Orçamento Pronto',      description: 'Configurar envelopes e categorias de orçamento',   xp: 25, gradient: ['#78350F','#F59E0B'], ringColor: '#FCD34D' },
   { key: 'fin_first_moment',   name: 'Memória Guardada',      description: 'Criar o primeiro Momento financeiro',              xp: 20, gradient: ['#4C1D95','#EC4899'], ringColor: '#F9A8D4' },
-  { key: 'fin_freedom',        name: 'Visionário',            description: 'Criar um plano de liberdade financeira',           xp: 30, gradient: ['#1E3A5F','#C9A227'], ringColor: '#FDE68A' },
+  { key: 'fin_freedom',        name: 'Visionário',            description: 'Criar um plano de liberdade financeira',           xp: 30, gradient: ['#1E3A5F','#C8B89A'], ringColor: '#FDE68A' },
   { key: 'fin_hundred_txn',    name: 'Historiador Financeiro',description: 'Registrar mais de 100 transações',                 xp: 40, gradient: ['#1F2937','#9CA3AF'], ringColor: '#D1D5DB' },
   { key: 'fin_categorized',    name: 'Organizado',            description: 'Categorizar mais de 50 transações',                xp: 35, gradient: ['#14532D','#22C55E'], ringColor: '#86EFAC' },
   { key: 'coruja',             name: 'Coruja',                description: 'Usar portfólio e finanças juntos',                  xp: 45, gradient: ['#1a1a2e','#6B21A8'], ringColor: '#D8B4FE' },

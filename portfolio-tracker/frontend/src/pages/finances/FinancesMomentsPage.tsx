@@ -605,8 +605,8 @@ export default function FinancesMomentsPage() {
       {/* Header */}
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-xl font-semibold text-gray-900">{t.finances.momentsTitle}</h1>
-          <p className="text-sm text-gray-400 mt-0.5">{t.finances.momentsSubtitle}</p>
+          <h1 style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 18, letterSpacing: '0.06em', color: 'var(--arvo-black)' }}>{t.finances.momentsTitle}</h1>
+          <p className="text-sm mt-0.5" style={{ color: 'rgba(13,13,13,0.60)' }}>{t.finances.momentsSubtitle}</p>
         </div>
         <button
           onClick={() => { setEditing(null); setShowForm(true) }}

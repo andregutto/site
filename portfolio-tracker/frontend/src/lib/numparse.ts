@@ -61,5 +61,5 @@ export function parseLocaleNum(raw: string): number | null {
 export function inputCls(base: string, hasError: boolean): string {
   return hasError
     ? `${base} border-red-400 focus:ring-red-300/40`
-    : `${base} border-gray-200 focus:ring-[#001A70]/20`
+    : `${base} border-gray-200 focus:ring-[#0D0D0D]/20`
 }

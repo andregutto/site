@@ -5,11 +5,12 @@ import { syncDividendsForUser } from '../services/dividendService.js'
 
 const router = Router()
 
-// POST /api/dividends/sync
+// POST /api/dividends/sync?force=true  — force=true deletes all dividends and re-fetches from scratch
 router.post('/sync', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
-  res.json({ status: 'started' })
-  syncDividendsForUser(userId).catch(err =>
+  const force = req.query.force === 'true'
+  res.json({ status: 'started', force })
+  syncDividendsForUser(userId, force).catch(err =>
     console.warn('[dividends/sync]', err)
   )
 })

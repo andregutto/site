@@ -92,7 +92,7 @@ export function useDividendSync() {
     if (!force && lastSync && Date.now() - new Date(lastSync).getTime() < INTERVAL) return
     setSyncing(true)
     try {
-      await apiFetch('/dividends/sync', { method: 'POST' })
+      await apiFetch(`/dividends/sync${force ? '?force=true' : ''}`, { method: 'POST' })
       const now = new Date().toISOString()
       localStorage.setItem('div_last_sync', now)
       setLastSync(now)

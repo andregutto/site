@@ -145,7 +145,7 @@ export default function PerformancePage() {
   // Normalize benchmarks from the month BEFORE the first portfolio month (= true period start)
   const prevFirstMonth = firstMonth ? addMonths(firstMonth, -1) : ''
   const baseBench  = benchmarkMap.get(prevFirstMonth)
-  const baseCDI    = baseBench?.cdi_cum   ?? benchmarkMap.get(firstMonth)?.cdi_cum ?? 1
+  const baseCDI    = baseBench?.cdi_cum   ?? benchmarkMap.get(firstMonth)?.cdi_cum ?? null
   const baseIBOV   = baseBench?.ibov_cum  ?? null
   const baseSP500  = baseBench?.sp500_cum ?? null
 
@@ -167,7 +167,7 @@ export default function PerformancePage() {
     return {
       month:     fmtMonth(m.month),
       portfolio: portfolioPct,
-      cdi:       b ? pct(b.cdi_cum, baseCDI) : null,
+      cdi:       (b?.cdi_cum != null && baseCDI != null) ? pct(b.cdi_cum, baseCDI) : null,
       ibov:      (b?.ibov_cum  != null && baseIBOV  != null) ? pct(b.ibov_cum,  baseIBOV)  : null,
       sp500:     (b?.sp500_cum != null && baseSP500 != null) ? pct(b.sp500_cum, baseSP500) : null,
     }
@@ -206,8 +206,8 @@ export default function PerformancePage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold text-gray-900">Performance</h1>
-          <p className="text-sm text-gray-400 mt-0.5">{t.performance.subtitle}</p>
+          <h1 style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 18, letterSpacing: '0.06em', color: 'var(--arvo-black)' }}>Performance</h1>
+          <p className="text-sm mt-0.5" style={{ color: 'rgba(13,13,13,0.60)' }}>{t.performance.subtitle}</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">

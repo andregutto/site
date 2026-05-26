@@ -20,27 +20,31 @@ export default function TermsOfUsePage() {
   ]
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center py-10 px-4">
-      <div className="w-full max-w-2xl space-y-6">
-        <div className="flex items-center justify-between">
-          <Link to="/login" className="text-xs text-[#0D0D0D] hover:underline flex items-center gap-1">
-            ← Login
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '40px 16px', background: 'var(--arvo-offwhite)' }}>
+      <div style={{ width: '100%', maxWidth: 672, display: 'flex', flexDirection: 'column', gap: 24 }}>
+
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 7, textDecoration: 'none' }}>
+            <img src="/brand/logo/arvo-symbol-black.svg" width="16" height="16" alt="" style={{ opacity: 0.55 }} />
+            <span style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 11, letterSpacing: '0.20em', color: 'var(--arvo-fg-soft)' }}>arvo</span>
           </Link>
           <LanguageSelector />
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 space-y-6">
-          <div>
-            <h1 className="text-2xl font-bold text-[#0D0D0D]">{tp.title}</h1>
-            <p className="text-xs text-gray-400 mt-1">{tp.updated}</p>
+        <div style={{ background: '#FFFFFF', borderRadius: 16, padding: '36px 36px', border: '1px solid var(--arvo-border)', boxShadow: '0 1px 4px rgba(13,13,13,0.05)' }}>
+          <div style={{ marginBottom: 28 }}>
+            <h1 style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 28, letterSpacing: '0.06em', color: 'var(--arvo-black)', marginBottom: 8 }}>{tp.title}</h1>
+            <p style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 11, letterSpacing: '0.10em', color: 'var(--arvo-fg-soft)' }}>{tp.updated}</p>
           </div>
 
-          {sections.map(({ title, body }) => (
-            <div key={title} className="space-y-1">
-              <h2 className="text-sm font-semibold text-gray-800">{title}</h2>
-              <p className="text-sm text-gray-600 leading-relaxed">{body}</p>
-            </div>
-          ))}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
+            {sections.map(({ title, body }) => (
+              <div key={title}>
+                <h2 style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 13, letterSpacing: '0.10em', textTransform: 'uppercase', color: 'var(--arvo-fg)', marginBottom: 6 }}>{title}</h2>
+                <p style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 14, color: 'var(--arvo-fg-muted)', lineHeight: 1.80 }}>{body}</p>
+              </div>
+            ))}
+          </div>
         </div>
 
         <LoginFooter />

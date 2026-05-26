@@ -474,8 +474,8 @@ export default function FinancesBudgetPage() {
       {/* Page header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-gray-900">{t.finances.budgetTitle}</h1>
-          <p className="text-sm text-gray-400 mt-0.5">{t.finances.budgetSubtitle}</p>
+          <h1 style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 18, letterSpacing: '0.06em', color: 'var(--arvo-black)' }}>{t.finances.budgetTitle}</h1>
+          <p className="text-sm mt-0.5" style={{ color: 'rgba(13,13,13,0.60)' }}>{t.finances.budgetSubtitle}</p>
         </div>
       </div>
 

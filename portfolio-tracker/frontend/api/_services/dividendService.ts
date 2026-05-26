@@ -70,13 +70,21 @@ function holdingsAt(contribs: Array<{ type: string; quantity: number; date: stri
   return Math.max(0, h)
 }
 
-export async function syncDividendsForUser(userId: string) {
+export async function syncDividendsForUser(userId: string, force = false) {
   const { data: assets } = await supabaseAdmin
     .from('assets').select('id, code, currency, ticker_brapi, ticker_yahoo')
     .eq('user_id', userId).eq('active', true).eq('asset_type', 'ticker')
 
   if (!assets?.length) return { synced: 0, skipped: 0, errors: 0 }
   const assetIds = assets.map(a => a.id as number)
+
+  if (force) {
+    await supabaseAdmin
+      .from('dividends')
+      .delete()
+      .in('asset_id', assetIds)
+      .eq('user_id', userId)
+  }
 
   const { data: latestRows } = await supabaseAdmin
     .from('dividends').select('asset_id, ex_date')
@@ -139,8 +147,7 @@ export async function syncDividendsForUser(userId: string) {
   for (const a of brapiAssets) {
     try {
       const allDivs = await fetchBrapiDividends(a.ticker_brapi!)
-      const lastKnown = latestMap[a.id]
-      await upsertRows(a, lastKnown ? allDivs.filter(d => d.ex_date > lastKnown) : allDivs)
+      await upsertRows(a, allDivs)
     } catch (err) { console.warn(`[dividends] brapi ${a.code}:`, err); errors++ }
     await new Promise(r => setTimeout(r, 600))
   }

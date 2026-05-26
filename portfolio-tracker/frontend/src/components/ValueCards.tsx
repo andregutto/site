@@ -44,10 +44,14 @@ export default function ValueCards({ total_brl, generated_at, invested_brl, gain
   }
 
   return (
-    <div style={{ background: 'linear-gradient(135deg, #0D0D0D 0%, #1B1815 60%, #28221B 100%)', color: 'var(--arvo-fg-on-dark)', borderRadius: 16, padding: 28, position: 'relative', overflow: 'hidden' }}>
+    <div style={{ background: 'linear-gradient(135deg, #0D0D0D 0%, #1B1815 60%, #28221B 100%)', color: 'var(--arvo-fg-on-dark)', borderRadius: 16, padding: 28, position: 'relative', overflow: 'hidden', boxShadow: '0 4px 32px rgba(200,184,154,0.18), 0 0 0 1px rgba(200,184,154,0.12)' }}>
 
-      {/* Gold glow */}
-      <div style={{ position: 'absolute', top: -120, right: -80, width: 360, height: 360, borderRadius: '50%', background: 'rgba(200,184,154,0.10)', filter: 'blur(60px)', pointerEvents: 'none' }} />
+      {/* Gold glow — top-right */}
+      <div style={{ position: 'absolute', top: -100, right: -60, width: 380, height: 380, borderRadius: '50%', background: 'rgba(200,184,154,0.18)', filter: 'blur(72px)', pointerEvents: 'none' }} />
+      {/* Gold glow — bottom-left */}
+      <div style={{ position: 'absolute', bottom: -80, left: -40, width: 240, height: 240, borderRadius: '50%', background: 'rgba(200,184,154,0.10)', filter: 'blur(56px)', pointerEvents: 'none' }} />
+      {/* Gold shimmer line at top */}
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 1, background: 'linear-gradient(to right, transparent, rgba(200,184,154,0.40), transparent)', pointerEvents: 'none' }} />
 
       {/* Top row */}
       <div style={{ position: 'relative', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, zIndex: 2 }}>
