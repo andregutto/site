@@ -66,19 +66,20 @@ export default function AchievementsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-gray-900">{t.achievements.title}</h1>
-          <p className="text-sm text-gray-500 mt-0.5">{earnedKeys.length} {t.achievements.of} {ACHIEVEMENT_DEFS.length} {t.achievements.subtitle}</p>
+          <h1 className="text-xl" style={{ fontFamily: "'Tenor Sans', sans-serif", color: 'var(--arvo-black)', letterSpacing: '0.04em' }}>{t.achievements.title}</h1>
+          <p className="text-sm mt-0.5" style={{ color: 'rgba(13,13,13,0.5)' }}>{earnedKeys.length} {t.achievements.of} {ACHIEVEMENT_DEFS.length} {t.achievements.subtitle}</p>
         </div>
         <div className="flex items-center gap-3">
           {(loading || checking) && (
-            <div className="flex items-center gap-2 text-sm text-gray-400">
-              <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-[#001A70]" />
+            <div className="flex items-center gap-2 text-sm" style={{ color: 'rgba(13,13,13,0.45)' }}>
+              <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-[#0D0D0D]" />
               {t.achievements.checking}
             </div>
           )}
           <button
             onClick={() => setPreview(true)}
-            className="text-xs text-gray-400 hover:text-[#001A70] border border-gray-200 hover:border-[#001A70]/30 rounded-lg px-3 py-1.5 transition-colors"
+            className="text-xs rounded-lg px-3 py-1.5 transition-colors"
+            style={{ color: 'rgba(13,13,13,0.45)', border: '1px solid var(--arvo-border-soft)' }}
           >
             {t.achievements.preview}
           </button>
@@ -86,33 +87,33 @@ export default function AchievementsPage() {
       </div>
 
       {/* Level card */}
-      <div className="bg-gradient-to-br from-[#0A0F1E] to-[#001A70] rounded-2xl p-5 shadow-sm">
+      <div className="rounded-2xl p-5" style={{ background: 'linear-gradient(135deg, #111 0%, #0D0D0D 100%)' }}>
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <span className="text-3xl">{level.emoji}</span>
             <div>
-              <p className="text-[#C9A227] text-xs font-bold uppercase tracking-widest">{t.achievements.currentLevel}</p>
-              <p className="text-white font-bold text-lg">{(t.levels as Record<string,string>)[level.key] ?? level.name}</p>
+              <p className="text-xs uppercase tracking-widest" style={{ fontFamily: "'Tenor Sans', sans-serif", color: 'var(--arvo-gold)' }}>{t.achievements.currentLevel}</p>
+              <p className="text-white text-lg" style={{ fontFamily: "'Tenor Sans', sans-serif" }}>{(t.levels as Record<string,string>)[level.key] ?? level.name}</p>
             </div>
           </div>
           <div className="text-right">
-            <span className="text-[#C9A227] font-bold text-2xl">{totalXp}</span>
-            <span className="text-gray-400 text-sm"> XP</span>
+            <span className="font-bold text-2xl" style={{ fontFamily: "'Playfair Display', serif", fontStyle: 'italic', color: 'var(--arvo-gold)' }}>{totalXp}</span>
+            <span className="text-sm ml-1" style={{ color: 'rgba(200,184,154,0.5)', fontFamily: "'Tenor Sans', sans-serif" }}>XP</span>
           </div>
         </div>
 
-        <div className="h-2.5 bg-white/10 rounded-full overflow-hidden">
+        <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.1)' }}>
           <div
             className="h-full rounded-full transition-all duration-700"
-            style={{ width: `${progress}%`, background: 'linear-gradient(90deg, #2563EB, #C9A227)' }}
+            style={{ width: `${progress}%`, background: 'linear-gradient(90deg, var(--arvo-black), var(--arvo-gold))' }}
           />
         </div>
 
-        <div className="flex justify-between mt-2 text-xs text-gray-400">
+        <div className="flex justify-between mt-2 text-xs" style={{ color: 'rgba(200,184,154,0.5)', fontFamily: "'Tenor Sans', sans-serif" }}>
           <span>{level.minXp} XP</span>
           {nextLevel
             ? <span>{t.achievements.nextLevel}: {nextLevel.emoji} {(t.levels as Record<string,string>)[nextLevel.key] ?? nextLevel.name} · {nextLevel.minXp} {t.achievements.xp}</span>
-            : <span className="text-[#D4AF37]">{t.achievements.maxLevel}</span>
+            : <span style={{ color: 'var(--arvo-gold)' }}>{t.achievements.maxLevel}</span>
           }
         </div>
       </div>
@@ -127,13 +128,12 @@ export default function AchievementsPage() {
           return (
             <div
               key={l.name}
-              className={`flex-1 rounded-xl py-2.5 text-center text-xs font-medium border transition-all ${
-                isActive
-                  ? 'border-[#001A70] bg-[#001A70]/10 text-[#001A70]'
-                  : isPast
-                  ? 'border-green-200 bg-green-50 text-green-700'
-                  : 'border-gray-100 bg-gray-50 text-gray-400'
-              }`}
+              className="flex-1 rounded-xl py-2.5 text-center text-xs transition-all"
+              style={isActive
+                ? { border: '1px solid var(--arvo-black)', background: 'rgba(13,13,13,0.08)', color: 'var(--arvo-black)', fontFamily: "'Tenor Sans', sans-serif" }
+                : isPast
+                ? { border: '1px solid rgba(31,138,91,0.3)', background: 'rgba(31,138,91,0.07)', color: 'var(--arvo-green)', fontFamily: "'Tenor Sans', sans-serif" }
+                : { border: '1px solid var(--arvo-border-soft)', background: 'transparent', color: 'rgba(13,13,13,0.35)', fontFamily: "'Tenor Sans', sans-serif" }}
             >
               <div className="text-base">{l.emoji}</div>
               <div className="truncate px-1 mt-0.5">{(t.levels as Record<string,string>)[l.key] ?? l.name}</div>
@@ -150,32 +150,31 @@ export default function AchievementsPage() {
           return (
             <div
               key={def.key}
-              className={`rounded-2xl border p-4 flex flex-col items-center text-center transition-all ${
-                isEarned
-                  ? 'border-gray-200 bg-white shadow-sm'
-                  : 'border-gray-100 bg-gray-50'
-              }`}
+              className="rounded-2xl p-4 flex flex-col items-center text-center transition-all"
+              style={isEarned
+                ? { border: '1px solid var(--arvo-border-soft)', background: 'var(--arvo-offwhite)' }
+                : { border: '1px solid var(--arvo-border-soft)', background: 'rgba(232,223,208,0.35)' }}
             >
               <Medal def={def} earned={isEarned} size={80} />
 
-              <p className={`mt-3 text-sm font-bold leading-tight ${isEarned ? 'text-gray-900' : 'text-gray-400'}`}>
+              <p className="mt-3 text-sm leading-tight" style={{ fontFamily: "'Tenor Sans', sans-serif", color: isEarned ? 'var(--arvo-black)' : 'rgba(13,13,13,0.4)' }}>
                 {(t.achievementDefs as Record<string, { name: string; desc: string }>)[def.key]?.name ?? def.name}
               </p>
-              <p className={`mt-1 text-xs leading-snug ${isEarned ? 'text-gray-500' : 'text-gray-400'}`}>
+              <p className="mt-1 text-xs leading-snug" style={{ color: isEarned ? 'rgba(13,13,13,0.55)' : 'rgba(13,13,13,0.35)' }}>
                 {resolveDesc(def.key, (t.achievementDefs as Record<string, { name: string; desc: string }>)[def.key]?.desc ?? def.description)}
               </p>
 
               {isEarned ? (
                 <div className="mt-2 flex items-center gap-1 flex-wrap justify-center">
-                  <span className="text-[#C9A227] text-xs font-bold">+{def.xp} {t.achievements.xp}</span>
+                  <span className="text-xs" style={{ fontFamily: "'Tenor Sans', sans-serif", color: 'var(--arvo-gold)' }}>+{def.xp} {t.achievements.xp}</span>
                   {earnedAt && (
-                    <span className="text-gray-400 text-xs">
+                    <span className="text-xs" style={{ color: 'rgba(13,13,13,0.35)' }}>
                       · {new Date(earnedAt).toLocaleDateString(undefined, { day: '2-digit', month: 'short' })}
                     </span>
                   )}
                 </div>
               ) : (
-                <span className="mt-2 text-gray-400 text-xs">🔒 {def.xp} {t.achievements.xp}</span>
+                <span className="mt-2 text-xs" style={{ color: 'rgba(13,13,13,0.35)', fontFamily: "'Tenor Sans', sans-serif" }}>🔒 {def.xp} {t.achievements.xp}</span>
               )}
             </div>
           )

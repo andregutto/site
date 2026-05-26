@@ -2,18 +2,17 @@ import { useState, useRef, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 
-const BLUE    = '#1B2F4E'
-const BG      = '#FAFAF8'
-const DARK    = '#111110'
-const GRAY    = '#6B6B67'
-const BORDER  = '#E0DDD5'
-const GOLD    = '#C9A227'
+const BLUE    = '#0D0D0D'
+const BG      = '#F2EDE4'
+const DARK    = '#0D0D0D'
+const GRAY    = 'rgba(13,13,13,0.5)'
+const BORDER  = 'rgba(13,13,13,0.08)'
+const GOLD    = '#C8B89A'
 
-const F_DISPLAY = "'Playfair Display', serif"
-const F_MONO    = "'DM Mono', monospace"
-const F_BODY    = "'DM Sans', sans-serif"
+const F_DISPLAY = "'Playfair Display', Georgia, serif"
+const F_SANS    = "'Tenor Sans', sans-serif"
 
-const PHOTO_URL = 'https://images.unsplash.com/photo-1507842217343-583bb7270b66?auto=format&fit=crop&w=1800&q=80'
+const PHOTO_URL = '/brand/imagery/01-broto-floresta.jpg'
 
 const FEATURES = [
   {
@@ -138,25 +137,26 @@ export default function LandingPage() {
   }
 
   return (
-    <div style={{ background: BG, color: DARK, fontFamily: F_BODY, minHeight: '100vh', overflowX: 'hidden' }}>
+    <div style={{ background: BG, color: DARK, fontFamily: F_SANS, minHeight: '100vh', overflowX: 'hidden' }}>
 
       {/* ── HEADER ── */}
       <header style={{
         position: 'sticky', top: 0, zIndex: 100,
-        background: 'rgba(250,250,248,0.95)',
+        background: 'rgba(242,237,228,0.95)',
         backdropFilter: 'blur(16px)',
         borderBottom: `1px solid ${BORDER}`,
       }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 20px', height: 60, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
 
-          <a href="#hero" style={{ fontFamily: F_DISPLAY, fontSize: 20, fontWeight: 400, color: BLUE, textDecoration: 'none', letterSpacing: '-0.2px', flexShrink: 0 }}>
-            André Gutto
+          <a href="#hero" style={{ textDecoration: 'none', flexShrink: 0, display: 'flex', alignItems: 'center', gap: 10 }}>
+            <img src="/brand/logo/arvo-symbol-black.svg" width="20" height="20" alt="" />
+            <span style={{ fontFamily: F_SANS, fontSize: 15, letterSpacing: '0.30em', textIndent: '0.30em', color: BLUE, lineHeight: 1 }}>arvo</span>
           </a>
 
           {/* Desktop nav */}
           <nav className="hidden md:flex" style={{ alignItems: 'center', gap: 36 }}>
             {[['#funcionalidades','Funcionalidades'],['#como-funciona','Como funciona'],['#faq','FAQ']].map(([href, label]) => (
-              <a key={href} href={href} style={{ fontFamily: F_MONO, fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', color: GRAY, textDecoration: 'none', transition: 'color 0.2s' }}
+              <a key={href} href={href} style={{ fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', color: GRAY, textDecoration: 'none', transition: 'color 0.2s' }}
                 onMouseEnter={e => (e.currentTarget.style.color = DARK)}
                 onMouseLeave={e => (e.currentTarget.style.color = GRAY)}
               >
@@ -171,7 +171,7 @@ export default function LandingPage() {
             <div ref={loginRef} style={{ position: 'relative' }}>
               <button
                 onClick={() => { setLoginOpen(o => !o); setLoginErr('') }}
-                style={{ fontFamily: F_MONO, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', color: BLUE, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                style={{ fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', color: BLUE, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
               >
                 Entrar
               </button>
@@ -179,7 +179,7 @@ export default function LandingPage() {
               {loginOpen && (
                 <div style={{
                   position: 'absolute', top: 'calc(100% + 12px)', right: 0,
-                  background: '#fff', border: `1px solid ${BORDER}`,
+                  background: BG, border: `1px solid ${BORDER}`,
                   borderRadius: 6, boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
                   padding: '24px 22px', width: 280, zIndex: 10,
                 }}>
@@ -192,33 +192,33 @@ export default function LandingPage() {
                       placeholder="E-mail"
                       value={loginEmail}
                       onChange={e => setLoginEmail(e.target.value)}
-                      style={{ fontFamily: F_BODY, fontSize: 13, padding: '9px 12px', border: `1px solid ${BORDER}`, borderRadius: 4, outline: 'none', color: DARK, background: BG }}
+                      style={{ fontFamily: F_SANS, fontSize: 13, padding: '9px 12px', border: `1px solid ${BORDER}`, borderRadius: 4, outline: 'none', color: DARK, background: BG }}
                     />
                     <input
                       type="password" required
                       placeholder="Senha"
                       value={loginPass}
                       onChange={e => setLoginPass(e.target.value)}
-                      style={{ fontFamily: F_BODY, fontSize: 13, padding: '9px 12px', border: `1px solid ${BORDER}`, borderRadius: 4, outline: 'none', color: DARK, background: BG }}
+                      style={{ fontFamily: F_SANS, fontSize: 13, padding: '9px 12px', border: `1px solid ${BORDER}`, borderRadius: 4, outline: 'none', color: DARK, background: BG }}
                     />
                     {loginErr && (
-                      <p style={{ fontFamily: F_BODY, fontSize: 12, color: '#dc2626', margin: 0 }}>{loginErr}</p>
+                      <p style={{ fontFamily: F_SANS, fontSize: 12, color: '#dc2626', margin: 0 }}>{loginErr}</p>
                     )}
                     <button
                       type="submit"
                       disabled={loginLoading}
-                      style={{ fontFamily: F_MONO, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', background: BLUE, color: '#fff', border: 'none', borderRadius: 4, padding: '10px 0', cursor: 'pointer', opacity: loginLoading ? 0.6 : 1, marginTop: 4 }}
+                      style={{ fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', background: BLUE, color: '#fff', border: 'none', borderRadius: 4, padding: '10px 0', cursor: 'pointer', opacity: loginLoading ? 0.6 : 1, marginTop: 4 }}
                     >
                       {loginLoading ? 'Entrando…' : 'Entrar'}
                     </button>
                   </form>
                   <div style={{ marginTop: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <Link to="/login?mode=forgot" onClick={() => setLoginOpen(false)}
-                      style={{ fontFamily: F_MONO, fontSize: 10, letterSpacing: '0.08em', color: GRAY, textDecoration: 'none' }}>
+                      style={{ fontFamily: F_SANS, fontSize: 10, letterSpacing: '0.08em', color: GRAY, textDecoration: 'none' }}>
                       Esqueci a senha
                     </Link>
                     <Link to="/login?mode=register" onClick={() => setLoginOpen(false)}
-                      style={{ fontFamily: F_MONO, fontSize: 10, letterSpacing: '0.08em', color: BLUE, textDecoration: 'none' }}>
+                      style={{ fontFamily: F_SANS, fontSize: 10, letterSpacing: '0.08em', color: BLUE, textDecoration: 'none' }}>
                       Criar conta
                     </Link>
                   </div>
@@ -227,7 +227,7 @@ export default function LandingPage() {
             </div>
 
             <Link to="/login?mode=register" style={{
-              fontFamily: F_MONO, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase',
+              fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase',
               background: BLUE, color: '#fff', textDecoration: 'none',
               padding: '9px 20px', borderRadius: 3,
             }}>
@@ -253,10 +253,10 @@ export default function LandingPage() {
 
         {/* Mobile drawer */}
         {menuOpen && (
-          <div style={{ background: BG, borderTop: `1px solid ${BORDER}`, padding: '8px 20px 20px' }} className="md:hidden">
+          <div style={{ background: 'rgba(242,237,228,0.98)', borderTop: `1px solid ${BORDER}`, padding: '8px 20px 20px' }} className="md:hidden">
             {[['#funcionalidades','Funcionalidades'],['#como-funciona','Como funciona'],['#faq','FAQ']].map(([href, label]) => (
               <a key={href} href={href} onClick={() => setMenuOpen(false)}
-                style={{ display: 'flex', alignItems: 'center', padding: '14px 0', fontFamily: F_MONO, fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', color: GRAY, textDecoration: 'none', borderBottom: `1px solid ${BORDER}` }}>
+                style={{ display: 'flex', alignItems: 'center', padding: '14px 0', fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', color: GRAY, textDecoration: 'none', borderBottom: `1px solid ${BORDER}` }}>
                 {label}
               </a>
             ))}
@@ -264,12 +264,12 @@ export default function LandingPage() {
               <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
                 <button
                   onClick={() => { setMobileLoginOpen(true); setLoginErr('') }}
-                  style={{ flex: 1, textAlign: 'center', padding: '12px 0', fontFamily: F_MONO, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', color: BLUE, background: 'none', border: `1px solid ${BORDER}`, borderRadius: 3, cursor: 'pointer' }}
+                  style={{ flex: 1, textAlign: 'center', padding: '12px 0', fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', color: BLUE, background: 'none', border: `1px solid ${BORDER}`, borderRadius: 3, cursor: 'pointer' }}
                 >
                   Entrar
                 </button>
                 <Link to="/login?mode=register" onClick={() => setMenuOpen(false)}
-                  style={{ flex: 1, textAlign: 'center', padding: '12px 0', fontFamily: F_MONO, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', background: BLUE, color: '#fff', textDecoration: 'none', borderRadius: 3 }}>
+                  style={{ flex: 1, textAlign: 'center', padding: '12px 0', fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', background: BLUE, color: '#fff', textDecoration: 'none', borderRadius: 3 }}>
                   Começar grátis
                 </Link>
               </div>
@@ -280,23 +280,23 @@ export default function LandingPage() {
                   placeholder="E-mail"
                   value={loginEmail}
                   onChange={e => setLoginEmail(e.target.value)}
-                  style={{ fontFamily: F_BODY, fontSize: 13, padding: '10px 12px', border: `1px solid ${BORDER}`, borderRadius: 4, color: DARK, background: BG }}
+                  style={{ fontFamily: F_SANS, fontSize: 13, padding: '10px 12px', border: `1px solid ${BORDER}`, borderRadius: 4, color: DARK, background: BG }}
                 />
                 <input
                   type="password" required
                   placeholder="Senha"
                   value={loginPass}
                   onChange={e => setLoginPass(e.target.value)}
-                  style={{ fontFamily: F_BODY, fontSize: 13, padding: '10px 12px', border: `1px solid ${BORDER}`, borderRadius: 4, color: DARK, background: BG }}
+                  style={{ fontFamily: F_SANS, fontSize: 13, padding: '10px 12px', border: `1px solid ${BORDER}`, borderRadius: 4, color: DARK, background: BG }}
                 />
-                {loginErr && <p style={{ fontFamily: F_BODY, fontSize: 12, color: '#dc2626', margin: 0 }}>{loginErr}</p>}
+                {loginErr && <p style={{ fontFamily: F_SANS, fontSize: 12, color: '#dc2626', margin: 0 }}>{loginErr}</p>}
                 <div style={{ display: 'flex', gap: 10 }}>
                   <button type="button" onClick={() => setMobileLoginOpen(false)}
-                    style={{ flex: 1, padding: '11px 0', fontFamily: F_MONO, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', background: 'none', border: `1px solid ${BORDER}`, borderRadius: 3, cursor: 'pointer', color: GRAY }}>
+                    style={{ flex: 1, padding: '11px 0', fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', background: 'none', border: `1px solid ${BORDER}`, borderRadius: 3, cursor: 'pointer', color: GRAY }}>
                     Voltar
                   </button>
                   <button type="submit" disabled={loginLoading}
-                    style={{ flex: 2, padding: '11px 0', fontFamily: F_MONO, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', background: BLUE, color: '#fff', border: 'none', borderRadius: 3, cursor: 'pointer', opacity: loginLoading ? 0.6 : 1 }}>
+                    style={{ flex: 2, padding: '11px 0', fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', background: BLUE, color: '#fff', border: 'none', borderRadius: 3, cursor: 'pointer', opacity: loginLoading ? 0.6 : 1 }}>
                     {loginLoading ? 'Entrando…' : 'Entrar'}
                   </button>
                 </div>
@@ -308,14 +308,14 @@ export default function LandingPage() {
 
       {/* ── HERO ── */}
       <section id="hero" style={{ position: 'relative', minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
-        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(160deg, #080f1c 0%, #1B2F4E 100%)' }} />
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(160deg, #080f1c 0%, #0D0D0D 100%)' }} />
         <div style={{ position: 'absolute', inset: 0, backgroundImage: `url('${PHOTO_URL}')`, backgroundSize: 'cover', backgroundPosition: 'center', opacity: 0.18 }} />
         <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '55%', background: 'linear-gradient(to top, rgba(6,12,24,0.90) 0%, transparent 100%)' }} />
 
         <div style={{ position: 'relative', maxWidth: 1200, margin: '0 auto', padding: '0 20px 80px', width: '100%' }}>
           <div style={{ marginBottom: 24, display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{ width: 5, height: 5, borderRadius: '50%', background: GOLD, flexShrink: 0, display: 'inline-block' }} />
-            <span style={{ fontFamily: F_MONO, fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.45)' }}>
+            <span style={{ fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.45)' }}>
               Portfolio Tracker · Beta
             </span>
           </div>
@@ -325,23 +325,22 @@ export default function LandingPage() {
             <em style={{ fontStyle: 'italic', color: 'rgba(255,255,255,0.45)' }}>verdadeiramente importa.</em>
           </h1>
 
-          <p style={{ fontFamily: F_BODY, fontSize: 'clamp(15px, 2.2vw, 18px)', fontWeight: 300, color: 'rgba(255,255,255,0.65)', lineHeight: 1.7, maxWidth: 500, marginBottom: 40 }}>
+          <p style={{ fontFamily: F_SANS, fontSize: 'clamp(15px, 2.2vw, 18px)', fontWeight: 300, color: 'rgba(255,255,255,0.65)', lineHeight: 1.7, maxWidth: 500, marginBottom: 40 }}>
             Portfólio de investimentos e controle financeiro reunidos. Multimoeda, com IA e pensado para quem vive entre países.
           </p>
 
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
             <Link to="/login?mode=register" style={{
-              fontFamily: F_MONO, fontSize: 12, letterSpacing: '0.12em', textTransform: 'uppercase',
-              background: '#fff', color: DARK, textDecoration: 'none',
-              padding: '15px 32px', borderRadius: 3,
-              boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+              fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase',
+              background: GOLD, color: DARK, textDecoration: 'none',
+              padding: '15px 32px', borderRadius: 2,
             }}>
               Criar conta grátis
             </Link>
             <Link to="/login" style={{
-              fontFamily: F_MONO, fontSize: 12, letterSpacing: '0.12em', textTransform: 'uppercase',
-              background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.8)', textDecoration: 'none',
-              padding: '15px 32px', borderRadius: 3, border: '1px solid rgba(255,255,255,0.18)',
+              fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase',
+              background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.7)', textDecoration: 'none',
+              padding: '15px 32px', borderRadius: 2, border: '1px solid rgba(255,255,255,0.15)',
             }}>
               Já tenho conta
             </Link>
@@ -350,7 +349,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── STATS BAR ── */}
-      <div style={{ background: '#fff', borderBottom: `1px solid ${BORDER}` }}>
+      <div style={{ background: BG, borderBottom: `1px solid ${BORDER}` }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', padding: '36px 20px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '28px 24px' }}>
           {[
             { value: '6+',          label: 'Classes de ativos' },
@@ -360,7 +359,7 @@ export default function LandingPage() {
           ].map(s => (
             <div key={s.label}>
               <div style={{ fontFamily: F_DISPLAY, fontSize: 'clamp(1.5rem, 3vw, 2rem)', fontWeight: 400, color: BLUE, marginBottom: 6 }}>{s.value}</div>
-              <div style={{ fontFamily: F_MONO, fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: GRAY, lineHeight: 1.4 }}>{s.label}</div>
+              <div style={{ fontFamily: F_SANS, fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: GRAY, lineHeight: 1.4 }}>{s.label}</div>
             </div>
           ))}
         </div>
@@ -369,7 +368,7 @@ export default function LandingPage() {
       {/* ── FUNCIONALIDADES ── */}
       <section id="funcionalidades" style={{ padding: 'clamp(60px, 8vw, 100px) 20px', maxWidth: 1200, margin: '0 auto' }}>
         <div style={{ marginBottom: 56 }}>
-          <p style={{ fontFamily: F_MONO, fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: GRAY, marginBottom: 14 }}>
+          <p style={{ fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: GRAY, marginBottom: 14 }}>
             Funcionalidades
           </p>
           <h2 style={{ fontFamily: F_DISPLAY, fontSize: 'clamp(1.9rem, 4vw, 2.8rem)', fontWeight: 400, lineHeight: 1.15, color: DARK, letterSpacing: '-0.3px', maxWidth: 540 }}>
@@ -383,14 +382,14 @@ export default function LandingPage() {
         >
           {FEATURES.map(f => (
             <div key={f.title} style={{ background: BG, padding: 'clamp(28px, 4vw, 40px) clamp(24px, 3vw, 36px)' }}>
-              <div style={{ fontFamily: F_MONO, fontSize: 18, color: BLUE, marginBottom: 16, lineHeight: 1 }}>{f.icon}</div>
-              <p style={{ fontFamily: F_MONO, fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: GRAY, marginBottom: 12 }}>
+              <div style={{ fontFamily: F_SANS, fontSize: 18, color: BLUE, marginBottom: 16, lineHeight: 1 }}>{f.icon}</div>
+              <p style={{ fontFamily: F_SANS, fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: GRAY, marginBottom: 12 }}>
                 {f.label}
               </p>
               <h3 style={{ fontFamily: F_DISPLAY, fontSize: 'clamp(1.05rem, 2vw, 1.3rem)', fontWeight: 400, color: DARK, marginBottom: 12, lineHeight: 1.25 }}>
                 {f.title}
               </h3>
-              <p style={{ fontFamily: F_BODY, fontSize: 14, fontWeight: 300, color: GRAY, lineHeight: 1.75 }}>
+              <p style={{ fontFamily: F_SANS, fontSize: 14, fontWeight: 300, color: GRAY, lineHeight: 1.75 }}>
                 {f.desc}
               </p>
             </div>
@@ -399,10 +398,10 @@ export default function LandingPage() {
       </section>
 
       {/* ── COMO FUNCIONA ── */}
-      <section id="como-funciona" style={{ background: '#fff', borderTop: `1px solid ${BORDER}`, borderBottom: `1px solid ${BORDER}`, padding: 'clamp(60px, 8vw, 100px) 20px' }}>
+      <section id="como-funciona" style={{ background: BG, borderTop: `1px solid ${BORDER}`, borderBottom: `1px solid ${BORDER}`, padding: 'clamp(60px, 8vw, 100px) 20px' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <div style={{ marginBottom: 56 }}>
-            <p style={{ fontFamily: F_MONO, fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: GRAY, marginBottom: 14 }}>
+            <p style={{ fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: GRAY, marginBottom: 14 }}>
               Como funciona
             </p>
             <h2 style={{ fontFamily: F_DISPLAY, fontSize: 'clamp(1.9rem, 4vw, 2.8rem)', fontWeight: 400, lineHeight: 1.15, color: DARK, letterSpacing: '-0.3px', maxWidth: 460 }}>
@@ -414,13 +413,13 @@ export default function LandingPage() {
             {HOW_IT_WORKS.map((step, i) => (
               <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                  <span style={{ fontFamily: F_MONO, fontSize: 28, fontWeight: 400, color: BORDER, letterSpacing: '-1px', lineHeight: 1 }}>{step.num}</span>
+                  <span style={{ fontFamily: F_SANS, fontSize: 28, fontWeight: 400, color: BORDER, letterSpacing: '-1px', lineHeight: 1 }}>{step.num}</span>
                   {i < HOW_IT_WORKS.length - 1 && (
                     <div style={{ flex: 1, height: 1, background: BORDER }} className="hidden lg:block" />
                   )}
                 </div>
                 <h3 style={{ fontFamily: F_DISPLAY, fontSize: '1.2rem', fontWeight: 400, color: DARK, lineHeight: 1.2 }}>{step.title}</h3>
-                <p style={{ fontFamily: F_BODY, fontSize: 14, fontWeight: 300, color: GRAY, lineHeight: 1.75 }}>{step.desc}</p>
+                <p style={{ fontFamily: F_SANS, fontSize: 14, fontWeight: 300, color: GRAY, lineHeight: 1.75 }}>{step.desc}</p>
               </div>
             ))}
           </div>
@@ -435,7 +434,7 @@ export default function LandingPage() {
             "Construído por um brasileiro na França — para quem tem ativos em mais de um país e quer uma visão clara de tudo."
           </p>
           <div style={{ marginTop: 32 }}>
-            <p style={{ fontFamily: F_MONO, fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.35)' }}>
+            <p style={{ fontFamily: F_SANS, fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.35)' }}>
               André Gutto · Paris, France
             </p>
           </div>
@@ -445,7 +444,7 @@ export default function LandingPage() {
       {/* ── FAQ ── */}
       <section id="faq" style={{ padding: 'clamp(60px, 8vw, 100px) 20px', maxWidth: 760, margin: '0 auto' }}>
         <div style={{ marginBottom: 52 }}>
-          <p style={{ fontFamily: F_MONO, fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: GRAY, marginBottom: 14 }}>FAQ</p>
+          <p style={{ fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: GRAY, marginBottom: 14 }}>FAQ</p>
           <h2 style={{ fontFamily: F_DISPLAY, fontSize: 'clamp(1.7rem, 3.5vw, 2.4rem)', fontWeight: 400, color: DARK, letterSpacing: '-0.3px' }}>
             Perguntas frequentes
           </h2>
@@ -461,7 +460,7 @@ export default function LandingPage() {
                   padding: '22px 0', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', gap: 16,
                 }}
               >
-                <span style={{ fontFamily: F_BODY, fontSize: 'clamp(14px, 2vw, 16px)', fontWeight: 400, color: DARK, lineHeight: 1.4 }}>{faq.q}</span>
+                <span style={{ fontFamily: F_SANS, fontSize: 'clamp(14px, 2vw, 16px)', fontWeight: 400, color: DARK, lineHeight: 1.4 }}>{faq.q}</span>
                 <svg
                   width="16" height="16" fill="none" viewBox="0 0 24 24" stroke={GRAY} strokeWidth={1.5}
                   style={{ flexShrink: 0, transition: 'transform 0.25s', transform: openFaq === i ? 'rotate(180deg)' : 'rotate(0deg)' }}
@@ -470,7 +469,7 @@ export default function LandingPage() {
                 </svg>
               </button>
               {openFaq === i && (
-                <div style={{ paddingBottom: 22, fontFamily: F_BODY, fontSize: 15, fontWeight: 300, color: GRAY, lineHeight: 1.8 }}>
+                <div style={{ paddingBottom: 22, fontFamily: F_SANS, fontSize: 15, fontWeight: 300, color: GRAY, lineHeight: 1.8 }}>
                   {faq.a}
                 </div>
               )}
@@ -487,15 +486,14 @@ export default function LandingPage() {
           <h2 style={{ fontFamily: F_DISPLAY, fontSize: 'clamp(2rem, 4.5vw, 3rem)', fontWeight: 400, lineHeight: 1.12, color: '#fff', letterSpacing: '-0.4px', marginBottom: 16 }}>
             Pronto para cultivar seu patrimônio?
           </h2>
-          <p style={{ fontFamily: F_BODY, fontSize: 15, fontWeight: 300, color: 'rgba(255,255,255,0.55)', lineHeight: 1.7, marginBottom: 36 }}>
+          <p style={{ fontFamily: F_SANS, fontSize: 15, fontWeight: 300, color: 'rgba(255,255,255,0.55)', lineHeight: 1.7, marginBottom: 36 }}>
             Crie sua conta em menos de dois minutos. Sem cartão de crédito. Grátis para sempre no beta.
           </p>
           <Link to="/login?mode=register" style={{
             display: 'inline-block',
-            fontFamily: F_MONO, fontSize: 12, letterSpacing: '0.12em', textTransform: 'uppercase',
-            background: '#fff', color: DARK, textDecoration: 'none',
-            padding: '15px 36px', borderRadius: 3,
-            boxShadow: '0 4px 24px rgba(0,0,0,0.4)',
+            fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase',
+            background: GOLD, color: DARK, textDecoration: 'none',
+            padding: '15px 36px', borderRadius: 2,
           }}>
             Começar agora
           </Link>
@@ -506,17 +504,18 @@ export default function LandingPage() {
       <footer style={{ borderTop: `1px solid rgba(255,255,255,0.07)`, background: DARK, padding: '24px 20px' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
           <a href="https://andregutto.com" target="_blank" rel="noopener noreferrer"
-            style={{ fontFamily: F_DISPLAY, fontSize: 16, fontWeight: 400, color: 'rgba(255,255,255,0.7)', textDecoration: 'none' }}>
-            André Gutto
+            style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <img src="/brand/logo/arvo-symbol-offwhite.svg" width="16" height="16" alt="" style={{ opacity: 0.7 }} />
+            <span style={{ fontFamily: F_SANS, fontSize: 14, letterSpacing: '0.30em', textIndent: '0.30em', color: 'rgba(255,255,255,0.7)', lineHeight: 1 }}>arvo</span>
           </a>
           <div style={{ display: 'flex', gap: 20, alignItems: 'center', flexWrap: 'wrap' }}>
             {[['Portfolio Tracker', null],['/privacy','Privacidade'],['/terms','Termos'],['/login','Entrar']].map((item, i) =>
               item[1] === null ? (
-                <span key={i} style={{ fontFamily: F_MONO, fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.2)' }}>
+                <span key={i} style={{ fontFamily: F_SANS, fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.2)' }}>
                   {item[0]}
                 </span>
               ) : (
-                <Link key={item[0] as string} to={item[0] as string} style={{ fontFamily: F_MONO, fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.35)', textDecoration: 'none' }}>
+                <Link key={item[0] as string} to={item[0] as string} style={{ fontFamily: F_SANS, fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.35)', textDecoration: 'none' }}>
                   {item[1]}
                 </Link>
               )

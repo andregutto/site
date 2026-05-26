@@ -17,7 +17,7 @@ interface FinanceAccount {
 }
 
 const ACCOUNT_ICONS = ['🏦', '🏧', '💳', '💰', '💵', '💶', '💷', '🪙', '📱', '🏠', '✈️', '💼']
-const ACCOUNT_COLORS = ['#6366f1', '#0ea5e9', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#001A70', '#64748b']
+const ACCOUNT_COLORS = ['#6366f1', '#0ea5e9', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#0D0D0D', '#64748b']
 const CURRENCIES = ['EUR', 'BRL', 'USD', 'GBP', 'CHF']
 
 function relativeTime(iso: string | null, neverLabel: string) {
@@ -60,7 +60,7 @@ function AccountForm({ initial, institutionName, onSave, onClose, saving, title 
   }
 
   const labelCls = 'text-xs font-medium text-gray-500 mb-1 block'
-  const fieldCls = 'w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20'
+  const fieldCls = 'w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20'
 
   return (
     <div className="fixed inset-0 z-50 bg-black/40 flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={onClose}>
@@ -96,7 +96,7 @@ function AccountForm({ initial, institutionName, onSave, onClose, saving, title 
             <div className="flex flex-wrap gap-1.5">
               {ACCOUNT_ICONS.map(ic => (
                 <button key={ic} type="button" onClick={() => setIcon(ic)}
-                  className={`w-9 h-9 rounded-lg text-lg flex items-center justify-center transition-colors ${icon === ic ? 'ring-2 ring-[#001A70] bg-[#001A70]/10' : 'bg-gray-50 hover:bg-gray-100'}`}
+                  className={`w-9 h-9 rounded-lg text-lg flex items-center justify-center transition-colors ${icon === ic ? 'ring-2 ring-[#0D0D0D] bg-[#0D0D0D]/10' : 'bg-gray-50 hover:bg-gray-100'}`}
                 >{ic}</button>
               ))}
             </div>
@@ -115,7 +115,7 @@ function AccountForm({ initial, institutionName, onSave, onClose, saving, title 
           </div>
 
           <div className="flex gap-2 pt-1">
-            <button type="submit" disabled={saving} className="flex-1 bg-[#001A70] text-white text-sm py-2.5 rounded-xl hover:opacity-80 disabled:opacity-40">
+            <button type="submit" disabled={saving} className="flex-1 bg-[#0D0D0D] text-white text-sm py-2.5 rounded-xl hover:opacity-80 disabled:opacity-40">
               {saving ? '…' : t.common.save}
             </button>
             <button type="button" onClick={onClose} className="px-4 text-sm text-gray-500 hover:text-gray-700">
@@ -172,7 +172,7 @@ function LinkPortfolioModal({ account, manualAssets, onLink, onClose, saving }: 
                 onClick={() => setSelectedId(a.id)}
                 className={`w-full text-left px-3 py-2.5 rounded-xl border text-sm transition-colors ${
                   selectedId === a.id
-                    ? 'border-[#001A70] bg-[#001A70]/5 text-[#001A70] font-medium'
+                    ? 'border-[#0D0D0D] bg-[#0D0D0D]/5 text-[#0D0D0D] font-medium'
                     : 'border-gray-200 hover:border-gray-300 text-gray-700'
                 }`}
               >
@@ -187,7 +187,7 @@ function LinkPortfolioModal({ account, manualAssets, onLink, onClose, saving }: 
           <button
             onClick={() => selectedId && onLink(selectedId)}
             disabled={!selectedId || saving}
-            className="flex-1 bg-[#001A70] text-white text-sm py-2.5 rounded-xl hover:opacity-80 disabled:opacity-40"
+            className="flex-1 bg-[#0D0D0D] text-white text-sm py-2.5 rounded-xl hover:opacity-80 disabled:opacity-40"
           >
             {saving ? '…' : 'Vincular'}
           </button>
@@ -334,7 +334,7 @@ export default function FinancesAccountsPage() {
         </div>
         <button
           onClick={() => setFormMode({ mode: 'new' })}
-          className="px-3 py-1.5 bg-[#001A70] text-white text-sm rounded-lg hover:opacity-80 transition-opacity"
+          className="px-3 py-1.5 bg-[#0D0D0D] text-white text-sm rounded-lg hover:opacity-80 transition-opacity"
         >+ {t.finances.addAccount}</button>
       </div>
 
@@ -431,7 +431,7 @@ export default function FinancesAccountsPage() {
                     <span className="text-xs text-gray-400 flex-1">Não vinculado ao portfólio</span>
                     <button
                       onClick={() => openLinkModal(acc)}
-                      className="px-2.5 py-1 text-xs border border-[#001A70]/20 rounded-lg text-[#001A70] hover:bg-[#001A70]/5 transition-colors"
+                      className="px-2.5 py-1 text-xs border border-[#0D0D0D]/20 rounded-lg text-[#0D0D0D] hover:bg-[#0D0D0D]/5 transition-colors"
                     >
                       Vincular ao portfólio
                     </button>
@@ -459,7 +459,7 @@ export default function FinancesAccountsPage() {
                   <>
                     <span className="text-xs text-gray-400 flex-1">{t.finances.bankConnectionsBody}</span>
                     <button onClick={connectBank} disabled={connecting}
-                      className="px-2.5 py-1 text-xs border border-[#001A70]/20 rounded-lg text-[#001A70] hover:bg-[#001A70]/5 transition-colors disabled:opacity-50">
+                      className="px-2.5 py-1 text-xs border border-[#0D0D0D]/20 rounded-lg text-[#0D0D0D] hover:bg-[#0D0D0D]/5 transition-colors disabled:opacity-50">
                       {connecting ? '…' : t.finances.connectBank}
                     </button>
                   </>
@@ -477,7 +477,7 @@ export default function FinancesAccountsPage() {
           <p className="text-gray-700 font-medium mb-1">{t.finances.accountEmpty}</p>
           <p className="text-sm text-gray-400 mb-5">{t.finances.accountEmptyBody}</p>
           <button onClick={() => setFormMode({ mode: 'new' })}
-            className="px-5 py-2 bg-[#001A70] text-white text-sm rounded-xl hover:opacity-80 transition-opacity">
+            className="px-5 py-2 bg-[#0D0D0D] text-white text-sm rounded-xl hover:opacity-80 transition-opacity">
             + {t.finances.addAccount}
           </button>
         </div>
@@ -500,7 +500,7 @@ export default function FinancesAccountsPage() {
                   <span className="text-sm text-gray-700">{inst}</span>
                 </div>
                 <button onClick={() => activateInstitution(inst)}
-                  className="px-3 py-1 text-xs bg-[#001A70] text-white rounded-lg hover:opacity-80 transition-opacity">
+                  className="px-3 py-1 text-xs bg-[#0D0D0D] text-white rounded-lg hover:opacity-80 transition-opacity">
                   + {t.finances.accountActivate}
                 </button>
               </div>

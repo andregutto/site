@@ -311,7 +311,7 @@ export default function AssetDetailPage() {
       <div className="flex items-start gap-3">
         <button
           onClick={() => navigate(-1)}
-          className="mt-0.5 w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center text-gray-500 hover:border-[#001A70] hover:text-[#001A70] transition-colors shrink-0"
+          className="mt-0.5 w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center text-gray-500 hover:border-[#0D0D0D] hover:text-[#0D0D0D] transition-colors shrink-0"
         >‹</button>
         {assetId && (
           <button
@@ -344,7 +344,7 @@ export default function AssetDetailPage() {
                     handleSaveClass(val)
                   }}
                   disabled={savingClass}
-                  className="text-xs border border-gray-200 rounded-lg px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-[#001A70]/30 bg-white disabled:opacity-50"
+                  className="text-xs border border-gray-200 rounded-lg px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-[#0D0D0D]/30 bg-white disabled:opacity-50"
                 >
                   <option value="">{d.noClass}</option>
                   {availableClasses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -389,17 +389,17 @@ export default function AssetDetailPage() {
                   onChange={e => setSectorValue(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter') handleSaveSector(); if (e.key === 'Escape') setEditingSector(false) }}
                   placeholder={d.sectorPlaceholder}
-                  className="text-xs border border-gray-300 rounded-lg px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-[#001A70]/30 w-36"
+                  className="text-xs border border-gray-300 rounded-lg px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-[#0D0D0D]/30 w-36"
                   autoFocus
                 />
-                <button onClick={handleSaveSector} disabled={savingSector} className="text-xs text-[#001A70] font-semibold disabled:opacity-50">OK</button>
+                <button onClick={handleSaveSector} disabled={savingSector} className="text-xs text-[#0D0D0D] font-semibold disabled:opacity-50">OK</button>
                 <button onClick={() => setEditingSector(false)} className="text-xs text-gray-400">✕</button>
               </span>
             ) : (
               <button
                 onClick={() => { setSectorValue(data.sector ?? ''); setEditingSector(true) }}
                 title={d.setSector}
-                className={`text-xs px-2 py-0.5 rounded-full border font-medium transition-colors hover:border-[#001A70]/50 ${
+                className={`text-xs px-2 py-0.5 rounded-full border font-medium transition-colors hover:border-[#0D0D0D]/50 ${
                   data.sector
                     ? 'bg-teal-50 border-teal-200 text-teal-700'
                     : 'border-dashed border-gray-300 text-gray-400 hover:text-gray-600'
@@ -416,17 +416,17 @@ export default function AssetDetailPage() {
                 value={nameValue}
                 onChange={e => setNameValue(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') handleSaveName(); if (e.key === 'Escape') setEditingName(false) }}
-                className="text-sm border border-gray-300 rounded-lg px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-[#001A70]/30 flex-1 min-w-0"
+                className="text-sm border border-gray-300 rounded-lg px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-[#0D0D0D]/30 flex-1 min-w-0"
                 autoFocus
               />
-              <button onClick={handleSaveName} disabled={savingName} className="text-xs text-[#001A70] font-semibold disabled:opacity-50">OK</button>
+              <button onClick={handleSaveName} disabled={savingName} className="text-xs text-[#0D0D0D] font-semibold disabled:opacity-50">OK</button>
               <button onClick={() => setEditingName(false)} className="text-xs text-gray-400">✕</button>
             </span>
           ) : (
             <button
               onClick={() => { setNameValue(data.name); setEditingName(true) }}
               title={d.editName}
-              className="text-sm text-gray-500 mt-0.5 truncate text-left max-w-full hover:text-[#001A70] transition-colors"
+              className="text-sm text-gray-500 mt-0.5 truncate text-left max-w-full hover:text-[#0D0D0D] transition-colors"
             >
               {data.name}
             </button>
@@ -436,13 +436,13 @@ export default function AssetDetailPage() {
             {!isManual && (
               <Link
                 to={`/portfolio?assetId=${id}&new=1`}
-                className="text-xs text-[#001A70] border border-[#001A70]/30 hover:bg-blue-50 rounded-lg px-2.5 py-1 transition-colors"
+                className="text-xs text-[#0D0D0D] border border-[#0D0D0D]/30 hover:bg-blue-50 rounded-lg px-2.5 py-1 transition-colors"
               >{d.addContrib}</Link>
             )}
             {canUpdateManualValue && (
               <button
                 onClick={() => setShowManualModal(true)}
-                className="text-xs text-[#001A70] border border-[#001A70]/30 hover:bg-blue-50 rounded-lg px-2.5 py-1 transition-colors font-medium"
+                className="text-xs text-[#0D0D0D] border border-[#0D0D0D]/30 hover:bg-blue-50 rounded-lg px-2.5 py-1 transition-colors font-medium"
               >{d.updateValue}</button>
             )}
             {isManual && (
@@ -483,14 +483,14 @@ export default function AssetDetailPage() {
               <button
                 onClick={handleSaveInstitution}
                 disabled={savingInstitution}
-                className="text-xs text-[#001A70] font-semibold disabled:opacity-50 shrink-0"
+                className="text-xs text-[#0D0D0D] font-semibold disabled:opacity-50 shrink-0"
               >OK</button>
               <button onClick={() => setEditingInstitution(false)} className="text-xs text-gray-400 shrink-0">✕</button>
             </div>
           ) : (
             <button
               onClick={() => { setInstitutionValue(data.exchange ?? ''); setEditingInstitution(true) }}
-              className="text-xs text-gray-400 hover:text-[#001A70] border border-gray-200 hover:border-[#001A70] rounded-lg px-2.5 py-1 transition-colors mt-1"
+              className="text-xs text-gray-400 hover:text-[#0D0D0D] border border-gray-200 hover:border-[#0D0D0D] rounded-lg px-2.5 py-1 transition-colors mt-1"
             >
               {data.exchange || d.noInstitution}
             </button>
@@ -727,7 +727,7 @@ export default function AssetDetailPage() {
           </div>
           <div className="mt-2 h-2 bg-gray-100 rounded-full overflow-hidden">
             <div
-              className="h-full bg-[#001A70] rounded-full transition-all"
+              className="h-full bg-[#0D0D0D] rounded-full transition-all"
               style={{ width: `${Math.min(weightPct, 100)}%` }}
             />
           </div>
@@ -746,7 +746,7 @@ export default function AssetDetailPage() {
                   onClick={() => setChartPeriod(p.months)}
                   className={`text-xs px-2.5 py-1 rounded-lg font-medium transition-colors ${
                     chartPeriod === p.months
-                      ? 'bg-[#001A70] text-white'
+                      ? 'bg-[#0D0D0D] text-white'
                       : 'text-gray-500 hover:bg-gray-100'
                   }`}
                 >{p.label}</button>
@@ -788,7 +788,7 @@ export default function AssetDetailPage() {
                 <Line
                   type="monotone"
                   dataKey="value"
-                  stroke="#001A70"
+                  stroke="#0D0D0D"
                   strokeWidth={2}
                   dot={false}
                   activeDot={{ r: 4 }}

@@ -283,7 +283,7 @@ function PlanForm({ initial, portfolio, ipcaAnnual, birthdate, onSave, onDelete,
     })
   }
 
-  const fieldCls = 'w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20'
+  const fieldCls = 'w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20'
   const labelCls = 'block text-xs text-gray-500 mb-1'
 
   // Steps 0=goal(new only), 1=info, 2=capital, 3=target, 4=strategy
@@ -313,19 +313,19 @@ function PlanForm({ initial, portfolio, ipcaAnnual, birthdate, onSave, onDelete,
             <div className="flex flex-col items-center">
               <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${
                 s.key === step
-                  ? 'bg-[#001A70] text-white shadow-sm'
+                  ? 'bg-[#0D0D0D] text-white shadow-sm'
                   : s.key < step
-                  ? 'bg-[#001A70]/20 text-[#001A70]'
+                  ? 'bg-[#0D0D0D]/20 text-[#0D0D0D]'
                   : 'bg-gray-100 text-gray-400'
               }`}>
                 {s.key < step ? '✓' : idx + 1}
               </div>
               <span className={`text-[10px] mt-0.5 hidden sm:block max-w-[60px] text-center leading-tight ${
-                s.key === step ? 'text-[#001A70] font-semibold' : 'text-gray-400'
+                s.key === step ? 'text-[#0D0D0D] font-semibold' : 'text-gray-400'
               }`}>{s.label}</span>
             </div>
             {idx < stepDefs.length - 1 && (
-              <div className={`h-px w-6 mx-1 mb-3 sm:mb-0 transition-colors ${s.key < step ? 'bg-[#001A70]/30' : 'bg-gray-200'}`} />
+              <div className={`h-px w-6 mx-1 mb-3 sm:mb-0 transition-colors ${s.key < step ? 'bg-[#0D0D0D]/30' : 'bg-gray-200'}`} />
             )}
           </div>
         ))}
@@ -346,8 +346,8 @@ function PlanForm({ initial, portfolio, ipcaAnnual, birthdate, onSave, onDelete,
                 onClick={() => { setGoalMode(mode); setStep(1) }}
                 className={`p-5 rounded-2xl border-2 text-left transition-all hover:shadow-md ${
                   goalMode === mode
-                    ? 'border-[#001A70] bg-[#001A70]/5 shadow-sm'
-                    : 'border-gray-200 hover:border-[#001A70]/40'
+                    ? 'border-[#0D0D0D] bg-[#0D0D0D]/5 shadow-sm'
+                    : 'border-gray-200 hover:border-[#0D0D0D]/40'
                 }`}
               >
                 <div className="text-3xl mb-3">{emoji}</div>
@@ -387,7 +387,7 @@ function PlanForm({ initial, portfolio, ipcaAnnual, birthdate, onSave, onDelete,
                   onClick={() => handleCurrencyChange(c)}
                   className={`px-4 py-2 text-sm font-semibold rounded-md transition-colors ${
                     currency === c
-                      ? 'bg-white text-[#001A70] shadow-sm'
+                      ? 'bg-white text-[#0D0D0D] shadow-sm'
                       : 'text-gray-400 hover:text-gray-700'
                   }`}
                 >
@@ -419,12 +419,12 @@ function PlanForm({ initial, portfolio, ipcaAnnual, birthdate, onSave, onDelete,
               <div className="mb-2 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2.5 flex items-center justify-between">
                 <span className="text-xs text-gray-600">
                   {t.finances.freedomCapitalHint}:&nbsp;
-                  <strong className="text-[#001A70]">{fmtCur(Number(portfolioSuggestion))}</strong>
+                  <strong className="text-[#0D0D0D]">{fmtCur(Number(portfolioSuggestion))}</strong>
                 </span>
                 <button
                   type="button"
                   onClick={() => setCapital(portfolioSuggestion)}
-                  className="text-xs text-[#001A70] font-semibold hover:opacity-70 transition-opacity ml-3 whitespace-nowrap"
+                  className="text-xs text-[#0D0D0D] font-semibold hover:opacity-70 transition-opacity ml-3 whitespace-nowrap"
                 >
                   {t.finances.freedomUseThisValue}
                 </button>
@@ -490,7 +490,7 @@ function PlanForm({ initial, portfolio, ipcaAnnual, birthdate, onSave, onDelete,
                   {ipcaAnnual != null && (
                     <p className="text-[11px] text-gray-400 mt-1">
                       {t.finances.freedomIpcaLabel}&nbsp;
-                      <button type="button" onClick={() => setInflation(String(ipcaAnnual))} className="text-[#001A70] underline underline-offset-2 hover:opacity-70 transition-opacity">
+                      <button type="button" onClick={() => setInflation(String(ipcaAnnual))} className="text-[#0D0D0D] underline underline-offset-2 hover:opacity-70 transition-opacity">
                         {ipcaAnnual}%
                       </button>
                     </p>
@@ -501,7 +501,7 @@ function PlanForm({ initial, portfolio, ipcaAnnual, birthdate, onSave, onDelete,
               {computedTarget != null && (
                 <div className="bg-indigo-50 border border-indigo-100 rounded-xl px-4 py-3 space-y-1">
                   <p className="text-xs text-gray-500">{t.finances.freedomComputedGoal}</p>
-                  <p className="text-xl font-bold text-[#001A70]">{fmtCur(computedTarget)}</p>
+                  <p className="text-xl font-bold text-[#0D0D0D]">{fmtCur(computedTarget)}</p>
                   <p className="text-[10px] text-gray-500">
                     {t.finances.freedomNominalInYear} {horizonInputYears || 20} {t.finances.freedomAgeAtTarget}:&nbsp;
                     <strong>{fmtCur(Math.round(parseFloat(desiredIncome || '0') * Math.pow(1 + parseFloat(inflation || '2') / 100, horizonInputYears || 20)))}{t.finances.freedomPerMonth}</strong>
@@ -531,7 +531,7 @@ function PlanForm({ initial, portfolio, ipcaAnnual, birthdate, onSave, onDelete,
                 onClick={() => setStratMode(mode)}
                 className={`flex-1 py-2 text-xs font-semibold rounded-lg border transition-colors ${
                   stratMode === mode
-                    ? 'bg-[#001A70] text-white border-[#001A70]'
+                    ? 'bg-[#0D0D0D] text-white border-[#0D0D0D]'
                     : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'
                 }`}
               >
@@ -590,7 +590,7 @@ function PlanForm({ initial, portfolio, ipcaAnnual, birthdate, onSave, onDelete,
                     if (!ageMode && currentAge != null) setTargetAge(String(currentAge + (parseInt(horizon) || 20)))
                     setAgeMode(v => !v)
                   }}
-                  className="text-[10px] text-[#001A70] hover:underline"
+                  className="text-[10px] text-[#0D0D0D] hover:underline"
                 >
                   {ageMode ? t.finances.freedomSwitchToYears : t.finances.freedomSwitchToAge}
                 </button>
@@ -704,7 +704,7 @@ function PlanForm({ initial, portfolio, ipcaAnnual, birthdate, onSave, onDelete,
             type="button"
             onClick={isLastStep ? handleSave : () => setStep(s => s + 1)}
             disabled={saving}
-            className="flex-1 bg-[#001A70] text-white text-sm py-2 rounded-xl hover:opacity-80 transition-opacity disabled:opacity-40"
+            className="flex-1 bg-[#0D0D0D] text-white text-sm py-2 rounded-xl hover:opacity-80 transition-opacity disabled:opacity-40"
           >
             {saving ? '…' : isLastStep ? t.common.save : `${t.finances.freedomNext} →`}
           </button>
@@ -997,7 +997,7 @@ export default function FinancesFreedomPage() {
           )}
           <button
             onClick={() => { setEditingPlan(null); setShowForm(true) }}
-            className="px-3 py-1.5 bg-[#001A70] text-white text-sm rounded-lg hover:opacity-80 transition-opacity"
+            className="px-3 py-1.5 bg-[#0D0D0D] text-white text-sm rounded-lg hover:opacity-80 transition-opacity"
           >
             + {t.finances.freedomNewPlan}
           </button>
@@ -1013,8 +1013,8 @@ export default function FinancesFreedomPage() {
               onClick={() => !p.is_active && setActive(p.id)}
               className={`px-3 py-1 text-xs rounded-full border transition-colors ${
                 p.is_active
-                  ? 'bg-[#001A70] text-white border-[#001A70] cursor-default'
-                  : 'border-gray-200 text-gray-500 hover:border-[#001A70] hover:text-[#001A70]'
+                  ? 'bg-[#0D0D0D] text-white border-[#0D0D0D] cursor-default'
+                  : 'border-gray-200 text-gray-500 hover:border-[#0D0D0D] hover:text-[#0D0D0D]'
               }`}
             >
               {p.name}
@@ -1031,7 +1031,7 @@ export default function FinancesFreedomPage() {
           <p className="text-sm text-gray-400 mb-5">{t.finances.freedomEmptyBody}</p>
           <button
             onClick={() => setShowForm(true)}
-            className="px-5 py-2 bg-[#001A70] text-white text-sm rounded-xl hover:opacity-80 transition-opacity"
+            className="px-5 py-2 bg-[#0D0D0D] text-white text-sm rounded-xl hover:opacity-80 transition-opacity"
           >
             {t.finances.freedomCreatePlan}
           </button>
@@ -1072,7 +1072,7 @@ export default function FinancesFreedomPage() {
           <div className="grid grid-cols-3 gap-3">
             <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
               <p className="text-xs text-gray-500 mb-1">{t.finances.freedomGoal}</p>
-              <p className="text-base font-bold text-[#001A70]">{fmt(activePlan!.target_amount, currency, true)}</p>
+              <p className="text-base font-bold text-[#0D0D0D]">{fmt(activePlan!.target_amount, currency, true)}</p>
             </div>
             <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
               <p className="text-xs text-gray-500 mb-1">{t.finances.freedomPassive} {t.finances.freedomPerMonth}</p>
@@ -1120,7 +1120,7 @@ export default function FinancesFreedomPage() {
           {/* Chart */}
           {perfLoading && (
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-center justify-center h-40">
-              <div className="animate-spin h-6 w-6 rounded-full border-2 border-[#001A70] border-t-transparent" />
+              <div className="animate-spin h-6 w-6 rounded-full border-2 border-[#0D0D0D] border-t-transparent" />
             </div>
           )}
           {!perfLoading && chartData.length > 0 && (
@@ -1143,15 +1143,15 @@ export default function FinancesFreedomPage() {
                   <Legend wrapperStyle={{ fontSize: 11 }} />
                   <ReferenceLine
                     y={activePlan!.target_amount}
-                    stroke="#C9A227"
+                    stroke="#C8B89A"
                     strokeDasharray="4 2"
-                    label={{ value: t.finances.freedomGoal, position: 'insideTopRight', fontSize: 10, fill: '#C9A227' }}
+                    label={{ value: t.finances.freedomGoal, position: 'insideTopRight', fontSize: 10, fill: '#C8B89A' }}
                   />
                   <Line
                     type="monotone"
                     dataKey="planned"
                     name={t.finances.freedomPlanned}
-                    stroke="#001A70"
+                    stroke="#0D0D0D"
                     strokeWidth={2}
                     strokeDasharray="6 3"
                     dot={false}

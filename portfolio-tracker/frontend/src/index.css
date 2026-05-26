@@ -1,24 +1,39 @@
 @import "tailwindcss";
+@import "./styles/colors_and_type.css";
 
 @theme {
-  --color-brand-dark: #001A70;
-  --color-brand-blue: #1057C8;
-  --color-brand-orange: #FE5815;
-  --color-positive: #16a34a;
-  --color-negative: #DC2626;
+  /* Base palette */
+  --color-arvo-black:      #0D0D0D;
+  --color-arvo-gold:       #C8B89A;
+  --color-arvo-offwhite:   #F2EDE4;
+  --color-arvo-beige:      #E8DFD0;
+  --color-arvo-terracotta: #A36A52;
 
-  --color-class-fiis: #2E75B6;
-  --color-class-acoes: #1F4E79;
-  --color-class-cripto: #7030A0;
-  --color-class-rf: #375623;
-  --color-class-exterior: #843C0C;
-  --color-class-previdencia: #7F6000;
+  /* Accents — Brazilian birds */
+  --color-arvo-blue:   #1B4FD8;
+  --color-arvo-red:    #D63B2F;
+  --color-arvo-ocre:   #E8A020;
+  --color-arvo-green:  #1F8A5B;
+  --color-arvo-green-on-dark: #7BC9A4;
 
-  --font-sans: 'Inter', system-ui, sans-serif;
+  /* Asset-class colours */
+  --color-class-fiis:        #A36A52;
+  --color-class-acoes:       #1B4FD8;
+  --color-class-cripto:      #0D0D0D;
+  --color-class-rf:          #C8B89A;
+  --color-class-exterior:    #E8A020;
+  --color-class-previdencia: #D63B2F;
+
+  /* Fonts */
+  --font-display: 'Tenor Sans', 'Times New Roman', serif;
+  --font-serif:   'Playfair Display', Georgia, serif;
+  --font-sans:    'Tenor Sans', system-ui, sans-serif;
 }
 
 body {
-  @apply font-sans bg-gray-50 text-gray-900 antialiased;
+  @apply font-sans antialiased;
+  background-color: var(--arvo-offwhite);
+  color: var(--arvo-fg);
 }
 
 @keyframes slide-in {
@@ -27,5 +42,10 @@ body {
 }
 
 .animate-slide-in {
-  animation: slide-in 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  animation: slide-in 280ms cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
 }
+
+/* Scrollbar — thin gold tint */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(200,184,154,0.35); border-radius: 999px; }

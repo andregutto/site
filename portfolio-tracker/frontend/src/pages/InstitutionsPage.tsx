@@ -104,7 +104,7 @@ export default function InstitutionsPage() {
   function Field({ label, field, placeholder, textarea }: {
     label: string; field: keyof InstitutionProfile; placeholder?: string; textarea?: boolean
   }) {
-    const inputClass = "w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20"
+    const inputClass = "w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20"
     return (
       <div>
         <label className="block text-xs text-gray-500 mb-1">{label}</label>
@@ -187,7 +187,7 @@ export default function InstitutionsPage() {
                         <select
                           value={form.country}
                           onChange={e => setForm(prev => ({ ...prev, country: e.target.value }))}
-                          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#001A70]/20"
+                          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20"
                         >
                           {COUNTRY_OPTIONS.map(o => (
                             <option key={o.value} value={o.value}>{o.label}</option>
@@ -213,7 +213,7 @@ export default function InstitutionsPage() {
                       <button
                         onClick={() => handleSave(name)}
                         disabled={saving}
-                        className="px-4 py-2 bg-[#001A70] text-white rounded-xl text-sm font-semibold hover:bg-[#001A70]/90 disabled:opacity-50 transition-colors"
+                        className="px-4 py-2 bg-[#0D0D0D] text-white rounded-xl text-sm font-semibold hover:bg-[#0D0D0D]/90 disabled:opacity-50 transition-colors"
                       >
                         {saving ? 'Salvando...' : 'Salvar'}
                       </button>

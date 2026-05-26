@@ -9,23 +9,21 @@ import LanguageSelector from '../components/LanguageSelector'
 type Mode = 'login' | 'register' | 'forgot'
 type Currency = 'BRL' | 'USD' | 'EUR'
 
-// Main site design tokens
-const BLUE   = '#1B2F4E'
-const BG     = '#FAFAF8'
-const DARK   = '#111110'
-const GRAY   = '#6B6B67'
-const BORDER = '#E0DDD5'
-const BORDEAUX = '#8B1A2F'
+const BLUE   = '#0D0D0D'
+const BG     = '#F2EDE4'
+const DARK   = '#0D0D0D'
+const GRAY   = 'rgba(13,13,13,0.5)'
+const BORDER = 'rgba(13,13,13,0.1)'
+const GOLD   = '#C8B89A'
 
-const F_DISPLAY = "'Playfair Display', serif"
-const F_MONO    = "'DM Mono', monospace"
-const F_BODY    = "'DM Sans', sans-serif"
+const F_DISPLAY = "'Playfair Display', Georgia, serif"
+const F_SANS    = "'Tenor Sans', sans-serif"
 
 const LABEL_STYLE: React.CSSProperties = {
   display: 'block',
-  fontFamily: F_MONO,
+  fontFamily: F_SANS,
   fontSize: 10,
-  letterSpacing: '0.1em',
+  letterSpacing: '0.14em',
   textTransform: 'uppercase',
   color: GRAY,
   marginBottom: 6,
@@ -37,9 +35,9 @@ const INPUT_STYLE: React.CSSProperties = {
   borderRadius: 3,
   padding: '12px 16px',
   fontSize: 14,
-  fontFamily: F_BODY,
+  fontFamily: F_SANS,
   color: DARK,
-  background: '#fff',
+  background: BG,
   outline: 'none',
   transition: 'border-color 0.2s',
 }
@@ -158,16 +156,16 @@ export default function LoginPage() {
       {/* ── Painel esquerdo ── */}
       <div
         className="hidden lg:flex lg:w-[44%] xl:w-[46%] flex-shrink-0 flex-col relative"
-        style={{ background: 'linear-gradient(160deg, #0c1a2e 0%, #1B2F4E 100%)' }}
+        style={{ background: '#0D0D0D' }}
       >
         <div
-          className="absolute inset-0 bg-cover bg-center"
+          className="absolute inset-0 bg-cover bg-center arvo-photo"
           style={{
-            backgroundImage: `url('https://images.unsplash.com/photo-1507842217343-583bb7270b66?auto=format&fit=crop&w=1200&q=80')`,
-            opacity: 0.38,
+            backgroundImage: `url('/brand/imagery/02-capins-dourados.jpg')`,
+            opacity: 0.32,
           }}
         />
-        <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(10,20,40,0.65) 0%, transparent 55%)' }} />
+        <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(13,13,13,0.75) 0%, transparent 60%)' }} />
 
         <div className="relative z-10 flex flex-col h-full" style={{ padding: '44px 48px' }}>
           <a
@@ -175,9 +173,10 @@ export default function LoginPage() {
             target="_blank"
             rel="noopener noreferrer"
             className="hover:opacity-70 transition-opacity self-start"
-            style={{ fontFamily: F_DISPLAY, fontSize: 27, fontWeight: 400, color: '#fff', textDecoration: 'none', letterSpacing: '-0.2px' }}
+            style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 10 }}
           >
-            André Gutto
+            <img src="/brand/logo/arvo-symbol-offwhite.svg" width="22" height="22" alt="" />
+            <span style={{ fontFamily: F_SANS, fontSize: 15, letterSpacing: '0.30em', textIndent: '0.30em', color: '#fff', lineHeight: 1 }}>arvo</span>
           </a>
 
           <div className="mt-auto">
@@ -199,9 +198,10 @@ export default function LoginPage() {
             target="_blank"
             rel="noopener noreferrer"
             className="lg:hidden hover:opacity-70 transition-opacity"
-            style={{ fontFamily: F_DISPLAY, fontSize: 17, color: BLUE, textDecoration: 'none' }}
+            style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8 }}
           >
-            André Gutto
+            <img src="/brand/logo/arvo-symbol-black.svg" width="18" height="18" alt="" />
+            <span style={{ fontFamily: F_SANS, fontSize: 14, letterSpacing: '0.30em', textIndent: '0.30em', color: BLUE, lineHeight: 1 }}>arvo</span>
           </a>
           <div className="hidden lg:block" />
           <LanguageSelector />
@@ -214,14 +214,16 @@ export default function LoginPage() {
             {/* Tela de sucesso após cadastro */}
             {registered && (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 24, textAlign: 'center' }}>
-                <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#eff6ff', border: `1px solid ${BORDER}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28 }}>
-                  ✉️
+                <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(13,13,13,0.06)', border: `1px solid ${BORDER}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} style={{ width: 28, height: 28, color: BLUE }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+                  </svg>
                 </div>
                 <div>
                   <h1 style={{ fontFamily: F_DISPLAY, fontSize: '1.8rem', fontWeight: 400, color: DARK, marginBottom: 12 }}>
                     {l.registrationDone}
                   </h1>
-                  <p style={{ fontFamily: F_BODY, fontSize: 14, color: GRAY, lineHeight: 1.6 }}>
+                  <p style={{ fontFamily: F_SANS, fontSize: 14, color: GRAY, lineHeight: 1.6 }}>
                     {l.registrationDoneBody.replace('{email}', email)}
                   </p>
                 </div>
@@ -230,7 +232,7 @@ export default function LoginPage() {
                   onClick={() => { setRegistered(false); switchMode('login') }}
                   style={{
                     width: '100%', padding: '14px 24px', background: BLUE, color: BG,
-                    fontFamily: F_MONO, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase',
+                    fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase',
                     border: 'none', borderRadius: 3, cursor: 'pointer',
                   }}
                 >
@@ -243,8 +245,8 @@ export default function LoginPage() {
 
             {/* Eyebrow */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 28 }}>
-              <div style={{ width: 6, height: 6, borderRadius: '50%', background: BORDEAUX, flexShrink: 0 }} />
-              <span style={{ fontFamily: F_MONO, fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: GRAY }}>
+              <div style={{ width: 6, height: 6, borderRadius: '50%', background: GOLD, flexShrink: 0 }} />
+              <span style={{ fontFamily: F_SANS, fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: GRAY }}>
                 Portfolio Tracker
               </span>
             </div>
@@ -253,7 +255,7 @@ export default function LoginPage() {
             <h1 style={{ fontFamily: F_DISPLAY, fontSize: '2rem', fontWeight: 400, lineHeight: 1.1, letterSpacing: '-0.5px', color: DARK, marginBottom: 8 }}>
               {panelTitle}
             </h1>
-            <p style={{ fontFamily: F_BODY, fontSize: 14, color: GRAY, fontWeight: 300, marginBottom: 32, lineHeight: 1.6 }}>
+            <p style={{ fontFamily: F_SANS, fontSize: 14, color: GRAY, fontWeight: 300, marginBottom: 32, lineHeight: 1.6 }}>
               {mode === 'forgot' ? l.forgotDesc : l.subtitle}
             </p>
 
@@ -273,7 +275,7 @@ export default function LoginPage() {
                       border: 'none',
                       borderBottom: mode === m ? `2px solid ${BLUE}` : '2px solid transparent',
                       cursor: 'pointer',
-                      fontFamily: F_MONO,
+                      fontFamily: F_SANS,
                       fontSize: 11,
                       letterSpacing: '0.1em',
                       textTransform: 'uppercase',
@@ -291,7 +293,7 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={() => switchMode('login')}
-                style={{ fontFamily: F_MONO, fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: BLUE, background: 'none', border: 'none', cursor: 'pointer', marginBottom: 24, display: 'flex', alignItems: 'center', gap: 6 }}
+                style={{ fontFamily: F_SANS, fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: BLUE, background: 'none', border: 'none', cursor: 'pointer', marginBottom: 24, display: 'flex', alignItems: 'center', gap: 6 }}
               >
                 ← {l.backToLogin}
               </button>
@@ -345,7 +347,7 @@ export default function LoginPage() {
                     <button
                       type="button"
                       onClick={() => setShowPwd(v => !v)}
-                      style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: F_MONO, fontSize: 9, letterSpacing: '0.1em', textTransform: 'uppercase', color: GRAY }}
+                      style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: F_SANS, fontSize: 9, letterSpacing: '0.1em', textTransform: 'uppercase', color: GRAY }}
                       tabIndex={-1}
                     >
                       {showPwd ? l.hidePwd : l.showPwd}
@@ -355,7 +357,7 @@ export default function LoginPage() {
                     <button
                       type="button"
                       onClick={() => switchMode('forgot')}
-                      style={{ fontFamily: F_MONO, fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', color: GRAY, background: 'none', border: 'none', cursor: 'pointer', marginTop: 6, display: 'block', transition: 'color 0.2s' }}
+                      style={{ fontFamily: F_SANS, fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', color: GRAY, background: 'none', border: 'none', cursor: 'pointer', marginTop: 6, display: 'block', transition: 'color 0.2s' }}
                     >
                       {l.forgotPwd}
                     </button>
@@ -413,13 +415,13 @@ export default function LoginPage() {
                           style={{
                             flex: 1,
                             padding: '10px 0',
-                            fontFamily: F_MONO,
+                            fontFamily: F_SANS,
                             fontSize: 11,
                             letterSpacing: '0.08em',
                             border: `1px solid ${currency === c ? BLUE : BORDER}`,
                             borderRadius: 3,
                             cursor: 'pointer',
-                            background: currency === c ? BLUE : '#fff',
+                            background: currency === c ? BLUE : BG,
                             color: currency === c ? BG : GRAY,
                             transition: 'all 0.2s',
                           }}
@@ -438,7 +440,7 @@ export default function LoginPage() {
                       onChange={e => setAcceptTerms(e.target.checked)}
                       style={{ width: 16, height: 16, accentColor: BLUE, flexShrink: 0 }}
                     />
-                    <span style={{ fontFamily: F_BODY, fontSize: 13, color: GRAY }}>
+                    <span style={{ fontFamily: F_SANS, fontSize: 13, color: GRAY }}>
                       {l.acceptTerms}{' '}
                       <a
                         href="/terms"
@@ -454,12 +456,12 @@ export default function LoginPage() {
               )}
 
               {error && (
-                <p style={{ fontFamily: F_BODY, fontSize: 13, padding: '12px 16px', borderRadius: 3, background: '#fef2f2', color: '#991b1b', border: '1px solid #fecaca' }}>
+                <p style={{ fontFamily: F_SANS, fontSize: 13, padding: '12px 16px', borderRadius: 3, background: '#fef2f2', color: '#991b1b', border: '1px solid #fecaca' }}>
                   {error}
                 </p>
               )}
               {info && (
-                <p style={{ fontFamily: F_BODY, fontSize: 13, padding: '12px 16px', borderRadius: 3, background: '#eff6ff', color: '#1e3a5f', border: `1px solid ${BORDER}` }}>
+                <p style={{ fontFamily: F_SANS, fontSize: 13, padding: '12px 16px', borderRadius: 3, background: '#eff6ff', color: '#1e3a5f', border: `1px solid ${BORDER}` }}>
                   {info}
                 </p>
               )}
@@ -473,7 +475,7 @@ export default function LoginPage() {
                   padding: '14px 24px',
                   background: BLUE,
                   color: BG,
-                  fontFamily: F_MONO,
+                  fontFamily: F_SANS,
                   fontSize: 11,
                   letterSpacing: '0.1em',
                   textTransform: 'uppercase',
@@ -488,7 +490,7 @@ export default function LoginPage() {
                   transition: 'background 0.2s',
                   marginTop: 4,
                 }}
-                onMouseEnter={e => { if (!loading) (e.currentTarget as HTMLButtonElement).style.background = '#2A4A72' }}
+                onMouseEnter={e => { if (!loading) (e.currentTarget as HTMLButtonElement).style.background = '#333' }}
                 onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = BLUE }}
               >
                 {loading && (

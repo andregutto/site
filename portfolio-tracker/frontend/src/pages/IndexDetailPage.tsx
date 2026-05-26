@@ -219,7 +219,7 @@ export default function IndexDetailPage() {
                 key={p}
                 onClick={() => setPeriod(p)}
                 className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors ${
-                  period === p ? 'bg-white text-[#001A70] shadow-sm' : 'text-gray-400 hover:text-gray-700'
+                  period === p ? 'bg-white text-[#0D0D0D] shadow-sm' : 'text-gray-400 hover:text-gray-700'
                 }`}
               >
                 {p === '1y' ? '1 ano' : p === '3y' ? '3 anos' : '5 anos'}
@@ -231,7 +231,7 @@ export default function IndexDetailPage() {
               <button
                 onClick={() => setViewMode('price')}
                 className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors ${
-                  viewMode === 'price' ? 'bg-white text-[#001A70] shadow-sm' : 'text-gray-400 hover:text-gray-700'
+                  viewMode === 'price' ? 'bg-white text-[#0D0D0D] shadow-sm' : 'text-gray-400 hover:text-gray-700'
                 }`}
               >
                 Valor
@@ -239,7 +239,7 @@ export default function IndexDetailPage() {
               <button
                 onClick={() => setViewMode('pct_month')}
                 className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors ${
-                  viewMode === 'pct_month' ? 'bg-white text-[#001A70] shadow-sm' : 'text-gray-400 hover:text-gray-700'
+                  viewMode === 'pct_month' ? 'bg-white text-[#0D0D0D] shadow-sm' : 'text-gray-400 hover:text-gray-700'
                 }`}
               >
                 % mês
@@ -280,7 +280,7 @@ export default function IndexDetailPage() {
                   fill={
                     viewMode === 'pct_month'
                       ? pctColor(entry.pct_month)
-                      : '#001A70'
+                      : '#0D0D0D'
                   }
                   fillOpacity={viewMode === 'price' ? 0.75 : 0.85}
                 />

@@ -118,7 +118,7 @@ export default function PerformancePage() {
   }
   function DetailSortIcon({ col }: { col: DetailSortKey }) {
     if (detailSort !== col) return <span className="text-gray-300">↕</span>
-    return <span className="text-[#001A70]">{detailDir === 'asc' ? '↑' : '↓'}</span>
+    return <span className="text-[#0D0D0D]">{detailDir === 'asc' ? '↑' : '↓'}</span>
   }
 
   const benchmarkMap = new Map(
@@ -220,8 +220,8 @@ export default function PerformancePage() {
                 disabled
                   ? 'bg-white text-gray-300 border-gray-100 cursor-not-allowed'
                   : mode === key
-                    ? 'bg-[#001A70] text-white border-[#001A70]'
-                    : 'bg-white text-gray-500 border-gray-200 hover:border-[#001A70] hover:text-[#001A70]'
+                    ? 'bg-[#0D0D0D] text-white border-[#0D0D0D]'
+                    : 'bg-white text-gray-500 border-gray-200 hover:border-[#0D0D0D] hover:text-[#0D0D0D]'
               }`}
             >{label}</button>
           ))}
@@ -232,7 +232,7 @@ export default function PerformancePage() {
             onClick={handleRefresh}
             disabled={isLoading}
             title={t.performance.recalculateTitle}
-            className="px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-200 text-gray-500 hover:border-[#001A70] hover:text-[#001A70] transition-colors disabled:opacity-40"
+            className="px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-200 text-gray-500 hover:border-[#0D0D0D] hover:text-[#0D0D0D] transition-colors disabled:opacity-40"
           >
             {isLoading ? t.performance.calculating : t.performance.recalculate}
           </button>
@@ -299,7 +299,7 @@ export default function PerformancePage() {
                       contentStyle={{ borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 12 }}
                     />
                     <Legend wrapperStyle={{ fontSize: 11 }} />
-                    <Line type="monotone" dataKey="portfolio" name={t.performance.wallet}  stroke="#001A70" strokeWidth={2}   dot={{ r: 3, fill: '#001A70' }} activeDot={{ r: 5 }} />
+                    <Line type="monotone" dataKey="portfolio" name={t.performance.wallet}  stroke="#0D0D0D" strokeWidth={2}   dot={{ r: 3, fill: '#0D0D0D' }} activeDot={{ r: 5 }} />
                     {showCDI   && <Line type="monotone" dataKey="cdi"   name="CDI"    stroke="#16a34a" strokeWidth={1.5} dot={false} strokeDasharray="4 2" connectNulls />}
                     {showIBOV  && <Line type="monotone" dataKey="ibov"  name="IBOV"   stroke="#7c3aed" strokeWidth={1.5} dot={false} strokeDasharray="4 2" connectNulls />}
                     {showSP500 && <Line type="monotone" dataKey="sp500" name="S&P500" stroke="#f59e0b" strokeWidth={1.5} dot={false} strokeDasharray="4 2" connectNulls />}
@@ -318,7 +318,7 @@ export default function PerformancePage() {
           {chartData.length > 0 && (
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
               {[
-                { label: t.performance.wallet, value: portfolioAccum, text: 'text-[#001A70]' },
+                { label: t.performance.wallet, value: portfolioAccum, text: 'text-[#0D0D0D]' },
                 { label: 'CDI',       value: cdiAccum,       text: 'text-green-600' },
                 { label: 'IBOV',      value: ibovAccum,      text: 'text-violet-700' },
                 { label: 'S&P500',    value: sp500Accum,     text: 'text-amber-600' },
@@ -442,10 +442,10 @@ export default function PerformancePage() {
                                           <tr
                                             key={d.asset_id}
                                             onClick={() => navigate(`/assets/${d.asset_id}`)}
-                                            className="cursor-pointer hover:bg-[#001A70]/5 transition-colors rounded"
+                                            className="cursor-pointer hover:bg-[#0D0D0D]/5 transition-colors rounded"
                                           >
                                             <td className="py-1.5 text-gray-700">
-                                              <span className="font-semibold hover:text-[#001A70] transition-colors">{d.code}</span>
+                                              <span className="font-semibold hover:text-[#0D0D0D] transition-colors">{d.code}</span>
                                               {d.name && d.name !== d.code && (
                                                 <span className="text-gray-400 ml-1 truncate max-w-[120px] inline-block align-bottom">{d.name}</span>
                                               )}

@@ -22,8 +22,8 @@ export default function AllocationChart({ data }: Props) {
   }
 
   return (
-    <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
-      <h2 className="font-semibold text-gray-800 mb-4">{t.dashboard.allocationByClass}</h2>
+    <div className="rounded-2xl p-6" style={{ background: 'var(--arvo-offwhite)', border: '1px solid var(--arvo-border-soft)' }}>
+      <h2 className="mb-4 text-sm" style={{ fontFamily: "'Tenor Sans', sans-serif", color: 'var(--arvo-black)', letterSpacing: '0.06em' }}>{t.dashboard.allocationByClass}</h2>
       <div className="flex flex-col lg:flex-row gap-6 items-center">
         <div className="w-full lg:w-64 h-64">
           <ResponsiveContainer width="100%" height="100%">
@@ -44,7 +44,7 @@ export default function AllocationChart({ data }: Props) {
               </Pie>
               <Tooltip
                 formatter={(value) => [fmtBRL(Number(value)), t.common.value]}
-                contentStyle={{ borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 12 }}
+                contentStyle={{ borderRadius: 8, border: '1px solid var(--arvo-border-soft)', background: 'var(--arvo-offwhite)', fontSize: 12, fontFamily: "'Tenor Sans', sans-serif" }}
               />
             </PieChart>
           </ResponsiveContainer>
@@ -53,22 +53,22 @@ export default function AllocationChart({ data }: Props) {
         <div className="flex-1 w-full space-y-2">
           {data.map((item) => (
             <div key={item.name} className="flex items-center gap-3">
-              <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: item.color }} />
+              <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: item.color }} />
               <div className="flex-1 min-w-0">
                 <div className="flex justify-between items-baseline">
-                  <span className="text-sm text-gray-700 truncate">{resolveClassName(item)}</span>
-                  <span className="text-sm font-medium text-gray-900 ml-2 flex-shrink-0">
+                  <span className="text-sm truncate" style={{ color: 'rgba(13,13,13,0.7)' }}>{resolveClassName(item)}</span>
+                  <span className="text-sm ml-2 flex-shrink-0" style={{ fontFamily: "'Tenor Sans', sans-serif", color: 'var(--arvo-black)' }}>
                     {item.pct.toFixed(1)}%
                   </span>
                 </div>
-                <div className="mt-0.5 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                <div className="mt-0.5 h-1 rounded-full overflow-hidden" style={{ background: 'rgba(13,13,13,0.07)' }}>
                   <div
                     className="h-full rounded-full transition-all"
                     style={{ width: `${item.pct}%`, backgroundColor: item.color }}
                   />
                 </div>
               </div>
-              <span className="text-xs text-gray-400 flex-shrink-0 w-24 text-right">
+              <span className="text-xs flex-shrink-0 w-24 text-right" style={{ color: 'rgba(13,13,13,0.4)', fontFamily: "'Tenor Sans', sans-serif" }}>
                 {fmtBRL(item.value_brl)}
               </span>
             </div>

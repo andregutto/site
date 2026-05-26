@@ -91,7 +91,7 @@ export default function InstitutionSelect({ value, onChange, placeholder = 'Banc
     return (
       <button
         type="button"
-        className="w-full text-left px-3 py-2 text-sm hover:bg-blue-50 hover:text-[#001A70] transition-colors"
+        className="w-full text-left px-3 py-2 text-sm hover:bg-blue-50 hover:text-[#0D0D0D] transition-colors"
         onMouseDown={() => select(name)}
       >
         {name}
@@ -113,7 +113,7 @@ export default function InstitutionSelect({ value, onChange, placeholder = 'Banc
           if (e.key === 'Enter' && query) { onChange(query); setOpen(false) }
           if (e.key === 'Escape') setOpen(false)
         }}
-        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20"
+        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20"
       />
 
       {/* Dropdown com position:fixed para escapar de qualquer overflow:hidden */}
@@ -149,7 +149,7 @@ export default function InstitutionSelect({ value, onChange, placeholder = 'Banc
           {showAdd && (
             <button
               type="button"
-              className="w-full text-left px-3 py-2 text-sm text-[#001A70] font-medium hover:bg-blue-50 border-t border-gray-100 transition-colors"
+              className="w-full text-left px-3 py-2 text-sm text-[#0D0D0D] font-medium hover:bg-blue-50 border-t border-gray-100 transition-colors"
               onMouseDown={() => select(query)}
             >
               Adicionar "{query}"

@@ -187,33 +187,32 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
   const needsCount     = assets.filter(a => a.needs_manual).length
 
   function SortIcon({ col }: { col: SortKey }) {
-    if (sortKey !== col) return <span className="text-gray-300 ml-1">↕</span>
-    return <span className="text-[#001A70] ml-1">{sortDir === 'asc' ? '↑' : '↓'}</span>
+    if (sortKey !== col) return <span className="ml-1" style={{ color: 'rgba(13,13,13,0.2)' }}>↕</span>
+    return <span className="ml-1" style={{ color: 'var(--arvo-black)' }}>{sortDir === 'asc' ? '↑' : '↓'}</span>
   }
 
   return (
-    <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
+    <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--arvo-offwhite)', border: '1px solid var(--arvo-border-soft)' }}>
       {/* Toolbar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 border-b border-gray-100">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4" style={{ borderBottom: '1px solid var(--arvo-border-soft)' }}>
         <div className="flex items-center gap-2 flex-wrap">
-          <h2 className="font-semibold text-gray-800">{d.assetsTitle} ({assets.length})</h2>
+          <h2 className="text-sm" style={{ fontFamily: "'Tenor Sans', sans-serif", color: 'var(--arvo-black)', letterSpacing: '0.06em' }}>{d.assetsTitle} ({assets.length})</h2>
           {needsCount > 0 && (
-            <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">
+            <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: 'rgba(232,160,32,0.12)', color: 'var(--arvo-ocre)' }}>
               {needsCount} {d.awaitingValue}
             </span>
           )}
         </div>
         <div className="flex items-center gap-2 flex-wrap justify-end">
-          <div className="flex items-center gap-1 bg-gray-50 border border-gray-200 rounded-lg p-0.5">
+          <div className="flex items-center rounded-full p-0.5 gap-0.5" style={{ background: 'rgba(13,13,13,0.07)' }}>
             {PERIOD_OPTIONS.map(({ key, label }) => (
               <button
                 key={key}
                 onClick={() => setPeriod(key)}
-                className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors ${
-                  period === key
-                    ? 'bg-white text-[#001A70] shadow-sm border border-gray-200'
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
+                className="px-2.5 py-1 text-xs rounded-full transition-all"
+                style={period === key
+                  ? { fontFamily: "'Tenor Sans', sans-serif", background: 'var(--arvo-black)', color: 'var(--arvo-offwhite)', letterSpacing: '0.06em' }
+                  : { fontFamily: "'Tenor Sans', sans-serif", color: 'rgba(13,13,13,0.45)', letterSpacing: '0.06em' }}
               >{label}</button>
             ))}
           </div>
@@ -222,7 +221,8 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
             placeholder={d.filterPlaceholder}
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm w-32 sm:w-40 focus:outline-none focus:ring-2 focus:ring-[#001A70]/20"
+            className="rounded-lg px-3 py-1.5 text-sm w-32 sm:w-40 focus:outline-none bg-transparent"
+            style={{ border: '1px solid var(--arvo-border-soft)', color: 'var(--arvo-black)' }}
           />
         </div>
       </div>
@@ -230,21 +230,21 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
       {/* Desktop table */}
       <div className="hidden sm:block overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
+          <thead style={{ background: 'rgba(232,223,208,0.45)' }}>
             <tr>
-              <th className="px-4 py-3 text-left cursor-pointer hover:text-gray-700 w-[36%]" onClick={() => toggleSort('code')}>
+              <th className="px-4 py-2.5 text-left cursor-pointer w-[36%]" style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.45)' }} onClick={() => toggleSort('code')}>
                 {d.assetsTitle} <SortIcon col="code" />
               </th>
-              <th className="px-4 py-3 text-right">{d.colHoldings}</th>
-              <th className="px-4 py-3 text-right">{d.colPrice}</th>
-              <th className="px-4 py-3 text-right">{d.colInvested}</th>
-              <th className="px-4 py-3 text-right cursor-pointer hover:text-gray-700" onClick={() => toggleSort('value_brl')}>
+              <th className="px-4 py-2.5 text-right" style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.45)' }}>{d.colHoldings}</th>
+              <th className="px-4 py-2.5 text-right" style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.45)' }}>{d.colPrice}</th>
+              <th className="px-4 py-2.5 text-right" style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.45)' }}>{d.colInvested}</th>
+              <th className="px-4 py-2.5 text-right cursor-pointer" style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.45)' }} onClick={() => toggleSort('value_brl')}>
                 {d.colValue} {currency} <SortIcon col="value_brl" />
               </th>
-              <th className="px-4 py-3 text-right cursor-pointer hover:text-gray-700" onClick={() => toggleSort('pct')}>
+              <th className="px-4 py-2.5 text-right cursor-pointer" style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.45)' }} onClick={() => toggleSort('pct')}>
                 {d.colPct} <SortIcon col="pct" />
               </th>
-              <th className="px-4 py-3 text-right text-[#001A70] cursor-pointer hover:text-[#001A70]/70" onClick={() => toggleSort('return')}>
+              <th className="px-4 py-2.5 text-right cursor-pointer" style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--arvo-black)' }} onClick={() => toggleSort('return')}>
                 {d.colReturn} <SortIcon col="return" />
               </th>
             </tr>
@@ -277,7 +277,8 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
                   {/* Group header row - columns aligned with table */}
                   <tr
                     onClick={() => toggleExpand(group.name)}
-                    className="bg-gray-50/80 border-t border-gray-100 cursor-pointer hover:bg-gray-100/60 transition-colors select-none"
+                    className="cursor-pointer select-none transition-colors"
+                    style={{ background: 'rgba(232,223,208,0.35)', borderTop: '1px solid var(--arvo-border-soft)' }}
                   >
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
@@ -288,8 +289,8 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
                             ? <span className="text-base leading-none shrink-0">{icon}</span>
                             : <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: group.color }} />
                         })()}
-                        <span className="font-bold text-gray-900 text-base tracking-tight">{resolveClassName(group.name, group.name_key)}</span>
-                        <span className="text-xs text-gray-400 font-normal">
+                        <span className="text-sm tracking-tight" style={{ fontFamily: "'Tenor Sans', sans-serif", fontWeight: 600, color: 'var(--arvo-black)' }}>{resolveClassName(group.name, group.name_key)}</span>
+                        <span className="text-xs" style={{ color: 'rgba(13,13,13,0.4)' }}>
                           {group.assets.length} {group.assets.length === 1 ? d.asset : d.assets}
                         </span>
                       </div>
@@ -297,21 +298,21 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
                     <td />
                     <td />
                     <td />
-                    <td className="px-4 py-3 text-right font-bold text-gray-900 text-base tabular-nums">
+                    <td className="px-4 py-3 text-right tabular-nums" style={{ fontFamily: "'Tenor Sans', sans-serif", fontWeight: 600, color: 'var(--arvo-black)' }}>
                       {fmt(group.total)}
                     </td>
-                    <td className="px-4 py-3 text-right text-sm text-gray-500 font-medium">
+                    <td className="px-4 py-3 text-right text-sm" style={{ color: 'rgba(13,13,13,0.5)' }}>
                       {groupPct.toFixed(1)}%
                     </td>
                     <td className="px-4 py-3 text-right">
                       {returnsLoading ? (
-                        <span className="text-gray-200 text-xs">...</span>
+                        <span className="text-xs" style={{ color: 'rgba(13,13,13,0.25)' }}>...</span>
                       ) : groupRentab !== null ? (
-                        <span className={`text-xs font-semibold ${groupRentab >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        <span className="text-xs font-semibold" style={{ color: groupRentab >= 0 ? 'var(--arvo-green)' : 'var(--arvo-red)' }}>
                           {groupRentab >= 0 ? '+' : ''}{groupRentab.toFixed(2)}%
                         </span>
                       ) : (
-                        <span className="text-gray-300 text-xs">—</span>
+                        <span className="text-xs" style={{ color: 'rgba(13,13,13,0.25)' }}>—</span>
                       )}
                     </td>
                   </tr>
@@ -323,13 +324,10 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
                       <tr
                         key={asset.id}
                         onClick={() => onAssetClick?.(asset)}
-                        className={`group border-t border-gray-50 transition-colors ${
-                          onAssetClick ? 'cursor-pointer' : ''
-                        } ${
-                          asset.needs_manual
-                            ? 'bg-amber-50/50 hover:bg-amber-50'
-                            : 'hover:bg-gray-50'
-                        }`}
+                        className={`group transition-colors ${onAssetClick ? 'cursor-pointer' : ''}`}
+                        style={{ borderTop: '1px solid var(--arvo-border-soft)', background: asset.needs_manual ? 'rgba(232,160,32,0.04)' : 'transparent' }}
+                        onMouseEnter={e => { if (!asset.needs_manual) e.currentTarget.style.background = 'rgba(13,13,13,0.02)' }}
+                        onMouseLeave={e => { e.currentTarget.style.background = asset.needs_manual ? 'rgba(232,160,32,0.04)' : 'transparent' }}
                       >
                         <td className="px-4 py-3 pl-10">
                           <div className="flex items-center gap-1">
@@ -340,8 +338,8 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
                               />
                             )}
                             <div>
-                              <div className="font-medium text-gray-900">{asset.code}</div>
-                              <div className="text-xs text-gray-400 truncate max-w-[200px]">{asset.name}</div>
+                              <div className="font-medium" style={{ color: 'var(--arvo-black)' }}>{asset.code}</div>
+                              <div className="text-xs truncate max-w-[200px]" style={{ color: 'rgba(13,13,13,0.45)' }}>{asset.name}</div>
                               {!asset.needs_manual && asset.source === 'manual' && (() => {
                                 if (!asset.last_manual_date) return null
                                 const days = Math.floor((Date.now() - new Date(asset.last_manual_date).getTime()) / 86_400_000)
@@ -355,47 +353,45 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
                             </div>
                           </div>
                         </td>
-                        <td className="px-4 py-3 text-right text-gray-600">
+                        <td className="px-4 py-3 text-right" style={{ color: 'rgba(13,13,13,0.6)' }}>
                           {asset.holdings != null ? fmtNumber(asset.holdings, 6) : '—'}
                         </td>
-                        {/* Preço atual + PM subtext */}
-                        <td className="px-4 py-3 text-right text-gray-600">
+                        <td className="px-4 py-3 text-right" style={{ color: 'rgba(13,13,13,0.6)' }}>
                           {asset.price != null ? (
                             <div>
                               <div>{asset.currency} {fmtNumber(asset.price, 2)}</div>
                               {asset.invested_brl != null && asset.holdings != null && asset.holdings > 0 && (
-                                <div className="text-[11px] text-gray-400">
+                                <div className="text-[11px]" style={{ color: 'rgba(13,13,13,0.4)' }}>
                                   PM: {fmt(asset.invested_brl / asset.holdings)}
                                 </div>
                               )}
                             </div>
                           ) : '—'}
                         </td>
-                        {/* Investido */}
-                        <td className="px-4 py-3 text-right text-gray-600">
+                        <td className="px-4 py-3 text-right" style={{ color: 'rgba(13,13,13,0.6)' }}>
                           {asset.needs_manual && asset.invested_brl == null ? (
-                            <span className="text-xs text-amber-600 font-medium">{d.enterValue}</span>
+                            <span className="text-xs font-medium" style={{ color: 'var(--arvo-ocre)' }}>{d.enterValue}</span>
                           ) : asset.invested_brl != null ? (
                             fmt(asset.invested_brl)
                           ) : '—'}
                         </td>
                         <td className="px-4 py-3 text-right font-medium">
                           {asset.needs_manual ? (
-                            <span className="text-amber-500 text-xs">—</span>
+                            <span className="text-xs" style={{ color: 'rgba(13,13,13,0.35)' }}>—</span>
                           ) : (
-                            <span className="text-gray-900">{fmt(asset.value_brl)}</span>
+                            <span style={{ color: 'var(--arvo-black)' }}>{fmt(asset.value_brl)}</span>
                           )}
                         </td>
-                        <td className="px-4 py-3 text-right text-gray-500">
+                        <td className="px-4 py-3 text-right" style={{ color: 'rgba(13,13,13,0.5)' }}>
                           {asset.needs_manual || portfolioTotal === 0
                             ? '—'
                             : ((asset.value_brl / portfolioTotal) * 100).toFixed(1) + '%'}
                         </td>
                         <td className="px-4 py-3 text-right">
                           {returnsLoading ? (
-                            <span className="text-gray-200 text-xs">...</span>
+                            <span className="text-xs" style={{ color: 'rgba(13,13,13,0.2)' }}>...</span>
                           ) : ret != null ? (
-                            <span className={`text-xs font-semibold ${ret >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            <span className="text-xs font-semibold" style={{ color: ret >= 0 ? 'var(--arvo-green)' : 'var(--arvo-red)' }}>
                               {ret >= 0 ? '+' : ''}{ret.toFixed(2)}%
                             </span>
                           ) : asset.invested_brl != null && asset.invested_brl > 0 && asset.value_brl > 0 ? (
@@ -403,7 +399,8 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
                               const r = (asset.value_brl - asset.invested_brl) / asset.invested_brl * 100
                               return (
                                 <span
-                                  className={`text-xs font-semibold ${r >= 0 ? 'text-green-600' : 'text-red-600'}`}
+                                  className="text-xs font-semibold"
+                                  style={{ color: r >= 0 ? 'var(--arvo-green)' : 'var(--arvo-red)' }}
                                   title="Rentabilidade total desde o primeiro aporte"
                                 >
                                   {r >= 0 ? '+' : ''}{r.toFixed(2)}%
@@ -411,7 +408,7 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
                               )
                             })()
                           ) : (
-                            <span className="text-gray-300 text-xs">—</span>
+                            <span className="text-xs" style={{ color: 'rgba(13,13,13,0.2)' }}>—</span>
                           )}
                         </td>
                       </tr>
@@ -421,24 +418,24 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
               )
             })}
           </tbody>
-          <tfoot className="bg-gray-50 border-t border-gray-200">
+          <tfoot style={{ background: 'rgba(232,223,208,0.45)', borderTop: '1px solid var(--arvo-border-soft)' }}>
             <tr>
-              <td colSpan={4} className="px-4 py-3 text-sm font-semibold text-gray-700">{t.common.total}</td>
-              <td className="px-4 py-3 text-right font-bold text-gray-900">{fmt(portfolioTotal)}</td>
-              <td className="px-4 py-3 text-right text-gray-500">100%</td>
+              <td colSpan={4} className="px-4 py-3 text-sm" style={{ fontFamily: "'Tenor Sans', sans-serif", color: 'var(--arvo-black)', letterSpacing: '0.06em' }}>{t.common.total}</td>
+              <td className="px-4 py-3 text-right" style={{ fontFamily: "'Tenor Sans', sans-serif", fontWeight: 600, color: 'var(--arvo-black)' }}>{fmt(portfolioTotal)}</td>
+              <td className="px-4 py-3 text-right" style={{ color: 'rgba(13,13,13,0.5)' }}>100%</td>
               <td className="px-4 py-3" />
             </tr>
           </tfoot>
         </table>
         {groups.length === 0 && (
-          <p className="text-center text-gray-400 py-8 text-sm">{d.noAssets}</p>
+          <p className="text-center py-8 text-sm" style={{ color: 'rgba(13,13,13,0.4)' }}>{d.noAssets}</p>
         )}
       </div>
 
       {/* Mobile cards */}
-      <div className="sm:hidden divide-y divide-gray-100">
+      <div className="sm:hidden" style={{ borderTop: '1px solid var(--arvo-border-soft)' }}>
         {groups.length === 0 && (
-          <p className="text-center text-gray-400 py-8 text-sm">{d.noAssets}</p>
+          <p className="text-center py-8 text-sm" style={{ color: 'rgba(13,13,13,0.4)' }}>{d.noAssets}</p>
         )}
         {groups.map(group => {
           const isOpen   = expanded.has(group.name)
@@ -467,7 +464,8 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
               {/* Group header */}
               <div
                 onClick={() => toggleExpand(group.name)}
-                className="flex items-center gap-2 px-4 py-3 bg-gray-50/80 border-t border-gray-100 cursor-pointer select-none"
+                className="flex items-center gap-2 px-4 py-3 cursor-pointer select-none"
+                style={{ background: 'rgba(232,223,208,0.35)', borderTop: '1px solid var(--arvo-border-soft)' }}
               >
                 <ChevronIcon open={isOpen} />
                 {(() => {
@@ -476,19 +474,19 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
                     ? <span className="text-base leading-none shrink-0">{icon}</span>
                     : <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: group.color }} />
                 })()}
-                <span className="font-bold text-gray-900 flex-1 truncate text-sm">{resolveClassName(group.name, group.name_key)}</span>
+                <span className="flex-1 truncate text-sm" style={{ fontFamily: "'Tenor Sans', sans-serif", fontWeight: 600, color: 'var(--arvo-black)' }}>{resolveClassName(group.name, group.name_key)}</span>
                 {!returnsLoading && groupRentabM !== null && (
-                  <span className={`text-xs font-semibold ${groupRentabM >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  <span className="text-xs font-semibold" style={{ color: groupRentabM >= 0 ? 'var(--arvo-green)' : 'var(--arvo-red)' }}>
                     {groupRentabM >= 0 ? '+' : ''}{groupRentabM.toFixed(2)}%
                   </span>
                 )}
-                <span className="font-bold text-gray-900 text-sm tabular-nums">{fmt(group.total)}</span>
-                <span className="text-xs text-gray-400 w-10 text-right">{groupPct.toFixed(1)}%</span>
+                <span className="text-sm tabular-nums" style={{ fontFamily: "'Tenor Sans', sans-serif", fontWeight: 600, color: 'var(--arvo-black)' }}>{fmt(group.total)}</span>
+                <span className="text-xs w-10 text-right" style={{ color: 'rgba(13,13,13,0.4)' }}>{groupPct.toFixed(1)}%</span>
               </div>
 
               {/* Asset cards */}
               {isOpen && (
-                <div className="divide-y divide-gray-50">
+                <div>
                   {group.assets.map(asset => {
                     const isCardExpanded = expandedAssets.has(asset.id)
                     const ret = returns?.[asset.id] ?? null
@@ -500,7 +498,8 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
                     return (
                       <div
                         key={asset.id}
-                        className={`group px-4 py-3 ${asset.needs_manual ? 'bg-amber-50/50' : 'bg-white'} ${onAssetClick ? 'cursor-pointer' : ''}`}
+                        className={`group px-4 py-3 ${onAssetClick ? 'cursor-pointer' : ''}`}
+                        style={{ background: asset.needs_manual ? 'rgba(232,160,32,0.04)' : 'transparent', borderTop: '1px solid var(--arvo-border-soft)' }}
                         onClick={() => onAssetClick?.(asset)}
                       >
                         <div className="flex items-center gap-2">
@@ -511,23 +510,24 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
                             />
                           )}
                           <div className="flex-1 min-w-0">
-                            <div className="font-medium text-gray-900 text-sm">{asset.code}</div>
-                            <div className="text-xs text-gray-400 truncate">{asset.name}</div>
+                            <div className="font-medium text-sm" style={{ color: 'var(--arvo-black)' }}>{asset.code}</div>
+                            <div className="text-xs truncate" style={{ color: 'rgba(13,13,13,0.45)' }}>{asset.name}</div>
                           </div>
                           <div className="flex items-center gap-2 shrink-0">
                             <div className="text-right">
-                              <div className="text-sm font-medium text-gray-900">
+                              <div className="text-sm font-medium" style={{ color: 'var(--arvo-black)' }}>
                                 {asset.needs_manual ? '—' : fmt(asset.value_brl)}
                               </div>
                               {!returnsLoading && displayRet != null && (
-                                <div className={`text-xs font-semibold ${displayRet >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                <div className="text-xs font-semibold" style={{ color: displayRet >= 0 ? 'var(--arvo-green)' : 'var(--arvo-red)' }}>
                                   {displayRet >= 0 ? '+' : ''}{displayRet.toFixed(2)}%
                                 </div>
                               )}
                             </div>
                             <button
                               onClick={e => { e.stopPropagation(); toggleAssetExpand(asset.id) }}
-                              className="p-1 text-gray-400 shrink-0"
+                              className="p-1 shrink-0"
+                              style={{ color: 'rgba(13,13,13,0.35)' }}
                               aria-label="Expandir detalhes"
                             >
                               <svg
@@ -540,42 +540,42 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
                           </div>
                         </div>
 
-                        {/* Inline expanded props */}
                         {isCardExpanded && (
                           <div
-                            className="mt-2 pt-2 border-t border-gray-100 grid grid-cols-2 gap-x-6 gap-y-1 text-xs"
+                            className="mt-2 pt-2 grid grid-cols-2 gap-x-6 gap-y-1 text-xs"
+                            style={{ borderTop: '1px solid var(--arvo-border-soft)' }}
                             onClick={e => e.stopPropagation()}
                           >
                             {asset.holdings != null && (
                               <div className="flex justify-between gap-2">
-                                <span className="text-gray-400">{d.colHoldings}</span>
-                                <span className="text-gray-700 font-medium tabular-nums">{fmtNumber(asset.holdings, 6)}</span>
+                                <span style={{ color: 'rgba(13,13,13,0.45)' }}>{d.colHoldings}</span>
+                                <span className="font-medium tabular-nums" style={{ color: 'var(--arvo-black)' }}>{fmtNumber(asset.holdings, 6)}</span>
                               </div>
                             )}
                             {asset.price != null && (
                               <div className="flex justify-between gap-2">
-                                <span className="text-gray-400">{d.colPrice}</span>
-                                <span className="text-gray-700 font-medium tabular-nums">{asset.currency} {fmtNumber(asset.price, 2)}</span>
+                                <span style={{ color: 'rgba(13,13,13,0.45)' }}>{d.colPrice}</span>
+                                <span className="font-medium tabular-nums" style={{ color: 'var(--arvo-black)' }}>{asset.currency} {fmtNumber(asset.price, 2)}</span>
                               </div>
                             )}
                             {asset.invested_brl != null && asset.holdings != null && asset.holdings > 0 && (
                               <div className="flex justify-between gap-2">
-                                <span className="text-gray-400">PM</span>
-                                <span className="text-gray-700 font-medium tabular-nums">{fmt(asset.invested_brl / asset.holdings)}</span>
+                                <span style={{ color: 'rgba(13,13,13,0.45)' }}>PM</span>
+                                <span className="font-medium tabular-nums" style={{ color: 'var(--arvo-black)' }}>{fmt(asset.invested_brl / asset.holdings)}</span>
                               </div>
                             )}
                             <div className="flex justify-between gap-2">
-                              <span className="text-gray-400">{d.colInvested}</span>
-                              <span className="text-gray-700 font-medium tabular-nums">
+                              <span style={{ color: 'rgba(13,13,13,0.45)' }}>{d.colInvested}</span>
+                              <span className="font-medium tabular-nums" style={{ color: 'var(--arvo-black)' }}>
                                 {asset.needs_manual && asset.invested_brl == null
-                                  ? <span className="text-amber-600">{d.enterValue}</span>
+                                  ? <span style={{ color: 'var(--arvo-ocre)' }}>{d.enterValue}</span>
                                   : asset.invested_brl != null ? fmt(asset.invested_brl) : '—'}
                               </span>
                             </div>
                             {!asset.needs_manual && portfolioTotal > 0 && (
                               <div className="flex justify-between gap-2">
-                                <span className="text-gray-400">{d.colPct}</span>
-                                <span className="text-gray-700 font-medium">{((asset.value_brl / portfolioTotal) * 100).toFixed(1)}%</span>
+                                <span style={{ color: 'rgba(13,13,13,0.45)' }}>{d.colPct}</span>
+                                <span className="font-medium" style={{ color: 'var(--arvo-black)' }}>{((asset.value_brl / portfolioTotal) * 100).toFixed(1)}%</span>
                               </div>
                             )}
                           </div>
@@ -590,9 +590,9 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
         })}
 
         {groups.length > 0 && (
-          <div className="flex justify-between items-center px-4 py-3 bg-gray-50 border-t border-gray-200">
-            <span className="text-sm font-semibold text-gray-700">{t.common.total}</span>
-            <span className="font-bold text-gray-900">{fmt(portfolioTotal)}</span>
+          <div className="flex justify-between items-center px-4 py-3" style={{ background: 'rgba(232,223,208,0.45)', borderTop: '1px solid var(--arvo-border-soft)' }}>
+            <span className="text-sm" style={{ fontFamily: "'Tenor Sans', sans-serif", color: 'var(--arvo-black)', letterSpacing: '0.06em' }}>{t.common.total}</span>
+            <span style={{ fontFamily: "'Tenor Sans', sans-serif", fontWeight: 600, color: 'var(--arvo-black)' }}>{fmt(portfolioTotal)}</span>
           </div>
         )}
       </div>

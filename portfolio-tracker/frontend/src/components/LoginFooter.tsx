@@ -25,18 +25,18 @@ export default function LoginFooter() {
     <footer className="text-center space-y-2 pb-4">
       <p className="text-xs text-gray-400">{f.copyright}</p>
       <div className="flex items-center justify-center gap-3 text-xs text-gray-400">
-        <Link to="/privacy" className="hover:text-[#001A70] transition-colors">{f.privacy}</Link>
+        <Link to="/privacy" className="hover:text-[#0D0D0D] transition-colors">{f.privacy}</Link>
         <span>·</span>
-        <Link to="/terms" className="hover:text-[#001A70] transition-colors">{f.terms}</Link>
+        <Link to="/terms" className="hover:text-[#0D0D0D] transition-colors">{f.terms}</Link>
         <span>·</span>
-        <a href="mailto:andre@andregutto.com" className="hover:text-[#001A70] transition-colors">{f.contact}</a>
+        <a href="mailto:andre@andregutto.com" className="hover:text-[#0D0D0D] transition-colors">{f.contact}</a>
       </div>
       <div className="flex items-center justify-center gap-3 text-gray-300">
         <a
           href="https://www.instagram.com/andregutto/"
           target="_blank"
           rel="noopener noreferrer"
-          className="hover:text-[#001A70] transition-colors"
+          className="hover:text-[#0D0D0D] transition-colors"
           aria-label="Instagram"
         >
           <IconInstagram />
@@ -45,7 +45,7 @@ export default function LoginFooter() {
           href="https://www.youtube.com/@andregutto"
           target="_blank"
           rel="noopener noreferrer"
-          className="hover:text-[#001A70] transition-colors"
+          className="hover:text-[#0D0D0D] transition-colors"
           aria-label="YouTube"
         >
           <IconYouTube />

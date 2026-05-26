@@ -123,7 +123,7 @@ export default function IndicesPage() {
                 <button
                   key={idx.code}
                   onClick={() => navigate(`/indices/${idx.code}`)}
-                  className="text-left bg-white border border-gray-100 rounded-2xl p-4 hover:border-[#001A70]/30 hover:shadow-sm transition-all"
+                  className="text-left bg-white border border-gray-100 rounded-2xl p-4 hover:border-[#0D0D0D]/30 hover:shadow-sm transition-all"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">

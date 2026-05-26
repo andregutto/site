@@ -22,7 +22,7 @@ const INSTITUTION_DOMAINS: Record<string, string> = {
 }
 
 const COLORS = [
-  '#001A70','#10B981','#F59E0B','#EF4444','#8B5CF6',
+  '#0D0D0D','#10B981','#F59E0B','#EF4444','#8B5CF6',
   '#EC4899','#06B6D4','#F97316','#6366F1','#14B8A6',
 ]
 

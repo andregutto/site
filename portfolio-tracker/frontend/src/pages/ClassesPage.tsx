@@ -77,7 +77,7 @@ function IconPicker({ value, onChange }: { value: string | null; onChange: (i: s
           type="button"
           onClick={() => onChange(null)}
           className={`w-8 h-8 rounded-lg text-xs border transition-all hover:scale-110 ${
-            value == null ? 'border-[#001A70] bg-[#001A70]/10 ring-1 ring-[#001A70]' : 'border-gray-200 bg-gray-50'
+            value == null ? 'border-[#0D0D0D] bg-[#0D0D0D]/10 ring-1 ring-[#0D0D0D]' : 'border-gray-200 bg-gray-50'
           }`}
           title="—"
         >—</button>
@@ -87,7 +87,7 @@ function IconPicker({ value, onChange }: { value: string | null; onChange: (i: s
             type="button"
             onClick={() => onChange(icon)}
             className={`w-8 h-8 rounded-lg text-base transition-all hover:scale-110 ${
-              value === icon ? 'ring-2 ring-[#001A70] bg-[#001A70]/10 scale-110' : 'hover:bg-gray-100'
+              value === icon ? 'ring-2 ring-[#0D0D0D] bg-[#0D0D0D]/10 scale-110' : 'hover:bg-gray-100'
             }`}
           >{icon}</button>
         ))}
@@ -229,7 +229,7 @@ export default function ClassesPage() {
         <h1 className="text-xl font-bold text-gray-900">{t.classes.title}</h1>
         <button
           onClick={() => { setShowCreate(v => !v); setCreateErr(null) }}
-          className="px-4 py-2 bg-[#001A70] text-white text-sm font-semibold rounded-xl hover:bg-[#001A70]/90 transition-colors"
+          className="px-4 py-2 bg-[#0D0D0D] text-white text-sm font-semibold rounded-xl hover:bg-[#0D0D0D]/90 transition-colors"
         >
           {showCreate ? t.classes.cancel : t.classes.newClass}
         </button>
@@ -251,7 +251,7 @@ export default function ClassesPage() {
                 onChange={e => setNewName(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') handleCreate() }}
                 placeholder={t.classes.classNamePlaceholder}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20"
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20"
                 autoFocus
               />
               <ColorPicker value={newColor} onChange={setNewColor} />
@@ -265,7 +265,7 @@ export default function ClassesPage() {
           <button
             onClick={handleCreate}
             disabled={creating}
-            className="px-4 py-2 bg-[#001A70] text-white text-sm font-semibold rounded-xl hover:bg-[#001A70]/90 disabled:opacity-50 transition-colors"
+            className="px-4 py-2 bg-[#0D0D0D] text-white text-sm font-semibold rounded-xl hover:bg-[#0D0D0D]/90 disabled:opacity-50 transition-colors"
           >{creating ? t.classes.creating : t.classes.create}</button>
         </div>
       )}
@@ -300,7 +300,7 @@ export default function ClassesPage() {
                             value={editName}
                             onChange={e => setEditName(e.target.value)}
                             onKeyDown={e => { if (e.key === 'Enter') handleSaveEdit(cls.id) }}
-                            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20"
+                            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20"
                             autoFocus
                           />
                           <ColorPicker value={editColor} onChange={setEditColor} />
@@ -315,7 +315,7 @@ export default function ClassesPage() {
                         <button
                           onClick={() => handleSaveEdit(cls.id)}
                           disabled={isSaving}
-                          className="px-3 py-1.5 bg-[#001A70] text-white text-xs font-semibold rounded-lg disabled:opacity-50"
+                          className="px-3 py-1.5 bg-[#0D0D0D] text-white text-xs font-semibold rounded-lg disabled:opacity-50"
                         >{isSaving ? t.classes.saving : t.classes.save}</button>
                         <button
                           onClick={() => setEditId(null)}
@@ -339,7 +339,7 @@ export default function ClassesPage() {
                       </span>
                       <button
                         onClick={() => startEdit(cls)}
-                        className="text-xs text-[#001A70] hover:underline"
+                        className="text-xs text-[#0D0D0D] hover:underline"
                       >{t.classes.edit}</button>
                       <button
                         onClick={() => handleDelete(cls.id, cls.name)}
@@ -457,7 +457,7 @@ function AssetClassRow({
         value={asset.asset_classes?.id ?? ''}
         onChange={e => onMove(asset.id, e.target.value)}
         disabled={moving}
-        className="border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-[#001A70]/20 bg-white disabled:opacity-50 shrink-0"
+        className="border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20 bg-white disabled:opacity-50 shrink-0"
       >
         <option value="">{t.classes.noClass}</option>
         {classes.map(c => (

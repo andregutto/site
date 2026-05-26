@@ -22,7 +22,7 @@ interface FinanceAccount {
 }
 
 const ACCOUNT_ICONS = ['🏦', '🏧', '💳', '💰', '💵', '💶', '💷', '🪙', '📱', '🏠', '✈️', '💼']
-const ACCOUNT_COLORS = ['#6366f1', '#0ea5e9', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#001A70', '#64748b']
+const ACCOUNT_COLORS = ['#6366f1', '#0ea5e9', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#0D0D0D', '#64748b']
 const CURRENCIES = ['EUR', 'BRL', 'USD', 'GBP', 'CHF']
 
 function fmtBalance(n: number, currency: string) {
@@ -56,10 +56,10 @@ function AddAccountModal({ prefillInstitution, onSave, onClose, saving }: AddAcc
   const [name,     setName]     = useState('')
   const [currency, setCurrency] = useState('EUR')
   const [instName, setInstName] = useState(prefillInstitution ?? '')
-  const [color,    setColor]    = useState('#001A70')
+  const [color,    setColor]    = useState('#0D0D0D')
   const [icon,     setIcon]     = useState('🏦')
 
-  const fieldCls = 'w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20'
+  const fieldCls = 'w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20'
   const labelCls = 'text-xs font-medium text-gray-500 mb-1 block'
 
   return (
@@ -98,7 +98,7 @@ function AddAccountModal({ prefillInstitution, onSave, onClose, saving }: AddAcc
             <div className="flex flex-wrap gap-1.5">
               {ACCOUNT_ICONS.map(ic => (
                 <button key={ic} type="button" onClick={() => setIcon(ic)}
-                  className={`w-9 h-9 rounded-lg text-lg flex items-center justify-center transition-colors ${icon === ic ? 'ring-2 ring-[#001A70] bg-[#001A70]/10' : 'bg-gray-50 hover:bg-gray-100'}`}
+                  className={`w-9 h-9 rounded-lg text-lg flex items-center justify-center transition-colors ${icon === ic ? 'ring-2 ring-[#0D0D0D] bg-[#0D0D0D]/10' : 'bg-gray-50 hover:bg-gray-100'}`}
                 >{ic}</button>
               ))}
             </div>
@@ -115,7 +115,7 @@ function AddAccountModal({ prefillInstitution, onSave, onClose, saving }: AddAcc
             </div>
           </div>
           <div className="flex gap-2 pt-1">
-            <button type="submit" disabled={saving} className="flex-1 bg-[#001A70] text-white text-sm py-2.5 rounded-xl hover:opacity-80 disabled:opacity-40">
+            <button type="submit" disabled={saving} className="flex-1 bg-[#0D0D0D] text-white text-sm py-2.5 rounded-xl hover:opacity-80 disabled:opacity-40">
               {saving ? '…' : f.institutionsCreateAccount}
             </button>
             <button type="button" onClick={onClose} className="px-4 text-sm text-gray-500 hover:text-gray-700">{t.common.cancel}</button>
@@ -311,11 +311,11 @@ export default function InstitutionPage() {
         <div className="flex items-center gap-2">
           <Link
             to="/institutions/profiles"
-            className="px-3 py-1.5 text-xs border border-gray-200 rounded-lg text-gray-500 hover:text-[#001A70] hover:border-[#001A70]/30 transition-colors"
+            className="px-3 py-1.5 text-xs border border-gray-200 rounded-lg text-gray-500 hover:text-[#0D0D0D] hover:border-[#0D0D0D]/30 transition-colors"
           >{f.institutionsLegalProfiles}</Link>
           <button
             onClick={() => setAddModal({})}
-            className="px-3 py-1.5 bg-[#001A70] text-white text-sm rounded-lg hover:opacity-80 transition-opacity"
+            className="px-3 py-1.5 bg-[#0D0D0D] text-white text-sm rounded-lg hover:opacity-80 transition-opacity"
           >+ {f.addAccount}</button>
         </div>
       </div>
@@ -325,7 +325,7 @@ export default function InstitutionPage() {
           <p className="text-4xl mb-4">🏦</p>
           <p className="text-gray-700 font-medium mb-1">{f.institutionsNone}</p>
           <p className="text-sm text-gray-400 mb-5">{f.institutionsNoneBody}</p>
-          <button onClick={() => setAddModal({})} className="px-5 py-2 bg-[#001A70] text-white text-sm rounded-xl hover:opacity-80">
+          <button onClick={() => setAddModal({})} className="px-5 py-2 bg-[#0D0D0D] text-white text-sm rounded-xl hover:opacity-80">
             + {f.addAccount}
           </button>
         </div>
@@ -377,7 +377,7 @@ export default function InstitutionPage() {
                               <div className="flex-1">
                                 <InstitutionSelect value={editingValue} onChange={setEditingValue} placeholder={f.accountInstitution} autoFocus />
                               </div>
-                              <button onClick={() => handleMoveAsset(asset.id)} disabled={moveSaving} className="text-xs text-[#001A70] font-semibold disabled:opacity-50 shrink-0">OK</button>
+                              <button onClick={() => handleMoveAsset(asset.id)} disabled={moveSaving} className="text-xs text-[#0D0D0D] font-semibold disabled:opacity-50 shrink-0">OK</button>
                               <button onClick={() => setEditingId(null)} className="text-xs text-gray-400 shrink-0">✕</button>
                             </>
                           ) : (
@@ -400,7 +400,7 @@ export default function InstitutionPage() {
                               </button>
                               <button
                                 onClick={() => { setEditingId(asset.id); setEditingValue(asset.exchange ?? '') }}
-                                className="text-xs text-gray-400 hover:text-[#001A70] border border-gray-200 hover:border-[#001A70] rounded-lg px-2.5 py-1 transition-colors shrink-0"
+                                className="text-xs text-gray-400 hover:text-[#0D0D0D] border border-gray-200 hover:border-[#0D0D0D] rounded-lg px-2.5 py-1 transition-colors shrink-0"
                               >{f.institutionsMoveAsset}</button>
                             </>
                           )}
@@ -447,7 +447,7 @@ export default function InstitutionPage() {
                           ) : (
                             <button
                               onClick={() => setLinkModal(acc.id)}
-                              className="px-2.5 py-1 text-xs border border-gray-200 rounded-lg text-gray-500 hover:text-[#001A70] hover:border-[#001A70]/30 transition-colors"
+                              className="px-2.5 py-1 text-xs border border-gray-200 rounded-lg text-gray-500 hover:text-[#0D0D0D] hover:border-[#0D0D0D]/30 transition-colors"
                             >{f.institutionsNotLinked} →</button>
                           )}
                           <button onClick={() => deleteAccount(acc.id)} className="p-1.5 text-gray-300 hover:text-red-500 transition-colors">
@@ -475,7 +475,7 @@ export default function InstitutionPage() {
                           <>
                             <span className="text-xs text-gray-400 flex-1">{f.institutionsNoBank}</span>
                             <button onClick={connectBank} disabled={connecting}
-                              className="px-2.5 py-1 text-xs border border-[#001A70]/20 rounded-lg text-[#001A70] hover:bg-[#001A70]/5 transition-colors disabled:opacity-50">
+                              className="px-2.5 py-1 text-xs border border-[#0D0D0D]/20 rounded-lg text-[#0D0D0D] hover:bg-[#0D0D0D]/5 transition-colors disabled:opacity-50">
                               {connecting ? '…' : f.connectBank}
                             </button>
                           </>
@@ -489,7 +489,7 @@ export default function InstitutionPage() {
                       <span className="text-xs text-gray-400">{f.institutionsNoFinanceAccount}</span>
                       <button
                         onClick={() => setAddModal({ institution: group.name })}
-                        className="px-2.5 py-1 text-xs border border-[#001A70]/20 rounded-lg text-[#001A70] hover:bg-[#001A70]/5 transition-colors"
+                        className="px-2.5 py-1 text-xs border border-[#0D0D0D]/20 rounded-lg text-[#0D0D0D] hover:bg-[#0D0D0D]/5 transition-colors"
                       >+ {f.addAccount}</button>
                     </div>
                   )}
@@ -528,7 +528,7 @@ export default function InstitutionPage() {
                     key={asset.id}
                     onClick={() => linkToAsset(linkModal, asset.id)}
                     disabled={linkSaving}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-blue-50 hover:border-[#001A70]/20 border border-gray-100 text-left transition-colors disabled:opacity-50"
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-blue-50 hover:border-[#0D0D0D]/20 border border-gray-100 text-left transition-colors disabled:opacity-50"
                   >
                     <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: asset.class_color }} />
                     <div className="flex-1 min-w-0">

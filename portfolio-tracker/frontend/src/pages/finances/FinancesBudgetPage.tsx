@@ -177,7 +177,7 @@ function EnvelopeBar({ env, expanded, onToggle, onEditCategory, onDeleteCategory
               onBlur={saveDesc}
               onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); saveDesc() } if (e.key === 'Escape') setEditingDesc(false) }}
               rows={2}
-              className="w-full text-xs text-gray-600 border border-gray-200 rounded-lg px-2 py-1 resize-none focus:outline-none focus:ring-1 focus:ring-[#001A70]/30"
+              className="w-full text-xs text-gray-600 border border-gray-200 rounded-lg px-2 py-1 resize-none focus:outline-none focus:ring-1 focus:ring-[#0D0D0D]/30"
               placeholder={t.finances.envelopeDescPlaceholder}
             />
           </div>
@@ -191,7 +191,7 @@ function EnvelopeBar({ env, expanded, onToggle, onEditCategory, onDeleteCategory
             </p>
             <button
               onClick={() => { setDescInput(env.name_key ? defaultDesc : (env.description ?? defaultDesc)); setEditingDesc(true) }}
-              className="[@media(hover:none)]:opacity-100 opacity-0 group-hover:opacity-100 transition-opacity p-0.5 text-gray-400 hover:text-[#001A70] shrink-0 mt-0.5"
+              className="[@media(hover:none)]:opacity-100 opacity-0 group-hover:opacity-100 transition-opacity p-0.5 text-gray-400 hover:text-[#0D0D0D] shrink-0 mt-0.5"
             >
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3">
                 <path d="M13.488 2.513a1.75 1.75 0 0 0-2.475 0L6.75 6.774a2.75 2.75 0 0 0-.596.892l-.848 2.047a.75.75 0 0 0 .98.98l2.047-.848a2.75 2.75 0 0 0 .892-.596l4.261-4.263a1.75 1.75 0 0 0 0-2.474ZM4.75 14a.75.75 0 0 0 0-1.5H3.5a.5.5 0 0 1-.5-.5V4a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v1.25a.75.75 0 0 0 1.5 0V4a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h1.25Z" />
@@ -231,7 +231,7 @@ function EnvelopeBar({ env, expanded, onToggle, onEditCategory, onDeleteCategory
                     <div className="flex items-center gap-1 [@media(hover:none)]:opacity-100 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button
                         onClick={() => onEditCategory(cat)}
-                        className="p-1 text-gray-400 hover:text-[#001A70] transition-colors rounded"
+                        className="p-1 text-gray-400 hover:text-[#0D0D0D] transition-colors rounded"
                         title="Editar"
                       >
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5">
@@ -256,7 +256,7 @@ function EnvelopeBar({ env, expanded, onToggle, onEditCategory, onDeleteCategory
           <div className="px-5 py-2.5">
             <button
               onClick={() => onAddCategory(env.id)}
-              className="flex items-center gap-1.5 text-xs text-[#001A70] hover:opacity-70 transition-opacity font-medium"
+              className="flex items-center gap-1.5 text-xs text-[#0D0D0D] hover:opacity-70 transition-opacity font-medium"
             >
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5">
                 <path d="M8.75 3.75a.75.75 0 0 0-1.5 0v3.5h-3.5a.75.75 0 0 0 0 1.5h3.5v3.5a.75.75 0 0 0 1.5 0v-3.5h3.5a.75.75 0 0 0 0-1.5h-3.5v-3.5Z" />
@@ -523,7 +523,7 @@ export default function FinancesBudgetPage() {
                               <span className="text-sm font-medium text-gray-600">{fmt(cat.budget_monthly, data.income.currency)}</span>
                             )}
                             <div className="flex items-center gap-1 [@media(hover:none)]:opacity-100 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <button onClick={() => openEditCategory(cat)} className="p-1 text-gray-400 hover:text-[#001A70] transition-colors rounded">
+                              <button onClick={() => openEditCategory(cat)} className="p-1 text-gray-400 hover:text-[#0D0D0D] transition-colors rounded">
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5">
                                   <path d="M13.488 2.513a1.75 1.75 0 0 0-2.475 0L6.75 6.774a2.75 2.75 0 0 0-.596.892l-.848 2.047a.75.75 0 0 0 .98.98l2.047-.848a2.75 2.75 0 0 0 .892-.596l4.261-4.263a1.75 1.75 0 0 0 0-2.474ZM4.75 14a.75.75 0 0 0 0-1.5H3.5a.5.5 0 0 1-.5-.5V4a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v1.25a.75.75 0 0 0 1.5 0V4a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h1.25Z" />
                                 </svg>
@@ -539,7 +539,7 @@ export default function FinancesBudgetPage() {
                       </ul>
                     )}
                     <div className="px-5 py-2.5">
-                      <button onClick={() => openAddCategory(env.id)} className="flex items-center gap-1.5 text-xs text-[#001A70] hover:opacity-70 transition-opacity font-medium">
+                      <button onClick={() => openAddCategory(env.id)} className="flex items-center gap-1.5 text-xs text-[#0D0D0D] hover:opacity-70 transition-opacity font-medium">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5">
                           <path d="M8.75 3.75a.75.75 0 0 0-1.5 0v3.5h-3.5a.75.75 0 0 0 0 1.5h3.5v3.5a.75.75 0 0 0 1.5 0v-3.5h3.5a.75.75 0 0 0 0-1.5h-3.5v-3.5Z" />
                         </svg>
@@ -558,7 +558,7 @@ export default function FinancesBudgetPage() {
           <div className="flex items-center justify-between mb-1">
             <span className="text-xs text-gray-500 uppercase tracking-wide font-medium">{t.finances.income}</span>
             {!incomeEdit && (
-              <button onClick={() => setIncomeEdit(true)} className="text-xs text-[#001A70] hover:opacity-70 transition-opacity">{t.common.edit}</button>
+              <button onClick={() => setIncomeEdit(true)} className="text-xs text-[#0D0D0D] hover:opacity-70 transition-opacity">{t.common.edit}</button>
             )}
           </div>
           {incomeEdit ? (
@@ -573,7 +573,7 @@ export default function FinancesBudgetPage() {
                 className="flex-1 border border-gray-200 rounded-lg px-3 py-1.5 text-sm"
                 placeholder="3500"
               />
-              <button onClick={saveIncome} disabled={saving} className="px-3 py-1.5 bg-[#001A70] text-white text-xs rounded-lg hover:opacity-80 transition-opacity disabled:opacity-50">
+              <button onClick={saveIncome} disabled={saving} className="px-3 py-1.5 bg-[#0D0D0D] text-white text-xs rounded-lg hover:opacity-80 transition-opacity disabled:opacity-50">
                 {saving ? '…' : t.common.save}
               </button>
               <button onClick={() => setIncomeEdit(false)} className="px-3 py-1.5 text-gray-500 text-xs hover:text-gray-700 transition-colors">{t.common.cancel}</button>
@@ -703,7 +703,7 @@ export default function FinancesBudgetPage() {
               }
               return row
             })
-            const COLORS = ['#001A70','#C9A227','#10b981','#7c3aed','#f59e0b','#ef4444','#3b82f6','#14b8a6']
+            const COLORS = ['#0D0D0D','#C8B89A','#10b981','#7c3aed','#f59e0b','#ef4444','#3b82f6','#14b8a6']
             return (
               <div className="h-48">
                 <ResponsiveContainer width="100%" height="100%">
@@ -752,7 +752,7 @@ export default function FinancesBudgetPage() {
                   <select
                     value={catEnvelopeId}
                     onChange={e => setCatEnvelopeId(Number(e.target.value))}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20"
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20"
                   >
                     {data.envelopes.map(env => (
                       <option key={env.id} value={env.id}>{env.icon} {resolveEnvName(env.name, env.type, env.name_key, nameKeys)}</option>
@@ -766,7 +766,7 @@ export default function FinancesBudgetPage() {
                   autoFocus
                   value={catName}
                   onChange={e => setCatName(e.target.value)}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20"
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20"
                   placeholder="Ex: Moradia"
                 />
               </div>
@@ -777,7 +777,7 @@ export default function FinancesBudgetPage() {
                     <button
                       key={e}
                       onClick={() => setCatIcon(e)}
-                      className={`text-xl p-1 rounded-lg transition-colors ${catIcon === e ? 'bg-[#001A70]/10 ring-1 ring-[#001A70]/30' : 'hover:bg-gray-100'}`}
+                      className={`text-xl p-1 rounded-lg transition-colors ${catIcon === e ? 'bg-[#0D0D0D]/10 ring-1 ring-[#0D0D0D]/30' : 'hover:bg-gray-100'}`}
                     >{e}</button>
                   ))}
                 </div>
@@ -790,7 +790,7 @@ export default function FinancesBudgetPage() {
                     type="number"
                     value={catBudget}
                     onChange={e => setCatBudget(e.target.value)}
-                    className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#001A70]/20"
+                    className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20"
                     placeholder="0"
                   />
                 </div>
@@ -800,7 +800,7 @@ export default function FinancesBudgetPage() {
               <button
                 onClick={saveCategory}
                 disabled={saving || !catName.trim()}
-                className="flex-1 bg-[#001A70] text-white text-sm py-2 rounded-xl hover:opacity-80 transition-opacity disabled:opacity-40"
+                className="flex-1 bg-[#0D0D0D] text-white text-sm py-2 rounded-xl hover:opacity-80 transition-opacity disabled:opacity-40"
               >
                 {saving ? '…' : t.common.save}
               </button>
