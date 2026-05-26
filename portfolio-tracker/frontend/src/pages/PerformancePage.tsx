@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { usePerformanceSummary, usePerformanceMonthly, usePerformanceBenchmarks, usePortfolioValue, usePerformanceInception } from '../hooks/usePortfolio'
-import { useDividendSummary } from '../hooks/useDividends'
+import { useDividendSummary, useDividends } from '../hooks/useDividends'
 import { useCurrency } from '../contexts/CurrencyContext'
 import { useI18n } from '../contexts/I18nContext'
 import { apiFetch } from '../lib/api'
@@ -90,6 +90,16 @@ export default function PerformancePage() {
   const divDateTo   = new Date().toISOString().split('T')[0]
   const { data: divSummary } = useDividendSummary(divDateFrom, divDateTo)
   const divByMonth = new Map((divSummary?.by_month ?? []).map(m => [m.month, m.total_brl]))
+
+  // Per-asset dividend breakdown for expanded detail rows
+  const { data: allDivRows } = useDividends(divDateFrom, divDateTo)
+  const divByMonthAsset = new Map<string, Map<number, number>>()
+  for (const r of allDivRows ?? []) {
+    const month = r.ex_date.slice(0, 7)
+    if (!divByMonthAsset.has(month)) divByMonthAsset.set(month, new Map())
+    const am = divByMonthAsset.get(month)!
+    am.set(r.asset_id, (am.get(r.asset_id) ?? 0) + r.amount_brl)
+  }
   // Fetch benchmarks from one month before `from` so we have the pre-period base for normalization
   const { data: benchmarks, loading: bLoading, refresh: refreshBenchmarks } = usePerformanceBenchmarks(addMonths(from, -1), to)
 
@@ -408,6 +418,9 @@ export default function PerformancePage() {
                                       <th className="py-1.5 text-right font-medium cursor-pointer hover:text-gray-600 select-none" onClick={e => { e.stopPropagation(); toggleDetailSort('contributions') }}>
                                         {t.performance.contributions} <DetailSortIcon col="contributions" />
                                       </th>
+                                      <th className="py-1.5 text-right font-medium text-green-700 select-none">
+                                        {(t as unknown as Record<string,Record<string,string>>).dividends?.title ?? 'Div.'}
+                                      </th>
                                       <th className="py-1.5 text-right font-medium cursor-pointer hover:text-gray-600 select-none" onClick={e => { e.stopPropagation(); toggleDetailSort('gain') }}>
                                         {t.performance.gainLoss} <DetailSortIcon col="gain" />
                                       </th>
@@ -455,6 +468,12 @@ export default function PerformancePage() {
                                             </td>
                                             <td className="py-1.5 text-right text-gray-500">
                                               {d.contributions !== 0 ? `${d.contributions > 0 ? '+' : ''}${fmt(d.contributions)}` : '—'}
+                                            </td>
+                                            <td className="py-1.5 text-right text-xs font-medium text-green-600">
+                                              {(() => {
+                                                const v = divByMonthAsset.get(m.month)?.get(d.asset_id)
+                                                return v ? `+${fmt(convert(v))}` : '—'
+                                              })()}
                                             </td>
                                             <td className={`py-1.5 text-right font-medium ${!hasGainData ? 'text-gray-300' : d.gain >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                                               {!hasGainData ? '—' : `${d.gain >= 0 ? '+' : ''}${fmt(d.gain)}`}

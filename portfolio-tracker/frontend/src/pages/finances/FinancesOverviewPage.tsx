@@ -72,11 +72,11 @@ const ENV_TYPE_KEY: Record<string, string> = {
 }
 
 const ARVO_ENV_COLORS: Record<string, string> = {
-  essential:  '#A36A52',
-  investment: '#1F8A5B',
-  savings:    '#C8B89A',
-  free:       '#E8A020',
-  income:     '#1B4FD8',
+  essential:  '#D4453C', // arara vermelha
+  investment: '#2E9E6B', // maritaca verde
+  savings:    '#F0A030', // tucano âmbar
+  free:       '#1A8CD8', // arara azul
+  income:     '#7B4FCC', // roxo índigo
 }
 
 function resolveEnvName(name: string, type: string | undefined, nameKey: string | null | undefined, keys: Record<string, string>): string {

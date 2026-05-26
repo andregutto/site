@@ -23,15 +23,19 @@ export default function LoginFooter() {
 
   return (
     <footer className="text-center space-y-2 pb-4">
-      <p className="text-xs text-gray-400">{f.copyright}</p>
-      <div className="flex items-center justify-center gap-3 text-xs text-gray-400">
+      <div className="flex items-center justify-center gap-2 mb-3">
+        <img src="/brand/logo/arvo-symbol-black.svg" width="14" height="14" alt="" style={{ opacity: 0.30 }} />
+        <span style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 11, letterSpacing: '0.30em', textIndent: '0.30em', color: 'rgba(13,13,13,0.30)', lineHeight: 1 }}>arvo</span>
+      </div>
+      <p className="text-xs" style={{ color: 'rgba(13,13,13,0.40)' }}>{f.copyright}</p>
+      <div className="flex items-center justify-center gap-3 text-xs" style={{ color: 'rgba(13,13,13,0.40)' }}>
         <Link to="/privacy" className="hover:text-[#0D0D0D] transition-colors">{f.privacy}</Link>
         <span>·</span>
         <Link to="/terms" className="hover:text-[#0D0D0D] transition-colors">{f.terms}</Link>
         <span>·</span>
         <a href="mailto:andre@andregutto.com" className="hover:text-[#0D0D0D] transition-colors">{f.contact}</a>
       </div>
-      <div className="flex items-center justify-center gap-3 text-gray-300">
+      <div className="flex items-center justify-center gap-3" style={{ color: 'rgba(13,13,13,0.30)' }}>
         <a
           href="https://www.instagram.com/andregutto/"
           target="_blank"
