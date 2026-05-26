@@ -100,7 +100,7 @@ export default function DashboardPage() {
     }
   })()
   const divTo = now.toISOString().split('T')[0]
-  const { data: divSummary, loading: divLoading } = useDividendSummary(divFrom, divTo)
+  const { data: divSummary, loading: divLoading, refresh: refreshDivs } = useDividendSummary(divFrom, divTo)
 
   const { data: perfData, loading: chartLoading } = usePerformanceMonthly(inception ?? currentYM, currentYM)
 
@@ -118,6 +118,12 @@ export default function DashboardPage() {
 
   function handleModalClose() { setSelectedAsset(null) }
   function handleSaved() { setSelectedAsset(null); refresh() }
+
+  async function handleForceSyncDividends() {
+    Object.keys(localStorage).filter(k => k.startsWith('div_summary_')).forEach(k => localStorage.removeItem(k))
+    await syncDividends(true)
+    await refreshDivs()
+  }
 
   if (loading) {
     return (
@@ -219,53 +225,51 @@ export default function DashboardPage() {
         )
       })()}
 
-      {/* Evolution chart + Allocation side by side */}
-      <div className="flex flex-col lg:flex-row gap-4 items-start">
-        {(chartLoading || portfolioChartData.length > 0) && (
-          <div className="flex-1 min-w-0 rounded-2xl p-5" style={{ background: 'white', border: '1px solid var(--arvo-border)' }}>
-            <h2 className="mb-1" style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 13, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--arvo-fg)' }}>{t.dashboard.portfolioEvolution}</h2>
-            <div className="h-48">
-            {chartLoading && portfolioChartData.length === 0 ? (
-              <div className="h-full flex items-end gap-1 px-2 pb-1">
-                {[40, 55, 48, 62, 58, 70, 65, 80, 75, 88, 82, 95].map((h, i) => (
-                  <div key={i} className="flex-1 bg-gray-100 rounded-t animate-pulse" style={{ height: `${h}%` }} />
-                ))}
-              </div>
-            ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={portfolioChartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-                  <XAxis dataKey="month" tick={{ fontSize: 10, fill: '#9ca3af' }} interval="preserveStartEnd" />
-                  <YAxis
-                    tick={{ fontSize: 10, fill: '#9ca3af' }}
-                    tickFormatter={v => {
-                      const n = typeof v === 'number' ? v : 0
-                      return currency === 'BRL'
-                        ? `${(n / 1000).toFixed(0)}k`
-                        : n >= 1000 ? `${(n / 1000).toFixed(0)}k` : n.toFixed(0)
-                    }}
-                    width={52}
-                  />
-                  <Tooltip
-                    formatter={(v) => [
-                      new Intl.NumberFormat('pt-BR', { style: 'currency', currency, maximumFractionDigits: 0 }).format(typeof v === 'number' ? v : 0),
-                      t.dashboard.patrimony,
-                    ]}
-                    contentStyle={{ borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 12 }}
-                  />
-                  <Line type="monotone" dataKey="value" stroke="#0D0D0D" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
-                </LineChart>
-              </ResponsiveContainer>
-            )}
+      {/* Evolution chart */}
+      {(chartLoading || portfolioChartData.length > 0) && (
+        <div className="rounded-2xl p-5" style={{ background: 'white', border: '1px solid var(--arvo-border)' }}>
+          <h2 className="mb-1" style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 13, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--arvo-fg)' }}>{t.dashboard.portfolioEvolution}</h2>
+          <div className="h-52">
+          {chartLoading && portfolioChartData.length === 0 ? (
+            <div className="h-full flex items-end gap-1 px-2 pb-1">
+              {[40, 55, 48, 62, 58, 70, 65, 80, 75, 88, 82, 95].map((h, i) => (
+                <div key={i} className="flex-1 bg-gray-100 rounded-t animate-pulse" style={{ height: `${h}%` }} />
+              ))}
             </div>
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={portfolioChartData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+                <XAxis dataKey="month" tick={{ fontSize: 10, fill: 'rgba(13,13,13,0.40)' }} interval="preserveStartEnd" />
+                <YAxis
+                  tick={{ fontSize: 10, fill: 'rgba(13,13,13,0.40)' }}
+                  tickFormatter={v => {
+                    const n = typeof v === 'number' ? v : 0
+                    return currency === 'BRL'
+                      ? `${(n / 1000).toFixed(0)}k`
+                      : n >= 1000 ? `${(n / 1000).toFixed(0)}k` : n.toFixed(0)
+                  }}
+                  width={52}
+                />
+                <Tooltip
+                  formatter={(v) => [
+                    new Intl.NumberFormat('pt-BR', { style: 'currency', currency, maximumFractionDigits: 0 }).format(typeof v === 'number' ? v : 0),
+                    t.dashboard.patrimony,
+                  ]}
+                  contentStyle={{ borderRadius: 8, border: '1px solid var(--arvo-border)', fontSize: 12 }}
+                />
+                <Line type="monotone" dataKey="value" stroke="#0D0D0D" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          )}
           </div>
-        )}
-        {data.by_class.length > 0 && (
-          <div className="w-full lg:w-72 xl:w-80 shrink-0">
-            <AllocationChart data={data.by_class} />
-          </div>
-        )}
-      </div>
+        </div>
+      )}
+
+      {/* Allocation chart — full width row */}
+      {data.by_class.length > 0 && (
+        <AllocationChart data={data.by_class} />
+      )}
 
       {data.by_asset.length > 0 ? (
         <AssetTable
@@ -289,7 +293,7 @@ export default function DashboardPage() {
             <div className="flex items-center gap-2">
               {syncing && <span className="text-xs animate-pulse" style={{ color: 'var(--arvo-fg-soft)' }}>{td.autoSyncing ?? 'Atualizando...'}</span>}
               <button
-                onClick={() => syncDividends(true)}
+                onClick={handleForceSyncDividends}
                 disabled={syncing}
                 className="transition-colors disabled:opacity-40"
                 style={{ color: 'var(--arvo-fg-soft)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, lineHeight: 0 }}

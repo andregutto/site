@@ -11,12 +11,13 @@ const BORDER = 'rgba(13,13,13,0.09)'
 // Text hierarchy on beige/offwhite — NEVER use raw gray-* classes on light bg
 const T_PRIMARY   = 'rgba(13,13,13,0.92)'   // headings
 const T_BODY      = 'rgba(13,13,13,0.78)'   // body paragraphs
-const T_SECONDARY = 'rgba(13,13,13,0.58)'   // labels / eyebrows / metadata
+const T_SECONDARY = 'rgba(13,13,13,0.72)'   // labels / eyebrows / metadata
 
 const F_SANS    = "'Tenor Sans', sans-serif"
 const F_DISPLAY = "'Playfair Display', serif"
 
 const ICONS = ['◈', '◎', '▦', '◉', '✦', '◑']
+const FEATURE_COLORS = ['#1F8A5B', '#1B4FD8', '#A36A52', '#E8A020', '#1B4FD8', '#A36A52']
 
 export default function LandingPage() {
   const { signIn } = useAuth()
@@ -25,12 +26,12 @@ export default function LandingPage() {
   const l = (t as unknown as Record<string, Record<string, string>>).landing ?? {}
 
   const FEATURES = [
-    { icon: ICONS[0], label: l.f1label, title: l.f1title, desc: l.f1desc },
-    { icon: ICONS[1], label: l.f2label, title: l.f2title, desc: l.f2desc },
-    { icon: ICONS[2], label: l.f3label, title: l.f3title, desc: l.f3desc },
-    { icon: ICONS[3], label: l.f4label, title: l.f4title, desc: l.f4desc },
-    { icon: ICONS[4], label: l.f5label, title: l.f5title, desc: l.f5desc },
-    { icon: ICONS[5], label: l.f6label, title: l.f6title, desc: l.f6desc },
+    { icon: ICONS[0], color: FEATURE_COLORS[0], label: l.f1label, title: l.f1title, desc: l.f1desc },
+    { icon: ICONS[1], color: FEATURE_COLORS[1], label: l.f2label, title: l.f2title, desc: l.f2desc },
+    { icon: ICONS[2], color: FEATURE_COLORS[2], label: l.f3label, title: l.f3title, desc: l.f3desc },
+    { icon: ICONS[3], color: FEATURE_COLORS[3], label: l.f4label, title: l.f4title, desc: l.f4desc },
+    { icon: ICONS[4], color: FEATURE_COLORS[4], label: l.f5label, title: l.f5title, desc: l.f5desc },
+    { icon: ICONS[5], color: FEATURE_COLORS[5], label: l.f6label, title: l.f6title, desc: l.f6desc },
   ]
   const STEPS = [
     { num: l.s1num, title: l.s1title, desc: l.s1desc },
@@ -277,7 +278,7 @@ export default function LandingPage() {
         <div style={{ display: 'grid', gap: 1, background: BORDER }} className="grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           {FEATURES.map((f, i) => (
             <div key={i} style={{ background: '#fff', padding: 'clamp(28px, 4vw, 40px) clamp(24px, 3vw, 36px)' }}>
-              <div style={{ fontFamily: F_SANS, fontSize: 20, color: DARK, marginBottom: 14, lineHeight: 1 }}>{f.icon}</div>
+              <div style={{ fontFamily: F_SANS, fontSize: 24, color: f.color, marginBottom: 14, lineHeight: 1 }}>{f.icon}</div>
               <p style={{ fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: T_SECONDARY, marginBottom: 10 }}>{f.label}</p>
               <h3 style={{ fontFamily: F_DISPLAY, fontSize: 'clamp(1rem, 1.8vw, 1.25rem)', fontWeight: 400, color: DARK, marginBottom: 10, lineHeight: 1.25 }}>{f.title}</h3>
               <p style={{ fontFamily: F_SANS, fontSize: 14, color: T_BODY, lineHeight: 1.8 }}>{f.desc}</p>
@@ -288,7 +289,7 @@ export default function LandingPage() {
 
       {/* ── IMAGE BREAK — árvore solitária ── */}
       <div style={{ position: 'relative', height: 'clamp(220px, 30vw, 380px)', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', inset: 0, backgroundImage: "url('/brand/imagery/02-arvore-solitaria.jpg')", backgroundSize: 'cover', backgroundPosition: 'center 35%', filter: 'sepia(0.22) saturate(1.10) brightness(0.82)' }} />
+        <div style={{ position: 'absolute', inset: 0, backgroundImage: "url('/brand/imagery/02-arvore-solitaria.jpg')", backgroundSize: 'cover', backgroundPosition: 'center 55%', filter: 'sepia(0.22) saturate(1.10) brightness(0.82)' }} />
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(242,237,228,0.45) 0%, rgba(242,237,228,0) 30%, rgba(242,237,228,0) 70%, rgba(242,237,228,0.60) 100%)' }} />
       </div>
 

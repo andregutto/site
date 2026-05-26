@@ -147,16 +147,14 @@ export default function AppLayout() {
         <div className="h-14 flex items-center px-6 gap-4">
 
           {/* Logo wordmark + product name */}
-          <a
-            href="https://andregutto.com"
-            target="_blank"
-            rel="noopener noreferrer"
+          <Link
+            to="/dashboard"
             className="shrink-0 flex items-center gap-2.5 hover:opacity-70 transition-opacity"
             style={{ textDecoration: 'none' }}
           >
             <img src="/brand/logo/arvo-symbol-black.svg" width="22" height="22" alt="" />
             <span style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 16, letterSpacing: '0.30em', textIndent: '0.30em', color: 'var(--arvo-black)', lineHeight: 1 }}>arvo</span>
-          </a>
+          </Link>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, paddingLeft: 14, borderLeft: '1px solid var(--arvo-border)', height: 24 }}>
             <span style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.55)', lineHeight: 1 }}>Capital</span>
           </div>
@@ -173,7 +171,7 @@ export default function AppLayout() {
                 className={() => `px-4 py-1.5 rounded-full text-xs whitespace-nowrap transition-all`}
                 style={{ fontFamily: "'Tenor Sans', sans-serif", letterSpacing: '0.16em', textTransform: 'uppercase',
                   background: active ? 'rgba(13,13,13,0.92)' : 'transparent',
-                  color: active ? 'var(--arvo-offwhite)' : 'rgba(13,13,13,0.55)',
+                  color: active ? 'var(--arvo-offwhite)' : 'rgba(13,13,13,0.72)',
                   transition: 'all 280ms cubic-bezier(0.22,0.61,0.36,1)' }}
               >{label}</NavLink>
             ))}
@@ -211,7 +209,7 @@ export default function AppLayout() {
                 </svg>
               </button>
               {showUserMenu && (
-                <div className="absolute right-0 top-full mt-2 w-52 rounded-xl shadow-lg py-1 z-50" style={{ background: 'var(--arvo-offwhite)', border: '1px solid var(--arvo-border-soft)' }}>
+                <div className="absolute right-0 top-full mt-2 w-52 rounded-xl shadow-lg py-1 z-50" style={{ background: '#FFFFFF', border: '1px solid var(--arvo-border-soft)' }}>
                   <div className="px-4 py-2.5 flex items-center justify-between" style={{ borderBottom: '1px solid var(--arvo-border-soft)' }}>
                     <span className="text-xs" style={{ color: 'rgba(13,13,13,0.45)' }}>{t.common.language}</span>
                     <LanguageSelector />
@@ -271,7 +269,7 @@ export default function AppLayout() {
                   className="flex items-center gap-2 whitespace-nowrap transition-all"
                   style={({ isActive }) => isActive
                     ? { fontFamily: "'Tenor Sans', sans-serif", fontSize: 11, letterSpacing: '0.08em', padding: '7px 14px', borderRadius: 8, border: '1px solid var(--arvo-border)', background: 'white', color: 'var(--arvo-fg)', boxShadow: '0 1px 2px rgba(13,13,13,0.04)', textDecoration: 'none' }
-                    : { fontFamily: "'Tenor Sans', sans-serif", fontSize: 11, letterSpacing: '0.08em', padding: '7px 14px', borderRadius: 8, border: '1px solid transparent', background: 'transparent', color: 'rgba(13,13,13,0.55)', textDecoration: 'none' }}
+                    : { fontFamily: "'Tenor Sans', sans-serif", fontSize: 11, letterSpacing: '0.08em', padding: '7px 14px', borderRadius: 8, border: '1px solid transparent', background: 'transparent', color: 'rgba(13,13,13,0.70)', textDecoration: 'none' }}
                 >
                   {({ isActive }) => (
                     <>
