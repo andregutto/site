@@ -1142,5 +1142,29 @@
     "srcCoingecko": "Price · CoinGecko",
     "srcManual": "Manually entered value",
     "srcCostBasis": "Estimated from average cost"
+  },
+  "dividends": {
+    "title": "Dividends",
+    "totalReceived": "Total received",
+    "inPeriod": "in period",
+    "topPayers": "Top payers",
+    "history": "Dividend history",
+    "syncBtn": "Update dividends",
+    "syncing": "Syncing...",
+    "noData": "No dividends recorded in this period",
+    "colExDate": "Ex-Date",
+    "colPayDate": "Pay Date",
+    "colPerShare": "Per share",
+    "colTotal": "Total received",
+    "colType": "Type",
+    "colYield": "Yield",
+    "typeDividend": "Dividend",
+    "typeJcp": "JCP",
+    "typeRendimento": "Income",
+    "typeAmortization": "Amortization",
+    "yieldOnCost": "Yield on cost",
+    "monthlyChart": "Dividends by month",
+    "autoSyncing": "Fetching dividends...",
+    "count": "payments"
   }
 }

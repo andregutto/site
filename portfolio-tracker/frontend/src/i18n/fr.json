@@ -1142,5 +1142,29 @@
     "srcCoingecko": "Cotation · CoinGecko",
     "srcManual": "Valeur saisie manuellement",
     "srcCostBasis": "Estimé à partir du coût moyen"
+  },
+  "dividends": {
+    "title": "Dividendes",
+    "totalReceived": "Total reçu",
+    "inPeriod": "sur la période",
+    "topPayers": "Principaux payeurs",
+    "history": "Historique des dividendes",
+    "syncBtn": "Mettre à jour",
+    "syncing": "Synchronisation...",
+    "noData": "Aucun dividende enregistré sur la période",
+    "colExDate": "Date EX",
+    "colPayDate": "Paiement",
+    "colPerShare": "Par action",
+    "colTotal": "Total reçu",
+    "colType": "Type",
+    "colYield": "Rendement",
+    "typeDividend": "Dividende",
+    "typeJcp": "JCP",
+    "typeRendimento": "Revenu",
+    "typeAmortization": "Amortissement",
+    "yieldOnCost": "Rendement sur coût",
+    "monthlyChart": "Dividendes par mois",
+    "autoSyncing": "Récupération des dividendes...",
+    "count": "paiements"
   }
 }

@@ -80,16 +80,41 @@ router.get('/:year', requireAuth, async (req, res: Response) => {
     }
   })
 
-  // Income in the year
-  const income = (contribs ?? []).filter(c => c.type === 'income').map(c => {
+  // Income in the year — manual entries
+  const incomeManual = (contribs ?? []).filter(c => c.type === 'income').map(c => {
     const asset = assetMap[c.asset_id]
     return {
       id: c.id, date: c.date, asset_id: c.asset_id,
       code: asset?.code ?? '', name: asset?.name ?? '',
       value_brl: c.value_brl ?? 0,
       description: c.description ?? '',
+      source: 'manual' as const,
     }
   })
+
+  // Auto-fetched dividends
+  const { data: autoDiv } = await supabaseAdmin
+    .from('dividends')
+    .select('id, asset_id, ex_date, pay_date, amount_brl, dividend_type')
+    .in('asset_id', assetIds)
+    .eq('user_id', userId)
+    .gte('ex_date', `${year}-01-01`)
+    .lte('ex_date', endOfYear)
+    .order('ex_date')
+
+  const incomeAuto = (autoDiv ?? []).map(d => {
+    const asset = assetMap[d.asset_id]
+    return {
+      id: d.id, date: d.ex_date, asset_id: d.asset_id,
+      code: asset?.code ?? '', name: asset?.name ?? '',
+      value_brl: d.amount_brl ?? 0,
+      description: d.dividend_type,
+      source: 'auto' as const,
+    }
+  })
+
+  const income = [...incomeManual, ...incomeAuto]
+    .sort((a, b) => a.date.localeCompare(b.date))
 
   // All contributions up to end of year — for position calculation
   const { data: allContribs, error: ace } = await supabaseAdmin

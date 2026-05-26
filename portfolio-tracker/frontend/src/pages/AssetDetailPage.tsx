@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom'
 import { useAssetDetail } from '../hooks/usePortfolio'
+import { useDividends } from '../hooks/useDividends'
 import { useCurrency } from '../contexts/CurrencyContext'
 import { useFavorites } from '../hooks/useFavorites'
 import { useI18n } from '../contexts/I18nContext'
@@ -92,9 +93,11 @@ export default function AssetDetailPage() {
   const navigate   = useNavigate()
   const location   = useLocation()
   const { data, loading, error, refresh } = useAssetDetail(assetId)
+  const { data: assetDividends, loading: divLoading } = useDividends(undefined, undefined, assetId ?? undefined)
   const { fmt, convert, currency } = useCurrency()
   const { t, locale } = useI18n()
   const d = t.assetDetail
+  const td = (t as unknown as Record<string, Record<string, string>>).dividends ?? {}
   const intlLocale = LOCALE_MAP[locale] ?? 'pt-BR'
 
   const [archiving,          setArchiving]          = useState(false)
@@ -980,6 +983,88 @@ export default function AssetDetailPage() {
           </div>
         )
       })()}
+
+      {/* Dividend history — only for ticker assets */}
+      {data.asset_type === 'ticker' && (
+        <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
+          <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+            <h2 className="font-semibold text-gray-800">
+              {td.history ?? 'Dividendos Recebidos'}
+              {assetDividends.length > 0 && (
+                <span className="ml-2 text-xs text-gray-400 font-normal">({assetDividends.length} {td.count ?? 'pagamentos'})</span>
+              )}
+            </h2>
+            {assetDividends.length > 0 && (
+              <span className="text-sm font-bold text-green-600">
+                {fmt(convert(assetDividends.reduce((s, r) => s + (r.amount_brl ?? 0), 0)))}
+              </span>
+            )}
+          </div>
+          {divLoading ? (
+            <div className="text-center text-gray-400 py-8 text-sm animate-pulse">{td.syncing ?? 'Carregando...'}</div>
+          ) : assetDividends.length === 0 ? (
+            <p className="text-center text-gray-400 py-8 text-sm">{td.noData ?? 'Nenhum dividendo registrado'}</p>
+          ) : (
+            <>
+              {/* desktop table */}
+              <div className="hidden sm:block overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
+                    <tr>
+                      <th className="px-4 py-3 text-left">{td.colExDate ?? 'Data EX'}</th>
+                      <th className="px-4 py-3 text-left">{td.colPayDate ?? 'Pagamento'}</th>
+                      <th className="px-4 py-3 text-left">{td.colType ?? 'Tipo'}</th>
+                      <th className="px-4 py-3 text-right">{td.colPerShare ?? 'Por cota'}</th>
+                      <th className="px-4 py-3 text-right">{td.colTotal ?? 'Total recebido'}</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {assetDividends.map(div => (
+                      <tr key={div.id} className="hover:bg-gray-50">
+                        <td className="px-4 py-3 text-gray-700">{fmtDate(div.ex_date, intlLocale)}</td>
+                        <td className="px-4 py-3 text-gray-500">{div.pay_date ? fmtDate(div.pay_date, intlLocale) : '—'}</td>
+                        <td className="px-4 py-3">
+                          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700">
+                            {div.dividend_type === 'jcp' ? (td.typeJcp ?? 'JCP') :
+                             div.dividend_type === 'rendimento' ? (td.typeRendimento ?? 'Rendimento') :
+                             div.dividend_type === 'amortization' ? (td.typeAmortization ?? 'Amortização') :
+                             (td.typeDividend ?? 'Dividendo')}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-right text-gray-700">
+                          {div.currency} {fmtNum(div.amount_per_share, 6, intlLocale)}
+                        </td>
+                        <td className="px-4 py-3 text-right font-medium text-green-600">
+                          {fmt(convert(div.amount_brl ?? 0))}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {/* mobile cards */}
+              <div className="sm:hidden divide-y divide-gray-50">
+                {assetDividends.map(div => (
+                  <div key={div.id} className="px-4 py-3">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700">
+                        {div.dividend_type === 'jcp' ? (td.typeJcp ?? 'JCP') :
+                         div.dividend_type === 'rendimento' ? (td.typeRendimento ?? 'Rendimento') :
+                         (td.typeDividend ?? 'Dividendo')}
+                      </span>
+                      <span className="font-bold text-green-600">{fmt(convert(div.amount_brl ?? 0))}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-xs text-gray-500">
+                      <span>EX: {fmtDate(div.ex_date, intlLocale)}</span>
+                      <span>{div.currency} {fmtNum(div.amount_per_share, 6, intlLocale)} / cota</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      )}
     </div>
   )
 }

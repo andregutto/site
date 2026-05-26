@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { usePerformanceSummary, usePerformanceMonthly, usePerformanceBenchmarks, usePortfolioValue, usePerformanceInception } from '../hooks/usePortfolio'
+import { useDividendSummary } from '../hooks/useDividends'
 import { useCurrency } from '../contexts/CurrencyContext'
 import { useI18n } from '../contexts/I18nContext'
 import { apiFetch } from '../lib/api'
@@ -85,6 +86,10 @@ export default function PerformancePage() {
 
   const { data: summary,    loading: sLoading, refresh: refreshSummary    } = usePerformanceSummary(from, to)
   const { data: monthly,    loading: mLoading, refresh: refreshMonthly    } = usePerformanceMonthly(from, to)
+  const divDateFrom = `${from}-01`
+  const divDateTo   = new Date().toISOString().split('T')[0]
+  const { data: divSummary } = useDividendSummary(divDateFrom, divDateTo)
+  const divByMonth = new Map((divSummary?.by_month ?? []).map(m => [m.month, m.total_brl]))
   // Fetch benchmarks from one month before `from` so we have the pre-period base for normalization
   const { data: benchmarks, loading: bLoading, refresh: refreshBenchmarks } = usePerformanceBenchmarks(addMonths(from, -1), to)
 
@@ -340,6 +345,7 @@ export default function PerformancePage() {
                       <th className="px-4 py-3 text-left">{t.performance.month}</th>
                       <th className="px-4 py-3 text-right">{t.performance.wealth}</th>
                       <th className="px-4 py-3 text-right">{t.performance.contributions}</th>
+                      <th className="px-4 py-3 text-right text-green-700">{(t as unknown as Record<string,Record<string,string>>).dividends?.title ?? 'Dividendos'}</th>
                       <th className="px-4 py-3 text-right">{t.performance.gainLoss}</th>
                       <th className="px-4 py-3 text-right">{t.performance.returnAbbr}</th>
                     </tr>
@@ -373,6 +379,9 @@ export default function PerformancePage() {
                             <td className="px-4 py-3 text-right text-gray-500 text-xs">
                               {cf !== 0 ? `${cf > 0 ? '+' : ''}${fmt(cf)}` : '—'}
                             </td>
+                            <td className="px-4 py-3 text-right text-xs font-medium text-green-600">
+                              {(() => { const v = divByMonth.get(m.month); return v ? `+${fmt(convert(v))}` : '—' })()}
+                            </td>
                             <td className={`px-4 py-3 text-right font-medium ${
                               gain == null ? 'text-gray-400' :
                               gain >= 0 ? 'text-green-600' : 'text-red-600'
@@ -388,7 +397,7 @@ export default function PerformancePage() {
                           </tr>
                           {isExpanded && m.detail && (
                             <tr key={`${m.month}-detail`} className="bg-gray-50/70">
-                              <td colSpan={5} className="px-6 pb-3 pt-1">
+                              <td colSpan={6} className="px-6 pb-3 pt-1">
                                 <table className="w-full text-xs">
                                   <thead>
                                     <tr className="text-gray-400 border-b border-gray-200">
