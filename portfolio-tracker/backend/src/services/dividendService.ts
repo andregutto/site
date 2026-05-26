@@ -197,18 +197,35 @@ export async function syncDividendsForUser(userId: string, force = false) {
     }
   }))
 
+  // For brapi assets (Brazilian stocks/FIIs): Yahoo Finance with .SA suffix is the
+  // primary source (free, no token). Brapi fundamental endpoint is the fallback but
+  // requires BRAPI_TOKEN which is optional.
   for (const a of brapiAssets) {
+    let didSync = false
+
+    // Primary: Yahoo Finance (.SA suffix) — dividends in BRL, no auth required
     try {
-      const allDivs = await fetchBrapiDividends(a.ticker_brapi!)
-      // Always upsert all brapi dividends — brapi returns a fixed history dataset,
-      // and filtering by lastKnown would block older records missed on previous syncs.
-      // Upsert is idempotent via (asset_id, ex_date, dividend_type) conflict key.
-      await upsertRows(a, allDivs)
+      const from = latestMap[a.id] ?? defaultFrom
+      const divs = await fetchYahooDividends(a.ticker_brapi! + '.SA', from)
+      await upsertRows(a, divs)
+      didSync = true
     } catch (err) {
-      console.warn(`[dividends] brapi ${a.code}:`, err)
-      errors++
+      console.warn(`[dividends] yahoo-sa ${a.code}:`, err)
     }
-    await new Promise(r => setTimeout(r, 600))
+
+    // Fallback: brapi (requires BRAPI_TOKEN env var)
+    if (!didSync && process.env.BRAPI_TOKEN) {
+      try {
+        const allDivs = await fetchBrapiDividends(a.ticker_brapi!)
+        await upsertRows(a, allDivs)
+        didSync = true
+      } catch (err) {
+        console.warn(`[dividends] brapi ${a.code}:`, err)
+      }
+    }
+
+    if (!didSync) errors++
+    await new Promise(r => setTimeout(r, 400))
   }
 
   return { synced, skipped, errors }

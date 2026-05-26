@@ -144,12 +144,30 @@ export async function syncDividendsForUser(userId: string, force = false) {
     } catch (err) { console.warn(`[dividends] yahoo ${a.code}:`, err); errors++ }
   }))
 
+  // For brapi assets (Brazilian stocks/FIIs): Yahoo Finance with .SA suffix is the
+  // primary source (free, no token). Brapi is the fallback if BRAPI_TOKEN is set.
   for (const a of brapiAssets) {
+    let didSync = false
+
     try {
-      const allDivs = await fetchBrapiDividends(a.ticker_brapi!)
-      await upsertRows(a, allDivs)
-    } catch (err) { console.warn(`[dividends] brapi ${a.code}:`, err); errors++ }
-    await new Promise(r => setTimeout(r, 600))
+      const from = latestMap[a.id] ?? defaultFrom
+      const divs = await fetchYahooDividends(a.ticker_brapi! + '.SA', from)
+      await upsertRows(a, divs)
+      didSync = true
+    } catch (err) {
+      console.warn(`[dividends] yahoo-sa ${a.code}:`, err)
+    }
+
+    if (!didSync && process.env.BRAPI_TOKEN) {
+      try {
+        const allDivs = await fetchBrapiDividends(a.ticker_brapi!)
+        await upsertRows(a, allDivs)
+        didSync = true
+      } catch (err) { console.warn(`[dividends] brapi ${a.code}:`, err) }
+    }
+
+    if (!didSync) errors++
+    await new Promise(r => setTimeout(r, 400))
   }
 
   return { synced, skipped, errors }
