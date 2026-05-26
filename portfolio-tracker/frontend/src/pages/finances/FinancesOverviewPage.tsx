@@ -71,13 +71,15 @@ const ENV_TYPE_KEY: Record<string, string> = {
   free:       'envelopeFree',
 }
 
-const ARVO_ENV_COLORS: Record<string, string> = {
-  essential:  '#1B4FD8', // azul arara
-  investment: '#7B4FCC', // índigo
-  savings:    '#F0A030', // tucano âmbar
-  free:       '#C8B89A', // ouro arvo
-  income:     '#A36A52', // terracota
-}
+const CHART_PALETTE = [
+  '#1B4FD8', // azul arara
+  '#A36A52', // terracota
+  '#E8A020', // tucano âmbar
+  '#7B4FCC', // índigo
+  '#0A7E6E', // verde teal
+  '#C86A28', // laranja escuro
+  '#5B8CD8', // azul claro
+]
 
 function resolveEnvName(name: string, type: string | undefined, nameKey: string | null | undefined, keys: Record<string, string>): string {
   const k = nameKey ?? (type ? ENV_TYPE_KEY[type] : null) ?? null
@@ -330,7 +332,7 @@ export default function FinancesOverviewPage() {
 
         <div style={{ position: 'relative', zIndex: 2, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
           <div>
-            <p style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'var(--arvo-gold)', margin: 0 }}>{t.finances.overviewBalance}</p>
+            <p style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'var(--arvo-gold-text)', margin: 0 }}>{t.finances.overviewBalance}</p>
             <p style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 42, letterSpacing: '0.02em', lineHeight: 1.05, marginTop: 10, color: receivedIncome > 0 && netBalance < 0 ? 'var(--arvo-red)' : 'var(--arvo-black)' }}>
               {receivedIncome > 0 ? fmt(cx(netBalance), currency, true) : '—'}
             </p>
@@ -347,27 +349,27 @@ export default function FinancesOverviewPage() {
 
         <div style={{ position: 'relative', zIndex: 2, marginTop: 20, paddingTop: 18, borderTop: '1px solid rgba(13,13,13,0.08)', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-            <span style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.48)' }}>{t.finances.income}</span>
+            <span style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.62)' }}>{t.finances.income}</span>
             <span style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 18, letterSpacing: '0.04em', color: receivedIncome > 0 && receivedIncome >= configuredIncome ? 'var(--arvo-green)' : receivedIncome > 0 ? 'var(--arvo-ocre)' : 'var(--arvo-fg)' }}>
               {receivedIncome > 0 ? fmt(cx(receivedIncome), currency, true) : '—'}
             </span>
-            <span style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 10, color: 'rgba(13,13,13,0.38)' }}>
+            <span style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 10, color: 'rgba(13,13,13,0.58)' }}>
               {t.finances.overviewPlanned} {fmt(cx(configuredIncome), currency, true)}
             </span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-            <span style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.48)' }}>{t.finances.expenses}</span>
+            <span style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.62)' }}>{t.finances.expenses}</span>
             <span style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 18, letterSpacing: '0.04em', color: totalExpenses > totalBudgeted && totalBudgeted > 0 ? 'var(--arvo-red)' : 'var(--arvo-fg)' }}>
               {totalExpenses > 0 ? fmt(cx(totalExpenses), currency, true) : '—'}
             </span>
             {totalBudgeted > 0 && (
-              <span style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 10, color: 'rgba(13,13,13,0.38)' }}>
+              <span style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 10, color: 'rgba(13,13,13,0.58)' }}>
                 {t.finances.overviewPlanned} {fmt(cx(totalBudgeted), currency, true)}
               </span>
             )}
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-            <span style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.48)' }}>{t.finances.heroSavingsRate}</span>
+            <span style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.62)' }}>{t.finances.heroSavingsRate}</span>
             <span style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 18, letterSpacing: '0.04em', color: receivedIncome > 0 && netBalance >= 0 ? 'var(--arvo-green)' : receivedIncome > 0 ? 'var(--arvo-red)' : 'var(--arvo-fg)' }}>
               {receivedIncome > 0 ? `${Math.round((netBalance / receivedIncome) * 100)}%` : '—'}
             </span>
@@ -406,15 +408,15 @@ export default function FinancesOverviewPage() {
                     </div>
                     <div className="text-right shrink-0 ml-3">
                       <div>
-                        <span style={{ fontSize: 10, color: 'rgba(13,13,13,0.40)', marginRight: 4 }}>{t.finances.overviewSpent}</span>
+                        <span style={{ fontSize: 10, color: 'rgba(13,13,13,0.58)', marginRight: 4 }}>{t.finances.overviewSpent}</span>
                         <span style={{ fontSize: 12, fontWeight: 600, color: env.over ? '#C0392B' : 'var(--arvo-fg-muted)' }}>
                           {fmt(cx(env.actual), currency, true)}
                         </span>
                       </div>
                       {env.budget > 0 && (
                         <div>
-                          <span style={{ fontSize: 10, color: 'rgba(13,13,13,0.40)', marginRight: 4 }}>{t.finances.overviewBudgeted}</span>
-                          <span style={{ fontSize: 12, color: 'rgba(13,13,13,0.40)' }}>{fmt(cx(env.budget), currency, true)}</span>
+                          <span style={{ fontSize: 10, color: 'rgba(13,13,13,0.58)', marginRight: 4 }}>{t.finances.overviewBudgeted}</span>
+                          <span style={{ fontSize: 12, color: 'rgba(13,13,13,0.58)' }}>{fmt(cx(env.budget), currency, true)}</span>
                         </div>
                       )}
                       {env.budget > 0 && env.actual > 0 && (
@@ -442,8 +444,8 @@ export default function FinancesOverviewPage() {
                     />
                   </div>
                   <div className="flex items-center justify-between mt-0.5">
-                    <span style={{ fontSize: 10, color: 'rgba(13,13,13,0.40)' }}>{env.pctOfIncome.toFixed(1)}% {t.finances.overviewSpent}</span>
-                    <span style={{ fontSize: 10, color: 'rgba(13,13,13,0.40)' }}>{t.finances.target}: {env.pct_target}% {t.finances.ofIncome}</span>
+                    <span style={{ fontSize: 10, color: 'rgba(13,13,13,0.58)' }}>{env.pctOfIncome.toFixed(1)}% {t.finances.overviewSpent}</span>
+                    <span style={{ fontSize: 10, color: 'rgba(13,13,13,0.58)' }}>{t.finances.target}: {env.pct_target}% {t.finances.ofIncome}</span>
                   </div>
                 </div>
               </div>
@@ -461,14 +463,14 @@ export default function FinancesOverviewPage() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between">
                             <span style={{ fontSize: 12, color: 'var(--arvo-fg-muted)' }} className="truncate">{resolveKey(cat.name, cat.name_key, nameKeys)}</span>
-                            <span style={{ fontSize: 10, color: 'rgba(13,13,13,0.40)', flexShrink: 0, marginLeft: 8 }}>{envPct.toFixed(0)}% {t.finances.ofEnvelope}</span>
+                            <span style={{ fontSize: 10, color: 'rgba(13,13,13,0.58)', flexShrink: 0, marginLeft: 8 }}>{envPct.toFixed(0)}% {t.finances.ofEnvelope}</span>
                           </div>
                           <div className="mt-0.5 h-1 bg-gray-200 rounded-full overflow-hidden">
                             <div className="h-full rounded-full" style={{ width: catBudget > 0 ? `${budgetPct}%` : `${Math.min(envPct, 100)}%`, backgroundColor: over ? '#ef4444' : cat.color }} />
                           </div>
                           <div className="flex items-center justify-between mt-0.5">
-                            <span style={{ fontSize: 10, color: 'rgba(13,13,13,0.40)' }}>{fmt(cx(cat.actual), currency, true)} {t.finances.overviewSpent}</span>
-                            {catBudget > 0 && <span style={{ fontSize: 10, flexShrink: 0, color: over ? '#C0392B' : 'rgba(13,13,13,0.40)' }}>{budgetPct.toFixed(0)}% {t.finances.ofBudget}</span>}
+                            <span style={{ fontSize: 10, color: 'rgba(13,13,13,0.58)' }}>{fmt(cx(cat.actual), currency, true)} {t.finances.overviewSpent}</span>
+                            {catBudget > 0 && <span style={{ fontSize: 10, flexShrink: 0, color: over ? '#C0392B' : 'rgba(13,13,13,0.58)' }}>{budgetPct.toFixed(0)}% {t.finances.ofBudget}</span>}
                           </div>
                         </div>
                       </div>
@@ -495,7 +497,7 @@ export default function FinancesOverviewPage() {
               const pct = totalExpenses > 0 ? (cat.actual / totalExpenses) * 100 : 0
               return (
                 <div key={cat.id} className="px-5 py-2.5 flex items-center gap-3 cursor-pointer hover:bg-gray-50 transition-colors" onClick={() => navigate(`/finances/transactions?category_id=${cat.id}`)}>
-                  <span style={{ fontSize: 12, color: 'rgba(13,13,13,0.30)', width: 16, flexShrink: 0 }}>{i + 1}</span>
+                  <span style={{ fontSize: 12, color: 'rgba(13,13,13,0.50)', width: 16, flexShrink: 0 }}>{i + 1}</span>
                   <span className="text-base leading-none w-6 shrink-0">{cat.icon}</span>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
@@ -506,7 +508,7 @@ export default function FinancesOverviewPage() {
                       <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: cat.color }} />
                     </div>
                   </div>
-                  <span style={{ fontSize: 12, color: 'rgba(13,13,13,0.40)', width: 32, textAlign: 'right', flexShrink: 0 }}>{pct.toFixed(0)}%</span>
+                  <span style={{ fontSize: 12, color: 'rgba(13,13,13,0.58)', width: 32, textAlign: 'right', flexShrink: 0 }}>{pct.toFixed(0)}%</span>
                 </div>
               )
             })}
@@ -562,7 +564,7 @@ export default function FinancesOverviewPage() {
                   dataKey={env.name}
                   name={resolveEnvName(env.name, env.type, env.name_key, nameKeys)}
                   stackId="a"
-                  fill={ARVO_ENV_COLORS[env.type ?? ''] ?? env.color}
+                  fill={CHART_PALETTE[i % CHART_PALETTE.length]}
                   radius={i === data.envelopes.length - 1 ? [3, 3, 0, 0] : [0, 0, 0, 0]}
                 />
               ))}

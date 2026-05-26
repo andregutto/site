@@ -28,7 +28,7 @@ export default function ValueCards({ total_brl, generated_at, invested_brl, gain
   }
 
   function pctColor(val: number | null | undefined): string {
-    if (val == null) return 'rgba(13,13,13,0.35)'
+    if (val == null) return 'rgba(13,13,13,0.45)'
     return val >= 0 ? 'var(--arvo-green)' : 'var(--arvo-red)'
   }
 
@@ -40,7 +40,7 @@ export default function ValueCards({ total_brl, generated_at, invested_brl, gain
     fontSize: 9,
     letterSpacing: '0.25em',
     textTransform: 'uppercase',
-    color: 'rgba(13,13,13,0.48)',
+    color: 'rgba(13,13,13,0.62)',
   }
 
   return (
@@ -56,14 +56,14 @@ export default function ValueCards({ total_brl, generated_at, invested_brl, gain
       {/* Top row */}
       <div style={{ position: 'relative', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, zIndex: 2 }}>
         <div>
-          <p style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 10, letterSpacing: '0.30em', textTransform: 'uppercase', color: 'var(--arvo-gold)', margin: 0 }}>
+          <p style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 10, letterSpacing: '0.30em', textTransform: 'uppercase', color: 'var(--arvo-gold-text)', margin: 0 }}>
             Total {currency}
           </p>
           <p style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 56, letterSpacing: '0.02em', lineHeight: 1.05, color: 'var(--arvo-black)', margin: '12px 0 0' }}>
             {fmt(total_brl, 0)}
           </p>
         </div>
-        <p style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.38)', marginTop: 4, whiteSpace: 'nowrap' }}>
+        <p style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.58)', marginTop: 4, whiteSpace: 'nowrap' }}>
           {t.dashboard.updatedAt.replace('{time}', ts)}
         </p>
       </div>

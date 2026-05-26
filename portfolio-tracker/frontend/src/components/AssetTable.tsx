@@ -290,7 +290,7 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
                             : <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: group.color }} />
                         })()}
                         <span className="text-sm tracking-tight" style={{ fontFamily: "'Tenor Sans', sans-serif", fontWeight: 600, color: 'var(--arvo-black)' }}>{resolveClassName(group.name, group.name_key)}</span>
-                        <span className="text-xs" style={{ color: 'rgba(13,13,13,0.4)' }}>
+                        <span className="text-xs" style={{ color: 'rgba(13,13,13,0.58)' }}>
                           {group.assets.length} {group.assets.length === 1 ? d.asset : d.assets}
                         </span>
                       </div>
@@ -361,7 +361,7 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
                             <div>
                               <div>{asset.currency} {fmtNumber(asset.price, 2)}</div>
                               {asset.invested_brl != null && asset.holdings != null && asset.holdings > 0 && (
-                                <div className="text-[11px]" style={{ color: 'rgba(13,13,13,0.4)' }}>
+                                <div className="text-[11px]" style={{ color: 'rgba(13,13,13,0.58)' }}>
                                   PM: {fmt(asset.invested_brl / asset.holdings)}
                                 </div>
                               )}
@@ -428,14 +428,14 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
           </tfoot>
         </table>
         {groups.length === 0 && (
-          <p className="text-center py-8 text-sm" style={{ color: 'rgba(13,13,13,0.4)' }}>{d.noAssets}</p>
+          <p className="text-center py-8 text-sm" style={{ color: 'rgba(13,13,13,0.58)' }}>{d.noAssets}</p>
         )}
       </div>
 
       {/* Mobile cards */}
       <div className="sm:hidden" style={{ borderTop: '1px solid var(--arvo-border-soft)' }}>
         {groups.length === 0 && (
-          <p className="text-center py-8 text-sm" style={{ color: 'rgba(13,13,13,0.4)' }}>{d.noAssets}</p>
+          <p className="text-center py-8 text-sm" style={{ color: 'rgba(13,13,13,0.58)' }}>{d.noAssets}</p>
         )}
         {groups.map(group => {
           const isOpen   = expanded.has(group.name)
@@ -481,7 +481,7 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
                   </span>
                 )}
                 <span className="text-sm tabular-nums" style={{ fontFamily: "'Tenor Sans', sans-serif", fontWeight: 600, color: 'var(--arvo-black)' }}>{fmt(group.total)}</span>
-                <span className="text-xs w-10 text-right" style={{ color: 'rgba(13,13,13,0.4)' }}>{groupPct.toFixed(1)}%</span>
+                <span className="text-xs w-10 text-right" style={{ color: 'rgba(13,13,13,0.58)' }}>{groupPct.toFixed(1)}%</span>
               </div>
 
               {/* Asset cards */}

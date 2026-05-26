@@ -69,7 +69,7 @@ export default function AllocationChart({ data }: Props) {
                   />
                 </div>
               </div>
-              <span className="text-xs flex-shrink-0 w-24 text-right" style={{ color: 'rgba(13,13,13,0.4)', fontFamily: "'Tenor Sans', sans-serif" }}>
+              <span className="text-xs flex-shrink-0 w-24 text-right" style={{ color: 'rgba(13,13,13,0.58)', fontFamily: "'Tenor Sans', sans-serif" }}>
                 {fmtBRL(item.value_brl)}
               </span>
             </div>

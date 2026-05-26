@@ -36,7 +36,8 @@
 
   /* ── BASE PALETTE — the backbone. Never changes. ───────────────────── */
   --arvo-black:       #0D0D0D;   /* landing, header, hero, video intros, logo */
-  --arvo-gold:        #C8B89A;   /* the through-line — always present */
+  --arvo-gold:        #C8B89A;   /* the through-line — borders, glows, accents */
+  --arvo-gold-text:   #8C6A28;   /* readable gold for text on white (contrast ≥ 4.5:1) */
   --arvo-offwhite:    #FFFFFF;   /* primary background of tools & content */
   --arvo-beige:       #F4F4F4;   /* secondary surfaces, separators, cards */
   --arvo-terracotta:  #A36A52;   /* warm accent, editorial details */
@@ -67,8 +68,8 @@
   /* ── FOREGROUND on LIGHT (offwhite) ────────────────────────────────── */
   --arvo-fg:           rgba(13, 13, 13, 0.92);   /* primary text */
   --arvo-fg-muted:     rgba(13, 13, 13, 0.65);   /* body */
-  --arvo-fg-soft:      rgba(13, 13, 13, 0.45);   /* metadata, labels */
-  --arvo-fg-faint:     rgba(13, 13, 13, 0.28);   /* dividers, hairlines */
+  --arvo-fg-soft:      rgba(13, 13, 13, 0.58);   /* metadata, labels (was 0.45 — too light on white) */
+  --arvo-fg-faint:     rgba(13, 13, 13, 0.28);   /* dividers, hairlines — NOT for text */
 
   /* ── FOREGROUND on DARK (black) ────────────────────────────────────── */
   --arvo-fg-on-dark:        rgba(242, 237, 228, 0.92);
@@ -215,8 +216,7 @@
   font-size: var(--arvo-text-eyebrow);
   text-transform: uppercase;
   letter-spacing: var(--arvo-track-widest);
-  color: var(--arvo-gold);
-  opacity: 0.65;
+  color: var(--arvo-gold-text);
 }
 
 /* Body, small, meta */

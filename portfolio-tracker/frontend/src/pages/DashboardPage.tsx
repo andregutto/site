@@ -178,7 +178,7 @@ export default function DashboardPage() {
           ))}
           <button
             onClick={refresh}
-            style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 11, color: 'rgba(13,13,13,0.45)', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, marginLeft: 4 }}
+            style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 11, color: 'rgba(13,13,13,0.60)', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, marginLeft: 4 }}
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -240,9 +240,9 @@ export default function DashboardPage() {
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={portfolioChartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-                <XAxis dataKey="month" tick={{ fontSize: 10, fill: 'rgba(13,13,13,0.40)' }} interval="preserveStartEnd" />
+                <XAxis dataKey="month" tick={{ fontSize: 10, fill: 'rgba(13,13,13,0.55)' }} interval="preserveStartEnd" />
                 <YAxis
-                  tick={{ fontSize: 10, fill: 'rgba(13,13,13,0.40)' }}
+                  tick={{ fontSize: 10, fill: 'rgba(13,13,13,0.55)' }}
                   tickFormatter={v => {
                     const n = typeof v === 'number' ? v : 0
                     return currency === 'BRL'
@@ -336,7 +336,7 @@ export default function DashboardPage() {
                 <div className="flex-1 min-w-[140px] h-20">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={divSummary.by_month.map(m => ({ month: m.month.slice(5), value: convert(m.total_brl) }))}>
-                      <XAxis dataKey="month" tick={{ fontSize: 9, fill: 'rgba(13,13,13,0.40)' }} />
+                      <XAxis dataKey="month" tick={{ fontSize: 9, fill: 'rgba(13,13,13,0.55)' }} />
                       <YAxis hide />
                       <Tooltip
                         formatter={(v) => [new Intl.NumberFormat('pt-BR', { style: 'currency', currency, maximumFractionDigits: 0 }).format(typeof v === 'number' ? v : 0), td.title ?? 'Dividendos']}

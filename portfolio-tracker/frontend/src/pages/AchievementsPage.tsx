@@ -94,13 +94,13 @@ export default function AchievementsPage() {
           <div className="flex items-center gap-2">
             <span className="text-3xl">{level.emoji}</span>
             <div>
-              <p className="text-xs uppercase tracking-widest" style={{ fontFamily: "'Tenor Sans', sans-serif", color: 'var(--arvo-gold)' }}>{t.achievements.currentLevel}</p>
+              <p className="text-xs uppercase tracking-widest" style={{ fontFamily: "'Tenor Sans', sans-serif", color: 'var(--arvo-gold-text)' }}>{t.achievements.currentLevel}</p>
               <p style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 18, color: 'var(--arvo-black)' }}>{(t.levels as Record<string,string>)[level.key] ?? level.name}</p>
             </div>
           </div>
           <div className="text-right">
-            <span className="font-bold text-2xl" style={{ fontFamily: "'Playfair Display', serif", fontStyle: 'italic', color: 'var(--arvo-gold)' }}>{totalXp}</span>
-            <span className="text-sm ml-1" style={{ color: 'rgba(13,13,13,0.45)', fontFamily: "'Tenor Sans', sans-serif" }}>XP</span>
+            <span className="font-bold text-2xl" style={{ fontFamily: "'Playfair Display', serif", fontStyle: 'italic', color: 'var(--arvo-gold-text)' }}>{totalXp}</span>
+            <span className="text-sm ml-1" style={{ color: 'rgba(13,13,13,0.60)', fontFamily: "'Tenor Sans', sans-serif" }}>XP</span>
           </div>
         </div>
 
@@ -111,7 +111,7 @@ export default function AchievementsPage() {
           />
         </div>
 
-        <div className="flex justify-between mt-2 text-xs" style={{ color: 'rgba(13,13,13,0.45)', fontFamily: "'Tenor Sans', sans-serif", position: 'relative', zIndex: 1 }}>
+        <div className="flex justify-between mt-2 text-xs" style={{ color: 'rgba(13,13,13,0.60)', fontFamily: "'Tenor Sans', sans-serif", position: 'relative', zIndex: 1 }}>
           <span>{level.minXp} XP</span>
           {nextLevel
             ? <span>{t.achievements.nextLevel}: {nextLevel.emoji} {(t.levels as Record<string,string>)[nextLevel.key] ?? nextLevel.name} · {nextLevel.minXp} {t.achievements.xp}</span>
