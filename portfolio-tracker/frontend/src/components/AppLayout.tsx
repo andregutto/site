@@ -253,10 +253,10 @@ export default function AppLayout() {
           </div>
         </div>
 
-        {/* ── Sub-nav bar (desktop only) ── */}
+        {/* ── Sub-nav bar ── */}
         {activeSubItems.length > 0 && (
-          <div className="hidden sm:block border-t border-gray-100 bg-gray-50/60">
-            <div className="flex items-center justify-center gap-0.5 px-6 py-1.5 overflow-x-auto scrollbar-none">
+          <div className="border-t border-gray-100 bg-gray-50/60">
+            <div className="flex items-center justify-start sm:justify-center gap-0.5 px-4 sm:px-6 py-1.5 overflow-x-auto scrollbar-none">
               {activeSubItems.map(({ to, label, end, icon }) => (
                 <NavLink
                   key={to} to={to} end={end}
