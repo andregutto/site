@@ -100,8 +100,8 @@ function deriveRates(portfolio: PortfolioValue): Record<string, number> {
   const brl = portfolio.total_brl || 1
   return {
     BRL: 1,
-    EUR: portfolio.total_eur != null ? portfolio.total_eur / brl : 1 / 6.4,
-    USD: portfolio.total_usd != null ? portfolio.total_usd / brl : 1 / 5.7,
+    EUR: portfolio.total_eur != null && portfolio.total_eur > 0 ? portfolio.total_eur / brl : 1 / 6.4,
+    USD: portfolio.total_usd != null && portfolio.total_usd > 0 ? portfolio.total_usd / brl : 1 / 5.7,
   }
 }
 

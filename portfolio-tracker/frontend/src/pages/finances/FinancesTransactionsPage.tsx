@@ -978,7 +978,7 @@ export default function FinancesTransactionsPage() {
                 <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
                   <tr>
                     {/* Select-all checkbox */}
-                    <th className="pl-4 pr-2 py-3 w-8">
+                    <th className="pl-3 pr-1 sm:pl-4 sm:pr-2 py-3 w-8">
                       <input
                         type="checkbox"
                         checked={allSelected}
@@ -987,12 +987,12 @@ export default function FinancesTransactionsPage() {
                         className="rounded border-gray-300 text-[#0D0D0D] focus:ring-[#0D0D0D]/20 cursor-pointer"
                       />
                     </th>
-                    <th className="px-3 py-3 text-left">{t.common.date}</th>
-                    <th className="px-3 py-3 text-left">{t.common.description}</th>
-                    <th className="px-3 py-3 text-right">{t.common.value}</th>
-                    <th className="px-3 py-3 text-left">{t.finances.category}</th>
-                    <th className="px-3 py-3 text-left">{t.finances.txMoment}</th>
-                    <th className="px-3 py-3"></th>
+                    <th className="px-2 sm:px-3 py-3 text-left whitespace-nowrap">{t.common.date}</th>
+                    <th className="px-2 sm:px-3 py-3 text-left">{t.common.description}</th>
+                    <th className="px-2 sm:px-3 py-3 text-right whitespace-nowrap">{t.common.value}</th>
+                    <th className="px-2 sm:px-3 py-3 text-left hidden sm:table-cell">{t.finances.category}</th>
+                    <th className="px-2 sm:px-3 py-3 text-left hidden md:table-cell">{t.finances.txMoment}</th>
+                    <th className="px-2 sm:px-3 py-3"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
@@ -1026,15 +1026,15 @@ export default function FinancesTransactionsPage() {
                           </tr>
                           {expanded && item.txs.map(tx => (
                             <tr key={tx.id} className="bg-amber-50/20 hover:bg-amber-50/40 transition-colors">
-                              <td className="pl-4 pr-2 py-2 w-8" />
-                              <td className="px-3 py-2 text-gray-400 whitespace-nowrap text-xs pl-8">{fmtDate(tx.date)}</td>
-                              <td className="px-3 py-2 text-gray-600 max-w-xs text-xs pl-8">
+                              <td className="pl-3 pr-1 py-2 w-8" />
+                              <td className="px-2 sm:px-3 py-2 text-gray-400 whitespace-nowrap text-xs">{fmtDate(tx.date)}</td>
+                              <td className="px-2 sm:px-3 py-2 text-gray-600 max-w-[120px] sm:max-w-xs text-xs">
                                 <span className="truncate block">{tx.description || '—'}</span>
                               </td>
-                              <td className={`px-3 py-2 text-right text-xs font-medium whitespace-nowrap ${tx.amount < 0 ? 'text-red-500' : 'text-green-500'}`}>
+                              <td className={`px-2 sm:px-3 py-2 text-right text-xs font-medium whitespace-nowrap ${tx.amount < 0 ? 'text-red-500' : 'text-green-500'}`}>
                                 {fmt(tx.amount, tx.currency)}
                               </td>
-                              <td className="px-3 py-2">
+                              <td className="px-2 sm:px-3 py-2 hidden sm:table-cell">
                                 {tx.finance_categories && (
                                   <span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ backgroundColor: tx.finance_categories.color + '22', color: tx.finance_categories.color }}>
                                     {tx.finance_categories.icon} {tx.finance_categories.name}
@@ -1055,7 +1055,7 @@ export default function FinancesTransactionsPage() {
                         key={tx.id}
                         className={`group transition-colors ${isHidden(tx) ? 'opacity-40' : ''} ${isSelected ? 'bg-[#0D0D0D]/5' : 'hover:bg-gray-50'}`}
                       >
-                        <td className="pl-4 pr-2 py-3 w-8">
+                        <td className="pl-3 pr-1 sm:pl-4 sm:pr-2 py-2.5 sm:py-3 w-8">
                           <input
                             type="checkbox"
                             checked={isSelected}
@@ -1063,8 +1063,8 @@ export default function FinancesTransactionsPage() {
                             className="rounded border-gray-300 text-[#0D0D0D] focus:ring-[#0D0D0D]/20 cursor-pointer"
                           />
                         </td>
-                        <td className="px-3 py-3 text-gray-500 whitespace-nowrap">{fmtDate(tx.date)}</td>
-                        <td className="px-3 py-3 text-gray-800 max-w-xs">
+                        <td className="px-2 sm:px-3 py-2.5 sm:py-3 text-gray-500 whitespace-nowrap text-xs sm:text-sm">{fmtDate(tx.date)}</td>
+                        <td className="px-2 sm:px-3 py-2.5 sm:py-3 text-gray-800 max-w-[140px] sm:max-w-xs">
                           <span className="truncate block">{tx.description || '—'}</span>
                           <div className="flex items-center gap-1 flex-wrap mt-0.5">
                             {tx.is_internal_transfer && !tx.linked_transfer_id && (
@@ -1088,6 +1088,18 @@ export default function FinancesTransactionsPage() {
                                 {groups.find(g => g.id === tx.reimbursement_group_id)?.name ?? t.finances.reimbursementGroup}
                               </span>
                             )}
+                            {/* Moment badges — only visible on mobile where the moment column is hidden */}
+                            {tx.moments.length > 0 && tx.moments.map(m => (
+                              <span
+                                key={m.id}
+                                className="md:hidden text-[10px] px-1 py-0.5 rounded-full font-medium cursor-pointer"
+                                style={{ backgroundColor: m.color + '22', color: m.color }}
+                                onClick={() => { setSelected(new Set([tx.id])); setShowMomentDropdown(true) }}
+                                title={m.name}
+                              >
+                                {m.icon}
+                              </span>
+                            ))}
                           </div>
                           {editingNotesId === tx.id ? (
                             <input
@@ -1107,10 +1119,10 @@ export default function FinancesTransactionsPage() {
                             >{tx.notes}</span>
                           ) : null}
                         </td>
-                        <td className={`px-3 py-3 text-right font-medium whitespace-nowrap ${tx.amount < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                        <td className={`px-2 sm:px-3 py-2.5 sm:py-3 text-right font-medium whitespace-nowrap text-xs sm:text-sm ${tx.amount < 0 ? 'text-red-600' : 'text-green-600'}`}>
                           {fmt(tx.amount, tx.currency)}
                         </td>
-                        <td className="px-3 py-3">
+                        <td className="px-2 sm:px-3 py-2.5 sm:py-3 hidden sm:table-cell">
                           {editingId === tx.id ? (
                             <select
                               autoFocus
@@ -1144,7 +1156,7 @@ export default function FinancesTransactionsPage() {
                           )}
                         </td>
                         {/* Moment badge */}
-                        <td className="px-3 py-3">
+                        <td className="px-2 sm:px-3 py-2.5 sm:py-3 hidden md:table-cell">
                           {tx.moments.length > 0 ? (
                             <div className="flex items-center gap-1 flex-wrap">
                               {tx.moments.map(m => (
@@ -1165,7 +1177,7 @@ export default function FinancesTransactionsPage() {
                             >—</span>
                           )}
                         </td>
-                        <td className="px-3 py-3">
+                        <td className="px-1 sm:px-3 py-2.5 sm:py-3">
                           <div className={`flex items-center gap-0.5 transition-opacity ${tx.exclude_from_stats ? 'opacity-100' : '[@media(hover:none)]:opacity-100 opacity-0 group-hover:opacity-100'}`}>
                             {/* Note */}
                             <button
