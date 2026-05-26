@@ -13,6 +13,7 @@ interface Moment {
   start_date: string | null
   end_date: string | null
   cover_image_url: string | null
+  cover_image_position: string | null
   share_token: string | null
   share_expires_at: string | null
   share_hide_descriptions: boolean
@@ -69,14 +70,62 @@ function MomentForm({ initial, onSave, onCancel, saving, userId }: FormProps) {
   const [photoPreview, setPhotoPreview] = useState<string | null>(initial?.cover_image_url ?? null)
   const [photoFile,    setPhotoFile]    = useState<File | null>(null)
   const [uploading,    setUploading]    = useState(false)
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [photoPos,     setPhotoPos]     = useState(() => {
+    const raw = initial?.cover_image_position ?? '50% 50%'
+    const [x, y] = raw.split(' ').map(v => parseFloat(v))
+    return { x: isNaN(x) ? 50 : x, y: isNaN(y) ? 50 : y }
+  })
+  const [isDragging,   setIsDragging]   = useState(false)
+  const fileInputRef  = useRef<HTMLInputElement>(null)
+  const photoContainerRef = useRef<HTMLDivElement>(null)
+  const dragStart = useRef<{ mx: number; my: number; px: number; py: number } | null>(null)
 
   function onFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
     setPhotoFile(file)
     setPhotoPreview(URL.createObjectURL(file))
+    setPhotoPos({ x: 50, y: 50 })
   }
+
+  function onDragStart(e: React.MouseEvent | React.TouchEvent) {
+    const point = 'touches' in e ? e.touches[0] : e
+    dragStart.current = { mx: point.clientX, my: point.clientY, px: photoPos.x, py: photoPos.y }
+    setIsDragging(true)
+    e.preventDefault()
+  }
+
+  function onDragMove(e: MouseEvent | TouchEvent) {
+    if (!dragStart.current || !photoContainerRef.current) return
+    const point = 'touches' in e ? (e as TouchEvent).touches[0] : (e as MouseEvent)
+    const rect = photoContainerRef.current.getBoundingClientRect()
+    const dx = ((point.clientX - dragStart.current.mx) / rect.width) * 100
+    const dy = ((point.clientY - dragStart.current.my) / rect.height) * 100
+    setPhotoPos({
+      x: Math.min(100, Math.max(0, dragStart.current.px - dx)),
+      y: Math.min(100, Math.max(0, dragStart.current.py - dy)),
+    })
+  }
+
+  function onDragEnd() {
+    dragStart.current = null
+    setIsDragging(false)
+  }
+
+  useEffect(() => {
+    if (!isDragging) return
+    window.addEventListener('mousemove', onDragMove)
+    window.addEventListener('mouseup', onDragEnd)
+    window.addEventListener('touchmove', onDragMove, { passive: false })
+    window.addEventListener('touchend', onDragEnd)
+    return () => {
+      window.removeEventListener('mousemove', onDragMove)
+      window.removeEventListener('mouseup', onDragEnd)
+      window.removeEventListener('touchmove', onDragMove)
+      window.removeEventListener('touchend', onDragEnd)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDragging])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -101,6 +150,7 @@ function MomentForm({ initial, onSave, onCancel, saving, userId }: FormProps) {
       name, description: description || null, icon, color,
       start_date: startDate || null, end_date: endDate || null,
       cover_image_url: coverImageUrl,
+      cover_image_position: `${photoPos.x.toFixed(1)}% ${photoPos.y.toFixed(1)}%`,
     })
   }
 
@@ -125,13 +175,50 @@ function MomentForm({ initial, onSave, onCancel, saving, userId }: FormProps) {
           <label className={labelCls}>Foto (opcional)</label>
           <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={onFileChange} />
           {photoPreview ? (
-            <div className="relative group w-full h-32 rounded-xl overflow-hidden">
-              <img src={photoPreview} alt="Capa" className="w-full h-full object-cover" />
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 [@media(hover:none)]:bg-black/30 transition-colors flex items-center justify-center gap-2 [@media(hover:none)]:opacity-100 opacity-0 group-hover:opacity-100">
+            <div className="space-y-1">
+              <div
+                ref={photoContainerRef}
+                className="relative w-full h-36 rounded-xl overflow-hidden select-none"
+                style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
+                onMouseDown={onDragStart}
+                onTouchStart={onDragStart}
+              >
+                <img
+                  src={photoPreview}
+                  alt="Capa"
+                  draggable={false}
+                  className="w-full h-full object-cover pointer-events-none"
+                  style={{ objectPosition: `${photoPos.x}% ${photoPos.y}%` }}
+                />
+                {/* Overlay with action buttons — hide while dragging */}
+                {!isDragging && (
+                  <div className="absolute inset-0 bg-black/0 hover:bg-black/30 transition-colors flex items-end justify-end gap-2 p-2">
+                    <button type="button" onClick={e => { e.stopPropagation(); fileInputRef.current?.click() }}
+                      onMouseDown={e => e.stopPropagation()}
+                      className="text-xs text-white bg-black/50 rounded-lg px-2.5 py-1 opacity-0 group-hover:opacity-100 hover:opacity-100 transition-opacity">
+                      Trocar
+                    </button>
+                    <button type="button"
+                      onClick={e => { e.stopPropagation(); setPhotoPreview(null); setPhotoFile(null) }}
+                      onMouseDown={e => e.stopPropagation()}
+                      className="text-xs text-white bg-red-500/70 rounded-lg px-2.5 py-1 opacity-0 group-hover:opacity-100 hover:opacity-100 transition-opacity">
+                      Remover
+                    </button>
+                  </div>
+                )}
+                {/* Drag hint */}
+                <div className="absolute top-2 left-1/2 -translate-x-1/2 pointer-events-none">
+                  <span className="text-[10px] text-white/70 bg-black/40 rounded px-2 py-0.5 tracking-wide">
+                    ↕ arraste para reposicionar
+                  </span>
+                </div>
+              </div>
+              <div className="flex justify-end gap-2 px-0.5">
                 <button type="button" onClick={() => fileInputRef.current?.click()}
-                  className="text-xs text-white bg-black/50 rounded-lg px-3 py-1.5">Trocar</button>
+                  className="text-xs text-gray-400 hover:text-gray-700 transition-colors">Trocar foto</button>
+                <span className="text-gray-200">·</span>
                 <button type="button" onClick={() => { setPhotoPreview(null); setPhotoFile(null) }}
-                  className="text-xs text-white bg-red-500/70 rounded-lg px-3 py-1.5">Remover</button>
+                  className="text-xs text-gray-400 hover:text-red-500 transition-colors">Remover</button>
               </div>
             </div>
           ) : (
@@ -567,7 +654,8 @@ export default function FinancesMomentsPage() {
             {/* Cover photo or color gradient */}
             {m.cover_image_url ? (
               <div className="h-28 overflow-hidden">
-                <img src={m.cover_image_url} alt={m.name} className="w-full h-full object-cover" />
+                <img src={m.cover_image_url} alt={m.name} className="w-full h-full object-cover"
+                  style={{ objectPosition: m.cover_image_position ?? '50% 50%' }} />
               </div>
             ) : (
               <div className="h-16 flex items-center justify-center text-3xl" style={{ background: `linear-gradient(135deg, ${m.color}30 0%, ${m.color}60 100%)` }}>

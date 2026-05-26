@@ -29,7 +29,7 @@ export default function LoginFooter() {
         <span>·</span>
         <Link to="/terms" className="hover:text-[#0D0D0D] transition-colors">{f.terms}</Link>
         <span>·</span>
-        <a href="mailto:andre@andregutto.com" className="hover:text-[#0D0D0D] transition-colors">{f.contact}</a>
+        <a href="mailto:contato@arvo.cc" className="hover:text-[#0D0D0D] transition-colors">{f.contact}</a>
       </div>
       <div className="flex items-center justify-center gap-3 text-gray-300">
         <a

@@ -5,6 +5,7 @@ import LanguageSelector from '../components/LanguageSelector'
 
 interface PublicMoment {
   name: string; icon: string; color: string; cover_image_url: string | null
+  cover_image_position: string | null
   start_date: string | null; end_date: string | null; description: string | null
   share_expires_at: string | null
 }
@@ -105,7 +106,8 @@ export default function PublicMomentPage() {
       {/* Hero */}
       {moment.cover_image_url ? (
         <div className="h-52 sm:h-64 overflow-hidden relative">
-          <img src={moment.cover_image_url} alt={moment.name} className="w-full h-full object-cover" />
+          <img src={moment.cover_image_url} alt={moment.name} className="w-full h-full object-cover"
+            style={{ objectPosition: moment.cover_image_position ?? '50% 50%' }} />
           <div className="absolute top-3 right-3"><LanguageSelector /></div>
         </div>
       ) : (
