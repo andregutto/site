@@ -27,50 +27,64 @@ export default function ValueCards({ total_brl, generated_at, invested_brl, gain
     return `${val >= 0 ? '+' : ''}${val.toFixed(1)}%`
   }
 
-  function pctStyle(val: number | null | undefined): React.CSSProperties {
-    if (val == null) return { color: 'rgba(200,184,154,0.6)' }
-    return { color: val >= 0 ? 'var(--arvo-green-on-dark)' : '#f08070' }
+  function pctColor(val: number | null | undefined): string {
+    if (val == null) return 'rgba(200,184,154,0.6)'
+    return val >= 0 ? 'var(--arvo-green-on-dark)' : '#f08070'
   }
 
-  const labelStyle: React.CSSProperties = { fontFamily: "'Tenor Sans', sans-serif", color: 'rgba(200,184,154,0.6)', fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase' }
-  const valueStyle: React.CSSProperties = { color: '#fff', fontFamily: "'Tenor Sans', sans-serif" }
+  const periodVal = period_pct !== undefined ? period_pct : ytd_pct
+  const periodLbl = period_label ?? t.dashboard.yearLabel.replace('{year}', ytd_year ?? '')
+
+  const labelStyle: React.CSSProperties = {
+    fontFamily: "'Tenor Sans', sans-serif",
+    fontSize: 9,
+    letterSpacing: '0.25em',
+    textTransform: 'uppercase',
+    color: 'rgba(200,184,154,0.60)',
+  }
 
   return (
-    <div className="rounded-2xl p-5" style={{ background: 'linear-gradient(135deg, #111 0%, #0D0D0D 100%)', color: '#fff' }}>
-      <div className="flex items-start justify-between">
+    <div style={{ background: 'linear-gradient(135deg, #0D0D0D 0%, #1B1815 60%, #28221B 100%)', color: 'var(--arvo-fg-on-dark)', borderRadius: 16, padding: 28, position: 'relative', overflow: 'hidden' }}>
+
+      {/* Gold glow */}
+      <div style={{ position: 'absolute', top: -120, right: -80, width: 360, height: 360, borderRadius: '50%', background: 'rgba(200,184,154,0.10)', filter: 'blur(60px)', pointerEvents: 'none' }} />
+
+      {/* Top row */}
+      <div style={{ position: 'relative', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, zIndex: 2 }}>
         <div>
-          <p style={labelStyle}>Total {currency}</p>
-          <p className="mt-2 leading-tight" style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 36, fontWeight: 700, color: '#fff' }}>{fmt(total_brl, 0)}</p>
+          <p style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 10, letterSpacing: '0.30em', textTransform: 'uppercase', color: 'var(--arvo-gold)', opacity: 0.75, margin: 0 }}>
+            Total {currency}
+          </p>
+          <p style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 56, letterSpacing: '0.02em', lineHeight: 1.05, marginTop: 12, color: 'var(--arvo-fg-on-dark)', margin: '12px 0 0' }}>
+            {fmt(total_brl, 0)}
+          </p>
         </div>
-        <p className="text-[11px] mt-1" style={{ color: 'rgba(200,184,154,0.45)' }}>{t.dashboard.updatedAt.replace('{time}', ts)}</p>
+        <p style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(200,184,154,0.50)', marginTop: 4, whiteSpace: 'nowrap' }}>
+          {t.dashboard.updatedAt.replace('{time}', ts)}
+        </p>
       </div>
 
+      {/* KPI grid */}
       {showSecondary && (
-        <div className="mt-4 pt-4 grid grid-cols-2 sm:grid-cols-4 gap-4" style={{ borderTop: '1px solid rgba(200,184,154,0.12)' }}>
-          <div>
-            <p style={labelStyle}>{t.dashboard.invested}</p>
-            <p className="text-base mt-0.5" style={valueStyle}>{fmt(invested_brl!, 0)}</p>
+        <div style={{ position: 'relative', zIndex: 2, marginTop: 24, paddingTop: 22, borderTop: '1px solid rgba(200,184,154,0.18)', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 24 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <span style={labelStyle}>{t.dashboard.invested}</span>
+            <span style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 18, letterSpacing: '0.04em', color: 'var(--arvo-fg-on-dark)' }}>{fmt(invested_brl!, 0)}</span>
           </div>
-          <div>
-            <p style={labelStyle}>{t.dashboard.result}</p>
-            <p className="text-base mt-0.5" style={{ ...pctStyle(gain_brl), fontFamily: "'Tenor Sans', sans-serif" }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <span style={labelStyle}>{t.dashboard.result}</span>
+            <span style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 18, letterSpacing: '0.04em', color: pctColor(gain_brl) }}>
               {gain_brl! >= 0 ? '+' : ''}{fmt(gain_brl!, 0)}
-              {gain_pct != null && (
-                <span className="ml-1 text-[11px] opacity-75">({gain_brl! >= 0 ? '+' : ''}{gain_pct.toFixed(1)}%)</span>
-              )}
-            </p>
+              {gain_pct != null && <span style={{ fontSize: 12, opacity: 0.75, marginLeft: 4 }}>({gain_brl! >= 0 ? '+' : ''}{gain_pct.toFixed(1)}%)</span>}
+            </span>
           </div>
-          <div>
-            <p style={labelStyle}>{t.dashboard.currentMonth}</p>
-            <p className="text-base mt-0.5" style={{ ...pctStyle(month_pct), fontFamily: "'Tenor Sans', sans-serif" }}>{pctText(month_pct)}</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <span style={labelStyle}>{t.dashboard.currentMonth}</span>
+            <span style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 18, letterSpacing: '0.04em', color: pctColor(month_pct) }}>{pctText(month_pct)}</span>
           </div>
-          <div>
-            <p style={labelStyle}>
-              {period_label ?? t.dashboard.yearLabel.replace('{year}', ytd_year ?? '')}
-            </p>
-            <p className="text-base mt-0.5" style={{ ...pctStyle(period_pct !== undefined ? period_pct : ytd_pct), fontFamily: "'Tenor Sans', sans-serif" }}>
-              {pctText(period_pct !== undefined ? period_pct : ytd_pct)}
-            </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <span style={labelStyle}>{periodLbl}</span>
+            <span style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 18, letterSpacing: '0.04em', color: pctColor(periodVal) }}>{pctText(periodVal)}</span>
           </div>
         </div>
       )}

@@ -65,6 +65,8 @@ export default function AppLayout() {
   const inFinances = location.pathname.startsWith('/finances')
   const inInstitutions = location.pathname.startsWith('/institutions')
 
+  const sectionAccent = inInvestimentos ? '#1B4FD8' : inFinances ? '#A36A52' : 'var(--arvo-black)'
+
   const investimentosItems = [
     { to: '/dashboard', label: t.nav.dashboard, end: true, icon: (
       <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
@@ -144,7 +146,7 @@ export default function AppLayout() {
         {/* ── Main bar ── */}
         <div className="h-14 flex items-center px-6 gap-4">
 
-          {/* Logo wordmark */}
+          {/* Logo wordmark + product name */}
           <a
             href="https://andregutto.com"
             target="_blank"
@@ -155,6 +157,9 @@ export default function AppLayout() {
             <img src="/brand/logo/arvo-symbol-black.svg" width="22" height="22" alt="" />
             <span style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 16, letterSpacing: '0.30em', textIndent: '0.30em', color: 'var(--arvo-black)', lineHeight: 1 }}>arvo</span>
           </a>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, paddingLeft: 14, borderLeft: '1px solid var(--arvo-border)', height: 24 }}>
+            <span style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.55)', lineHeight: 1 }}>Capital</span>
+          </div>
 
           {/* Desktop — three section tabs (pill style) */}
           <nav className="hidden sm:flex flex-1 justify-center gap-1">
@@ -259,17 +264,21 @@ export default function AppLayout() {
         {/* ── Sub-nav bar — desktop only ── */}
         {activeSubItems.length > 0 && (
           <div className="hidden sm:block" style={{ borderTop: '1px solid var(--arvo-border-soft)', background: 'rgba(232,223,208,0.45)' }}>
-            <div className="flex items-center justify-center gap-0.5 px-6 py-1.5">
-              {activeSubItems.map(({ to, label, end, icon }) => (
+            <div className="flex items-center justify-center gap-1 px-6 py-2">
+              {activeSubItems.map(({ to, label, end }) => (
                 <NavLink
                   key={to} to={to} end={end}
-                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs whitespace-nowrap transition-all"
+                  className="flex items-center gap-2 whitespace-nowrap transition-all"
                   style={({ isActive }) => isActive
-                    ? { fontFamily: "'Tenor Sans', sans-serif", background: 'var(--arvo-black)', color: 'var(--arvo-offwhite)', letterSpacing: '0.08em' }
-                    : { fontFamily: "'Tenor Sans', sans-serif", color: 'rgba(13,13,13,0.5)', letterSpacing: '0.08em' }}
+                    ? { fontFamily: "'Tenor Sans', sans-serif", fontSize: 11, letterSpacing: '0.08em', padding: '7px 14px', borderRadius: 8, border: '1px solid var(--arvo-border)', background: 'white', color: 'var(--arvo-fg)', boxShadow: '0 1px 2px rgba(13,13,13,0.04)', textDecoration: 'none' }
+                    : { fontFamily: "'Tenor Sans', sans-serif", fontSize: 11, letterSpacing: '0.08em', padding: '7px 14px', borderRadius: 8, border: '1px solid transparent', background: 'transparent', color: 'rgba(13,13,13,0.55)', textDecoration: 'none' }}
                 >
-                  <span className="flex items-center" style={{ opacity: 0.7 }}>{icon}</span>
-                  {label}
+                  {({ isActive }) => (
+                    <>
+                      {isActive && <span style={{ width: 5, height: 5, borderRadius: 999, background: sectionAccent, flexShrink: 0, display: 'inline-block' }} />}
+                      {label}
+                    </>
+                  )}
                 </NavLink>
               ))}
             </div>
@@ -411,17 +420,21 @@ export default function AppLayout() {
       {/* Mobile sub-nav — fixed just above the bottom nav */}
       {activeSubItems.length > 0 && (
         <nav className="sm:hidden fixed bottom-14 left-0 right-0 z-20" style={{ background: 'rgba(232,223,208,0.94)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', borderTop: '1px solid var(--arvo-border-soft)' }}>
-          <div className="flex items-center gap-0.5 px-3 py-1 overflow-x-auto scrollbar-none">
-            {activeSubItems.map(({ to, label, end, icon }) => (
+          <div className="flex items-center gap-1 px-3 py-1.5 overflow-x-auto scrollbar-none">
+            {activeSubItems.map(({ to, label, end }) => (
               <NavLink
                 key={to} to={to} end={end}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs whitespace-nowrap transition-all"
+                className="flex items-center gap-2 whitespace-nowrap transition-all"
                 style={({ isActive }) => isActive
-                  ? { fontFamily: "'Tenor Sans', sans-serif", background: 'var(--arvo-black)', color: 'var(--arvo-offwhite)', letterSpacing: '0.08em' }
-                  : { fontFamily: "'Tenor Sans', sans-serif", color: 'rgba(13,13,13,0.5)', letterSpacing: '0.08em' }}
+                  ? { fontFamily: "'Tenor Sans', sans-serif", fontSize: 11, letterSpacing: '0.08em', padding: '6px 12px', borderRadius: 8, border: '1px solid var(--arvo-border)', background: 'white', color: 'var(--arvo-fg)', boxShadow: '0 1px 2px rgba(13,13,13,0.04)', textDecoration: 'none' }
+                  : { fontFamily: "'Tenor Sans', sans-serif", fontSize: 11, letterSpacing: '0.08em', padding: '6px 12px', borderRadius: 8, border: '1px solid transparent', background: 'transparent', color: 'rgba(13,13,13,0.5)', textDecoration: 'none' }}
               >
-                <span className="flex items-center" style={{ opacity: 0.7 }}>{icon}</span>
-                {label}
+                {({ isActive }) => (
+                  <>
+                    {isActive && <span style={{ width: 5, height: 5, borderRadius: 999, background: sectionAccent, flexShrink: 0, display: 'inline-block' }} />}
+                    {label}
+                  </>
+                )}
               </NavLink>
             ))}
           </div>

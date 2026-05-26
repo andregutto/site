@@ -192,7 +192,7 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
   }
 
   return (
-    <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--arvo-offwhite)', border: '1px solid var(--arvo-border-soft)' }}>
+    <div className="rounded-2xl overflow-hidden" style={{ background: 'white', border: '1px solid var(--arvo-border)' }}>
       {/* Toolbar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4" style={{ borderBottom: '1px solid var(--arvo-border-soft)' }}>
         <div className="flex items-center gap-2 flex-wrap">

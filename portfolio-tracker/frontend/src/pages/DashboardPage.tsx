@@ -142,7 +142,7 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-bold text-gray-900">Dashboard</h1>
+        <h1 style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 18, letterSpacing: '0.06em', color: 'var(--arvo-black)' }}>Dashboard</h1>
         <div className="flex flex-wrap items-center gap-2">
           {([
             { key: 'current_month' as PeriodMode, label: t.performance.currentMonth },
@@ -155,18 +155,24 @@ export default function DashboardPage() {
               key={key}
               onClick={() => !disabled && setPeriodMode(key)}
               disabled={disabled}
-              className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
-                disabled
-                  ? 'bg-white text-gray-300 border-gray-100 cursor-not-allowed'
-                  : periodMode === key
-                    ? 'bg-[#0D0D0D] text-white border-[#0D0D0D]'
-                    : 'bg-white text-gray-500 border-gray-200 hover:border-[#0D0D0D] hover:text-[#0D0D0D]'
-              }`}
+              style={{
+                fontFamily: "'Tenor Sans', sans-serif",
+                fontSize: 10,
+                letterSpacing: '0.12em',
+                textTransform: 'uppercase',
+                padding: '6px 12px',
+                borderRadius: 6,
+                border: `1px solid ${disabled ? 'var(--arvo-border-soft)' : periodMode === key ? 'var(--arvo-black)' : 'var(--arvo-border)'}`,
+                background: periodMode === key && !disabled ? 'var(--arvo-black)' : 'white',
+                color: disabled ? 'rgba(13,13,13,0.25)' : periodMode === key ? 'var(--arvo-offwhite)' : 'rgba(13,13,13,0.55)',
+                cursor: disabled ? 'not-allowed' : 'pointer',
+                transition: 'all 0.2s',
+              }}
             >{label}</button>
           ))}
           <button
             onClick={refresh}
-            className="text-sm text-gray-500 hover:text-[#0D0D0D] flex items-center gap-1.5 transition-colors ml-1"
+            style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 11, color: 'rgba(13,13,13,0.45)', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, marginLeft: 4 }}
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -214,8 +220,8 @@ export default function DashboardPage() {
       })()}
 
       {(chartLoading || portfolioChartData.length > 1) && (
-        <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
-          <h2 className="font-semibold text-gray-800 mb-4">{t.dashboard.portfolioEvolution}</h2>
+        <div className="rounded-2xl p-5" style={{ background: 'white', border: '1px solid var(--arvo-border)' }}>
+          <h2 className="mb-1" style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 13, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--arvo-fg)' }}>{t.dashboard.portfolioEvolution}</h2>
           <div className="h-48">
           {chartLoading && portfolioChartData.length === 0 ? (
             <div className="h-full flex items-end gap-1 px-2 pb-1">
@@ -255,9 +261,9 @@ export default function DashboardPage() {
 
       {/* Dividend section */}
       {(divLoading || (divSummary && divSummary.total_brl > 0)) && (
-        <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
+        <div className="rounded-2xl p-5" style={{ background: 'white', border: '1px solid var(--arvo-border)' }}>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-gray-800">{td.title ?? 'Dividendos'}</h2>
+            <h2 style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 13, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--arvo-fg)' }}>{td.title ?? 'Dividendos'}</h2>
             <div className="flex items-center gap-2">
               {syncing && <span className="text-xs text-gray-400 animate-pulse">{td.autoSyncing ?? 'Atualizando...'}</span>}
               <button
@@ -340,9 +346,9 @@ export default function DashboardPage() {
           onToggleFavorite={toggleFavorite}
         />
       ) : (
-        <div className="bg-white border border-gray-100 rounded-2xl p-12 text-center text-gray-400">
-          <p className="text-lg font-medium">{t.dashboard.noOpenPositions}</p>
-          <p className="text-sm mt-1">{t.dashboard.addAssetsHint}</p>
+        <div className="rounded-2xl p-12 text-center" style={{ background: 'white', border: '1px solid var(--arvo-border)' }}>
+          <p style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 16, letterSpacing: '0.06em', color: 'var(--arvo-fg-soft)' }}>{t.dashboard.noOpenPositions}</p>
+          <p className="text-sm mt-1" style={{ fontFamily: "'Playfair Display', serif", fontStyle: 'italic', color: 'var(--arvo-fg-soft)', opacity: 0.7 }}>{t.dashboard.addAssetsHint}</p>
         </div>
       )}
 

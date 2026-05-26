@@ -9,38 +9,8 @@ import LanguageSelector from '../components/LanguageSelector'
 type Mode = 'login' | 'register' | 'forgot'
 type Currency = 'BRL' | 'USD' | 'EUR'
 
-const BLUE   = '#0D0D0D'
-const BG     = '#F2EDE4'
-const DARK   = '#0D0D0D'
-const GRAY   = 'rgba(13,13,13,0.5)'
-const BORDER = 'rgba(13,13,13,0.1)'
-const GOLD   = '#C8B89A'
-
-const F_DISPLAY = "'Playfair Display', Georgia, serif"
 const F_SANS    = "'Tenor Sans', sans-serif"
-
-const LABEL_STYLE: React.CSSProperties = {
-  display: 'block',
-  fontFamily: F_SANS,
-  fontSize: 10,
-  letterSpacing: '0.14em',
-  textTransform: 'uppercase',
-  color: GRAY,
-  marginBottom: 6,
-}
-
-const INPUT_STYLE: React.CSSProperties = {
-  width: '100%',
-  border: `1px solid ${BORDER}`,
-  borderRadius: 3,
-  padding: '12px 16px',
-  fontSize: 14,
-  fontFamily: F_SANS,
-  color: DARK,
-  background: BG,
-  outline: 'none',
-  transition: 'border-color 0.2s',
-}
+const F_DISPLAY = "'Playfair Display', serif"
 
 const COUNTRY_OPTIONS = [
   { value: '',            label: '—' },
@@ -56,6 +26,30 @@ const COUNTRY_OPTIONS = [
   { value: 'Austrália',   label: 'Australia' },
   { value: 'Outro',       label: 'Outro / Other' },
 ]
+
+const labelStyle: React.CSSProperties = {
+  display: 'block',
+  fontFamily: F_SANS,
+  fontSize: 10,
+  letterSpacing: '0.14em',
+  textTransform: 'uppercase',
+  color: 'var(--arvo-fg-soft)',
+  marginBottom: 6,
+}
+
+const inputBase: React.CSSProperties = {
+  width: '100%',
+  border: '1px solid var(--arvo-border)',
+  borderRadius: 3,
+  padding: '12px 16px',
+  fontSize: 14,
+  fontFamily: F_SANS,
+  color: 'var(--arvo-fg)',
+  background: 'var(--arvo-offwhite)',
+  outline: 'none',
+  transition: 'border-color 0.2s, box-shadow 0.2s',
+  boxSizing: 'border-box' as const,
+}
 
 export default function LoginPage() {
   const { signIn, signUp } = useAuth()
@@ -151,136 +145,114 @@ export default function LoginPage() {
                           l.panelForgot
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex' }}>
+    <div style={{ minHeight: '100vh', display: 'grid', gridTemplateColumns: '1fr 1.1fr', fontFamily: F_SANS, background: 'var(--arvo-offwhite)' }}
+      className="grid-cols-1 lg:grid-cols-[1fr_1.1fr]"
+    >
 
-      {/* ── Painel esquerdo ── */}
-      <div
-        className="hidden lg:flex lg:w-[44%] xl:w-[46%] flex-shrink-0 flex-col relative"
-        style={{ background: '#0D0D0D' }}
+      {/* ── Left — editorial ── */}
+      <aside
+        className="hidden lg:flex flex-col"
+        style={{ background: 'var(--arvo-black)', color: 'var(--arvo-fg-on-dark)', padding: '64px 56px', justifyContent: 'space-between', position: 'relative', overflow: 'hidden' }}
       >
-        <div
-          className="absolute inset-0 bg-cover bg-center arvo-photo"
-          style={{
-            backgroundImage: `url('/brand/imagery/02-capins-dourados.jpg')`,
-            opacity: 0.32,
-          }}
-        />
-        <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(13,13,13,0.75) 0%, transparent 60%)' }} />
+        {/* Photo bg */}
+        <div style={{ position: 'absolute', inset: 0, backgroundImage: "url('/brand/imagery/02-capins-dourados.jpg')", backgroundSize: 'cover', backgroundPosition: 'center', filter: 'brightness(0.30) sepia(0.40) saturate(1.20)' }} />
+        {/* Overlay */}
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom right, rgba(13,13,13,0.55), rgba(13,13,13,0.92))' }} />
+        {/* Grain */}
+        <div className="arvo-grain" />
 
-        <div className="relative z-10 flex flex-col h-full" style={{ padding: '44px 48px' }}>
-          <a
-            href="https://andregutto.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hover:opacity-70 transition-opacity self-start"
-            style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 10 }}
-          >
-            <img src="/brand/logo/arvo-symbol-offwhite.svg" width="22" height="22" alt="" />
-            <span style={{ fontFamily: F_SANS, fontSize: 15, letterSpacing: '0.30em', textIndent: '0.30em', color: '#fff', lineHeight: 1 }}>arvo</span>
-          </a>
-
-          <div className="mt-auto">
-            <p style={{ fontFamily: F_DISPLAY, fontSize: '1.8rem', fontWeight: 400, lineHeight: 1.2, color: '#fff', marginBottom: 0 }}>
-              {l.tagline1}<br />
-              <em style={{ fontStyle: 'italic', color: 'rgba(255,255,255,0.58)' }}>{l.tagline2}</em>
-            </p>
+        <div style={{ position: 'relative', zIndex: 2 }}>
+          <div style={{ fontFamily: F_SANS, fontSize: 20, letterSpacing: '0.30em', textIndent: '0.30em', color: 'var(--arvo-offwhite)', display: 'flex', alignItems: 'center', gap: 12 }}>
+            <img src="/brand/logo/arvo-symbol-gold.svg" width="24" height="25" alt="" />
+            arvo
+          </div>
+          <div style={{ fontFamily: F_DISPLAY, fontStyle: 'italic', fontSize: 36, lineHeight: 1.2, color: 'var(--arvo-gold)', maxWidth: 380, marginTop: 60 }}>
+            "{l.tagline1}"
+          </div>
+          <div style={{ fontFamily: F_SANS, fontSize: 10, letterSpacing: '0.30em', textTransform: 'uppercase', color: 'rgba(242,237,228,0.45)', marginTop: 24 }}>
+            — manifesto, 2026
           </div>
         </div>
-      </div>
 
-      {/* ── Painel direito ── */}
-      <div className="flex-1 flex flex-col min-h-screen" style={{ background: BG }}>
+        <div style={{ fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.18em', color: 'rgba(242,237,228,0.5)', position: 'relative', zIndex: 2 }}>
+          cultive o que é seu
+        </div>
+      </aside>
 
-        {/* Barra superior */}
-        <div className="flex items-center justify-between px-4 pt-7 sm:px-12" style={{ display: 'flex' }}>
-          <a
-            href="https://andregutto.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="lg:hidden hover:opacity-70 transition-opacity"
-            style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8 }}
-          >
-            <img src="/brand/logo/arvo-symbol-black.svg" width="18" height="18" alt="" />
-            <span style={{ fontFamily: F_SANS, fontSize: 14, letterSpacing: '0.30em', textIndent: '0.30em', color: BLUE, lineHeight: 1 }}>arvo</span>
-          </a>
-          <div className="hidden lg:block" />
+      {/* ── Right — form ── */}
+      <main style={{ padding: '64px 72px', display: 'flex', flexDirection: 'column', justifyContent: 'center', background: 'var(--arvo-offwhite)' }}
+        className="px-6 py-12 lg:px-[72px] lg:py-[64px]"
+      >
+        {/* Lang selector row */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 40 }}>
           <LanguageSelector />
         </div>
 
-        {/* Formulário centralizado */}
-        <div className="flex-1 flex flex-col items-center justify-center px-4 py-10 sm:px-12">
-          <div style={{ width: '100%', maxWidth: 360 }}>
+        {/* Success state */}
+        {registered && (
+          <div style={{ maxWidth: 440, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 24, textAlign: 'center' }}>
+            <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(13,13,13,0.06)', border: '1px solid var(--arvo-border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} style={{ width: 28, height: 28, color: 'var(--arvo-black)' }}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+              </svg>
+            </div>
+            <div>
+              <h1 style={{ fontFamily: F_SANS, fontSize: 32, letterSpacing: '0.04em', color: 'var(--arvo-fg)', marginBottom: 12 }}>
+                {l.registrationDone}
+              </h1>
+              <p style={{ fontFamily: F_SANS, fontSize: 14, color: 'var(--arvo-fg-soft)', lineHeight: 1.6 }}>
+                {l.registrationDoneBody.replace('{email}', email)}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => { setRegistered(false); switchMode('login') }}
+              style={{ width: '100%', padding: '14px 24px', background: 'var(--arvo-black)', color: 'var(--arvo-offwhite)', fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', border: 'none', borderRadius: 3, cursor: 'pointer' }}
+            >
+              {l.goToLogin}
+            </button>
+          </div>
+        )}
 
-            {/* Tela de sucesso após cadastro */}
-            {registered && (
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 24, textAlign: 'center' }}>
-                <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(13,13,13,0.06)', border: `1px solid ${BORDER}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} style={{ width: 28, height: 28, color: BLUE }}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
-                  </svg>
-                </div>
-                <div>
-                  <h1 style={{ fontFamily: F_DISPLAY, fontSize: '1.8rem', fontWeight: 400, color: DARK, marginBottom: 12 }}>
-                    {l.registrationDone}
-                  </h1>
-                  <p style={{ fontFamily: F_SANS, fontSize: 14, color: GRAY, lineHeight: 1.6 }}>
-                    {l.registrationDoneBody.replace('{email}', email)}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => { setRegistered(false); switchMode('login') }}
-                  style={{
-                    width: '100%', padding: '14px 24px', background: BLUE, color: BG,
-                    fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase',
-                    border: 'none', borderRadius: 3, cursor: 'pointer',
-                  }}
-                >
-                  {l.goToLogin}
-                </button>
-              </div>
-            )}
-
-            {!registered && (<>
+        {!registered && (
+          <div style={{ maxWidth: 440, width: '100%' }}>
 
             {/* Eyebrow */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 28 }}>
-              <div style={{ width: 6, height: 6, borderRadius: '50%', background: GOLD, flexShrink: 0 }} />
-              <span style={{ fontFamily: F_SANS, fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: GRAY }}>
-                Portfolio Tracker
-              </span>
+            <div style={{ fontFamily: F_SANS, fontSize: 10, letterSpacing: '0.30em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)', marginBottom: 16 }}>
+              Acesso
             </div>
 
-            {/* Título */}
-            <h1 style={{ fontFamily: F_DISPLAY, fontSize: '2rem', fontWeight: 400, lineHeight: 1.1, letterSpacing: '-0.5px', color: DARK, marginBottom: 8 }}>
+            {/* h1 */}
+            <h1 style={{ fontFamily: F_SANS, fontSize: 44, letterSpacing: '0.06em', lineHeight: 1.15, color: 'var(--arvo-fg)', marginBottom: 12, maxWidth: 460 }}>
               {panelTitle}
             </h1>
-            <p style={{ fontFamily: F_SANS, fontSize: 14, color: GRAY, fontWeight: 300, marginBottom: 32, lineHeight: 1.6 }}>
-              {mode === 'forgot' ? l.forgotDesc : l.subtitle}
-            </p>
 
-            {/* Abas login / cadastro */}
+            {/* Subtitle */}
             {mode !== 'forgot' && (
-              <div style={{ display: 'flex', borderBottom: `1px solid ${BORDER}`, marginBottom: 28 }}>
+              <p style={{ fontFamily: F_DISPLAY, fontStyle: 'italic', fontSize: 17, color: 'var(--arvo-terracotta)', marginBottom: 40 }}>
+                {l.subtitle}
+              </p>
+            )}
+            {mode === 'forgot' && (
+              <p style={{ fontFamily: F_SANS, fontSize: 14, color: 'var(--arvo-fg-soft)', marginBottom: 32, lineHeight: 1.6 }}>
+                {l.forgotDesc}
+              </p>
+            )}
+
+            {/* Mode tabs */}
+            {mode !== 'forgot' && (
+              <div style={{ display: 'flex', gap: 18, marginBottom: 32 }}>
                 {(['login', 'register'] as const).map(m => (
                   <button
                     key={m}
                     type="button"
                     onClick={() => switchMode(m)}
                     style={{
-                      padding: '8px 0',
-                      marginRight: 24,
-                      marginBottom: -1,
-                      background: 'none',
-                      border: 'none',
-                      borderBottom: mode === m ? `2px solid ${BLUE}` : '2px solid transparent',
-                      cursor: 'pointer',
-                      fontFamily: F_SANS,
-                      fontSize: 11,
-                      letterSpacing: '0.1em',
-                      textTransform: 'uppercase',
-                      color: mode === m ? BLUE : GRAY,
-                      transition: 'color 0.2s, border-color 0.2s',
+                      fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase',
+                      padding: '4px 0', border: 0, background: 'transparent',
+                      color: mode === m ? 'var(--arvo-black)' : 'rgba(13,13,13,0.35)',
+                      borderBottom: mode === m ? '1px solid var(--arvo-black)' : '1px solid transparent',
+                      cursor: 'pointer', transition: 'color 0.2s',
                     }}
                   >
                     {m === 'login' ? l.loginTab : l.registerTab}
@@ -293,71 +265,65 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={() => switchMode('login')}
-                style={{ fontFamily: F_SANS, fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: BLUE, background: 'none', border: 'none', cursor: 'pointer', marginBottom: 24, display: 'flex', alignItems: 'center', gap: 6 }}
+                style={{ fontFamily: F_SANS, fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--arvo-black)', background: 'none', border: 'none', cursor: 'pointer', marginBottom: 24, display: 'flex', alignItems: 'center', gap: 6 }}
               >
                 ← {l.backToLogin}
               </button>
             )}
 
-            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
 
-              {/* Cadastro: nome + sobrenome */}
               {mode === 'register' && (
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                   <div>
-                    <label style={LABEL_STYLE}>{l.firstName}</label>
-                    <input type="text" value={firstName} onChange={e => setFirstName(e.target.value)} placeholder="André" style={INPUT_STYLE} />
+                    <label style={labelStyle}>{l.firstName}</label>
+                    <input type="text" value={firstName} onChange={e => setFirstName(e.target.value)} placeholder="André" style={inputBase}
+                      onFocus={e => { e.currentTarget.style.borderColor = 'var(--arvo-gold)'; e.currentTarget.style.boxShadow = '0 0 0 2px rgba(200,184,154,0.25)' }}
+                      onBlur={e => { e.currentTarget.style.borderColor = 'var(--arvo-border)'; e.currentTarget.style.boxShadow = 'none' }}
+                    />
                   </div>
                   <div>
-                    <label style={LABEL_STYLE}>{l.lastName}</label>
-                    <input type="text" value={lastName} onChange={e => setLastName(e.target.value)} placeholder="Gutto" style={INPUT_STYLE} />
+                    <label style={labelStyle}>{l.lastName}</label>
+                    <input type="text" value={lastName} onChange={e => setLastName(e.target.value)} placeholder="Gutto" style={inputBase}
+                      onFocus={e => { e.currentTarget.style.borderColor = 'var(--arvo-gold)'; e.currentTarget.style.boxShadow = '0 0 0 2px rgba(200,184,154,0.25)' }}
+                      onBlur={e => { e.currentTarget.style.borderColor = 'var(--arvo-border)'; e.currentTarget.style.boxShadow = 'none' }}
+                    />
                   </div>
                 </div>
               )}
 
-              {/* Email */}
               <div>
-                <label style={LABEL_STYLE}>{l.email}</label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  required
-                  autoComplete="email"
-                  placeholder="seu@email.com"
-                  style={INPUT_STYLE}
+                <label style={labelStyle}>{l.email}</label>
+                <input type="email" value={email} onChange={e => setEmail(e.target.value)} required autoComplete="email" placeholder="seu@email.com" style={inputBase}
+                  onFocus={e => { e.currentTarget.style.borderColor = 'var(--arvo-gold)'; e.currentTarget.style.boxShadow = '0 0 0 2px rgba(200,184,154,0.25)' }}
+                  onBlur={e => { e.currentTarget.style.borderColor = 'var(--arvo-border)'; e.currentTarget.style.boxShadow = 'none' }}
                 />
               </div>
 
-              {/* Senha */}
               {mode !== 'forgot' && (
                 <div>
-                  <label style={LABEL_STYLE}>{l.password}</label>
+                  <label style={labelStyle}>{l.password}</label>
                   <div style={{ position: 'relative' }}>
                     <input
                       type={showPwd ? 'text' : 'password'}
                       value={password}
                       onChange={e => setPassword(e.target.value)}
-                      required
-                      minLength={6}
+                      required minLength={6}
                       autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
                       placeholder="••••••••"
-                      style={{ ...INPUT_STYLE, paddingRight: 56 }}
+                      style={{ ...inputBase, paddingRight: 56 }}
+                      onFocus={e => { e.currentTarget.style.borderColor = 'var(--arvo-gold)'; e.currentTarget.style.boxShadow = '0 0 0 2px rgba(200,184,154,0.25)' }}
+                      onBlur={e => { e.currentTarget.style.borderColor = 'var(--arvo-border)'; e.currentTarget.style.boxShadow = 'none' }}
                     />
-                    <button
-                      type="button"
-                      onClick={() => setShowPwd(v => !v)}
-                      style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: F_SANS, fontSize: 9, letterSpacing: '0.1em', textTransform: 'uppercase', color: GRAY }}
-                      tabIndex={-1}
+                    <button type="button" onClick={() => setShowPwd(v => !v)} tabIndex={-1}
+                      style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: F_SANS, fontSize: 9, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)' }}
                     >
                       {showPwd ? l.hidePwd : l.showPwd}
                     </button>
                   </div>
                   {mode === 'login' && (
-                    <button
-                      type="button"
-                      onClick={() => switchMode('forgot')}
-                      style={{ fontFamily: F_SANS, fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', color: GRAY, background: 'none', border: 'none', cursor: 'pointer', marginTop: 6, display: 'block', transition: 'color 0.2s' }}
+                    <button type="button" onClick={() => switchMode('forgot')}
+                      style={{ fontFamily: F_SANS, fontSize: 10, letterSpacing: '0.10em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)', background: 'none', border: 'none', cursor: 'pointer', marginTop: 6, display: 'block', borderBottom: '1px solid transparent', transition: 'color 0.2s' }}
                     >
                       {l.forgotPwd}
                     </button>
@@ -365,66 +331,48 @@ export default function LoginPage() {
                 </div>
               )}
 
-              {/* Confirmar senha (apenas cadastro) */}
               {mode === 'register' && (
                 <div>
-                  <label style={LABEL_STYLE}>{l.confirmPwd}</label>
-                  <input
-                    type="password"
-                    value={confirmPwd}
-                    onChange={e => setConfirmPwd(e.target.value)}
-                    required
-                    autoComplete="new-password"
-                    placeholder="••••••••"
-                    style={{ ...INPUT_STYLE, borderColor: confirmPwd && confirmPwd !== password ? '#ef4444' : BORDER }}
+                  <label style={labelStyle}>{l.confirmPwd}</label>
+                  <input type="password" value={confirmPwd} onChange={e => setConfirmPwd(e.target.value)} required autoComplete="new-password" placeholder="••••••••"
+                    style={{ ...inputBase, borderColor: confirmPwd && confirmPwd !== password ? '#ef4444' : 'var(--arvo-border)' }}
+                    onFocus={e => { e.currentTarget.style.borderColor = 'var(--arvo-gold)'; e.currentTarget.style.boxShadow = '0 0 0 2px rgba(200,184,154,0.25)' }}
+                    onBlur={e => { e.currentTarget.style.borderColor = confirmPwd && confirmPwd !== password ? '#ef4444' : 'var(--arvo-border)'; e.currentTarget.style.boxShadow = 'none' }}
                   />
                 </div>
               )}
 
-              {/* Campos extras de cadastro */}
               {mode === 'register' && (
                 <>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                     <div>
-                      <label style={LABEL_STYLE}>{t.profile.country}</label>
-                      <select value={country} onChange={e => setCountry(e.target.value)} style={{ ...INPUT_STYLE, appearance: 'none' }}>
+                      <label style={labelStyle}>{t.profile.country}</label>
+                      <select value={country} onChange={e => setCountry(e.target.value)} style={{ ...inputBase, appearance: 'none' as never }}>
                         {COUNTRY_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                       </select>
                     </div>
                     <div>
-                      <label style={LABEL_STYLE}>{l.taxCountry}</label>
-                      <select value={taxCountry} onChange={e => setTaxCountry(e.target.value)} style={{ ...INPUT_STYLE, appearance: 'none' }}>
+                      <label style={labelStyle}>{l.taxCountry}</label>
+                      <select value={taxCountry} onChange={e => setTaxCountry(e.target.value)} style={{ ...inputBase, appearance: 'none' as never }}>
                         {COUNTRY_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                       </select>
                     </div>
                   </div>
 
                   <div>
-                    <label style={LABEL_STYLE}>{l.birthdate}</label>
-                    <input type="date" value={birthdate} onChange={e => setBirthdate(e.target.value)} style={INPUT_STYLE} />
+                    <label style={labelStyle}>{l.birthdate}</label>
+                    <input type="date" value={birthdate} onChange={e => setBirthdate(e.target.value)} style={inputBase}
+                      onFocus={e => { e.currentTarget.style.borderColor = 'var(--arvo-gold)'; e.currentTarget.style.boxShadow = '0 0 0 2px rgba(200,184,154,0.25)' }}
+                      onBlur={e => { e.currentTarget.style.borderColor = 'var(--arvo-border)'; e.currentTarget.style.boxShadow = 'none' }}
+                    />
                   </div>
 
                   <div>
-                    <label style={LABEL_STYLE}>{l.defaultCurrency}</label>
+                    <label style={labelStyle}>{l.defaultCurrency}</label>
                     <div style={{ display: 'flex', gap: 8 }}>
                       {(['BRL', 'USD', 'EUR'] as Currency[]).map(c => (
-                        <button
-                          key={c}
-                          type="button"
-                          onClick={() => setCurrency(c)}
-                          style={{
-                            flex: 1,
-                            padding: '10px 0',
-                            fontFamily: F_SANS,
-                            fontSize: 11,
-                            letterSpacing: '0.08em',
-                            border: `1px solid ${currency === c ? BLUE : BORDER}`,
-                            borderRadius: 3,
-                            cursor: 'pointer',
-                            background: currency === c ? BLUE : BG,
-                            color: currency === c ? BG : GRAY,
-                            transition: 'all 0.2s',
-                          }}
+                        <button key={c} type="button" onClick={() => setCurrency(c)}
+                          style={{ flex: 1, padding: '10px 0', fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.08em', border: `1px solid ${currency === c ? 'var(--arvo-black)' : 'var(--arvo-border)'}`, borderRadius: 3, cursor: 'pointer', background: currency === c ? 'var(--arvo-black)' : 'var(--arvo-offwhite)', color: currency === c ? 'var(--arvo-offwhite)' : 'var(--arvo-fg-soft)', transition: 'all 0.2s' }}
                         >
                           {c}
                         </button>
@@ -432,22 +380,13 @@ export default function LoginPage() {
                     </div>
                   </div>
 
-                  {/* Aceitar termos */}
                   <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
-                    <input
-                      type="checkbox"
-                      checked={acceptTerms}
-                      onChange={e => setAcceptTerms(e.target.checked)}
-                      style={{ width: 16, height: 16, accentColor: BLUE, flexShrink: 0 }}
+                    <input type="checkbox" checked={acceptTerms} onChange={e => setAcceptTerms(e.target.checked)}
+                      style={{ width: 16, height: 16, accentColor: 'var(--arvo-black)', flexShrink: 0 }}
                     />
-                    <span style={{ fontFamily: F_SANS, fontSize: 13, color: GRAY }}>
+                    <span style={{ fontFamily: F_SANS, fontSize: 13, color: 'var(--arvo-fg-soft)' }}>
                       {l.acceptTerms}{' '}
-                      <a
-                        href="/terms"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{ color: BLUE, textDecoration: 'underline' }}
-                      >
+                      <a href="/terms" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--arvo-black)', textDecoration: 'underline' }}>
                         {l.termsLink}
                       </a>
                     </span>
@@ -461,37 +400,15 @@ export default function LoginPage() {
                 </p>
               )}
               {info && (
-                <p style={{ fontFamily: F_SANS, fontSize: 13, padding: '12px 16px', borderRadius: 3, background: '#eff6ff', color: '#1e3a5f', border: `1px solid ${BORDER}` }}>
+                <p style={{ fontFamily: F_SANS, fontSize: 13, padding: '12px 16px', borderRadius: 3, background: '#eff6ff', color: '#1e3a5f', border: '1px solid var(--arvo-border)' }}>
                   {info}
                 </p>
               )}
 
-              {/* Botão de submit — estilo site principal */}
               <button
                 type="submit"
                 disabled={loading}
-                style={{
-                  width: '100%',
-                  padding: '14px 24px',
-                  background: BLUE,
-                  color: BG,
-                  fontFamily: F_SANS,
-                  fontSize: 11,
-                  letterSpacing: '0.1em',
-                  textTransform: 'uppercase',
-                  border: 'none',
-                  borderRadius: 3,
-                  cursor: loading ? 'not-allowed' : 'pointer',
-                  opacity: loading ? 0.6 : 1,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 8,
-                  transition: 'background 0.2s',
-                  marginTop: 4,
-                }}
-                onMouseEnter={e => { if (!loading) (e.currentTarget as HTMLButtonElement).style.background = '#333' }}
-                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = BLUE }}
+                style={{ width: '100%', padding: '14px 24px', background: 'var(--arvo-black)', color: 'var(--arvo-offwhite)', fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', border: 'none', borderRadius: 3, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.6 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, transition: 'background 0.2s', marginTop: 4, boxSizing: 'border-box' }}
               >
                 {loading && (
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="animate-spin">
@@ -502,14 +419,17 @@ export default function LoginPage() {
                 {submitLabel}
               </button>
             </form>
-            </>)}
-          </div>
-        </div>
 
-        <div style={{ padding: '0 48px 28px' }}>
+            <p style={{ fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.05em', color: 'var(--arvo-fg-soft)', marginTop: 32, maxWidth: 440, lineHeight: 1.7 }}>
+              ao entrar, você aceita os termos de uso e a política de privacidade. arvo guarda seus dados em servidores na União Europeia.
+            </p>
+          </div>
+        )}
+
+        <div style={{ marginTop: 'auto', paddingTop: 32 }}>
           <LoginFooter />
         </div>
-      </div>
+      </main>
     </div>
   )
 }

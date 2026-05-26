@@ -22,8 +22,9 @@ export default function AllocationChart({ data }: Props) {
   }
 
   return (
-    <div className="rounded-2xl p-6" style={{ background: 'var(--arvo-offwhite)', border: '1px solid var(--arvo-border-soft)' }}>
-      <h2 className="mb-4 text-sm" style={{ fontFamily: "'Tenor Sans', sans-serif", color: 'var(--arvo-black)', letterSpacing: '0.06em' }}>{t.dashboard.allocationByClass}</h2>
+    <div className="rounded-2xl p-6" style={{ background: 'white', border: '1px solid var(--arvo-border)' }}>
+      <h2 className="mb-1" style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 13, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--arvo-fg)' }}>{t.dashboard.allocationByClass}</h2>
+      <p className="mb-4" style={{ fontFamily: "'Playfair Display', serif", fontStyle: 'italic', fontSize: 13, color: 'var(--arvo-fg-soft)' }}>onde seu patrimônio está plantado</p>
       <div className="flex flex-col lg:flex-row gap-6 items-center">
         <div className="w-full lg:w-64 h-64">
           <ResponsiveContainer width="100%" height="100%">
