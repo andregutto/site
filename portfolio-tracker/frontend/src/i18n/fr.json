@@ -864,11 +864,11 @@
     "increase": "Augmenter"
   },
   "chat": {
-    "open": "Ouvrir l'assistant",
-    "title": "Assistant",
+    "open": "Parlez à votre Arvo",
+    "title": "Arvo",
     "poweredBy": "Powered by Claude",
     "clear": "Effacer",
-    "greeting": "Bonjour ! Je peux vous aider avec vos finances et investissements.",
+    "greeting": "Salut ! Je suis Arvo, votre guide financier. Qu'est-ce que vous voulez explorer aujourd'hui ?",
     "placeholder": "Posez une question…",
     "enterHint": "Entrée pour envoyer · Maj+Entrée pour nouvelle ligne",
     "consulting": "Consultation des données…",
