@@ -755,6 +755,34 @@ router.get('/asset-returns', requireAuth, async (req, res: Response) => {
       }))
     }
 
+    // For Yahoo assets with no price_history at all, fetch the period-start price
+    // live from Yahoo Finance so the return column changes correctly per period.
+    const assetsNeedingStart = tickerAssets.filter(a =>
+      a.ticker_yahoo && startMap[a.id] == null && oldestMap[a.id] == null
+    )
+    if (assetsNeedingStart.length > 0) {
+      const d  = new Date(fromDate + 'T12:00:00Z')
+      const p1 = new Date(d); p1.setDate(d.getDate() - 7)
+      const p2 = new Date(d); p2.setDate(d.getDate() + 7)
+      const p1Str = p1.toISOString().split('T')[0]
+      const p2Str = p2.toISOString().split('T')[0]
+      await Promise.all(assetsNeedingStart.map(async a => {
+        try {
+          const rows = await yf.historical(a.ticker_yahoo!, {
+            period1: p1Str, period2: p2Str, interval: '1d',
+          }) as Array<{ date: Date; close?: number; adjClose?: number }>
+          if (!rows.length) return
+          const sorted = [...rows].sort((r1, r2) => r1.date.getTime() - r2.date.getTime())
+          const target = d.getTime()
+          const after  = sorted.find(r => r.date.getTime() >= target)
+          const before = sorted.filter(r => r.date.getTime() < target).pop()
+          const best   = after ?? before
+          const price  = best ? (best.close ?? best.adjClose ?? 0) : 0
+          if (price > 0) startMap[a.id] = price
+        } catch { /* keep as null */ }
+      }))
+    }
+
     for (const a of tickerAssets) {
       const ps = startMap[a.id] ?? oldestMap[a.id]
       const pe = endMap[a.id]?.price
