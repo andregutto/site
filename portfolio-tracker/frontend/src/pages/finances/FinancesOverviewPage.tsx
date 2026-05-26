@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend,
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid,
 } from 'recharts'
 import { apiFetch } from '../../lib/api'
 import { useI18n } from '../../contexts/I18nContext'
@@ -40,6 +40,11 @@ interface SpendingSummary {
   months: MonthSummary[]
   income_config: { monthly_net: number; currency: string }
   envelopes: { id: number; name: string; name_key?: string | null; type?: string; color: string; icon: string; pct_target: number; budget: number }[]
+}
+
+interface CatHistoryEntry {
+  id: number; name: string; icon: string; color: string
+  months: { month: string; total: number }[]
 }
 
 function fmt(n: number, currency: string, compact = false) {
@@ -192,6 +197,22 @@ export default function FinancesOverviewPage() {
   const [data,           setData]           = useState<SpendingSummary | null>(null)
   const [loading,        setLoading]        = useState(true)
   const [expandedEnvIds, setExpandedEnvIds] = useState<Set<number>>(new Set())
+
+  const [catHistory,    setCatHistory]    = useState<CatHistoryEntry[]>([])
+  const [selectedCatId, setSelectedCatId] = useState<number | ''>('')
+  const [catHistLoading, setCatHistLoading] = useState(false)
+
+  useEffect(() => {
+    const now = new Date()
+    const to = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+    const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - (historyMonths - 1))
+    const from = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+    setCatHistLoading(true)
+    apiFetch<CatHistoryEntry[]>(`/finances/categories/monthly-history?from=${from}&to=${to}`)
+      .then(setCatHistory)
+      .catch(() => {})
+      .finally(() => setCatHistLoading(false))
+  }, [historyMonths])
 
   useEffect(() => {
     setLoading(true)
@@ -570,6 +591,67 @@ export default function FinancesOverviewPage() {
               ))}
             </BarChart>
           </ResponsiveContainer>
+        </div>
+      )}
+
+      {/* Category history chart — shares historyMonths toggle from envelope chart above */}
+      {(catHistLoading || catHistory.length > 0) && (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+            <h2 style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 14, color: 'var(--arvo-fg)', fontWeight: 600 }}>{t.finances.categoryHistory}</h2>
+            <select
+              value={selectedCatId}
+              onChange={e => setSelectedCatId(e.target.value === '' ? '' : Number(e.target.value))}
+              style={{ border: '1px solid var(--arvo-border)', borderRadius: 8, padding: '4px 10px', fontSize: 12, background: 'white', color: 'var(--arvo-fg)' }}
+            >
+              <option value="">{t.finances.selectCategory}</option>
+              {catHistory.map(c => (
+                <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
+              ))}
+            </select>
+          </div>
+          {catHistLoading ? (
+            <div className="h-48 flex items-end gap-1 px-2 pb-1">
+              {[60,45,70,55,80,65,50,75,60,85,70,55].map((h, i) => (
+                <div key={i} className="flex-1 bg-gray-100 rounded-t animate-pulse" style={{ height: `${h}%` }} />
+              ))}
+            </div>
+          ) : (() => {
+            const filtered = selectedCatId !== '' ? catHistory.filter(c => c.id === selectedCatId) : catHistory
+            if (!filtered.length) return null
+            const allMonths = Array.from(new Set(filtered.flatMap(c => c.months.map(m => m.month)))).sort()
+            const catChartData = allMonths.map(month => {
+              const row: Record<string, string | number> = {
+                month: historyMonths >= 12 ? fmtMonthYear(month, browserLocale) : fmtMonth(month, browserLocale),
+              }
+              for (const cat of filtered) {
+                const m = cat.months.find(m2 => m2.month === month)
+                row[cat.name] = m?.total ?? 0
+              }
+              return row
+            })
+            const isStacked = selectedCatId === ''
+            return (
+              <ResponsiveContainer width="100%" height={220}>
+                <BarChart data={catChartData} margin={{ top: 5, right: 5, bottom: 5, left: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+                  <XAxis dataKey="month" tick={{ fontSize: 11 }} interval={historyMonths <= 6 ? 0 : historyMonths <= 12 ? 1 : Math.max(0, Math.ceil(catChartData.length / 8) - 1)} />
+                  <YAxis tickFormatter={v => fmt(cx(Number(v)), currency, true)} tick={{ fontSize: 10 }} width={70} />
+                  <Tooltip content={<ChartTooltip currency={currency} />} />
+                  {filtered.map((cat, i) => (
+                    <Bar
+                      key={cat.id}
+                      dataKey={cat.name}
+                      name={cat.name}
+                      fill={CHART_PALETTE[i % CHART_PALETTE.length]}
+                      stackId={isStacked ? 'a' : undefined}
+                      radius={!isStacked || i === filtered.length - 1 ? [3, 3, 0, 0] : [0, 0, 0, 0]}
+                    />
+                  ))}
+                </BarChart>
+              </ResponsiveContainer>
+            )
+          })()}
         </div>
       )}
 

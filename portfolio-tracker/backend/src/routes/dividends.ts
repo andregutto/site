@@ -9,10 +9,13 @@ const router = Router()
 router.post('/sync', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const force = req.query.force === 'true'
-  res.json({ status: 'started', force })
-  syncDividendsForUser(userId, force).catch(err =>
+  try {
+    const result = await syncDividendsForUser(userId, force)
+    res.json({ status: 'ok', ...result })
+  } catch (err) {
     console.warn('[dividends/sync]', err)
-  )
+    res.status(500).json({ error: 'sync failed' })
+  }
 })
 
 // GET /api/dividends?from=YYYY-MM-DD&to=YYYY-MM-DD&asset_id=123
