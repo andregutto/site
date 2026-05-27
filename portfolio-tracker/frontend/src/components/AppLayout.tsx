@@ -158,7 +158,7 @@ export default function AppLayout() {
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: 'var(--arvo-offwhite)' }}>
-      <header className="sticky top-0 z-10" style={{ background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(12px) saturate(1.05)', WebkitBackdropFilter: 'blur(12px) saturate(1.05)', borderBottom: '1px solid var(--arvo-border-soft)' }}>
+      <header className="sticky top-0 z-10" style={{ background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(12px) saturate(1.05)', WebkitBackdropFilter: 'blur(12px) saturate(1.05)', borderBottom: '1px solid var(--arvo-border-soft)', paddingTop: 'env(safe-area-inset-top, 0px)' }}>
 
         {/* ── Main bar ── */}
         <div className="h-14 flex items-center px-6 gap-4">

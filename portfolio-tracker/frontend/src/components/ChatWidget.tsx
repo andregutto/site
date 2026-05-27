@@ -159,7 +159,7 @@ export default function ChatWidget({ visible = true, onDismiss, forceOpen, onFor
   return (
     <>
       {/* Floating button */}
-      <div className="fixed bottom-28 right-5 z-50 sm:bottom-5">
+      <div className="fixed chat-bubble-safe right-5 z-50 sm:bottom-5">
         <button
           onClick={() => setOpen(o => !o)}
           className="w-12 h-12 rounded-full text-white shadow-lg flex items-center justify-center transition-all"
@@ -191,7 +191,7 @@ export default function ChatWidget({ visible = true, onDismiss, forceOpen, onFor
 
       {/* Chat panel */}
       {open && (
-        <div className="fixed bottom-44 right-5 z-50 w-[360px] max-w-[calc(100vw-2.5rem)] h-[520px] max-h-[calc(100vh-6rem)] rounded-2xl shadow-2xl flex flex-col overflow-hidden sm:bottom-20" style={{ background: 'var(--arvo-offwhite)', border: '1px solid var(--arvo-border-soft)' }}>
+        <div className="fixed chat-dialog-safe right-5 z-50 w-[360px] max-w-[calc(100vw-2.5rem)] h-[520px] max-h-[calc(100vh-6rem)] rounded-2xl shadow-2xl flex flex-col overflow-hidden sm:bottom-20" style={{ background: 'var(--arvo-offwhite)', border: '1px solid var(--arvo-border-soft)' }}>
           {/* Header */}
           <div className="flex items-center gap-2.5 px-4 py-3 rounded-t-2xl" style={{ background: 'var(--arvo-black)', borderBottom: '1px solid rgba(200,184,154,0.15)' }}>
             <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
