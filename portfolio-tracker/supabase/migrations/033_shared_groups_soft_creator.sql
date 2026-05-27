@@ -16,7 +16,7 @@ CREATE POLICY "sg_update" ON shared_groups FOR UPDATE TO authenticated USING (
   created_by = auth.uid()
   OR (
     created_by IS NULL
-    AND EXISTS (SELECT 1 FROM shared_group_members WHERE group_id = shared_groups.id AND user_id = auth.uid() AND status = 'active')
+    AND EXISTS (SELECT 1 FROM shared_group_members WHERE group_id = id AND user_id = auth.uid() AND status = 'active')
   )
 );
 
@@ -24,6 +24,6 @@ CREATE POLICY "sg_delete" ON shared_groups FOR DELETE TO authenticated USING (
   created_by = auth.uid()
   OR (
     created_by IS NULL
-    AND EXISTS (SELECT 1 FROM shared_group_members WHERE group_id = shared_groups.id AND user_id = auth.uid() AND status = 'active')
+    AND EXISTS (SELECT 1 FROM shared_group_members WHERE group_id = id AND user_id = auth.uid() AND status = 'active')
   )
 );
