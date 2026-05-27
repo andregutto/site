@@ -36,14 +36,14 @@ export default function InstitutionSelect({ value, onChange, placeholder = 'Banc
   // Fecha ao clicar fora (dropdown ainda é descendente de containerRef no DOM,
   // então contains() funciona mesmo com position:fixed)
   useEffect(() => {
-    function onOutside(e: MouseEvent) {
+    function onOutside(e: PointerEvent) {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setOpen(false)
         if (query !== value) onChange(query)
       }
     }
-    document.addEventListener('mousedown', onOutside)
-    return () => document.removeEventListener('mousedown', onOutside)
+    document.addEventListener('pointerdown', onOutside)
+    return () => document.removeEventListener('pointerdown', onOutside)
   }, [query, value, onChange])
 
   // Fecha ao rolar a página
@@ -92,7 +92,7 @@ export default function InstitutionSelect({ value, onChange, placeholder = 'Banc
       <button
         type="button"
         className="w-full text-left px-3 py-2 text-sm hover:bg-blue-50 hover:text-[#0D0D0D] transition-colors"
-        onMouseDown={() => select(name)}
+        onPointerDown={() => select(name)}
       >
         {name}
       </button>
@@ -150,7 +150,7 @@ export default function InstitutionSelect({ value, onChange, placeholder = 'Banc
             <button
               type="button"
               className="w-full text-left px-3 py-2 text-sm text-[#0D0D0D] font-medium hover:bg-blue-50 border-t border-gray-100 transition-colors"
-              onMouseDown={() => select(query)}
+              onPointerDown={() => select(query)}
             >
               Adicionar "{query}"
             </button>

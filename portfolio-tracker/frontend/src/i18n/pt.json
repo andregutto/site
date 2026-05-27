@@ -1343,6 +1343,7 @@
     "useExistingCategory": "Usar existente",
     "pickCategoryHint": "Escolha uma categoria do planejamento para usar como base. Você poderá ajustar nome, ícone e meta.",
     "save": "Salvar",
-    "loginToAccept": "Você precisará criar uma conta ou fazer login para aceitar o convite."
+    "loginToAccept": "Você precisará criar uma conta ou fazer login para aceitar o convite.",
+    "accountDeleted": "Conta excluída"
   }
 }

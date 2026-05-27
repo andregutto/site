@@ -308,7 +308,7 @@ export default function OnboardingOverlay({ onDone, userId }: Props) {
                           <button
                             key={name}
                             type="button"
-                            onMouseDown={() => { setAccountInstitution(name); setShowInstitutionSuggestions(false) }}
+                            onPointerDown={() => { setAccountInstitution(name); setShowInstitutionSuggestions(false) }}
                             style={{ display: 'block', width: '100%', textAlign: 'left', padding: '10px 14px', fontSize: 14, background: 'none', border: 'none', cursor: 'pointer', color: '#0D0D0D' }}
                             onMouseEnter={e => (e.currentTarget.style.background = '#f9fafb')}
                             onMouseLeave={e => (e.currentTarget.style.background = 'none')}

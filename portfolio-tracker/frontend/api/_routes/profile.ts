@@ -115,6 +115,41 @@ router.get('/export', requireAuth, async (req, res: Response) => {
 
 router.delete('/', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
+
+  // Transfer ownership of owned groups to another active member before deleting
+  const { data: ownedGroups } = await supabaseAdmin
+    .from('shared_groups')
+    .select('id')
+    .eq('created_by', userId)
+
+  if (ownedGroups && ownedGroups.length > 0) {
+    for (const group of ownedGroups) {
+      const { data: otherMembers } = await supabaseAdmin
+        .from('shared_group_members')
+        .select('user_id')
+        .eq('group_id', group.id)
+        .eq('status', 'active')
+        .neq('user_id', userId)
+        .order('joined_at', { ascending: true })
+        .limit(1)
+
+      const newOwner = otherMembers?.[0]?.user_id
+      if (newOwner) {
+        await supabaseAdmin
+          .from('shared_groups')
+          .update({ created_by: newOwner })
+          .eq('id', group.id)
+      }
+    }
+  }
+
+  // Mark user's memberships as left
+  await supabaseAdmin
+    .from('shared_group_members')
+    .update({ status: 'left', left_at: new Date().toISOString() })
+    .eq('user_id', userId)
+    .eq('status', 'active')
+
   const { error } = await supabaseAdmin.auth.admin.deleteUser(userId)
   if (error) { res.status(500).json({ error: error.message }); return }
   res.json({ ok: true })

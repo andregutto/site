@@ -385,13 +385,17 @@ function GroupPanel({ group, userId, s, onEditGroup, onInvite, onResendInvite, o
         <div className="rounded-xl p-4 flex flex-col gap-3" style={{ background: 'rgba(13,13,13,0.04)', border: '1px solid var(--arvo-border-soft)' }}>
           {group.members.filter(m => m.status !== 'left').map(m => {
             const isMe = m.user_id === userId
+            const accountDeleted = !m.user_id && m.status === 'active'
             return (
               <div key={m.id} className="flex items-start justify-between gap-3">
                 <div className="flex items-start gap-3 min-w-0">
                   <Avatar display={m.display} size={32} />
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold truncate" style={{ color: 'var(--arvo-black)' }}>
-                      {m.display.name}{isMe ? <span className="font-normal text-xs ml-1" style={{ color: 'var(--arvo-fg-soft)' }}>(você)</span> : ''}
+                    <p className="text-sm font-semibold truncate" style={{ color: accountDeleted ? 'var(--arvo-fg-soft)' : 'var(--arvo-black)' }}>
+                      {accountDeleted
+                        ? <span className="italic">{s.accountDeleted ?? 'Conta excluída'}</span>
+                        : <>{m.display.name}{isMe ? <span className="font-normal text-xs ml-1" style={{ color: 'var(--arvo-fg-soft)' }}>(você)</span> : ''}</>
+                      }
                     </p>
                     {m.status === 'pending' ? (
                       <p className="text-xs mt-0.5" style={{ color: 'var(--arvo-fg-soft)' }}>{s.pending}</p>
