@@ -484,6 +484,8 @@
     "navFreedom": "Freedom",
     "overviewTitle": "Finances",
     "overviewSubtitle": "Summary of your personal finances",
+    "homePromptText": "Always open Finances when you launch the app?",
+    "homePromptConfirm": "Yes, set as home",
     "transactionsTitle": "Transactions",
     "transactionsSubtitle": "Expenses and income history",
     "budgetTitle": "Planning",

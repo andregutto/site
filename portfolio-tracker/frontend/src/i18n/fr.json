@@ -484,6 +484,8 @@
     "navFreedom": "Liberté",
     "overviewTitle": "Finances",
     "overviewSubtitle": "Résumé de vos finances personnelles",
+    "homePromptText": "Toujours ouvrir Finances au lancement de l'app ?",
+    "homePromptConfirm": "Oui, définir comme accueil",
     "transactionsTitle": "Transactions",
     "transactionsSubtitle": "Historique des dépenses et revenus",
     "budgetTitle": "Planification",

@@ -2,7 +2,7 @@
   "name": "Arvo — Cultive o que é seu",
   "short_name": "Arvo",
   "description": "Acompanhe seu patrimônio em um só lugar",
-  "start_url": "/dashboard",
+  "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#0D0D0D",

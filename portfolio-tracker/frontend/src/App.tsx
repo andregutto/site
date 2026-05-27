@@ -89,6 +89,12 @@ function EmailConfirmGate({ email }: { email: string }) {
   )
 }
 
+function DashboardGate() {
+  const { user } = useAuth()
+  if (user?.user_metadata?.default_section === 'finances') return <Navigate to="/finances" replace />
+  return <DashboardPage />
+}
+
 function ProtectedRoutes() {
   const { user, loading } = useAuth()
 
@@ -115,7 +121,7 @@ function AppRoutes() {
       <Route path="/share/momento/:token"   element={<PublicMomentPage />} />
       <Route path="/invite/:token"           element={<AcceptInvitePage />} />
       <Route element={<ProtectedRoutes />}>
-        <Route path="/dashboard"      element={<DashboardPage />} />
+        <Route path="/dashboard"      element={<DashboardGate />} />
         <Route path="/performance"    element={<PerformancePage />} />
         <Route path="/assets/:id"     element={<AssetDetailPage />} />
         <Route path="/profile"        element={<ProfilePage />} />
@@ -145,7 +151,7 @@ function AppRoutes() {
           <Route path="accounts"      element={<Navigate to="/institutions" replace />} />
         </Route>
       </Route>
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )
 }

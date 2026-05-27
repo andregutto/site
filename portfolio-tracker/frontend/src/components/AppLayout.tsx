@@ -364,7 +364,7 @@ export default function AppLayout() {
             aria-hidden="true"
             style={{
               position: 'absolute', right: 0, top: 0, bottom: 0, width: 52, pointerEvents: 'none',
-              background: 'linear-gradient(to left, rgba(255,255,255,0.5) 20%, rgba(255,255,255,0))',
+              background: 'linear-gradient(to left, rgba(255,255,255,0.97) 45%, rgba(255,255,255,0))',
               display: 'flex', alignItems: 'center', justifyContent: 'flex-end', paddingRight: 6,
             }}
           >

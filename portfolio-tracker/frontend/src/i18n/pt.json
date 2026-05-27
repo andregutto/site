@@ -484,6 +484,8 @@
     "navShared": "Compartilhado",
     "overviewTitle": "Finanças",
     "overviewSubtitle": "Resumo das suas finanças pessoais",
+    "homePromptText": "Abrir sempre em Finanças ao entrar no app?",
+    "homePromptConfirm": "Sim, definir como início",
     "transactionsTitle": "Transações",
     "transactionsSubtitle": "Histórico de despesas e receitas",
     "budgetTitle": "Planejamento",

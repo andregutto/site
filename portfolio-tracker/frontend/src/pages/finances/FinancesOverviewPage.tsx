@@ -7,6 +7,8 @@ import {
 import { apiFetch } from '../../lib/api'
 import { useI18n } from '../../contexts/I18nContext'
 import { useCurrency } from '../../contexts/CurrencyContext'
+import { useAuth } from '../../contexts/AuthContext'
+import { supabase } from '../../lib/supabase'
 
 interface CategorySummary {
   id: number
@@ -149,7 +151,31 @@ function ChartTooltip({ active, payload, label, currency }: {
 export default function FinancesOverviewPage() {
   const { t, locale } = useI18n()
   const navigate = useNavigate()
+  const { user } = useAuth()
   const { currency: displayCurrency, fxRates } = useCurrency()
+
+  const [showHomePrompt, setShowHomePrompt] = useState(() =>
+    user?.user_metadata?.default_section !== 'finances' &&
+    !localStorage.getItem('arvo_finances_home_prompt_dismissed')
+  )
+  const [savingHome, setSavingHome] = useState(false)
+
+  async function confirmHomeSection() {
+    setSavingHome(true)
+    try {
+      await apiFetch('/api/profile', { method: 'PATCH', body: JSON.stringify({ default_section: 'finances' }) })
+      await supabase.auth.refreshSession()
+    } finally {
+      localStorage.setItem('arvo_finances_home_prompt_dismissed', '1')
+      setShowHomePrompt(false)
+      setSavingHome(false)
+    }
+  }
+
+  function dismissHomePrompt() {
+    localStorage.setItem('arvo_finances_home_prompt_dismissed', '1')
+    setShowHomePrompt(false)
+  }
   const browserLocale = locale === 'pt' ? 'pt-BR' : locale === 'fr' ? 'fr-FR' : 'en-GB'
   const nameKeys: Record<string, string> = {
     envelopeEssential:     t.finances.envelopeEssential,
@@ -334,6 +360,32 @@ export default function FinancesOverviewPage() {
 
   return (
     <div className="space-y-5">
+      {showHomePrompt && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'rgba(200,184,154,0.12)', border: '1px solid rgba(200,184,154,0.35)', borderRadius: 12, padding: '10px 14px' }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(13,13,13,0.55)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+            <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z"/>
+            <path d="M9 21V12h6v9"/>
+          </svg>
+          <p style={{ flex: 1, fontSize: 13, fontFamily: 'var(--arvo-font-body)', color: 'rgba(13,13,13,0.70)', lineHeight: 1.4, margin: 0 }}>
+            {t.finances.homePromptText}
+          </p>
+          <button
+            onClick={confirmHomeSection}
+            disabled={savingHome}
+            style={{ flexShrink: 0, fontSize: 12, fontFamily: 'var(--arvo-font-body)', fontWeight: 600, letterSpacing: '0.04em', color: 'var(--arvo-black)', background: 'rgba(200,184,154,0.25)', border: '1px solid rgba(200,184,154,0.5)', borderRadius: 8, padding: '5px 11px', cursor: 'pointer', opacity: savingHome ? 0.5 : 1, whiteSpace: 'nowrap' }}
+          >
+            {t.finances.homePromptConfirm}
+          </button>
+          <button
+            onClick={dismissHomePrompt}
+            style={{ flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer', padding: 2, display: 'flex', alignItems: 'center', color: 'rgba(13,13,13,0.35)' }}
+            aria-label="Dismiss"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+      )}
+
       {/* Header with month picker */}
       <div className="flex items-start justify-between flex-wrap gap-2">
         <div>
