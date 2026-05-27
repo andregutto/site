@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
+import { PageLoader } from '../components/ArvoLoader'
 import * as XLSX from 'xlsx'
 import { apiFetch } from '../lib/api'
 import { useAuth } from '../contexts/AuthContext'
@@ -77,8 +78,6 @@ export default function ProfilePage() {
   const level = getLevel(totalXp)
   const nextLevel = getNextLevel(totalXp)
   const levelProgress = getLevelProgress(totalXp)
-  const fileInputRef = useRef<HTMLInputElement>(null)
-
   const [loading,  setLoading]  = useState(true)
   const [saving,   setSaving]   = useState(false)
   const [saveOk,   setSaveOk]   = useState(false)
@@ -107,6 +106,12 @@ export default function ProfilePage() {
   const [exportSheets,  setExportSheets]  = useState<string[]>([])
   const [avatarPosition, setAvatarPosition] = useState(50)
 
+  const [showAvatarModal,  setShowAvatarModal]  = useState(false)
+  const [pendingAvatarUrl, setPendingAvatarUrl] = useState<string | null>(null)
+  const [pendingPosition,  setPendingPosition]  = useState(50)
+  const [savingPhoto,      setSavingPhoto]      = useState(false)
+  const modalFileRef = useRef<HTMLInputElement>(null)
+
   const { reset: rebuildHistory, loading: rebuilding, result: rebuildResult } = useResetPriceHistory()
   const { sync: syncDividends, syncing: syncingDivs } = useDividendSync()
   const [showRebuildConfirm, setShowRebuildConfirm] = useState(false)
@@ -126,24 +131,51 @@ export default function ProfilePage() {
       .finally(() => setLoading(false))
   }, [])
 
-  async function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+  function openAvatarModal() {
+    setPendingAvatarUrl(null)
+    setPendingPosition(avatarPosition)
+    setShowAvatarModal(true)
+  }
+
+  async function handleModalFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
-    setSaving(true); setError(null); setSaveOk(false)
     try {
       const dataUrl = await resizeImageToDataUrl(file)
-      setAvatarUrl(dataUrl)
-      await apiFetch('/profile', {
-        method: 'PATCH',
-        body: JSON.stringify({ avatar_url: dataUrl }),
-      })
-      setSaveOk(true)
-      setTimeout(() => setSaveOk(false), 3000)
+      setPendingAvatarUrl(dataUrl)
+    } catch {
+      setError(t.profile.errorPhoto)
+    }
+  }
+
+  async function handleAvatarSave() {
+    if (!pendingAvatarUrl && pendingPosition === avatarPosition) { setShowAvatarModal(false); return }
+    setSavingPhoto(true)
+    try {
+      const patch: Record<string, unknown> = { avatar_position: pendingPosition }
+      if (pendingAvatarUrl) patch.avatar_url = pendingAvatarUrl
+      await apiFetch('/profile', { method: 'PATCH', body: JSON.stringify(patch) })
+      if (pendingAvatarUrl) setAvatarUrl(pendingAvatarUrl)
+      setAvatarPosition(pendingPosition)
+      setShowAvatarModal(false)
       triggerCheck()
     } catch {
       setError(t.profile.errorPhoto)
     } finally {
-      setSaving(false)
+      setSavingPhoto(false)
+    }
+  }
+
+  async function handleAvatarRemove() {
+    setSavingPhoto(true)
+    try {
+      await apiFetch('/profile', { method: 'PATCH', body: JSON.stringify({ avatar_url: '' }) })
+      setAvatarUrl('')
+      setShowAvatarModal(false)
+    } catch {
+      setError(t.profile.errorPhoto)
+    } finally {
+      setSavingPhoto(false)
     }
   }
 
@@ -269,11 +301,6 @@ export default function ProfilePage() {
     }
   }
 
-  async function handlePositionChange(pos: number) {
-    setAvatarPosition(pos)
-    await apiFetch('/profile', { method: 'PATCH', body: JSON.stringify({ avatar_position: pos }) }).catch(() => {})
-  }
-
   const emailForDisplay = email || user?.email || ''
   const avatarInitials  = initials(firstName, lastName, emailForDisplay)
   const displayName     = [firstName, lastName].filter(Boolean).join(' ') || t.profile.noName
@@ -283,9 +310,7 @@ export default function ProfilePage() {
       <h1 className="text-xl font-bold text-gray-900">{t.profile.title}</h1>
 
       {loading ? (
-        <div className="bg-white border border-gray-100 rounded-2xl p-8 text-center text-gray-400 text-sm">
-          {t.common.loading}
-        </div>
+        <PageLoader />
       ) : (
         <>
           {/* Avatar + nome */}
@@ -297,56 +322,30 @@ export default function ProfilePage() {
                   alt="Foto de perfil"
                   className="w-16 h-16 rounded-full object-cover"
                   style={{ objectPosition: `50% ${avatarPosition}%` }}
-                  title={`${displayName} · ${emailForDisplay}`}
                 />
               ) : (
-                <div
-                  className="w-16 h-16 rounded-full bg-[#0D0D0D] text-white flex items-center justify-center text-xl font-bold"
-                  title={`${displayName} · ${emailForDisplay}`}
-                >
+                <div className="w-16 h-16 rounded-full bg-[#0D0D0D] text-white flex items-center justify-center text-xl font-bold">
                   {avatarInitials}
                 </div>
               )}
               <button
                 type="button"
-                onClick={() => fileInputRef.current?.click()}
+                onClick={openAvatarModal}
                 className="absolute inset-0 rounded-full bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center"
-                title={t.profile.changeOverlay}
               >
                 <span className="text-white text-xs font-semibold opacity-0 group-hover:opacity-100 transition-opacity">{t.profile.changeOverlay}</span>
               </button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handlePhotoChange}
-              />
             </div>
             <div className="min-w-0 flex-1">
               <p className="font-semibold text-gray-900 truncate">{displayName}</p>
               <p className="text-sm text-gray-500 truncate">{emailForDisplay}</p>
               <button
                 type="button"
-                onClick={() => fileInputRef.current?.click()}
+                onClick={openAvatarModal}
                 className="text-xs text-[#0D0D0D] hover:underline mt-0.5"
               >
                 {avatarUrl ? t.profile.changePhoto : t.profile.addPhoto}
               </button>
-              {avatarUrl && (
-                <div className="mt-2">
-                  <p className="text-xs text-gray-400 mb-1">{t.profile.avatarPositionLabel}</p>
-                  <input
-                    type="range"
-                    min={0}
-                    max={100}
-                    value={avatarPosition}
-                    onChange={e => handlePositionChange(Number(e.target.value))}
-                    className="w-full accent-[#0D0D0D]"
-                    style={{ maxWidth: 160 }}
-                  />
-                </div>
-              )}
             </div>
           </div>
 
@@ -622,6 +621,93 @@ export default function ProfilePage() {
               </button>
             </div>
           </div>
+
+          {/* Modal de foto de perfil */}
+          {showAvatarModal && (
+            <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+              <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-5">
+                <h3 className="text-base font-bold text-gray-900">{t.profile.photoModalTitle}</h3>
+
+                {/* Preview */}
+                <div className="flex flex-col items-center gap-4">
+                  <div className="w-24 h-24 rounded-full overflow-hidden bg-[#0D0D0D] flex items-center justify-center shrink-0">
+                    {(pendingAvatarUrl ?? avatarUrl) ? (
+                      <img
+                        src={pendingAvatarUrl ?? avatarUrl}
+                        alt="Preview"
+                        className="w-full h-full object-cover"
+                        style={{ objectPosition: `50% ${pendingPosition}%` }}
+                      />
+                    ) : (
+                      <span className="text-white text-2xl font-bold">{avatarInitials}</span>
+                    )}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => modalFileRef.current?.click()}
+                    className="px-4 py-2 text-sm font-semibold border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors"
+                  >
+                    {t.profile.photoModalChoose}
+                  </button>
+                  <input
+                    ref={modalFileRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleModalFileChange}
+                  />
+                </div>
+
+                {/* Slider de posição — só aparece se há foto */}
+                {(pendingAvatarUrl ?? avatarUrl) && (
+                  <div className="space-y-2">
+                    <label className="block text-xs text-gray-500">{t.profile.photoModalAdjust}</label>
+                    <input
+                      type="range"
+                      min={0}
+                      max={100}
+                      value={pendingPosition}
+                      onChange={e => setPendingPosition(Number(e.target.value))}
+                      className="w-full accent-[#0D0D0D]"
+                    />
+                  </div>
+                )}
+
+                {/* Botões */}
+                <div className="flex gap-3 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setShowAvatarModal(false)}
+                    disabled={savingPhoto}
+                    className="flex-1 py-2.5 text-sm font-semibold border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                  >
+                    {t.common.cancel}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleAvatarSave}
+                    disabled={savingPhoto || (!pendingAvatarUrl && pendingPosition === avatarPosition)}
+                    className="flex-1 py-2.5 text-sm font-semibold bg-[#0D0D0D] text-white rounded-xl hover:bg-[#0D0D0D]/90 disabled:opacity-40 transition-colors"
+                  >
+                    {savingPhoto ? t.profile.saving : t.profile.photoModalSave}
+                  </button>
+                </div>
+
+                {/* Remover foto — só se já tem foto */}
+                {avatarUrl && (
+                  <button
+                    type="button"
+                    onClick={handleAvatarRemove}
+                    disabled={savingPhoto}
+                    className="w-full text-xs text-red-500 hover:text-red-700 py-1 transition-colors disabled:opacity-50"
+                  >
+                    {t.profile.photoModalRemove}
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Modal de confirmacao de exclusao */}
           {showDeleteModal && (
