@@ -100,7 +100,7 @@ export default function DashboardPage() {
     }
   })()
   const divTo = now.toISOString().split('T')[0]
-  const { data: divSummary, loading: divLoading, refresh: refreshDivs } = useDividendSummary(divFrom, divTo)
+  const { data: divSummary, loading: divLoading } = useDividendSummary(divFrom, divTo)
 
   const { data: perfData, loading: chartLoading } = usePerformanceMonthly(inception ?? currentYM, currentYM)
 

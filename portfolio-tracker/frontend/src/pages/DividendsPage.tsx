@@ -150,7 +150,7 @@ export default function DividendsPage() {
                     <YAxis tick={{ fontSize: 11, fill: '#9ca3af' }}
                       tickFormatter={v => new Intl.NumberFormat('pt-BR', { notation: 'compact', currency, style: 'currency', maximumFractionDigits: 0 }).format(v)} />
                     <Tooltip
-                      formatter={(v: number) => [new Intl.NumberFormat('pt-BR', { style: 'currency', currency, maximumFractionDigits: 2 }).format(v), d.totalReceived]}
+                      formatter={(v) => [new Intl.NumberFormat('pt-BR', { style: 'currency', currency, maximumFractionDigits: 2 }).format(Number(v)), d.totalReceived]}
                       contentStyle={{ borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 12 }}
                     />
                     <Bar dataKey="value" fill="#16a34a" radius={[3, 3, 0, 0]} />
