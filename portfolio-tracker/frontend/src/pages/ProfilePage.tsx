@@ -95,23 +95,23 @@ export default function ProfilePage() {
   const CROP_BOX  = 280
   const CIRCLE_SZ = 200
   const CIRC_OFF  = (CROP_BOX - CIRCLE_SZ) / 2
-  const [imgNat, setImgNat] = useState<{ w: number; h: number } | null>(null)
-  const [cropOff, setCropOff] = useState({ x: 0, y: 0 })
+  const [imgNat,    setImgNat]    = useState<{ w: number; h: number } | null>(null)
+  const [cropOff,   setCropOff]   = useState({ x: 0, y: 0 })
   const [cropScale, setCropScale] = useState(1)
-  const [minScale, setMinScale] = useState(1)
-  const dragRef = useRef<{ sx: number; sy: number; ox: number; oy: number } | null>(null)
-  const pointersRef = useRef<Map<number, { x: number; y: number }>>(new Map())
-  const pinchRef = useRef<{ dist: number; scale: number } | null>(null)
-  const cropAreaRef = useRef<HTMLDivElement>(null)
-  // Refs to avoid stale closures in wheel/pointer handlers
-  const cropScaleRef = useRef(cropScale)
-  const cropOffRef   = useRef(cropOff)
-  const imgNatRef    = useRef(imgNat)
-  const minScaleRef  = useRef(minScale)
-  useEffect(() => { cropScaleRef.current = cropScale }, [cropScale])
-  useEffect(() => { cropOffRef.current   = cropOff   }, [cropOff])
-  useEffect(() => { imgNatRef.current    = imgNat    }, [imgNat])
-  useEffect(() => { minScaleRef.current  = minScale  }, [minScale])
+  // Single ref with all live crop values — updated synchronously in every handler
+  // so that consecutive pointer/wheel events always read the latest values
+  const cropStateRef = useRef({ scale: 1, off: { x: 0, y: 0 }, min: 1, nat: null as { w: number; h: number } | null })
+  const dragRef      = useRef<{ sx: number; sy: number; ox: number; oy: number } | null>(null)
+  const pointersRef  = useRef<Map<number, { x: number; y: number }>>(new Map())
+  const pinchRef     = useRef<{ dist: number; scale: number } | null>(null)
+  const cropAreaRef  = useRef<HTMLDivElement>(null)
+
+  function applyCrop(scale: number, off: { x: number; y: number }) {
+    cropStateRef.current.scale = scale
+    cropStateRef.current.off   = off
+    setCropScale(scale)
+    setCropOff(off)
+  }
 
   const { reset: rebuildHistory, loading: rebuilding, result: rebuildResult } = useResetPriceHistory()
   const { sync: syncDividends, syncing: syncingDivs } = useDividendSync()
@@ -152,15 +152,15 @@ export default function ProfilePage() {
     const img = new Image()
     img.onload = () => {
       const { naturalWidth: nw, naturalHeight: nh } = img
-      const min = Math.max(CIRCLE_SZ / nw, CIRCLE_SZ / nh)
-      // Start at 1.25× min so both axes have drag room from the start
+      const min   = Math.max(CIRCLE_SZ / nw, CIRCLE_SZ / nh)
       const scale = Math.min(min * 1.25, min * 4)
-      const sw = nw * scale
-      const sh = nh * scale
-      setImgNat({ w: nw, h: nh })
-      setMinScale(min)
+      const off   = clampCrop((CROP_BOX - nw * scale) / 2, (CROP_BOX - nh * scale) / 2, scale, nw, nh)
+      const nat   = { w: nw, h: nh }
+      // Sync ref immediately so first pointer/wheel events see correct values
+      cropStateRef.current = { scale, off, min, nat }
+      setImgNat(nat)
       setCropScale(scale)
-      setCropOff(clampCrop((CROP_BOX - sw) / 2, (CROP_BOX - sh) / 2, scale, nw, nh))
+      setCropOff(off)
     }
     img.src = dataUrl
   }
@@ -171,16 +171,12 @@ export default function ProfilePage() {
     if (!el) return
     const onWheel = (e: WheelEvent) => {
       e.preventDefault()
-      const sc  = cropScaleRef.current
-      const off = cropOffRef.current
-      const nat = imgNatRef.current
-      const min = minScaleRef.current
+      const { scale: sc, off, nat, min } = cropStateRef.current
       if (!nat) return
       const newScale = Math.max(min, Math.min(min * 4, sc * (e.deltaY < 0 ? 1.08 : 0.93)))
       const cx = CIRC_OFF + CIRCLE_SZ / 2
       const cy = CIRC_OFF + CIRCLE_SZ / 2
-      setCropScale(newScale)
-      setCropOff(clampCrop(
+      applyCrop(newScale, clampCrop(
         cx - ((cx - off.x) / sc) * newScale,
         cy - ((cy - off.y) / sc) * newScale,
         newScale, nat.w, nat.h,
@@ -194,14 +190,15 @@ export default function ProfilePage() {
     e.currentTarget.setPointerCapture(e.pointerId)
     pointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
     if (pointersRef.current.size === 1) {
-      dragRef.current = { sx: e.clientX, sy: e.clientY, ox: cropOffRef.current.x, oy: cropOffRef.current.y }
+      const { off } = cropStateRef.current
+      dragRef.current  = { sx: e.clientX, sy: e.clientY, ox: off.x, oy: off.y }
       pinchRef.current = null
     } else if (pointersRef.current.size >= 2) {
-      dragRef.current = null
+      dragRef.current  = null
       const pts = [...pointersRef.current.values()]
       pinchRef.current = {
         dist:  Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y),
-        scale: cropScaleRef.current,
+        scale: cropStateRef.current.scale,
       }
     }
   }
@@ -209,27 +206,23 @@ export default function ProfilePage() {
   function onCropPointerMove(e: React.PointerEvent<HTMLDivElement>) {
     if (!pointersRef.current.has(e.pointerId)) return
     pointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
-    const nat = imgNatRef.current
+    const { nat, min, scale: sc, off } = cropStateRef.current
     if (!nat) return
 
     if (pointersRef.current.size >= 2 && pinchRef.current) {
-      const pts = [...pointersRef.current.values()]
-      const newDist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y)
-      const min = minScaleRef.current
+      const pts      = [...pointersRef.current.values()]
+      const newDist  = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y)
       const newScale = Math.max(min, Math.min(min * 4, pinchRef.current.scale * newDist / pinchRef.current.dist))
       const cx = CIRC_OFF + CIRCLE_SZ / 2
       const cy = CIRC_OFF + CIRCLE_SZ / 2
-      const sc  = cropScaleRef.current
-      const off = cropOffRef.current
-      setCropScale(newScale)
-      setCropOff(clampCrop(
+      applyCrop(newScale, clampCrop(
         cx - ((cx - off.x) / sc) * newScale,
         cy - ((cy - off.y) / sc) * newScale,
         newScale, nat.w, nat.h,
       ))
     } else if (dragRef.current) {
       const { sx, sy, ox, oy } = dragRef.current
-      setCropOff(clampCrop(ox + e.clientX - sx, oy + e.clientY - sy, cropScaleRef.current, nat.w, nat.h))
+      applyCrop(sc, clampCrop(ox + e.clientX - sx, oy + e.clientY - sy, sc, nat.w, nat.h))
     }
   }
 
@@ -240,7 +233,8 @@ export default function ProfilePage() {
       dragRef.current = null
     } else if (pointersRef.current.size === 1) {
       const [pt] = pointersRef.current.values()
-      dragRef.current = { sx: pt.x, sy: pt.y, ox: cropOffRef.current.x, oy: cropOffRef.current.y }
+      const { off } = cropStateRef.current
+      dragRef.current = { sx: pt.x, sy: pt.y, ox: off.x, oy: off.y }
     }
   }
 
