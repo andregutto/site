@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>
-    {{ if eq .Data.preferred_locale "fr" }}Confirmez votre compte Arvo{{ else if eq .Data.preferred_locale "en" }}Confirm your Arvo account{{ else }}Confirme sua conta Arvo{{ end }}
+    {{ if eq .Data.preferred_locale "fr" }}Confirmez votre compte arvo{{ else if eq .Data.preferred_locale "en" }}Confirm your arvo account{{ else }}Confirme sua conta arvo{{ end }}
   </title>
 </head>
 <body style="margin:0;padding:0;background-color:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
@@ -19,11 +19,19 @@
 
           <!-- header -->
           <tr>
-            <td style="background-color:#0d0d0d;padding:32px 40px 28px;text-align:center;">
-              <!-- logo -->
-              <img src="https://arvo.andregutto.com/brand/logo/arvo-symbol-offwhite.png" width="48" height="48" alt="Arvo" style="display:block;margin:0 auto 10px;border:0;" />
-              <p style="margin:0 0 6px;font-size:26px;font-weight:700;letter-spacing:-0.5px;color:#ffffff;">Arvo</p>
-              <p style="margin:0;font-size:13px;color:#9ca3af;letter-spacing:0.04em;">
+            <td style="background-color:#0d0d0d;padding:28px 40px;text-align:center;">
+              <!-- logo + wordmark side by side -->
+              <table cellpadding="0" cellspacing="0" border="0" style="margin:0 auto 8px;">
+                <tr>
+                  <td style="vertical-align:middle;padding-right:10px;">
+                    <img src="https://arvo.andregutto.com/brand/logo/arvo-symbol-offwhite.png" width="36" height="36" alt="arvo" style="display:block;border:0;" />
+                  </td>
+                  <td style="vertical-align:middle;">
+                    <span style="font-size:26px;font-weight:700;letter-spacing:-0.5px;color:#ffffff;">arvo</span>
+                  </td>
+                </tr>
+              </table>
+              <p style="margin:0;font-size:12px;color:#9ca3af;letter-spacing:0.04em;">
                 {{ if eq .Data.preferred_locale "fr" }}Cultivez ce qui est vôtre.{{ else if eq .Data.preferred_locale "en" }}Grow what is yours.{{ else }}Cultive o que é seu.{{ end }}
               </p>
             </td>
@@ -47,11 +55,11 @@
               <!-- body text -->
               <p style="margin:0 0 28px;font-size:15px;line-height:1.6;color:#374151;">
                 {{ if eq .Data.preferred_locale "fr" }}
-                  Merci de vous être inscrit sur <strong style="color:#0d0d0d;">Arvo</strong>. Cliquez sur le bouton ci-dessous pour confirmer votre adresse e-mail et activer votre compte.
+                  Merci de vous être inscrit sur <strong style="color:#0d0d0d;">arvo</strong>. Cliquez sur le bouton ci-dessous pour confirmer votre adresse e-mail et activer votre compte.
                 {{ else if eq .Data.preferred_locale "en" }}
-                  Thanks for signing up for <strong style="color:#0d0d0d;">Arvo</strong>. Click the button below to confirm your email address and activate your account.
+                  Thanks for signing up for <strong style="color:#0d0d0d;">arvo</strong>. Click the button below to confirm your email address and activate your account.
                 {{ else }}
-                  Obrigado por criar sua conta no <strong style="color:#0d0d0d;">Arvo</strong>. Clique no botão abaixo para confirmar seu endereço de e-mail e ativar sua conta.
+                  Obrigado por criar sua conta no <strong style="color:#0d0d0d;">arvo</strong>. Clique no botão abaixo para confirmar seu endereço de e-mail e ativar sua conta.
                 {{ end }}
               </p>
 
@@ -105,11 +113,11 @@
             <td style="background-color:#f9fafb;padding:20px 40px;border-top:1px solid #e5e7eb;text-align:center;">
               <p style="margin:0;font-size:11px;color:#9ca3af;line-height:1.6;">
                 {{ if eq .Data.preferred_locale "fr" }}
-                  Vous recevez cet e-mail parce que quelqu'un a créé un compte Arvo avec cette adresse. Si vous n'êtes pas à l'origine de cette demande, ignorez simplement ce message.
+                  Vous recevez cet e-mail parce que quelqu'un a créé un compte arvo avec cette adresse. Si vous n'êtes pas à l'origine de cette demande, ignorez simplement ce message.
                 {{ else if eq .Data.preferred_locale "en" }}
-                  You're receiving this email because someone signed up for an Arvo account with this address. If this wasn't you, you can safely ignore this message.
+                  You're receiving this email because someone signed up for an arvo account with this address. If this wasn't you, you can safely ignore this message.
                 {{ else }}
-                  Você está recebendo este e-mail porque alguém criou uma conta Arvo com este endereço. Se não foi você, pode ignorar esta mensagem com segurança.
+                  Você está recebendo este e-mail porque alguém criou uma conta arvo com este endereço. Se não foi você, pode ignorar esta mensagem com segurança.
                 {{ end }}
               </p>
             </td>
