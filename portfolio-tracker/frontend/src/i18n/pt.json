@@ -925,6 +925,7 @@
     "title": "Aportes",
     "subtitle": "Histórico de compras e vendas",
     "importB3": "Importar B3",
+    "exportBtn": "Exportar",
     "newBtn": "+ Novo aporte",
     "editTitle": "Editar aporte",
     "registerTitle": "Registrar aporte / resgate",
