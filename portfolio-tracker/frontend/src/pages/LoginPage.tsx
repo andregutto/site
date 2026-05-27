@@ -67,6 +67,8 @@ export default function LoginPage() {
   const [error, setError]         = useState('')
   const [info, setInfo]           = useState('')
   const [loading, setLoading]     = useState(false)
+  const [resending, setResending] = useState(false)
+  const [resent,    setResent]    = useState(false)
 
   const [firstName,  setFirstName]  = useState('')
   const [lastName,   setLastName]   = useState('')
@@ -82,8 +84,16 @@ export default function LoginPage() {
   }
 
   function switchMode(m: Mode) {
-    setMode(m); setError(''); setInfo('')
+    setMode(m); setError(''); setInfo(''); setResent(false)
     if (m !== 'register') resetExtras()
+  }
+
+  async function handleResend() {
+    if (!email || resending || resent) return
+    setResending(true)
+    await supabase.auth.resend({ type: 'signup', email })
+    setResending(false)
+    setResent(true)
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -400,9 +410,25 @@ export default function LoginPage() {
               )}
 
               {error && (
-                <p style={{ fontFamily: F_SANS, fontSize: 13, padding: '12px 16px', borderRadius: 3, background: '#fef2f2', color: '#991b1b', border: '1px solid #fecaca' }}>
-                  {error}
-                </p>
+                <div style={{ fontFamily: F_SANS, fontSize: 13, padding: '12px 16px', borderRadius: 3, background: '#fef2f2', color: '#991b1b', border: '1px solid #fecaca' }}>
+                  <p style={{ margin: 0 }}>{error}</p>
+                  {error === l.errEmailNotConfirmed && (
+                    <div style={{ marginTop: 10 }}>
+                      {resent ? (
+                        <p style={{ margin: 0, fontSize: 12, color: '#166534' }}>{l.emailResent ?? 'E-mail reenviado. Verifique sua caixa de entrada.'}</p>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={handleResend}
+                          disabled={resending || !email}
+                          style={{ background: 'none', border: '1px solid #991b1b', borderRadius: 3, padding: '5px 12px', fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#991b1b', cursor: resending || !email ? 'not-allowed' : 'pointer', opacity: resending || !email ? 0.6 : 1 }}
+                        >
+                          {resending ? (l.loading ?? '...') : (l.resendEmail ?? 'Reenviar e-mail')}
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
               )}
               {info && (
                 <p style={{ fontFamily: F_SANS, fontSize: 13, padding: '12px 16px', borderRadius: 3, background: '#eff6ff', color: '#1e3a5f', border: '1px solid var(--arvo-border)' }}>
