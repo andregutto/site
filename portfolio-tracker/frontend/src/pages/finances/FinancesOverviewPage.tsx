@@ -100,28 +100,6 @@ function resolveKey(name: string, nameKey: string | null | undefined, keys: Reco
   return keys[nameKey] ?? name
 }
 
-function MonthPicker({ value, onChange, locale, dark }: { value: string; onChange: (m: string) => void; locale: string; dark?: boolean }) {
-  const months = Array.from({ length: 12 }, (_, i) => {
-    const d = new Date()
-    d.setDate(1)
-    d.setMonth(d.getMonth() - i)
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
-  })
-  return (
-    <select
-      value={value}
-      onChange={e => onChange(e.target.value)}
-      className={dark
-        ? 'bg-white/10 border border-white/20 text-white rounded-lg px-3 py-1.5 text-sm focus:outline-none'
-        : 'border border-gray-200 rounded-lg px-3 py-1.5 text-sm bg-white'}
-    >
-      {months.map(m => {
-        const [y, mo] = m.split('-')
-        return <option key={m} value={m} className="text-gray-900 bg-white">{new Date(Number(y), Number(mo) - 1).toLocaleDateString(locale, { month: 'long', year: 'numeric' })}</option>
-      })}
-    </select>
-  )
-}
 
 function ChartTooltip({ active, payload, label, currency }: {
   active?: boolean
@@ -287,13 +265,21 @@ export default function FinancesOverviewPage() {
   }
 
   if (loading) return (
-    <div className="space-y-6">
-      <div className="flex items-start justify-between flex-wrap gap-2">
-        <div>
-          <h1 style={{ fontFamily: "var(--arvo-font-body)", fontSize: 18, letterSpacing: '0.06em', color: 'var(--arvo-black)' }}>{t.finances.overviewTitle}</h1>
-          <p className="text-sm mt-0.5" style={{ color: 'rgba(13,13,13,0.60)' }}>{t.finances.overviewSubtitle}</p>
-        </div>
-        <MonthPicker value={month} onChange={setMonth} locale={browserLocale} />
+    <div className="space-y-5">
+      <div>
+        <h1 style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 18, letterSpacing: '0.06em', color: 'var(--arvo-black)' }}>{t.finances.overviewTitle}</h1>
+        <p className="text-sm mt-0.5" style={{ color: 'rgba(13,13,13,0.60)' }}>{t.finances.overviewSubtitle}</p>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <button onClick={prevMonth} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(13,13,13,0.40)', borderRadius: 8 }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+        </button>
+        <span style={{ fontSize: 14, fontFamily: 'var(--arvo-font-body)', fontWeight: 600, letterSpacing: '0.02em', color: 'var(--arvo-black)', minWidth: 160, textAlign: 'center', textTransform: 'capitalize' }}>
+          {fmtMonthFull(month)}
+        </span>
+        <button onClick={nextMonth} disabled={month >= defaultMonth} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, background: 'none', border: 'none', cursor: 'pointer', color: month >= defaultMonth ? 'rgba(13,13,13,0.18)' : 'rgba(13,13,13,0.40)', borderRadius: 8 }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+        </button>
       </div>
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm">
         <PageLoader />
