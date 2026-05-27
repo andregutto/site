@@ -168,7 +168,7 @@ export default function AchievementsPage() {
 
               {isEarned ? (
                 <div className="mt-2 flex items-center gap-1 flex-wrap justify-center">
-                  <span className="text-xs" style={{ fontFamily: "var(--arvo-font-body)", color: 'var(--arvo-gold)' }}>+{def.xp} {t.achievements.xp}</span>
+                  <span className="text-xs" style={{ fontFamily: "var(--arvo-font-body)", color: 'var(--arvo-gold-text)' }}>+{def.xp} {t.achievements.xp}</span>
                   {earnedAt && (
                     <span className="text-xs" style={{ color: 'rgba(13,13,13,0.35)' }}>
                       · {new Date(earnedAt).toLocaleDateString(undefined, { day: '2-digit', month: 'short' })}
