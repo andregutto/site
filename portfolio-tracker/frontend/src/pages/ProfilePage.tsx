@@ -20,7 +20,6 @@ interface ProfileData {
   birthdate:          string
   allocation_targets: Record<string, number>
   avatar_url:         string
-  avatar_position:    number
 }
 
 const COUNTRY_OPTIONS = [
@@ -48,28 +47,6 @@ function initials(firstName: string, lastName: string, email: string) {
   return email.slice(0, 2).toUpperCase()
 }
 
-function resizeImageToDataUrl(file: File, maxSize = 400): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = e => {
-      const img = new Image()
-      img.onload = () => {
-        const scale = Math.min(1, maxSize / Math.max(img.width, img.height))
-        const w = Math.round(img.width * scale)
-        const h = Math.round(img.height * scale)
-        const canvas = document.createElement('canvas')
-        canvas.width = w; canvas.height = h
-        const ctx = canvas.getContext('2d')!
-        ctx.drawImage(img, 0, 0, w, h)
-        resolve(canvas.toDataURL('image/jpeg', 0.78))
-      }
-      img.onerror = reject
-      img.src = e.target?.result as string
-    }
-    reader.onerror = reject
-    reader.readAsDataURL(file)
-  })
-}
 
 export default function ProfilePage() {
   const { user } = useAuth()
@@ -105,14 +82,21 @@ export default function ProfilePage() {
   const [exporting,     setExporting]     = useState(false)
   const [exportError,   setExportError]   = useState<string | null>(null)
   const [exportSheets,  setExportSheets]  = useState<string[]>([])
-  const [avatarPosition, setAvatarPosition] = useState(50)
-
   const [showAvatarModal,  setShowAvatarModal]  = useState(false)
   const [pendingAvatarUrl, setPendingAvatarUrl] = useState<string | null>(null)
-  const [pendingPosition,  setPendingPosition]  = useState(50)
   const [savingPhoto,      setSavingPhoto]      = useState(false)
   const [photoError,       setPhotoError]       = useState<string | null>(null)
   const modalFileRef = useRef<HTMLInputElement>(null)
+
+  // Cropper state
+  const CROP_BOX  = 280
+  const CIRCLE_SZ = 200
+  const CIRC_OFF  = (CROP_BOX - CIRCLE_SZ) / 2
+  const [imgNat, setImgNat] = useState<{ w: number; h: number } | null>(null)
+  const [cropOff, setCropOff] = useState({ x: 0, y: 0 })
+  const [cropScale, setCropScale] = useState(1)
+  const [minScale, setMinScale] = useState(1)
+  const dragRef = useRef<{ sx: number; sy: number; ox: number; oy: number } | null>(null)
 
   const { reset: rebuildHistory, loading: rebuilding, result: rebuildResult } = useResetPriceHistory()
   const { sync: syncDividends, syncing: syncingDivs } = useDividendSync()
@@ -127,7 +111,6 @@ export default function ProfilePage() {
         setCountry(d.country)
         setBirthdate(d.birthdate ?? '')
         setAvatarUrl(d.avatar_url)
-        setAvatarPosition(d.avatar_position ?? 50)
       })
       .catch(e => setError(e instanceof Error ? e.message : t.profile.errorLoad))
       .finally(() => setLoading(false))
@@ -135,9 +118,75 @@ export default function ProfilePage() {
 
   function openAvatarModal() {
     setPendingAvatarUrl(null)
-    setPendingPosition(avatarPosition)
+    setImgNat(null)
     setPhotoError(null)
     setShowAvatarModal(true)
+  }
+
+  function clampCrop(x: number, y: number, scale: number, nw: number, nh: number) {
+    const sw = nw * scale
+    const sh = nh * scale
+    return {
+      x: Math.min(CIRC_OFF, Math.max(CIRC_OFF + CIRCLE_SZ - sw, x)),
+      y: Math.min(CIRC_OFF, Math.max(CIRC_OFF + CIRCLE_SZ - sh, y)),
+    }
+  }
+
+  function initCropper(dataUrl: string) {
+    const img = new Image()
+    img.onload = () => {
+      const { naturalWidth: nw, naturalHeight: nh } = img
+      const min = Math.max(CIRCLE_SZ / nw, CIRCLE_SZ / nh)
+      const scale = Math.min(Math.max(min, CROP_BOX / Math.max(nw, nh)), min * 3)
+      const sw = nw * scale
+      const sh = nh * scale
+      setImgNat({ w: nw, h: nh })
+      setMinScale(min)
+      setCropScale(scale)
+      setCropOff(clampCrop((CROP_BOX - sw) / 2, (CROP_BOX - sh) / 2, scale, nw, nh))
+    }
+    img.src = dataUrl
+  }
+
+  function onCropPointerDown(e: React.PointerEvent<HTMLDivElement>) {
+    e.currentTarget.setPointerCapture(e.pointerId)
+    dragRef.current = { sx: e.clientX, sy: e.clientY, ox: cropOff.x, oy: cropOff.y }
+  }
+
+  function onCropPointerMove(e: React.PointerEvent<HTMLDivElement>) {
+    if (!dragRef.current || !imgNat) return
+    const { sx, sy, ox, oy } = dragRef.current
+    setCropOff(clampCrop(ox + e.clientX - sx, oy + e.clientY - sy, cropScale, imgNat.w, imgNat.h))
+  }
+
+  function onCropPointerUp() { dragRef.current = null }
+
+  function onZoomChange(newScale: number) {
+    if (!imgNat) return
+    const cx = CIRC_OFF + CIRCLE_SZ / 2
+    const cy = CIRC_OFF + CIRCLE_SZ / 2
+    const imgX = (cx - cropOff.x) / cropScale
+    const imgY = (cy - cropOff.y) / cropScale
+    setCropScale(newScale)
+    setCropOff(clampCrop(cx - imgX * newScale, cy - imgY * newScale, newScale, imgNat.w, imgNat.h))
+  }
+
+  function cropFromCanvas(): Promise<string> {
+    return new Promise((resolve, reject) => {
+      if (!pendingAvatarUrl) { reject(new Error('no image')); return }
+      const img = new Image()
+      img.onload = () => {
+        const srcX = (CIRC_OFF - cropOff.x) / cropScale
+        const srcY = (CIRC_OFF - cropOff.y) / cropScale
+        const srcSz = CIRCLE_SZ / cropScale
+        const canvas = document.createElement('canvas')
+        canvas.width = 200; canvas.height = 200
+        canvas.getContext('2d')!.drawImage(img, srcX, srcY, srcSz, srcSz, 0, 0, 200, 200)
+        resolve(canvas.toDataURL('image/jpeg', 0.85))
+      }
+      img.onerror = reject
+      img.src = pendingAvatarUrl
+    })
   }
 
   async function handleModalFileChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -145,23 +194,27 @@ export default function ProfilePage() {
     if (!file) return
     setPhotoError(null)
     try {
-      const dataUrl = await resizeImageToDataUrl(file)
+      const reader = new FileReader()
+      const dataUrl = await new Promise<string>((res, rej) => {
+        reader.onload = ev => res(ev.target?.result as string)
+        reader.onerror = rej
+        reader.readAsDataURL(file)
+      })
       setPendingAvatarUrl(dataUrl)
+      initCropper(dataUrl)
     } catch {
       setPhotoError(t.profile.errorPhoto)
     }
   }
 
   async function handleAvatarSave() {
-    if (!pendingAvatarUrl && pendingPosition === avatarPosition) { setShowAvatarModal(false); return }
+    if (!pendingAvatarUrl) { setShowAvatarModal(false); return }
     setSavingPhoto(true)
     setPhotoError(null)
     try {
-      const patch: Record<string, unknown> = { avatar_position: pendingPosition }
-      if (pendingAvatarUrl) patch.avatar_url = pendingAvatarUrl
-      await apiFetch('/profile', { method: 'PATCH', body: JSON.stringify(patch) })
-      if (pendingAvatarUrl) setAvatarUrl(pendingAvatarUrl)
-      setAvatarPosition(pendingPosition)
+      const avatar_url = await cropFromCanvas()
+      await apiFetch('/profile', { method: 'PATCH', body: JSON.stringify({ avatar_url }) })
+      setAvatarUrl(avatar_url)
       setShowAvatarModal(false)
       triggerCheck()
     } catch (err) {
@@ -384,7 +437,6 @@ export default function ProfilePage() {
                   src={avatarUrl}
                   alt="Foto de perfil"
                   className="w-16 h-16 rounded-full object-cover"
-                  style={{ objectPosition: `50% ${avatarPosition}%` }}
                 />
               ) : (
                 <div className="w-16 h-16 rounded-full bg-[#0D0D0D] text-white flex items-center justify-center text-xl font-bold">
@@ -688,60 +740,101 @@ export default function ProfilePage() {
           {/* Modal de foto de perfil */}
           {showAvatarModal && (
             <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-              <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-5">
+              <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
                 <h3 className="text-base font-bold text-gray-900">{t.profile.photoModalTitle}</h3>
 
-                {/* Preview */}
-                <div className="flex flex-col items-center gap-4">
-                  <div className="w-24 h-24 rounded-full overflow-hidden bg-[#0D0D0D] flex items-center justify-center shrink-0">
-                    {(pendingAvatarUrl ?? avatarUrl) ? (
+                {/* Cropper ou preview estático */}
+                {pendingAvatarUrl && imgNat ? (
+                  <div className="flex flex-col items-center gap-3">
+                    {/* Área de recorte arrastável */}
+                    <div
+                      className="relative overflow-hidden bg-black rounded-xl select-none touch-none"
+                      style={{ width: CROP_BOX, height: CROP_BOX, cursor: 'grab' }}
+                      onPointerDown={onCropPointerDown}
+                      onPointerMove={onCropPointerMove}
+                      onPointerUp={onCropPointerUp}
+                      onPointerCancel={onCropPointerUp}
+                    >
+                      {/* Imagem arrastável */}
                       <img
-                        src={pendingAvatarUrl ?? avatarUrl}
-                        alt="Preview"
-                        className="w-full h-full object-cover"
-                        style={{ objectPosition: `50% ${pendingPosition}%` }}
+                        src={pendingAvatarUrl}
+                        alt=""
+                        draggable={false}
+                        style={{
+                          position: 'absolute',
+                          width:  imgNat.w * cropScale,
+                          height: imgNat.h * cropScale,
+                          left:   cropOff.x,
+                          top:    cropOff.y,
+                          pointerEvents: 'none',
+                          userSelect: 'none',
+                        }}
                       />
-                    ) : (
-                      <span className="text-white text-2xl font-bold">{avatarInitials}</span>
-                    )}
+                      {/* Overlay escuro com buraco circular */}
+                      <svg
+                        style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
+                        width={CROP_BOX}
+                        height={CROP_BOX}
+                      >
+                        <defs>
+                          <mask id="cropMask">
+                            <rect width={CROP_BOX} height={CROP_BOX} fill="white" />
+                            <circle cx={CROP_BOX / 2} cy={CROP_BOX / 2} r={CIRCLE_SZ / 2} fill="black" />
+                          </mask>
+                        </defs>
+                        <rect width={CROP_BOX} height={CROP_BOX} fill="rgba(0,0,0,0.55)" mask="url(#cropMask)" />
+                        <circle cx={CROP_BOX / 2} cy={CROP_BOX / 2} r={CIRCLE_SZ / 2} fill="none" stroke="white" strokeWidth={2} />
+                      </svg>
+                    </div>
+
+                    {/* Slider de zoom */}
+                    <div className="w-full space-y-1">
+                      <label className="block text-xs text-gray-500 text-center">{t.profile.photoModalAdjust}</label>
+                      <input
+                        type="range"
+                        min={minScale}
+                        max={minScale * 3}
+                        step={minScale * 0.01}
+                        value={cropScale}
+                        onChange={e => onZoomChange(Number(e.target.value))}
+                        className="w-full accent-[#0D0D0D]"
+                      />
+                    </div>
                   </div>
-
-                  <button
-                    type="button"
-                    onClick={() => modalFileRef.current?.click()}
-                    className="px-4 py-2 text-sm font-semibold border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors"
-                  >
-                    {t.profile.photoModalChoose}
-                  </button>
-                  <input
-                    ref={modalFileRef}
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleModalFileChange}
-                  />
-                </div>
-
-                {/* Slider de posição — só aparece se há foto */}
-                {(pendingAvatarUrl ?? avatarUrl) && (
-                  <div className="space-y-2">
-                    <label className="block text-xs text-gray-500">{t.profile.photoModalAdjust}</label>
-                    <input
-                      type="range"
-                      min={0}
-                      max={100}
-                      value={pendingPosition}
-                      onChange={e => setPendingPosition(Number(e.target.value))}
-                      className="w-full accent-[#0D0D0D]"
-                    />
+                ) : (
+                  /* Sem foto nova: mostra avatar atual */
+                  <div className="flex flex-col items-center gap-4">
+                    <div className="w-24 h-24 rounded-full overflow-hidden bg-[#0D0D0D] flex items-center justify-center shrink-0">
+                      {avatarUrl ? (
+                        <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-white text-2xl font-bold">{avatarInitials}</span>
+                      )}
+                    </div>
                   </div>
                 )}
+
+                {/* Botão para escolher ficheiro */}
+                <button
+                  type="button"
+                  onClick={() => modalFileRef.current?.click()}
+                  className="w-full py-2 text-sm font-semibold border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors"
+                >
+                  {t.profile.photoModalChoose}
+                </button>
+                <input
+                  ref={modalFileRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleModalFileChange}
+                />
 
                 {/* Error */}
                 {photoError && <p className="text-xs text-red-600 text-center">{photoError}</p>}
 
                 {/* Botões */}
-                <div className="flex gap-3 pt-1">
+                <div className="flex gap-3">
                   <button
                     type="button"
                     onClick={() => setShowAvatarModal(false)}
@@ -753,7 +846,7 @@ export default function ProfilePage() {
                   <button
                     type="button"
                     onClick={handleAvatarSave}
-                    disabled={savingPhoto || (!pendingAvatarUrl && pendingPosition === avatarPosition)}
+                    disabled={savingPhoto || !pendingAvatarUrl}
                     className="flex-1 py-2.5 text-sm font-semibold bg-[#0D0D0D] text-white rounded-xl hover:bg-[#0D0D0D]/90 disabled:opacity-40 transition-colors"
                   >
                     {savingPhoto ? t.profile.saving : t.profile.photoModalSave}

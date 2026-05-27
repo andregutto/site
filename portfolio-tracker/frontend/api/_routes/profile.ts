@@ -34,7 +34,7 @@ router.patch('/', requireAuth, async (req, res: Response) => {
     first_name?: string; last_name?: string; country?: string
     tax_country?: string; birthdate?: string; default_currency?: string
     portfolio_start_date?: string; allocation_targets?: Record<string, number>
-    institution_data?: Record<string, Record<string, string>>; avatar_url?: string; avatar_position?: number
+    institution_data?: Record<string, Record<string, string>>; avatar_url?: string
   }
   const { data: { user: current } } = await supabaseAdmin.auth.admin.getUserById(userId)
   const meta = {

@@ -1,4 +1,4 @@
-const CACHE = 'arvo-v4'
+const CACHE = 'arvo-v5'
 const STATIC = ['/manifest.json', '/favicon.svg', '/offline.html']
 
 self.addEventListener('install', e => {
@@ -25,7 +25,14 @@ self.addEventListener('fetch', e => {
   // Network-first for API calls
   if (url.pathname.startsWith('/api/')) {
     e.respondWith(
-      fetch(request).catch(() => caches.match(request))
+      fetch(request).catch(() =>
+        caches.match(request).then(cached =>
+          cached ?? new Response(JSON.stringify({ error: 'Network error' }), {
+            status: 503,
+            headers: { 'Content-Type': 'application/json' },
+          })
+        )
+      )
     )
     return
   }
@@ -33,7 +40,11 @@ self.addEventListener('fetch', e => {
   // Navigation requests: network-first, fall back to offline.html
   if (request.mode === 'navigate') {
     e.respondWith(
-      fetch(request).catch(() => caches.match('/offline.html'))
+      fetch(request).catch(() =>
+        caches.match('/offline.html').then(cached =>
+          cached ?? new Response('Offline', { status: 503 })
+        )
+      )
     )
     return
   }
