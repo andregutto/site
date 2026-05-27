@@ -37,8 +37,8 @@ export default function ValueCards({ total_brl, generated_at, invested_brl, gain
 
   const labelStyle: React.CSSProperties = {
     fontFamily: "var(--arvo-font-body)",
-    fontSize: 9,
-    letterSpacing: '0.25em',
+    fontSize: 11,
+    letterSpacing: '0.20em',
     textTransform: 'uppercase',
     color: 'rgba(13,13,13,0.62)',
   }

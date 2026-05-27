@@ -5,6 +5,7 @@ import {
 } from 'recharts'
 import { apiFetch } from '../../lib/api'
 import { useI18n } from '../../contexts/I18nContext'
+import { useCurrency } from '../../contexts/CurrencyContext'
 
 interface FreedomPlan {
   id: number
@@ -750,6 +751,7 @@ function ChartTooltip({ active, payload, label, currency }: {
 export default function FinancesFreedomPage() {
   const { t, locale } = useI18n()
   const intlLocale = ({ pt: 'pt-BR', en: 'en-US', fr: 'fr-FR' } as Record<string, string>)[locale] ?? 'pt-BR'
+  const { currency: displayCurrency, convert, fxRates } = useCurrency()
 
   const [plans,        setPlans]        = useState<FreedomPlan[]>([])
   const [perf,         setPerf]         = useState<MonthlyPerf[]>([])
@@ -890,6 +892,13 @@ export default function FinancesFreedomPage() {
     }
   }
 
+  // Chart data converted to display currency
+  const displayChartData = chartData.map(pt => ({
+    ...pt,
+    planned: pt.planned != null ? Math.round(cxFreedom(pt.planned)) : null,
+    actual:  pt.actual  != null ? Math.round(cxFreedom(pt.actual))  : null,
+  }))
+
   // Summary cards
   const currentValue = (() => {
     if (!activePlan || !portfolio) return 0
@@ -968,6 +977,16 @@ export default function FinancesFreedomPage() {
     return { diff: Math.round(diff), pct: pct.toFixed(1), ahead: diff >= 0 }
   })()
 
+  // Convert a value from activePlan.currency to the app display currency
+  function cxFreedom(value: number): number {
+    const planCur = activePlan?.currency ?? 'EUR'
+    if (planCur === displayCurrency) return value
+    const inBrl = planCur === 'BRL' ? value
+      : planCur === 'EUR' ? value * fxRates.EUR
+      : value * (fxRates.USD ?? 5.7)
+    return convert(inBrl)
+  }
+
   if (loading) {
     return (
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-12 text-center text-gray-400 text-sm">
@@ -976,7 +995,7 @@ export default function FinancesFreedomPage() {
     )
   }
 
-  const currency = activePlan?.currency ?? 'EUR'
+  const planCurrency = activePlan?.currency ?? 'EUR'
 
   return (
     <div className="space-y-5">
@@ -1059,12 +1078,12 @@ export default function FinancesFreedomPage() {
           <div className="grid grid-cols-2 gap-3">
             <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
               <p className="text-xs text-gray-500 mb-1">{t.finances.freedomToday}</p>
-              <p className="text-lg font-bold text-gray-900">{fmt(currentValue, currency, true)}</p>
+              <p className="text-lg font-bold text-gray-900">{fmt(cxFreedom(currentValue), displayCurrency, true)}</p>
               <p className="text-[10px] text-gray-400 mt-0.5">{t.finances.freedomActualNow}</p>
             </div>
             <div className={`rounded-xl border shadow-sm p-4 ${planStatusText?.ahead ? 'bg-emerald-50 border-emerald-100' : planStatusText ? 'bg-amber-50 border-amber-100' : 'bg-white border-gray-100'}`}>
               <p className="text-xs text-gray-500 mb-1">{t.finances.freedomPlannedToday}</p>
-              <p className="text-lg font-bold text-gray-900">{fmt(plannedAtCurrentMonth, currency, true)}</p>
+              <p className="text-lg font-bold text-gray-900">{fmt(cxFreedom(plannedAtCurrentMonth), displayCurrency, true)}</p>
               <p className="text-[10px] text-gray-400 mt-0.5">{t.finances.freedomAccordingToPlan}</p>
             </div>
           </div>
@@ -1072,14 +1091,14 @@ export default function FinancesFreedomPage() {
           <div className="grid grid-cols-3 gap-3">
             <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
               <p className="text-xs text-gray-500 mb-1">{t.finances.freedomGoal}</p>
-              <p className="text-base font-bold text-[#0D0D0D]">{fmt(activePlan!.target_amount, currency, true)}</p>
+              <p className="text-base font-bold text-[#0D0D0D]">{fmt(cxFreedom(activePlan!.target_amount), displayCurrency, true)}</p>
             </div>
             <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
               <p className="text-xs text-gray-500 mb-1">{t.finances.freedomPassive} {t.finances.freedomPerMonth}</p>
               <div className="flex items-baseline gap-2 flex-wrap">
-                <p className="text-base font-bold text-emerald-600">{fmt(passiveIncome, currency, true)}</p>
+                <p className="text-base font-bold text-emerald-600">{fmt(cxFreedom(passiveIncome), displayCurrency, true)}</p>
                 {passiveIncomeReal != null && passiveIncomeReal !== passiveIncome && (
-                  <p className="text-sm font-semibold text-emerald-500">≈ {fmt(passiveIncomeReal, currency, true)} {t.finances.freedomRealToday}</p>
+                  <p className="text-sm font-semibold text-emerald-500">≈ {fmt(cxFreedom(passiveIncomeReal), displayCurrency, true)} {t.finances.freedomRealToday}</p>
                 )}
               </div>
               <p className="text-[10px] text-gray-400">{(activePlan!.monthly_income_rate * 100).toFixed(1)}% {t.finances.freedomIncomeNominalTag}</p>
@@ -1111,7 +1130,7 @@ export default function FinancesFreedomPage() {
               <span>{planStatusText.ahead ? '✅' : '⚠️'}</span>
               <span>
                 {planStatusText.ahead ? t.finances.freedomAhead : t.finances.freedomBehind}:&nbsp;
-                <strong>{fmt(Math.abs(planStatusText.diff), currency, true, intlLocale)}</strong>
+                <strong>{fmt(cxFreedom(Math.abs(planStatusText.diff)), displayCurrency, true, intlLocale)}</strong>
                 &nbsp;({planStatusText.ahead ? '+' : ''}{planStatusText.pct}% {t.finances.freedomVsPlanned})
               </span>
             </div>
@@ -1127,22 +1146,22 @@ export default function FinancesFreedomPage() {
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
               <h3 className="text-sm font-semibold text-gray-700 mb-4">{t.finances.freedomChartTitle}</h3>
               <ResponsiveContainer width="100%" height={320}>
-                <LineChart data={chartData} margin={{ top: 5, right: 10, bottom: 5, left: 0 }}>
+                <LineChart data={displayChartData} margin={{ top: 5, right: 10, bottom: 5, left: 0 }}>
                   <XAxis
                     dataKey="month"
                     tickFormatter={m => fmtMonth(m, intlLocale)}
                     tick={{ fontSize: 10 }}
-                    interval={Math.floor(chartData.length / 8)}
+                    interval={Math.floor(displayChartData.length / 8)}
                   />
                   <YAxis
-                    tickFormatter={v => fmt(v, currency, true)}
+                    tickFormatter={v => fmt(v, displayCurrency, true)}
                     tick={{ fontSize: 10 }}
                     width={80}
                   />
-                  <Tooltip content={<ChartTooltip currency={currency} />} />
+                  <Tooltip content={<ChartTooltip currency={displayCurrency} />} />
                   <Legend wrapperStyle={{ fontSize: 11 }} />
                   <ReferenceLine
-                    y={activePlan!.target_amount}
+                    y={cxFreedom(activePlan!.target_amount)}
                     stroke="#C8B89A"
                     strokeDasharray="4 2"
                     label={{ value: t.finances.freedomGoal, position: 'insideTopRight', fontSize: 10, fill: '#C8B89A' }}
@@ -1179,12 +1198,12 @@ export default function FinancesFreedomPage() {
             <h3 className="text-sm font-semibold text-gray-700 mb-3">{activePlan!.name}</h3>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
               {[
-                { label: t.finances.freedomCapital, value: fmt(activePlan!.initial_capital, currency) },
-                { label: `${t.finances.freedomContrib} ${t.finances.freedomPerMonth}`, value: fmt(activePlan!.monthly_contribution, currency, false, intlLocale) },
+                { label: t.finances.freedomCapital, value: fmt(cxFreedom(activePlan!.initial_capital), displayCurrency) },
+                { label: `${t.finances.freedomContrib} ${t.finances.freedomPerMonth}`, value: fmt(cxFreedom(activePlan!.monthly_contribution), displayCurrency, false, intlLocale) },
                 { label: `${t.finances.freedomRate} ${t.finances.freedomPerMonth}`, value: (activePlan!.monthly_return_rate * 100).toFixed(2) + '%' },
                 { label: `${t.finances.freedomIncomeRate} ${t.finances.freedomPerMonth}`, value: (activePlan!.monthly_income_rate * 100).toFixed(2) + '%' },
                 { label: t.finances.freedomHorizon, value: `${activePlan!.horizon_years} ${t.finances.freedomAgeAtTarget}` },
-                { label: t.finances.freedomCurrency, value: activePlan!.currency },
+                { label: t.finances.freedomCurrency, value: `${planCurrency}${planCurrency !== displayCurrency ? ` → ${displayCurrency}` : ''}` },
               ].map(({ label, value }) => (
                 <div key={label}>
                   <p className="text-xs text-gray-400">{label}</p>

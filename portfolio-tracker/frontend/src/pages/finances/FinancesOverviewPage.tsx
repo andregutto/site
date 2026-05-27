@@ -430,14 +430,14 @@ export default function FinancesOverviewPage() {
                     </div>
                     <div className="text-right shrink-0 ml-3">
                       <div>
-                        <span style={{ fontSize: 10, color: 'rgba(13,13,13,0.58)', marginRight: 4 }}>{t.finances.overviewSpent}</span>
-                        <span style={{ fontSize: 12, fontWeight: 600, color: env.over ? '#C0392B' : 'var(--arvo-fg-muted)' }}>
+                        <span style={{ fontSize: 11, color: 'rgba(13,13,13,0.58)', marginRight: 4 }}>{t.finances.overviewSpent}</span>
+                        <span style={{ fontSize: 13, fontWeight: 600, color: env.over ? '#C0392B' : 'var(--arvo-fg-muted)' }}>
                           {fmt(cx(env.actual), currency, true)}
                         </span>
                       </div>
                       {env.budget > 0 && (
                         <div>
-                          <span style={{ fontSize: 10, color: 'rgba(13,13,13,0.58)', marginRight: 4 }}>{t.finances.overviewBudgeted}</span>
+                          <span style={{ fontSize: 11, color: 'rgba(13,13,13,0.58)', marginRight: 4 }}>{t.finances.overviewBudgeted}</span>
                           <span style={{ fontSize: 12, color: 'rgba(13,13,13,0.58)' }}>{fmt(cx(env.budget), currency, true)}</span>
                         </div>
                       )}
@@ -447,7 +447,7 @@ export default function FinancesOverviewPage() {
                             const pct = Math.round((env.actual - env.budget) / env.budget * 100)
                             const over = pct > 0
                             return (
-                              <span style={{ fontSize: 10, fontWeight: 600, color: over ? '#C0392B' : 'var(--arvo-green)' }}>
+                              <span style={{ fontSize: 11, fontWeight: 600, color: over ? '#C0392B' : 'var(--arvo-green)' }}>
                                 {over ? `+${pct}%` : `${pct}%`} {t.finances.ofTarget}
                               </span>
                             )
@@ -466,8 +466,8 @@ export default function FinancesOverviewPage() {
                     />
                   </div>
                   <div className="flex items-center justify-between mt-0.5">
-                    <span style={{ fontSize: 10, color: 'rgba(13,13,13,0.58)' }}>{env.pctOfIncome.toFixed(1)}% {t.finances.overviewSpent}</span>
-                    <span style={{ fontSize: 10, color: 'rgba(13,13,13,0.58)' }}>{t.finances.target}: {env.pct_target}% {t.finances.ofIncome}</span>
+                    <span style={{ fontSize: 11, color: 'rgba(13,13,13,0.58)' }}>{env.pctOfIncome.toFixed(1)}% {t.finances.overviewSpent}</span>
+                    <span style={{ fontSize: 11, color: 'rgba(13,13,13,0.58)' }}>{t.finances.target}: {env.pct_target}% {t.finances.ofIncome}</span>
                   </div>
                 </div>
               </div>
@@ -485,14 +485,14 @@ export default function FinancesOverviewPage() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between">
                             <span style={{ fontSize: 12, color: 'var(--arvo-fg-muted)' }} className="truncate">{resolveKey(cat.name, cat.name_key, nameKeys)}</span>
-                            <span style={{ fontSize: 10, color: 'rgba(13,13,13,0.58)', flexShrink: 0, marginLeft: 8 }}>{envPct.toFixed(0)}% {t.finances.ofEnvelope}</span>
+                            <span style={{ fontSize: 11, color: 'rgba(13,13,13,0.58)', flexShrink: 0, marginLeft: 8 }}>{envPct.toFixed(0)}% {t.finances.ofEnvelope}</span>
                           </div>
                           <div className="mt-0.5 h-1 bg-gray-200 rounded-full overflow-hidden">
                             <div className="h-full rounded-full" style={{ width: catBudget > 0 ? `${budgetPct}%` : `${Math.min(envPct, 100)}%`, backgroundColor: over ? '#ef4444' : cat.color }} />
                           </div>
                           <div className="flex items-center justify-between mt-0.5">
-                            <span style={{ fontSize: 10, color: 'rgba(13,13,13,0.58)' }}>{fmt(cx(cat.actual), currency, true)} {t.finances.overviewSpent}</span>
-                            {catBudget > 0 && <span style={{ fontSize: 10, flexShrink: 0, color: over ? '#C0392B' : 'rgba(13,13,13,0.58)' }}>{budgetPct.toFixed(0)}% {t.finances.ofBudget}</span>}
+                            <span style={{ fontSize: 11, color: 'rgba(13,13,13,0.58)' }}>{fmt(cx(cat.actual), currency, true)} {t.finances.overviewSpent}</span>
+                            {catBudget > 0 && <span style={{ fontSize: 11, flexShrink: 0, color: over ? '#C0392B' : 'rgba(13,13,13,0.58)' }}>{budgetPct.toFixed(0)}% {t.finances.ofBudget}</span>}
                           </div>
                         </div>
                       </div>

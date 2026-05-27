@@ -1,7 +1,13 @@
 <svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-label="arvo favicon">
-  <rect width="64" height="64" rx="12" fill="#0D0D0D"></rect>
+  <defs>
+    <radialGradient id="bg-glow" cx="52%" cy="46%" r="62%" gradientUnits="objectBoundingBox">
+      <stop offset="0%" stop-color="#3A2C14"/>
+      <stop offset="38%" stop-color="#1E1608"/>
+      <stop offset="100%" stop-color="#0D0D0D"/>
+    </radialGradient>
+  </defs>
+  <rect width="64" height="64" rx="12" fill="url(#bg-glow)"/>
   <g transform="translate(9 8) scale(0.265)">
-    
     <path d="M96.9642 82.5762C83.7642 28.1762 141.798 5.2429 172.464 0.576233C173.464 15.7429 159.764 53.3762 96.9642 82.5762Z" fill="#D6C6A8"></path>
     <path d="M165.464 82.5762V53.5762L136.964 73.9631V111.674C144.263 106.015 151.778 100.102 155.964 96.5762C163.564 90.1762 165.464 84.5762 165.464 82.5762Z" fill="#C8B89A"></path>
     <path d="M121.464 85.0507V123.576C125.207 120.732 131.014 116.287 136.964 111.674V73.9631L121.464 85.0507Z" fill="#B8A98C"></path>
