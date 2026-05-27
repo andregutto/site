@@ -4,7 +4,7 @@ import { requireAuth, AuthRequest } from '../../middleware/auth.js'
 import { supabaseAdmin } from '../../lib/supabase.js'
 
 const router = Router()
-router.use(requireAuth)
+// NOTE: GET /invite/:token is intentionally public (no requireAuth)
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -22,7 +22,7 @@ async function userDisplay(userId: string): Promise<{ name: string; email: strin
 // ─── Groups ──────────────────────────────────────────────────────────────────
 
 // GET /api/shared/groups
-router.get('/groups', async (req, res: Response) => {
+router.get('/groups', requireAuth, async (req, res: Response) => {
   const userId = uid(req)
 
   // Groups where user is creator or active/pending member
@@ -79,7 +79,7 @@ router.get('/groups', async (req, res: Response) => {
 })
 
 // POST /api/shared/groups
-router.post('/groups', async (req, res: Response) => {
+router.post('/groups', requireAuth, async (req, res: Response) => {
   const userId = uid(req)
   const { name } = req.body as { name: string }
   if (!name?.trim()) { res.status(400).json({ error: 'Nome obrigatório' }); return }
@@ -105,7 +105,7 @@ router.post('/groups', async (req, res: Response) => {
 })
 
 // PATCH /api/shared/groups/:id
-router.patch('/groups/:id', async (req, res: Response) => {
+router.patch('/groups/:id', requireAuth, async (req, res: Response) => {
   const userId = uid(req)
   const { name } = req.body as { name: string }
   const { data, error } = await supabaseAdmin
@@ -120,7 +120,7 @@ router.patch('/groups/:id', async (req, res: Response) => {
 })
 
 // DELETE /api/shared/groups/:id
-router.delete('/groups/:id', async (req, res: Response) => {
+router.delete('/groups/:id', requireAuth, async (req, res: Response) => {
   const userId = uid(req)
   const { error } = await supabaseAdmin
     .from('shared_groups')
@@ -134,7 +134,7 @@ router.delete('/groups/:id', async (req, res: Response) => {
 // ─── Invites ─────────────────────────────────────────────────────────────────
 
 // POST /api/shared/groups/:id/invite
-router.post('/groups/:id/invite', async (req, res: Response) => {
+router.post('/groups/:id/invite', requireAuth, async (req, res: Response) => {
   const userId = uid(req)
   const groupId = Number(req.params.id)
   const { email } = req.body as { email: string }
@@ -217,7 +217,7 @@ router.get('/invite/:token', async (req, res: Response) => {
 })
 
 // POST /api/shared/invite/accept
-router.post('/invite/accept', async (req, res: Response) => {
+router.post('/invite/accept', requireAuth, async (req, res: Response) => {
   const userId = uid(req)
   const { token } = req.body as { token: string }
 
@@ -259,7 +259,7 @@ router.post('/invite/accept', async (req, res: Response) => {
 // ─── Members ─────────────────────────────────────────────────────────────────
 
 // PATCH /api/shared/groups/:groupId/members/:memberId  (update share settings)
-router.patch('/groups/:groupId/members/:memberId', async (req, res: Response) => {
+router.patch('/groups/:groupId/members/:memberId', requireAuth, async (req, res: Response) => {
   const userId = uid(req)
   const { share_pct, share_mode, salary_authorized } = req.body as {
     share_pct?: number
@@ -321,7 +321,7 @@ router.patch('/groups/:groupId/members/:memberId', async (req, res: Response) =>
 })
 
 // DELETE /api/shared/groups/:groupId/members/:memberId  (leave or remove)
-router.delete('/groups/:groupId/members/:memberId', async (req, res: Response) => {
+router.delete('/groups/:groupId/members/:memberId', requireAuth, async (req, res: Response) => {
   const userId = uid(req)
   const groupId = Number(req.params.groupId)
   const memberId = Number(req.params.memberId)
@@ -359,7 +359,7 @@ router.delete('/groups/:groupId/members/:memberId', async (req, res: Response) =
 // ─── Shared Categories ────────────────────────────────────────────────────────
 
 // GET /api/shared/categories
-router.get('/categories', async (req, res: Response) => {
+router.get('/categories', requireAuth, async (req, res: Response) => {
   const userId = uid(req)
 
   // All groups user is active in
@@ -395,7 +395,7 @@ router.get('/categories', async (req, res: Response) => {
 })
 
 // POST /api/shared/categories
-router.post('/categories', async (req, res: Response) => {
+router.post('/categories', requireAuth, async (req, res: Response) => {
   const userId = uid(req)
   const { group_id, name, icon, color, total_goal, currency } = req.body as {
     group_id: number; name: string; icon?: string; color?: string; total_goal?: number; currency?: string
@@ -423,7 +423,7 @@ router.post('/categories', async (req, res: Response) => {
 })
 
 // PATCH /api/shared/categories/:id
-router.patch('/categories/:id', async (req, res: Response) => {
+router.patch('/categories/:id', requireAuth, async (req, res: Response) => {
   const userId = uid(req)
   const { name, icon, color, total_goal, currency } = req.body as {
     name?: string; icon?: string; color?: string; total_goal?: number; currency?: string
@@ -467,7 +467,7 @@ router.patch('/categories/:id', async (req, res: Response) => {
 })
 
 // DELETE /api/shared/categories/:id
-router.delete('/categories/:id', async (req, res: Response) => {
+router.delete('/categories/:id', requireAuth, async (req, res: Response) => {
   const userId = uid(req)
   const { error } = await supabaseAdmin
     .from('shared_categories')
@@ -480,7 +480,7 @@ router.delete('/categories/:id', async (req, res: Response) => {
 
 // GET /api/shared/categories/:id/detail
 // Returns category + member contributions (actual vs goal)
-router.get('/categories/:id/detail', async (req, res: Response) => {
+router.get('/categories/:id/detail', requireAuth, async (req, res: Response) => {
   const userId = uid(req)
   const catId = Number(req.params.id)
 

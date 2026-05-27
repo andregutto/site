@@ -108,7 +108,7 @@ function AppRoutes() {
 
   return (
     <Routes>
-      <Route path="/login"   element={user ? <Navigate to="/dashboard" replace /> : <LoginPage />} />
+      <Route path="/login"   element={user ? <Navigate to={sessionStorage.getItem('pending_invite_token') ? `/invite/${sessionStorage.getItem('pending_invite_token')}` : '/dashboard'} replace /> : <LoginPage />} />
       <Route path="/"        element={user ? <Navigate to="/dashboard" replace /> : <LandingPage />} />
       <Route path="/privacy"                element={<PrivacyPolicyPage />} />
       <Route path="/terms"                  element={<TermsOfUsePage />} />
