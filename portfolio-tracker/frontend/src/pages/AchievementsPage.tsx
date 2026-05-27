@@ -99,8 +99,10 @@ export default function AchievementsPage() {
             </div>
           </div>
           <div className="text-right">
-            <span className="font-bold text-2xl" style={{ fontFamily: "'Playfair Display', serif", fontStyle: 'italic', color: 'var(--arvo-gold-text)' }}>{totalXp}</span>
-            <span className="text-sm ml-1" style={{ color: 'rgba(13,13,13,0.60)', fontFamily: "var(--arvo-font-body)" }}>XP</span>
+            <p className="font-bold text-xl" style={{ color: 'var(--arvo-black)' }}>
+              {totalXp} <span style={{ color: 'var(--arvo-gold)' }}>{t.achievements.xp}</span>
+            </p>
+            <p className="text-xs" style={{ color: 'rgba(13,13,13,0.45)' }}>{earnedKeys.length}/{ACHIEVEMENT_DEFS.length} {t.achievements.subtitle}</p>
           </div>
         </div>
 
