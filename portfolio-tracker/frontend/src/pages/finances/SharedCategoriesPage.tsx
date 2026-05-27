@@ -206,7 +206,6 @@ export default function SharedCategoriesPage() {
       {showInvite && (
         <InviteModal
           s={s}
-          groupId={showInvite}
           result={inviteResult}
           copied={copied}
           onInvite={async (email) => {
@@ -547,8 +546,8 @@ function NewGroupModal({ s, onClose, onCreated }: { s: Record<string, string>; o
   )
 }
 
-function InviteModal({ s, groupId, result, copied, onInvite, onCopy, onClose }: {
-  s: Record<string, string>; groupId: number; result: string | null; copied: boolean
+function InviteModal({ s, result, copied, onInvite, onCopy, onClose }: {
+  s: Record<string, string>; result: string | null; copied: boolean
   onInvite: (email: string) => Promise<void>; onCopy: () => void; onClose: () => void
 }) {
   const [email, setEmail] = useState('')
