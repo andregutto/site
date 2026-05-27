@@ -569,6 +569,9 @@ function InviteModal({ s, result, copied, onInvite, onCopy, onClose }: {
         <h2 className="text-sm font-semibold" style={{ color: 'var(--arvo-black)', fontFamily: 'var(--arvo-font-body)', letterSpacing: '0.06em' }}>{s.invite}</h2>
         {!result ? (
           <>
+            <p className="text-xs" style={{ color: 'var(--arvo-fg-soft)', lineHeight: 1.5 }}>
+              {s.inviteHint ?? 'Informe o e-mail do convidado. Nenhuma mensagem é enviada automaticamente — você receberá um link para compartilhar.'}
+            </p>
             <div className="flex flex-col gap-1">
               <label className="text-[11px] uppercase tracking-widest" style={{ color: 'var(--arvo-fg-soft)', fontFamily: 'var(--arvo-font-body)' }}>{s.inviteEmail}</label>
               <input
@@ -579,22 +582,24 @@ function InviteModal({ s, result, copied, onInvite, onCopy, onClose }: {
               {err && <p className="text-xs" style={{ color: 'var(--arvo-red)' }}>{err}</p>}
             </div>
             <div className="flex gap-2 justify-end">
-              <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg text-xs" style={{ background: 'rgba(13,13,13,0.07)', color: 'var(--arvo-fg)' }}>Cancelar</button>
+              <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg text-xs" style={{ background: 'rgba(13,13,13,0.07)', color: 'var(--arvo-fg)' }}>{s.cancel ?? 'Cancelar'}</button>
               <button type="submit" disabled={saving} className="px-4 py-2 rounded-lg text-xs" style={{ background: 'var(--arvo-black)', color: 'var(--arvo-offwhite)', opacity: saving ? 0.6 : 1 }}>
-                {saving ? '...' : s.invite}
+                {saving ? '...' : (s.generateLink ?? 'Gerar link')}
               </button>
             </div>
           </>
         ) : (
           <>
-            <p className="text-xs" style={{ color: 'var(--arvo-fg-soft)' }}>{s.inviteSent}. {s.inviteLink}:</p>
+            <p className="text-xs" style={{ color: 'var(--arvo-fg-soft)', lineHeight: 1.5 }}>
+              {s.inviteLinkReady ?? 'Link gerado! Copie e envie via WhatsApp, e-mail ou onde preferir.'}
+            </p>
             <div className="flex items-center gap-2">
               <input readOnly value={result} className="flex-1 px-3 py-2 rounded-lg text-xs" style={{ border: '1px solid var(--arvo-border)', background: 'rgba(13,13,13,0.04)', color: 'var(--arvo-fg)', outline: 'none' }} />
               <button type="button" onClick={onCopy} className="px-3 py-2 rounded-lg text-xs shrink-0" style={{ background: copied ? 'var(--arvo-green)' : 'var(--arvo-black)', color: 'var(--arvo-offwhite)' }}>
                 {copied ? s.linkCopied : s.copyLink}
               </button>
             </div>
-            <button type="button" onClick={onClose} className="text-xs self-end" style={{ color: 'var(--arvo-fg-soft)' }}>Fechar</button>
+            <button type="button" onClick={onClose} className="text-xs self-end" style={{ color: 'var(--arvo-fg-soft)' }}>{s.close ?? 'Fechar'}</button>
           </>
         )}
       </form>
