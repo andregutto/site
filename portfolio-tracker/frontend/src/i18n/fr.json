@@ -1341,6 +1341,7 @@
     "editPctHint": "Cliquez sur votre pourcentage pour modifier votre part.",
     "useExistingCategory": "Utiliser existante",
     "pickCategoryHint": "Choisissez une catégorie du planning comme base. Vous pourrez ajuster le nom, l'icône et l'objectif.",
-    "save": "Enregistrer"
+    "save": "Enregistrer",
+    "loginToAccept": "Vous devrez créer un compte ou vous connecter pour accepter l'invitation."
   }
 }

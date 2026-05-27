@@ -29,7 +29,12 @@ export function AchievementProvider({ children }: { children: React.ReactNode })
     if (checking.current) return
     checking.current = true
     try {
+      const justFinishedOnboarding = localStorage.getItem('arvo_onboarding_just_finished') === '1'
+      if (justFinishedOnboarding) localStorage.removeItem('arvo_onboarding_just_finished')
+
       const newKeys = await checkAchievements(total_brl, total_display, currency)
+      if (justFinishedOnboarding) return
+
       const notifyKeys = newKeys.filter(k => !SILENT_ACHIEVEMENTS.has(k))
       if (notifyKeys.length > 0) {
         setCelebrateKey(notifyKeys[0])

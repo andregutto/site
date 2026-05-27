@@ -1341,6 +1341,7 @@
     "editPctHint": "Clique no seu percentual para editar a sua parte.",
     "useExistingCategory": "Usar existente",
     "pickCategoryHint": "Escolha uma categoria do planejamento para usar como base. Você poderá ajustar nome, ícone e meta.",
-    "save": "Salvar"
+    "save": "Salvar",
+    "loginToAccept": "Você precisará criar uma conta ou fazer login para aceitar o convite."
   }
 }

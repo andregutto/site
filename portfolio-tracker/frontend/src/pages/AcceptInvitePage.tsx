@@ -127,7 +127,7 @@ export default function AcceptInvitePage() {
 
               {!user && (
                 <p style={{ fontSize: 12, color: 'var(--arvo-fg-soft)', textAlign: 'center', padding: '8px 0', borderTop: '1px solid var(--arvo-border-soft)', borderBottom: '1px solid var(--arvo-border-soft)' }}>
-                  Você precisará criar uma conta ou fazer login para aceitar o convite.
+                  {s.loginToAccept}
                 </p>
               )}
 
@@ -140,7 +140,7 @@ export default function AcceptInvitePage() {
               </button>
 
               <button onClick={() => navigate('/')} style={{ background: 'none', border: 'none', fontSize: 12, color: 'var(--arvo-fg-soft)', cursor: 'pointer', textAlign: 'center' }}>
-                Cancelar
+                {s.cancel}
               </button>
             </div>
           )}

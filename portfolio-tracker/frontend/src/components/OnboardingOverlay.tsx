@@ -86,8 +86,14 @@ export default function OnboardingOverlay({ onDone, userId }: Props) {
   const defaultClasses   = CLASSES_BY_LOCALE[locale]   ?? CLASSES_BY_LOCALE.pt
   const defaultEnvelopes = ENVELOPES_BY_LOCALE[locale] ?? ENVELOPES_BY_LOCALE.pt
 
+  const [showInstitutionSuggestions, setShowInstitutionSuggestions] = useState(false)
+  const institutionSuggestions = INSTITUTION_SUGGESTIONS.filter(s =>
+    accountInstitution.length === 0 || s.toLowerCase().includes(accountInstitution.toLowerCase())
+  )
+
   function finish() {
     localStorage.setItem(onboardingKey(userId), '1')
+    localStorage.setItem('arvo_onboarding_just_finished', '1')
     onDone()
   }
 
@@ -285,17 +291,34 @@ export default function OnboardingOverlay({ onDone, userId }: Props) {
               <div className="space-y-3">
                 <div>
                   <label className="text-xs font-medium text-gray-500 block mb-1">{o.accountInstitution}</label>
-                  <input
-                    type="text"
-                    list="institution-suggestions"
-                    value={accountInstitution}
-                    onChange={e => setAccountInstitution(e.target.value)}
-                    placeholder="Revolut"
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20"
-                  />
-                  <datalist id="institution-suggestions">
-                    {INSTITUTION_SUGGESTIONS.map(s => <option key={s} value={s} />)}
-                  </datalist>
+                  <div style={{ position: 'relative' }}>
+                    <input
+                      type="text"
+                      value={accountInstitution}
+                      onChange={e => { setAccountInstitution(e.target.value); setShowInstitutionSuggestions(true) }}
+                      onFocus={() => setShowInstitutionSuggestions(true)}
+                      onBlur={() => setTimeout(() => setShowInstitutionSuggestions(false), 150)}
+                      placeholder="Revolut"
+                      autoComplete="off"
+                      className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20"
+                    />
+                    {showInstitutionSuggestions && institutionSuggestions.length > 0 && (
+                      <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 50, marginTop: 4, background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, boxShadow: '0 4px 16px rgba(0,0,0,0.10)', maxHeight: 180, overflowY: 'auto' }}>
+                        {institutionSuggestions.map(name => (
+                          <button
+                            key={name}
+                            type="button"
+                            onMouseDown={() => { setAccountInstitution(name); setShowInstitutionSuggestions(false) }}
+                            style={{ display: 'block', width: '100%', textAlign: 'left', padding: '10px 14px', fontSize: 14, background: 'none', border: 'none', cursor: 'pointer', color: '#0D0D0D' }}
+                            onMouseEnter={e => (e.currentTarget.style.background = '#f9fafb')}
+                            onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+                          >
+                            {name}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div>
                   <label className="text-xs font-medium text-gray-500 block mb-1">{o.accountName}</label>

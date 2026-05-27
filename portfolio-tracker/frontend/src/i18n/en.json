@@ -1341,6 +1341,7 @@
     "editPctHint": "Click your percentage to edit your share.",
     "useExistingCategory": "Use existing",
     "pickCategoryHint": "Pick a category from planning to use as a base. You can still adjust name, icon and goal.",
-    "save": "Save"
+    "save": "Save",
+    "loginToAccept": "You'll need to create an account or log in to accept the invite."
   }
 }
