@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { PageLoader } from '../../components/ArvoLoader'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid,
 } from 'recharts'
@@ -246,8 +247,8 @@ export default function FinancesOverviewPage() {
         </div>
         <MonthPicker value={month} onChange={setMonth} locale={browserLocale} />
       </div>
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-12 text-center text-gray-400 text-sm">
-        {t.common.loading}
+      <div className="bg-white rounded-xl border border-gray-100 shadow-sm">
+        <PageLoader />
       </div>
     </div>
   )
