@@ -853,12 +853,13 @@ export default function ProfilePage() {
                         draggable={false}
                         style={{
                           position: 'absolute',
-                          width:  imgNat.w * cropScale,
-                          height: imgNat.h * cropScale,
-                          left:   cropOff.x,
-                          top:    cropOff.y,
+                          width:    imgNat.w * cropScale,
+                          height:   imgNat.h * cropScale,
+                          maxWidth: 'none',   // override Tailwind preflight max-width:100%
+                          left:     cropOff.x,
+                          top:      cropOff.y,
                           pointerEvents: 'none',
-                          userSelect: 'none',
+                          userSelect:    'none',
                         }}
                       />
                       {/* Overlay escuro com buraco circular */}
