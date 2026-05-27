@@ -35,6 +35,22 @@ body {
   @apply font-sans antialiased;
   background-color: var(--arvo-offwhite);
   color: var(--arvo-fg);
+  overflow-x: hidden;
+}
+
+/* Prevent iOS Safari auto-zoom when focusing inputs with small font */
+@media screen and (max-width: 640px) {
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="date"],
+  input[type="number"],
+  input[type="tel"],
+  input[type="search"],
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
 }
 
 @keyframes slide-in {

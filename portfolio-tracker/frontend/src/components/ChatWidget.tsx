@@ -25,7 +25,14 @@ function renderText(text: string) {
   })
 }
 
-export default function ChatWidget() {
+interface ChatWidgetProps {
+  visible?: boolean
+  onDismiss?: () => void
+  forceOpen?: boolean
+  onForceOpenConsumed?: () => void
+}
+
+export default function ChatWidget({ visible = true, onDismiss, forceOpen, onForceOpenConsumed }: ChatWidgetProps) {
   const { t, locale } = useI18n()
   const location = useLocation()
   const [open, setOpen]       = useState(false)
@@ -35,6 +42,10 @@ export default function ChatWidget() {
   const [toolHint, setToolHint] = useState('')
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef  = useRef<HTMLTextAreaElement>(null)
+
+  useEffect(() => {
+    if (forceOpen) { setOpen(true); onForceOpenConsumed?.() }
+  }, [forceOpen])
 
   const SUGGESTIONS = [t.chat.s1, t.chat.s2, t.chat.s3, t.chat.s4]
   const TOOL_LABELS: Record<string, string> = {
@@ -143,31 +154,44 @@ export default function ChatWidget() {
 
   const isEmpty = messages.length === 0
 
+  if (!visible) return null
+
   return (
     <>
       {/* Floating button */}
-      <button
-        onClick={() => setOpen(o => !o)}
-        className="fixed bottom-20 right-5 z-50 w-12 h-12 rounded-full text-white shadow-lg flex items-center justify-center transition-all sm:bottom-5"
-        style={{ background: 'var(--arvo-black)', border: '1px solid rgba(200,184,154,0.25)' }}
-        onMouseEnter={e => { e.currentTarget.style.border = '1px solid rgba(200,184,154,0.6)' }}
-        onMouseLeave={e => { e.currentTarget.style.border = '1px solid rgba(200,184,154,0.25)' }}
-        aria-label={t.chat.open}
-      >
-        {open ? (
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        ) : (
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-          </svg>
+      <div className="fixed bottom-28 right-5 z-50 sm:bottom-5">
+        <button
+          onClick={() => setOpen(o => !o)}
+          className="w-12 h-12 rounded-full text-white shadow-lg flex items-center justify-center transition-all"
+          style={{ background: 'var(--arvo-black)', border: '1px solid rgba(200,184,154,0.25)' }}
+          onMouseEnter={e => { e.currentTarget.style.border = '1px solid rgba(200,184,154,0.6)' }}
+          onMouseLeave={e => { e.currentTarget.style.border = '1px solid rgba(200,184,154,0.25)' }}
+          aria-label={t.chat.open}
+        >
+          {open ? (
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          ) : (
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+            </svg>
+          )}
+        </button>
+        {/* Dismiss badge — only when chat is closed */}
+        {!open && onDismiss && (
+          <button
+            onClick={onDismiss}
+            className="absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center text-[10px] leading-none text-white transition-opacity hover:opacity-80"
+            style={{ background: 'rgba(13,13,13,0.55)' }}
+            aria-label={t.chat.dismiss ?? 'Fechar assistente'}
+          >×</button>
         )}
-      </button>
+      </div>
 
       {/* Chat panel */}
       {open && (
-        <div className="fixed bottom-36 right-5 z-50 w-[360px] max-w-[calc(100vw-2.5rem)] h-[520px] max-h-[calc(100vh-6rem)] rounded-2xl shadow-2xl flex flex-col overflow-hidden sm:bottom-20" style={{ background: 'var(--arvo-offwhite)', border: '1px solid var(--arvo-border-soft)' }}>
+        <div className="fixed bottom-44 right-5 z-50 w-[360px] max-w-[calc(100vw-2.5rem)] h-[520px] max-h-[calc(100vh-6rem)] rounded-2xl shadow-2xl flex flex-col overflow-hidden sm:bottom-20" style={{ background: 'var(--arvo-offwhite)', border: '1px solid var(--arvo-border-soft)' }}>
           {/* Header */}
           <div className="flex items-center gap-2.5 px-4 py-3 rounded-t-2xl" style={{ background: 'var(--arvo-black)', borderBottom: '1px solid rgba(200,184,154,0.15)' }}>
             <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">

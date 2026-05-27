@@ -37,6 +37,20 @@ export default function AppLayout() {
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [showUserMenu,   setShowUserMenu]   = useState(false)
   const [showMobileMenu, setShowMobileMenu] = useState(false)
+  const [chatVisible,    setChatVisible]    = useState(() => localStorage.getItem('arvo_chat_visible') !== 'false')
+  const [openChatNow,    setOpenChatNow]    = useState(false)
+
+  function openChat() {
+    setChatVisible(true)
+    localStorage.setItem('arvo_chat_visible', 'true')
+    setOpenChatNow(true)
+    setShowUserMenu(false)
+    setShowMobileMenu(false)
+  }
+  function dismissChat() {
+    setChatVisible(false)
+    localStorage.setItem('arvo_chat_visible', 'false')
+  }
 
   const userMenuRef = useRef<HTMLDivElement>(null)
   useClickOutside(userMenuRef, () => setShowUserMenu(false), showUserMenu)
@@ -253,6 +267,12 @@ export default function AppLayout() {
                     </svg>
                     {t.nav.profile}
                   </Link>
+                  <button onClick={openChat} className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors" style={{ color: 'rgba(13,13,13,0.75)' }} onMouseEnter={e => (e.currentTarget.style.background='rgba(13,13,13,0.04)')} onMouseLeave={e => (e.currentTarget.style.background='')}>
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4 shrink-0">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M2 2.5h12a1 1 0 011 1v6a1 1 0 01-1 1H9L6 13v-2.5H2a1 1 0 01-1-1v-6a1 1 0 011-1z"/>
+                    </svg>
+                    {t.chat.open}
+                  </button>
                   <button onClick={() => signOut()} className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors" style={{ color: 'var(--arvo-red)' }} onMouseEnter={e => (e.currentTarget.style.background='rgba(214,59,47,0.06)')} onMouseLeave={e => (e.currentTarget.style.background='')}>
                     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4 shrink-0">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 11.5L14 8l-3.5-3.5M14 8H6M6 2.5H3A1.5 1.5 0 0 0 1.5 4v8A1.5 1.5 0 0 0 3 13.5h3"/>
@@ -350,6 +370,16 @@ export default function AppLayout() {
                     {label}
                   </NavLink>
                 ))}
+                <button
+                  onClick={openChat}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-colors"
+                  style={{ color: 'rgba(13,13,13,0.7)' }}
+                >
+                  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4 shrink-0">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M2 2.5h12a1 1 0 011 1v6a1 1 0 01-1 1H9L6 13v-2.5H2a1 1 0 01-1-1v-6a1 1 0 011-1z"/>
+                  </svg>
+                  {t.chat.open}
+                </button>
                 <button
                   onClick={() => signOut()}
                   className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-red-500 hover:bg-red-50 transition-colors"
@@ -488,7 +518,12 @@ export default function AppLayout() {
       </nav>
 
       {showOnboarding && user?.id && <OnboardingOverlay userId={user.id} onDone={() => setShowOnboarding(false)} />}
-      <ChatWidget />
+      <ChatWidget
+        visible={chatVisible}
+        onDismiss={dismissChat}
+        forceOpen={openChatNow}
+        onForceOpenConsumed={() => setOpenChatNow(false)}
+      />
     </div>
   )
 }

@@ -898,7 +898,8 @@
     "toolSummary": "Calcul du résumé…",
     "toolAccounts": "Consultation des comptes…",
     "errorProcessing": "Erreur lors du traitement de votre question.",
-    "errorNoResponse": "Impossible de générer une réponse."
+    "errorNoResponse": "Impossible de générer une réponse.",
+    "dismiss": "Fermer l'assistant"
   },
   "archived": {
     "title": "Archivés",

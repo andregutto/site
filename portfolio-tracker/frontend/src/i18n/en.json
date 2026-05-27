@@ -898,7 +898,8 @@
     "toolSummary": "Calculating summary…",
     "toolAccounts": "Consulting accounts…",
     "errorProcessing": "Error processing your question.",
-    "errorNoResponse": "Could not generate a response."
+    "errorNoResponse": "Could not generate a response.",
+    "dismiss": "Close assistant"
   },
   "archived": {
     "title": "Archived",

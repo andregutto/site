@@ -898,7 +898,8 @@
     "toolSummary": "Calculando resumo…",
     "toolAccounts": "Consultando contas…",
     "errorProcessing": "Erro ao processar sua pergunta.",
-    "errorNoResponse": "Não consegui gerar uma resposta."
+    "errorNoResponse": "Não consegui gerar uma resposta.",
+    "dismiss": "Fechar assistente"
   },
   "archived": {
     "title": "Arquivados",

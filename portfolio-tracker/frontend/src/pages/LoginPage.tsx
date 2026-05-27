@@ -191,11 +191,11 @@ export default function LoginPage() {
       </aside>
 
       {/* ── Right — form ── */}
-      <main style={{ padding: '64px 72px', display: 'flex', flexDirection: 'column', justifyContent: 'center', background: 'var(--arvo-offwhite)' }}
-        className="px-6 py-12 lg:px-[72px] lg:py-[64px]"
+      <main style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', background: 'var(--arvo-offwhite)' }}
+        className="px-6 py-10 lg:px-[72px] lg:py-[64px]"
       >
         {/* Top bar: logo → landing page + language selector */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 40 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
           <a href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8 }}>
             <img src="/brand/logo/arvo-symbol-black.svg" width="18" height="18" alt="arvo" />
             <span style={{ fontFamily: F_SANS, fontSize: 13, letterSpacing: '0.28em', textIndent: '0.28em', color: 'var(--arvo-black)', lineHeight: 1 }}>arvo</span>
@@ -230,7 +230,7 @@ export default function LoginPage() {
         )}
 
         {!registered && (
-          <div style={{ maxWidth: 440, width: '100%' }}>
+          <div style={{ maxWidth: 440, width: '100%', margin: '0 auto' }}>
 
             {/* Eyebrow */}
             <div style={{ fontFamily: F_SANS, fontSize: 10, letterSpacing: '0.30em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)', marginBottom: 16 }}>
