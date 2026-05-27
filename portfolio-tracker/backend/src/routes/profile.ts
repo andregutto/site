@@ -29,7 +29,7 @@ router.patch('/', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const {
     first_name, last_name, country, tax_country, birthdate, default_currency,
-    portfolio_start_date, allocation_targets, institution_data, avatar_url,
+    portfolio_start_date, allocation_targets, institution_data, avatar_url, avatar_position,
   } = req.body as {
     first_name?: string; last_name?: string; country?: string
     tax_country?: string; birthdate?: string; default_currency?: string

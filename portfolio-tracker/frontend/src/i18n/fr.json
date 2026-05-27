@@ -18,7 +18,8 @@
     "portfolio": "Portefeuille",
     "investments": "Investissements",
     "moments": "Moments",
-    "banks": "Comptes"
+    "banks": "Comptes",
+    "dividends": "Dividendes"
   },
   "currency": {
     "label": "Devise"
@@ -159,7 +160,10 @@
     "termsLink": "Conditions d'utilisation",
     "registrationDone": "Confirmez votre e-mail",
     "registrationDoneBody": "Nous avons envoyé un lien de confirmation à {email}. Consultez votre boîte de réception et cliquez sur le lien pour activer votre compte.",
-    "goToLogin": "Aller à la connexion"
+    "goToLogin": "Aller à la connexion",
+    "resendEmail": "Renvoyer l'e-mail",
+    "emailSent": "E-mail envoyé",
+    "emailResent": "E-mail renvoyé. Vérifiez votre boîte de réception."
   },
   "dashboard": {
     "assetsTitle": "Actifs",

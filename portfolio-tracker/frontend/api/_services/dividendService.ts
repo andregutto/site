@@ -71,9 +71,12 @@ function holdingsAt(contribs: Array<{ type: string; quantity: number; date: stri
 }
 
 export async function syncDividendsForUser(userId: string, force = false) {
-  const { data: assets } = await supabaseAdmin
+  // force=true also includes inactive assets to backfill historical dividends
+  let q = supabaseAdmin
     .from('assets').select('id, code, currency, ticker_brapi, ticker_yahoo')
-    .eq('user_id', userId).eq('active', true).eq('asset_type', 'ticker')
+    .eq('user_id', userId).eq('asset_type', 'ticker')
+  if (!force) q = q.eq('active', true)
+  const { data: assets } = await q
 
   if (!assets?.length) return { synced: 0, skipped: 0, errors: 0 }
   const assetIds = assets.map(a => a.id as number)

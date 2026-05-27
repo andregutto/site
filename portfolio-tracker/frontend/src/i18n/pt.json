@@ -18,7 +18,8 @@
     "portfolio": "Portfólio",
     "investments": "Investimentos",
     "moments": "Momentos",
-    "banks": "Contas"
+    "banks": "Contas",
+    "dividends": "Dividendos"
   },
   "currency": {
     "label": "Moeda"
@@ -159,7 +160,10 @@
     "termsLink": "Termos de Uso",
     "registrationDone": "Confirme seu e-mail",
     "registrationDoneBody": "Enviamos um link de confirmação para {email}. Acesse sua caixa de entrada e clique no link para ativar sua conta.",
-    "goToLogin": "Ir para o login"
+    "goToLogin": "Ir para o login",
+    "resendEmail": "Reenviar e-mail",
+    "emailSent": "E-mail enviado",
+    "emailResent": "E-mail reenviado. Verifique sua caixa de entrada."
   },
   "dashboard": {
     "assetsTitle": "Ativos",

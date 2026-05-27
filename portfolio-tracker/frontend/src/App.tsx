@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { CurrencyProvider } from './contexts/CurrencyContext'
-import { I18nProvider } from './contexts/I18nContext'
+import { I18nProvider, useI18n } from './contexts/I18nContext'
 import { supabase } from './lib/supabase'
 import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
@@ -29,6 +29,7 @@ import FinancesFreedomPage from './pages/finances/FinancesFreedomPage'
 import FinancesMomentsPage from './pages/finances/FinancesMomentsPage'
 import AppLayout from './components/AppLayout'
 import AchievementsPage from './pages/AchievementsPage'
+import DividendsPage from './pages/DividendsPage'
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage'
 import TermsOfUsePage from './pages/TermsOfUsePage'
 import PublicMomentPage from './pages/PublicMomentPage'
@@ -37,6 +38,8 @@ import LandingPage from './pages/LandingPage'
 
 function EmailConfirmGate({ email }: { email: string }) {
   const { signOut } = useAuth()
+  const { t } = useI18n()
+  const l = t.login
   const [sent, setSent] = useState(false)
   const [sending, setSending] = useState(false)
 
@@ -48,29 +51,27 @@ function EmailConfirmGate({ email }: { email: string }) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 w-full max-w-sm p-8 space-y-5 text-center">
-        <div className="w-14 h-14 bg-[#0D0D0D]/10 rounded-2xl flex items-center justify-center mx-auto">
-          <svg className="w-7 h-7 text-[#0D0D0D]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--arvo-offwhite)', padding: '24px 16px' }}>
+      <div style={{ background: '#fff', borderRadius: 16, border: '1px solid var(--arvo-border)', width: '100%', maxWidth: 400, padding: '40px 32px', textAlign: 'center', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+        <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'rgba(13,13,13,0.06)', border: '1px solid var(--arvo-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+          <svg style={{ width: 24, height: 24, color: 'var(--arvo-black)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />
           </svg>
         </div>
-        <div>
-          <h2 className="text-lg font-bold text-gray-900">Confirme seu e-mail</h2>
-          <p className="text-sm text-gray-500 mt-2">
-            Enviamos um link de confirmacao para <span className="font-medium text-gray-700">{email}</span>. Verifique sua caixa de entrada e clique no link para ativar sua conta.
-          </p>
-        </div>
-        {sent && <p className="text-xs text-green-600">E-mail reenviado. Verifique sua caixa de entrada.</p>}
+        <h2 style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 20, fontWeight: 700, color: 'var(--arvo-black)', margin: '0 0 10px' }}>{l.registrationDone}</h2>
+        <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: 'var(--arvo-fg-soft)', lineHeight: 1.6, margin: '0 0 24px' }}>
+          {l.registrationDoneBody.replace('{email}', email)}
+        </p>
+        {sent && <p style={{ fontSize: 12, color: '#16a34a', marginBottom: 12 }}>{l.emailResent ?? 'E-mail reenviado.'}</p>}
         <button
           onClick={resend}
           disabled={sending || sent}
-          className="w-full border border-[#0D0D0D] text-[#0D0D0D] rounded-xl py-2.5 text-sm font-semibold hover:bg-[#0D0D0D]/5 disabled:opacity-50 transition-colors"
+          style={{ width: '100%', padding: '12px 24px', background: 'var(--arvo-black)', color: 'var(--arvo-offwhite)', fontFamily: 'var(--arvo-font-body)', fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', border: 'none', borderRadius: 6, cursor: 'pointer', opacity: sending || sent ? 0.5 : 1, marginBottom: 16 }}
         >
-          {sending ? 'Enviando...' : sent ? 'E-mail enviado' : 'Reenviar e-mail'}
+          {sending ? (l.loading ?? '...') : sent ? (l.emailSent ?? 'Enviado') : (l.resendEmail ?? 'Reenviar e-mail')}
         </button>
-        <button onClick={() => signOut()} className="text-xs text-gray-400 hover:text-gray-600 transition-colors">
-          Sair
+        <button onClick={() => signOut()} style={{ background: 'none', border: 'none', fontSize: 12, color: 'var(--arvo-fg-soft)', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)' }}>
+          {t.nav.signout}
         </button>
       </div>
     </div>
@@ -128,6 +129,7 @@ function AppRoutes() {
           <Route path="indices"       element={<IndicesPage />} />
           <Route path="indices/:code" element={<IndexDetailPage />} />
         </Route>
+        <Route path="/dividends"      element={<DividendsPage />} />
         <Route path="/favorites"      element={<FavoritesPage />} />
         <Route path="/achievements"   element={<AchievementsPage />} />
         <Route path="/archived"       element={<ArchivedPage />} />

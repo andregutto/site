@@ -61,6 +61,7 @@ export default function AppLayout() {
 
   const inInvestimentos = location.pathname === '/dashboard' || location.pathname === '/' ||
     location.pathname.startsWith('/performance') ||
+    location.pathname.startsWith('/dividends') ||
     location.pathname.startsWith('/portfolio')
   const inFinances = location.pathname.startsWith('/finances')
   const inInstitutions = location.pathname.startsWith('/institutions')
@@ -76,6 +77,11 @@ export default function AppLayout() {
     { to: '/performance', label: t.nav.performance, end: false, icon: (
       <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
         <path strokeLinecap="round" strokeLinejoin="round" d="M1 12l4-4 3 3 7-7M11.5 4H15v3.5"/>
+      </svg>
+    )},
+    { to: '/dividends', label: t.nav.dividends, end: true, icon: (
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
+        <circle cx="8" cy="8" r="6.5"/><path strokeLinecap="round" strokeLinejoin="round" d="M8 5v6M6 7h3a1 1 0 010 2H6"/>
       </svg>
     )},
     { to: '/portfolio', label: t.nav.contributions, end: true, icon: (
