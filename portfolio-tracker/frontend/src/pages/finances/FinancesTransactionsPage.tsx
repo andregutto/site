@@ -150,6 +150,8 @@ export default function FinancesTransactionsPage() {
   const [addCat, setAddCat]             = useState<number | ''>('')
   const [addCur, setAddCur]             = useState('EUR')
   const [addAccountId, setAddAccountId] = useState<number | null>(null)
+  const [addSharedCat, setAddSharedCat] = useState<number | ''>('')
+  const [sharedCats, setSharedCats]     = useState<{ id: number; name: string; icon: string; group_id: number }[]>([])
   const [saving, setSaving]             = useState(false)
 
   // Inline category edit
@@ -226,6 +228,10 @@ export default function FinancesTransactionsPage() {
   }, [])
 
   useEffect(() => { loadTransactions() }, [loadTransactions])
+  useEffect(() => {
+    apiFetch<{ id: number; name: string; icon: string; group_id: number }[]>('/shared/categories')
+      .then(setSharedCats).catch(() => {})
+  }, [])
 
   // On mount: fetch all months with data and jump to most recent if current is empty
   useEffect(() => {
@@ -316,7 +322,7 @@ export default function FinancesTransactionsPage() {
       const amount = parseFloat(addAmt) * (addSign === '-' ? -1 : 1)
       await apiFetch('/finances/transactions', {
         method: 'POST',
-        body: JSON.stringify({ date: addDate, description: addDesc.trim(), amount, currency: addCur, category_id: addCat || null, account_id: addAccountId }),
+        body: JSON.stringify({ date: addDate, description: addDesc.trim(), amount, currency: addCur, category_id: addCat || null, account_id: addAccountId, shared_category_id: addSharedCat || null }),
       })
       setShowAdd(false)
       setAddDesc(''); setAddAmt(''); setAddCat(''); setAddAccountId(null)
@@ -1669,6 +1675,15 @@ export default function FinancesTransactionsPage() {
                   <select value={addAccountId ?? ''} onChange={e => setAddAccountId(e.target.value === '' ? null : Number(e.target.value))} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
                     <option value="">{t.finances.csvAccountNone}</option>
                     {accounts.map(a => <option key={a.id} value={a.id}>{a.icon} {a.name}</option>)}
+                  </select>
+                </div>
+              )}
+              {sharedCats.length > 0 && (
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">{t.shared?.tagTransaction ?? 'Categoria compartilhada'}</label>
+                  <select value={addSharedCat} onChange={e => setAddSharedCat(e.target.value === '' ? '' : Number(e.target.value))} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
+                    <option value="">—</option>
+                    {sharedCats.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
                   </select>
                 </div>
               )}

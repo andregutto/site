@@ -19,6 +19,7 @@ import publicRouter         from './routes/public.js'
 import chatRouter           from './routes/chat.js'
 import reportsRouter        from './routes/reports.js'
 import dividendsRouter      from './routes/dividends.js'
+import sharedRouter         from './routes/shared.js'
 
 const app  = express()
 const PORT = process.env.PORT || 3001
@@ -43,6 +44,7 @@ app.use('/api/public',        publicRouter)
 app.use('/api/chat',         chatRouter)
 app.use('/api/reports',     reportsRouter)
 app.use('/api/dividends',   dividendsRouter)
+app.use('/api/shared',      sharedRouter)
 
 app.get('/health', (_req, res) => res.json({ status: 'ok', ts: new Date().toISOString() }))
 

@@ -702,7 +702,7 @@ router.get('/transactions/months', requireAuth, async (req, res: Response) => {
 // POST /api/finances/transactions — create manual
 router.post('/transactions', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
-  const { date, description, amount, currency, category_id, account_id, is_internal_transfer, notes } = req.body
+  const { date, description, amount, currency, category_id, account_id, is_internal_transfer, notes, shared_category_id } = req.body
   if (!date || amount == null) { res.status(400).json({ error: 'date and amount required' }); return }
   const { data, error } = await supabaseAdmin
     .from('finance_transactions')
@@ -715,6 +715,7 @@ router.post('/transactions', requireAuth, async (req, res: Response) => {
       account_id: account_id ?? null,
       is_internal_transfer: is_internal_transfer ?? false,
       notes: notes ?? null,
+      shared_category_id: shared_category_id ?? null,
       source: 'manual',
     })
     .select()

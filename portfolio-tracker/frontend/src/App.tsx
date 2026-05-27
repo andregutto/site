@@ -44,6 +44,8 @@ import TermsOfUsePage from './pages/TermsOfUsePage'
 import PublicMomentPage from './pages/PublicMomentPage'
 import { AchievementProvider } from './contexts/AchievementContext'
 import LandingPage from './pages/LandingPage'
+import AcceptInvitePage from './pages/AcceptInvitePage'
+import SharedCategoriesPage from './pages/finances/SharedCategoriesPage'
 
 function EmailConfirmGate({ email }: { email: string }) {
   const { signOut } = useAuth()
@@ -111,6 +113,7 @@ function AppRoutes() {
       <Route path="/privacy"                element={<PrivacyPolicyPage />} />
       <Route path="/terms"                  element={<TermsOfUsePage />} />
       <Route path="/share/momento/:token"   element={<PublicMomentPage />} />
+      <Route path="/invite/:token"           element={<AcceptInvitePage />} />
       <Route element={<ProtectedRoutes />}>
         <Route path="/dashboard"      element={<DashboardPage />} />
         <Route path="/performance"    element={<PerformancePage />} />
@@ -138,6 +141,7 @@ function AppRoutes() {
           <Route path="budget"        element={<FinancesBudgetPage />} />
           <Route path="moments"       element={<FinancesMomentsPage />} />
           <Route path="freedom"       element={<FinancesFreedomPage />} />
+          <Route path="shared"        element={<SharedCategoriesPage />} />
           <Route path="accounts"      element={<Navigate to="/institutions" replace />} />
         </Route>
       </Route>

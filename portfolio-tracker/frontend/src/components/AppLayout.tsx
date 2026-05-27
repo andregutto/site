@@ -146,6 +146,12 @@ export default function AppLayout() {
         <path strokeLinecap="round" d="M8 1.5V3M8 13v1.5M1.5 8H3M13 8h1.5M3.4 3.4l1.1 1.1M11.5 11.5l1.1 1.1M3.4 12.6l1.1-1.1M11.5 4.5l1.1-1.1"/>
       </svg>
     )},
+    { to: '/finances/shared', label: t.finances.navShared, end: false, icon: (
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M11 5a3 3 0 1 1-6 0 3 3 0 0 1 6 0ZM2.5 13.5a5.5 5.5 0 0 1 11 0"/>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M13 4a2 2 0 1 1 0 4M13.5 12.5a4 4 0 0 0-2-1.5"/>
+      </svg>
+    )},
     { to: '/finances/freedom', label: t.finances.navFreedom, end: false, icon: (
       <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
         <path strokeLinecap="round" strokeLinejoin="round" d="M1 12.5a7 7 0 0114 0"/>
