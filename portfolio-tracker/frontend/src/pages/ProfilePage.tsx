@@ -9,6 +9,7 @@ import { useI18n } from '../contexts/I18nContext'
 import { getLevel, getNextLevel, getLevelProgress, ACHIEVEMENT_DEFS } from '../lib/achievementDefs'
 import { supabase } from '../lib/supabase'
 import { useResetPriceHistory } from '../hooks/usePortfolio'
+import { useDividendSync } from '../hooks/useDividends'
 
 interface ProfileData {
   email:              string
@@ -18,6 +19,7 @@ interface ProfileData {
   birthdate:          string
   allocation_targets: Record<string, number>
   avatar_url:         string
+  avatar_position:    number
 }
 
 const COUNTRY_OPTIONS = [
@@ -100,9 +102,12 @@ export default function ProfilePage() {
   const [deleting,        setDeleting]        = useState(false)
   const [deleteError,     setDeleteError]     = useState<string | null>(null)
 
-  const [exporting, setExporting] = useState(false)
+  const [exporting,     setExporting]     = useState(false)
+  const [exportError,   setExportError]   = useState<string | null>(null)
+  const [avatarPosition, setAvatarPosition] = useState(50)
 
   const { reset: rebuildHistory, loading: rebuilding, result: rebuildResult } = useResetPriceHistory()
+  const { sync: syncDividends, syncing: syncingDivs } = useDividendSync()
   const [showRebuildConfirm, setShowRebuildConfirm] = useState(false)
 
   useEffect(() => {
@@ -114,6 +119,7 @@ export default function ProfilePage() {
         setCountry(d.country)
         setBirthdate(d.birthdate ?? '')
         setAvatarUrl(d.avatar_url)
+        setAvatarPosition(d.avatar_position ?? 50)
       })
       .catch(e => setError(e instanceof Error ? e.message : t.profile.errorLoad))
       .finally(() => setLoading(false))
@@ -253,11 +259,17 @@ export default function ProfilePage() {
         XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(data.finance_accounts), 'Contas')
 
       XLSX.writeFile(wb, `arvo-dados-${new Date().toISOString().slice(0, 10)}.xlsx`)
+      setExportError(null)
     } catch {
-      // silently ignore — user will see no download
+      setExportError(t.profile.exportError)
     } finally {
       setExporting(false)
     }
+  }
+
+  async function handlePositionChange(pos: number) {
+    setAvatarPosition(pos)
+    await apiFetch('/profile', { method: 'PATCH', body: JSON.stringify({ avatar_position: pos }) }).catch(() => {})
   }
 
   const emailForDisplay = email || user?.email || ''
@@ -282,6 +294,7 @@ export default function ProfilePage() {
                   src={avatarUrl}
                   alt="Foto de perfil"
                   className="w-16 h-16 rounded-full object-cover"
+                  style={{ objectPosition: `50% ${avatarPosition}%` }}
                   title={`${displayName} · ${emailForDisplay}`}
                 />
               ) : (
@@ -308,7 +321,7 @@ export default function ProfilePage() {
                 onChange={handlePhotoChange}
               />
             </div>
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <p className="font-semibold text-gray-900 truncate">{displayName}</p>
               <p className="text-sm text-gray-500 truncate">{emailForDisplay}</p>
               <button
@@ -318,6 +331,20 @@ export default function ProfilePage() {
               >
                 {avatarUrl ? t.profile.changePhoto : t.profile.addPhoto}
               </button>
+              {avatarUrl && (
+                <div className="mt-2">
+                  <p className="text-xs text-gray-400 mb-1">{t.profile.avatarPositionLabel}</p>
+                  <input
+                    type="range"
+                    min={0}
+                    max={100}
+                    value={avatarPosition}
+                    onChange={e => handlePositionChange(Number(e.target.value))}
+                    className="w-full accent-[#0D0D0D]"
+                    style={{ maxWidth: 160 }}
+                  />
+                </div>
+              )}
             </div>
           </div>
 
@@ -512,13 +539,29 @@ export default function ProfilePage() {
               </svg>
               {exporting ? t.profile.exporting : t.profile.exportBtn}
             </button>
+            {exportError && <p className="text-xs text-red-600">{exportError}</p>}
           </div>
 
-          {/* Zona de perigo */}
-          <div className="bg-white border border-red-100 rounded-2xl p-6 shadow-sm space-y-4">
-            <h2 className="font-semibold text-red-700">{t.profile.dangerZone}</h2>
+          {/* Manutenção */}
+          <div className="bg-white border border-amber-100 rounded-2xl p-6 shadow-sm space-y-4">
+            <h2 className="font-semibold text-amber-700">{t.profile.maintenanceTitle}</h2>
+            <p className="text-xs text-gray-500">{t.profile.maintenanceDesc}</p>
 
-            <div className="space-y-2">
+            {/* Sync dividendos */}
+            <div className="space-y-1">
+              <p className="text-xs font-medium text-gray-700">{t.profile.syncDividendsBtn}</p>
+              <p className="text-xs text-gray-500">{t.profile.syncDividendsDesc}</p>
+              <button
+                type="button"
+                disabled={syncingDivs}
+                onClick={() => syncDividends(true)}
+                className="px-4 py-2 text-sm font-semibold text-amber-700 border border-amber-200 rounded-lg hover:bg-amber-50 disabled:opacity-50 transition-colors"
+              >
+                {syncingDivs ? t.profile.syncing : t.profile.syncDividendsBtn}
+              </button>
+            </div>
+
+            <div className="border-t border-amber-100 pt-4 space-y-2">
               <p className="text-xs font-medium text-gray-700">{t.profile.rebuildHistory}</p>
               <p className="text-xs text-gray-500">{t.profile.rebuildDesc}</p>
               {!showRebuildConfirm ? (
@@ -555,8 +598,13 @@ export default function ProfilePage() {
                 </p>
               )}
             </div>
+          </div>
 
-            <div className="border-t border-red-100 pt-4 space-y-2">
+          {/* Zona de perigo */}
+          <div className="bg-white border border-red-100 rounded-2xl p-6 shadow-sm space-y-4">
+            <h2 className="font-semibold text-red-700">{t.profile.dangerZone}</h2>
+
+            <div className="border-t border-red-100 pt-0 space-y-2">
               <p className="text-xs text-gray-500">{t.profile.deleteDesc}</p>
               <button
                 type="button"
@@ -633,7 +681,7 @@ export default function ProfilePage() {
             <p className="font-semibold text-gray-500">{t.profile.terms}</p>
             <p>{t.profile.termsBody}</p>
             <p>{t.profile.termsDisclaimer}</p>
-            <p className="text-gray-300 pt-1">portfolio.andregutto.com · v1.0</p>
+            <p className="text-gray-300 pt-1">arvo · v1.1</p>
           </div>
         </>
       )}

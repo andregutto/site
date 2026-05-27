@@ -21,6 +21,7 @@ router.get('/', requireAuth, async (req, res: Response) => {
     allocation_targets:   meta.allocation_targets    ?? {},
     institution_data:     meta.institution_data      ?? {},
     avatar_url:           meta.avatar_url            ?? '',
+    avatar_position:      meta.avatar_position       ?? 50,
   })
 })
 
@@ -33,7 +34,7 @@ router.patch('/', requireAuth, async (req, res: Response) => {
     first_name?: string; last_name?: string; country?: string
     tax_country?: string; birthdate?: string; default_currency?: string
     portfolio_start_date?: string; allocation_targets?: Record<string, number>
-    institution_data?: Record<string, Record<string, string>>; avatar_url?: string
+    institution_data?: Record<string, Record<string, string>>; avatar_url?: string; avatar_position?: number
   }
   const { data: { user: current } } = await supabaseAdmin.auth.admin.getUserById(userId)
   const meta = {
@@ -41,7 +42,7 @@ router.patch('/', requireAuth, async (req, res: Response) => {
     ...Object.fromEntries(
       Object.entries({
         first_name, last_name, country, tax_country, birthdate, default_currency,
-        portfolio_start_date, allocation_targets, institution_data, avatar_url,
+        portfolio_start_date, allocation_targets, institution_data, avatar_url, avatar_position,
       }).filter(([, v]) => v !== undefined)
     ),
   }
@@ -59,6 +60,36 @@ router.patch('/password', requireAuth, async (req, res: Response) => {
   const { error } = await supabaseAdmin.auth.admin.updateUserById(userId, { password })
   if (error) { res.status(500).json({ error: error.message }); return }
   res.json({ ok: true })
+})
+
+router.get('/export', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+
+  const [
+    { data: assets },
+    { data: contributions },
+    { data: dividends },
+    { data: manualValues },
+    { data: transactions },
+    { data: accounts },
+  ] = await Promise.all([
+    supabaseAdmin.from('assets').select('code, name, asset_type, currency, is_active, created_at').eq('user_id', userId).order('code'),
+    supabaseAdmin.from('contributions').select('date, type, quantity, price_orig, currency, fx_rate_brl, value_brl, profit_brl, assets(code, name)').eq('user_id', userId).order('date', { ascending: false }),
+    supabaseAdmin.from('dividends').select('ex_date, pay_date, dividend_type, amount_per_share, currency, amount_brl, assets(code)').eq('user_id', userId).order('ex_date', { ascending: false }),
+    supabaseAdmin.from('manual_values').select('ref_date, value, currency, notes, assets(code, name)').eq('user_id', userId).order('ref_date', { ascending: false }),
+    supabaseAdmin.from('finance_transactions').select('date, description, amount, currency, notes, is_internal_transfer, exclude_from_stats, finance_categories(name), finance_accounts(name)').eq('user_id', userId).order('date', { ascending: false }),
+    supabaseAdmin.from('finance_accounts').select('name, institution_name, currency, account_type, balance, is_active').eq('user_id', userId),
+  ])
+
+  res.json({
+    exported_at: new Date().toISOString(),
+    assets:               assets        ?? [],
+    contributions:        contributions ?? [],
+    dividends:            dividends     ?? [],
+    manual_values:        manualValues  ?? [],
+    finance_transactions: transactions  ?? [],
+    finance_accounts:     accounts      ?? [],
+  })
 })
 
 router.delete('/', requireAuth, async (req, res: Response) => {

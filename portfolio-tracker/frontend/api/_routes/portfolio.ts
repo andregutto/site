@@ -3,7 +3,7 @@ import { requireAuth, AuthRequest } from '../_middleware/auth.js'
 import { supabaseAdmin } from '../_lib/supabase.js'
 import { getCurrentPrice, getMonthlyHistory, Asset, FITranche } from '../_services/priceService.js'
 import { getFxRate } from '../_lib/fx.js'
-import { cache } from '../_lib/cache.js'
+import { cache, TTL } from '../_lib/cache.js'
 import * as yahoo from '../_services/yahooService.js'
 
 const router = Router()
@@ -11,6 +11,10 @@ const router = Router()
 router.get('/value', requireAuth, async (req, res: Response, next) => {
   try {
   const { userId } = req as AuthRequest
+
+  const cacheKey = `portfolio:value:${userId}`
+  const cached = cache.get<object>(cacheKey)
+  if (cached) { res.json(cached); return }
 
   const { data: assets, error: assetsErr } = await supabaseAdmin
     .from('assets')
@@ -251,14 +255,16 @@ router.get('/value', requireAuth, async (req, res: Response, next) => {
     getFxRate('EUR').then((r) => 1 / r).catch(() => null),
   ])
 
-  res.json({
+  const result = {
     total_brl: Math.round(total_brl * 100) / 100,
     total_usd: fx_usd ? Math.round(total_brl * fx_usd * 100) / 100 : null,
     total_eur: fx_eur ? Math.round(total_brl * fx_eur * 100) / 100 : null,
     by_class,
     by_asset: byAsset.sort((a, b) => b.value_brl - a.value_brl),
     generated_at: new Date().toISOString(),
-  })
+  }
+  cache.set(cacheKey, result, TTL.PORTFOLIO_VALUE)
+  res.json(result)
   } catch (err) { next(err) }
 })
 

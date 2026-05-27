@@ -119,12 +119,6 @@ export default function DashboardPage() {
   function handleModalClose() { setSelectedAsset(null) }
   function handleSaved() { setSelectedAsset(null); refresh() }
 
-  async function handleForceSyncDividends() {
-    Object.keys(localStorage).filter(k => k.startsWith('div_summary_')).forEach(k => localStorage.removeItem(k))
-    await syncDividends(true)
-    await refreshDivs()
-  }
-
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -292,16 +286,6 @@ export default function DashboardPage() {
             <h2 style={{ fontFamily: "var(--arvo-font-body)", fontSize: 13, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--arvo-fg)' }}>{td.title ?? 'Dividendos'}</h2>
             <div className="flex items-center gap-2">
               {syncing && <span className="text-xs animate-pulse" style={{ color: 'var(--arvo-fg-soft)' }}>{td.autoSyncing ?? 'Atualizando...'}</span>}
-              <button
-                onClick={handleForceSyncDividends}
-                disabled={syncing}
-                className="transition-colors disabled:opacity-40"
-                style={{ color: 'var(--arvo-fg-soft)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, lineHeight: 0 }}
-              >
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-              </button>
             </div>
           </div>
 

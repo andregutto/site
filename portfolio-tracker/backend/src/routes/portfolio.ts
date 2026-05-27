@@ -4,6 +4,7 @@ import { requireAuth, AuthRequest } from '../middleware/auth.js'
 import { supabaseAdmin } from '../lib/supabase.js'
 import { getCurrentPrice, getMonthlyHistory, Asset } from '../services/priceService.js'
 import { getFxRate } from '../lib/fx.js'
+import { cache, TTL } from '../lib/cache.js'
 import * as yahoo from '../services/yahooService.js'
 
 const router = Router()
@@ -12,6 +13,10 @@ const router = Router()
 router.get('/value', requireAuth, async (req, res: Response, next) => {
   try {
   const { userId } = req as AuthRequest
+
+  const cacheKey = `portfolio:value:${userId}`
+  const cached = cache.get<object>(cacheKey)
+  if (cached) { res.json(cached); return }
 
   // 1. Busca todos ativos ativos do usuário com classe
   const { data: assets, error: assetsErr } = await supabaseAdmin
@@ -204,14 +209,16 @@ router.get('/value', requireAuth, async (req, res: Response, next) => {
     getFxRate('EUR').then((r) => 1 / r).catch(() => null),
   ])
 
-  res.json({
+  const result = {
     total_brl: Math.round(total_brl * 100) / 100,
     total_usd: fx_usd ? Math.round(total_brl * fx_usd * 100) / 100 : null,
     total_eur: fx_eur ? Math.round(total_brl * fx_eur * 100) / 100 : null,
     by_class,
     by_asset: byAsset.sort((a, b) => b.value_brl - a.value_brl),
     generated_at: new Date().toISOString(),
-  })
+  }
+  cache.set(cacheKey, result, TTL.PORTFOLIO_VALUE)
+  res.json(result)
   } catch (err) { next(err) }
 })
 

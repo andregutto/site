@@ -21,6 +21,7 @@ router.get('/', requireAuth, async (req, res: Response) => {
     allocation_targets:   meta.allocation_targets    ?? {},
     institution_data:     meta.institution_data      ?? {},
     avatar_url:           meta.avatar_url            ?? '',
+    avatar_position:      meta.avatar_position       ?? 50,
   })
 })
 
@@ -34,7 +35,7 @@ router.patch('/', requireAuth, async (req, res: Response) => {
     tax_country?: string; birthdate?: string; default_currency?: string
     portfolio_start_date?: string; allocation_targets?: Record<string, number>
     institution_data?: Record<string, Record<string, string>>
-    avatar_url?: string
+    avatar_url?: string; avatar_position?: number
   }
   const { data: { user: current } } = await supabaseAdmin.auth.admin.getUserById(userId)
   const meta = {
@@ -42,7 +43,7 @@ router.patch('/', requireAuth, async (req, res: Response) => {
     ...Object.fromEntries(
       Object.entries({
         first_name, last_name, country, tax_country, birthdate, default_currency,
-        portfolio_start_date, allocation_targets, institution_data, avatar_url,
+        portfolio_start_date, allocation_targets, institution_data, avatar_url, avatar_position,
       }).filter(([, v]) => v !== undefined)
     ),
   }

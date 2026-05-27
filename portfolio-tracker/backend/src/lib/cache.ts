@@ -52,4 +52,5 @@ export const TTL = {
   FX_CURRENT:       5  * 60 * 1000,
   FX_HISTORICAL:    60 * 60 * 1000,
   BCB_RATES:        6  * 60 * 60 * 1000,
+  PORTFOLIO_VALUE:  2  * 60 * 1000,
 }
