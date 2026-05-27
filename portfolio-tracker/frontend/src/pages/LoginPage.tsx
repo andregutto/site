@@ -53,7 +53,7 @@ const inputBase: React.CSSProperties = {
 
 export default function LoginPage() {
   const { signIn, signUp } = useAuth()
-  const { t } = useI18n()
+  const { t, locale } = useI18n()
   const l = t.login
   const [searchParams] = useSearchParams()
 
@@ -99,12 +99,13 @@ export default function LoginPage() {
         await signIn(email, password)
       } else if (mode === 'register') {
         const metadata: Record<string, unknown> = {
-          first_name:       firstName || undefined,
-          last_name:        lastName  || undefined,
-          country:          country   || undefined,
-          tax_country:      taxCountry || undefined,
-          birthdate:        birthdate  || undefined,
-          default_currency: currency,
+          first_name:        firstName || undefined,
+          last_name:         lastName  || undefined,
+          country:           country   || undefined,
+          tax_country:       taxCountry || undefined,
+          birthdate:         birthdate  || undefined,
+          default_currency:  currency,
+          preferred_locale:  locale,
         }
         Object.keys(metadata).forEach(k => metadata[k] === undefined && delete metadata[k])
         await signUp(email, password, Object.keys(metadata).length ? metadata : undefined)
