@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useI18n } from '../contexts/I18nContext'
+import { supabase } from '../lib/supabase'
 import LanguageSelector from '../components/LanguageSelector'
 
 const DARK  = '#0D0D0D'
@@ -54,6 +55,8 @@ export default function LandingPage() {
   const [loginPass,        setLoginPass]         = useState('')
   const [loginErr,         setLoginErr]          = useState('')
   const [loginLoading,     setLoginLoading]      = useState(false)
+  const [loginResending,   setLoginResending]    = useState(false)
+  const [loginResent,      setLoginResent]       = useState(false)
   const [mobileLoginOpen,  setMobileLoginOpen]   = useState(false)
 
   const loginRef = useRef<HTMLDivElement>(null)
@@ -70,15 +73,28 @@ export default function LandingPage() {
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
     setLoginErr('')
+    setLoginResent(false)
     setLoginLoading(true)
     try {
       await signIn(loginEmail, loginPass)
       navigate('/dashboard')
     } catch (err) {
-      setLoginErr(err instanceof Error ? err.message : 'Credenciais inválidas')
+      const msg = err instanceof Error ? err.message : ''
+      if (/email not confirmed/i.test(msg)) setLoginErr(t.login.errEmailNotConfirmed)
+      else if (/invalid login credentials/i.test(msg)) setLoginErr(t.login.errInvalidCredentials)
+      else if (/too many requests|rate limit/i.test(msg)) setLoginErr(t.login.errTooManyRequests)
+      else setLoginErr(msg || 'Erro desconhecido')
     } finally {
       setLoginLoading(false)
     }
+  }
+
+  async function handleResendFromOverlay() {
+    if (!loginEmail || loginResending || loginResent) return
+    setLoginResending(true)
+    await supabase.auth.resend({ type: 'signup', email: loginEmail })
+    setLoginResending(false)
+    setLoginResent(true)
   }
 
   return (
@@ -128,7 +144,23 @@ export default function LandingPage() {
                       onFocus={e => { e.currentTarget.style.borderColor = GOLD; e.currentTarget.style.boxShadow = `0 0 0 2px rgba(200,184,154,0.25)` }}
                       onBlur={e => { e.currentTarget.style.borderColor = BORDER; e.currentTarget.style.boxShadow = 'none' }}
                     />
-                    {loginErr && <p style={{ fontFamily: F_SANS, fontSize: 12, color: '#dc2626', margin: 0 }}>{loginErr}</p>}
+                    {loginErr && (
+                      <div style={{ fontFamily: F_SANS, fontSize: 12, color: '#dc2626', margin: 0 }}>
+                        <p style={{ margin: 0 }}>{loginErr}</p>
+                        {loginErr === t.login.errEmailNotConfirmed && (
+                          <div style={{ marginTop: 8 }}>
+                            {loginResent ? (
+                              <p style={{ margin: 0, fontSize: 11, color: '#166534' }}>{t.login.emailResent ?? 'E-mail reenviado.'}</p>
+                            ) : (
+                              <button type="button" onClick={handleResendFromOverlay} disabled={loginResending || !loginEmail}
+                                style={{ background: 'none', border: '1px solid #dc2626', borderRadius: 3, padding: '4px 10px', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#dc2626', cursor: loginResending || !loginEmail ? 'not-allowed' : 'pointer', opacity: loginResending || !loginEmail ? 0.6 : 1 }}>
+                                {loginResending ? '...' : (t.login.resendEmail ?? 'Reenviar e-mail')}
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
                     <button type="submit" disabled={loginLoading}
                       style={{ fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', background: DARK, color: '#fff', border: 'none', borderRadius: 4, padding: '11px 0', cursor: 'pointer', opacity: loginLoading ? 0.6 : 1, marginTop: 4 }}>
                       {loginLoading ? '...' : l.enterBtn}
@@ -191,7 +223,23 @@ export default function LandingPage() {
                   style={{ fontFamily: F_SANS, fontSize: 13, padding: '11px 12px', border: `1px solid ${BORDER}`, borderRadius: 4, color: DARK, background: '#fff', boxSizing: 'border-box' as const }} />
                 <input type="password" required placeholder="Senha" value={loginPass} onChange={e => setLoginPass(e.target.value)}
                   style={{ fontFamily: F_SANS, fontSize: 13, padding: '11px 12px', border: `1px solid ${BORDER}`, borderRadius: 4, color: DARK, background: '#fff', boxSizing: 'border-box' as const }} />
-                {loginErr && <p style={{ fontFamily: F_SANS, fontSize: 12, color: '#dc2626', margin: 0 }}>{loginErr}</p>}
+                {loginErr && (
+                  <div style={{ fontFamily: F_SANS, fontSize: 12, color: '#dc2626', margin: 0 }}>
+                    <p style={{ margin: 0 }}>{loginErr}</p>
+                    {loginErr === t.login.errEmailNotConfirmed && (
+                      <div style={{ marginTop: 8 }}>
+                        {loginResent ? (
+                          <p style={{ margin: 0, fontSize: 11, color: '#166534' }}>{t.login.emailResent ?? 'E-mail reenviado.'}</p>
+                        ) : (
+                          <button type="button" onClick={handleResendFromOverlay} disabled={loginResending || !loginEmail}
+                            style={{ background: 'none', border: '1px solid #dc2626', borderRadius: 3, padding: '4px 10px', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#dc2626', cursor: loginResending || !loginEmail ? 'not-allowed' : 'pointer', opacity: loginResending || !loginEmail ? 0.6 : 1 }}>
+                            {loginResending ? '...' : (t.login.resendEmail ?? 'Reenviar e-mail')}
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
                 <div style={{ display: 'flex', gap: 10 }}>
                   <button type="button" onClick={() => setMobileLoginOpen(false)}
                     style={{ flex: 1, padding: '12px 0', fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', background: '#fff', border: `1px solid ${BORDER}`, borderRadius: 3, cursor: 'pointer', color: T_SECONDARY }}>
