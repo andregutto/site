@@ -302,6 +302,7 @@ function GroupPanel({ group, userId, s, onEditGroup, onInvite, onResendInvite, o
   const [pctVal, setPctVal] = useState('')
   const [savingPct, setSavingPct] = useState(false)
   const [resending, setResending] = useState<number | null>(null)
+  const [toggingSalary, setToggingSalary] = useState(false)
 
   async function handleDeleteGroup() {
     if (!confirm(s.deleteGroupConfirm)) return
@@ -332,35 +333,47 @@ function GroupPanel({ group, userId, s, onEditGroup, onInvite, onResendInvite, o
     finally { setResending(null) }
   }
 
+  async function toggleSalary(myMemberId: number, current: boolean) {
+    setToggingSalary(true)
+    try {
+      await apiFetch(`/shared/groups/${group.id}/members/${myMemberId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ salary_authorized: !current, share_mode: !current ? 'salary_based' : 'manual' }),
+      })
+      onRefresh()
+    } finally { setToggingSalary(false) }
+  }
+
   const myMember = group.members.find(m => m.user_id === userId)
 
   return (
     <div className="flex flex-col gap-3">
       {/* Group header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5">
           <div className="flex -space-x-2">
             {group.members.filter(m => m.status === 'active').slice(0, 3).map(m => (
               <div key={m.id} style={{ border: '2px solid var(--arvo-offwhite)', borderRadius: '50%' }}>
-                <Avatar display={m.display} size={24} />
+                <Avatar display={m.display} size={28} />
               </div>
             ))}
           </div>
-          <button onClick={() => setShowMembers(v => !v)} className="text-xs" style={{ color: 'var(--arvo-fg-soft)', fontFamily: 'var(--arvo-font-body)' }}>
-            {group.name} · {s.groupMembers} ({group.members.filter(m => m.status !== 'left').length})
+          <button onClick={() => setShowMembers(v => !v)} className="text-left" style={{ fontFamily: 'var(--arvo-font-body)' }}>
+            <span className="text-sm font-semibold" style={{ color: 'var(--arvo-black)' }}>{group.name}</span>
+            <span className="text-xs ml-1.5" style={{ color: 'var(--arvo-fg-soft)' }}>· {s.groupMembers} ({group.members.filter(m => m.status !== 'left').length})</span>
           </button>
         </div>
         <div className="flex gap-1.5">
-          <button onClick={onEditGroup} className="px-2 py-1.5 rounded-lg text-xs" style={{ color: 'var(--arvo-fg-soft)', background: 'rgba(13,13,13,0.06)' }} title={s.editGroup}>
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
+          <button onClick={onEditGroup} className="px-2 py-1.5 rounded-lg" style={{ color: 'var(--arvo-fg-soft)', background: 'rgba(13,13,13,0.06)' }} title={s.editGroup}>
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4">
               <path strokeLinecap="round" strokeLinejoin="round" d="M11.5 2.5l2 2-8 8H3.5v-2l8-8z" />
             </svg>
           </button>
-          <button onClick={onInvite} className="px-2.5 py-1.5 rounded-lg text-xs transition-all" style={{ background: 'rgba(13,13,13,0.07)', color: 'var(--arvo-fg)', fontFamily: 'var(--arvo-font-body)', letterSpacing: '0.06em' }}>
+          <button onClick={onInvite} className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all" style={{ background: 'rgba(13,13,13,0.07)', color: 'var(--arvo-fg)', fontFamily: 'var(--arvo-font-body)', letterSpacing: '0.04em' }}>
             + {s.invite}
           </button>
-          <button onClick={handleDeleteGroup} className="px-2 py-1.5 rounded-lg text-xs" style={{ color: 'var(--arvo-red)', background: 'rgba(214,59,47,0.06)' }}>
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
+          <button onClick={handleDeleteGroup} className="px-2 py-1.5 rounded-lg" style={{ color: 'var(--arvo-red)', background: 'rgba(214,59,47,0.06)' }}>
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4">
               <path strokeLinecap="round" strokeLinejoin="round" d="M2 4.5h12v1.5H2zM3.5 6v7h9V6M6 9h4M6.5 2.5h3" />
             </svg>
           </button>
@@ -369,59 +382,85 @@ function GroupPanel({ group, userId, s, onEditGroup, onInvite, onResendInvite, o
 
       {/* Members list */}
       {showMembers && (
-        <div className="rounded-xl p-3 flex flex-col gap-2.5" style={{ background: 'rgba(13,13,13,0.04)', border: '1px solid var(--arvo-border-soft)' }}>
+        <div className="rounded-xl p-4 flex flex-col gap-3" style={{ background: 'rgba(13,13,13,0.04)', border: '1px solid var(--arvo-border-soft)' }}>
           {group.members.filter(m => m.status !== 'left').map(m => {
             const isMe = m.user_id === userId
             return (
-              <div key={m.id} className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2 min-w-0">
-                  <Avatar display={m.display} size={28} />
+              <div key={m.id} className="flex items-start justify-between gap-3">
+                <div className="flex items-start gap-3 min-w-0">
+                  <Avatar display={m.display} size={32} />
                   <div className="min-w-0">
-                    <p className="text-xs font-medium truncate" style={{ color: 'var(--arvo-black)' }}>
-                      {m.display.name}{isMe ? ' (você)' : ''}
+                    <p className="text-sm font-semibold truncate" style={{ color: 'var(--arvo-black)' }}>
+                      {m.display.name}{isMe ? <span className="font-normal text-xs ml-1" style={{ color: 'var(--arvo-fg-soft)' }}>(você)</span> : ''}
                     </p>
                     {m.status === 'pending' ? (
-                      <p className="text-[10px]" style={{ color: 'var(--arvo-fg-soft)' }}>{s.pending}</p>
+                      <p className="text-xs mt-0.5" style={{ color: 'var(--arvo-fg-soft)' }}>{s.pending}</p>
                     ) : editingPct === m.id ? (
-                      <div className="flex items-center gap-1 mt-0.5">
+                      <div className="flex items-center gap-2 mt-1">
                         <input
                           type="number" min="0" max="100" value={pctVal}
                           onChange={e => setPctVal(e.target.value)}
                           onKeyDown={e => { if (e.key === 'Enter') savePct(m.id); if (e.key === 'Escape') setEditingPct(null) }}
                           autoFocus
-                          className="w-14 px-1.5 py-0.5 rounded text-xs"
-                          style={{ border: '1px solid var(--arvo-border)', outline: 'none' }}
+                          className="w-16 px-2 py-1 rounded-lg text-sm font-semibold"
+                          style={{ border: '1.5px solid var(--arvo-black)', outline: 'none' }}
                         />
-                        <span className="text-[10px]" style={{ color: 'var(--arvo-fg-soft)' }}>%</span>
-                        <button onClick={() => savePct(m.id)} disabled={savingPct} className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: 'var(--arvo-black)', color: 'white' }}>
-                          {savingPct ? '...' : '✓'}
+                        <span className="text-sm font-medium" style={{ color: 'var(--arvo-fg-soft)' }}>%</span>
+                        <button onClick={() => savePct(m.id)} disabled={savingPct} className="px-2.5 py-1 rounded-lg text-xs font-semibold" style={{ background: 'var(--arvo-black)', color: 'white' }}>
+                          {savingPct ? '...' : s.save ?? 'Salvar'}
                         </button>
+                        <button onClick={() => setEditingPct(null)} className="px-2 py-1 rounded-lg text-xs" style={{ color: 'var(--arvo-fg-soft)' }}>✕</button>
                       </div>
                     ) : (
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <button
+                          onClick={() => isMe ? (setEditingPct(m.id), setPctVal(String(m.share_pct))) : undefined}
+                          className="text-sm font-bold"
+                          style={{
+                            color: 'var(--arvo-black)',
+                            cursor: isMe ? 'pointer' : 'default',
+                            background: isMe ? 'rgba(13,13,13,0.08)' : 'transparent',
+                            padding: isMe ? '2px 8px' : '2px 0',
+                            borderRadius: 6,
+                          }}
+                          title={isMe ? s.editPct : undefined}
+                        >
+                          {m.share_pct}%
+                        </button>
+                        {m.share_mode === 'salary_based' && (
+                          <span className="text-xs px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(31,138,91,0.10)', color: 'var(--arvo-green)', fontWeight: 600 }}>
+                            {s.salaryBased}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    {/* Salary authorization toggle — only for me, only when active */}
+                    {isMe && m.status === 'active' && editingPct !== m.id && (
                       <button
-                        onClick={() => isMe ? (setEditingPct(m.id), setPctVal(String(m.share_pct))) : undefined}
-                        className="text-[10px]"
-                        style={{ color: 'var(--arvo-fg-soft)', cursor: isMe ? 'pointer' : 'default', textDecoration: isMe ? 'underline dotted' : 'none' }}
-                        title={isMe ? s.editPct : undefined}
+                        onClick={() => toggleSalary(m.id, m.salary_authorized)}
+                        disabled={toggingSalary}
+                        className="mt-1.5 text-xs flex items-center gap-1.5"
+                        style={{ color: m.salary_authorized ? 'var(--arvo-green)' : 'var(--arvo-fg-soft)', opacity: toggingSalary ? 0.5 : 1 }}
                       >
-                        {m.share_pct}%
+                        <span style={{ fontSize: 14 }}>{m.salary_authorized ? '✅' : '☐'}</span>
+                        {m.salary_authorized ? s.salaryAuthorized : s.authorizeSalary}
                       </button>
                     )}
                   </div>
                 </div>
-                <div className="flex items-center gap-1.5 shrink-0">
+                <div className="flex items-center gap-2 shrink-0 mt-0.5">
                   {m.status === 'pending' && (
                     <button
                       onClick={() => handleResend(m)}
                       disabled={resending === m.id}
-                      className="text-[10px] px-2 py-1 rounded"
+                      className="text-xs px-3 py-1.5 rounded-lg font-medium"
                       style={{ color: 'var(--arvo-black)', background: 'rgba(13,13,13,0.08)', opacity: resending === m.id ? 0.5 : 1 }}
                     >
-                      {resending === m.id ? '...' : (s.resendInvite ?? 'Reenviar link')}
+                      {resending === m.id ? '...' : s.resendInvite}
                     </button>
                   )}
-                  {isMe && (
-                    <button onClick={() => handleLeave(m.id)} className="text-[10px] px-2 py-1 rounded" style={{ color: 'var(--arvo-fg-soft)', background: 'rgba(13,13,13,0.06)' }}>
+                  {isMe && m.status === 'active' && (
+                    <button onClick={() => handleLeave(m.id)} className="text-xs px-3 py-1.5 rounded-lg" style={{ color: 'var(--arvo-fg-soft)', background: 'rgba(13,13,13,0.06)' }}>
                       {s.leaveGroup}
                     </button>
                   )}
@@ -429,8 +468,8 @@ function GroupPanel({ group, userId, s, onEditGroup, onInvite, onResendInvite, o
               </div>
             )
           })}
-          <p className="text-[10px] mt-1" style={{ color: 'var(--arvo-fg-soft)' }}>
-            {s.editPctHint ?? 'Clique no seu percentual para editar a sua parte.'}
+          <p className="text-xs pt-1 border-t" style={{ color: 'var(--arvo-fg-soft)', borderColor: 'var(--arvo-border-soft)' }}>
+            {s.editPctHint}
           </p>
         </div>
       )}
