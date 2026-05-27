@@ -104,6 +104,7 @@ export default function ProfilePage() {
 
   const [exporting,     setExporting]     = useState(false)
   const [exportError,   setExportError]   = useState<string | null>(null)
+  const [exportSheets,  setExportSheets]  = useState<string[]>([])
   const [avatarPosition, setAvatarPosition] = useState(50)
 
   const { reset: rebuildHistory, loading: rebuilding, result: rebuildResult } = useResetPriceHistory()
@@ -259,6 +260,7 @@ export default function ProfilePage() {
         XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(data.finance_accounts), 'Contas')
 
       XLSX.writeFile(wb, `arvo-dados-${new Date().toISOString().slice(0, 10)}.xlsx`)
+      setExportSheets(wb.SheetNames)
       setExportError(null)
     } catch {
       setExportError(t.profile.exportError)
@@ -540,6 +542,11 @@ export default function ProfilePage() {
               {exporting ? t.profile.exporting : t.profile.exportBtn}
             </button>
             {exportError && <p className="text-xs text-red-600">{exportError}</p>}
+            {exportSheets.length > 0 && !exportError && (
+              <p className="text-xs text-green-600">
+                {exportSheets.length} planilhas exportadas: {exportSheets.join(', ')}
+              </p>
+            )}
           </div>
 
           {/* Manutenção */}
@@ -604,7 +611,7 @@ export default function ProfilePage() {
           <div className="bg-white border border-red-100 rounded-2xl p-6 shadow-sm space-y-4">
             <h2 className="font-semibold text-red-700">{t.profile.dangerZone}</h2>
 
-            <div className="border-t border-red-100 pt-0 space-y-2">
+            <div className="space-y-2">
               <p className="text-xs text-gray-500">{t.profile.deleteDesc}</p>
               <button
                 type="button"

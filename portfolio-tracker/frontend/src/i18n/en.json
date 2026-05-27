@@ -1170,7 +1170,7 @@
     "syncBtn": "Update dividends",
     "syncing": "Syncing...",
     "noData": "No dividends recorded in this period",
-    "colExDate": "Ex-Date",
+    "colExDate": "Ex-Dividend",
     "colPayDate": "Pay Date",
     "colPerShare": "Per share",
     "colTotal": "Total received",

@@ -991,7 +991,7 @@ export default function FinancesTransactionsPage() {
                     <th className="px-2 sm:px-3 py-3 text-left">{t.common.description}</th>
                     <th className="px-2 sm:px-3 py-3 text-right whitespace-nowrap">{t.common.value}</th>
                     <th className="px-2 sm:px-3 py-3 text-left hidden sm:table-cell">{t.finances.category}</th>
-                    <th className="px-2 sm:px-3 py-3 text-left hidden md:table-cell">{t.finances.txMoment}</th>
+                    <th className="px-2 sm:px-3 py-3 text-left hidden sm:table-cell">{t.finances.txMoment}</th>
                     <th className="px-2 sm:px-3 py-3"></th>
                   </tr>
                 </thead>
@@ -1156,7 +1156,7 @@ export default function FinancesTransactionsPage() {
                           )}
                         </td>
                         {/* Moment badge */}
-                        <td className="px-2 sm:px-3 py-2.5 sm:py-3 hidden md:table-cell">
+                        <td className="px-2 sm:px-3 py-2.5 sm:py-3 hidden sm:table-cell">
                           {tx.moments.length > 0 ? (
                             <div className="flex items-center gap-1 flex-wrap">
                               {tx.moments.map(m => (

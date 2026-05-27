@@ -94,7 +94,7 @@ export default function DashboardPage() {
     switch (periodMode) {
       case 'current_month': return `${currentYM}-01`
       case 'last_30d': { const d = new Date(); d.setDate(d.getDate() - 29); return d.toISOString().split('T')[0] }
-      case 'last_12m': { const d = new Date(); d.setMonth(d.getMonth() - 11); d.setDate(1); return d.toISOString().split('T')[0] }
+      case 'last_12m': { const d = new Date(); d.setFullYear(d.getFullYear() - 1); return d.toISOString().split('T')[0] }
       case 'ytd':     return `${currentYear}-01-01`
       case 'inception': return inception ? `${inception}-01` : `${currentYear}-01-01`
     }

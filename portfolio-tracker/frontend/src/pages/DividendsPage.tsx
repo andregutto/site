@@ -209,8 +209,12 @@ export default function DividendsPage() {
                   <thead className="bg-gray-50 text-gray-400 text-xs uppercase">
                     <tr>
                       <th className="px-4 py-3 text-left">Ativo</th>
-                      <th className="px-4 py-3 text-left">{d.colExDate}</th>
-                      <th className="px-4 py-3 text-left">{d.colPayDate}</th>
+                      <th className="px-4 py-3 text-left">
+                        <span title="Data de corte: é preciso ter a ação ANTES desta data para receber o dividendo">{d.colExDate} ⓘ</span>
+                      </th>
+                      <th className="px-4 py-3 text-left">
+                        <span title="Data em que o pagamento é creditado. Pode ser indisponível para ações no exterior.">{d.colPayDate}</span>
+                      </th>
                       <th className="px-4 py-3 text-right">{d.colPerShare}</th>
                       <th className="px-4 py-3 text-right">{d.colTotal}</th>
                       <th className="px-4 py-3 text-left">{d.colType}</th>

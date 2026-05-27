@@ -5,23 +5,25 @@ import { usePortfolioValue } from '../hooks/usePortfolio'
 import InstitutionLogo from '../components/InstitutionLogo'
 
 interface InstitutionProfile {
-  official_name:  string
-  country:        string
-  registration:   string  // CNPJ (BR) ou número de registro (intl)
-  address:        string
-  iban:           string
-  swift:          string
-  account_number: string
+  official_name:    string
+  country:          string
+  registration:     string  // CNPJ (BR) ou número de registro (intl)
+  address:          string
+  iban:             string
+  swift:            string
+  account_number:   string
+  account_open_date: string // YYYY-MM-DD
 }
 
 const EMPTY_PROFILE: InstitutionProfile = {
-  official_name:  '',
-  country:        '',
-  registration:   '',
-  address:        '',
-  iban:           '',
-  swift:          '',
-  account_number: '',
+  official_name:    '',
+  country:          '',
+  registration:     '',
+  address:          '',
+  iban:             '',
+  swift:            '',
+  account_number:   '',
+  account_open_date: '',
 }
 
 const COUNTRY_OPTIONS = [
@@ -206,6 +208,15 @@ export default function InstitutionsPage() {
                       <Field label="SWIFT / BIC" field="swift" placeholder="Ex: CMCIFRPP" />
                       <div className="col-span-2">
                         <Field label="Número da conta" field="account_number" placeholder="Nº da sua conta nesta instituição" />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-500 mb-1">Data de abertura da conta</label>
+                        <input
+                          type="date"
+                          value={form.account_open_date}
+                          onChange={e => setForm(prev => ({ ...prev, account_open_date: e.target.value }))}
+                          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20"
+                        />
                       </div>
                     </div>
 
