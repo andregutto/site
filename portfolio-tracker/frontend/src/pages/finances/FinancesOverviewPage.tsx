@@ -219,6 +219,28 @@ export default function FinancesOverviewPage() {
   const today = new Date()
   const defaultMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`
 
+  function fmtMonthFull(m: string) {
+    const [y, mo] = m.split('-')
+    return new Date(Number(y), Number(mo) - 1).toLocaleDateString(browserLocale, { month: 'long', year: 'numeric' })
+  }
+
+  function prevMonth() {
+    setMonth(prev => {
+      const [y, mo] = prev.split('-').map(Number)
+      const d = new Date(y, mo - 2, 1)
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+    })
+  }
+
+  function nextMonth() {
+    setMonth(prev => {
+      if (prev >= defaultMonth) return prev
+      const [y, mo] = prev.split('-').map(Number)
+      const d = new Date(y, mo, 1)
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+    })
+  }
+
   const [month,          setMonth]          = useState(defaultMonth)
   const [historyMonths,  setHistoryMonths]  = useState<6 | 12 | 60>(6)
   const [data,           setData]           = useState<SpendingSummary | null>(null)
@@ -386,13 +408,23 @@ export default function FinancesOverviewPage() {
         </div>
       )}
 
-      {/* Header with month picker */}
-      <div className="flex items-start justify-between flex-wrap gap-2">
-        <div>
-          <h1 style={{ fontFamily: "var(--arvo-font-body)", fontSize: 18, letterSpacing: '0.06em', color: 'var(--arvo-black)' }}>{t.finances.overviewTitle}</h1>
-          <p className="text-sm mt-0.5" style={{ color: 'rgba(13,13,13,0.60)' }}>{t.finances.overviewSubtitle}</p>
-        </div>
-        <MonthPicker value={month} onChange={setMonth} locale={browserLocale} />
+      {/* Header */}
+      <div>
+        <h1 style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 18, letterSpacing: '0.06em', color: 'var(--arvo-black)' }}>{t.finances.overviewTitle}</h1>
+        <p className="text-sm mt-0.5" style={{ color: 'rgba(13,13,13,0.60)' }}>{t.finances.overviewSubtitle}</p>
+      </div>
+
+      {/* Month navigation */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <button onClick={prevMonth} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(13,13,13,0.40)', borderRadius: 8 }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+        </button>
+        <span style={{ fontSize: 14, fontFamily: 'var(--arvo-font-body)', fontWeight: 600, letterSpacing: '0.02em', color: 'var(--arvo-black)', minWidth: 160, textAlign: 'center', textTransform: 'capitalize' }}>
+          {fmtMonthFull(month)}
+        </span>
+        <button onClick={nextMonth} disabled={month >= defaultMonth} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, background: 'none', border: 'none', cursor: 'pointer', color: month >= defaultMonth ? 'rgba(13,13,13,0.18)' : 'rgba(13,13,13,0.40)', borderRadius: 8 }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+        </button>
       </div>
 
       {/* Hero card — white with gold glow */}

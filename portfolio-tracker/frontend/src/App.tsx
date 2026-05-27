@@ -91,7 +91,12 @@ function EmailConfirmGate({ email }: { email: string }) {
 
 function DashboardGate() {
   const { user } = useAuth()
-  if (user?.user_metadata?.default_section === 'finances') return <Navigate to="/finances" replace />
+  // Only redirect on launch (first visit this session), not when user explicitly navigates here
+  if (!sessionStorage.getItem('arvo_launch_redirect_done') && user?.user_metadata?.default_section === 'finances') {
+    sessionStorage.setItem('arvo_launch_redirect_done', '1')
+    return <Navigate to="/finances" replace />
+  }
+  sessionStorage.setItem('arvo_launch_redirect_done', '1')
   return <DashboardPage />
 }
 

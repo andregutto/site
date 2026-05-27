@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import * as XLSX from 'xlsx'
 import { apiFetch } from '../../lib/api'
@@ -58,6 +58,23 @@ function fmtDate(d: string) {
 }
 
 const LOCALE_MAP: Record<string, string> = { pt: 'pt-BR', en: 'en-GB', fr: 'fr-FR' }
+
+const menuItemStyle: React.CSSProperties = {
+  display: 'flex', alignItems: 'center', gap: 10, width: '100%',
+  padding: '9px 16px', fontSize: 13, fontFamily: 'var(--arvo-font-body)',
+  color: 'var(--arvo-black)', background: 'none', border: 'none',
+  cursor: 'pointer', textAlign: 'left', whiteSpace: 'nowrap',
+}
+const chipStyle: React.CSSProperties = {
+  display: 'inline-flex', alignItems: 'center', gap: 5,
+  padding: '4px 10px', borderRadius: 999,
+  background: 'rgba(13,13,13,0.06)', border: '1px solid rgba(13,13,13,0.10)',
+  fontSize: 12, fontFamily: 'var(--arvo-font-body)', color: 'var(--arvo-black)',
+}
+const chipXStyle: React.CSSProperties = {
+  background: 'none', border: 'none', cursor: 'pointer',
+  padding: 0, fontSize: 11, color: 'rgba(13,13,13,0.40)', lineHeight: 1,
+}
 
 function MonthPicker({ value, onChange, locale }: { value: string; onChange: (m: string) => void; locale: string }) {
   const fmtLocale = LOCALE_MAP[locale] ?? 'pt-BR'
@@ -178,6 +195,12 @@ export default function FinancesTransactionsPage() {
 
   // Import modal
   const [showImportModal, setShowImportModal] = useState(false)
+
+  // Overflow menu + filter panel
+  const [showOverflowMenu, setShowOverflowMenu] = useState(false)
+  const [showFilterPanel, setShowFilterPanel]   = useState(false)
+  const overflowMenuRef = useRef<HTMLDivElement>(null)
+  const filterPanelRef  = useRef<HTMLDivElement>(null)
 
   const loadTransactions = useCallback(async () => {
     setLoading(true)
@@ -387,6 +410,45 @@ export default function FinancesTransactionsPage() {
     await apiFetch(`/finances/transactions/${id}/unlink-transfer`, { method: 'POST' })
     loadTransactions()
   }
+
+  const activeFilterCount = (filterCatId !== '' ? 1 : 0) + (filterMomentId !== '' ? 1 : 0) + (filterAccountId !== '' ? 1 : 0)
+  const fmtLocale = LOCALE_MAP[locale] ?? 'pt-BR'
+
+  function fmtMonthFull(m: string) {
+    const [y, mo] = m.split('-')
+    return new Date(Number(y), Number(mo) - 1).toLocaleDateString(fmtLocale, { month: 'long', year: 'numeric' })
+  }
+
+  function prevMonth() {
+    const [y, mo] = month.split('-').map(Number)
+    const d = new Date(y, mo - 2, 1)
+    setMonth(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`)
+  }
+
+  function nextMonth() {
+    if (month >= defaultMonth) return
+    const [y, mo] = month.split('-').map(Number)
+    const d = new Date(y, mo, 1)
+    setMonth(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`)
+  }
+
+  useEffect(() => {
+    if (!showOverflowMenu) return
+    function handler(e: MouseEvent) {
+      if (overflowMenuRef.current && !overflowMenuRef.current.contains(e.target as Node)) setShowOverflowMenu(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [showOverflowMenu])
+
+  useEffect(() => {
+    if (!showFilterPanel) return
+    function handler(e: MouseEvent) {
+      if (filterPanelRef.current && !filterPanelRef.current.contains(e.target as Node)) setShowFilterPanel(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [showFilterPanel])
 
   function setLast30Days() {
     const d = new Date()
@@ -689,125 +751,149 @@ export default function FinancesTransactionsPage() {
       )}
 
       {/* Header */}
-      <div className="flex items-start justify-between flex-wrap gap-3">
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
         <div>
-          <h1 style={{ fontFamily: "var(--arvo-font-body)", fontSize: 18, letterSpacing: '0.06em', color: 'var(--arvo-black)' }}>{t.finances.transactionsTitle}</h1>
+          <h1 style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 18, letterSpacing: '0.06em', color: 'var(--arvo-black)' }}>{t.finances.transactionsTitle}</h1>
           <p className="text-sm mt-0.5" style={{ color: 'rgba(13,13,13,0.60)' }}>{t.finances.transactionsSubtitle}</p>
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          {dateMode === 'month' ? (
-            <div className="flex items-center gap-1">
-              <MonthPicker value={month} onChange={setMonth} locale={locale} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+          {/* Filter icon with active-count badge */}
+          {csvStep === 'idle' && (allCategories.length > 0 || moments.length > 0 || accounts.length > 0) && (
+            <div style={{ position: 'relative' }} ref={filterPanelRef}>
               <button
-                onClick={setLast30Days}
-                title={t.performance.last30d}
-                className="px-2.5 py-1.5 bg-white text-xs font-medium text-gray-500 border border-gray-200 rounded-lg hover:border-[#0D0D0D] hover:text-[#0D0D0D] transition-colors whitespace-nowrap"
-              >{t.performance.last30d}</button>
-              <button
-                onClick={() => setDateMode('range')}
-                title="Período personalizado"
-                className="p-1.5 bg-white text-gray-400 hover:text-gray-600 border border-gray-200 rounded-lg transition-colors"
+                onClick={() => { setShowFilterPanel(p => !p); setShowOverflowMenu(false) }}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, border: '1px solid var(--arvo-border)', borderRadius: 10, background: activeFilterCount > 0 ? 'var(--arvo-black)' : '#fff', color: activeFilterCount > 0 ? '#fff' : 'rgba(13,13,13,0.55)', cursor: 'pointer' }}
               >
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4"><path d="M5.75 7.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5ZM8 7.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm2.25 0a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5ZM5.75 10a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5ZM8 10a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm2.25 0a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5ZM4.75 2a.75.75 0 0 1 .75.75V4h5V2.75a.75.75 0 0 1 1.5 0V4h.25A2.75 2.75 0 0 1 15 6.75v6.5A2.75 2.75 0 0 1 12.25 16H3.75A2.75 2.75 0 0 1 1 13.25v-6.5A2.75 2.75 0 0 1 3.75 4H4V2.75A.75.75 0 0 1 4.75 2ZM2.5 7.5v5.75c0 .69.56 1.25 1.25 1.25h8.5c.69 0 1.25-.56 1.25-1.25V7.5h-11Z"/></svg>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/>
+                </svg>
+                {activeFilterCount > 0 && (
+                  <span style={{ position: 'absolute', top: -5, right: -5, width: 16, height: 16, borderRadius: '50%', background: '#1B4FD8', color: '#fff', fontSize: 10, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--arvo-font-body)' }}>
+                    {activeFilterCount}
+                  </span>
+                )}
               </button>
-            </div>
-          ) : (
-            <div className="flex items-center gap-1.5">
-              <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm" />
-              <span className="text-gray-400 text-xs">→</span>
-              <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className="border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm" />
-              <button
-                onClick={() => setDateMode('month')}
-                className="p-1.5 bg-white text-gray-400 hover:text-gray-600 border border-gray-200 rounded-lg transition-colors"
-                title="Voltar para seleção por mês"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4"><path d="M5.28 4.22a.75.75 0 0 0-1.06 1.06L6.94 8l-2.72 2.72a.75.75 0 1 0 1.06 1.06L8 9.06l2.72 2.72a.75.75 0 1 0 1.06-1.06L9.06 8l2.72-2.72a.75.75 0 0 0-1.06-1.06L8 6.94 5.28 4.22Z" /></svg>
-              </button>
+              {showFilterPanel && (
+                <div style={{ position: 'absolute', right: 0, top: 44, zIndex: 50, background: '#fff', border: '1px solid var(--arvo-border)', borderRadius: 14, boxShadow: '0 8px 32px rgba(0,0,0,0.10)', padding: 16, minWidth: 240, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {accounts.length > 0 && (
+                    <select value={filterAccountId === '' ? '' : String(filterAccountId)} onChange={e => { const v = e.target.value; setFilterAccountId(v === '' ? '' : v === 'unassigned' ? 'unassigned' : Number(v)) }} style={{ border: '1px solid var(--arvo-border)', borderRadius: 8, padding: '8px 12px', fontSize: 13, fontFamily: 'var(--arvo-font-body)', background: '#fff', width: '100%' }}>
+                      <option value="">{t.finances.allAccounts}</option>
+                      <option value="unassigned">{t.finances.csvAccountNone}</option>
+                      {accounts.map(a => <option key={a.id} value={a.id}>{a.icon} {a.name}</option>)}
+                    </select>
+                  )}
+                  {allCategories.length > 0 && (
+                    <select value={filterCatId} onChange={e => setFilterCatId(e.target.value === '' ? '' : Number(e.target.value))} style={{ border: '1px solid var(--arvo-border)', borderRadius: 8, padding: '8px 12px', fontSize: 13, fontFamily: 'var(--arvo-font-body)', background: '#fff', width: '100%' }}>
+                      <option value="">{t.finances.allCategories}</option>
+                      {allCategories.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
+                    </select>
+                  )}
+                  {moments.length > 0 && (
+                    <select value={filterMomentId} onChange={e => setFilterMomentId(e.target.value === '' ? '' : Number(e.target.value))} style={{ border: '1px solid var(--arvo-border)', borderRadius: 8, padding: '8px 12px', fontSize: 13, fontFamily: 'var(--arvo-font-body)', background: '#fff', width: '100%' }}>
+                      <option value="">{t.finances.allMoments}</option>
+                      {moments.map(m => <option key={m.id} value={m.id}>{m.icon} {m.name}</option>)}
+                    </select>
+                  )}
+                  {activeFilterCount > 0 && (
+                    <button onClick={() => { setFilterCatId(''); setFilterMomentId(''); setFilterAccountId('') }} style={{ fontSize: 12, color: 'rgba(13,13,13,0.45)', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', padding: '4px 0', fontFamily: 'var(--arvo-font-body)' }}>
+                      {t.finances.clearFilters}
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           )}
-          {accountsLoaded && accounts.length > 0 && (<>
-            <button
-              onClick={detectTransfers}
-              disabled={detecting}
-              title={detectResult ?? t.finances.detectTransfers}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 text-sm text-gray-500 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M4 4a.75.75 0 0 1 .75-.75h6.5a.75.75 0 0 1 0 1.5h-6.5A.75.75 0 0 1 4 4Zm-1.5 4A.75.75 0 0 1 3.25 7.25h9.5a.75.75 0 0 1 0 1.5h-9.5A.75.75 0 0 1 2.5 8Zm3 4a.75.75 0 0 1 .75-.75h3.5a.75.75 0 0 1 0 1.5h-3.5A.75.75 0 0 1 5.5 12Z" clipRule="evenodd"/></svg>
-              {detecting ? t.finances.detectingTransfers : (detectResult ?? t.finances.detectTransfers)}
-            </button>
-            <button
-              onClick={detectReimbursements}
-              disabled={detectingReimb}
-              title={detectReimbResult ?? t.finances.detectRefunds}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 text-sm text-gray-500 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
-            >
-              <span className="text-base leading-none">↩</span>
-              {detectingReimb ? t.finances.detecting : (detectReimbResult ?? t.finances.detectRefunds)}
-            </button>
-            <button
-              onClick={() => { setCsvStep('idle'); setCsvRows([]); setCsvDuplicateCount(0); setCsvError(''); setCsvAiDebug(null); setShowImportModal(true) }}
-              disabled={csvStep === 'parsing'}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 text-sm text-gray-600 rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4"><path d="M8.75 2.75a.75.75 0 0 0-1.5 0v5.69L5.03 6.22a.75.75 0 0 0-1.06 1.06l3.5 3.5a.75.75 0 0 0 1.06 0l3.5-3.5a.75.75 0 0 0-1.06-1.06L8.75 8.44V2.75Z" /><path d="M3.5 9.75a.75.75 0 0 0-1.5 0v1.5A2.75 2.75 0 0 0 4.75 14h6.5A2.75 2.75 0 0 0 14 11.25v-1.5a.75.75 0 0 0-1.5 0v1.5c0 .69-.56 1.25-1.25 1.25h-6.5c-.69 0-1.25-.56-1.25-1.25v-1.5Z" /></svg>
-              {t.finances.importCSV}
-            </button>
+
+          {/* Overflow menu — utility actions */}
+          {accountsLoaded && accounts.length > 0 && (
+            <div style={{ position: 'relative' }} ref={overflowMenuRef}>
+              <button
+                onClick={() => { setShowOverflowMenu(p => !p); setShowFilterPanel(false) }}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, border: '1px solid var(--arvo-border)', borderRadius: 10, background: '#fff', color: 'rgba(13,13,13,0.55)', cursor: 'pointer' }}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>
+              </button>
+              {showOverflowMenu && (
+                <div style={{ position: 'absolute', right: 0, top: 44, zIndex: 50, background: '#fff', border: '1px solid var(--arvo-border)', borderRadius: 14, boxShadow: '0 8px 32px rgba(0,0,0,0.10)', padding: '6px 0', minWidth: 220 }}>
+                  <button onClick={() => { setShowOverflowMenu(false); detectTransfers() }} disabled={detecting} style={menuItemStyle}>
+                    <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path fillRule="evenodd" d="M4 4a.75.75 0 0 1 .75-.75h6.5a.75.75 0 0 1 0 1.5h-6.5A.75.75 0 0 1 4 4Zm-1.5 4A.75.75 0 0 1 3.25 7.25h9.5a.75.75 0 0 1 0 1.5h-9.5A.75.75 0 0 1 2.5 8Zm3 4a.75.75 0 0 1 .75-.75h3.5a.75.75 0 0 1 0 1.5h-3.5A.75.75 0 0 1 5.5 12Z" clipRule="evenodd"/></svg>
+                    <span>{detecting ? t.finances.detectingTransfers : (detectResult ?? t.finances.detectTransfers)}</span>
+                  </button>
+                  <button onClick={() => { setShowOverflowMenu(false); detectReimbursements() }} disabled={detectingReimb} style={menuItemStyle}>
+                    <span style={{ fontSize: 15, lineHeight: 1 }}>↩</span>
+                    <span>{detectingReimb ? t.finances.detecting : (detectReimbResult ?? t.finances.detectRefunds)}</span>
+                  </button>
+                  <div style={{ height: 1, background: 'var(--arvo-border)', margin: '6px 0' }} />
+                  <button onClick={() => { setShowOverflowMenu(false); setLast30Days() }} style={menuItemStyle}>
+                    <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M4.75 2a.75.75 0 0 1 .75.75V4h5V2.75a.75.75 0 0 1 1.5 0V4h.25A2.75 2.75 0 0 1 15 6.75v6.5A2.75 2.75 0 0 1 12.25 16H3.75A2.75 2.75 0 0 1 1 13.25v-6.5A2.75 2.75 0 0 1 3.75 4H4V2.75A.75.75 0 0 1 4.75 2ZM2.5 7.5v5.75c0 .69.56 1.25 1.25 1.25h8.5c.69 0 1.25-.56 1.25-1.25V7.5h-11Z"/></svg>
+                    <span>{t.performance.last30d}</span>
+                  </button>
+                  <button onClick={() => { setShowOverflowMenu(false); setCsvStep('idle'); setCsvRows([]); setCsvDuplicateCount(0); setCsvError(''); setCsvAiDebug(null); setShowImportModal(true) }} disabled={csvStep === 'parsing'} style={menuItemStyle}>
+                    <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M8.75 2.75a.75.75 0 0 0-1.5 0v5.69L5.03 6.22a.75.75 0 0 0-1.06 1.06l3.5 3.5a.75.75 0 0 0 1.06 0l3.5-3.5a.75.75 0 0 0-1.06-1.06L8.75 8.44V2.75Z"/><path d="M3.5 9.75a.75.75 0 0 0-1.5 0v1.5A2.75 2.75 0 0 0 4.75 14h6.5A2.75 2.75 0 0 0 14 11.25v-1.5a.75.75 0 0 0-1.5 0v1.5c0 .69-.56 1.25-1.25 1.25h-6.5c-.69 0-1.25-.56-1.25-1.25v-1.5Z"/></svg>
+                    <span>{t.finances.importCSV}</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Add button */}
+          {accountsLoaded && accounts.length > 0 && (
             <button
               onClick={() => setShowAdd(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#0D0D0D] text-white text-sm rounded-lg hover:opacity-80 transition-opacity"
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, background: 'var(--arvo-black)', color: '#fff', border: 'none', borderRadius: 10, cursor: 'pointer', flexShrink: 0 }}
             >
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4"><path d="M8.75 3.75a.75.75 0 0 0-1.5 0v3.5h-3.5a.75.75 0 0 0 0 1.5h3.5v3.5a.75.75 0 0 0 1.5 0v-3.5h3.5a.75.75 0 0 0 0-1.5h-3.5v-3.5Z" /></svg>
-              {t.finances.addTransaction}
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8.75 3.75a.75.75 0 0 0-1.5 0v3.5h-3.5a.75.75 0 0 0 0 1.5h3.5v3.5a.75.75 0 0 0 1.5 0v-3.5h3.5a.75.75 0 0 0 0-1.5h-3.5v-3.5Z"/></svg>
             </button>
-          </>)}
+          )}
           <input ref={fileRef} type="file" accept=".csv,.txt,.xls,.xlsx,.ods" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) { setShowImportModal(false); handleCSVFile(f) } e.target.value = '' }} />
         </div>
       </div>
 
-      {/* Filter strip */}
-      {csvStep === 'idle' && (allCategories.length > 0 || moments.length > 0 || accounts.length > 0) && (
-        <div className="flex items-center gap-2 flex-wrap">
-          {accounts.length > 0 && (
-            <select
-              value={filterAccountId === '' ? '' : String(filterAccountId)}
-              onChange={e => {
-                const v = e.target.value
-                setFilterAccountId(v === '' ? '' : v === 'unassigned' ? 'unassigned' : Number(v))
-              }}
-              className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm bg-white"
-            >
-              <option value="">{t.finances.allAccounts}</option>
-              <option value="unassigned">{t.finances.csvAccountNone}</option>
-              {accounts.map(a => <option key={a.id} value={a.id}>{a.icon} {a.name}</option>)}
-            </select>
-          )}
-          {allCategories.length > 0 && (
-            <select
-              value={filterCatId}
-              onChange={e => setFilterCatId(e.target.value === '' ? '' : Number(e.target.value))}
-              className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm bg-white"
-            >
-              <option value="">{t.finances.allCategories}</option>
-              {allCategories.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
-            </select>
-          )}
-          {moments.length > 0 && (
-            <select
-              value={filterMomentId}
-              onChange={e => setFilterMomentId(e.target.value === '' ? '' : Number(e.target.value))}
-              className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm bg-white"
-            >
-              <option value="">{t.finances.allMoments}</option>
-              {moments.map(m => <option key={m.id} value={m.id}>{m.icon} {m.name}</option>)}
-            </select>
-          )}
-          {(filterCatId !== '' || filterMomentId !== '' || filterAccountId !== '') && (
-            <button
-              onClick={() => { setFilterCatId(''); setFilterMomentId(''); setFilterAccountId('') }}
-              className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
-            >
-              {t.finances.clearFilters}
+      {/* Month navigation */}
+      {csvStep === 'idle' && (
+        dateMode === 'month' ? (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <button onClick={prevMonth} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(13,13,13,0.40)', borderRadius: 8 }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
             </button>
+            <span style={{ fontSize: 14, fontFamily: 'var(--arvo-font-body)', fontWeight: 600, letterSpacing: '0.02em', color: 'var(--arvo-black)', minWidth: 160, textAlign: 'center', textTransform: 'capitalize' }}>
+              {fmtMonthFull(month)}
+            </span>
+            <button onClick={nextMonth} disabled={month >= defaultMonth} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, background: 'none', border: 'none', cursor: 'pointer', color: month >= defaultMonth ? 'rgba(13,13,13,0.18)' : 'rgba(13,13,13,0.40)', borderRadius: 8 }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+            </button>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} style={{ border: '1px solid var(--arvo-border)', borderRadius: 8, padding: '7px 10px', fontSize: 13, fontFamily: 'var(--arvo-font-body)' }} />
+            <span style={{ fontSize: 12, color: 'rgba(13,13,13,0.35)' }}>→</span>
+            <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} style={{ border: '1px solid var(--arvo-border)', borderRadius: 8, padding: '7px 10px', fontSize: 13, fontFamily: 'var(--arvo-font-body)' }} />
+            <button onClick={() => setDateMode('month')} style={{ fontSize: 12, color: 'rgba(13,13,13,0.40)', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px', fontFamily: 'var(--arvo-font-body)' }}>✕</button>
+          </div>
+        )
+      )}
+
+      {/* Active filter chips */}
+      {csvStep === 'idle' && activeFilterCount > 0 && (
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+          {filterAccountId !== '' && (
+            <span style={chipStyle}>
+              {filterAccountId === 'unassigned' ? t.finances.csvAccountNone : (accounts.find(a => a.id === filterAccountId)?.name ?? '')}
+              <button onClick={() => setFilterAccountId('')} style={chipXStyle}>✕</button>
+            </span>
+          )}
+          {filterCatId !== '' && (
+            <span style={chipStyle}>
+              {allCategories.find(c => c.id === filterCatId)?.icon} {allCategories.find(c => c.id === filterCatId)?.name}
+              <button onClick={() => setFilterCatId('')} style={chipXStyle}>✕</button>
+            </span>
+          )}
+          {filterMomentId !== '' && (
+            <span style={chipStyle}>
+              {moments.find(m => m.id === filterMomentId)?.icon} {moments.find(m => m.id === filterMomentId)?.name}
+              <button onClick={() => setFilterMomentId('')} style={chipXStyle}>✕</button>
+            </span>
           )}
         </div>
       )}
