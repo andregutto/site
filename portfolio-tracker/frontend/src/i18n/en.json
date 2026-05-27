@@ -506,6 +506,13 @@
     "monthlyBudget": "Monthly budget (optional)",
     "unallocatedBanner": "unallocated",
     "overspentBanner": "Categories exceed income by",
+    "sharedSection": "Shared categories",
+    "sharedSectionSubtitle": "Budget categories shared with others",
+    "viewShared": "View all",
+    "shareCategory": "Share",
+    "pickGroup": "Which group?",
+    "pickGroupHint": "The category will be shared with the group members.",
+    "myGoal": "My goal",
     "configureIncome": "Set your monthly income to get started",
     "configureBudget": "Configure planning",
     "configureHint": "Go to Planning to set your income and envelopes",
@@ -1327,6 +1334,13 @@
     "transactions": "Transactions",
     "tagTransaction": "Shared category",
     "inviteSent": "Invite link generated",
-    "shareGoal": "Goal split"
+    "shareGoal": "Goal split",
+    "resendInvite": "Resend link",
+    "editGroup": "Edit group",
+    "editPct": "Edit my percentage",
+    "editPctHint": "Click your percentage to edit your share.",
+    "useExistingCategory": "Use existing",
+    "pickCategoryHint": "Pick a category from planning to use as a base. You can still adjust name, icon and goal.",
+    "save": "Save"
   }
 }

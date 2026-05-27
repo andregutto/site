@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { apiFetch } from '../../lib/api'
 import { useI18n } from '../../contexts/I18nContext'
+import { useAuth } from '../../contexts/AuthContext'
 
 interface Category {
   id: number
@@ -30,6 +32,32 @@ interface BudgetData {
   envelopes: Envelope[]
 }
 
+interface SharedMember {
+  id: number
+  user_id: string | null
+  invite_email: string | null
+  status: string
+  share_pct: number
+  display: { name: string; email: string }
+}
+
+interface SharedCategory {
+  id: number
+  group_id: number
+  name: string
+  icon: string
+  color: string
+  total_goal: number
+  currency: string
+}
+
+interface SharedGroup {
+  id: number
+  name: string
+  members: SharedMember[]
+  categories: SharedCategory[]
+}
+
 function fmt(n: number, currency: string) {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n)
 }
@@ -53,8 +81,8 @@ function resolveKey(name: string, nameKey: string | null | undefined, keys: Reco
 }
 
 
-function EnvelopeBar({ env, expanded, onToggle, onEditCategory, onDeleteCategory, onAddCategory, onSaveDescription, actuals, currency }:
-  { env: Envelope; expanded: boolean; onToggle: () => void; onEditCategory: (c: Category) => void; onDeleteCategory: (id: number) => void; onAddCategory: (envId: number) => void; onSaveDescription: (id: number, desc: string) => void; actuals: Map<number, number>; currency: string }) {
+function EnvelopeBar({ env, expanded, onToggle, onEditCategory, onDeleteCategory, onAddCategory, onSaveDescription, onShareCategory, actuals, currency }:
+  { env: Envelope; expanded: boolean; onToggle: () => void; onEditCategory: (c: Category) => void; onDeleteCategory: (id: number) => void; onAddCategory: (envId: number) => void; onSaveDescription: (id: number, desc: string) => void; onShareCategory: (c: Category) => void; actuals: Map<number, number>; currency: string }) {
   const { t } = useI18n()
   const nameKeys: Record<string, string> = {
     envelopeEssential:     t.finances.envelopeEssential,
@@ -224,6 +252,15 @@ function EnvelopeBar({ env, expanded, onToggle, onEditCategory, onDeleteCategory
                     </div>
                     <div className="flex items-center gap-1 [@media(hover:none)]:opacity-100 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button
+                        onClick={() => onShareCategory(cat)}
+                        className="p-1 text-gray-400 hover:text-indigo-500 transition-colors rounded"
+                        title={t.finances.shareCategory}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5">
+                          <path d="M11.25 1.5a2.25 2.25 0 1 1 0 4.5 2.25 2.25 0 0 1 0-4.5ZM4.75 7.25a2.25 2.25 0 1 1 0 4.5 2.25 2.25 0 0 1 0-4.5ZM11.25 11a2.25 2.25 0 1 1 0 4.5 2.25 2.25 0 0 1 0-4.5ZM6.27 8.944l3.46-1.888.013.009-.013-.009-3.46 1.888Zm0-1.888 3.46 1.888-.013-.009.013.009-3.46-1.888Z" />
+                        </svg>
+                      </button>
+                      <button
                         onClick={() => onEditCategory(cat)}
                         className="p-1 text-gray-400 hover:text-[#0D0D0D] transition-colors rounded"
                         title="Editar"
@@ -279,6 +316,8 @@ interface SpendingSummary { months: SpendingMonth[] }
 
 export default function FinancesBudgetPage() {
   const { t } = useI18n()
+  const { user } = useAuth()
+  const navigate = useNavigate()
   const nameKeys: Record<string, string> = {
     envelopeEssential:     t.finances.envelopeEssential,
     envelopeInvestment:    t.finances.envelopeInvestment,
@@ -325,20 +364,26 @@ export default function FinancesBudgetPage() {
   const [catBudget, setCatBudget]     = useState('')
   const [catEnvelopeId, setCatEnvelopeId] = useState<number>(0)
   const [catActuals, setCatActuals]   = useState<Map<number, number>>(new Map())
+  const [sharedGroups, setSharedGroups] = useState<SharedGroup[]>([])
+  const [shareModal, setShareModal]   = useState<Category | null>(null)
+  const [sharingGroupId, setSharingGroupId] = useState<number | null>(null)
+  const [sharingSaving, setSharingSaving]   = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
     try {
       const today = new Date()
       const currentMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`
-      const [d, spending] = await Promise.all([
+      const [d, spending, groups] = await Promise.all([
         apiFetch<BudgetData>('/finances/budget'),
         apiFetch<SpendingSummary>('/finances/spending-summary?months=1'),
+        apiFetch<SharedGroup[]>('/shared/groups').catch(() => [] as SharedGroup[]),
       ])
       setData(d)
       setIncomeVal(String(d.income.monthly_net))
       setIncomeCur(d.income.currency)
       setExpandedIds(new Set(d.envelopes.map(e => e.id)))
+      setSharedGroups(groups)
       const monthData = spending.months.find(m => m.month === currentMonth)
       const actMap = new Map<number, number>()
       if (monthData) {
@@ -422,6 +467,33 @@ export default function FinancesBudgetPage() {
   async function saveDescription(envId: number, description: string) {
     await apiFetch(`/finances/envelopes/${envId}`, { method: 'PATCH', body: JSON.stringify({ description }) })
     await load()
+  }
+
+  function openShareModal(cat: Category) {
+    setSharingGroupId(sharedGroups.length > 0 ? sharedGroups[0].id : null)
+    setShareModal(cat)
+  }
+
+  async function confirmShare() {
+    if (!shareModal || !sharingGroupId) return
+    setSharingSaving(true)
+    try {
+      await apiFetch('/shared/categories', {
+        method: 'POST',
+        body: JSON.stringify({
+          group_id: sharingGroupId,
+          name: shareModal.name,
+          icon: shareModal.icon,
+          color: shareModal.color ?? '#6366f1',
+          total_goal: shareModal.budget_monthly ?? 0,
+          currency: data?.income.currency ?? 'EUR',
+        }),
+      })
+      setShareModal(null)
+      await load()
+    } finally {
+      setSharingSaving(false)
+    }
   }
 
   if (loading) return (
@@ -608,6 +680,7 @@ export default function FinancesBudgetPage() {
             onDeleteCategory={deleteCategory}
             onAddCategory={openAddCategory}
             onSaveDescription={saveDescription}
+            onShareCategory={openShareModal}
             actuals={catActuals}
             currency={data.income.currency}
           />
@@ -619,6 +692,59 @@ export default function FinancesBudgetPage() {
         <span className="text-sm text-gray-500">{t.finances.totalBudgeted}</span>
         <span className="text-sm font-semibold text-gray-900">{fmt(totalBudget, data.income.currency)}</span>
       </div>
+
+      {/* Shared categories section */}
+      {sharedGroups.some(g => g.categories.length > 0) && (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between px-1">
+            <div>
+              <p className="text-xs text-gray-400 uppercase tracking-wide font-medium">{t.finances.sharedSection}</p>
+            </div>
+            <button
+              onClick={() => navigate('/finances/shared')}
+              className="text-xs text-[#0D0D0D] hover:opacity-70 transition-opacity font-medium"
+            >
+              {t.finances.viewShared} →
+            </button>
+          </div>
+          {sharedGroups.filter(g => g.categories.length > 0).map(group => {
+            const myMember = group.members.find(m => m.user_id === user?.id)
+            const myPct = myMember?.share_pct ?? 50
+            const activeMembers = group.members.filter(m => m.status === 'active')
+            return (
+              <div key={group.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                <div className="px-5 py-3 border-b border-gray-50 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold text-gray-900">{group.name}</span>
+                    <span className="text-xs bg-indigo-50 text-indigo-600 px-1.5 py-0.5 rounded-full font-medium">👥 {activeMembers.length}</span>
+                  </div>
+                  <span className="text-xs text-gray-400">{activeMembers.map(m => m.display.name.split(' ')[0]).join(', ')}</span>
+                </div>
+                <ul className="divide-y divide-gray-50">
+                  {group.categories.map(cat => {
+                    const myGoal = Math.round(cat.total_goal * myPct / 100)
+                    return (
+                      <li key={cat.id} className="px-5 py-2.5 flex items-center gap-3">
+                        <span className="text-base leading-none w-6 shrink-0">{cat.icon}</span>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-sm text-gray-700 truncate">{cat.name}</span>
+                            <span className="text-xs text-indigo-500 font-medium">👥</span>
+                          </div>
+                          <span className="text-xs text-gray-400">{myPct}% · {t.finances.myGoal}: {fmt(myGoal, cat.currency)}</span>
+                        </div>
+                        {cat.total_goal > 0 && (
+                          <span className="text-xs text-gray-400 shrink-0">/ {fmt(cat.total_goal, cat.currency)}</span>
+                        )}
+                      </li>
+                    )
+                  })}
+                </ul>
+              </div>
+            )
+          })}
+        </div>
+      )}
 
       {/* Category modal */}
       {modal && (
@@ -687,6 +813,49 @@ export default function FinancesBudgetPage() {
                 {saving ? '…' : t.common.save}
               </button>
               <button onClick={() => setModal(null)} className="px-4 text-sm text-gray-500 hover:text-gray-700 transition-colors">{t.common.cancel}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Share-to-group modal */}
+      {shareModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={() => setShareModal(null)}>
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6" onClick={e => e.stopPropagation()}>
+            <h3 className="font-semibold text-gray-900 mb-1">{t.finances.shareCategory}</h3>
+            <p className="text-xs text-gray-500 mb-4">{t.finances.pickGroupHint}</p>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-xl">{shareModal.icon}</span>
+              <span className="text-sm font-medium text-gray-800">{shareModal.name}</span>
+            </div>
+            {sharedGroups.length === 0 ? (
+              <p className="text-sm text-gray-500 mt-3 mb-4">{t.shared.noGroups}</p>
+            ) : (
+              <div className="mt-3 space-y-2 mb-4">
+                <label className="block text-xs text-gray-500 mb-1">{t.finances.pickGroup}</label>
+                {sharedGroups.map(g => (
+                  <button
+                    key={g.id}
+                    onClick={() => setSharingGroupId(g.id)}
+                    className={`w-full text-left px-3 py-2.5 rounded-xl border text-sm transition-colors ${sharingGroupId === g.id ? 'border-[#0D0D0D] bg-[#0D0D0D]/5 font-medium' : 'border-gray-200 hover:border-gray-300'}`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span>{g.name}</span>
+                      <span className="text-xs text-gray-400">👥 {g.members.filter(m => m.status === 'active').length}</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+            <div className="flex gap-2 mt-2">
+              <button
+                onClick={confirmShare}
+                disabled={sharingSaving || !sharingGroupId}
+                className="flex-1 bg-[#0D0D0D] text-white text-sm py-2 rounded-xl hover:opacity-80 transition-opacity disabled:opacity-40"
+              >
+                {sharingSaving ? '…' : t.finances.shareCategory}
+              </button>
+              <button onClick={() => setShareModal(null)} className="px-4 text-sm text-gray-500 hover:text-gray-700 transition-colors">{t.common.cancel}</button>
             </div>
           </div>
         </div>

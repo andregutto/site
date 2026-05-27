@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { apiFetch } from '../../lib/api'
 import { useI18n } from '../../contexts/I18nContext'
+import { useAuth } from '../../contexts/AuthContext'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -33,7 +34,6 @@ interface Group {
   members: Member[]
   categories: SharedCategory[]
 }
-
 interface DetailMember {
   member_id: number
   user_id: string
@@ -58,6 +58,7 @@ interface CategoryDetail {
   alerts: { user_id: string; name: string; overspent_by: number }[]
   total_spent: number
 }
+interface FinanceCategory { id: number; name: string; icon: string; color?: string }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -84,6 +85,7 @@ const COLORS = ['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#6366f1','#ec
 
 export default function SharedCategoriesPage() {
   const { t } = useI18n()
+  const { user } = useAuth()
   const s = t.shared
 
   const [groups, setGroups] = useState<Group[]>([])
@@ -94,10 +96,12 @@ export default function SharedCategoriesPage() {
   const [detailLoading, setDetailLoading] = useState(false)
 
   // Modals
-  const [showNewGroup, setShowNewGroup] = useState(false)
+  const [showGroupModal, setShowGroupModal] = useState<'new' | Group | null>(null)
   const [showInvite, setShowInvite] = useState<number | null>(null)
   const [showNewCat, setShowNewCat] = useState<number | null>(null)
   const [editCat, setEditCat] = useState<SharedCategory | null>(null)
+  const [showPickCategory, setShowPickCategory] = useState<number | null>(null) // groupId
+  const [prefilledCat, setPrefilledCat] = useState<Partial<SharedCategory> | null>(null)
   const [inviteResult, setInviteResult] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
 
@@ -106,9 +110,9 @@ export default function SharedCategoriesPage() {
     try {
       const data = await apiFetch<Group[]>('/shared/groups')
       setGroups(data)
-      if (data.length && !activeGroupId) setActiveGroupId(data[0].id)
+      if (data.length) setActiveGroupId(prev => prev ?? data[0].id)
     } catch { /* ignore */ } finally { setLoading(false) }
-  }, [activeGroupId])
+  }, [])
 
   useEffect(() => { load() }, [])
 
@@ -142,7 +146,7 @@ export default function SharedCategoriesPage() {
           <p className="text-xs mt-0.5" style={{ color: 'var(--arvo-fg-soft)' }}>{s.pageSubtitle}</p>
         </div>
         <button
-          onClick={() => setShowNewGroup(true)}
+          onClick={() => setShowGroupModal('new')}
           className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs transition-all"
           style={{ background: 'var(--arvo-black)', color: 'var(--arvo-offwhite)', fontFamily: 'var(--arvo-font-body)', letterSpacing: '0.08em' }}
         >
@@ -154,7 +158,7 @@ export default function SharedCategoriesPage() {
       </div>
 
       {groups.length === 0 ? (
-        <EmptyState s={s} onNew={() => setShowNewGroup(true)} />
+        <EmptyState s={s} onNew={() => setShowGroupModal('new')} />
       ) : (
         <div className="flex flex-col gap-4">
           {/* Group tabs */}
@@ -176,18 +180,25 @@ export default function SharedCategoriesPage() {
           {activeGroup && (
             <GroupPanel
               group={activeGroup}
+              userId={user?.id ?? ''}
               s={s}
-              onInvite={() => setShowInvite(activeGroup.id)}
-              onNewCat={() => setShowNewCat(activeGroup.id)}
+              onEditGroup={() => setShowGroupModal(activeGroup)}
+              onInvite={() => { setShowInvite(activeGroup.id); setInviteResult(null) }}
+              onResendInvite={async (email) => {
+                const data = await apiFetch<{ invite_url: string }>(`/shared/groups/${activeGroup.id}/invite`, { method: 'POST', body: JSON.stringify({ email }) })
+                setInviteResult(data.invite_url)
+                setShowInvite(activeGroup.id)
+              }}
+              onNewCat={() => { setPrefilledCat(null); setShowNewCat(activeGroup.id) }}
+              onPickExisting={() => setShowPickCategory(activeGroup.id)}
               onEditCat={setEditCat}
               onSelectCat={loadDetail}
               activeCatId={activeCatId}
-              onLeave={() => { load(); setActiveGroupId(null) }}
+              onRefresh={load}
               onDelete={() => { load(); setActiveGroupId(null) }}
             />
           )}
 
-          {/* Category detail panel */}
           {activeCatId && (
             <CategoryDetailPanel
               loading={detailLoading}
@@ -200,10 +211,15 @@ export default function SharedCategoriesPage() {
       )}
 
       {/* Modals */}
-      {showNewGroup && (
-        <NewGroupModal s={s} onClose={() => setShowNewGroup(false)} onCreated={() => { setShowNewGroup(false); load() }} />
+      {showGroupModal && (
+        <GroupModal
+          s={s}
+          initial={showGroupModal === 'new' ? undefined : showGroupModal}
+          onClose={() => setShowGroupModal(null)}
+          onSaved={(id) => { setShowGroupModal(null); load(); if (id) setActiveGroupId(id) }}
+        />
       )}
-      {showInvite && (
+      {showInvite !== null && (
         <InviteModal
           s={s}
           result={inviteResult}
@@ -219,13 +235,25 @@ export default function SharedCategoriesPage() {
           onClose={() => { setShowInvite(null); setInviteResult(null); setCopied(false) }}
         />
       )}
+      {showPickCategory !== null && (
+        <PickCategoryModal
+          s={s}
+          onClose={() => setShowPickCategory(null)}
+          onPick={(cat) => {
+            setShowPickCategory(null)
+            setPrefilledCat({ name: cat.name, icon: cat.icon, color: cat.color })
+            setShowNewCat(activeGroupId!)
+          }}
+        />
+      )}
       {(showNewCat !== null || editCat) && (
         <CategoryModal
           s={s}
           groupId={showNewCat ?? editCat!.group_id}
           initial={editCat ?? undefined}
-          onClose={() => { setShowNewCat(null); setEditCat(null) }}
-          onSaved={() => { setShowNewCat(null); setEditCat(null); load() }}
+          prefilled={prefilledCat ?? undefined}
+          onClose={() => { setShowNewCat(null); setEditCat(null); setPrefilledCat(null) }}
+          onSaved={() => { setShowNewCat(null); setEditCat(null); setPrefilledCat(null); load() }}
         />
       )}
     </div>
@@ -246,36 +274,65 @@ function EmptyState({ s, onNew }: { s: Record<string, string>; onNew: () => void
         <p className="text-sm font-medium" style={{ color: 'var(--arvo-black)' }}>{s.noGroups}</p>
         <p className="text-xs mt-1 max-w-xs" style={{ color: 'var(--arvo-fg-soft)' }}>{s.createFirstGroup}</p>
       </div>
-      <button
-        onClick={onNew}
-        className="px-4 py-2 rounded-lg text-xs"
-        style={{ background: 'var(--arvo-black)', color: 'var(--arvo-offwhite)', fontFamily: 'var(--arvo-font-body)', letterSpacing: '0.08em' }}
-      >{s.newGroup}</button>
+      <button onClick={onNew} className="px-4 py-2 rounded-lg text-xs"
+        style={{ background: 'var(--arvo-black)', color: 'var(--arvo-offwhite)', fontFamily: 'var(--arvo-font-body)', letterSpacing: '0.08em' }}>
+        {s.newGroup}
+      </button>
     </div>
   )
 }
 
 // ─── Group Panel ──────────────────────────────────────────────────────────────
 
-function GroupPanel({ group, s, onInvite, onNewCat, onEditCat, onSelectCat, activeCatId, onLeave, onDelete }: {
-  group: Group; s: Record<string, string>
-  onInvite: () => void; onNewCat: () => void; onEditCat: (c: SharedCategory) => void
-  onSelectCat: (id: number) => void; activeCatId: number | null
-  onLeave: () => void; onDelete: () => void
+function GroupPanel({ group, userId, s, onEditGroup, onInvite, onResendInvite, onNewCat, onPickExisting, onEditCat, onSelectCat, activeCatId, onRefresh, onDelete }: {
+  group: Group; userId: string; s: Record<string, string>
+  onEditGroup: () => void
+  onInvite: () => void
+  onResendInvite: (email: string) => Promise<void>
+  onNewCat: () => void
+  onPickExisting: () => void
+  onEditCat: (c: SharedCategory) => void
+  onSelectCat: (id: number) => void
+  activeCatId: number | null
+  onRefresh: () => void
+  onDelete: () => void
 }) {
   const [showMembers, setShowMembers] = useState(false)
-
-  async function handleLeave(memberId: number) {
-    if (!confirm(s.leaveConfirm)) return
-    await apiFetch(`/shared/groups/${group.id}/members/${memberId}`, { method: 'DELETE' })
-    onLeave()
-  }
+  const [editingPct, setEditingPct] = useState<number | null>(null) // memberId
+  const [pctVal, setPctVal] = useState('')
+  const [savingPct, setSavingPct] = useState(false)
+  const [resending, setResending] = useState<number | null>(null)
 
   async function handleDeleteGroup() {
     if (!confirm(s.deleteGroupConfirm)) return
     await apiFetch(`/shared/groups/${group.id}`, { method: 'DELETE' })
     onDelete()
   }
+
+  async function handleLeave(memberId: number) {
+    if (!confirm(s.leaveConfirm)) return
+    await apiFetch(`/shared/groups/${group.id}/members/${memberId}`, { method: 'DELETE' })
+    onRefresh()
+  }
+
+  async function savePct(memberId: number) {
+    const pct = parseFloat(pctVal)
+    if (isNaN(pct) || pct < 0 || pct > 100) { setEditingPct(null); return }
+    setSavingPct(true)
+    try {
+      await apiFetch(`/shared/groups/${group.id}/members/${memberId}`, { method: 'PATCH', body: JSON.stringify({ share_pct: pct }) })
+      onRefresh()
+    } finally { setSavingPct(false); setEditingPct(null) }
+  }
+
+  async function handleResend(m: Member) {
+    if (!m.invite_email) return
+    setResending(m.id)
+    try { await onResendInvite(m.invite_email) }
+    finally { setResending(null) }
+  }
+
+  const myMember = group.members.find(m => m.user_id === userId)
 
   return (
     <div className="flex flex-col gap-3">
@@ -290,14 +347,19 @@ function GroupPanel({ group, s, onInvite, onNewCat, onEditCat, onSelectCat, acti
             ))}
           </div>
           <button onClick={() => setShowMembers(v => !v)} className="text-xs" style={{ color: 'var(--arvo-fg-soft)', fontFamily: 'var(--arvo-font-body)' }}>
-            {s.groupMembers} ({group.members.filter(m => m.status !== 'left').length})
+            {group.name} · {s.groupMembers} ({group.members.filter(m => m.status !== 'left').length})
           </button>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-1.5">
+          <button onClick={onEditGroup} className="px-2 py-1.5 rounded-lg text-xs" style={{ color: 'var(--arvo-fg-soft)', background: 'rgba(13,13,13,0.06)' }} title={s.editGroup}>
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M11.5 2.5l2 2-8 8H3.5v-2l8-8z" />
+            </svg>
+          </button>
           <button onClick={onInvite} className="px-2.5 py-1.5 rounded-lg text-xs transition-all" style={{ background: 'rgba(13,13,13,0.07)', color: 'var(--arvo-fg)', fontFamily: 'var(--arvo-font-body)', letterSpacing: '0.06em' }}>
             + {s.invite}
           </button>
-          <button onClick={handleDeleteGroup} className="px-2 py-1.5 rounded-lg text-xs transition-all" style={{ color: 'var(--arvo-red)', background: 'rgba(214,59,47,0.06)' }}>
+          <button onClick={handleDeleteGroup} className="px-2 py-1.5 rounded-lg text-xs" style={{ color: 'var(--arvo-red)', background: 'rgba(214,59,47,0.06)' }}>
             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
               <path strokeLinecap="round" strokeLinejoin="round" d="M2 4.5h12v1.5H2zM3.5 6v7h9V6M6 9h4M6.5 2.5h3" />
             </svg>
@@ -307,21 +369,69 @@ function GroupPanel({ group, s, onInvite, onNewCat, onEditCat, onSelectCat, acti
 
       {/* Members list */}
       {showMembers && (
-        <div className="rounded-xl p-3 flex flex-col gap-2" style={{ background: 'rgba(13,13,13,0.04)', border: '1px solid var(--arvo-border-soft)' }}>
-          {group.members.filter(m => m.status !== 'left').map(m => (
-            <div key={m.id} className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <Avatar display={m.display} size={28} />
-                <div>
-                  <p className="text-xs font-medium" style={{ color: 'var(--arvo-black)' }}>{m.display.name}</p>
-                  <p className="text-[10px]" style={{ color: 'var(--arvo-fg-soft)' }}>{m.status === 'pending' ? s.pending : `${m.share_pct}%`}</p>
+        <div className="rounded-xl p-3 flex flex-col gap-2.5" style={{ background: 'rgba(13,13,13,0.04)', border: '1px solid var(--arvo-border-soft)' }}>
+          {group.members.filter(m => m.status !== 'left').map(m => {
+            const isMe = m.user_id === userId
+            return (
+              <div key={m.id} className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <Avatar display={m.display} size={28} />
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium truncate" style={{ color: 'var(--arvo-black)' }}>
+                      {m.display.name}{isMe ? ' (você)' : ''}
+                    </p>
+                    {m.status === 'pending' ? (
+                      <p className="text-[10px]" style={{ color: 'var(--arvo-fg-soft)' }}>{s.pending}</p>
+                    ) : editingPct === m.id ? (
+                      <div className="flex items-center gap-1 mt-0.5">
+                        <input
+                          type="number" min="0" max="100" value={pctVal}
+                          onChange={e => setPctVal(e.target.value)}
+                          onKeyDown={e => { if (e.key === 'Enter') savePct(m.id); if (e.key === 'Escape') setEditingPct(null) }}
+                          autoFocus
+                          className="w-14 px-1.5 py-0.5 rounded text-xs"
+                          style={{ border: '1px solid var(--arvo-border)', outline: 'none' }}
+                        />
+                        <span className="text-[10px]" style={{ color: 'var(--arvo-fg-soft)' }}>%</span>
+                        <button onClick={() => savePct(m.id)} disabled={savingPct} className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: 'var(--arvo-black)', color: 'white' }}>
+                          {savingPct ? '...' : '✓'}
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => isMe ? (setEditingPct(m.id), setPctVal(String(m.share_pct))) : undefined}
+                        className="text-[10px]"
+                        style={{ color: 'var(--arvo-fg-soft)', cursor: isMe ? 'pointer' : 'default', textDecoration: isMe ? 'underline dotted' : 'none' }}
+                        title={isMe ? s.editPct : undefined}
+                      >
+                        {m.share_pct}%
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  {m.status === 'pending' && (
+                    <button
+                      onClick={() => handleResend(m)}
+                      disabled={resending === m.id}
+                      className="text-[10px] px-2 py-1 rounded"
+                      style={{ color: 'var(--arvo-black)', background: 'rgba(13,13,13,0.08)', opacity: resending === m.id ? 0.5 : 1 }}
+                    >
+                      {resending === m.id ? '...' : (s.resendInvite ?? 'Reenviar link')}
+                    </button>
+                  )}
+                  {isMe && (
+                    <button onClick={() => handleLeave(m.id)} className="text-[10px] px-2 py-1 rounded" style={{ color: 'var(--arvo-fg-soft)', background: 'rgba(13,13,13,0.06)' }}>
+                      {s.leaveGroup}
+                    </button>
+                  )}
                 </div>
               </div>
-              <button onClick={() => handleLeave(m.id)} className="text-[10px] px-2 py-1 rounded" style={{ color: 'var(--arvo-fg-soft)', background: 'rgba(13,13,13,0.06)' }}>
-                {s.leaveGroup}
-              </button>
-            </div>
-          ))}
+            )
+          })}
+          <p className="text-[10px] mt-1" style={{ color: 'var(--arvo-fg-soft)' }}>
+            {s.editPctHint ?? 'Clique no seu percentual para editar a sua parte.'}
+          </p>
         </div>
       )}
 
@@ -330,34 +440,50 @@ function GroupPanel({ group, s, onInvite, onNewCat, onEditCat, onSelectCat, acti
         {group.categories.length === 0 ? (
           <p className="text-xs text-center py-4" style={{ color: 'var(--arvo-fg-soft)' }}>{s.noCategories}</p>
         ) : (
-          group.categories.map(cat => (
-            <SharedCategoryCard
-              key={cat.id}
-              cat={cat}
-              group={group}
-              s={s}
-              active={activeCatId === cat.id}
-              onClick={() => onSelectCat(cat.id)}
-              onEdit={() => onEditCat(cat)}
-            />
-          ))
+          group.categories.map(cat => {
+            const myPct = myMember?.share_pct ?? 50
+            const myGoal = cat.total_goal * myPct / 100
+            return (
+              <SharedCategoryCard
+                key={cat.id}
+                cat={{ ...cat, my_share_pct: myPct, my_goal: myGoal }}
+                group={group}
+                s={s}
+                active={activeCatId === cat.id}
+                onClick={() => onSelectCat(cat.id)}
+                onEdit={() => onEditCat(cat)}
+              />
+            )
+          })
         )}
-        <button
-          onClick={onNewCat}
-          className="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-xs transition-all border border-dashed"
-          style={{ borderColor: 'var(--arvo-border)', color: 'var(--arvo-fg-soft)', fontFamily: 'var(--arvo-font-body)' }}
-        >
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M8 1v14M1 8h14" />
-          </svg>
-          {s.addCategory}
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={onNewCat}
+            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-xs transition-all border border-dashed"
+            style={{ borderColor: 'var(--arvo-border)', color: 'var(--arvo-fg-soft)', fontFamily: 'var(--arvo-font-body)' }}
+          >
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8 1v14M1 8h14" />
+            </svg>
+            {s.addCategory}
+          </button>
+          <button
+            onClick={onPickExisting}
+            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-xs transition-all border border-dashed"
+            style={{ borderColor: 'var(--arvo-border)', color: 'var(--arvo-fg-soft)', fontFamily: 'var(--arvo-font-body)' }}
+          >
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M1.5 3h13M1.5 8h8.5M1.5 13h5.5" />
+            </svg>
+            {s.useExistingCategory ?? 'Usar existente'}
+          </button>
+        </div>
       </div>
     </div>
   )
 }
 
-// ─── Shared Category Card ────────────────────────────────────────────────────
+// ─── Shared Category Card ─────────────────────────────────────────────────────
 
 function SharedCategoryCard({ cat, group, s, active, onClick, onEdit }: {
   cat: SharedCategory; group: Group; s: Record<string, string>
@@ -399,14 +525,10 @@ function SharedCategoryCard({ cat, group, s, active, onClick, onEdit }: {
           </button>
         </div>
       </div>
-
-      {/* Goals row */}
       <div className="flex justify-between text-[10px] mb-1.5" style={{ color: 'var(--arvo-fg-soft)' }}>
         <span>{s.yourGoal}: <strong style={{ color: 'var(--arvo-black)' }}>{fmt(cat.my_goal, cat.currency)}</strong> ({myPct}%)</span>
         <span>{s.totalGoal}: <strong style={{ color: 'var(--arvo-black)' }}>{fmt(cat.total_goal, cat.currency)}</strong></span>
       </div>
-
-      {/* Progress bar (goal split visual) */}
       <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(13,13,13,0.08)' }}>
         <div className="h-full rounded-full" style={{ width: `${myPct}%`, background: cat.color }} />
       </div>
@@ -430,12 +552,9 @@ function CategoryDetailPanel({ loading, detail, s, onClose }: {
           </svg>
         </button>
       </div>
-
       {loading && <div className="h-24 rounded-lg animate-pulse" style={{ background: 'var(--arvo-border)' }} />}
-
       {!loading && detail && (
         <>
-          {/* Alerts */}
           {detail.alerts.map(a => (
             <div key={a.user_id} className="flex items-center gap-2 px-3 py-2 rounded-lg" style={{ background: 'rgba(214,59,47,0.08)', border: '1px solid rgba(214,59,47,0.15)' }}>
               <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4 shrink-0" style={{ color: 'var(--arvo-red)' }}>
@@ -446,8 +565,6 @@ function CategoryDetailPanel({ loading, detail, s, onClose }: {
               </p>
             </div>
           ))}
-
-          {/* Member progress bars */}
           <div className="flex flex-col gap-3">
             {detail.members.map(m => {
               const pct = m.goal > 0 ? Math.min(100, Math.round(m.spent / m.goal * 100)) : 0
@@ -457,7 +574,9 @@ function CategoryDetailPanel({ loading, detail, s, onClose }: {
                   <div className="flex items-center justify-between mb-1">
                     <div className="flex items-center gap-1.5">
                       <Avatar display={m.display} size={20} />
-                      <span className="text-xs" style={{ color: 'var(--arvo-black)', fontWeight: m.is_me ? 600 : 400 }}>{m.is_me ? 'Você' : m.display.name}</span>
+                      <span className="text-xs" style={{ color: 'var(--arvo-black)', fontWeight: m.is_me ? 600 : 400 }}>
+                        {m.is_me ? 'Você' : m.display.name}
+                      </span>
                     </div>
                     <span className="text-xs" style={{ color: over ? 'var(--arvo-red)' : 'var(--arvo-fg-soft)' }}>
                       {fmt(m.spent, detail.category.currency)} / {fmt(m.goal, detail.category.currency)}
@@ -470,14 +589,10 @@ function CategoryDetailPanel({ loading, detail, s, onClose }: {
               )
             })}
           </div>
-
-          {/* Total */}
           <div className="flex justify-between text-xs pt-1" style={{ borderTop: '1px solid var(--arvo-border-soft)', color: 'var(--arvo-fg-soft)' }}>
             <span>{s.totalSpent}</span>
             <strong style={{ color: 'var(--arvo-black)' }}>{fmt(detail.total_spent, detail.category.currency)} / {fmt(detail.category.total_goal, detail.category.currency)}</strong>
           </div>
-
-          {/* Transactions */}
           {detail.transactions.length > 0 && (
             <div className="flex flex-col gap-1">
               <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: 'var(--arvo-fg-soft)', fontFamily: 'var(--arvo-font-body)' }}>{s.transactions}</p>
@@ -506,8 +621,13 @@ function CategoryDetailPanel({ loading, detail, s, onClose }: {
 
 // ─── Modals ───────────────────────────────────────────────────────────────────
 
-function NewGroupModal({ s, onClose, onCreated }: { s: Record<string, string>; onClose: () => void; onCreated: () => void }) {
-  const [name, setName] = useState('')
+function GroupModal({ s, initial, onClose, onSaved }: {
+  s: Record<string, string>
+  initial?: Group
+  onClose: () => void
+  onSaved: (id?: number) => void
+}) {
+  const [name, setName] = useState(initial?.name ?? '')
   const [saving, setSaving] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
@@ -515,30 +635,35 @@ function NewGroupModal({ s, onClose, onCreated }: { s: Record<string, string>; o
     if (!name.trim()) return
     setSaving(true)
     try {
-      await apiFetch('/shared/groups', { method: 'POST', body: JSON.stringify({ name }) })
-      onCreated()
+      if (initial) {
+        await apiFetch(`/shared/groups/${initial.id}`, { method: 'PATCH', body: JSON.stringify({ name }) })
+        onSaved()
+      } else {
+        const data = await apiFetch<{ id: number }>('/shared/groups', { method: 'POST', body: JSON.stringify({ name }) })
+        onSaved(data.id)
+      }
     } finally { setSaving(false) }
   }
 
   return (
     <ModalOverlay onClose={onClose}>
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <h2 className="text-sm font-semibold" style={{ color: 'var(--arvo-black)', fontFamily: 'var(--arvo-font-body)', letterSpacing: '0.06em' }}>{s.newGroup}</h2>
+        <h2 className="text-sm font-semibold" style={{ color: 'var(--arvo-black)', fontFamily: 'var(--arvo-font-body)', letterSpacing: '0.06em' }}>
+          {initial ? (s.editGroup ?? 'Editar grupo') : s.newGroup}
+        </h2>
         <div className="flex flex-col gap-1">
           <label className="text-[11px] uppercase tracking-widest" style={{ color: 'var(--arvo-fg-soft)', fontFamily: 'var(--arvo-font-body)' }}>{s.groupName}</label>
           <input
-            value={name}
-            onChange={e => setName(e.target.value)}
-            placeholder={s.groupNamePlaceholder}
-            autoFocus
+            value={name} onChange={e => setName(e.target.value)}
+            placeholder={s.groupNamePlaceholder} autoFocus
             className="w-full px-3 py-2.5 rounded-lg text-sm"
             style={{ border: '1px solid var(--arvo-border)', background: 'white', color: 'var(--arvo-black)', outline: 'none' }}
           />
         </div>
         <div className="flex gap-2 justify-end">
-          <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg text-xs" style={{ background: 'rgba(13,13,13,0.07)', color: 'var(--arvo-fg)' }}>Cancelar</button>
+          <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg text-xs" style={{ background: 'rgba(13,13,13,0.07)', color: 'var(--arvo-fg)' }}>{s.cancel ?? 'Cancelar'}</button>
           <button type="submit" disabled={saving || !name.trim()} className="px-4 py-2 rounded-lg text-xs" style={{ background: 'var(--arvo-black)', color: 'var(--arvo-offwhite)', opacity: saving ? 0.6 : 1 }}>
-            {saving ? '...' : s.newGroup}
+            {saving ? '...' : (initial ? (s.save ?? 'Salvar') : s.newGroup)}
           </button>
         </div>
       </form>
@@ -575,8 +700,8 @@ function InviteModal({ s, result, copied, onInvite, onCopy, onClose }: {
             <div className="flex flex-col gap-1">
               <label className="text-[11px] uppercase tracking-widest" style={{ color: 'var(--arvo-fg-soft)', fontFamily: 'var(--arvo-font-body)' }}>{s.inviteEmail}</label>
               <input
-                type="email" value={email} onChange={e => setEmail(e.target.value)}
-                autoFocus className="w-full px-3 py-2.5 rounded-lg text-sm"
+                type="email" value={email} onChange={e => setEmail(e.target.value)} autoFocus
+                className="w-full px-3 py-2.5 rounded-lg text-sm"
                 style={{ border: `1px solid ${err ? 'var(--arvo-red)' : 'var(--arvo-border)'}`, background: 'white', color: 'var(--arvo-black)', outline: 'none' }}
               />
               {err && <p className="text-xs" style={{ color: 'var(--arvo-red)' }}>{err}</p>}
@@ -607,12 +732,64 @@ function InviteModal({ s, result, copied, onInvite, onCopy, onClose }: {
   )
 }
 
-function CategoryModal({ s, groupId, initial, onClose, onSaved }: {
-  s: Record<string, string>; groupId: number; initial?: SharedCategory; onClose: () => void; onSaved: () => void
+function PickCategoryModal({ s, onClose, onPick }: {
+  s: Record<string, string>
+  onClose: () => void
+  onPick: (cat: FinanceCategory) => void
 }) {
-  const [name, setName] = useState(initial?.name ?? '')
-  const [icon, setIcon] = useState(initial?.icon ?? '🏠')
-  const [color, setColor] = useState(initial?.color ?? '#3b82f6')
+  const [cats, setCats] = useState<FinanceCategory[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    apiFetch<FinanceCategory[]>('/finances/categories')
+      .then(data => setCats(data))
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [])
+
+  return (
+    <ModalOverlay onClose={onClose}>
+      <div className="flex flex-col gap-3">
+        <h2 className="text-sm font-semibold" style={{ color: 'var(--arvo-black)', fontFamily: 'var(--arvo-font-body)', letterSpacing: '0.06em' }}>
+          {s.useExistingCategory ?? 'Usar categoria existente'}
+        </h2>
+        <p className="text-xs" style={{ color: 'var(--arvo-fg-soft)' }}>
+          {s.pickCategoryHint ?? 'Escolha uma categoria do planejamento para usar como base. Você poderá ajustar nome, ícone e meta.'}
+        </p>
+        {loading ? (
+          <div className="h-20 animate-pulse rounded-lg" style={{ background: 'var(--arvo-border)' }} />
+        ) : cats.length === 0 ? (
+          <p className="text-xs text-center py-4" style={{ color: 'var(--arvo-fg-soft)' }}>Nenhuma categoria encontrada.</p>
+        ) : (
+          <div className="flex flex-col gap-1 max-h-64 overflow-y-auto">
+            {cats.map(cat => (
+              <button
+                key={cat.id}
+                onClick={() => onPick(cat)}
+                className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-left transition-all hover:bg-gray-50"
+                style={{ border: '1px solid transparent' }}
+              >
+                <span style={{ fontSize: 18 }}>{cat.icon}</span>
+                <span className="text-sm" style={{ color: 'var(--arvo-black)' }}>{cat.name}</span>
+              </button>
+            ))}
+          </div>
+        )}
+        <button type="button" onClick={onClose} className="text-xs self-end mt-1" style={{ color: 'var(--arvo-fg-soft)' }}>{s.cancel ?? 'Cancelar'}</button>
+      </div>
+    </ModalOverlay>
+  )
+}
+
+function CategoryModal({ s, groupId, initial, prefilled, onClose, onSaved }: {
+  s: Record<string, string>; groupId: number
+  initial?: SharedCategory
+  prefilled?: Partial<SharedCategory>
+  onClose: () => void; onSaved: () => void
+}) {
+  const [name, setName] = useState(initial?.name ?? prefilled?.name ?? '')
+  const [icon, setIcon] = useState(initial?.icon ?? prefilled?.icon ?? '🏠')
+  const [color, setColor] = useState(initial?.color ?? prefilled?.color ?? '#3b82f6')
   const [goal, setGoal] = useState(String(initial?.total_goal ?? ''))
   const [currency, setCurrency] = useState(initial?.currency ?? 'EUR')
   const [saving, setSaving] = useState(false)
@@ -644,41 +821,33 @@ function CategoryModal({ s, groupId, initial, onClose, onSaved }: {
         <h2 className="text-sm font-semibold" style={{ color: 'var(--arvo-black)', fontFamily: 'var(--arvo-font-body)', letterSpacing: '0.06em' }}>
           {initial ? s.editCategory : s.newSharedCategory}
         </h2>
-
-        {/* Icon picker */}
         <div>
           <label className="text-[11px] uppercase tracking-widest block mb-1" style={{ color: 'var(--arvo-fg-soft)', fontFamily: 'var(--arvo-font-body)' }}>Ícone</label>
           <div className="flex flex-wrap gap-1">
             {ICONS.map(ic => (
               <button key={ic} type="button" onClick={() => setIcon(ic)}
                 className="w-8 h-8 rounded-lg text-base flex items-center justify-center transition-all"
-                style={{ background: ic === icon ? color + '30' : 'rgba(13,13,13,0.05)', border: ic === icon ? `1px solid ${color}` : '1px solid transparent' }}
-              >{ic}</button>
+                style={{ background: ic === icon ? color + '30' : 'rgba(13,13,13,0.05)', border: ic === icon ? `1px solid ${color}` : '1px solid transparent' }}>
+                {ic}
+              </button>
             ))}
           </div>
         </div>
-
-        {/* Color picker */}
         <div>
           <label className="text-[11px] uppercase tracking-widest block mb-1" style={{ color: 'var(--arvo-fg-soft)', fontFamily: 'var(--arvo-font-body)' }}>Cor</label>
           <div className="flex gap-1.5 flex-wrap">
             {COLORS.map(c => (
               <button key={c} type="button" onClick={() => setColor(c)}
                 className="w-6 h-6 rounded-full transition-all"
-                style={{ background: c, boxShadow: c === color ? `0 0 0 2px white, 0 0 0 3px ${c}` : undefined }}
-              />
+                style={{ background: c, boxShadow: c === color ? `0 0 0 2px white, 0 0 0 3px ${c}` : undefined }} />
             ))}
           </div>
         </div>
-
-        {/* Name */}
         <div className="flex flex-col gap-1">
           <label className="text-[11px] uppercase tracking-widest" style={{ color: 'var(--arvo-fg-soft)', fontFamily: 'var(--arvo-font-body)' }}>Nome</label>
           <input value={name} onChange={e => setName(e.target.value)} autoFocus className="w-full px-3 py-2.5 rounded-lg text-sm"
             style={{ border: '1px solid var(--arvo-border)', background: 'white', color: 'var(--arvo-black)', outline: 'none' }} />
         </div>
-
-        {/* Goal + currency */}
         <div className="flex gap-2">
           <div className="flex-1 flex flex-col gap-1">
             <label className="text-[11px] uppercase tracking-widest" style={{ color: 'var(--arvo-fg-soft)', fontFamily: 'var(--arvo-font-body)' }}>{s.totalGoal}</label>
@@ -695,15 +864,14 @@ function CategoryModal({ s, groupId, initial, onClose, onSaved }: {
             </select>
           </div>
         </div>
-
         <div className="flex gap-2 justify-between items-center">
           {initial && (
             <button type="button" onClick={handleDelete} className="text-xs" style={{ color: 'var(--arvo-red)' }}>Excluir</button>
           )}
           <div className="flex gap-2 ml-auto">
-            <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg text-xs" style={{ background: 'rgba(13,13,13,0.07)', color: 'var(--arvo-fg)' }}>Cancelar</button>
+            <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg text-xs" style={{ background: 'rgba(13,13,13,0.07)', color: 'var(--arvo-fg)' }}>{s.cancel ?? 'Cancelar'}</button>
             <button type="submit" disabled={saving || !name.trim()} className="px-4 py-2 rounded-lg text-xs" style={{ background: color, color: 'white', opacity: saving ? 0.6 : 1 }}>
-              {saving ? '...' : 'Salvar'}
+              {saving ? '...' : (s.save ?? 'Salvar')}
             </button>
           </div>
         </div>
@@ -712,13 +880,11 @@ function CategoryModal({ s, groupId, initial, onClose, onSaved }: {
   )
 }
 
-// ─── Modal Overlay ────────────────────────────────────────────────────────────
-
 function ModalOverlay({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center" style={{ background: 'rgba(0,0,0,0.45)' }} onClick={onClose}>
       <div
-        className="w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl p-6 flex flex-col gap-0"
+        className="w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl p-6 max-h-[90vh] overflow-y-auto"
         style={{ background: 'white', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}
         onClick={e => e.stopPropagation()}
       >

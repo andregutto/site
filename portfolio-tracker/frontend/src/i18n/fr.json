@@ -506,6 +506,13 @@
     "monthlyBudget": "Budget mensuel (optionnel)",
     "unallocatedBanner": "non alloué",
     "overspentBanner": "Les catégories dépassent le revenu de",
+    "sharedSection": "Catégories partagées",
+    "sharedSectionSubtitle": "Catégories de budget partagées avec d'autres",
+    "viewShared": "Voir tout",
+    "shareCategory": "Partager",
+    "pickGroup": "Quel groupe ?",
+    "pickGroupHint": "La catégorie sera partagée avec les membres du groupe.",
+    "myGoal": "Mon objectif",
     "configureIncome": "Configurez votre revenu mensuel pour commencer",
     "configureBudget": "Configurer la planification",
     "configureHint": "Allez dans Planification pour définir votre revenu et enveloppes",
@@ -1327,6 +1334,13 @@
     "transactions": "Transactions",
     "tagTransaction": "Catégorie partagée",
     "inviteSent": "Lien d'invitation généré",
-    "shareGoal": "Répartition de l'objectif"
+    "shareGoal": "Répartition de l'objectif",
+    "resendInvite": "Renvoyer le lien",
+    "editGroup": "Modifier le groupe",
+    "editPct": "Modifier mon pourcentage",
+    "editPctHint": "Cliquez sur votre pourcentage pour modifier votre part.",
+    "useExistingCategory": "Utiliser existante",
+    "pickCategoryHint": "Choisissez une catégorie du planning comme base. Vous pourrez ajuster le nom, l'icône et l'objectif.",
+    "save": "Enregistrer"
   }
 }

@@ -506,6 +506,13 @@
     "monthlyBudget": "Budget mensal (opcional)",
     "unallocatedBanner": "sem categoria atribuída",
     "overspentBanner": "Categorias excedem a renda em",
+    "sharedSection": "Categorias compartilhadas",
+    "sharedSectionSubtitle": "Categorias de orçamento com outras pessoas",
+    "viewShared": "Ver tudo",
+    "shareCategory": "Compartilhar",
+    "pickGroup": "Com qual grupo?",
+    "pickGroupHint": "A categoria será compartilhada com os membros do grupo.",
+    "myGoal": "Minha meta",
     "configureIncome": "Configure sua renda mensal para começar",
     "configureBudget": "Configurar planejamento",
     "configureHint": "Acesse Planejamento para definir sua renda e envelopes",
@@ -1327,6 +1334,13 @@
     "transactions": "Transações",
     "tagTransaction": "Categoria compartilhada",
     "inviteSent": "Link de convite gerado",
-    "shareGoal": "Divisão da meta"
+    "shareGoal": "Divisão da meta",
+    "resendInvite": "Reenviar link",
+    "editGroup": "Editar grupo",
+    "editPct": "Editar meu percentual",
+    "editPctHint": "Clique no seu percentual para editar a sua parte.",
+    "useExistingCategory": "Usar existente",
+    "pickCategoryHint": "Escolha uma categoria do planejamento para usar como base. Você poderá ajustar nome, ícone e meta.",
+    "save": "Salvar"
   }
 }
