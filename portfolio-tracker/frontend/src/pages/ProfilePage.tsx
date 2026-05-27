@@ -239,6 +239,13 @@ export default function ProfilePage() {
         manual_values: Record<string, unknown>[]
         finance_transactions: Record<string, unknown>[]
         finance_accounts: Record<string, unknown>[]
+        finance_income: Record<string, unknown>[]
+        finance_envelopes: Record<string, unknown>[]
+        finance_categories: Record<string, unknown>[]
+        finance_freedom_plans: Record<string, unknown>[]
+        finance_moments: Record<string, unknown>[]
+        shared_groups: Record<string, unknown>[]
+        shared_categories: Record<string, unknown>[]
       }>('/profile/export')
 
       const wb = XLSX.utils.book_new()
@@ -248,48 +255,99 @@ export default function ProfilePage() {
         transform: (r: T) => Record<string, unknown>
       ) => rows.map(transform)
 
-      if (data.assets.length > 0)
-        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(data.assets), 'Ativos')
+      const sheet = (rows: Record<string, unknown>[], name: string) => {
+        if (rows.length > 0)
+          XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), name)
+      }
+
+      // Portfolio
+      sheet(data.assets, 'Ativos')
 
       if (data.contributions.length > 0)
-        XLSX.utils.book_append_sheet(wb,
-          XLSX.utils.json_to_sheet(flat(data.contributions, c => ({
-            data: c.date, tipo: c.type,
-            ticker: (c.assets as { code?: string })?.code ?? '',
-            ativo: (c.assets as { name?: string })?.name ?? '',
-            quantidade: c.quantity, preco: c.price_orig, moeda: c.currency,
-            fx_brl: c.fx_rate_brl, total_brl: c.value_brl, lucro_brl: c.profit_brl,
-          }))), 'Aportes')
+        sheet(flat(data.contributions, c => ({
+          data: c.date, tipo: c.type,
+          ticker: (c.assets as { code?: string })?.code ?? '',
+          ativo: (c.assets as { name?: string })?.name ?? '',
+          quantidade: c.quantity, preco: c.price_orig, moeda: c.currency,
+          fx_brl: c.fx_rate_brl, total_brl: c.value_brl, lucro_brl: c.profit_brl,
+        })), 'Aportes')
 
       if (data.dividends.length > 0)
-        XLSX.utils.book_append_sheet(wb,
-          XLSX.utils.json_to_sheet(flat(data.dividends, d => ({
-            data_ex: d.ex_date, data_pgto: d.pay_date,
-            ticker: (d.assets as { code?: string })?.code ?? '',
-            tipo: d.dividend_type, valor_por_cota: d.amount_per_share,
-            moeda: d.currency, total_brl: d.amount_brl,
-          }))), 'Dividendos')
+        sheet(flat(data.dividends, d => ({
+          data_ex: d.ex_date, data_pgto: d.pay_date,
+          ticker: (d.assets as { code?: string })?.code ?? '',
+          tipo: d.dividend_type, valor_por_cota: d.amount_per_share,
+          moeda: d.currency, total_brl: d.amount_brl,
+        })), 'Dividendos')
 
       if (data.manual_values.length > 0)
-        XLSX.utils.book_append_sheet(wb,
-          XLSX.utils.json_to_sheet(flat(data.manual_values, m => ({
-            data: m.ref_date,
-            ticker: (m.assets as { code?: string })?.code ?? '',
-            ativo: (m.assets as { name?: string })?.name ?? '',
-            valor: m.value, moeda: m.currency, notas: m.notes,
-          }))), 'Valores Manuais')
+        sheet(flat(data.manual_values, m => ({
+          data: m.ref_date,
+          ticker: (m.assets as { code?: string })?.code ?? '',
+          ativo: (m.assets as { name?: string })?.name ?? '',
+          valor: m.value, moeda: m.currency, notas: m.notes,
+        })), 'Valores Manuais')
 
+      // Finanças pessoais
       if (data.finance_transactions.length > 0)
-        XLSX.utils.book_append_sheet(wb,
-          XLSX.utils.json_to_sheet(flat(data.finance_transactions, tx => ({
-            data: tx.date, descricao: tx.description, valor: tx.amount, moeda: tx.currency,
-            categoria: (tx.finance_categories as { name?: string })?.name ?? '',
-            conta: (tx.finance_accounts as { name?: string })?.name ?? '',
-            notas: tx.notes,
-          }))), 'Transações')
+        sheet(flat(data.finance_transactions, tx => ({
+          data: tx.date, descricao: tx.description, valor: tx.amount, moeda: tx.currency,
+          categoria: (tx.finance_categories as { name?: string })?.name ?? '',
+          conta: (tx.finance_accounts as { name?: string })?.name ?? '',
+          momento: (tx.finance_moments as { name?: string })?.name ?? '',
+          notas: tx.notes,
+          transferencia_interna: tx.is_internal_transfer,
+          excluir_stats: tx.exclude_from_stats,
+        })), 'Transações')
 
-      if (data.finance_accounts.length > 0)
-        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(data.finance_accounts), 'Contas')
+      sheet(data.finance_accounts, 'Contas')
+
+      if (data.finance_income.length > 0)
+        sheet(flat(data.finance_income, r => ({
+          renda_mensal_liquida: r.monthly_net, moeda: r.currency, atualizado_em: r.updated_at,
+        })), 'Renda')
+
+      if (data.finance_envelopes.length > 0)
+        sheet(flat(data.finance_envelopes, e => ({
+          nome: e.name, icone: e.icon, percentual_meta: e.pct_target,
+          tipo: e.type, cor: e.color, ordem: e.sort_order,
+        })), 'Envelopes')
+
+      if (data.finance_categories.length > 0)
+        sheet(flat(data.finance_categories, c => ({
+          nome: c.name, icone: c.icon, cor: c.color,
+          envelope: (c.finance_envelopes as { name?: string })?.name ?? '',
+          orcamento_mensal: c.budget_monthly ?? '',
+        })), 'Categorias')
+
+      if (data.finance_moments.length > 0)
+        sheet(flat(data.finance_moments, m => ({
+          nome: m.name, descricao: m.description, icone: m.icon,
+          cor: m.color, inicio: m.start_date, fim: m.end_date, criado_em: m.created_at,
+        })), 'Momentos')
+
+      if (data.finance_freedom_plans.length > 0)
+        sheet(flat(data.finance_freedom_plans, p => ({
+          nome: p.name, ativo: p.is_active, capital_inicial: p.initial_capital,
+          aporte_mensal: p.monthly_contribution, taxa_retorno_mensal: p.monthly_return_rate,
+          taxa_renda_passiva: p.monthly_income_rate, meta: p.target_amount,
+          moeda: p.currency, horizonte_anos: p.horizon_years,
+          notas: p.notes, criado_em: p.created_at,
+        })), 'Liberdade Financeira')
+
+      // Compartilhado
+      if (data.shared_groups.length > 0)
+        sheet(flat(data.shared_groups, g => ({
+          grupo: g.name, criado_em: g.created_at,
+          membros: JSON.stringify(g.shared_group_members),
+        })), 'Grupos Compartilhados')
+
+      if (data.shared_categories.length > 0)
+        sheet(flat(data.shared_categories, c => ({
+          nome: c.name, icone: c.icon, cor: c.color,
+          grupo: (c.shared_groups as { name?: string })?.name ?? '',
+          meta_total: c.total_goal, moeda: c.currency,
+        })), 'Categ. Compartilhadas')
 
       XLSX.writeFile(wb, `arvo-dados-${new Date().toISOString().slice(0, 10)}.xlsx`)
       setExportSheets(wb.SheetNames)

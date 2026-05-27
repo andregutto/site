@@ -73,46 +73,44 @@ router.get('/export', requireAuth, async (req, res: Response) => {
     { data: manualValues },
     { data: transactions },
     { data: accounts },
+    { data: income },
+    { data: envelopes },
+    { data: categories },
+    { data: freedomPlans },
+    { data: moments },
+    { data: sharedGroups },
+    { data: sharedCategories },
   ] = await Promise.all([
-    supabaseAdmin
-      .from('assets')
-      .select('code, name, asset_type, currency, is_active, created_at')
-      .eq('user_id', userId)
-      .order('code'),
-    supabaseAdmin
-      .from('contributions')
-      .select('date, type, quantity, price_orig, currency, fx_rate_brl, value_brl, profit_brl, assets(code, name)')
-      .eq('user_id', userId)
-      .order('date', { ascending: false }),
-    supabaseAdmin
-      .from('dividends')
-      .select('ex_date, pay_date, dividend_type, amount_per_share, currency, amount_brl, assets(code)')
-      .eq('user_id', userId)
-      .order('ex_date', { ascending: false }),
-    supabaseAdmin
-      .from('manual_values')
-      .select('ref_date, value, currency, notes, assets(code, name)')
-      .eq('user_id', userId)
-      .order('ref_date', { ascending: false }),
-    supabaseAdmin
-      .from('finance_transactions')
-      .select('date, description, amount, currency, notes, is_internal_transfer, exclude_from_stats, finance_categories(name), finance_accounts(name)')
-      .eq('user_id', userId)
-      .order('date', { ascending: false }),
-    supabaseAdmin
-      .from('finance_accounts')
-      .select('name, institution_name, currency, account_type, balance, is_active')
-      .eq('user_id', userId),
+    supabaseAdmin.from('assets').select('code, name, asset_type, currency, is_active, created_at').eq('user_id', userId).order('code'),
+    supabaseAdmin.from('contributions').select('date, type, quantity, price_orig, currency, fx_rate_brl, value_brl, profit_brl, assets(code, name)').eq('user_id', userId).order('date', { ascending: false }),
+    supabaseAdmin.from('dividends').select('ex_date, pay_date, dividend_type, amount_per_share, currency, amount_brl, assets(code)').eq('user_id', userId).order('ex_date', { ascending: false }),
+    supabaseAdmin.from('manual_values').select('ref_date, value, currency, notes, assets(code, name)').eq('user_id', userId).order('ref_date', { ascending: false }),
+    supabaseAdmin.from('finance_transactions').select('date, description, amount, currency, notes, is_internal_transfer, exclude_from_stats, finance_categories(name), finance_accounts(name), finance_moments(name)').eq('user_id', userId).order('date', { ascending: false }),
+    supabaseAdmin.from('finance_accounts').select('name, institution_name, currency, icon, color, is_active, created_at').eq('user_id', userId),
+    supabaseAdmin.from('finance_income').select('monthly_net, currency, updated_at').eq('user_id', userId),
+    supabaseAdmin.from('finance_envelopes').select('name, pct_target, color, icon, type, sort_order').eq('user_id', userId).order('sort_order'),
+    supabaseAdmin.from('finance_categories').select('name, icon, color, budget_monthly, finance_envelopes(name)').eq('user_id', userId).order('name'),
+    supabaseAdmin.from('finance_freedom_plans').select('name, is_active, initial_capital, monthly_contribution, monthly_return_rate, monthly_income_rate, target_amount, currency, horizon_years, notes, created_at').eq('user_id', userId).order('created_at'),
+    supabaseAdmin.from('finance_moments').select('name, description, icon, color, start_date, end_date, created_at').eq('user_id', userId).order('start_date', { ascending: false }),
+    supabaseAdmin.from('shared_groups').select('name, created_at, shared_group_members(invite_email, status, share_pct, joined_at)').eq('created_by', userId),
+    supabaseAdmin.from('shared_categories').select('name, icon, color, total_goal, currency, shared_groups(name)').eq('created_by', userId),
   ])
 
   res.json({
-    exported_at: new Date().toISOString(),
-    assets:               assets        ?? [],
-    contributions:        contributions ?? [],
-    dividends:            dividends     ?? [],
-    manual_values:        manualValues  ?? [],
-    finance_transactions: transactions  ?? [],
-    finance_accounts:     accounts      ?? [],
+    exported_at:           new Date().toISOString(),
+    assets:                assets           ?? [],
+    contributions:         contributions    ?? [],
+    dividends:             dividends        ?? [],
+    manual_values:         manualValues     ?? [],
+    finance_transactions:  transactions     ?? [],
+    finance_accounts:      accounts         ?? [],
+    finance_income:        income           ?? [],
+    finance_envelopes:     envelopes        ?? [],
+    finance_categories:    categories       ?? [],
+    finance_freedom_plans: freedomPlans     ?? [],
+    finance_moments:       moments          ?? [],
+    shared_groups:         sharedGroups     ?? [],
+    shared_categories:     sharedCategories ?? [],
   })
 })
 
