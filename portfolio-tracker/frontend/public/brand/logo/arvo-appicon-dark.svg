@@ -1,21 +1,27 @@
 <svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" aria-label="arvo app icon — dark">
   <defs>
-    <clipPath id="r"><rect width="512" height="512" rx="115" ry="115"></rect></clipPath>
-    <radialGradient id="bg-glow" cx="52%" cy="46%" r="62%" gradientUnits="objectBoundingBox">
-      <stop offset="0%" stop-color="#3A2C14"/>
-      <stop offset="38%" stop-color="#1E1608"/>
-      <stop offset="100%" stop-color="#0D0D0D"/>
+    <clipPath id="r"><rect width="512" height="512" rx="115" ry="115"/></clipPath>
+    <radialGradient id="corner-glow" cx="82%" cy="12%" r="45%" gradientUnits="objectBoundingBox">
+      <stop offset="0%" stop-color="#C8B89A" stop-opacity="0.28"/>
+      <stop offset="100%" stop-color="#C8B89A" stop-opacity="0"/>
     </radialGradient>
+    <linearGradient id="top-shimmer" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%"   stop-color="#C8B89A" stop-opacity="0"/>
+      <stop offset="45%"  stop-color="#C8B89A" stop-opacity="0.65"/>
+      <stop offset="100%" stop-color="#C8B89A" stop-opacity="0.05"/>
+    </linearGradient>
   </defs>
   <g clip-path="url(#r)">
-    <rect width="512" height="512" fill="url(#bg-glow)"/>
+    <rect width="512" height="512" fill="#0D0D0D"/>
+    <rect width="512" height="512" fill="url(#corner-glow)"/>
+    <rect width="512" height="1.5" fill="url(#top-shimmer)"/>
     <g transform="translate(125 116) scale(1.45)">
-      <path d="M96.9642 82.5762C83.7642 28.1762 141.798 5.2429 172.464 0.576233C173.464 15.7429 159.764 53.3762 96.9642 82.5762Z" fill="#C8B89A"></path>
-      <path d="M165.464 82.5762V53.5762L136.964 73.9631V111.674C144.263 106.015 151.778 100.102 155.964 96.5762C163.564 90.1762 165.464 84.5762 165.464 82.5762Z" fill="#C8B89A" opacity="0.85"></path>
-      <path d="M121.464 85.0507V123.576C125.207 120.732 131.014 116.287 136.964 111.674V73.9631L121.464 85.0507Z" fill="#C8B89A" opacity="0.7"></path>
-      <path d="M96.9642 102.576L121.464 123.576V85.0507L96.9642 102.576Z" fill="#C8B89A" opacity="0.6"></path>
-      <path d="M121.464 155.576V123.576L96.9642 102.576V178.576L121.464 155.576Z" fill="#C8B89A" opacity="0.8"></path>
-      <path d="M0.513985 24.5762V51.5762C0.513985 53.5762 -0.135759 66.6762 7.46424 73.0762L44.514 101.576V155.076L69.014 178.076V82.0762L37.9642 56.0762L0.513985 24.5762Z" fill="#C8B89A" opacity="0.9"></path>
+      <path d="M96.9642 82.5762C83.7642 28.1762 141.798 5.2429 172.464 0.576233C173.464 15.7429 159.764 53.3762 96.9642 82.5762Z" fill="#C8B89A"/>
+      <path d="M165.464 82.5762V53.5762L136.964 73.9631V111.674C144.263 106.015 151.778 100.102 155.964 96.5762C163.564 90.1762 165.464 84.5762 165.464 82.5762Z" fill="#C8B89A" opacity="0.85"/>
+      <path d="M121.464 85.0507V123.576C125.207 120.732 131.014 116.287 136.964 111.674V73.9631L121.464 85.0507Z" fill="#C8B89A" opacity="0.7"/>
+      <path d="M96.9642 102.576L121.464 123.576V85.0507L96.9642 102.576Z" fill="#C8B89A" opacity="0.6"/>
+      <path d="M121.464 155.576V123.576L96.9642 102.576V178.576L121.464 155.576Z" fill="#C8B89A" opacity="0.8"/>
+      <path d="M0.513985 24.5762V51.5762C0.513985 53.5762 -0.135759 66.6762 7.46424 73.0762L44.514 101.576V155.076L69.014 178.076V82.0762L37.9642 56.0762L0.513985 24.5762Z" fill="#C8B89A" opacity="0.9"/>
     </g>
   </g>
 </svg>

@@ -1,18 +1,24 @@
 <svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-label="arvo favicon">
   <defs>
-    <radialGradient id="bg-glow" cx="52%" cy="46%" r="62%" gradientUnits="objectBoundingBox">
-      <stop offset="0%" stop-color="#3A2C14"/>
-      <stop offset="38%" stop-color="#1E1608"/>
-      <stop offset="100%" stop-color="#0D0D0D"/>
+    <radialGradient id="corner-glow" cx="82%" cy="12%" r="45%" gradientUnits="objectBoundingBox">
+      <stop offset="0%" stop-color="#C8B89A" stop-opacity="0.28"/>
+      <stop offset="100%" stop-color="#C8B89A" stop-opacity="0"/>
     </radialGradient>
+    <linearGradient id="top-shimmer" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%"   stop-color="#C8B89A" stop-opacity="0"/>
+      <stop offset="45%"  stop-color="#C8B89A" stop-opacity="0.65"/>
+      <stop offset="100%" stop-color="#C8B89A" stop-opacity="0.05"/>
+    </linearGradient>
   </defs>
-  <rect width="64" height="64" rx="12" fill="url(#bg-glow)"/>
+  <rect width="64" height="64" rx="12" fill="#0D0D0D"/>
+  <rect width="64" height="64" rx="12" fill="url(#corner-glow)"/>
+  <rect width="64" height="1.5" rx="0" fill="url(#top-shimmer)"/>
   <g transform="translate(9 8) scale(0.265)">
-    <path d="M96.9642 82.5762C83.7642 28.1762 141.798 5.2429 172.464 0.576233C173.464 15.7429 159.764 53.3762 96.9642 82.5762Z" fill="#D6C6A8"></path>
-    <path d="M165.464 82.5762V53.5762L136.964 73.9631V111.674C144.263 106.015 151.778 100.102 155.964 96.5762C163.564 90.1762 165.464 84.5762 165.464 82.5762Z" fill="#C8B89A"></path>
-    <path d="M121.464 85.0507V123.576C125.207 120.732 131.014 116.287 136.964 111.674V73.9631L121.464 85.0507Z" fill="#B8A98C"></path>
-    <path d="M96.9642 102.576L121.464 123.576V85.0507L96.9642 102.576Z" fill="#A89A80"></path>
-    <path d="M121.464 155.576V123.576L96.9642 102.576V178.576L121.464 155.576Z" fill="#C8B89A"></path>
-    <path d="M0.513985 24.5762V51.5762C0.513985 53.5762 -0.135759 66.6762 7.46424 73.0762L44.514 101.576V155.076L69.014 178.076V82.0762L37.9642 56.0762L0.513985 24.5762Z" fill="#D6C6A8"></path>
+    <path d="M96.9642 82.5762C83.7642 28.1762 141.798 5.2429 172.464 0.576233C173.464 15.7429 159.764 53.3762 96.9642 82.5762Z" fill="#D6C6A8"/>
+    <path d="M165.464 82.5762V53.5762L136.964 73.9631V111.674C144.263 106.015 151.778 100.102 155.964 96.5762C163.564 90.1762 165.464 84.5762 165.464 82.5762Z" fill="#C8B89A"/>
+    <path d="M121.464 85.0507V123.576C125.207 120.732 131.014 116.287 136.964 111.674V73.9631L121.464 85.0507Z" fill="#B8A98C"/>
+    <path d="M96.9642 102.576L121.464 123.576V85.0507L96.9642 102.576Z" fill="#A89A80"/>
+    <path d="M121.464 155.576V123.576L96.9642 102.576V178.576L121.464 155.576Z" fill="#C8B89A"/>
+    <path d="M0.513985 24.5762V51.5762C0.513985 53.5762 -0.135759 66.6762 7.46424 73.0762L44.514 101.576V155.076L69.014 178.076V82.0762L37.9642 56.0762L0.513985 24.5762Z" fill="#D6C6A8"/>
   </g>
 </svg>
