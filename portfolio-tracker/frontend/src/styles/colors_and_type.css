@@ -2,7 +2,7 @@
    ARVO — colors_and_type.css
    The two foundations of the brand. Import this file before anything else.
 
-   Fonts: loaded via Google Fonts (Tenor Sans + Playfair Display).
+   Fonts: self-hosted. Display/wordmark → Tenor Sans. Body/UI → DM Sans (variable). Editorial accent → Playfair Display (italic).
    If you need self-hosted fonts, drop .woff2 files into /fonts and replace
    the @import below with @font-face declarations.
    ===================================================================== */
@@ -13,6 +13,20 @@
   src: url('./fonts/TenorSans-Regular.ttf') format('truetype');
   font-weight: 400;
   font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'DM Sans';
+  src: url('./fonts/DMSans-Variable.woff2') format('woff2-variations');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'DM Sans';
+  src: url('./fonts/DMSans-Variable-Italic.woff2') format('woff2-variations');
+  font-weight: 100 900;
+  font-style: italic;
   font-display: swap;
 }
 @font-face {
@@ -85,13 +99,13 @@
   /* ── TYPOGRAPHY ────────────────────────────────────────────────────── */
   --arvo-font-display: 'Tenor Sans', 'Times New Roman', serif;
   --arvo-font-serif:   'Playfair Display', Georgia, serif;   /* italic accent */
-  --arvo-font-body:    'Tenor Sans', system-ui, sans-serif;
+  --arvo-font-body:    'DM Sans', system-ui, sans-serif;
 
-  /* Letter-spacing — Tenor Sans wants room to breathe */
-  --arvo-track-tight:   0.04em;   /* body */
-  --arvo-track-normal:  0.10em;   /* h2/h3 */
-  --arvo-track-wide:    0.18em;   /* h1, navigation */
-  --arvo-track-widest:  0.30em;   /* logo wordmark, eyebrows */
+  /* Letter-spacing — DM Sans needs no extra tracking; Tenor Sans headings keep theirs */
+  --arvo-track-tight:   0em;      /* body (DM Sans) */
+  --arvo-track-normal:  0.10em;   /* h2/h3 (Tenor Sans) */
+  --arvo-track-wide:    0.18em;   /* h1, navigation (Tenor Sans) */
+  --arvo-track-widest:  0.30em;   /* logo wordmark, eyebrows (Tenor Sans) */
 
   /* ── TYPE SCALE (display → caption) ────────────────────────────────── */
   --arvo-text-hero:    clamp(72px, 14vw, 148px);  /* wordmark, landing hero */

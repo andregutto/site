@@ -28,7 +28,7 @@
   /* Fonts */
   --font-display: 'Tenor Sans', 'Times New Roman', serif;
   --font-serif:   'Playfair Display', Georgia, serif;
-  --font-sans:    'Tenor Sans', system-ui, sans-serif;
+  --font-sans:    'DM Sans', system-ui, sans-serif;
 }
 
 body {
