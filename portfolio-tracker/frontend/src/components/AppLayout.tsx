@@ -36,6 +36,7 @@ export default function AppLayout() {
 
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [showUserMenu,   setShowUserMenu]   = useState(false)
+  const subNavScrollRef = useRef<HTMLDivElement>(null)
   const [chatVisible,    setChatVisible]    = useState(() => localStorage.getItem('arvo_chat_visible') !== 'false')
   const [openChatNow,    setOpenChatNow]    = useState(false)
 
@@ -55,6 +56,18 @@ export default function AppLayout() {
 
   useEffect(() => {
     setShowUserMenu(false)
+  }, [location.pathname])
+
+  // Auto-scroll active sub-nav tab into center view (Option B)
+  useEffect(() => {
+    const container = subNavScrollRef.current
+    if (!container) return
+    const active = container.querySelector('[aria-current="page"]') as HTMLElement | null
+    if (!active) return
+    container.scrollTo({
+      left: active.offsetLeft - container.offsetWidth / 2 + active.offsetWidth / 2,
+      behavior: 'smooth',
+    })
   }, [location.pathname])
 
   useEffect(() => {
@@ -324,15 +337,15 @@ export default function AppLayout() {
 
       {/* Mobile sub-nav — fixed just above the bottom nav */}
       {activeSubItems.length > 0 && (
-        <nav className="sm:hidden fixed left-0 right-0 z-20" style={{ bottom: 'calc(3.5rem + env(safe-area-inset-bottom, 0px))', background: 'rgba(255,255,255,0.96)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', borderTop: '1px solid var(--arvo-border-soft)' }}>
-          <div className="flex items-center gap-1 px-3 py-1.5 overflow-x-auto scrollbar-none">
+        <nav className="sm:hidden fixed left-0 right-0 z-20" style={{ bottom: 'calc(3.5rem + env(safe-area-inset-bottom, 0px))', background: 'rgba(255,255,255,0.96)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', borderTop: '1px solid var(--arvo-border-soft)', position: 'fixed' }}>
+          <div ref={subNavScrollRef} className="flex items-center gap-1 px-3 py-2 overflow-x-auto scrollbar-none">
             {activeSubItems.map(({ to, label, end }) => (
               <NavLink
                 key={to} to={to} end={end}
                 className="flex items-center gap-2 whitespace-nowrap transition-all"
                 style={({ isActive }) => isActive
-                  ? { fontFamily: "var(--arvo-font-body)", fontSize: 11, letterSpacing: '0.08em', padding: '6px 12px', borderRadius: 8, border: '1px solid var(--arvo-border)', background: 'white', color: 'var(--arvo-fg)', boxShadow: '0 1px 2px rgba(13,13,13,0.04)', textDecoration: 'none' }
-                  : { fontFamily: "var(--arvo-font-body)", fontSize: 11, letterSpacing: '0.08em', padding: '6px 12px', borderRadius: 8, border: '1px solid transparent', background: 'transparent', color: 'rgba(13,13,13,0.5)', textDecoration: 'none' }}
+                  ? { fontFamily: "var(--arvo-font-body)", fontSize: 13, letterSpacing: '0.05em', padding: '9px 14px', borderRadius: 9, border: '1px solid var(--arvo-border)', background: 'white', color: 'var(--arvo-fg)', boxShadow: '0 1px 2px rgba(13,13,13,0.06)', textDecoration: 'none' }
+                  : { fontFamily: "var(--arvo-font-body)", fontSize: 13, letterSpacing: '0.05em', padding: '9px 14px', borderRadius: 9, border: '1px solid transparent', background: 'transparent', color: 'rgba(13,13,13,0.5)', textDecoration: 'none' }}
               >
                 {({ isActive }) => (
                   <>
@@ -342,7 +355,17 @@ export default function AppLayout() {
                 )}
               </NavLink>
             ))}
+            {/* Spacer so last item isn't hidden under gradient */}
+            <div style={{ minWidth: 32, flexShrink: 0 }} />
           </div>
+          {/* Gradient fade — hints at more content (Option A) */}
+          <div
+            aria-hidden="true"
+            style={{
+              position: 'absolute', right: 0, top: 0, bottom: 0, width: 40, pointerEvents: 'none',
+              background: 'linear-gradient(to left, rgba(255,255,255,0.97) 30%, rgba(255,255,255,0))',
+            }}
+          />
         </nav>
       )}
 

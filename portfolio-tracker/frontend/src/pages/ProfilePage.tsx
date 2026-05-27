@@ -20,6 +20,7 @@ interface ProfileData {
   birthdate:          string
   allocation_targets: Record<string, number>
   avatar_url:         string
+  default_section:    string
 }
 
 const COUNTRY_OPTIONS = [
@@ -88,6 +89,8 @@ export default function ProfilePage() {
   const [photoError,       setPhotoError]       = useState<string | null>(null)
   const modalFileRef = useRef<HTMLInputElement>(null)
 
+  const [defaultSection, setDefaultSection] = useState<'investments' | 'finances'>('investments')
+
   // Cropper state
   const CROP_BOX  = 280
   const CIRCLE_SZ = 200
@@ -97,6 +100,18 @@ export default function ProfilePage() {
   const [cropScale, setCropScale] = useState(1)
   const [minScale, setMinScale] = useState(1)
   const dragRef = useRef<{ sx: number; sy: number; ox: number; oy: number } | null>(null)
+  const pointersRef = useRef<Map<number, { x: number; y: number }>>(new Map())
+  const pinchRef = useRef<{ dist: number; scale: number } | null>(null)
+  const cropAreaRef = useRef<HTMLDivElement>(null)
+  // Refs to avoid stale closures in wheel/pointer handlers
+  const cropScaleRef = useRef(cropScale)
+  const cropOffRef   = useRef(cropOff)
+  const imgNatRef    = useRef(imgNat)
+  const minScaleRef  = useRef(minScale)
+  useEffect(() => { cropScaleRef.current = cropScale }, [cropScale])
+  useEffect(() => { cropOffRef.current   = cropOff   }, [cropOff])
+  useEffect(() => { imgNatRef.current    = imgNat    }, [imgNat])
+  useEffect(() => { minScaleRef.current  = minScale  }, [minScale])
 
   const { reset: rebuildHistory, loading: rebuilding, result: rebuildResult } = useResetPriceHistory()
   const { sync: syncDividends, syncing: syncingDivs } = useDividendSync()
@@ -111,6 +126,7 @@ export default function ProfilePage() {
         setCountry(d.country)
         setBirthdate(d.birthdate ?? '')
         setAvatarUrl(d.avatar_url)
+        setDefaultSection(d.default_section === 'finances' ? 'finances' : 'investments')
       })
       .catch(e => setError(e instanceof Error ? e.message : t.profile.errorLoad))
       .finally(() => setLoading(false))
@@ -137,7 +153,8 @@ export default function ProfilePage() {
     img.onload = () => {
       const { naturalWidth: nw, naturalHeight: nh } = img
       const min = Math.max(CIRCLE_SZ / nw, CIRCLE_SZ / nh)
-      const scale = Math.min(Math.max(min, CROP_BOX / Math.max(nw, nh)), min * 3)
+      // Start at 1.25× min so both axes have drag room from the start
+      const scale = Math.min(min * 1.25, min * 4)
       const sw = nw * scale
       const sh = nh * scale
       setImgNat({ w: nw, h: nh })
@@ -148,27 +165,83 @@ export default function ProfilePage() {
     img.src = dataUrl
   }
 
+  // Wheel zoom — passive:false required to prevent page scroll
+  useEffect(() => {
+    const el = cropAreaRef.current
+    if (!el) return
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault()
+      const sc  = cropScaleRef.current
+      const off = cropOffRef.current
+      const nat = imgNatRef.current
+      const min = minScaleRef.current
+      if (!nat) return
+      const newScale = Math.max(min, Math.min(min * 4, sc * (e.deltaY < 0 ? 1.08 : 0.93)))
+      const cx = CIRC_OFF + CIRCLE_SZ / 2
+      const cy = CIRC_OFF + CIRCLE_SZ / 2
+      setCropScale(newScale)
+      setCropOff(clampCrop(
+        cx - ((cx - off.x) / sc) * newScale,
+        cy - ((cy - off.y) / sc) * newScale,
+        newScale, nat.w, nat.h,
+      ))
+    }
+    el.addEventListener('wheel', onWheel, { passive: false })
+    return () => el.removeEventListener('wheel', onWheel)
+  }, [])
+
   function onCropPointerDown(e: React.PointerEvent<HTMLDivElement>) {
     e.currentTarget.setPointerCapture(e.pointerId)
-    dragRef.current = { sx: e.clientX, sy: e.clientY, ox: cropOff.x, oy: cropOff.y }
+    pointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
+    if (pointersRef.current.size === 1) {
+      dragRef.current = { sx: e.clientX, sy: e.clientY, ox: cropOffRef.current.x, oy: cropOffRef.current.y }
+      pinchRef.current = null
+    } else if (pointersRef.current.size >= 2) {
+      dragRef.current = null
+      const pts = [...pointersRef.current.values()]
+      pinchRef.current = {
+        dist:  Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y),
+        scale: cropScaleRef.current,
+      }
+    }
   }
 
   function onCropPointerMove(e: React.PointerEvent<HTMLDivElement>) {
-    if (!dragRef.current || !imgNat) return
-    const { sx, sy, ox, oy } = dragRef.current
-    setCropOff(clampCrop(ox + e.clientX - sx, oy + e.clientY - sy, cropScale, imgNat.w, imgNat.h))
+    if (!pointersRef.current.has(e.pointerId)) return
+    pointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
+    const nat = imgNatRef.current
+    if (!nat) return
+
+    if (pointersRef.current.size >= 2 && pinchRef.current) {
+      const pts = [...pointersRef.current.values()]
+      const newDist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y)
+      const min = minScaleRef.current
+      const newScale = Math.max(min, Math.min(min * 4, pinchRef.current.scale * newDist / pinchRef.current.dist))
+      const cx = CIRC_OFF + CIRCLE_SZ / 2
+      const cy = CIRC_OFF + CIRCLE_SZ / 2
+      const sc  = cropScaleRef.current
+      const off = cropOffRef.current
+      setCropScale(newScale)
+      setCropOff(clampCrop(
+        cx - ((cx - off.x) / sc) * newScale,
+        cy - ((cy - off.y) / sc) * newScale,
+        newScale, nat.w, nat.h,
+      ))
+    } else if (dragRef.current) {
+      const { sx, sy, ox, oy } = dragRef.current
+      setCropOff(clampCrop(ox + e.clientX - sx, oy + e.clientY - sy, cropScaleRef.current, nat.w, nat.h))
+    }
   }
 
-  function onCropPointerUp() { dragRef.current = null }
-
-  function onZoomChange(newScale: number) {
-    if (!imgNat) return
-    const cx = CIRC_OFF + CIRCLE_SZ / 2
-    const cy = CIRC_OFF + CIRCLE_SZ / 2
-    const imgX = (cx - cropOff.x) / cropScale
-    const imgY = (cy - cropOff.y) / cropScale
-    setCropScale(newScale)
-    setCropOff(clampCrop(cx - imgX * newScale, cy - imgY * newScale, newScale, imgNat.w, imgNat.h))
+  function onCropPointerUp(e: React.PointerEvent<HTMLDivElement>) {
+    pointersRef.current.delete(e.pointerId)
+    if (pointersRef.current.size < 2) pinchRef.current = null
+    if (pointersRef.current.size === 0) {
+      dragRef.current = null
+    } else if (pointersRef.current.size === 1) {
+      const [pt] = pointersRef.current.values()
+      dragRef.current = { sx: pt.x, sy: pt.y, ox: cropOffRef.current.x, oy: cropOffRef.current.y }
+    }
   }
 
   function cropFromCanvas(): Promise<string> {
@@ -247,6 +320,7 @@ export default function ProfilePage() {
           first_name: firstName, last_name: lastName,
           country, birthdate: birthdate || undefined,
           avatar_url: avatarUrl || undefined,
+          default_section: defaultSection,
         }),
       })
       setSaveOk(true)
@@ -589,6 +663,28 @@ export default function ProfilePage() {
               </div>
             </div>
 
+            {/* Página inicial */}
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">{t.profile.defaultSectionLabel}</label>
+              <p className="text-xs text-gray-400 mb-2">{t.profile.defaultSectionHint}</p>
+              <div className="flex gap-2">
+                {(['investments', 'finances'] as const).map(s => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => setDefaultSection(s)}
+                    className={`flex-1 py-2 text-sm font-semibold rounded-lg border transition-colors ${
+                      defaultSection === s
+                        ? 'bg-[#0D0D0D] text-white border-[#0D0D0D]'
+                        : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'
+                    }`}
+                  >
+                    {s === 'investments' ? t.profile.defaultSectionInvestments : t.profile.defaultSectionFinances}
+                  </button>
+                ))}
+              </div>
+            </div>
+
 {error    && <p className="text-xs text-red-600">{error}</p>}
             {saveOk   && <p className="text-xs text-green-600">{t.profile.saved}</p>}
 
@@ -748,6 +844,7 @@ export default function ProfilePage() {
                   <div className="flex flex-col items-center gap-3">
                     {/* Área de recorte arrastável */}
                     <div
+                      ref={cropAreaRef}
                       className="relative overflow-hidden bg-black rounded-xl select-none touch-none"
                       style={{ width: CROP_BOX, height: CROP_BOX, cursor: 'grab' }}
                       onPointerDown={onCropPointerDown}
@@ -787,19 +884,8 @@ export default function ProfilePage() {
                       </svg>
                     </div>
 
-                    {/* Slider de zoom */}
-                    <div className="w-full space-y-1">
-                      <label className="block text-xs text-gray-500 text-center">{t.profile.photoModalAdjust}</label>
-                      <input
-                        type="range"
-                        min={minScale}
-                        max={minScale * 3}
-                        step={minScale * 0.01}
-                        value={cropScale}
-                        onChange={e => onZoomChange(Number(e.target.value))}
-                        className="w-full accent-[#0D0D0D]"
-                      />
-                    </div>
+                    {/* Hint */}
+                    <p className="text-xs text-gray-400 text-center">{t.profile.cropperHint}</p>
                   </div>
                 ) : (
                   /* Sem foto nova: mostra avatar atual */
