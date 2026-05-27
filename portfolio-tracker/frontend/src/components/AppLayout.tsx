@@ -153,10 +153,10 @@ export default function AppLayout() {
             style={{ textDecoration: 'none' }}
           >
             <img src="/brand/logo/arvo-symbol-black.svg" width="22" height="22" alt="" />
-            <span style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 16, letterSpacing: '0.30em', textIndent: '0.30em', color: 'var(--arvo-black)', lineHeight: 1 }}>arvo</span>
+            <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 16, letterSpacing: '0.30em', textIndent: '0.30em', color: 'var(--arvo-black)', lineHeight: 1 }}>arvo</span>
           </Link>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, paddingLeft: 14, borderLeft: '1px solid var(--arvo-border)', height: 24 }}>
-            <span style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.55)', lineHeight: 1 }}>Capital</span>
+            <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.55)', lineHeight: 1 }}>Capital</span>
           </div>
 
           {/* Desktop — three section tabs (pill style) */}
@@ -169,7 +169,7 @@ export default function AppLayout() {
               <NavLink
                 key={to} to={to}
                 className={() => `px-4 py-1.5 rounded-full text-xs whitespace-nowrap transition-all`}
-                style={{ fontFamily: "'Tenor Sans', sans-serif", letterSpacing: '0.16em', textTransform: 'uppercase',
+                style={{ fontFamily: "var(--arvo-font-body)", letterSpacing: '0.16em', textTransform: 'uppercase',
                   background: active ? 'rgba(13,13,13,0.92)' : 'transparent',
                   color: active ? 'var(--arvo-offwhite)' : 'rgba(13,13,13,0.72)',
                   transition: 'all 280ms cubic-bezier(0.22,0.61,0.36,1)' }}
@@ -186,8 +186,8 @@ export default function AppLayout() {
                   onClick={() => setCurrency(c)}
                   className="px-2.5 py-1 text-xs rounded-full transition-all"
                   style={currency === c
-                    ? { fontFamily: "'Tenor Sans', sans-serif", background: 'var(--arvo-black)', color: 'var(--arvo-offwhite)', letterSpacing: '0.06em' }
-                    : { fontFamily: "'Tenor Sans', sans-serif", color: 'rgba(13,13,13,0.45)', letterSpacing: '0.06em' }}
+                    ? { fontFamily: "var(--arvo-font-body)", background: 'var(--arvo-black)', color: 'var(--arvo-offwhite)', letterSpacing: '0.06em' }
+                    : { fontFamily: "var(--arvo-font-body)", color: 'rgba(13,13,13,0.45)', letterSpacing: '0.06em' }}
                 >{c}</button>
               ))}
             </div>
@@ -201,7 +201,7 @@ export default function AppLayout() {
                 {avatarUrl ? (
                   <img src={avatarUrl} alt="Avatar" className="w-7 h-7 rounded-full object-cover" />
                 ) : (
-                  <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px]" style={{ background: 'var(--arvo-black)', color: 'var(--arvo-gold)', fontFamily: "'Tenor Sans', sans-serif", letterSpacing: '0.08em' }}>{avatarInitials}</div>
+                  <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px]" style={{ background: 'var(--arvo-black)', color: 'var(--arvo-gold)', fontFamily: "var(--arvo-font-body)", letterSpacing: '0.08em' }}>{avatarInitials}</div>
                 )}
                 <span className="text-xs max-w-[100px] truncate transition-colors" style={{ color: 'rgba(13,13,13,0.5)' }}>{headerLabel}</span>
                 <svg className={`w-3 h-3 text-gray-400 transition-transform ${showUserMenu ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -217,7 +217,7 @@ export default function AppLayout() {
                   <div className="px-4 py-2.5" style={{ borderBottom: '1px solid var(--arvo-border-soft)' }}>
                     <div className="flex items-center justify-between mb-1.5">
                       <span className="text-xs" style={{ color: 'rgba(13,13,13,0.45)' }}>{(t.levels as Record<string, string>)[level.key] ?? level.name}</span>
-                      <span className="text-xs" style={{ fontFamily: "'Tenor Sans', sans-serif", color: 'var(--arvo-black)' }}>{totalXp} XP</span>
+                      <span className="text-xs" style={{ fontFamily: "var(--arvo-font-body)", color: 'var(--arvo-black)' }}>{totalXp} XP</span>
                     </div>
                     <div className="h-1 rounded-full overflow-hidden" style={{ background: 'rgba(13,13,13,0.08)' }}>
                       <div className="h-full rounded-full transition-all" style={{ width: `${levelProgress}%`, background: 'linear-gradient(90deg, var(--arvo-black), var(--arvo-gold))' }} />
@@ -268,8 +268,8 @@ export default function AppLayout() {
                   key={to} to={to} end={end}
                   className="flex items-center gap-2 whitespace-nowrap transition-all"
                   style={({ isActive }) => isActive
-                    ? { fontFamily: "'Tenor Sans', sans-serif", fontSize: 11, letterSpacing: '0.08em', padding: '7px 14px', borderRadius: 8, border: '1px solid var(--arvo-border)', background: 'white', color: 'var(--arvo-fg)', boxShadow: '0 1px 2px rgba(13,13,13,0.04)', textDecoration: 'none' }
-                    : { fontFamily: "'Tenor Sans', sans-serif", fontSize: 11, letterSpacing: '0.08em', padding: '7px 14px', borderRadius: 8, border: '1px solid transparent', background: 'transparent', color: 'rgba(13,13,13,0.70)', textDecoration: 'none' }}
+                    ? { fontFamily: "var(--arvo-font-body)", fontSize: 11, letterSpacing: '0.08em', padding: '7px 14px', borderRadius: 8, border: '1px solid var(--arvo-border)', background: 'white', color: 'var(--arvo-fg)', boxShadow: '0 1px 2px rgba(13,13,13,0.04)', textDecoration: 'none' }
+                    : { fontFamily: "var(--arvo-font-body)", fontSize: 11, letterSpacing: '0.08em', padding: '7px 14px', borderRadius: 8, border: '1px solid transparent', background: 'transparent', color: 'rgba(13,13,13,0.70)', textDecoration: 'none' }}
                 >
                   {({ isActive }) => (
                     <>
@@ -293,7 +293,7 @@ export default function AppLayout() {
                 {avatarUrl ? (
                   <img src={avatarUrl} alt="Avatar" className="w-9 h-9 rounded-full object-cover shrink-0" />
                 ) : (
-                  <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs shrink-0" style={{ background: 'var(--arvo-black)', color: 'var(--arvo-gold)', fontFamily: "'Tenor Sans', sans-serif", letterSpacing: '0.08em' }}>{avatarInitials}</div>
+                  <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs shrink-0" style={{ background: 'var(--arvo-black)', color: 'var(--arvo-gold)', fontFamily: "var(--arvo-font-body)", letterSpacing: '0.08em' }}>{avatarInitials}</div>
                 )}
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate" style={{ color: 'var(--arvo-black)' }}>{headerLabel}</p>
@@ -301,7 +301,7 @@ export default function AppLayout() {
                     <div className="flex-1 h-1 rounded-full overflow-hidden" style={{ background: 'rgba(13,13,13,0.08)' }}>
                       <div className="h-full rounded-full" style={{ width: `${levelProgress}%`, background: 'linear-gradient(90deg, var(--arvo-black), var(--arvo-gold))' }} />
                     </div>
-                    <span className="text-[10px] shrink-0" style={{ fontFamily: "'Tenor Sans', sans-serif", color: 'var(--arvo-black)' }}>{totalXp} XP</span>
+                    <span className="text-[10px] shrink-0" style={{ fontFamily: "var(--arvo-font-body)", color: 'var(--arvo-black)' }}>{totalXp} XP</span>
                   </div>
                 </div>
               </div>
@@ -317,8 +317,8 @@ export default function AppLayout() {
                     <button key={c} onClick={() => setCurrency(c)}
                       className="px-2.5 py-1 text-xs rounded-full transition-all"
                       style={currency === c
-                        ? { fontFamily: "'Tenor Sans', sans-serif", background: 'var(--arvo-black)', color: 'var(--arvo-offwhite)', letterSpacing: '0.06em' }
-                        : { fontFamily: "'Tenor Sans', sans-serif", color: 'rgba(13,13,13,0.45)', letterSpacing: '0.06em' }}
+                        ? { fontFamily: "var(--arvo-font-body)", background: 'var(--arvo-black)', color: 'var(--arvo-offwhite)', letterSpacing: '0.06em' }
+                        : { fontFamily: "var(--arvo-font-body)", color: 'rgba(13,13,13,0.45)', letterSpacing: '0.06em' }}
                     >{c}</button>
                   ))}
                 </div>
@@ -357,7 +357,7 @@ export default function AppLayout() {
 
               {/* Navigation */}
               <div className="pt-1" style={{ borderTop: '1px solid var(--arvo-border-soft)' }}>
-                <p className="px-3 py-1.5 text-[10px] uppercase tracking-widest" style={{ fontFamily: "'Tenor Sans', sans-serif", color: 'rgba(13,13,13,0.35)' }}>{t.nav.investments}</p>
+                <p className="px-3 py-1.5 text-[10px] uppercase tracking-widest" style={{ fontFamily: "var(--arvo-font-body)", color: 'rgba(13,13,13,0.35)' }}>{t.nav.investments}</p>
                 {investimentosItems.map(({ to, label, end, icon }) => (
                   <NavLink key={to} to={to} end={end}
                     className={({ isActive }) => `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-colors ${isActive ? 'font-medium' : ''}`}
@@ -372,7 +372,7 @@ export default function AppLayout() {
               </div>
 
               <div className="pt-1" style={{ borderTop: '1px solid var(--arvo-border-soft)' }}>
-                <p className="px-3 py-1.5 text-[10px] uppercase tracking-widest" style={{ fontFamily: "'Tenor Sans', sans-serif", color: 'rgba(13,13,13,0.35)' }}>{t.nav.finances}</p>
+                <p className="px-3 py-1.5 text-[10px] uppercase tracking-widest" style={{ fontFamily: "var(--arvo-font-body)", color: 'rgba(13,13,13,0.35)' }}>{t.nav.finances}</p>
                 {financesItems.map(({ to, label, end, icon }) => (
                   <NavLink key={to} to={to} end={end}
                     className={({ isActive }) => `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-colors ${isActive ? 'font-medium' : ''}`}
@@ -424,8 +424,8 @@ export default function AppLayout() {
                 key={to} to={to} end={end}
                 className="flex items-center gap-2 whitespace-nowrap transition-all"
                 style={({ isActive }) => isActive
-                  ? { fontFamily: "'Tenor Sans', sans-serif", fontSize: 11, letterSpacing: '0.08em', padding: '6px 12px', borderRadius: 8, border: '1px solid var(--arvo-border)', background: 'white', color: 'var(--arvo-fg)', boxShadow: '0 1px 2px rgba(13,13,13,0.04)', textDecoration: 'none' }
-                  : { fontFamily: "'Tenor Sans', sans-serif", fontSize: 11, letterSpacing: '0.08em', padding: '6px 12px', borderRadius: 8, border: '1px solid transparent', background: 'transparent', color: 'rgba(13,13,13,0.5)', textDecoration: 'none' }}
+                  ? { fontFamily: "var(--arvo-font-body)", fontSize: 11, letterSpacing: '0.08em', padding: '6px 12px', borderRadius: 8, border: '1px solid var(--arvo-border)', background: 'white', color: 'var(--arvo-fg)', boxShadow: '0 1px 2px rgba(13,13,13,0.04)', textDecoration: 'none' }
+                  : { fontFamily: "var(--arvo-font-body)", fontSize: 11, letterSpacing: '0.08em', padding: '6px 12px', borderRadius: 8, border: '1px solid transparent', background: 'transparent', color: 'rgba(13,13,13,0.5)', textDecoration: 'none' }}
               >
                 {({ isActive }) => (
                   <>
@@ -462,7 +462,7 @@ export default function AppLayout() {
             <NavLink
               key={to} to={to}
               className="flex-1 py-2.5 flex flex-col items-center gap-0.5 transition-colors text-[11px] leading-tight"
-              style={{ fontFamily: "'Tenor Sans', sans-serif", color: match ? 'var(--arvo-black)' : 'rgba(13,13,13,0.35)', letterSpacing: '0.06em' }}
+              style={{ fontFamily: "var(--arvo-font-body)", color: match ? 'var(--arvo-black)' : 'rgba(13,13,13,0.35)', letterSpacing: '0.06em' }}
             >
               {icon}
               <span className="truncate w-full text-center px-0.5">{label}</span>
@@ -471,7 +471,7 @@ export default function AppLayout() {
           <button
             onClick={() => setShowMobileMenu(v => !v)}
             className="flex-1 py-2.5 flex flex-col items-center gap-0.5 transition-colors text-[11px] leading-tight"
-            style={{ fontFamily: "'Tenor Sans', sans-serif", color: showMobileMenu ? 'var(--arvo-black)' : 'rgba(13,13,13,0.35)', letterSpacing: '0.06em' }}
+            style={{ fontFamily: "var(--arvo-font-body)", color: showMobileMenu ? 'var(--arvo-black)' : 'rgba(13,13,13,0.35)', letterSpacing: '0.06em' }}
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />

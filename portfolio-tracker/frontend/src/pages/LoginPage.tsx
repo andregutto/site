@@ -9,7 +9,7 @@ import LanguageSelector from '../components/LanguageSelector'
 type Mode = 'login' | 'register' | 'forgot'
 type Currency = 'BRL' | 'USD' | 'EUR'
 
-const F_SANS    = "'Tenor Sans', sans-serif"
+const F_SANS    = "var(--arvo-font-body)"
 const F_DISPLAY = "'Playfair Display', serif"
 
 const COUNTRY_OPTIONS = [

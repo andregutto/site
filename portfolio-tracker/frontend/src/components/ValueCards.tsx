@@ -36,7 +36,7 @@ export default function ValueCards({ total_brl, generated_at, invested_brl, gain
   const periodLbl = period_label ?? t.dashboard.yearLabel.replace('{year}', ytd_year ?? '')
 
   const labelStyle: React.CSSProperties = {
-    fontFamily: "'Tenor Sans', sans-serif",
+    fontFamily: "var(--arvo-font-body)",
     fontSize: 9,
     letterSpacing: '0.25em',
     textTransform: 'uppercase',
@@ -56,14 +56,14 @@ export default function ValueCards({ total_brl, generated_at, invested_brl, gain
       {/* Top row */}
       <div style={{ position: 'relative', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, zIndex: 2 }}>
         <div>
-          <p style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 10, letterSpacing: '0.30em', textTransform: 'uppercase', color: 'var(--arvo-gold-text)', margin: 0 }}>
+          <p style={{ fontFamily: "var(--arvo-font-body)", fontSize: 10, letterSpacing: '0.30em', textTransform: 'uppercase', color: 'var(--arvo-gold-text)', margin: 0 }}>
             Total {currency}
           </p>
-          <p className="text-[36px] sm:text-[56px]" style={{ fontFamily: "'Tenor Sans', sans-serif", letterSpacing: '0.02em', lineHeight: 1.05, color: 'var(--arvo-black)', margin: '12px 0 0' }}>
+          <p className="text-[36px] sm:text-[56px]" style={{ fontFamily: "var(--arvo-font-body)", letterSpacing: '0.02em', lineHeight: 1.05, color: 'var(--arvo-black)', margin: '12px 0 0' }}>
             {fmt(total_brl, 0)}
           </p>
         </div>
-        <p className="hidden sm:block" style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.58)', marginTop: 4, whiteSpace: 'nowrap' }}>
+        <p className="hidden sm:block" style={{ fontFamily: "var(--arvo-font-body)", fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.58)', marginTop: 4, whiteSpace: 'nowrap' }}>
           {t.dashboard.updatedAt.replace('{time}', ts)}
         </p>
       </div>
@@ -73,22 +73,22 @@ export default function ValueCards({ total_brl, generated_at, invested_brl, gain
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6" style={{ position: 'relative', zIndex: 2, marginTop: 24, paddingTop: 22, borderTop: '1px solid rgba(13,13,13,0.08)' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             <span style={labelStyle}>{t.dashboard.invested}</span>
-            <span className="text-base sm:text-lg" style={{ fontFamily: "'Tenor Sans', sans-serif", letterSpacing: '0.04em', color: 'var(--arvo-fg)' }}>{fmt(invested_brl!, 0)}</span>
+            <span className="text-base sm:text-lg" style={{ fontFamily: "var(--arvo-font-body)", letterSpacing: '0.04em', color: 'var(--arvo-fg)' }}>{fmt(invested_brl!, 0)}</span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             <span style={labelStyle}>{t.dashboard.result}</span>
-            <span className="text-base sm:text-lg" style={{ fontFamily: "'Tenor Sans', sans-serif", letterSpacing: '0.04em', color: pctColor(gain_brl) }}>
+            <span className="text-base sm:text-lg" style={{ fontFamily: "var(--arvo-font-body)", letterSpacing: '0.04em', color: pctColor(gain_brl) }}>
               {gain_brl! >= 0 ? '+' : ''}{fmt(gain_brl!, 0)}
               {gain_pct != null && <span style={{ fontSize: 12, opacity: 0.75, marginLeft: 4 }}>({gain_brl! >= 0 ? '+' : ''}{gain_pct.toFixed(1)}%)</span>}
             </span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             <span style={labelStyle}>{t.dashboard.currentMonth}</span>
-            <span className="text-base sm:text-lg" style={{ fontFamily: "'Tenor Sans', sans-serif", letterSpacing: '0.04em', color: pctColor(month_pct) }}>{pctText(month_pct)}</span>
+            <span className="text-base sm:text-lg" style={{ fontFamily: "var(--arvo-font-body)", letterSpacing: '0.04em', color: pctColor(month_pct) }}>{pctText(month_pct)}</span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             <span style={labelStyle}>{periodLbl}</span>
-            <span className="text-base sm:text-lg" style={{ fontFamily: "'Tenor Sans', sans-serif", letterSpacing: '0.04em', color: pctColor(periodVal) }}>{pctText(periodVal)}</span>
+            <span className="text-base sm:text-lg" style={{ fontFamily: "var(--arvo-font-body)", letterSpacing: '0.04em', color: pctColor(periodVal) }}>{pctText(periodVal)}</span>
           </div>
         </div>
       )}

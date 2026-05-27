@@ -25,7 +25,7 @@ export default function LoginFooter() {
     <footer className="text-center space-y-2 pb-4">
       <div className="flex items-center justify-center gap-2 mb-3">
         <img src="/brand/logo/arvo-symbol-black.svg" width="14" height="14" alt="" style={{ opacity: 0.30 }} />
-        <span style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 11, letterSpacing: '0.30em', textIndent: '0.30em', color: 'rgba(13,13,13,0.30)', lineHeight: 1 }}>arvo</span>
+        <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 11, letterSpacing: '0.30em', textIndent: '0.30em', color: 'rgba(13,13,13,0.30)', lineHeight: 1 }}>arvo</span>
       </div>
       <p className="text-xs" style={{ color: 'rgba(13,13,13,0.40)' }}>{f.copyright}</p>
       <div className="flex items-center justify-center gap-3 text-xs" style={{ color: 'rgba(13,13,13,0.40)' }}>

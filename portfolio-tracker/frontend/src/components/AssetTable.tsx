@@ -196,7 +196,7 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
       {/* Toolbar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4" style={{ borderBottom: '1px solid var(--arvo-border-soft)' }}>
         <div className="flex items-center gap-2 flex-wrap">
-          <h2 className="text-sm" style={{ fontFamily: "'Tenor Sans', sans-serif", color: 'var(--arvo-black)', letterSpacing: '0.06em' }}>{d.assetsTitle} ({assets.length})</h2>
+          <h2 className="text-sm" style={{ fontFamily: "var(--arvo-font-body)", color: 'var(--arvo-black)', letterSpacing: '0.06em' }}>{d.assetsTitle} ({assets.length})</h2>
           {needsCount > 0 && (
             <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: 'rgba(232,160,32,0.12)', color: 'var(--arvo-ocre)' }}>
               {needsCount} {d.awaitingValue}
@@ -211,8 +211,8 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
                 onClick={() => setPeriod(key)}
                 className="px-2.5 py-1 text-xs rounded-full transition-all"
                 style={period === key
-                  ? { fontFamily: "'Tenor Sans', sans-serif", background: 'var(--arvo-black)', color: 'var(--arvo-offwhite)', letterSpacing: '0.06em' }
-                  : { fontFamily: "'Tenor Sans', sans-serif", color: 'rgba(13,13,13,0.45)', letterSpacing: '0.06em' }}
+                  ? { fontFamily: "var(--arvo-font-body)", background: 'var(--arvo-black)', color: 'var(--arvo-offwhite)', letterSpacing: '0.06em' }
+                  : { fontFamily: "var(--arvo-font-body)", color: 'rgba(13,13,13,0.45)', letterSpacing: '0.06em' }}
               >{label}</button>
             ))}
           </div>
@@ -232,19 +232,19 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
         <table className="w-full text-sm">
           <thead style={{ background: 'rgba(0,0,0,0.025)' }}>
             <tr>
-              <th className="px-4 py-2.5 text-left cursor-pointer w-[36%]" style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.45)' }} onClick={() => toggleSort('code')}>
+              <th className="px-4 py-2.5 text-left cursor-pointer w-[36%]" style={{ fontFamily: "var(--arvo-font-body)", fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.45)' }} onClick={() => toggleSort('code')}>
                 {d.assetsTitle} <SortIcon col="code" />
               </th>
-              <th className="px-4 py-2.5 text-right" style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.45)' }}>{d.colHoldings}</th>
-              <th className="px-4 py-2.5 text-right" style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.45)' }}>{d.colPrice}</th>
-              <th className="px-4 py-2.5 text-right" style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.45)' }}>{d.colInvested}</th>
-              <th className="px-4 py-2.5 text-right cursor-pointer" style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.45)' }} onClick={() => toggleSort('value_brl')}>
+              <th className="px-4 py-2.5 text-right" style={{ fontFamily: "var(--arvo-font-body)", fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.45)' }}>{d.colHoldings}</th>
+              <th className="px-4 py-2.5 text-right" style={{ fontFamily: "var(--arvo-font-body)", fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.45)' }}>{d.colPrice}</th>
+              <th className="px-4 py-2.5 text-right" style={{ fontFamily: "var(--arvo-font-body)", fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.45)' }}>{d.colInvested}</th>
+              <th className="px-4 py-2.5 text-right cursor-pointer" style={{ fontFamily: "var(--arvo-font-body)", fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.45)' }} onClick={() => toggleSort('value_brl')}>
                 {d.colValue} {currency} <SortIcon col="value_brl" />
               </th>
-              <th className="px-4 py-2.5 text-right cursor-pointer" style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.45)' }} onClick={() => toggleSort('pct')}>
+              <th className="px-4 py-2.5 text-right cursor-pointer" style={{ fontFamily: "var(--arvo-font-body)", fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.45)' }} onClick={() => toggleSort('pct')}>
                 {d.colPct} <SortIcon col="pct" />
               </th>
-              <th className="px-4 py-2.5 text-right cursor-pointer" style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--arvo-black)' }} onClick={() => toggleSort('return')}>
+              <th className="px-4 py-2.5 text-right cursor-pointer" style={{ fontFamily: "var(--arvo-font-body)", fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--arvo-black)' }} onClick={() => toggleSort('return')}>
                 {d.colReturn} <SortIcon col="return" />
               </th>
             </tr>
@@ -289,7 +289,7 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
                             ? <span className="text-base leading-none shrink-0">{icon}</span>
                             : <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: group.color }} />
                         })()}
-                        <span className="text-sm tracking-tight" style={{ fontFamily: "'Tenor Sans', sans-serif", fontWeight: 600, color: 'var(--arvo-black)' }}>{resolveClassName(group.name, group.name_key)}</span>
+                        <span className="text-sm tracking-tight" style={{ fontFamily: "var(--arvo-font-body)", fontWeight: 600, color: 'var(--arvo-black)' }}>{resolveClassName(group.name, group.name_key)}</span>
                         <span className="text-xs" style={{ color: 'rgba(13,13,13,0.58)' }}>
                           {group.assets.length} {group.assets.length === 1 ? d.asset : d.assets}
                         </span>
@@ -298,7 +298,7 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
                     <td />
                     <td />
                     <td />
-                    <td className="px-4 py-3 text-right tabular-nums" style={{ fontFamily: "'Tenor Sans', sans-serif", fontWeight: 600, color: 'var(--arvo-black)' }}>
+                    <td className="px-4 py-3 text-right tabular-nums" style={{ fontFamily: "var(--arvo-font-body)", fontWeight: 600, color: 'var(--arvo-black)' }}>
                       {fmt(group.total)}
                     </td>
                     <td className="px-4 py-3 text-right text-sm" style={{ color: 'rgba(13,13,13,0.5)' }}>
@@ -420,8 +420,8 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
           </tbody>
           <tfoot style={{ background: 'rgba(0,0,0,0.025)', borderTop: '1px solid var(--arvo-border-soft)' }}>
             <tr>
-              <td colSpan={4} className="px-4 py-3 text-sm" style={{ fontFamily: "'Tenor Sans', sans-serif", color: 'var(--arvo-black)', letterSpacing: '0.06em' }}>{t.common.total}</td>
-              <td className="px-4 py-3 text-right" style={{ fontFamily: "'Tenor Sans', sans-serif", fontWeight: 600, color: 'var(--arvo-black)' }}>{fmt(portfolioTotal)}</td>
+              <td colSpan={4} className="px-4 py-3 text-sm" style={{ fontFamily: "var(--arvo-font-body)", color: 'var(--arvo-black)', letterSpacing: '0.06em' }}>{t.common.total}</td>
+              <td className="px-4 py-3 text-right" style={{ fontFamily: "var(--arvo-font-body)", fontWeight: 600, color: 'var(--arvo-black)' }}>{fmt(portfolioTotal)}</td>
               <td className="px-4 py-3 text-right" style={{ color: 'rgba(13,13,13,0.5)' }}>100%</td>
               <td className="px-4 py-3" />
             </tr>
@@ -474,13 +474,13 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
                     ? <span className="text-base leading-none shrink-0">{icon}</span>
                     : <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: group.color }} />
                 })()}
-                <span className="flex-1 truncate text-sm" style={{ fontFamily: "'Tenor Sans', sans-serif", fontWeight: 600, color: 'var(--arvo-black)' }}>{resolveClassName(group.name, group.name_key)}</span>
+                <span className="flex-1 truncate text-sm" style={{ fontFamily: "var(--arvo-font-body)", fontWeight: 600, color: 'var(--arvo-black)' }}>{resolveClassName(group.name, group.name_key)}</span>
                 {!returnsLoading && groupRentabM !== null && (
                   <span className="text-xs font-semibold" style={{ color: groupRentabM >= 0 ? 'var(--arvo-green)' : 'var(--arvo-red)' }}>
                     {groupRentabM >= 0 ? '+' : ''}{groupRentabM.toFixed(2)}%
                   </span>
                 )}
-                <span className="text-sm tabular-nums" style={{ fontFamily: "'Tenor Sans', sans-serif", fontWeight: 600, color: 'var(--arvo-black)' }}>{fmt(group.total)}</span>
+                <span className="text-sm tabular-nums" style={{ fontFamily: "var(--arvo-font-body)", fontWeight: 600, color: 'var(--arvo-black)' }}>{fmt(group.total)}</span>
                 <span className="text-xs w-10 text-right" style={{ color: 'rgba(13,13,13,0.58)' }}>{groupPct.toFixed(1)}%</span>
               </div>
 
@@ -591,8 +591,8 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
 
         {groups.length > 0 && (
           <div className="flex justify-between items-center px-4 py-3" style={{ background: 'rgba(0,0,0,0.025)', borderTop: '1px solid var(--arvo-border-soft)' }}>
-            <span className="text-sm" style={{ fontFamily: "'Tenor Sans', sans-serif", color: 'var(--arvo-black)', letterSpacing: '0.06em' }}>{t.common.total}</span>
-            <span style={{ fontFamily: "'Tenor Sans', sans-serif", fontWeight: 600, color: 'var(--arvo-black)' }}>{fmt(portfolioTotal)}</span>
+            <span className="text-sm" style={{ fontFamily: "var(--arvo-font-body)", color: 'var(--arvo-black)', letterSpacing: '0.06em' }}>{t.common.total}</span>
+            <span style={{ fontFamily: "var(--arvo-font-body)", fontWeight: 600, color: 'var(--arvo-black)' }}>{fmt(portfolioTotal)}</span>
           </div>
         )}
       </div>

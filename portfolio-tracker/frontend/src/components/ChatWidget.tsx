@@ -193,7 +193,7 @@ export default function ChatWidget() {
           <div className="flex-1 overflow-y-auto px-3 py-3 space-y-3 text-sm">
             {isEmpty ? (
               <div className="flex flex-col h-full">
-                <p className="text-[13px] text-center mt-6 mb-4" style={{ color: 'rgba(13,13,13,0.45)', fontFamily: "'Tenor Sans', sans-serif" }}>
+                <p className="text-[13px] text-center mt-6 mb-4" style={{ color: 'rgba(13,13,13,0.45)', fontFamily: "var(--arvo-font-body)" }}>
                   {t.chat.greeting}
                 </p>
                 <div className="grid grid-cols-1 gap-1.5 mt-auto mb-2">
@@ -202,7 +202,7 @@ export default function ChatWidget() {
                       key={s}
                       onClick={() => sendMessage(s)}
                       className="text-left text-[12px] rounded-lg px-3 py-2 transition-all leading-snug"
-                      style={{ background: 'rgba(13,13,13,0.05)', color: 'var(--arvo-black)', fontFamily: "'Tenor Sans', sans-serif" }}
+                      style={{ background: 'rgba(13,13,13,0.05)', color: 'var(--arvo-black)', fontFamily: "var(--arvo-font-body)" }}
                       onMouseEnter={e => { e.currentTarget.style.background = 'rgba(13,13,13,0.09)' }}
                       onMouseLeave={e => { e.currentTarget.style.background = 'rgba(13,13,13,0.05)' }}
                     >
@@ -218,8 +218,8 @@ export default function ChatWidget() {
                     <div
                       className="max-w-[85%] rounded-2xl px-3 py-2 text-[13px] leading-relaxed whitespace-pre-wrap"
                       style={m.role === 'user'
-                        ? { background: 'var(--arvo-black)', color: 'var(--arvo-offwhite)', borderBottomRightRadius: 4, fontFamily: "'Tenor Sans', sans-serif" }
-                        : { background: 'rgba(13,13,13,0.07)', color: 'var(--arvo-black)', borderBottomLeftRadius: 4, fontFamily: "'Tenor Sans', sans-serif" }}
+                        ? { background: 'var(--arvo-black)', color: 'var(--arvo-offwhite)', borderBottomRightRadius: 4, fontFamily: "var(--arvo-font-body)" }
+                        : { background: 'rgba(13,13,13,0.07)', color: 'var(--arvo-black)', borderBottomLeftRadius: 4, fontFamily: "var(--arvo-font-body)" }}
                     >
                       {m.loading && !m.content ? (
                         <span className="flex gap-1 items-center h-4">
@@ -255,7 +255,7 @@ export default function ChatWidget() {
                 placeholder={t.chat.placeholder}
                 disabled={loading}
                 className="flex-1 resize-none rounded-xl px-3 py-2 text-[13px] focus:outline-none disabled:opacity-50 max-h-24 overflow-y-auto leading-relaxed bg-transparent"
-                style={{ minHeight: '36px', border: '1px solid var(--arvo-border-soft)', color: 'var(--arvo-black)', fontFamily: "'Tenor Sans', sans-serif" }}
+                style={{ minHeight: '36px', border: '1px solid var(--arvo-border-soft)', color: 'var(--arvo-black)', fontFamily: "var(--arvo-font-body)" }}
               />
               <button
                 onClick={() => sendMessage(input)}
@@ -268,7 +268,7 @@ export default function ChatWidget() {
                 </svg>
               </button>
             </div>
-            <p className="text-[10px] text-center mt-1.5" style={{ color: 'rgba(13,13,13,0.35)', fontFamily: "'Tenor Sans', sans-serif" }}>{t.chat.enterHint}</p>
+            <p className="text-[10px] text-center mt-1.5" style={{ color: 'rgba(13,13,13,0.35)', fontFamily: "var(--arvo-font-body)" }}>{t.chat.enterHint}</p>
           </div>
         </div>
       )}

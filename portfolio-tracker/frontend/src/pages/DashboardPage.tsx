@@ -148,7 +148,7 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 18, letterSpacing: '0.06em', color: 'var(--arvo-black)' }}>Dashboard</h1>
+        <h1 style={{ fontFamily: "var(--arvo-font-body)", fontSize: 18, letterSpacing: '0.06em', color: 'var(--arvo-black)' }}>Dashboard</h1>
         <div className="flex flex-wrap items-center gap-2">
           {([
             { key: 'current_month' as PeriodMode, label: t.performance.currentMonth },
@@ -162,7 +162,7 @@ export default function DashboardPage() {
               onClick={() => !disabled && setPeriodMode(key)}
               disabled={disabled}
               style={{
-                fontFamily: "'Tenor Sans', sans-serif",
+                fontFamily: "var(--arvo-font-body)",
                 fontSize: 10,
                 letterSpacing: '0.12em',
                 textTransform: 'uppercase',
@@ -178,7 +178,7 @@ export default function DashboardPage() {
           ))}
           <button
             onClick={refresh}
-            style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 11, color: 'rgba(13,13,13,0.60)', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, marginLeft: 4 }}
+            style={{ fontFamily: "var(--arvo-font-body)", fontSize: 11, color: 'rgba(13,13,13,0.60)', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, marginLeft: 4 }}
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -228,7 +228,7 @@ export default function DashboardPage() {
       {/* Evolution chart */}
       {(chartLoading || portfolioChartData.length > 0) && (
         <div className="rounded-2xl p-5" style={{ background: 'white', border: '1px solid var(--arvo-border)' }}>
-          <h2 className="mb-1" style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 13, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--arvo-fg)' }}>{t.dashboard.portfolioEvolution}</h2>
+          <h2 className="mb-1" style={{ fontFamily: "var(--arvo-font-body)", fontSize: 13, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--arvo-fg)' }}>{t.dashboard.portfolioEvolution}</h2>
           <div className="h-52">
           {chartLoading && portfolioChartData.length === 0 ? (
             <div className="h-full flex items-end gap-1 px-2 pb-1">
@@ -280,7 +280,7 @@ export default function DashboardPage() {
         />
       ) : (
         <div className="rounded-2xl p-12 text-center" style={{ background: 'white', border: '1px solid var(--arvo-border)' }}>
-          <p style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 16, letterSpacing: '0.06em', color: 'var(--arvo-fg-soft)' }}>{t.dashboard.noOpenPositions}</p>
+          <p style={{ fontFamily: "var(--arvo-font-body)", fontSize: 16, letterSpacing: '0.06em', color: 'var(--arvo-fg-soft)' }}>{t.dashboard.noOpenPositions}</p>
           <p className="text-sm mt-1" style={{ fontFamily: "'Playfair Display', serif", fontStyle: 'italic', color: 'var(--arvo-fg-soft)', opacity: 0.7 }}>{t.dashboard.addAssetsHint}</p>
         </div>
       )}
@@ -289,7 +289,7 @@ export default function DashboardPage() {
       {(divLoading || (divSummary && divSummary.total_brl > 0)) && (
         <div className="rounded-2xl p-5" style={{ background: 'white', border: '1px solid var(--arvo-border)' }}>
           <div className="flex items-center justify-between mb-3">
-            <h2 style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 13, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--arvo-fg)' }}>{td.title ?? 'Dividendos'}</h2>
+            <h2 style={{ fontFamily: "var(--arvo-font-body)", fontSize: 13, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--arvo-fg)' }}>{td.title ?? 'Dividendos'}</h2>
             <div className="flex items-center gap-2">
               {syncing && <span className="text-xs animate-pulse" style={{ color: 'var(--arvo-fg-soft)' }}>{td.autoSyncing ?? 'Atualizando...'}</span>}
               <button

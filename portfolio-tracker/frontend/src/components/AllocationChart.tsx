@@ -23,7 +23,7 @@ export default function AllocationChart({ data }: Props) {
 
   return (
     <div className="rounded-2xl p-6" style={{ background: 'white', border: '1px solid var(--arvo-border)' }}>
-      <h2 className="mb-1" style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 13, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--arvo-fg)' }}>{t.dashboard.allocationByClass}</h2>
+      <h2 className="mb-1" style={{ fontFamily: "var(--arvo-font-body)", fontSize: 13, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--arvo-fg)' }}>{t.dashboard.allocationByClass}</h2>
       <p className="mb-4" style={{ fontFamily: "'Playfair Display', serif", fontStyle: 'italic', fontSize: 13, color: 'var(--arvo-fg-soft)' }}>onde seu patrimônio está plantado</p>
       <div className="flex flex-col lg:flex-row gap-6 items-center">
         <div className="w-full lg:w-64 h-64">
@@ -45,7 +45,7 @@ export default function AllocationChart({ data }: Props) {
               </Pie>
               <Tooltip
                 formatter={(value) => [fmtBRL(Number(value)), t.common.value]}
-                contentStyle={{ borderRadius: 8, border: '1px solid var(--arvo-border-soft)', background: 'var(--arvo-offwhite)', fontSize: 12, fontFamily: "'Tenor Sans', sans-serif" }}
+                contentStyle={{ borderRadius: 8, border: '1px solid var(--arvo-border-soft)', background: 'var(--arvo-offwhite)', fontSize: 12, fontFamily: "var(--arvo-font-body)" }}
               />
             </PieChart>
           </ResponsiveContainer>
@@ -58,7 +58,7 @@ export default function AllocationChart({ data }: Props) {
               <div className="flex-1 min-w-0">
                 <div className="flex justify-between items-baseline">
                   <span className="text-sm truncate" style={{ color: 'rgba(13,13,13,0.7)' }}>{resolveClassName(item)}</span>
-                  <span className="text-sm ml-2 flex-shrink-0" style={{ fontFamily: "'Tenor Sans', sans-serif", color: 'var(--arvo-black)' }}>
+                  <span className="text-sm ml-2 flex-shrink-0" style={{ fontFamily: "var(--arvo-font-body)", color: 'var(--arvo-black)' }}>
                     {item.pct.toFixed(1)}%
                   </span>
                 </div>
@@ -69,7 +69,7 @@ export default function AllocationChart({ data }: Props) {
                   />
                 </div>
               </div>
-              <span className="text-xs flex-shrink-0 w-24 text-right" style={{ color: 'rgba(13,13,13,0.58)', fontFamily: "'Tenor Sans', sans-serif" }}>
+              <span className="text-xs flex-shrink-0 w-24 text-right" style={{ color: 'rgba(13,13,13,0.58)', fontFamily: "var(--arvo-font-body)" }}>
                 {fmtBRL(item.value_brl)}
               </span>
             </div>

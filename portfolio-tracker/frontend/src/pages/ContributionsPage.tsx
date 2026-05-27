@@ -586,13 +586,13 @@ export default function ContributionsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h1 style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 18, letterSpacing: '0.06em', color: 'var(--arvo-black)' }}>{t.contributions.title}</h1>
+          <h1 style={{ fontFamily: "var(--arvo-font-body)", fontSize: 18, letterSpacing: '0.06em', color: 'var(--arvo-black)' }}>{t.contributions.title}</h1>
           <p className="text-sm mt-0.5" style={{ color: 'rgba(13,13,13,0.60)' }}>{t.contributions.subtitle}</p>
         </div>
         <div className="flex items-center gap-2">
           <Link
             to="/import/b3"
-            style={{ padding: '8px 14px', background: '#FFFFFF', border: '1px solid var(--arvo-border)', color: 'var(--arvo-fg-muted)', fontSize: 14, fontFamily: "'Tenor Sans', sans-serif", borderRadius: 12, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', transition: 'border-color 0.2s' }}
+            style={{ padding: '8px 14px', background: '#FFFFFF', border: '1px solid var(--arvo-border)', color: 'var(--arvo-fg-muted)', fontSize: 14, fontFamily: "var(--arvo-font-body)", borderRadius: 12, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', transition: 'border-color 0.2s' }}
           >
             {t.contributions.importB3}
           </Link>

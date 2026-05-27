@@ -66,7 +66,7 @@ export default function AchievementsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl" style={{ fontFamily: "'Tenor Sans', sans-serif", color: 'var(--arvo-black)', letterSpacing: '0.04em' }}>{t.achievements.title}</h1>
+          <h1 className="text-xl" style={{ fontFamily: "var(--arvo-font-body)", color: 'var(--arvo-black)', letterSpacing: '0.04em' }}>{t.achievements.title}</h1>
           <p className="text-sm mt-0.5" style={{ color: 'rgba(13,13,13,0.5)' }}>{earnedKeys.length} {t.achievements.of} {ACHIEVEMENT_DEFS.length} {t.achievements.subtitle}</p>
         </div>
         <div className="flex items-center gap-3">
@@ -94,13 +94,13 @@ export default function AchievementsPage() {
           <div className="flex items-center gap-2">
             <span className="text-3xl">{level.emoji}</span>
             <div>
-              <p className="text-xs uppercase tracking-widest" style={{ fontFamily: "'Tenor Sans', sans-serif", color: 'var(--arvo-gold-text)' }}>{t.achievements.currentLevel}</p>
-              <p style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 18, color: 'var(--arvo-black)' }}>{(t.levels as Record<string,string>)[level.key] ?? level.name}</p>
+              <p className="text-xs uppercase tracking-widest" style={{ fontFamily: "var(--arvo-font-body)", color: 'var(--arvo-gold-text)' }}>{t.achievements.currentLevel}</p>
+              <p style={{ fontFamily: "var(--arvo-font-body)", fontSize: 18, color: 'var(--arvo-black)' }}>{(t.levels as Record<string,string>)[level.key] ?? level.name}</p>
             </div>
           </div>
           <div className="text-right">
             <span className="font-bold text-2xl" style={{ fontFamily: "'Playfair Display', serif", fontStyle: 'italic', color: 'var(--arvo-gold-text)' }}>{totalXp}</span>
-            <span className="text-sm ml-1" style={{ color: 'rgba(13,13,13,0.60)', fontFamily: "'Tenor Sans', sans-serif" }}>XP</span>
+            <span className="text-sm ml-1" style={{ color: 'rgba(13,13,13,0.60)', fontFamily: "var(--arvo-font-body)" }}>XP</span>
           </div>
         </div>
 
@@ -111,7 +111,7 @@ export default function AchievementsPage() {
           />
         </div>
 
-        <div className="flex justify-between mt-2 text-xs" style={{ color: 'rgba(13,13,13,0.60)', fontFamily: "'Tenor Sans', sans-serif", position: 'relative', zIndex: 1 }}>
+        <div className="flex justify-between mt-2 text-xs" style={{ color: 'rgba(13,13,13,0.60)', fontFamily: "var(--arvo-font-body)", position: 'relative', zIndex: 1 }}>
           <span>{level.minXp} XP</span>
           {nextLevel
             ? <span>{t.achievements.nextLevel}: {nextLevel.emoji} {(t.levels as Record<string,string>)[nextLevel.key] ?? nextLevel.name} · {nextLevel.minXp} {t.achievements.xp}</span>
@@ -132,10 +132,10 @@ export default function AchievementsPage() {
               key={l.name}
               className="flex-1 rounded-xl py-2.5 text-center text-xs transition-all"
               style={isActive
-                ? { border: '1px solid var(--arvo-black)', background: 'rgba(13,13,13,0.08)', color: 'var(--arvo-black)', fontFamily: "'Tenor Sans', sans-serif" }
+                ? { border: '1px solid var(--arvo-black)', background: 'rgba(13,13,13,0.08)', color: 'var(--arvo-black)', fontFamily: "var(--arvo-font-body)" }
                 : isPast
-                ? { border: '1px solid rgba(31,138,91,0.3)', background: 'rgba(31,138,91,0.07)', color: 'var(--arvo-green)', fontFamily: "'Tenor Sans', sans-serif" }
-                : { border: '1px solid var(--arvo-border-soft)', background: 'transparent', color: 'rgba(13,13,13,0.35)', fontFamily: "'Tenor Sans', sans-serif" }}
+                ? { border: '1px solid rgba(31,138,91,0.3)', background: 'rgba(31,138,91,0.07)', color: 'var(--arvo-green)', fontFamily: "var(--arvo-font-body)" }
+                : { border: '1px solid var(--arvo-border-soft)', background: 'transparent', color: 'rgba(13,13,13,0.35)', fontFamily: "var(--arvo-font-body)" }}
             >
               <div className="text-base">{l.emoji}</div>
               <div className="truncate px-1 mt-0.5">{(t.levels as Record<string,string>)[l.key] ?? l.name}</div>
@@ -159,7 +159,7 @@ export default function AchievementsPage() {
             >
               <Medal def={def} earned={isEarned} size={80} />
 
-              <p className="mt-3 text-sm leading-tight" style={{ fontFamily: "'Tenor Sans', sans-serif", color: isEarned ? 'var(--arvo-black)' : 'rgba(13,13,13,0.4)' }}>
+              <p className="mt-3 text-sm leading-tight" style={{ fontFamily: "var(--arvo-font-body)", color: isEarned ? 'var(--arvo-black)' : 'rgba(13,13,13,0.4)' }}>
                 {(t.achievementDefs as Record<string, { name: string; desc: string }>)[def.key]?.name ?? def.name}
               </p>
               <p className="mt-1 text-xs leading-snug" style={{ color: isEarned ? 'rgba(13,13,13,0.55)' : 'rgba(13,13,13,0.35)' }}>
@@ -168,7 +168,7 @@ export default function AchievementsPage() {
 
               {isEarned ? (
                 <div className="mt-2 flex items-center gap-1 flex-wrap justify-center">
-                  <span className="text-xs" style={{ fontFamily: "'Tenor Sans', sans-serif", color: 'var(--arvo-gold)' }}>+{def.xp} {t.achievements.xp}</span>
+                  <span className="text-xs" style={{ fontFamily: "var(--arvo-font-body)", color: 'var(--arvo-gold)' }}>+{def.xp} {t.achievements.xp}</span>
                   {earnedAt && (
                     <span className="text-xs" style={{ color: 'rgba(13,13,13,0.35)' }}>
                       · {new Date(earnedAt).toLocaleDateString(undefined, { day: '2-digit', month: 'short' })}
@@ -176,7 +176,7 @@ export default function AchievementsPage() {
                   )}
                 </div>
               ) : (
-                <span className="mt-2 text-xs" style={{ color: 'rgba(13,13,13,0.35)', fontFamily: "'Tenor Sans', sans-serif" }}>🔒 {def.xp} {t.achievements.xp}</span>
+                <span className="mt-2 text-xs" style={{ color: 'rgba(13,13,13,0.35)', fontFamily: "var(--arvo-font-body)" }}>🔒 {def.xp} {t.achievements.xp}</span>
               )}
             </div>
           )

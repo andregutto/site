@@ -104,13 +104,13 @@ export default function IndicesPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 18, letterSpacing: '0.06em', color: 'var(--arvo-black)' }}>{t.indices.title}</h1>
+        <h1 style={{ fontFamily: "var(--arvo-font-body)", fontSize: 18, letterSpacing: '0.06em', color: 'var(--arvo-black)' }}>{t.indices.title}</h1>
         <p className="text-sm mt-0.5" style={{ color: 'rgba(13,13,13,0.60)' }}>{t.indices.subtitle}</p>
       </div>
 
       {grouped.map(([category, items]) => (
         <section key={category}>
-          <h2 className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: 'rgba(13,13,13,0.55)', fontFamily: "'Tenor Sans', sans-serif", letterSpacing: '0.18em' }}>
+          <h2 className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: 'rgba(13,13,13,0.55)', fontFamily: "var(--arvo-font-body)", letterSpacing: '0.18em' }}>
             {CATEGORY_LABELS[category]?.[locale as 'pt' | 'en' | 'fr'] ?? category}
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
