@@ -22,7 +22,8 @@ export function AchievementProvider({ children }: { children: React.ReactNode })
   const checking = useRef(false)
 
   // Achievements awarded silently — no toast or celebration modal
-  const SILENT_ACHIEVEMENTS = new Set(['first_step'])
+  // first_step and fin_first_account both fire during onboarding; suppress to avoid overwhelming new users
+  const SILENT_ACHIEVEMENTS = new Set(['first_step', 'fin_first_account'])
 
   const triggerCheck = useCallback(async (total_brl?: number, total_display?: number, currency?: string) => {
     if (checking.current) return

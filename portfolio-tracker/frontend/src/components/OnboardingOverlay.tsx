@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useI18n } from '../contexts/I18nContext'
 import { apiFetch } from '../lib/api'
+import ArvoLoader from './ArvoLoader'
 
 const onboardingKey = (userId: string) => `onboarding_v1_done_${userId}`
 
@@ -188,7 +189,7 @@ export default function OnboardingOverlay({ onDone, userId }: Props) {
           {step === 0 && (
             <div className="space-y-5 text-center">
               <div className="w-16 h-16 bg-[#0D0D0D] rounded-2xl flex items-center justify-center mx-auto shadow-lg">
-                <span className="text-white text-3xl">▦</span>
+                <ArvoLoader size={36} style={{ color: 'var(--arvo-gold)' }} />
               </div>
               <div>
                 <h2 className="text-xl font-bold text-[#0D0D0D]">{o.welcomeTitle}</h2>

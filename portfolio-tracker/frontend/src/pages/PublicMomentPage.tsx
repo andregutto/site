@@ -200,7 +200,7 @@ export default function PublicMomentPage() {
         {/* Footer */}
         <div className="text-center py-4 border-t border-gray-100">
           <Link to="/" className="text-xs text-gray-400 hover:text-[#0D0D0D] transition-colors">
-            {t.finances.publicCreatedWith} <span className="font-semibold text-[#0D0D0D]">portfolio.andregutto.com</span>
+            {t.finances.publicCreatedWith} <span className="font-semibold text-[#0D0D0D]">arvo.andregutto.com</span>
           </Link>
         </div>
       </div>
