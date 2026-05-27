@@ -317,6 +317,9 @@ export default function ProfilePage() {
           default_section: defaultSection,
         }),
       })
+      // Refresh the session token so user_metadata (incl. default_section) is
+      // up to date — the backend updates the DB but the client token is cached
+      await supabase.auth.refreshSession()
       setSaveOk(true)
       setTimeout(() => setSaveOk(false), 3000)
       triggerCheck()
