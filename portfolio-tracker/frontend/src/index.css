@@ -31,11 +31,27 @@
   --font-sans:    'DM Sans', system-ui, sans-serif;
 }
 
+html, body {
+  overscroll-behavior: none;
+}
+
 body {
   @apply font-sans antialiased;
   background-color: var(--arvo-offwhite);
   color: var(--arvo-fg);
   overflow-x: hidden;
+}
+
+/* Safe area utility — used by the mobile bottom nav */
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Main content bottom padding accounts for nav + sub-nav + safe area on mobile */
+@media (max-width: 639px) {
+  .main-content {
+    padding-bottom: calc(7rem + env(safe-area-inset-bottom, 0px));
+  }
 }
 
 /* Prevent iOS Safari auto-zoom when focusing inputs with small font */

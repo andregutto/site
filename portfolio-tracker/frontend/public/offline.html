@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0D0D0D" />
+  <title>Arvo — Sem conexão</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      background: #0D0D0D;
+      color: #C8B89A;
+      font-family: 'DM Sans', system-ui, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 24px;
+      padding: 32px 24px;
+      text-align: center;
+    }
+    svg { color: #C8B89A; }
+    h1 {
+      font-family: 'Tenor Sans', 'Times New Roman', serif;
+      font-size: 22px;
+      font-weight: 400;
+      letter-spacing: 0.04em;
+      color: #FFFFFF;
+    }
+    p {
+      font-size: 14px;
+      line-height: 1.6;
+      color: rgba(200,184,154,0.7);
+      max-width: 280px;
+    }
+    button {
+      margin-top: 8px;
+      padding: 12px 28px;
+      background: #C8B89A;
+      color: #0D0D0D;
+      border: none;
+      border-radius: 6px;
+      font-family: 'DM Sans', system-ui, sans-serif;
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <svg width="52" height="54" viewBox="0 0 174 180" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <path fill="currentColor" d="M87 0L174 45V135L87 180L0 135V45L87 0Z" opacity="0.15"/>
+    <path fill="currentColor" d="M87 20L154 57.5V132.5L87 170L20 132.5V57.5L87 20Z" opacity="0.25"/>
+    <path fill="currentColor" d="M87 44L134 71V125L87 152L40 125V71L87 44Z" opacity="0.4"/>
+    <path fill="currentColor" d="M87 68L114 84.5V117.5L87 134L60 117.5V84.5L87 68Z"/>
+  </svg>
+  <h1>Sem conexão</h1>
+  <p>Verifique sua conexão com a internet e tente novamente.</p>
+  <button onclick="location.reload()">Tentar novamente</button>
+</body>
+</html>

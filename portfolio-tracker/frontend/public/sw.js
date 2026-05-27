@@ -1,5 +1,5 @@
-const CACHE = 'portfolio-v3'
-const STATIC = ['/manifest.json', '/favicon.svg']
+const CACHE = 'arvo-v4'
+const STATIC = ['/manifest.json', '/favicon.svg', '/offline.html']
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(STATIC)))
@@ -30,8 +30,13 @@ self.addEventListener('fetch', e => {
     return
   }
 
-  // Never cache HTML — always network so new deploys load immediately
-  if (request.headers.get('accept')?.includes('text/html')) return
+  // Navigation requests: network-first, fall back to offline.html
+  if (request.mode === 'navigate') {
+    e.respondWith(
+      fetch(request).catch(() => caches.match('/offline.html'))
+    )
+    return
+  }
 
   // Cache-first for same-origin static assets (GET only)
   if (request.method !== 'GET') return

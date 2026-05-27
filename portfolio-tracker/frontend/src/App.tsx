@@ -4,6 +4,15 @@ import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { CurrencyProvider } from './contexts/CurrencyContext'
 import { I18nProvider, useI18n } from './contexts/I18nContext'
 import { supabase } from './lib/supabase'
+import ArvoLoader from './components/ArvoLoader'
+
+function ArvoSplash() {
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'var(--arvo-black)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }}>
+      <ArvoLoader size={52} style={{ color: 'var(--arvo-gold)' }} />
+    </div>
+  )
+}
 import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
 import PerformancePage from './pages/PerformancePage'
@@ -81,13 +90,7 @@ function EmailConfirmGate({ email }: { email: string }) {
 function ProtectedRoutes() {
   const { user, loading } = useAuth()
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-gray-400 text-sm animate-pulse">Carregando...</div>
-      </div>
-    )
-  }
+  if (loading) return <ArvoSplash />
 
   if (!user) return <Navigate to="/" replace />
 
@@ -99,11 +102,7 @@ function ProtectedRoutes() {
 function AppRoutes() {
   const { user, loading } = useAuth()
 
-  if (loading) return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <div className="text-gray-400 text-sm animate-pulse">Carregando...</div>
-    </div>
-  )
+  if (loading) return <ArvoSplash />
 
   return (
     <Routes>
