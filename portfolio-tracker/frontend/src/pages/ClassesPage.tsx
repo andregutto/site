@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { apiFetch } from '../lib/api'
 import { useI18n } from '../contexts/I18nContext'
+import { PageLoader } from '../components/ArvoLoader'
 
 interface AssetClass { id: number; name: string; name_key?: string | null; color: string; icon: string | null }
 
@@ -220,7 +221,7 @@ export default function ClassesPage() {
   const unclassed = assets.filter(a => a.asset_classes == null)
 
   if (loading) {
-    return <div className="text-center text-gray-400 text-sm py-12 animate-pulse">{t.classes.loading}</div>
+    return <PageLoader />
   }
 
   return (

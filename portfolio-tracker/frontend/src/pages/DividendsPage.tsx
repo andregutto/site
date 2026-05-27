@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useDividends, useDividendSummary, useDividendSync } from '../hooks/useDividends'
+import { PageLoader } from '../components/ArvoLoader'
 import { useCurrency } from '../contexts/CurrencyContext'
 import { useI18n } from '../contexts/I18nContext'
 import {
@@ -114,7 +115,7 @@ export default function DividendsPage() {
       </div>
 
       {isLoading ? (
-        <div className="text-center text-gray-400 text-sm py-12 animate-pulse">{d.autoSyncing}</div>
+        <PageLoader />
       ) : (
         <>
           {/* Summary card */}

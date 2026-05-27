@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { usePortfolioValue } from '../hooks/usePortfolio'
 import { useCurrency } from '../contexts/CurrencyContext'
 import { useI18n } from '../contexts/I18nContext'
+import { PageLoader } from '../components/ArvoLoader'
 import { apiFetch } from '../lib/api'
 import InstitutionLogo from '../components/InstitutionLogo'
 import InstitutionSelect from '../components/InstitutionSelect'
@@ -245,7 +246,7 @@ export default function InstitutionPage() {
   const loading = portfolioLoading || accountsLoading
 
   if (loading) {
-    return <div className="text-center text-gray-400 text-sm py-12 animate-pulse">{t.common.loading}</div>
+    return <PageLoader />
   }
 
   if (!portfolio) return null

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { apiFetch } from '../lib/api'
 import { useI18n } from '../contexts/I18nContext'
+import { PageLoader } from '../components/ArvoLoader'
 
 type Contribution = {
   asset_id: number
@@ -86,9 +87,7 @@ export default function ArchivedPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-24">
-        <div className="text-gray-400 text-sm animate-pulse">{t.common.loading}</div>
-      </div>
+      <PageLoader />
     )
   }
 

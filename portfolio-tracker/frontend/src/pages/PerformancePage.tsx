@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { PageLoader } from '../components/ArvoLoader'
 import { usePerformanceSummary, usePerformanceMonthly, usePerformanceBenchmarks, usePortfolioValue, usePerformanceInception } from '../hooks/usePortfolio'
 import { useDividendSummary, useDividends } from '../hooks/useDividends'
 import { useCurrency } from '../contexts/CurrencyContext'
@@ -250,9 +251,7 @@ export default function PerformancePage() {
       </div>
 
       {isLoading ? (
-        <div className="text-center text-gray-400 text-sm py-12 animate-pulse">
-          {t.performance.loading}
-        </div>
+        <PageLoader />
       ) : (
         <>
           {summary && (

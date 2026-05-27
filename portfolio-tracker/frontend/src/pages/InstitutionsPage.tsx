@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useLocation } from 'react-router-dom'
+import { PageLoader } from '../components/ArvoLoader'
 import { apiFetch } from '../lib/api'
 import { usePortfolioValue } from '../hooks/usePortfolio'
 import InstitutionLogo from '../components/InstitutionLogo'
@@ -132,7 +133,7 @@ export default function InstitutionsPage() {
   }
 
   if (loading) {
-    return <div className="text-center text-gray-400 text-sm py-12 animate-pulse">Carregando...</div>
+    return <PageLoader />
   }
 
   return (

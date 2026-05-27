@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { PageLoader } from '../components/ArvoLoader'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ReferenceLine,
   ResponsiveContainer, Cell,
@@ -104,9 +105,7 @@ export default function IndexDetailPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-24">
-        <div className="text-gray-400 text-sm animate-pulse">Carregando...</div>
-      </div>
+      <PageLoader />
     )
   }
 

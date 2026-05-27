@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { PageLoader } from '../components/ArvoLoader'
 import { usePortfolioValue, usePerformanceMonthly, usePerformanceInception, usePerformanceSummary } from '../hooks/usePortfolio'
 import { useDividendSummary, useDividendSync } from '../hooks/useDividends'
 import { useCurrency } from '../contexts/CurrencyContext'
@@ -120,11 +121,7 @@ export default function DashboardPage() {
   function handleSaved() { setSelectedAsset(null); refresh() }
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-sm animate-pulse" style={{ color: 'var(--arvo-fg-soft)' }}>{t.dashboard.calculating}</div>
-      </div>
-    )
+    return <PageLoader />
   }
 
   if (error) {

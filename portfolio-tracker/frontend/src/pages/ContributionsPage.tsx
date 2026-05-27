@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useSearchParams, Link, useNavigate } from 'react-router-dom'
 import { useContributions } from '../hooks/usePortfolio'
+import { PageLoader } from '../components/ArvoLoader'
 import { useCurrency } from '../contexts/CurrencyContext'
 import { useAchievementContext } from '../contexts/AchievementContext'
 import { useI18n } from '../contexts/I18nContext'
@@ -1089,7 +1090,7 @@ export default function ContributionsPage() {
         </div>
 
         {loading ? (
-          <p className="text-center text-gray-400 py-8 text-sm animate-pulse">{t.common.loading}</p>
+          <PageLoader />
         ) : error ? (
           <p className="text-center text-red-500 py-8 text-sm">{error}</p>
         ) : contributions.length === 0 ? (

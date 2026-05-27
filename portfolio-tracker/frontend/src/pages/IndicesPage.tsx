@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { apiFetch } from '../lib/api'
 import { useI18n } from '../contexts/I18nContext'
+import { PageLoader } from '../components/ArvoLoader'
 
 interface IndexSnapshot {
   code: string
@@ -87,9 +88,7 @@ export default function IndicesPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-24">
-        <div className="text-gray-400 text-sm animate-pulse">{t.indices.loading}</div>
-      </div>
+      <PageLoader />
     )
   }
 

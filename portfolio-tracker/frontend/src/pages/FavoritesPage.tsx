@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { usePortfolioValue } from '../hooks/usePortfolio'
 import { useFavorites } from '../hooks/useFavorites'
 import { useCurrency } from '../contexts/CurrencyContext'
+import { PageLoader } from '../components/ArvoLoader'
 
 function StarIcon({ filled }: { filled: boolean }) {
   return (
@@ -27,9 +28,7 @@ export default function FavoritesPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-24">
-        <div className="text-gray-400 text-sm animate-pulse">Carregando...</div>
-      </div>
+      <PageLoader />
     )
   }
 

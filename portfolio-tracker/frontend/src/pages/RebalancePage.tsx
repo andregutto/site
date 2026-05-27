@@ -3,6 +3,7 @@ import { usePortfolioValue } from '../hooks/usePortfolio'
 import { useCurrency } from '../contexts/CurrencyContext'
 import { useI18n } from '../contexts/I18nContext'
 import { apiFetch } from '../lib/api'
+import { PageLoader } from '../components/ArvoLoader'
 
 export default function RebalancePage() {
   const { data, loading: portfolioLoading } = usePortfolioValue()
@@ -56,7 +57,7 @@ export default function RebalancePage() {
   }
 
   if (portfolioLoading || profileLoading) {
-    return <div className="text-center text-gray-400 text-sm py-12 animate-pulse">{t.classes.loading}</div>
+    return <PageLoader />
   }
 
   const targetSumOk = Math.abs(totalTarget - 100) < 0.1
