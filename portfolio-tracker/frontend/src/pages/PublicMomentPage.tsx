@@ -102,7 +102,7 @@ export default function PublicMomentPage() {
   const { moment, summary, transactions } = data
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
       {/* Hero */}
       {moment.cover_image_url ? (
         <div className="h-52 sm:h-64 overflow-hidden relative">

@@ -20,7 +20,7 @@ export default function PrivacyPolicyPage() {
   ]
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '40px 16px', background: 'var(--arvo-offwhite)' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: 'calc(40px + env(safe-area-inset-top, 0px)) 16px 40px', background: 'var(--arvo-offwhite)' }}>
       <div style={{ width: '100%', maxWidth: 672, display: 'flex', flexDirection: 'column', gap: 24 }}>
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
