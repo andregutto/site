@@ -845,7 +845,8 @@ export default function AssetDetailPage() {
           <div className="px-5 py-4 border-b border-gray-100">
             <h2 className="font-semibold text-gray-800">{d.manualHistTitle} ({mvEntriesWithChange.length})</h2>
           </div>
-          <div className="overflow-x-auto">
+          {/* desktop */}
+          <div className="hidden sm:block overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
                 <tr>
@@ -894,6 +895,37 @@ export default function AssetDetailPage() {
               </tbody>
             </table>
           </div>
+          {/* mobile cards */}
+          <div className="sm:hidden divide-y divide-gray-50">
+            {mvEntriesWithChange.map(e => (
+              <div key={e.id} className="px-4 py-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <div className="text-sm font-medium text-gray-900">
+                      {new Intl.NumberFormat(intlLocale, { style: 'currency', currency: e.currency, maximumFractionDigits: 2 }).format(e.value)}
+                    </div>
+                    <div className="text-xs text-gray-500 mt-0.5">{fmtDate(e.ref_date, intlLocale)}</div>
+                    {e.notes && <div className="text-xs text-gray-400 italic mt-0.5">{e.notes}</div>}
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {e.changePct != null && (
+                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                        e.changePct > 0 ? 'bg-green-100 text-green-700' :
+                        e.changePct < 0 ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-500'
+                      }`}>
+                        {e.changePct >= 0 ? '+' : ''}{e.changePct.toFixed(2)}%
+                      </span>
+                    )}
+                    <button
+                      onClick={() => handleDeleteManualValue(e.id)}
+                      className="text-gray-300 hover:text-red-500 transition-colors text-lg leading-none"
+                      title={d.removeEntry}
+                    >×</button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
@@ -915,70 +947,110 @@ export default function AssetDetailPage() {
                 {t.contributions.noContributions}
               </p>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
-                    <tr>
-                      <th className="px-4 py-3 text-left">{d.tableDate}</th>
-                      <th className="px-4 py-3 text-left">{d.tableType}</th>
-                      <th className="px-4 py-3 text-right">{d.tableQty}</th>
-                      <th className="px-4 py-3 text-right">{d.tableUnitPrice}</th>
-                      <th className="px-4 py-3 text-right">{d.tableTotalBrl}</th>
-                      <th className="px-4 py-3 text-right">{d.tableProfit}</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-50">
-                    {data.contributions.map(c => {
-                      const totalBrlVal = c.value_brl ?? (c.price_orig != null
-                        ? c.price_orig * c.quantity * (c.fx_rate_brl ?? 1)
-                        : null)
-
-                      const profitBrl = c.profit_brl != null
-                        ? c.profit_brl
-                        : (data.asset_type === 'ticker' && c.type === 'buy' && currentPriceBrl != null && totalBrlVal != null
-                          ? c.quantity * currentPriceBrl - totalBrlVal
+              <>
+                {/* desktop */}
+                <div className="hidden sm:block overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
+                      <tr>
+                        <th className="px-4 py-3 text-left">{d.tableDate}</th>
+                        <th className="px-4 py-3 text-left">{d.tableType}</th>
+                        <th className="px-4 py-3 text-right">{d.tableQty}</th>
+                        <th className="px-4 py-3 text-right">{d.tableUnitPrice}</th>
+                        <th className="px-4 py-3 text-right">{d.tableTotalBrl}</th>
+                        <th className="px-4 py-3 text-right">{d.tableProfit}</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50">
+                      {data.contributions.map(c => {
+                        const totalBrlVal = c.value_brl ?? (c.price_orig != null
+                          ? c.price_orig * c.quantity * (c.fx_rate_brl ?? 1)
                           : null)
 
-                      return (
-                        <tr key={c.id} className="hover:bg-gray-50">
-                          <td className="px-4 py-3 text-gray-600">{fmtDate(c.date, intlLocale)}</td>
-                          <td className="px-4 py-3">
+                        const profitBrl = c.profit_brl != null
+                          ? c.profit_brl
+                          : (data.asset_type === 'ticker' && c.type === 'buy' && currentPriceBrl != null && totalBrlVal != null
+                            ? c.quantity * currentPriceBrl - totalBrlVal
+                            : null)
+
+                        return (
+                          <tr key={c.id} className="hover:bg-gray-50">
+                            <td className="px-4 py-3 text-gray-600">{fmtDate(c.date, intlLocale)}</td>
+                            <td className="px-4 py-3">
+                              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                                c.type === 'buy'    ? 'bg-green-100 text-green-700' :
+                                c.type === 'income' ? 'bg-purple-100 text-purple-700' :
+                                                      'bg-red-100 text-red-700'
+                              }`}>
+                                {c.type === 'buy'
+                                  ? t.contributions.buyLabel
+                                  : c.type === 'income'
+                                  ? t.contributions.incomeLabel
+                                  : t.contributions.sellLabel}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-right text-gray-700">{fmtNum(c.quantity, 6, intlLocale)}</td>
+                            <td className="px-4 py-3 text-right text-gray-500">
+                              {c.price_orig != null && c.currency
+                                ? `${c.currency} ${fmtNum(c.price_orig, 4, intlLocale)}`
+                                : '—'}
+                            </td>
+                            <td className="px-4 py-3 text-right font-medium text-gray-900">
+                              {totalBrlVal != null ? fmt(totalBrlVal) : '—'}
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              {profitBrl != null ? (
+                                <span className={`text-xs font-semibold ${profitBrl >= 0 ? 'text-green-700' : 'text-red-600'}`}>
+                                  {profitBrl >= 0 ? '+' : ''}{fmt(profitBrl)}
+                                </span>
+                              ) : (
+                                <span className="text-xs text-gray-400">—</span>
+                              )}
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+                {/* mobile cards */}
+                <div className="sm:hidden divide-y divide-gray-50">
+                  {data.contributions.map(c => {
+                    const totalBrlVal = c.value_brl ?? (c.price_orig != null
+                      ? c.price_orig * c.quantity * (c.fx_rate_brl ?? 1)
+                      : null)
+                    const profitBrl = c.profit_brl != null
+                      ? c.profit_brl
+                      : (data.asset_type === 'ticker' && c.type === 'buy' && currentPriceBrl != null && totalBrlVal != null
+                        ? c.quantity * currentPriceBrl - totalBrlVal
+                        : null)
+                    return (
+                      <div key={c.id} className="px-4 py-3">
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
                             <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
                               c.type === 'buy'    ? 'bg-green-100 text-green-700' :
                               c.type === 'income' ? 'bg-purple-100 text-purple-700' :
                                                     'bg-red-100 text-red-700'
                             }`}>
-                              {c.type === 'buy'
-                                ? t.contributions.buyLabel
-                                : c.type === 'income'
-                                ? t.contributions.incomeLabel
-                                : t.contributions.sellLabel}
+                              {c.type === 'buy' ? t.contributions.buyLabel : c.type === 'income' ? t.contributions.incomeLabel : t.contributions.sellLabel}
                             </span>
-                          </td>
-                          <td className="px-4 py-3 text-right text-gray-700">{fmtNum(c.quantity, 6, intlLocale)}</td>
-                          <td className="px-4 py-3 text-right text-gray-500">
-                            {c.price_orig != null && c.currency
-                              ? `${c.currency} ${fmtNum(c.price_orig, 4, intlLocale)}`
-                              : '—'}
-                          </td>
-                          <td className="px-4 py-3 text-right font-medium text-gray-900">
-                            {totalBrlVal != null ? fmt(totalBrlVal) : '—'}
-                          </td>
-                          <td className="px-4 py-3 text-right">
-                            {profitBrl != null ? (
-                              <span className={`text-xs font-semibold ${profitBrl >= 0 ? 'text-green-700' : 'text-red-600'}`}>
+                            <div className="text-xs text-gray-500 mt-1">{fmtDate(c.date, intlLocale)}</div>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <div className="font-medium text-sm text-gray-900">{totalBrlVal != null ? fmt(totalBrlVal) : '—'}</div>
+                            {profitBrl != null && (
+                              <div className={`text-xs font-semibold ${profitBrl >= 0 ? 'text-green-700' : 'text-red-600'}`}>
                                 {profitBrl >= 0 ? '+' : ''}{fmt(profitBrl)}
-                              </span>
-                            ) : (
-                              <span className="text-xs text-gray-400">—</span>
+                              </div>
                             )}
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </>
             )}
           </div>
         )

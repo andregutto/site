@@ -100,35 +100,65 @@ function BrReport({ data }: { data: ReportData }) {
         {data.sells.length === 0 ? (
           <p className="text-sm text-gray-400 py-4 text-center">Nenhuma venda registrada em {data.year}</p>
         ) : (
-          <table className="w-full text-sm">
-            <thead><tr className="text-xs text-gray-400 border-b border-gray-100">
-              <th className="text-left py-2 font-medium">{t.reports.colDate}</th>
-              <th className="text-left py-2 font-medium">{t.reports.colAsset}</th>
-              <th className="text-right py-2 font-medium">Qtd</th>
-              <th className="text-right py-2 font-medium">Custo medio</th>
-              <th className="text-right py-2 font-medium">{t.reports.colSaleValue}</th>
-              <th className="text-right py-2 font-medium">{t.reports.colGainLoss}</th>
-              <th className="text-right py-2 font-medium">%</th>
-            </tr></thead>
-            <tbody>
+          <>
+            {/* desktop */}
+            <div className="hidden sm:block">
+              <table className="w-full text-sm">
+                <thead><tr className="text-xs text-gray-400 border-b border-gray-100">
+                  <th className="text-left py-2 font-medium">{t.reports.colDate}</th>
+                  <th className="text-left py-2 font-medium">{t.reports.colAsset}</th>
+                  <th className="text-right py-2 font-medium">Qtd</th>
+                  <th className="text-right py-2 font-medium">Custo medio</th>
+                  <th className="text-right py-2 font-medium">{t.reports.colSaleValue}</th>
+                  <th className="text-right py-2 font-medium">{t.reports.colGainLoss}</th>
+                  <th className="text-right py-2 font-medium">%</th>
+                </tr></thead>
+                <tbody>
+                  {data.sells.map(r => (
+                    <tr key={r.id} className="border-b border-gray-50 hover:bg-gray-50">
+                      <td className="py-2 text-gray-500">{r.date}</td>
+                      <td className="py-2 font-medium">{r.code} <span className="text-gray-400 font-normal text-xs">{r.name}</span></td>
+                      <td className="py-2 text-right text-gray-600">{fmt(r.qty, 6)}</td>
+                      <td className="py-2 text-right text-gray-600">{fmtBRL(r.cost_basis_brl)}</td>
+                      <td className="py-2 text-right text-gray-600">{fmtBRL(r.sale_value_brl)}</td>
+                      <td className={`py-2 text-right font-semibold ${pctColor(r.gain_loss_brl)}`}>{fmtBRL(r.gain_loss_brl)}</td>
+                      <td className={`py-2 text-right ${pctColor(r.gain_loss_brl)}`}>{r.gain_loss_pct != null ? `${fmt(r.gain_loss_pct, 1)}%` : '-'}</td>
+                    </tr>
+                  ))}
+                  <tr className="font-semibold border-t border-gray-200 bg-gray-50">
+                    <td colSpan={5} className="py-2 text-right text-xs text-gray-500">Total ganho/perda</td>
+                    <td className={`py-2 text-right ${pctColor(data.totalGainLoss)}`}>{fmtBRL(data.totalGainLoss)}</td>
+                    <td />
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            {/* mobile cards */}
+            <div className="sm:hidden divide-y divide-gray-50">
               {data.sells.map(r => (
-                <tr key={r.id} className="border-b border-gray-50 hover:bg-gray-50">
-                  <td className="py-2 text-gray-500">{r.date}</td>
-                  <td className="py-2 font-medium">{r.code} <span className="text-gray-400 font-normal text-xs">{r.name}</span></td>
-                  <td className="py-2 text-right text-gray-600">{fmt(r.qty, 6)}</td>
-                  <td className="py-2 text-right text-gray-600">{fmtBRL(r.cost_basis_brl)}</td>
-                  <td className="py-2 text-right text-gray-600">{fmtBRL(r.sale_value_brl)}</td>
-                  <td className={`py-2 text-right font-semibold ${pctColor(r.gain_loss_brl)}`}>{fmtBRL(r.gain_loss_brl)}</td>
-                  <td className={`py-2 text-right ${pctColor(r.gain_loss_brl)}`}>{r.gain_loss_pct != null ? `${fmt(r.gain_loss_pct, 1)}%` : '-'}</td>
-                </tr>
+                <div key={r.id} className="py-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <span className="font-semibold text-sm text-gray-900">{r.code}</span>
+                      <span className="text-xs text-gray-400 ml-1.5 truncate">{r.name}</span>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className={`font-semibold text-sm ${pctColor(r.gain_loss_brl)}`}>{fmtBRL(r.gain_loss_brl)}</div>
+                      <div className={`text-xs ${pctColor(r.gain_loss_brl)}`}>{r.gain_loss_pct != null ? `${fmt(r.gain_loss_pct, 1)}%` : '—'}</div>
+                    </div>
+                  </div>
+                  <div className="mt-1 text-xs text-gray-400 flex flex-wrap gap-x-3">
+                    <span>{r.date}</span>
+                    <span>Venda {fmtBRL(r.sale_value_brl)}</span>
+                  </div>
+                </div>
               ))}
-              <tr className="font-semibold border-t border-gray-200 bg-gray-50">
-                <td colSpan={5} className="py-2 text-right text-xs text-gray-500">Total ganho/perda</td>
-                <td className={`py-2 text-right ${pctColor(data.totalGainLoss)}`}>{fmtBRL(data.totalGainLoss)}</td>
-                <td />
-              </tr>
-            </tbody>
-          </table>
+              <div className="py-3 flex justify-between text-xs border-t border-gray-100">
+                <span className="text-gray-500 font-medium">Total ganho/perda</span>
+                <span className={`font-semibold ${pctColor(data.totalGainLoss)}`}>{fmtBRL(data.totalGainLoss)}</span>
+              </div>
+            </div>
+          </>
         )}
       </Section>
 
@@ -137,28 +167,49 @@ function BrReport({ data }: { data: ReportData }) {
         {data.income.length === 0 ? (
           <p className="text-sm text-gray-400 py-4 text-center">Nenhum rendimento registrado em {data.year}</p>
         ) : (
-          <table className="w-full text-sm">
-            <thead><tr className="text-xs text-gray-400 border-b border-gray-100">
-              <th className="text-left py-2 font-medium">{t.reports.colDate}</th>
-              <th className="text-left py-2 font-medium">{t.reports.colAsset}</th>
-              <th className="text-left py-2 font-medium">{t.common.description}</th>
-              <th className="text-right py-2 font-medium">{t.reports.colValue}</th>
-            </tr></thead>
-            <tbody>
+          <>
+            {/* desktop */}
+            <div className="hidden sm:block">
+              <table className="w-full text-sm">
+                <thead><tr className="text-xs text-gray-400 border-b border-gray-100">
+                  <th className="text-left py-2 font-medium">{t.reports.colDate}</th>
+                  <th className="text-left py-2 font-medium">{t.reports.colAsset}</th>
+                  <th className="text-left py-2 font-medium">{t.common.description}</th>
+                  <th className="text-right py-2 font-medium">{t.reports.colValue}</th>
+                </tr></thead>
+                <tbody>
+                  {data.income.map(r => (
+                    <tr key={r.id} className="border-b border-gray-50 hover:bg-gray-50">
+                      <td className="py-2 text-gray-500">{r.date}</td>
+                      <td className="py-2 font-medium">{r.code}</td>
+                      <td className="py-2 text-gray-500">{r.description || '-'}</td>
+                      <td className="py-2 text-right text-purple-700 font-semibold">{fmtBRL(r.value_brl)}</td>
+                    </tr>
+                  ))}
+                  <tr className="font-semibold border-t border-gray-200 bg-gray-50">
+                    <td colSpan={3} className="py-2 text-right text-xs text-gray-500">Total rendimentos</td>
+                    <td className="py-2 text-right text-purple-700">{fmtBRL(data.totalIncome)}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            {/* mobile cards */}
+            <div className="sm:hidden divide-y divide-gray-50">
               {data.income.map(r => (
-                <tr key={r.id} className="border-b border-gray-50 hover:bg-gray-50">
-                  <td className="py-2 text-gray-500">{r.date}</td>
-                  <td className="py-2 font-medium">{r.code}</td>
-                  <td className="py-2 text-gray-500">{r.description || '-'}</td>
-                  <td className="py-2 text-right text-purple-700 font-semibold">{fmtBRL(r.value_brl)}</td>
-                </tr>
+                <div key={r.id} className="py-3 flex items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <div className="font-semibold text-sm text-gray-900">{r.code}</div>
+                    <div className="text-xs text-gray-400 truncate">{r.description || r.date}</div>
+                  </div>
+                  <div className="text-purple-700 font-semibold text-sm shrink-0">{fmtBRL(r.value_brl)}</div>
+                </div>
               ))}
-              <tr className="font-semibold border-t border-gray-200 bg-gray-50">
-                <td colSpan={3} className="py-2 text-right text-xs text-gray-500">Total rendimentos</td>
-                <td className="py-2 text-right text-purple-700">{fmtBRL(data.totalIncome)}</td>
-              </tr>
-            </tbody>
-          </table>
+              <div className="py-3 flex justify-between text-xs border-t border-gray-100">
+                <span className="text-gray-500 font-medium">Total rendimentos</span>
+                <span className="font-semibold text-purple-700">{fmtBRL(data.totalIncome)}</span>
+              </div>
+            </div>
+          </>
         )}
       </Section>
 
@@ -167,26 +218,44 @@ function BrReport({ data }: { data: ReportData }) {
         {data.positions.length === 0 ? (
           <p className="text-sm text-gray-400 py-4 text-center">Nenhum ativo em posicao em 31/12/{data.year}</p>
         ) : (
-          <table className="w-full text-sm">
-            <thead><tr className="text-xs text-gray-400 border-b border-gray-100">
-              <th className="text-left py-2 font-medium">Codigo</th>
-              <th className="text-left py-2 font-medium">Nome</th>
-              <th className="text-left py-2 font-medium">Tipo</th>
-              <th className="text-right py-2 font-medium">Qtd</th>
-              <th className="text-right py-2 font-medium">Custo total (R$)</th>
-            </tr></thead>
-            <tbody>
+          <>
+            {/* desktop */}
+            <div className="hidden sm:block">
+              <table className="w-full text-sm">
+                <thead><tr className="text-xs text-gray-400 border-b border-gray-100">
+                  <th className="text-left py-2 font-medium">Codigo</th>
+                  <th className="text-left py-2 font-medium">Nome</th>
+                  <th className="text-left py-2 font-medium">Tipo</th>
+                  <th className="text-right py-2 font-medium">Qtd</th>
+                  <th className="text-right py-2 font-medium">Custo total (R$)</th>
+                </tr></thead>
+                <tbody>
+                  {data.positions.map(p => (
+                    <tr key={p.asset_id} className="border-b border-gray-50 hover:bg-gray-50">
+                      <td className="py-2 font-medium">{p.code}</td>
+                      <td className="py-2 text-gray-600 text-xs">{p.name}</td>
+                      <td className="py-2 text-gray-400 text-xs">{p.asset_type}</td>
+                      <td className="py-2 text-right text-gray-600">{fmt(p.qty, 6)}</td>
+                      <td className="py-2 text-right font-semibold">{fmtBRL(p.cost_brl)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {/* mobile cards */}
+            <div className="sm:hidden divide-y divide-gray-50">
               {data.positions.map(p => (
-                <tr key={p.asset_id} className="border-b border-gray-50 hover:bg-gray-50">
-                  <td className="py-2 font-medium">{p.code}</td>
-                  <td className="py-2 text-gray-600 text-xs">{p.name}</td>
-                  <td className="py-2 text-gray-400 text-xs">{p.asset_type}</td>
-                  <td className="py-2 text-right text-gray-600">{fmt(p.qty, 6)}</td>
-                  <td className="py-2 text-right font-semibold">{fmtBRL(p.cost_brl)}</td>
-                </tr>
+                <div key={p.asset_id} className="py-3 flex items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <div className="font-semibold text-sm text-gray-900">{p.code}</div>
+                    <div className="text-xs text-gray-500 truncate">{p.name}</div>
+                    <div className="text-xs text-gray-400">{fmt(p.qty, 2)} un. · {p.asset_type}</div>
+                  </div>
+                  <div className="font-semibold text-sm text-gray-900 shrink-0">{fmtBRL(p.cost_brl)}</div>
+                </div>
               ))}
-            </tbody>
-          </table>
+            </div>
+          </>
         )}
       </Section>
 
@@ -214,30 +283,58 @@ function FrReport({ data }: { data: ReportData }) {
         {data.sells.length === 0 ? (
           <p className="text-sm text-gray-400 py-4 text-center">Aucune cession enregistrée en {data.year}</p>
         ) : (
-          <table className="w-full text-sm">
-            <thead><tr className="text-xs text-gray-400 border-b border-gray-100">
-              <th className="text-left py-2 font-medium">Date</th>
-              <th className="text-left py-2 font-medium">Valeur</th>
-              <th className="text-right py-2 font-medium">Prix cession</th>
-              <th className="text-right py-2 font-medium">Prix revient</th>
-              <th className="text-right py-2 font-medium">Plus-value</th>
-            </tr></thead>
-            <tbody>
+          <>
+            {/* desktop */}
+            <div className="hidden sm:block">
+              <table className="w-full text-sm">
+                <thead><tr className="text-xs text-gray-400 border-b border-gray-100">
+                  <th className="text-left py-2 font-medium">Date</th>
+                  <th className="text-left py-2 font-medium">Valeur</th>
+                  <th className="text-right py-2 font-medium">Prix cession</th>
+                  <th className="text-right py-2 font-medium">Prix revient</th>
+                  <th className="text-right py-2 font-medium">Plus-value</th>
+                </tr></thead>
+                <tbody>
+                  {data.sells.map(r => (
+                    <tr key={r.id} className="border-b border-gray-50 hover:bg-gray-50">
+                      <td className="py-2 text-gray-500">{r.date}</td>
+                      <td className="py-2 font-medium">{r.code} <span className="text-gray-400 font-normal text-xs">{r.name}</span></td>
+                      <td className="py-2 text-right text-gray-600">{fmtBRL(r.sale_value_brl)}</td>
+                      <td className="py-2 text-right text-gray-600">{fmtBRL(r.cost_basis_brl)}</td>
+                      <td className={`py-2 text-right font-semibold ${pctColor(r.gain_loss_brl)}`}>{fmtBRL(r.gain_loss_brl)}</td>
+                    </tr>
+                  ))}
+                  <tr className="font-semibold border-t border-gray-200 bg-gray-50">
+                    <td colSpan={4} className="py-2 text-right text-xs text-gray-500">Total plus-values nettes</td>
+                    <td className={`py-2 text-right ${pctColor(data.totalGainLoss)}`}>{fmtBRL(data.totalGainLoss)}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            {/* mobile cards */}
+            <div className="sm:hidden divide-y divide-gray-50">
               {data.sells.map(r => (
-                <tr key={r.id} className="border-b border-gray-50 hover:bg-gray-50">
-                  <td className="py-2 text-gray-500">{r.date}</td>
-                  <td className="py-2 font-medium">{r.code} <span className="text-gray-400 font-normal text-xs">{r.name}</span></td>
-                  <td className="py-2 text-right text-gray-600">{fmtBRL(r.sale_value_brl)}</td>
-                  <td className="py-2 text-right text-gray-600">{fmtBRL(r.cost_basis_brl)}</td>
-                  <td className={`py-2 text-right font-semibold ${pctColor(r.gain_loss_brl)}`}>{fmtBRL(r.gain_loss_brl)}</td>
-                </tr>
+                <div key={r.id} className="py-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <span className="font-semibold text-sm text-gray-900">{r.code}</span>
+                      <span className="text-xs text-gray-400 ml-1.5 truncate">{r.name}</span>
+                    </div>
+                    <div className={`font-semibold text-sm shrink-0 ${pctColor(r.gain_loss_brl)}`}>{fmtBRL(r.gain_loss_brl)}</div>
+                  </div>
+                  <div className="mt-1 text-xs text-gray-400 flex flex-wrap gap-x-3">
+                    <span>{r.date}</span>
+                    <span>Cession {fmtBRL(r.sale_value_brl)}</span>
+                    <span>Revient {fmtBRL(r.cost_basis_brl)}</span>
+                  </div>
+                </div>
               ))}
-              <tr className="font-semibold border-t border-gray-200 bg-gray-50">
-                <td colSpan={4} className="py-2 text-right text-xs text-gray-500">Total plus-values nettes</td>
-                <td className={`py-2 text-right ${pctColor(data.totalGainLoss)}`}>{fmtBRL(data.totalGainLoss)}</td>
-              </tr>
-            </tbody>
-          </table>
+              <div className="py-3 flex justify-between text-xs border-t border-gray-100">
+                <span className="text-gray-500 font-medium">Total plus-values nettes</span>
+                <span className={`font-semibold ${pctColor(data.totalGainLoss)}`}>{fmtBRL(data.totalGainLoss)}</span>
+              </div>
+            </div>
+          </>
         )}
       </Section>
 
@@ -246,28 +343,49 @@ function FrReport({ data }: { data: ReportData }) {
         {data.income.length === 0 ? (
           <p className="text-sm text-gray-400 py-4 text-center">Aucun revenu enregistré en {data.year}</p>
         ) : (
-          <table className="w-full text-sm">
-            <thead><tr className="text-xs text-gray-400 border-b border-gray-100">
-              <th className="text-left py-2 font-medium">Date</th>
-              <th className="text-left py-2 font-medium">Valeur</th>
-              <th className="text-left py-2 font-medium">Description</th>
-              <th className="text-right py-2 font-medium">Montant (R$)</th>
-            </tr></thead>
-            <tbody>
+          <>
+            {/* desktop */}
+            <div className="hidden sm:block">
+              <table className="w-full text-sm">
+                <thead><tr className="text-xs text-gray-400 border-b border-gray-100">
+                  <th className="text-left py-2 font-medium">Date</th>
+                  <th className="text-left py-2 font-medium">Valeur</th>
+                  <th className="text-left py-2 font-medium">Description</th>
+                  <th className="text-right py-2 font-medium">Montant (R$)</th>
+                </tr></thead>
+                <tbody>
+                  {data.income.map(r => (
+                    <tr key={r.id} className="border-b border-gray-50 hover:bg-gray-50">
+                      <td className="py-2 text-gray-500">{r.date}</td>
+                      <td className="py-2 font-medium">{r.code}</td>
+                      <td className="py-2 text-gray-500">{r.description || '-'}</td>
+                      <td className="py-2 text-right text-purple-700 font-semibold">{fmtBRL(r.value_brl)}</td>
+                    </tr>
+                  ))}
+                  <tr className="font-semibold border-t border-gray-200 bg-gray-50">
+                    <td colSpan={3} className="py-2 text-right text-xs text-gray-500">Total revenus</td>
+                    <td className="py-2 text-right text-purple-700">{fmtBRL(data.totalIncome)}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            {/* mobile cards */}
+            <div className="sm:hidden divide-y divide-gray-50">
               {data.income.map(r => (
-                <tr key={r.id} className="border-b border-gray-50 hover:bg-gray-50">
-                  <td className="py-2 text-gray-500">{r.date}</td>
-                  <td className="py-2 font-medium">{r.code}</td>
-                  <td className="py-2 text-gray-500">{r.description || '-'}</td>
-                  <td className="py-2 text-right text-purple-700 font-semibold">{fmtBRL(r.value_brl)}</td>
-                </tr>
+                <div key={r.id} className="py-3 flex items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <div className="font-semibold text-sm text-gray-900">{r.code}</div>
+                    <div className="text-xs text-gray-400 truncate">{r.description || r.date}</div>
+                  </div>
+                  <div className="text-purple-700 font-semibold text-sm shrink-0">{fmtBRL(r.value_brl)}</div>
+                </div>
               ))}
-              <tr className="font-semibold border-t border-gray-200 bg-gray-50">
-                <td colSpan={3} className="py-2 text-right text-xs text-gray-500">Total revenus</td>
-                <td className="py-2 text-right text-purple-700">{fmtBRL(data.totalIncome)}</td>
-              </tr>
-            </tbody>
-          </table>
+              <div className="py-3 flex justify-between text-xs border-t border-gray-100">
+                <span className="text-gray-500 font-medium">Total revenus</span>
+                <span className="font-semibold text-purple-700">{fmtBRL(data.totalIncome)}</span>
+              </div>
+            </div>
+          </>
         )}
       </Section>
 
@@ -276,24 +394,42 @@ function FrReport({ data }: { data: ReportData }) {
         {data.positions.length === 0 ? (
           <p className="text-sm text-gray-400 py-4 text-center">Aucun actif en portefeuille au 31/12/{data.year}</p>
         ) : (
-          <table className="w-full text-sm">
-            <thead><tr className="text-xs text-gray-400 border-b border-gray-100">
-              <th className="text-left py-2 font-medium">Code</th>
-              <th className="text-left py-2 font-medium">Designation</th>
-              <th className="text-right py-2 font-medium">Qte</th>
-              <th className="text-right py-2 font-medium">Prix de revient (R$)</th>
-            </tr></thead>
-            <tbody>
+          <>
+            {/* desktop */}
+            <div className="hidden sm:block">
+              <table className="w-full text-sm">
+                <thead><tr className="text-xs text-gray-400 border-b border-gray-100">
+                  <th className="text-left py-2 font-medium">Code</th>
+                  <th className="text-left py-2 font-medium">Designation</th>
+                  <th className="text-right py-2 font-medium">Qte</th>
+                  <th className="text-right py-2 font-medium">Prix de revient (R$)</th>
+                </tr></thead>
+                <tbody>
+                  {data.positions.map(p => (
+                    <tr key={p.asset_id} className="border-b border-gray-50 hover:bg-gray-50">
+                      <td className="py-2 font-medium">{p.code}</td>
+                      <td className="py-2 text-gray-600 text-xs">{p.name}</td>
+                      <td className="py-2 text-right text-gray-600">{fmt(p.qty, 6)}</td>
+                      <td className="py-2 text-right font-semibold">{fmtBRL(p.cost_brl)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {/* mobile cards */}
+            <div className="sm:hidden divide-y divide-gray-50">
               {data.positions.map(p => (
-                <tr key={p.asset_id} className="border-b border-gray-50 hover:bg-gray-50">
-                  <td className="py-2 font-medium">{p.code}</td>
-                  <td className="py-2 text-gray-600 text-xs">{p.name}</td>
-                  <td className="py-2 text-right text-gray-600">{fmt(p.qty, 6)}</td>
-                  <td className="py-2 text-right font-semibold">{fmtBRL(p.cost_brl)}</td>
-                </tr>
+                <div key={p.asset_id} className="py-3 flex items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <div className="font-semibold text-sm text-gray-900">{p.code}</div>
+                    <div className="text-xs text-gray-500 truncate">{p.name}</div>
+                    <div className="text-xs text-gray-400">{fmt(p.qty, 2)} un.</div>
+                  </div>
+                  <div className="font-semibold text-sm text-gray-900 shrink-0">{fmtBRL(p.cost_brl)}</div>
+                </div>
               ))}
-            </tbody>
-          </table>
+            </div>
+          </>
         )}
       </Section>
 

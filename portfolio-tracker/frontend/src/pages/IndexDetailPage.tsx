@@ -294,7 +294,8 @@ export default function IndexDetailPage() {
       {data.annual.length > 0 && (
         <div className="bg-white border border-gray-100 rounded-2xl p-5">
           <h2 className="text-sm font-semibold text-gray-700 mb-4">Retorno anual</h2>
-          <div className="overflow-x-auto">
+          {/* desktop */}
+          <div className="hidden sm:block overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100">
@@ -326,6 +327,25 @@ export default function IndexDetailPage() {
                 ))}
               </tbody>
             </table>
+          </div>
+          {/* mobile cards */}
+          <div className="sm:hidden space-y-2">
+            {[...data.annual].reverse().map(row => (
+              <div key={row.year} className="flex items-center gap-3">
+                <span className="text-sm font-medium text-gray-700 w-12 shrink-0">{row.year}</span>
+                <div className="flex-1 bg-gray-100 rounded-full h-2">
+                  {row.pct != null && (
+                    <div
+                      className={`h-2 rounded-full ${row.pct >= 0 ? 'bg-emerald-400' : 'bg-red-400'}`}
+                      style={{ width: `${Math.min(Math.abs(row.pct) * 1.5, 100)}%` }}
+                    />
+                  )}
+                </div>
+                <span className={`text-sm font-semibold tabular-nums w-16 text-right shrink-0 ${row.pct != null && row.pct >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+                  {fmtPct(row.pct)}
+                </span>
+              </div>
+            ))}
           </div>
         </div>
       )}

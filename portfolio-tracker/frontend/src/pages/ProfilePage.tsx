@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
+import * as XLSX from 'xlsx'
 import { apiFetch } from '../lib/api'
 import { useAuth } from '../contexts/AuthContext'
 import { useCurrency, type Currency } from '../contexts/CurrencyContext'
@@ -99,6 +100,8 @@ export default function ProfilePage() {
   const [deleting,        setDeleting]        = useState(false)
   const [deleteError,     setDeleteError]     = useState<string | null>(null)
 
+  const [exporting, setExporting] = useState(false)
+
   const { reset: rebuildHistory, loading: rebuilding, result: rebuildResult } = useResetPriceHistory()
   const [showRebuildConfirm, setShowRebuildConfirm] = useState(false)
 
@@ -183,6 +186,77 @@ export default function ProfilePage() {
     } catch (e) {
       setDeleteError(e instanceof Error ? e.message : 'Erro ao excluir conta')
       setDeleting(false)
+    }
+  }
+
+  async function handleExportData() {
+    setExporting(true)
+    try {
+      const data = await apiFetch<{
+        exported_at: string
+        assets: Record<string, unknown>[]
+        contributions: Record<string, unknown>[]
+        dividends: Record<string, unknown>[]
+        manual_values: Record<string, unknown>[]
+        finance_transactions: Record<string, unknown>[]
+        finance_accounts: Record<string, unknown>[]
+      }>('/profile/export')
+
+      const wb = XLSX.utils.book_new()
+
+      const flat = <T extends Record<string, unknown>>(
+        rows: T[],
+        transform: (r: T) => Record<string, unknown>
+      ) => rows.map(transform)
+
+      if (data.assets.length > 0)
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(data.assets), 'Ativos')
+
+      if (data.contributions.length > 0)
+        XLSX.utils.book_append_sheet(wb,
+          XLSX.utils.json_to_sheet(flat(data.contributions, c => ({
+            data: c.date, tipo: c.type,
+            ticker: (c.assets as { code?: string })?.code ?? '',
+            ativo: (c.assets as { name?: string })?.name ?? '',
+            quantidade: c.quantity, preco: c.price_orig, moeda: c.currency,
+            fx_brl: c.fx_rate_brl, total_brl: c.value_brl, lucro_brl: c.profit_brl,
+          }))), 'Aportes')
+
+      if (data.dividends.length > 0)
+        XLSX.utils.book_append_sheet(wb,
+          XLSX.utils.json_to_sheet(flat(data.dividends, d => ({
+            data_ex: d.ex_date, data_pgto: d.pay_date,
+            ticker: (d.assets as { code?: string })?.code ?? '',
+            tipo: d.dividend_type, valor_por_cota: d.amount_per_share,
+            moeda: d.currency, total_brl: d.amount_brl,
+          }))), 'Dividendos')
+
+      if (data.manual_values.length > 0)
+        XLSX.utils.book_append_sheet(wb,
+          XLSX.utils.json_to_sheet(flat(data.manual_values, m => ({
+            data: m.ref_date,
+            ticker: (m.assets as { code?: string })?.code ?? '',
+            ativo: (m.assets as { name?: string })?.name ?? '',
+            valor: m.value, moeda: m.currency, notas: m.notes,
+          }))), 'Valores Manuais')
+
+      if (data.finance_transactions.length > 0)
+        XLSX.utils.book_append_sheet(wb,
+          XLSX.utils.json_to_sheet(flat(data.finance_transactions, tx => ({
+            data: tx.date, descricao: tx.description, valor: tx.amount, moeda: tx.currency,
+            categoria: (tx.finance_categories as { name?: string })?.name ?? '',
+            conta: (tx.finance_accounts as { name?: string })?.name ?? '',
+            notas: tx.notes,
+          }))), 'Transações')
+
+      if (data.finance_accounts.length > 0)
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(data.finance_accounts), 'Contas')
+
+      XLSX.writeFile(wb, `arvo-dados-${new Date().toISOString().slice(0, 10)}.xlsx`)
+    } catch {
+      // silently ignore — user will see no download
+    } finally {
+      setExporting(false)
     }
   }
 
@@ -422,6 +496,24 @@ export default function ProfilePage() {
             </button>
           </form>
 
+          {/* Exportar dados */}
+          <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm space-y-3">
+            <h2 className="font-semibold text-gray-800">{t.profile.exportTitle}</h2>
+            <p className="text-xs text-gray-500">{t.profile.exportDesc}</p>
+            <button
+              type="button"
+              onClick={handleExportData}
+              disabled={exporting}
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-[#0D0D0D] border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4">
+                <path d="M8.75 2.75a.75.75 0 0 0-1.5 0v5.69L5.03 6.22a.75.75 0 0 0-1.06 1.06l3.5 3.5a.75.75 0 0 0 1.06 0l3.5-3.5a.75.75 0 0 0-1.06-1.06L8.75 8.44V2.75Z" />
+                <path d="M3.5 9.75a.75.75 0 0 0-1.5 0v1.5A2.75 2.75 0 0 0 4.75 14h6.5A2.75 2.75 0 0 0 14 11.25v-1.5a.75.75 0 0 0-1.5 0v1.5c0 .69-.56 1.25-1.25 1.25h-6.5c-.69 0-1.25-.56-1.25-1.25v-1.5Z" />
+              </svg>
+              {exporting ? t.profile.exporting : t.profile.exportBtn}
+            </button>
+          </div>
+
           {/* Zona de perigo */}
           <div className="bg-white border border-red-100 rounded-2xl p-6 shadow-sm space-y-4">
             <h2 className="font-semibold text-red-700">{t.profile.dangerZone}</h2>
@@ -483,6 +575,7 @@ export default function ProfilePage() {
                 <h3 className="text-lg font-bold text-gray-900">{t.profile.deleteModalTitle}</h3>
                 <p className="text-sm text-gray-500">{t.profile.deleteModalDesc}</p>
                 <p className="text-xs font-mono bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-gray-700 select-all">{emailForDisplay}</p>
+
                 <input
                   type="email"
                   value={deleteConfirm}
@@ -491,11 +584,32 @@ export default function ProfilePage() {
                   className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-300"
                   autoFocus
                 />
+
+                <div className="bg-amber-50 border border-amber-100 rounded-xl px-4 py-3 flex items-start gap-3">
+                  <div className="shrink-0 mt-0.5">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4 text-amber-600">
+                      <path d="M8.75 2.75a.75.75 0 0 0-1.5 0v5.69L5.03 6.22a.75.75 0 0 0-1.06 1.06l3.5 3.5a.75.75 0 0 0 1.06 0l3.5-3.5a.75.75 0 0 0-1.06-1.06L8.75 8.44V2.75Z" />
+                      <path d="M3.5 9.75a.75.75 0 0 0-1.5 0v1.5A2.75 2.75 0 0 0 4.75 14h6.5A2.75 2.75 0 0 0 14 11.25v-1.5a.75.75 0 0 0-1.5 0v1.5c0 .69-.56 1.25-1.25 1.25h-6.5c-.69 0-1.25-.56-1.25-1.25v-1.5Z" />
+                    </svg>
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs text-amber-800">{t.profile.exportModalHint}</p>
+                    <button
+                      type="button"
+                      onClick={handleExportData}
+                      disabled={exporting}
+                      className="mt-1 text-xs font-semibold text-amber-700 hover:text-amber-900 underline underline-offset-2 disabled:opacity-50"
+                    >
+                      {exporting ? t.profile.exporting : t.profile.exportBtn}
+                    </button>
+                  </div>
+                </div>
+
                 {deleteError && <p className="text-xs text-red-600">{deleteError}</p>}
                 <div className="flex gap-3">
                   <button
                     type="button"
-                    onClick={() => setShowDeleteModal(false)}
+                    onClick={() => { setShowDeleteModal(false); setDeleteConfirm('') }}
                     disabled={deleting}
                     className="flex-1 py-2.5 text-sm font-semibold border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-50 transition-colors"
                   >

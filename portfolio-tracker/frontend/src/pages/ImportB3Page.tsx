@@ -415,7 +415,8 @@ export default function ImportB3Page() {
               className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm w-36 focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20"
             />
           </div>
-          <div className="overflow-x-auto">
+          {/* desktop table */}
+          <div className="hidden sm:block overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
                 <tr>
@@ -456,6 +457,30 @@ export default function ImportB3Page() {
                 ))}
               </tbody>
             </table>
+          </div>
+          {/* mobile cards */}
+          <div className="sm:hidden divide-y divide-gray-50">
+            {displayOps.map((op, i) => (
+              <div key={i} className="px-4 py-3">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-gray-900">{op.ticker}</span>
+                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                      op.type === 'buy' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                    }`}>
+                      {op.type === 'buy' ? 'Compra' : 'Venda'}
+                    </span>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <div className="font-medium text-sm text-gray-900">{fmtBrl(op.value_brl)}</div>
+                  </div>
+                </div>
+                <div className="mt-1 text-xs text-gray-400 flex flex-wrap gap-x-3">
+                  <span>{fmtDate(op.date)}</span>
+                  <span>{new Intl.NumberFormat('pt-BR').format(op.quantity)} un. · {fmtBrl(op.price)}</span>
+                </div>
+              </div>
+            ))}
           </div>
           {visibleOps.length > 30 && !showAllOps && (
             <div className="px-4 py-3 border-t border-gray-50 text-center">
