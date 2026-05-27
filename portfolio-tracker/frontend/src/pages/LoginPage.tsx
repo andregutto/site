@@ -156,8 +156,8 @@ export default function LoginPage() {
                           l.panelForgot
 
   return (
-    <div style={{ minHeight: '100vh', display: 'grid', gridTemplateColumns: '1fr 1.1fr', fontFamily: F_SANS, background: 'var(--arvo-offwhite)' }}
-      className="grid-cols-1 lg:grid-cols-[1fr_1.1fr]"
+    <div style={{ minHeight: '100vh', fontFamily: F_SANS, background: 'var(--arvo-offwhite)' }}
+      className="grid grid-cols-1 lg:grid-cols-[1fr_1.1fr]"
     >
 
       {/* ── Left — editorial ── */}
