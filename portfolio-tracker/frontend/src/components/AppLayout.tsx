@@ -195,7 +195,7 @@ export default function AppLayout() {
           </nav>
 
           {/* Right — user */}
-          <div className="flex items-center gap-3 shrink-0">
+          <div className="flex items-center gap-3 shrink-0 ml-auto">
             <div ref={userMenuRef} className="relative">
               <button
                 onClick={() => setShowUserMenu(v => !v)}
