@@ -8,7 +8,6 @@ import { useI18n } from '../contexts/I18nContext'
 import { apiFetch } from '../lib/api'
 import { parseLocaleNum, inputCls } from '../lib/numparse'
 import InstitutionSelect from '../components/InstitutionSelect'
-import * as XLSX from 'xlsx'
 
 function fmtDate(iso: string) {
   return new Date(iso + 'T12:00:00').toLocaleDateString('pt-BR')
@@ -592,34 +591,6 @@ export default function ContributionsPage() {
           <p className="text-sm mt-0.5" style={{ color: 'rgba(13,13,13,0.60)' }}>{t.contributions.subtitle}</p>
         </div>
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => {
-              if (!contributions || contributions.length === 0) return
-              const rows = contributions.map(c => ({
-                data:         c.date,
-                tipo:         c.type,
-                ticker:       c.assets.code,
-                ativo:        c.assets.name,
-                classe:       c.assets.asset_classes?.name ?? '',
-                quantidade:   c.quantity,
-                preco_orig:   c.price_orig ?? '',
-                moeda:        c.currency ?? '',
-                fx_brl:       c.fx_rate_brl ?? '',
-                total_brl:    c.value_brl ?? '',
-                descricao:    c.description ?? '',
-              }))
-              const wb = XLSX.utils.book_new()
-              XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), 'Movimentações')
-              XLSX.writeFile(wb, `arvo-movimentacoes-${new Date().toISOString().slice(0, 10)}.xlsx`)
-            }}
-            title="Baixar todas as movimentações"
-            style={{ padding: '8px 10px', background: '#FFFFFF', border: '1px solid var(--arvo-border)', color: 'var(--arvo-fg-muted)', fontSize: 14, fontFamily: "var(--arvo-font-body)", borderRadius: 12, display: 'inline-flex', alignItems: 'center', gap: 6, transition: 'border-color 0.2s' }}
-          >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
-            </svg>
-            <span className="hidden sm:inline" style={{ fontSize: 13 }}>{t.contributions.exportBtn ?? 'Exportar'}</span>
-          </button>
           <Link
             to="/import/b3"
             style={{ padding: '8px 14px', background: '#FFFFFF', border: '1px solid var(--arvo-border)', color: 'var(--arvo-fg-muted)', fontSize: 14, fontFamily: "var(--arvo-font-body)", borderRadius: 12, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', transition: 'border-color 0.2s' }}
