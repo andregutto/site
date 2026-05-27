@@ -76,23 +76,6 @@ const chipXStyle: React.CSSProperties = {
   padding: 0, fontSize: 11, color: 'rgba(13,13,13,0.40)', lineHeight: 1,
 }
 
-function MonthPicker({ value, onChange, locale }: { value: string; onChange: (m: string) => void; locale: string }) {
-  const fmtLocale = LOCALE_MAP[locale] ?? 'pt-BR'
-  const months = Array.from({ length: 36 }, (_, i) => {
-    const d = new Date()
-    d.setDate(1)
-    d.setMonth(d.getMonth() - i)
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
-  })
-  return (
-    <select value={value} onChange={e => onChange(e.target.value)} className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm bg-white">
-      {months.map(m => {
-        const [y, mo] = m.split('-')
-        return <option key={m} value={m}>{new Date(Number(y), Number(mo) - 1).toLocaleDateString(fmtLocale, { month: 'long', year: 'numeric' })}</option>
-      })}
-    </select>
-  )
-}
 
 export default function FinancesTransactionsPage() {
   const { t, locale } = useI18n()
