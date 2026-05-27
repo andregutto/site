@@ -52,6 +52,22 @@ router.get('/groups', requireAuth, async (req, res: Response) => {
 
   if (error) { res.status(500).json({ error: error.message }); return }
 
+  // Pre-fetch all shared category IDs in these groups for envelope mapping lookup
+  const { data: allSharedCats } = await supabaseAdmin
+    .from('shared_categories')
+    .select('id')
+    .in('group_id', groupIds)
+  const allCatIds = (allSharedCats ?? []).map(c => c.id)
+
+  const { data: userEnvSettings } = allCatIds.length > 0
+    ? await supabaseAdmin
+        .from('shared_category_user_settings')
+        .select('shared_category_id, local_envelope_id')
+        .eq('user_id', userId)
+        .in('shared_category_id', allCatIds)
+    : { data: [] }
+  const envMap = new Map((userEnvSettings ?? []).map(s => [s.shared_category_id, s.local_envelope_id]))
+
   // Enrich with members and categories
   const result = await Promise.all((groups ?? []).map(async g => {
     const { data: members } = await supabaseAdmin
@@ -72,7 +88,12 @@ router.get('/groups', requireAuth, async (req, res: Response) => {
       .eq('group_id', g.id)
       .order('created_at', { ascending: true })
 
-    return { ...g, members: enrichedMembers, categories: categories ?? [] }
+    const categoriesWithEnv = (categories ?? []).map(c => ({
+      ...c,
+      local_envelope_id: envMap.get(c.id) ?? null,
+    }))
+
+    return { ...g, members: enrichedMembers, categories: categoriesWithEnv }
   }))
 
   res.json(result)
@@ -474,6 +495,29 @@ router.delete('/categories/:id', requireAuth, async (req, res: Response) => {
     .delete()
     .eq('id', req.params.id)
     .eq('created_by', userId)
+  if (error) { res.status(500).json({ error: error.message }); return }
+  res.json({ ok: true })
+})
+
+// PATCH /api/shared/categories/:id/envelope — set (or clear) user's local envelope for a shared category
+router.patch('/categories/:id/envelope', requireAuth, async (req, res: Response) => {
+  const userId = uid(req)
+  const catId = Number(req.params.id)
+  const { envelope_id } = req.body as { envelope_id: number | null }
+
+  if (envelope_id == null) {
+    await supabaseAdmin
+      .from('shared_category_user_settings')
+      .delete()
+      .eq('user_id', userId)
+      .eq('shared_category_id', catId)
+    res.json({ ok: true }); return
+  }
+
+  const { error } = await supabaseAdmin
+    .from('shared_category_user_settings')
+    .upsert({ user_id: userId, shared_category_id: catId, local_envelope_id: envelope_id }, { onConflict: 'user_id,shared_category_id' })
+
   if (error) { res.status(500).json({ error: error.message }); return }
   res.json({ ok: true })
 })

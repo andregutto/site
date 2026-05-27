@@ -347,7 +347,7 @@ router.get('/spending-summary', requireAuth, async (req, res: Response) => {
   const [txnRes, catRes, envRes, incomeRes] = await Promise.all([
     supabaseAdmin
       .from('finance_transactions')
-      .select('date, amount, category_id, is_internal_transfer, exclude_from_stats')
+      .select('date, amount, category_id, shared_category_id, is_internal_transfer, exclude_from_stats')
       .eq('user_id', userId)
       .gte('date', sinceStr)
       .order('date', { ascending: true }),
@@ -386,6 +386,41 @@ router.get('/spending-summary', requireAuth, async (req, res: Response) => {
     }
   }
 
+  // Shared category envelope mappings for this user
+  const { data: sharedEnvRows } = await supabaseAdmin
+    .from('shared_category_user_settings')
+    .select('shared_category_id, local_envelope_id')
+    .eq('user_id', userId)
+  const sharedCatToEnv = new Map<number, number>(
+    (sharedEnvRows ?? [])
+      .filter(r => r.local_envelope_id != null)
+      .map(r => [r.shared_category_id, r.local_envelope_id as number])
+  )
+
+  // Add shared category goals to envelope budgets
+  if (sharedCatToEnv.size > 0) {
+    const sharedCatIds = [...sharedCatToEnv.keys()]
+    const { data: sharedCatRows } = await supabaseAdmin
+      .from('shared_categories')
+      .select('id, total_goal, group_id')
+      .in('id', sharedCatIds)
+    const groupIds2 = [...new Set((sharedCatRows ?? []).map(c => c.group_id))]
+    const { data: myMemberships } = await supabaseAdmin
+      .from('shared_group_members')
+      .select('group_id, share_pct')
+      .eq('user_id', userId)
+      .eq('status', 'active')
+      .in('group_id', groupIds2.length > 0 ? groupIds2 : [-1])
+    const pctByGroup = new Map((myMemberships ?? []).map(m => [m.group_id, Number(m.share_pct ?? 50)]))
+    for (const cat of sharedCatRows ?? []) {
+      const envId = sharedCatToEnv.get(cat.id)
+      if (!envId) continue
+      const pct = pctByGroup.get(cat.group_id) ?? 50
+      const myGoal = Number(cat.total_goal) * pct / 100
+      envCatBudget.set(envId, (envCatBudget.get(envId) ?? 0) + myGoal)
+    }
+  }
+
   // Aggregate transactions by month → envelope and category
   type MonthData = { income: number; expenses: number; byEnv: Map<number | null, number>; byCat: Map<number | null, number> }
   const monthMap = new Map<string, MonthData>()
@@ -399,8 +434,11 @@ router.get('/spending-summary', requireAuth, async (req, res: Response) => {
       md.income += tx.amount
     } else {
       md.expenses += Math.abs(tx.amount)
-      const envId = tx.category_id ? (catToEnv.get(tx.category_id) ?? null) : null
-      md.byEnv.set(envId, (md.byEnv.get(envId) ?? 0) + Math.abs(tx.amount))
+      const sharedEnvId = (tx as { shared_category_id?: number }).shared_category_id
+        ? sharedCatToEnv.get((tx as { shared_category_id: number }).shared_category_id)
+        : undefined
+      const envId = sharedEnvId ?? (tx.category_id ? (catToEnv.get(tx.category_id) ?? null) : null)
+      md.byEnv.set(envId ?? null, (md.byEnv.get(envId ?? null) ?? 0) + Math.abs(tx.amount))
       md.byCat.set(tx.category_id, (md.byCat.get(tx.category_id) ?? 0) + Math.abs(tx.amount))
     }
   }

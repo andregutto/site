@@ -25,7 +25,7 @@ const app  = express()
 const PORT = process.env.PORT || 3001
 
 app.use(cors({ origin: process.env.FRONTEND_ORIGIN || 'http://localhost:5174' }))
-app.use(express.json())
+app.use(express.json({ limit: '2mb' }))
 
 app.use('/api/fx',          fxRouter)
 app.use('/api/prices',      pricesRouter)

@@ -49,6 +49,7 @@ interface SharedCategory {
   color: string
   total_goal: number
   currency: string
+  local_envelope_id: number | null
 }
 
 interface SharedGroup {
@@ -474,6 +475,14 @@ export default function FinancesBudgetPage() {
     setShareModal(cat)
   }
 
+  async function setSharedEnvelope(catId: number, envId: number | null) {
+    await apiFetch(`/shared/categories/${catId}/envelope`, {
+      method: 'PATCH',
+      body: JSON.stringify({ envelope_id: envId }),
+    })
+    await load()
+  }
+
   async function confirmShare() {
     if (!shareModal || !sharingGroupId) return
     setSharingSaving(true)
@@ -724,17 +733,29 @@ export default function FinancesBudgetPage() {
                   {group.categories.map(cat => {
                     const myGoal = Math.round(cat.total_goal * myPct / 100)
                     return (
-                      <li key={cat.id} className="px-5 py-2.5 flex items-center gap-3">
-                        <span className="text-base leading-none w-6 shrink-0">{cat.icon}</span>
-                        <div className="flex-1 min-w-0">
+                      <li key={cat.id} className="px-5 py-3 flex items-start gap-3">
+                        <span className="text-base leading-none w-6 shrink-0 mt-0.5">{cat.icon}</span>
+                        <div className="flex-1 min-w-0 space-y-1.5">
                           <div className="flex items-center gap-1.5">
                             <span className="text-sm text-gray-700 truncate">{cat.name}</span>
                             <span className="text-xs text-indigo-500 font-medium">👥</span>
                           </div>
                           <span className="text-xs text-gray-400">{myPct}% · {t.finances.myGoal}: {fmt(myGoal, cat.currency)}</span>
+                          <div className="flex items-center gap-1.5">
+                            <select
+                              value={cat.local_envelope_id ?? ''}
+                              onChange={e => setSharedEnvelope(cat.id, e.target.value ? Number(e.target.value) : null)}
+                              className="text-xs border border-gray-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-[#0D0D0D]/20 text-gray-600"
+                            >
+                              <option value="">{t.finances.noEnvelope ?? '— sem envelope —'}</option>
+                              {expenseEnvelopes.map(env => (
+                                <option key={env.id} value={env.id}>{env.icon} {resolveEnvName(env.name, env.type, env.name_key, nameKeys)}</option>
+                              ))}
+                            </select>
+                          </div>
                         </div>
                         {cat.total_goal > 0 && (
-                          <span className="text-xs text-gray-400 shrink-0">/ {fmt(cat.total_goal, cat.currency)}</span>
+                          <span className="text-xs text-gray-400 shrink-0 mt-0.5">/ {fmt(cat.total_goal, cat.currency)}</span>
                         )}
                       </li>
                     )

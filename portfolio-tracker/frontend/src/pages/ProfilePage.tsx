@@ -48,19 +48,20 @@ function initials(firstName: string, lastName: string, email: string) {
   return email.slice(0, 2).toUpperCase()
 }
 
-function resizeImageToDataUrl(file: File, size = 128): Promise<string> {
+function resizeImageToDataUrl(file: File, maxSize = 400): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
     reader.onload = e => {
       const img = new Image()
       img.onload = () => {
+        const scale = Math.min(1, maxSize / Math.max(img.width, img.height))
+        const w = Math.round(img.width * scale)
+        const h = Math.round(img.height * scale)
         const canvas = document.createElement('canvas')
-        canvas.width = size; canvas.height = size
+        canvas.width = w; canvas.height = h
         const ctx = canvas.getContext('2d')!
-        const scale = Math.max(size / img.width, size / img.height)
-        const w = img.width * scale, h = img.height * scale
-        ctx.drawImage(img, (size - w) / 2, (size - h) / 2, w, h)
-        resolve(canvas.toDataURL('image/jpeg', 0.82))
+        ctx.drawImage(img, 0, 0, w, h)
+        resolve(canvas.toDataURL('image/jpeg', 0.78))
       }
       img.onerror = reject
       img.src = e.target?.result as string
@@ -110,6 +111,7 @@ export default function ProfilePage() {
   const [pendingAvatarUrl, setPendingAvatarUrl] = useState<string | null>(null)
   const [pendingPosition,  setPendingPosition]  = useState(50)
   const [savingPhoto,      setSavingPhoto]      = useState(false)
+  const [photoError,       setPhotoError]       = useState<string | null>(null)
   const modalFileRef = useRef<HTMLInputElement>(null)
 
   const { reset: rebuildHistory, loading: rebuilding, result: rebuildResult } = useResetPriceHistory()
@@ -134,23 +136,26 @@ export default function ProfilePage() {
   function openAvatarModal() {
     setPendingAvatarUrl(null)
     setPendingPosition(avatarPosition)
+    setPhotoError(null)
     setShowAvatarModal(true)
   }
 
   async function handleModalFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
+    setPhotoError(null)
     try {
       const dataUrl = await resizeImageToDataUrl(file)
       setPendingAvatarUrl(dataUrl)
     } catch {
-      setError(t.profile.errorPhoto)
+      setPhotoError(t.profile.errorPhoto)
     }
   }
 
   async function handleAvatarSave() {
     if (!pendingAvatarUrl && pendingPosition === avatarPosition) { setShowAvatarModal(false); return }
     setSavingPhoto(true)
+    setPhotoError(null)
     try {
       const patch: Record<string, unknown> = { avatar_position: pendingPosition }
       if (pendingAvatarUrl) patch.avatar_url = pendingAvatarUrl
@@ -159,8 +164,8 @@ export default function ProfilePage() {
       setAvatarPosition(pendingPosition)
       setShowAvatarModal(false)
       triggerCheck()
-    } catch {
-      setError(t.profile.errorPhoto)
+    } catch (err) {
+      setPhotoError(err instanceof Error ? err.message : t.profile.errorPhoto)
     } finally {
       setSavingPhoto(false)
     }
@@ -731,6 +736,9 @@ export default function ProfilePage() {
                     />
                   </div>
                 )}
+
+                {/* Error */}
+                {photoError && <p className="text-xs text-red-600 text-center">{photoError}</p>}
 
                 {/* Botões */}
                 <div className="flex gap-3 pt-1">

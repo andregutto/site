@@ -513,6 +513,7 @@
     "pickGroup": "Quel groupe ?",
     "pickGroupHint": "La catégorie sera partagée avec les membres du groupe.",
     "myGoal": "Mon objectif",
+    "noEnvelope": "— sans enveloppe —",
     "configureIncome": "Configurez votre revenu mensuel pour commencer",
     "configureBudget": "Configurer la planification",
     "configureHint": "Allez dans Planification pour définir votre revenu et enveloppes",
