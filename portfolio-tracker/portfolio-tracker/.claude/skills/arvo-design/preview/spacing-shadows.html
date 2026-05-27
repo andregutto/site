@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Elevação / sombras</title>
+<link rel="stylesheet" href="_card.css">
+<style>
+  body { background: var(--arvo-offwhite); overflow: hidden; }
+  .list { padding: 20px 28px; min-height: 100vh; display: flex; flex-direction: column; gap: 18px; justify-content: center; }
+  .row { display: grid; grid-template-columns: 160px 1fr; gap: 22px; align-items: center; }
+  .stage {
+    height: 56px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 10px;
+    background: var(--arvo-offwhite);
+    padding: 0 12px;
+  }
+  .stage.dim { background: rgba(13,13,13,0.06); }
+  .stage.dark { background: var(--arvo-black); }
+
+  .text { display: flex; flex-direction: column; gap: 3px; }
+  .name { font-family: var(--arvo-font-display); font-size: 13px; letter-spacing: 0.10em; color: var(--arvo-fg); }
+  .use  { font-family: var(--arvo-font-serif); font-style: italic; font-size: 13px; color: var(--arvo-fg-muted); line-height: 1.4; }
+  .token { font-family: var(--arvo-font-display); font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--arvo-fg-soft); margin-top: 2px; }
+
+  /* Demo shapes */
+  .input {
+    background: white;
+    border: 1px solid var(--arvo-border);
+    border-radius: 3px;
+    padding: 9px 14px;
+    font-family: var(--arvo-font-display);
+    font-size: 12px;
+    color: var(--arvo-fg-muted);
+    width: 130px;
+    box-shadow: 0 1px 2px rgba(13,13,13,0.04);
+  }
+  .card {
+    background: white;
+    border: 1px solid var(--arvo-border-soft);
+    border-radius: 10px;
+    padding: 10px 14px;
+    width: 130px;
+    box-shadow: 0 4px 16px rgba(13,13,13,0.08);
+  }
+  .card .ttl { font-family: var(--arvo-font-display); font-size: 8px; letter-spacing: 0.20em; text-transform: uppercase; color: var(--arvo-fg-soft); }
+  .card .v  { font-family: var(--arvo-font-display); font-size: 16px; color: var(--arvo-fg); margin-top: 3px; letter-spacing: 0.04em; }
+  .modal {
+    background: white;
+    border-radius: 12px;
+    padding: 10px 14px;
+    width: 130px;
+    box-shadow: 0 22px 50px -14px rgba(13,13,13,0.35);
+  }
+  .modal .ttl { font-family: var(--arvo-font-display); font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--arvo-fg); }
+  .modal .bd  { font-family: var(--arvo-font-display); font-size: 11px; color: var(--arvo-fg-muted); margin-top: 4px; line-height: 1.4; }
+  .hero {
+    background: var(--arvo-black);
+    border: 1px solid rgba(200,184,154,0.15);
+    border-radius: 10px;
+    padding: 10px 18px;
+    color: var(--arvo-gold);
+    font-family: var(--arvo-font-display);
+    font-size: 16px;
+    letter-spacing: 0.28em;
+    text-indent: 0.28em;
+    box-shadow: 0 0 50px -2px rgba(200,184,154,0.75);
+  }
+</style></head>
+<body>
+<div class="list">
+
+  <div class="row">
+    <div class="stage">
+      <input class="input" value="andre@arvo.cc" />
+    </div>
+    <div class="text">
+      <div class="name">Sutil</div>
+      <div class="use">campos de formulário, controles de linha</div>
+      <div class="token">0 1px 2px rgba(13,13,13, .04)</div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="stage">
+      <div class="card"><div class="ttl">Total · EUR</div><div class="v">€ 84.320</div></div>
+    </div>
+    <div class="text">
+      <div class="name">Cartão</div>
+      <div class="use">cards de dados sobre o off-white — padrão do dashboard</div>
+      <div class="token">0 4px 16px rgba(13,13,13, .08)</div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="stage dim">
+      <div class="modal"><div class="ttl">Confirmar</div><div class="bd">Adicionar ativo ao portfólio?</div></div>
+    </div>
+    <div class="text">
+      <div class="name">Modal</div>
+      <div class="use">diálogos flutuando sobre conteúdo escurecido</div>
+      <div class="token">0 22px 50px -14px rgba(13,13,13, .35)</div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="stage dark">
+      <div class="hero">arvo</div>
+    </div>
+    <div class="text">
+      <div class="name">Brilho dourado</div>
+      <div class="use">apenas no hero — uma vez por tela, no máximo</div>
+      <div class="token">0 0 50px rgba(200,184,154, .75)</div>
+    </div>
+  </div>
+
+</div>
+</body></html>

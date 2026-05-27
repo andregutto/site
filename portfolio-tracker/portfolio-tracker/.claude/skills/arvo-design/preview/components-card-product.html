@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Card — product (light)</title>
+<link rel="stylesheet" href="_card.css">
+<style>
+  body { background: var(--arvo-offwhite); overflow: hidden; }
+  .card { padding: 18px; min-height: 100vh; justify-content: center; gap: 12px; }
+  .panel { background: white; border: 1px solid var(--arvo-border); border-radius: 14px; padding: 22px; display: flex; flex-direction: column; gap: 14px; }
+  .top { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+  .lab { font-family: var(--arvo-font-display); font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--arvo-fg-soft); }
+  .num { font-family: var(--arvo-font-display); font-size: 34px; letter-spacing: 0.02em; color: var(--arvo-fg); margin-top: 4px; line-height: 1; }
+  .green-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 5px 12px; background: rgba(31,138,91,0.10);
+    color: #1F8A5B; font-family: var(--arvo-font-display); font-size: 11px;
+    letter-spacing: 0.08em; border-radius: 999px; line-height: 1.2;
+  }
+  .row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; padding-top: 14px; border-top: 1px solid var(--arvo-border-soft); }
+  .cell { display: flex; flex-direction: column; gap: 4px; }
+  .cell .l { font-family: var(--arvo-font-display); font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--arvo-fg-soft); }
+  .cell .v { font-family: var(--arvo-font-display); font-size: 16px; letter-spacing: 0.02em; }
+  .pos { color: #1F8A5B; }
+  .neg { color: #D63B2F; }
+  .neutral { color: var(--arvo-fg); }
+  .arrow { font-size: 12px; line-height: 1; }
+</style></head>
+<body>
+<div class="card">
+  <div class="panel">
+    <div class="top">
+      <div>
+        <div class="lab">Patrimônio total · EUR</div>
+        <div class="num">€ 84.320</div>
+      </div>
+      <span class="green-pill"><span class="arrow">↑</span>+12,4% este ano</span>
+    </div>
+    <div class="row">
+      <div class="cell">
+        <div class="l">Investido</div>
+        <div class="v neutral">€ 75.000</div>
+      </div>
+      <div class="cell">
+        <div class="l">Resultado</div>
+        <div class="v pos">+ € 9.320</div>
+      </div>
+      <div class="cell">
+        <div class="l">Mês</div>
+        <div class="v neg">− 0,4%</div>
+      </div>
+    </div>
+  </div>
+</div>
+</body></html>

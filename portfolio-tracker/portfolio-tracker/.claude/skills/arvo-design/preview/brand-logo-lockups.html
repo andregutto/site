@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Logo lockups & app icons</title>
+<link rel="stylesheet" href="_card.css">
+<style>
+  body { background: var(--arvo-offwhite); overflow: hidden; }
+  .root { padding: 12px; min-height: 100vh; display: flex; flex-direction: column; gap: 14px; }
+  .eyebrow { font-family: var(--arvo-font-display); font-size: 9px; letter-spacing: 0.30em; text-transform: uppercase; color: var(--arvo-fg-soft); display: flex; align-items: center; gap: 14px; }
+  .eyebrow::after { content: ''; flex: 1; height: 1px; background: linear-gradient(to right, rgba(13,13,13,0.18), transparent); }
+
+  /* Lockups */
+  .lockups { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .lockup {
+    border-radius: 10px;
+    padding: 18px 12px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+    aspect-ratio: 4/3;
+  }
+  .lockup.dark  { background: var(--arvo-black); border: 1px solid var(--arvo-border-dark); }
+  .lockup.light { background: var(--arvo-offwhite); border: 1px solid var(--arvo-border); }
+  .lockup.gold  { background: var(--arvo-gold); }
+  .wm { font-family: var(--arvo-font-display); font-size: 24px; letter-spacing: 0.30em; line-height: 1; text-indent: 0.30em; }
+  .wm.lightWm { color: var(--arvo-offwhite); }
+  .wm.darkWm  { color: var(--arvo-black); }
+  .cap { font-family: var(--arvo-font-display); font-size: 8px; letter-spacing: 0.25em; text-transform: uppercase; }
+  .cap.muted-light { color: rgba(200,184,154,0.50); }
+  .cap.muted-dark  { color: rgba(13,13,13,0.40); }
+
+  /* App icons row */
+  .iconRow { display: flex; gap: 18px; align-items: flex-end; }
+  .iconCol { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .iconCol img { display: block; }
+  .iconCap { font-family: var(--arvo-font-display); font-size: 8px; letter-spacing: 0.20em; text-transform: uppercase; color: var(--arvo-fg-soft); }
+  /* Footer signature */
+  .sigStage { background: var(--arvo-black); border-radius: 10px; padding: 22px 0; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  .sig { opacity: 0.20; }
+  .sigText { font-family: var(--arvo-font-display); font-size: 9px; letter-spacing: 0.30em; text-transform: uppercase; color: rgba(200,184,154,0.30); }
+</style></head>
+<body>
+<div class="root">
+
+  <div class="eyebrow">Lockups · símbolo + wordmark</div>
+  <div class="lockups">
+    <div class="lockup dark">
+      <img src="../assets/logo/arvo-symbol-gold.svg" width="38" height="40" alt="">
+      <div class="wm lightWm">arvo</div>
+      <div class="cap muted-light">Dark · principal</div>
+    </div>
+    <div class="lockup light">
+      <img src="../assets/logo/arvo-symbol-black.svg" width="38" height="40" alt="">
+      <div class="wm darkWm">arvo</div>
+      <div class="cap muted-dark">Light</div>
+    </div>
+    <div class="lockup gold">
+      <img src="../assets/logo/arvo-symbol-black.svg" width="38" height="40" alt="">
+      <div class="wm darkWm">arvo</div>
+      <div class="cap muted-dark">Gold</div>
+    </div>
+  </div>
+
+  <div class="eyebrow">App icons · só o símbolo (sem texto)</div>
+  <div class="iconRow">
+    <div class="iconCol">
+      <img src="../assets/logo/arvo-appicon-dark.svg" width="80" height="80" alt="arvo app icon dark">
+      <div class="iconCap">Dark · 1024</div>
+    </div>
+    <div class="iconCol">
+      <img src="../assets/logo/arvo-appicon-light.svg" width="64" height="64" alt="arvo app icon light">
+      <div class="iconCap">Light · 1024</div>
+    </div>
+    <div class="iconCol">
+      <img src="../assets/logo/arvo-appicon-gold.svg" width="64" height="64" alt="arvo app icon gold">
+      <div class="iconCap">Gold · 1024</div>
+    </div>
+    <div style="width: 1px; align-self: stretch; background: rgba(13,13,13,0.1); margin: 0 4px;"></div>
+    <div class="iconCol">
+      <img src="../assets/logo/arvo-favicon.svg" width="48" height="48" alt="favicon">
+      <div class="iconCap">favicon · 48</div>
+    </div>
+    <div class="iconCol">
+      <img src="../assets/logo/arvo-favicon.svg" width="32" height="32" alt="favicon">
+      <div class="iconCap">favicon · 32</div>
+    </div>
+    <div class="iconCol">
+      <img src="../assets/logo/arvo-favicon.svg" width="16" height="16" alt="favicon">
+      <div class="iconCap">favicon · 16</div>
+    </div>
+  </div>
+
+  <div class="eyebrow">Assinatura de rodapé · símbolo fading + caption</div>
+  <div class="sigStage">
+    <img src="../assets/logo/arvo-symbol-gold.svg" width="24" height="25" alt="" class="sig">
+    <div class="sigText">arvo — cultive o que é seu — 2026</div>
+  </div>
+
+</div>
+</body></html>

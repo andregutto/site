@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Foreground on light</title>
+<link rel="stylesheet" href="_card.css">
+<style>
+  body { background: var(--arvo-offwhite); overflow: hidden; }
+  .card { padding: 18px 24px; gap: 14px; min-height: 100vh; justify-content: center; }
+  .row { display: grid; grid-template-columns: 26px 1fr 88px; align-items: center; gap: 14px; }
+  .ch { height: 22px; border-radius: 4px; }
+  .nm { font-family: var(--arvo-font-display); font-size: 13px; letter-spacing: 0.04em; }
+  .tk { font-family: var(--arvo-font-display); font-size: 10px; letter-spacing: 0.08em; color: var(--arvo-fg-soft); text-align: right; }
+</style></head>
+<body>
+<div class="card">
+  <div class="row"><div class="ch" style="background: rgba(13,13,13,0.92);"></div><div class="nm" style="color: rgba(13,13,13,0.92);">Primary — fg on light</div><div class="tk">.92</div></div>
+  <div class="row"><div class="ch" style="background: rgba(13,13,13,0.65);"></div><div class="nm" style="color: rgba(13,13,13,0.65);">Muted — body copy</div><div class="tk">.65</div></div>
+  <div class="row"><div class="ch" style="background: rgba(13,13,13,0.45);"></div><div class="nm" style="color: rgba(13,13,13,0.45);">Soft — metadata · labels</div><div class="tk">.45</div></div>
+  <div class="row"><div class="ch" style="background: rgba(13,13,13,0.10);"></div><div class="nm" style="color: rgba(13,13,13,0.55);">Border · hairline</div><div class="tk">.10</div></div>
+  <div class="row"><div class="ch" style="background: #A36A52;"></div><div class="nm" style="color: #A36A52; font-family: var(--arvo-font-serif); font-style: italic;">editorial accent — terracota</div><div class="tk">#A36A52</div></div>
+</div>
+</body></html>

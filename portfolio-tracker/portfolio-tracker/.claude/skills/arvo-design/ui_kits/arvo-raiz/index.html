@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Arvo Raiz — UI Kit (placeholder)</title>
+  <link rel="icon" type="image/svg+xml" href="../../assets/logo/arvo-favicon.svg">
+  <link rel="stylesheet" href="../../colors_and_type.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: var(--arvo-black); color: var(--arvo-fg-on-dark); font-family: var(--arvo-font-body); min-height: 100vh; }
+    .stage { min-height: 100vh; display: grid; grid-template-columns: 1.2fr 1fr; }
+    .left {
+      position: relative; overflow: hidden;
+      background-image: url('../../assets/imagery/01-broto-floresta.jpg');
+      background-size: cover; background-position: center;
+      filter: brightness(0.55) sepia(0.25) saturate(1.15);
+    }
+    .left::after { content:''; position: absolute; inset: 0; background: linear-gradient(to right, rgba(13,13,13,0.10) 0%, rgba(13,13,13,0.55) 60%, var(--arvo-black) 100%); }
+    .right { padding: 64px 56px; display: flex; flex-direction: column; justify-content: center; gap: 26px; }
+    .wm { display: flex; align-items: center; gap: 12px; font-family: var(--arvo-font-display); font-size: 18px; letter-spacing: 0.30em; text-indent: 0.30em; color: var(--arvo-offwhite); margin-bottom: 12px; text-decoration: none; }
+    .eyebrow { font-family: var(--arvo-font-display); font-size: 10px; letter-spacing: 0.30em; text-transform: uppercase; color: var(--arvo-ocre); }
+    h1 { font-family: var(--arvo-font-display); font-size: clamp(40px, 5vw, 64px); letter-spacing: 0.08em; line-height: 1.05; color: var(--arvo-offwhite); max-width: 480px; text-wrap: balance; }
+    .sub { font-family: var(--arvo-font-serif); font-style: italic; font-size: 18px; color: var(--arvo-gold); max-width: 460px; line-height: 1.45; }
+    .body { font-family: var(--arvo-font-body); font-size: 14px; line-height: 1.8; color: rgba(242,237,228,0.65); max-width: 480px; letter-spacing: 0.02em; }
+    .note { max-width: 480px; padding: 18px 22px; border: 1px solid rgba(232,160,32,0.30); border-left: 2px solid var(--arvo-ocre); background: rgba(232,160,32,0.06); border-radius: 4px; }
+    .note .lab { font-family: var(--arvo-font-display); font-size: 9px; letter-spacing: 0.30em; text-transform: uppercase; color: var(--arvo-ocre); margin-bottom: 8px; }
+    .note p { font-family: var(--arvo-body); font-size: 13px; line-height: 1.7; color: rgba(242,237,228,0.68); }
+    .naming { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(232,160,32,0.20); }
+    .naming .row { display: grid; grid-template-columns: 110px 1fr; gap: 14px; font-family: var(--arvo-font-body); font-size: 12px; line-height: 1.6; }
+    .naming .name { font-family: var(--arvo-font-display); letter-spacing: 0.06em; color: var(--arvo-gold); }
+    .naming .name.active { color: var(--arvo-offwhite); }
+    .naming .name.active::after { content: ' · escolha atual'; font-family: var(--arvo-font-serif); font-style: italic; font-size: 10px; letter-spacing: 0; color: var(--arvo-ocre); }
+    .naming .why { color: rgba(242,237,228,0.55); }
+    .leftContent { position: absolute; left: 56px; bottom: 56px; z-index: 2; max-width: 360px; }
+    .leftContent .quote { font-family: var(--arvo-font-serif); font-style: italic; font-size: 28px; line-height: 1.2; color: var(--arvo-gold); }
+    .leftContent .cite { font-family: var(--arvo-font-display); font-size: 10px; letter-spacing: 0.30em; text-transform: uppercase; color: rgba(242,237,228,0.5); margin-top: 16px; }
+    @media (max-width: 900px) {
+      .stage { grid-template-columns: 1fr; }
+      .left { min-height: 40vh; }
+      .leftContent { position: relative; left: auto; bottom: auto; padding: 32px; }
+      .right { padding: 40px 28px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="stage">
+    <aside class="left">
+      <div class="leftContent">
+        <p class="quote">"raiz não cresce de pressa — mas é o que segura quando o vento bate."</p>
+        <p class="cite">— manifesto, em construção</p>
+      </div>
+    </aside>
+    <main class="right">
+      <a class="wm" href="../arvo-capital/index.html">
+        <img src="../../assets/logo/arvo-symbol-gold.svg" width="22" height="23" alt="">
+        arvo
+      </a>
+      <div class="eyebrow">◎ Arvo Raiz</div>
+      <h1>onde a comunidade cria raiz.</h1>
+      <p class="sub">a vertical de gente — lives, fórum, planners, workshops. para quem está fora encontrar quem está fora também — e cultivar junto.</p>
+      <p class="body">
+        Cor de acento: <strong>Ocre Tucano</strong> <code>#E8A020</code> — só em
+        tags ao vivo, badges de workshop, alertas de comunidade. Nunca em fundos.
+        Imagem associada: <code>01-broto-floresta.jpg</code> (segunda leitura
+        da metáfora do broto — agora coletivizada).
+      </p>
+      <div class="note">
+        <div class="lab">Nomeação em aberto</div>
+        <p>
+          O nome <strong>Raiz</strong> é uma aposta inicial — escolhido porque
+          conversa com a metáfora central do cultivo (broto → raiz → árvore) e
+          porque <em>"criar raiz"</em> é exatamente o que essa vertical
+          representa para o brasileiro fora. Outros candidatos abaixo —
+          troque livremente.
+        </p>
+        <div class="naming">
+          <div class="row"><span class="name active">Raiz</span><span class="why">cria raiz junto · pertencimento · liga direto à árvore</span></div>
+          <div class="row"><span class="name">Roda</span><span class="why">roda de conversa · roda de samba · palavra brasileiríssima</span></div>
+          <div class="row"><span class="name">Pomar</span><span class="why">onde a colheita coletiva acontece · um pouco específico</span></div>
+          <div class="row"><span class="name">Travessia</span><span class="why">para quem vive a travessia Brasil-Europa · solene</span></div>
+        </div>
+      </div>
+      <p class="body" style="opacity: 0.7;">
+        Vertical em construção. Ainda não há código de produto no monorepo —
+        este placeholder reserva cor, imagem e vocabulário para quando entrar.
+      </p>
+    </main>
+  </div>
+</body>
+</html>

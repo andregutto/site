@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Card — marketing (dark)</title>
+<link rel="stylesheet" href="_card.css">
+<style>
+  body { background: var(--arvo-black); overflow: hidden; }
+  .card { padding: 18px; min-height: 100vh; justify-content: center; }
+  .panel {
+    background: #161513;
+    border: 1px solid rgba(200,184,154,0.10);
+    border-radius: 14px;
+    padding: 24px;
+    display: flex; flex-direction: column; gap: 14px;
+    position: relative; overflow: hidden;
+    min-height: 180px;
+    justify-content: flex-end;
+  }
+  .accent { position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(to right, var(--arvo-blue), transparent); }
+  .glow { position: absolute; top: -80px; left: 40%; width: 200px; height: 200px; border-radius: 50%; background: var(--arvo-blue); opacity: 0.08; filter: blur(50px); }
+  .icon { position: absolute; top: 20px; right: 20px; width: 36px; height: 36px; border-radius: 10px; background: rgba(27,79,216,0.16); color: var(--arvo-blue); display:flex; align-items:center; justify-content:center; font-family: var(--arvo-font-display); font-size: 14px; }
+  .eb { font-family: var(--arvo-font-display); font-size: 9px; letter-spacing: 0.30em; text-transform: uppercase; color: var(--arvo-blue); }
+  .nm { font-family: var(--arvo-font-display); font-size: 28px; letter-spacing: 0.10em; color: var(--arvo-offwhite); line-height: 1.1; }
+  .sub { font-family: var(--arvo-font-serif); font-style: italic; font-size: 13px; color: var(--arvo-fg-on-dark-soft); }
+  .tags { display: flex; gap: 6px; }
+  .pill { font-family: var(--arvo-font-display); font-size: 9px; letter-spacing: 0.10em; padding: 3px 10px; border-radius: 999px; border: 1px solid rgba(27,79,216,0.4); color: #7CA0FF; }
+</style></head>
+<body class="dark">
+<div class="card">
+  <div class="panel">
+    <div class="accent"></div>
+    <div class="glow"></div>
+    <div class="icon">⬡</div>
+    <div class="eb">Arvo</div>
+    <div class="nm">Capital</div>
+    <div class="sub">finanças &amp; patrimônio</div>
+    <div class="tags">
+      <span class="pill">gráfico</span>
+      <span class="pill">saldo</span>
+      <span class="pill">aporte</span>
+    </div>
+  </div>
+</div>
+</body></html>

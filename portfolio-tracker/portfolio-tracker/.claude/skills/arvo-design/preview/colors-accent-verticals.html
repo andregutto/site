@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Accent hierarchy → Verticals + Sentiment</title>
+<link rel="stylesheet" href="_card.css">
+<style>
+  body { background: var(--arvo-offwhite); overflow: hidden; }
+  .wrap { padding: 14px; min-height: 100vh; display: flex; flex-direction: column; gap: 12px; }
+
+  .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; flex: 1; align-items: stretch; }
+  .cell { display: flex; flex-direction: column; gap: 8px; }
+  .ch {
+    border-radius: 10px; flex: 1; min-height: 78px; position: relative; overflow: hidden;
+    padding: 12px 14px; display: flex; flex-direction: column; justify-content: space-between;
+    color: white;
+  }
+  .ch::after { content:''; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(255,255,255,0.08) 0%, transparent 50%); pointer-events: none; }
+  .topRow { display: flex; justify-content: space-between; align-items: baseline; }
+  .rank  { font-family: var(--arvo-font-display); font-size: 8px; letter-spacing: 0.30em; text-transform: uppercase; opacity: 0.85; }
+  .hex   { font-family: var(--arvo-font-display); font-size: 10px; letter-spacing: 0.05em; opacity: 0.85; }
+  .bird  { font-family: var(--arvo-font-serif); font-style: italic; font-size: 13px; opacity: 0.95; }
+
+  .info { display: flex; flex-direction: column; gap: 3px; padding: 0 2px; }
+  .name { font-family: var(--arvo-font-display); font-size: 13px; letter-spacing: 0.06em; color: var(--arvo-fg); }
+  .vert { font-family: var(--arvo-font-display); font-size: 9px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--arvo-fg-soft); }
+  .meaning { font-family: var(--arvo-font-serif); font-style: italic; font-size: 11px; color: var(--arvo-fg-muted); line-height: 1.4; margin-top: 2px; }
+
+  /* Sentiment row — visually separated, not a vertical */
+  .sentRule { display: flex; align-items: center; gap: 14px; margin-top: 2px; }
+  .sentRule .lab { font-family: var(--arvo-font-display); font-size: 9px; letter-spacing: 0.30em; text-transform: uppercase; color: var(--arvo-fg-soft); }
+  .sentRule::after { content: ''; flex: 1; height: 1px; background: linear-gradient(to right, rgba(13,13,13,0.18), transparent); }
+
+  .sent { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .sentCell { display: grid; grid-template-columns: 70px 1fr; gap: 14px; align-items: center; padding: 8px 10px; border-radius: 8px; }
+  .sentSwatch { height: 42px; border-radius: 6px; position: relative; overflow: hidden; }
+  .sentSwatch::after { content:''; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(255,255,255,0.08) 0%, transparent 50%); }
+  .sentInfo { display: flex; flex-direction: column; gap: 1px; }
+  .sentName { font-family: var(--arvo-font-display); font-size: 12px; letter-spacing: 0.05em; color: var(--arvo-fg); }
+  .sentMeta { font-family: var(--arvo-font-display); font-size: 9px; letter-spacing: 0.05em; color: var(--arvo-fg-soft); }
+  .sentMeaning { font-family: var(--arvo-font-serif); font-style: italic; font-size: 11px; color: var(--arvo-fg-muted); line-height: 1.35; }
+</style></head>
+<body>
+<div class="wrap">
+
+  <div class="grid">
+    <div class="cell">
+      <div class="ch" style="background:#1B4FD8;">
+        <div class="topRow"><span class="rank">Primária</span><span class="hex">#1B4FD8</span></div>
+        <div class="bird">— da arara-azul</div>
+      </div>
+      <div class="info">
+        <div class="name">Azul Arara</div>
+        <div class="vert">Arvo Capital</div>
+        <div class="meaning">precisão técnica, segurança patrimonial</div>
+      </div>
+    </div>
+    <div class="cell">
+      <div class="ch" style="background:#D63B2F;">
+        <div class="topRow"><span class="rank">Secundária</span><span class="hex">#D63B2F</span></div>
+        <div class="bird">— do guará-vermelho</div>
+      </div>
+      <div class="info">
+        <div class="name">Vermelho Guará</div>
+        <div class="vert">Arvo Voyage</div>
+        <div class="meaning">paixão, audácia, movimento</div>
+      </div>
+    </div>
+    <div class="cell">
+      <div class="ch" style="background:#E8A020;">
+        <div class="topRow"><span class="rank">Terciária</span><span class="hex">#E8A020</span></div>
+        <div class="bird">— do tucano-de-bico-verde</div>
+      </div>
+      <div class="info">
+        <div class="name">Ocre Tucano</div>
+        <div class="vert">Arvo Raiz</div>
+        <div class="meaning">criatividade, comunidade, luz</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sentRule"><span class="lab">Sentimento · finanças</span></div>
+
+  <div class="sent">
+    <div class="sentCell">
+      <div class="sentSwatch" style="background:#1F8A5B;"></div>
+      <div class="sentInfo">
+        <div class="sentName">Verde Maritaca</div>
+        <div class="sentMeta">#1F8A5B · positivo · ganhos · ↑</div>
+        <div class="sentMeaning">mata atlântica, crescimento paciente</div>
+      </div>
+    </div>
+    <div class="sentCell">
+      <div class="sentSwatch" style="background:#D63B2F;"></div>
+      <div class="sentInfo">
+        <div class="sentName">Vermelho Guará</div>
+        <div class="sentMeta">#D63B2F · negativo · perdas · ↓</div>
+        <div class="sentMeaning">re-uso do acento de Voyage para alertas</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body></html>

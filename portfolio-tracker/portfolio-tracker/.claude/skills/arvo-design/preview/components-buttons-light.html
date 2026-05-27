@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Buttons — light</title>
+<link rel="stylesheet" href="_card.css">
+<style>
+  body { background: var(--arvo-offwhite); overflow: hidden; }
+  .card { padding: 22px 28px; min-height: 100vh; justify-content: center; gap: 18px; }
+  .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  .lab { font-family: var(--arvo-font-display); font-size: 9px; letter-spacing: 0.30em; text-transform: uppercase; color: var(--arvo-fg-soft); }
+  button { font: inherit; cursor: pointer; }
+  .btn { font-family: var(--arvo-font-display); font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; padding: 11px 22px; border: 0; border-radius: 3px; transition: all 280ms cubic-bezier(0.22,0.61,0.36,1); }
+  .btn-primary { background: var(--arvo-black); color: var(--arvo-offwhite); }
+  .btn-secondary { background: transparent; color: var(--arvo-black); border: 1px solid var(--arvo-black); }
+  .btn-ghost { background: transparent; color: var(--arvo-fg-muted); border: 1px solid var(--arvo-border); }
+  .btn-blue { background: var(--arvo-blue); color: white; }
+  .btn-red { background: var(--arvo-red); color: white; }
+  .btn-ocre { background: var(--arvo-ocre); color: #2a1900; }
+  .btn-green { background: #1F8A5B; color: white; }
+  .btn:hover { opacity: 0.88; }
+</style></head>
+<body>
+<div class="card">
+  <div class="lab">on light — product</div>
+  <div class="row">
+    <button class="btn btn-primary">Continuar</button>
+    <button class="btn btn-secondary">Cancelar</button>
+    <button class="btn btn-ghost">Voltar</button>
+  </div>
+  <div class="lab">accent action — by vertical</div>
+  <div class="row">
+    <button class="btn btn-blue">Capital · Aportar</button>
+    <button class="btn btn-red">Voyage · Reservar</button>
+    <button class="btn btn-ocre">Raiz · Entrar na live</button>
+  </div>
+  <div class="lab">sentiment · confirmar ganho / ação positiva</div>
+  <div class="row">
+    <button class="btn btn-green">Confirmar aporte</button>
+    <button class="btn btn-green">↑ Vender com lucro</button>
+  </div>
+</div>
+</body></html>

@@ -241,7 +241,7 @@ export default function FinancesOverviewPage() {
     <div className="space-y-6">
       <div className="flex items-start justify-between flex-wrap gap-2">
         <div>
-          <h1 style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 18, letterSpacing: '0.06em', color: 'var(--arvo-black)' }}>{t.finances.overviewTitle}</h1>
+          <h1 style={{ fontFamily: "var(--arvo-font-body)", fontSize: 18, letterSpacing: '0.06em', color: 'var(--arvo-black)' }}>{t.finances.overviewTitle}</h1>
           <p className="text-sm mt-0.5" style={{ color: 'rgba(13,13,13,0.60)' }}>{t.finances.overviewSubtitle}</p>
         </div>
         <MonthPicker value={month} onChange={setMonth} locale={browserLocale} />
@@ -255,7 +255,7 @@ export default function FinancesOverviewPage() {
   if (!data || data.income_config.monthly_net === 0) return (
     <div className="space-y-6">
       <div>
-        <h1 style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 18, letterSpacing: '0.06em', color: 'var(--arvo-black)' }}>{t.finances.overviewTitle}</h1>
+        <h1 style={{ fontFamily: "var(--arvo-font-body)", fontSize: 18, letterSpacing: '0.06em', color: 'var(--arvo-black)' }}>{t.finances.overviewTitle}</h1>
         <p className="text-sm mt-0.5" style={{ color: 'rgba(13,13,13,0.60)' }}>{t.finances.overviewSubtitle}</p>
       </div>
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-10 text-center">
@@ -336,7 +336,7 @@ export default function FinancesOverviewPage() {
       {/* Header with month picker */}
       <div className="flex items-start justify-between flex-wrap gap-2">
         <div>
-          <h1 style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 18, letterSpacing: '0.06em', color: 'var(--arvo-black)' }}>{t.finances.overviewTitle}</h1>
+          <h1 style={{ fontFamily: "var(--arvo-font-body)", fontSize: 18, letterSpacing: '0.06em', color: 'var(--arvo-black)' }}>{t.finances.overviewTitle}</h1>
           <p className="text-sm mt-0.5" style={{ color: 'rgba(13,13,13,0.60)' }}>{t.finances.overviewSubtitle}</p>
         </div>
         <MonthPicker value={month} onChange={setMonth} locale={browserLocale} />
@@ -353,12 +353,12 @@ export default function FinancesOverviewPage() {
 
         <div style={{ position: 'relative', zIndex: 2, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
           <div>
-            <p style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'var(--arvo-gold-text)', margin: 0 }}>{t.finances.overviewBalance}</p>
-            <p style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 42, letterSpacing: '0.02em', lineHeight: 1.05, marginTop: 10, color: receivedIncome > 0 && netBalance < 0 ? 'var(--arvo-red)' : 'var(--arvo-black)' }}>
+            <p style={{ fontFamily: "var(--arvo-font-body)", fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'var(--arvo-gold-text)', margin: 0 }}>{t.finances.overviewBalance}</p>
+            <p style={{ fontFamily: "var(--arvo-font-body)", fontSize: 42, letterSpacing: '0.02em', lineHeight: 1.05, marginTop: 10, color: receivedIncome > 0 && netBalance < 0 ? 'var(--arvo-red)' : 'var(--arvo-black)' }}>
               {receivedIncome > 0 ? fmt(cx(netBalance), currency, true) : '—'}
             </p>
           </div>
-          <div style={{ flexShrink: 0, padding: '4px 12px', borderRadius: 999, fontSize: 11, fontFamily: "'Tenor Sans', sans-serif", letterSpacing: '0.06em',
+          <div style={{ flexShrink: 0, padding: '4px 12px', borderRadius: 999, fontSize: 11, fontFamily: "var(--arvo-font-body)", letterSpacing: '0.06em',
             background: totalExpenses === 0 ? 'rgba(0,0,0,0.04)' : isWithinBudget ? 'rgba(31,138,91,0.10)' : 'rgba(214,59,47,0.10)',
             color: totalExpenses === 0 ? 'rgba(13,13,13,0.40)' : isWithinBudget ? 'var(--arvo-green)' : 'var(--arvo-red)',
             border: `1px solid ${totalExpenses === 0 ? 'rgba(0,0,0,0.08)' : isWithinBudget ? 'rgba(31,138,91,0.25)' : 'rgba(214,59,47,0.25)'}`,
@@ -370,32 +370,32 @@ export default function FinancesOverviewPage() {
 
         <div style={{ position: 'relative', zIndex: 2, marginTop: 20, paddingTop: 18, borderTop: '1px solid rgba(13,13,13,0.08)', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-            <span style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.62)' }}>{t.finances.income}</span>
-            <span style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 18, letterSpacing: '0.04em', color: receivedIncome > 0 && receivedIncome >= configuredIncome ? 'var(--arvo-green)' : receivedIncome > 0 ? 'var(--arvo-ocre)' : 'var(--arvo-fg)' }}>
+            <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.62)' }}>{t.finances.income}</span>
+            <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 18, letterSpacing: '0.04em', color: receivedIncome > 0 && receivedIncome >= configuredIncome ? 'var(--arvo-green)' : receivedIncome > 0 ? 'var(--arvo-ocre)' : 'var(--arvo-fg)' }}>
               {receivedIncome > 0 ? fmt(cx(receivedIncome), currency, true) : '—'}
             </span>
-            <span style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 10, color: 'rgba(13,13,13,0.58)' }}>
+            <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 10, color: 'rgba(13,13,13,0.58)' }}>
               {t.finances.overviewPlanned} {fmt(cx(configuredIncome), currency, true)}
             </span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-            <span style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.62)' }}>{t.finances.expenses}</span>
-            <span style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 18, letterSpacing: '0.04em', color: totalExpenses > totalBudgeted && totalBudgeted > 0 ? 'var(--arvo-red)' : 'var(--arvo-fg)' }}>
+            <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.62)' }}>{t.finances.expenses}</span>
+            <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 18, letterSpacing: '0.04em', color: totalExpenses > totalBudgeted && totalBudgeted > 0 ? 'var(--arvo-red)' : 'var(--arvo-fg)' }}>
               {totalExpenses > 0 ? fmt(cx(totalExpenses), currency, true) : '—'}
             </span>
             {totalBudgeted > 0 && (
-              <span style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 10, color: 'rgba(13,13,13,0.58)' }}>
+              <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 10, color: 'rgba(13,13,13,0.58)' }}>
                 {t.finances.overviewPlanned} {fmt(cx(totalBudgeted), currency, true)}
               </span>
             )}
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-            <span style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.62)' }}>{t.finances.heroSavingsRate}</span>
-            <span style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 18, letterSpacing: '0.04em', color: receivedIncome > 0 && netBalance >= 0 ? 'var(--arvo-green)' : receivedIncome > 0 ? 'var(--arvo-red)' : 'var(--arvo-fg)' }}>
+            <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.62)' }}>{t.finances.heroSavingsRate}</span>
+            <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 18, letterSpacing: '0.04em', color: receivedIncome > 0 && netBalance >= 0 ? 'var(--arvo-green)' : receivedIncome > 0 ? 'var(--arvo-red)' : 'var(--arvo-fg)' }}>
               {receivedIncome > 0 ? `${Math.round((netBalance / receivedIncome) * 100)}%` : '—'}
             </span>
             {receivedIncome > 0 && (
-              <span style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 10, color: 'rgba(13,13,13,0.38)' }}>{t.finances.overviewStatus}</span>
+              <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 10, color: 'rgba(13,13,13,0.38)' }}>{t.finances.overviewStatus}</span>
             )}
           </div>
         </div>
@@ -404,7 +404,7 @@ export default function FinancesOverviewPage() {
       {/* Envelope spending vs budget */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         <div className="px-5 py-4 border-b border-gray-50 flex items-center justify-between">
-          <h2 style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 14, color: 'var(--arvo-fg)', fontWeight: 600 }}>{t.finances.overviewSpendingVsBudget}</h2>
+          <h2 style={{ fontFamily: "var(--arvo-font-body)", fontSize: 14, color: 'var(--arvo-fg)', fontWeight: 600 }}>{t.finances.overviewSpendingVsBudget}</h2>
           <Link to="/finances/budget" className="text-xs text-[#0D0D0D] hover:opacity-70 transition-opacity">
             {t.finances.navBudget} →
           </Link>
@@ -420,7 +420,7 @@ export default function FinancesOverviewPage() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between mb-1">
                     <div className="flex items-center gap-1.5">
-                      <span style={{ fontSize: 14, color: 'var(--arvo-fg-muted)', fontFamily: "'Tenor Sans', sans-serif" }}>{resolveEnvName(env.name, env.type, env.name_key, nameKeys)}</span>
+                      <span style={{ fontSize: 14, color: 'var(--arvo-fg-muted)', fontFamily: "var(--arvo-font-body)" }}>{resolveEnvName(env.name, env.type, env.name_key, nameKeys)}</span>
                       {env.categories.length > 0 && (
                         <span className="text-[10px] text-gray-400 leading-none">
                           {expandedEnvIds.has(env.id) ? '▲' : '▼'}
@@ -508,7 +508,7 @@ export default function FinancesOverviewPage() {
       {topCategories.length > 0 && (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           <div className="px-5 py-4 border-b border-gray-50 flex items-center justify-between">
-            <h2 style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 14, color: 'var(--arvo-fg)', fontWeight: 600 }}>{t.finances.overviewTopCategories}</h2>
+            <h2 style={{ fontFamily: "var(--arvo-font-body)", fontSize: 14, color: 'var(--arvo-fg)', fontWeight: 600 }}>{t.finances.overviewTopCategories}</h2>
             <Link to="/finances/transactions" className="text-xs text-[#0D0D0D] hover:opacity-70 transition-opacity">
               {t.finances.navTransactions} →
             </Link>
@@ -522,7 +522,7 @@ export default function FinancesOverviewPage() {
                   <span className="text-base leading-none w-6 shrink-0">{cat.icon}</span>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
-                      <span style={{ fontSize: 14, color: 'var(--arvo-fg-muted)', fontFamily: "'Tenor Sans', sans-serif" }} className="truncate">{resolveKey(cat.name, cat.name_key, nameKeys)}</span>
+                      <span style={{ fontSize: 14, color: 'var(--arvo-fg-muted)', fontFamily: "var(--arvo-font-body)" }} className="truncate">{resolveKey(cat.name, cat.name_key, nameKeys)}</span>
                       <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--arvo-fg)', flexShrink: 0, marginLeft: 8 }}>{fmt(cx(cat.actual), currency, true)}</span>
                     </div>
                     <div className="mt-1 h-1 bg-gray-100 rounded-full overflow-hidden">
@@ -541,7 +541,7 @@ export default function FinancesOverviewPage() {
       {hasHistory && (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
           <div className="flex items-center justify-between mb-4">
-            <h2 style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 14, color: 'var(--arvo-fg)', fontWeight: 600 }}>{t.finances.overviewHistory}</h2>
+            <h2 style={{ fontFamily: "var(--arvo-font-body)", fontSize: 14, color: 'var(--arvo-fg)', fontWeight: 600 }}>{t.finances.overviewHistory}</h2>
             <div className="flex gap-1">
               {([6, 12, 60] as const).map(n => (
                 <button
@@ -598,7 +598,7 @@ export default function FinancesOverviewPage() {
       {(catHistLoading || catHistory.length > 0) && (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-            <h2 style={{ fontFamily: "'Tenor Sans', sans-serif", fontSize: 14, color: 'var(--arvo-fg)', fontWeight: 600 }}>{t.finances.categoryHistory}</h2>
+            <h2 style={{ fontFamily: "var(--arvo-font-body)", fontSize: 14, color: 'var(--arvo-fg)', fontWeight: 600 }}>{t.finances.categoryHistory}</h2>
             <select
               value={selectedCatId}
               onChange={e => setSelectedCatId(e.target.value === '' ? '' : Number(e.target.value))}

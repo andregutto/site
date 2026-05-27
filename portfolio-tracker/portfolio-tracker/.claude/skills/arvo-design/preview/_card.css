@@ -1,0 +1,54 @@
+/* Shared base for design system preview cards.
+   Each card is ~700px wide, kept small (≤ 400px tall, ideally ~150-260). */
+
+@import url('../colors_and_type.css');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  background: var(--arvo-offwhite);
+  color: var(--arvo-fg);
+  font-family: var(--arvo-font-body);
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+body.dark {
+  background: var(--arvo-black);
+  color: var(--arvo-fg-on-dark);
+}
+
+.card {
+  padding: 24px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 100vh;
+}
+
+.card.center { justify-content: center; }
+.card.tight { padding: 18px 24px; gap: 12px; }
+
+.label {
+  font-family: var(--arvo-font-display);
+  font-size: 9px;
+  letter-spacing: 0.30em;
+  text-transform: uppercase;
+  color: var(--arvo-fg-soft);
+}
+body.dark .label { color: var(--arvo-fg-on-dark-soft); }
+
+.gold { color: var(--arvo-gold); }
+.serif { font-family: var(--arvo-font-serif); font-style: italic; }
+
+.row { display: flex; align-items: center; gap: 16px; }
+.col { display: flex; flex-direction: column; gap: 8px; }
+
+.token {
+  font-family: var(--arvo-font-display);
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  color: var(--arvo-fg-soft);
+}
+body.dark .token { color: var(--arvo-fg-on-dark-soft); }

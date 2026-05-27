@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Arvo Voyage — UI Kit (placeholder)</title>
+  <link rel="icon" type="image/svg+xml" href="../../assets/logo/arvo-symbol-gold.svg">
+  <link rel="stylesheet" href="../../colors_and_type.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: var(--arvo-black); color: var(--arvo-fg-on-dark); font-family: var(--arvo-font-body); min-height: 100vh; }
+    .stage {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+    }
+    .left {
+      position: relative;
+      overflow: hidden;
+      background-image: url('../../assets/imagery/04-vista-trem.jpg');
+      background-size: cover;
+      background-position: center;
+      filter: brightness(0.55) sepia(0.20) saturate(1.15);
+    }
+    .left::after {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(to right, rgba(13,13,13,0.10) 0%, rgba(13,13,13,0.55) 60%, var(--arvo-black) 100%);
+    }
+    .right { padding: 64px 56px; display: flex; flex-direction: column; justify-content: center; gap: 28px; }
+    .wm { display: flex; align-items: center; gap: 12px; font-family: var(--arvo-font-display); font-size: 18px; letter-spacing: 0.30em; text-indent: 0.30em; color: var(--arvo-offwhite); margin-bottom: 18px; }
+    .eyebrow { font-family: var(--arvo-font-display); font-size: 10px; letter-spacing: 0.30em; text-transform: uppercase; color: var(--arvo-red); }
+    h1 { font-family: var(--arvo-font-display); font-size: clamp(40px, 5vw, 64px); letter-spacing: 0.10em; line-height: 1.05; color: var(--arvo-offwhite); max-width: 480px; text-wrap: balance; }
+    .sub { font-family: var(--arvo-font-serif); font-style: italic; font-size: 18px; color: var(--arvo-gold); max-width: 460px; line-height: 1.45; }
+    .body { font-family: var(--arvo-font-body); font-size: 14px; line-height: 1.8; color: rgba(242,237,228,0.65); max-width: 480px; letter-spacing: 0.04em; }
+    .note {
+      max-width: 480px;
+      padding: 18px 22px;
+      border: 1px solid rgba(214,59,47,0.30);
+      border-left: 2px solid var(--arvo-red);
+      background: rgba(214,59,47,0.06);
+      border-radius: 4px;
+    }
+    .note .lab { font-family: var(--arvo-font-display); font-size: 9px; letter-spacing: 0.30em; text-transform: uppercase; color: var(--arvo-red); margin-bottom: 8px; }
+    .note p { font-family: var(--arvo-font-body); font-size: 13px; line-height: 1.7; color: rgba(242,237,228,0.65); }
+    .tags { display: flex; gap: 8px; flex-wrap: wrap; }
+    .tag {
+      font-family: var(--arvo-font-display); font-size: 10px; letter-spacing: 0.12em;
+      padding: 6px 14px; border-radius: 999px;
+      background: rgba(214,59,47,0.12); color: #FF8A84;
+    }
+    .leftContent {
+      position: absolute; left: 56px; bottom: 56px; z-index: 2; max-width: 360px;
+    }
+    .leftContent .quote { font-family: var(--arvo-font-serif); font-style: italic; font-size: 28px; line-height: 1.2; color: var(--arvo-gold); }
+    .leftContent .cite { font-family: var(--arvo-font-display); font-size: 10px; letter-spacing: 0.30em; text-transform: uppercase; color: rgba(242,237,228,0.5); margin-top: 16px; }
+
+    @media (max-width: 900px) {
+      .stage { grid-template-columns: 1fr; }
+      .left { min-height: 40vh; }
+      .leftContent { position: relative; left: auto; bottom: auto; padding: 32px; }
+      .right { padding: 40px 28px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="stage">
+    <aside class="left">
+      <div class="leftContent">
+        <p class="quote">"a jornada que continua."</p>
+        <p class="cite">— manifesto, 2026</p>
+      </div>
+    </aside>
+    <main class="right">
+      <a class="wm" href="../arvo-capital/index.html">
+        <img src="../../assets/logo/arvo-symbol-gold.svg" width="22" height="23" alt="">
+        arvo
+      </a>
+      <div class="eyebrow">◈ Arvo Voyage</div>
+      <h1>estilo de vida &amp; viagens.</h1>
+      <p class="sub">a vertical de movimento — destinos, reservas, mapas, experiências da Europa para o brasileiro fora de casa.</p>
+      <div class="tags">
+        <span class="tag">destino</span>
+        <span class="tag">reserva</span>
+        <span class="tag">mapa</span>
+        <span class="tag">experiência</span>
+        <span class="tag">guia</span>
+      </div>
+      <div class="note">
+        <div class="lab">Em construção</div>
+        <p>
+          A vertical <strong>Voyage</strong> ainda não tem código de produto no monorepo
+          do Arvo. Este placeholder existe para reservar lugar no design system e
+          fixar a cor de acento (Vermelho Guará <code>#D63B2F</code>),
+          a imagem associada (Tier 1 — vista de trem ao pôr-do-sol) e o vocabulário.
+          Quando a vertical entrar em produção, este UI kit será expandido seguindo
+          as regras do <em>Arvo Capital</em>.
+        </p>
+      </div>
+      <p class="body">
+        Use a paleta-mãe (preto, dourado, off-white) como fundo. Vermelho aparece
+        apenas em dados, ações e tags — nunca em fundos de seção. Imagem associada:
+        <code>04-vista-trem.jpg</code>.
+      </p>
+    </main>
+  </div>
+</body>
+</html>

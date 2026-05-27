@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Foreground on dark</title>
+<link rel="stylesheet" href="_card.css">
+<style>
+  body { background: var(--arvo-black); overflow: hidden; color: var(--arvo-fg-on-dark); }
+  .card { padding: 18px 24px; gap: 14px; min-height: 100vh; justify-content: center; }
+  .row { display: grid; grid-template-columns: 26px 1fr 88px; align-items: center; gap: 14px; }
+  .ch { height: 22px; border-radius: 4px; }
+  .nm { font-family: var(--arvo-font-display); font-size: 13px; letter-spacing: 0.04em; }
+  .tk { font-family: var(--arvo-font-display); font-size: 10px; letter-spacing: 0.08em; color: var(--arvo-fg-on-dark-soft); text-align: right; }
+</style></head>
+<body>
+<div class="card">
+  <div class="row"><div class="ch" style="background: rgba(242,237,228,0.92);"></div><div class="nm" style="color: rgba(242,237,228,0.92);">Primary — fg on dark</div><div class="tk">.92</div></div>
+  <div class="row"><div class="ch" style="background: rgba(242,237,228,0.65);"></div><div class="nm" style="color: rgba(242,237,228,0.65);">Muted — body copy</div><div class="tk">.65</div></div>
+  <div class="row"><div class="ch" style="background: rgba(242,237,228,0.45);"></div><div class="nm" style="color: rgba(242,237,228,0.45);">Soft — metadata · labels</div><div class="tk">.45</div></div>
+  <div class="row"><div class="ch" style="background: rgba(200,184,154,0.30);"></div><div class="nm" style="color: rgba(200,184,154,0.6);">Faint — hairline dividers</div><div class="tk">.30 gold</div></div>
+  <div class="row"><div class="ch" style="background: var(--arvo-gold);"></div><div class="nm" style="color: var(--arvo-gold); font-family: var(--arvo-font-serif); font-style: italic;">accent — gold &amp; serif</div><div class="tk">#C8B89A</div></div>
+</div>
+</body></html>

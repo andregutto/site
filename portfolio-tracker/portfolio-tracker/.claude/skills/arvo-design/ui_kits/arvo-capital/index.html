@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Arvo Capital — UI Kit</title>
+  <link rel="icon" type="image/svg+xml" href="../../assets/logo/arvo-symbol-gold.svg">
+  <link rel="stylesheet" href="../../colors_and_type.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body, #root { min-height: 100vh; }
+    body {
+      background: var(--arvo-offwhite);
+      color: var(--arvo-fg);
+      font-family: var(--arvo-font-body);
+      font-size: 15px;
+      -webkit-font-smoothing: antialiased;
+    }
+    button { font: inherit; }
+    a { color: inherit; }
+    /* hide scrollbar chrome on horizontal sub-nav */
+    nav::-webkit-scrollbar { display: none; }
+
+    /* Demo overlay — top-right pill that lets you jump between screens */
+    .demo-jump {
+      position: fixed; bottom: 16px; right: 16px;
+      z-index: 1000;
+      background: rgba(13,13,13,0.78);
+      backdrop-filter: blur(10px);
+      color: var(--arvo-gold);
+      border-radius: 999px;
+      padding: 3px;
+      display: flex; gap: 2px; align-items: center;
+      box-shadow: 0 8px 30px -8px rgba(13,13,13,0.45);
+      transition: opacity 200ms, transform 200ms;
+    }
+    .demo-jump.hidden { opacity: 0; transform: translateY(20px); pointer-events: none; }
+    .demo-jump button {
+      font-family: 'Tenor Sans', sans-serif;
+      font-size: 9px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      padding: 6px 12px;
+      border: 0;
+      border-radius: 999px;
+      background: transparent;
+      color: rgba(200,184,154,0.55);
+      cursor: pointer;
+      transition: all 200ms;
+    }
+    .demo-jump button.on {
+      background: var(--arvo-gold);
+      color: var(--arvo-black);
+    }
+    .demo-jump .dismiss {
+      padding: 4px 8px;
+      font-size: 12px;
+      letter-spacing: 0;
+      opacity: 0.5;
+      border-left: 1px solid rgba(200,184,154,0.15);
+      margin-left: 2px;
+    }
+    .demo-jump .dismiss:hover { opacity: 1; }
+    .demo-show {
+      position: fixed; bottom: 16px; right: 16px;
+      z-index: 1000;
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      background: rgba(13,13,13,0.78);
+      backdrop-filter: blur(10px);
+      color: var(--arvo-gold);
+      border: 0;
+      cursor: pointer;
+      display: none;
+      align-items: center; justify-content: center;
+      font-family: 'Tenor Sans', sans-serif;
+      font-size: 14px;
+      box-shadow: 0 4px 12px rgba(13,13,13,0.30);
+    }
+    .demo-show.visible { display: flex; }
+
+    @media (max-width: 800px) {
+      .demo-jump { left: 16px; right: 16px; justify-content: center; }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <script type="text/babel" src="icons.jsx"></script>
+  <script type="text/babel" src="controls.jsx"></script>
+  <script type="text/babel" src="header.jsx"></script>
+  <script type="text/babel" src="screen-landing.jsx"></script>
+  <script type="text/babel" src="screen-login.jsx"></script>
+  <script type="text/babel" src="screen-dashboard.jsx"></script>
+
+  <script type="text/babel">
+    const { useState } = React;
+
+    function App() {
+      const [screen, setScreen]     = useState('landing'); // landing | login | app
+      const [section, setSection]   = useState('invest');
+      const [subPage, setSubPage]   = useState('dashboard');
+      const [showDemo, setShowDemo] = useState(true);
+
+      const enterLogin = () => setScreen('login');
+      const signIn     = () => setScreen('app');
+      const signOut    = () => setScreen('landing');
+
+      return (
+        <>
+          {/* Demo jump overlay — not part of the brand, lets reviewers hop */}
+          <div className={'demo-jump' + (showDemo ? '' : ' hidden')}>
+            <button className={screen === 'landing' ? 'on' : ''} onClick={() => setScreen('landing')}>Landing</button>
+            <button className={screen === 'login'   ? 'on' : ''} onClick={() => setScreen('login')}>Login</button>
+            <button className={screen === 'app'     ? 'on' : ''} onClick={() => setScreen('app')}>Dashboard</button>
+            <button className="dismiss" onClick={() => setShowDemo(false)} title="Esconder">×</button>
+          </div>
+          <button className={'demo-show' + (showDemo ? '' : ' visible')} onClick={() => setShowDemo(true)} title="Demo nav">⋮⋮</button>
+
+          {screen === 'landing' && <LandingScreen onEnter={enterLogin} />}
+          {screen === 'login'   && <LoginScreen onLogin={signIn} onBack={() => setScreen('landing')} />}
+          {screen === 'app' && (
+            <>
+              <Header section={section} setSection={setSection} subPage={subPage} setSubPage={setSubPage} onSignOut={signOut} />
+              <DashboardScreen section={section} subPage={subPage} />
+            </>
+          )}
+        </>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Imagery — Tier 2 + Preset</title>
+<link rel="stylesheet" href="_card.css">
+<style>
+  body { background: var(--arvo-black); overflow: hidden; }
+  .card { padding: 12px; gap: 10px; min-height: 100vh; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; flex: 1; }
+  figure { position: relative; border-radius: 8px; overflow: hidden; }
+  img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  figure.with { img { filter: var(--arvo-photo-filter); } }
+  figure.without img { filter: none; }
+  figcaption { position: absolute; left: 10px; bottom: 8px; right: 10px; color: var(--arvo-fg-on-dark); z-index: 2; }
+  figure::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to top, rgba(13,13,13,0.85), transparent 55%); }
+  .use { font-family: var(--arvo-font-display); font-size: 8px; letter-spacing: 0.25em; text-transform: uppercase; color: rgba(200,184,154,0.75); }
+  .desc { font-family: var(--arvo-font-serif); font-style: italic; font-size: 11px; opacity: 0.85; margin-top: 2px; }
+  .preset { color: var(--arvo-gold); font-family: var(--arvo-font-display); font-size: 9px; letter-spacing: 0.25em; text-transform: uppercase; padding: 0 4px; }
+</style></head>
+<body class="dark">
+<div class="card">
+  <div class="grid">
+    <figure class="with">
+      <img src="../assets/imagery/05-trigo-close.jpg" alt="">
+      <figcaption><div class="use">Tier 2 · Banner</div><div class="desc">cultivo em close</div></figcaption>
+    </figure>
+    <figure class="with">
+      <img src="../assets/imagery/06-floresta-por-do-sol.jpg" alt="">
+      <figcaption><div class="use">Tier 2 · Abertura</div><div class="desc">escala &amp; perspectiva</div></figcaption>
+    </figure>
+    <figure class="with">
+      <img src="../assets/imagery/07-broto-escuro.jpg" alt="">
+      <figcaption><div class="use">Tier 2 · Comunidade</div><div class="desc">o broto segunda-vez</div></figcaption>
+    </figure>
+  </div>
+  <div style="display:grid; grid-template-columns: 1fr 16px 1fr; gap: 4px; align-items: stretch; height: 70px;">
+    <figure class="without">
+      <img src="../assets/imagery/02-arvore-solitaria.jpg" alt="">
+      <figcaption style="bottom: 6px;"><div class="use">sem preset</div></figcaption>
+    </figure>
+    <div style="display:flex; align-items:center; justify-content:center;">
+      <span class="preset">→</span>
+    </div>
+    <figure class="with">
+      <img src="../assets/imagery/02-arvore-solitaria.jpg" alt="">
+      <figcaption style="bottom: 6px;"><div class="use">preset arvo</div></figcaption>
+    </figure>
+  </div>
+</div>
+</body></html>

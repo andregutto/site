@@ -1,0 +1,253 @@
+/* =====================================================================
+   ARVO — colors_and_type.css
+   The two foundations of the brand. Import this file before anything else.
+
+   Fonts: loaded via Google Fonts (Tenor Sans + Playfair Display).
+   If you need self-hosted fonts, drop .woff2 files into /fonts and replace
+   the @import below with @font-face declarations.
+   ===================================================================== */
+
+/* ── Self-hosted brand fonts ─────────────────────────────────────────── */
+@font-face {
+  font-family: 'Tenor Sans';
+  src: url('fonts/TenorSans-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Playfair Display';
+  src: url('fonts/PlayfairDisplay-VariableFont_wght.ttf') format('truetype-variations'),
+       url('fonts/PlayfairDisplay-VariableFont_wght.ttf') format('truetype');
+  font-weight: 400 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Playfair Display';
+  src: url('fonts/PlayfairDisplay-Italic-VariableFont_wght.ttf') format('truetype-variations'),
+       url('fonts/PlayfairDisplay-Italic-VariableFont_wght.ttf') format('truetype');
+  font-weight: 400 900;
+  font-style: italic;
+  font-display: swap;
+}
+
+:root {
+
+  /* ── BASE PALETTE — the backbone. Never changes. ───────────────────── */
+  --arvo-black:       #0D0D0D;   /* landing, header, hero, video intros, logo */
+  --arvo-gold:        #C8B89A;   /* the through-line — always present */
+  --arvo-offwhite:    #F2EDE4;   /* primary background of tools & content */
+  --arvo-beige:       #E8DFD0;   /* secondary surfaces, separators, cards */
+  --arvo-terracotta:  #A36A52;   /* warm accent, editorial details */
+
+  /* ── ACCENT HIERARCHY — appears ONLY in data, actions and tags. ─────
+     Never as section backgrounds. Max ONE accent per screen. */
+  --arvo-blue:        #1B4FD8;   /* Azul Arara — primary; Arvo Capital; precisão, segurança patrimonial */
+  --arvo-red:         #D63B2F;   /* Vermelho Guará — secondary; Arvo Voyage; paixão, audácia, movimento */
+  --arvo-ocre:        #E8A020;   /* Ocre Tucano — tertiary; Arvo Journal; criatividade, comunidade, luz */
+  --arvo-green:       #1F8A5B;   /* Verde Maritaca — finance-positive; mata atlântica; crescimento paciente */
+  --arvo-green-on-dark: #7BC9A4; /* lighter sibling for dark surfaces */
+
+  /* Softer companions (10–14% tints; never invent new ones) */
+  --arvo-blue-tint:        rgba(27, 79, 216, 0.10);
+  --arvo-red-tint:         rgba(214, 59, 47, 0.10);
+  --arvo-ocre-tint:        rgba(232, 160, 32, 0.12);
+  --arvo-green-tint:       rgba(31, 138, 91, 0.10);
+  --arvo-gold-tint:        rgba(200, 184, 154, 0.12);
+  --arvo-gold-line:        rgba(200, 184, 154, 0.15);
+
+  /* ── SEMANTIC SURFACES ─────────────────────────────────────────────── */
+  --arvo-bg:           var(--arvo-offwhite);
+  --arvo-bg-dark:      var(--arvo-black);
+  --arvo-surface:      #FFFFFF;                  /* card on offwhite */
+  --arvo-surface-2:    var(--arvo-beige);        /* sunken card / separator */
+  --arvo-surface-dark: #161513;                  /* card on black */
+
+  /* ── FOREGROUND on LIGHT (offwhite) ────────────────────────────────── */
+  --arvo-fg:           rgba(13, 13, 13, 0.92);   /* primary text */
+  --arvo-fg-muted:     rgba(13, 13, 13, 0.65);   /* body */
+  --arvo-fg-soft:      rgba(13, 13, 13, 0.45);   /* metadata, labels */
+  --arvo-fg-faint:     rgba(13, 13, 13, 0.28);   /* dividers, hairlines */
+
+  /* ── FOREGROUND on DARK (black) ────────────────────────────────────── */
+  --arvo-fg-on-dark:        rgba(242, 237, 228, 0.92);
+  --arvo-fg-on-dark-muted:  rgba(242, 237, 228, 0.65);
+  --arvo-fg-on-dark-soft:   rgba(242, 237, 228, 0.45);
+  --arvo-fg-on-dark-faint:  rgba(200, 184, 154, 0.30);
+
+  /* ── BORDERS ────────────────────────────────────────────────────────── */
+  --arvo-border:       rgba(13, 13, 13, 0.10);
+  --arvo-border-soft:  rgba(13, 13, 13, 0.06);
+  --arvo-border-dark:  rgba(200, 184, 154, 0.12);
+
+  /* ── TYPOGRAPHY ────────────────────────────────────────────────────── */
+  --arvo-font-display: 'Tenor Sans', 'Times New Roman', serif;
+  --arvo-font-serif:   'Playfair Display', Georgia, serif;   /* italic accent */
+  --arvo-font-body:    'Tenor Sans', system-ui, sans-serif;
+
+  /* Letter-spacing — Tenor Sans wants room to breathe */
+  --arvo-track-tight:   0.04em;   /* body */
+  --arvo-track-normal:  0.10em;   /* h2/h3 */
+  --arvo-track-wide:    0.18em;   /* h1, navigation */
+  --arvo-track-widest:  0.30em;   /* logo wordmark, eyebrows */
+
+  /* ── TYPE SCALE (display → caption) ────────────────────────────────── */
+  --arvo-text-hero:    clamp(72px, 14vw, 148px);  /* wordmark, landing hero */
+  --arvo-text-h1:      clamp(40px, 5vw, 64px);
+  --arvo-text-h2:      clamp(28px, 3vw, 40px);
+  --arvo-text-h3:      22px;
+  --arvo-text-h4:      18px;
+  --arvo-text-body:    15px;
+  --arvo-text-small:   13px;
+  --arvo-text-meta:    11px;
+  --arvo-text-eyebrow: 10px;      /* uppercase + 0.30em tracking */
+
+  --arvo-leading-tight: 1.15;
+  --arvo-leading-snug:  1.35;
+  --arvo-leading-body:  1.75;
+
+  /* ── SPACING (4px base) ────────────────────────────────────────────── */
+  --arvo-space-1: 4px;
+  --arvo-space-2: 8px;
+  --arvo-space-3: 12px;
+  --arvo-space-4: 16px;
+  --arvo-space-5: 24px;
+  --arvo-space-6: 32px;
+  --arvo-space-7: 48px;
+  --arvo-space-8: 64px;
+  --arvo-space-9: 96px;
+
+  /* ── RADII — gentle, never pill except on tags ─────────────────────── */
+  --arvo-radius-xs: 3px;     /* form inputs (loginPage uses 3px) */
+  --arvo-radius-sm: 6px;
+  --arvo-radius-md: 10px;    /* swatches */
+  --arvo-radius-lg: 14px;    /* cards */
+  --arvo-radius-xl: 18px;    /* hero panels */
+  --arvo-radius-pill: 999px; /* tags only */
+
+  /* ── ELEVATION — almost flat. Use sparingly. ───────────────────────── */
+  --arvo-shadow-sm: 0 1px 2px rgba(13, 13, 13, 0.04);
+  --arvo-shadow-md: 0 4px 16px rgba(13, 13, 13, 0.06);
+  --arvo-shadow-lg: 0 24px 60px -20px rgba(13, 13, 13, 0.18);
+  --arvo-shadow-glow-gold: 0 0 80px -20px rgba(200, 184, 154, 0.35);
+
+  /* ── MOTION — slow, intentional. Nothing bounces. ──────────────────── */
+  --arvo-ease:      cubic-bezier(0.22, 0.61, 0.36, 1);
+  --arvo-ease-out:  cubic-bezier(0.16, 1, 0.30, 1);
+  --arvo-dur-fast:  160ms;
+  --arvo-dur-base:  280ms;
+  --arvo-dur-slow:  600ms;
+  --arvo-dur-very-slow: 900ms;
+
+  /* ── IMAGERY PRESET — apply to <img> on top of any photograph ─────── */
+  --arvo-photo-filter: sepia(0.20) saturate(1.10) brightness(0.85);
+}
+
+/* ===================================================================
+   SEMANTIC ELEMENT STYLES — use these directly in markup.
+   =================================================================== */
+
+.arvo {
+  background: var(--arvo-bg);
+  color: var(--arvo-fg);
+  font-family: var(--arvo-font-body);
+  font-size: var(--arvo-text-body);
+  line-height: var(--arvo-leading-body);
+  letter-spacing: var(--arvo-track-tight);
+  -webkit-font-smoothing: antialiased;
+}
+.arvo--dark {
+  background: var(--arvo-bg-dark);
+  color: var(--arvo-fg-on-dark);
+}
+
+/* Wordmark — never use a non-Tenor font here, never uppercase */
+.arvo-wordmark {
+  font-family: var(--arvo-font-display);
+  font-weight: 400;
+  text-transform: lowercase;
+  letter-spacing: var(--arvo-track-widest);
+  text-indent: var(--arvo-track-widest); /* compensate for trailing track */
+  line-height: 1;
+}
+
+/* Headings — display sans, generous tracking */
+.arvo-h1 {
+  font-family: var(--arvo-font-display);
+  font-weight: 400;
+  font-size: var(--arvo-text-h1);
+  letter-spacing: var(--arvo-track-wide);
+  line-height: var(--arvo-leading-tight);
+  text-wrap: balance;
+}
+.arvo-h2 {
+  font-family: var(--arvo-font-display);
+  font-weight: 400;
+  font-size: var(--arvo-text-h2);
+  letter-spacing: var(--arvo-track-normal);
+  line-height: var(--arvo-leading-snug);
+  text-wrap: balance;
+}
+.arvo-h3 {
+  font-family: var(--arvo-font-display);
+  font-weight: 400;
+  font-size: var(--arvo-text-h3);
+  letter-spacing: var(--arvo-track-normal);
+  line-height: var(--arvo-leading-snug);
+}
+
+/* Editorial serif — taglines, quotes, section subtitles. Always italic. */
+.arvo-serif,
+.arvo-tagline,
+.arvo-quote {
+  font-family: var(--arvo-font-serif);
+  font-style: italic;
+  font-weight: 400;
+  color: var(--arvo-gold);
+  letter-spacing: 0.01em;
+  line-height: var(--arvo-leading-snug);
+}
+
+/* Eyebrow — the tiny tracked-out label that opens every section */
+.arvo-eyebrow {
+  font-family: var(--arvo-font-display);
+  font-size: var(--arvo-text-eyebrow);
+  text-transform: uppercase;
+  letter-spacing: var(--arvo-track-widest);
+  color: var(--arvo-gold);
+  opacity: 0.65;
+}
+
+/* Body, small, meta */
+.arvo-body  { font-size: var(--arvo-text-body);  color: var(--arvo-fg-muted); line-height: var(--arvo-leading-body); }
+.arvo-small { font-size: var(--arvo-text-small); color: var(--arvo-fg-soft);  line-height: 1.6; }
+.arvo-meta  {
+  font-size: var(--arvo-text-meta);
+  letter-spacing: var(--arvo-track-wide);
+  text-transform: uppercase;
+  color: var(--arvo-fg-soft);
+}
+
+/* Hairline divider — gold gradient, used between sections on dark */
+.arvo-rule-gold {
+  height: 1px;
+  background: linear-gradient(to right, transparent, var(--arvo-gold-line), transparent);
+  border: 0;
+}
+
+/* Photograph treatment — apply the Arvo preset on every <img> in content */
+.arvo-photo {
+  filter: var(--arvo-photo-filter);
+  transition: filter var(--arvo-dur-slow) var(--arvo-ease);
+}
+.arvo-photo:hover { filter: sepia(0.10) saturate(1.20) brightness(0.95); }
+
+/* Film grain overlay — drop into any hero for texture */
+.arvo-grain {
+  position: absolute; inset: 0; pointer-events: none;
+  opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 256px;
+  mix-blend-mode: overlay;
+}
