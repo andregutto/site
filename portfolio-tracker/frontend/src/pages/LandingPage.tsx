@@ -5,10 +5,11 @@ import { useI18n } from '../contexts/I18nContext'
 import { supabase } from '../lib/supabase'
 import LanguageSelector from '../components/LanguageSelector'
 
-const DARK  = '#0D0D0D'
-const GOLD  = '#C8B89A'
-const BG    = '#FFFFFF'
-const BORDER = 'rgba(13,13,13,0.09)'
+const DARK     = '#0D0D0D'
+const GOLD     = '#C8B89A'
+const GOLD_CTA = '#C9911A'
+const BG       = '#FFFFFF'
+const BORDER   = 'rgba(13,13,13,0.09)'
 // Text hierarchy on beige/offwhite — NEVER use raw gray-* classes on light bg
 const T_PRIMARY   = 'rgba(13,13,13,0.92)'   // headings
 const T_BODY      = 'rgba(13,13,13,0.78)'   // body paragraphs
@@ -17,8 +18,16 @@ const T_SECONDARY = 'rgba(13,13,13,0.72)'   // labels / eyebrows / metadata
 const F_SANS    = "'Tenor Sans', sans-serif"
 const F_DISPLAY = "'Playfair Display', serif"
 
-const ICONS = ['◈', '◎', '▦', '◉', '✦', '◑']
-const FEATURE_COLORS = ['#1F8A5B', '#1B4FD8', '#A36A52', '#E8A020', '#1B4FD8', '#A36A52']
+const ICONS = ['◈', '◎', '◉', '◉', '✦', '◑']
+const FEATURE_COLORS = ['#1F8A5B', '#1B4FD8', '#A36A52', '#E8A020', '#1B4FD8', '#1B4FD8']
+const FEATURE_TINTS  = [
+  'rgba(31,138,91,0.04)',
+  'rgba(27,79,216,0.04)',
+  'rgba(163,106,82,0.04)',
+  'rgba(232,160,32,0.04)',
+  'rgba(27,79,216,0.04)',
+  'rgba(27,79,216,0.04)',
+]
 
 const TABLE_ROWS: [string, string, string, string, string][] = [
   ['BOVA11',   'ETF',     'R$45,2k', '+5,8%',  '#1F8A5B'],
@@ -454,27 +463,36 @@ export default function LandingPage() {
 
       {/* ── HERO ── */}
       <section id="hero" style={{ position: 'relative', minHeight: '93vh', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
-        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(160deg, #080f1c 0%, #0D0D0D 100%)' }} />
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(160deg, #0D1A2E 0%, #0D0D0D 100%)' }} />
         <div style={{ position: 'absolute', inset: 0, backgroundImage: "url('/brand/imagery/01-broto-floresta.jpg')", backgroundSize: 'cover', backgroundPosition: 'center 40%', filter: 'brightness(0.28) sepia(0.30) saturate(1.20)' }} />
         <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '55%', background: 'linear-gradient(to top, rgba(6,12,24,0.90) 0%, transparent 100%)' }} />
         <div className="arvo-grain" />
 
-        {/* Right mockup — absolute, full hero height, right 55%, clips to ~60% visible */}
-        <div className="hidden lg:block" style={{ position: 'absolute', top: 0, right: 0, width: '55%', height: '100%', overflow: 'hidden', zIndex: 1 }}>
-          {/* Left-edge blend */}
-          <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 220, background: 'linear-gradient(to right, rgba(6,12,24,0.98) 0%, transparent 100%)', zIndex: 3, pointerEvents: 'none' }} />
-          {/* Top-edge blend */}
-          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 100, background: 'linear-gradient(to bottom, rgba(6,12,24,0.95) 0%, transparent 100%)', zIndex: 3, pointerEvents: 'none' }} />
-          {/* Bottom-edge blend */}
-          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 140, background: 'linear-gradient(to top, rgba(6,12,24,0.90) 0%, transparent 100%)', zIndex: 3, pointerEvents: 'none' }} />
-          {/* Drop shadow on the left edge of the frame */}
-          <div style={{ position: 'absolute', top: 56, left: 0, bottom: 0, boxShadow: '-12px 0 48px rgba(0,0,0,0.55)', zIndex: 2, pointerEvents: 'none', width: 1 }} />
-          <DashboardMockupContent
-            td={(t as unknown as Record<string, Record<string, string>>).dashboard ?? {}}
-            tn={(t as unknown as Record<string, Record<string, string>>).nav ?? {}}
-            tc={((t as unknown as Record<string, Record<string, Record<string, string>>>).classes?.names ?? {}) as Record<string, string>}
-            ti={(t as unknown as Record<string, Record<string, string>>).indices ?? {}}
-          />
+        {/* Right mockup — browser window, ~80% hero height, anchored to bottom */}
+        <div className="hidden lg:block" style={{ position: 'absolute', bottom: 0, right: 0, width: '55%', height: '82%', overflow: 'hidden', zIndex: 1, borderRadius: '10px 0 0 0', boxShadow: '-16px 0 64px rgba(0,0,0,0.55), 0 -8px 32px rgba(0,0,0,0.30)' }}>
+          {/* macOS-style browser chrome */}
+          <div style={{ height: 36, flexShrink: 0, background: '#1C1C1E', display: 'flex', alignItems: 'center', padding: '0 14px', gap: 0 }}>
+            <div style={{ display: 'flex', gap: 6, marginRight: 14 }}>
+              <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#FF5F57' }} />
+              <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#FFBD2E' }} />
+              <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#28C840' }} />
+            </div>
+            <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
+              <div style={{ padding: '3px 12px', background: '#2C2C2E', borderRadius: 5, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <svg width="10" height="10" fill="none" viewBox="0 0 24 24" stroke="rgba(255,255,255,0.35)" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 2a10 10 0 100 20A10 10 0 0012 2z"/><path strokeLinecap="round" strokeLinejoin="round" d="M2 12h20M12 2c-2.8 3-4 6.4-4 10s1.2 7 4 10M12 2c2.8 3 4 6.4 4 10s-1.2 7-4 10"/></svg>
+                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', fontFamily: "'DM Sans', sans-serif", letterSpacing: '0.01em' }}>arvo.andregutto.com</span>
+              </div>
+            </div>
+          </div>
+          {/* App content */}
+          <div style={{ height: 'calc(100% - 36px)', overflow: 'hidden' }}>
+            <DashboardMockupContent
+              td={(t as unknown as Record<string, Record<string, string>>).dashboard ?? {}}
+              tn={(t as unknown as Record<string, Record<string, string>>).nav ?? {}}
+              tc={((t as unknown as Record<string, Record<string, Record<string, string>>>).classes?.names ?? {}) as Record<string, string>}
+              ti={(t as unknown as Record<string, Record<string, string>>).indices ?? {}}
+            />
+          </div>
         </div>
 
         {/* Left text — constrained to left half */}
@@ -498,7 +516,7 @@ export default function LandingPage() {
 
             <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
               <Link to="/login?mode=register"
-                style={{ fontFamily: F_SANS, fontSize: 12, letterSpacing: '0.16em', textTransform: 'uppercase', background: GOLD, color: DARK, textDecoration: 'none', padding: '16px 34px', borderRadius: 2 }}>
+                style={{ fontFamily: F_SANS, fontSize: 12, letterSpacing: '0.16em', textTransform: 'uppercase', background: GOLD_CTA, color: '#fff', textDecoration: 'none', padding: '16px 34px', borderRadius: 2 }}>
                 {l.heroCta}
               </Link>
               <Link to="/login"
@@ -542,9 +560,9 @@ export default function LandingPage() {
 
         <div style={{ display: 'grid', gap: 1, background: BORDER }} className="grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           {FEATURES.map((f, i) => (
-            <div key={i} className={`arvo-reveal arvo-reveal-d${i + 1}`} style={{ background: '#fff', padding: 'clamp(28px, 4vw, 40px) clamp(24px, 3vw, 36px)' }}>
-              <div style={{ fontFamily: F_SANS, fontSize: 24, color: f.color, marginBottom: 14, lineHeight: 1 }}>{f.icon}</div>
-              <p style={{ fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: T_SECONDARY, marginBottom: 10 }}>{f.label}</p>
+            <div key={i} className={`arvo-reveal arvo-reveal-d${i + 1}`} style={{ background: FEATURE_TINTS[i] || '#fff', padding: 'clamp(28px, 4vw, 40px) clamp(24px, 3vw, 36px)' }}>
+              <div style={{ fontFamily: F_SANS, fontSize: 28, color: f.color, marginBottom: 14, lineHeight: 1 }}>{f.icon}</div>
+              <p style={{ fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: f.color, marginBottom: 10, opacity: 0.85 }}>{f.label}</p>
               <h3 style={{ fontFamily: F_DISPLAY, fontSize: 'clamp(1rem, 1.8vw, 1.25rem)', fontWeight: 400, color: DARK, marginBottom: 10, lineHeight: 1.25 }}>{f.title}</h3>
               <p style={{ fontFamily: F_SANS, fontSize: 14, color: T_BODY, lineHeight: 1.8 }}>{f.desc}</p>
             </div>
@@ -642,7 +660,7 @@ export default function LandingPage() {
             {l.ctaPara}
           </p>
           <Link to="/login?mode=register"
-            style={{ display: 'inline-block', fontFamily: F_SANS, fontSize: 12, letterSpacing: '0.16em', textTransform: 'uppercase', background: GOLD, color: DARK, textDecoration: 'none', padding: '16px 38px', borderRadius: 2 }}>
+            style={{ display: 'inline-block', fontFamily: F_SANS, fontSize: 12, letterSpacing: '0.16em', textTransform: 'uppercase', background: GOLD_CTA, color: '#fff', textDecoration: 'none', padding: '16px 38px', borderRadius: 2 }}>
             {l.ctaBtn}
           </Link>
         </div>

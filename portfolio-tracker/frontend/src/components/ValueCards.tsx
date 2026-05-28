@@ -81,12 +81,14 @@ export default function ValueCards({ total_brl, generated_at, invested_brl, gain
   }
 
   return (
-    <div style={{ background: '#FFFFFF', color: 'var(--arvo-fg)', borderRadius: 16, padding: 20, position: 'relative', overflow: 'hidden', border: '1px solid rgba(200,184,154,0.35)', boxShadow: '0 4px 24px rgba(200,184,154,0.18), 0 1px 0 rgba(200,184,154,0.22)' }}>
+    <div style={{ background: '#FFFFFF', color: 'var(--arvo-fg)', borderRadius: 16, padding: 20, position: 'relative', overflow: 'hidden', border: '1px solid rgba(200,184,154,0.35)', boxShadow: '0 4px 24px rgba(200,184,154,0.18), 0 1px 0 rgba(200,184,154,0.22), -24px 24px 64px rgba(27,79,216,0.09)' }}>
 
       {/* Gold glow — top-right */}
       <div style={{ position: 'absolute', top: -120, right: -60, width: 360, height: 360, borderRadius: '50%', background: 'rgba(200,184,154,0.10)', filter: 'blur(70px)', pointerEvents: 'none' }} />
       {/* Gold glow — bottom-left */}
       <div style={{ position: 'absolute', bottom: -80, left: -40, width: 220, height: 220, borderRadius: '50%', background: 'rgba(200,184,154,0.07)', filter: 'blur(50px)', pointerEvents: 'none' }} />
+      {/* Blue accent glow — bottom-left */}
+      <div style={{ position: 'absolute', bottom: -60, left: -30, width: 280, height: 280, borderRadius: '50%', background: 'rgba(27,79,216,0.08)', filter: 'blur(64px)', pointerEvents: 'none' }} />
       {/* Gold shimmer line at top */}
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 1, background: 'linear-gradient(to right, transparent, rgba(200,184,154,0.65), transparent)', pointerEvents: 'none' }} />
 

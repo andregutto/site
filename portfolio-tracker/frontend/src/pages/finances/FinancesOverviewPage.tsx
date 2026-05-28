@@ -412,11 +412,13 @@ export default function FinancesOverviewPage() {
       </div>
 
       {/* Hero card — white with gold glow */}
-      <div style={{ background: '#FFFFFF', color: 'var(--arvo-fg)', borderRadius: 16, padding: 24, position: 'relative', overflow: 'hidden', border: '1px solid rgba(200,184,154,0.35)', boxShadow: '0 4px 24px rgba(200,184,154,0.18), 0 1px 0 rgba(200,184,154,0.22)' }}>
+      <div style={{ background: '#FFFFFF', color: 'var(--arvo-fg)', borderRadius: 16, padding: 24, position: 'relative', overflow: 'hidden', border: '1px solid rgba(200,184,154,0.35)', boxShadow: '0 4px 24px rgba(200,184,154,0.18), 0 1px 0 rgba(200,184,154,0.22), -24px 24px 64px rgba(163,106,82,0.10)' }}>
         {/* Gold glow — top-right */}
         <div style={{ position: 'absolute', top: -100, right: -60, width: 320, height: 320, borderRadius: '50%', background: 'rgba(200,184,154,0.10)', filter: 'blur(60px)', pointerEvents: 'none' }} />
         {/* Gold glow — bottom-left */}
         <div style={{ position: 'absolute', bottom: -70, left: -40, width: 180, height: 180, borderRadius: '50%', background: 'rgba(200,184,154,0.07)', filter: 'blur(48px)', pointerEvents: 'none' }} />
+        {/* Terracota accent glow — bottom-left */}
+        <div style={{ position: 'absolute', bottom: -60, left: -30, width: 260, height: 260, borderRadius: '50%', background: 'rgba(163,106,82,0.09)', filter: 'blur(60px)', pointerEvents: 'none' }} />
         {/* Gold shimmer line */}
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 1, background: 'linear-gradient(to right, transparent, rgba(200,184,154,0.65), transparent)', pointerEvents: 'none' }} />
 
