@@ -266,9 +266,9 @@ export default function FinancesOverviewPage() {
 
   if (loading) return (
     <div className="space-y-5">
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-        <div>
-          <h1 style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 18, letterSpacing: '0.06em', color: 'var(--arvo-black)' }}>{t.finances.overviewTitle}</h1>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+        <div style={{ minWidth: 0, flex: 1, overflow: 'hidden' }}>
+          <h1 style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 18, letterSpacing: '0.06em', color: 'var(--arvo-black)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.finances.overviewTitle}</h1>
           <p className="text-sm mt-0.5" style={{ color: 'rgba(13,13,13,0.60)' }}>{t.finances.overviewSubtitle}</p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
@@ -395,9 +395,9 @@ export default function FinancesOverviewPage() {
       )}
 
       {/* Header + month nav inline */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-        <div>
-          <h1 style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 18, letterSpacing: '0.06em', color: 'var(--arvo-black)' }}>{t.finances.overviewTitle}</h1>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+        <div style={{ minWidth: 0, flex: 1, overflow: 'hidden' }}>
+          <h1 style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 18, letterSpacing: '0.06em', color: 'var(--arvo-black)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.finances.overviewTitle}</h1>
           <p className="text-sm mt-0.5" style={{ color: 'rgba(13,13,13,0.60)' }}>{t.finances.overviewSubtitle}</p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>

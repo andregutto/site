@@ -35,6 +35,12 @@ html, body {
   overscroll-behavior: none;
 }
 
+/* On iOS PWA, the html element fills any safe-area gap not covered by body.
+   Keeping it dark prevents a white bar at the bottom during the splash screen. */
+html {
+  background-color: #0D0D0D;
+}
+
 body {
   @apply font-sans antialiased;
   background-color: var(--arvo-offwhite);

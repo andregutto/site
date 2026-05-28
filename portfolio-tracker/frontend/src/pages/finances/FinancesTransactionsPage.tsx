@@ -54,7 +54,8 @@ function fmt(n: number, currency = 'EUR') {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency, minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n)
 }
 function fmtDate(d: string) {
-  return new Date(d + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })
+  const dt = new Date(d + 'T12:00:00')
+  return `${String(dt.getDate()).padStart(2, '0')}/${String(dt.getMonth() + 1).padStart(2, '0')}`
 }
 
 const LOCALE_MAP: Record<string, string> = { pt: 'pt-BR', en: 'en-GB', fr: 'fr-FR' }
@@ -734,9 +735,9 @@ export default function FinancesTransactionsPage() {
       )}
 
       {/* Header + month nav inline */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-        <div style={{ minWidth: 0 }}>
-          <h1 style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 18, letterSpacing: '0.06em', color: 'var(--arvo-black)' }}>{t.finances.transactionsTitle}</h1>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+        <div style={{ minWidth: 0, flex: 1, overflow: 'hidden' }}>
+          <h1 style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 18, letterSpacing: '0.06em', color: 'var(--arvo-black)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.finances.transactionsTitle}</h1>
           <p className="text-sm mt-0.5" style={{ color: 'rgba(13,13,13,0.60)' }}>{t.finances.transactionsSubtitle}</p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
