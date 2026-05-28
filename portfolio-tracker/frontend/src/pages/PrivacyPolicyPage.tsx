@@ -17,6 +17,7 @@ export default function PrivacyPolicyPage() {
     { title: p.s7title, body: p.s7body },
     { title: p.s8title, body: p.s8body },
     { title: p.s9title, body: p.s9body },
+    { title: p.s10title, body: p.s10body },
   ]
 
   return (

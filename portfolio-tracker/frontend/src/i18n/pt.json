@@ -233,7 +233,9 @@
     "s8title": "8. Autoridade de Supervisão",
     "s8body": "Se você reside na França, tem o direito de apresentar uma reclamação junto à CNIL (Commission Nationale de l'Informatique et des Libertés) em cnil.fr caso considere que seus dados pessoais não estão sendo tratados de acordo com o RGPD.",
     "s9title": "9. Contato",
-    "s9body": "Para qualquer questão relativa a esta política ou ao tratamento dos seus dados, entre em contato: andre@andregutto.com"
+    "s9body": "Para qualquer questão relativa a esta política ou ao tratamento dos seus dados, entre em contato: andre@andregutto.com",
+    "s10title": "10. Portabilidade de Dados",
+    "s10body": "Você pode exportar todos os seus dados financeiros a qualquer momento, em formato CSV ou JSON, diretamente pela plataforma. O acesso aos dados é garantido independentemente do status da sua conta."
   },
   "termsPage": {
     "title": "Termos de Uso",
@@ -255,7 +257,9 @@
     "s8title": "8. Lei Aplicável",
     "s8body": "Estes termos são regidos pela legislação francesa (loi n° 2004-575 du 21 juin 2004 pour la confiance dans l'économie numérique) e pelo Regulamento Geral de Proteção de Dados (RGPD/GDPR).",
     "s9title": "9. Contato",
-    "s9body": "Em caso de dúvidas, entre em contato: andre@andregutto.com"
+    "s9body": "Em caso de dúvidas, entre em contato: andre@andregutto.com",
+    "s10title": "10. Acesso Gratuito e Modelo de Assinatura",
+    "s10body": "O Arvo está disponível gratuitamente durante o período beta. No futuro, uma assinatura poderá ser exigida para acesso à plataforma. Independentemente do modelo de acesso, todos os seus dados financeiros estarão sempre disponíveis para download a qualquer momento."
   },
   "countries": {
     "select": "Selecione o país",

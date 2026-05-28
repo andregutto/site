@@ -89,9 +89,9 @@ function DashboardMockupContent({ td, tn, tc, ti }: MockupLabels) {
   }}>
     {/* Dynamic Island */}
     <div style={{
-      position: 'absolute', top: 10, left: '50%',
+      position: 'absolute', top: 12, left: '50%',
       transform: 'translateX(-50%)',
-      width: 96, height: 28, borderRadius: 14,
+      width: 76, height: 20, borderRadius: 10,
       background: '#000', zIndex: 10
     }} />
     {/* Screen content */}
@@ -105,7 +105,7 @@ function DashboardMockupContent({ td, tn, tc, ti }: MockupLabels) {
 **Key values:**
 - Outer: `260×520px`, `border-radius: 50px`, `border: 12px`
 - Inner content area: `236×496px` (260 - 2×12)
-- Dynamic Island: `96×28px`, `border-radius: 14px`, centered at `top: 10px`
+- Dynamic Island: `76×20px`, `border-radius: 10px`, centered at `top: 12px`
 - `right: 'calc(37vw - 50px)'` positions it overlapping the desktop mockup's left edge
 
 ### Screen content component structure
@@ -115,12 +115,16 @@ function YourIphoneScreenContent() {
   return (
     <div style={{ width: '100%', height: '100%', background: '#F4F4F4',
                   fontFamily: FS, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      {/* Status bar ~44px */}
-      <div style={{ height: 44, flexShrink: 0, background: '#fff',
-                    display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between',
-                    padding: '0 20px 8px', fontSize: 11 }}>
-        <span style={{ fontWeight: 600, fontSize: 12 }}>14:30</span>
-        {/* battery + wifi icons */}
+      {/* Status bar ~54px — tall enough to clear Dynamic Island (top:12, h:20) */}
+      <div style={{ height: 54, flexShrink: 0, background: '#fff',
+                    display: 'flex', alignItems: 'center',
+                    padding: '0 16px', fontSize: 11 }}>
+        <span style={{ fontWeight: 600, fontSize: 12, flex: 1 }}>14:30</span>
+        {/* spacer for Dynamic Island */}
+        <div style={{ width: 80 }} />
+        <div style={{ flex: 1, display: 'flex', gap: 5, alignItems: 'center', justifyContent: 'flex-end' }}>
+          {/* battery + wifi + signal icons */}
+        </div>
       </div>
 
       {/* Nav bar ~48px */}
@@ -142,10 +146,10 @@ function YourIphoneScreenContent() {
 ```
 
 **Content budget** (496px inner height):
-- Status bar: 44px
+- Status bar: 54px
 - Nav bar: 48px
 - Padding: 14px
-- Available for cards: **~390px**
+- Available for cards: **~380px**
 - Recommended card heights: title 30px, card 90-110px, gap 10px between cards
 
 ---

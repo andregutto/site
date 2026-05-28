@@ -233,7 +233,9 @@
     "s8title": "8. Supervisory Authority",
     "s8body": "If you reside in France, you have the right to file a complaint with the CNIL (Commission Nationale de l'Informatique et des Libertés) at cnil.fr if you believe your personal data is not being processed in accordance with the GDPR.",
     "s9title": "9. Contact",
-    "s9body": "For any questions regarding this policy or the processing of your data, please contact: andre@andregutto.com"
+    "s9body": "For any questions regarding this policy or the processing of your data, please contact: andre@andregutto.com",
+    "s10title": "10. Data Portability",
+    "s10body": "You can export all your financial data at any time in CSV or JSON format directly from the platform. Access to your data is guaranteed regardless of your account status."
   },
   "termsPage": {
     "title": "Terms of Use",
@@ -255,7 +257,9 @@
     "s8title": "8. Governing Law",
     "s8body": "These terms are governed by French law (loi n° 2004-575 du 21 juin 2004 for confidence in the digital economy) and the General Data Protection Regulation (GDPR).",
     "s9title": "9. Contact",
-    "s9body": "For any questions, please contact: andre@andregutto.com"
+    "s9body": "For any questions, please contact: andre@andregutto.com",
+    "s10title": "10. Free Access and Subscription Model",
+    "s10body": "Arvo is available free of charge during the beta period. In the future, a subscription may be required to access the platform. Regardless of the access model, all your financial data will always be available for download at any time."
   },
   "countries": {
     "select": "Select country",

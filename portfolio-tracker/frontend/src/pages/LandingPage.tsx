@@ -240,13 +240,15 @@ function FreedomMockupContent() {
 
   return (
     <div style={{ width: '100%', height: '100%', background: '#F4F4F4', fontFamily: FS, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      {/* Status bar */}
-      <div style={{ height: 44, flexShrink: 0, background: '#fff', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', padding: '0 20px 8px', fontSize: 11, color: DARK }}>
-        <span style={{ fontFamily: FS, fontWeight: 600, fontSize: 12 }}>14:30</span>
-        <div style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
-          <svg width="14" height="10" viewBox="0 0 14 10" fill={DARK}><rect x="0" y="3" width="3" height="7" rx="0.5"/><rect x="4" y="2" width="3" height="8" rx="0.5"/><rect x="8" y="0" width="3" height="10" rx="0.5"/><rect x="12" y="1" width="2" height="9" rx="0.5" opacity="0.3"/></svg>
-          <svg width="14" height="10" viewBox="0 0 14 10" fill="none"><path d="M7 2C9.2 2 11.2 2.9 12.6 4.4L14 3C12.2 1.1 9.7 0 7 0S1.8 1.1 0 3L1.4 4.4C2.8 2.9 4.8 2 7 2Z" fill={DARK} opacity="0.3"/><path d="M7 5C8.4 5 9.6 5.6 10.5 6.5L11.9 5.1C10.6 3.8 8.9 3 7 3S3.4 3.8 2.1 5.1L3.5 6.5C4.4 5.6 5.6 5 7 5Z" fill={DARK} opacity="0.6"/><path d="M7 8C7.8 8 8.5 8.3 9 8.8L10.4 7.4C9.5 6.5 8.3 6 7 6S4.5 6.5 3.6 7.4L5 8.8C5.5 8.3 6.2 8 7 8Z" fill={DARK}/><circle cx="7" cy="10" r="1" fill={DARK}/></svg>
-          <svg width="20" height="10" viewBox="0 0 20 10" fill="none"><rect x="0.5" y="0.5" width="17" height="9" rx="2" stroke={DARK} strokeWidth="1" opacity="0.35"/><rect x="1.5" y="1.5" width="14" height="7" rx="1.5" fill={DARK}/><path d="M18.5 3.5C19.3 3.5 19.3 6.5 18.5 6.5" stroke={DARK} strokeWidth="1" strokeLinecap="round" opacity="0.35"/></svg>
+      {/* Status bar — 54px tall so content clears the 20px Dynamic Island at top:12 */}
+      <div style={{ height: 54, flexShrink: 0, background: '#fff', display: 'flex', alignItems: 'center', padding: '0 16px', fontSize: 11, color: DARK }}>
+        <span style={{ fontFamily: FS, fontWeight: 600, fontSize: 12, flex: 1 }}>14:30</span>
+        {/* spacer for Dynamic Island */}
+        <div style={{ width: 80 }} />
+        <div style={{ flex: 1, display: 'flex', gap: 5, alignItems: 'center', justifyContent: 'flex-end' }}>
+          <svg width="13" height="10" viewBox="0 0 14 10" fill={DARK}><rect x="0" y="3" width="3" height="7" rx="0.5"/><rect x="4" y="2" width="3" height="8" rx="0.5"/><rect x="8" y="0" width="3" height="10" rx="0.5"/><rect x="12" y="1" width="2" height="9" rx="0.5" opacity="0.3"/></svg>
+          <svg width="13" height="10" viewBox="0 0 14 10" fill="none"><path d="M7 2C9.2 2 11.2 2.9 12.6 4.4L14 3C12.2 1.1 9.7 0 7 0S1.8 1.1 0 3L1.4 4.4C2.8 2.9 4.8 2 7 2Z" fill={DARK} opacity="0.3"/><path d="M7 5C8.4 5 9.6 5.6 10.5 6.5L11.9 5.1C10.6 3.8 8.9 3 7 3S3.4 3.8 2.1 5.1L3.5 6.5C4.4 5.6 5.6 5 7 5Z" fill={DARK} opacity="0.6"/><path d="M7 8C7.8 8 8.5 8.3 9 8.8L10.4 7.4C9.5 6.5 8.3 6 7 6S4.5 6.5 3.6 7.4L5 8.8C5.5 8.3 6.2 8 7 8Z" fill={DARK}/><circle cx="7" cy="10" r="1" fill={DARK}/></svg>
+          <svg width="19" height="10" viewBox="0 0 20 10" fill="none"><rect x="0.5" y="0.5" width="17" height="9" rx="2" stroke={DARK} strokeWidth="1" opacity="0.35"/><rect x="1.5" y="1.5" width="14" height="7" rx="1.5" fill={DARK}/><path d="M18.5 3.5C19.3 3.5 19.3 6.5 18.5 6.5" stroke={DARK} strokeWidth="1" strokeLinecap="round" opacity="0.35"/></svg>
         </div>
       </div>
 
@@ -607,7 +609,7 @@ export default function LandingPage() {
           {/* iPhone shell */}
           <div style={{ width: 260, height: 520, borderRadius: 50, border: '12px solid #1C1C1E', background: '#1C1C1E', boxShadow: '0 0 0 1px rgba(255,255,255,0.08) inset, 0 32px 80px rgba(0,0,0,0.65), 0 0 40px rgba(200,184,154,0.10)', position: 'relative', overflow: 'hidden' }}>
             {/* Dynamic Island */}
-            <div style={{ position: 'absolute', top: 10, left: '50%', transform: 'translateX(-50%)', width: 96, height: 28, borderRadius: 14, background: '#000', zIndex: 10 }} />
+            <div style={{ position: 'absolute', top: 12, left: '50%', transform: 'translateX(-50%)', width: 76, height: 20, borderRadius: 10, background: '#000', zIndex: 10 }} />
             {/* Screen content */}
             <div style={{ width: '100%', height: '100%', borderRadius: 38, overflow: 'hidden' }}>
               <FreedomMockupContent />

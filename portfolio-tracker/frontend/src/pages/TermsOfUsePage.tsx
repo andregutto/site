@@ -17,6 +17,7 @@ export default function TermsOfUsePage() {
     { title: tp.s7title, body: tp.s7body },
     { title: tp.s8title, body: tp.s8body },
     { title: tp.s9title, body: tp.s9body },
+    { title: tp.s10title, body: tp.s10body },
   ]
 
   return (

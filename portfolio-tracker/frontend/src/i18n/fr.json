@@ -233,7 +233,9 @@
     "s8title": "8. Autorité de contrôle",
     "s8body": "Si vous résidez en France, vous avez le droit d'introduire une réclamation auprès de la CNIL (Commission Nationale de l'Informatique et des Libertés) sur cnil.fr si vous estimez que vos données personnelles ne sont pas traitées conformément au RGPD.",
     "s9title": "9. Contact",
-    "s9body": "Pour toute question relative à cette politique ou au traitement de vos données, veuillez nous contacter : andre@andregutto.com"
+    "s9body": "Pour toute question relative à cette politique ou au traitement de vos données, veuillez nous contacter : andre@andregutto.com",
+    "s10title": "10. Portabilité des données",
+    "s10body": "Vous pouvez exporter toutes vos données financières à tout moment au format CSV ou JSON, directement depuis la plateforme. L'accès à vos données est garanti quel que soit le statut de votre compte."
   },
   "termsPage": {
     "title": "Conditions d'utilisation",
@@ -255,7 +257,9 @@
     "s8title": "8. Droit applicable",
     "s8body": "Ces conditions sont régies par le droit français (loi n° 2004-575 du 21 juin 2004 pour la confiance dans l'économie numérique) et le Règlement Général sur la Protection des Données (RGPD).",
     "s9title": "9. Contact",
-    "s9body": "Pour toute question, veuillez nous contacter : andre@andregutto.com"
+    "s9body": "Pour toute question, veuillez nous contacter : andre@andregutto.com",
+    "s10title": "10. Accès gratuit et modèle d'abonnement",
+    "s10body": "Arvo est disponible gratuitement pendant la période bêta. À l'avenir, un abonnement pourra être requis pour accéder à la plateforme. Quel que soit le modèle d'accès, toutes vos données financières seront toujours disponibles en téléchargement à tout moment."
   },
   "countries": {
     "select": "Sélectionnez le pays",
