@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { PageLoader } from '../components/ArvoLoader'
-import { usePerformanceSummary, usePerformanceMonthly, usePerformanceBenchmarks, usePortfolioValue, usePerformanceInception } from '../hooks/usePortfolio'
+import { usePerformanceSummary, usePerformanceMonthly, usePerformanceBenchmarks, usePortfolioValue, usePerformanceInception, usePerformanceDaily } from '../hooks/usePortfolio'
 import { useDividendSummary, useDividends } from '../hooks/useDividends'
 import { useCurrency } from '../contexts/CurrencyContext'
 import { useI18n } from '../contexts/I18nContext'
@@ -16,8 +16,18 @@ function fmtMonth(ym: string) {
   return `${names[parseInt(m) - 1]}/${y.slice(2)}`
 }
 
+function fmtDayLabel(dateStr: string) {
+  const [, m, day] = dateStr.split('-')
+  const names = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
+  return `${parseInt(day)}/${names[parseInt(m) - 1]}`
+}
+
 function localYM(d: Date) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+}
+
+function localDate(d: Date) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
 function addMonths(ym: string, n: number): string {
@@ -84,6 +94,22 @@ export default function PerformancePage() {
       case 'inception':     return inceptionYM ? `${fmtMonth(inceptionYM)} – ${fmtMonth(currentYM)}` : `– ${fmtMonth(currentYM)}`
     }
   })()
+
+  const useDailyChart = mode === 'current_month' || mode === 'last_30d'
+  const dailyFrom = useDailyChart
+    ? mode === 'current_month'
+      ? `${currentYM}-01`
+      : localDate(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 29))
+    : null
+  const dailyTo = useDailyChart ? localDate(now) : null
+  const { data: dailyData, loading: dailyLoading } = usePerformanceDaily(dailyFrom, dailyTo)
+
+  const dailyChartData = useDailyChart
+    ? (dailyData?.daily ?? []).filter(pt => pt.total > 0).map(pt => ({
+        month: fmtDayLabel(pt.date),
+        value: convert(pt.total),
+      }))
+    : []
 
   const { data: summary,    loading: sLoading, refresh: refreshSummary    } = usePerformanceSummary(from, to)
   const { data: monthly,    loading: mLoading, refresh: refreshMonthly    } = usePerformanceMonthly(from, to)
@@ -203,7 +229,7 @@ export default function PerformancePage() {
   // portfolioAccum must be declared AFTER displayReturnPct
   const portfolioAccum = displayReturnPct
 
-  const isLoading = sLoading || mLoading || bLoading
+  const isLoading = sLoading || mLoading || bLoading || (useDailyChart && dailyLoading)
 
   const modeButtons: Array<{ key: PeriodMode; label: string; disabled?: boolean }> = [
     { key: 'current_month', label: t.performance.currentMonth },
@@ -275,7 +301,36 @@ export default function PerformancePage() {
             </div>
           )}
 
-          {chartData.length > 0 ? (
+          {useDailyChart ? (
+            dailyChartData.length > 0 ? (
+              <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
+                <h2 className="font-semibold text-gray-800 mb-4">{t.performance.accumulatedReturn} · {periodLabel}</h2>
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={dailyChartData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+                      <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#9ca3af' }} interval="preserveStartEnd" />
+                      <YAxis
+                        tick={{ fontSize: 11, fill: '#9ca3af' }}
+                        tickFormatter={v => new Intl.NumberFormat('pt-BR', { notation: 'compact', maximumFractionDigits: 0 }).format(v)}
+                        width={56}
+                      />
+                      <Tooltip
+                        formatter={(v) => [new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(Number(v))]}
+                        contentStyle={{ borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 12 }}
+                      />
+                      <Line type="monotone" dataKey="value" name={t.performance.wallet} stroke="#0D0D0D" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-white border border-gray-100 rounded-2xl p-12 text-center text-gray-400 shadow-sm">
+                <p className="text-base font-medium text-gray-500">{t.performance.noData}</p>
+                <p className="text-sm mt-1">{t.performance.visitDashboard}</p>
+              </div>
+            )
+          ) : chartData.length > 0 ? (
             <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
               <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
                 <h2 className="font-semibold text-gray-800">{t.performance.accumulatedReturn} · {periodLabel}</h2>
@@ -323,8 +378,8 @@ export default function PerformancePage() {
             </div>
           )}
 
-          {/* Benchmark comparison cards */}
-          {chartData.length > 0 && (
+          {/* Benchmark comparison cards — only for monthly % chart */}
+          {!useDailyChart && chartData.length > 0 && (
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
               {[
                 { label: t.performance.wallet, value: portfolioAccum, text: 'text-[#0D0D0D]' },

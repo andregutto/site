@@ -310,41 +310,12 @@ export default function AssetDetailPage() {
       {/* Header */}
       <div className="flex items-start gap-2">
         <div className="flex-1 min-w-0">
-          {/* Title row: back + code + class pill + favorite */}
+          {/* Title row: back + favorite + code (code gets all remaining width) */}
           <div className="flex items-center gap-1.5">
             <button
               onClick={() => navigate(-1)}
               className="w-7 h-7 rounded-lg border border-gray-200 flex items-center justify-center text-gray-500 hover:border-[#0D0D0D] hover:text-[#0D0D0D] transition-colors shrink-0"
             >‹</button>
-            <h1 className="text-xl font-bold text-gray-900 truncate">{data.code}</h1>
-            {editingClass ? (
-              <span className="flex items-center gap-1">
-                <select
-                  autoFocus
-                  value={classIdValue ?? ''}
-                  onChange={e => {
-                    const val = e.target.value === '' ? null : Number(e.target.value)
-                    setClassIdValue(val)
-                    handleSaveClass(val)
-                  }}
-                  disabled={savingClass}
-                  className="text-xs border border-gray-200 rounded-lg px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-[#0D0D0D]/30 bg-white disabled:opacity-50"
-                >
-                  <option value="">{d.noClass}</option>
-                  {availableClasses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                </select>
-                {!savingClass && (
-                  <button onClick={() => setEditingClass(false)} className="text-xs text-gray-400">✕</button>
-                )}
-              </span>
-            ) : (
-              <button
-                onClick={() => { setClassIdValue(data.class_id); setEditingClass(true) }}
-                title={d.changeClass}
-                className="text-xs px-2 py-0.5 rounded-full text-white font-medium hover:opacity-75 transition-opacity shrink-0"
-                style={{ backgroundColor: data.class_color }}
-              >{data.class_name}</button>
-            )}
             {assetId && (
               <button
                 onClick={() => toggleFavorite(assetId)}
@@ -362,6 +333,7 @@ export default function AssetDetailPage() {
                 </svg>
               </button>
             )}
+            <h1 className="text-xl font-bold text-gray-900 flex-1 min-w-0">{data.code}</h1>
           </div>
 
           {/* Name (editable) */}
@@ -390,6 +362,34 @@ export default function AssetDetailPage() {
 
           {/* Metadata pills */}
           <div className="flex flex-wrap items-center gap-1 mt-1.5">
+            {editingClass ? (
+              <span className="flex items-center gap-1">
+                <select
+                  autoFocus
+                  value={classIdValue ?? ''}
+                  onChange={e => {
+                    const val = e.target.value === '' ? null : Number(e.target.value)
+                    setClassIdValue(val)
+                    handleSaveClass(val)
+                  }}
+                  disabled={savingClass}
+                  className="text-xs border border-gray-200 rounded-lg px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-[#0D0D0D]/30 bg-white disabled:opacity-50"
+                >
+                  <option value="">{d.noClass}</option>
+                  {availableClasses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+                {!savingClass && (
+                  <button onClick={() => setEditingClass(false)} className="text-xs text-gray-400">✕</button>
+                )}
+              </span>
+            ) : (
+              <button
+                onClick={() => { setClassIdValue(data.class_id); setEditingClass(true) }}
+                title={d.changeClass}
+                className="text-xs px-2 py-0.5 rounded-full text-white font-medium hover:opacity-75 transition-opacity"
+                style={{ backgroundColor: data.class_color }}
+              >{data.class_name}</button>
+            )}
             {data.fi_type && (
               <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-medium">
                 {data.fi_type.replace('_', ' ').replace('plus', '+').toUpperCase()}

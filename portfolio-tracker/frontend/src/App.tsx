@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { CurrencyProvider } from './contexts/CurrencyContext'
@@ -7,8 +7,15 @@ import { supabase } from './lib/supabase'
 import ArvoLoader from './components/ArvoLoader'
 
 function ArvoSplash() {
+  useEffect(() => {
+    // Body is white by default; force dark while the splash is visible so the
+    // iOS safe-area / home-indicator gap below the fixed overlay doesn't flash white.
+    const prev = document.body.style.background
+    document.body.style.background = '#0D0D0D'
+    return () => { document.body.style.background = prev }
+  }, [])
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'var(--arvo-black)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }}>
+    <div style={{ position: 'fixed', inset: 0, background: '#0D0D0D', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }}>
       <ArvoLoader size={52} style={{ color: 'var(--arvo-gold)' }} />
     </div>
   )
