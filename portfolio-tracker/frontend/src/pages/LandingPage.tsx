@@ -20,6 +20,154 @@ const F_DISPLAY = "'Playfair Display', serif"
 const ICONS = ['◈', '◎', '▦', '◉', '✦', '◑']
 const FEATURE_COLORS = ['#1F8A5B', '#1B4FD8', '#A36A52', '#E8A020', '#1B4FD8', '#A36A52']
 
+const KPI_CELLS: [string, string, boolean][] = [
+  ['INVEST.', 'R$180k', false],
+  ['RESULT.', '+R$24k', true],
+  ['MÊS', '+1,4%', true],
+  ['YTD', '+8,2%', true],
+]
+const ALLOC_ITEMS: [string, string, string][] = [
+  ['#1F8A5B', 'Ações', '45%'],
+  ['#1B4FD8', 'ETFs', '25%'],
+  ['#A36A52', 'RF', '20%'],
+  ['#E8A020', 'Cripto', '10%'],
+]
+const TABLE_ROWS: [string, string, string, string, string][] = [
+  ['BOVA11', 'ETF', 'R$45,2k', '+5,8%', '#1F8A5B'],
+  ['WEGE3', 'Ação', 'R$38,7k', '+12,4%', '#1F8A5B'],
+  ['BTC', 'Cripto', 'R$28,4k', '-2,1%', '#D63B2F'],
+]
+
+function DashboardMockupContent() {
+  return (
+    <div style={{ background: '#F8F7F5', width: '100%', height: '100%', overflow: 'hidden', fontFamily: F_SANS }}>
+      {/* App header */}
+      <div style={{ background: '#FFFFFF', borderBottom: '1px solid rgba(200,184,154,0.3)', padding: '7px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+          <img src="/brand/logo/arvo-symbol-black.svg" width="11" height="11" alt="" />
+          <span style={{ fontSize: 8, letterSpacing: '0.3em', color: DARK }}>arvo</span>
+        </div>
+        <span style={{ fontSize: 7.5, letterSpacing: '0.18em', textTransform: 'uppercase', color: DARK }}>Dashboard</span>
+        <div style={{ display: 'flex', gap: 3 }}>
+          {(['Mês', 'YTD', 'Início'] as const).map(label => (
+            <span key={label} style={{ fontSize: 6, padding: '2px 5px', borderRadius: 3, border: label === 'YTD' ? '1px solid #0D0D0D' : '1px solid rgba(13,13,13,0.2)', background: label === 'YTD' ? '#0D0D0D' : 'transparent', color: label === 'YTD' ? '#fff' : 'rgba(13,13,13,0.55)' }}>{label}</span>
+          ))}
+        </div>
+      </div>
+
+      {/* Content area */}
+      <div style={{ padding: '9px 11px', display: 'flex', flexDirection: 'column', gap: 7 }}>
+        {/* ValueCard */}
+        <div style={{ background: '#FFFFFF', borderRadius: 7, padding: '9px 11px', border: '1px solid rgba(200,184,154,0.4)', boxShadow: '0 3px 12px rgba(200,184,154,0.18)', position: 'relative', overflow: 'hidden' }}>
+          <div style={{ position: 'absolute', top: -50, right: -20, width: 120, height: 120, borderRadius: '50%', background: 'rgba(200,184,154,0.13)', filter: 'blur(24px)', pointerEvents: 'none' }} />
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 1, background: 'linear-gradient(to right, transparent, rgba(200,184,154,0.65), transparent)', pointerEvents: 'none' }} />
+          <div style={{ position: 'relative', zIndex: 1 }}>
+            <div style={{ fontSize: 6, letterSpacing: '0.22em', textTransform: 'uppercase', color: '#C8B89A', marginBottom: 3 }}>Total BRL</div>
+            <div style={{ fontSize: 18, letterSpacing: '0.02em', lineHeight: 1.05, color: DARK }}>R$ 284.500</div>
+            <div style={{ marginTop: 6, paddingTop: 6, borderTop: '1px solid rgba(13,13,13,0.08)', display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 5 }}>
+              {KPI_CELLS.map(([lbl, val, green]) => (
+                <div key={lbl}>
+                  <div style={{ fontSize: 5.5, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.45)', marginBottom: 2 }}>{lbl}</div>
+                  <div style={{ fontSize: 8, color: green ? '#1F8A5B' : DARK }}>{val}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Charts */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 7 }}>
+          {/* Donut */}
+          <div style={{ background: '#FFFFFF', borderRadius: 6, padding: '7px 9px', border: '1px solid rgba(200,184,154,0.2)' }}>
+            <div style={{ fontSize: 6, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.45)', marginBottom: 5 }}>Alocação</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+              <svg width="52" height="52" viewBox="0 0 80 80" style={{ flexShrink: 0 }}>
+                <circle cx="40" cy="40" r="28" fill="none" stroke="#f3f4f6" strokeWidth="12"/>
+                <circle cx="40" cy="40" r="28" fill="none" stroke="#1F8A5B" strokeWidth="12" strokeDasharray="79 97"  strokeDashoffset="0"    transform="rotate(-90 40 40)"/>
+                <circle cx="40" cy="40" r="28" fill="none" stroke="#1B4FD8" strokeWidth="12" strokeDasharray="44 132" strokeDashoffset="-79"   transform="rotate(-90 40 40)"/>
+                <circle cx="40" cy="40" r="28" fill="none" stroke="#A36A52" strokeWidth="12" strokeDasharray="35 141" strokeDashoffset="-123"  transform="rotate(-90 40 40)"/>
+                <circle cx="40" cy="40" r="28" fill="none" stroke="#E8A020" strokeWidth="12" strokeDasharray="18 158" strokeDashoffset="-158"  transform="rotate(-90 40 40)"/>
+              </svg>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                {ALLOC_ITEMS.map(([color, name, pct]) => (
+                  <div key={name} style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                    <div style={{ width: 5, height: 5, borderRadius: '50%', background: color, flexShrink: 0 }} />
+                    <span style={{ fontSize: 6.5, color: 'rgba(13,13,13,0.65)' }}>{name}</span>
+                    <span style={{ fontSize: 6, color: 'rgba(13,13,13,0.38)', marginLeft: 'auto' }}>{pct}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Line chart */}
+          <div style={{ background: '#FFFFFF', borderRadius: 6, padding: '7px 9px', border: '1px solid rgba(200,184,154,0.2)' }}>
+            <div style={{ fontSize: 6, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.45)', marginBottom: 5 }}>Evolução YTD</div>
+            <svg width="100%" height="52" viewBox="0 0 160 44" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="mlg" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#0D0D0D" stopOpacity="0.07"/>
+                  <stop offset="100%" stopColor="#0D0D0D" stopOpacity="0"/>
+                </linearGradient>
+              </defs>
+              <line x1="0" y1="28" x2="160" y2="28" stroke="#f3f4f6" strokeWidth="0.8"/>
+              <line x1="0" y1="14" x2="160" y2="14" stroke="#f3f4f6" strokeWidth="0.8"/>
+              <path d="M 0 38 C 30 36 50 30 80 26 S 120 16 160 9 L 160 44 L 0 44 Z" fill="url(#mlg)"/>
+              <path d="M 0 38 C 30 36 50 30 80 26 S 120 16 160 9" fill="none" stroke={DARK} strokeWidth="1.5"/>
+              {(['Jan', 'Mar', 'Mai', 'Jul', 'Set'] as const).map((lbl, i) => (
+                <text key={lbl} x={i * 40} y={44} fontSize="5" fill="rgba(13,13,13,0.38)" textAnchor={i === 4 ? 'end' : i === 0 ? 'start' : 'middle'}>{lbl}</text>
+              ))}
+            </svg>
+          </div>
+        </div>
+
+        {/* Asset table */}
+        <div style={{ background: '#FFFFFF', borderRadius: 6, border: '1px solid rgba(200,184,154,0.2)', overflow: 'hidden' }}>
+          <div style={{ padding: '5px 9px', background: 'rgba(248,247,245,0.9)', borderBottom: '1px solid rgba(13,13,13,0.05)', display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', gap: 4 }}>
+            {(['Ativo', 'Classe', 'Valor', '+/-'] as const).map(h => (
+              <span key={h} style={{ fontSize: 5.5, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.38)' }}>{h}</span>
+            ))}
+          </div>
+          {TABLE_ROWS.map(([ticker, classe, valor, pct, color]) => (
+            <div key={ticker} style={{ padding: '5px 9px', borderBottom: '1px solid rgba(13,13,13,0.04)', display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', gap: 4, alignItems: 'center' }}>
+              <span style={{ fontSize: 7, fontWeight: 600, color: DARK }}>{ticker}</span>
+              <span style={{ fontSize: 6.5, color: 'rgba(13,13,13,0.50)' }}>{classe}</span>
+              <span style={{ fontSize: 6.5, color: DARK }}>{valor}</span>
+              <span style={{ fontSize: 6.5, color }}>{pct}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function LaptopFrame({ children }: { children: React.ReactNode }) {
+  return (
+    <div style={{ position: 'relative', filter: 'drop-shadow(0 48px 96px rgba(0,0,0,0.70)) drop-shadow(0 0 80px rgba(200,184,154,0.13))' }}>
+      {/* Screen lid */}
+      <div style={{ background: 'linear-gradient(145deg, #2e2e2e 0%, #1a1a1a 100%)', borderRadius: '14px 14px 0 0', padding: '13px 13px 0', border: '1px solid rgba(255,255,255,0.06)', borderBottom: 'none' }}>
+        {/* Camera */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 9 }}>
+          <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#2a2a2a', border: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ width: 2.5, height: 2.5, borderRadius: '50%', background: '#333' }} />
+          </div>
+        </div>
+        {/* Screen glass */}
+        <div style={{ borderRadius: '4px 4px 0 0', overflow: 'hidden', aspectRatio: '16 / 10', background: '#fff' }}>
+          {children}
+        </div>
+      </div>
+      {/* Hinge bar */}
+      <div style={{ background: 'linear-gradient(to bottom, #2e2e2e, #222)', height: 18, borderRadius: '0 0 3px 3px', position: 'relative' }}>
+        <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: '55%', height: '100%', background: 'rgba(0,0,0,0.25)', borderRadius: '0 0 3px 3px' }} />
+      </div>
+      {/* Foot */}
+      <div style={{ background: 'linear-gradient(to bottom, #252525, #1c1c1c)', height: 5, width: '70%', margin: '0 auto', borderRadius: '0 0 6px 6px', boxShadow: '0 6px 18px rgba(0,0,0,0.50)' }} />
+    </div>
+  )
+}
+
 export default function LandingPage() {
   const { signIn } = useAuth()
   const navigate = useNavigate()
@@ -69,6 +217,15 @@ export default function LandingPage() {
     document.addEventListener('mousedown', onDown)
     return () => document.removeEventListener('mousedown', onDown)
   }, [loginOpen])
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('is-visible') }),
+      { threshold: 0.08 }
+    )
+    document.querySelectorAll('.arvo-reveal').forEach(el => observer.observe(el))
+    return () => observer.disconnect()
+  }, [])
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
@@ -257,43 +414,59 @@ export default function LandingPage() {
       </header>
 
       {/* ── HERO ── */}
-      <section id="hero" style={{ position: 'relative', minHeight: '93vh', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+      <section id="hero" style={{ position: 'relative', minHeight: '93vh', display: 'flex', alignItems: 'center' }}>
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(160deg, #080f1c 0%, #0D0D0D 100%)' }} />
         <div style={{ position: 'absolute', inset: 0, backgroundImage: "url('/brand/imagery/01-broto-floresta.jpg')", backgroundSize: 'cover', backgroundPosition: 'center 40%', filter: 'brightness(0.28) sepia(0.30) saturate(1.20)' }} />
-        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '65%', background: 'linear-gradient(to top, rgba(6,12,24,0.97) 0%, transparent 100%)' }} />
+        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '55%', background: 'linear-gradient(to top, rgba(6,12,24,0.90) 0%, transparent 100%)' }} />
         <div className="arvo-grain" />
 
-        <div style={{ position: 'relative', maxWidth: 1200, margin: '0 auto', padding: '0 24px 88px', width: '100%' }}>
-          <div style={{ marginBottom: 22, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ width: 5, height: 5, borderRadius: '50%', background: GOLD, display: 'inline-block', flexShrink: 0 }} />
-            <span style={{ fontFamily: F_SANS, fontSize: 12, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.72)' }}>
-              {l.eyebrow}
-            </span>
+        <div style={{ position: 'relative', maxWidth: 1200, margin: '0 auto', padding: '80px 24px', width: '100%' }}>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 items-center">
+
+            {/* Left: text */}
+            <div>
+              <div style={{ marginBottom: 22, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ width: 5, height: 5, borderRadius: '50%', background: GOLD, display: 'inline-block', flexShrink: 0 }} />
+                <span style={{ fontFamily: F_SANS, fontSize: 12, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.72)' }}>
+                  {l.eyebrow}
+                </span>
+              </div>
+
+              <h1 style={{ fontFamily: F_DISPLAY, fontSize: 'clamp(2rem, 3.8vw, 3.6rem)', fontWeight: 400, lineHeight: 1.08, color: '#fff', marginBottom: 26, letterSpacing: '-0.3px' }}>
+                {l.h1line1}<br />
+                <em style={{ fontStyle: 'italic', color: `${GOLD}CC` }}>{l.h1line2}</em>
+              </h1>
+
+              <p style={{ fontFamily: F_SANS, fontSize: 'clamp(15px, 2vw, 18px)', color: 'rgba(255,255,255,0.72)', lineHeight: 1.75, marginBottom: 40 }}>
+                {l.heroPara}
+              </p>
+
+              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+                <Link to="/login?mode=register"
+                  style={{ fontFamily: F_SANS, fontSize: 12, letterSpacing: '0.16em', textTransform: 'uppercase', background: GOLD, color: DARK, textDecoration: 'none', padding: '16px 34px', borderRadius: 2 }}>
+                  {l.heroCta}
+                </Link>
+                <Link to="/login"
+                  style={{ fontFamily: F_SANS, fontSize: 12, letterSpacing: '0.16em', textTransform: 'uppercase', background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.78)', textDecoration: 'none', padding: '16px 34px', borderRadius: 2, border: '1px solid rgba(255,255,255,0.18)' }}>
+                  {l.heroAlready}
+                </Link>
+              </div>
+
+              <p style={{ fontFamily: F_SANS, fontSize: 12, letterSpacing: '0.06em', color: 'rgba(255,255,255,0.52)', marginTop: 18 }}>
+                {l.assurance}
+              </p>
+            </div>
+
+            {/* Right: laptop mockup — desktop only */}
+            <div className="hidden lg:flex justify-center items-center">
+              <div className="arvo-float" style={{ width: '100%', maxWidth: 540 }}>
+                <LaptopFrame>
+                  <DashboardMockupContent />
+                </LaptopFrame>
+              </div>
+            </div>
+
           </div>
-
-          <h1 style={{ fontFamily: F_DISPLAY, fontSize: 'clamp(2rem, 3.8vw, 3.6rem)', fontWeight: 400, lineHeight: 1.08, color: '#fff', marginBottom: 26, letterSpacing: '-0.3px', maxWidth: 820 }}>
-            {l.h1line1}<br />
-            <em style={{ fontStyle: 'italic', color: `${GOLD}CC` }}>{l.h1line2}</em>
-          </h1>
-
-          <p style={{ fontFamily: F_SANS, fontSize: 'clamp(15px, 2vw, 18px)', color: 'rgba(255,255,255,0.72)', lineHeight: 1.75, maxWidth: 560, marginBottom: 40 }}>
-            {l.heroPara}
-          </p>
-
-          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
-            <Link to="/login?mode=register"
-              style={{ fontFamily: F_SANS, fontSize: 12, letterSpacing: '0.16em', textTransform: 'uppercase', background: GOLD, color: DARK, textDecoration: 'none', padding: '16px 34px', borderRadius: 2 }}>
-              {l.heroCta}
-            </Link>
-            <Link to="/login"
-              style={{ fontFamily: F_SANS, fontSize: 12, letterSpacing: '0.16em', textTransform: 'uppercase', background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.78)', textDecoration: 'none', padding: '16px 34px', borderRadius: 2, border: '1px solid rgba(255,255,255,0.18)' }}>
-              {l.heroAlready}
-            </Link>
-          </div>
-
-          <p style={{ fontFamily: F_SANS, fontSize: 12, letterSpacing: '0.06em', color: 'rgba(255,255,255,0.52)', marginTop: 18 }}>
-            {l.assurance}
-          </p>
         </div>
       </section>
 
@@ -305,8 +478,8 @@ export default function LandingPage() {
             { value: l.stat2v, label: l.stat2l },
             { value: l.stat3v, label: l.stat3l },
             { value: l.stat4v, label: l.stat4l },
-          ].map(s => (
-            <div key={s.label}>
+          ].map((s, i) => (
+            <div key={s.label} className={`arvo-reveal arvo-reveal-d${i + 1}`}>
               <div style={{ fontFamily: F_DISPLAY, fontSize: 'clamp(1.5rem, 2.8vw, 2rem)', fontWeight: 400, color: DARK, marginBottom: 6 }}>{s.value}</div>
               <div style={{ fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', color: T_SECONDARY, lineHeight: 1.4 }}>{s.label}</div>
             </div>
@@ -316,7 +489,7 @@ export default function LandingPage() {
 
       {/* ── FUNCIONALIDADES ── */}
       <section id="funcionalidades" style={{ padding: 'clamp(64px, 8vw, 100px) 24px', maxWidth: 1200, margin: '0 auto' }}>
-        <div style={{ marginBottom: 56 }}>
+        <div className="arvo-reveal" style={{ marginBottom: 56 }}>
           <p style={{ fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.22em', textTransform: 'uppercase', color: T_SECONDARY, marginBottom: 16 }}>{l.featEyebrow}</p>
           <h2 style={{ fontFamily: F_DISPLAY, fontSize: 'clamp(1.9rem, 3.5vw, 2.7rem)', fontWeight: 400, lineHeight: 1.12, color: DARK, letterSpacing: '-0.3px', maxWidth: 560 }}>
             {l.featH2}
@@ -325,7 +498,7 @@ export default function LandingPage() {
 
         <div style={{ display: 'grid', gap: 1, background: BORDER }} className="grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           {FEATURES.map((f, i) => (
-            <div key={i} style={{ background: '#fff', padding: 'clamp(28px, 4vw, 40px) clamp(24px, 3vw, 36px)' }}>
+            <div key={i} className={`arvo-reveal arvo-reveal-d${i + 1}`} style={{ background: '#fff', padding: 'clamp(28px, 4vw, 40px) clamp(24px, 3vw, 36px)' }}>
               <div style={{ fontFamily: F_SANS, fontSize: 24, color: f.color, marginBottom: 14, lineHeight: 1 }}>{f.icon}</div>
               <p style={{ fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: T_SECONDARY, marginBottom: 10 }}>{f.label}</p>
               <h3 style={{ fontFamily: F_DISPLAY, fontSize: 'clamp(1rem, 1.8vw, 1.25rem)', fontWeight: 400, color: DARK, marginBottom: 10, lineHeight: 1.25 }}>{f.title}</h3>
@@ -344,7 +517,7 @@ export default function LandingPage() {
       {/* ── COMO FUNCIONA ── */}
       <section id="como-funciona" style={{ background: BG, borderTop: `1px solid ${BORDER}`, borderBottom: `1px solid ${BORDER}`, padding: 'clamp(64px, 8vw, 100px) 24px' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-          <div style={{ marginBottom: 56 }}>
+          <div className="arvo-reveal" style={{ marginBottom: 56 }}>
             <p style={{ fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.22em', textTransform: 'uppercase', color: T_SECONDARY, marginBottom: 16 }}>{l.howEyebrow}</p>
             <h2 style={{ fontFamily: F_DISPLAY, fontSize: 'clamp(1.9rem, 3.5vw, 2.7rem)', fontWeight: 400, lineHeight: 1.12, color: DARK, letterSpacing: '-0.3px', maxWidth: 480 }}>
               {l.howH2}
@@ -352,7 +525,7 @@ export default function LandingPage() {
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 40 }}>
             {STEPS.map((step, i) => (
-              <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div key={i} className={`arvo-reveal arvo-reveal-d${i + 1}`} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                   <span style={{ fontFamily: F_SANS, fontSize: 28, color: 'rgba(13,13,13,0.14)', letterSpacing: '-1px', lineHeight: 1 }}>{step.num}</span>
                   {i < 2 && <div style={{ flex: 1, height: 1, background: BORDER }} className="hidden lg:block" />}
