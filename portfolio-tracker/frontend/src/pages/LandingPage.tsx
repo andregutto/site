@@ -20,18 +20,6 @@ const F_DISPLAY = "'Playfair Display', serif"
 const ICONS = ['◈', '◎', '▦', '◉', '✦', '◑']
 const FEATURE_COLORS = ['#1F8A5B', '#1B4FD8', '#A36A52', '#E8A020', '#1B4FD8', '#A36A52']
 
-const KPI_CELLS: [string, string, boolean][] = [
-  ['INVEST.', 'R$180k', false],
-  ['RESULT.', '+R$24k', true],
-  ['MÊS', '+1,4%', true],
-  ['YTD', '+8,2%', true],
-]
-const ALLOC_ITEMS: [string, string, string][] = [
-  ['#1F8A5B', 'Ações', '45%'],
-  ['#1B4FD8', 'ETFs', '25%'],
-  ['#A36A52', 'RF', '20%'],
-  ['#E8A020', 'Cripto', '10%'],
-]
 const TABLE_ROWS: [string, string, string, string, string][] = [
   ['BOVA11',   'ETF',     'R$45,2k', '+5,8%',  '#1F8A5B'],
   ['WEGE3',    'Ação',    'R$38,7k', '+12,4%', '#1F8A5B'],
@@ -41,121 +29,179 @@ const TABLE_ROWS: [string, string, string, string, string][] = [
   ['TESOURO+', 'Renda F.','R$52,0k', '+1,1%',  '#1F8A5B'],
 ]
 
-function DashboardMockupContent() {
+interface MockupLabels {
+  td: Record<string, string>
+  tn: Record<string, string>
+  tc: Record<string, string>
+  ti: Record<string, string>
+}
+
+const ALLOC_ROWS: [string, string, string, string][] = [
+  ['#1B4FD8', 'classAcoesBrasil',  '38%', 'R$ 108.000'],
+  ['#A36A52', 'classFiis',         '22%', 'R$ 63.000'],
+  ['#C8B89A', 'classRendaFixa',    '20%', 'R$ 57.000'],
+  ['#0D0D0D', 'classCripto',       '12%', 'R$ 34.000'],
+  ['#E8A020', 'classAcoesExterior','8%',  'R$ 23.000'],
+]
+
+const MOCK_INDICES: [string, string, string, string][] = [
+  ['Ibovespa', '130.450', '+1,2%', '#1F8A5B'],
+  ['CDI',      '10,50%',  '+0,05%','#1F8A5B'],
+  ['S&P 500',  '5.210',   '+2,8%', '#1F8A5B'],
+  ['IPCA',     '4,83%',   '-0,1%', '#D63B2F'],
+]
+
+function DashboardMockupContent({ td, tn, tc, ti }: MockupLabels) {
+  const FS = "'DM Sans', system-ui, sans-serif"
+  const FD = "'Tenor Sans', serif"
+
   return (
-    <div style={{ background: '#F8F7F5', width: '100%', height: '100%', overflow: 'hidden', fontFamily: F_SANS, display: 'flex', flexDirection: 'column' }}>
-      {/* Header */}
-      <div style={{ background: '#FFF', borderBottom: '1px solid rgba(200,184,154,0.3)', padding: '5px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-          <img src="/brand/logo/arvo-symbol-black.svg" width="10" height="10" alt="" />
-          <span style={{ fontSize: 7.5, letterSpacing: '0.3em', color: DARK }}>arvo</span>
+    <div style={{ width: 1280, height: '100%', background: '#F4F4F4', fontFamily: FS, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+
+      {/* ── App header ── */}
+      <header style={{ height: 56, flexShrink: 0, background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(13,13,13,0.08)', display: 'flex', alignItems: 'center', padding: '0 24px', gap: 14 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+          <img src="/brand/logo/arvo-symbol-black.svg" width="22" height="22" alt="" />
+          <span style={{ fontFamily: FD, fontSize: 16, letterSpacing: '0.30em', color: DARK, lineHeight: 1 }}>arvo</span>
         </div>
-        <span style={{ fontSize: 7, letterSpacing: '0.18em', textTransform: 'uppercase', color: DARK }}>Dashboard</span>
-        <div style={{ display: 'flex', gap: 3 }}>
-          {(['Mês', 'YTD', 'Início'] as const).map(label => (
-            <span key={label} style={{ fontSize: 5.5, padding: '1.5px 4px', borderRadius: 2, border: label === 'YTD' ? '1px solid #0D0D0D' : '1px solid rgba(13,13,13,0.2)', background: label === 'YTD' ? '#0D0D0D' : 'transparent', color: label === 'YTD' ? '#fff' : 'rgba(13,13,13,0.55)' }}>{label}</span>
+        <div style={{ width: 1, height: 22, background: 'rgba(13,13,13,0.12)', flexShrink: 0 }} />
+        <span style={{ fontFamily: FD, fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.50)', flexShrink: 0 }}>Capital</span>
+        <nav style={{ flex: 1, display: 'flex', justifyContent: 'center', gap: 4 }}>
+          {([tn.investments, tn.finances, tn.institutions] as string[]).map((label, i) => (
+            <span key={i} style={{ padding: '6px 18px', borderRadius: 99, fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', background: i === 0 ? DARK : 'transparent', color: i === 0 ? '#fff' : 'rgba(13,13,13,0.62)', fontFamily: FS, whiteSpace: 'nowrap' }}>{label}</span>
           ))}
+        </nav>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+          <div style={{ width: 28, height: 28, borderRadius: '50%', background: DARK, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, color: GOLD, letterSpacing: '0.08em' }}>AG</div>
+          <span style={{ fontSize: 12, color: 'rgba(13,13,13,0.50)' }}>André</span>
+          <svg width="10" height="10" fill="none" viewBox="0 0 24 24" stroke="rgba(13,13,13,0.38)" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7"/></svg>
         </div>
+      </header>
+
+      {/* ── Sub-nav ── */}
+      <div style={{ height: 40, flexShrink: 0, background: '#fff', borderBottom: '1px solid rgba(13,13,13,0.06)', display: 'flex', alignItems: 'stretch', padding: '0 24px', overflow: 'hidden' }}>
+        {([
+          { label: tn.dashboard, active: true },
+          { label: tn.performance, active: false },
+          { label: tn.dividends, active: false },
+          { label: tn.contributions, active: false },
+          { label: tn.rebalance, active: false },
+          { label: tn.classes, active: false },
+        ] as Array<{ label: string; active: boolean }>).map(({ label, active }, i) => (
+          <span key={i} style={{ padding: '0 16px', display: 'flex', alignItems: 'center', fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', color: active ? DARK : 'rgba(13,13,13,0.42)', borderBottom: active ? `2px solid ${DARK}` : '2px solid transparent', fontFamily: FS, whiteSpace: 'nowrap', flexShrink: 0 }}>{label}</span>
+        ))}
       </div>
 
-      {/* Content */}
-      <div style={{ flex: 1, padding: '7px 10px 0', display: 'flex', flexDirection: 'column', gap: 6, overflow: 'hidden' }}>
-        {/* Row 1: ValueCard (left) + Allocation (right) */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, flexShrink: 0 }}>
-          {/* ValueCard */}
-          <div style={{ background: '#FFF', borderRadius: 6, padding: '7px 9px', border: '1px solid rgba(200,184,154,0.4)', position: 'relative', overflow: 'hidden' }}>
-            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 1, background: 'linear-gradient(to right, transparent, rgba(200,184,154,0.65), transparent)', pointerEvents: 'none' }} />
-            <div style={{ fontSize: 5.5, letterSpacing: '0.22em', textTransform: 'uppercase', color: '#C8B89A', marginBottom: 2 }}>Patrimônio</div>
-            <div style={{ fontSize: 16, letterSpacing: '0.01em', lineHeight: 1, color: DARK, marginBottom: 5 }}>R$ 284.500</div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3px 5px', paddingTop: 5, borderTop: '1px solid rgba(13,13,13,0.07)' }}>
-              {KPI_CELLS.map(([lbl, val, green]) => (
-                <div key={lbl}>
-                  <div style={{ fontSize: 4.5, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.4)', marginBottom: 1 }}>{lbl}</div>
-                  <div style={{ fontSize: 7.5, color: green ? '#1F8A5B' : DARK }}>{val}</div>
+      {/* ── Content ── */}
+      <div style={{ flex: 1, padding: '20px 24px', overflow: 'hidden', display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+        {/* Period selector */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+          <span style={{ fontFamily: FD, fontSize: 13, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.50)' }}>Dashboard</span>
+          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+            {(['Mês', 'YTD', '12M', 'Início'] as const).map((lbl, i) => (
+              <span key={lbl} style={{ padding: '5px 12px', borderRadius: 6, fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', border: i === 1 ? `1px solid ${DARK}` : '1px solid rgba(13,13,13,0.18)', background: i === 1 ? DARK : '#fff', color: i === 1 ? '#fff' : 'rgba(13,13,13,0.52)', fontFamily: FS }}>{lbl}</span>
+            ))}
+            <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="rgba(13,13,13,0.42)" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+          </div>
+        </div>
+
+        {/* ValueCard */}
+        <div style={{ flexShrink: 0, background: '#fff', borderRadius: 16, padding: 20, position: 'relative', overflow: 'hidden', border: '1px solid rgba(200,184,154,0.35)', boxShadow: '0 4px 24px rgba(200,184,154,0.18), 0 1px 0 rgba(200,184,154,0.22)' }}>
+          <div style={{ position: 'absolute', top: -120, right: -60, width: 360, height: 360, borderRadius: '50%', background: 'rgba(200,184,154,0.10)', filter: 'blur(70px)', pointerEvents: 'none' }} />
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 1, background: 'linear-gradient(to right, transparent, rgba(200,184,154,0.65), transparent)', pointerEvents: 'none' }} />
+          <div style={{ position: 'relative', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', zIndex: 2 }}>
+            <div>
+              <p style={{ fontFamily: FS, fontSize: 10, letterSpacing: '0.30em', textTransform: 'uppercase', color: '#8C6A28', margin: 0 }}>Total BRL</p>
+              <p style={{ fontFamily: FS, fontSize: 36, letterSpacing: '0.02em', lineHeight: 1.05, color: DARK, margin: '6px 0 0' }}>R$ 284.500</p>
+            </div>
+            <span style={{ fontFamily: FS, fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.52)', marginTop: 4 }}>14:30</span>
+          </div>
+          <div style={{ position: 'relative', zIndex: 2, display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '12px 24px', marginTop: 16, paddingTop: 16, borderTop: '1px solid rgba(13,13,13,0.08)' }}>
+            {([
+              { label: td.invested,      val: 'R$ 236.000',           color: DARK },
+              { label: td.result,        val: '+R$ 48.500 (+20,6%)',   color: '#1F8A5B' },
+              { label: td.currentMonth,  val: '+1,4%',                 color: '#1F8A5B' },
+              { label: 'YTD 2025',       val: '+8,2%',                 color: '#1F8A5B' },
+            ] as Array<{ label: string; val: string; color: string }>).map(({ label, val, color }) => (
+              <div key={label} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <span style={{ fontFamily: FS, fontSize: 11, letterSpacing: '0.20em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.60)' }}>{label}</span>
+                <span style={{ fontFamily: FS, fontSize: 16, letterSpacing: '0.02em', color }}>{val}</span>
+              </div>
+            ))}
+          </div>
+          <div style={{ position: 'relative', zIndex: 2, display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '10px 8px', marginTop: 16, paddingTop: 14, borderTop: '1px solid rgba(13,13,13,0.07)' }}>
+            {MOCK_INDICES.map(([name, val, pct, color]) => (
+              <div key={name} style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                <span style={{ fontFamily: FS, fontSize: 10, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.40)' }}>{name}</span>
+                <span style={{ fontFamily: FS, fontSize: 14, color: DARK, lineHeight: 1 }}>{val}</span>
+                <span style={{ fontFamily: FS, fontSize: 11, color }}>{pct} <span style={{ color: 'rgba(13,13,13,0.35)' }}>{ti.month ?? 'mês'}</span></span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Allocation chart */}
+        <div style={{ flexShrink: 0, background: '#fff', borderRadius: 16, padding: '16px 20px', border: '1px solid rgba(13,13,13,0.08)' }}>
+          <div style={{ fontFamily: FS, fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.52)', marginBottom: 12 }}>{td.allocationByClass}</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 28 }}>
+            <svg width="90" height="90" viewBox="0 0 80 80" style={{ flexShrink: 0 }}>
+              <circle cx="40" cy="40" r="28" fill="none" stroke="#f3f4f6" strokeWidth="13"/>
+              <circle cx="40" cy="40" r="28" fill="none" stroke="#1B4FD8" strokeWidth="13" strokeDasharray="67 109" strokeDashoffset="0" transform="rotate(-90 40 40)"/>
+              <circle cx="40" cy="40" r="28" fill="none" stroke="#A36A52" strokeWidth="13" strokeDasharray="39 137" strokeDashoffset="-67" transform="rotate(-90 40 40)"/>
+              <circle cx="40" cy="40" r="28" fill="none" stroke="#C8B89A" strokeWidth="13" strokeDasharray="35 141" strokeDashoffset="-106" transform="rotate(-90 40 40)"/>
+              <circle cx="40" cy="40" r="28" fill="none" stroke="#0D0D0D" strokeWidth="13" strokeDasharray="21 155" strokeDashoffset="-141" transform="rotate(-90 40 40)"/>
+              <circle cx="40" cy="40" r="28" fill="none" stroke="#E8A020" strokeWidth="13" strokeDasharray="14 162" strokeDashoffset="-162" transform="rotate(-90 40 40)"/>
+            </svg>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px 40px', flex: 1 }}>
+              {ALLOC_ROWS.map(([color, classKey, pct, val]) => (
+                <div key={classKey} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: color, flexShrink: 0 }} />
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span style={{ fontSize: 12, color: 'rgba(13,13,13,0.75)', fontFamily: FS, whiteSpace: 'nowrap' }}>{tc[classKey] ?? classKey}</span>
+                      <span style={{ fontSize: 11, color: 'rgba(13,13,13,0.42)', fontFamily: FS }}>{pct}</span>
+                    </div>
+                    <span style={{ fontSize: 11, fontStyle: 'italic', color: 'rgba(13,13,13,0.42)', fontFamily: FS }}>{val}</span>
+                  </div>
                 </div>
               ))}
             </div>
           </div>
-          {/* Allocation donut */}
-          <div style={{ background: '#FFF', borderRadius: 6, padding: '7px 9px', border: '1px solid rgba(200,184,154,0.2)' }}>
-            <div style={{ fontSize: 5.5, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.45)', marginBottom: 4 }}>Alocação</div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <svg width="42" height="42" viewBox="0 0 80 80" style={{ flexShrink: 0 }}>
-                <circle cx="40" cy="40" r="28" fill="none" stroke="#f3f4f6" strokeWidth="12"/>
-                <circle cx="40" cy="40" r="28" fill="none" stroke="#1F8A5B" strokeWidth="12" strokeDasharray="79 97" strokeDashoffset="0" transform="rotate(-90 40 40)"/>
-                <circle cx="40" cy="40" r="28" fill="none" stroke="#1B4FD8" strokeWidth="12" strokeDasharray="44 132" strokeDashoffset="-79" transform="rotate(-90 40 40)"/>
-                <circle cx="40" cy="40" r="28" fill="none" stroke="#A36A52" strokeWidth="12" strokeDasharray="35 141" strokeDashoffset="-123" transform="rotate(-90 40 40)"/>
-                <circle cx="40" cy="40" r="28" fill="none" stroke="#E8A020" strokeWidth="12" strokeDasharray="18 158" strokeDashoffset="-158" transform="rotate(-90 40 40)"/>
-              </svg>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 2.5, flex: 1, minWidth: 0 }}>
-                {ALLOC_ITEMS.map(([color, name, pct]) => (
-                  <div key={name} style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-                    <div style={{ width: 4, height: 4, borderRadius: '50%', background: color, flexShrink: 0 }} />
-                    <span style={{ fontSize: 5.5, color: 'rgba(13,13,13,0.65)', flex: 1 }}>{name}</span>
-                    <span style={{ fontSize: 5, color: 'rgba(13,13,13,0.38)' }}>{pct}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
         </div>
 
-        {/* Row 2: Evolution chart full width */}
-        <div style={{ background: '#FFF', borderRadius: 6, padding: '6px 9px', border: '1px solid rgba(200,184,154,0.2)', flexShrink: 0 }}>
-          <div style={{ fontSize: 5.5, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.45)', marginBottom: 3 }}>Evolução YTD</div>
-          <svg width="100%" height="48" viewBox="0 0 280 40" preserveAspectRatio="none">
-            <defs>
-              <linearGradient id="mlg2" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#0D0D0D" stopOpacity="0.08"/>
-                <stop offset="100%" stopColor="#0D0D0D" stopOpacity="0"/>
-              </linearGradient>
-            </defs>
-            <line x1="0" y1="26" x2="280" y2="26" stroke="#f3f4f6" strokeWidth="0.8"/>
-            <line x1="0" y1="13" x2="280" y2="13" stroke="#f3f4f6" strokeWidth="0.8"/>
-            <path d="M 0 38 C 40 36 80 30 130 22 S 200 13 280 6 L 280 40 L 0 40 Z" fill="url(#mlg2)"/>
-            <path d="M 0 38 C 40 36 80 30 130 22 S 200 13 280 6" fill="none" stroke={DARK} strokeWidth="1.5"/>
-            {(['Jan','Mar','Mai','Set'] as const).map((lbl, i) => (
-              <text key={lbl} x={[0, 80, 160, 280][i]} y={40} fontSize="5" fill="rgba(13,13,13,0.35)" textAnchor={i === 3 ? 'end' : i === 0 ? 'start' : 'middle'}>{lbl}</text>
+        {/* Evolution chart */}
+        <div style={{ flexShrink: 0, background: '#fff', borderRadius: 16, padding: '16px 20px', border: '1px solid rgba(13,13,13,0.08)' }}>
+          <div style={{ fontFamily: FS, fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.52)', marginBottom: 10 }}>{td.portfolioEvolution}</div>
+          <svg width="100%" height="80" viewBox="0 0 1200 80" preserveAspectRatio="none" style={{ display: 'block' }}>
+            <defs><linearGradient id="evGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#0D0D0D" stopOpacity="0.07"/><stop offset="100%" stopColor="#0D0D0D" stopOpacity="0"/></linearGradient></defs>
+            <line x1="0" y1="55" x2="1200" y2="55" stroke="#f0f0f0" strokeWidth="1"/>
+            <line x1="0" y1="30" x2="1200" y2="30" stroke="#f0f0f0" strokeWidth="1"/>
+            <path d="M 0 72 C 100 70 200 65 350 55 C 500 45 600 38 750 28 C 900 18 1050 10 1200 5 L 1200 80 L 0 80 Z" fill="url(#evGrad)"/>
+            <path d="M 0 72 C 100 70 200 65 350 55 C 500 45 600 38 750 28 C 900 18 1050 10 1200 5" fill="none" stroke={DARK} strokeWidth="2"/>
+            {(['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'] as const).map((lbl, i) => (
+              <text key={lbl} x={i * 109} y={79} fontSize="9" fill="rgba(13,13,13,0.35)" textAnchor={i === 0 ? 'start' : i === 11 ? 'end' : 'middle'} fontFamily={FS}>{lbl}</text>
             ))}
           </svg>
         </div>
 
-        {/* Row 3: Asset table — flex: 1 fills remaining height */}
-        <div style={{ background: '#FFF', borderRadius: 6, border: '1px solid rgba(200,184,154,0.2)', overflow: 'hidden', flex: 1 }}>
-          <div style={{ padding: '4px 8px', background: 'rgba(248,247,245,0.9)', borderBottom: '1px solid rgba(13,13,13,0.05)', display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', gap: 3 }}>
-            {(['Ativo', 'Classe', 'Valor', '+/-'] as const).map(h => (
-              <span key={h} style={{ fontSize: 5, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.38)' }}>{h}</span>
+        {/* Asset table */}
+        <div style={{ flex: 1, background: '#fff', borderRadius: 16, border: '1px solid rgba(13,13,13,0.08)', overflow: 'hidden' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1.5fr 1.5fr 1fr', padding: '10px 20px', background: 'rgba(248,247,245,0.9)', borderBottom: '1px solid rgba(13,13,13,0.05)' }}>
+            {([td.asset?.charAt(0).toUpperCase() + (td.asset?.slice(1) ?? ''), td.colHoldings, td.colValue, td.colReturn] as string[]).map(h => (
+              <span key={h} style={{ fontFamily: FS, fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.38)' }}>{h}</span>
             ))}
           </div>
           {TABLE_ROWS.map(([ticker, classe, valor, pct, color]) => (
-            <div key={ticker} style={{ padding: '3.5px 8px', borderBottom: '1px solid rgba(13,13,13,0.04)', display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', gap: 3, alignItems: 'center' }}>
-              <span style={{ fontSize: 6.5, fontWeight: 600, color: DARK }}>{ticker}</span>
-              <span style={{ fontSize: 5.5, color: 'rgba(13,13,13,0.50)' }}>{classe}</span>
-              <span style={{ fontSize: 6, color: DARK }}>{valor}</span>
-              <span style={{ fontSize: 6, color }}>{pct}</span>
+            <div key={ticker} style={{ display: 'grid', gridTemplateColumns: '2fr 1.5fr 1.5fr 1fr', padding: '11px 20px', borderBottom: '1px solid rgba(13,13,13,0.04)', alignItems: 'center' }}>
+              <span style={{ fontFamily: FS, fontSize: 13, fontWeight: 600, color: DARK }}>{ticker}</span>
+              <span style={{ fontFamily: FS, fontSize: 12, color: 'rgba(13,13,13,0.50)' }}>{classe}</span>
+              <span style={{ fontFamily: FS, fontSize: 13, color: DARK }}>{valor}</span>
+              <span style={{ fontFamily: FS, fontSize: 13, color }}>{pct}</span>
             </div>
           ))}
         </div>
-      </div>
-    </div>
-  )
-}
 
-function ScreenFrame({ children }: { children: React.ReactNode }) {
-  return (
-    <div style={{
-      background: 'linear-gradient(145deg, #282828 0%, #161616 100%)',
-      borderRadius: '10px 10px 0 0',
-      padding: '5px 5px 0',
-      border: '1px solid rgba(255,255,255,0.07)',
-      borderBottom: 'none',
-      boxShadow: '0 -8px 40px rgba(0,0,0,0.45), 0 40px 80px rgba(0,0,0,0.60)',
-    }}>
-      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 4 }}>
-        <div style={{ width: 4, height: 4, borderRadius: '50%', background: '#222' }} />
-      </div>
-      <div style={{ borderRadius: '4px 4px 0 0', overflow: 'hidden', aspectRatio: '16 / 10', background: '#fff' }}>
-        {children}
       </div>
     </div>
   )
@@ -413,46 +459,57 @@ export default function LandingPage() {
         <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '55%', background: 'linear-gradient(to top, rgba(6,12,24,0.90) 0%, transparent 100%)' }} />
         <div className="arvo-grain" />
 
-        <div style={{ position: 'relative', maxWidth: 1200, margin: '0 auto', padding: '0 24px', width: '100%' }}>
-          <div className="grid grid-cols-1 lg:grid-cols-2 items-end" style={{ gap: '0 64px' }}>
-            <div style={{ paddingTop: 'clamp(80px, 10vh, 120px)', paddingBottom: 'clamp(48px, 6vh, 72px)' }}>
-              <div style={{ marginBottom: 22, display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ width: 5, height: 5, borderRadius: '50%', background: GOLD, display: 'inline-block', flexShrink: 0 }} />
-                <span style={{ fontFamily: F_SANS, fontSize: 12, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.72)' }}>
-                  {l.eyebrow}
-                </span>
-              </div>
+        {/* Right mockup — absolute, full hero height, right 55%, clips to ~60% visible */}
+        <div className="hidden lg:block" style={{ position: 'absolute', top: 0, right: 0, width: '55%', height: '100%', overflow: 'hidden', zIndex: 1 }}>
+          {/* Left-edge blend */}
+          <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 220, background: 'linear-gradient(to right, rgba(6,12,24,0.98) 0%, transparent 100%)', zIndex: 3, pointerEvents: 'none' }} />
+          {/* Top-edge blend */}
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 100, background: 'linear-gradient(to bottom, rgba(6,12,24,0.95) 0%, transparent 100%)', zIndex: 3, pointerEvents: 'none' }} />
+          {/* Bottom-edge blend */}
+          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 140, background: 'linear-gradient(to top, rgba(6,12,24,0.90) 0%, transparent 100%)', zIndex: 3, pointerEvents: 'none' }} />
+          {/* Drop shadow on the left edge of the frame */}
+          <div style={{ position: 'absolute', top: 56, left: 0, bottom: 0, boxShadow: '-12px 0 48px rgba(0,0,0,0.55)', zIndex: 2, pointerEvents: 'none', width: 1 }} />
+          <DashboardMockupContent
+            td={(t as unknown as Record<string, Record<string, string>>).dashboard ?? {}}
+            tn={(t as unknown as Record<string, Record<string, string>>).nav ?? {}}
+            tc={((t as unknown as Record<string, Record<string, Record<string, string>>>).classes?.names ?? {}) as Record<string, string>}
+            ti={(t as unknown as Record<string, Record<string, string>>).indices ?? {}}
+          />
+        </div>
 
-              <h1 style={{ fontFamily: F_DISPLAY, fontSize: 'clamp(2rem, 3.8vw, 3.6rem)', fontWeight: 400, lineHeight: 1.08, color: '#fff', marginBottom: 26, letterSpacing: '-0.3px' }}>
-                {l.h1line1}<br />
-                <em style={{ fontStyle: 'italic', color: `${GOLD}CC` }}>{l.h1line2}</em>
-              </h1>
-
-              <p style={{ fontFamily: F_SANS, fontSize: 'clamp(15px, 2vw, 18px)', color: 'rgba(255,255,255,0.72)', lineHeight: 1.75, marginBottom: 40 }}>
-                {l.heroPara}
-              </p>
-
-              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
-                <Link to="/login?mode=register"
-                  style={{ fontFamily: F_SANS, fontSize: 12, letterSpacing: '0.16em', textTransform: 'uppercase', background: GOLD, color: DARK, textDecoration: 'none', padding: '16px 34px', borderRadius: 2 }}>
-                  {l.heroCta}
-                </Link>
-                <Link to="/login"
-                  style={{ fontFamily: F_SANS, fontSize: 12, letterSpacing: '0.16em', textTransform: 'uppercase', background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.78)', textDecoration: 'none', padding: '16px 34px', borderRadius: 2, border: '1px solid rgba(255,255,255,0.18)' }}>
-                  {l.heroAlready}
-                </Link>
-              </div>
-
-              <p style={{ fontFamily: F_SANS, fontSize: 12, letterSpacing: '0.06em', color: 'rgba(255,255,255,0.52)', marginTop: 18 }}>
-                {l.assurance}
-              </p>
+        {/* Left text — constrained to left half */}
+        <div style={{ position: 'relative', maxWidth: 1200, margin: '0 auto', padding: '0 24px', width: '100%', zIndex: 2 }}>
+          <div style={{ maxWidth: 540, paddingTop: 'clamp(80px, 10vh, 120px)', paddingBottom: 'clamp(48px, 6vh, 72px)' }}>
+            <div style={{ marginBottom: 22, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ width: 5, height: 5, borderRadius: '50%', background: GOLD, display: 'inline-block', flexShrink: 0 }} />
+              <span style={{ fontFamily: F_SANS, fontSize: 12, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.72)' }}>
+                {l.eyebrow}
+              </span>
             </div>
 
-            <div className="hidden lg:block">
-              <ScreenFrame>
-                <DashboardMockupContent />
-              </ScreenFrame>
+            <h1 style={{ fontFamily: F_DISPLAY, fontSize: 'clamp(2rem, 3.8vw, 3.6rem)', fontWeight: 400, lineHeight: 1.08, color: '#fff', marginBottom: 26, letterSpacing: '-0.3px' }}>
+              {l.h1line1}<br />
+              <em style={{ fontStyle: 'italic', color: `${GOLD}CC` }}>{l.h1line2}</em>
+            </h1>
+
+            <p style={{ fontFamily: F_SANS, fontSize: 'clamp(15px, 2vw, 18px)', color: 'rgba(255,255,255,0.72)', lineHeight: 1.75, marginBottom: 40 }}>
+              {l.heroPara}
+            </p>
+
+            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+              <Link to="/login?mode=register"
+                style={{ fontFamily: F_SANS, fontSize: 12, letterSpacing: '0.16em', textTransform: 'uppercase', background: GOLD, color: DARK, textDecoration: 'none', padding: '16px 34px', borderRadius: 2 }}>
+                {l.heroCta}
+              </Link>
+              <Link to="/login"
+                style={{ fontFamily: F_SANS, fontSize: 12, letterSpacing: '0.16em', textTransform: 'uppercase', background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.78)', textDecoration: 'none', padding: '16px 34px', borderRadius: 2, border: '1px solid rgba(255,255,255,0.18)' }}>
+                {l.heroAlready}
+              </Link>
             </div>
+
+            <p style={{ fontFamily: F_SANS, fontSize: 12, letterSpacing: '0.06em', color: 'rgba(255,255,255,0.52)', marginTop: 18 }}>
+              {l.assurance}
+            </p>
           </div>
         </div>
       </section>
