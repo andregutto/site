@@ -216,12 +216,17 @@ export default function DashboardPage() {
         )
       })()}
 
-      {/* Evolution + Allocation — side by side on desktop */}
+      {/* Allocation + Evolution — 50/50 side by side on desktop */}
       {(chartLoading || portfolioChartData.length > 0 || data.by_class.length > 0) && (
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-          {/* Evolution chart — wider column */}
+        <div className={`grid grid-cols-1 gap-6 ${(chartLoading || portfolioChartData.length > 0) && data.by_class.length > 0 ? 'lg:grid-cols-2' : ''}`}>
+          {/* Allocation chart — left on desktop */}
+          {data.by_class.length > 0 && (
+            <AllocationChart data={data.by_class} />
+          )}
+
+          {/* Evolution chart — right on desktop */}
           {(chartLoading || portfolioChartData.length > 0) && (
-            <div className="lg:col-span-3 rounded-2xl p-5" style={{ background: 'white', border: '1px solid var(--arvo-border)' }}>
+            <div className="rounded-2xl p-5" style={{ background: 'white', border: '1px solid var(--arvo-border)' }}>
               <h2 className="mb-1" style={{ fontFamily: "var(--arvo-font-body)", fontSize: 13, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--arvo-fg)' }}>{t.dashboard.portfolioEvolution}</h2>
               <div className="h-52">
               {chartLoading && portfolioChartData.length === 0 ? (
@@ -257,13 +262,6 @@ export default function DashboardPage() {
                 </ResponsiveContainer>
               )}
               </div>
-            </div>
-          )}
-
-          {/* Allocation chart — narrower column */}
-          {data.by_class.length > 0 && (
-            <div className={chartLoading || portfolioChartData.length > 0 ? 'lg:col-span-2' : 'lg:col-span-5'}>
-              <AllocationChart data={data.by_class} />
             </div>
           )}
         </div>

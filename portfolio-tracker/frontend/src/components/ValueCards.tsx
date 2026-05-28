@@ -44,7 +44,7 @@ export default function ValueCards({ total_brl, generated_at, invested_brl, gain
   }
 
   return (
-    <div style={{ background: '#FFFFFF', color: 'var(--arvo-fg)', borderRadius: 16, padding: 28, position: 'relative', overflow: 'hidden', border: '1px solid rgba(200,184,154,0.35)', boxShadow: '0 4px 24px rgba(200,184,154,0.18), 0 1px 0 rgba(200,184,154,0.22)' }}>
+    <div style={{ background: '#FFFFFF', color: 'var(--arvo-fg)', borderRadius: 16, padding: 20, position: 'relative', overflow: 'hidden', border: '1px solid rgba(200,184,154,0.35)', boxShadow: '0 4px 24px rgba(200,184,154,0.18), 0 1px 0 rgba(200,184,154,0.22)' }}>
 
       {/* Gold glow — top-right */}
       <div style={{ position: 'absolute', top: -120, right: -60, width: 360, height: 360, borderRadius: '50%', background: 'rgba(200,184,154,0.10)', filter: 'blur(70px)', pointerEvents: 'none' }} />
@@ -59,7 +59,7 @@ export default function ValueCards({ total_brl, generated_at, invested_brl, gain
           <p style={{ fontFamily: "var(--arvo-font-body)", fontSize: 10, letterSpacing: '0.30em', textTransform: 'uppercase', color: 'var(--arvo-gold-text)', margin: 0 }}>
             Total {currency}
           </p>
-          <p className="text-[36px] sm:text-[56px]" style={{ fontFamily: "var(--arvo-font-body)", letterSpacing: '0.02em', lineHeight: 1.05, color: 'var(--arvo-black)', margin: '12px 0 0' }}>
+          <p className="text-[28px] sm:text-[40px]" style={{ fontFamily: "var(--arvo-font-body)", letterSpacing: '0.02em', lineHeight: 1.05, color: 'var(--arvo-black)', margin: '6px 0 0' }}>
             {fmt(total_brl, 0)}
           </p>
         </div>
@@ -70,7 +70,7 @@ export default function ValueCards({ total_brl, generated_at, invested_brl, gain
 
       {/* KPI grid */}
       {showSecondary && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6" style={{ position: 'relative', zIndex: 2, marginTop: 24, paddingTop: 22, borderTop: '1px solid rgba(13,13,13,0.08)' }}>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6" style={{ position: 'relative', zIndex: 2, marginTop: 16, paddingTop: 16, borderTop: '1px solid rgba(13,13,13,0.08)' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             <span style={labelStyle}>{t.dashboard.invested}</span>
             <span className="text-base sm:text-lg" style={{ fontFamily: "var(--arvo-font-body)", letterSpacing: '0.04em', color: 'var(--arvo-fg)' }}>{fmt(invested_brl!, 0)}</span>
