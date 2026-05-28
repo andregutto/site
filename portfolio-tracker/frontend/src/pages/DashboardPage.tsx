@@ -105,8 +105,8 @@ export default function DashboardPage() {
 
   const { data: perfData, loading: chartLoading } = usePerformanceMonthly(inception ?? currentYM, currentYM)
 
-  const portfolioChartData = (perfData?.monthly ?? [])
-    .filter(m => m.total > 0 && m.month >= perfFrom)
+  const rawFiltered = (perfData?.monthly ?? []).filter(m => m.total > 0 && m.month >= perfFrom)
+  const portfolioChartData = (rawFiltered.length >= 2 ? rawFiltered : (perfData?.monthly ?? []).filter(m => m.total > 0))
     .map(m => ({ month: fmtMonthLabel(m.month), value: convert(m.total) }))
 
   function handleAssetClick(asset: PortfolioAsset) {
@@ -226,9 +226,9 @@ export default function DashboardPage() {
 
           {/* Evolution chart — right on desktop */}
           {(chartLoading || portfolioChartData.length > 0) && (
-            <div className="rounded-2xl p-5" style={{ background: 'white', border: '1px solid var(--arvo-border)' }}>
+            <div className="rounded-2xl p-5" style={{ background: 'white', border: '1px solid var(--arvo-border)', display: 'flex', flexDirection: 'column' }}>
               <h2 className="mb-1" style={{ fontFamily: "var(--arvo-font-body)", fontSize: 13, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--arvo-fg)' }}>{t.dashboard.portfolioEvolution}</h2>
-              <div className="h-52">
+              <div style={{ flex: 1, minHeight: 0, minWidth: 0 }}>
               {chartLoading && portfolioChartData.length === 0 ? (
                 <div className="h-full flex items-end gap-1 px-2 pb-1">
                   {[40, 55, 48, 62, 58, 70, 65, 80, 75, 88, 82, 95].map((h, i) => (

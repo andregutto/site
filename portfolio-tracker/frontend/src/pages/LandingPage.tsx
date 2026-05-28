@@ -142,28 +142,22 @@ function DashboardMockupContent() {
   )
 }
 
-function LaptopFrame({ children }: { children: React.ReactNode }) {
+function ScreenFrame({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ position: 'relative', filter: 'drop-shadow(0 48px 96px rgba(0,0,0,0.70)) drop-shadow(0 0 80px rgba(200,184,154,0.13))' }}>
-      {/* Screen lid */}
-      <div style={{ background: 'linear-gradient(145deg, #2e2e2e 0%, #1a1a1a 100%)', borderRadius: '14px 14px 0 0', padding: '13px 13px 0', border: '1px solid rgba(255,255,255,0.06)', borderBottom: 'none' }}>
-        {/* Camera */}
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 9 }}>
-          <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#2a2a2a', border: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <div style={{ width: 2.5, height: 2.5, borderRadius: '50%', background: '#333' }} />
-          </div>
-        </div>
-        {/* Screen glass */}
-        <div style={{ borderRadius: '4px 4px 0 0', overflow: 'hidden', aspectRatio: '16 / 10', background: '#fff' }}>
-          {children}
-        </div>
+    <div style={{
+      background: 'linear-gradient(145deg, #282828 0%, #161616 100%)',
+      borderRadius: '10px 10px 0 0',
+      padding: '5px 5px 0',
+      border: '1px solid rgba(255,255,255,0.07)',
+      borderBottom: 'none',
+      boxShadow: '0 -8px 40px rgba(0,0,0,0.45), 0 40px 80px rgba(0,0,0,0.60)',
+    }}>
+      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 4 }}>
+        <div style={{ width: 4, height: 4, borderRadius: '50%', background: '#222' }} />
       </div>
-      {/* Hinge bar */}
-      <div style={{ background: 'linear-gradient(to bottom, #2e2e2e, #222)', height: 18, borderRadius: '0 0 3px 3px', position: 'relative' }}>
-        <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: '55%', height: '100%', background: 'rgba(0,0,0,0.25)', borderRadius: '0 0 3px 3px' }} />
+      <div style={{ borderRadius: '4px 4px 0 0', overflow: 'hidden', aspectRatio: '16 / 10', background: '#fff' }}>
+        {children}
       </div>
-      {/* Foot */}
-      <div style={{ background: 'linear-gradient(to bottom, #252525, #1c1c1c)', height: 5, width: '70%', margin: '0 auto', borderRadius: '0 0 6px 6px', boxShadow: '0 6px 18px rgba(0,0,0,0.50)' }} />
     </div>
   )
 }
@@ -421,10 +415,7 @@ export default function LandingPage() {
         <div className="arvo-grain" />
 
         <div style={{ position: 'relative', maxWidth: 1200, margin: '0 auto', padding: '80px 24px', width: '100%' }}>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 items-center">
-
-            {/* Left: text */}
-            <div>
+          <div style={{ maxWidth: 560 }}>
               <div style={{ marginBottom: 22, display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span style={{ width: 5, height: 5, borderRadius: '50%', background: GOLD, display: 'inline-block', flexShrink: 0 }} />
                 <span style={{ fontFamily: F_SANS, fontSize: 12, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.72)' }}>
@@ -455,18 +446,15 @@ export default function LandingPage() {
               <p style={{ fontFamily: F_SANS, fontSize: 12, letterSpacing: '0.06em', color: 'rgba(255,255,255,0.52)', marginTop: 18 }}>
                 {l.assurance}
               </p>
-            </div>
-
-            {/* Right: laptop mockup — desktop only */}
-            <div className="hidden lg:flex justify-center items-center">
-              <div className="arvo-float" style={{ width: '100%', maxWidth: 540 }}>
-                <LaptopFrame>
-                  <DashboardMockupContent />
-                </LaptopFrame>
-              </div>
-            </div>
 
           </div>
+        </div>
+
+        {/* Screen mockup — xl+ only, pinned to hero bottom, half-visible bleeding right */}
+        <div className="hidden xl:block" style={{ position: 'absolute', bottom: 0, right: '-400px', width: '800px' }}>
+          <ScreenFrame>
+            <DashboardMockupContent />
+          </ScreenFrame>
         </div>
       </section>
 

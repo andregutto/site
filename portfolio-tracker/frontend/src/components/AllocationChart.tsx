@@ -10,6 +10,12 @@ function fmtBRL(v: number) {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(v)
 }
 
+function fmtCompact(v: number) {
+  if (v >= 1_000_000) return `R$${(v / 1_000_000).toFixed(1)}M`
+  if (v >= 1_000) return `R$${(v / 1_000).toFixed(0)}k`
+  return `R$${v.toFixed(0)}`
+}
+
 export default function AllocationChart({ data }: Props) {
   const { t } = useI18n()
   if (!data.length) return null
@@ -25,8 +31,8 @@ export default function AllocationChart({ data }: Props) {
     <div className="rounded-2xl p-6" style={{ background: 'white', border: '1px solid var(--arvo-border)' }}>
       <h2 className="mb-1" style={{ fontFamily: "var(--arvo-font-body)", fontSize: 13, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--arvo-fg)' }}>{t.dashboard.allocationByClass}</h2>
       <p className="mb-4" style={{ fontFamily: "'Playfair Display', serif", fontStyle: 'italic', fontSize: 13, color: 'var(--arvo-fg-soft)' }}>onde seu patrimônio está plantado</p>
-      <div className="flex flex-col lg:flex-row gap-6 items-center">
-        <div className="w-full lg:w-64 h-64">
+      <div className="flex flex-col gap-4">
+        <div className="w-full" style={{ height: 220 }}>
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
@@ -35,8 +41,8 @@ export default function AllocationChart({ data }: Props) {
                 nameKey="name"
                 cx="50%"
                 cy="50%"
-                innerRadius={60}
-                outerRadius={100}
+                innerRadius={54}
+                outerRadius={88}
                 paddingAngle={2}
               >
                 {data.map((entry, i) => (
@@ -51,7 +57,7 @@ export default function AllocationChart({ data }: Props) {
           </ResponsiveContainer>
         </div>
 
-        <div className="flex-1 w-full space-y-2">
+        <div className="w-full space-y-2">
           {data.map((item) => (
             <div key={item.name} className="flex items-center gap-3">
               <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: item.color }} />
@@ -60,6 +66,7 @@ export default function AllocationChart({ data }: Props) {
                   <span className="text-sm truncate" style={{ color: 'rgba(13,13,13,0.7)' }}>{resolveClassName(item)}</span>
                   <span className="text-sm ml-2 flex-shrink-0" style={{ fontFamily: "var(--arvo-font-body)", color: 'var(--arvo-black)' }}>
                     {item.pct.toFixed(1)}%
+                    <span className="ml-1 text-xs" style={{ fontStyle: 'italic', color: 'rgba(13,13,13,0.45)' }}>{fmtCompact(item.value_brl)}</span>
                   </span>
                 </div>
                 <div className="mt-0.5 h-1 rounded-full overflow-hidden" style={{ background: 'rgba(13,13,13,0.07)' }}>
@@ -69,9 +76,6 @@ export default function AllocationChart({ data }: Props) {
                   />
                 </div>
               </div>
-              <span className="text-xs flex-shrink-0 w-24 text-right" style={{ color: 'rgba(13,13,13,0.58)', fontFamily: "var(--arvo-font-body)" }}>
-                {fmtBRL(item.value_brl)}
-              </span>
             </div>
           ))}
         </div>
