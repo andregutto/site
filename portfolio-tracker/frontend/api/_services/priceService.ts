@@ -78,6 +78,34 @@ export async function getCurrentPrice(asset: Asset, tranches?: FITranche[], refD
   throw new Error(`Asset ${asset.id}: nenhuma fonte de preço configurada`)
 }
 
+export async function getDailyHistory(asset: Asset, days = 365): Promise<PricePoint[]> {
+  if (asset.asset_type !== 'ticker') {
+    throw new Error('Histórico de preços só disponível para assets tipo ticker')
+  }
+
+  if (asset.ticker_yahoo) {
+    try {
+      const pts = await yahoo.getDailyHistory(asset.ticker_yahoo, days)
+      if (pts.length > 0) return pts.map(p => ({ ...p, currency: asset.currency || 'USD' }))
+    } catch { /* fallthrough */ }
+  }
+
+  if (asset.ticker_brapi) {
+    try {
+      const pts = await brapi.getDailyHistory(asset.ticker_brapi, days)
+      return pts.map(p => ({ ...p, currency: 'BRL' }))
+    } catch { /* fallthrough */ }
+  }
+
+  if (asset.coingecko_id) {
+    const currency = (asset.currency || 'USD').toLowerCase()
+    const pts = await coingecko.getDailyHistory(asset.coingecko_id, days, currency)
+    return pts.map(p => ({ ...p, currency: asset.currency || 'USD' }))
+  }
+
+  throw new Error(`Asset ${asset.id}: nenhuma fonte de histórico diário configurada`)
+}
+
 export async function getMonthlyHistory(asset: Asset, months = 24): Promise<PricePoint[]> {
   if (asset.asset_type !== 'ticker') {
     throw new Error('Histórico de preços só disponível para assets tipo ticker')

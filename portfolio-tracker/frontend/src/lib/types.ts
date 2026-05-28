@@ -109,6 +109,16 @@ export interface PerformanceBenchmarks {
   monthly:   BenchmarkMonthly[]
 }
 
+export interface DailyPerf {
+  date: string
+  total: number
+  contributions: number
+}
+
+export interface PerformanceDaily {
+  daily: DailyPerf[]
+}
+
 export type AssetReturns = Record<number, number | null>
 
 export interface Asset {

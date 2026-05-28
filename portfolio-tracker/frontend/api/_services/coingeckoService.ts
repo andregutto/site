@@ -55,3 +55,19 @@ export async function getMonthlyHistory(
       .map(([month, price]) => ({ date: month + '-01', price }))
   })
 }
+
+export async function getDailyHistory(
+  coingeckoId: string,
+  days = 365,
+  vsCurrency = 'usd'
+): Promise<PricePoint[]> {
+  const key = `coingecko:daily:${coingeckoId}:${days}:${vsCurrency}`
+  return cache.getOrFetch(key, TTL.PRICE_HISTORICAL, async () => {
+    const data = await cg<{ prices: [number, number][] }>(
+      `/coins/${coingeckoId}/market_chart?vs_currency=${vsCurrency}&days=${days}`
+    )
+    return data.prices
+      .map(([ts, price]) => ({ date: new Date(ts).toISOString().split('T')[0], price }))
+      .filter(r => r.price > 0)
+  })
+}

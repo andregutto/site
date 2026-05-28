@@ -63,3 +63,25 @@ export async function getMonthlyHistory(ticker: string, months = 24): Promise<Pr
     }
   )
 }
+
+export async function getDailyHistory(ticker: string, days = 365): Promise<PricePoint[]> {
+  return cache.getOrFetch(
+    `yahoo:daily:${ticker}:${days}`,
+    TTL.PRICE_HISTORICAL,
+    async () => {
+      const period1 = new Date()
+      period1.setDate(period1.getDate() - days)
+      const period2 = new Date().toISOString().split('T')[0]
+
+      const rows = await yf.historical(ticker, {
+        period1: period1.toISOString().split('T')[0],
+        period2,
+        interval: '1d',
+      })
+
+      return rows
+        .map((r) => ({ date: r.date.toISOString().split('T')[0], price: r.close ?? r.adjClose ?? 0 }))
+        .filter(r => r.price > 0)
+    }
+  )
+}

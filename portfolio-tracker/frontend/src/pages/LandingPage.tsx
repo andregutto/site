@@ -602,14 +602,14 @@ export default function LandingPage() {
           </div>
         </div>
 
-        {/* iPhone mockup — overlapping lower-left of desktop (left edge of desktop is at ~37vw from right) */}
-        <div className="hidden lg:block" style={{ position: 'absolute', bottom: 0, right: 'calc(37vw - 60px)', zIndex: 3 }}>
+        {/* iPhone mockup — lower-left of desktop, larger, anchored to bottom */}
+        <div className="hidden lg:block" style={{ position: 'absolute', bottom: 0, right: 'calc(37vw - 50px)', zIndex: 3 }}>
           {/* iPhone shell */}
-          <div style={{ width: 190, height: 390, borderRadius: 38, border: '10px solid #1C1C1E', background: '#1C1C1E', boxShadow: '0 0 0 1px rgba(255,255,255,0.08) inset, 0 24px 60px rgba(0,0,0,0.60), 0 0 30px rgba(200,184,154,0.12)', position: 'relative', overflow: 'hidden' }}>
+          <div style={{ width: 260, height: 520, borderRadius: 50, border: '12px solid #1C1C1E', background: '#1C1C1E', boxShadow: '0 0 0 1px rgba(255,255,255,0.08) inset, 0 32px 80px rgba(0,0,0,0.65), 0 0 40px rgba(200,184,154,0.10)', position: 'relative', overflow: 'hidden' }}>
             {/* Dynamic Island */}
-            <div style={{ position: 'absolute', top: 8, left: '50%', transform: 'translateX(-50%)', width: 80, height: 24, borderRadius: 12, background: '#000', zIndex: 10 }} />
+            <div style={{ position: 'absolute', top: 10, left: '50%', transform: 'translateX(-50%)', width: 96, height: 28, borderRadius: 14, background: '#000', zIndex: 10 }} />
             {/* Screen content */}
-            <div style={{ width: '100%', height: '100%', borderRadius: 28, overflow: 'hidden' }}>
+            <div style={{ width: '100%', height: '100%', borderRadius: 38, overflow: 'hidden' }}>
               <FreedomMockupContent />
             </div>
           </div>

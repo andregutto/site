@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { apiFetch } from '../lib/api'
 import { useAuth } from '../contexts/AuthContext'
-import type { PortfolioValue, PerformanceSummary, PerformanceMonthly, PerformanceBenchmarks, AssetReturns, AssetDetail, ContributionRow } from '../lib/types'
+import type { PortfolioValue, PerformanceSummary, PerformanceMonthly, PerformanceBenchmarks, PerformanceDaily, AssetReturns, AssetDetail, ContributionRow } from '../lib/types'
 
 // Daily cache v7 — bumped to invalidate pre-userId-scoping entries (2026-05-22).
 // Keys include userId so different users never share cached data.
@@ -163,6 +163,38 @@ export function usePerformanceMonthly(from: string, to: string) {
   useEffect(() => { doFetch(false) }, [doFetch])
 
   return { data, loading, error, refresh }
+}
+
+export function usePerformanceDaily(from: string | null, to: string | null) {
+  const { user } = useAuth()
+  const userId = user?.id ?? ''
+  const [data, setData]     = useState<PerformanceDaily | null>(null)
+  const [loading, setLoading] = useState(false)
+
+  const doFetch = useCallback(async (force: boolean) => {
+    if (!userId || !from || !to) { setData(null); return }
+    const key = `daily_${userId}_${from}_${to}`
+    if (!force) {
+      const cached = perfCacheGet<PerformanceDaily>(key)
+      if (cached) { setData(cached); return }
+    }
+    setLoading(true)
+    try {
+      const result = await apiFetch<PerformanceDaily>(`/performance/daily?from=${from}&to=${to}`)
+      setData(result)
+      perfCacheSet(key, result)
+    } catch {
+      setData(null)
+    } finally {
+      setLoading(false)
+    }
+  }, [from, to, userId])
+
+  const refresh = useCallback(() => doFetch(true), [doFetch])
+  useEffect(() => { setData(null) }, [userId])
+  useEffect(() => { doFetch(false) }, [doFetch])
+
+  return { data, loading, refresh }
 }
 
 export function usePerformanceBenchmarks(from: string, to: string) {

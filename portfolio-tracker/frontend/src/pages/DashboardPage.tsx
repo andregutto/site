@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { PageLoader } from '../components/ArvoLoader'
-import { usePortfolioValue, usePerformanceMonthly, usePerformanceInception, usePerformanceSummary } from '../hooks/usePortfolio'
+import { usePortfolioValue, usePerformanceMonthly, usePerformanceDaily, usePerformanceInception, usePerformanceSummary } from '../hooks/usePortfolio'
 import { useDividendSummary, useDividendSync } from '../hooks/useDividends'
 import { useCurrency } from '../contexts/CurrencyContext'
 import { useFavorites } from '../hooks/useFavorites'
@@ -18,6 +18,16 @@ function fmtMonthLabel(ym: string) {
   const [y, m] = ym.split('-')
   const names = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
   return `${names[parseInt(m) - 1]}/${y.slice(2)}`
+}
+
+function fmtDayLabel(dateStr: string) {
+  const [, m, d] = dateStr.split('-')
+  const names = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
+  return `${parseInt(d)}/${names[parseInt(m) - 1]}`
+}
+
+function localDate(d: Date) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
 type PeriodMode = 'current_month' | 'last_30d' | 'last_12m' | 'ytd' | 'inception'
@@ -105,9 +115,20 @@ export default function DashboardPage() {
 
   const { data: perfData, loading: chartLoading } = usePerformanceMonthly(inception ?? currentYM, currentYM)
 
+  const useDailyChart = periodMode === 'current_month' || periodMode === 'last_30d'
+  const dailyFrom = useDailyChart
+    ? periodMode === 'current_month'
+      ? `${currentYM}-01`
+      : localDate(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 29))
+    : null
+  const dailyTo = useDailyChart ? localDate(now) : null
+  const { data: dailyData, loading: dailyLoading } = usePerformanceDaily(dailyFrom, dailyTo)
+
   const rawFiltered = (perfData?.monthly ?? []).filter(m => m.total > 0 && m.month >= perfFrom)
-  const portfolioChartData = (rawFiltered.length >= 2 ? rawFiltered : (perfData?.monthly ?? []).filter(m => m.total > 0))
-    .map(m => ({ month: fmtMonthLabel(m.month), value: convert(m.total) }))
+  const portfolioChartData = useDailyChart
+    ? (dailyData?.daily ?? []).filter(d => d.total > 0).map(d => ({ month: fmtDayLabel(d.date), value: convert(d.total) }))
+    : (rawFiltered.length >= 2 ? rawFiltered : (perfData?.monthly ?? []).filter(m => m.total > 0))
+        .map(m => ({ month: fmtMonthLabel(m.month), value: convert(m.total) }))
 
   function handleAssetClick(asset: PortfolioAsset) {
     if (asset.needs_manual && asset.source === 'fixed_income') {
@@ -210,7 +231,7 @@ export default function DashboardPage() {
               month_pct={hasInvested ? monthReturn : null}
               ytd_pct={hasInvested ? ytdReturn : null}
               ytd_year={currentYearStr}
-              chartLoading={chartLoading || periodLoading}
+              chartLoading={chartLoading || dailyLoading || periodLoading}
               period_pct={hasInvested ? periodReturnPct : null}
               period_label={periodLabel}
             />

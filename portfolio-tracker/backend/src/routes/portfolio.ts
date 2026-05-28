@@ -2,7 +2,7 @@
 import { Router, Response } from 'express'
 import { requireAuth, AuthRequest } from '../middleware/auth.js'
 import { supabaseAdmin } from '../lib/supabase.js'
-import { getCurrentPrice, getMonthlyHistory, Asset } from '../services/priceService.js'
+import { getCurrentPrice, getDailyHistory, getMonthlyHistory, Asset } from '../services/priceService.js'
 import { getFxRate } from '../lib/fx.js'
 import { cache, TTL } from '../lib/cache.js'
 import * as yahoo from '../services/yahooService.js'
@@ -250,7 +250,7 @@ router.post('/sync-history', requireAuth, async (req, res: Response) => {
 
   const syncOne = async (a: (typeof assets)[number]): Promise<Detail> => {
     try {
-      const history = await getMonthlyHistory(a as Asset, monthsBack)
+      const history = await getDailyHistory(a as Asset, monthsBack * 30)
       if (!history.length) return { id: a.id, code: a.code, status: 'empty' }
       const { error: upsertErr } = await supabaseAdmin.from('price_history').upsert(
         history.map(p => ({ asset_id: a.id, ref_date: p.date, price: p.price, currency: p.currency, source: 'sync' })),

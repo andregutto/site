@@ -53,3 +53,25 @@ export async function getMonthlyHistory(ticker: string, months = 24): Promise<Pr
     }
   )
 }
+
+export async function getDailyHistory(ticker: string, days = 365): Promise<PricePoint[]> {
+  return cache.getOrFetch(
+    `brapi:daily:${ticker}:${days}`,
+    TTL.PRICE_HISTORICAL,
+    async () => {
+      const range = days <= 90 ? '3mo' : days <= 180 ? '6mo' : days <= 365 ? '1y' : '2y'
+      const json = await fetchBrapi(
+        `/quote/${ticker}${TOKEN}${SEP}range=${range}&interval=1d&fundamental=false`
+      ) as { results: BrapiResult[] }
+
+      const hist = json.results?.[0]?.historicalDataPrice ?? []
+      return hist
+        .map((p) => ({
+          date:  new Date(p.date * 1000).toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' }),
+          price: p.close,
+        }))
+        .filter(r => r.price > 0)
+        .reverse()
+    }
+  )
+}

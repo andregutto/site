@@ -48,6 +48,30 @@ function interpolateKnownPoints(points: ValPoint[], targetDate: string): ValPoin
   return { ref_date: targetDate, value, currency: before.currency }
 }
 
+function interpolateKnownPointsDaily(points: ValPoint[], targetDate: string): ValPoint | null {
+  if (!points.length) return null
+  const last = points[points.length - 1]
+  if (targetDate >= last.ref_date) return { ...last }
+  if (targetDate <  points[0].ref_date) return { ...points[0] }
+
+  let before = points[0], after = points[1]
+  for (let i = 0; i < points.length - 1; i++) {
+    if (points[i].ref_date <= targetDate && points[i + 1].ref_date > targetDate) {
+      before = points[i]; after = points[i + 1]; break
+    }
+  }
+
+  const toMs = (s: string) => new Date(s + 'T12:00:00').getTime()
+  const dB = toMs(before.ref_date), dA = toMs(after.ref_date), dT = toMs(targetDate)
+  const span = dA - dB, elapsed = dT - dB
+  if (span <= 0 || elapsed <= 0) return { ...before }
+  const t = elapsed / span
+  const value = (before.value > 0 && after.value > 0)
+    ? before.value * Math.pow(after.value / before.value, t)
+    : before.value + (after.value - before.value) * t
+  return { ref_date: targetDate, value, currency: before.currency }
+}
+
 type PrefetchedData = {
   assets: Array<{
     id: number; code: string; name: string; asset_type: string; currency: string; active: boolean
@@ -496,6 +520,202 @@ router.get('/monthly', requireAuth, async (req, res: Response) => {
   })
 
   res.json({ monthly })
+})
+
+// ── Daily portfolio value ─────────────────────────────────────────────────────
+
+async function computePortfolioValueAtDay(
+  data: PrefetchedData,
+  dateStr: string,
+  pricesByAsset: Record<number, Array<{ ref_date: string; price: number; currency: string }>>
+): Promise<{ total: number }> {
+  const today   = localDate(new Date())
+  const isToday = dateStr === today
+
+  const { assets, contributions: allContribs, manualValues: allMVRaw } = data
+  if (!assets.length) return { total: 0 }
+
+  const contributions = allContribs.filter(c => c.date <= dateStr)
+
+  const holdingsMap: Record<number, number> = {}
+  const costMap: Record<number, { totalCost: number; totalQty: number }> = {}
+  for (const c of contributions) {
+    const qty = Number(c.quantity) || 0
+    holdingsMap[c.asset_id] = (holdingsMap[c.asset_id] ?? 0) + (c.type === 'buy' ? qty : -qty)
+    if (c.type === 'buy' && qty > 0) {
+      const vBrl = Number(c.value_brl) > 0
+        ? Number(c.value_brl)
+        : (Number(c.price_orig) > 0 ? Number(c.price_orig) * qty * (Number(c.fx_rate_brl) || (c.currency && c.currency !== 'BRL' ? 5.7 : 1)) : 0)
+      if (vBrl > 0) {
+        if (!costMap[c.asset_id]) costMap[c.asset_id] = { totalCost: 0, totalQty: 0 }
+        costMap[c.asset_id].totalCost += vBrl
+        costMap[c.asset_id].totalQty  += qty
+      }
+    }
+  }
+
+  const fiAssetIds = assets.filter(a => a.asset_type === 'fixed_income').map(a => a.id)
+  const fiTranchesMap: Record<number, FITranche[]> = {}
+  for (const c of contributions) {
+    if (!fiAssetIds.includes(c.asset_id) || c.type !== 'buy') continue
+    const vBrl = Number(c.value_brl)
+    if (vBrl <= 0) continue
+    if (!fiTranchesMap[c.asset_id]) fiTranchesMap[c.asset_id] = []
+    fiTranchesMap[c.asset_id].push({ principal: vBrl, start_date: c.date as string })
+  }
+
+  function getPriceAtDay(assetId: number): { price: number; currency: string } | undefined {
+    const arr = pricesByAsset[assetId]
+    if (!arr) return undefined
+    let best: typeof arr[0] | undefined
+    for (const p of arr) {
+      if (p.ref_date <= dateStr) best = p
+      else break
+    }
+    return best ? { price: best.price, currency: best.currency } : undefined
+  }
+
+  const allMVByAsset: Record<number, ValPoint[]> = {}
+  for (const mv of allMVRaw) {
+    if (!allMVByAsset[mv.asset_id]) allMVByAsset[mv.asset_id] = []
+    allMVByAsset[mv.asset_id].push({ ref_date: mv.ref_date, value: mv.value, currency: mv.currency })
+  }
+
+  const firstBuyMap: Record<number, ValPoint> = {}
+  for (const c of contributions) {
+    if (c.type !== 'buy') continue
+    const vBrl = Number(c.value_brl) > 0 ? Number(c.value_brl) : 0
+    if (vBrl <= 0 || firstBuyMap[c.asset_id]) continue
+    firstBuyMap[c.asset_id] = { ref_date: c.date as string, value: vBrl, currency: 'BRL' }
+  }
+
+  let total = 0
+  for (const a of assets) {
+    if (!a.active) continue
+    let value = 0
+    const holdings = holdingsMap[a.id] ?? 0
+    const cost = costMap[a.id]
+    const costBasisValue = cost && cost.totalQty > 0 ? holdings * (cost.totalCost / cost.totalQty) : 0
+
+    try {
+      if (a.asset_type === 'manual') {
+        const anchor = firstBuyMap[a.id]
+        const mvPts  = allMVByAsset[a.id] ?? []
+        if (anchor || mvPts.length > 0) {
+          const pts = anchor ? [anchor, ...mvPts] : [...mvPts]
+          pts.sort((x, y) => x.ref_date.localeCompare(y.ref_date))
+          const interp = interpolateKnownPointsDaily(pts, dateStr)
+          if (interp) {
+            const fx = interp.currency === 'BRL' ? 1 : await getFxRate(interp.currency)
+            value = interp.value * fx
+          }
+        }
+      } else if (a.asset_type === 'fixed_income') {
+        const fiStartDate     = a.fi_start_date as string | null
+        const fiEarliestStart = fiStartDate ?? fiTranchesMap[a.id]?.[0]?.start_date ?? null
+        if (fiEarliestStart && fiEarliestStart > dateStr) continue
+
+        const ph = getPriceAtDay(a.id)
+        if (ph && !isToday) {
+          const fx = ph.currency === 'BRL' ? 1 : await getFxRate(ph.currency)
+          value = ph.price * fx
+        } else {
+          const fiPrincipal = Number(a.fi_principal) || 0
+          if (fiPrincipal > 0 && fiStartDate) {
+            try {
+              const result = await getCurrentPrice(
+                { ...a, fi_principal: fiPrincipal, ticker_brapi: null, ticker_yahoo: null, coingecko_id: null } as Asset,
+                undefined, new Date(dateStr + 'T12:00:00')
+              )
+              value = result.price
+            } catch { value = ph?.price ?? fiPrincipal }
+          } else {
+            const activeTranches = (fiTranchesMap[a.id] ?? []).filter(t => t.start_date <= dateStr)
+            const principalSum = activeTranches.reduce((s, t) => s + t.principal, 0)
+            try {
+              const result = await getCurrentPrice(
+                { ...a, ticker_brapi: null, ticker_yahoo: null, coingecko_id: null } as Asset,
+                activeTranches.length > 0 ? activeTranches : undefined,
+                new Date(dateStr + 'T12:00:00')
+              )
+              value = result.price
+            } catch { value = ph?.price ?? principalSum }
+          }
+        }
+      } else {
+        if (holdings > 0) {
+          const ph = getPriceAtDay(a.id)
+          if (isToday) {
+            try {
+              const result = await getCurrentPrice(a as Asset)
+              const fx = result.currency === 'BRL' ? 1 : await getFxRate(result.currency)
+              value = holdings * result.price * fx
+            } catch {
+              if (ph) { const fx = await getFxRate(ph.currency); value = holdings * ph.price * fx }
+              else     { value = costBasisValue }
+            }
+          } else {
+            if (ph) { const fx = await getFxRate(ph.currency); value = holdings * ph.price * fx }
+            else     { value = costBasisValue }
+          }
+        }
+      }
+    } catch { value = costBasisValue }
+
+    if (value > 0) total += value
+  }
+
+  return { total: Math.round(total * 100) / 100 }
+}
+
+router.get('/daily', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const today = localDate(new Date())
+
+  const fromStr = (req.query.from as string) || today
+  const rawTo   = (req.query.to   as string) || today
+  const toStr   = rawTo > today ? today : rawTo
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(fromStr) || !/^\d{4}-\d{2}-\d{2}$/.test(toStr)) {
+    res.status(400).json({ error: 'from and to must be YYYY-MM-DD' }); return
+  }
+  if (fromStr > toStr) {
+    res.status(400).json({ error: '"from" deve ser anterior a "to"' }); return
+  }
+
+  const prefetched = await fetchPrefetchedData(userId)
+
+  const pricesByAsset: Record<number, Array<{ ref_date: string; price: number; currency: string }>> = {}
+  for (const p of prefetched.prices) {
+    if (!pricesByAsset[p.asset_id]) pricesByAsset[p.asset_id] = []
+    pricesByAsset[p.asset_id].push(p)
+  }
+
+  const dates: string[] = []
+  const cur = new Date(fromStr + 'T12:00:00')
+  const end = new Date(toStr   + 'T12:00:00')
+  while (cur <= end) { dates.push(localDate(cur)); cur.setDate(cur.getDate() + 1) }
+
+  const values = await Promise.all(dates.map(d => computePortfolioValueAtDay(prefetched, d, pricesByAsset)))
+
+  const contribsByDay: Record<string, number> = {}
+  for (const c of prefetched.contributions) {
+    if (c.date < fromStr || c.date > toStr || c.type === 'income') continue
+    const vBrl = Number(c.value_brl) > 0
+      ? Number(c.value_brl)
+      : (Number(c.price_orig) > 0 && Number(c.quantity) > 0
+          ? Number(c.price_orig) * Number(c.quantity) * (Number(c.fx_rate_brl) || (c.currency && c.currency !== 'BRL' ? 5.7 : 1))
+          : 0)
+    contribsByDay[c.date] = (contribsByDay[c.date] ?? 0) + (c.type === 'buy' ? vBrl : -vBrl)
+  }
+
+  const daily = dates.map((date, i) => ({
+    date,
+    total:         values[i].total,
+    contributions: Math.round((contribsByDay[date] ?? 0) * 100) / 100,
+  }))
+
+  res.json({ daily })
 })
 
 router.get('/benchmarks', requireAuth, async (req, res: Response) => {
