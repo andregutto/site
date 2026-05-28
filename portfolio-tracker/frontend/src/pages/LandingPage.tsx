@@ -468,31 +468,14 @@ export default function LandingPage() {
         <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '55%', background: 'linear-gradient(to top, rgba(6,12,24,0.90) 0%, transparent 100%)' }} />
         <div className="arvo-grain" />
 
-        {/* Right mockup — browser window, ~80% hero height, anchored to bottom */}
-        <div className="hidden lg:block" style={{ position: 'absolute', bottom: 0, right: 0, width: '55%', height: '82%', overflow: 'hidden', zIndex: 1, borderRadius: '10px 0 0 0', boxShadow: '-16px 0 64px rgba(0,0,0,0.55), 0 -8px 32px rgba(0,0,0,0.30)' }}>
-          {/* macOS-style browser chrome */}
-          <div style={{ height: 36, flexShrink: 0, background: '#1C1C1E', display: 'flex', alignItems: 'center', padding: '0 14px', gap: 0 }}>
-            <div style={{ display: 'flex', gap: 6, marginRight: 14 }}>
-              <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#FF5F57' }} />
-              <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#FFBD2E' }} />
-              <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#28C840' }} />
-            </div>
-            <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
-              <div style={{ padding: '3px 12px', background: '#2C2C2E', borderRadius: 5, display: 'flex', alignItems: 'center', gap: 6 }}>
-                <svg width="10" height="10" fill="none" viewBox="0 0 24 24" stroke="rgba(255,255,255,0.35)" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 2a10 10 0 100 20A10 10 0 0012 2z"/><path strokeLinecap="round" strokeLinejoin="round" d="M2 12h20M12 2c-2.8 3-4 6.4-4 10s1.2 7 4 10M12 2c2.8 3 4 6.4 4 10s-1.2 7-4 10"/></svg>
-                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', fontFamily: "'DM Sans', sans-serif", letterSpacing: '0.01em' }}>arvo.andregutto.com</span>
-              </div>
-            </div>
-          </div>
-          {/* App content */}
-          <div style={{ height: 'calc(100% - 36px)', overflow: 'hidden' }}>
-            <DashboardMockupContent
-              td={(t as unknown as Record<string, Record<string, string>>).dashboard ?? {}}
-              tn={(t as unknown as Record<string, Record<string, string>>).nav ?? {}}
-              tc={((t as unknown as Record<string, Record<string, Record<string, string>>>).classes?.names ?? {}) as Record<string, string>}
-              ti={(t as unknown as Record<string, Record<string, string>>).indices ?? {}}
-            />
-          </div>
+        {/* Right mockup — MacBook-style bezel, ~80% hero height, anchored to bottom, shifted right */}
+        <div className="hidden lg:block" style={{ position: 'absolute', bottom: 0, right: '-18vw', width: '55%', height: '82%', overflow: 'hidden', zIndex: 1, borderRadius: '10px 10px 0 0', border: '8px solid #111', borderBottom: 'none', boxShadow: '-20px 0 80px rgba(0,0,0,0.50), 0 -12px 40px rgba(0,0,0,0.30)' }}>
+          <DashboardMockupContent
+            td={(t as unknown as Record<string, Record<string, string>>).dashboard ?? {}}
+            tn={(t as unknown as Record<string, Record<string, string>>).nav ?? {}}
+            tc={((t as unknown as Record<string, Record<string, Record<string, string>>>).classes?.names ?? {}) as Record<string, string>}
+            ti={(t as unknown as Record<string, Record<string, string>>).indices ?? {}}
+          />
         </div>
 
         {/* Left text — constrained to left half */}

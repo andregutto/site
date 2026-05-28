@@ -81,7 +81,7 @@ export default function ValueCards({ total_brl, generated_at, invested_brl, gain
   }
 
   return (
-    <div style={{ background: '#FFFFFF', color: 'var(--arvo-fg)', borderRadius: 16, padding: 20, position: 'relative', overflow: 'hidden', border: '1px solid rgba(200,184,154,0.35)', boxShadow: '0 4px 24px rgba(200,184,154,0.18), 0 1px 0 rgba(200,184,154,0.22), -24px 24px 64px rgba(27,79,216,0.09)' }}>
+    <div style={{ background: '#FFFFFF', color: 'var(--arvo-fg)', borderRadius: 16, padding: 20, position: 'relative', overflow: 'hidden', border: '1px solid rgba(27,79,216,0.22)', boxShadow: '0 4px 24px rgba(200,184,154,0.18), 0 1px 0 rgba(200,184,154,0.22)' }}>
 
       {/* Gold glow — top-right */}
       <div style={{ position: 'absolute', top: -120, right: -60, width: 360, height: 360, borderRadius: '50%', background: 'rgba(200,184,154,0.10)', filter: 'blur(70px)', pointerEvents: 'none' }} />
