@@ -216,6 +216,125 @@ function DashboardMockupContent({ td, tn, tc, ti }: MockupLabels) {
   )
 }
 
+function FreedomMockupContent() {
+  const FS = "'DM Sans', system-ui, sans-serif"
+  const FD = "'Tenor Sans', serif"
+  const ARARA = '#1B4FD8'
+
+  const projData = [
+    [0, 284], [6, 310], [12, 340], [18, 372], [24, 400], [30, 432],
+    [36, 465], [42, 500], [48, 540], [54, 585], [60, 632], [66, 682],
+    [72, 738], [78, 800], [84, 868], [90, 940], [96, 1020], [102, 1100],
+    [108, 1190], [114, 1290], [120, 1400], [126, 1520], [132, 1650],
+    [138, 1790], [144, 1940], [150, 2100], [156, 2280], [162, 2480],
+    [168, 2700], [174, 2950], [180, 3200],
+  ]
+  const maxVal = 3200
+  const W = 320, H = 90
+  const pts = projData.map(([m, v]) => {
+    const x = (m / 180) * W
+    const y = H - (v / maxVal) * H
+    return `${x.toFixed(1)},${y.toFixed(1)}`
+  }).join(' ')
+  const areaPath = `M 0,${H} ${projData.map(([m, v]) => `L ${((m / 180) * W).toFixed(1)},${(H - (v / maxVal) * H).toFixed(1)}`).join(' ')} L ${W},${H} Z`
+
+  return (
+    <div style={{ width: '100%', height: '100%', background: '#F4F4F4', fontFamily: FS, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      {/* Status bar */}
+      <div style={{ height: 44, flexShrink: 0, background: '#fff', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', padding: '0 20px 8px', fontSize: 11, color: DARK }}>
+        <span style={{ fontFamily: FS, fontWeight: 600, fontSize: 12 }}>14:30</span>
+        <div style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
+          <svg width="14" height="10" viewBox="0 0 14 10" fill={DARK}><rect x="0" y="3" width="3" height="7" rx="0.5"/><rect x="4" y="2" width="3" height="8" rx="0.5"/><rect x="8" y="0" width="3" height="10" rx="0.5"/><rect x="12" y="1" width="2" height="9" rx="0.5" opacity="0.3"/></svg>
+          <svg width="14" height="10" viewBox="0 0 14 10" fill="none"><path d="M7 2C9.2 2 11.2 2.9 12.6 4.4L14 3C12.2 1.1 9.7 0 7 0S1.8 1.1 0 3L1.4 4.4C2.8 2.9 4.8 2 7 2Z" fill={DARK} opacity="0.3"/><path d="M7 5C8.4 5 9.6 5.6 10.5 6.5L11.9 5.1C10.6 3.8 8.9 3 7 3S3.4 3.8 2.1 5.1L3.5 6.5C4.4 5.6 5.6 5 7 5Z" fill={DARK} opacity="0.6"/><path d="M7 8C7.8 8 8.5 8.3 9 8.8L10.4 7.4C9.5 6.5 8.3 6 7 6S4.5 6.5 3.6 7.4L5 8.8C5.5 8.3 6.2 8 7 8Z" fill={DARK}/><circle cx="7" cy="10" r="1" fill={DARK}/></svg>
+          <svg width="20" height="10" viewBox="0 0 20 10" fill="none"><rect x="0.5" y="0.5" width="17" height="9" rx="2" stroke={DARK} strokeWidth="1" opacity="0.35"/><rect x="1.5" y="1.5" width="14" height="7" rx="1.5" fill={DARK}/><path d="M18.5 3.5C19.3 3.5 19.3 6.5 18.5 6.5" stroke={DARK} strokeWidth="1" strokeLinecap="round" opacity="0.35"/></svg>
+        </div>
+      </div>
+
+      {/* Nav bar */}
+      <div style={{ height: 48, flexShrink: 0, background: '#fff', borderBottom: '1px solid rgba(13,13,13,0.07)', display: 'flex', alignItems: 'center', padding: '0 16px', gap: 8 }}>
+        <img src="/brand/logo/arvo-symbol-black.svg" width="18" height="18" alt="" />
+        <span style={{ fontFamily: FD, fontSize: 13, letterSpacing: '0.28em', color: DARK }}>arvo</span>
+        <div style={{ flex: 1 }} />
+        <div style={{ width: 28, height: 28, borderRadius: '50%', background: DARK, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, color: '#C8B89A', letterSpacing: '0.06em' }}>AG</div>
+      </div>
+
+      {/* Content */}
+      <div style={{ flex: 1, overflowY: 'hidden', padding: '14px 16px 0', display: 'flex', flexDirection: 'column', gap: 10 }}>
+
+        {/* Page title */}
+        <div>
+          <p style={{ fontFamily: FS, fontSize: 9, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.45)', margin: 0 }}>Simulação</p>
+          <p style={{ fontFamily: FD, fontSize: 18, letterSpacing: '0.01em', color: DARK, margin: '2px 0 0' }}>Liberdade Financeira</p>
+        </div>
+
+        {/* Target year */}
+        <div style={{ background: '#fff', borderRadius: 14, padding: '12px 14px', border: '1px solid rgba(27,79,216,0.18)', boxShadow: '0 2px 12px rgba(27,79,216,0.07)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div>
+              <p style={{ fontFamily: FS, fontSize: 9, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.42)', margin: 0 }}>Meta</p>
+              <p style={{ fontFamily: FD, fontSize: 22, letterSpacing: '0.01em', color: ARARA, margin: '2px 0 0', lineHeight: 1 }}>2041</p>
+              <p style={{ fontFamily: FS, fontSize: 10, color: 'rgba(13,13,13,0.50)', margin: '3px 0 0' }}>15 anos · independência total</p>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <p style={{ fontFamily: FS, fontSize: 9, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.42)', margin: 0 }}>Patrimônio alvo</p>
+              <p style={{ fontFamily: FD, fontSize: 16, color: DARK, margin: '2px 0 0' }}>R$ 4,2M</p>
+              <p style={{ fontFamily: FS, fontSize: 10, color: 'rgba(13,13,13,0.50)', margin: '3px 0 0' }}>4% regra de retirada</p>
+            </div>
+          </div>
+          {/* Progress bar */}
+          <div style={{ marginTop: 12 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
+              <span style={{ fontFamily: FS, fontSize: 9, color: 'rgba(13,13,13,0.45)', letterSpacing: '0.08em' }}>R$ 284k atual</span>
+              <span style={{ fontFamily: FS, fontSize: 9, color: ARARA, fontWeight: 600 }}>6,8%</span>
+            </div>
+            <div style={{ height: 6, borderRadius: 99, background: 'rgba(27,79,216,0.10)', overflow: 'hidden' }}>
+              <div style={{ width: '6.8%', height: '100%', borderRadius: 99, background: `linear-gradient(to right, ${ARARA}, #4B7BF0)` }} />
+            </div>
+          </div>
+        </div>
+
+        {/* Projection chart */}
+        <div style={{ background: '#fff', borderRadius: 14, padding: '12px 14px', border: '1px solid rgba(13,13,13,0.07)' }}>
+          <p style={{ fontFamily: FS, fontSize: 9, letterSpacing: '0.20em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.42)', margin: '0 0 8px' }}>Projeção patrimonial</p>
+          <svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ display: 'block' }}>
+            <defs>
+              <linearGradient id="freedomGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={ARARA} stopOpacity="0.15"/>
+                <stop offset="100%" stopColor={ARARA} stopOpacity="0"/>
+              </linearGradient>
+            </defs>
+            <path d={areaPath} fill="url(#freedomGrad)"/>
+            <polyline points={pts} fill="none" stroke={ARARA} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round"/>
+            {/* Today dot */}
+            <circle cx="0" cy={H} r="3.5" fill={ARARA}/>
+            {/* Target dot */}
+            <circle cx={W} cy={(H - (3200/maxVal)*H).toFixed(1) as unknown as number} r="3.5" fill={ARARA}/>
+          </svg>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
+            <span style={{ fontFamily: FS, fontSize: 9, color: 'rgba(13,13,13,0.38)' }}>2026</span>
+            <span style={{ fontFamily: FS, fontSize: 9, color: ARARA }}>R$ 4,2M em 2041</span>
+          </div>
+        </div>
+
+        {/* Monthly contribution */}
+        <div style={{ background: '#fff', borderRadius: 14, padding: '12px 14px', border: '1px solid rgba(13,13,13,0.07)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <p style={{ fontFamily: FS, fontSize: 9, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.42)', margin: 0 }}>Aporte mensal</p>
+              <p style={{ fontFamily: FD, fontSize: 18, color: DARK, margin: '3px 0 0' }}>R$ 3.500</p>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <p style={{ fontFamily: FS, fontSize: 9, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.42)', margin: 0 }}>Retorno anual</p>
+              <p style={{ fontFamily: FD, fontSize: 18, color: '#1F8A5B', margin: '3px 0 0' }}>+12,4%</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  )
+}
+
 export default function LandingPage() {
   const { signIn } = useAuth()
   const navigate = useNavigate()
@@ -468,14 +587,32 @@ export default function LandingPage() {
         <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '55%', background: 'linear-gradient(to top, rgba(6,12,24,0.90) 0%, transparent 100%)' }} />
         <div className="arvo-grain" />
 
-        {/* Right mockup — MacBook-style bezel, ~80% hero height, anchored to bottom, shifted right */}
-        <div className="hidden lg:block" style={{ position: 'absolute', bottom: 0, right: '-18vw', width: '55%', height: '82%', overflow: 'hidden', zIndex: 1, borderRadius: '10px 10px 0 0', border: '8px solid #111', borderBottom: 'none', boxShadow: '-20px 0 80px rgba(0,0,0,0.50), 0 -12px 40px rgba(0,0,0,0.30)' }}>
-          <DashboardMockupContent
-            td={(t as unknown as Record<string, Record<string, string>>).dashboard ?? {}}
-            tn={(t as unknown as Record<string, Record<string, string>>).nav ?? {}}
-            tc={((t as unknown as Record<string, Record<string, Record<string, string>>>).classes?.names ?? {}) as Record<string, string>}
-            ti={(t as unknown as Record<string, Record<string, string>>).indices ?? {}}
-          />
+        {/* Desktop mockup — MacBook-style bezel, gold glow behind, ~80% hero height, anchored to bottom, shifted right */}
+        <div className="hidden lg:block" style={{ position: 'absolute', bottom: 0, right: '-18vw', width: '55%', height: '82%', zIndex: 1 }}>
+          {/* Gold aura behind the screen */}
+          <div style={{ position: 'absolute', inset: '-30px -40px -0px -40px', background: 'radial-gradient(ellipse 70% 60% at 50% 80%, rgba(200,184,154,0.22) 0%, rgba(200,184,154,0.08) 45%, transparent 75%)', pointerEvents: 'none', zIndex: 0 }} />
+          {/* Screen content + bezel */}
+          <div style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden', borderRadius: '18px 18px 0 0', border: '14px solid #1C1C1E', borderBottom: 'none', boxShadow: '0 0 0 1px rgba(255,255,255,0.06) inset, -16px 0 60px rgba(0,0,0,0.45)', zIndex: 1 }}>
+            <DashboardMockupContent
+              td={(t as unknown as Record<string, Record<string, string>>).dashboard ?? {}}
+              tn={(t as unknown as Record<string, Record<string, string>>).nav ?? {}}
+              tc={((t as unknown as Record<string, Record<string, Record<string, string>>>).classes?.names ?? {}) as Record<string, string>}
+              ti={(t as unknown as Record<string, Record<string, string>>).indices ?? {}}
+            />
+          </div>
+        </div>
+
+        {/* iPhone mockup — overlapping lower-left of desktop (left edge of desktop is at ~37vw from right) */}
+        <div className="hidden lg:block" style={{ position: 'absolute', bottom: 0, right: 'calc(37vw - 60px)', zIndex: 3 }}>
+          {/* iPhone shell */}
+          <div style={{ width: 190, height: 390, borderRadius: 38, border: '10px solid #1C1C1E', background: '#1C1C1E', boxShadow: '0 0 0 1px rgba(255,255,255,0.08) inset, 0 24px 60px rgba(0,0,0,0.60), 0 0 30px rgba(200,184,154,0.12)', position: 'relative', overflow: 'hidden' }}>
+            {/* Dynamic Island */}
+            <div style={{ position: 'absolute', top: 8, left: '50%', transform: 'translateX(-50%)', width: 80, height: 24, borderRadius: 12, background: '#000', zIndex: 10 }} />
+            {/* Screen content */}
+            <div style={{ width: '100%', height: '100%', borderRadius: 28, overflow: 'hidden' }}>
+              <FreedomMockupContent />
+            </div>
+          </div>
         </div>
 
         {/* Left text — constrained to left half */}
