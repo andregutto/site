@@ -4,19 +4,18 @@ import { useI18n } from '../contexts/I18nContext'
 
 interface Props {
   data: PortfolioClass[]
+  currency?: string
+  convert?: (v: number) => number
 }
 
-function fmtBRL(v: number) {
-  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(v)
+function fmtCompact(v: number, cur = 'BRL') {
+  const sym = cur === 'EUR' ? '€' : cur === 'USD' ? '$' : 'R$'
+  if (v >= 1_000_000) return `${sym}${(v / 1_000_000).toFixed(1)}M`
+  if (v >= 1_000) return `${sym}${(v / 1_000).toFixed(0)}k`
+  return `${sym}${v.toFixed(0)}`
 }
 
-function fmtCompact(v: number) {
-  if (v >= 1_000_000) return `R$${(v / 1_000_000).toFixed(1)}M`
-  if (v >= 1_000) return `R$${(v / 1_000).toFixed(0)}k`
-  return `R$${v.toFixed(0)}`
-}
-
-export default function AllocationChart({ data }: Props) {
+export default function AllocationChart({ data, currency = 'BRL', convert }: Props) {
   const { t } = useI18n()
   if (!data.length) return null
 
@@ -50,7 +49,11 @@ export default function AllocationChart({ data }: Props) {
                 ))}
               </Pie>
               <Tooltip
-                formatter={(value) => [fmtBRL(Number(value)), t.common.value]}
+                formatter={(value) => {
+                  const raw = Number(value)
+                  const converted = convert ? convert(raw) : raw
+                  return [new Intl.NumberFormat('pt-BR', { style: 'currency', currency, maximumFractionDigits: 0 }).format(converted), t.common.value]
+                }}
                 contentStyle={{ borderRadius: 8, border: '1px solid var(--arvo-border-soft)', background: 'var(--arvo-offwhite)', fontSize: 12, fontFamily: "var(--arvo-font-body)" }}
               />
             </PieChart>
@@ -66,7 +69,7 @@ export default function AllocationChart({ data }: Props) {
                   <span className="text-sm truncate" style={{ color: 'rgba(13,13,13,0.7)' }}>{resolveClassName(item)}</span>
                   <span className="text-sm ml-2 flex-shrink-0" style={{ fontFamily: "var(--arvo-font-body)", color: 'var(--arvo-black)' }}>
                     {item.pct.toFixed(1)}%
-                    <span className="ml-1 text-xs" style={{ fontStyle: 'italic', color: 'rgba(13,13,13,0.45)' }}>{fmtCompact(item.value_brl)}</span>
+                    <span className="ml-1 text-xs" style={{ fontStyle: 'italic', color: 'rgba(13,13,13,0.45)' }}>{fmtCompact(convert ? convert(item.value_brl) : item.value_brl, currency)}</span>
                   </span>
                 </div>
                 <div className="mt-0.5 h-1 rounded-full overflow-hidden" style={{ background: 'rgba(13,13,13,0.07)' }}>

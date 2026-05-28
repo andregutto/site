@@ -179,91 +179,86 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Top cards row — Option A: main card (3 cols) + Mês + Ano */}
-      {(() => {
-        const totalInvestedBrl = data.by_asset.reduce((s, a) => s + (a.invested_brl ?? 0), 0)
-        const hasInvested = totalInvestedBrl > 0
-        const gainLossBrl = hasInvested ? data.total_brl - totalInvestedBrl : null
-        const gainLossPct = hasInvested && gainLossBrl != null ? (gainLossBrl / totalInvestedBrl) * 100 : null
+      {/* Row 1: ValueCards left + AllocationChart right on desktop */}
+      <div className={`grid grid-cols-1 gap-6 ${data.by_class.length > 0 ? 'lg:grid-cols-2' : ''}`}>
+        {(() => {
+          const totalInvestedBrl = data.by_asset.reduce((s, a) => s + (a.invested_brl ?? 0), 0)
+          const hasInvested = totalInvestedBrl > 0
+          const gainLossBrl = hasInvested ? data.total_brl - totalInvestedBrl : null
+          const gainLossPct = hasInvested && gainLossBrl != null ? (gainLossBrl / totalInvestedBrl) * 100 : null
 
-        const currentYearStr = String(new Date().getFullYear())
-        const januaryData = (perfData?.monthly ?? []).find(m => m.month === `${currentYearStr}-01`)
-        const ytdStartValue = januaryData?.prev_total ?? 0
-        const yearMonthsWithData = (perfData?.monthly ?? []).filter(m => m.month.startsWith(currentYearStr) && m.total > 0)
-        const ytdEndValue = yearMonthsWithData.at(-1)?.total ?? 0
-        const ytdContribs = (perfData?.monthly ?? []).filter(m => m.month.startsWith(currentYearStr)).reduce((s, m) => s + m.contributions, 0)
-        const ytdReturn = ytdStartValue > 0 ? ((ytdEndValue - ytdStartValue - ytdContribs) / ytdStartValue) * 100 : null
+          const currentYearStr = String(new Date().getFullYear())
+          const januaryData = (perfData?.monthly ?? []).find(m => m.month === `${currentYearStr}-01`)
+          const ytdStartValue = januaryData?.prev_total ?? 0
+          const yearMonthsWithData = (perfData?.monthly ?? []).filter(m => m.month.startsWith(currentYearStr) && m.total > 0)
+          const ytdEndValue = yearMonthsWithData.at(-1)?.total ?? 0
+          const ytdContribs = (perfData?.monthly ?? []).filter(m => m.month.startsWith(currentYearStr)).reduce((s, m) => s + m.contributions, 0)
+          const ytdReturn = ytdStartValue > 0 ? ((ytdEndValue - ytdStartValue - ytdContribs) / ytdStartValue) * 100 : null
 
-        const currentMonthEntry = (perfData?.monthly ?? []).find(m => m.month === currentYM)
-        const monthReturn = currentMonthEntry && currentMonthEntry.prev_total > 0
-          ? ((currentMonthEntry.total - currentMonthEntry.prev_total - currentMonthEntry.contributions) / currentMonthEntry.prev_total) * 100
-          : null
+          const currentMonthEntry = (perfData?.monthly ?? []).find(m => m.month === currentYM)
+          const monthReturn = currentMonthEntry && currentMonthEntry.prev_total > 0
+            ? ((currentMonthEntry.total - currentMonthEntry.prev_total - currentMonthEntry.contributions) / currentMonthEntry.prev_total) * 100
+            : null
 
-        return (
-          <ValueCards
-            total_brl={data.total_brl}
-            generated_at={data.generated_at}
-            invested_brl={hasInvested ? totalInvestedBrl : null}
-            gain_brl={gainLossBrl}
-            gain_pct={gainLossPct}
-            month_pct={hasInvested ? monthReturn : null}
-            ytd_pct={hasInvested ? ytdReturn : null}
-            ytd_year={currentYearStr}
-            chartLoading={chartLoading || periodLoading}
-            period_pct={hasInvested ? periodReturnPct : null}
-            period_label={periodLabel}
-          />
-        )
-      })()}
+          return (
+            <ValueCards
+              total_brl={data.total_brl}
+              generated_at={data.generated_at}
+              invested_brl={hasInvested ? totalInvestedBrl : null}
+              gain_brl={gainLossBrl}
+              gain_pct={gainLossPct}
+              month_pct={hasInvested ? monthReturn : null}
+              ytd_pct={hasInvested ? ytdReturn : null}
+              ytd_year={currentYearStr}
+              chartLoading={chartLoading || periodLoading}
+              period_pct={hasInvested ? periodReturnPct : null}
+              period_label={periodLabel}
+            />
+          )
+        })()}
+        {data.by_class.length > 0 && (
+          <AllocationChart data={data.by_class} currency={currency} convert={convert} />
+        )}
+      </div>
 
-      {/* Allocation + Evolution — 50/50 side by side on desktop */}
-      {(chartLoading || portfolioChartData.length > 0 || data.by_class.length > 0) && (
-        <div className={`grid grid-cols-1 gap-6 ${(chartLoading || portfolioChartData.length > 0) && data.by_class.length > 0 ? 'lg:grid-cols-2' : ''}`}>
-          {/* Allocation chart — left on desktop */}
-          {data.by_class.length > 0 && (
-            <AllocationChart data={data.by_class} />
-          )}
-
-          {/* Evolution chart — right on desktop */}
-          {(chartLoading || portfolioChartData.length > 0) && (
-            <div className="rounded-2xl p-5" style={{ background: 'white', border: '1px solid var(--arvo-border)', display: 'flex', flexDirection: 'column' }}>
-              <h2 className="mb-1" style={{ fontFamily: "var(--arvo-font-body)", fontSize: 13, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--arvo-fg)' }}>{t.dashboard.portfolioEvolution}</h2>
-              <div style={{ flex: 1, minHeight: 0, minWidth: 0 }}>
-              {chartLoading && portfolioChartData.length === 0 ? (
-                <div className="h-full flex items-end gap-1 px-2 pb-1">
-                  {[40, 55, 48, 62, 58, 70, 65, 80, 75, 88, 82, 95].map((h, i) => (
-                    <div key={i} className="flex-1 bg-gray-100 rounded-t animate-pulse" style={{ height: `${h}%` }} />
-                  ))}
-                </div>
-              ) : (
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={portfolioChartData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-                    <XAxis dataKey="month" tick={{ fontSize: 10, fill: 'rgba(13,13,13,0.55)' }} interval="preserveStartEnd" />
-                    <YAxis
-                      tick={{ fontSize: 10, fill: 'rgba(13,13,13,0.55)' }}
-                      tickFormatter={v => {
-                        const n = typeof v === 'number' ? v : 0
-                        return currency === 'BRL'
-                          ? `${(n / 1000).toFixed(0)}k`
-                          : n >= 1000 ? `${(n / 1000).toFixed(0)}k` : n.toFixed(0)
-                      }}
-                      width={52}
-                    />
-                    <Tooltip
-                      formatter={(v) => [
-                        new Intl.NumberFormat('pt-BR', { style: 'currency', currency, maximumFractionDigits: 0 }).format(typeof v === 'number' ? v : 0),
-                        t.dashboard.patrimony,
-                      ]}
-                      contentStyle={{ borderRadius: 8, border: '1px solid var(--arvo-border)', fontSize: 12 }}
-                    />
-                    <Line type="monotone" dataKey="value" stroke="#0D0D0D" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
-                  </LineChart>
-                </ResponsiveContainer>
-              )}
-              </div>
+      {/* Row 2: Evolution chart — full width */}
+      {(chartLoading || portfolioChartData.length > 0) && (
+        <div className="rounded-2xl p-5" style={{ background: 'white', border: '1px solid var(--arvo-border)' }}>
+          <h2 className="mb-3" style={{ fontFamily: "var(--arvo-font-body)", fontSize: 13, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--arvo-fg)' }}>{t.dashboard.portfolioEvolution}</h2>
+          <div className="h-52">
+          {chartLoading && portfolioChartData.length === 0 ? (
+            <div className="h-full flex items-end gap-1 px-2 pb-1">
+              {[40, 55, 48, 62, 58, 70, 65, 80, 75, 88, 82, 95].map((h, i) => (
+                <div key={i} className="flex-1 bg-gray-100 rounded-t animate-pulse" style={{ height: `${h}%` }} />
+              ))}
             </div>
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={portfolioChartData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+                <XAxis dataKey="month" tick={{ fontSize: 10, fill: 'rgba(13,13,13,0.55)' }} interval="preserveStartEnd" />
+                <YAxis
+                  tick={{ fontSize: 10, fill: 'rgba(13,13,13,0.55)' }}
+                  tickFormatter={v => {
+                    const n = typeof v === 'number' ? v : 0
+                    return currency === 'BRL'
+                      ? `${(n / 1000).toFixed(0)}k`
+                      : n >= 1000 ? `${(n / 1000).toFixed(0)}k` : n.toFixed(0)
+                  }}
+                  width={52}
+                />
+                <Tooltip
+                  formatter={(v) => [
+                    new Intl.NumberFormat('pt-BR', { style: 'currency', currency, maximumFractionDigits: 0 }).format(typeof v === 'number' ? v : 0),
+                    t.dashboard.patrimony,
+                  ]}
+                  contentStyle={{ borderRadius: 8, border: '1px solid var(--arvo-border)', fontSize: 12 }}
+                />
+                <Line type="monotone" dataKey="value" stroke="#0D0D0D" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
+              </LineChart>
+            </ResponsiveContainer>
           )}
+          </div>
         </div>
       )}
 
