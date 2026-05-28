@@ -266,20 +266,20 @@ export default function FinancesOverviewPage() {
 
   if (loading) return (
     <div className="space-y-5">
-      <div>
-        <h1 style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 18, letterSpacing: '0.06em', color: 'var(--arvo-black)' }}>{t.finances.overviewTitle}</h1>
-        <p className="text-sm mt-0.5" style={{ color: 'rgba(13,13,13,0.60)' }}>{t.finances.overviewSubtitle}</p>
-      </div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <button onClick={prevMonth} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(13,13,13,0.40)', borderRadius: 8 }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
-        </button>
-        <span style={{ fontSize: 14, fontFamily: 'var(--arvo-font-body)', fontWeight: 600, letterSpacing: '0.02em', color: 'var(--arvo-black)', minWidth: 160, textAlign: 'center', textTransform: 'capitalize' }}>
-          {fmtMonthFull(month)}
-        </span>
-        <button onClick={nextMonth} disabled={month >= defaultMonth} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, background: 'none', border: 'none', cursor: 'pointer', color: month >= defaultMonth ? 'rgba(13,13,13,0.18)' : 'rgba(13,13,13,0.40)', borderRadius: 8 }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"/></svg>
-        </button>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+        <div>
+          <h1 style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 18, letterSpacing: '0.06em', color: 'var(--arvo-black)' }}>{t.finances.overviewTitle}</h1>
+          <p className="text-sm mt-0.5" style={{ color: 'rgba(13,13,13,0.60)' }}>{t.finances.overviewSubtitle}</p>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+          <button onClick={prevMonth} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 32, height: 32, background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(13,13,13,0.40)', borderRadius: 8 }}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+          </button>
+          <span style={{ fontSize: 13, fontFamily: 'var(--arvo-font-body)', fontWeight: 600, letterSpacing: '0.02em', color: 'var(--arvo-black)', minWidth: 130, textAlign: 'center', textTransform: 'capitalize' }}>{fmtMonthFull(month)}</span>
+          <button onClick={nextMonth} disabled={month >= defaultMonth} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 32, height: 32, background: 'none', border: 'none', cursor: 'pointer', color: month >= defaultMonth ? 'rgba(13,13,13,0.18)' : 'rgba(13,13,13,0.40)', borderRadius: 8 }}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+          </button>
+        </div>
       </div>
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm">
         <PageLoader />
@@ -394,23 +394,21 @@ export default function FinancesOverviewPage() {
         </div>
       )}
 
-      {/* Header */}
-      <div>
-        <h1 style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 18, letterSpacing: '0.06em', color: 'var(--arvo-black)' }}>{t.finances.overviewTitle}</h1>
-        <p className="text-sm mt-0.5" style={{ color: 'rgba(13,13,13,0.60)' }}>{t.finances.overviewSubtitle}</p>
-      </div>
-
-      {/* Month navigation */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <button onClick={prevMonth} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(13,13,13,0.40)', borderRadius: 8 }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
-        </button>
-        <span style={{ fontSize: 14, fontFamily: 'var(--arvo-font-body)', fontWeight: 600, letterSpacing: '0.02em', color: 'var(--arvo-black)', minWidth: 160, textAlign: 'center', textTransform: 'capitalize' }}>
-          {fmtMonthFull(month)}
-        </span>
-        <button onClick={nextMonth} disabled={month >= defaultMonth} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, background: 'none', border: 'none', cursor: 'pointer', color: month >= defaultMonth ? 'rgba(13,13,13,0.18)' : 'rgba(13,13,13,0.40)', borderRadius: 8 }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"/></svg>
-        </button>
+      {/* Header + month nav inline */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+        <div>
+          <h1 style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 18, letterSpacing: '0.06em', color: 'var(--arvo-black)' }}>{t.finances.overviewTitle}</h1>
+          <p className="text-sm mt-0.5" style={{ color: 'rgba(13,13,13,0.60)' }}>{t.finances.overviewSubtitle}</p>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+          <button onClick={prevMonth} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 32, height: 32, background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(13,13,13,0.40)', borderRadius: 8 }}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+          </button>
+          <span style={{ fontSize: 13, fontFamily: 'var(--arvo-font-body)', fontWeight: 600, letterSpacing: '0.02em', color: 'var(--arvo-black)', minWidth: 130, textAlign: 'center', textTransform: 'capitalize' }}>{fmtMonthFull(month)}</span>
+          <button onClick={nextMonth} disabled={month >= defaultMonth} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 32, height: 32, background: 'none', border: 'none', cursor: 'pointer', color: month >= defaultMonth ? 'rgba(13,13,13,0.18)' : 'rgba(13,13,13,0.40)', borderRadius: 8 }}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+          </button>
+        </div>
       </div>
 
       {/* Hero card — white with gold glow */}

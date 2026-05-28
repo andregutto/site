@@ -1020,6 +1020,7 @@
     "subtitle": "Portfolio returns and evolution",
     "currentMonth": "Current month",
     "last30d": "Last 30d",
+    "customPeriod": "Custom period",
     "last12m": "Last 12m",
     "inception": "Inception",
     "recalculate": "Recalculate",

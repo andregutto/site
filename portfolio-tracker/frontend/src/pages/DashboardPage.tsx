@@ -216,50 +216,57 @@ export default function DashboardPage() {
         )
       })()}
 
-      {/* Evolution chart */}
-      {(chartLoading || portfolioChartData.length > 0) && (
-        <div className="rounded-2xl p-5" style={{ background: 'white', border: '1px solid var(--arvo-border)' }}>
-          <h2 className="mb-1" style={{ fontFamily: "var(--arvo-font-body)", fontSize: 13, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--arvo-fg)' }}>{t.dashboard.portfolioEvolution}</h2>
-          <div className="h-52">
-          {chartLoading && portfolioChartData.length === 0 ? (
-            <div className="h-full flex items-end gap-1 px-2 pb-1">
-              {[40, 55, 48, 62, 58, 70, 65, 80, 75, 88, 82, 95].map((h, i) => (
-                <div key={i} className="flex-1 bg-gray-100 rounded-t animate-pulse" style={{ height: `${h}%` }} />
-              ))}
+      {/* Evolution + Allocation — side by side on desktop */}
+      {(chartLoading || portfolioChartData.length > 0 || data.by_class.length > 0) && (
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+          {/* Evolution chart — wider column */}
+          {(chartLoading || portfolioChartData.length > 0) && (
+            <div className="lg:col-span-3 rounded-2xl p-5" style={{ background: 'white', border: '1px solid var(--arvo-border)' }}>
+              <h2 className="mb-1" style={{ fontFamily: "var(--arvo-font-body)", fontSize: 13, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--arvo-fg)' }}>{t.dashboard.portfolioEvolution}</h2>
+              <div className="h-52">
+              {chartLoading && portfolioChartData.length === 0 ? (
+                <div className="h-full flex items-end gap-1 px-2 pb-1">
+                  {[40, 55, 48, 62, 58, 70, 65, 80, 75, 88, 82, 95].map((h, i) => (
+                    <div key={i} className="flex-1 bg-gray-100 rounded-t animate-pulse" style={{ height: `${h}%` }} />
+                  ))}
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={portfolioChartData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+                    <XAxis dataKey="month" tick={{ fontSize: 10, fill: 'rgba(13,13,13,0.55)' }} interval="preserveStartEnd" />
+                    <YAxis
+                      tick={{ fontSize: 10, fill: 'rgba(13,13,13,0.55)' }}
+                      tickFormatter={v => {
+                        const n = typeof v === 'number' ? v : 0
+                        return currency === 'BRL'
+                          ? `${(n / 1000).toFixed(0)}k`
+                          : n >= 1000 ? `${(n / 1000).toFixed(0)}k` : n.toFixed(0)
+                      }}
+                      width={52}
+                    />
+                    <Tooltip
+                      formatter={(v) => [
+                        new Intl.NumberFormat('pt-BR', { style: 'currency', currency, maximumFractionDigits: 0 }).format(typeof v === 'number' ? v : 0),
+                        t.dashboard.patrimony,
+                      ]}
+                      contentStyle={{ borderRadius: 8, border: '1px solid var(--arvo-border)', fontSize: 12 }}
+                    />
+                    <Line type="monotone" dataKey="value" stroke="#0D0D0D" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              )}
+              </div>
             </div>
-          ) : (
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={portfolioChartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-                <XAxis dataKey="month" tick={{ fontSize: 10, fill: 'rgba(13,13,13,0.55)' }} interval="preserveStartEnd" />
-                <YAxis
-                  tick={{ fontSize: 10, fill: 'rgba(13,13,13,0.55)' }}
-                  tickFormatter={v => {
-                    const n = typeof v === 'number' ? v : 0
-                    return currency === 'BRL'
-                      ? `${(n / 1000).toFixed(0)}k`
-                      : n >= 1000 ? `${(n / 1000).toFixed(0)}k` : n.toFixed(0)
-                  }}
-                  width={52}
-                />
-                <Tooltip
-                  formatter={(v) => [
-                    new Intl.NumberFormat('pt-BR', { style: 'currency', currency, maximumFractionDigits: 0 }).format(typeof v === 'number' ? v : 0),
-                    t.dashboard.patrimony,
-                  ]}
-                  contentStyle={{ borderRadius: 8, border: '1px solid var(--arvo-border)', fontSize: 12 }}
-                />
-                <Line type="monotone" dataKey="value" stroke="#0D0D0D" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
-              </LineChart>
-            </ResponsiveContainer>
           )}
-          </div>
-        </div>
-      )}
 
-      {/* Allocation chart — full width row */}
-      {data.by_class.length > 0 && (
-        <AllocationChart data={data.by_class} />
+          {/* Allocation chart — narrower column */}
+          {data.by_class.length > 0 && (
+            <div className={chartLoading || portfolioChartData.length > 0 ? 'lg:col-span-2' : 'lg:col-span-5'}>
+              <AllocationChart data={data.by_class} />
+            </div>
+          )}
+        </div>
       )}
 
       {data.by_asset.length > 0 ? (

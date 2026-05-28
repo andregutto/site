@@ -271,7 +271,7 @@ export default function LandingPage() {
             </span>
           </div>
 
-          <h1 style={{ fontFamily: F_DISPLAY, fontSize: 'clamp(2.6rem, 6vw, 5rem)', fontWeight: 400, lineHeight: 1.06, color: '#fff', marginBottom: 26, letterSpacing: '-0.4px', maxWidth: 820 }}>
+          <h1 style={{ fontFamily: F_DISPLAY, fontSize: 'clamp(2rem, 3.8vw, 3.6rem)', fontWeight: 400, lineHeight: 1.08, color: '#fff', marginBottom: 26, letterSpacing: '-0.3px', maxWidth: 820 }}>
             {l.h1line1}<br />
             <em style={{ fontStyle: 'italic', color: `${GOLD}CC` }}>{l.h1line2}</em>
           </h1>

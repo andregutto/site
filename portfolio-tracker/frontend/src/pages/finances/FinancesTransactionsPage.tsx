@@ -733,13 +733,34 @@ export default function FinancesTransactionsPage() {
         </div>
       )}
 
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-        <div>
+      {/* Header + month nav inline */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+        <div style={{ minWidth: 0 }}>
           <h1 style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 18, letterSpacing: '0.06em', color: 'var(--arvo-black)' }}>{t.finances.transactionsTitle}</h1>
           <p className="text-sm mt-0.5" style={{ color: 'rgba(13,13,13,0.60)' }}>{t.finances.transactionsSubtitle}</p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+          {/* Month nav / date range — inline with actions */}
+          {csvStep === 'idle' && (
+            dateMode === 'month' ? (
+              <div style={{ display: 'flex', alignItems: 'center', marginRight: 4 }}>
+                <button onClick={prevMonth} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(13,13,13,0.40)', borderRadius: 6 }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+                </button>
+                <span style={{ fontSize: 13, fontFamily: 'var(--arvo-font-body)', fontWeight: 600, color: 'var(--arvo-black)', minWidth: 120, textAlign: 'center', textTransform: 'capitalize', letterSpacing: '0.01em' }}>{fmtMonthFull(month)}</span>
+                <button onClick={nextMonth} disabled={month >= defaultMonth} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, background: 'none', border: 'none', cursor: 'pointer', color: month >= defaultMonth ? 'rgba(13,13,13,0.18)' : 'rgba(13,13,13,0.40)', borderRadius: 6 }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+                </button>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} style={{ border: '1px solid var(--arvo-border)', borderRadius: 8, padding: '6px 8px', fontSize: 12, fontFamily: 'var(--arvo-font-body)' }} />
+                <span style={{ fontSize: 11, color: 'rgba(13,13,13,0.35)' }}>→</span>
+                <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} style={{ border: '1px solid var(--arvo-border)', borderRadius: 8, padding: '6px 8px', fontSize: 12, fontFamily: 'var(--arvo-font-body)' }} />
+                <button onClick={() => setDateMode('month')} style={{ fontSize: 12, color: 'rgba(13,13,13,0.40)', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 6px', fontFamily: 'var(--arvo-font-body)' }}>✕</button>
+              </div>
+            )
+          )}
           {/* Filter icon with active-count badge */}
           {csvStep === 'idle' && (allCategories.length > 0 || moments.length > 0 || accounts.length > 0) && (
             <div style={{ position: 'relative' }} ref={filterPanelRef}>
@@ -811,6 +832,10 @@ export default function FinancesTransactionsPage() {
                     <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M4.75 2a.75.75 0 0 1 .75.75V4h5V2.75a.75.75 0 0 1 1.5 0V4h.25A2.75 2.75 0 0 1 15 6.75v6.5A2.75 2.75 0 0 1 12.25 16H3.75A2.75 2.75 0 0 1 1 13.25v-6.5A2.75 2.75 0 0 1 3.75 4H4V2.75A.75.75 0 0 1 4.75 2ZM2.5 7.5v5.75c0 .69.56 1.25 1.25 1.25h8.5c.69 0 1.25-.56 1.25-1.25V7.5h-11Z"/></svg>
                     <span>{t.performance.last30d}</span>
                   </button>
+                  <button onClick={() => { setShowOverflowMenu(false); setDateMode('range') }} style={menuItemStyle}>
+                    <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M5.75 7.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5ZM8 7.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm2.25 0a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5ZM5.75 10a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5ZM8 10a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm2.25 0a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5ZM4.75 2a.75.75 0 0 1 .75.75V4h5V2.75a.75.75 0 0 1 1.5 0V4h.25A2.75 2.75 0 0 1 15 6.75v6.5A2.75 2.75 0 0 1 12.25 16H3.75A2.75 2.75 0 0 1 1 13.25v-6.5A2.75 2.75 0 0 1 3.75 4H4V2.75A.75.75 0 0 1 4.75 2ZM2.5 7.5v5.75c0 .69.56 1.25 1.25 1.25h8.5c.69 0 1.25-.56 1.25-1.25V7.5h-11Z"/></svg>
+                    <span>{t.performance.customPeriod}</span>
+                  </button>
                   <button onClick={() => { setShowOverflowMenu(false); setCsvStep('idle'); setCsvRows([]); setCsvDuplicateCount(0); setCsvError(''); setCsvAiDebug(null); setShowImportModal(true) }} disabled={csvStep === 'parsing'} style={menuItemStyle}>
                     <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M8.75 2.75a.75.75 0 0 0-1.5 0v5.69L5.03 6.22a.75.75 0 0 0-1.06 1.06l3.5 3.5a.75.75 0 0 0 1.06 0l3.5-3.5a.75.75 0 0 0-1.06-1.06L8.75 8.44V2.75Z"/><path d="M3.5 9.75a.75.75 0 0 0-1.5 0v1.5A2.75 2.75 0 0 0 4.75 14h6.5A2.75 2.75 0 0 0 14 11.25v-1.5a.75.75 0 0 0-1.5 0v1.5c0 .69-.56 1.25-1.25 1.25h-6.5c-.69 0-1.25-.56-1.25-1.25v-1.5Z"/></svg>
                     <span>{t.finances.importCSV}</span>
@@ -833,29 +858,6 @@ export default function FinancesTransactionsPage() {
         </div>
       </div>
 
-      {/* Month navigation */}
-      {csvStep === 'idle' && (
-        dateMode === 'month' ? (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <button onClick={prevMonth} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(13,13,13,0.40)', borderRadius: 8 }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
-            </button>
-            <span style={{ fontSize: 14, fontFamily: 'var(--arvo-font-body)', fontWeight: 600, letterSpacing: '0.02em', color: 'var(--arvo-black)', minWidth: 160, textAlign: 'center', textTransform: 'capitalize' }}>
-              {fmtMonthFull(month)}
-            </span>
-            <button onClick={nextMonth} disabled={month >= defaultMonth} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, background: 'none', border: 'none', cursor: 'pointer', color: month >= defaultMonth ? 'rgba(13,13,13,0.18)' : 'rgba(13,13,13,0.40)', borderRadius: 8 }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"/></svg>
-            </button>
-          </div>
-        ) : (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} style={{ border: '1px solid var(--arvo-border)', borderRadius: 8, padding: '7px 10px', fontSize: 13, fontFamily: 'var(--arvo-font-body)' }} />
-            <span style={{ fontSize: 12, color: 'rgba(13,13,13,0.35)' }}>→</span>
-            <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} style={{ border: '1px solid var(--arvo-border)', borderRadius: 8, padding: '7px 10px', fontSize: 13, fontFamily: 'var(--arvo-font-body)' }} />
-            <button onClick={() => setDateMode('month')} style={{ fontSize: 12, color: 'rgba(13,13,13,0.40)', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px', fontFamily: 'var(--arvo-font-body)' }}>✕</button>
-          </div>
-        )
-      )}
 
       {/* Active filter chips */}
       {csvStep === 'idle' && activeFilterCount > 0 && (

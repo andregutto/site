@@ -1020,6 +1020,7 @@
     "subtitle": "Rendements et évolution du portefeuille",
     "currentMonth": "Mois en cours",
     "last30d": "30 derniers j.",
+    "customPeriod": "Période personnalisée",
     "last12m": "12 derniers m.",
     "inception": "Depuis le début",
     "recalculate": "Recalculer",
