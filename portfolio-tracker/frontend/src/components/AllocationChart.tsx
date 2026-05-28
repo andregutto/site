@@ -8,11 +8,8 @@ interface Props {
   convert?: (v: number) => number
 }
 
-function fmtCompact(v: number, cur = 'BRL') {
-  const sym = cur === 'EUR' ? '€' : cur === 'USD' ? '$' : 'R$'
-  if (v >= 1_000_000) return `${sym}${(v / 1_000_000).toFixed(1)}M`
-  if (v >= 1_000) return `${sym}${(v / 1_000).toFixed(0)}k`
-  return `${sym}${v.toFixed(0)}`
+function fmtFull(v: number, cur = 'BRL') {
+  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: cur, maximumFractionDigits: 0 }).format(v)
 }
 
 export default function AllocationChart({ data, currency = 'BRL', convert }: Props) {
@@ -30,8 +27,8 @@ export default function AllocationChart({ data, currency = 'BRL', convert }: Pro
     <div className="rounded-2xl p-6" style={{ background: 'white', border: '1px solid var(--arvo-border)' }}>
       <h2 className="mb-1" style={{ fontFamily: "var(--arvo-font-body)", fontSize: 13, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--arvo-fg)' }}>{t.dashboard.allocationByClass}</h2>
       <p className="mb-4" style={{ fontFamily: "'Playfair Display', serif", fontStyle: 'italic', fontSize: 13, color: 'var(--arvo-fg-soft)' }}>onde seu patrimônio está plantado</p>
-      <div className="flex flex-col gap-4">
-        <div className="w-full" style={{ height: 220 }}>
+      <div className="flex gap-6 items-center">
+        <div style={{ width: 200, height: 200, flexShrink: 0 }}>
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
@@ -40,8 +37,8 @@ export default function AllocationChart({ data, currency = 'BRL', convert }: Pro
                 nameKey="name"
                 cx="50%"
                 cy="50%"
-                innerRadius={54}
-                outerRadius={88}
+                innerRadius={60}
+                outerRadius={95}
                 paddingAngle={2}
               >
                 {data.map((entry, i) => (
@@ -60,7 +57,7 @@ export default function AllocationChart({ data, currency = 'BRL', convert }: Pro
           </ResponsiveContainer>
         </div>
 
-        <div className="w-full space-y-2">
+        <div className="flex-1 min-w-0 space-y-2">
           {data.map((item) => (
             <div key={item.name} className="flex items-center gap-3">
               <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: item.color }} />
@@ -69,7 +66,7 @@ export default function AllocationChart({ data, currency = 'BRL', convert }: Pro
                   <span className="text-sm truncate" style={{ color: 'rgba(13,13,13,0.7)' }}>{resolveClassName(item)}</span>
                   <span className="text-sm ml-2 flex-shrink-0" style={{ fontFamily: "var(--arvo-font-body)", color: 'var(--arvo-black)' }}>
                     {item.pct.toFixed(1)}%
-                    <span className="ml-1 text-xs" style={{ fontStyle: 'italic', color: 'rgba(13,13,13,0.45)' }}>{fmtCompact(convert ? convert(item.value_brl) : item.value_brl, currency)}</span>
+                    <span className="ml-2 text-xs" style={{ fontStyle: 'italic', color: 'rgba(13,13,13,0.45)' }}>{fmtFull(convert ? convert(item.value_brl) : item.value_brl, currency)}</span>
                   </span>
                 </div>
                 <div className="mt-0.5 h-1 rounded-full overflow-hidden" style={{ background: 'rgba(13,13,13,0.07)' }}>

@@ -9,6 +9,7 @@ import { useAchievementContext } from '../contexts/AchievementContext'
 import { useI18n } from '../contexts/I18nContext'
 import ValueCards from '../components/ValueCards'
 import AllocationChart from '../components/AllocationChart'
+import MarketIndicesBar from '../components/MarketIndicesBar'
 import AssetTable from '../components/AssetTable'
 import FixedIncomeSetupModal from '../components/FixedIncomeSetupModal'
 import type { PortfolioAsset } from '../lib/types'
@@ -179,8 +180,8 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Row 1: ValueCards left + AllocationChart right on desktop */}
-      <div className={`grid grid-cols-1 gap-6 ${data.by_class.length > 0 ? 'lg:grid-cols-2' : ''}`}>
+      {/* Row 1: ValueCards */}
+      <div className="grid grid-cols-1 gap-6">
         {(() => {
           const totalInvestedBrl = data.by_asset.reduce((s, a) => s + (a.invested_brl ?? 0), 0)
           const hasInvested = totalInvestedBrl > 0
@@ -221,7 +222,10 @@ export default function DashboardPage() {
         )}
       </div>
 
-      {/* Row 2: Evolution chart — full width */}
+      {/* Row 2: Market indices bar */}
+      <MarketIndicesBar />
+
+      {/* Row 3: Evolution chart — full width */}
       {(chartLoading || portfolioChartData.length > 0) && (
         <div className="rounded-2xl p-5" style={{ background: 'white', border: '1px solid var(--arvo-border)' }}>
           <h2 className="mb-3" style={{ fontFamily: "var(--arvo-font-body)", fontSize: 13, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--arvo-fg)' }}>{t.dashboard.portfolioEvolution}</h2>
