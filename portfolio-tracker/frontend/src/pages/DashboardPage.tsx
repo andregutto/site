@@ -226,7 +226,7 @@ export default function DashboardPage() {
         <div className="rounded-2xl p-5" style={{ background: 'white', border: '1px solid var(--arvo-border)' }}>
           <h2 className="mb-3" style={{ fontFamily: "var(--arvo-font-body)", fontSize: 13, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--arvo-fg)' }}>{t.dashboard.portfolioEvolution}</h2>
           <div className="h-52">
-          {chartLoading && portfolioChartData.length === 0 ? (
+          {chartLoading ? (
             <div className="h-full flex items-end gap-1 px-2 pb-1">
               {[40, 55, 48, 62, 58, 70, 65, 80, 75, 88, 82, 95].map((h, i) => (
                 <div key={i} className="flex-1 bg-gray-100 rounded-t animate-pulse" style={{ height: `${h}%` }} />

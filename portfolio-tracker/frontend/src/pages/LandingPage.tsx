@@ -33,107 +33,106 @@ const ALLOC_ITEMS: [string, string, string][] = [
   ['#E8A020', 'Cripto', '10%'],
 ]
 const TABLE_ROWS: [string, string, string, string, string][] = [
-  ['BOVA11', 'ETF', 'R$45,2k', '+5,8%', '#1F8A5B'],
-  ['WEGE3', 'Ação', 'R$38,7k', '+12,4%', '#1F8A5B'],
-  ['BTC', 'Cripto', 'R$28,4k', '-2,1%', '#D63B2F'],
+  ['BOVA11',   'ETF',     'R$45,2k', '+5,8%',  '#1F8A5B'],
+  ['WEGE3',    'Ação',    'R$38,7k', '+12,4%', '#1F8A5B'],
+  ['BTC',      'Cripto',  'R$28,4k', '-2,1%',  '#D63B2F'],
+  ['KNRI11',   'FII',     'R$21,3k', '+3,2%',  '#1F8A5B'],
+  ['IVV',      'ETF EUA', 'R$18,9k', '+7,6%',  '#1F8A5B'],
+  ['TESOURO+', 'Renda F.','R$52,0k', '+1,1%',  '#1F8A5B'],
 ]
 
 function DashboardMockupContent() {
   return (
-    <div style={{ background: '#F8F7F5', width: '100%', height: '100%', overflow: 'hidden', fontFamily: F_SANS }}>
-      {/* App header */}
-      <div style={{ background: '#FFFFFF', borderBottom: '1px solid rgba(200,184,154,0.3)', padding: '7px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+    <div style={{ background: '#F8F7F5', width: '100%', height: '100%', overflow: 'hidden', fontFamily: F_SANS, display: 'flex', flexDirection: 'column' }}>
+      {/* Header */}
+      <div style={{ background: '#FFF', borderBottom: '1px solid rgba(200,184,154,0.3)', padding: '5px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-          <img src="/brand/logo/arvo-symbol-black.svg" width="11" height="11" alt="" />
-          <span style={{ fontSize: 8, letterSpacing: '0.3em', color: DARK }}>arvo</span>
+          <img src="/brand/logo/arvo-symbol-black.svg" width="10" height="10" alt="" />
+          <span style={{ fontSize: 7.5, letterSpacing: '0.3em', color: DARK }}>arvo</span>
         </div>
-        <span style={{ fontSize: 7.5, letterSpacing: '0.18em', textTransform: 'uppercase', color: DARK }}>Dashboard</span>
+        <span style={{ fontSize: 7, letterSpacing: '0.18em', textTransform: 'uppercase', color: DARK }}>Dashboard</span>
         <div style={{ display: 'flex', gap: 3 }}>
           {(['Mês', 'YTD', 'Início'] as const).map(label => (
-            <span key={label} style={{ fontSize: 6, padding: '2px 5px', borderRadius: 3, border: label === 'YTD' ? '1px solid #0D0D0D' : '1px solid rgba(13,13,13,0.2)', background: label === 'YTD' ? '#0D0D0D' : 'transparent', color: label === 'YTD' ? '#fff' : 'rgba(13,13,13,0.55)' }}>{label}</span>
+            <span key={label} style={{ fontSize: 5.5, padding: '1.5px 4px', borderRadius: 2, border: label === 'YTD' ? '1px solid #0D0D0D' : '1px solid rgba(13,13,13,0.2)', background: label === 'YTD' ? '#0D0D0D' : 'transparent', color: label === 'YTD' ? '#fff' : 'rgba(13,13,13,0.55)' }}>{label}</span>
           ))}
         </div>
       </div>
 
-      {/* Content area */}
-      <div style={{ padding: '9px 11px', display: 'flex', flexDirection: 'column', gap: 7 }}>
-        {/* ValueCard */}
-        <div style={{ background: '#FFFFFF', borderRadius: 7, padding: '9px 11px', border: '1px solid rgba(200,184,154,0.4)', boxShadow: '0 3px 12px rgba(200,184,154,0.18)', position: 'relative', overflow: 'hidden' }}>
-          <div style={{ position: 'absolute', top: -50, right: -20, width: 120, height: 120, borderRadius: '50%', background: 'rgba(200,184,154,0.13)', filter: 'blur(24px)', pointerEvents: 'none' }} />
-          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 1, background: 'linear-gradient(to right, transparent, rgba(200,184,154,0.65), transparent)', pointerEvents: 'none' }} />
-          <div style={{ position: 'relative', zIndex: 1 }}>
-            <div style={{ fontSize: 6, letterSpacing: '0.22em', textTransform: 'uppercase', color: '#C8B89A', marginBottom: 3 }}>Total BRL</div>
-            <div style={{ fontSize: 18, letterSpacing: '0.02em', lineHeight: 1.05, color: DARK }}>R$ 284.500</div>
-            <div style={{ marginTop: 6, paddingTop: 6, borderTop: '1px solid rgba(13,13,13,0.08)', display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 5 }}>
+      {/* Content */}
+      <div style={{ flex: 1, padding: '7px 10px 0', display: 'flex', flexDirection: 'column', gap: 6, overflow: 'hidden' }}>
+        {/* Row 1: ValueCard (left) + Allocation (right) */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, flexShrink: 0 }}>
+          {/* ValueCard */}
+          <div style={{ background: '#FFF', borderRadius: 6, padding: '7px 9px', border: '1px solid rgba(200,184,154,0.4)', position: 'relative', overflow: 'hidden' }}>
+            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 1, background: 'linear-gradient(to right, transparent, rgba(200,184,154,0.65), transparent)', pointerEvents: 'none' }} />
+            <div style={{ fontSize: 5.5, letterSpacing: '0.22em', textTransform: 'uppercase', color: '#C8B89A', marginBottom: 2 }}>Patrimônio</div>
+            <div style={{ fontSize: 16, letterSpacing: '0.01em', lineHeight: 1, color: DARK, marginBottom: 5 }}>R$ 284.500</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3px 5px', paddingTop: 5, borderTop: '1px solid rgba(13,13,13,0.07)' }}>
               {KPI_CELLS.map(([lbl, val, green]) => (
                 <div key={lbl}>
-                  <div style={{ fontSize: 5.5, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.45)', marginBottom: 2 }}>{lbl}</div>
-                  <div style={{ fontSize: 8, color: green ? '#1F8A5B' : DARK }}>{val}</div>
+                  <div style={{ fontSize: 4.5, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.4)', marginBottom: 1 }}>{lbl}</div>
+                  <div style={{ fontSize: 7.5, color: green ? '#1F8A5B' : DARK }}>{val}</div>
                 </div>
               ))}
             </div>
           </div>
-        </div>
-
-        {/* Charts */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 7 }}>
-          {/* Donut */}
-          <div style={{ background: '#FFFFFF', borderRadius: 6, padding: '7px 9px', border: '1px solid rgba(200,184,154,0.2)' }}>
-            <div style={{ fontSize: 6, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.45)', marginBottom: 5 }}>Alocação</div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-              <svg width="52" height="52" viewBox="0 0 80 80" style={{ flexShrink: 0 }}>
+          {/* Allocation donut */}
+          <div style={{ background: '#FFF', borderRadius: 6, padding: '7px 9px', border: '1px solid rgba(200,184,154,0.2)' }}>
+            <div style={{ fontSize: 5.5, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.45)', marginBottom: 4 }}>Alocação</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <svg width="42" height="42" viewBox="0 0 80 80" style={{ flexShrink: 0 }}>
                 <circle cx="40" cy="40" r="28" fill="none" stroke="#f3f4f6" strokeWidth="12"/>
-                <circle cx="40" cy="40" r="28" fill="none" stroke="#1F8A5B" strokeWidth="12" strokeDasharray="79 97"  strokeDashoffset="0"    transform="rotate(-90 40 40)"/>
-                <circle cx="40" cy="40" r="28" fill="none" stroke="#1B4FD8" strokeWidth="12" strokeDasharray="44 132" strokeDashoffset="-79"   transform="rotate(-90 40 40)"/>
-                <circle cx="40" cy="40" r="28" fill="none" stroke="#A36A52" strokeWidth="12" strokeDasharray="35 141" strokeDashoffset="-123"  transform="rotate(-90 40 40)"/>
-                <circle cx="40" cy="40" r="28" fill="none" stroke="#E8A020" strokeWidth="12" strokeDasharray="18 158" strokeDashoffset="-158"  transform="rotate(-90 40 40)"/>
+                <circle cx="40" cy="40" r="28" fill="none" stroke="#1F8A5B" strokeWidth="12" strokeDasharray="79 97" strokeDashoffset="0" transform="rotate(-90 40 40)"/>
+                <circle cx="40" cy="40" r="28" fill="none" stroke="#1B4FD8" strokeWidth="12" strokeDasharray="44 132" strokeDashoffset="-79" transform="rotate(-90 40 40)"/>
+                <circle cx="40" cy="40" r="28" fill="none" stroke="#A36A52" strokeWidth="12" strokeDasharray="35 141" strokeDashoffset="-123" transform="rotate(-90 40 40)"/>
+                <circle cx="40" cy="40" r="28" fill="none" stroke="#E8A020" strokeWidth="12" strokeDasharray="18 158" strokeDashoffset="-158" transform="rotate(-90 40 40)"/>
               </svg>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 2.5, flex: 1, minWidth: 0 }}>
                 {ALLOC_ITEMS.map(([color, name, pct]) => (
                   <div key={name} style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-                    <div style={{ width: 5, height: 5, borderRadius: '50%', background: color, flexShrink: 0 }} />
-                    <span style={{ fontSize: 6.5, color: 'rgba(13,13,13,0.65)' }}>{name}</span>
-                    <span style={{ fontSize: 6, color: 'rgba(13,13,13,0.38)', marginLeft: 'auto' }}>{pct}</span>
+                    <div style={{ width: 4, height: 4, borderRadius: '50%', background: color, flexShrink: 0 }} />
+                    <span style={{ fontSize: 5.5, color: 'rgba(13,13,13,0.65)', flex: 1 }}>{name}</span>
+                    <span style={{ fontSize: 5, color: 'rgba(13,13,13,0.38)' }}>{pct}</span>
                   </div>
                 ))}
               </div>
             </div>
           </div>
-
-          {/* Line chart */}
-          <div style={{ background: '#FFFFFF', borderRadius: 6, padding: '7px 9px', border: '1px solid rgba(200,184,154,0.2)' }}>
-            <div style={{ fontSize: 6, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.45)', marginBottom: 5 }}>Evolução YTD</div>
-            <svg width="100%" height="52" viewBox="0 0 160 44" preserveAspectRatio="none">
-              <defs>
-                <linearGradient id="mlg" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#0D0D0D" stopOpacity="0.07"/>
-                  <stop offset="100%" stopColor="#0D0D0D" stopOpacity="0"/>
-                </linearGradient>
-              </defs>
-              <line x1="0" y1="28" x2="160" y2="28" stroke="#f3f4f6" strokeWidth="0.8"/>
-              <line x1="0" y1="14" x2="160" y2="14" stroke="#f3f4f6" strokeWidth="0.8"/>
-              <path d="M 0 38 C 30 36 50 30 80 26 S 120 16 160 9 L 160 44 L 0 44 Z" fill="url(#mlg)"/>
-              <path d="M 0 38 C 30 36 50 30 80 26 S 120 16 160 9" fill="none" stroke={DARK} strokeWidth="1.5"/>
-              {(['Jan', 'Mar', 'Mai', 'Jul', 'Set'] as const).map((lbl, i) => (
-                <text key={lbl} x={i * 40} y={44} fontSize="5" fill="rgba(13,13,13,0.38)" textAnchor={i === 4 ? 'end' : i === 0 ? 'start' : 'middle'}>{lbl}</text>
-              ))}
-            </svg>
-          </div>
         </div>
 
-        {/* Asset table */}
-        <div style={{ background: '#FFFFFF', borderRadius: 6, border: '1px solid rgba(200,184,154,0.2)', overflow: 'hidden' }}>
-          <div style={{ padding: '5px 9px', background: 'rgba(248,247,245,0.9)', borderBottom: '1px solid rgba(13,13,13,0.05)', display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', gap: 4 }}>
+        {/* Row 2: Evolution chart full width */}
+        <div style={{ background: '#FFF', borderRadius: 6, padding: '6px 9px', border: '1px solid rgba(200,184,154,0.2)', flexShrink: 0 }}>
+          <div style={{ fontSize: 5.5, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.45)', marginBottom: 3 }}>Evolução YTD</div>
+          <svg width="100%" height="48" viewBox="0 0 280 40" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="mlg2" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#0D0D0D" stopOpacity="0.08"/>
+                <stop offset="100%" stopColor="#0D0D0D" stopOpacity="0"/>
+              </linearGradient>
+            </defs>
+            <line x1="0" y1="26" x2="280" y2="26" stroke="#f3f4f6" strokeWidth="0.8"/>
+            <line x1="0" y1="13" x2="280" y2="13" stroke="#f3f4f6" strokeWidth="0.8"/>
+            <path d="M 0 38 C 40 36 80 30 130 22 S 200 13 280 6 L 280 40 L 0 40 Z" fill="url(#mlg2)"/>
+            <path d="M 0 38 C 40 36 80 30 130 22 S 200 13 280 6" fill="none" stroke={DARK} strokeWidth="1.5"/>
+            {(['Jan','Mar','Mai','Set'] as const).map((lbl, i) => (
+              <text key={lbl} x={[0, 80, 160, 280][i]} y={40} fontSize="5" fill="rgba(13,13,13,0.35)" textAnchor={i === 3 ? 'end' : i === 0 ? 'start' : 'middle'}>{lbl}</text>
+            ))}
+          </svg>
+        </div>
+
+        {/* Row 3: Asset table — flex: 1 fills remaining height */}
+        <div style={{ background: '#FFF', borderRadius: 6, border: '1px solid rgba(200,184,154,0.2)', overflow: 'hidden', flex: 1 }}>
+          <div style={{ padding: '4px 8px', background: 'rgba(248,247,245,0.9)', borderBottom: '1px solid rgba(13,13,13,0.05)', display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', gap: 3 }}>
             {(['Ativo', 'Classe', 'Valor', '+/-'] as const).map(h => (
-              <span key={h} style={{ fontSize: 5.5, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.38)' }}>{h}</span>
+              <span key={h} style={{ fontSize: 5, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.38)' }}>{h}</span>
             ))}
           </div>
           {TABLE_ROWS.map(([ticker, classe, valor, pct, color]) => (
-            <div key={ticker} style={{ padding: '5px 9px', borderBottom: '1px solid rgba(13,13,13,0.04)', display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', gap: 4, alignItems: 'center' }}>
-              <span style={{ fontSize: 7, fontWeight: 600, color: DARK }}>{ticker}</span>
-              <span style={{ fontSize: 6.5, color: 'rgba(13,13,13,0.50)' }}>{classe}</span>
-              <span style={{ fontSize: 6.5, color: DARK }}>{valor}</span>
-              <span style={{ fontSize: 6.5, color }}>{pct}</span>
+            <div key={ticker} style={{ padding: '3.5px 8px', borderBottom: '1px solid rgba(13,13,13,0.04)', display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', gap: 3, alignItems: 'center' }}>
+              <span style={{ fontSize: 6.5, fontWeight: 600, color: DARK }}>{ticker}</span>
+              <span style={{ fontSize: 5.5, color: 'rgba(13,13,13,0.50)' }}>{classe}</span>
+              <span style={{ fontSize: 6, color: DARK }}>{valor}</span>
+              <span style={{ fontSize: 6, color }}>{pct}</span>
             </div>
           ))}
         </div>
@@ -408,14 +407,15 @@ export default function LandingPage() {
       </header>
 
       {/* ── HERO ── */}
-      <section id="hero" style={{ position: 'relative', minHeight: '93vh', display: 'flex', alignItems: 'center' }}>
+      <section id="hero" style={{ position: 'relative', minHeight: '93vh', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(160deg, #080f1c 0%, #0D0D0D 100%)' }} />
         <div style={{ position: 'absolute', inset: 0, backgroundImage: "url('/brand/imagery/01-broto-floresta.jpg')", backgroundSize: 'cover', backgroundPosition: 'center 40%', filter: 'brightness(0.28) sepia(0.30) saturate(1.20)' }} />
         <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '55%', background: 'linear-gradient(to top, rgba(6,12,24,0.90) 0%, transparent 100%)' }} />
         <div className="arvo-grain" />
 
-        <div style={{ position: 'relative', maxWidth: 1200, margin: '0 auto', padding: '80px 24px', width: '100%' }}>
-          <div style={{ maxWidth: 560 }}>
+        <div style={{ position: 'relative', maxWidth: 1200, margin: '0 auto', padding: '0 24px', width: '100%' }}>
+          <div className="grid grid-cols-1 lg:grid-cols-2 items-end" style={{ gap: '0 64px' }}>
+            <div style={{ paddingTop: 'clamp(80px, 10vh, 120px)', paddingBottom: 'clamp(48px, 6vh, 72px)' }}>
               <div style={{ marginBottom: 22, display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span style={{ width: 5, height: 5, borderRadius: '50%', background: GOLD, display: 'inline-block', flexShrink: 0 }} />
                 <span style={{ fontFamily: F_SANS, fontSize: 12, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.72)' }}>
@@ -446,15 +446,14 @@ export default function LandingPage() {
               <p style={{ fontFamily: F_SANS, fontSize: 12, letterSpacing: '0.06em', color: 'rgba(255,255,255,0.52)', marginTop: 18 }}>
                 {l.assurance}
               </p>
+            </div>
 
+            <div className="hidden lg:block">
+              <ScreenFrame>
+                <DashboardMockupContent />
+              </ScreenFrame>
+            </div>
           </div>
-        </div>
-
-        {/* Screen mockup — xl+ only, pinned to hero bottom, half-visible bleeding right */}
-        <div className="hidden xl:block" style={{ position: 'absolute', bottom: 0, right: '-400px', width: '800px' }}>
-          <ScreenFrame>
-            <DashboardMockupContent />
-          </ScreenFrame>
         </div>
       </section>
 
