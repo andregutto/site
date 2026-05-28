@@ -106,7 +106,7 @@ export default function DashboardPage() {
   const { data: perfData, loading: chartLoading } = usePerformanceMonthly(inception ?? currentYM, currentYM)
 
   const portfolioChartData = (perfData?.monthly ?? [])
-    .filter(m => m.total > 0)
+    .filter(m => m.total > 0 && m.month >= perfFrom)
     .map(m => ({ month: fmtMonthLabel(m.month), value: convert(m.total) }))
 
   function handleAssetClick(asset: PortfolioAsset) {

@@ -420,53 +420,96 @@ export default function FinancesOverviewPage() {
         {/* Gold shimmer line */}
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 1, background: 'linear-gradient(to right, transparent, rgba(200,184,154,0.65), transparent)', pointerEvents: 'none' }} />
 
-        <div style={{ position: 'relative', zIndex: 2, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
+        <div className="lg:grid lg:grid-cols-2 lg:gap-8" style={{ position: 'relative', zIndex: 2 }}>
+          {/* Left: balance + KPIs */}
           <div>
-            <p style={{ fontFamily: "var(--arvo-font-body)", fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'var(--arvo-gold-text)', margin: 0 }}>{t.finances.overviewBalance}</p>
-            <p style={{ fontFamily: "var(--arvo-font-body)", fontSize: 42, letterSpacing: '0.02em', lineHeight: 1.05, marginTop: 10, color: receivedIncome > 0 && netBalance < 0 ? 'var(--arvo-red)' : 'var(--arvo-black)' }}>
-              {receivedIncome > 0 ? fmt(cx(netBalance), currency, true) : '—'}
-            </p>
-          </div>
-          <div style={{ flexShrink: 0, padding: '4px 12px', borderRadius: 999, fontSize: 11, fontFamily: "var(--arvo-font-body)", letterSpacing: '0.06em',
-            background: totalExpenses === 0 ? 'rgba(0,0,0,0.04)' : isWithinBudget ? 'rgba(31,138,91,0.10)' : 'rgba(214,59,47,0.10)',
-            color: totalExpenses === 0 ? 'rgba(13,13,13,0.40)' : isWithinBudget ? 'var(--arvo-green)' : 'var(--arvo-red)',
-            border: `1px solid ${totalExpenses === 0 ? 'rgba(0,0,0,0.08)' : isWithinBudget ? 'rgba(31,138,91,0.25)' : 'rgba(214,59,47,0.25)'}`,
-          }}>
-            {totalExpenses === 0 ? '—' : isWithinBudget ? t.finances.overviewOnTrack : t.finances.overviewOverspent}
-            {overspentAmount > 0 && ` +${fmt(cx(overspentAmount), currency, true)}`}
-          </div>
-        </div>
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
+              <div>
+                <p style={{ fontFamily: "var(--arvo-font-body)", fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'var(--arvo-gold-text)', margin: 0 }}>{t.finances.overviewBalance}</p>
+                <p style={{ fontFamily: "var(--arvo-font-body)", fontSize: 42, letterSpacing: '0.02em', lineHeight: 1.05, marginTop: 10, color: receivedIncome > 0 && netBalance < 0 ? 'var(--arvo-red)' : 'var(--arvo-black)' }}>
+                  {receivedIncome > 0 ? fmt(cx(netBalance), currency, true) : '—'}
+                </p>
+              </div>
+              <div style={{ flexShrink: 0, padding: '4px 12px', borderRadius: 999, fontSize: 11, fontFamily: "var(--arvo-font-body)", letterSpacing: '0.06em',
+                background: totalExpenses === 0 ? 'rgba(0,0,0,0.04)' : isWithinBudget ? 'rgba(31,138,91,0.10)' : 'rgba(214,59,47,0.10)',
+                color: totalExpenses === 0 ? 'rgba(13,13,13,0.40)' : isWithinBudget ? 'var(--arvo-green)' : 'var(--arvo-red)',
+                border: `1px solid ${totalExpenses === 0 ? 'rgba(0,0,0,0.08)' : isWithinBudget ? 'rgba(31,138,91,0.25)' : 'rgba(214,59,47,0.25)'}`,
+              }}>
+                {totalExpenses === 0 ? '—' : isWithinBudget ? t.finances.overviewOnTrack : t.finances.overviewOverspent}
+                {overspentAmount > 0 && ` +${fmt(cx(overspentAmount), currency, true)}`}
+              </div>
+            </div>
 
-        <div style={{ position: 'relative', zIndex: 2, marginTop: 20, paddingTop: 18, borderTop: '1px solid rgba(13,13,13,0.08)', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-            <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.62)' }}>{t.finances.income}</span>
-            <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 18, letterSpacing: '0.04em', color: receivedIncome > 0 && receivedIncome >= configuredIncome ? 'var(--arvo-green)' : receivedIncome > 0 ? 'var(--arvo-ocre)' : 'var(--arvo-fg)' }}>
-              {receivedIncome > 0 ? fmt(cx(receivedIncome), currency, true) : '—'}
-            </span>
-            <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 10, color: 'rgba(13,13,13,0.58)' }}>
-              {t.finances.overviewPlanned} {fmt(cx(configuredIncome), currency, true)}
-            </span>
+            <div style={{ marginTop: 20, paddingTop: 18, borderTop: '1px solid rgba(13,13,13,0.08)', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.62)' }}>{t.finances.income}</span>
+                <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 18, letterSpacing: '0.04em', color: receivedIncome > 0 && receivedIncome >= configuredIncome ? 'var(--arvo-green)' : receivedIncome > 0 ? 'var(--arvo-ocre)' : 'var(--arvo-fg)' }}>
+                  {receivedIncome > 0 ? fmt(cx(receivedIncome), currency, true) : '—'}
+                </span>
+                <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 10, color: 'rgba(13,13,13,0.58)' }}>
+                  {t.finances.overviewPlanned} {fmt(cx(configuredIncome), currency, true)}
+                </span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.62)' }}>{t.finances.expenses}</span>
+                <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 18, letterSpacing: '0.04em', color: totalExpenses > totalBudgeted && totalBudgeted > 0 ? 'var(--arvo-red)' : 'var(--arvo-fg)' }}>
+                  {totalExpenses > 0 ? fmt(cx(totalExpenses), currency, true) : '—'}
+                </span>
+                {totalBudgeted > 0 && (
+                  <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 10, color: 'rgba(13,13,13,0.58)' }}>
+                    {t.finances.overviewPlanned} {fmt(cx(totalBudgeted), currency, true)}
+                  </span>
+                )}
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.62)' }}>{t.finances.heroSavingsRate}</span>
+                <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 18, letterSpacing: '0.04em', color: receivedIncome > 0 && netBalance >= 0 ? 'var(--arvo-green)' : receivedIncome > 0 ? 'var(--arvo-red)' : 'var(--arvo-fg)' }}>
+                  {receivedIncome > 0 ? `${Math.round((netBalance / receivedIncome) * 100)}%` : '—'}
+                </span>
+                {receivedIncome > 0 && (
+                  <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 10, color: 'rgba(13,13,13,0.38)' }}>{t.finances.overviewStatus}</span>
+                )}
+              </div>
+            </div>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-            <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.62)' }}>{t.finances.expenses}</span>
-            <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 18, letterSpacing: '0.04em', color: totalExpenses > totalBudgeted && totalBudgeted > 0 ? 'var(--arvo-red)' : 'var(--arvo-fg)' }}>
-              {totalExpenses > 0 ? fmt(cx(totalExpenses), currency, true) : '—'}
-            </span>
-            {totalBudgeted > 0 && (
-              <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 10, color: 'rgba(13,13,13,0.58)' }}>
-                {t.finances.overviewPlanned} {fmt(cx(totalBudgeted), currency, true)}
-              </span>
-            )}
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-            <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.62)' }}>{t.finances.heroSavingsRate}</span>
-            <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 18, letterSpacing: '0.04em', color: receivedIncome > 0 && netBalance >= 0 ? 'var(--arvo-green)' : receivedIncome > 0 ? 'var(--arvo-red)' : 'var(--arvo-fg)' }}>
-              {receivedIncome > 0 ? `${Math.round((netBalance / receivedIncome) * 100)}%` : '—'}
-            </span>
-            {receivedIncome > 0 && (
-              <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 10, color: 'rgba(13,13,13,0.38)' }}>{t.finances.overviewStatus}</span>
-            )}
-          </div>
+
+          {/* Right: envelope mini breakdown — desktop only */}
+          {envelopeBars.filter(e => e.type !== 'income' && e.actual > 0).length > 0 && (
+            <div className="hidden lg:flex lg:flex-col lg:justify-center" style={{ borderLeft: '1px solid rgba(13,13,13,0.07)', paddingLeft: 28 }}>
+              <p style={{ fontFamily: "var(--arvo-font-body)", fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.45)', marginBottom: 14 }}>{t.finances.overviewSpendingVsBudget}</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {envelopeBars.filter(e => e.type !== 'income' && e.actual > 0).slice(0, 5).map(env => (
+                  <div key={env.id}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4, gap: 8 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+                        <span style={{ fontSize: 14, lineHeight: 1 }}>{env.icon}</span>
+                        <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 12, color: 'var(--arvo-fg-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {resolveEnvName(env.name, env.type, env.name_key, nameKeys)}
+                        </span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                        <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 12, fontWeight: 600, color: env.over ? 'var(--arvo-red)' : 'var(--arvo-fg)' }}>
+                          {fmt(cx(env.actual), currency, true)}
+                        </span>
+                        {env.budget > 0 && (
+                          <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 11, color: 'rgba(13,13,13,0.40)' }}>
+                            / {fmt(cx(env.budget), currency, true)}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div style={{ height: 4, background: 'rgba(13,13,13,0.07)', borderRadius: 2, overflow: 'hidden' }}>
+                      <div style={{
+                        height: '100%', borderRadius: 2, transition: 'width 0.4s ease',
+                        width: env.budget > 0 ? `${Math.min((env.actual / env.budget) * 100, 100)}%` : '40%',
+                        background: env.over ? 'var(--arvo-red)' : env.color,
+                      }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
