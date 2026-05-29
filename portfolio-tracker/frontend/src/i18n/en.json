@@ -206,7 +206,8 @@
     "errorLoadingPortfolio": "Error loading portfolio",
     "tryAgain": "Try again",
     "calculating": "Calculating portfolio...",
-    "targetLine": "Target"
+    "targetLine": "Plan",
+    "createFreedomPlan": "Create freedom plan →"
   },
   "footer": {
     "copyright": "© 2026 arvo",

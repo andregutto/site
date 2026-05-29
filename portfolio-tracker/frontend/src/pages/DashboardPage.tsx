@@ -81,12 +81,11 @@ export default function DashboardPage() {
     syncDividends()
   }, [syncDividends])
 
-  const [activePlan, setActivePlan] = useState<FreedomPlan | null>(null)
-  const [showTarget, setShowTarget] = useState(false)
+  const [activePlan, setActivePlan] = useState<FreedomPlan | null | undefined>(undefined)
   useEffect(() => {
     apiFetch<FreedomPlan[]>('/finances/freedom-plans')
       .then(plans => setActivePlan(plans.find(p => p.is_active) ?? plans[0] ?? null))
-      .catch(() => {})
+      .catch(() => setActivePlan(null))
   }, [])
 
   const [periodMode, setPeriodMode] = useState<PeriodMode>('ytd')
@@ -143,7 +142,7 @@ export default function DashboardPage() {
   const planStartDate = activePlan ? (activePlan.start_date ?? activePlan.created_at.slice(0, 10)) : null
 
   function targetAtDate(dateStr: string): number | null {
-    if (!activePlan || !showTarget || !planStartDate) return null
+    if (!activePlan || !planStartDate) return null
     const t = (new Date(dateStr + 'T12:00:00').getTime() - new Date(planStartDate + 'T12:00:00').getTime()) / (30.4375 * 24 * 3600 * 1000)
     const brlPerUnit = activePlan.currency === 'BRL' ? 1 : (fxRates[activePlan.currency] ?? 1)
     const IC = convert(activePlan.initial_capital * brlPerUnit)
@@ -288,16 +287,15 @@ export default function DashboardPage() {
         <div className="rounded-2xl p-5" style={{ background: 'white', border: '1px solid var(--arvo-border)' }}>
           <div className="flex items-center justify-between mb-3">
             <h2 style={{ fontFamily: "var(--arvo-font-body)", fontSize: 13, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--arvo-fg)' }}>{t.dashboard.portfolioEvolution}</h2>
-            {activePlan && (
+            {activePlan === null && (
               <button
-                onClick={() => setShowTarget(v => !v)}
+                onClick={() => navigate('/finances/freedom')}
                 style={{
                   fontFamily: 'var(--arvo-font-body)', fontSize: 10, letterSpacing: '0.1em',
-                  padding: '4px 10px', borderRadius: 6, border: `1px solid ${showTarget ? '#1B4FD8' : 'var(--arvo-border)'}`,
-                  background: showTarget ? '#1B4FD8' : 'white',
-                  color: showTarget ? 'white' : 'rgba(13,13,13,0.55)', cursor: 'pointer', transition: 'all 0.2s',
+                  padding: '4px 10px', borderRadius: 6, border: '1px solid #1B4FD8',
+                  background: 'white', color: '#1B4FD8', cursor: 'pointer',
                 }}
-              >{(t.dashboard as unknown as Record<string,string>).targetLine ?? 'Meta'}</button>
+              >{(t.dashboard as unknown as Record<string,string>).createFreedomPlan ?? 'Criar plano de liberdade →'}</button>
             )}
           </div>
           <div className="h-52">
@@ -331,7 +329,7 @@ export default function DashboardPage() {
                   contentStyle={{ borderRadius: 8, border: '1px solid var(--arvo-border)', fontSize: 12 }}
                 />
                 <Line type="monotone" dataKey="value" name={t.dashboard.patrimony} stroke="#0D0D0D" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
-                {showTarget && activePlan && <Line type="monotone" dataKey="target" name={(t.dashboard as unknown as Record<string,string>).targetLine ?? 'Meta'} stroke="#1B4FD8" strokeWidth={1.5} dot={false} strokeDasharray="5 3" connectNulls />}
+                {activePlan && <Line type="monotone" dataKey="target" name={(t.dashboard as unknown as Record<string,string>).targetLine ?? 'Plano'} stroke="#1B4FD8" strokeWidth={1.5} dot={false} strokeDasharray="5 3" connectNulls />}
               </LineChart>
             </ResponsiveContainer>
           )}

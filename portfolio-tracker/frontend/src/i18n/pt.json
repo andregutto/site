@@ -206,7 +206,8 @@
     "errorLoadingPortfolio": "Erro ao carregar portfólio",
     "tryAgain": "Tentar novamente",
     "calculating": "Calculando portfólio...",
-    "targetLine": "Meta"
+    "targetLine": "Plano",
+    "createFreedomPlan": "Criar plano de liberdade →"
   },
   "footer": {
     "copyright": "© 2026 arvo",

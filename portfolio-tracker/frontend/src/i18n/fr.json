@@ -206,7 +206,8 @@
     "errorLoadingPortfolio": "Erreur lors du chargement du portefeuille",
     "tryAgain": "Réessayer",
     "calculating": "Calcul du portefeuille...",
-    "targetLine": "Objectif"
+    "targetLine": "Plan",
+    "createFreedomPlan": "Créer un plan liberté →"
   },
   "footer": {
     "copyright": "© 2026 arvo",
