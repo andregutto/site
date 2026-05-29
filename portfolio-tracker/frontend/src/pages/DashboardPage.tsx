@@ -267,6 +267,7 @@ export default function DashboardPage() {
                       : n >= 1000 ? `${(n / 1000).toFixed(0)}k` : n.toFixed(0)
                   }}
                   width={52}
+                  domain={['auto', 'auto']}
                 />
                 <Tooltip
                   formatter={(v) => [

@@ -104,10 +104,36 @@ export default function PerformancePage() {
   const dailyTo = useDailyChart ? localDate(now) : null
   const { data: dailyData, loading: dailyLoading } = usePerformanceDaily(dailyFrom, dailyTo)
 
+  // Interpolate monthly benchmark cum factors to a specific day (linear within the month).
+  function interpolateBenchmarkCumAtDate(dateStr: string): { cdi: number | null; ibov: number | null; sp500: number | null } {
+    const bm = benchmarks?.monthly ?? []
+    if (!bm.length) return { cdi: null, ibov: null, sp500: null }
+    const ym = dateStr.substring(0, 7)
+    const day = parseInt(dateStr.split('-')[2])
+    const [y, m] = ym.split('-').map(Number)
+    const daysInMonth = new Date(y, m, 0).getDate()
+    const t = day / daysInMonth
+    const monthMap = new Map(bm.map(b => [b.month, b]))
+    const prevYm = addMonths(ym, -1)
+    const prev = monthMap.get(prevYm)
+    const cur  = monthMap.get(ym)
+    function interp(pv: number | null | undefined, cv: number | null | undefined): number | null {
+      if (cv == null) return null
+      const p = pv ?? cv
+      return p + (cv - p) * t
+    }
+    return {
+      cdi:   interp(prev?.cdi_cum,   cur?.cdi_cum),
+      ibov:  interp(prev?.ibov_cum,  cur?.ibov_cum),
+      sp500: interp(prev?.sp500_cum, cur?.sp500_cum),
+    }
+  }
+
   const dailyChartData = useDailyChart ? (() => {
     const pts = (dailyData?.daily ?? []).filter(pt => pt.total > 0)
     if (pts.length === 0) return []
     const periodStart = pts[0].total - (pts[0].contributions ?? 0)
+    const baseBm = interpolateBenchmarkCumAtDate(pts[0].date)
     let cfCumul = 0
     return pts.map(pt => {
       cfCumul += (pt.contributions ?? 0)
@@ -115,9 +141,15 @@ export default function PerformancePage() {
       const retPct = periodStart > 0 && denom > 0
         ? Math.round(((pt.total - periodStart - cfCumul) / denom) * 10000) / 100
         : 0
-      return { month: fmtDayLabel(pt.date), portfolio: retPct }
+      const dayBm = interpolateBenchmarkCumAtDate(pt.date)
+      const cdi   = dayBm.cdi   != null && baseBm.cdi   != null && baseBm.cdi   > 0 ? Math.round((dayBm.cdi   / baseBm.cdi   - 1) * 10000) / 100 : null
+      const ibov  = dayBm.ibov  != null && baseBm.ibov  != null && baseBm.ibov  > 0 ? Math.round((dayBm.ibov  / baseBm.ibov  - 1) * 10000) / 100 : null
+      const sp500 = dayBm.sp500 != null && baseBm.sp500 != null && baseBm.sp500 > 0 ? Math.round((dayBm.sp500 / baseBm.sp500 - 1) * 10000) / 100 : null
+      return { month: fmtDayLabel(pt.date), portfolio: retPct, cdi, ibov, sp500 }
     })
   })() : []
+
+  const lastDailyPoint = dailyChartData[dailyChartData.length - 1]
 
   const { data: summary,    loading: sLoading, refresh: refreshSummary    } = usePerformanceSummary(from, to)
   const { data: monthly,    loading: mLoading, refresh: refreshMonthly    } = usePerformanceMonthly(from, to)
@@ -219,9 +251,9 @@ export default function PerformancePage() {
   })
 
   const lastPoint = chartData[chartData.length - 1]
-  const cdiAccum  = lastPoint?.cdi   ?? null
-  const ibovAccum = lastPoint?.ibov  ?? null
-  const sp500Accum = lastPoint?.sp500 ?? null
+  const cdiAccum   = useDailyChart ? (lastDailyPoint?.cdi   ?? null) : (lastPoint?.cdi   ?? null)
+  const ibovAccum  = useDailyChart ? (lastDailyPoint?.ibov  ?? null) : (lastPoint?.ibov  ?? null)
+  const sp500Accum = useDailyChart ? (lastDailyPoint?.sp500 ?? null) : (lastPoint?.sp500 ?? null)
 
   // "Fim do período" card: use live total when available so the BRL amount matches dashboard.
   const endsAtCurrentMonth = to === currentYM
@@ -234,8 +266,9 @@ export default function PerformancePage() {
   const dietzDenom       = summary ? summary.value_start + 0.5 * summary.contributions : 0
   const displayReturnPct = dietzDenom > 0 ? (displayReturnAbs / dietzDenom) * 100 : null
 
-  // portfolioAccum must be declared AFTER displayReturnPct
-  const portfolioAccum = displayReturnPct
+  const portfolioAccum = useDailyChart
+    ? (lastDailyPoint?.portfolio ?? displayReturnPct)
+    : displayReturnPct
 
   const isLoading = sLoading || mLoading || bLoading || (useDailyChart && dailyLoading)
 
@@ -312,7 +345,23 @@ export default function PerformancePage() {
           {useDailyChart ? (
             dailyChartData.length > 0 ? (
               <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
-                <h2 className="font-semibold text-gray-800 mb-4">{t.performance.accumulatedReturn} · {periodLabel}</h2>
+                <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
+                  <h2 className="font-semibold text-gray-800">{t.performance.accumulatedReturn} · {periodLabel}</h2>
+                  <div className="flex items-center gap-2">
+                    {([['CDI', showCDI, setShowCDI, '#16a34a'], ['IBOV', showIBOV, setShowIBOV, '#7c3aed'], ['S&P500', showSP500, setShowSP500, '#f59e0b']] as const).map(
+                      ([lbl, active, setter, color]) => (
+                        <button
+                          key={lbl}
+                          onClick={() => (setter as (v: boolean) => void)(!active)}
+                          className={`px-2.5 py-1 text-xs font-semibold rounded-md border transition-colors ${
+                            active ? 'text-white border-transparent' : 'bg-white text-gray-400 border-gray-200 hover:border-gray-400'
+                          }`}
+                          style={active ? { backgroundColor: color as string, borderColor: color as string } : {}}
+                        >{lbl}</button>
+                      )
+                    )}
+                  </div>
+                </div>
                 <div className="h-64">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={dailyChartData}>
@@ -326,7 +375,11 @@ export default function PerformancePage() {
                         formatter={(v) => [`${Number(v) >= 0 ? '+' : ''}${Number(v).toFixed(2)}%`]}
                         contentStyle={{ borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 12 }}
                       />
+                      <Legend wrapperStyle={{ fontSize: 11 }} />
                       <Line type="monotone" dataKey="portfolio" name={t.performance.wallet} stroke="#0D0D0D" strokeWidth={2} dot={{ r: 2, fill: '#0D0D0D' }} activeDot={{ r: 4 }} />
+                      {showCDI   && <Line type="monotone" dataKey="cdi"   name="CDI"    stroke="#16a34a" strokeWidth={1.5} dot={false} strokeDasharray="4 2" connectNulls />}
+                      {showIBOV  && <Line type="monotone" dataKey="ibov"  name="IBOV"   stroke="#7c3aed" strokeWidth={1.5} dot={false} strokeDasharray="4 2" connectNulls />}
+                      {showSP500 && <Line type="monotone" dataKey="sp500" name="S&P500" stroke="#f59e0b" strokeWidth={1.5} dot={false} strokeDasharray="4 2" connectNulls />}
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
@@ -385,8 +438,8 @@ export default function PerformancePage() {
             </div>
           )}
 
-          {/* Benchmark comparison cards — only for monthly % chart */}
-          {!useDailyChart && chartData.length > 0 && (
+          {/* Benchmark comparison cards */}
+          {(useDailyChart ? dailyChartData.length > 0 : chartData.length > 0) && (
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
               {[
                 { label: t.performance.wallet, value: portfolioAccum, text: 'text-[#0D0D0D]' },
