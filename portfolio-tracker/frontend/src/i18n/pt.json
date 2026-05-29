@@ -205,7 +205,8 @@
     "addAssetsHint": "Adicione ativos e registre suas compras para visualizar o portfólio.",
     "errorLoadingPortfolio": "Erro ao carregar portfólio",
     "tryAgain": "Tentar novamente",
-    "calculating": "Calculando portfólio..."
+    "calculating": "Calculando portfólio...",
+    "targetLine": "Meta"
   },
   "footer": {
     "copyright": "© 2026 arvo",

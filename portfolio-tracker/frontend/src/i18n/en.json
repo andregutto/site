@@ -205,7 +205,8 @@
     "addAssetsHint": "Add assets and record your purchases to view the portfolio.",
     "errorLoadingPortfolio": "Error loading portfolio",
     "tryAgain": "Try again",
-    "calculating": "Calculating portfolio..."
+    "calculating": "Calculating portfolio...",
+    "targetLine": "Target"
   },
   "footer": {
     "copyright": "© 2026 arvo",

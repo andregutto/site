@@ -7,12 +7,19 @@ import { useCurrency } from '../contexts/CurrencyContext'
 import { useFavorites } from '../hooks/useFavorites'
 import { useAchievementContext } from '../contexts/AchievementContext'
 import { useI18n } from '../contexts/I18nContext'
+import { apiFetch } from '../lib/api'
 import ValueCards from '../components/ValueCards'
 import AllocationChart from '../components/AllocationChart'
 import AssetTable from '../components/AssetTable'
 import FixedIncomeSetupModal from '../components/FixedIncomeSetupModal'
 import type { PortfolioAsset } from '../lib/types'
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
+
+interface FreedomPlan {
+  id: number; is_active: boolean
+  initial_capital: number; monthly_contribution: number; monthly_return_rate: number
+  currency: string; start_date: string | null; created_at: string
+}
 
 function fmtMonthLabel(ym: string) {
   const [y, m] = ym.split('-')
@@ -49,7 +56,7 @@ export default function DashboardPage() {
   const navigate = useNavigate()
   const { triggerCheck } = useAchievementContext()
 
-  const { convert, fmt, currency } = useCurrency()
+  const { convert, fmt, currency, fxRates } = useCurrency()
   const { t } = useI18n()
   const td = (t as unknown as Record<string, Record<string, string>>).dividends ?? {}
 
@@ -73,6 +80,14 @@ export default function DashboardPage() {
     divSyncFired.current = true
     syncDividends()
   }, [syncDividends])
+
+  const [activePlan, setActivePlan] = useState<FreedomPlan | null>(null)
+  const [showTarget, setShowTarget] = useState(false)
+  useEffect(() => {
+    apiFetch<FreedomPlan[]>('/finances/freedom-plans')
+      .then(plans => setActivePlan(plans.find(p => p.is_active) ?? plans[0] ?? null))
+      .catch(() => {})
+  }, [])
 
   const [periodMode, setPeriodMode] = useState<PeriodMode>('ytd')
 
@@ -124,11 +139,37 @@ export default function DashboardPage() {
   const dailyTo = useDailyChart ? localDate(now) : null
   const { data: dailyData, loading: dailyLoading } = usePerformanceDaily(dailyFrom, dailyTo)
 
+  // Target line: project freedom plan trajectory onto the chart
+  const planStartDate = activePlan ? (activePlan.start_date ?? activePlan.created_at.slice(0, 10)) : null
+
+  function targetAtDate(dateStr: string): number | null {
+    if (!activePlan || !showTarget || !planStartDate) return null
+    const t = (new Date(dateStr + 'T12:00:00').getTime() - new Date(planStartDate + 'T12:00:00').getTime()) / (30.4375 * 24 * 3600 * 1000)
+    if (t < 0) return null
+    const brlPerUnit = activePlan.currency === 'BRL' ? 1 : (fxRates[activePlan.currency] ?? 1)
+    const IC = convert(activePlan.initial_capital * brlPerUnit)
+    const MC = convert(activePlan.monthly_contribution * brlPerUnit)
+    const r  = activePlan.monthly_return_rate
+    return r === 0 ? IC + MC * t : IC * Math.pow(1 + r, t) + MC * (Math.pow(1 + r, t) - 1) / r
+  }
+
   const rawFiltered = (perfData?.monthly ?? []).filter(m => m.total > 0 && m.month >= perfFrom)
   const portfolioChartData = useDailyChart
-    ? (dailyData?.daily ?? []).filter(d => d.total > 0).map(d => ({ month: fmtDayLabel(d.date), value: convert(d.total) }))
+    ? (dailyData?.daily ?? []).filter(d => d.total > 0).map(d => ({
+        month: fmtDayLabel(d.date),
+        value: convert(d.total),
+        target: targetAtDate(d.date),
+      }))
     : (rawFiltered.length >= 2 ? rawFiltered : (perfData?.monthly ?? []).filter(m => m.total > 0))
-        .map(m => ({ month: fmtMonthLabel(m.month), value: convert(m.total) }))
+        .map(m => {
+          const [y, mo] = m.month.split('-').map(Number)
+          const lastDay = new Date(y, mo, 0).getDate()
+          return {
+            month: fmtMonthLabel(m.month),
+            value: convert(m.total),
+            target: targetAtDate(`${m.month}-${String(lastDay).padStart(2, '0')}`),
+          }
+        })
 
   function handleAssetClick(asset: PortfolioAsset) {
     if (asset.needs_manual && asset.source === 'fixed_income') {
@@ -245,7 +286,20 @@ export default function DashboardPage() {
       {/* Row 2: Evolution chart — full width */}
       {(chartLoading || portfolioChartData.length > 0) && (
         <div className="rounded-2xl p-5" style={{ background: 'white', border: '1px solid var(--arvo-border)' }}>
-          <h2 className="mb-3" style={{ fontFamily: "var(--arvo-font-body)", fontSize: 13, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--arvo-fg)' }}>{t.dashboard.portfolioEvolution}</h2>
+          <div className="flex items-center justify-between mb-3">
+            <h2 style={{ fontFamily: "var(--arvo-font-body)", fontSize: 13, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--arvo-fg)' }}>{t.dashboard.portfolioEvolution}</h2>
+            {activePlan && (
+              <button
+                onClick={() => setShowTarget(v => !v)}
+                style={{
+                  fontFamily: 'var(--arvo-font-body)', fontSize: 10, letterSpacing: '0.1em',
+                  padding: '4px 10px', borderRadius: 6, border: `1px solid ${showTarget ? '#1B4FD8' : 'var(--arvo-border)'}`,
+                  background: showTarget ? '#1B4FD8' : 'white',
+                  color: showTarget ? 'white' : 'rgba(13,13,13,0.55)', cursor: 'pointer', transition: 'all 0.2s',
+                }}
+              >{(t.dashboard as unknown as Record<string,string>).targetLine ?? 'Meta'}</button>
+            )}
+          </div>
           <div className="h-52">
           {chartLoading ? (
             <div className="h-full flex items-end gap-1 px-2 pb-1">
@@ -270,13 +324,14 @@ export default function DashboardPage() {
                   domain={['auto', 'auto']}
                 />
                 <Tooltip
-                  formatter={(v) => [
+                  formatter={(v, name) => [
                     new Intl.NumberFormat('pt-BR', { style: 'currency', currency, maximumFractionDigits: 0 }).format(typeof v === 'number' ? v : 0),
-                    t.dashboard.patrimony,
+                    name,
                   ]}
                   contentStyle={{ borderRadius: 8, border: '1px solid var(--arvo-border)', fontSize: 12 }}
                 />
-                <Line type="monotone" dataKey="value" stroke="#0D0D0D" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
+                <Line type="monotone" dataKey="value" name={t.dashboard.patrimony} stroke="#0D0D0D" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
+                {showTarget && activePlan && <Line type="monotone" dataKey="target" name={(t.dashboard as unknown as Record<string,string>).targetLine ?? 'Meta'} stroke="#1B4FD8" strokeWidth={1.5} dot={false} strokeDasharray="5 3" connectNulls />}
               </LineChart>
             </ResponsiveContainer>
           )}

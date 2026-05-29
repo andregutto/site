@@ -205,7 +205,8 @@
     "addAssetsHint": "Ajoutez des actifs et enregistrez vos achats pour visualiser le portefeuille.",
     "errorLoadingPortfolio": "Erreur lors du chargement du portefeuille",
     "tryAgain": "Réessayer",
-    "calculating": "Calcul du portefeuille..."
+    "calculating": "Calcul du portefeuille...",
+    "targetLine": "Objectif"
   },
   "footer": {
     "copyright": "© 2026 arvo",
