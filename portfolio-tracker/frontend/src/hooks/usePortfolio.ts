@@ -3,9 +3,9 @@ import { apiFetch } from '../lib/api'
 import { useAuth } from '../contexts/AuthContext'
 import type { PortfolioValue, PerformanceSummary, PerformanceMonthly, PerformanceBenchmarks, PerformanceDaily, AssetReturns, AssetDetail, ContributionRow } from '../lib/types'
 
-// Daily cache v7 — bumped to invalidate pre-userId-scoping entries (2026-05-22).
-// Keys include userId so different users never share cached data.
-const CACHE_PREFIX = 'perf7_'
+// Daily cache v8 — bumped 2026-05-29 to invalidate entries cached before
+// price_history was repopulated with daily granularity.
+const CACHE_PREFIX = 'perf8_'
 
 function perfCacheGet<T>(key: string): T | null {
   try {
