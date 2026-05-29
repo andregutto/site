@@ -145,12 +145,12 @@ export default function DashboardPage() {
   function targetAtDate(dateStr: string): number | null {
     if (!activePlan || !showTarget || !planStartDate) return null
     const t = (new Date(dateStr + 'T12:00:00').getTime() - new Date(planStartDate + 'T12:00:00').getTime()) / (30.4375 * 24 * 3600 * 1000)
-    if (t < 0) return null
     const brlPerUnit = activePlan.currency === 'BRL' ? 1 : (fxRates[activePlan.currency] ?? 1)
     const IC = convert(activePlan.initial_capital * brlPerUnit)
     const MC = convert(activePlan.monthly_contribution * brlPerUnit)
     const r  = activePlan.monthly_return_rate
-    return r === 0 ? IC + MC * t : IC * Math.pow(1 + r, t) + MC * (Math.pow(1 + r, t) - 1) / r
+    const v  = r === 0 ? IC + MC * t : IC * Math.pow(1 + r, t) + MC * (Math.pow(1 + r, t) - 1) / r
+    return v > 0 ? v : null
   }
 
   const rawFiltered = (perfData?.monthly ?? []).filter(m => m.total > 0 && m.month >= perfFrom)
