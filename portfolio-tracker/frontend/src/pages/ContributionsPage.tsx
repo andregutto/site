@@ -89,6 +89,7 @@ export default function ContributionsPage() {
   const [priceCurrency,  setPriceCurrency]  = useState('BRL')
   const [simpleCurrency, setSimpleCurrency] = useState('BRL')
   const [valueBrl,       setValueBrl]       = useState('')
+  const [taxWithheld,   setTaxWithheld]   = useState('')
   const [description,   setDescription]  = useState('')
 
   // new asset form
@@ -217,7 +218,7 @@ export default function ContributionsPage() {
 
   function resetForm() {
     setAssetId(''); setDate(today); setType('buy')
-    setQuantity(''); setPriceOrig(''); setPriceCurrency('BRL'); setSimpleCurrency('BRL'); setValueBrl(''); setDescription('')
+    setQuantity(''); setPriceOrig(''); setPriceCurrency('BRL'); setSimpleCurrency('BRL'); setValueBrl(''); setTaxWithheld(''); setDescription('')
     setAssetSearch(''); setFormErr(null); setFieldErrors({})
   }
 
@@ -273,12 +274,14 @@ export default function ContributionsPage() {
       const vBrl = rawVal * (fxRate ?? 1)
       setSaving(true); setFormErr(null)
       try {
+        const twVal = parseLocaleNum(taxWithheld)
         await apiFetch('/contributions', {
           method: 'POST',
           body: JSON.stringify({
             asset_id: Number(assetId), date, type: 'income',
             quantity: 0, value_brl: vBrl, currency: simpleCurrency,
             description: description || undefined,
+            tax_withheld: twVal && twVal > 0 ? twVal : undefined,
           }),
         })
         setShowForm(false); resetForm(); refresh(); triggerCheck()
@@ -523,6 +526,7 @@ export default function ContributionsPage() {
       if (rate) displayValueBrl = (c.value_brl / rate).toFixed(2).replace('.', ',')
     }
     setValueBrl(displayValueBrl)
+    setTaxWithheld((c as { tax_withheld?: number | null }).tax_withheld != null ? String((c as { tax_withheld?: number }).tax_withheld).replace('.', ',') : '')
     setDescription(c.description ?? '')
     setAssetSearch('')
     setFormErr(null)
@@ -562,16 +566,18 @@ export default function ContributionsPage() {
 
     setSaving(true); setFormErr(null)
     try {
+      const twVal = parseLocaleNum(taxWithheld)
       await apiFetch(`/contributions/${editId}`, {
         method: 'PATCH',
         body: JSON.stringify({
           date,
           type,
-          quantity:   (isIncome || isSimpleAsset) ? (qty ?? 0) : qty,
-          price_orig: parseLocaleNum(priceOrig) ?? null,
-          currency:   (isIncome || isSimpleAsset) ? simpleCurrency : (priceCurrency || null),
-          value_brl:  vBrl,
-          description: description || null,
+          quantity:     (isIncome || isSimpleAsset) ? (qty ?? 0) : qty,
+          price_orig:   parseLocaleNum(priceOrig) ?? null,
+          currency:     (isIncome || isSimpleAsset) ? simpleCurrency : (priceCurrency || null),
+          value_brl:    vBrl,
+          description:  description || null,
+          tax_withheld: isIncome ? (twVal && twVal > 0 ? twVal : null) : undefined,
         }),
       })
       setEditId(null)
@@ -1049,6 +1055,23 @@ export default function ContributionsPage() {
               </div>
               {fieldErrors.valueBrl && <p className="text-xs text-red-500 mt-0.5">{fieldErrors.valueBrl}</p>}
             </div>
+
+            {/* IR retido na fonte — income contributions only, for France fiscal report */}
+            {isIncome && (
+              <div className="sm:col-span-2">
+                <label className="block text-xs text-gray-500 mb-1">
+                  IR retido na fonte (R$) <span className="text-gray-400 font-normal">— opcional, para crédito fiscal França (2AB)</span>
+                </label>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  value={taxWithheld}
+                  onChange={e => setTaxWithheld(e.target.value)}
+                  placeholder="0,00"
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20"
+                />
+              </div>
+            )}
 
             {/* Description */}
             <div className="sm:col-span-2">

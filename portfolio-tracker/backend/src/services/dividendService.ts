@@ -199,30 +199,32 @@ export async function syncDividendsForUser(userId: string, force = false) {
     }
   }))
 
-  // For brapi assets (Brazilian stocks/FIIs): Yahoo Finance with .SA suffix is the
-  // primary source (free, no token). Brapi fundamental endpoint is the fallback but
-  // requires BRAPI_TOKEN which is optional.
+  // For brapi assets (Brazilian stocks/FIIs):
+  // When BRAPI_TOKEN is available, brapi is the primary source — it provides proper
+  // dividend type labels (JCP vs DIVIDEND vs FII_INCOME) that Yahoo Finance doesn't.
+  // Without a token, Yahoo Finance .SA is used (free, but all dividends come as 'dividend').
   for (const a of brapiAssets) {
     let didSync = false
 
-    // Primary: Yahoo Finance (.SA suffix) — dividends in BRL, no auth required
-    try {
-      const from = latestMap[a.id] ?? defaultFrom
-      const divs = await fetchYahooDividends(a.ticker_brapi! + '.SA', from)
-      await upsertRows(a, divs)
-      didSync = true
-    } catch (err) {
-      console.warn(`[dividends] yahoo-sa ${a.code}:`, err)
-    }
-
-    // Fallback: brapi (requires BRAPI_TOKEN env var)
-    if (!didSync && process.env.BRAPI_TOKEN) {
+    // Primary (when token available): brapi — proper JCP/rendimento/dividend labels
+    if (process.env.BRAPI_TOKEN) {
       try {
         const allDivs = await fetchBrapiDividends(a.ticker_brapi!)
         await upsertRows(a, allDivs)
         didSync = true
       } catch (err) {
         console.warn(`[dividends] brapi ${a.code}:`, err)
+      }
+    }
+
+    // Primary (no token) or fallback: Yahoo Finance .SA — no JCP label differentiation
+    if (!didSync) {
+      try {
+        const from = latestMap[a.id] ?? defaultFrom
+        await upsertRows(a, await fetchYahooDividends(a.ticker_brapi! + '.SA', from))
+        didSync = true
+      } catch (err) {
+        console.warn(`[dividends] yahoo-sa ${a.code}:`, err)
       }
     }
 

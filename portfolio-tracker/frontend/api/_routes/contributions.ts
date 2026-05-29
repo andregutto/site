@@ -23,17 +23,18 @@ router.get('/', requireAuth, async (req, res: Response) => {
 
 router.post('/', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
-  const { asset_id, date, type, quantity, price_orig, currency, fx_rate_brl, value_brl, amount_orig, description } = req.body as {
-    asset_id:     number
-    date:         string
-    type:         'buy' | 'sell' | 'income'
-    quantity?:    number
-    price_orig?:  number
-    currency?:    string
-    fx_rate_brl?: number
-    value_brl?:   number
-    amount_orig?: number
-    description?: string
+  const { asset_id, date, type, quantity, price_orig, currency, fx_rate_brl, value_brl, amount_orig, description, tax_withheld } = req.body as {
+    asset_id:      number
+    date:          string
+    type:          'buy' | 'sell' | 'income'
+    quantity?:     number
+    price_orig?:   number
+    currency?:     string
+    fx_rate_brl?:  number
+    value_brl?:    number
+    amount_orig?:  number
+    description?:  string
+    tax_withheld?: number
   }
 
   const qty = type === 'income' ? (quantity ?? 0) : quantity
@@ -56,11 +57,12 @@ router.post('/', requireAuth, async (req, res: Response) => {
     .from('contributions')
     .insert({
       asset_id, date, type, quantity: qty,
-      price_orig:  price_orig  ?? null,
-      currency:    currency    ?? null,
-      fx_rate_brl: fx_rate_brl ?? null,
-      value_brl:   value_brl   ?? null,
-      description: description ?? null,
+      price_orig:   price_orig   ?? null,
+      currency:     currency     ?? null,
+      fx_rate_brl:  fx_rate_brl  ?? null,
+      value_brl:    value_brl    ?? null,
+      description:  description  ?? null,
+      tax_withheld: tax_withheld ?? null,
     })
     .select('id')
     .single()
@@ -116,15 +118,16 @@ router.patch('/:id', requireAuth, async (req, res: Response) => {
     .single()
   if (!contrib) { res.status(404).json({ error: 'Aporte não encontrado' }); return }
 
-  const { date, type, quantity, price_orig, currency, fx_rate_brl, value_brl, description } = req.body as {
-    date?:        string
-    type?:        'buy' | 'sell' | 'income'
-    quantity?:    number
-    price_orig?:  number | null
-    currency?:    string | null
-    fx_rate_brl?: number | null
-    value_brl?:   number | null
-    description?: string | null
+  const { date, type, quantity, price_orig, currency, fx_rate_brl, value_brl, description, tax_withheld } = req.body as {
+    date?:         string
+    type?:         'buy' | 'sell' | 'income'
+    quantity?:     number
+    price_orig?:   number | null
+    currency?:     string | null
+    fx_rate_brl?:  number | null
+    value_brl?:    number | null
+    description?:  string | null
+    tax_withheld?: number | null
   }
 
   if (type && !['buy', 'sell', 'income'].includes(type)) {
@@ -132,14 +135,15 @@ router.patch('/:id', requireAuth, async (req, res: Response) => {
   }
 
   const updates: Record<string, unknown> = {}
-  if (date        !== undefined) updates.date        = date
-  if (type        !== undefined) updates.type        = type
-  if (quantity    !== undefined) updates.quantity    = quantity
-  if (price_orig  !== undefined) updates.price_orig  = price_orig
-  if (currency    !== undefined) updates.currency    = currency
-  if (fx_rate_brl !== undefined) updates.fx_rate_brl = fx_rate_brl
-  if (value_brl   !== undefined) updates.value_brl   = value_brl
-  if (description !== undefined) updates.description = description
+  if (date         !== undefined) updates.date         = date
+  if (type         !== undefined) updates.type         = type
+  if (quantity     !== undefined) updates.quantity     = quantity
+  if (price_orig   !== undefined) updates.price_orig   = price_orig
+  if (currency     !== undefined) updates.currency     = currency
+  if (fx_rate_brl  !== undefined) updates.fx_rate_brl  = fx_rate_brl
+  if (value_brl    !== undefined) updates.value_brl    = value_brl
+  if (description  !== undefined) updates.description  = description
+  if (tax_withheld !== undefined) updates.tax_withheld = tax_withheld
 
   const { error } = await supabaseAdmin
     .from('contributions')

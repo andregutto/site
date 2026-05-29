@@ -152,21 +152,24 @@ export async function syncDividendsForUser(userId: string, force = false) {
   for (const a of brapiAssets) {
     let didSync = false
 
-    try {
-      const from = latestMap[a.id] ?? defaultFrom
-      const divs = await fetchYahooDividends(a.ticker_brapi! + '.SA', from)
-      await upsertRows(a, divs)
-      didSync = true
-    } catch (err) {
-      console.warn(`[dividends] yahoo-sa ${a.code}:`, err)
-    }
-
-    if (!didSync && process.env.BRAPI_TOKEN) {
+    // Primary (when token available): brapi — proper JCP/rendimento/dividend labels
+    if (process.env.BRAPI_TOKEN) {
       try {
         const allDivs = await fetchBrapiDividends(a.ticker_brapi!)
         await upsertRows(a, allDivs)
         didSync = true
       } catch (err) { console.warn(`[dividends] brapi ${a.code}:`, err) }
+    }
+
+    // Primary (no token) or fallback: Yahoo Finance .SA — no JCP label differentiation
+    if (!didSync) {
+      try {
+        const from = latestMap[a.id] ?? defaultFrom
+        await upsertRows(a, await fetchYahooDividends(a.ticker_brapi! + '.SA', from))
+        didSync = true
+      } catch (err) {
+        console.warn(`[dividends] yahoo-sa ${a.code}:`, err)
+      }
     }
 
     if (!didSync) errors++

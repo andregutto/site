@@ -1,7 +1,7 @@
 import { Router, Response } from 'express'
 import { randomBytes } from 'crypto'
-import { requireAuth, AuthRequest } from '../../middleware/auth.js'
-import { supabaseAdmin } from '../../lib/supabase.js'
+import { requireAuth, AuthRequest } from '../middleware/auth.js'
+import { supabaseAdmin } from '../lib/supabase.js'
 
 const router = Router()
 // NOTE: GET /invite/:token is intentionally public (no requireAuth)
