@@ -89,7 +89,8 @@ type PrefetchedData = {
 }
 
 // Fetches all data needed for portfolio value computation in one round-trip (4 parallel DB queries).
-async function fetchPrefetchedData(userId: string): Promise<PrefetchedData> {
+// priceFrom: optional earliest ref_date to load from price_history (reduces rows for short periods).
+async function fetchPrefetchedData(userId: string, priceFrom?: string): Promise<PrefetchedData> {
   const { data: assets } = await supabaseAdmin
     .from('assets')
     .select('id, code, name, asset_type, currency, active, fi_principal, fi_start_date, fi_type, fi_rate, fi_spread, ticker_brapi, ticker_yahoo, coingecko_id')
@@ -116,18 +117,19 @@ async function fetchPrefetchedData(userId: string): Promise<PrefetchedData> {
   const prices: PrefetchedData['prices'] = []
   {
     const pageSize = 1000
-    let from = 0
+    let offset = 0
     while (true) {
-      const { data: batch } = await supabaseAdmin
+      let q = supabaseAdmin
         .from('price_history')
         .select('asset_id, price, currency, ref_date')
         .in('asset_id', assetIds)
         .order('ref_date', { ascending: true })
-        .range(from, from + pageSize - 1)
+      if (priceFrom) q = q.gte('ref_date', priceFrom)
+      const { data: batch } = await q.range(offset, offset + pageSize - 1)
       if (!batch || batch.length === 0) break
       prices.push(...(batch as PrefetchedData['prices']))
       if (batch.length < pageSize) break
-      from += pageSize
+      offset += pageSize
     }
   }
 
@@ -683,7 +685,12 @@ router.get('/daily', requireAuth, async (req, res: Response) => {
     res.status(400).json({ error: '"from" deve ser anterior a "to"' }); return
   }
 
-  const prefetched = await fetchPrefetchedData(userId)
+  // Load only price_history rows back 90 days before the window (carry-backward buffer).
+  // This reduces ~78k rows to ~3k for a 30-day window.
+  const priceFromDate = new Date(fromStr + 'T12:00:00')
+  priceFromDate.setDate(priceFromDate.getDate() - 90)
+  const priceFrom = localDate(priceFromDate)
+  const prefetched = await fetchPrefetchedData(userId, priceFrom)
 
   const pricesByAsset: Record<number, Array<{ ref_date: string; price: number; currency: string }>> = {}
   for (const p of prefetched.prices) {

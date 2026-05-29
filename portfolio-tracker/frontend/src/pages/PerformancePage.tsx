@@ -104,12 +104,20 @@ export default function PerformancePage() {
   const dailyTo = useDailyChart ? localDate(now) : null
   const { data: dailyData, loading: dailyLoading } = usePerformanceDaily(dailyFrom, dailyTo)
 
-  const dailyChartData = useDailyChart
-    ? (dailyData?.daily ?? []).filter(pt => pt.total > 0).map(pt => ({
-        month: fmtDayLabel(pt.date),
-        value: convert(pt.total),
-      }))
-    : []
+  const dailyChartData = useDailyChart ? (() => {
+    const pts = (dailyData?.daily ?? []).filter(pt => pt.total > 0)
+    if (pts.length === 0) return []
+    const periodStart = pts[0].total - (pts[0].contributions ?? 0)
+    let cfCumul = 0
+    return pts.map(pt => {
+      cfCumul += (pt.contributions ?? 0)
+      const denom = periodStart + 0.5 * cfCumul
+      const retPct = periodStart > 0 && denom > 0
+        ? Math.round(((pt.total - periodStart - cfCumul) / denom) * 10000) / 100
+        : 0
+      return { month: fmtDayLabel(pt.date), portfolio: retPct }
+    })
+  })() : []
 
   const { data: summary,    loading: sLoading, refresh: refreshSummary    } = usePerformanceSummary(from, to)
   const { data: monthly,    loading: mLoading, refresh: refreshMonthly    } = usePerformanceMonthly(from, to)
@@ -312,14 +320,13 @@ export default function PerformancePage() {
                       <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#9ca3af' }} interval="preserveStartEnd" />
                       <YAxis
                         tick={{ fontSize: 11, fill: '#9ca3af' }}
-                        tickFormatter={v => new Intl.NumberFormat('pt-BR', { notation: 'compact', maximumFractionDigits: 0 }).format(v)}
-                        width={56}
+                        tickFormatter={v => `${Number(v) > 0 ? '+' : ''}${Number(v).toFixed(1)}%`}
                       />
                       <Tooltip
-                        formatter={(v) => [new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(Number(v))]}
+                        formatter={(v) => [`${Number(v) >= 0 ? '+' : ''}${Number(v).toFixed(2)}%`]}
                         contentStyle={{ borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 12 }}
                       />
-                      <Line type="monotone" dataKey="value" name={t.performance.wallet} stroke="#0D0D0D" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
+                      <Line type="monotone" dataKey="portfolio" name={t.performance.wallet} stroke="#0D0D0D" strokeWidth={2} dot={{ r: 2, fill: '#0D0D0D' }} activeDot={{ r: 4 }} />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
