@@ -51,9 +51,6 @@ function fmt(n: number, digits = 2) {
 function fmtBRL(n: number) {
   return `R$ ${fmt(n)}`
 }
-function pctColor(n: number) {
-  return n >= 0 ? 'text-green-600' : 'text-red-500'
-}
 
 const CURRENT_YEAR = new Date().getFullYear()
 const YEARS = Array.from({ length: 6 }, (_, i) => CURRENT_YEAR - i)
