@@ -52,6 +52,20 @@ function fmtBRL(n: number) {
   return `R$ ${fmt(n)}`
 }
 
+const DIV_SYNC_INTERVAL = 6 * 60 * 60 * 1000 // 6 h
+const DIV_SYNC_KEY = 'div_last_sync'
+
+function syncDividendsThen<T>(fn: () => Promise<T>): Promise<T> {
+  const last = localStorage.getItem(DIV_SYNC_KEY)
+  const stale = !last || Date.now() - new Date(last).getTime() >= DIV_SYNC_INTERVAL
+  const step = stale
+    ? apiFetch('/dividends/sync', { method: 'POST' })
+        .then(() => localStorage.setItem(DIV_SYNC_KEY, new Date().toISOString()))
+        .catch(() => {})
+    : Promise.resolve()
+  return step.then(fn)
+}
+
 const CURRENT_YEAR = new Date().getFullYear()
 const YEARS = Array.from({ length: 6 }, (_, i) => CURRENT_YEAR - i)
 
@@ -94,7 +108,7 @@ function BrReport({ year }: { year: number }) {
 
   useEffect(() => {
     setStep('overview'); setLoading(true); setError(null); setBrData(null)
-    apiFetch<BrazilTaxData>(`/reports/brazil/${year}`)
+    syncDividendsThen(() => apiFetch<BrazilTaxData>(`/reports/brazil/${year}`))
       .then(d => { setBrData(d); setLoading(false) })
       .catch(e => { setError(e instanceof Error ? e.message : 'Erro'); setLoading(false) })
   }, [year])
@@ -828,7 +842,7 @@ function FrReport({ year }: { year: number }) {
 
   const fetchReport = () => {
     setLoading(true); setError(null); setTaxData(null)
-    apiFetch<FranceTaxData>(`/reports/france/${year}`)
+    syncDividendsThen(() => apiFetch<FranceTaxData>(`/reports/france/${year}`))
       .then(d => { setTaxData(d); setLoading(false) })
       .catch(e => { setError(e instanceof Error ? e.message : 'Erreur de chargement'); setLoading(false) })
   }
