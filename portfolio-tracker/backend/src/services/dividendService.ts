@@ -17,7 +17,7 @@ function parseDate(s: string | null | undefined): string | null {
 
 function mapBrapiLabel(label: string): string {
   const l = (label ?? '').toUpperCase()
-  if (l.includes('JCP')) return 'jcp'
+  if (l.includes('JCP') || l.includes('JSCP') || l.includes('JUROS')) return 'jcp'
   if (l.includes('RENDIMENTO')) return 'rendimento'
   if (l.includes('AMORTIZA')) return 'amortization'
   return 'dividend'
@@ -61,6 +61,26 @@ export async function fetchBrapiDividends(ticker: string): Promise<RawDividend[]
     })
   }
   return out
+}
+
+export async function fetchStatusInvestDividends(ticker: string): Promise<RawDividend[]> {
+  const url = `https://statusinvest.com.br/acao/companytickerprovents?ticker=${ticker}&chartProventsType=2`
+  const res = await fetch(url, {
+    headers: { 'User-Agent': 'Mozilla/5.0 (compatible; portfolio-tracker/1.0)' },
+    signal: AbortSignal.timeout(12000),
+  })
+  if (!res.ok) throw new Error(`statusinvest ${res.status}: ${ticker}`)
+  const data = await res.json() as {
+    assetEarningsModels?: Array<{ ed: string; pd: string; et: string; etd: string; v: number }>
+  }
+  const models = data.assetEarningsModels ?? []
+  return models.flatMap(m => {
+    const ex_date = parseDate(m.ed)
+    if (!ex_date || m.v <= 0) return []
+    const et = (m.et ?? '').toUpperCase()
+    const dividend_type = et === 'JCP' || et.includes('JUROS') ? 'jcp' : et === 'RENDIMENTO' ? 'rendimento' : 'dividend'
+    return [{ ex_date, pay_date: parseDate(m.pd), amount_per_share: m.v, dividend_type, source: 'statusinvest' }]
+  })
 }
 
 export async function fetchYahooDividends(ticker: string, from: string): Promise<RawDividend[]> {
@@ -200,14 +220,31 @@ export async function syncDividendsForUser(userId: string, force = false) {
   }))
 
   // For brapi assets (Brazilian stocks/FIIs):
-  // When BRAPI_TOKEN is available, brapi is the primary source — it provides proper
-  // dividend type labels (JCP vs DIVIDEND vs FII_INCOME) that Yahoo Finance doesn't.
-  // Without a token, Yahoo Finance .SA is used (free, but all dividends come as 'dividend').
+  // 1. Status Invest (free, proper JCP/Rendimento/Dividendo labels) — primary
+  // 2. Brapi fundamental (paid token) — fallback if Status Invest fails
+  // 3. Yahoo Finance .SA (free, all events as 'dividend') — last resort
   for (const a of brapiAssets) {
     let didSync = false
 
-    // Primary (when token available): brapi — proper JCP/rendimento/dividend labels
-    if (process.env.BRAPI_TOKEN) {
+    // Primary: Status Invest — free, correct type labels, covers all BR tickers
+    try {
+      const allDivs = await fetchStatusInvestDividends(a.ticker_brapi!)
+      if (allDivs.length > 0) {
+        // Clean this asset's existing records so Yahoo 'dividend' entries don't persist
+        // alongside correctly-typed Status Invest records (avoids double-counting JCP)
+        if (!force) {
+          await supabaseAdmin.from('dividends')
+            .delete().eq('asset_id', a.id).eq('user_id', userId)
+        }
+        await upsertRows(a, allDivs)
+        didSync = true
+      }
+    } catch (err) {
+      console.warn(`[dividends] statusinvest ${a.code}:`, err)
+    }
+
+    // Fallback: brapi fundamental (requires paid token)
+    if (!didSync && process.env.BRAPI_TOKEN) {
       try {
         const allDivs = await fetchBrapiDividends(a.ticker_brapi!)
         await upsertRows(a, allDivs)
@@ -217,7 +254,7 @@ export async function syncDividendsForUser(userId: string, force = false) {
       }
     }
 
-    // Primary (no token) or fallback: Yahoo Finance .SA — no JCP label differentiation
+    // Last resort: Yahoo .SA (all types become 'dividend')
     if (!didSync) {
       try {
         const from = latestMap[a.id] ?? defaultFrom
@@ -229,7 +266,7 @@ export async function syncDividendsForUser(userId: string, force = false) {
     }
 
     if (!didSync) errors++
-    await new Promise(r => setTimeout(r, 400))
+    await new Promise(r => setTimeout(r, 500))
   }
 
   return { synced, skipped, errors }
