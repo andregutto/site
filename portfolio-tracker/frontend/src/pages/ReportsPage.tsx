@@ -3,29 +3,46 @@ import * as XLSX from 'xlsx'
 import { apiFetch } from '../lib/api'
 import { useI18n } from '../contexts/I18nContext'
 
-interface SellRecord {
-  id: number; date: string; code: string; name: string
-  qty: number; sale_value_brl: number; cost_basis_brl: number
-  gain_loss_brl: number; gain_loss_pct: number | null
-}
+// ─── Brazil Tax Interfaces ────────────────────────────────────────────────────
 
-interface IncomeRecord {
-  id: number; date: string; code: string; name: string
-  value_brl: number; description: string
-}
-
-interface PositionRecord {
+interface BrBem {
   asset_id: number; code: string; name: string
-  asset_type: string; currency: string; qty: number; cost_brl: number
+  pgdi_grupo: string; pgdi_codigo: string; pgdi_descricao: string
+  qty: number; cost_brl: number
+  situacao_anterior: number; situacao_atual: number
+  discriminacao: string
 }
 
-interface ReportData {
+interface BrRendItem { id: string; date: string; asset_code: string; asset_name: string; valor: number; ir_retido: number }
+
+interface BrRendGroup {
+  codigo: string; descricao: string
+  items: BrRendItem[]
+  total: number; ir_retido_total: number
+}
+
+interface BrRVMes {
+  mes: string; total_vendas: number; ganho_bruto: number; perda_bruta: number
+  carryover_anterior: number; ganho_liquido: number; isento: boolean
+  aliquota: number; ir_devido: number; ir_retido: number; darf_a_pagar: number
+  operacoes: Array<{ date: string; code: string; qty: number; sale_value: number; cost_basis: number; gain: number }>
+}
+
+interface BrCLMes {
+  mes: string; dividendos_brl: number; aliquota: number; deducao: number; ir_devido: number
+  items: Array<{ date: string; asset_code: string; country: string; amount_brl: number }>
+}
+
+interface BrazilTaxData {
   year: number
-  sells: SellRecord[]
-  income: IncomeRecord[]
-  positions: PositionRecord[]
-  totalGainLoss: number
-  totalIncome: number
+  bens_direitos: BrBem[]
+  rendimentos_isentos: BrRendGroup[]
+  tributacao_exclusiva: BrRendGroup[]
+  ir_retido_total: number; total_isentos: number; total_exclusiva: number
+  renda_variavel: BrRVMes[]
+  total_ganho_rv: number; total_perda_rv: number; total_darf_rv: number; carryover_final: number
+  carne_leao: BrCLMes[]
+  total_carne_leao: number
 }
 
 function fmt(n: number, digits = 2) {
@@ -42,19 +59,8 @@ const CURRENT_YEAR = new Date().getFullYear()
 const YEARS = Array.from({ length: 6 }, (_, i) => CURRENT_YEAR - i)
 
 export default function ReportsPage() {
-  const [year, setYear]       = useState(CURRENT_YEAR - 1)
-  const [tab, setTab]         = useState<'br' | 'fr'>('br')
-  const [data, setData]       = useState<ReportData | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError]     = useState<string | null>(null)
-
-  useEffect(() => {
-    setLoading(true); setError(null); setData(null)
-    apiFetch<ReportData>(`/reports/${year}`)
-      .then(setData)
-      .catch(e => setError(e instanceof Error ? e.message : 'Erro ao carregar relatorio'))
-      .finally(() => setLoading(false))
-  }, [year])
+  const [year, setYear] = useState(CURRENT_YEAR - 1)
+  const [tab, setTab]   = useState<'br' | 'fr'>('br')
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -75,195 +81,310 @@ export default function ReportsPage() {
         </div>
       </div>
 
-      {loading && <div className="bg-white border border-gray-100 rounded-2xl p-10 text-center text-gray-400 text-sm">Carregando...</div>}
-      {error   && <div className="bg-white border border-gray-100 rounded-2xl p-6 text-red-600 text-sm">{error}</div>}
-
-      {data && tab === 'br' && <BrReport data={data} />}
+      {tab === 'br' && <BrReport year={year} />}
       {tab === 'fr' && <FrReport year={year} />}
     </div>
   )
 }
 
-function BrReport({ data }: { data: ReportData }) {
+function BrReport({ year }: { year: number }) {
   const { t } = useI18n()
+  const bt = t.brTax
+  const [brData, setBrData] = useState<BrazilTaxData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError]     = useState<string | null>(null)
+  const [step, setStep]       = useState<'overview' | 'rv' | 'bens'>('overview')
+
+  useEffect(() => {
+    setStep('overview'); setLoading(true); setError(null); setBrData(null)
+    apiFetch<BrazilTaxData>(`/reports/brazil/${year}`)
+      .then(d => { setBrData(d); setLoading(false) })
+      .catch(e => { setError(e instanceof Error ? e.message : 'Erro'); setLoading(false) })
+  }, [year])
+
+  if (loading) return <div className="bg-white border border-gray-100 rounded-2xl p-10 text-center text-gray-400 text-sm">{bt.loading}</div>
+  if (error)   return <div className="bg-white border border-gray-100 rounded-2xl p-6 text-red-600 text-sm">{error}</div>
+  if (!brData) return null
+
+  const totalRend = brData.total_isentos + brData.total_exclusiva
+
   return (
-    <div className="space-y-6">
-
-      {/* Resumo */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-        <Card label="Ganho/Perda de capital" value={fmtBRL(data.totalGainLoss)} valueClass={pctColor(data.totalGainLoss)} />
-        <Card label="Rendimentos recebidos"  value={fmtBRL(data.totalIncome)}   valueClass="text-purple-600" />
-        <Card label="Ativos declarados"      value={String(data.positions.length)} valueClass="text-gray-800" />
+    <div className="space-y-5">
+      {/* Step nav */}
+      <div className="flex gap-2 text-xs font-medium flex-wrap">
+        {(['overview', 'rv', 'bens'] as const).map((s, i) => {
+          const labels = [bt.step1, bt.step2, bt.step3]
+          return (
+            <button key={s} onClick={() => setStep(s)}
+              className={`px-3 py-1.5 rounded-full border transition-colors ${step === s ? 'bg-[#0D0D0D] text-white border-[#0D0D0D]' : 'border-gray-200 text-gray-500 hover:bg-gray-50'}`}
+            >{labels[i]}</button>
+          )
+        })}
       </div>
 
-      {/* Ganho de Capital — Alienacoes */}
-      <Section title="Ganho de Capital — Alienacoes">
-        {data.sells.length === 0 ? (
-          <p className="text-sm text-gray-400 py-4 text-center">Nenhuma venda registrada em {data.year}</p>
-        ) : (
-          <>
-            {/* desktop */}
-            <div className="hidden sm:block">
-              <table className="w-full text-sm">
-                <thead><tr className="text-xs text-gray-400 border-b border-gray-100">
-                  <th className="text-left py-2 font-medium">{t.reports.colDate}</th>
-                  <th className="text-left py-2 font-medium">{t.reports.colAsset}</th>
-                  <th className="text-right py-2 font-medium">Qtd</th>
-                  <th className="text-right py-2 font-medium">Custo medio</th>
-                  <th className="text-right py-2 font-medium">{t.reports.colSaleValue}</th>
-                  <th className="text-right py-2 font-medium">{t.reports.colGainLoss}</th>
-                  <th className="text-right py-2 font-medium">%</th>
-                </tr></thead>
-                <tbody>
-                  {data.sells.map(r => (
-                    <tr key={r.id} className="border-b border-gray-50 hover:bg-gray-50">
-                      <td className="py-2 text-gray-500">{r.date}</td>
-                      <td className="py-2 font-medium">{r.code} <span className="text-gray-400 font-normal text-xs">{r.name}</span></td>
-                      <td className="py-2 text-right text-gray-600">{fmt(r.qty, 6)}</td>
-                      <td className="py-2 text-right text-gray-600">{fmtBRL(r.cost_basis_brl)}</td>
-                      <td className="py-2 text-right text-gray-600">{fmtBRL(r.sale_value_brl)}</td>
-                      <td className={`py-2 text-right font-semibold ${pctColor(r.gain_loss_brl)}`}>{fmtBRL(r.gain_loss_brl)}</td>
-                      <td className={`py-2 text-right ${pctColor(r.gain_loss_brl)}`}>{r.gain_loss_pct != null ? `${fmt(r.gain_loss_pct, 1)}%` : '-'}</td>
-                    </tr>
-                  ))}
-                  <tr className="font-semibold border-t border-gray-200 bg-gray-50">
-                    <td colSpan={5} className="py-2 text-right text-xs text-gray-500">Total ganho/perda</td>
-                    <td className={`py-2 text-right ${pctColor(data.totalGainLoss)}`}>{fmtBRL(data.totalGainLoss)}</td>
-                    <td />
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-            {/* mobile cards */}
-            <div className="sm:hidden divide-y divide-gray-50">
-              {data.sells.map(r => (
-                <div key={r.id} className="py-3">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <span className="font-semibold text-sm text-gray-900">{r.code}</span>
-                      <span className="text-xs text-gray-400 ml-1.5 truncate">{r.name}</span>
-                    </div>
-                    <div className="text-right shrink-0">
-                      <div className={`font-semibold text-sm ${pctColor(r.gain_loss_brl)}`}>{fmtBRL(r.gain_loss_brl)}</div>
-                      <div className={`text-xs ${pctColor(r.gain_loss_brl)}`}>{r.gain_loss_pct != null ? `${fmt(r.gain_loss_pct, 1)}%` : '—'}</div>
-                    </div>
-                  </div>
-                  <div className="mt-1 text-xs text-gray-400 flex flex-wrap gap-x-3">
-                    <span>{r.date}</span>
-                    <span>Venda {fmtBRL(r.sale_value_brl)}</span>
-                  </div>
-                </div>
+      {/* ── Step 1: Resumo ────────────────────────────────────────────────── */}
+      {step === 'overview' && (
+        <>
+          {/* KPI cards */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            <Card label={bt.kpiBens}     value={String(brData.bens_direitos.length)}  valueClass="text-gray-800" />
+            <Card label={bt.kpiIsentos}  value={fmtBRL(brData.total_isentos)}         valueClass="text-green-600" />
+            <Card label={bt.kpiExclusiva} value={fmtBRL(brData.total_exclusiva)}      valueClass="text-purple-600" />
+            <Card label={bt.kpiDARF}     value={fmtBRL(brData.total_darf_rv)}         valueClass={brData.total_darf_rv > 0 ? 'text-red-600' : 'text-gray-400'} />
+            <Card label={bt.kpiCarneLeao} value={fmtBRL(brData.total_carne_leao)}     valueClass={brData.total_carne_leao > 0 ? 'text-orange-600' : 'text-gray-400'} />
+            <Card label={bt.kpiIRRetido} value={fmtBRL(brData.ir_retido_total)}       valueClass="text-blue-600" />
+          </div>
+
+          {/* Auto sources */}
+          <Section title={bt.autoSources}>
+            <div className="py-3 space-y-1 text-sm text-gray-600">
+              <p>• {brData.bens_direitos.length} {bt.kpiBens.toLowerCase()}</p>
+              {brData.rendimentos_isentos.map(g => (
+                <p key={g.codigo}>• {bt.sectionIsentos} — Código {g.codigo}: {g.descricao} ({fmtBRL(g.total)})</p>
               ))}
-              <div className="py-3 flex justify-between text-xs border-t border-gray-100">
-                <span className="text-gray-500 font-medium">Total ganho/perda</span>
-                <span className={`font-semibold ${pctColor(data.totalGainLoss)}`}>{fmtBRL(data.totalGainLoss)}</span>
+              {brData.tributacao_exclusiva.map(g => (
+                <p key={g.codigo}>• {bt.sectionExclusiva} — Código {g.codigo}: {g.descricao} ({fmtBRL(g.total)})</p>
+              ))}
+              {brData.renda_variavel.length > 0 && (
+                <p>• {brData.renda_variavel.reduce((s, m) => s + m.operacoes.length, 0)} {t.frTax.salesDetected.replace('→ caso 3VG', '→ Renda Variável')}</p>
+              )}
+              {brData.carne_leao.length > 0 && (
+                <p>• {bt.sectionCL} — {brData.carne_leao.reduce((s, m) => s + m.items.length, 0)} {t.frTax.eventsSync}</p>
+              )}
+            </div>
+          </Section>
+
+          {/* Manual instructions */}
+          <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 text-sm text-blue-800">
+            <p className="font-semibold mb-1">{bt.instrTitle}</p>
+            <p>{bt.instrText}</p>
+          </div>
+
+          {/* Summary totals */}
+          {(brData.total_darf_rv > 0 || brData.total_carne_leao > 0 || totalRend > 0) && (
+            <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-5 space-y-2 text-sm">
+              {totalRend > 0 && <div className="flex justify-between"><span className="text-gray-500">Total rendimentos declarados</span><span className="font-semibold">{fmtBRL(totalRend)}</span></div>}
+              {brData.total_darf_rv > 0 && <div className="flex justify-between"><span className="text-gray-500">{bt.rvTotalDARF}</span><span className="font-semibold text-red-600">{fmtBRL(brData.total_darf_rv)}</span></div>}
+              {brData.total_carne_leao > 0 && <div className="flex justify-between"><span className="text-gray-500">{bt.clTotal}</span><span className="font-semibold text-orange-600">{fmtBRL(brData.total_carne_leao)}</span></div>}
+              {brData.ir_retido_total > 0 && <div className="flex justify-between border-t border-gray-100 pt-2"><span className="text-gray-500">{bt.kpiIRRetido}</span><span className="font-semibold text-blue-600">{fmtBRL(brData.ir_retido_total)}</span></div>}
+            </div>
+          )}
+
+          <div className="flex justify-end">
+            <button onClick={() => setStep('rv')} className="px-6 py-2.5 text-sm font-semibold bg-[#0D0D0D] text-white rounded-xl hover:bg-gray-800 transition-colors">{bt.btnContinue}</button>
+          </div>
+        </>
+      )}
+
+      {/* ── Step 2: Renda Variável + Carnê-Leão ──────────────────────────── */}
+      {step === 'rv' && (
+        <>
+          {/* Renda Variável */}
+          <Section title={bt.sectionRV}>
+            <p className="text-xs text-gray-400 py-2">{bt.rvDesc}</p>
+            {brData.renda_variavel.length === 0 ? (
+              <p className="text-sm text-gray-400 py-4 text-center">{bt.noRV} {year}</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead><tr className="text-xs text-gray-400 border-b border-gray-100">
+                    <th className="text-left py-2 font-medium">{bt.rvColMes}</th>
+                    <th className="text-right py-2 font-medium">{bt.rvColVendas}</th>
+                    <th className="text-right py-2 font-medium">{bt.rvColGanho}</th>
+                    <th className="text-right py-2 font-medium">{bt.rvColPerda}</th>
+                    <th className="text-right py-2 font-medium">{bt.rvColCarryover}</th>
+                    <th className="text-right py-2 font-medium">{bt.rvColLiquido}</th>
+                    <th className="text-center py-2 font-medium">{bt.rvColIsento}</th>
+                    <th className="text-right py-2 font-medium">{bt.rvColDARF}</th>
+                  </tr></thead>
+                  <tbody>
+                    {brData.renda_variavel.map((m, i) => (
+                      <tr key={m.mes} className={`border-b border-gray-50 ${i % 2 === 0 ? '' : 'bg-gray-50/50'}`}>
+                        <td className="py-1.5 font-medium">{m.mes}</td>
+                        <td className="py-1.5 text-right text-gray-600">{fmtBRL(m.total_vendas)}</td>
+                        <td className="py-1.5 text-right text-green-700">{m.ganho_bruto > 0 ? fmtBRL(m.ganho_bruto) : '—'}</td>
+                        <td className="py-1.5 text-right text-red-500">{m.perda_bruta < 0 ? fmtBRL(m.perda_bruta) : '—'}</td>
+                        <td className="py-1.5 text-right text-gray-400 font-mono text-xs">{m.carryover_anterior !== 0 ? fmtBRL(m.carryover_anterior) : '—'}</td>
+                        <td className="py-1.5 text-right font-semibold">{m.ganho_liquido > 0 ? fmtBRL(m.ganho_liquido) : '—'}</td>
+                        <td className="py-1.5 text-center">
+                          <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${m.isento ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
+                            {m.isento ? bt.rvIsento : bt.rvTributado}
+                          </span>
+                        </td>
+                        <td className="py-1.5 text-right font-semibold text-red-600">{m.darf_a_pagar > 0 ? fmtBRL(m.darf_a_pagar) : '—'}</td>
+                      </tr>
+                    ))}
+                    <tr className="border-t border-gray-200 bg-gray-50 font-semibold">
+                      <td className="py-2 text-gray-500 text-xs">{bt.rvTotalDARF}</td>
+                      <td />
+                      <td className="py-2 text-right text-green-700">{fmtBRL(brData.total_ganho_rv)}</td>
+                      <td className="py-2 text-right text-red-500">{brData.total_perda_rv !== 0 ? fmtBRL(brData.total_perda_rv) : '—'}</td>
+                      <td />
+                      <td />
+                      <td />
+                      <td className="py-2 text-right text-red-600">{fmtBRL(brData.total_darf_rv)}</td>
+                    </tr>
+                    {brData.carryover_final !== 0 && (
+                      <tr className="border-t border-gray-100 text-xs text-gray-400">
+                        <td colSpan={7} className="py-1.5 text-right">{bt.rvCarryover}</td>
+                        <td className="py-1.5 text-right font-semibold text-gray-600">{fmtBRL(brData.carryover_final)}</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
               </div>
-            </div>
-          </>
-        )}
-      </Section>
+            )}
+          </Section>
 
-      {/* Rendimentos */}
-      <Section title="Rendimentos Recebidos (dividendos, JCP, alugueis)">
-        {data.income.length === 0 ? (
-          <p className="text-sm text-gray-400 py-4 text-center">Nenhum rendimento registrado em {data.year}</p>
-        ) : (
-          <>
-            {/* desktop */}
-            <div className="hidden sm:block">
-              <table className="w-full text-sm">
-                <thead><tr className="text-xs text-gray-400 border-b border-gray-100">
-                  <th className="text-left py-2 font-medium">{t.reports.colDate}</th>
-                  <th className="text-left py-2 font-medium">{t.reports.colAsset}</th>
-                  <th className="text-left py-2 font-medium">{t.common.description}</th>
-                  <th className="text-right py-2 font-medium">{t.reports.colValue}</th>
-                </tr></thead>
-                <tbody>
-                  {data.income.map(r => (
-                    <tr key={r.id} className="border-b border-gray-50 hover:bg-gray-50">
-                      <td className="py-2 text-gray-500">{r.date}</td>
-                      <td className="py-2 font-medium">{r.code}</td>
-                      <td className="py-2 text-gray-500">{r.description || '-'}</td>
-                      <td className="py-2 text-right text-purple-700 font-semibold">{fmtBRL(r.value_brl)}</td>
+          {/* Carnê-Leão */}
+          <Section title={bt.sectionCL}>
+            <p className="text-xs text-gray-400 py-2">{bt.clDesc}</p>
+            {brData.carne_leao.length === 0 ? (
+              <p className="text-sm text-gray-400 py-4 text-center">{bt.noCL} {year}</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead><tr className="text-xs text-gray-400 border-b border-gray-100">
+                    <th className="text-left py-2 font-medium">{bt.clColMes}</th>
+                    <th className="text-right py-2 font-medium">{bt.clColDivs}</th>
+                    <th className="text-right py-2 font-medium">{bt.clColAliq}</th>
+                    <th className="text-right py-2 font-medium">{bt.clColDeducao}</th>
+                    <th className="text-right py-2 font-medium">{bt.clColIR}</th>
+                  </tr></thead>
+                  <tbody>
+                    {brData.carne_leao.map((m, i) => (
+                      <tr key={m.mes} className={`border-b border-gray-50 ${i % 2 === 0 ? '' : 'bg-gray-50/50'}`}>
+                        <td className="py-1.5 font-medium">{m.mes}</td>
+                        <td className="py-1.5 text-right text-gray-600">{fmtBRL(m.dividendos_brl)}</td>
+                        <td className="py-1.5 text-right">{(m.aliquota * 100).toFixed(1)}%</td>
+                        <td className="py-1.5 text-right text-gray-400">{m.deducao > 0 ? fmtBRL(m.deducao) : '—'}</td>
+                        <td className="py-1.5 text-right font-semibold text-orange-600">{m.ir_devido > 0 ? fmtBRL(m.ir_devido) : '—'}</td>
+                      </tr>
+                    ))}
+                    <tr className="border-t border-gray-200 bg-gray-50 font-semibold">
+                      <td colSpan={4} className="py-2 text-right text-xs text-gray-500">{bt.clTotal}</td>
+                      <td className="py-2 text-right text-orange-600">{fmtBRL(brData.total_carne_leao)}</td>
                     </tr>
-                  ))}
-                  <tr className="font-semibold border-t border-gray-200 bg-gray-50">
-                    <td colSpan={3} className="py-2 text-right text-xs text-gray-500">Total rendimentos</td>
-                    <td className="py-2 text-right text-purple-700">{fmtBRL(data.totalIncome)}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-            {/* mobile cards */}
-            <div className="sm:hidden divide-y divide-gray-50">
-              {data.income.map(r => (
-                <div key={r.id} className="py-3 flex items-center justify-between gap-2">
-                  <div className="min-w-0">
-                    <div className="font-semibold text-sm text-gray-900">{r.code}</div>
-                    <div className="text-xs text-gray-400 truncate">{r.description || r.date}</div>
-                  </div>
-                  <div className="text-purple-700 font-semibold text-sm shrink-0">{fmtBRL(r.value_brl)}</div>
-                </div>
-              ))}
-              <div className="py-3 flex justify-between text-xs border-t border-gray-100">
-                <span className="text-gray-500 font-medium">Total rendimentos</span>
-                <span className="font-semibold text-purple-700">{fmtBRL(data.totalIncome)}</span>
+                  </tbody>
+                </table>
               </div>
-            </div>
-          </>
-        )}
-      </Section>
+            )}
+          </Section>
 
-      {/* Bens e Direitos */}
-      <Section title={`Bens e Direitos em 31/12/${data.year}`}>
-        {data.positions.length === 0 ? (
-          <p className="text-sm text-gray-400 py-4 text-center">Nenhum ativo em posicao em 31/12/{data.year}</p>
-        ) : (
-          <>
-            {/* desktop */}
-            <div className="hidden sm:block">
-              <table className="w-full text-sm">
-                <thead><tr className="text-xs text-gray-400 border-b border-gray-100">
-                  <th className="text-left py-2 font-medium">Codigo</th>
-                  <th className="text-left py-2 font-medium">Nome</th>
-                  <th className="text-left py-2 font-medium">Tipo</th>
-                  <th className="text-right py-2 font-medium">Qtd</th>
-                  <th className="text-right py-2 font-medium">Custo total (R$)</th>
-                </tr></thead>
-                <tbody>
-                  {data.positions.map(p => (
-                    <tr key={p.asset_id} className="border-b border-gray-50 hover:bg-gray-50">
-                      <td className="py-2 font-medium">{p.code}</td>
-                      <td className="py-2 text-gray-600 text-xs">{p.name}</td>
-                      <td className="py-2 text-gray-400 text-xs">{p.asset_type}</td>
-                      <td className="py-2 text-right text-gray-600">{fmt(p.qty, 6)}</td>
-                      <td className="py-2 text-right font-semibold">{fmtBRL(p.cost_brl)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            {/* mobile cards */}
-            <div className="sm:hidden divide-y divide-gray-50">
-              {data.positions.map(p => (
-                <div key={p.asset_id} className="py-3 flex items-center justify-between gap-2">
-                  <div className="min-w-0">
-                    <div className="font-semibold text-sm text-gray-900">{p.code}</div>
-                    <div className="text-xs text-gray-500 truncate">{p.name}</div>
-                    <div className="text-xs text-gray-400">{fmt(p.qty, 2)} un. · {p.asset_type}</div>
+          <div className="flex justify-between items-center gap-3">
+            <button onClick={() => setStep('overview')} className="px-4 py-2 text-sm text-gray-500 hover:text-gray-700">{bt.btnBack}</button>
+            <button onClick={() => setStep('bens')} className="px-6 py-2.5 text-sm font-semibold bg-[#0D0D0D] text-white rounded-xl hover:bg-gray-800 transition-colors">{bt.btnContinue}</button>
+          </div>
+        </>
+      )}
+
+      {/* ── Step 3: Bens e Direitos + Rendimentos + Download ─────────────── */}
+      {step === 'bens' && (
+        <>
+          {/* Bens e Direitos */}
+          <Section title={`${bt.sectionBens} ${year}`}>
+            <p className="text-xs text-gray-400 py-2">{bt.bensDesc}</p>
+            {brData.bens_direitos.length === 0 ? (
+              <p className="text-sm text-gray-400 py-4 text-center">{bt.noBens}{year}</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead><tr className="text-xs text-gray-400 border-b border-gray-100">
+                    <th className="text-left py-2 font-medium">{bt.bensColPGDI}</th>
+                    <th className="text-left py-2 font-medium">{bt.bensColAtivo}</th>
+                    <th className="text-left py-2 font-medium hidden md:table-cell">{bt.bensColDescr}</th>
+                    <th className="text-right py-2 font-medium">{bt.bensColAnterior}</th>
+                    <th className="text-right py-2 font-medium">{bt.bensColAtual}</th>
+                  </tr></thead>
+                  <tbody>
+                    {brData.bens_direitos.map((b, i) => (
+                      <tr key={b.asset_id} className={`border-b border-gray-50 ${i % 2 === 0 ? '' : 'bg-gray-50/50'}`}>
+                        <td className="py-1.5">
+                          <span className="font-mono text-xs text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded">{b.pgdi_grupo}/{b.pgdi_codigo}</span>
+                        </td>
+                        <td className="py-1.5"><span className="font-semibold">{b.code}</span> <span className="text-xs text-gray-400">{b.name}</span></td>
+                        <td className="py-1.5 text-xs text-gray-500 hidden md:table-cell">{b.discriminacao}</td>
+                        <td className="py-1.5 text-right text-gray-500">{b.situacao_anterior > 0 ? fmtBRL(b.situacao_anterior) : '—'}</td>
+                        <td className="py-1.5 text-right font-semibold">{fmtBRL(b.situacao_atual)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </Section>
+
+          {/* Rendimentos Isentos */}
+          {brData.rendimentos_isentos.length > 0 && (
+            <Section title={bt.sectionIsentos}>
+              {brData.rendimentos_isentos.map(g => (
+                <div key={g.codigo} className="py-3 border-b border-gray-50 last:border-0">
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-xs text-green-700 bg-green-50 px-1.5 py-0.5 rounded">{g.codigo}</span>
+                      <span className="text-sm font-medium text-gray-700">{g.descricao}</span>
+                    </div>
+                    <span className="font-semibold text-green-700">{fmtBRL(g.total)}</span>
                   </div>
-                  <div className="font-semibold text-sm text-gray-900 shrink-0">{fmtBRL(p.cost_brl)}</div>
+                  <div className="ml-8 space-y-0.5">
+                    {g.items.map(item => (
+                      <div key={item.id} className="flex justify-between text-xs text-gray-500">
+                        <span>{item.date} · {item.asset_code}</span>
+                        <span>{fmtBRL(item.valor)}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               ))}
-            </div>
-          </>
-        )}
-      </Section>
+            </Section>
+          )}
 
-      <div className="text-xs text-gray-400 bg-gray-50 border border-gray-100 rounded-xl p-4">
-        <p className="font-medium text-gray-500 mb-1">Aviso</p>
-        <p>Os dados acima sao calculados a partir das operacoes registradas no sistema e servem como auxilio ao preenchimento da declaracao. Consulte um contador para situacoes especificas como isencao ate R$20.000/mes em acoes do mercado a vista, compensacao de perdas, FIIs isentos de IR, etc.</p>
-      </div>
+          {/* Tributação Exclusiva */}
+          {brData.tributacao_exclusiva.length > 0 && (
+            <Section title={bt.sectionExclusiva}>
+              {brData.tributacao_exclusiva.map(g => (
+                <div key={g.codigo} className="py-3 border-b border-gray-50 last:border-0">
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-xs text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded">{g.codigo}</span>
+                      <span className="text-sm font-medium text-gray-700">{g.descricao}</span>
+                    </div>
+                    <div className="text-right">
+                      <span className="font-semibold text-purple-700">{fmtBRL(g.total)}</span>
+                      {g.ir_retido_total > 0 && <span className="text-xs text-gray-400 ml-2">IR retido: {fmtBRL(g.ir_retido_total)}</span>}
+                    </div>
+                  </div>
+                  <div className="ml-8 space-y-0.5">
+                    {g.items.map(item => (
+                      <div key={item.id} className="flex justify-between text-xs text-gray-500">
+                        <span>{item.date} · {item.asset_code}</span>
+                        <span>{fmtBRL(item.valor)}{item.ir_retido > 0 ? ` (IR: ${fmtBRL(item.ir_retido)})` : ''}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </Section>
+          )}
+
+          <div className="flex justify-between items-center gap-3 flex-wrap">
+            <button onClick={() => setStep('rv')} className="px-4 py-2 text-sm text-gray-500 hover:text-gray-700">{bt.btnBack}</button>
+            <button
+              onClick={() => generateBrExcel(brData)}
+              className="flex items-center gap-2 px-6 py-2.5 text-sm font-semibold bg-green-700 text-white rounded-xl hover:bg-green-800 transition-colors"
+            >{bt.btnDownload}</button>
+          </div>
+
+          {/* Disclaimers */}
+          <div className="text-xs text-gray-400 bg-red-50 border border-red-100 rounded-xl p-4 space-y-1">
+            <p className="font-semibold text-red-600 mb-2">{bt.warningTitle}</p>
+            <p>• {bt.warning1}</p>
+            <p>• {bt.warning2}</p>
+            <p>• {bt.warning3}</p>
+            <p>• {bt.warning4}</p>
+          </div>
+        </>
+      )}
     </div>
   )
 }
@@ -386,6 +507,7 @@ function generateExcel(d: FranceTaxData, method: 'daily' | 'year_end') {
   const tots = method === 'daily' ? d.totals_daily   : d.totals_year_end
   const fxLabel = method === 'daily' ? 'Taux du jour' : 'Taux au 31/12'
   const e2 = (n: number) => Math.round(n * 100) / 100
+  const totalGainEur = method === 'daily' ? d.total_gain_eur_daily : d.total_gain_eur_year_end
 
   // ── Sheet 1: Resumo ──────────────────────────────────────────────────────
   const resumo: unknown[][] = [
@@ -497,7 +619,6 @@ function generateExcel(d: FranceTaxData, method: 'daily' | 'year_end') {
   XLSX.utils.book_append_sheet(wb, ws2047, '2047 - Par pays')
 
   // ── Sheet 5: 2042 ────────────────────────────────────────────────────────
-  const totalGainEur = method === 'daily' ? d.total_gain_eur_daily : d.total_gain_eur_year_end
   const case3VG = totalGainEur >= 0
   const case3Style = case3VG
     ? { fill: { patternType: 'solid', fgColor: { rgb: 'EDE9FE' } }, font: { bold: true } } as XlsxStyle
@@ -560,6 +681,128 @@ function generateExcel(d: FranceTaxData, method: 'daily' | 'year_end') {
   const a    = document.createElement('a')
   a.href     = url
   a.download = `ARVO_RelatorioFiscal_${d.year}.xlsx`
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+function generateBrExcel(d: BrazilTaxData) {
+  const wb  = XLSX.utils.book_new()
+  const r2  = (n: number) => Math.round(n * 100) / 100
+
+  // ── Sheet 1: Resumo ──────────────────────────────────────────────────────
+  const resumo: unknown[][] = [
+    xcRow([`ARVO — DIRPF ${d.year}`, '', ''], XS.titleBg),
+    xcRow([`Gerado em ${new Date().toLocaleDateString('pt-BR')}`, '', ''], XS.titleSub),
+    [],
+    xcRow(['RESUMO GERAL', '', ''], XS.secHead),
+    xcRow(['Item', 'Valor (R$)', 'Observação'], XS.colHead),
+    xcRow(['Rendimentos Isentos (total)', r2(d.total_isentos), 'Ficha: Rendimentos Isentos'], {}),
+    xcRow(['Tributação Exclusiva (total)', r2(d.total_exclusiva), 'Ficha: Trib. Exclusiva'], {}),
+    xcRow(['IR Retido na Fonte (total)', r2(d.ir_retido_total), 'Compensação de IR'], {}),
+    xcRow(['DARF Renda Variável (total)', r2(d.total_darf_rv), 'Código 6015 — já pago?'], d.total_darf_rv > 0 ? XS.warnBg : {}),
+    xcRow(['Carnê-Leão (total)', r2(d.total_carne_leao), 'Código 0190 — já pago?'], d.total_carne_leao > 0 ? XS.warnBg : {}),
+    xcRow(['Carryover final para próx. ano', r2(d.carryover_final), d.carryover_final < 0 ? 'Deduzir de ganhos futuros' : ''], d.carryover_final < 0 ? XS.case2TR : {}),
+    [],
+    xcRow(['BENS E DIREITOS', '', ''], XS.secHead),
+    xcRow([`${d.bens_direitos.length} ativos em posição em 31/12/${d.year}`, '', ''], XS.stepTxt),
+    [],
+    xcRow(['AVISOS', '', ''], XS.secHead),
+    [xc('!', XS.warnIcon), xc('Este relatório é indicativo. Consulte um contador antes de submeter.', XS.warnBg), xc('', XS.warnBg)],
+    [xc('!', XS.warnIcon), xc('Isenção de R$20.000/mês válida apenas para ações (swing trade). Day trade excluído.', XS.warnBg), xc('', XS.warnBg)],
+    [xc('!', XS.warnIcon), xc('Dividendos de FIIs são isentos para PF — verificar requisitos legais.', XS.warnBg), xc('', XS.warnBg)],
+    [xc('!', XS.warnIcon), xc('JCP sujeito a 15% retido na fonte. Verificar informes de cada instituição.', XS.warnBg), xc('', XS.warnBg)],
+  ]
+  const wsResumo = XLSX.utils.aoa_to_sheet(resumo)
+  wsResumo['!cols'] = [{ width: 42 }, { width: 18 }, { width: 40 }]
+  XLSX.utils.book_append_sheet(wb, wsResumo, '📋 Resumo')
+
+  // ── Sheet 2: Bens e Direitos ─────────────────────────────────────────────
+  const bensRows: unknown[][] = [
+    xcRow([`BENS E DIREITOS — DECLARAÇÃO ANUAL ${d.year}`, '', '', '', '', ''], XS.titleBg),
+    xcRow(['Código PGDI: Grupo/Código — Situação anterior = posição em 31/12 do ano-calendário anterior', '', '', '', '', ''], XS.titleSub),
+    [],
+    xcRow(['PGDI Grupo', 'PGDI Código', 'Discriminação', 'Ativo', 'Situação Anterior (R$)', 'Situação Atual (R$)'], XS.colHead),
+    ...d.bens_direitos.map((b, i) => xcRow([b.pgdi_grupo, b.pgdi_codigo, b.discriminacao, `${b.code} — ${b.name}`, r2(b.situacao_anterior), r2(b.situacao_atual)], i % 2 === 0 ? {} : XS.altRow)),
+    [],
+    [xc('', XS.totalRow), xc('', XS.totalRow), xc('TOTAL', XS.totalRow), xc('', XS.totalRow), xc(r2(d.bens_direitos.reduce((s, b) => s + b.situacao_anterior, 0)), XS.totalVal), xc(r2(d.bens_direitos.reduce((s, b) => s + b.situacao_atual, 0)), XS.totalVal)],
+  ]
+  const wsBens = XLSX.utils.aoa_to_sheet(bensRows)
+  wsBens['!cols'] = [{ width: 12 }, { width: 12 }, { width: 50 }, { width: 28 }, { width: 22 }, { width: 22 }]
+  XLSX.utils.book_append_sheet(wb, wsBens, 'Bens e Direitos')
+
+  // ── Sheet 3: Rendimentos ─────────────────────────────────────────────────
+  const rendRows: unknown[][] = [
+    xcRow([`RENDIMENTOS — DECLARAÇÃO ANUAL ${d.year}`, '', '', '', ''], XS.titleBg),
+    [],
+    xcRow(['RENDIMENTOS ISENTOS E NÃO TRIBUTÁVEIS', '', '', '', ''], XS.secHead),
+    xcRow(['Código', 'Descrição', 'Data', 'Ativo', 'Valor (R$)'], XS.colHead),
+  ]
+  d.rendimentos_isentos.forEach(g => {
+    g.items.forEach((item, i) => {
+      rendRows.push(xcRow([i === 0 ? g.codigo : '', i === 0 ? g.descricao : '', item.date, item.asset_code, r2(item.valor)], i % 2 === 0 ? {} : XS.altRow))
+    })
+    rendRows.push([xc('', XS.totalRow), xc(`Total código ${g.codigo}`, XS.totalRow), xc('', XS.totalRow), xc('', XS.totalRow), xc(r2(g.total), XS.totalVal)])
+    rendRows.push([])
+  })
+  rendRows.push([])
+  rendRows.push(xcRow(['TRIBUTAÇÃO EXCLUSIVA/DEFINITIVA', '', '', '', ''], XS.secHead))
+  rendRows.push(xcRow(['Código', 'Descrição', 'Data', 'Ativo', 'Valor (R$)'], XS.colHead))
+  d.tributacao_exclusiva.forEach(g => {
+    g.items.forEach((item, i) => {
+      rendRows.push(xcRow([i === 0 ? g.codigo : '', i === 0 ? g.descricao : '', item.date, item.asset_code, r2(item.valor)], i % 2 === 0 ? {} : XS.altRow))
+    })
+    rendRows.push([xc('', XS.totalRow), xc(`Total código ${g.codigo}`, XS.totalRow), xc('', XS.totalRow), xc('', XS.totalRow), xc(r2(g.total), XS.totalVal)])
+    rendRows.push([])
+  })
+  const wsRend = XLSX.utils.aoa_to_sheet(rendRows)
+  wsRend['!cols'] = [{ width: 8 }, { width: 48 }, { width: 12 }, { width: 16 }, { width: 16 }]
+  XLSX.utils.book_append_sheet(wb, wsRend, 'Rendimentos')
+
+  // ── Sheet 4: Renda Variável ──────────────────────────────────────────────
+  const rvRows: unknown[][] = [
+    xcRow([`RENDA VARIÁVEL — OPERAÇÕES EM BOLSA ${d.year}`, '', '', '', '', '', '', ''], XS.titleBg),
+    xcRow(['DARF código 6015 — vencimento último dia útil do mês seguinte ao da operação', '', '', '', '', '', '', ''], XS.titleSub),
+    [],
+    xcRow(['Mês', 'Total Vendas', 'Ganho Bruto', 'Perda Bruta', 'Carryover Ant.', 'Ganho Líquido', 'Isento', 'DARF a Pagar'], XS.colHead),
+    ...d.renda_variavel.map((m, i) => xcRow([m.mes, r2(m.total_vendas), r2(m.ganho_bruto), r2(m.perda_bruta), r2(m.carryover_anterior), r2(m.ganho_liquido), m.isento ? 'Isento' : 'Tributado', r2(m.darf_a_pagar)], i % 2 === 0 ? {} : XS.altRow)),
+    [],
+    [xc('TOTAIS', XS.totalRow), xc('', XS.totalRow), xc(r2(d.total_ganho_rv), XS.totalVal), xc(r2(d.total_perda_rv), XS.totalVal), xc('', XS.totalRow), xc('', XS.totalRow), xc('', XS.totalRow), xc(r2(d.total_darf_rv), XS.totalVal)],
+    d.carryover_final !== 0 ? xcRow([`Carryover final para ${d.year + 1}`, '', '', '', '', r2(d.carryover_final), '', ''], XS.warnBg) : [],
+    [],
+    xcRow(['DETALHE DAS OPERAÇÕES', '', '', '', '', '', '', ''], XS.secHead),
+    xcRow(['Mês', 'Data', 'Ativo', 'Qtd', 'Venda (R$)', 'Custo (R$)', 'G/P (R$)', ''], XS.colHead),
+    ...d.renda_variavel.flatMap(m => m.operacoes.map((op, i) => xcRow([m.mes, op.date, op.code, op.qty, r2(op.sale_value), r2(op.cost_basis), r2(op.gain), ''], i % 2 === 0 ? {} : XS.altRow))),
+  ]
+  const wsRV = XLSX.utils.aoa_to_sheet(rvRows)
+  wsRV['!cols'] = [{ width: 10 }, { width: 14 }, { width: 14 }, { width: 14 }, { width: 16 }, { width: 14 }, { width: 14 }, { width: 14 }]
+  XLSX.utils.book_append_sheet(wb, wsRV, 'Renda Variável')
+
+  // ── Sheet 5: Carnê-Leão ──────────────────────────────────────────────────
+  if (d.carne_leao.length > 0) {
+    const clRows: unknown[][] = [
+      xcRow([`CARNÊ-LEÃO — DIVIDENDOS DO EXTERIOR ${d.year}`, '', '', '', ''], XS.titleBg),
+      xcRow(['DARF código 0190 — vencimento último dia útil do mês seguinte', '', '', '', ''], XS.titleSub),
+      [],
+      xcRow(['Mês', 'Dividendos (R$)', 'Alíquota', 'Dedução', 'IR Devido'], XS.colHead),
+      ...d.carne_leao.map((m, i) => xcRow([m.mes, r2(m.dividendos_brl), `${(m.aliquota * 100).toFixed(1)}%`, r2(m.deducao), r2(m.ir_devido)], i % 2 === 0 ? {} : XS.altRow)),
+      [],
+      [xc('TOTAL', XS.totalRow), xc(r2(d.carne_leao.reduce((s, m) => s + m.dividendos_brl, 0)), XS.totalVal), xc('', XS.totalRow), xc('', XS.totalRow), xc(r2(d.total_carne_leao), XS.totalVal)],
+      [],
+      xcRow(['DETALHE POR EVENTO', '', '', '', ''], XS.secHead),
+      xcRow(['Mês', 'Data', 'Ativo', 'País', 'Valor (R$)'], XS.colHead),
+      ...d.carne_leao.flatMap(m => m.items.map((it, i) => xcRow([m.mes, it.date, it.asset_code, it.country, r2(it.amount_brl)], i % 2 === 0 ? {} : XS.altRow))),
+    ]
+    const wsCL = XLSX.utils.aoa_to_sheet(clRows)
+    wsCL['!cols'] = [{ width: 10 }, { width: 18 }, { width: 14 }, { width: 14 }, { width: 16 }]
+    XLSX.utils.book_append_sheet(wb, wsCL, 'Carnê-Leão')
+  }
+
+  const out  = XLSX.write(wb, { bookType: 'xlsx', type: 'array', cellStyles: true })
+  const blob = new Blob([out], { type: 'application/octet-stream' })
+  const url  = URL.createObjectURL(blob)
+  const a    = document.createElement('a')
+  a.href     = url
+  a.download = `ARVO_DIRPF_${d.year}.xlsx`
   a.click()
   URL.revokeObjectURL(url)
 }

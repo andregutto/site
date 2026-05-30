@@ -556,6 +556,410 @@ router.get('/france/:year', requireAuth, async (req, res: Response) => {
   })
 })
 
+// ─── Brazil Tax Report ────────────────────────────────────────────────────────
+
+const CARNE_LEAO_TABLE = [
+  { limite: 2259.20,  rate: 0,     deducao: 0      },
+  { limite: 2826.65,  rate: 0.075, deducao: 169.44 },
+  { limite: 3751.05,  rate: 0.15,  deducao: 381.44 },
+  { limite: 4664.68,  rate: 0.225, deducao: 662.77 },
+  { limite: Infinity, rate: 0.275, deducao: 896.00 },
+]
+
+function calcCarneLeao(baseMensal: number): { aliquota: number; deducao: number; ir: number } {
+  for (const faixa of CARNE_LEAO_TABLE) {
+    if (baseMensal <= faixa.limite) {
+      const ir = Math.max(0, baseMensal * faixa.rate - faixa.deducao)
+      return { aliquota: faixa.rate, deducao: faixa.deducao, ir: Math.round(ir * 100) / 100 }
+    }
+  }
+  return { aliquota: 0.275, deducao: 896, ir: 0 }
+}
+
+function pgdiCode(asset: { asset_type: string; country: string | null; code: string; class_name?: string }): {
+  grupo: string; codigo: string; descricao: string
+} {
+  const country = normaliseCountry(asset.country)
+  const cls     = (asset.class_name ?? '').toLowerCase()
+  const code    = (asset.code ?? '').toUpperCase()
+
+  if (asset.asset_type === 'fixed_income') {
+    if (code.includes('LCI') || cls.includes('lci')) return { grupo: '04', codigo: '03', descricao: 'Letra de Crédito Imobiliário (LCI)' }
+    if (code.includes('LCA') || cls.includes('lca')) return { grupo: '04', codigo: '03', descricao: 'Letra de Crédito do Agronegócio (LCA)' }
+    if (code.includes('NTN') || code.includes('TESOURO') || cls.includes('tesouro')) return { grupo: '04', codigo: '02', descricao: 'Título Público Federal (Tesouro Direto)' }
+    return { grupo: '04', codigo: '02', descricao: 'CDB / Aplicação de Renda Fixa' }
+  }
+  if (asset.asset_type === 'manual') {
+    return { grupo: '99', codigo: '99', descricao: 'Outros bens — verificar no PGDI' }
+  }
+  // ticker
+  const isFII = (cls.includes('fii') || cls.includes('imobiliário') || cls.includes('imobiliario'))
+  const isETF = (cls.includes('etf') || cls.includes('índice') || cls.includes('indice'))
+  const isCrypto = (cls.includes('cripto') || cls.includes('crypto') || cls.includes('bitcoin') || cls.includes('digital'))
+
+  if (isCrypto) return { grupo: '08', codigo: '01', descricao: 'Criptoativo / Ativo Virtual' }
+  if (country === 'BR') {
+    if (isFII) return { grupo: '07', codigo: '03', descricao: 'Fundo de Investimento Imobiliário (FII)' }
+    if (isETF) return { grupo: '07', codigo: '09', descricao: 'ETF / Fundo de Índice (Bolsa BR)' }
+    return { grupo: '03', codigo: '01', descricao: 'Ações em Bolsa de Valores — Brasil (B3)' }
+  }
+  // foreign
+  if (isFII || isETF) return { grupo: '07', codigo: '09', descricao: 'ETF / Fundo no Exterior' }
+  return { grupo: '03', codigo: '09', descricao: 'Ações de Companhia Estrangeira' }
+}
+
+// GET /api/reports/brazil/:year
+router.get('/brazil/:year', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const year = parseInt(req.params.year, 10)
+  if (isNaN(year) || year < 2000 || year > 2100) {
+    res.status(400).json({ error: 'Ano inválido' }); return
+  }
+
+  const startDate  = `${year}-01-01`
+  const endDate    = `${year}-12-31`
+  const prevEnd    = `${year - 1}-12-31`
+
+  // 1. Assets with class name
+  const { data: assets, error: ae } = await supabaseAdmin
+    .from('assets')
+    .select('id, code, name, asset_type, currency, exchange, country, asset_classes(name)')
+    .eq('user_id', userId)
+  if (ae) { res.status(500).json({ error: ae.message }); return }
+
+  const assetMap = Object.fromEntries(
+    (assets ?? []).map(a => [a.id, { ...a, class_name: ((a.asset_classes as unknown) as { name: string } | null)?.name ?? '' }])
+  )
+  const assetIds = Object.keys(assetMap).map(Number)
+  if (assetIds.length === 0) {
+    res.json({ year, bens_direitos: [], rendimentos_isentos: [], tributacao_exclusiva: [], ir_retido_total: 0, renda_variavel: [], total_ganho_rv: 0, total_perda_rv: 0, total_darf_rv: 0, carryover_final: 0, carne_leao: [], total_carne_leao: 0, total_isentos: 0, total_exclusiva: 0 })
+    return
+  }
+
+  // 2. All contributions (all time for cost basis; filter year for events)
+  const { data: allContribs } = await supabaseAdmin
+    .from('contributions')
+    .select('id, asset_id, date, type, quantity, value_brl, description, tax_withheld')
+    .in('asset_id', assetIds)
+    .order('date')
+
+  // 3. Dividends for the year
+  const { data: dividends } = await supabaseAdmin
+    .from('dividends')
+    .select('id, asset_id, ex_date, amount_brl, dividend_type, tax_withheld')
+    .in('asset_id', assetIds)
+    .eq('user_id', userId)
+    .gte('ex_date', startDate)
+    .lte('ex_date', endDate)
+    .order('ex_date')
+
+  const contribs = allContribs ?? []
+  const divs     = dividends ?? []
+
+  // ── 4. Bens e Direitos ──────────────────────────────────────────────────────
+  // Cost basis and qty at 31/12/year and 31/12/year-1
+  interface AssetState { qty: number; cost: number }
+  const stateAt = (cutoff: string): Record<number, AssetState> => {
+    const m: Record<number, AssetState> = {}
+    for (const c of contribs) {
+      if (c.date > cutoff) break
+      const id = c.asset_id as number
+      if (!m[id]) m[id] = { qty: 0, cost: 0 }
+      if (c.type === 'buy') {
+        m[id].qty  += (c.quantity as number) ?? 0
+        m[id].cost += (c.value_brl as number) ?? 0
+      } else if (c.type === 'sell') {
+        const before = m[id]
+        const soldQty = (c.quantity as number) ?? 0
+        if (before.qty > 0) {
+          const avgCost = before.cost / before.qty
+          before.cost -= avgCost * soldQty
+          before.qty  -= soldQty
+        }
+      }
+    }
+    return m
+  }
+
+  const stateYE   = stateAt(endDate)
+  const statePrev = stateAt(prevEnd)
+
+  const bens_direitos = Object.entries(stateYE)
+    .filter(([, s]) => s.qty > 0.0001 && s.cost > 0)
+    .map(([idStr, s]) => {
+      const id    = Number(idStr)
+      const asset = assetMap[id]
+      const prev  = statePrev[id] ?? { qty: 0, cost: 0 }
+      const pgdi  = pgdiCode(asset as { asset_type: string; country: string | null; code: string; class_name?: string })
+      return {
+        asset_id: id, code: asset.code, name: asset.name,
+        pgdi_grupo: pgdi.grupo, pgdi_codigo: pgdi.codigo, pgdi_descricao: pgdi.descricao,
+        qty: Math.round(s.qty * 1e6) / 1e6,
+        cost_brl: Math.round(s.cost * 100) / 100,
+        situacao_anterior: Math.round(prev.cost * 100) / 100,
+        situacao_atual:    Math.round(s.cost * 100) / 100,
+        discriminacao: `${s.qty > 0 ? Number(s.qty.toFixed(4)) : ''} ${asset.asset_type === 'fixed_income' ? '' : 'ações/cotas'} ${asset.code} — ${asset.name}`.trim(),
+      }
+    })
+    .sort((a, b) => a.pgdi_grupo.localeCompare(b.pgdi_grupo) || a.code.localeCompare(b.code))
+
+  // ── 5. Rendimentos Isentos + Tributação Exclusiva ───────────────────────────
+  type RendItem = { id: string; date: string; asset_code: string; asset_name: string; valor: number; ir_retido: number }
+  const isentosByCode: Record<string, { codigo: string; descricao: string; items: RendItem[] }> = {}
+  const exclusivaByCode: Record<string, { codigo: string; descricao: string; items: RendItem[] }> = {}
+
+  const pushItem = (bucket: typeof isentosByCode, codigo: string, descricao: string, item: RendItem) => {
+    if (!bucket[codigo]) bucket[codigo] = { codigo, descricao, items: [] }
+    bucket[codigo].items.push(item)
+  }
+
+  for (const d of divs) {
+    const asset   = assetMap[d.asset_id as number]
+    if (!asset) continue
+    const country = normaliseCountry(asset.country as string | null)
+    const dType   = ((d.dividend_type as string) ?? 'dividend').toLowerCase()
+    const valor   = (d.amount_brl as number) ?? 0
+    const irRetido = (d.tax_withheld as number) ?? 0
+
+    const item: RendItem = {
+      id: String(d.id), date: d.ex_date as string,
+      asset_code: asset.code as string, asset_name: asset.name as string,
+      valor, ir_retido: irRetido,
+    }
+
+    if (dType === 'jcp') {
+      // Tributação Exclusiva — JCP (código 10)
+      pushItem(exclusivaByCode, '10', 'Juros sobre Capital Próprio (JCP)', item)
+    } else if (dType === 'fii_income') {
+      // Isento — FII (código 26)
+      pushItem(isentosByCode, '26', 'Rendimentos de Fundos de Investimento Imobiliário', item)
+    } else if (country === 'BR') {
+      // Isento — Dividendos BR (código 09)
+      pushItem(isentosByCode, '09', 'Lucros e dividendos recebidos', item)
+    }
+    // foreign dividends → Carnê-Leão (handled below)
+  }
+
+  // Income contributions (CDB, LCI, LCA, etc.) in the year
+  for (const c of contribs) {
+    if (c.type !== 'income') continue
+    if ((c.date as string) < startDate || (c.date as string) > endDate) continue
+    const asset = assetMap[c.asset_id as number]
+    if (!asset) continue
+    const desc  = ((c.description as string) ?? '').toLowerCase()
+    const valor = (c.value_brl as number) ?? 0
+    const ir    = (c.tax_withheld as number) ?? 0
+
+    const item: RendItem = {
+      id: `c${c.id}`, date: c.date as string,
+      asset_code: asset.code as string, asset_name: asset.name as string,
+      valor, ir_retido: ir,
+    }
+
+    if (desc === 'lci' || desc === 'lca') {
+      // Isento — LCI/LCA (código 12)
+      const label = desc === 'lci' ? 'Rendimentos de LCI (isentos de IR)' : 'Rendimentos de LCA (isentos de IR)'
+      pushItem(isentosByCode, '12', label, item)
+    } else if (desc === 'poupanca') {
+      pushItem(isentosByCode, '12', 'Rendimentos de caderneta de poupança', item)
+    } else {
+      // CDB, NTN-B, outros RF → Tributação Exclusiva código 06
+      pushItem(exclusivaByCode, '06', 'Rendimentos de aplicações financeiras (CDB, RF)', item)
+    }
+  }
+
+  const sumItems = (items: RendItem[]) => items.reduce((s, i) => s + i.valor, 0)
+  const sumIR    = (items: RendItem[]) => items.reduce((s, i) => s + i.ir_retido, 0)
+
+  const rendimentos_isentos = Object.values(isentosByCode).map(g => ({
+    ...g, total: Math.round(sumItems(g.items) * 100) / 100,
+    ir_retido_total: Math.round(sumIR(g.items) * 100) / 100,
+  }))
+  const tributacao_exclusiva = Object.values(exclusivaByCode).map(g => ({
+    ...g, total: Math.round(sumItems(g.items) * 100) / 100,
+    ir_retido_total: Math.round(sumIR(g.items) * 100) / 100,
+  }))
+
+  const total_isentos   = rendimentos_isentos.reduce((s, g) => s + g.total, 0)
+  const total_exclusiva = tributacao_exclusiva.reduce((s, g) => s + g.total, 0)
+  const ir_retido_total = [
+    ...rendimentos_isentos, ...tributacao_exclusiva,
+  ].reduce((s, g) => s + g.ir_retido_total, 0)
+
+  // ── 6. Renda Variável Mensal ─────────────────────────────────────────────────
+  // Build cost basis map (rolling average) for all buys before each sell
+  const buyCumulative: Record<number, { qty: number; cost: number }> = {}
+
+  interface MonthRV {
+    mes: string; total_vendas: number; ganho_bruto: number; perda_bruta: number
+    carryover_anterior: number; ganho_liquido: number
+    isento: boolean; aliquota: number; ir_devido: number; ir_retido: number; darf_a_pagar: number
+    operacoes: Array<{ date: string; code: string; qty: number; sale_value: number; cost_basis: number; gain: number }>
+  }
+
+  const monthMap: Record<string, MonthRV> = {}
+  const getMes = (date: string) => date.slice(0, 7)
+
+  // Process all contribs chronologically for RV
+  let carryoverLoss = 0 // cumulative loss from prior months (within year)
+
+  // First pass: build running cost basis map including months outside the year (for basis only)
+  const sellsInYear: Array<{ c: typeof contribs[0]; avgCost: number; gain: number }> = []
+  const runningBasis: Record<number, { qty: number; cost: number }> = {}
+
+  for (const c of contribs) {
+    const id = c.asset_id as number
+    const asset = assetMap[id]
+    if (!asset || (asset.asset_type as string) !== 'ticker') continue
+
+    if (!runningBasis[id]) runningBasis[id] = { qty: 0, cost: 0 }
+
+    if (c.type === 'buy') {
+      runningBasis[id].qty  += (c.quantity as number) ?? 0
+      runningBasis[id].cost += (c.value_brl as number) ?? 0
+    } else if (c.type === 'sell') {
+      if ((c.date as string) < startDate || (c.date as string) > endDate) {
+        // sell outside year — update basis and skip
+        const b = runningBasis[id]
+        const qty = (c.quantity as number) ?? 0
+        if (b.qty > 0) {
+          const avg = b.cost / b.qty
+          b.cost -= avg * qty
+          b.qty  -= qty
+        }
+        continue
+      }
+      // sell in year
+      const b = runningBasis[id]
+      const qty = (c.quantity as number) ?? 0
+      const avgCost = b.qty > 0 ? (b.cost / b.qty) * qty : 0
+      const saleValue = (c.value_brl as number) ?? 0
+      const gain = saleValue - avgCost
+      sellsInYear.push({ c, avgCost, gain })
+
+      if (b.qty > 0) {
+        b.cost -= (b.cost / b.qty) * qty
+        b.qty  -= qty
+      }
+    }
+  }
+
+  // Group sells by month and apply R$20k exemption + carryover
+  const sellsByMonth: Record<string, typeof sellsInYear> = {}
+  for (const s of sellsInYear) {
+    const mes = getMes(s.c.date as string)
+    if (!sellsByMonth[mes]) sellsByMonth[mes] = []
+    sellsByMonth[mes].push(s)
+  }
+
+  let carryover = 0
+  const allMonths = Array.from(new Set(sellsInYear.map(s => getMes(s.c.date as string)))).sort()
+
+  const renda_variavel: MonthRV[] = allMonths.map(mes => {
+    const sells = sellsByMonth[mes] ?? []
+    const totalVendas = sells.reduce((s, x) => s + (x.c.value_brl as number ?? 0), 0)
+    const ganhoMes    = sells.filter(x => x.gain > 0).reduce((s, x) => s + x.gain, 0)
+    const perdaMes    = sells.filter(x => x.gain < 0).reduce((s, x) => s + x.gain, 0)
+    const isento      = totalVendas <= 20000
+
+    const carryoverAnterior = carryover
+    let ganhoLiquido = 0
+    let irDevido     = 0
+    let darf         = 0
+
+    if (!isento) {
+      const brutoComCarryover = ganhoMes + perdaMes + carryover // carryover is negative
+      ganhoLiquido = Math.max(0, brutoComCarryover)
+      const novoPrejuizo = Math.min(0, brutoComCarryover)
+      carryover = novoPrejuizo // negative or zero
+      irDevido = Math.round(ganhoLiquido * 0.15 * 100) / 100
+      darf = Math.max(0, irDevido)
+    } else {
+      // isento — losses still carry over
+      carryover += ganhoMes + perdaMes
+      ganhoLiquido = 0
+    }
+
+    return {
+      mes,
+      total_vendas: Math.round(totalVendas * 100) / 100,
+      ganho_bruto:  Math.round(ganhoMes * 100) / 100,
+      perda_bruta:  Math.round(perdaMes * 100) / 100,
+      carryover_anterior: Math.round(carryoverAnterior * 100) / 100,
+      ganho_liquido: Math.round(ganhoLiquido * 100) / 100,
+      isento,
+      aliquota: 0.15,
+      ir_devido: irDevido,
+      ir_retido: 0,
+      darf_a_pagar: darf,
+      operacoes: sells.map(s => ({
+        date: s.c.date as string,
+        code: (assetMap[s.c.asset_id as number]?.code as string) ?? '?',
+        qty:  (s.c.quantity as number) ?? 0,
+        sale_value:  Math.round(((s.c.value_brl as number) ?? 0) * 100) / 100,
+        cost_basis:  Math.round(s.avgCost * 100) / 100,
+        gain:        Math.round(s.gain * 100) / 100,
+      })),
+    }
+  })
+
+  const total_ganho_rv = renda_variavel.reduce((s, m) => s + Math.max(0, m.ganho_bruto + m.perda_bruta), 0)
+  const total_perda_rv = renda_variavel.reduce((s, m) => s + Math.min(0, m.ganho_bruto + m.perda_bruta), 0)
+  const total_darf_rv  = renda_variavel.reduce((s, m) => s + m.darf_a_pagar, 0)
+  const carryover_final = carryover
+
+  // ── 7. Carnê-Leão (foreign dividends) ───────────────────────────────────────
+  const foreignDivs = divs.filter(d => {
+    const asset = assetMap[d.asset_id as number]
+    if (!asset) return false
+    return normaliseCountry(asset.country as string | null) !== 'BR'
+  })
+
+  const clByMonth: Record<string, { brl: number; items: Array<{ date: string; asset_code: string; country: string; amount_brl: number }> }> = {}
+  for (const d of foreignDivs) {
+    const mes = getMes(d.ex_date as string)
+    if (!clByMonth[mes]) clByMonth[mes] = { brl: 0, items: [] }
+    const asset = assetMap[d.asset_id as number]
+    const amount = (d.amount_brl as number) ?? 0
+    clByMonth[mes].brl += amount
+    clByMonth[mes].items.push({
+      date: d.ex_date as string,
+      asset_code: asset?.code as string ?? '?',
+      country: normaliseCountry(asset?.country as string | null),
+      amount_brl: Math.round(amount * 100) / 100,
+    })
+  }
+
+  const carne_leao = Object.entries(clByMonth).sort(([a], [b]) => a.localeCompare(b)).map(([mes, data]) => {
+    const { aliquota, deducao, ir } = calcCarneLeao(data.brl)
+    return {
+      mes,
+      dividendos_brl: Math.round(data.brl * 100) / 100,
+      aliquota, deducao,
+      ir_devido: ir,
+      items: data.items,
+    }
+  })
+  const total_carne_leao = carne_leao.reduce((s, m) => s + m.ir_devido, 0)
+
+  res.json({
+    year,
+    bens_direitos,
+    rendimentos_isentos,
+    tributacao_exclusiva,
+    ir_retido_total: Math.round(ir_retido_total * 100) / 100,
+    total_isentos:   Math.round(total_isentos * 100) / 100,
+    total_exclusiva: Math.round(total_exclusiva * 100) / 100,
+    renda_variavel,
+    total_ganho_rv:  Math.round(total_ganho_rv * 100) / 100,
+    total_perda_rv:  Math.round(total_perda_rv * 100) / 100,
+    total_darf_rv:   Math.round(total_darf_rv * 100) / 100,
+    carryover_final: Math.round(carryover_final * 100) / 100,
+    carne_leao,
+    total_carne_leao: Math.round(total_carne_leao * 100) / 100,
+  })
+})
+
 // GET /api/reports/:year
 router.get('/:year', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
