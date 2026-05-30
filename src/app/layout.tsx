@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Libre_Baskerville, Playfair_Display, DM_Sans, DM_Mono } from "next/font/google";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 
 const libreBaskerville = Libre_Baskerville({
@@ -58,7 +59,10 @@ export default function RootLayout({
       <head>
         <meta name="color-scheme" content="light only" />
       </head>
-      <body>{children}</body>
+      <body>
+        {children}
+        <SpeedInsights />
+      </body>
     </html>
   );
 }
