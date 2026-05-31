@@ -5,13 +5,14 @@ import { Barlow_Condensed } from 'next/font/google'
 
 const barlow = Barlow_Condensed({ weight: ['900'], subsets: ['latin'] })
 
-// ── Studio Quartier palette ──────────────────────────────────────────────────
+// ── Studio Quartier palette ───────────────────────────────────────────────────
 const C = {
   paper: '#FDFAF5',
   ink:   '#1C1917',
   warm:  '#F4F0E6',
   muted: '#6B6760',
 }
+const sans = 'Arial, "Helvetica Neue", Helvetica, sans-serif'
 
 // ── Data ─────────────────────────────────────────────────────────────────────
 const NEIGHBORHOODS = [
@@ -64,100 +65,6 @@ function exportCSV(rows: Prospect[]) {
   a.click()
 }
 
-// ── Styles ───────────────────────────────────────────────────────────────────
-const sq = {
-  page: {
-    background: C.paper,
-    color: C.ink,
-    fontFamily: 'Arial, "Helvetica Neue", Helvetica, sans-serif',
-    minHeight: '100vh',
-    padding: '64px 48px',
-    maxWidth: 1200,
-    margin: '0 auto',
-  } as React.CSSProperties,
-
-  label: {
-    fontFamily: 'Arial, "Helvetica Neue", Helvetica, sans-serif',
-    fontSize: 11,
-    fontWeight: 400,
-    textTransform: 'uppercase' as const,
-    letterSpacing: '0.22em',
-    color: C.muted,
-    display: 'flex',
-    flexDirection: 'column' as const,
-    gap: 8,
-  } as React.CSSProperties,
-
-  select: {
-    fontFamily: 'Arial, "Helvetica Neue", Helvetica, sans-serif',
-    fontSize: 14,
-    color: C.ink,
-    background: C.paper,
-    border: 'none',
-    borderBottom: `0.5px solid ${C.ink}`,
-    borderRadius: 0,
-    padding: '8px 0',
-    cursor: 'pointer',
-    minWidth: 180,
-    outline: 'none',
-    appearance: 'none' as const,
-    WebkitAppearance: 'none' as const,
-  } as React.CSSProperties,
-
-  btnPrimary: {
-    fontFamily: 'Arial, "Helvetica Neue", Helvetica, sans-serif',
-    fontSize: 11,
-    fontWeight: 400,
-    textTransform: 'uppercase' as const,
-    letterSpacing: '0.22em',
-    background: C.ink,
-    color: C.warm,
-    border: 'none',
-    borderRadius: 0,
-    padding: '12px 28px',
-    cursor: 'pointer',
-    whiteSpace: 'nowrap' as const,
-  } as React.CSSProperties,
-
-  btnSecondary: {
-    fontFamily: 'Arial, "Helvetica Neue", Helvetica, sans-serif',
-    fontSize: 11,
-    fontWeight: 400,
-    textTransform: 'uppercase' as const,
-    letterSpacing: '0.22em',
-    background: C.warm,
-    color: C.ink,
-    border: 'none',
-    borderRadius: 0,
-    padding: '12px 28px',
-    cursor: 'pointer',
-    boxShadow: `inset 0 0 0 0.5px ${C.ink}`,
-    whiteSpace: 'nowrap' as const,
-  } as React.CSSProperties,
-
-  th: {
-    fontFamily: 'Arial, "Helvetica Neue", Helvetica, sans-serif',
-    fontSize: 10,
-    fontWeight: 400,
-    textTransform: 'uppercase' as const,
-    letterSpacing: '0.22em',
-    color: C.muted,
-    padding: '10px 16px',
-    textAlign: 'left' as const,
-    borderBottom: `0.5px solid ${C.ink}`,
-    whiteSpace: 'nowrap' as const,
-    background: C.warm,
-  } as React.CSSProperties,
-
-  td: {
-    padding: '10px 16px',
-    verticalAlign: 'middle' as const,
-    fontSize: 13,
-    borderBottom: `0.5px solid rgba(28,25,23,0.15)`,
-  } as React.CSSProperties,
-}
-
-// ── Component ─────────────────────────────────────────────────────────────────
 export default function ProspectPage() {
   const [neighborhoodIdx, setNeighborhoodIdx] = useState(0)
   const [categoryIdx,     setCategoryIdx]     = useState(0)
@@ -180,7 +87,6 @@ export default function ProspectPage() {
       type:   cat.type,
     })
     if (cat.keyword) params.set('keyword', cat.keyword)
-
     try {
       const res = await fetch(`/api/prospects?${params}`)
       const data = await res.json()
@@ -198,163 +104,207 @@ export default function ProspectPage() {
   const fewReview = results.filter(r =>  r.has_website && r.review_count < 50).length
 
   return (
-    <div style={sq.page}>
+    <div style={{ background: C.paper, minHeight: '100vh', fontFamily: sans, color: C.ink }}>
 
-      {/* ── Header ── */}
-      <header style={{ marginBottom: 64 }}>
-        <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'flex-start', gap: 0 }}>
-          <span style={{ fontFamily: 'Arial, "Helvetica Neue", Helvetica, sans-serif', fontSize: 12, letterSpacing: '0.6em', color: C.muted, marginLeft: 2 }}>
-            studio
-          </span>
-          <span className={barlow.className} style={{ fontSize: 52, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '-0.02em', lineHeight: 0.9, color: C.ink, marginTop: -4 }}>
-            Prospection
-          </span>
-          <div style={{ width: '100%', height: '0.5px', background: C.ink, margin: '6px 0 4px' }} />
-          <span style={{ fontFamily: 'Arial, "Helvetica Neue", Helvetica, sans-serif', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.22em', color: C.muted }}>
-            Outil interne · Studio Quartier
+      {/* ── Nav / Logo ── */}
+      <header style={{ position: 'sticky', top: 0, zIndex: 50, background: C.paper }}>
+        <div style={{ maxWidth: 1240, margin: '0 auto', padding: '20px 40px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          {/* Wordmark */}
+          <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1 }}>
+            <span style={{ fontFamily: sans, textTransform: 'lowercase', letterSpacing: '0.5em', fontSize: 9, color: C.muted }}>
+              studio
+            </span>
+            <span className={barlow.className} style={{ fontWeight: 900, textTransform: 'uppercase', letterSpacing: '-0.02em', fontSize: 22, color: C.ink, marginTop: 2 }}>
+              QUARTIER
+            </span>
+          </div>
+          {/* Tool label */}
+          <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 10, color: C.muted }}>
+            Outil interne
           </span>
         </div>
+        <div style={{ height: '0.5px', background: C.ink }} />
       </header>
 
-      {/* ── Filters ── */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 40, marginBottom: 48, alignItems: 'flex-end' }}>
+      {/* ── Page content ── */}
+      <main style={{ maxWidth: 1240, margin: '0 auto', padding: '48px 40px 96px' }}>
 
-        <label style={sq.label}>
-          Quartier
-          <div style={{ position: 'relative' }}>
-            <select value={neighborhoodIdx} onChange={e => setNeighborhoodIdx(Number(e.target.value))} style={sq.select}>
+        {/* Page title */}
+        <div style={{ marginBottom: 48 }}>
+          <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 10, color: C.muted }}>
+            Prospection · 1er / 2ème arrondissement
+          </span>
+          <div style={{ height: '0.5px', background: C.ink, marginTop: 12 }} />
+        </div>
+
+        {/* ── Filters ── */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 40, marginBottom: 48, alignItems: 'flex-end' }}>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 10, color: C.muted }}>Quartier</span>
+            <select
+              value={neighborhoodIdx}
+              onChange={e => setNeighborhoodIdx(Number(e.target.value))}
+              style={{ fontFamily: sans, fontSize: 14, color: C.ink, background: 'transparent', border: 'none', borderBottom: `0.5px solid ${C.ink}`, borderRadius: 0, padding: '8px 24px 8px 0', cursor: 'pointer', minWidth: 180, outline: 'none', appearance: 'none' as const }}
+            >
               {NEIGHBORHOODS.map((n, i) => <option key={n.label} value={i}>{n.label}</option>)}
             </select>
-            <span style={{ position: 'absolute', right: 0, top: '50%', transform: 'translateY(-50%)', color: C.muted, pointerEvents: 'none', fontSize: 10 }}>↓</span>
           </div>
-        </label>
 
-        <label style={sq.label}>
-          Catégorie
-          <div style={{ position: 'relative' }}>
-            <select value={categoryIdx} onChange={e => setCategoryIdx(Number(e.target.value))} style={sq.select}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 10, color: C.muted }}>Catégorie</span>
+            <select
+              value={categoryIdx}
+              onChange={e => setCategoryIdx(Number(e.target.value))}
+              style={{ fontFamily: sans, fontSize: 14, color: C.ink, background: 'transparent', border: 'none', borderBottom: `0.5px solid ${C.ink}`, borderRadius: 0, padding: '8px 24px 8px 0', cursor: 'pointer', minWidth: 200, outline: 'none', appearance: 'none' as const }}
+            >
               {CATEGORIES.map((c, i) => <option key={c.label} value={i}>{c.label}</option>)}
             </select>
-            <span style={{ position: 'absolute', right: 0, top: '50%', transform: 'translateY(-50%)', color: C.muted, pointerEvents: 'none', fontSize: 10 }}>↓</span>
           </div>
-        </label>
 
-        <label style={sq.label}>
-          Rayon (m)
-          <input
-            type="number" min={100} max={2000} step={100}
-            value={radius}
-            onChange={e => setRadius(Number(e.target.value))}
-            style={{ ...sq.select, width: 80 }}
-          />
-        </label>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 10, color: C.muted }}>Rayon (m)</span>
+            <input
+              type="number" min={100} max={2000} step={100}
+              value={radius}
+              onChange={e => setRadius(Number(e.target.value))}
+              style={{ fontFamily: sans, fontSize: 14, color: C.ink, background: 'transparent', border: 'none', borderBottom: `0.5px solid ${C.ink}`, borderRadius: 0, padding: '8px 0', width: 80, outline: 'none' }}
+            />
+          </div>
 
-        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-          <button onClick={handleSearch} disabled={loading} style={{ ...sq.btnPrimary, opacity: loading ? 0.6 : 1 }}>
-            {loading ? 'Recherche…' : 'Rechercher'}
-          </button>
-
-          {results.length > 0 && (
-            <button onClick={() => exportCSV(results)} style={sq.btnSecondary}>
-              Exporter CSV ({results.length})
+          {/* Buttons — SQ directory button pattern */}
+          <div style={{ display: 'flex', gap: 12, alignItems: 'stretch' }}>
+            <button
+              onClick={handleSearch}
+              disabled={loading}
+              style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '14px 20px', border: `0.5px solid ${C.ink}`, borderRadius: 0, background: C.ink, color: C.paper, cursor: loading ? 'wait' : 'pointer', opacity: loading ? 0.7 : 1 }}
+            >
+              <span style={{ fontFamily: sans, fontSize: 10, letterSpacing: '0.1em', color: C.muted }}>01</span>
+              <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.28em', fontSize: 11, flex: 1, whiteSpace: 'nowrap' as const }}>
+                {loading ? 'Recherche…' : 'Rechercher'}
+              </span>
+              <span style={{ fontSize: 13 }}>→</span>
             </button>
-          )}
-        </div>
-      </div>
 
-      {/* ── Error ── */}
-      {error && (
-        <div style={{ background: C.warm, boxShadow: `inset 0 0 0 0.5px ${C.ink}`, padding: '14px 20px', marginBottom: 24, fontSize: 13, color: C.ink }}>
-          <span style={{ fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', color: C.muted, display: 'block', marginBottom: 4 }}>Erreur</span>
-          {error}
-        </div>
-      )}
-
-      {/* ── Empty state ── */}
-      {searched && !loading && results.length === 0 && !error && (
-        <p style={{ fontSize: 13, color: C.muted, letterSpacing: '0.04em' }}>Aucun résultat.</p>
-      )}
-
-      {/* ── Results ── */}
-      {results.length > 0 && (
-        <>
-          {/* Legend */}
-          <div style={{ display: 'flex', gap: 32, marginBottom: 20, alignItems: 'center' }}>
-            <span style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.22em', color: C.muted }}>
-              {results.length} établissement{results.length > 1 ? 's' : ''} · priorité décroissante
-            </span>
-            <div style={{ display: 'flex', gap: 20 }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.18em', color: C.muted }}>
-                <span style={{ display: 'inline-block', width: 10, height: 10, background: C.ink }} />
-                Sans site — {noSite}
-              </span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.18em', color: C.muted }}>
-                <span style={{ display: 'inline-block', width: 10, height: 10, background: C.warm, boxShadow: `inset 0 0 0 0.5px ${C.ink}` }} />
-                {'< 50 avis — ' + fewReview}
-              </span>
-            </div>
+            {results.length > 0 && (
+              <button
+                onClick={() => exportCSV(results)}
+                style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '14px 20px', border: `0.5px solid ${C.ink}`, borderRadius: 0, background: 'transparent', color: C.ink, cursor: 'pointer' }}
+              >
+                <span style={{ fontFamily: sans, fontSize: 10, letterSpacing: '0.1em', color: C.muted }}>02</span>
+                <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.28em', fontSize: 11, flex: 1, whiteSpace: 'nowrap' as const }}>
+                  Exporter CSV ({results.length})
+                </span>
+                <span style={{ fontSize: 13 }}>↓</span>
+              </button>
+            )}
           </div>
+        </div>
 
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-              <thead>
-                <tr>
-                  {['N°', 'Établissement', 'Note', 'Avis', 'Site web', 'Adresse', 'Statut', 'Maps'].map(h => (
-                    <th key={h} style={sq.th}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {results.map((r, i) => {
-                  const priority = !r.has_website ? 0 : r.review_count < 50 ? 1 : 2
-                  const rowBg    = priority === 0 ? C.ink  : priority === 1 ? C.warm : C.paper
-                  const rowFg    = priority === 0 ? C.warm : C.ink
-                  const rowMuted = priority === 0 ? 'rgba(244,240,230,0.55)' : C.muted
-                  const tdPriority = { ...sq.td, color: rowFg, borderBottomColor: priority === 0 ? 'rgba(244,240,230,0.18)' : 'rgba(28,25,23,0.15)' }
+        {/* ── Error ── */}
+        {error && (
+          <div style={{ background: C.warm, border: `0.5px solid ${C.ink}`, padding: '14px 20px', marginBottom: 32 }}>
+            <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 9, color: C.muted, display: 'block', marginBottom: 6 }}>Erreur</span>
+            <span style={{ fontFamily: sans, fontSize: 13, color: C.ink }}>{error}</span>
+          </div>
+        )}
 
-                  return (
-                    <tr key={r.place_id} style={{ background: rowBg }}>
-                      <td style={{ ...tdPriority, color: rowMuted, fontSize: 11 }}>{i + 1}</td>
-                      <td style={{ ...tdPriority, fontWeight: 400, maxWidth: 200 }}>{r.name}</td>
-                      <td style={tdPriority}>
-                        {r.rating !== null
-                          ? <span>{r.rating}</span>
-                          : <span style={{ color: rowMuted }}>—</span>}
-                      </td>
-                      <td style={tdPriority}>
-                        {r.review_count > 0
-                          ? r.review_count.toLocaleString('fr-FR')
-                          : <span style={{ color: rowMuted }}>—</span>}
-                      </td>
-                      <td style={tdPriority}>
-                        {r.has_website
-                          ? <a href={r.website!} target="_blank" rel="noopener noreferrer"
-                              style={{ color: rowFg, textDecoration: 'underline', fontSize: 11, textUnderlineOffset: 3 }}>
+        {/* ── Empty ── */}
+        {searched && !loading && results.length === 0 && !error && (
+          <p style={{ fontFamily: sans, fontSize: 13, color: C.muted, letterSpacing: '0.04em' }}>Aucun résultat.</p>
+        )}
+
+        {/* ── Results ── */}
+        {results.length > 0 && (
+          <>
+            {/* Legend */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 40, marginBottom: 16 }}>
+              <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 9, color: C.muted }}>
+                {results.length} établissement{results.length > 1 ? 's' : ''} · priorité décroissante
+              </span>
+              <div style={{ display: 'flex', gap: 24 }}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.2em', fontSize: 9, color: C.muted }}>
+                  <span style={{ display: 'inline-block', width: 8, height: 8, background: C.ink }} />
+                  Sans site — {noSite}
+                </span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.2em', fontSize: 9, color: C.muted }}>
+                  <span style={{ display: 'inline-block', width: 8, height: 8, background: C.warm, boxShadow: `inset 0 0 0 0.5px ${C.ink}` }} />
+                  {'Peu d\'avis — ' + fewReview}
+                </span>
+              </div>
+            </div>
+
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ background: C.warm }}>
+                    {['N°','Établissement','Note','Avis','Site web','Adresse','Statut','Maps'].map(h => (
+                      <th key={h} style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 9, color: C.muted, fontWeight: 400, padding: '10px 16px', textAlign: 'left', borderBottom: `0.5px solid ${C.ink}`, whiteSpace: 'nowrap' }}>
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {results.map((r, i) => {
+                    const priority = !r.has_website ? 0 : r.review_count < 50 ? 1 : 2
+                    const bg   = priority === 0 ? C.ink  : priority === 1 ? C.warm : C.paper
+                    const fg   = priority === 0 ? C.warm : C.ink
+                    const dim  = priority === 0 ? 'rgba(244,240,230,0.45)' : C.muted
+                    const rule = priority === 0 ? 'rgba(244,240,230,0.12)' : 'rgba(28,25,23,0.12)'
+                    const td: React.CSSProperties = { padding: '11px 16px', verticalAlign: 'middle', borderBottom: `0.5px solid ${rule}`, fontSize: 13, fontFamily: sans, color: fg }
+
+                    return (
+                      <tr key={r.place_id} style={{ background: bg }}>
+                        <td style={{ ...td, color: dim, fontSize: 10 }}>{i + 1}</td>
+
+                        <td style={{ ...td, maxWidth: 220 }}>{r.name}</td>
+
+                        <td style={{ ...td, color: r.rating !== null ? fg : dim }}>
+                          {r.rating !== null ? r.rating : '—'}
+                        </td>
+
+                        <td style={{ ...td, color: r.review_count > 0 ? fg : dim }}>
+                          {r.review_count > 0 ? r.review_count.toLocaleString('fr-FR') : '—'}
+                        </td>
+
+                        <td style={td}>
+                          {r.has_website ? (
+                            <a href={r.website!} target="_blank" rel="noopener noreferrer"
+                              style={{ color: fg, textDecoration: 'underline', textUnderlineOffset: 3, fontSize: 11 }}>
                               Oui ↗
                             </a>
-                          : <span style={{ fontWeight: 400, letterSpacing: '0.06em', fontSize: 11, textTransform: 'uppercase' }}>Non</span>}
-                      </td>
-                      <td style={{ ...tdPriority, color: rowMuted, maxWidth: 220, fontSize: 12 }}>{r.address}</td>
-                      <td style={tdPriority}>
-                        {r.is_open === true  && <span style={{ fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Ouvert</span>}
-                        {r.is_open === false && <span style={{ fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', color: rowMuted }}>Fermé</span>}
-                        {r.is_open === null  && <span style={{ color: rowMuted }}>—</span>}
-                      </td>
-                      <td style={tdPriority}>
-                        <a href={r.maps_url} target="_blank" rel="noopener noreferrer"
-                          style={{ color: rowFg, textDecoration: 'none', fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
-                          Maps ↗
-                        </a>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        </>
-      )}
+                          ) : (
+                            /* Badge ink / no site */
+                            <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.2em', fontSize: 9, padding: '4px 10px', background: C.paper, color: C.ink }}>
+                              Non
+                            </span>
+                          )}
+                        </td>
 
+                        <td style={{ ...td, color: dim, maxWidth: 220, fontSize: 12 }}>{r.address}</td>
+
+                        <td style={td}>
+                          {r.is_open === true  && <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.14em', fontSize: 10, color: fg }}>Ouvert</span>}
+                          {r.is_open === false && <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.14em', fontSize: 10, color: dim }}>Fermé</span>}
+                          {r.is_open === null  && <span style={{ color: dim }}>—</span>}
+                        </td>
+
+                        <td style={td}>
+                          <a href={r.maps_url} target="_blank" rel="noopener noreferrer"
+                            style={{ color: fg, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.14em', textDecoration: 'none', whiteSpace: 'nowrap' }}>
+                            Maps ↗
+                          </a>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
+      </main>
     </div>
   )
 }
