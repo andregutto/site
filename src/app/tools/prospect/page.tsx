@@ -106,24 +106,28 @@ export default function ProspectPage() {
   return (
     <div style={{ background: C.paper, minHeight: '100vh', fontFamily: sans, color: C.ink }}>
 
-      {/* ── Nav / Logo ── */}
-      <header style={{ position: 'sticky', top: 0, zIndex: 50, background: C.paper }}>
-        <div style={{ maxWidth: 1240, margin: '0 auto', padding: '20px 40px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          {/* Wordmark */}
-          <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1 }}>
-            <span style={{ fontFamily: sans, textTransform: 'lowercase', letterSpacing: '0.5em', fontSize: 9, color: C.muted }}>
+      {/* ── Header / Logo ── */}
+      <header style={{ background: C.paper }}>
+        <div style={{ maxWidth: 1240, margin: '0 auto', padding: '48px 48px 36px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
+          {/* Wordmark — sq-logo pattern at medium scale */}
+          <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'flex-start', gap: 0 }}>
+            <span style={{ fontFamily: sans, textTransform: 'lowercase', letterSpacing: '0.6em', fontSize: 13, color: C.muted, marginLeft: 2 }}>
               studio
             </span>
-            <span className={barlow.className} style={{ fontWeight: 900, textTransform: 'uppercase', letterSpacing: '-0.02em', fontSize: 22, color: C.ink, marginTop: 2 }}>
+            <span className={barlow.className} style={{ fontWeight: 900, textTransform: 'uppercase', letterSpacing: '-0.02em', fontSize: 52, lineHeight: 0.9, color: C.ink, marginTop: -2 }}>
               QUARTIER
+            </span>
+            <div style={{ width: '100%', height: '0.5px', background: C.ink, margin: '6px 0 4px' }} />
+            <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 10, color: C.muted }}>
+              Marketing Digital · Paris
             </span>
           </div>
           {/* Tool label */}
-          <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 10, color: C.muted }}>
+          <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 10, color: C.muted, paddingBottom: 4 }}>
             Outil interne
           </span>
         </div>
-        <div style={{ height: '0.5px', background: C.ink }} />
+        <div style={{ height: '0.5px', background: C.ink, marginLeft: 48, marginRight: 48 }} />
       </header>
 
       {/* ── Page content ── */}
