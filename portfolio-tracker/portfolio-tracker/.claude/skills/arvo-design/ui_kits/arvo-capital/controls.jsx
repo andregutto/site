@@ -24,7 +24,7 @@ const controlsStyles = {
 const Button = ({ variant = 'primary', children, onClick, style, type = 'button' }) => {
   const variants = {
     primary:   { background: 'var(--arvo-black)', color: 'var(--arvo-offwhite)' },
-    gold:      { background: 'var(--arvo-gold)',  color: 'var(--arvo-black)' },
+    gold:      { background: 'var(--arvo-gold-cta)', color: '#fff' },  /* #C9911A — production CTA */
     secondary: { background: 'transparent', color: 'var(--arvo-black)', border: '1px solid var(--arvo-black)' },
     ghost:     { background: 'transparent', color: 'rgba(13,13,13,0.65)', border: '1px solid var(--arvo-border)' },
     ghostDark: { background: 'transparent', color: 'var(--arvo-offwhite)', border: '1px solid rgba(242,237,228,0.18)' },

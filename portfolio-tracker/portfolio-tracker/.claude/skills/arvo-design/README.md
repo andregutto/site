@@ -18,7 +18,7 @@ actions and tags — never in section backgrounds.
 |---|---|---|---|---|
 | **Arvo Capital** | Finanças & Patrimônio | **Azul Arara** `#1B4FD8` | precisão técnica, segurança patrimonial | portfolio, balance, contribution, allocation |
 | **Arvo Voyage** | Estilo de Vida & Viagens | **Vermelho Guará** `#D63B2F` | paixão, audácia, movimento | destination, booking, map pins, experiences |
-| **Arvo Journal** | Comunidade & Evolução | **Ocre Tucano** `#E8A020` | criatividade, comunidade, luz | live, forum, planner, workshops |
+| **Arvo Raiz** | Comunidade & Evolução | **Ocre Tucano** `#E8A020` | criatividade, comunidade, luz | live, forum, planner, workshops |
 
 The three accents are named for **Brazilian birds** — arara, guará, tucano —
 a quiet through-line that keeps the brand grounded in its origin without
@@ -145,9 +145,12 @@ Two rules dominate:
 
 ### Typography
 
-- **Display + body: Tenor Sans** — one weight (400), generous tracking
-  (`0.10–0.30em`). Hierarchy is built from **size + tracking + color**,
-  never weight.
+- **Display + marketing body: Tenor Sans** — one weight (400), generous tracking
+  (`0.10–0.30em`). Used for headings, wordmark, and the landing page throughout.
+  Hierarchy is built from **size + tracking + color**, never weight.
+- **Product body: DM Sans** — used in the authenticated app for body text and
+  data labels where readability at small sizes matters more than editorial feel.
+  Tenor Sans remains for display headings inside the product too.
 - **Accent: Playfair Display Italic** — taglines, pull quotes, section
   subtitles. Always italic. Always preferred in gold.
 
@@ -184,8 +187,8 @@ Use class `.arvo-photo` to apply it.
 
 - **Slow, intentional, never bouncy.** Default duration **280ms**, default
   easing `cubic-bezier(0.22, 0.61, 0.36, 1)` (an almost-linear out-curve).
-- **Section reveal:** `opacity 0 → 1, translateY(20px → 0)` over **900ms**
-  on intersection (see moodboard).
+- **Section reveal:** `opacity 0 → 1, translateY(22px → 0)` over **650ms**
+  (`0.65s ease`) on intersection — production value in `index.css`.
 - **No spring physics, no rubber-band, no infinite loops** except for a
   *very* subtle background ken-burns (`scale(1.0) → 1.05` over 20s) on hero
   photographs.
@@ -347,7 +350,7 @@ typographic hierarchy. The verticals map to:
 |---|---|
 | Arvo Capital | `⬡` |
 | Arvo Voyage | `◈` |
-| Arvo Journal | `◎` |
+| Arvo Raiz | `◎` |
 
 ### Emoji
 
@@ -392,9 +395,8 @@ ui_kits/
 
   arvo-voyage/             ← lifestyle / travel — placeholder shell
     index.html             not in scope of the existing codebase
-                           (see CAVEATS in the closing chat message)
 
-  arvo-journal/            ← community / live — placeholder shell
+  arvo-raiz/               ← community / live — placeholder shell
     index.html             not in scope of the existing codebase
 ```
 

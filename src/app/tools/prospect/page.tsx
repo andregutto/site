@@ -1,23 +1,35 @@
 'use client'
 
 import { useState } from 'react'
+import { Barlow_Condensed } from 'next/font/google'
 
+const barlow = Barlow_Condensed({ weight: ['900'], subsets: ['latin'] })
+
+// ── Studio Quartier palette ──────────────────────────────────────────────────
+const C = {
+  paper: '#FDFAF5',
+  ink:   '#1C1917',
+  warm:  '#F4F0E6',
+  muted: '#6B6760',
+}
+
+// ── Data ─────────────────────────────────────────────────────────────────────
 const NEIGHBORHOODS = [
-  { label: 'Sentier',            lat: 48.8648, lng: 2.3476 },
-  { label: 'Montorgueil',        lat: 48.8634, lng: 2.3467 },
-  { label: 'Bourse',             lat: 48.8674, lng: 2.3408 },
-  { label: 'Les Halles',         lat: 48.8606, lng: 2.3477 },
-  { label: 'Place des Victoires',lat: 48.8655, lng: 2.3427 },
+  { label: 'Sentier',             lat: 48.8648, lng: 2.3476 },
+  { label: 'Montorgueil',         lat: 48.8634, lng: 2.3467 },
+  { label: 'Bourse',              lat: 48.8674, lng: 2.3408 },
+  { label: 'Les Halles',          lat: 48.8606, lng: 2.3477 },
+  { label: 'Place des Victoires', lat: 48.8655, lng: 2.3427 },
 ]
 
 const CATEGORIES = [
-  { label: 'Restaurante',          type: 'restaurant' },
-  { label: 'Bistrô',               type: 'restaurant', keyword: 'bistro' },
+  { label: 'Restaurant',           type: 'restaurant' },
+  { label: 'Bistro',               type: 'restaurant', keyword: 'bistro' },
   { label: 'Boulangerie',          type: 'bakery' },
   { label: 'Pâtisserie',           type: 'bakery',     keyword: 'patisserie' },
   { label: 'Café',                 type: 'cafe' },
   { label: 'Bar',                  type: 'bar' },
-  { label: 'Commerce de proximité',type: 'store' },
+  { label: 'Commerce de quartier', type: 'store' },
 ]
 
 interface Prospect {
@@ -33,25 +45,119 @@ interface Prospect {
 }
 
 function exportCSV(rows: Prospect[]) {
-  const headers = ['Nome','Endereço','Rating','Avaliações','Tem site','Site','Status','Maps']
+  const headers = ['Établissement','Adresse','Note','Avis','Site web','URL','Statut','Maps']
   const lines = rows.map(r => [
     `"${r.name.replace(/"/g, '""')}"`,
     `"${r.address.replace(/"/g, '""')}"`,
     r.rating ?? '',
     r.review_count,
-    r.has_website ? 'Sim' : 'Não',
+    r.has_website ? 'Oui' : 'Non',
     r.website ?? '',
-    r.is_open === true ? 'Aberto' : r.is_open === false ? 'Fechado' : '—',
+    r.is_open === true ? 'Ouvert' : r.is_open === false ? 'Fermé' : '—',
     r.maps_url,
   ].join(','))
   const csv = [headers.join(','), ...lines].join('\n')
   const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })
   const a = document.createElement('a')
   a.href = URL.createObjectURL(blob)
-  a.download = `prospectos_${Date.now()}.csv`
+  a.download = `prospection_${Date.now()}.csv`
   a.click()
 }
 
+// ── Styles ───────────────────────────────────────────────────────────────────
+const sq = {
+  page: {
+    background: C.paper,
+    color: C.ink,
+    fontFamily: 'Arial, "Helvetica Neue", Helvetica, sans-serif',
+    minHeight: '100vh',
+    padding: '64px 48px',
+    maxWidth: 1200,
+    margin: '0 auto',
+  } as React.CSSProperties,
+
+  label: {
+    fontFamily: 'Arial, "Helvetica Neue", Helvetica, sans-serif',
+    fontSize: 11,
+    fontWeight: 400,
+    textTransform: 'uppercase' as const,
+    letterSpacing: '0.22em',
+    color: C.muted,
+    display: 'flex',
+    flexDirection: 'column' as const,
+    gap: 8,
+  } as React.CSSProperties,
+
+  select: {
+    fontFamily: 'Arial, "Helvetica Neue", Helvetica, sans-serif',
+    fontSize: 14,
+    color: C.ink,
+    background: C.paper,
+    border: 'none',
+    borderBottom: `0.5px solid ${C.ink}`,
+    borderRadius: 0,
+    padding: '8px 0',
+    cursor: 'pointer',
+    minWidth: 180,
+    outline: 'none',
+    appearance: 'none' as const,
+    WebkitAppearance: 'none' as const,
+  } as React.CSSProperties,
+
+  btnPrimary: {
+    fontFamily: 'Arial, "Helvetica Neue", Helvetica, sans-serif',
+    fontSize: 11,
+    fontWeight: 400,
+    textTransform: 'uppercase' as const,
+    letterSpacing: '0.22em',
+    background: C.ink,
+    color: C.warm,
+    border: 'none',
+    borderRadius: 0,
+    padding: '12px 28px',
+    cursor: 'pointer',
+    whiteSpace: 'nowrap' as const,
+  } as React.CSSProperties,
+
+  btnSecondary: {
+    fontFamily: 'Arial, "Helvetica Neue", Helvetica, sans-serif',
+    fontSize: 11,
+    fontWeight: 400,
+    textTransform: 'uppercase' as const,
+    letterSpacing: '0.22em',
+    background: C.warm,
+    color: C.ink,
+    border: 'none',
+    borderRadius: 0,
+    padding: '12px 28px',
+    cursor: 'pointer',
+    boxShadow: `inset 0 0 0 0.5px ${C.ink}`,
+    whiteSpace: 'nowrap' as const,
+  } as React.CSSProperties,
+
+  th: {
+    fontFamily: 'Arial, "Helvetica Neue", Helvetica, sans-serif',
+    fontSize: 10,
+    fontWeight: 400,
+    textTransform: 'uppercase' as const,
+    letterSpacing: '0.22em',
+    color: C.muted,
+    padding: '10px 16px',
+    textAlign: 'left' as const,
+    borderBottom: `0.5px solid ${C.ink}`,
+    whiteSpace: 'nowrap' as const,
+    background: C.warm,
+  } as React.CSSProperties,
+
+  td: {
+    padding: '10px 16px',
+    verticalAlign: 'middle' as const,
+    fontSize: 13,
+    borderBottom: `0.5px solid rgba(28,25,23,0.15)`,
+  } as React.CSSProperties,
+}
+
+// ── Component ─────────────────────────────────────────────────────────────────
 export default function ProspectPage() {
   const [neighborhoodIdx, setNeighborhoodIdx] = useState(0)
   const [categoryIdx,     setCategoryIdx]     = useState(0)
@@ -78,116 +184,166 @@ export default function ProspectPage() {
     try {
       const res = await fetch(`/api/prospects?${params}`)
       const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'Erro desconhecido')
+      if (!res.ok) throw new Error(data.error || 'Erreur inconnue')
       setResults(data.results ?? [])
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Erro')
+      setError(e instanceof Error ? e.message : 'Erreur')
       setResults([])
     } finally {
       setLoading(false)
     }
   }
 
+  const noSite    = results.filter(r => !r.has_website).length
+  const fewReview = results.filter(r =>  r.has_website && r.review_count < 50).length
+
   return (
-    <div style={{ fontFamily: 'system-ui, sans-serif', maxWidth: 1100, margin: '0 auto', padding: '32px 24px' }}>
-      <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 4 }}>🔍 Prospecção — Studio Quartier</h1>
-      <p style={{ fontSize: 13, color: '#666', marginBottom: 24 }}>
-        Busca estabelecimentos com baixa presença digital no 1er/2ème arrondissement.
-      </p>
+    <div style={sq.page}>
 
-      {/* Filtros */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 20, alignItems: 'flex-end' }}>
-        <label style={labelStyle}>
-          Bairro
-          <select value={neighborhoodIdx} onChange={e => setNeighborhoodIdx(Number(e.target.value))} style={selectStyle}>
-            {NEIGHBORHOODS.map((n, i) => <option key={n.label} value={i}>{n.label}</option>)}
-          </select>
+      {/* ── Header ── */}
+      <header style={{ marginBottom: 64 }}>
+        <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'flex-start', gap: 0 }}>
+          <span style={{ fontFamily: 'Arial, "Helvetica Neue", Helvetica, sans-serif', fontSize: 12, letterSpacing: '0.6em', color: C.muted, marginLeft: 2 }}>
+            studio
+          </span>
+          <span className={barlow.className} style={{ fontSize: 52, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '-0.02em', lineHeight: 0.9, color: C.ink, marginTop: -4 }}>
+            Prospection
+          </span>
+          <div style={{ width: '100%', height: '0.5px', background: C.ink, margin: '6px 0 4px' }} />
+          <span style={{ fontFamily: 'Arial, "Helvetica Neue", Helvetica, sans-serif', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.22em', color: C.muted }}>
+            Outil interne · Studio Quartier
+          </span>
+        </div>
+      </header>
+
+      {/* ── Filters ── */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 40, marginBottom: 48, alignItems: 'flex-end' }}>
+
+        <label style={sq.label}>
+          Quartier
+          <div style={{ position: 'relative' }}>
+            <select value={neighborhoodIdx} onChange={e => setNeighborhoodIdx(Number(e.target.value))} style={sq.select}>
+              {NEIGHBORHOODS.map((n, i) => <option key={n.label} value={i}>{n.label}</option>)}
+            </select>
+            <span style={{ position: 'absolute', right: 0, top: '50%', transform: 'translateY(-50%)', color: C.muted, pointerEvents: 'none', fontSize: 10 }}>↓</span>
+          </div>
         </label>
 
-        <label style={labelStyle}>
-          Categoria
-          <select value={categoryIdx} onChange={e => setCategoryIdx(Number(e.target.value))} style={selectStyle}>
-            {CATEGORIES.map((c, i) => <option key={c.label} value={i}>{c.label}</option>)}
-          </select>
+        <label style={sq.label}>
+          Catégorie
+          <div style={{ position: 'relative' }}>
+            <select value={categoryIdx} onChange={e => setCategoryIdx(Number(e.target.value))} style={sq.select}>
+              {CATEGORIES.map((c, i) => <option key={c.label} value={i}>{c.label}</option>)}
+            </select>
+            <span style={{ position: 'absolute', right: 0, top: '50%', transform: 'translateY(-50%)', color: C.muted, pointerEvents: 'none', fontSize: 10 }}>↓</span>
+          </div>
         </label>
 
-        <label style={labelStyle}>
-          Raio (m)
+        <label style={sq.label}>
+          Rayon (m)
           <input
             type="number" min={100} max={2000} step={100}
             value={radius}
             onChange={e => setRadius(Number(e.target.value))}
-            style={{ ...selectStyle, width: 90 }}
+            style={{ ...sq.select, width: 80 }}
           />
         </label>
 
-        <button onClick={handleSearch} disabled={loading} style={btnStyle}>
-          {loading ? 'Buscando...' : 'Buscar'}
-        </button>
-
-        {results.length > 0 && (
-          <button onClick={() => exportCSV(results)} style={{ ...btnStyle, background: '#16a34a' }}>
-            Exportar CSV ({results.length})
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+          <button onClick={handleSearch} disabled={loading} style={{ ...sq.btnPrimary, opacity: loading ? 0.6 : 1 }}>
+            {loading ? 'Recherche…' : 'Rechercher'}
           </button>
-        )}
+
+          {results.length > 0 && (
+            <button onClick={() => exportCSV(results)} style={sq.btnSecondary}>
+              Exporter CSV ({results.length})
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* Error */}
+      {/* ── Error ── */}
       {error && (
-        <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 6, padding: '10px 14px', marginBottom: 16, color: '#b91c1c', fontSize: 13 }}>
+        <div style={{ background: C.warm, boxShadow: `inset 0 0 0 0.5px ${C.ink}`, padding: '14px 20px', marginBottom: 24, fontSize: 13, color: C.ink }}>
+          <span style={{ fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', color: C.muted, display: 'block', marginBottom: 4 }}>Erreur</span>
           {error}
         </div>
       )}
 
-      {/* Resultados */}
+      {/* ── Empty state ── */}
       {searched && !loading && results.length === 0 && !error && (
-        <p style={{ color: '#666', fontSize: 14 }}>Nenhum resultado encontrado.</p>
+        <p style={{ fontSize: 13, color: C.muted, letterSpacing: '0.04em' }}>Aucun résultat.</p>
       )}
 
+      {/* ── Results ── */}
       {results.length > 0 && (
         <>
-          <p style={{ fontSize: 13, color: '#555', marginBottom: 10 }}>
-            <b>{results.length}</b> resultado(s) — ordenados por prioridade de prospecção
-            {' '}<span style={{ color: '#16a34a' }}>■</span> sem site
-            {' '}<span style={{ color: '#f59e0b' }}>■</span> &lt; 50 avaliações
-          </p>
+          {/* Legend */}
+          <div style={{ display: 'flex', gap: 32, marginBottom: 20, alignItems: 'center' }}>
+            <span style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.22em', color: C.muted }}>
+              {results.length} établissement{results.length > 1 ? 's' : ''} · priorité décroissante
+            </span>
+            <div style={{ display: 'flex', gap: 20 }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.18em', color: C.muted }}>
+                <span style={{ display: 'inline-block', width: 10, height: 10, background: C.ink }} />
+                Sans site — {noSite}
+              </span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.18em', color: C.muted }}>
+                <span style={{ display: 'inline-block', width: 10, height: 10, background: C.warm, boxShadow: `inset 0 0 0 0.5px ${C.ink}` }} />
+                {'< 50 avis — ' + fewReview}
+              </span>
+            </div>
+          </div>
+
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead>
-                <tr style={{ background: '#f3f4f6', textAlign: 'left' }}>
-                  {['#','Nome','Rating','Avaliações','Tem site','Endereço','Status','Maps'].map(h => (
-                    <th key={h} style={thStyle}>{h}</th>
+                <tr>
+                  {['N°', 'Établissement', 'Note', 'Avis', 'Site web', 'Adresse', 'Statut', 'Maps'].map(h => (
+                    <th key={h} style={sq.th}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {results.map((r, i) => {
                   const priority = !r.has_website ? 0 : r.review_count < 50 ? 1 : 2
-                  const rowBg = priority === 0 ? '#f0fdf4' : priority === 1 ? '#fffbeb' : '#fff'
+                  const rowBg    = priority === 0 ? C.ink  : priority === 1 ? C.warm : C.paper
+                  const rowFg    = priority === 0 ? C.warm : C.ink
+                  const rowMuted = priority === 0 ? 'rgba(244,240,230,0.55)' : C.muted
+                  const tdPriority = { ...sq.td, color: rowFg, borderBottomColor: priority === 0 ? 'rgba(244,240,230,0.18)' : 'rgba(28,25,23,0.15)' }
+
                   return (
-                    <tr key={r.place_id} style={{ background: rowBg, borderBottom: '1px solid #e5e7eb' }}>
-                      <td style={tdStyle}>{i + 1}</td>
-                      <td style={{ ...tdStyle, fontWeight: 600, maxWidth: 200 }}>{r.name}</td>
-                      <td style={tdStyle}>
+                    <tr key={r.place_id} style={{ background: rowBg }}>
+                      <td style={{ ...tdPriority, color: rowMuted, fontSize: 11 }}>{i + 1}</td>
+                      <td style={{ ...tdPriority, fontWeight: 400, maxWidth: 200 }}>{r.name}</td>
+                      <td style={tdPriority}>
                         {r.rating !== null
-                          ? <span>{r.rating} <span style={{ color: '#f59e0b' }}>★</span></span>
-                          : <span style={{ color: '#aaa' }}>—</span>}
+                          ? <span>{r.rating}</span>
+                          : <span style={{ color: rowMuted }}>—</span>}
                       </td>
-                      <td style={tdStyle}>{r.review_count > 0 ? r.review_count.toLocaleString('fr-FR') : '—'}</td>
-                      <td style={tdStyle}>
+                      <td style={tdPriority}>
+                        {r.review_count > 0
+                          ? r.review_count.toLocaleString('fr-FR')
+                          : <span style={{ color: rowMuted }}>—</span>}
+                      </td>
+                      <td style={tdPriority}>
                         {r.has_website
-                          ? <a href={r.website!} target="_blank" rel="noopener noreferrer" style={{ color: '#2563eb', textDecoration: 'underline', fontSize: 11 }}>Sim ↗</a>
-                          : <span style={{ color: '#16a34a', fontWeight: 700 }}>Não ✓</span>}
+                          ? <a href={r.website!} target="_blank" rel="noopener noreferrer"
+                              style={{ color: rowFg, textDecoration: 'underline', fontSize: 11, textUnderlineOffset: 3 }}>
+                              Oui ↗
+                            </a>
+                          : <span style={{ fontWeight: 400, letterSpacing: '0.06em', fontSize: 11, textTransform: 'uppercase' }}>Non</span>}
                       </td>
-                      <td style={{ ...tdStyle, color: '#555', maxWidth: 220 }}>{r.address}</td>
-                      <td style={tdStyle}>
-                        {r.is_open === true  && <span style={{ color: '#16a34a' }}>Aberto</span>}
-                        {r.is_open === false && <span style={{ color: '#dc2626' }}>Fechado</span>}
-                        {r.is_open === null  && <span style={{ color: '#aaa' }}>—</span>}
+                      <td style={{ ...tdPriority, color: rowMuted, maxWidth: 220, fontSize: 12 }}>{r.address}</td>
+                      <td style={tdPriority}>
+                        {r.is_open === true  && <span style={{ fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Ouvert</span>}
+                        {r.is_open === false && <span style={{ fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', color: rowMuted }}>Fermé</span>}
+                        {r.is_open === null  && <span style={{ color: rowMuted }}>—</span>}
                       </td>
-                      <td style={tdStyle}>
-                        <a href={r.maps_url} target="_blank" rel="noopener noreferrer" style={{ color: '#2563eb', textDecoration: 'none', fontSize: 11, whiteSpace: 'nowrap' }}>
-                          Ver Maps ↗
+                      <td style={tdPriority}>
+                        <a href={r.maps_url} target="_blank" rel="noopener noreferrer"
+                          style={{ color: rowFg, textDecoration: 'none', fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
+                          Maps ↗
                         </a>
                       </td>
                     </tr>
@@ -198,28 +354,7 @@ export default function ProspectPage() {
           </div>
         </>
       )}
+
     </div>
   )
-}
-
-const labelStyle: React.CSSProperties = {
-  display: 'flex', flexDirection: 'column', gap: 4,
-  fontSize: 12, fontWeight: 600, color: '#374151',
-}
-const selectStyle: React.CSSProperties = {
-  padding: '7px 10px', borderRadius: 6, border: '1px solid #d1d5db',
-  fontSize: 13, background: '#fff', cursor: 'pointer', minWidth: 160,
-}
-const btnStyle: React.CSSProperties = {
-  padding: '8px 20px', background: '#1d4ed8', color: '#fff',
-  border: 'none', borderRadius: 6, fontSize: 13, fontWeight: 600,
-  cursor: 'pointer', alignSelf: 'flex-end',
-}
-const thStyle: React.CSSProperties = {
-  padding: '8px 12px', fontSize: 11, fontWeight: 700,
-  letterSpacing: '0.05em', textTransform: 'uppercase', color: '#6b7280',
-  borderBottom: '2px solid #e5e7eb', whiteSpace: 'nowrap',
-}
-const tdStyle: React.CSSProperties = {
-  padding: '9px 12px', verticalAlign: 'middle',
 }

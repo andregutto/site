@@ -1,6 +1,6 @@
 ---
 name: arvo-design
-description: Use this skill to generate well-branded interfaces and assets for Arvo, either for production or throwaway prototypes/mocks/etc. Contains essential design guidelines, colors, type, fonts, assets, and UI kit components for prototyping. Arvo is a Brazilian-in-Europe platform with three verticals — Capital (finance), Voyage (lifestyle), Journal (community). Premium but accessible, serious without being cold, brazilian without being folkloric.
+description: Use this skill to generate well-branded interfaces and assets for Arvo, either for production or throwaway prototypes/mocks/etc. Contains essential design guidelines, colors, type, fonts, assets, and UI kit components for prototyping. Arvo is a Brazilian-in-Europe platform with three verticals — Capital (finance), Voyage (lifestyle), Raiz (community). Premium but accessible, serious without being cold, brazilian without being folkloric.
 user-invocable: true
 ---
 
@@ -24,7 +24,7 @@ file-by-file index. Then explore:
   React JSX components you can copy-paste: `header.jsx`, `controls.jsx`,
   `icons.jsx`, plus three screens.
 - [`ui_kits/arvo-voyage/`](./ui_kits/arvo-voyage),
-  [`ui_kits/arvo-journal/`](./ui_kits/arvo-journal) — placeholders only;
+  [`ui_kits/arvo-raiz/`](./ui_kits/arvo-raiz) — placeholders only;
   these verticals don't have product code yet.
 
 ## When working
@@ -42,7 +42,7 @@ in this folder as you write components.
 If the user invokes this skill without other guidance, ask them:
 
 1. Which surface — marketing (black + gold) or product (off-white)?
-2. Which vertical — Capital (blue), Voyage (red), Journal (ocre), or
+2. Which vertical — Capital (blue), Voyage (red), Raiz (ocre), or
    mother brand only?
 3. What screen / artifact? (landing? dashboard? a single component?)
 4. Is there an existing screen to match, or a brand-fresh one?

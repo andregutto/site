@@ -36,9 +36,11 @@
 
   /* ── BASE PALETTE — the backbone. Never changes. ───────────────────── */
   --arvo-black:       #0D0D0D;   /* landing, header, hero, video intros, logo */
-  --arvo-gold:        #C8B89A;   /* the through-line — always present */
-  --arvo-offwhite:    #F2EDE4;   /* primary background of tools & content */
-  --arvo-beige:       #E8DFD0;   /* secondary surfaces, separators, cards */
+  --arvo-gold:        #C8B89A;   /* the through-line — decorative, borders, icons */
+  --arvo-gold-cta:    #C9911A;   /* CTA buttons on dark/photo backgrounds — white text */
+  --arvo-gold-text:   #8C6A28;   /* legible gold label text on light surfaces */
+  --arvo-offwhite:    #F2EDE4;   /* marketing surfaces; product uses #FFFFFF */
+  --arvo-beige:       #E8DFD0;   /* marketing separators; product uses #F4F4F4 */
   --arvo-terracotta:  #A36A52;   /* warm accent, editorial details */
 
   /* ── ACCENT HIERARCHY — appears ONLY in data, actions and tags. ─────
@@ -84,7 +86,8 @@
   /* ── TYPOGRAPHY ────────────────────────────────────────────────────── */
   --arvo-font-display: 'Tenor Sans', 'Times New Roman', serif;
   --arvo-font-serif:   'Playfair Display', Georgia, serif;   /* italic accent */
-  --arvo-font-body:    'Tenor Sans', system-ui, sans-serif;
+  --arvo-font-body:    'Tenor Sans', system-ui, sans-serif;  /* marketing/landing */
+  --arvo-font-product: 'DM Sans', system-ui, sans-serif;     /* product app body text */
 
   /* Letter-spacing — Tenor Sans wants room to breathe */
   --arvo-track-tight:   0.04em;   /* body */
@@ -130,7 +133,8 @@
   --arvo-shadow-sm: 0 1px 2px rgba(13, 13, 13, 0.04);
   --arvo-shadow-md: 0 4px 16px rgba(13, 13, 13, 0.06);
   --arvo-shadow-lg: 0 24px 60px -20px rgba(13, 13, 13, 0.18);
-  --arvo-shadow-glow-gold: 0 0 80px -20px rgba(200, 184, 154, 0.35);
+  --arvo-shadow-glow-gold: 0 0 80px -20px rgba(200, 184, 154, 0.35);  /* token value */
+  /* Production uses radial-gradient for hero aura — see LandingPage.tsx */
 
   /* ── MOTION — slow, intentional. Nothing bounces. ──────────────────── */
   --arvo-ease:      cubic-bezier(0.22, 0.61, 0.36, 1);

@@ -104,6 +104,10 @@ export default function PerformancePage() {
   const dailyTo = useDailyChart ? localDate(now) : null
   const { data: dailyData, loading: dailyLoading } = usePerformanceDaily(dailyFrom, dailyTo)
 
+  // Fetch benchmarks from one month before `from` so we have the pre-period base for normalization
+  // Must be declared before dailyChartData which calls interpolateBenchmarkCumAtDate
+  const { data: benchmarks, loading: bLoading, refresh: refreshBenchmarks } = usePerformanceBenchmarks(addMonths(from, -1), to)
+
   // Interpolate monthly benchmark cum factors to a specific day (linear within the month).
   function interpolateBenchmarkCumAtDate(dateStr: string): { cdi: number | null; ibov: number | null; sp500: number | null } {
     const bm = benchmarks?.monthly ?? []
@@ -167,9 +171,6 @@ export default function PerformancePage() {
     const am = divByMonthAsset.get(month)!
     am.set(r.asset_id, (am.get(r.asset_id) ?? 0) + r.amount_brl)
   }
-  // Fetch benchmarks from one month before `from` so we have the pre-period base for normalization
-  const { data: benchmarks, loading: bLoading, refresh: refreshBenchmarks } = usePerformanceBenchmarks(addMonths(from, -1), to)
-
   const handleRefresh = useCallback(() => {
     refreshSummary()
     refreshMonthly()
