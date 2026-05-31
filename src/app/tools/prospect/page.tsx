@@ -187,7 +187,7 @@ export default function ProspectPage() {
     setPlaces(prev => prev.map(p => p.place_id === place_id ? { ...p, analyzeStatus: status } : p))
   }, [])
 
-  async function analyzeOne(p: PlaceBasic) {
+  async function analyzeOne(p: PlaceBasic, runId: string): Promise<AnalysisResult | null> {
     updatePlace(p.place_id, { state: 'loading' })
     try {
       const res = await fetch('/api/sq/analyze', {
@@ -205,29 +205,37 @@ export default function ProspectPage() {
           website:      p.website,
           phone:        p.phone,
           maps_url:     p.maps_url,
+          run_id:       runId,
         }),
       })
       const data: AnalysisResult = await res.json()
       if (!res.ok) {
         updatePlace(p.place_id, { state: 'error', message: (data as any).error ?? 'Erreur' })
-      } else {
-        updatePlace(p.place_id, { state: 'done', result: data })
+        return null
       }
+      updatePlace(p.place_id, { state: 'done', result: data })
+      return data
     } catch (e) {
       updatePlace(p.place_id, { state: 'error', message: e instanceof Error ? e.message : 'Erreur réseau' })
+      return null
     }
   }
 
-  async function runAnalysis(list: PlaceBasic[]) {
+  async function runAnalysis(list: PlaceBasic[], runId: string): Promise<{ prospects: number; skipped: number }> {
+    let prospectCount = 0
+    let skippedCount  = 0
     const CONCURRENCY = 3
     let i = 0
     async function worker() {
       while (i < list.length) {
         const p = list[i++]
-        await analyzeOne(p)
+        const result = await analyzeOne(p, runId)
+        if (result?.classification === 'PROSPECT') prospectCount++
+        else if (result) skippedCount++
       }
     }
     await Promise.all(Array.from({ length: CONCURRENCY }, worker))
+    return { prospects: prospectCount, skipped: skippedCount }
   }
 
   async function handleSearch() {
@@ -237,6 +245,7 @@ export default function ProspectPage() {
     setPlaces([])
     setView('table')
 
+    const runId = crypto.randomUUID()
     const params = new URLSearchParams({
       lat:    String(nb.lat),
       lng:    String(nb.lng),
@@ -252,7 +261,21 @@ export default function ProspectPage() {
       const list: PlaceBasic[] = data.results ?? []
       setPlaces(list.map(p => ({ ...p, analyzeStatus: { state: 'pending' } })))
       setSearching(false)
-      await runAnalysis(list)
+      const counts = await runAnalysis(list, runId)
+      // Save run summary to Supabase
+      fetch('/api/sq/runs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id:               runId,
+          neighborhood:     nb.label,
+          category:         cat.label,
+          radius,
+          total_found:      list.length,
+          total_skipped:    counts.skipped,
+          total_prospects:  counts.prospects,
+        }),
+      }).catch(() => {})
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Erreur')
       setSearching(false)
@@ -297,9 +320,15 @@ export default function ProspectPage() {
               Marketing Digital · Paris
             </span>
           </div>
-          <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 10, color: C.muted, paddingBottom: 4 }}>
-            Outil interne
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 28, paddingBottom: 4 }}>
+            <a href="/tools/prospect/historique"
+              style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 10, color: C.muted, textDecoration: 'none' }}>
+              Historique ↗
+            </a>
+            <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 10, color: C.muted }}>
+              Outil interne
+            </span>
+          </div>
         </div>
         <div style={{ height: '0.5px', background: C.ink, marginLeft: 48, marginRight: 48 }} />
       </header>

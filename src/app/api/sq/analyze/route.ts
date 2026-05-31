@@ -16,6 +16,7 @@ interface AnalyzeBody {
   website:      string | null
   phone:        string | null
   maps_url:     string
+  run_id?:      string
 }
 
 // ── Website fetch ─────────────────────────────────────────────────────────────
@@ -54,7 +55,7 @@ function extractInstagram(html: string): string | null {
 
 export async function POST(req: NextRequest) {
   const body: AnalyzeBody = await req.json()
-  const { place_id, name, address, lat, lng, google_types, rating, review_count, website, phone, maps_url } = body
+  const { place_id, name, address, lat, lng, google_types, rating, review_count, website, phone, maps_url, run_id } = body
 
   if (!process.env.ANTHROPIC_API_KEY) {
     return NextResponse.json({ error: 'ANTHROPIC_API_KEY non configurée — ajoutez-la dans .env.local' }, { status: 503 })
@@ -128,7 +129,10 @@ Reply with JSON only, no markdown:
   if (classification !== 'PROSPECT') {
     try {
       const sb = getSupabaseSQ()
-      if (sb) await sb.from('sq_places').upsert(baseRecord as any, { onConflict: 'place_id' })
+      if (sb) {
+        await sb.from('sq_places').upsert(baseRecord as any, { onConflict: 'place_id' })
+        if (run_id) await sb.from('sq_run_places').upsert({ run_id, place_id } as any, { onConflict: 'run_id,place_id' })
+      }
     } catch { /* skip */ }
     return NextResponse.json({ ...baseRecord, from_cache: false })
   }
@@ -202,7 +206,10 @@ Règle de score: 100 = présence digitale quasi inexistante + fort potentiel pou
   // ── 5. Save to Supabase ───────────────────────────────────────────────────
   try {
     const sb = getSupabaseSQ()
-    if (sb) await sb.from('sq_places').upsert(fullRecord as any, { onConflict: 'place_id' })
+    if (sb) {
+      await sb.from('sq_places').upsert(fullRecord as any, { onConflict: 'place_id' })
+      if (run_id) await sb.from('sq_run_places').upsert({ run_id, place_id } as any, { onConflict: 'run_id,place_id' })
+    }
   } catch { /* skip */ }
 
   return NextResponse.json({ ...fullRecord, from_cache: false })
