@@ -178,8 +178,10 @@ export default function ProspectPage() {
     p => p.analyzeStatus.state === 'done' &&
       (p.analyzeStatus.result.classification === 'CHAIN' || p.analyzeStatus.result.classification === 'LARGE')
   ).length
-  const pending = places.filter(p => p.analyzeStatus.state === 'pending' || p.analyzeStatus.state === 'loading').length
-  const done    = places.filter(p => p.analyzeStatus.state === 'done' || p.analyzeStatus.state === 'error').length
+  const pending  = places.filter(p => p.analyzeStatus.state === 'pending' || p.analyzeStatus.state === 'loading').length
+  const done     = places.filter(p => p.analyzeStatus.state === 'done' || p.analyzeStatus.state === 'error').length
+  const errors   = places.filter(p => p.analyzeStatus.state === 'error')
+  const firstErr = errors.length > 0 ? (errors[0].analyzeStatus as { state: 'error'; message: string }).message : null
 
   const updatePlace = useCallback((place_id: string, status: AnalyzeStatus) => {
     setPlaces(prev => prev.map(p => p.place_id === place_id ? { ...p, analyzeStatus: status } : p))
@@ -385,6 +387,16 @@ export default function ProspectPage() {
           <div style={{ background: C.warm, border: `0.5px solid ${C.ink}`, padding: '14px 20px', marginBottom: 32 }}>
             <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 9, color: C.muted, display: 'block', marginBottom: 6 }}>Erreur</span>
             <span style={{ fontFamily: sans, fontSize: 13, color: C.ink }}>{error}</span>
+          </div>
+        )}
+
+        {/* ── Analysis errors ── */}
+        {!isRunning && errors.length > 0 && prospects.length === 0 && skipped === 0 && firstErr && (
+          <div style={{ background: C.warm, border: `0.5px solid ${C.ink}`, padding: '14px 20px', marginBottom: 32 }}>
+            <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 9, color: C.muted, display: 'block', marginBottom: 6 }}>
+              Erreur d'analyse ({errors.length}/{places.length})
+            </span>
+            <span style={{ fontFamily: sans, fontSize: 13, color: C.ink }}>{firstErr}</span>
           </div>
         )}
 

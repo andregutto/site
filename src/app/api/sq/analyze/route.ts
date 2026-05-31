@@ -23,7 +23,7 @@ interface AnalyzeBody {
 async function fetchWebsiteText(url: string): Promise<string | null> {
   try {
     const ctrl = new AbortController()
-    const timer = setTimeout(() => ctrl.abort(), 6000)
+    const timer = setTimeout(() => ctrl.abort(), 3000)
     const res = await fetch(url, {
       signal: ctrl.signal,
       headers: { 'User-Agent': 'Mozilla/5.0 (compatible; StudioQuartier-bot/1.0)' },
