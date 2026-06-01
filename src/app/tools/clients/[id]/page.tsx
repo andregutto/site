@@ -2,6 +2,8 @@
 
 import { useState, useEffect, use } from 'react'
 import { Barlow_Condensed } from 'next/font/google'
+import { useTranslation } from '@/lib/i18n'
+import { LangSwitcher } from '@/components/sq/LangSwitcher'
 
 const barlow = Barlow_Condensed({ weight: ['900'], subsets: ['latin'] })
 const C = { paper: '#FDFAF5', ink: '#1C1917', warm: '#F4F0E6', muted: '#6B6760' }
@@ -26,24 +28,6 @@ interface Event {
   title: string | null; content: string | null; meta: any
 }
 
-// ── Config ────────────────────────────────────────────────────────────────────
-
-const STATUSES = [
-  { key: 'prospect',     label: 'Prospect'      },
-  { key: 'en_approche',  label: 'En approche'   },
-  { key: 'rdv',          label: 'RDV'           },
-  { key: 'devis_envoye', label: 'Devis envoyé'  },
-  { key: 'negocia',      label: 'Négociation'   },
-  { key: 'gagne',        label: 'Gagné'         },
-  { key: 'actif',        label: 'Client actif'  },
-  { key: 'perdu',        label: 'Perdu'         },
-]
-
-const EVENT_TYPES = ['note', 'appel', 'email', 'réunion', 'proposition', 'contrat']
-const EVENT_ICONS: Record<string, string> = {
-  note: '·', appel: '☎', email: '✉', réunion: '◈', proposition: '◻', contrat: '★', statut_change: '→',
-}
-
 // ── Sub-components ────────────────────────────────────────────────────────────
 
 function Field({ label, value }: { label: string; value: string | number | null | undefined }) {
@@ -55,7 +39,7 @@ function Field({ label, value }: { label: string; value: string | number | null 
   )
 }
 
-function EditableField({ label, value, onSave }: { label: string; value: string | null; onSave: (v: string) => void }) {
+function EditableField({ label, addLabel, editLabel, value, onSave }: { label: string; addLabel: string; editLabel: string; value: string | null; onSave: (v: string) => void }) {
   const [editing, setEditing] = useState(false)
   const [draft,   setDraft]   = useState(value ?? '')
   return (
@@ -77,8 +61,8 @@ function EditableField({ label, value, onSave }: { label: string; value: string 
         </div>
       ) : (
         <div style={{ display: 'flex', gap: 12, alignItems: 'center', cursor: 'pointer' }} onClick={() => setEditing(true)}>
-          <span style={{ fontFamily: sans, fontSize: 13, color: value ? C.ink : C.muted }}>{value || 'Ajouter…'}</span>
-          <span style={{ fontFamily: sans, fontSize: 9, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.18em' }}>Modifier</span>
+          <span style={{ fontFamily: sans, fontSize: 13, color: value ? C.ink : C.muted }}>{value || addLabel}</span>
+          <span style={{ fontFamily: sans, fontSize: 9, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.18em' }}>{editLabel}</span>
         </div>
       )}
     </div>
@@ -89,12 +73,36 @@ function EditableField({ label, value, onSave }: { label: string; value: string 
 
 export default function ClientDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
+  const { t } = useTranslation()
   const [client,  setClient]  = useState<Client | null>(null)
   const [events,  setEvents]  = useState<Event[]>([])
   const [loading, setLoading] = useState(true)
   const [evtType, setEvtType] = useState('note')
   const [evtText, setEvtText] = useState('')
   const [saving,  setSaving]  = useState(false)
+
+  const STATUSES = [
+    { key: 'prospect',     label: t('status_prospect')     },
+    { key: 'en_approche',  label: t('status_en_approche')  },
+    { key: 'rdv',          label: t('status_rdv')          },
+    { key: 'devis_envoye', label: t('status_devis_envoye') },
+    { key: 'negocia',      label: t('status_negocia')      },
+    { key: 'gagne',        label: t('status_gagne')        },
+    { key: 'actif',        label: t('status_actif')        },
+    { key: 'perdu',        label: t('status_perdu')        },
+  ]
+
+  const EVENT_TYPES = [
+    t('event_note'), t('event_call'), t('event_email'),
+    t('event_meeting'), t('event_proposal'), t('event_contract'),
+  ]
+
+  const EVENT_ICONS: Record<string, string> = {
+    [t('event_note')]: '·', [t('event_call')]: '☎', [t('event_email')]: '✉',
+    [t('event_meeting')]: '◈', [t('event_proposal')]: '◻', [t('event_contract')]: '★',
+    note: '·', appel: '☎', email: '✉', réunion: '◈', proposition: '◻', contrat: '★', statut_change: '→',
+    nota: '·', ligação: '☎', reunião: '◈', proposta: '◻', contrato: '★',
+  }
 
   useEffect(() => {
     fetch(`/api/sq/clients/${id}`)
@@ -142,13 +150,13 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
 
   if (loading) return (
     <div style={{ background: C.paper, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <span style={{ fontFamily: sans, fontSize: 13, color: C.muted }}>Chargement…</span>
+      <span style={{ fontFamily: sans, fontSize: 13, color: C.muted }}>{t('progress_loading')}</span>
     </div>
   )
 
   if (!client) return (
     <div style={{ background: C.paper, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <span style={{ fontFamily: sans, fontSize: 13, color: C.muted }}>Client introuvable. <a href="/tools/clients" style={{ color: C.ink }}>← Retour</a></span>
+      <span style={{ fontFamily: sans, fontSize: 13, color: C.muted }}>{t('client_not_found')} <a href="/tools/clients" style={{ color: C.ink }}>{t('back')}</a></span>
     </div>
   )
 
@@ -159,14 +167,15 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
       <header style={{ background: C.paper }}>
         <div style={{ maxWidth: 1300, margin: '0 auto', padding: '48px 48px 36px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
           <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-            <span style={{ fontFamily: sans, letterSpacing: '0.6em', fontSize: 13, color: C.muted, marginLeft: 2 }}>studio</span>
-            <span className={barlow.className} style={{ fontWeight: 900, textTransform: 'uppercase', letterSpacing: '-0.02em', fontSize: 52, lineHeight: 0.9, color: C.ink, marginTop: -2 }}>QUARTIER</span>
+            <span style={{ fontFamily: sans, letterSpacing: '0.6em', fontSize: 13, color: C.muted, marginLeft: 2 }}>{t('studio')}</span>
+            <span className={barlow.className} style={{ fontWeight: 900, textTransform: 'uppercase', letterSpacing: '-0.02em', fontSize: 52, lineHeight: 0.9, color: C.ink, marginTop: -2 }}>{t('quartier')}</span>
             <div style={{ width: '100%', height: '0.5px', background: C.ink, margin: '6px 0 4px' }} />
-            <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 10, color: C.muted }}>Marketing Digital · Paris</span>
+            <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 10, color: C.muted }}>{t('tagline')}</span>
           </div>
-          <div style={{ display: 'flex', gap: 28, alignItems: 'center', paddingBottom: 4 }}>
-            <a href="/tools/clients" style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 10, color: C.muted, textDecoration: 'none' }}>← Clients</a>
-            <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 10, color: C.muted }}>Dossier</span>
+          <div style={{ display: 'flex', gap: 20, alignItems: 'center', paddingBottom: 4 }}>
+            <LangSwitcher />
+            <a href="/tools/clients" style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 10, color: C.muted, textDecoration: 'none' }}>{t('nav_clients')}</a>
+            <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 10, color: C.muted }}>{t('section_dossier')}</span>
           </div>
         </div>
         <div style={{ height: '0.5px', background: C.ink, marginLeft: 48, marginRight: 48 }} />
@@ -187,12 +196,12 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
             </div>
             {/* Priority */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'flex-end' }}>
-              <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.2em', fontSize: 9, color: C.muted }}>Priorité</span>
+              <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.2em', fontSize: 9, color: C.muted }}>{t('priority')}</span>
               <div style={{ display: 'flex', gap: 0 }}>
                 {[1, 2, 3].map(p => (
                   <button key={p} onClick={() => patchClient({ priority: p })}
                     style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.16em', fontSize: 9, padding: '5px 10px', border: `0.5px solid ${C.ink}`, borderLeft: p === 1 ? `0.5px solid ${C.ink}` : 'none', background: client.priority === p ? C.ink : 'transparent', color: client.priority === p ? C.paper : C.muted, cursor: 'pointer', borderRadius: 0 }}>
-                    {p === 1 ? 'Haute' : p === 2 ? 'Normale' : 'Basse'}
+                    {p === 1 ? t('priority_high') : p === 2 ? t('priority_normal') : t('priority_low')}
                   </button>
                 ))}
               </div>
@@ -226,46 +235,46 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
 
             {/* Contact */}
             <div style={{ marginBottom: 40 }}>
-              <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 9, color: C.muted }}>Contact</span>
+              <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 9, color: C.muted }}>{t('section_contact')}</span>
               <div style={{ height: '0.5px', background: C.ink, marginTop: 10, marginBottom: 20 }} />
-              <EditableField label="Nom du contact"    value={client.contact_name}   onSave={v => patchClient({ contact_name: v })} />
-              <EditableField label="Rôle / Fonction"   value={client.contact_role}   onSave={v => patchClient({ contact_role: v })} />
-              <EditableField label="Email"             value={client.contact_email}  onSave={v => patchClient({ contact_email: v })} />
-              <EditableField label="Mobile"            value={client.contact_mobile} onSave={v => patchClient({ contact_mobile: v })} />
+              <EditableField label={t('field_contact_name')}  addLabel={t('editable_add')} editLabel={t('editable_edit')} value={client.contact_name}   onSave={v => patchClient({ contact_name: v })} />
+              <EditableField label={t('field_contact_role')}  addLabel={t('editable_add')} editLabel={t('editable_edit')} value={client.contact_role}   onSave={v => patchClient({ contact_role: v })} />
+              <EditableField label={t('field_email')}         addLabel={t('editable_add')} editLabel={t('editable_edit')} value={client.contact_email}  onSave={v => patchClient({ contact_email: v })} />
+              <EditableField label={t('field_mobile')}        addLabel={t('editable_add')} editLabel={t('editable_edit')} value={client.contact_mobile} onSave={v => patchClient({ contact_mobile: v })} />
             </div>
 
             {/* Business */}
             <div style={{ marginBottom: 40 }}>
-              <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 9, color: C.muted }}>Établissement</span>
+              <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 9, color: C.muted }}>{t('section_business')}</span>
               <div style={{ height: '0.5px', background: C.ink, marginTop: 10, marginBottom: 20 }} />
-              <Field label="Téléphone"       value={client.phone_business} />
-              <Field label="Score IA initial" value={client.score_initial !== null ? `${client.score_initial}/100` : null} />
-              <Field label="Note Google"     value={client.google_rating ? `${client.google_rating} ★ (${client.google_reviews?.toLocaleString('fr-FR')} avis)` : null} />
+              <Field label={t('field_phone')}        value={client.phone_business} />
+              <Field label={t('field_score_initial')} value={client.score_initial !== null ? `${client.score_initial}/100` : null} />
+              <Field label={t('field_google_rating')} value={client.google_rating ? `${client.google_rating} ★ (${client.google_reviews?.toLocaleString('fr-FR')} ${t('reviews_suffix')})` : null} />
               {client.website && <div style={{ marginBottom: 16 }}>
-                <div style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.2em', fontSize: 9, color: C.muted, marginBottom: 4 }}>Site web</div>
+                <div style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.2em', fontSize: 9, color: C.muted, marginBottom: 4 }}>{t('field_website')}</div>
                 <a href={client.website} target="_blank" rel="noopener noreferrer" style={{ fontFamily: sans, fontSize: 13, color: C.ink, textDecoration: 'underline', textUnderlineOffset: 2 }}>
                   {client.website.replace(/^https?:\/\//, '')} ↗
                 </a>
               </div>}
               {client.instagram_url && <div style={{ marginBottom: 16 }}>
-                <div style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.2em', fontSize: 9, color: C.muted, marginBottom: 4 }}>Instagram</div>
+                <div style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.2em', fontSize: 9, color: C.muted, marginBottom: 4 }}>{t('field_instagram')}</div>
                 <a href={client.instagram_url} target="_blank" rel="noopener noreferrer" style={{ fontFamily: sans, fontSize: 13, color: C.ink, textDecoration: 'underline', textUnderlineOffset: 2 }}>
                   {client.instagram_url.replace('https://www.instagram.com/', '@')} ↗
                 </a>
               </div>}
               {client.maps_url && <div style={{ marginBottom: 16 }}>
-                <div style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.2em', fontSize: 9, color: C.muted, marginBottom: 4 }}>Google Maps</div>
-                <a href={client.maps_url} target="_blank" rel="noopener noreferrer" style={{ fontFamily: sans, color: C.ink, textDecoration: 'none', textTransform: 'uppercase', letterSpacing: '0.16em', fontSize: 11 }}>Maps ↗</a>
+                <div style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.2em', fontSize: 9, color: C.muted, marginBottom: 4 }}>{t('field_google_maps')}</div>
+                <a href={client.maps_url} target="_blank" rel="noopener noreferrer" style={{ fontFamily: sans, color: C.ink, textDecoration: 'none', textTransform: 'uppercase', letterSpacing: '0.16em', fontSize: 11 }}>{t('link_maps')}</a>
               </div>}
             </div>
 
             {/* Services */}
             <div style={{ marginBottom: 40 }}>
-              <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 9, color: C.muted }}>Services</span>
+              <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 9, color: C.muted }}>{t('section_services')}</span>
               <div style={{ height: '0.5px', background: C.ink, marginTop: 10, marginBottom: 20 }} />
               {client.services_suggested?.length ? (
                 <div style={{ marginBottom: 16 }}>
-                  <div style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.2em', fontSize: 9, color: C.muted, marginBottom: 8 }}>Suggérés par IA</div>
+                  <div style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.2em', fontSize: 9, color: C.muted, marginBottom: 8 }}>{t('field_services_ai')}</div>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                     {client.services_suggested.map(s => (
                       <span key={s} style={{ fontFamily: sans, fontSize: 11, padding: '3px 10px', border: `0.5px solid ${C.muted}`, color: C.muted }}>{s}</span>
@@ -273,11 +282,13 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
                   </div>
                 </div>
               ) : null}
-              <EditableField label="Services actifs (séparés par virgule)"
+              <EditableField label={t('field_services_active')}
+                addLabel={t('editable_add')} editLabel={t('editable_edit')}
                 value={client.services_active?.join(', ') ?? null}
                 onSave={v => patchClient({ services_active: v.split(',').map(s => s.trim()).filter(Boolean) })}
               />
-              <EditableField label="Valeur mensuelle (€)"
+              <EditableField label={t('field_monthly_value')}
+                addLabel={t('editable_add')} editLabel={t('editable_edit')}
                 value={client.monthly_value?.toString() ?? null}
                 onSave={v => patchClient({ monthly_value: parseFloat(v) || 0 })}
               />
@@ -286,7 +297,7 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
             {/* AI summary */}
             {client.ai_summary && (
               <div style={{ marginBottom: 40 }}>
-                <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 9, color: C.muted }}>Analyse IA initiale</span>
+                <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 9, color: C.muted }}>{t('section_ai_analysis')}</span>
                 <div style={{ height: '0.5px', background: C.ink, marginTop: 10, marginBottom: 14 }} />
                 <p style={{ fontFamily: sans, fontSize: 13, color: C.muted, lineHeight: 1.7, margin: 0 }}>{client.ai_summary}</p>
               </div>
@@ -294,25 +305,30 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
 
             {/* Notes */}
             <div>
-              <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 9, color: C.muted }}>Notes internes</span>
+              <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 9, color: C.muted }}>{t('section_notes')}</span>
               <div style={{ height: '0.5px', background: C.ink, marginTop: 10, marginBottom: 14 }} />
-              <NotesField value={client.notes} onSave={v => patchClient({ notes: v })} />
+              <NotesField
+                value={client.notes}
+                placeholder={t('notes_placeholder')}
+                saveLabel={t('btn_save_notes')}
+                onSave={v => patchClient({ notes: v })}
+              />
             </div>
 
           </div>
 
           {/* ── RIGHT: Timeline ── */}
           <div>
-            <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 9, color: C.muted }}>Activité</span>
+            <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 9, color: C.muted }}>{t('section_activity')}</span>
             <div style={{ height: '0.5px', background: C.ink, marginTop: 10, marginBottom: 24 }} />
 
             {/* Add event form */}
             <div style={{ border: `0.5px solid ${C.ink}`, padding: 20, marginBottom: 32 }}>
               <div style={{ display: 'flex', gap: 0, marginBottom: 14, flexWrap: 'wrap' }}>
-                {EVENT_TYPES.map((t, i) => (
-                  <button key={t} onClick={() => setEvtType(t)}
-                    style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.16em', fontSize: 9, padding: '6px 10px', borderRadius: 0, cursor: 'pointer', border: `0.5px solid ${C.ink}`, borderLeft: i === 0 ? `0.5px solid ${C.ink}` : 'none', background: evtType === t ? C.ink : 'transparent', color: evtType === t ? C.paper : C.muted }}>
-                    {t}
+                {EVENT_TYPES.map((type, i) => (
+                  <button key={type} onClick={() => setEvtType(type)}
+                    style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.16em', fontSize: 9, padding: '6px 10px', borderRadius: 0, cursor: 'pointer', border: `0.5px solid ${C.ink}`, borderLeft: i === 0 ? `0.5px solid ${C.ink}` : 'none', background: evtType === type ? C.ink : 'transparent', color: evtType === type ? C.paper : C.muted }}>
+                    {type}
                   </button>
                 ))}
               </div>
@@ -320,13 +336,13 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
                 value={evtText}
                 onChange={e => setEvtText(e.target.value)}
                 rows={3}
-                placeholder="Ajouter une note, résumé d'appel, compte rendu de réunion…"
+                placeholder={t('event_placeholder')}
                 style={{ width: '100%', fontFamily: sans, fontSize: 13, color: C.ink, background: 'transparent', border: 'none', borderBottom: `0.5px solid ${C.ink}`, outline: 'none', resize: 'none', padding: '8px 0', boxSizing: 'border-box' }}
               />
               <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 12 }}>
                 <button onClick={handleAddEvent} disabled={saving || !evtText.trim()}
                   style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 16px', border: `0.5px solid ${C.ink}`, borderRadius: 0, background: C.ink, color: C.paper, cursor: 'pointer', opacity: (!evtText.trim() || saving) ? 0.5 : 1 }}>
-                  <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 10 }}>Enregistrer</span>
+                  <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 10 }}>{t('btn_save')}</span>
                   <span>→</span>
                 </button>
               </div>
@@ -334,7 +350,7 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
 
             {/* Events list */}
             {events.length === 0 && (
-              <p style={{ fontFamily: sans, fontSize: 13, color: C.muted }}>Aucune activité enregistrée.</p>
+              <p style={{ fontFamily: sans, fontSize: 13, color: C.muted }}>{t('empty_activity')}</p>
             )}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
               {events.map(evt => (
@@ -360,7 +376,7 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
   )
 }
 
-function NotesField({ value, onSave }: { value: string | null; onSave: (v: string) => void }) {
+function NotesField({ value, placeholder, saveLabel, onSave }: { value: string | null; placeholder: string; saveLabel: string; onSave: (v: string) => void }) {
   const [draft, setDraft] = useState(value ?? '')
   return (
     <div>
@@ -368,12 +384,12 @@ function NotesField({ value, onSave }: { value: string | null; onSave: (v: strin
         value={draft}
         onChange={e => setDraft(e.target.value)}
         rows={4}
-        placeholder="Notes internes sur ce client…"
+        placeholder={placeholder}
         style={{ width: '100%', fontFamily: sans, fontSize: 13, color: C.ink, background: 'transparent', border: 'none', borderBottom: `0.5px solid ${C.ink}`, outline: 'none', resize: 'vertical', padding: '4px 0', boxSizing: 'border-box' }}
       />
       <button onClick={() => onSave(draft)}
         style={{ marginTop: 8, fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.18em', fontSize: 9, padding: '5px 12px', border: `0.5px solid ${C.ink}`, background: 'transparent', color: C.muted, cursor: 'pointer', borderRadius: 0 }}>
-        Sauvegarder
+        {saveLabel}
       </button>
     </div>
   )

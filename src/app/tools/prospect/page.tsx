@@ -4,6 +4,8 @@ import { useState, useCallback } from 'react'
 import dynamic from 'next/dynamic'
 import { Barlow_Condensed } from 'next/font/google'
 import type { MapMarker } from './_Map'
+import { useTranslation } from '@/lib/i18n'
+import { LangSwitcher } from '@/components/sq/LangSwitcher'
 
 const barlow = Barlow_Condensed({ weight: ['900'], subsets: ['latin'] })
 
@@ -117,20 +119,20 @@ async function exportExcel(places: Place[], neighborhood: string, category: stri
   const payload = prospects.map(p => {
     const r = p.analyzeStatus.state === 'done' ? p.analyzeStatus.result : null
     return {
-      place_id:       p.place_id,
-      name:           p.name,
-      address:        p.address,
-      rating:         p.rating,
-      review_count:   p.review_count,
-      website:        p.website,
-      phone:          p.phone,
-      maps_url:       p.maps_url,
-      classification: r?.classification,
-      score:          r?.score ?? null,
-      services:       r?.services ?? null,
-      summary:        r?.summary ?? null,
-      has_instagram:  r?.has_instagram ?? null,
-      instagram_url:  r?.instagram_url ?? null,
+      place_id:        p.place_id,
+      name:            p.name,
+      address:         p.address,
+      rating:          p.rating,
+      review_count:    p.review_count,
+      website:         p.website,
+      phone:           p.phone,
+      maps_url:        p.maps_url,
+      classification:  r?.classification,
+      score:           r?.score ?? null,
+      services:        r?.services ?? null,
+      summary:         r?.summary ?? null,
+      has_instagram:   r?.has_instagram ?? null,
+      instagram_url:   r?.instagram_url ?? null,
       website_quality: r?.website_quality ?? null,
     }
   })
@@ -151,6 +153,7 @@ async function exportExcel(places: Place[], neighborhood: string, category: stri
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function ProspectPage() {
+  const { t } = useTranslation()
   const [neighborhoodIdx, setNeighborhoodIdx] = useState(0)
   const [categoryIdx,     setCategoryIdx]     = useState(0)
   const [radius,          setRadius]          = useState(600)
@@ -205,13 +208,13 @@ export default function ProspectPage() {
       })
       const data: AnalysisResult = await res.json()
       if (!res.ok) {
-        updatePlace(p.place_id, { state: 'error', message: (data as any).error ?? 'Erreur' })
+        updatePlace(p.place_id, { state: 'error', message: (data as any).error ?? t('error_label') })
         return null
       }
       updatePlace(p.place_id, { state: 'done', result: data })
       return data
     } catch (e) {
-      updatePlace(p.place_id, { state: 'error', message: e instanceof Error ? e.message : 'Erreur réseau' })
+      updatePlace(p.place_id, { state: 'error', message: e instanceof Error ? e.message : t('error_label') })
       return null
     }
   }
@@ -252,27 +255,26 @@ export default function ProspectPage() {
     try {
       const res  = await fetch(`/api/sq/search?${params}`)
       const data = await res.json()
-      if (!res.ok) throw new Error(data.error || data.message || 'Erreur recherche')
+      if (!res.ok) throw new Error(data.error || data.message || t('error_label'))
       const list: PlaceBasic[] = data.results ?? []
       setPlaces(list.map(p => ({ ...p, analyzeStatus: { state: 'pending' } })))
       setSearching(false)
       const counts = await runAnalysis(list, runId)
-      // Save run summary to Supabase
       fetch('/api/sq/runs', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          id:               runId,
-          neighborhood:     nb.label,
-          category:         cat.label,
+          id:              runId,
+          neighborhood:    nb.label,
+          category:        cat.label,
           radius,
-          total_found:      list.length,
-          total_skipped:    counts.skipped,
-          total_prospects:  counts.prospects,
+          total_found:     list.length,
+          total_skipped:   counts.skipped,
+          total_prospects: counts.prospects,
         }),
       }).catch(() => {})
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Erreur')
+      setError(e instanceof Error ? e.message : t('error_label'))
       setSearching(false)
     }
   }
@@ -305,23 +307,28 @@ export default function ProspectPage() {
         <div style={{ maxWidth: 1300, margin: '0 auto', padding: '48px 48px 36px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
           <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'flex-start' }}>
             <span style={{ fontFamily: sans, textTransform: 'lowercase', letterSpacing: '0.6em', fontSize: 13, color: C.muted, marginLeft: 2 }}>
-              studio
+              {t('studio')}
             </span>
             <span className={barlow.className} style={{ fontWeight: 900, textTransform: 'uppercase', letterSpacing: '-0.02em', fontSize: 52, lineHeight: 0.9, color: C.ink, marginTop: -2 }}>
-              QUARTIER
+              {t('quartier')}
             </span>
             <div style={{ width: '100%', height: '0.5px', background: C.ink, margin: '6px 0 4px' }} />
             <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 10, color: C.muted }}>
-              Marketing Digital · Paris
+              {t('tagline')}
             </span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 28, paddingBottom: 4 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 20, paddingBottom: 4 }}>
+            <LangSwitcher />
+            <a href="/tools"
+              style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 10, color: C.muted, textDecoration: 'none' }}>
+              {t('nav_hub')}
+            </a>
             <a href="/tools/prospect/historique"
               style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 10, color: C.muted, textDecoration: 'none' }}>
-              Historique ↗
+              {t('nav_history')}
             </a>
             <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 10, color: C.muted }}>
-              Outil interne
+              {t('internal_tool')}
             </span>
           </div>
         </div>
@@ -334,7 +341,7 @@ export default function ProspectPage() {
         {/* Section label */}
         <div style={{ marginBottom: 40 }}>
           <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 10, color: C.muted }}>
-            Prospection · Intelligence commerciale
+            {t('section_prospection')}
           </span>
           <div style={{ height: '0.5px', background: C.ink, marginTop: 12 }} />
         </div>
@@ -343,7 +350,7 @@ export default function ProspectPage() {
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 40, marginBottom: 48, alignItems: 'flex-end' }}>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 10, color: C.muted }}>Quartier</span>
+            <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 10, color: C.muted }}>{t('filter_neighborhood')}</span>
             <select
               value={neighborhoodIdx}
               onChange={e => setNeighborhoodIdx(Number(e.target.value))}
@@ -355,7 +362,7 @@ export default function ProspectPage() {
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 10, color: C.muted }}>Catégorie</span>
+            <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 10, color: C.muted }}>{t('filter_category')}</span>
             <select
               value={categoryIdx}
               onChange={e => setCategoryIdx(Number(e.target.value))}
@@ -367,7 +374,7 @@ export default function ProspectPage() {
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 10, color: C.muted }}>Rayon (m)</span>
+            <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 10, color: C.muted }}>{t('filter_radius')}</span>
             <input
               type="number" min={200} max={2000} step={100}
               value={radius}
@@ -386,7 +393,7 @@ export default function ProspectPage() {
             >
               <span style={{ fontFamily: sans, fontSize: 10, letterSpacing: '0.1em', color: C.muted }}>01</span>
               <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.28em', fontSize: 11, whiteSpace: 'nowrap' }}>
-                {searching ? 'Recherche…' : isRunning ? 'Analyse en cours…' : 'Lancer la recherche'}
+                {searching ? t('btn_searching') : isRunning ? t('btn_analyzing') : t('btn_search')}
               </span>
               <span style={{ fontSize: 13 }}>→</span>
             </button>
@@ -398,7 +405,7 @@ export default function ProspectPage() {
               >
                 <span style={{ fontFamily: sans, fontSize: 10, letterSpacing: '0.1em', color: C.muted }}>02</span>
                 <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.28em', fontSize: 11, whiteSpace: 'nowrap' }}>
-                  Excel · {prospects.length} prospect{prospects.length > 1 ? 's' : ''}
+                  {t('btn_excel')} · {prospects.length} {t('progress_prospects')}
                 </span>
                 <span style={{ fontSize: 13 }}>↓</span>
               </button>
@@ -414,8 +421,8 @@ export default function ProspectPage() {
                   })
                   const res  = await fetch('/api/sq/clients', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clients: toAdd }) })
                   const data = await res.json()
-                  if (res.ok) { setCrmMsg(`${toAdd.length} client${toAdd.length > 1 ? 's' : ''} ajouté${toAdd.length > 1 ? 's' : ''} au CRM`); setSelected(new Set()) }
-                  else setCrmMsg(`Erreur: ${data.error}`)
+                  if (res.ok) { setCrmMsg(`${toAdd.length} ${t('progress_prospects')} → CRM`); setSelected(new Set()) }
+                  else setCrmMsg(`${t('error_label')}: ${data.error}`)
                   setAddingCRM(false)
                 }}
                 disabled={addingCRM}
@@ -423,7 +430,7 @@ export default function ProspectPage() {
               >
                 <span style={{ fontFamily: sans, fontSize: 10, letterSpacing: '0.1em', color: C.muted }}>03</span>
                 <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.28em', fontSize: 11, whiteSpace: 'nowrap' }}>
-                  {addingCRM ? 'Ajout…' : `Ajouter au CRM · ${selected.size}`}
+                  {addingCRM ? t('btn_adding') : `${t('btn_add_crm')} · ${selected.size}`}
                 </span>
                 <span style={{ fontSize: 13 }}>→</span>
               </button>
@@ -434,7 +441,7 @@ export default function ProspectPage() {
         {/* ── Error ── */}
         {error && (
           <div style={{ background: C.warm, border: `0.5px solid ${C.ink}`, padding: '14px 20px', marginBottom: 32 }}>
-            <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 9, color: C.muted, display: 'block', marginBottom: 6 }}>Erreur</span>
+            <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 9, color: C.muted, display: 'block', marginBottom: 6 }}>{t('error_label')}</span>
             <span style={{ fontFamily: sans, fontSize: 13, color: C.ink }}>{error}</span>
           </div>
         )}
@@ -443,7 +450,7 @@ export default function ProspectPage() {
         {crmMsg && (
           <div style={{ background: C.warm, border: `0.5px solid ${C.ink}`, padding: '12px 20px', marginBottom: 24, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <span style={{ fontFamily: sans, fontSize: 13, color: C.ink }}>{crmMsg}</span>
-            <a href="/tools/clients" style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.18em', fontSize: 10, color: C.ink, textDecoration: 'none' }}>Voir les clients →</a>
+            <a href="/tools/clients" style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.18em', fontSize: 10, color: C.ink, textDecoration: 'none' }}>{t('btn_see_clients')}</a>
           </div>
         )}
 
@@ -451,7 +458,7 @@ export default function ProspectPage() {
         {!isRunning && errors.length > 0 && prospects.length === 0 && skipped === 0 && firstErr && (
           <div style={{ background: C.warm, border: `0.5px solid ${C.ink}`, padding: '14px 20px', marginBottom: 32 }}>
             <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 9, color: C.muted, display: 'block', marginBottom: 6 }}>
-              Erreur d'analyse ({errors.length}/{places.length})
+              {t('error_analysis_label')} ({errors.length}/{places.length})
             </span>
             <span style={{ fontFamily: sans, fontSize: 13, color: C.ink }}>{firstErr}</span>
           </div>
@@ -462,10 +469,10 @@ export default function ProspectPage() {
           <div style={{ marginBottom: 32 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
               <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 9, color: C.muted }}>
-                Analyse en cours · {done}/{places.length}
+                {t('progress_analyzing')} · {done}/{places.length}
               </span>
               <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 9, color: C.muted }}>
-                {prospects.length} prospect{prospects.length > 1 ? 's' : ''} · {skipped} filtrés
+                {prospects.length} {t('progress_prospects')} · {skipped} {t('progress_filtered')}
               </span>
             </div>
             <div style={{ height: 2, background: C.warm, position: 'relative', overflow: 'hidden' }}>
@@ -484,11 +491,11 @@ export default function ProspectPage() {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
             <div style={{ display: 'flex', gap: 32, alignItems: 'center' }}>
               <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 9, color: C.muted }}>
-                {prospects.length} prospect{prospects.length > 1 ? 's' : ''} · score décroissant
+                {prospects.length} {t('progress_prospects')} · {t('progress_score_desc')}
               </span>
               {skipped > 0 && (
                 <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 9, color: C.muted }}>
-                  {skipped} ignoré{skipped > 1 ? 's' : ''} (grandes enseignes)
+                  {skipped} {t('progress_ignored')}
                 </span>
               )}
             </div>
@@ -508,7 +515,7 @@ export default function ProspectPage() {
                       cursor: 'pointer', borderRadius: 0,
                     }}
                   >
-                    {v === 'table' ? 'Liste' : 'Carte'}
+                    {v === 'table' ? t('view_list') : t('view_map')}
                   </button>
                 ))}
               </div>
@@ -520,14 +527,14 @@ export default function ProspectPage() {
         {prospects.length > 0 && (
           <div style={{ display: 'flex', gap: 24, marginBottom: 16, flexWrap: 'wrap' }}>
             {[
-              { range: '75–100', score: 80, label: 'Très haute priorité' },
-              { range: '55–74',  score: 65, label: 'Haute priorité' },
-              { range: '35–54',  score: 45, label: 'Priorité moyenne' },
-              { range: '0–34',   score: 20, label: 'Faible priorité' },
-            ].map(({ range, score, label }) => (
+              { range: '75–100', score: 80, labelKey: 'score_very_high' as const },
+              { range: '55–74',  score: 65, labelKey: 'score_high'      as const },
+              { range: '35–54',  score: 45, labelKey: 'score_mid'       as const },
+              { range: '0–34',   score: 20, labelKey: 'score_low'       as const },
+            ].map(({ range, score, labelKey }) => (
               <div key={range} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <ScoreBadge score={score} />
-                <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.16em', fontSize: 9, color: C.muted }}>{range} · {label}</span>
+                <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.16em', fontSize: 9, color: C.muted }}>{range} · {t(labelKey)}</span>
               </div>
             ))}
           </div>
@@ -535,7 +542,7 @@ export default function ProspectPage() {
 
         {/* ── Empty state ── */}
         {ran && !searching && places.length === 0 && !error && (
-          <p style={{ fontFamily: sans, fontSize: 13, color: C.muted, letterSpacing: '0.04em' }}>Aucun résultat pour ce secteur.</p>
+          <p style={{ fontFamily: sans, fontSize: 13, color: C.muted, letterSpacing: '0.04em' }}>{t('empty_results')}</p>
         )}
 
         {/* ── MAP VIEW ── */}
@@ -551,9 +558,9 @@ export default function ProspectPage() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ background: C.warm }}>
-                  {['', 'N°', 'Score', 'Établissement', 'Note · Avis', 'Site · Instagram', 'Qualité site', 'Services recommandés', 'Adresse', 'Actions'].map(h => (
-                    <th key={h} style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.18em', fontSize: 9, color: C.muted, fontWeight: 400, padding: '10px 14px', textAlign: 'left', borderBottom: `0.5px solid ${C.ink}`, whiteSpace: 'nowrap' }}>
-                      {h}
+                  {(['', 'th_num', 'th_score', 'th_business', 'th_rating', 'th_web_ig', 'th_site_quality', 'th_services', 'th_address', 'th_actions'] as const).map((h, i) => (
+                    <th key={i} style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.18em', fontSize: 9, color: C.muted, fontWeight: 400, padding: '10px 14px', textAlign: 'left', borderBottom: `0.5px solid ${C.ink}`, whiteSpace: 'nowrap' }}>
+                      {h === '' ? '' : t(h)}
                     </th>
                   ))}
                 </tr>
@@ -561,7 +568,7 @@ export default function ProspectPage() {
               <tbody>
                 {[...prospects]
                   .sort((a, b) => {
-                    const sa = a.analyzeStatus.state === 'done' ? (a.analyzeStatus.result.score ?? 0) : 0
+                    const sa  = a.analyzeStatus.state === 'done' ? (a.analyzeStatus.result.score ?? 0) : 0
                     const sb2 = b.analyzeStatus.state === 'done' ? (b.analyzeStatus.result.score ?? 0) : 0
                     return sb2 - sa
                   })
@@ -588,7 +595,7 @@ export default function ProspectPage() {
                         <td style={{ ...td, whiteSpace: 'nowrap', color: C.muted, fontSize: 12 }}>
                           {p.rating !== null ? `${p.rating} ★` : '—'}
                           {' · '}
-                          {p.review_count > 0 ? p.review_count.toLocaleString('fr-FR') + ' avis' : '—'}
+                          {p.review_count > 0 ? p.review_count.toLocaleString('fr-FR') + ' ' + t('reviews_suffix') : '—'}
                         </td>
 
                         <td style={{ ...td, fontSize: 12 }}>
@@ -596,18 +603,18 @@ export default function ProspectPage() {
                             {p.website ? (
                               <a href={p.website} target="_blank" rel="noopener noreferrer"
                                 style={{ color: C.ink, textDecoration: 'underline', textUnderlineOffset: 2 }}>
-                                Site ↗
+                                {t('link_website')}
                               </a>
                             ) : (
-                              <span style={{ color: C.muted }}>Aucun site</span>
+                              <span style={{ color: C.muted }}>{t('no_website')}</span>
                             )}
                             {r?.instagram_url ? (
                               <a href={r.instagram_url} target="_blank" rel="noopener noreferrer"
                                 style={{ color: C.ink, textDecoration: 'underline', textUnderlineOffset: 2 }}>
-                                Instagram ↗
+                                {t('link_instagram')}
                               </a>
                             ) : r ? (
-                              <span style={{ color: C.muted, fontSize: 11 }}>Pas d'Instagram</span>
+                              <span style={{ color: C.muted, fontSize: 11 }}>{t('no_instagram')}</span>
                             ) : null}
                           </div>
                         </td>
@@ -629,7 +636,7 @@ export default function ProspectPage() {
                         <td style={{ ...td, whiteSpace: 'nowrap', fontSize: 12 }}>
                           <a href={p.maps_url} target="_blank" rel="noopener noreferrer"
                             style={{ color: C.ink, textTransform: 'uppercase', letterSpacing: '0.12em', fontSize: 10, textDecoration: 'none' }}>
-                            Maps ↗
+                            {t('link_maps')}
                           </a>
                         </td>
                       </tr>
@@ -642,7 +649,7 @@ export default function ProspectPage() {
 
         {/* ── Pending rows (analysis in progress) ── */}
         {view === 'table' && places.filter(p => p.analyzeStatus.state === 'pending' || p.analyzeStatus.state === 'loading').length > 0 && (
-          <div style={{ marginTop: prospects.length > 0 ? 0 : 0 }}>
+          <div>
             {places
               .filter(p => p.analyzeStatus.state === 'pending' || p.analyzeStatus.state === 'loading')
               .map(p => (
@@ -656,7 +663,7 @@ export default function ProspectPage() {
                     {p.name}
                   </span>
                   <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 9, color: C.muted }}>
-                    {p.analyzeStatus.state === 'loading' ? 'Analyse…' : 'En attente'}
+                    {p.analyzeStatus.state === 'loading' ? t('progress_analyzing_one') : t('progress_pending')}
                   </span>
                 </div>
               ))}

@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react'
 import dynamic from 'next/dynamic'
 import { Barlow_Condensed } from 'next/font/google'
 import type { MapMarker } from '../_Map'
+import { useTranslation } from '@/lib/i18n'
+import { LangSwitcher } from '@/components/sq/LangSwitcher'
 
 const ProspectMap = dynamic(() => import('../_Map'), { ssr: false })
 
@@ -84,6 +86,7 @@ async function exportExcel(places: Place[], run: Run) {
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function HistoriquePage() {
+  const { t } = useTranslation()
   const [runs,          setRuns]          = useState<Run[]>([])
   const [selectedRun,   setSelectedRun]   = useState<Run | null>(null)
   const [places,        setPlaces]        = useState<Place[]>([])
@@ -120,20 +123,25 @@ export default function HistoriquePage() {
       <header style={{ background: C.paper }}>
         <div style={{ maxWidth: 1300, margin: '0 auto', padding: '48px 48px 36px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
           <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-            <span style={{ fontFamily: sans, letterSpacing: '0.6em', fontSize: 13, color: C.muted, marginLeft: 2 }}>studio</span>
+            <span style={{ fontFamily: sans, letterSpacing: '0.6em', fontSize: 13, color: C.muted, marginLeft: 2 }}>{t('studio')}</span>
             <span className={barlow.className} style={{ fontWeight: 900, textTransform: 'uppercase', letterSpacing: '-0.02em', fontSize: 52, lineHeight: 0.9, color: C.ink, marginTop: -2 }}>
-              QUARTIER
+              {t('quartier')}
             </span>
             <div style={{ width: '100%', height: '0.5px', background: C.ink, margin: '6px 0 4px' }} />
-            <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 10, color: C.muted }}>Marketing Digital · Paris</span>
+            <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 10, color: C.muted }}>{t('tagline')}</span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 28, paddingBottom: 4 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 20, paddingBottom: 4 }}>
+            <LangSwitcher />
+            <a href="/tools"
+              style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 10, color: C.muted, textDecoration: 'none' }}>
+              {t('nav_hub')}
+            </a>
             <a href="/tools/prospect"
               style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 10, color: C.muted, textDecoration: 'none' }}>
-              ← Nouvelle recherche
+              {t('nav_new_search')}
             </a>
             <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 10, color: C.muted }}>
-              Outil interne
+              {t('internal_tool')}
             </span>
           </div>
         </div>
@@ -145,20 +153,20 @@ export default function HistoriquePage() {
         {/* Section label */}
         <div style={{ marginBottom: 40 }}>
           <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 10, color: C.muted }}>
-            Historique · {runs.length} recherche{runs.length !== 1 ? 's' : ''}
+            {t('section_history')} · {runs.length} {runs.length !== 1 ? t('history_count_plural') : t('history_count_singular')}
           </span>
           <div style={{ height: '0.5px', background: C.ink, marginTop: 12 }} />
         </div>
 
         {/* ── Runs table ── */}
         {loadingRuns && (
-          <p style={{ fontFamily: sans, fontSize: 13, color: C.muted }}>Chargement…</p>
+          <p style={{ fontFamily: sans, fontSize: 13, color: C.muted }}>{t('progress_loading')}</p>
         )}
 
         {!loadingRuns && runs.length === 0 && (
           <p style={{ fontFamily: sans, fontSize: 13, color: C.muted }}>
-            Aucune recherche enregistrée.{' '}
-            <a href="/tools/prospect" style={{ color: C.ink }}>Lancer une recherche →</a>
+            {t('empty_history')}{' '}
+            <a href="/tools/prospect" style={{ color: C.ink }}>{t('btn_launch_search')}</a>
           </p>
         )}
 
@@ -167,9 +175,9 @@ export default function HistoriquePage() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ background: C.warm }}>
-                  {['N°', 'Date', 'Quartier', 'Catégorie', 'Rayon', 'Prospects', 'Filtrés', ''].map(h => (
-                    <th key={h} style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.18em', fontSize: 9, color: C.muted, fontWeight: 400, padding: '10px 14px', textAlign: 'left', borderBottom: `0.5px solid ${C.ink}`, whiteSpace: 'nowrap' }}>
-                      {h}
+                  {(['th_num', 'th_date', 'th_neighborhood', 'th_category', 'th_radius', 'th_prospects', 'th_filtered', ''] as const).map((h, i) => (
+                    <th key={i} style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.18em', fontSize: 9, color: C.muted, fontWeight: 400, padding: '10px 14px', textAlign: 'left', borderBottom: `0.5px solid ${C.ink}`, whiteSpace: 'nowrap' }}>
+                      {h === '' ? '' : t(h)}
                     </th>
                   ))}
                 </tr>
@@ -197,7 +205,7 @@ export default function HistoriquePage() {
                       <td style={{ ...td, color: C.muted, fontSize: 12 }}>{run.total_skipped}</td>
                       <td style={{ ...td }}>
                         <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.18em', fontSize: 10, color: isSelected ? C.ink : C.muted }}>
-                          {isSelected ? 'Fermer ↑' : 'Voir →'}
+                          {isSelected ? t('btn_close') : t('btn_see')}
                         </span>
                       </td>
                     </tr>
@@ -226,24 +234,24 @@ export default function HistoriquePage() {
                     {(['table', 'map'] as const).map((v, idx) => (
                       <button key={v} onClick={() => setDetailView(v)}
                         style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.18em', fontSize: 9, padding: '6px 14px', border: `0.5px solid ${C.ink}`, borderLeft: idx === 1 ? 'none' : `0.5px solid ${C.ink}`, background: detailView === v ? C.ink : 'transparent', color: detailView === v ? C.paper : C.muted, cursor: 'pointer', borderRadius: 0 }}>
-                        {v === 'table' ? 'Liste' : 'Carte'}
+                        {v === 'table' ? t('view_list') : t('view_map')}
                       </button>
                     ))}
                   </div>
                   <button onClick={() => exportExcel(places, selectedRun)}
                     style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '6px 14px', border: `0.5px solid ${C.ink}`, borderRadius: 0, background: 'transparent', color: C.ink, cursor: 'pointer' }}>
-                    <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 9, whiteSpace: 'nowrap' }}>Excel ↓</span>
+                    <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 9, whiteSpace: 'nowrap' }}>{t('excel_download')}</span>
                   </button>
                 </div>
               )}
             </div>
 
             {loadingPlaces && (
-              <p style={{ fontFamily: sans, fontSize: 13, color: C.muted }}>Chargement des prospects…</p>
+              <p style={{ fontFamily: sans, fontSize: 13, color: C.muted }}>{t('progress_loading_prospects')}</p>
             )}
 
             {!loadingPlaces && prospects.length === 0 && (
-              <p style={{ fontFamily: sans, fontSize: 13, color: C.muted }}>Aucun prospect trouvé dans cette recherche.</p>
+              <p style={{ fontFamily: sans, fontSize: 13, color: C.muted }}>{t('empty_prospects_in_run')}</p>
             )}
 
             {/* Map view */}
@@ -273,9 +281,9 @@ export default function HistoriquePage() {
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead>
                     <tr style={{ background: C.warm }}>
-                      {['N°', 'Score', 'Établissement', 'Note · Avis', 'Site · Instagram', 'Qualité site', 'Services recommandés', 'Adresse', 'Maps'].map(h => (
+                      {(['th_num', 'th_score', 'th_business', 'th_rating', 'th_web_ig', 'th_site_quality', 'th_services', 'th_address', 'th_maps'] as const).map(h => (
                         <th key={h} style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.18em', fontSize: 9, color: C.muted, fontWeight: 400, padding: '10px 14px', textAlign: 'left', borderBottom: `0.5px solid ${C.ink}`, whiteSpace: 'nowrap' }}>
-                          {h}
+                          {t(h)}
                         </th>
                       ))}
                     </tr>
@@ -295,18 +303,18 @@ export default function HistoriquePage() {
                           <td style={{ ...td, maxWidth: 200, fontWeight: 500 }}>{p.name}</td>
 
                           <td style={{ ...td, whiteSpace: 'nowrap', color: C.muted, fontSize: 12 }}>
-                            {p.rating !== null ? `${p.rating} ★` : '—'} · {p.review_count > 0 ? p.review_count.toLocaleString('fr-FR') + ' avis' : '—'}
+                            {p.rating !== null ? `${p.rating} ★` : '—'} · {p.review_count > 0 ? p.review_count.toLocaleString('fr-FR') + ' ' + t('reviews_suffix') : '—'}
                           </td>
 
                           <td style={{ ...td, fontSize: 12 }}>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                               {p.website
-                                ? <a href={p.website} target="_blank" rel="noopener noreferrer" style={{ color: C.ink, textDecoration: 'underline', textUnderlineOffset: 2 }}>Site ↗</a>
-                                : <span style={{ color: C.muted }}>Aucun site</span>
+                                ? <a href={p.website} target="_blank" rel="noopener noreferrer" style={{ color: C.ink, textDecoration: 'underline', textUnderlineOffset: 2 }}>{t('link_website')}</a>
+                                : <span style={{ color: C.muted }}>{t('no_website')}</span>
                               }
                               {p.instagram_url
-                                ? <a href={p.instagram_url} target="_blank" rel="noopener noreferrer" style={{ color: C.ink, textDecoration: 'underline', textUnderlineOffset: 2 }}>Instagram ↗</a>
-                                : <span style={{ fontSize: 11, color: C.muted }}>Pas d'Instagram</span>
+                                ? <a href={p.instagram_url} target="_blank" rel="noopener noreferrer" style={{ color: C.ink, textDecoration: 'underline', textUnderlineOffset: 2 }}>{t('link_instagram')}</a>
+                                : <span style={{ fontSize: 11, color: C.muted }}>{t('no_instagram')}</span>
                               }
                             </div>
                           </td>
@@ -325,7 +333,7 @@ export default function HistoriquePage() {
                           <td style={td}>
                             <a href={p.maps_url ?? '#'} target="_blank" rel="noopener noreferrer"
                               style={{ color: C.ink, textTransform: 'uppercase', letterSpacing: '0.12em', fontSize: 10, textDecoration: 'none' }}>
-                              Maps ↗
+                              {t('link_maps')}
                             </a>
                           </td>
                         </tr>

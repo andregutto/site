@@ -23,3 +23,12 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ client: data })
 }
+
+export async function DELETE(_req: NextRequest, { params }: Ctx) {
+  const { id } = await params
+  const sb = getSupabaseSQ()
+  if (!sb) return NextResponse.json({ error: 'no db' }, { status: 503 })
+  const { error } = await sb.from('sq_clients').delete().eq('id', id)
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json({ ok: true })
+}

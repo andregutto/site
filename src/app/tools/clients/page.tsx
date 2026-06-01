@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { Barlow_Condensed } from 'next/font/google'
+import { useTranslation } from '@/lib/i18n'
+import { LangSwitcher } from '@/components/sq/LangSwitcher'
 
 const barlow = Barlow_Condensed({ weight: ['900'], subsets: ['latin'] })
 const C = { paper: '#FDFAF5', ink: '#1C1917', warm: '#F4F0E6', muted: '#6B6760' }
@@ -34,24 +36,6 @@ interface Client {
   priority:         number
 }
 
-// ── Status config ─────────────────────────────────────────────────────────────
-
-const STATUSES = [
-  { key: 'tous',          label: 'Tous' },
-  { key: 'prospect',      label: 'Prospect' },
-  { key: 'en_approche',   label: 'En approche' },
-  { key: 'rdv',           label: 'RDV' },
-  { key: 'devis_envoye',  label: 'Devis envoyé' },
-  { key: 'negocia',       label: 'Négociation' },
-  { key: 'gagne',         label: 'Gagné' },
-  { key: 'actif',         label: 'Client actif' },
-  { key: 'perdu',         label: 'Perdu' },
-]
-
-const STATUS_LABEL: Record<string, string> = Object.fromEntries(STATUSES.map(s => [s.key, s.label]))
-
-const PRIORITY_LABEL: Record<number, string> = { 1: 'Haute', 2: 'Normale', 3: 'Basse' }
-
 // ── Score badge ───────────────────────────────────────────────────────────────
 
 function ScoreDot({ score }: { score: number | null }) {
@@ -68,9 +52,30 @@ function ScoreDot({ score }: { score: number | null }) {
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function ClientsPage() {
+  const { t } = useTranslation()
   const [clients,  setClients]  = useState<Client[]>([])
   const [tab,      setTab]      = useState('tous')
   const [loading,  setLoading]  = useState(true)
+
+  const STATUSES = [
+    { key: 'tous',         label: t('status_all')         },
+    { key: 'prospect',     label: t('status_prospect')    },
+    { key: 'en_approche',  label: t('status_en_approche') },
+    { key: 'rdv',          label: t('status_rdv')         },
+    { key: 'devis_envoye', label: t('status_devis_envoye')},
+    { key: 'negocia',      label: t('status_negocia')     },
+    { key: 'gagne',        label: t('status_gagne')       },
+    { key: 'actif',        label: t('status_actif')       },
+    { key: 'perdu',        label: t('status_perdu')       },
+  ]
+
+  const STATUS_LABEL: Record<string, string> = Object.fromEntries(STATUSES.map(s => [s.key, s.label]))
+
+  const PRIORITY_LABEL: Record<number, string> = {
+    1: t('priority_high'),
+    2: t('priority_normal'),
+    3: t('priority_low'),
+  }
 
   useEffect(() => {
     const url = tab === 'tous' ? '/api/sq/clients' : `/api/sq/clients?status=${tab}`
@@ -86,6 +91,12 @@ export default function ClientsPage() {
     .filter(c => c.status === 'actif' || c.status === 'gagne')
     .reduce((s, c) => s + (c.monthly_value ?? 0), 0)
 
+  async function deleteClient(id: string, name: string) {
+    if (!window.confirm(t('delete_confirm'))) return
+    await fetch(`/api/sq/clients/${id}`, { method: 'DELETE' })
+    setClients(prev => prev.filter(c => c.id !== id))
+  }
+
   return (
     <div style={{ background: C.paper, minHeight: '100vh', fontFamily: sans, color: C.ink }}>
 
@@ -93,13 +104,15 @@ export default function ClientsPage() {
       <header style={{ background: C.paper }}>
         <div style={{ maxWidth: 1300, margin: '0 auto', padding: '48px 48px 36px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
           <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-            <span style={{ fontFamily: sans, letterSpacing: '0.6em', fontSize: 13, color: C.muted, marginLeft: 2 }}>studio</span>
-            <span className={barlow.className} style={{ fontWeight: 900, textTransform: 'uppercase', letterSpacing: '-0.02em', fontSize: 52, lineHeight: 0.9, color: C.ink, marginTop: -2 }}>QUARTIER</span>
+            <span style={{ fontFamily: sans, letterSpacing: '0.6em', fontSize: 13, color: C.muted, marginLeft: 2 }}>{t('studio')}</span>
+            <span className={barlow.className} style={{ fontWeight: 900, textTransform: 'uppercase', letterSpacing: '-0.02em', fontSize: 52, lineHeight: 0.9, color: C.ink, marginTop: -2 }}>{t('quartier')}</span>
             <div style={{ width: '100%', height: '0.5px', background: C.ink, margin: '6px 0 4px' }} />
-            <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 10, color: C.muted }}>Marketing Digital · Paris</span>
+            <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 10, color: C.muted }}>{t('tagline')}</span>
           </div>
-          <div style={{ display: 'flex', gap: 28, alignItems: 'center', paddingBottom: 4 }}>
-            <a href="/tools/prospect" style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 10, color: C.muted, textDecoration: 'none' }}>← Prospection</a>
+          <div style={{ display: 'flex', gap: 20, alignItems: 'center', paddingBottom: 4 }}>
+            <LangSwitcher />
+            <a href="/tools" style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 10, color: C.muted, textDecoration: 'none' }}>{t('nav_hub')}</a>
+            <a href="/tools/prospect" style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 10, color: C.muted, textDecoration: 'none' }}>{t('nav_prospection')}</a>
             <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 10, color: C.muted }}>CRM</span>
           </div>
         </div>
@@ -112,13 +125,13 @@ export default function ClientsPage() {
         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 40 }}>
           <div>
             <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 10, color: C.muted }}>
-              Clients · Pipeline commercial
+              {t('section_clients')}
             </span>
             <div style={{ height: '0.5px', background: C.ink, marginTop: 12, width: '100%' }} />
           </div>
           {totalRevenue > 0 && (
             <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.18em', fontSize: 10, color: C.muted }}>
-              MRR actif · {totalRevenue.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}
+              {t('mrr_label')} · {totalRevenue.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}
             </span>
           )}
         </div>
@@ -142,13 +155,13 @@ export default function ClientsPage() {
         </div>
 
         {/* ── Table ── */}
-        {loading && <p style={{ fontFamily: sans, fontSize: 13, color: C.muted }}>Chargement…</p>}
+        {loading && <p style={{ fontFamily: sans, fontSize: 13, color: C.muted }}>{t('progress_loading')}</p>}
 
         {!loading && clients.length === 0 && (
           <div style={{ padding: '48px 0' }}>
             <p style={{ fontFamily: sans, fontSize: 13, color: C.muted, margin: 0 }}>
-              Aucun client dans cette catégorie.{' '}
-              <a href="/tools/prospect" style={{ color: C.ink }}>Ajouter depuis la prospection →</a>
+              {t('empty_clients')}{' '}
+              <a href="/tools/prospect" style={{ color: C.ink }}>{t('btn_add_from_prospect')}</a>
             </p>
           </div>
         )}
@@ -158,9 +171,9 @@ export default function ClientsPage() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ background: C.warm }}>
-                  {['N°', 'Établissement', 'Statut', 'Score', 'Catégorie', 'Contact', 'Services actifs', 'Valeur/mois', 'Priorité', 'Ajouté le', ''].map(h => (
-                    <th key={h} style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.18em', fontSize: 9, color: C.muted, fontWeight: 400, padding: '10px 14px', textAlign: 'left', borderBottom: `0.5px solid ${C.ink}`, whiteSpace: 'nowrap' }}>
-                      {h}
+                  {(['th_num', 'th_business', 'th_status', 'th_score', 'th_category', 'th_contact', 'th_services_active', 'th_monthly_value', 'th_priority', 'th_added_on', ''] as const).map((h, i) => (
+                    <th key={i} style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.18em', fontSize: 9, color: C.muted, fontWeight: 400, padding: '10px 14px', textAlign: 'left', borderBottom: `0.5px solid ${C.ink}`, whiteSpace: 'nowrap' }}>
+                      {h === '' ? '' : t(h)}
                     </th>
                   ))}
                 </tr>
@@ -200,11 +213,18 @@ export default function ClientsPage() {
                       <td style={{ ...td, color: C.muted, fontSize: 11, whiteSpace: 'nowrap' }}>
                         {new Date(c.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
                       </td>
-                      <td style={td}>
-                        <a href={`/tools/clients/${c.id}`}
-                          style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.18em', fontSize: 10, color: C.ink, textDecoration: 'none', whiteSpace: 'nowrap' }}>
-                          Dossier →
-                        </a>
+                      <td style={{ ...td, whiteSpace: 'nowrap' }}>
+                        <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+                          <a href={`/tools/clients/${c.id}`}
+                            style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.18em', fontSize: 10, color: C.ink, textDecoration: 'none' }}>
+                            {t('btn_dossier')}
+                          </a>
+                          <button
+                            onClick={() => deleteClient(c.id, c.name)}
+                            style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.18em', fontSize: 9, color: C.muted, background: 'transparent', border: 'none', cursor: 'pointer', padding: 0 }}>
+                            {t('btn_delete')}
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   )
