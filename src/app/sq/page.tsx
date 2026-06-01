@@ -28,21 +28,6 @@ const SERVICES = [
   },
 ]
 
-const SEGMENTS = [
-  {
-    label: 'Commerce de quartier',
-    types: ['Restaurants & bistrots', 'Boulangeries & pâtisseries', 'Cafés & bars', 'Épiceries fines', 'Boutiques de mode', 'Fleuristes'],
-    pain: 'Le client décide sur son téléphone avant de sortir de chez lui. Sans présence digitale, il choisit le concurrent.',
-    result: 'Des gens qui passent de l\'écran au comptoir.',
-  },
-  {
-    label: 'Instituts & bien-être',
-    types: ['Soins du visage', 'Massages & relaxation', 'Épilation laser', 'Soins corps & ongles', 'Coiffeurs indépendants', 'Instituts bien-être'],
-    pain: 'Instagram à l\'abandon, Google Business désactivé, agenda à moitié plein. Les grandes enseignes captent vos clients.',
-    result: 'Un agenda plein, des clients qui reviennent.',
-  },
-]
-
 const RESULTS = [
   {
     segment: 'Commerce',
@@ -53,7 +38,7 @@ const RESULTS = [
   {
     segment: 'Bien-être',
     metric: '80%',
-    unit: 'de taux d\'occupation',
+    unit: "taux d'occupation",
     detail: 'en 45 jours pour un institut du Marais',
   },
   {
@@ -66,7 +51,7 @@ const RESULTS = [
     segment: 'Bien-être',
     metric: '+210',
     unit: 'abonnés qualifiés',
-    detail: 'en 2 mois pour une esthéticienne indépendante',
+    detail: "en 2 mois pour une esthéticienne indépendante",
   },
 ]
 
@@ -103,65 +88,81 @@ export default function LandingPage() {
       </header>
 
       {/* ── Hero ── */}
-      <section style={{ maxWidth: 1300, margin: '0 auto', padding: '80px 48px 96px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 80, alignItems: 'end' }}>
-          <div>
-            <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', color: C.muted, textTransform: 'uppercase', display: 'block', marginBottom: 28 }}>
-              Agence · Paris
-            </span>
-            <h1 className={barlow.className} style={{
-              fontWeight: 900, fontSize: 'clamp(60px, 7.5vw, 92px)',
-              letterSpacing: '-0.02em', lineHeight: 0.88,
-              textTransform: 'uppercase', color: C.ink,
-              margin: '0 0 32px',
-            }}>
-              Excellent<br />dans votre<br />métier.<br />
-              <span style={{ color: C.accent }}>Visible</span><br />en ligne.
-            </h1>
-            <div style={{ height: '0.5px', background: C.ink, marginBottom: 32 }} />
-            <p style={{ fontSize: 16, lineHeight: 1.7, color: C.ink, margin: '0 0 40px', maxWidth: 480 }}>
-              Studio Quartier accompagne les commerces de quartier et les instituts indépendants parisiens. Vous maîtrisez votre métier — on s'occupe de faire en sorte que vos clients vous trouvent.
-            </p>
+      <section style={{ maxWidth: 1300, margin: '0 auto', padding: '72px 48px 88px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 64, alignItems: 'start' }}>
+
+          {/* Left — headline */}
+          <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%' }}>
+            <div>
+              <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', color: C.muted, textTransform: 'uppercase', display: 'block', marginBottom: 24 }}>
+                Agence · Paris
+              </span>
+              <h1 className={barlow.className} style={{
+                fontWeight: 900, fontSize: 'clamp(56px, 6.5vw, 82px)',
+                letterSpacing: '-0.02em', lineHeight: 0.9,
+                textTransform: 'uppercase', color: C.ink,
+                margin: '0 0 28px',
+              }}>
+                Votre métier<br />mérite<br />d'être vu.
+              </h1>
+              <div style={{ height: '0.5px', background: C.ink, marginBottom: 28 }} />
+              <p style={{ fontSize: 15, lineHeight: 1.7, color: C.ink, margin: '0 0 36px', maxWidth: 420 }}>
+                Studio Quartier accompagne les commerces de quartier et les instituts indépendants parisiens. Vous maîtrisez votre métier — on s'occupe du reste.
+              </p>
+            </div>
             <a href="mailto:hello@studioquartier.fr" style={{
-              display: 'inline-flex', alignItems: 'center', gap: 12,
+              display: 'inline-flex', alignItems: 'center', gap: 12, alignSelf: 'flex-start',
               fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.08em',
               fontSize: 12, fontWeight: 700, color: C.paper, background: C.accent,
-              padding: '14px 28px', textDecoration: 'none',
+              padding: '13px 24px', textDecoration: 'none',
             }}>
-              Audit gratuit de votre présence digitale →
+              Audit gratuit de votre présence →
             </a>
           </div>
 
-          {/* Segments box */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-            {SEGMENTS.map((seg, i) => (
-              <div key={seg.label} style={{
-                border: `0.5px solid ${C.ink}`,
-                borderTop: i === 1 ? 'none' : `0.5px solid ${C.ink}`,
-                padding: '32px 36px',
-                background: i === 0 ? C.warm : C.paper,
-              }}>
-                <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', color: C.muted, textTransform: 'uppercase', display: 'block', marginBottom: 16 }}>
-                  {seg.label}
-                </span>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 20 }}>
-                  {seg.types.map(t => (
-                    <span key={t} style={{
-                      fontSize: 11, fontWeight: 500, padding: '3px 10px',
-                      border: `0.5px solid ${C.ink}`, color: C.ink, background: C.paper,
-                    }}>
-                      {t}
-                    </span>
-                  ))}
-                </div>
-                <p style={{ fontSize: 12, color: C.muted, lineHeight: 1.6, margin: '0 0 10px' }}>
-                  <span style={{ color: C.ink, fontWeight: 600 }}>Le problème : </span>{seg.pain}
-                </p>
-                <p style={{ fontSize: 12, color: C.accent, fontWeight: 700, letterSpacing: '0.02em', margin: 0 }}>
-                  → {seg.result}
-                </p>
+          {/* Right — segments (editorial, no chips) */}
+          <div style={{ border: `0.5px solid ${C.ink}` }}>
+
+            {/* Segment 01 */}
+            <div style={{ padding: '36px 40px', background: C.warm }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 16, marginBottom: 16 }}>
+                <span style={{ fontSize: 10, color: C.muted, letterSpacing: '0.08em', fontWeight: 600, flexShrink: 0 }}>01</span>
+                <h2 className={barlow.className} style={{
+                  fontWeight: 900, fontSize: 26, textTransform: 'uppercase',
+                  letterSpacing: '-0.01em', lineHeight: 1, color: C.ink, margin: 0,
+                }}>
+                  Commerce de quartier
+                </h2>
               </div>
-            ))}
+              <p style={{ fontSize: 13, color: C.muted, lineHeight: 1.6, margin: '0 0 6px' }}>
+                Bistrots, boulangeries, cafés, boutiques. Le client décide sur son téléphone avant de sortir de chez lui.
+              </p>
+              <p style={{ fontSize: 13, color: C.accent, fontWeight: 700, margin: 0 }}>
+                → De l'écran au comptoir.
+              </p>
+            </div>
+
+            <div style={{ height: '0.5px', background: C.ink }} />
+
+            {/* Segment 02 */}
+            <div style={{ padding: '36px 40px', background: C.paper }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 16, marginBottom: 16 }}>
+                <span style={{ fontSize: 10, color: C.muted, letterSpacing: '0.08em', fontWeight: 600, flexShrink: 0 }}>02</span>
+                <h2 className={barlow.className} style={{
+                  fontWeight: 900, fontSize: 26, textTransform: 'uppercase',
+                  letterSpacing: '-0.01em', lineHeight: 1, color: C.ink, margin: 0,
+                }}>
+                  Instituts & bien-être
+                </h2>
+              </div>
+              <p style={{ fontSize: 13, color: C.muted, lineHeight: 1.6, margin: '0 0 6px' }}>
+                Soins, massages, esthétique. Instagram à l'abandon, agenda à moitié plein. Les grandes enseignes captent vos clients.
+              </p>
+              <p style={{ fontSize: 13, color: C.accent, fontWeight: 700, margin: 0 }}>
+                → Un agenda plein, des clients qui reviennent.
+              </p>
+            </div>
+
           </div>
         </div>
       </section>
@@ -212,7 +213,7 @@ export default function LandingPage() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 0 }}>
             {RESULTS.map((r, i) => (
               <div key={i} style={{
-                padding: '32px 32px',
+                padding: '32px',
                 borderLeft: `0.5px solid ${C.ink}`,
                 borderRight: i === RESULTS.length - 1 ? `0.5px solid ${C.ink}` : 'none',
               }}>
@@ -251,9 +252,9 @@ export default function LandingPage() {
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 0 }}>
           {[
-            { num: '01', title: 'On connaît\nvos quartiers', body: 'Nous travaillons exclusivement avec des établissements parisiens. Chaque arrondissement a ses habitudes, ses clients, ses horaires. On s\'y adapte.' },
-            { num: '02', title: 'Vous gardez\nle contrôle', body: 'Vous validez tout avant publication. Pas de surprise, pas de contenu hors sujet. Votre image reste la vôtre — qu\'il s\'agisse d\'un croissant ou d\'un soin visage.' },
-            { num: '03', title: 'Des résultats\nmesurables', body: 'Rapport mensuel clair : avis Google, portée des publications, clics, taux d\'occupation. Vous savez exactement ce que ça vous apporte.' },
+            { num: '01', title: 'On connaît\nvos quartiers', body: "Nous travaillons exclusivement avec des établissements parisiens. Chaque arrondissement a ses habitudes, ses clients, ses horaires. On s'y adapte." },
+            { num: '02', title: 'Vous gardez\nle contrôle', body: "Vous validez tout avant publication. Pas de surprise, pas de contenu hors sujet. Votre image reste la vôtre — qu'il s'agisse d'un croissant ou d'un soin visage." },
+            { num: '03', title: 'Des résultats\nmesurables', body: "Rapport mensuel clair : avis Google, portée des publications, clics, taux d'occupation. Vous savez exactement ce que ça vous apporte." },
           ].map((item, i) => (
             <div key={item.num} style={{
               padding: '40px 36px',
