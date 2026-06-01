@@ -169,6 +169,9 @@ export default function FinancesTransactionsPage() {
   // Inline notes edit
   const [editingNotesId, setEditingNotesId] = useState<number | null>(null)
   const [notesInput, setNotesInput]         = useState('')
+  // Mobile bottom sheet for category edit
+  const [editSheetTx, setEditSheetTx] = useState<Transaction | null>(null)
+  const [sheetCatId, setSheetCatId]   = useState<number | null>(null)
 
   // Date range mode
   const [dateMode, setDateMode]   = useState<'month' | 'range'>('month')
@@ -1187,6 +1190,19 @@ export default function FinancesTransactionsPage() {
                                 {m.icon}
                               </span>
                             ))}
+                            {/* Category chip — only on mobile where the category column is hidden */}
+                            <button
+                              className="sm:hidden text-left"
+                              onClick={e => { e.stopPropagation(); setEditSheetTx(tx); setSheetCatId(tx.category_id) }}
+                            >
+                              {tx.finance_categories ? (
+                                <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium" style={{ backgroundColor: tx.finance_categories.color + '22', color: tx.finance_categories.color }}>
+                                  {tx.finance_categories.icon} {tx.finance_categories.name}
+                                </span>
+                              ) : (
+                                <span className="text-[10px] text-gray-300">+ {t.finances.category}</span>
+                              )}
+                            </button>
                           </div>
                           {editingNotesId === tx.id ? (
                             <input
@@ -1781,6 +1797,53 @@ export default function FinancesTransactionsPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Mobile bottom sheet — category edit */}
+      {editSheetTx && (
+        <>
+          <div className="fixed inset-0 bg-black/30 z-40" onClick={() => setEditSheetTx(null)} />
+          <div className="fixed bottom-0 left-0 right-0 bg-white rounded-t-2xl z-50 px-5 pt-4 pb-8 shadow-2xl">
+            <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-4" />
+            <p className="text-sm font-semibold text-gray-800 truncate mb-0.5">{editSheetTx.description}</p>
+            <p className="text-xs text-gray-400 mb-4">{fmtDate(editSheetTx.date)} · <span className={editSheetTx.amount < 0 ? 'text-red-500' : 'text-green-500'}>{fmt(editSheetTx.amount, editSheetTx.currency)}</span></p>
+            <p className="text-xs text-gray-500 mb-2">{t.finances.category}</p>
+            <select
+              value={sheetCatId ?? ''}
+              onChange={e => setSheetCatId(e.target.value === '' ? null : Number(e.target.value))}
+              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm mb-4 bg-white"
+            >
+              <option value="">{t.finances.noCategory}</option>
+              {incomeCategories.length > 0 && (
+                <optgroup label={t.finances.incomeLabel}>
+                  {incomeCategories.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
+                </optgroup>
+              )}
+              {expenseCategories.length > 0 && (
+                <optgroup label={t.finances.expenses}>
+                  {expenseCategories.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
+                </optgroup>
+              )}
+            </select>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setEditSheetTx(null)}
+                className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-600"
+              >
+                {t.common.cancel}
+              </button>
+              <button
+                onClick={async () => {
+                  await updateCategory(editSheetTx.id, sheetCatId)
+                  setEditSheetTx(null)
+                }}
+                className="flex-1 py-2.5 rounded-xl bg-[#0D0D0D] text-white text-sm font-medium"
+              >
+                {t.common.save}
+              </button>
+            </div>
+          </div>
+        </>
       )}
     </div>
   )
