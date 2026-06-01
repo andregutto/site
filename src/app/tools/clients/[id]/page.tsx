@@ -4,10 +4,9 @@ import { useState, useEffect, use } from 'react'
 import { Barlow_Condensed } from 'next/font/google'
 import { useTranslation } from '@/lib/i18n'
 import { SQHeader } from '@/components/sq/SQHeader'
+import { C, sans, STATUS_COLORS } from '@/lib/sq-design'
 
 const barlow = Barlow_Condensed({ weight: ['900'], subsets: ['latin'] })
-const C = { paper: '#FDFAF5', ink: '#1C1917', warm: '#F4F0E6', muted: '#6B6760' }
-const sans = 'Arial, "Helvetica Neue", Helvetica, sans-serif'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -194,19 +193,24 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
 
           {/* Status pipeline */}
           <div style={{ marginTop: 24, display: 'flex', gap: 0, flexWrap: 'wrap' }}>
-            {STATUSES.map((s, i) => (
-              <button key={s.key} onClick={() => changeStatus(s.key)}
-                style={{
-                  fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.14em', fontSize: 11,
-                  padding: '8px 14px', borderRadius: 0, cursor: 'pointer',
-                  border: `0.5px solid ${C.ink}`,
-                  borderLeft: i === 0 ? `0.5px solid ${C.ink}` : 'none',
-                  background: client.status === s.key ? C.ink : 'transparent',
-                  color: client.status === s.key ? C.paper : C.ink,
-                }}>
-                {s.label}
-              </button>
-            ))}
+            {STATUSES.map((s, i) => {
+              const sc = STATUS_COLORS[s.key]
+              const isActive = client.status === s.key
+              return (
+                <button key={s.key} onClick={() => changeStatus(s.key)}
+                  style={{
+                    fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: 11, fontWeight: 600,
+                    padding: '8px 14px', borderRadius: 0, cursor: 'pointer',
+                    border: `0.5px solid ${isActive ? 'transparent' : C.ink}`,
+                    borderLeft: i === 0 ? undefined : 'none',
+                    background: isActive ? (sc?.bg ?? C.warm) : 'transparent',
+                    color: isActive ? (sc?.fg ?? C.ink) : C.muted,
+                    boxShadow: isActive ? `inset 0 -2px 0 ${sc?.fg ?? C.ink}` : 'none',
+                  }}>
+                  {s.label}
+                </button>
+              )
+            })}
           </div>
           <div style={{ height: '0.5px', background: C.ink, marginTop: 32 }} />
         </div>
@@ -325,8 +329,8 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
               />
               <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 12 }}>
                 <button onClick={handleAddEvent} disabled={saving || !evtText.trim()}
-                  style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 16px', border: `0.5px solid ${C.ink}`, borderRadius: 0, background: C.ink, color: C.paper, cursor: 'pointer', opacity: (!evtText.trim() || saving) ? 0.5 : 1 }}>
-                  <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 10 }}>{t('btn_save')}</span>
+                  style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 18px', border: 'none', borderRadius: 0, background: C.accent, color: C.paper, cursor: 'pointer', opacity: (!evtText.trim() || saving) ? 0.45 : 1 }}>
+                  <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: 11, fontWeight: 700 }}>{t('btn_save')}</span>
                   <span>→</span>
                 </button>
               </div>

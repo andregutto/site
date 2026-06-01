@@ -3,9 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from '@/lib/i18n'
 import { SQHeader } from '@/components/sq/SQHeader'
-
-const C = { paper: '#FDFAF5', ink: '#1C1917', warm: '#F4F0E6', muted: '#6B6760' }
-const sans = 'Arial, "Helvetica Neue", Helvetica, sans-serif'
+import { C, sans, STATUS_COLORS } from '@/lib/sq-design'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -119,20 +117,24 @@ export default function ClientsPage() {
 
         {/* ── Status tabs ── */}
         <div style={{ display: 'flex', gap: 0, marginBottom: 32, flexWrap: 'wrap' }}>
-          {STATUSES.map((s, i) => (
-            <button key={s.key} onClick={() => setTab(s.key)}
-              style={{
-                fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.14em', fontSize: 11,
-                padding: '8px 14px',
-                border: `0.5px solid ${C.ink}`,
-                borderLeft: i === 0 ? `0.5px solid ${C.ink}` : 'none',
-                background: tab === s.key ? C.ink : 'transparent',
-                color: tab === s.key ? C.paper : C.ink,
-                cursor: 'pointer', borderRadius: 0,
-              }}>
-              {s.label}
-            </button>
-          ))}
+          {STATUSES.map((s, i) => {
+            const sc = STATUS_COLORS[s.key]
+            const isActive = tab === s.key
+            return (
+              <button key={s.key} onClick={() => setTab(s.key)}
+                style={{
+                  fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: 11, fontWeight: 600,
+                  padding: '8px 14px',
+                  border: `0.5px solid ${C.ink}`,
+                  borderLeft: i === 0 ? `0.5px solid ${C.ink}` : 'none',
+                  background: isActive ? (sc?.bg ?? C.ink) : 'transparent',
+                  color: isActive ? (sc?.fg ?? C.paper) : C.muted,
+                  cursor: 'pointer', borderRadius: 0,
+                }}>
+                {s.label}
+              </button>
+            )
+          })}
         </div>
 
         {/* ── Table ── */}
@@ -167,7 +169,7 @@ export default function ClientsPage() {
                       <td style={{ ...td, color: C.muted, fontSize: 10 }}>{i + 1}</td>
                       <td style={{ ...td, fontWeight: 500, maxWidth: 200 }}>{c.name}</td>
                       <td style={td}>
-                        <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.12em', fontSize: 10, padding: '3px 8px', border: `0.5px solid ${C.ink}`, whiteSpace: 'nowrap' }}>
+                        <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: 10, fontWeight: 600, padding: '3px 10px', background: STATUS_COLORS[c.status]?.bg ?? C.warm, color: STATUS_COLORS[c.status]?.fg ?? C.ink, whiteSpace: 'nowrap' }}>
                           {STATUS_LABEL[c.status] ?? c.status}
                         </span>
                       </td>
@@ -197,8 +199,8 @@ export default function ClientsPage() {
                       <td style={{ ...td, whiteSpace: 'nowrap' }}>
                         <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
                           <a href={`/tools/clients/${c.id}`}
-                            style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.14em', fontSize: 11, color: C.ink, textDecoration: 'none', borderBottom: `1px solid ${C.ink}`, paddingBottom: 1 }}>
-                            {t('btn_dossier')}
+                            style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: 11, fontWeight: 700, color: C.paper, textDecoration: 'none', background: C.accent, padding: '4px 10px', whiteSpace: 'nowrap' }}>
+                            {t('btn_dossier')} →
                           </a>
                           <button
                             onClick={() => deleteClient(c.id, c.name)}

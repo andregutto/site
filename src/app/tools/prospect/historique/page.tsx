@@ -8,8 +8,7 @@ import { SQHeader } from '@/components/sq/SQHeader'
 
 const ProspectMap = dynamic(() => import('../_Map'), { ssr: false })
 
-const C = { paper: '#FDFAF5', ink: '#1C1917', warm: '#F4F0E6', muted: '#6B6760' }
-const sans = 'Arial, "Helvetica Neue", Helvetica, sans-serif'
+import { C, sans } from '@/lib/sq-design'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
