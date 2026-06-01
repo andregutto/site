@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { Barlow_Condensed } from 'next/font/google'
 import { usePathname } from 'next/navigation'
 import { LangSwitcher } from './LangSwitcher'
@@ -24,8 +25,8 @@ export function SQHeader() {
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       }}>
 
-        {/* ── Monograma ── */}
-        <a href="/tools" style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 14 }}>
+        {/* ── Monograma → /tools ── */}
+        <Link href="/tools" style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 14, cursor: 'pointer' }}>
           <span className={barlow.className} style={{
             fontWeight: 900, fontSize: 20, letterSpacing: '-0.01em', lineHeight: 1,
             color: C.paper, background: C.ink, padding: '6px 9px', display: 'inline-block',
@@ -35,14 +36,14 @@ export function SQHeader() {
           <span style={{ fontFamily: sans, fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', color: C.muted, textTransform: 'uppercase' }}>
             Studio Quartier
           </span>
-        </a>
+        </Link>
 
         {/* ── Nav fixa ── */}
         <nav style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           {NAV.map(link => {
             const active = link.match(pathname)
             return (
-              <a key={link.href} href={link.href} style={{
+              <Link key={link.href} href={link.href} style={{
                 fontFamily: sans, fontSize: 12, fontWeight: active ? 700 : 500,
                 color: active ? C.paper : C.ink,
                 textDecoration: 'none', whiteSpace: 'nowrap',
@@ -55,7 +56,7 @@ export function SQHeader() {
               onMouseLeave={e => { if (!active) e.currentTarget.style.background = 'transparent' }}
               >
                 {link.label}
-              </a>
+              </Link>
             )
           })}
 
