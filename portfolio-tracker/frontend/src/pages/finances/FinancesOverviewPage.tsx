@@ -347,8 +347,12 @@ export default function FinancesOverviewPage() {
   const isWithinBudget  = totalExpenses === 0 || totalExpenses <= totalBudgeted
   const overspentAmount = totalExpenses > totalBudgeted ? totalExpenses - totalBudgeted : 0
 
-  // Top categories from current month (actual categories, not envelopes)
+  const incomeEnvelopeBar = envelopeBars.find(e => e.type === 'income')
+  const expenseEnvelopeBars = envelopeBars.filter(e => e.type !== 'income')
+
+  // Top categories from current month (expense only)
   const topCategories = currentMonthData.by_envelope
+    .filter(e => e.type !== 'income')
     .flatMap(e => e.categories ?? [])
     .filter(c => c.actual > 0)
     .sort((a, b) => b.actual - a.actual)
@@ -520,6 +524,67 @@ export default function FinancesOverviewPage() {
         </div>
       </div>
 
+      {/* Income envelope section */}
+      {incomeEnvelopeBar && (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div
+            className={`px-5 py-4 flex items-center gap-3 transition-colors ${incomeEnvelopeBar.categories.length > 0 ? 'cursor-pointer hover:bg-gray-50' : ''}`}
+            onClick={() => incomeEnvelopeBar.categories.length > 0 && toggleEnv(incomeEnvelopeBar.id)}
+          >
+            <span className="text-xl leading-none w-7 shrink-0">{incomeEnvelopeBar.icon}</span>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center gap-1.5">
+                  <span style={{ fontSize: 14, color: 'var(--arvo-fg-muted)', fontFamily: "var(--arvo-font-body)", fontWeight: 600 }}>{t.finances.overviewIncomeSection}</span>
+                  {incomeEnvelopeBar.categories.length > 0 && (
+                    <span className="text-[10px] text-gray-400 leading-none">
+                      {expandedEnvIds.has(incomeEnvelopeBar.id) ? '▲' : '▼'}
+                    </span>
+                  )}
+                </div>
+                <div className="text-right shrink-0 ml-3">
+                  <div>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--arvo-green)' }}>
+                      {fmt(cx(incomeEnvelopeBar.actual), currency, true)}
+                    </span>
+                  </div>
+                  {incomeEnvelopeBar.budget > 0 && (
+                    <div>
+                      <span style={{ fontSize: 11, color: 'rgba(13,13,13,0.58)', marginRight: 4 }}>{t.finances.overviewIncomeExpected}:</span>
+                      <span style={{ fontSize: 12, color: 'rgba(13,13,13,0.58)' }}>{fmt(cx(incomeEnvelopeBar.budget), currency, true)}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                <div
+                  className="h-full rounded-full transition-all duration-500"
+                  style={{
+                    width: incomeEnvelopeBar.budget > 0 ? `${Math.min((incomeEnvelopeBar.actual / incomeEnvelopeBar.budget) * 100, 100)}%` : '0%',
+                    backgroundColor: incomeEnvelopeBar.actual === 0 ? '#e5e7eb' : incomeEnvelopeBar.color,
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+          {expandedEnvIds.has(incomeEnvelopeBar.id) && incomeEnvelopeBar.categories.length > 0 && (
+            <div className="bg-gray-50 border-t border-gray-100">
+              {incomeEnvelopeBar.categories.map(cat => (
+                <div key={cat.id} className="px-5 py-2 flex items-center gap-3 pl-14 cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => navigate(`/finances/transactions?category_id=${cat.id}`)}>
+                  <span className="text-base leading-none w-5 shrink-0">{cat.icon}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <span style={{ fontSize: 12, color: 'var(--arvo-fg-muted)' }} className="truncate">{resolveKey(cat.name, cat.name_key, nameKeys)}</span>
+                      <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--arvo-green)', flexShrink: 0, marginLeft: 8 }}>{fmt(cx(cat.actual), currency, true)}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Envelope spending vs budget */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         <div className="px-5 py-4 border-b border-gray-50 flex items-center justify-between">
@@ -529,7 +594,7 @@ export default function FinancesOverviewPage() {
           </Link>
         </div>
         <div className="divide-y divide-gray-50">
-          {envelopeBars.map(env => (
+          {expenseEnvelopeBars.map(env => (
             <div key={env.id}>
               <div
                 className={`px-5 py-3 flex items-center gap-3 transition-colors ${env.categories.length > 0 ? 'cursor-pointer hover:bg-gray-50' : ''}`}

@@ -169,8 +169,24 @@ router.get('/value', requireAuth, async (req, res: Response, next) => {
               source     = 'manual'
               value_brl  = currency === 'BRL' ? value_orig : value_orig * await getFxRate(currency)
             } else {
-              byAsset.push({ ...base, value_brl: 0, value_orig: 0, currency: a.currency || 'BRL', holdings, price: null, source: 'error', needs_manual: true, invested_brl: investedMap[a.id] ?? null, last_manual_date: null })
-              return
+              // Fallback: use last price_history entry to avoid dropping asset value to zero
+              const { data: lastPh } = await supabaseAdmin
+                .from('price_history')
+                .select('price, currency')
+                .eq('asset_id', a.id)
+                .order('ref_date', { ascending: false })
+                .limit(1)
+                .single()
+              if (lastPh) {
+                price      = lastPh.price
+                currency   = lastPh.currency
+                source     = 'stale'
+                value_orig = (holdings ?? 0) * price
+                value_brl  = currency === 'BRL' ? value_orig : value_orig * await getFxRate(currency)
+              } else {
+                byAsset.push({ ...base, value_brl: 0, value_orig: 0, currency: a.currency || 'BRL', holdings, price: null, source: 'error', needs_manual: true, invested_brl: investedMap[a.id] ?? null, last_manual_date: null })
+                return
+              }
             }
           }
         }

@@ -468,6 +468,11 @@ router.get('/spending-summary', requireAuth, async (req, res: Response) => {
     if (tx.is_internal_transfer || tx.exclude_from_stats) continue
     if (tx.amount > 0) {
       md.income += tx.amount
+      const incomeEnvId2 = tx.category_id ? (catToEnv.get(tx.category_id) ?? null) : null
+      if (incomeEnvId2 != null) {
+        md.byEnv.set(incomeEnvId2, (md.byEnv.get(incomeEnvId2) ?? 0) + tx.amount)
+        md.byCat.set(tx.category_id, (md.byCat.get(tx.category_id) ?? 0) + tx.amount)
+      }
     } else {
       md.expenses += Math.abs(tx.amount)
       const sharedEnvId = (tx as { shared_category_id?: number }).shared_category_id
@@ -486,12 +491,13 @@ router.get('/spending-summary', requireAuth, async (req, res: Response) => {
     const m = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
     const md = monthMap.get(m) ?? { income: 0, expenses: 0, byEnv: new Map(), byCat: new Map() }
 
-    const byEnv = envs.map(env => {
+    const byEnv = allEnvs.map(env => {
       const envCats = cats
         .filter(c => c.envelope_id === env.id)
         .map(c => ({ id: c.id, name: c.name, name_key: c.name_key ?? null, icon: c.icon, color: c.color, actual: Math.round((md.byCat.get(c.id) ?? 0) * 100) / 100, budget: Math.round((c.budget_monthly ?? 0) * 100) / 100 }))
         .filter(c => c.actual > 0)
         .sort((a, b) => b.actual - a.actual)
+      const envBudget = env.type === 'income' ? income.monthly_net : (envCatBudget.get(env.id) ?? 0)
       return {
         envelope_id: env.id,
         name:        env.name,
@@ -500,7 +506,7 @@ router.get('/spending-summary', requireAuth, async (req, res: Response) => {
         color:       env.color,
         icon:        env.icon,
         actual:      Math.round((md.byEnv.get(env.id) ?? 0) * 100) / 100,
-        budget:      Math.round((envCatBudget.get(env.id) ?? 0) * 100) / 100,
+        budget:      Math.round(envBudget * 100) / 100,
         categories:  envCats,
       }
     })
@@ -521,7 +527,7 @@ router.get('/spending-summary', requireAuth, async (req, res: Response) => {
   res.json({
     months:        resultMonths,
     income_config: income,
-    envelopes:     envs.map(e => ({ ...e, budget: envCatBudget.get(e.id) ?? 0 })),
+    envelopes:     allEnvs.map(e => ({ ...e, budget: e.type === 'income' ? income.monthly_net : (envCatBudget.get(e.id) ?? 0) })),
   })
 })
 
