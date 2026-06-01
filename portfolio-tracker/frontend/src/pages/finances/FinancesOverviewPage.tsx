@@ -639,19 +639,18 @@ export default function FinancesOverviewPage() {
                     const envPct = env.actual > 0 ? (cat.actual / env.actual) * 100 : 0
                     const over = catBudget > 0 && cat.actual > catBudget
                     return (
-                      <div key={cat.id} className="px-5 py-2 flex items-center gap-3 pl-14 cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => navigate(`/finances/transactions?category_id=${cat.id}`)}>
-                        <span className="text-base leading-none w-5 shrink-0">{cat.icon}</span>
+                      <div key={cat.id} className="px-4 py-2 flex items-center gap-2.5 pl-12 cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => navigate(`/finances/transactions?category_id=${cat.id}`)}>
+                        <span className="text-sm leading-none w-5 shrink-0">{cat.icon}</span>
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between">
+                          <div className="flex items-center justify-between gap-2 mb-1">
                             <span style={{ fontSize: 12, color: 'var(--arvo-fg-muted)' }} className="truncate">{resolveKey(cat.name, cat.name_key, nameKeys)}</span>
-                            <span style={{ fontSize: 11, color: 'rgba(13,13,13,0.58)', flexShrink: 0, marginLeft: 8 }}>{envPct.toFixed(0)}% {t.finances.ofEnvelope}</span>
+                            <div className="flex items-center gap-1 shrink-0">
+                              <span style={{ fontSize: 12, fontWeight: 600, color: over ? '#C0392B' : 'var(--arvo-fg-muted)' }}>{fmt(cx(cat.actual), currency, true)}</span>
+                              {catBudget > 0 && <span style={{ fontSize: 11, color: 'rgba(13,13,13,0.38)' }}>/ {fmt(cx(catBudget), currency, true)}</span>}
+                            </div>
                           </div>
-                          <div className="mt-0.5 h-1 bg-gray-200 rounded-full overflow-hidden">
+                          <div className="h-1 bg-gray-200 rounded-full overflow-hidden">
                             <div className="h-full rounded-full" style={{ width: catBudget > 0 ? `${budgetPct}%` : `${Math.min(envPct, 100)}%`, backgroundColor: over ? '#ef4444' : cat.color }} />
-                          </div>
-                          <div className="flex items-center justify-between mt-0.5">
-                            <span style={{ fontSize: 11, color: 'rgba(13,13,13,0.58)' }}>{fmt(cx(cat.actual), currency, true)} {t.finances.overviewSpent}</span>
-                            {catBudget > 0 && <span style={{ fontSize: 11, flexShrink: 0, color: over ? '#C0392B' : 'rgba(13,13,13,0.58)' }}>{budgetPct.toFixed(0)}% {t.finances.ofBudget}</span>}
                           </div>
                         </div>
                       </div>

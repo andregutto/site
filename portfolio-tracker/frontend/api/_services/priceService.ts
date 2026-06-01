@@ -52,7 +52,15 @@ export async function getCurrentPrice(asset: Asset, tranches?: FITranche[], refD
       const price = await brapi.getCurrentPrice(asset.ticker_brapi)
       return { price, currency: 'BRL', source: 'brapi' }
     } catch {
-      // fallthrough
+      // brapi failed (e.g. missing token) — try Yahoo with .SA suffix before giving up
+      if (!asset.ticker_yahoo) {
+        try {
+          const price = await yahoo.getCurrentPrice(`${asset.ticker_brapi}.SA`)
+          return { price, currency: 'BRL', source: 'yahoo' }
+        } catch {
+          // fallthrough
+        }
+      }
     }
   }
 
