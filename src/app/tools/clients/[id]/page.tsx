@@ -162,7 +162,7 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
   return (
     <div style={{ background: C.paper, minHeight: '100vh', fontFamily: sans, color: C.ink }}>
 
-      <SQHeader links={[{ href: '/tools/clients', label: t('nav_clients') }]} badge={t('section_dossier')} />
+      <SQHeader />
 
       <main style={{ maxWidth: 1300, margin: '0 auto', padding: '48px 48px 96px' }}>
 

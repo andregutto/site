@@ -27,9 +27,10 @@ export const pt: Record<TranslationKey, string> = {
   section_activity: 'Atividade',
 
   // Filter labels
-  filter_neighborhood: 'Bairro',
+  filter_neighborhood: 'Arrondissement',
   filter_category: 'Categoria',
   filter_radius: 'Raio (m)',
+  filter_max_results: 'Máx. resultados',
 
   // Buttons
   btn_search: 'Iniciar pesquisa',

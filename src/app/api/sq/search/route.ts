@@ -3,12 +3,13 @@ import { NextRequest, NextResponse } from 'next/server'
 const GKEY = process.env.GOOGLE_PLACES_API_KEY!
 
 export async function GET(req: NextRequest) {
-  const sp     = req.nextUrl.searchParams
-  const lat    = sp.get('lat')
-  const lng    = sp.get('lng')
-  const radius = sp.get('radius') || '600'
-  const type   = sp.get('type')
-  const kw     = sp.get('keyword') || ''
+  const sp         = req.nextUrl.searchParams
+  const lat        = sp.get('lat')
+  const lng        = sp.get('lng')
+  const radius     = sp.get('radius') || '600'
+  const type       = sp.get('type')
+  const kw         = sp.get('keyword') || ''
+  const maxResults = Math.min(25, Math.max(1, parseInt(sp.get('maxResults') || '15', 10)))
 
   if (!lat || !lng || !type) {
     return NextResponse.json({ error: 'lat, lng, type required' }, { status: 400 })
@@ -30,8 +31,8 @@ export async function GET(req: NextRequest) {
 
   const raw: any[] = nearby.results || []
 
-  // 2 — Place Details (parallel, first 25 results)
-  const batch = raw.slice(0, 25)
+  // 2 — Place Details (parallel, respects maxResults)
+  const batch = raw.slice(0, maxResults)
   const results = await Promise.all(batch.map(async (p: any) => {
     try {
       const detUrl = new URL('https://maps.googleapis.com/maps/api/place/details/json')

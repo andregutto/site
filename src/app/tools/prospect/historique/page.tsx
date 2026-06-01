@@ -115,7 +115,7 @@ export default function HistoriquePage() {
   return (
     <div style={{ background: C.paper, minHeight: '100vh', fontFamily: sans, color: C.ink }}>
 
-      <SQHeader links={[{ href: '/tools/prospect', label: t('nav_new_search') }]} badge={t('section_history').split(' · ')[0]} />
+      <SQHeader />
 
       <main style={{ maxWidth: 1300, margin: '0 auto', padding: '48px 48px 96px' }}>
 

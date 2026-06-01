@@ -13,18 +13,26 @@ import { C, sans } from '@/lib/sq-design'
 const ProspectMap = dynamic(() => import('./_Map'), { ssr: false })
 
 const NEIGHBORHOODS = [
-  { label: 'Sentier',            lat: 48.8648, lng: 2.3476 },
-  { label: 'Montorgueil',        lat: 48.8634, lng: 2.3467 },
-  { label: 'Les Halles',         lat: 48.8606, lng: 2.3477 },
-  { label: 'Le Marais',          lat: 48.8565, lng: 2.3556 },
-  { label: 'Pigalle / S.G.M.',   lat: 48.8818, lng: 2.3354 },
-  { label: 'Canal Saint-Martin', lat: 48.8701, lng: 2.3628 },
-  { label: 'République',         lat: 48.8677, lng: 2.3636 },
-  { label: 'Oberkampf',          lat: 48.8622, lng: 2.3724 },
-  { label: 'Saint-Germain',      lat: 48.8542, lng: 2.3355 },
-  { label: 'Montparnasse',       lat: 48.8422, lng: 2.3219 },
-  { label: 'Bastille',           lat: 48.8534, lng: 2.3692 },
-  { label: 'Belleville',         lat: 48.8701, lng: 2.3782 },
+  { label: '1er — Louvre / Halles',       lat: 48.8603, lng: 2.3477 },
+  { label: '2e — Bourse / Sentier',       lat: 48.8668, lng: 2.3459 },
+  { label: '3e — Temple / Marais Nord',   lat: 48.8635, lng: 2.3609 },
+  { label: '4e — Marais / Île St-Louis',  lat: 48.8534, lng: 2.3558 },
+  { label: '5e — Quartier Latin',         lat: 48.8462, lng: 2.3508 },
+  { label: '6e — Saint-Germain',          lat: 48.8495, lng: 2.3340 },
+  { label: '7e — Invalides / Tour Eiffel',lat: 48.8566, lng: 2.3156 },
+  { label: '8e — Champs-Élysées',         lat: 48.8750, lng: 2.3098 },
+  { label: '9e — Opéra / Pigalle',        lat: 48.8763, lng: 2.3376 },
+  { label: '10e — Gare du Nord / Est',    lat: 48.8752, lng: 2.3620 },
+  { label: '11e — Oberkampf / Nation',    lat: 48.8589, lng: 2.3792 },
+  { label: '12e — Bastille / Vincennes',  lat: 48.8423, lng: 2.3915 },
+  { label: '13e — Gobelins / Chinatown',  lat: 48.8322, lng: 2.3561 },
+  { label: '14e — Montparnasse Sud',      lat: 48.8330, lng: 2.3247 },
+  { label: '15e — Vaugirard',             lat: 48.8414, lng: 2.2966 },
+  { label: '16e — Passy / Trocadéro',     lat: 48.8634, lng: 2.2741 },
+  { label: '17e — Batignolles',           lat: 48.8836, lng: 2.3113 },
+  { label: '18e — Montmartre',            lat: 48.8927, lng: 2.3445 },
+  { label: '19e — Buttes-Chaumont',       lat: 48.8823, lng: 2.3794 },
+  { label: '20e — Ménilmontant',          lat: 48.8647, lng: 2.3989 },
 ]
 
 const CATEGORIES = [
@@ -100,6 +108,7 @@ export default function ProspectPage() {
   const [neighborhoodIdx, setNeighborhoodIdx] = useState(0)
   const [categoryIdx,     setCategoryIdx]     = useState(0)
   const [radius,          setRadius]          = useState(600)
+  const [maxResults,      setMaxResults]      = useState(15)
   const [places,          setPlaces]          = useState<Place[]>([])
   const [searching,       setSearching]       = useState(false)
   const [view,            setView]            = useState<'table' | 'map'>('table')
@@ -146,7 +155,7 @@ export default function ProspectPage() {
   async function handleSearch() {
     setSearching(true); setError(null); setRan(true); setPlaces([]); setView('table')
     const runId = crypto.randomUUID()
-    const params = new URLSearchParams({ lat: String(nb.lat), lng: String(nb.lng), radius: String(radius), type: cat.type })
+    const params = new URLSearchParams({ lat: String(nb.lat), lng: String(nb.lng), radius: String(radius), type: cat.type, maxResults: String(maxResults) })
     if ('keyword' in cat && cat.keyword) params.set('keyword', cat.keyword)
     try {
       const res  = await fetch(`/api/sq/search?${params}`)
@@ -173,12 +182,7 @@ export default function ProspectPage() {
   return (
     <div style={{ background: C.paper, minHeight: '100vh', fontFamily: sans, color: C.ink }}>
 
-      <SQHeader
-        links={[
-          { href: '/tools/prospect/historique', label: t('nav_history') },
-        ]}
-        badge={t('section_prospection').split(' · ')[0]}
-      />
+      <SQHeader />
 
       <main style={{ maxWidth: 1300, margin: '0 auto', padding: '48px 48px 96px' }}>
 
@@ -207,6 +211,10 @@ export default function ProspectPage() {
             { labelKey: 'filter_radius' as const, el: (
               <input type="number" min={200} max={2000} step={100} value={radius} onChange={e => setRadius(Number(e.target.value))} disabled={isRunning}
                 style={{ fontFamily: sans, fontSize: 14, color: C.ink, background: 'transparent', border: 'none', borderBottom: `0.5px solid ${C.ink}`, borderRadius: 0, padding: '8px 0', width: 80, outline: 'none' }} />
+            )},
+            { labelKey: 'filter_max_results' as const, el: (
+              <input type="number" min={5} max={25} step={5} value={maxResults} onChange={e => setMaxResults(Number(e.target.value))} disabled={isRunning}
+                style={{ fontFamily: sans, fontSize: 14, color: C.ink, background: 'transparent', border: 'none', borderBottom: `0.5px solid ${C.ink}`, borderRadius: 0, padding: '8px 0', width: 60, outline: 'none' }} />
             )},
           ].map(({ labelKey, el }) => (
             <div key={labelKey} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>

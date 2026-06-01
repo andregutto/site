@@ -25,9 +25,10 @@ export const fr = {
   section_activity: 'Activité',
 
   // Filter labels
-  filter_neighborhood: 'Quartier',
+  filter_neighborhood: 'Arrondissement',
   filter_category: 'Catégorie',
   filter_radius: 'Rayon (m)',
+  filter_max_results: 'Résultats max',
 
   // Buttons
   btn_search: 'Lancer la recherche',
