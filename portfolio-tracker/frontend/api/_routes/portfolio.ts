@@ -162,8 +162,7 @@ router.get('/value', requireAuth, async (req, res: Response, next) => {
 
         } else {
           holdings = holdingsMap[a.id] ?? 0
-          const hasAutoSource = !!(a.ticker_yahoo || a.coingecko_id)
-          if (holdings <= 0 && hasAutoSource) return
+          if (holdings <= 0) return  // zero position → contributes nothing to portfolio
 
           // manual_value is a hard override: user explicitly set the position value
           const mvOverride = manualMap[a.id]

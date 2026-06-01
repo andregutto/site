@@ -152,8 +152,7 @@ router.get('/value', requireAuth, async (req, res: Response, next) => {
         } else {
           // ticker
           holdings = holdingsMap[a.id] ?? 0
-          const hasAutoSource = !!(a.ticker_yahoo || a.coingecko_id)
-          if (holdings <= 0 && hasAutoSource) return
+          if (holdings <= 0) return  // zero position → contributes nothing to portfolio
           try {
             const result = await getCurrentPrice(a as Asset)
             price      = result.price
