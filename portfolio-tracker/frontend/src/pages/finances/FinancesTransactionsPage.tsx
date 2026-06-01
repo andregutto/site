@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import * as XLSX from 'xlsx'
 import { apiFetch } from '../../lib/api'
+import { useAuth } from '../../contexts/AuthContext'
 import { useI18n } from '../../contexts/I18nContext'
 
 interface Category { id: number; name: string; icon: string; color: string }
@@ -80,9 +81,17 @@ const chipXStyle: React.CSSProperties = {
 
 export default function FinancesTransactionsPage() {
   const { t, locale } = useI18n()
+  const { user } = useAuth()
   const [searchParams] = useSearchParams()
   const today = new Date()
-  const defaultMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`
+  const cycleDay: number = (user?.user_metadata?.month_cycle_day as number) || 1
+  const defaultMonth = (() => {
+    if (cycleDay > 1 && today.getDate() >= cycleDay) {
+      const next = new Date(today.getFullYear(), today.getMonth() + 1, 1)
+      return `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}`
+    }
+    return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`
+  })()
 
   const [month, setMonth]               = useState(defaultMonth)
   const [transactions, setTransactions] = useState<Transaction[]>([])

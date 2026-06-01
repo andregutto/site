@@ -78,6 +78,8 @@
     "defaultSectionHint": "Choisissez quelle section s'ouvre au démarrage. Utile si vous utilisez davantage les finances que les investissements au quotidien.",
     "defaultSectionInvestments": "Investissements",
     "defaultSectionFinances": "Finances",
+    "monthCycleDayLabel": "Jour de début du mois financier",
+    "monthCycleDayHint": "Les transactions à partir de ce jour sont comptées dans le budget du mois suivant. Utile si vous recevez votre salaire en fin de mois.",
     "maintenanceTitle": "Maintenance",
     "maintenanceDesc": "Outils pour corriger les données en cas d'incohérences.",
     "syncDividendsBtn": "Synchroniser les dividendes",

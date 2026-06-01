@@ -6,6 +6,39 @@ import { supabaseAdmin } from '../_lib/supabase.js'
 
 const router = Router()
 
+// ── Financial month helpers ───────────────────────────────────────────────────
+
+function financialMonthKey(dateStr: string, cycleDay: number): string {
+  if (cycleDay <= 1) return dateStr.slice(0, 7)
+  const [y, m, d] = dateStr.split('-').map(Number)
+  if (d >= cycleDay) {
+    const next = new Date(y, m, 1)
+    return `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}`
+  }
+  return `${y}-${String(m).padStart(2, '0')}`
+}
+
+function financialMonthRange(yearMonth: string, cycleDay: number): { start: string; end: string } {
+  const [y, m] = yearMonth.split('-').map(Number)
+  if (cycleDay <= 1) {
+    const start = `${y}-${String(m).padStart(2, '0')}-01`
+    const end   = new Date(y, m, 0).toISOString().split('T')[0]
+    return { start, end }
+  }
+  const prevM = m === 1 ? 12 : m - 1
+  const prevY = m === 1 ? y - 1 : y
+  const start = `${prevY}-${String(prevM).padStart(2, '0')}-${String(cycleDay).padStart(2, '0')}`
+  const endDay = Math.min(cycleDay - 1, new Date(y, m, 0).getDate())
+  const end   = `${y}-${String(m).padStart(2, '0')}-${String(endDay).padStart(2, '0')}`
+  return { start, end }
+}
+
+async function getUserCycleDay(userId: string): Promise<number> {
+  const { data: { user } } = await supabaseAdmin.auth.admin.getUserById(userId)
+  const day = user?.user_metadata?.month_cycle_day
+  return typeof day === 'number' && day >= 1 && day <= 28 ? day : 1
+}
+
 const DEFAULT_NAMES: Record<string, { income: string; transfer: string; salary: string; essential: string; investment: string; savings: string; free: string }> = {
   pt: { income: 'Rendas',  transfer: 'Transferência', salary: 'Salário',  essential: 'Gastos Essenciais',      investment: 'Investimentos',    savings: 'Reserva', free: 'Lazer'    },
   en: { income: 'Income',  transfer: 'Transfer',      salary: 'Salary',   essential: 'Essential Expenses',     investment: 'Investments',      savings: 'Savings', free: 'Fun Money' },
@@ -337,12 +370,15 @@ router.delete('/categories/:id', requireAuth, async (req, res: Response) => {
 router.get('/spending-summary', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const months = Math.min(parseInt(req.query.months as string) || 6, 120)
+  const cycleDay = await getUserCycleDay(userId)
 
-  // Date range: from the start of (months) months ago to today
-  const since = new Date()
-  since.setMonth(since.getMonth() - months + 1)
-  since.setDate(1)
-  const sinceStr = since.toISOString().slice(0, 10)
+  // Determine current financial month and the oldest one needed
+  const todayStr = new Date().toISOString().slice(0, 10)
+  const currentFM = financialMonthKey(todayStr, cycleDay)
+  const [cfy, cfm] = currentFM.split('-').map(Number)
+  const oldestDate = new Date(cfy, cfm - 1 - (months - 1), 1)
+  const oldestFM   = `${oldestDate.getFullYear()}-${String(oldestDate.getMonth() + 1).padStart(2, '0')}`
+  const { start: sinceStr } = financialMonthRange(oldestFM, cycleDay)
 
   const [txnRes, catRes, envRes, incomeRes] = await Promise.all([
     supabaseAdmin
@@ -421,12 +457,12 @@ router.get('/spending-summary', requireAuth, async (req, res: Response) => {
     }
   }
 
-  // Aggregate transactions by month → envelope and category
+  // Aggregate transactions by financial month → envelope and category
   type MonthData = { income: number; expenses: number; byEnv: Map<number | null, number>; byCat: Map<number | null, number> }
   const monthMap = new Map<string, MonthData>()
 
   for (const tx of txns) {
-    const m = (tx.date as string).slice(0, 7)
+    const m = financialMonthKey(tx.date as string, cycleDay)
     if (!monthMap.has(m)) monthMap.set(m, { income: 0, expenses: 0, byEnv: new Map(), byCat: new Map() })
     const md = monthMap.get(m)!
     if (tx.is_internal_transfer || tx.exclude_from_stats) continue
@@ -443,12 +479,10 @@ router.get('/spending-summary', requireAuth, async (req, res: Response) => {
     }
   }
 
-  // Build response months
+  // Build response months anchored to current financial month
   const resultMonths = []
   for (let i = months - 1; i >= 0; i--) {
-    const d = new Date()
-    d.setMonth(d.getMonth() - i)
-    d.setDate(1)
+    const d = new Date(cfy, cfm - 1 - i, 1)
     const m = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
     const md = monthMap.get(m) ?? { income: 0, expenses: 0, byEnv: new Map(), byCat: new Map() }
 
@@ -701,9 +735,8 @@ router.get('/transactions', requireAuth, async (req, res: Response) => {
     .order('id', { ascending: false })
 
   if (month) {
-    const [y, m] = month.split('-').map(Number)
-    const start = `${y}-${String(m).padStart(2, '0')}-01`
-    const end   = new Date(y, m, 0).toISOString().split('T')[0]
+    const cycleDay = await getUserCycleDay(userId)
+    const { start, end } = financialMonthRange(month, cycleDay)
     query = query.gte('date', start).lte('date', end)
   } else if (date_from && date_to) {
     query = query.gte('date', date_from).lte('date', date_to)
@@ -729,16 +762,17 @@ router.get('/transactions', requireAuth, async (req, res: Response) => {
   res.json(result)
 })
 
-// GET /api/finances/transactions/months — distinct YYYY-MM months with data, desc
+// GET /api/finances/transactions/months — distinct financial YYYY-MM months with data, desc
 router.get('/transactions/months', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
+  const cycleDay = await getUserCycleDay(userId)
   const { data } = await supabaseAdmin
     .from('finance_transactions')
     .select('date')
     .eq('user_id', userId)
     .order('date', { ascending: false })
   const seen = new Set<string>()
-  for (const r of (data ?? [])) seen.add((r.date as string).slice(0, 7))
+  for (const r of (data ?? [])) seen.add(financialMonthKey(r.date as string, cycleDay))
   res.json([...seen])
 })
 
@@ -1499,9 +1533,9 @@ router.get('/categories/monthly-history', requireAuth, async (req, res: Response
 
   if (!from || !to) { res.status(400).json({ error: 'from and to are required (YYYY-MM)' }); return }
 
-  const dateFrom = `${from}-01`
-  const [toY, toM] = to.split('-').map(Number)
-  const dateTo = new Date(toY, toM, 0).toISOString().split('T')[0]
+  const cycleDay = await getUserCycleDay(userId)
+  const { start: dateFrom } = financialMonthRange(from, cycleDay)
+  const { end:   dateTo   } = financialMonthRange(to,   cycleDay)
 
   const { data, error } = await supabaseAdmin
     .from('finance_transactions')
@@ -1525,7 +1559,7 @@ router.get('/categories/monthly-history', requireAuth, async (req, res: Response
     if (!cat) continue
     const catId = cat.id
     if (!catMap.has(catId)) catMap.set(catId, cat)
-    const ym = (row.date as string).slice(0, 7)
+    const ym = financialMonthKey(row.date as string, cycleDay)
     if (!monthlyMap.has(catId)) monthlyMap.set(catId, new Map())
     const cm = monthlyMap.get(catId)!
     cm.set(ym, (cm.get(ym) ?? 0) + Math.abs(row.amount as number))

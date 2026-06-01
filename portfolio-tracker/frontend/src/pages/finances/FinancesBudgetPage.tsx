@@ -374,7 +374,14 @@ export default function FinancesBudgetPage() {
     setLoading(true)
     try {
       const today = new Date()
-      const currentMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`
+      const _cycleDay: number = (user?.user_metadata?.month_cycle_day as number) || 1
+      const currentMonth = (() => {
+        if (_cycleDay > 1 && today.getDate() >= _cycleDay) {
+          const next = new Date(today.getFullYear(), today.getMonth() + 1, 1)
+          return `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}`
+        }
+        return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`
+      })()
       const [d, spending, groups] = await Promise.all([
         apiFetch<BudgetData>('/finances/budget'),
         apiFetch<SpendingSummary>('/finances/spending-summary?months=1'),

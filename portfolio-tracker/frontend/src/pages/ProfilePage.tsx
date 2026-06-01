@@ -21,6 +21,7 @@ interface ProfileData {
   allocation_targets: Record<string, number>
   avatar_url:         string
   default_section:    string
+  month_cycle_day:    number
 }
 
 const COUNTRY_OPTIONS = [
@@ -90,6 +91,7 @@ export default function ProfilePage() {
   const modalFileRef = useRef<HTMLInputElement>(null)
 
   const [defaultSection, setDefaultSection] = useState<'investments' | 'finances'>('investments')
+  const [monthCycleDay, setMonthCycleDay]   = useState(1)
 
   // Cropper state
   const CROP_BOX  = 280
@@ -127,6 +129,7 @@ export default function ProfilePage() {
         setBirthdate(d.birthdate ?? '')
         setAvatarUrl(d.avatar_url)
         setDefaultSection(d.default_section === 'finances' ? 'finances' : 'investments')
+        setMonthCycleDay(d.month_cycle_day ?? 1)
       })
       .catch(e => setError(e instanceof Error ? e.message : t.profile.errorLoad))
       .finally(() => setLoading(false))
@@ -315,6 +318,7 @@ export default function ProfilePage() {
           country, birthdate: birthdate || undefined,
           avatar_url: avatarUrl || undefined,
           default_section: defaultSection,
+          month_cycle_day: monthCycleDay,
         }),
       })
       // Refresh the session token so user_metadata (incl. default_section) is
@@ -679,6 +683,23 @@ export default function ProfilePage() {
                     {s === 'investments' ? t.profile.defaultSectionInvestments : t.profile.defaultSectionFinances}
                   </button>
                 ))}
+              </div>
+            </div>
+
+            {/* Dia de início do mês financeiro */}
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">{t.profile.monthCycleDayLabel}</label>
+              <p className="text-xs text-gray-400 mb-2">{t.profile.monthCycleDayHint}</p>
+              <div className="flex items-center gap-3">
+                <input
+                  type="number"
+                  min={1}
+                  max={28}
+                  value={monthCycleDay}
+                  onChange={e => setMonthCycleDay(Math.min(28, Math.max(1, parseInt(e.target.value) || 1)))}
+                  className="w-20 border border-gray-200 rounded-lg px-3 py-2 text-sm text-center focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20"
+                />
+                <span className="text-sm text-gray-500">/ 28</span>
               </div>
             </div>
 

@@ -78,6 +78,8 @@
     "defaultSectionHint": "Escolha qual seção abre ao entrar no app. Útil se você usa mais finanças do que investimentos no dia a dia.",
     "defaultSectionInvestments": "Investimentos",
     "defaultSectionFinances": "Finanças",
+    "monthCycleDayLabel": "Dia de início do mês financeiro",
+    "monthCycleDayHint": "Transações a partir deste dia são contadas no orçamento do mês seguinte. Útil se você recebe salário no fim do mês.",
     "maintenanceTitle": "Manutenção",
     "maintenanceDesc": "Ferramentas para corrigir dados em caso de inconsistências.",
     "syncDividendsBtn": "Sincronizar dividendos agora",

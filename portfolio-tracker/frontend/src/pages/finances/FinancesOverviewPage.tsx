@@ -195,7 +195,14 @@ export default function FinancesOverviewPage() {
   }
 
   const today = new Date()
-  const defaultMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`
+  const cycleDay: number = (user?.user_metadata?.month_cycle_day as number) || 1
+  const defaultMonth = (() => {
+    if (cycleDay > 1 && today.getDate() >= cycleDay) {
+      const next = new Date(today.getFullYear(), today.getMonth() + 1, 1)
+      return `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}`
+    }
+    return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`
+  })()
 
   function fmtMonthFull(m: string) {
     const [y, mo] = m.split('-')
