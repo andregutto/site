@@ -690,17 +690,14 @@ export default function ProfilePage() {
             <div>
               <label className="block text-xs text-gray-500 mb-1">{t.profile.monthCycleDayLabel}</label>
               <p className="text-xs text-gray-400 mb-2">{t.profile.monthCycleDayHint}</p>
-              <div className="flex items-center gap-3">
-                <input
-                  type="number"
-                  min={1}
-                  max={28}
-                  value={monthCycleDay}
-                  onChange={e => setMonthCycleDay(Math.min(28, Math.max(1, parseInt(e.target.value) || 1)))}
-                  className="w-20 border border-gray-200 rounded-lg px-3 py-2 text-sm text-center focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20"
-                />
-                <span className="text-sm text-gray-500">/ 28</span>
-              </div>
+              <input
+                type="number"
+                min={1}
+                max={28}
+                value={monthCycleDay}
+                onChange={e => setMonthCycleDay(Math.min(28, Math.max(1, parseInt(e.target.value) || 1)))}
+                className="w-20 border border-gray-200 rounded-lg px-3 py-2 text-sm text-center focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20"
+              />
             </div>
 
 {error    && <p className="text-xs text-red-600">{error}</p>}
