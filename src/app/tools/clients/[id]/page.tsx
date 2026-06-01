@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, use } from 'react'
+import { useState, useEffect, use, useCallback } from 'react'
 import { Barlow_Condensed } from 'next/font/google'
 import { useTranslation } from '@/lib/i18n'
 import { SQHeader } from '@/components/sq/SQHeader'
@@ -132,12 +132,18 @@ function NotesField({ value, placeholder, saveLabel, onSave }: { value: string |
 export default function ClientDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const { t } = useTranslation()
-  const [client,  setClient]  = useState<Client | null>(null)
-  const [events,  setEvents]  = useState<Event[]>([])
-  const [loading, setLoading] = useState(true)
-  const [evtType, setEvtType] = useState('note')
-  const [evtText, setEvtText] = useState('')
-  const [saving,  setSaving]  = useState(false)
+  const [client,    setClient]    = useState<Client | null>(null)
+  const [events,    setEvents]    = useState<Event[]>([])
+  const [loading,   setLoading]   = useState(true)
+  const [evtType,   setEvtType]   = useState('note')
+  const [evtText,   setEvtText]   = useState('')
+  const [saving,    setSaving]    = useState(false)
+  const [briefing,  setBriefing]  = useState<any>(null)
+  const [genBriefing, setGenBriefing] = useState(false)
+  const [briefingCopied, setBriefingCopied] = useState(false)
+  const [checklist, setChecklist] = useState<any>(null)
+  const [newTask,   setNewTask]   = useState('')
+  const curMonth = new Date().toISOString().slice(0, 7)
 
   const STATUSES = [
     { key: 'prospect',     label: t('status_prospect')     },
@@ -158,12 +164,40 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
   }
 
   useEffect(() => {
-    fetch(`/api/sq/clients/${id}`)
-      .then(r => r.json())
-      .then(d => { setClient(d.client); setEvents(d.events ?? []) })
-      .catch(() => {})
-      .finally(() => setLoading(false))
+    Promise.all([
+      fetch(`/api/sq/clients/${id}`).then(r => r.json()),
+      fetch(`/api/sq/briefings?client_id=${id}`).then(r => r.json()),
+      fetch(`/api/sq/checklists?client_id=${id}&month=${curMonth}`).then(r => r.json()),
+    ]).then(([clientData, briefingData, checklistData]) => {
+      setClient(clientData.client)
+      setEvents(clientData.events ?? [])
+      setBriefing(briefingData.briefing)
+      setChecklist(checklistData.checklist)
+    }).catch(() => {}).finally(() => setLoading(false))
   }, [id])
+
+  async function generateBriefingLink() {
+    setGenBriefing(true)
+    const res = await fetch('/api/sq/briefings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ client_id: id }) })
+    const d   = await res.json()
+    if (d.briefing) setBriefing(d.briefing)
+    setGenBriefing(false)
+  }
+
+  async function toggleChecklistItem(itemId: string) {
+    if (!checklist) return
+    const items = checklist.items.map((i: any) => i.id === itemId ? { ...i, done: !i.done } : i)
+    setChecklist({ ...checklist, items })
+    await fetch('/api/sq/checklists', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ client_id: id, month: curMonth, items }) })
+  }
+
+  async function addChecklistTask() {
+    if (!newTask.trim() || !checklist) return
+    const items = [...checklist.items, { id: crypto.randomUUID(), category: 'Custom', task: newTask.trim(), done: false }]
+    setChecklist({ ...checklist, items })
+    setNewTask('')
+    await fetch('/api/sq/checklists', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ client_id: id, month: curMonth, items }) })
+  }
 
   async function patchClient(patch: Partial<Client>) {
     if (!client) return
@@ -302,6 +336,37 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
           <div style={{ height: '0.5px', background: C.ink, marginTop: 24 }} />
         </div>
 
+        {/* ── Action bar ── */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 40, flexWrap: 'wrap' }}>
+          {[
+            { label: 'Diagnostic client', icon: '◈', href: `/tools/clients/${id}/diagnostic` },
+            { label: 'Devis',             icon: '◻', href: `/tools/clients/${id}/devis` },
+          ].map(({ label, icon, href }) => (
+            <a key={label} href={href}
+              style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 18px', border: `0.5px solid ${C.ink}`, color: C.ink, textDecoration: 'none', fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.12em', fontSize: 11 }}>
+              <span style={{ opacity: 0.5 }}>{icon}</span> {label}
+            </a>
+          ))}
+          {/* Briefing */}
+          {!briefing
+            ? <button onClick={generateBriefingLink} disabled={genBriefing}
+                style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 18px', border: `0.5px solid ${C.ink}`, background: 'transparent', color: C.ink, cursor: 'pointer', fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.12em', fontSize: 11, borderRadius: 0 }}>
+                <span style={{ opacity: 0.5 }}>✎</span> {genBriefing ? 'Génération…' : 'Générer lien briefing'}
+              </button>
+            : <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 18px', border: `0.5px solid ${briefing.filled_at ? '#186040' : C.muted}` }}>
+                <span style={{ fontFamily: sans, fontSize: 11, color: briefing.filled_at ? '#186040' : C.muted, textTransform: 'uppercase', letterSpacing: '0.12em' }}>
+                  ✎ Briefing {briefing.filled_at ? '— Rempli ✓' : '— En attente'}
+                </span>
+                <button onClick={() => {
+                  navigator.clipboard.writeText(`${window.location.origin}/briefing/${briefing.token}`)
+                  setBriefingCopied(true); setTimeout(() => setBriefingCopied(false), 2000)
+                }} style={{ fontFamily: sans, fontSize: 10, padding: '3px 8px', border: `0.5px solid ${C.muted}`, background: 'transparent', color: C.muted, cursor: 'pointer', borderRadius: 0 }}>
+                  {briefingCopied ? 'Copié ✓' : 'Copier lien'}
+                </button>
+              </div>
+          }
+        </div>
+
         {/* ── Three-column body ── */}
         <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr 1.4fr', gap: 48 }}>
 
@@ -412,6 +477,60 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
           </div>
 
         </div>
+
+        {/* ── Checklist mensuel ── */}
+        {checklist && (
+          <div style={{ marginTop: 56, paddingTop: 40, borderTop: `0.5px solid ${C.ink}` }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 24 }}>
+              <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.14em', fontSize: 11, color: C.ink }}>
+                Checklist — {new Date(curMonth + '-01').toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}
+              </span>
+              <span style={{ fontFamily: sans, fontSize: 11, color: C.muted }}>
+                {checklist.items.filter((i: any) => i.done).length}/{checklist.items.length} complétées
+              </span>
+            </div>
+
+            {/* Progress bar */}
+            <div style={{ height: 3, background: C.warm, marginBottom: 24, position: 'relative', overflow: 'hidden' }}>
+              <div style={{ position: 'absolute', left: 0, top: 0, height: '100%', background: C.ink, width: `${checklist.items.length > 0 ? (checklist.items.filter((i: any) => i.done).length / checklist.items.length) * 100 : 0}%`, transition: 'width 0.3s' }} />
+            </div>
+
+            {/* Tasks grouped by category */}
+            {Object.entries(
+              checklist.items.reduce((acc: Record<string, any[]>, item: any) => {
+                const cat = item.category || 'Autre'
+                if (!acc[cat]) acc[cat] = []
+                acc[cat].push(item)
+                return acc
+              }, {})
+            ).map(([category, items]) => (
+              <div key={category} style={{ marginBottom: 20 }}>
+                <div style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.14em', fontSize: 9, color: C.muted, marginBottom: 8 }}>{category}</div>
+                {(items as any[]).map((item: any) => (
+                  <div key={item.id} onClick={() => toggleChecklistItem(item.id)}
+                    style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 0', borderBottom: `0.5px solid rgba(28,25,23,0.06)`, cursor: 'pointer' }}>
+                    <span style={{ width: 16, height: 16, border: `0.5px solid ${item.done ? C.ink : C.muted}`, background: item.done ? C.ink : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      {item.done && <span style={{ color: C.paper, fontSize: 9 }}>✓</span>}
+                    </span>
+                    <span style={{ fontFamily: sans, fontSize: 13, color: item.done ? C.muted : C.ink, textDecoration: item.done ? 'line-through' : 'none' }}>{item.task}</span>
+                  </div>
+                ))}
+              </div>
+            ))}
+
+            {/* Add custom task */}
+            <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+              <input value={newTask} onChange={e => setNewTask(e.target.value)} placeholder="Ajouter une tâche…"
+                onKeyDown={e => e.key === 'Enter' && addChecklistTask()}
+                style={{ flex: 1, fontFamily: sans, fontSize: 13, color: C.ink, background: 'transparent', border: 'none', borderBottom: `0.5px solid ${C.ink}`, outline: 'none', padding: '6px 0' }} />
+              <button onClick={addChecklistTask} disabled={!newTask.trim()}
+                style={{ fontFamily: sans, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.1em', padding: '6px 14px', border: `0.5px solid ${C.ink}`, background: 'transparent', color: C.ink, cursor: 'pointer', borderRadius: 0, opacity: newTask.trim() ? 1 : 0.4 }}>
+                + Ajouter
+              </button>
+            </div>
+          </div>
+        )}
+
       </main>
       <SQFooter />
     </div>
