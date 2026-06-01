@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import dynamic from 'next/dynamic'
 import { Barlow_Condensed } from 'next/font/google'
 import type { MapMarker } from './_Map'
@@ -119,12 +119,116 @@ async function exportExcel(places: Place[], neighborhood: string, category: stri
   URL.revokeObjectURL(url)
 }
 
+// ── MultiSelectDropdown ───────────────────────────────────────────────────────
+
+interface MSDGroup { group: string; items: { label: string }[] }
+
+function MultiSelectDropdown({
+  filterLabel, groups, flat, selectedIdxs, onToggle, disabled, minWidth = 240,
+}: {
+  filterLabel: string
+  groups?: MSDGroup[]
+  flat?: { label: string }[]
+  selectedIdxs: number[]
+  onToggle: (idx: number) => void
+  disabled?: boolean
+  minWidth?: number
+}) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function onDown(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', onDown)
+    return () => document.removeEventListener('mousedown', onDown)
+  }, [])
+
+  const allItems: { label: string }[] = groups ? groups.flatMap(g => g.items) : (flat ?? [])
+  const selectedLabels = selectedIdxs.map(i => allItems[i]?.label).filter(Boolean)
+  const display = selectedLabels.length === 0 ? '—'
+    : selectedLabels.length === 1 ? selectedLabels[0]
+    : `${selectedLabels.length} sélectionnés`
+
+  const triggerStyle: React.CSSProperties = {
+    display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16,
+    fontFamily: sans, fontSize: 14, color: disabled ? C.muted : C.ink,
+    background: 'transparent', border: 'none', borderBottom: `0.5px solid ${disabled ? C.muted : C.ink}`,
+    borderRadius: 0, padding: '8px 0', minWidth, cursor: disabled ? 'not-allowed' : 'pointer',
+    outline: 'none', textAlign: 'left',
+  }
+
+  return (
+    <div ref={ref} style={{ position: 'relative', display: 'inline-block' }}>
+      <button type="button" disabled={disabled} onClick={() => !disabled && setOpen(o => !o)} style={triggerStyle}>
+        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: minWidth - 24 }}>{display}</span>
+        <span style={{ fontSize: 10, opacity: 0.5, flexShrink: 0 }}>{open ? '▲' : '▼'}</span>
+      </button>
+
+      {open && (
+        <div style={{
+          position: 'absolute', top: 'calc(100% + 4px)', left: 0, zIndex: 200,
+          background: C.paper, border: `0.5px solid ${C.ink}`,
+          minWidth, maxHeight: 340, overflowY: 'auto',
+          boxShadow: '0 8px 32px rgba(28,25,23,0.12)',
+        }}>
+          {groups ? (() => {
+            let cursor = 0
+            return groups.map(g => {
+              const startIdx = cursor
+              cursor += g.items.length
+              return (
+                <div key={g.group}>
+                  <div style={{ fontFamily: sans, fontSize: 9, letterSpacing: '0.14em', textTransform: 'uppercase', color: C.muted, padding: '10px 14px 6px', borderBottom: `0.5px solid rgba(28,25,23,0.1)` }}>
+                    {g.group}
+                  </div>
+                  {g.items.map((item, ii) => {
+                    const idx = startIdx + ii
+                    const checked = selectedIdxs.includes(idx)
+                    return (
+                      <div key={item.label} onClick={() => onToggle(idx)}
+                        style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '9px 14px', cursor: 'pointer', background: checked ? C.warm : 'transparent', borderBottom: `0.5px solid rgba(28,25,23,0.06)` }}
+                        onMouseEnter={e => { if (!checked) (e.currentTarget as HTMLDivElement).style.background = 'rgba(28,25,23,0.04)' }}
+                        onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = checked ? C.warm : 'transparent' }}
+                      >
+                        <span style={{ width: 14, height: 14, border: `0.5px solid ${checked ? C.ink : C.muted}`, background: checked ? C.ink : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          {checked && <span style={{ color: C.paper, fontSize: 9, lineHeight: 1 }}>✓</span>}
+                        </span>
+                        <span style={{ fontFamily: sans, fontSize: 13, color: C.ink }}>{item.label}</span>
+                      </div>
+                    )
+                  })}
+                </div>
+              )
+            })
+          })() : (flat ?? []).map((item, idx) => {
+            const checked = selectedIdxs.includes(idx)
+            return (
+              <div key={item.label} onClick={() => onToggle(idx)}
+                style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '9px 14px', cursor: 'pointer', background: checked ? C.warm : 'transparent', borderBottom: `0.5px solid rgba(28,25,23,0.06)` }}
+                onMouseEnter={e => { if (!checked) (e.currentTarget as HTMLDivElement).style.background = 'rgba(28,25,23,0.04)' }}
+                onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = checked ? C.warm : 'transparent' }}
+              >
+                <span style={{ width: 14, height: 14, border: `0.5px solid ${checked ? C.ink : C.muted}`, background: checked ? C.ink : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  {checked && <span style={{ color: C.paper, fontSize: 9, lineHeight: 1 }}>✓</span>}
+                </span>
+                <span style={{ fontFamily: sans, fontSize: 13, color: C.ink }}>{item.label}</span>
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function ProspectPage() {
   const { t } = useTranslation()
   const [neighborhoodIdxs, setNeighborhoodIdxs] = useState<number[]>([0])
-  const [categoryIdx,      setCategoryIdx]      = useState(0)
+  const [categoryIdxs,     setCategoryIdxs]     = useState<number[]>([0])
   const [radius,          setRadius]          = useState(600)
   const [maxResults,      setMaxResults]      = useState(15)
   const [places,          setPlaces]          = useState<Place[]>([])
@@ -137,8 +241,9 @@ export default function ProspectPage() {
   const [crmMsg,          setCrmMsg]          = useState<string | null>(null)
 
   const selectedNeighborhoods = neighborhoodIdxs.map(i => NEIGHBORHOODS[i])
+  const selectedCategories    = categoryIdxs.map(i => CATEGORIES[i]).filter(Boolean)
   const nb  = selectedNeighborhoods[0] ?? NEIGHBORHOODS[0]
-  const cat = CATEGORIES[categoryIdx]
+  const cat = selectedCategories[0] ?? CATEGORIES[0]
 
   const prospects = places.filter(p => p.analyzeStatus.state === 'done' && p.analyzeStatus.result.classification === 'PROSPECT')
   const skipped   = places.filter(p => p.analyzeStatus.state === 'done' && (p.analyzeStatus.result.classification === 'CHAIN' || p.analyzeStatus.result.classification === 'LARGE')).length
@@ -175,9 +280,10 @@ export default function ProspectPage() {
     setSearching(true); setError(null); setRan(true); setPlaces([]); setView('table')
     const runId = crypto.randomUUID()
     try {
-      const fetches = selectedNeighborhoods.map(async nbItem => {
-        const params = new URLSearchParams({ lat: String(nbItem.lat), lng: String(nbItem.lng), radius: String(radius), type: cat.type, maxResults: String(maxResults) })
-        if ('keyword' in cat && cat.keyword) params.set('keyword', cat.keyword)
+      const pairs = selectedNeighborhoods.flatMap(nbItem => selectedCategories.map(catItem => ({ nbItem, catItem })))
+      const fetches = pairs.map(async ({ nbItem, catItem }) => {
+        const params = new URLSearchParams({ lat: String(nbItem.lat), lng: String(nbItem.lng), radius: String(radius), type: catItem.type, maxResults: String(maxResults) })
+        if ('keyword' in catItem && catItem.keyword) params.set('keyword', catItem.keyword)
         const res  = await fetch(`/api/sq/search?${params}`)
         const data = await res.json()
         if (!res.ok) throw new Error(data.error || data.message || t('error_label'))
@@ -194,7 +300,8 @@ export default function ProspectPage() {
       setPlaces(list.map(p => ({ ...p, analyzeStatus: { state: 'pending' } }))); setSearching(false)
       const counts = await runAnalysis(list, runId)
       const neighborhoodLabel = selectedNeighborhoods.map(n => n.label).join(', ')
-      fetch('/api/sq/runs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: runId, neighborhood: neighborhoodLabel, category: cat.label, radius, total_found: list.length, total_skipped: counts.skipped, total_prospects: counts.prospects }) }).catch(() => {})
+      const categoryLabel = selectedCategories.map(c => c.label).join(', ')
+      fetch('/api/sq/runs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: runId, neighborhood: neighborhoodLabel, category: categoryLabel, radius, total_found: list.length, total_skipped: counts.skipped, total_prospects: counts.prospects }) }).catch(() => {})
     } catch (e) { setError(e instanceof Error ? e.message : t('error_label')); setSearching(false) }
   }
 
@@ -225,49 +332,36 @@ export default function ProspectPage() {
         {/* Filters */}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 40, marginBottom: 48, alignItems: 'flex-end' }}>
 
-          {/* Neighborhood multi-select */}
+          {/* Neighborhood */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <span style={{ ...labelStyle }}>
-              {t('filter_neighborhood')}
-              {neighborhoodIdxs.length > 1 && (
-                <span style={{ marginLeft: 8, fontWeight: 400, color: C.muted, fontSize: 10 }}>({neighborhoodIdxs.length} sélectionnés)</span>
-              )}
-            </span>
-            <select
-              multiple
-              size={6}
+            <span style={{ ...labelStyle }}>{t('filter_neighborhood')}</span>
+            <MultiSelectDropdown
+              filterLabel={t('filter_neighborhood')}
+              flat={NEIGHBORHOODS}
+              selectedIdxs={neighborhoodIdxs}
+              onToggle={idx => setNeighborhoodIdxs(prev => {
+                const next = prev.includes(idx) ? prev.filter(i => i !== idx) : [...prev, idx]
+                return next.length > 0 ? next : [idx]
+              })}
               disabled={isRunning}
-              value={neighborhoodIdxs.map(String)}
-              onChange={e => {
-                const selected = Array.from(e.target.selectedOptions).map(o => Number(o.value))
-                setNeighborhoodIdxs(selected.length > 0 ? selected : [0])
-              }}
-              style={{ fontFamily: sans, fontSize: 13, color: C.ink, background: C.paper, border: `0.5px solid ${C.ink}`, borderRadius: 0, padding: '4px 0', minWidth: 220, outline: 'none', cursor: 'pointer' }}
-            >
-              {NEIGHBORHOODS.map((n, i) => (
-                <option key={n.label} value={i} style={{ padding: '5px 10px' }}>{n.label}</option>
-              ))}
-            </select>
-            <span style={{ fontFamily: sans, fontSize: 10, color: C.muted, letterSpacing: '0.04em' }}>Cmd/Ctrl + clic pour multi-sélection</span>
+              minWidth={240}
+            />
           </div>
 
-          {/* Category select with groups */}
+          {/* Category */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             <span style={{ ...labelStyle }}>{t('filter_category')}</span>
-            <select value={categoryIdx} onChange={e => setCategoryIdx(Number(e.target.value))} disabled={isRunning}
-              style={{ fontFamily: sans, fontSize: 14, color: C.ink, background: 'transparent', border: 'none', borderBottom: `0.5px solid ${C.ink}`, borderRadius: 0, padding: '8px 24px 8px 0', cursor: 'pointer', minWidth: 220, outline: 'none', appearance: 'none' }}>
-              {(() => {
-                let globalIdx = 0
-                return CATEGORY_GROUPS.map(g => (
-                  <optgroup key={g.group} label={`── ${g.group} ──`}>
-                    {g.items.map(c => {
-                      const idx = globalIdx++
-                      return <option key={c.label} value={idx}>{c.label}</option>
-                    })}
-                  </optgroup>
-                ))
-              })()}
-            </select>
+            <MultiSelectDropdown
+              filterLabel={t('filter_category')}
+              groups={CATEGORY_GROUPS}
+              selectedIdxs={categoryIdxs}
+              onToggle={idx => setCategoryIdxs(prev => {
+                const next = prev.includes(idx) ? prev.filter(i => i !== idx) : [...prev, idx]
+                return next.length > 0 ? next : [idx]
+              })}
+              disabled={isRunning}
+              minWidth={240}
+            />
           </div>
 
           {/* Radius */}
@@ -295,7 +389,7 @@ export default function ProspectPage() {
             </button>
 
             {prospects.length > 0 && !isRunning && (
-              <button onClick={() => exportExcel(places, selectedNeighborhoods.map(n => n.label).join(', '), cat.label)}
+              <button onClick={() => exportExcel(places, selectedNeighborhoods.map(n => n.label).join(', '), selectedCategories.map(c => c.label).join(', '))}
                 style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '13px 22px', border: `0.5px solid ${C.ink}`, borderRadius: 0, background: 'transparent', color: C.ink, cursor: 'pointer' }}>
                 <span style={{ fontFamily: sans, fontSize: 10, letterSpacing: '0.08em', color: C.muted }}>02</span>
                 <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.18em', fontSize: 12, whiteSpace: 'nowrap' }}>
@@ -307,7 +401,7 @@ export default function ProspectPage() {
             {selected.size > 0 && !isRunning && (
               <button onClick={async () => {
                 setAddingCRM(true); setCrmMsg(null)
-                const toAdd = prospects.filter(p => selected.has(p.place_id)).map(p => { const r = p.analyzeStatus.state === 'done' ? p.analyzeStatus.result : null; return { ...p, score: r?.score ?? null, services: r?.services ?? null, summary: r?.summary ?? null, instagram_url: r?.instagram_url ?? null, neighborhood: selectedNeighborhoods.map(n => n.label).join(', '), category: cat.label } })
+                const toAdd = prospects.filter(p => selected.has(p.place_id)).map(p => { const r = p.analyzeStatus.state === 'done' ? p.analyzeStatus.result : null; return { ...p, score: r?.score ?? null, services: r?.services ?? null, summary: r?.summary ?? null, instagram_url: r?.instagram_url ?? null, neighborhood: selectedNeighborhoods.map(n => n.label).join(', '), category: selectedCategories.map(c => c.label).join(', ') } })
                 const res  = await fetch('/api/sq/clients', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clients: toAdd }) })
                 const data = await res.json()
                 if (res.ok) { setCrmMsg(`${toAdd.length} ${t('progress_prospects')} → CRM`); setSelected(new Set()) }
