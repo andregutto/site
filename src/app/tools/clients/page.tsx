@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from '@/lib/i18n'
 import { SQHeader } from '@/components/sq/SQHeader'
+import { SQFooter } from '@/components/sq/SQFooter'
 import { C, sans, STATUS_COLORS } from '@/lib/sq-design'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -217,6 +218,7 @@ export default function ClientsPage() {
           </div>
         )}
       </main>
+      <SQFooter />
     </div>
   )
 }

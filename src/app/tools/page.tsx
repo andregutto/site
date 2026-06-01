@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { Barlow_Condensed } from 'next/font/google'
 import { useTranslation } from '@/lib/i18n'
 import { SQHeader } from '@/components/sq/SQHeader'
+import { SQFooter } from '@/components/sq/SQFooter'
 import { C, sans } from '@/lib/sq-design'
 
 const barlow = Barlow_Condensed({ weight: ['900'], subsets: ['latin'] })
@@ -159,6 +160,7 @@ export default function ToolsDashboard() {
         </div>
 
       </main>
+      <SQFooter />
     </div>
   )
 }

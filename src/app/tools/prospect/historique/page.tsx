@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic'
 import type { MapMarker } from '../_Map'
 import { useTranslation } from '@/lib/i18n'
 import { SQHeader } from '@/components/sq/SQHeader'
+import { SQFooter } from '@/components/sq/SQFooter'
 
 const ProspectMap = dynamic(() => import('../_Map'), { ssr: false })
 
@@ -316,6 +317,7 @@ export default function HistoriquePage() {
         )}
 
       </main>
+      <SQFooter />
     </div>
   )
 }

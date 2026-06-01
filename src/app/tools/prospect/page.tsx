@@ -6,6 +6,7 @@ import { Barlow_Condensed } from 'next/font/google'
 import type { MapMarker } from './_Map'
 import { useTranslation } from '@/lib/i18n'
 import { SQHeader } from '@/components/sq/SQHeader'
+import { SQFooter } from '@/components/sq/SQFooter'
 
 const barlow = Barlow_Condensed({ weight: ['900'], subsets: ['latin'] })
 import { C, sans } from '@/lib/sq-design'
@@ -427,6 +428,7 @@ export default function ProspectPage() {
         )}
 
       </main>
+      <SQFooter />
     </div>
   )
 }
