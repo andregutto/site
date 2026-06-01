@@ -364,7 +364,7 @@ export default function FinancesOverviewPage() {
       month:    historyMonths >= 12 ? fmtMonthYear(ms.month, browserLocale) : fmtMonth(ms.month, browserLocale),
       rawMonth: ms.month,
     }
-    for (const env of ms.by_envelope.filter(e => e.envelope_id !== -1 && e.actual > 0)) {
+    for (const env of ms.by_envelope.filter(e => e.envelope_id !== -1 && e.type !== 'income' && e.actual > 0)) {
       row[env.name] = env.actual
     }
     return row
@@ -376,6 +376,26 @@ export default function FinancesOverviewPage() {
   }
 
   const hasHistory = data.months.some(m => m.expenses > 0)
+
+  // Month projection
+  const isCurrentMonth = month === defaultMonth
+  const fmDates = (() => {
+    const [y, mo] = month.split('-').map(Number)
+    if (cycleDay <= 1) return { start: new Date(y, mo - 1, 1), end: new Date(y, mo, 0) }
+    return { start: new Date(y, mo - 2, cycleDay), end: new Date(y, mo - 1, cycleDay - 1) }
+  })()
+  const MS_DAY = 86400000
+  const todayMs  = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime()
+  const startMs  = new Date(fmDates.start.getFullYear(), fmDates.start.getMonth(), fmDates.start.getDate()).getTime()
+  const endMs    = new Date(fmDates.end.getFullYear(), fmDates.end.getMonth(), fmDates.end.getDate()).getTime()
+  const daysTotal    = Math.round((endMs - startMs) / MS_DAY) + 1
+  const daysElapsed  = isCurrentMonth ? Math.max(1, Math.round((todayMs - startMs) / MS_DAY) + 1) : daysTotal
+  const daysRemaining = isCurrentMonth ? Math.max(0, daysTotal - daysElapsed) : 0
+  const projected    = daysElapsed >= 3 && totalExpenses > 0
+    ? Math.round((totalExpenses / daysElapsed) * daysTotal)
+    : null
+  const projectedPct  = projected != null && totalBudgeted > 0 ? Math.min(Math.round((projected / totalBudgeted) * 100), 100) : null
+  const projectedOver = projected != null && totalBudgeted > 0 && projected > totalBudgeted
 
   return (
     <div className="space-y-5">
@@ -484,43 +504,51 @@ export default function FinancesOverviewPage() {
             </div>
           </div>
 
-          {/* Right: envelope mini breakdown — desktop only */}
-          {envelopeBars.filter(e => e.type !== 'income' && e.actual > 0).length > 0 && (
-            <div className="hidden lg:flex lg:flex-col lg:justify-center" style={{ borderLeft: '1px solid rgba(13,13,13,0.07)', paddingLeft: 28 }}>
-              <p style={{ fontFamily: "var(--arvo-font-body)", fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.45)', marginBottom: 14 }}>{t.finances.overviewSpendingVsBudget}</p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {envelopeBars.filter(e => e.type !== 'income' && e.actual > 0).slice(0, 5).map(env => (
-                  <div key={env.id}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4, gap: 8 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
-                        <span style={{ fontSize: 14, lineHeight: 1 }}>{env.icon}</span>
-                        <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 12, color: 'var(--arvo-fg-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                          {resolveEnvName(env.name, env.type, env.name_key, nameKeys)}
-                        </span>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-                        <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 12, fontWeight: 600, color: env.over ? 'var(--arvo-red)' : 'var(--arvo-fg)' }}>
-                          {fmt(cx(env.actual), currency, true)}
-                        </span>
-                        {env.budget > 0 && (
-                          <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 11, color: 'rgba(13,13,13,0.40)' }}>
-                            / {fmt(cx(env.budget), currency, true)}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <div style={{ height: 4, background: 'rgba(13,13,13,0.07)', borderRadius: 2, overflow: 'hidden' }}>
+          {/* Right: month projection — desktop only */}
+          <div className="hidden lg:flex lg:flex-col lg:justify-center" style={{ borderLeft: '1px solid rgba(13,13,13,0.07)', paddingLeft: 28 }}>
+            <p style={{ fontFamily: "var(--arvo-font-body)", fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.45)', marginBottom: 4 }}>
+              {isCurrentMonth ? t.finances.overviewProjection : t.finances.overviewResult}
+            </p>
+            <p style={{ fontFamily: "var(--arvo-font-body)", fontSize: 11, color: 'rgba(13,13,13,0.45)', marginBottom: 16 }}>
+              {t.finances.overviewDayOf} {daysElapsed} {t.finances.overviewDayOfSep} {daysTotal}
+              {isCurrentMonth && daysRemaining > 0 && <span style={{ marginLeft: 6 }}>· {daysRemaining} {t.finances.overviewDaysLeft}</span>}
+            </p>
+
+            {projected != null ? (
+              <>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 8 }}>
+                  <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 26, letterSpacing: '0.02em', color: projectedOver ? 'var(--arvo-red)' : 'var(--arvo-fg)' }}>
+                    {fmt(cx(projected), currency, true)}
+                  </span>
+                  {totalBudgeted > 0 && (
+                    <span style={{ fontSize: 12, color: 'rgba(13,13,13,0.40)' }}>/ {fmt(cx(totalBudgeted), currency, true)}</span>
+                  )}
+                </div>
+                {totalBudgeted > 0 && projectedPct != null && (
+                  <>
+                    <div style={{ height: 4, background: 'rgba(13,13,13,0.08)', borderRadius: 2, overflow: 'hidden', marginBottom: 8 }}>
                       <div style={{
-                        height: '100%', borderRadius: 2, transition: 'width 0.4s ease',
-                        width: env.budget > 0 ? `${Math.min((env.actual / env.budget) * 100, 100)}%` : '40%',
-                        background: env.over ? 'var(--arvo-red)' : env.color,
+                        height: '100%', borderRadius: 2, transition: 'width 0.5s ease',
+                        width: `${projectedPct}%`,
+                        background: projectedOver ? 'var(--arvo-red)' : 'var(--arvo-green)',
                       }} />
                     </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+                    <span style={{ fontSize: 12, fontWeight: 600, color: projectedOver ? 'var(--arvo-red)' : 'var(--arvo-green)' }}>
+                      {projectedOver
+                        ? `+${fmt(cx(projected - totalBudgeted), currency, true)} ${t.finances.overviewOverBudget}`
+                        : `${fmt(cx(totalBudgeted - projected), currency, true)} ${t.finances.overviewUnderBudget}`}
+                    </span>
+                  </>
+                )}
+              </>
+            ) : totalExpenses > 0 ? (
+              <p style={{ fontSize: 12, color: 'rgba(13,13,13,0.38)', fontStyle: 'italic' }}>
+                {daysElapsed} {t.finances.overviewInsufficientData}
+              </p>
+            ) : (
+              <p style={{ fontSize: 22, fontFamily: "var(--arvo-font-body)", color: 'rgba(13,13,13,0.20)' }}>—</p>
+            )}
+          </div>
         </div>
       </div>
 
@@ -738,14 +766,14 @@ export default function FinancesOverviewPage() {
               <YAxis tickFormatter={v => fmt(cx(v as number), currency, true)} tick={{ fontSize: 10 }} width={70} />
               <Tooltip content={<ChartTooltip currency={currency} />} />
               <Legend wrapperStyle={{ fontSize: 11 }} />
-              {data.envelopes.map((env, i) => (
+              {data.envelopes.filter(e => e.type !== 'income').map((env, i, arr) => (
                 <Bar
                   key={env.id}
                   dataKey={env.name}
                   name={resolveEnvName(env.name, env.type, env.name_key, nameKeys)}
                   stackId="a"
                   fill={CHART_PALETTE[i % CHART_PALETTE.length]}
-                  radius={i === data.envelopes.length - 1 ? [3, 3, 0, 0] : [0, 0, 0, 0]}
+                  radius={i === arr.length - 1 ? [3, 3, 0, 0] : [0, 0, 0, 0]}
                 />
               ))}
             </BarChart>
