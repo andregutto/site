@@ -50,15 +50,17 @@ Génère UNIQUEMENT un objet JSON sans markdown avec cette structure :
 
 Contraintes :
 - Maximum 3 opportunités
+- Chaque champ body : 2 phrases max (concis et percutant)
 - Ton professionnel mais chaleureux, jamais agressif
-- Toujours centré sur les bénéfices CLIENT (plus de visibilité, plus de clients, fidélité), pas sur nos services
+- Centré sur les bénéfices CLIENT, pas sur nos services
 - Vocabulaire accessible, pas de jargon digital
-- En français`
+- En français
+- JSON strict, pas de markdown`
 
   try {
     const msg = await anthropic.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: 800,
+      max_tokens: 1500,
       temperature: 0.3,
       messages: [{ role: 'user', content: prompt }],
     })

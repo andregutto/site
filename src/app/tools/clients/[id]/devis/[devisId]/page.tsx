@@ -34,11 +34,26 @@ export default function DevisPage({ params }: { params: Promise<{ id: string; de
   const [saving,  setSaving]  = useState(false)
 
   useEffect(() => {
-    fetch(`/api/sq/devis/${devisId}`)
-      .then(r => r.json())
-      .then(d => setDevis(d.devis))
-      .finally(() => setLoading(false))
-  }, [devisId])
+    Promise.all([
+      fetch(`/api/sq/devis/${devisId}`).then(r => r.json()),
+      fetch(`/api/sq/clients/${id}`).then(r => r.json()),
+    ]).then(([devisData, clientData]) => {
+      setDevis(devisData.devis)
+      // Auto-populate from suggested services if devis is new and empty
+      if (devisData.devis && devisData.devis.items?.length === 0 && clientData.client?.services_suggested?.length > 0) {
+        const suggested: string[] = clientData.client.services_suggested
+        const matched = suggested.flatMap((s: string) => {
+          const preset = SERVICE_PRESETS.find(p => p.service.toLowerCase().includes(s.toLowerCase().split(' ')[0]) || s.toLowerCase().includes(p.service.toLowerCase().split(' ')[0]))
+          return preset ? [{ id: crypto.randomUUID(), ...preset }] : [{ id: crypto.randomUUID(), service: s, description: '', price_monthly: 0, price_setup: 0 }]
+        })
+        if (matched.length > 0) {
+          const updated = { ...devisData.devis, items: matched }
+          setDevis(updated)
+          fetch(`/api/sq/devis/${devisId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ items: matched }) })
+        }
+      }
+    }).finally(() => setLoading(false))
+  }, [devisId, id])
 
   async function save(patch: Partial<Devis>) {
     if (!devis) return
