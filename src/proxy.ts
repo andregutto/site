@@ -8,7 +8,7 @@ export function proxy(request: NextRequest) {
     if (pathname === '/' || pathname === '') {
       return NextResponse.redirect(new URL('/sq', request.url))
     }
-    if (!pathname.startsWith('/tools') && !pathname.startsWith('/sq')) {
+    if (!pathname.startsWith('/tools') && !pathname.startsWith('/sq') && !pathname.startsWith('/api')) {
       return NextResponse.redirect(new URL('/sq', request.url))
     }
   }
