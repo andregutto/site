@@ -3,12 +3,20 @@
 ## Ferramentas internas (já construídas)
 
 - [x] Prospecção com Google Places API + análise IA por arrondissement
-- [x] Histórico de buscas com tabela + mapa
+- [x] Multi-select de arrondissements e categorias no dropdown
+- [x] Análise de resposta a reviews Google (review_response_quality)
+- [x] Histórico de buscas com tabela + mapa + filtros avançados
+- [x] Vista "Tous les prospects" com filtros: score, site, instagram, qualidade, categoria
 - [x] CRM com pipeline de status (prospect → actif)
-- [x] Dossier de cliente com timeline de atividade
+- [x] Dossier de cliente reorganizado com KPI strip + 3 colunas
+- [x] Timeline de atividade por cliente
 - [x] Exportação Excel de prospects
 - [x] Adicionar prospect direto ao CRM
 - [x] Design system: papel/tinta/terracota, Barlow Condensed
+- [x] Briefing digital — formulário por link (/briefing/[token])
+- [x] Diagnóstico cliente — PDF de venda com copy gerado por IA
+- [x] Devis & propositions — editor + PDF profissional com presets de serviços
+- [x] Checklist mensal recorrente por cliente
 
 ---
 
@@ -22,29 +30,20 @@
 - Histórico de faturas por cliente
 - Dashboard financeiro: MRR, churn, receita prevista
 
-#### Calendário de conteúdo
+#### Calendário de conteúdo *(adiado — usar Notion por ora)*
 - Calendário mensal por cliente (publicações programadas)
 - Campos: plataforma (Instagram/Facebook/GMB), tipo de post, data, status
-- Vista semanal e mensal
-- Checklist de aprovação do cliente
 
 ### 🟡 Média prioridade
 
-#### Proposta comercial / Devis
-- Criação de proposta com pacotes de serviço e preços
-- Exportação em PDF com branding Studio Quartier
-- Histórico de propostas por cliente
-- Aceito / recusado / em negociação
+#### [x] Proposta comercial / Devis — IMPLEMENTADO
+#### [x] Checklist mensal recorrente — IMPLEMENTADO
+#### [x] Briefing de cliente (formulário por link) — IMPLEMENTADO
 
-#### Checklist mensal recorrente
-- Tarefas padrão que se repetem a cada mês por cliente
-- Indicador de progresso por cliente no mês corrente
-- Alertas de tarefas atrasadas
-
-#### Briefing de cliente
-- Ficha com: tom de voz, referências visuais, concorrentes, objetivos
+#### Briefing — melhorias futuras
 - Upload de assets (logo, fotos)
 - Notas de onboarding
+- Visualização das respostas no dossier (atualmente só salva no DB)
 
 ### 🟢 Baixa prioridade / Futuro
 
@@ -81,6 +80,7 @@
 - **Google Business Profile API** — publicar posts diretamente do calendário
 - **Instagram Graph API** — agendar publicações
 - **Stripe** — pagamento de faturas online
+- **Brevo (ex-Sendinblue)** — automação SMS + email para clientes dos clientes
 - **Notion / Google Docs** — sync de briefings
 - **Zapier / Make** — automações (ex: novo cliente assina → cria checklist)
 
