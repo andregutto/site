@@ -528,31 +528,24 @@ export default function FinancesOverviewPage() {
       {incomeEnvelopeBar && (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           <div
-            className={`px-5 py-4 flex items-center gap-3 transition-colors ${incomeEnvelopeBar.categories.length > 0 ? 'cursor-pointer hover:bg-gray-50' : ''}`}
+            className={`px-5 py-3 flex items-center gap-3 transition-colors ${incomeEnvelopeBar.categories.length > 0 ? 'cursor-pointer hover:bg-gray-50' : ''}`}
             onClick={() => incomeEnvelopeBar.categories.length > 0 && toggleEnv(incomeEnvelopeBar.id)}
           >
-            <span className="text-xl leading-none w-7 shrink-0">{incomeEnvelopeBar.icon}</span>
+            <span className="text-lg leading-none w-6 shrink-0">{incomeEnvelopeBar.icon}</span>
             <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between mb-1">
-                <div className="flex items-center gap-1.5">
-                  <span style={{ fontSize: 14, color: 'var(--arvo-fg-muted)', fontFamily: "var(--arvo-font-body)", fontWeight: 600 }}>{t.finances.overviewIncomeSection}</span>
+              <div className="flex items-center justify-between gap-2 mb-1.5">
+                <div className="flex items-center gap-1 min-w-0">
+                  <span style={{ fontSize: 13, color: 'var(--arvo-fg-muted)', fontFamily: "var(--arvo-font-body)", fontWeight: 600 }} className="truncate">{t.finances.overviewIncomeSection}</span>
                   {incomeEnvelopeBar.categories.length > 0 && (
-                    <span className="text-[10px] text-gray-400 leading-none">
-                      {expandedEnvIds.has(incomeEnvelopeBar.id) ? '▲' : '▼'}
-                    </span>
+                    <span className="text-[9px] text-gray-400 leading-none shrink-0">{expandedEnvIds.has(incomeEnvelopeBar.id) ? '▲' : '▼'}</span>
                   )}
                 </div>
-                <div className="text-right shrink-0 ml-3">
-                  <div>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--arvo-green)' }}>
-                      {fmt(cx(incomeEnvelopeBar.actual), currency, true)}
-                    </span>
-                  </div>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--arvo-green)' }}>
+                    {fmt(cx(incomeEnvelopeBar.actual), currency, true)}
+                  </span>
                   {incomeEnvelopeBar.budget > 0 && (
-                    <div>
-                      <span style={{ fontSize: 11, color: 'rgba(13,13,13,0.58)', marginRight: 4 }}>{t.finances.overviewIncomeExpected}:</span>
-                      <span style={{ fontSize: 12, color: 'rgba(13,13,13,0.58)' }}>{fmt(cx(incomeEnvelopeBar.budget), currency, true)}</span>
-                    </div>
+                    <span style={{ fontSize: 12, color: 'rgba(13,13,13,0.38)' }}>/ {fmt(cx(incomeEnvelopeBar.budget), currency, true)}</span>
                   )}
                 </div>
               </div>
@@ -600,43 +593,30 @@ export default function FinancesOverviewPage() {
                 className={`px-5 py-3 flex items-center gap-3 transition-colors ${env.categories.length > 0 ? 'cursor-pointer hover:bg-gray-50' : ''}`}
                 onClick={() => env.categories.length > 0 && toggleEnv(env.id)}
               >
-                <span className="text-xl leading-none w-7 shrink-0">{env.icon}</span>
+                <span className="text-lg leading-none w-6 shrink-0">{env.icon}</span>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between mb-1">
-                    <div className="flex items-center gap-1.5">
-                      <span style={{ fontSize: 14, color: 'var(--arvo-fg-muted)', fontFamily: "var(--arvo-font-body)" }}>{resolveEnvName(env.name, env.type, env.name_key, nameKeys)}</span>
+                  <div className="flex items-center justify-between gap-2 mb-1.5">
+                    <div className="flex items-center gap-1 min-w-0">
+                      <span style={{ fontSize: 13, color: 'var(--arvo-fg-muted)', fontFamily: "var(--arvo-font-body)" }} className="truncate">{resolveEnvName(env.name, env.type, env.name_key, nameKeys)}</span>
                       {env.categories.length > 0 && (
-                        <span className="text-[10px] text-gray-400 leading-none">
-                          {expandedEnvIds.has(env.id) ? '▲' : '▼'}
-                        </span>
+                        <span className="text-[9px] text-gray-400 leading-none shrink-0">{expandedEnvIds.has(env.id) ? '▲' : '▼'}</span>
                       )}
                     </div>
-                    <div className="text-right shrink-0 ml-3">
-                      <div>
-                        <span style={{ fontSize: 11, color: 'rgba(13,13,13,0.58)', marginRight: 4 }}>{t.finances.overviewSpent}</span>
-                        <span style={{ fontSize: 13, fontWeight: 600, color: env.over ? '#C0392B' : 'var(--arvo-fg-muted)' }}>
-                          {fmt(cx(env.actual), currency, true)}
-                        </span>
-                      </div>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <span style={{ fontSize: 13, fontWeight: 600, color: env.over ? '#C0392B' : 'var(--arvo-fg)' }}>
+                        {fmt(cx(env.actual), currency, true)}
+                      </span>
                       {env.budget > 0 && (
-                        <div>
-                          <span style={{ fontSize: 11, color: 'rgba(13,13,13,0.58)', marginRight: 4 }}>{t.finances.overviewBudgeted}</span>
-                          <span style={{ fontSize: 12, color: 'rgba(13,13,13,0.58)' }}>{fmt(cx(env.budget), currency, true)}</span>
-                        </div>
+                        <span style={{ fontSize: 12, color: 'rgba(13,13,13,0.38)' }}>/ {fmt(cx(env.budget), currency, true)}</span>
                       )}
-                      {env.budget > 0 && env.actual > 0 && (
-                        <div>
-                          {(() => {
-                            const pct = Math.round((env.actual - env.budget) / env.budget * 100)
-                            const over = pct > 0
-                            return (
-                              <span style={{ fontSize: 11, fontWeight: 600, color: over ? '#C0392B' : 'var(--arvo-green)' }}>
-                                {over ? `+${pct}%` : `${pct}%`} {t.finances.ofTarget}
-                              </span>
-                            )
-                          })()}
-                        </div>
-                      )}
+                      {env.budget > 0 && env.actual > 0 && (() => {
+                        const pct = Math.round((env.actual - env.budget) / env.budget * 100)
+                        return (
+                          <span style={{ fontSize: 11, fontWeight: 600, color: pct > 0 ? '#C0392B' : 'var(--arvo-green)', minWidth: 30, textAlign: 'right' }}>
+                            {pct > 0 ? `+${pct}%` : `${pct}%`}
+                          </span>
+                        )
+                      })()}
                     </div>
                   </div>
                   <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
@@ -647,10 +627,6 @@ export default function FinancesOverviewPage() {
                         backgroundColor: env.over ? '#ef4444' : env.actual === 0 ? '#e5e7eb' : env.color,
                       }}
                     />
-                  </div>
-                  <div className="flex items-center justify-between mt-0.5">
-                    <span style={{ fontSize: 11, color: 'rgba(13,13,13,0.58)' }}>{env.pctOfIncome.toFixed(1)}% {t.finances.overviewSpent}</span>
-                    <span style={{ fontSize: 11, color: 'rgba(13,13,13,0.58)' }}>{t.finances.target}: {env.pct_target}% {t.finances.ofIncome}</span>
                   </div>
                 </div>
               </div>
