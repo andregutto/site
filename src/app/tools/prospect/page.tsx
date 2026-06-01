@@ -3,7 +3,6 @@
 import { useState, useCallback } from 'react'
 import dynamic from 'next/dynamic'
 import { Barlow_Condensed } from 'next/font/google'
-import * as XLSX from 'xlsx'
 import type { MapMarker } from './_Map'
 
 const barlow = Barlow_Condensed({ weight: ['900'], subsets: ['latin'] })
@@ -109,49 +108,42 @@ function ScoreBadge({ score }: { score: number }) {
   )
 }
 
-// ── Excel export ──────────────────────────────────────────────────────────────
+// ── Excel export (via API — branded with exceljs) ─────────────────────────────
 
-function exportExcel(places: Place[], nb: string, cat: string) {
+async function exportExcel(places: Place[], neighborhood: string, category: string) {
   const prospects = places.filter(
     p => p.analyzeStatus.state === 'done' && p.analyzeStatus.result.classification === 'PROSPECT'
   )
-  const rows = prospects.map((p, i) => {
+  const payload = prospects.map(p => {
     const r = p.analyzeStatus.state === 'done' ? p.analyzeStatus.result : null
-    return [
-      i + 1,
-      p.name,
-      r?.score ?? '',
-      p.address,
-      p.rating ?? '',
-      p.review_count,
-      p.website ?? '—',
-      r?.instagram_url ?? (r?.has_instagram ? 'Oui' : '—'),
-      r?.website_quality ?? '—',
-      r?.services?.join(', ') ?? '—',
-      r?.summary ?? '—',
-      p.phone ?? '—',
-      p.maps_url,
-    ]
+    return {
+      place_id:       p.place_id,
+      name:           p.name,
+      address:        p.address,
+      rating:         p.rating,
+      review_count:   p.review_count,
+      website:        p.website,
+      phone:          p.phone,
+      maps_url:       p.maps_url,
+      classification: r?.classification,
+      score:          r?.score ?? null,
+      services:       r?.services ?? null,
+      summary:        r?.summary ?? null,
+      has_instagram:  r?.has_instagram ?? null,
+      instagram_url:  r?.instagram_url ?? null,
+      website_quality: r?.website_quality ?? null,
+    }
   })
-
-  const header = ['N°', 'Établissement', 'Score /100', 'Adresse', 'Note', 'Avis', 'Site web', 'Instagram', 'Qualité site', 'Services recommandés', 'Analyse IA', 'Téléphone', 'Google Maps']
-  const title  = [`STUDIO QUARTIER — Rapport de Prospection · ${nb} · ${cat}`, ...Array(12).fill('')]
-  const date   = [`Généré le ${new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}`, ...Array(12).fill('')]
-
-  const ws = XLSX.utils.aoa_to_sheet([title, date, [], header, ...rows])
-  ws['!cols'] = [
-    { wch: 4 }, { wch: 28 }, { wch: 10 }, { wch: 36 }, { wch: 6 }, { wch: 7 },
-    { wch: 30 }, { wch: 28 }, { wch: 14 }, { wch: 40 }, { wch: 55 }, { wch: 16 }, { wch: 20 },
-  ]
-
-  const wb = XLSX.utils.book_new()
-  XLSX.utils.book_append_sheet(wb, ws, 'Prospects')
-  const buf = XLSX.write(wb, { bookType: 'xlsx', type: 'array' })
-  const blob = new Blob([buf], { type: 'application/octet-stream' })
+  const res  = await fetch('/api/sq/export', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ places: payload, neighborhood, category }),
+  })
+  const blob = await res.blob()
   const url  = URL.createObjectURL(blob)
   const a    = document.createElement('a')
   a.href     = url
-  a.download = `SQ_Prospection_${new Date().toISOString().slice(0, 10)}.xlsx`
+  a.download = `SQ_${neighborhood}_${category}_${new Date().toISOString().slice(0, 10)}.xlsx`
   a.click()
   URL.revokeObjectURL(url)
 }
@@ -167,6 +159,9 @@ export default function ProspectPage() {
   const [view,            setView]            = useState<'table' | 'map'>('table')
   const [error,           setError]           = useState<string | null>(null)
   const [ran,             setRan]             = useState(false)
+  const [selected,        setSelected]        = useState<Set<string>>(new Set())
+  const [addingCRM,       setAddingCRM]       = useState(false)
+  const [crmMsg,          setCrmMsg]          = useState<string | null>(null)
 
   const nb  = NEIGHBORHOODS[neighborhoodIdx]
   const cat = CATEGORIES[categoryIdx]
@@ -408,6 +403,31 @@ export default function ProspectPage() {
                 <span style={{ fontSize: 13 }}>↓</span>
               </button>
             )}
+            {selected.size > 0 && !isRunning && (
+              <button
+                onClick={async () => {
+                  setAddingCRM(true)
+                  setCrmMsg(null)
+                  const toAdd = prospects.filter(p => selected.has(p.place_id)).map(p => {
+                    const r = p.analyzeStatus.state === 'done' ? p.analyzeStatus.result : null
+                    return { ...p, score: r?.score ?? null, services: r?.services ?? null, summary: r?.summary ?? null, instagram_url: r?.instagram_url ?? null, neighborhood: nb.label, category: cat.label }
+                  })
+                  const res  = await fetch('/api/sq/clients', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clients: toAdd }) })
+                  const data = await res.json()
+                  if (res.ok) { setCrmMsg(`${toAdd.length} client${toAdd.length > 1 ? 's' : ''} ajouté${toAdd.length > 1 ? 's' : ''} au CRM`); setSelected(new Set()) }
+                  else setCrmMsg(`Erreur: ${data.error}`)
+                  setAddingCRM(false)
+                }}
+                disabled={addingCRM}
+                style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '14px 20px', border: `0.5px solid ${C.ink}`, borderRadius: 0, background: C.warm, color: C.ink, cursor: 'pointer' }}
+              >
+                <span style={{ fontFamily: sans, fontSize: 10, letterSpacing: '0.1em', color: C.muted }}>03</span>
+                <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.28em', fontSize: 11, whiteSpace: 'nowrap' }}>
+                  {addingCRM ? 'Ajout…' : `Ajouter au CRM · ${selected.size}`}
+                </span>
+                <span style={{ fontSize: 13 }}>→</span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -416,6 +436,14 @@ export default function ProspectPage() {
           <div style={{ background: C.warm, border: `0.5px solid ${C.ink}`, padding: '14px 20px', marginBottom: 32 }}>
             <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 9, color: C.muted, display: 'block', marginBottom: 6 }}>Erreur</span>
             <span style={{ fontFamily: sans, fontSize: 13, color: C.ink }}>{error}</span>
+          </div>
+        )}
+
+        {/* ── CRM feedback ── */}
+        {crmMsg && (
+          <div style={{ background: C.warm, border: `0.5px solid ${C.ink}`, padding: '12px 20px', marginBottom: 24, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ fontFamily: sans, fontSize: 13, color: C.ink }}>{crmMsg}</span>
+            <a href="/tools/clients" style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.18em', fontSize: 10, color: C.ink, textDecoration: 'none' }}>Voir les clients →</a>
           </div>
         )}
 
@@ -523,7 +551,7 @@ export default function ProspectPage() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ background: C.warm }}>
-                  {['N°', 'Score', 'Établissement', 'Note · Avis', 'Site · Instagram', 'Qualité site', 'Services recommandés', 'Adresse', 'Actions'].map(h => (
+                  {['', 'N°', 'Score', 'Établissement', 'Note · Avis', 'Site · Instagram', 'Qualité site', 'Services recommandés', 'Adresse', 'Actions'].map(h => (
                     <th key={h} style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.18em', fontSize: 9, color: C.muted, fontWeight: 400, padding: '10px 14px', textAlign: 'left', borderBottom: `0.5px solid ${C.ink}`, whiteSpace: 'nowrap' }}>
                       {h}
                     </th>
@@ -544,6 +572,11 @@ export default function ProspectPage() {
                     const td: React.CSSProperties = { padding: '11px 14px', verticalAlign: 'top', borderBottom: `0.5px solid ${rule}`, fontSize: 13, fontFamily: sans, color: C.ink }
                     return (
                       <tr key={p.place_id} style={{ background: i % 2 === 0 ? C.paper : C.warm }}>
+                        <td style={{ ...td, padding: '11px 8px 11px 14px', width: 24 }}>
+                          <input type="checkbox" checked={selected.has(p.place_id)}
+                            onChange={e => setSelected(prev => { const s = new Set(prev); e.target.checked ? s.add(p.place_id) : s.delete(p.place_id); return s })}
+                            style={{ cursor: 'pointer', accentColor: C.ink }} />
+                        </td>
                         <td style={{ ...td, color: C.muted, fontSize: 10 }}>{i + 1}</td>
 
                         <td style={{ ...td }}>

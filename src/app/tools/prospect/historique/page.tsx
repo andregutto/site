@@ -1,8 +1,11 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import dynamic from 'next/dynamic'
 import { Barlow_Condensed } from 'next/font/google'
-import * as XLSX from 'xlsx'
+import type { MapMarker } from '../_Map'
+
+const ProspectMap = dynamic(() => import('../_Map'), { ssr: false })
 
 const barlow = Barlow_Condensed({ weight: ['900'], subsets: ['latin'] })
 
@@ -23,20 +26,23 @@ interface Run {
 }
 
 interface Place {
-  place_id:       string
-  name:           string
-  address:        string
-  rating:         number | null
-  review_count:   number
-  website:        string | null
-  maps_url:       string
-  classification: string
-  score:          number | null
-  services:       string[] | null
-  summary:        string | null
-  has_instagram:  boolean | null
-  instagram_url:  string | null
+  place_id:        string
+  name:            string
+  address:         string
+  lat:             number | null
+  lng:             number | null
+  rating:          number | null
+  review_count:    number
+  website:         string | null
+  maps_url:        string | null
+  classification:  string
+  score:           number | null
+  services:        string[] | null
+  summary:         string | null
+  has_instagram:   boolean | null
+  instagram_url:   string | null
   website_quality: string | null
+  phone:           string | null
 }
 
 // ── Score badge ───────────────────────────────────────────────────────────────
@@ -57,32 +63,16 @@ function ScoreBadge({ score }: { score: number }) {
   )
 }
 
-// ── Excel export ──────────────────────────────────────────────────────────────
+// ── Excel export (via API — branded exceljs) ──────────────────────────────────
 
-function exportExcel(places: Place[], run: Run) {
+async function exportExcel(places: Place[], run: Run) {
   const prospects = places.filter(p => p.classification === 'PROSPECT')
-  const rows = prospects.map((p, i) => [
-    i + 1, p.name, p.score ?? '', p.address,
-    p.rating ?? '', p.review_count,
-    p.website ?? '—',
-    p.instagram_url ?? (p.has_instagram ? 'Oui' : '—'),
-    p.website_quality ?? '—',
-    p.services?.join(', ') ?? '—',
-    p.summary ?? '—',
-    p.maps_url,
-  ])
-  const header = ['N°', 'Établissement', 'Score /100', 'Adresse', 'Note', 'Avis', 'Site web', 'Instagram', 'Qualité site', 'Services recommandés', 'Analyse IA', 'Google Maps']
-  const title  = [`STUDIO QUARTIER — ${run.neighborhood} · ${run.category}`, ...Array(11).fill('')]
-  const date   = [new Date(run.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }), ...Array(11).fill('')]
-  const ws = XLSX.utils.aoa_to_sheet([title, date, [], header, ...rows])
-  ws['!cols'] = [
-    { wch: 4 }, { wch: 28 }, { wch: 10 }, { wch: 36 }, { wch: 6 }, { wch: 7 },
-    { wch: 30 }, { wch: 28 }, { wch: 14 }, { wch: 40 }, { wch: 55 }, { wch: 20 },
-  ]
-  const wb = XLSX.utils.book_new()
-  XLSX.utils.book_append_sheet(wb, ws, 'Prospects')
-  const buf  = XLSX.write(wb, { bookType: 'xlsx', type: 'array' })
-  const blob = new Blob([buf], { type: 'application/octet-stream' })
+  const res  = await fetch('/api/sq/export', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ places: prospects, neighborhood: run.neighborhood, category: run.category }),
+  })
+  const blob = await res.blob()
   const url  = URL.createObjectURL(blob)
   const a    = document.createElement('a')
   a.href     = url
@@ -98,6 +88,7 @@ export default function HistoriquePage() {
   const [selectedRun,   setSelectedRun]   = useState<Run | null>(null)
   const [places,        setPlaces]        = useState<Place[]>([])
   const [loadingRuns,   setLoadingRuns]   = useState(true)
+  const [detailView,    setDetailView]    = useState<'table' | 'map'>('table')
   const [loadingPlaces, setLoadingPlaces] = useState(false)
 
   useEffect(() => {
@@ -229,16 +220,21 @@ export default function HistoriquePage() {
                 <div style={{ height: '0.5px', background: C.ink, marginTop: 10 }} />
               </div>
               {prospects.length > 0 && !loadingPlaces && (
-                <button
-                  onClick={() => exportExcel(places, selectedRun)}
-                  style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px 18px', border: `0.5px solid ${C.ink}`, borderRadius: 0, background: 'transparent', color: C.ink, cursor: 'pointer' }}
-                >
-                  <span style={{ fontFamily: sans, fontSize: 10, letterSpacing: '0.1em', color: C.muted }}>02</span>
-                  <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.28em', fontSize: 10, whiteSpace: 'nowrap' }}>
-                    Excel · {prospects.length} prospect{prospects.length > 1 ? 's' : ''}
-                  </span>
-                  <span>↓</span>
-                </button>
+                <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                  {/* View toggle */}
+                  <div style={{ display: 'flex', gap: 0 }}>
+                    {(['table', 'map'] as const).map((v, idx) => (
+                      <button key={v} onClick={() => setDetailView(v)}
+                        style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.18em', fontSize: 9, padding: '6px 14px', border: `0.5px solid ${C.ink}`, borderLeft: idx === 1 ? 'none' : `0.5px solid ${C.ink}`, background: detailView === v ? C.ink : 'transparent', color: detailView === v ? C.paper : C.muted, cursor: 'pointer', borderRadius: 0 }}>
+                        {v === 'table' ? 'Liste' : 'Carte'}
+                      </button>
+                    ))}
+                  </div>
+                  <button onClick={() => exportExcel(places, selectedRun)}
+                    style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '6px 14px', border: `0.5px solid ${C.ink}`, borderRadius: 0, background: 'transparent', color: C.ink, cursor: 'pointer' }}>
+                    <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 9, whiteSpace: 'nowrap' }}>Excel ↓</span>
+                  </button>
+                </div>
               )}
             </div>
 
@@ -250,7 +246,29 @@ export default function HistoriquePage() {
               <p style={{ fontFamily: sans, fontSize: 13, color: C.muted }}>Aucun prospect trouvé dans cette recherche.</p>
             )}
 
-            {!loadingPlaces && prospects.length > 0 && (
+            {/* Map view */}
+            {!loadingPlaces && detailView === 'map' && prospects.length > 0 && (() => {
+              const markers: MapMarker[] = prospects
+                .filter(p => p.lat && p.lng)
+                .map(p => ({
+                  place_id: p.place_id,
+                  name:     p.name,
+                  lat:      p.lat!,
+                  lng:      p.lng!,
+                  score:    p.score ?? 0,
+                  services: p.services ?? [],
+                  summary:  p.summary ?? '',
+                  maps_url: p.maps_url ?? '',
+                  website:  p.website,
+                }))
+              return (
+                <div style={{ border: `0.5px solid ${C.ink}`, marginBottom: 40 }}>
+                  <ProspectMap markers={markers} center={[markers[0]?.lat ?? 48.86, markers[0]?.lng ?? 2.35]} />
+                </div>
+              )
+            })()}
+
+            {!loadingPlaces && detailView === 'table' && prospects.length > 0 && (
               <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead>
@@ -305,7 +323,7 @@ export default function HistoriquePage() {
                           <td style={{ ...td, color: C.muted, fontSize: 12, maxWidth: 200 }}>{p.address}</td>
 
                           <td style={td}>
-                            <a href={p.maps_url} target="_blank" rel="noopener noreferrer"
+                            <a href={p.maps_url ?? '#'} target="_blank" rel="noopener noreferrer"
                               style={{ color: C.ink, textTransform: 'uppercase', letterSpacing: '0.12em', fontSize: 10, textDecoration: 'none' }}>
                               Maps ↗
                             </a>
