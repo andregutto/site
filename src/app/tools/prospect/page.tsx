@@ -38,28 +38,28 @@ const NEIGHBORHOODS = [
 
 const CATEGORY_GROUPS = [
   {
-    group: 'Comércio & Restauração',
+    group: 'Restauration',
     items: [
-      { label: 'Restaurant',         type: 'restaurant' },
-      { label: 'Bistro / Brasserie', type: 'restaurant', keyword: 'bistro' },
-      { label: 'Boulangerie',        type: 'bakery' },
-      { label: 'Pâtisserie',         type: 'bakery', keyword: 'patisserie' },
-      { label: 'Café',               type: 'cafe' },
-      { label: 'Bar',                type: 'bar' },
-      { label: 'Épicerie fine',      type: 'grocery_or_supermarket', keyword: 'épicerie' },
-      { label: 'Commerce de mode',   type: 'clothing_store' },
-      { label: 'Fleuriste',          type: 'florist' },
+      { label: 'Restaurant',             type: 'restaurant' },
+      { label: 'Boulangerie / Pâtisserie', type: 'bakery' },
+      { label: 'Café',                   type: 'cafe' },
+      { label: 'Bar',                    type: 'bar' },
+    ],
+  },
+  {
+    group: 'Comércio',
+    items: [
+      { label: 'Fleuriste',              type: 'florist' },
+      { label: 'Mode',                   type: 'clothing_store' },
+      { label: 'Épicerie / Supérette',   type: 'grocery_or_supermarket' },
     ],
   },
   {
     group: 'Estética & Bem-estar',
     items: [
-      { label: 'Institut de beauté',      type: 'beauty_salon', keyword: 'institut de beauté' },
-      { label: 'Spa & bien-être',         type: 'spa',          keyword: 'spa bien-être Paris' },
-      { label: 'Épilation & soins corps', type: 'beauty_salon', keyword: 'épilation laser soins corps' },
-      { label: 'Onglerie & nail art',     type: 'beauty_salon', keyword: 'onglerie nail art' },
-      { label: 'Massage & relaxation',    type: 'spa',          keyword: 'massage relaxation' },
-      { label: 'Coiffeur indépendant',    type: 'hair_care',    keyword: 'coiffeur salon de coiffure' },
+      { label: 'Beauté',                 type: 'beauty_salon' },
+      { label: 'Coiffeur',               type: 'hair_care' },
+      { label: 'Spa & Massage',          type: 'spa' },
     ],
   },
 ]
@@ -283,7 +283,6 @@ export default function ProspectPage() {
       const pairs = selectedNeighborhoods.flatMap(nbItem => selectedCategories.map(catItem => ({ nbItem, catItem })))
       const fetches = pairs.map(async ({ nbItem, catItem }) => {
         const params = new URLSearchParams({ lat: String(nbItem.lat), lng: String(nbItem.lng), radius: String(radius), type: catItem.type, maxResults: String(maxResults) })
-        if ('keyword' in catItem && catItem.keyword) params.set('keyword', catItem.keyword)
         const res  = await fetch(`/api/sq/search?${params}`)
         const data = await res.json()
         if (!res.ok) throw new Error(data.error || data.message || t('error_label'))
