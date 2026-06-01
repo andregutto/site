@@ -2,14 +2,11 @@
 
 import { useState, useEffect } from 'react'
 import dynamic from 'next/dynamic'
-import { Barlow_Condensed } from 'next/font/google'
 import type { MapMarker } from '../_Map'
 import { useTranslation } from '@/lib/i18n'
-import { LangSwitcher } from '@/components/sq/LangSwitcher'
+import { SQHeader } from '@/components/sq/SQHeader'
 
 const ProspectMap = dynamic(() => import('../_Map'), { ssr: false })
-
-const barlow = Barlow_Condensed({ weight: ['900'], subsets: ['latin'] })
 
 const C = { paper: '#FDFAF5', ink: '#1C1917', warm: '#F4F0E6', muted: '#6B6760' }
 const sans = 'Arial, "Helvetica Neue", Helvetica, sans-serif'
@@ -59,7 +56,7 @@ function scoreColor(score: number) {
 function ScoreBadge({ score }: { score: number }) {
   const { bg, fg } = scoreColor(score)
   return (
-    <span style={{ display: 'inline-block', background: bg, color: fg, border: `0.5px solid ${bg === C.paper ? C.muted : bg}`, fontFamily: sans, fontSize: 11, padding: '3px 8px', minWidth: 36, textAlign: 'center' }}>
+    <span style={{ display: 'inline-block', background: bg, color: fg, border: `0.5px solid ${bg === C.paper ? C.muted : bg}`, fontFamily: sans, fontSize: 12, fontWeight: 600, padding: '3px 8px', minWidth: 36, textAlign: 'center' }}>
       {score}
     </span>
   )
@@ -119,43 +116,16 @@ export default function HistoriquePage() {
   return (
     <div style={{ background: C.paper, minHeight: '100vh', fontFamily: sans, color: C.ink }}>
 
-      {/* ── Header ── */}
-      <header style={{ background: C.paper }}>
-        <div style={{ maxWidth: 1300, margin: '0 auto', padding: '48px 48px 36px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
-          <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-            <span style={{ fontFamily: sans, letterSpacing: '0.6em', fontSize: 13, color: C.muted, marginLeft: 2 }}>{t('studio')}</span>
-            <span className={barlow.className} style={{ fontWeight: 900, textTransform: 'uppercase', letterSpacing: '-0.02em', fontSize: 52, lineHeight: 0.9, color: C.ink, marginTop: -2 }}>
-              {t('quartier')}
-            </span>
-            <div style={{ width: '100%', height: '0.5px', background: C.ink, margin: '6px 0 4px' }} />
-            <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 10, color: C.muted }}>{t('tagline')}</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 20, paddingBottom: 4 }}>
-            <LangSwitcher />
-            <a href="/tools"
-              style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 10, color: C.muted, textDecoration: 'none' }}>
-              {t('nav_hub')}
-            </a>
-            <a href="/tools/prospect"
-              style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 10, color: C.muted, textDecoration: 'none' }}>
-              {t('nav_new_search')}
-            </a>
-            <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 10, color: C.muted }}>
-              {t('internal_tool')}
-            </span>
-          </div>
-        </div>
-        <div style={{ height: '0.5px', background: C.ink, marginLeft: 48, marginRight: 48 }} />
-      </header>
+      <SQHeader links={[{ href: '/tools/prospect', label: t('nav_new_search') }]} badge={t('section_history').split(' · ')[0]} />
 
       <main style={{ maxWidth: 1300, margin: '0 auto', padding: '48px 48px 96px' }}>
 
         {/* Section label */}
         <div style={{ marginBottom: 40 }}>
-          <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 10, color: C.muted }}>
+          <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.14em', fontSize: 12, color: C.ink }}>
             {t('section_history')} · {runs.length} {runs.length !== 1 ? t('history_count_plural') : t('history_count_singular')}
           </span>
-          <div style={{ height: '0.5px', background: C.ink, marginTop: 12 }} />
+          <div style={{ height: '0.5px', background: C.ink, marginTop: 14 }} />
         </div>
 
         {/* ── Runs table ── */}
@@ -176,7 +146,7 @@ export default function HistoriquePage() {
               <thead>
                 <tr style={{ background: C.warm }}>
                   {(['th_num', 'th_date', 'th_neighborhood', 'th_category', 'th_radius', 'th_prospects', 'th_filtered', ''] as const).map((h, i) => (
-                    <th key={i} style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.18em', fontSize: 9, color: C.muted, fontWeight: 400, padding: '10px 14px', textAlign: 'left', borderBottom: `0.5px solid ${C.ink}`, whiteSpace: 'nowrap' }}>
+                    <th key={i} style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.14em', fontSize: 10, color: C.ink, fontWeight: 500, padding: '10px 14px', textAlign: 'left', borderBottom: `0.5px solid ${C.ink}`, whiteSpace: 'nowrap' }}>
                       {h === '' ? '' : t(h)}
                     </th>
                   ))}
@@ -222,7 +192,7 @@ export default function HistoriquePage() {
             {/* Detail header */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
               <div>
-                <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 10, color: C.muted }}>
+                <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.14em', fontSize: 12, color: C.ink }}>
                   {selectedRun.neighborhood} · {selectedRun.category} · {new Date(selectedRun.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
                 </span>
                 <div style={{ height: '0.5px', background: C.ink, marginTop: 10 }} />
@@ -282,7 +252,7 @@ export default function HistoriquePage() {
                   <thead>
                     <tr style={{ background: C.warm }}>
                       {(['th_num', 'th_score', 'th_business', 'th_rating', 'th_web_ig', 'th_site_quality', 'th_services', 'th_address', 'th_maps'] as const).map(h => (
-                        <th key={h} style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.18em', fontSize: 9, color: C.muted, fontWeight: 400, padding: '10px 14px', textAlign: 'left', borderBottom: `0.5px solid ${C.ink}`, whiteSpace: 'nowrap' }}>
+                        <th key={h} style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.14em', fontSize: 10, color: C.ink, fontWeight: 500, padding: '10px 14px', textAlign: 'left', borderBottom: `0.5px solid ${C.ink}`, whiteSpace: 'nowrap' }}>
                           {t(h)}
                         </th>
                       ))}

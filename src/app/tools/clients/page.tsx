@@ -1,11 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Barlow_Condensed } from 'next/font/google'
 import { useTranslation } from '@/lib/i18n'
-import { LangSwitcher } from '@/components/sq/LangSwitcher'
+import { SQHeader } from '@/components/sq/SQHeader'
 
-const barlow = Barlow_Condensed({ weight: ['900'], subsets: ['latin'] })
 const C = { paper: '#FDFAF5', ink: '#1C1917', warm: '#F4F0E6', muted: '#6B6760' }
 const sans = 'Arial, "Helvetica Neue", Helvetica, sans-serif'
 
@@ -43,7 +41,7 @@ function ScoreDot({ score }: { score: number | null }) {
   const bg = score >= 75 ? C.ink : score >= 55 ? '#3D3028' : score >= 35 ? C.warm : C.paper
   const fg = score >= 35 ? C.paper : C.muted
   return (
-    <span style={{ display: 'inline-block', background: bg, color: fg, border: `0.5px solid ${bg === C.paper ? C.muted : bg}`, fontFamily: sans, fontSize: 11, padding: '2px 7px', minWidth: 30, textAlign: 'center' }}>
+    <span style={{ display: 'inline-block', background: bg, color: fg, border: `0.5px solid ${bg === C.paper ? C.muted : bg}`, fontFamily: sans, fontSize: 12, fontWeight: 600, padding: '2px 7px', minWidth: 30, textAlign: 'center' }}>
       {score}
     </span>
   )
@@ -100,37 +98,20 @@ export default function ClientsPage() {
   return (
     <div style={{ background: C.paper, minHeight: '100vh', fontFamily: sans, color: C.ink }}>
 
-      {/* ── Header ── */}
-      <header style={{ background: C.paper }}>
-        <div style={{ maxWidth: 1300, margin: '0 auto', padding: '48px 48px 36px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
-          <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-            <span style={{ fontFamily: sans, letterSpacing: '0.6em', fontSize: 13, color: C.muted, marginLeft: 2 }}>{t('studio')}</span>
-            <span className={barlow.className} style={{ fontWeight: 900, textTransform: 'uppercase', letterSpacing: '-0.02em', fontSize: 52, lineHeight: 0.9, color: C.ink, marginTop: -2 }}>{t('quartier')}</span>
-            <div style={{ width: '100%', height: '0.5px', background: C.ink, margin: '6px 0 4px' }} />
-            <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 10, color: C.muted }}>{t('tagline')}</span>
-          </div>
-          <div style={{ display: 'flex', gap: 20, alignItems: 'center', paddingBottom: 4 }}>
-            <LangSwitcher />
-            <a href="/tools" style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 10, color: C.muted, textDecoration: 'none' }}>{t('nav_hub')}</a>
-            <a href="/tools/prospect" style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 10, color: C.muted, textDecoration: 'none' }}>{t('nav_prospection')}</a>
-            <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 10, color: C.muted }}>CRM</span>
-          </div>
-        </div>
-        <div style={{ height: '0.5px', background: C.ink, marginLeft: 48, marginRight: 48 }} />
-      </header>
+      <SQHeader links={[{ href: '/tools/prospect', label: t('nav_prospection') }]} badge="CRM" />
 
       <main style={{ maxWidth: 1300, margin: '0 auto', padding: '48px 48px 96px' }}>
 
         {/* Section + stats */}
         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 40 }}>
           <div>
-            <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 10, color: C.muted }}>
+            <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.14em', fontSize: 12, color: C.ink }}>
               {t('section_clients')}
             </span>
-            <div style={{ height: '0.5px', background: C.ink, marginTop: 12, width: '100%' }} />
+            <div style={{ height: '0.5px', background: C.ink, marginTop: 14, width: '100%' }} />
           </div>
           {totalRevenue > 0 && (
-            <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.18em', fontSize: 10, color: C.muted }}>
+            <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.14em', fontSize: 12, color: C.ink }}>
               {t('mrr_label')} · {totalRevenue.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}
             </span>
           )}
@@ -141,12 +122,12 @@ export default function ClientsPage() {
           {STATUSES.map((s, i) => (
             <button key={s.key} onClick={() => setTab(s.key)}
               style={{
-                fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.18em', fontSize: 9,
+                fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.14em', fontSize: 11,
                 padding: '8px 14px',
                 border: `0.5px solid ${C.ink}`,
                 borderLeft: i === 0 ? `0.5px solid ${C.ink}` : 'none',
                 background: tab === s.key ? C.ink : 'transparent',
-                color: tab === s.key ? C.paper : C.muted,
+                color: tab === s.key ? C.paper : C.ink,
                 cursor: 'pointer', borderRadius: 0,
               }}>
               {s.label}
@@ -172,7 +153,7 @@ export default function ClientsPage() {
               <thead>
                 <tr style={{ background: C.warm }}>
                   {(['th_num', 'th_business', 'th_status', 'th_score', 'th_category', 'th_contact', 'th_services_active', 'th_monthly_value', 'th_priority', 'th_added_on', ''] as const).map((h, i) => (
-                    <th key={i} style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.18em', fontSize: 9, color: C.muted, fontWeight: 400, padding: '10px 14px', textAlign: 'left', borderBottom: `0.5px solid ${C.ink}`, whiteSpace: 'nowrap' }}>
+                    <th key={i} style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.14em', fontSize: 10, color: C.ink, fontWeight: 500, padding: '10px 14px', textAlign: 'left', borderBottom: `0.5px solid ${C.ink}`, whiteSpace: 'nowrap' }}>
                       {h === '' ? '' : t(h)}
                     </th>
                   ))}
@@ -186,7 +167,7 @@ export default function ClientsPage() {
                       <td style={{ ...td, color: C.muted, fontSize: 10 }}>{i + 1}</td>
                       <td style={{ ...td, fontWeight: 500, maxWidth: 200 }}>{c.name}</td>
                       <td style={td}>
-                        <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.18em', fontSize: 9, padding: '3px 8px', border: `0.5px solid ${C.ink}`, whiteSpace: 'nowrap' }}>
+                        <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.12em', fontSize: 10, padding: '3px 8px', border: `0.5px solid ${C.ink}`, whiteSpace: 'nowrap' }}>
                           {STATUS_LABEL[c.status] ?? c.status}
                         </span>
                       </td>
@@ -216,12 +197,12 @@ export default function ClientsPage() {
                       <td style={{ ...td, whiteSpace: 'nowrap' }}>
                         <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
                           <a href={`/tools/clients/${c.id}`}
-                            style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.18em', fontSize: 10, color: C.ink, textDecoration: 'none' }}>
+                            style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.14em', fontSize: 11, color: C.ink, textDecoration: 'none', borderBottom: `1px solid ${C.ink}`, paddingBottom: 1 }}>
                             {t('btn_dossier')}
                           </a>
                           <button
                             onClick={() => deleteClient(c.id, c.name)}
-                            style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.18em', fontSize: 9, color: C.muted, background: 'transparent', border: 'none', cursor: 'pointer', padding: 0 }}>
+                            style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.14em', fontSize: 10, color: C.muted, background: 'transparent', border: 'none', cursor: 'pointer', padding: 0 }}>
                             {t('btn_delete')}
                           </button>
                         </div>

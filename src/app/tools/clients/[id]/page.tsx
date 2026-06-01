@@ -3,7 +3,7 @@
 import { useState, useEffect, use } from 'react'
 import { Barlow_Condensed } from 'next/font/google'
 import { useTranslation } from '@/lib/i18n'
-import { LangSwitcher } from '@/components/sq/LangSwitcher'
+import { SQHeader } from '@/components/sq/SQHeader'
 
 const barlow = Barlow_Condensed({ weight: ['900'], subsets: ['latin'] })
 const C = { paper: '#FDFAF5', ink: '#1C1917', warm: '#F4F0E6', muted: '#6B6760' }
@@ -163,23 +163,7 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
   return (
     <div style={{ background: C.paper, minHeight: '100vh', fontFamily: sans, color: C.ink }}>
 
-      {/* ── Header ── */}
-      <header style={{ background: C.paper }}>
-        <div style={{ maxWidth: 1300, margin: '0 auto', padding: '48px 48px 36px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
-          <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-            <span style={{ fontFamily: sans, letterSpacing: '0.6em', fontSize: 13, color: C.muted, marginLeft: 2 }}>{t('studio')}</span>
-            <span className={barlow.className} style={{ fontWeight: 900, textTransform: 'uppercase', letterSpacing: '-0.02em', fontSize: 52, lineHeight: 0.9, color: C.ink, marginTop: -2 }}>{t('quartier')}</span>
-            <div style={{ width: '100%', height: '0.5px', background: C.ink, margin: '6px 0 4px' }} />
-            <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 10, color: C.muted }}>{t('tagline')}</span>
-          </div>
-          <div style={{ display: 'flex', gap: 20, alignItems: 'center', paddingBottom: 4 }}>
-            <LangSwitcher />
-            <a href="/tools/clients" style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 10, color: C.muted, textDecoration: 'none' }}>{t('nav_clients')}</a>
-            <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 10, color: C.muted }}>{t('section_dossier')}</span>
-          </div>
-        </div>
-        <div style={{ height: '0.5px', background: C.ink, marginLeft: 48, marginRight: 48 }} />
-      </header>
+      <SQHeader links={[{ href: '/tools/clients', label: t('nav_clients') }]} badge={t('section_dossier')} />
 
       <main style={{ maxWidth: 1300, margin: '0 auto', padding: '48px 48px 96px' }}>
 
@@ -196,11 +180,11 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
             </div>
             {/* Priority */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'flex-end' }}>
-              <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.2em', fontSize: 9, color: C.muted }}>{t('priority')}</span>
+              <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.14em', fontSize: 11, color: C.ink }}>{t('priority')}</span>
               <div style={{ display: 'flex', gap: 0 }}>
                 {[1, 2, 3].map(p => (
                   <button key={p} onClick={() => patchClient({ priority: p })}
-                    style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.16em', fontSize: 9, padding: '5px 10px', border: `0.5px solid ${C.ink}`, borderLeft: p === 1 ? `0.5px solid ${C.ink}` : 'none', background: client.priority === p ? C.ink : 'transparent', color: client.priority === p ? C.paper : C.muted, cursor: 'pointer', borderRadius: 0 }}>
+                    style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.14em', fontSize: 11, padding: '6px 12px', border: `0.5px solid ${C.ink}`, borderLeft: p === 1 ? `0.5px solid ${C.ink}` : 'none', background: client.priority === p ? C.ink : 'transparent', color: client.priority === p ? C.paper : C.ink, cursor: 'pointer', borderRadius: 0 }}>
                     {p === 1 ? t('priority_high') : p === 2 ? t('priority_normal') : t('priority_low')}
                   </button>
                 ))}
@@ -213,12 +197,12 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
             {STATUSES.map((s, i) => (
               <button key={s.key} onClick={() => changeStatus(s.key)}
                 style={{
-                  fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.16em', fontSize: 9,
-                  padding: '8px 12px', borderRadius: 0, cursor: 'pointer',
+                  fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.14em', fontSize: 11,
+                  padding: '8px 14px', borderRadius: 0, cursor: 'pointer',
                   border: `0.5px solid ${C.ink}`,
                   borderLeft: i === 0 ? `0.5px solid ${C.ink}` : 'none',
                   background: client.status === s.key ? C.ink : 'transparent',
-                  color: client.status === s.key ? C.paper : C.muted,
+                  color: client.status === s.key ? C.paper : C.ink,
                 }}>
                 {s.label}
               </button>
@@ -235,7 +219,7 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
 
             {/* Contact */}
             <div style={{ marginBottom: 40 }}>
-              <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 9, color: C.muted }}>{t('section_contact')}</span>
+              <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.14em', fontSize: 11, color: C.ink }}>{t('section_contact')}</span>
               <div style={{ height: '0.5px', background: C.ink, marginTop: 10, marginBottom: 20 }} />
               <EditableField label={t('field_contact_name')}  addLabel={t('editable_add')} editLabel={t('editable_edit')} value={client.contact_name}   onSave={v => patchClient({ contact_name: v })} />
               <EditableField label={t('field_contact_role')}  addLabel={t('editable_add')} editLabel={t('editable_edit')} value={client.contact_role}   onSave={v => patchClient({ contact_role: v })} />
@@ -245,7 +229,7 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
 
             {/* Business */}
             <div style={{ marginBottom: 40 }}>
-              <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 9, color: C.muted }}>{t('section_business')}</span>
+              <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.14em', fontSize: 11, color: C.ink }}>{t('section_business')}</span>
               <div style={{ height: '0.5px', background: C.ink, marginTop: 10, marginBottom: 20 }} />
               <Field label={t('field_phone')}        value={client.phone_business} />
               <Field label={t('field_score_initial')} value={client.score_initial !== null ? `${client.score_initial}/100` : null} />
@@ -270,7 +254,7 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
 
             {/* Services */}
             <div style={{ marginBottom: 40 }}>
-              <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 9, color: C.muted }}>{t('section_services')}</span>
+              <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.14em', fontSize: 11, color: C.ink }}>{t('section_services')}</span>
               <div style={{ height: '0.5px', background: C.ink, marginTop: 10, marginBottom: 20 }} />
               {client.services_suggested?.length ? (
                 <div style={{ marginBottom: 16 }}>
@@ -297,7 +281,7 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
             {/* AI summary */}
             {client.ai_summary && (
               <div style={{ marginBottom: 40 }}>
-                <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 9, color: C.muted }}>{t('section_ai_analysis')}</span>
+                <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.14em', fontSize: 11, color: C.ink }}>{t('section_ai_analysis')}</span>
                 <div style={{ height: '0.5px', background: C.ink, marginTop: 10, marginBottom: 14 }} />
                 <p style={{ fontFamily: sans, fontSize: 13, color: C.muted, lineHeight: 1.7, margin: 0 }}>{client.ai_summary}</p>
               </div>
@@ -305,7 +289,7 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
 
             {/* Notes */}
             <div>
-              <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 9, color: C.muted }}>{t('section_notes')}</span>
+              <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.14em', fontSize: 11, color: C.ink }}>{t('section_notes')}</span>
               <div style={{ height: '0.5px', background: C.ink, marginTop: 10, marginBottom: 14 }} />
               <NotesField
                 value={client.notes}
@@ -319,7 +303,7 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
 
           {/* ── RIGHT: Timeline ── */}
           <div>
-            <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.22em', fontSize: 9, color: C.muted }}>{t('section_activity')}</span>
+            <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.14em', fontSize: 11, color: C.ink }}>{t('section_activity')}</span>
             <div style={{ height: '0.5px', background: C.ink, marginTop: 10, marginBottom: 24 }} />
 
             {/* Add event form */}
@@ -327,7 +311,7 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
               <div style={{ display: 'flex', gap: 0, marginBottom: 14, flexWrap: 'wrap' }}>
                 {EVENT_TYPES.map((type, i) => (
                   <button key={type} onClick={() => setEvtType(type)}
-                    style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.16em', fontSize: 9, padding: '6px 10px', borderRadius: 0, cursor: 'pointer', border: `0.5px solid ${C.ink}`, borderLeft: i === 0 ? `0.5px solid ${C.ink}` : 'none', background: evtType === type ? C.ink : 'transparent', color: evtType === type ? C.paper : C.muted }}>
+                    style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.14em', fontSize: 11, padding: '7px 12px', borderRadius: 0, cursor: 'pointer', border: `0.5px solid ${C.ink}`, borderLeft: i === 0 ? `0.5px solid ${C.ink}` : 'none', background: evtType === type ? C.ink : 'transparent', color: evtType === type ? C.paper : C.ink }}>
                     {type}
                   </button>
                 ))}
