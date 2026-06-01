@@ -151,6 +151,16 @@ Reply with JSON only, no markdown:
     }
   }
 
+  // ── Fetch service catalog ────────────────────────────────────────────────
+  let catalogNames: string[] = []
+  try {
+    const sb2 = getSupabaseSQ()
+    if (sb2) {
+      const { data: svcData } = await sb2.from('sq_services').select('name').eq('is_active', true).order('sort_order')
+      catalogNames = (svcData ?? []).map((s: any) => s.name)
+    }
+  } catch { /* use empty list */ }
+
   const reviewsBlock = reviews_summary.length > 0
     ? reviews_summary.map((r, i) =>
         `Avis ${i + 1} (${r.rating ?? '?'}/5): "${r.text}"${r.replied ? `\n  → Réponse propriétaire: "${r.reply_text ?? ''}"` : '\n  → Aucune réponse'}`
@@ -193,9 +203,13 @@ Règles de score:
 - 0 = déjà très bien géré digitalement
 - Pour review_response_quality: "NONE" = ne répond jamais aux avis, "INCONSISTENT" = répond parfois ou avec des messages génériques/automatiques, "HUMAN" = répond régulièrement de façon personnalisée, chaleureuse et professionnelle
 
-Inclure "Gestion des avis Google (IA)" dans services si review_response_quality est NONE ou INCONSISTENT.
+${catalogNames.length > 0
+  ? `Services disponibles (utiliser UNIQUEMENT ces noms exacts dans le champ "services") :\n${catalogNames.map(n => `- ${n}`).join('\n')}`
+  : 'Proposer les services les plus pertinents pour ce commerce.'}
 
-{"score":0-100,"score_breakdown":{"website":0-100,"social":0-100,"local_seo":0-100,"engagement":0-100},"services":["service1","service2"],"summary":"2-3 phrases en français spécifiques à ce commerce","has_instagram":boolean,"instagram_url":"url ou null","website_quality":"NONE"|"BASIC"|"OUTDATED"|"DECENT"|"GOOD","review_response_quality":"NONE"|"INCONSISTENT"|"HUMAN"}`
+Règle services: maximum 3, choisir uniquement parmi la liste ci-dessus. Toujours inclure "Gestion des avis Google (IA)" si review_response_quality est NONE ou INCONSISTENT.
+
+{"score":0-100,"score_breakdown":{"website":0-100,"social":0-100,"local_seo":0-100,"engagement":0-100},"services":["nom exact du service"],"summary":"2-3 phrases en français spécifiques à ce commerce","has_instagram":boolean,"instagram_url":"url ou null","website_quality":"NONE"|"BASIC"|"OUTDATED"|"DECENT"|"GOOD","review_response_quality":"NONE"|"INCONSISTENT"|"HUMAN"}`
       }]
     })
     const raw = (analysisMsg.content[0] as any).text?.trim() ?? ''
