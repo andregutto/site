@@ -17,34 +17,36 @@ interface Devis {
 const STATUS_LABELS: Record<string, string> = { draft: 'Brouillon', sent: 'Envoyé', accepted: 'Accepté', refused: 'Refusé', expired: 'Expiré' }
 const STATUS_COLORS: Record<string, string> = { draft: C.muted, sent: '#2A42A8', accepted: '#186040', refused: '#8C1A1A', expired: C.muted }
 
-const SERVICE_PRESETS = [
-  { service: 'Site web vitrine',              description: 'Création d\'un site web professionnel, mobile-first, avec formulaire de contact et intégration Google Maps.',  price_monthly: 80,  price_setup: 600 },
-  { service: 'Gestion Instagram',             description: 'Création de contenu, 8 posts/mois + stories, calendrier éditorial, suivi des statistiques.',                   price_monthly: 250, price_setup: 0   },
-  { service: 'Référencement local (SEO)',      description: 'Optimisation Google Business Profile, gestion des avis, citations locales, rapport mensuel.',                  price_monthly: 120, price_setup: 0   },
-  { service: 'Gestion des avis Google (IA)',  description: 'Réponses personnalisées à tous les avis Google — professionnelles, chaleureuses, automatisées par IA.',        price_monthly: 80,  price_setup: 0   },
-  { service: 'Email marketing',               description: 'Newsletter mensuelle, base clients, design et envoi.',                                                         price_monthly: 120, price_setup: 0   },
-  { service: 'Pack complet',                  description: 'Site web + Instagram + Référencement local + Avis Google.',                                                    price_monthly: 490, price_setup: 600 },
-]
+interface CatalogService { id: string; name: string; description: string; price_monthly: number; price_setup: number }
 
 export default function DevisPage({ params }: { params: Promise<{ id: string; devisId: string }> }) {
   const { id, devisId } = use(params)
-  const [devis,   setDevis]   = useState<Devis | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [mode,    setMode]    = useState<'edit' | 'preview'>('edit')
-  const [saving,  setSaving]  = useState(false)
+  const [devis,    setDevis]    = useState<Devis | null>(null)
+  const [catalog,  setCatalog]  = useState<CatalogService[]>([])
+  const [loading,  setLoading]  = useState(true)
+  const [mode,     setMode]     = useState<'edit' | 'preview'>('edit')
+  const [saving,   setSaving]   = useState(false)
 
   useEffect(() => {
     Promise.all([
       fetch(`/api/sq/devis/${devisId}`).then(r => r.json()),
       fetch(`/api/sq/clients/${id}`).then(r => r.json()),
-    ]).then(([devisData, clientData]) => {
+      fetch('/api/sq/services').then(r => r.json()),
+    ]).then(([devisData, clientData, servicesData]) => {
+      const catalogItems: CatalogService[] = (servicesData.services ?? []).filter((s: any) => s.is_active)
+      setCatalog(catalogItems)
       setDevis(devisData.devis)
       // Auto-populate from suggested services if devis is new and empty
       if (devisData.devis && devisData.devis.items?.length === 0 && clientData.client?.services_suggested?.length > 0) {
         const suggested: string[] = clientData.client.services_suggested
         const matched = suggested.flatMap((s: string) => {
-          const preset = SERVICE_PRESETS.find(p => p.service.toLowerCase().includes(s.toLowerCase().split(' ')[0]) || s.toLowerCase().includes(p.service.toLowerCase().split(' ')[0]))
-          return preset ? [{ id: crypto.randomUUID(), ...preset }] : [{ id: crypto.randomUUID(), service: s, description: '', price_monthly: 0, price_setup: 0 }]
+          const catalog = catalogItems.find((c: CatalogService) =>
+            c.name.toLowerCase().includes(s.toLowerCase().split(' ')[0]) ||
+            s.toLowerCase().includes(c.name.toLowerCase().split(' ')[0])
+          )
+          return catalog
+            ? [{ id: crypto.randomUUID(), service: catalog.name, description: catalog.description, price_monthly: catalog.price_monthly, price_setup: catalog.price_setup }]
+            : [{ id: crypto.randomUUID(), service: s, description: '', price_monthly: 0, price_setup: 0 }]
         })
         if (matched.length > 0) {
           const updated = { ...devisData.devis, items: matched }
@@ -70,7 +72,7 @@ export default function DevisPage({ params }: { params: Promise<{ id: string; de
     save({ items })
   }
 
-  function addPreset(preset: typeof SERVICE_PRESETS[0]) {
+  function addPreset(preset: { service: string; description: string; price_monthly: number; price_setup: number }) {
     if (!devis) return
     const item: DevisItem = { id: crypto.randomUUID(), ...preset }
     save({ items: [...devis.items, item] })
@@ -186,8 +188,11 @@ export default function DevisPage({ params }: { params: Promise<{ id: string; de
                 )}
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   <button onClick={addBlank} style={{ fontFamily: sans, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.1em', padding: '7px 14px', border: `0.5px solid ${C.ink}`, background: 'transparent', color: C.ink, cursor: 'pointer', borderRadius: 0 }}>+ Ligne vide</button>
-                  {SERVICE_PRESETS.map(p => (
-                    <button key={p.service} onClick={() => addPreset(p)} style={{ fontFamily: sans, fontSize: 11, padding: '7px 14px', border: `0.5px solid ${C.muted}`, background: 'transparent', color: C.muted, cursor: 'pointer', borderRadius: 0 }}>+ {p.service}</button>
+                  {catalog.map(c => (
+                    <button key={c.id} onClick={() => addPreset({ service: c.name, description: c.description, price_monthly: c.price_monthly, price_setup: c.price_setup })}
+                      style={{ fontFamily: sans, fontSize: 11, padding: '7px 14px', border: `0.5px solid ${C.muted}`, background: 'transparent', color: C.muted, cursor: 'pointer', borderRadius: 0 }}>
+                      + {c.name}
+                    </button>
                   ))}
                 </div>
               </div>

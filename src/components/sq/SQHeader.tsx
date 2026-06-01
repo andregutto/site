@@ -12,6 +12,7 @@ const NAV = [
   { href: '/tools/prospect/historique', label: 'Historique',  match: (p: string) => p.startsWith('/tools/prospect/historique') },
   { href: '/tools/prospect',            label: 'Prospection', match: (p: string) => p.startsWith('/tools/prospect') && !p.includes('historique') },
   { href: '/tools/clients',             label: 'CRM',         match: (p: string) => p.startsWith('/tools/clients') },
+  { href: '/tools/services',            label: 'Services',    match: (p: string) => p.startsWith('/tools/services') },
 ]
 
 export function SQHeader() {
