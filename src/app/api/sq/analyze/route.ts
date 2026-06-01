@@ -4,19 +4,22 @@ import { getSupabaseSQ } from '@/lib/supabase-sq'
 
 const CACHE_DAYS = 30
 
+interface ReviewSummary { rating: number | null; text: string; replied: boolean; reply_text?: string }
+
 interface AnalyzeBody {
-  place_id:     string
-  name:         string
-  address:      string
-  lat:          number
-  lng:          number
-  google_types: string[]
-  rating:       number | null
-  review_count: number
-  website:      string | null
-  phone:        string | null
-  maps_url:     string
-  run_id?:      string
+  place_id:        string
+  name:            string
+  address:         string
+  lat:             number
+  lng:             number
+  google_types:    string[]
+  rating:          number | null
+  review_count:    number
+  website:         string | null
+  phone:           string | null
+  maps_url:        string
+  reviews_summary: ReviewSummary[]
+  run_id?:         string
 }
 
 // ── Website fetch ─────────────────────────────────────────────────────────────
@@ -55,7 +58,7 @@ function extractInstagram(html: string): string | null {
 
 export async function POST(req: NextRequest) {
   const body: AnalyzeBody = await req.json()
-  const { place_id, name, address, lat, lng, google_types, rating, review_count, website, phone, maps_url, run_id } = body
+  const { place_id, name, address, lat, lng, google_types, rating, review_count, website, phone, maps_url, reviews_summary = [], run_id } = body
 
   if (!process.env.ANTHROPIC_API_KEY) {
     return NextResponse.json({ error: 'ANTHROPIC_API_KEY non configurée — ajoutez-la dans .env.local' }, { status: 503 })
@@ -148,12 +151,19 @@ Reply with JSON only, no markdown:
     }
   }
 
+  const reviewsBlock = reviews_summary.length > 0
+    ? reviews_summary.map((r, i) =>
+        `Avis ${i + 1} (${r.rating ?? '?'}/5): "${r.text}"${r.replied ? `\n  → Réponse propriétaire: "${r.reply_text ?? ''}"` : '\n  → Aucune réponse'}`
+      ).join('\n')
+    : 'Aucun avis disponible'
+
   let score = 50
   let score_breakdown = { website: 50, social: 50, local_seo: 50, engagement: 50 }
   let services: string[] = []
   let summary = ''
   let has_instagram = !!instagramUrl
   let website_quality: string = website ? 'BASIC' : 'NONE'
+  let review_response_quality: string = 'NONE'
 
   try {
     const analysisMsg = await anthropic.messages.create({
@@ -175,9 +185,17 @@ Site web: ${website || 'AUCUN'}
 ${instagramUrl ? `Instagram détecté: ${instagramUrl}` : 'Instagram: non détecté sur le site'}
 ${websiteText ? `\nContenu site (extrait):\n${websiteText.slice(0, 2000)}` : ''}
 
-Règle de score: 100 = présence digitale quasi inexistante + fort potentiel pour nos services. 0 = déjà très bien géré digitalement.
+Avis Google récents (${reviews_summary.length} disponibles):
+${reviewsBlock}
 
-{"score":0-100,"score_breakdown":{"website":0-100,"social":0-100,"local_seo":0-100,"engagement":0-100},"services":["service1","service2"],"summary":"2-3 phrases en français spécifiques à ce commerce","has_instagram":boolean,"instagram_url":"url ou null","website_quality":"NONE"|"BASIC"|"OUTDATED"|"DECENT"|"GOOD"}`
+Règles de score:
+- 100 = présence digitale quasi inexistante + fort potentiel pour nos services
+- 0 = déjà très bien géré digitalement
+- Pour review_response_quality: "NONE" = ne répond jamais aux avis, "INCONSISTENT" = répond parfois ou avec des messages génériques/automatiques, "HUMAN" = répond régulièrement de façon personnalisée, chaleureuse et professionnelle
+
+Inclure "Gestion des avis Google (IA)" dans services si review_response_quality est NONE ou INCONSISTENT.
+
+{"score":0-100,"score_breakdown":{"website":0-100,"social":0-100,"local_seo":0-100,"engagement":0-100},"services":["service1","service2"],"summary":"2-3 phrases en français spécifiques à ce commerce","has_instagram":boolean,"instagram_url":"url ou null","website_quality":"NONE"|"BASIC"|"OUTDATED"|"DECENT"|"GOOD","review_response_quality":"NONE"|"INCONSISTENT"|"HUMAN"}`
       }]
     })
     const raw = (analysisMsg.content[0] as any).text?.trim() ?? ''
@@ -187,9 +205,10 @@ Règle de score: 100 = présence digitale quasi inexistante + fort potentiel pou
     score_breakdown  = parsed.score_breakdown ?? score_breakdown
     services         = Array.isArray(parsed.services) ? parsed.services.slice(0, 4) : []
     summary          = parsed.summary ?? ''
-    has_instagram    = parsed.has_instagram ?? has_instagram
-    instagramUrl     = parsed.instagram_url ?? instagramUrl
-    website_quality  = parsed.website_quality ?? website_quality
+    has_instagram            = parsed.has_instagram ?? has_instagram
+    instagramUrl             = parsed.instagram_url ?? instagramUrl
+    website_quality          = parsed.website_quality ?? website_quality
+    review_response_quality  = parsed.review_response_quality ?? review_response_quality
   } catch { /* keep defaults */ }
 
   const fullRecord = {
@@ -201,6 +220,7 @@ Règle de score: 100 = présence digitale quasi inexistante + fort potentiel pou
     has_instagram,
     instagram_url: instagramUrl,
     website_quality,
+    review_response_quality,
   }
 
   // ── 5. Save to Supabase ───────────────────────────────────────────────────

@@ -78,6 +78,7 @@ export const fr = {
   th_services: 'Services recommandés',
   th_address: 'Adresse',
   th_actions: 'Actions',
+  th_reviews: 'Avis / Réponses',
   th_maps: 'Maps',
 
   // Table headers — history

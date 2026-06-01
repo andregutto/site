@@ -66,17 +66,20 @@ const CATEGORY_GROUPS = [
 
 const CATEGORIES = CATEGORY_GROUPS.flatMap(g => g.items)
 
+interface ReviewSummary { rating: number | null; text: string; replied: boolean; reply_text?: string }
+
 interface PlaceBasic {
   place_id: string; name: string; address: string; lat: number; lng: number
   rating: number | null; review_count: number; has_website: boolean
   website: string | null; phone: string | null; is_open: boolean | null
-  maps_url: string; google_types: string[]
+  maps_url: string; google_types: string[]; reviews_summary: ReviewSummary[]
 }
 
 interface AnalysisResult {
   classification: 'CHAIN' | 'LARGE' | 'PROSPECT'; class_reason: string
   score?: number; score_breakdown?: { website: number; social: number; local_seo: number; engagement: number }
   services?: string[]; summary?: string; has_instagram?: boolean
+  review_response_quality?: 'NONE' | 'INCONSISTENT' | 'HUMAN'
   instagram_url?: string | null; website_quality?: 'NONE' | 'BASIC' | 'OUTDATED' | 'DECENT' | 'GOOD'
   from_cache?: boolean
 }
@@ -259,7 +262,7 @@ export default function ProspectPage() {
   async function analyzeOne(p: PlaceBasic, runId: string): Promise<AnalysisResult | null> {
     updatePlace(p.place_id, { state: 'loading' })
     try {
-      const res = await fetch('/api/sq/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ place_id: p.place_id, name: p.name, address: p.address, lat: p.lat, lng: p.lng, google_types: p.google_types, rating: p.rating, review_count: p.review_count, website: p.website, phone: p.phone, maps_url: p.maps_url, run_id: runId }) })
+      const res = await fetch('/api/sq/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ place_id: p.place_id, name: p.name, address: p.address, lat: p.lat, lng: p.lng, google_types: p.google_types, rating: p.rating, review_count: p.review_count, website: p.website, phone: p.phone, maps_url: p.maps_url, reviews_summary: p.reviews_summary ?? [], run_id: runId }) })
       const data: AnalysisResult = await res.json()
       if (!res.ok) { updatePlace(p.place_id, { state: 'error', message: (data as any).error ?? t('error_label') }); return null }
       updatePlace(p.place_id, { state: 'done', result: data }); return data
@@ -522,7 +525,7 @@ export default function ProspectPage() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr>
-                  {(['', 'th_num', 'th_score', 'th_business', 'th_rating', 'th_web_ig', 'th_site_quality', 'th_services', 'th_address', 'th_actions'] as const).map((h, i) => (
+                  {(['', 'th_num', 'th_score', 'th_business', 'th_rating', 'th_web_ig', 'th_site_quality', 'th_reviews', 'th_services', 'th_address', 'th_actions'] as const).map((h, i) => (
                     <th key={i} style={thStyle}>{h === '' ? '' : t(h)}</th>
                   ))}
                 </tr>
@@ -550,6 +553,15 @@ export default function ProspectPage() {
                         </div>
                       </td>
                       <td style={{ ...td, fontSize: 12, color: C.muted }}>{r?.website_quality ?? '—'}</td>
+                      <td style={{ ...td, fontSize: 11, whiteSpace: 'nowrap' }}>
+                        {r?.review_response_quality === 'HUMAN'
+                          ? <span style={{ color: '#2d6a4f' }}>✓ Humain</span>
+                          : r?.review_response_quality === 'INCONSISTENT'
+                          ? <span style={{ color: C.ink }}>~ Irrégulier</span>
+                          : r?.review_response_quality === 'NONE'
+                          ? <span style={{ color: C.muted }}>✗ Absent</span>
+                          : <span style={{ color: C.muted }}>—</span>}
+                      </td>
                       <td style={{ ...td, maxWidth: 240, fontSize: 12, color: C.muted }}>
                         {r?.services?.length ? <ul style={{ margin: 0, paddingLeft: 14 }}>{r.services.map(s => <li key={s}>{s}</li>)}</ul> : '—'}
                       </td>

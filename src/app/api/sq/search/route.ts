@@ -9,7 +9,7 @@ export async function GET(req: NextRequest) {
   const radius     = sp.get('radius') || '600'
   const type       = sp.get('type')
   const kw         = sp.get('keyword') || ''
-  const maxResults = Math.min(25, Math.max(1, parseInt(sp.get('maxResults') || '15', 10)))
+  const maxResults = Math.min(60, Math.max(1, parseInt(sp.get('maxResults') || '15', 10)))
 
   if (!lat || !lng || !type) {
     return NextResponse.json({ error: 'lat, lng, type required' }, { status: 400 })
@@ -37,7 +37,7 @@ export async function GET(req: NextRequest) {
     try {
       const detUrl = new URL('https://maps.googleapis.com/maps/api/place/details/json')
       detUrl.searchParams.set('place_id', p.place_id)
-      detUrl.searchParams.set('fields', 'place_id,name,formatted_address,geometry,rating,user_ratings_total,website,formatted_phone_number,opening_hours,types,url')
+      detUrl.searchParams.set('fields', 'place_id,name,formatted_address,geometry,rating,user_ratings_total,website,formatted_phone_number,opening_hours,types,url,reviews')
       detUrl.searchParams.set('language', 'fr')
       detUrl.searchParams.set('key', GKEY)
       const det = await fetch(detUrl.toString()).then(r => r.json())
@@ -56,6 +56,12 @@ export async function GET(req: NextRequest) {
         is_open:      d.opening_hours?.open_now   ?? null,
         maps_url:     d.url || `https://www.google.com/maps/place/?q=place_id:${p.place_id}`,
         google_types: d.types || p.types          || [],
+        reviews_summary: ((d.reviews ?? []) as any[]).slice(0, 5).map((r: any) => ({
+          rating:     r.rating ?? null,
+          text:       (r.text ?? '').slice(0, 300),
+          replied:    !!r.author_reply,
+          reply_text: r.author_reply?.text ? (r.author_reply.text as string).slice(0, 200) : undefined,
+        })),
       }
     } catch {
       return {
@@ -70,8 +76,9 @@ export async function GET(req: NextRequest) {
         website:      null,
         phone:        null,
         is_open:      p.opening_hours?.open_now ?? null,
-        maps_url:     `https://www.google.com/maps/place/?q=place_id:${p.place_id}`,
-        google_types: p.types || [],
+        maps_url:        `https://www.google.com/maps/place/?q=place_id:${p.place_id}`,
+        google_types:    p.types || [],
+        reviews_summary: [],
       }
     }
   }))

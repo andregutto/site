@@ -80,6 +80,7 @@ export const pt: Record<TranslationKey, string> = {
   th_services: 'Serviços recomendados',
   th_address: 'Endereço',
   th_actions: 'Ações',
+  th_reviews: 'Avaliações / Respostas',
   th_maps: 'Maps',
 
   // Table headers — history
