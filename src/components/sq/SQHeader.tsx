@@ -3,9 +3,9 @@
 import { Barlow_Condensed } from 'next/font/google'
 import { useTranslation } from '@/lib/i18n'
 import { LangSwitcher } from './LangSwitcher'
+import { C, sans } from '@/lib/sq-design'
 
 const barlow = Barlow_Condensed({ weight: ['900'], subsets: ['latin'] })
-import { C, sans } from '@/lib/sq-design'
 
 interface NavLink { href: string; label: string }
 
