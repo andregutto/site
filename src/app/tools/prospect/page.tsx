@@ -36,18 +36,35 @@ const NEIGHBORHOODS = [
   { label: '20e — Ménilmontant',          lat: 48.8647, lng: 2.3989 },
 ]
 
-const CATEGORIES = [
-  { label: 'Restaurant',         type: 'restaurant' },
-  { label: 'Bistro / Brasserie', type: 'restaurant', keyword: 'bistro' },
-  { label: 'Boulangerie',        type: 'bakery' },
-  { label: 'Pâtisserie',         type: 'bakery', keyword: 'patisserie' },
-  { label: 'Café',               type: 'cafe' },
-  { label: 'Bar',                type: 'bar' },
-  { label: 'Épicerie fine',      type: 'grocery_or_supermarket', keyword: 'épicerie' },
-  { label: 'Commerce de mode',   type: 'clothing_store' },
-  { label: 'Fleuriste',          type: 'florist' },
-  { label: 'Coiffeur / Beauté',  type: 'beauty_salon' },
+const CATEGORY_GROUPS = [
+  {
+    group: 'Comércio & Restauração',
+    items: [
+      { label: 'Restaurant',         type: 'restaurant' },
+      { label: 'Bistro / Brasserie', type: 'restaurant', keyword: 'bistro' },
+      { label: 'Boulangerie',        type: 'bakery' },
+      { label: 'Pâtisserie',         type: 'bakery', keyword: 'patisserie' },
+      { label: 'Café',               type: 'cafe' },
+      { label: 'Bar',                type: 'bar' },
+      { label: 'Épicerie fine',      type: 'grocery_or_supermarket', keyword: 'épicerie' },
+      { label: 'Commerce de mode',   type: 'clothing_store' },
+      { label: 'Fleuriste',          type: 'florist' },
+    ],
+  },
+  {
+    group: 'Estética & Bem-estar',
+    items: [
+      { label: 'Institut de beauté',      type: 'beauty_salon', keyword: 'institut de beauté' },
+      { label: 'Spa & bien-être',         type: 'spa',          keyword: 'spa bien-être Paris' },
+      { label: 'Épilation & soins corps', type: 'beauty_salon', keyword: 'épilation laser soins corps' },
+      { label: 'Onglerie & nail art',     type: 'beauty_salon', keyword: 'onglerie nail art' },
+      { label: 'Massage & relaxation',    type: 'spa',          keyword: 'massage relaxation' },
+      { label: 'Coiffeur indépendant',    type: 'hair_care',    keyword: 'coiffeur salon de coiffure' },
+    ],
+  },
 ]
+
+const CATEGORIES = CATEGORY_GROUPS.flatMap(g => g.items)
 
 interface PlaceBasic {
   place_id: string; name: string; address: string; lat: number; lng: number
@@ -106,8 +123,8 @@ async function exportExcel(places: Place[], neighborhood: string, category: stri
 
 export default function ProspectPage() {
   const { t } = useTranslation()
-  const [neighborhoodIdx, setNeighborhoodIdx] = useState(0)
-  const [categoryIdx,     setCategoryIdx]     = useState(0)
+  const [neighborhoodIdxs, setNeighborhoodIdxs] = useState<number[]>([0])
+  const [categoryIdx,      setCategoryIdx]      = useState(0)
   const [radius,          setRadius]          = useState(600)
   const [maxResults,      setMaxResults]      = useState(15)
   const [places,          setPlaces]          = useState<Place[]>([])
@@ -119,7 +136,8 @@ export default function ProspectPage() {
   const [addingCRM,       setAddingCRM]       = useState(false)
   const [crmMsg,          setCrmMsg]          = useState<string | null>(null)
 
-  const nb  = NEIGHBORHOODS[neighborhoodIdx]
+  const selectedNeighborhoods = neighborhoodIdxs.map(i => NEIGHBORHOODS[i])
+  const nb  = selectedNeighborhoods[0] ?? NEIGHBORHOODS[0]
   const cat = CATEGORIES[categoryIdx]
 
   const prospects = places.filter(p => p.analyzeStatus.state === 'done' && p.analyzeStatus.result.classification === 'PROSPECT')
@@ -156,16 +174,27 @@ export default function ProspectPage() {
   async function handleSearch() {
     setSearching(true); setError(null); setRan(true); setPlaces([]); setView('table')
     const runId = crypto.randomUUID()
-    const params = new URLSearchParams({ lat: String(nb.lat), lng: String(nb.lng), radius: String(radius), type: cat.type, maxResults: String(maxResults) })
-    if ('keyword' in cat && cat.keyword) params.set('keyword', cat.keyword)
     try {
-      const res  = await fetch(`/api/sq/search?${params}`)
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || data.message || t('error_label'))
-      const list: PlaceBasic[] = data.results ?? []
+      const fetches = selectedNeighborhoods.map(async nbItem => {
+        const params = new URLSearchParams({ lat: String(nbItem.lat), lng: String(nbItem.lng), radius: String(radius), type: cat.type, maxResults: String(maxResults) })
+        if ('keyword' in cat && cat.keyword) params.set('keyword', cat.keyword)
+        const res  = await fetch(`/api/sq/search?${params}`)
+        const data = await res.json()
+        if (!res.ok) throw new Error(data.error || data.message || t('error_label'))
+        return (data.results ?? []) as PlaceBasic[]
+      })
+      const allResults = await Promise.all(fetches)
+      const seen = new Set<string>()
+      const list: PlaceBasic[] = []
+      for (const batch of allResults) {
+        for (const p of batch) {
+          if (!seen.has(p.place_id)) { seen.add(p.place_id); list.push(p) }
+        }
+      }
       setPlaces(list.map(p => ({ ...p, analyzeStatus: { state: 'pending' } }))); setSearching(false)
       const counts = await runAnalysis(list, runId)
-      fetch('/api/sq/runs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: runId, neighborhood: nb.label, category: cat.label, radius, total_found: list.length, total_skipped: counts.skipped, total_prospects: counts.prospects }) }).catch(() => {})
+      const neighborhoodLabel = selectedNeighborhoods.map(n => n.label).join(', ')
+      fetch('/api/sq/runs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: runId, neighborhood: neighborhoodLabel, category: cat.label, radius, total_found: list.length, total_skipped: counts.skipped, total_prospects: counts.prospects }) }).catch(() => {})
     } catch (e) { setError(e instanceof Error ? e.message : t('error_label')); setSearching(false) }
   }
 
@@ -196,33 +225,64 @@ export default function ProspectPage() {
         {/* Filters */}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 40, marginBottom: 48, alignItems: 'flex-end' }}>
 
-          {[
-            { labelKey: 'filter_neighborhood' as const, el: (
-              <select value={neighborhoodIdx} onChange={e => setNeighborhoodIdx(Number(e.target.value))} disabled={isRunning}
-                style={{ fontFamily: sans, fontSize: 14, color: C.ink, background: 'transparent', border: 'none', borderBottom: `0.5px solid ${C.ink}`, borderRadius: 0, padding: '8px 24px 8px 0', cursor: 'pointer', minWidth: 200, outline: 'none', appearance: 'none' }}>
-                {NEIGHBORHOODS.map((n, i) => <option key={n.label} value={i}>{n.label}</option>)}
-              </select>
-            )},
-            { labelKey: 'filter_category' as const, el: (
-              <select value={categoryIdx} onChange={e => setCategoryIdx(Number(e.target.value))} disabled={isRunning}
-                style={{ fontFamily: sans, fontSize: 14, color: C.ink, background: 'transparent', border: 'none', borderBottom: `0.5px solid ${C.ink}`, borderRadius: 0, padding: '8px 24px 8px 0', cursor: 'pointer', minWidth: 200, outline: 'none', appearance: 'none' }}>
-                {CATEGORIES.map((c, i) => <option key={c.label} value={i}>{c.label}</option>)}
-              </select>
-            )},
-            { labelKey: 'filter_radius' as const, el: (
-              <input type="number" min={200} max={2000} step={100} value={radius} onChange={e => setRadius(Number(e.target.value))} disabled={isRunning}
-                style={{ fontFamily: sans, fontSize: 14, color: C.ink, background: 'transparent', border: 'none', borderBottom: `0.5px solid ${C.ink}`, borderRadius: 0, padding: '8px 0', width: 80, outline: 'none' }} />
-            )},
-            { labelKey: 'filter_max_results' as const, el: (
-              <input type="number" min={5} max={25} step={5} value={maxResults} onChange={e => setMaxResults(Number(e.target.value))} disabled={isRunning}
-                style={{ fontFamily: sans, fontSize: 14, color: C.ink, background: 'transparent', border: 'none', borderBottom: `0.5px solid ${C.ink}`, borderRadius: 0, padding: '8px 0', width: 60, outline: 'none' }} />
-            )},
-          ].map(({ labelKey, el }) => (
-            <div key={labelKey} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <span style={{ ...labelStyle }}>{t(labelKey)}</span>
-              {el}
-            </div>
-          ))}
+          {/* Neighborhood multi-select */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <span style={{ ...labelStyle }}>
+              {t('filter_neighborhood')}
+              {neighborhoodIdxs.length > 1 && (
+                <span style={{ marginLeft: 8, fontWeight: 400, color: C.muted, fontSize: 10 }}>({neighborhoodIdxs.length} sélectionnés)</span>
+              )}
+            </span>
+            <select
+              multiple
+              size={6}
+              disabled={isRunning}
+              value={neighborhoodIdxs.map(String)}
+              onChange={e => {
+                const selected = Array.from(e.target.selectedOptions).map(o => Number(o.value))
+                setNeighborhoodIdxs(selected.length > 0 ? selected : [0])
+              }}
+              style={{ fontFamily: sans, fontSize: 13, color: C.ink, background: C.paper, border: `0.5px solid ${C.ink}`, borderRadius: 0, padding: '4px 0', minWidth: 220, outline: 'none', cursor: 'pointer' }}
+            >
+              {NEIGHBORHOODS.map((n, i) => (
+                <option key={n.label} value={i} style={{ padding: '5px 10px' }}>{n.label}</option>
+              ))}
+            </select>
+            <span style={{ fontFamily: sans, fontSize: 10, color: C.muted, letterSpacing: '0.04em' }}>Cmd/Ctrl + clic pour multi-sélection</span>
+          </div>
+
+          {/* Category select with groups */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <span style={{ ...labelStyle }}>{t('filter_category')}</span>
+            <select value={categoryIdx} onChange={e => setCategoryIdx(Number(e.target.value))} disabled={isRunning}
+              style={{ fontFamily: sans, fontSize: 14, color: C.ink, background: 'transparent', border: 'none', borderBottom: `0.5px solid ${C.ink}`, borderRadius: 0, padding: '8px 24px 8px 0', cursor: 'pointer', minWidth: 220, outline: 'none', appearance: 'none' }}>
+              {(() => {
+                let globalIdx = 0
+                return CATEGORY_GROUPS.map(g => (
+                  <optgroup key={g.group} label={`── ${g.group} ──`}>
+                    {g.items.map(c => {
+                      const idx = globalIdx++
+                      return <option key={c.label} value={idx}>{c.label}</option>
+                    })}
+                  </optgroup>
+                ))
+              })()}
+            </select>
+          </div>
+
+          {/* Radius */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <span style={{ ...labelStyle }}>{t('filter_radius')}</span>
+            <input type="number" min={200} max={2000} step={100} value={radius} onChange={e => setRadius(Number(e.target.value))} disabled={isRunning}
+              style={{ fontFamily: sans, fontSize: 14, color: C.ink, background: 'transparent', border: 'none', borderBottom: `0.5px solid ${C.ink}`, borderRadius: 0, padding: '8px 0', width: 80, outline: 'none' }} />
+          </div>
+
+          {/* Max results */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <span style={{ ...labelStyle }}>{t('filter_max_results')}</span>
+            <input type="number" min={5} max={60} step={5} value={maxResults} onChange={e => setMaxResults(Number(e.target.value))} disabled={isRunning}
+              style={{ fontFamily: sans, fontSize: 14, color: C.ink, background: 'transparent', border: 'none', borderBottom: `0.5px solid ${C.ink}`, borderRadius: 0, padding: '8px 0', width: 60, outline: 'none' }} />
+          </div>
 
           {/* Buttons */}
           <div style={{ display: 'flex', gap: 12, alignItems: 'stretch' }}>
@@ -235,7 +295,7 @@ export default function ProspectPage() {
             </button>
 
             {prospects.length > 0 && !isRunning && (
-              <button onClick={() => exportExcel(places, nb.label, cat.label)}
+              <button onClick={() => exportExcel(places, selectedNeighborhoods.map(n => n.label).join(', '), cat.label)}
                 style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '13px 22px', border: `0.5px solid ${C.ink}`, borderRadius: 0, background: 'transparent', color: C.ink, cursor: 'pointer' }}>
                 <span style={{ fontFamily: sans, fontSize: 10, letterSpacing: '0.08em', color: C.muted }}>02</span>
                 <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.18em', fontSize: 12, whiteSpace: 'nowrap' }}>
@@ -247,7 +307,7 @@ export default function ProspectPage() {
             {selected.size > 0 && !isRunning && (
               <button onClick={async () => {
                 setAddingCRM(true); setCrmMsg(null)
-                const toAdd = prospects.filter(p => selected.has(p.place_id)).map(p => { const r = p.analyzeStatus.state === 'done' ? p.analyzeStatus.result : null; return { ...p, score: r?.score ?? null, services: r?.services ?? null, summary: r?.summary ?? null, instagram_url: r?.instagram_url ?? null, neighborhood: nb.label, category: cat.label } })
+                const toAdd = prospects.filter(p => selected.has(p.place_id)).map(p => { const r = p.analyzeStatus.state === 'done' ? p.analyzeStatus.result : null; return { ...p, score: r?.score ?? null, services: r?.services ?? null, summary: r?.summary ?? null, instagram_url: r?.instagram_url ?? null, neighborhood: selectedNeighborhoods.map(n => n.label).join(', '), category: cat.label } })
                 const res  = await fetch('/api/sq/clients', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clients: toAdd }) })
                 const data = await res.json()
                 if (res.ok) { setCrmMsg(`${toAdd.length} ${t('progress_prospects')} → CRM`); setSelected(new Set()) }
