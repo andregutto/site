@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 export function proxy(request: NextRequest) {
-  const hostname = request.headers.get('host') ?? ''
+  const hostname = request.nextUrl.hostname
   const pathname = request.nextUrl.pathname
 
-  if (hostname.startsWith('sq.') && !pathname.startsWith('/tools')) {
+  if (hostname === 'sq.andregutto.com' && !pathname.startsWith('/tools')) {
     return NextResponse.redirect(new URL('/tools', request.url))
   }
 }
