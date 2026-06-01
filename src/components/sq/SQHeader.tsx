@@ -39,7 +39,7 @@ export function SQHeader() {
         </Link>
 
         {/* ── Nav fixa ── */}
-        <nav style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           {NAV.map(link => {
             const active = link.match(pathname)
             return (
@@ -62,7 +62,7 @@ export function SQHeader() {
 
           <div style={{ width: '0.5px', height: 18, background: C.ink, opacity: 0.2, margin: '0 10px' }} />
           <LangSwitcher />
-        </nav>
+        </div>
       </div>
       <div style={{ height: '0.5px', background: C.ink, marginLeft: 48, marginRight: 48 }} />
     </header>
