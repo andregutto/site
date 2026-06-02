@@ -5,9 +5,10 @@ export async function GET(req: NextRequest) {
   const client_id = req.nextUrl.searchParams.get('client_id')
   const month     = req.nextUrl.searchParams.get('month')
   const sb = getSupabaseSQ()
-  if (!sb || !client_id) return NextResponse.json({ posts: [] })
+  if (!sb) return NextResponse.json({ posts: [] })
 
-  let query = (sb as any).from('sq_calendar_posts').select('*').eq('client_id', client_id)
+  let query = (sb as any).from('sq_calendar_posts').select('*, sq_clients(id, name)')
+  if (client_id) query = query.eq('client_id', client_id)
   if (month) {
     const start = `${month}-01`
     const [y, m] = month.split('-').map(Number)

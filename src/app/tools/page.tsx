@@ -52,6 +52,15 @@ export default function ToolsDashboard() {
       statValue: stats ? String(stats.clients) : null,
       statKey: 'dash_stat_clients' as const,
     },
+    {
+      num: '04', title: 'Calendrier', desc: 'Vue globale du calendrier éditorial de tous vos clients, avec filtres par client et par plateforme.', href: '/tools/calendrier', statValue: null, statKey: null,
+    },
+    {
+      num: '05', title: 'Finances', desc: 'Suivi des factures, contrôle des paiements, balance mensuelle et flux de trésorerie.', href: '/tools/finances', statValue: stats ? (stats.mrr > 0 ? stats.mrr.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }) : null) : null, statKey: null,
+    },
+    {
+      num: '06', title: 'Services', desc: 'Catalogue des services proposés — prix, descriptions, activation. Référence pour les devis et analyses.', href: '/tools/services', statValue: null, statKey: null,
+    },
   ]
 
   return (
@@ -96,67 +105,55 @@ export default function ToolsDashboard() {
 
         {/* Tool cards */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 0 }}>
-          {TOOLS.map((tool, i) => (
-            <a
-              key={tool.num}
-              href={tool.href}
-              style={{
-                textDecoration: 'none', display: 'flex', flexDirection: 'column',
-                padding: '36px 36px 32px',
-                border: `0.5px solid ${C.ink}`,
-                borderLeft: i === 0 ? `0.5px solid ${C.ink}` : 'none',
-                background: C.paper, cursor: 'pointer', transition: 'background 0.15s',
-              }}
-              onMouseEnter={e => (e.currentTarget.style.background = C.warm)}
-              onMouseLeave={e => (e.currentTarget.style.background = C.paper)}
-            >
-              <span style={{ fontFamily: sans, fontSize: 11, letterSpacing: '0.08em', color: C.muted, marginBottom: 20 }}>
-                {tool.num}
-              </span>
-              <span className={barlow.className} style={{ fontWeight: 900, textTransform: 'uppercase', letterSpacing: '-0.01em', fontSize: 36, lineHeight: 0.92, color: C.ink, marginBottom: 16 }}>
-                {t(tool.titleKey)}
-              </span>
-              <span style={{ fontFamily: sans, fontSize: 13, color: C.ink, lineHeight: 1.65, flex: 1, marginBottom: 28 }}>
-                {t(tool.descKey)}
-              </span>
-              {tool.statValue !== null && (
-                <div style={{ marginBottom: 20, paddingTop: 18, borderTop: `0.5px solid rgba(28,25,23,0.15)` }}>
-                  <span style={{ fontFamily: sans, fontVariantNumeric: 'tabular-nums', fontSize: 24, color: C.ink, letterSpacing: '-0.01em' }}>
-                    {tool.statValue}
-                  </span>
-                  <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.12em', fontSize: 10, color: C.muted, marginLeft: 10 }}>
-                    {t(tool.statKey)}
-                  </span>
-                </div>
-              )}
-              <span style={{
-                fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: 11, fontWeight: 700,
-                color: C.paper, background: C.accent, padding: '8px 16px',
-                display: 'inline-flex', alignSelf: 'flex-start', alignItems: 'center', gap: 8,
-              }}>
-                {t('dash_access')} →
-              </span>
-            </a>
-          ))}
-
-          {/* Coming soon */}
-          {['04', '05', '06'].map((num) => (
-            <div key={num} style={{
-              display: 'flex', flexDirection: 'column', padding: '36px 36px 32px',
-              border: `0.5px solid ${C.ink}`, borderLeft: 'none', borderTop: `0.5px solid ${C.ink}`,
-              background: C.warm, opacity: 0.45,
-            }}>
-              <span style={{ fontFamily: sans, fontSize: 11, letterSpacing: '0.08em', color: C.muted, marginBottom: 20 }}>
-                {num}
-              </span>
-              <span className={barlow.className} style={{ fontWeight: 900, textTransform: 'uppercase', letterSpacing: '-0.01em', fontSize: 36, lineHeight: 0.92, color: C.ink, marginBottom: 16 }}>
-                {t('dash_coming_soon_title')}
-              </span>
-              <span style={{ fontFamily: sans, fontSize: 13, color: C.muted, lineHeight: 1.65 }}>
-                {t('dash_coming_soon_desc')}
-              </span>
-            </div>
-          ))}
+          {TOOLS.map((tool, i) => {
+            const title = (tool as any).title ?? t((tool as any).titleKey)
+            const desc  = (tool as any).desc  ?? t((tool as any).descKey)
+            return (
+              <a
+                key={tool.num}
+                href={tool.href}
+                style={{
+                  textDecoration: 'none', display: 'flex', flexDirection: 'column',
+                  padding: '36px 36px 32px',
+                  border: `0.5px solid ${C.ink}`,
+                  borderLeft: i % 3 === 0 ? `0.5px solid ${C.ink}` : 'none',
+                  borderTop: i >= 3 ? `0.5px solid ${C.ink}` : `0.5px solid ${C.ink}`,
+                  background: C.paper, cursor: 'pointer', transition: 'background 0.15s',
+                }}
+                onMouseEnter={e => (e.currentTarget.style.background = C.warm)}
+                onMouseLeave={e => (e.currentTarget.style.background = C.paper)}
+              >
+                <span style={{ fontFamily: sans, fontSize: 11, letterSpacing: '0.08em', color: C.muted, marginBottom: 20 }}>
+                  {tool.num}
+                </span>
+                <span className={barlow.className} style={{ fontWeight: 900, textTransform: 'uppercase', letterSpacing: '-0.01em', fontSize: 36, lineHeight: 0.92, color: C.ink, marginBottom: 16 }}>
+                  {title}
+                </span>
+                <span style={{ fontFamily: sans, fontSize: 13, color: C.ink, lineHeight: 1.65, flex: 1, marginBottom: 28 }}>
+                  {desc}
+                </span>
+                {tool.statValue !== null && (
+                  <div style={{ marginBottom: 20, paddingTop: 18, borderTop: `0.5px solid rgba(28,25,23,0.15)` }}>
+                    <span style={{ fontFamily: sans, fontVariantNumeric: 'tabular-nums', fontSize: 24, color: C.ink, letterSpacing: '-0.01em' }}>
+                      {tool.statValue}
+                    </span>
+                    {(tool as any).statKey && (
+                      <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.12em', fontSize: 10, color: C.muted, marginLeft: 10 }}>
+                        {t((tool as any).statKey)}
+                      </span>
+                    )}
+                  </div>
+                )}
+                <span style={{
+                  fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: 11, fontWeight: 700,
+                  color: C.paper, background: C.accent, padding: '8px 16px',
+                  display: 'inline-flex', alignSelf: 'flex-start', alignItems: 'center', gap: 8,
+                }}>
+                  {t('dash_access')} →
+                </span>
+              </a>
+            )
+          })}
         </div>
 
       </main>

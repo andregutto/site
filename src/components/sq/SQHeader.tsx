@@ -12,6 +12,8 @@ const NAV = [
   { href: '/tools/prospect/historique', label: 'Historique',  match: (p: string) => p.startsWith('/tools/prospect/historique') },
   { href: '/tools/prospect',            label: 'Prospection', match: (p: string) => p.startsWith('/tools/prospect') && !p.includes('historique') },
   { href: '/tools/clients',             label: 'CRM',         match: (p: string) => p.startsWith('/tools/clients') },
+  { href: '/tools/calendrier',          label: 'Calendrier',  match: (p: string) => p === '/tools/calendrier' },
+  { href: '/tools/finances',            label: 'Finances',    match: (p: string) => p.startsWith('/tools/finances') },
   { href: '/tools/services',            label: 'Services',    match: (p: string) => p.startsWith('/tools/services') },
 ]
 
