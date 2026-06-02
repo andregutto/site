@@ -54,10 +54,14 @@ router.get('/value', requireAuth, async (req, res: Response, next) => {
   for (const c of (contributions ?? [])) {
     if (!rfAssetIds.includes(c.asset_id)) continue
     if (!c.value_brl || c.value_brl <= 0) continue
-    // Only 'buy' transactions = capital invested; 'sell' = interest/income withdrawals, not principal redemptions
+    if (!rfTranchesMap[c.asset_id]) rfTranchesMap[c.asset_id] = []
     if (c.type === 'buy') {
-      if (!rfTranchesMap[c.asset_id]) rfTranchesMap[c.asset_id] = []
+      // Positive tranche: capital deposited, earns CDI from start_date to today
       rfTranchesMap[c.asset_id].push({ principal: c.value_brl, start_date: c.date })
+    } else if (c.type === 'sell') {
+      // Negative tranche: interest/principal withdrawal. Subtracts the CDI-accrued value
+      // from withdrawal date to today — mathematically equivalent to running balance model.
+      rfTranchesMap[c.asset_id].push({ principal: -c.value_brl, start_date: c.date })
     }
   }
 

@@ -320,8 +320,11 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
   const [briefing,  setBriefing]  = useState<any>(null)
   const [genBriefing, setGenBriefing] = useState(false)
   const [briefingCopied, setBriefingCopied] = useState(false)
-  const [checklist, setChecklist] = useState<any>(null)
-  const [newTask,   setNewTask]   = useState('')
+  const [checklist,       setChecklist]       = useState<any>(null)
+  const [newTask,         setNewTask]         = useState('')
+  const [checklistMonth,  setChecklistMonth]  = useState(new Date().toISOString().slice(0, 7))
+  const [checklistLoading, setChecklistLoading] = useState(false)
+  const [briefingOpen,    setBriefingOpen]    = useState(false)
   const curMonth = new Date().toISOString().slice(0, 7)
 
   const STATUSES = [
@@ -346,7 +349,7 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
     Promise.all([
       fetch(`/api/sq/clients/${id}`).then(r => r.json()),
       fetch(`/api/sq/briefings?client_id=${id}`).then(r => r.json()),
-      fetch(`/api/sq/checklists?client_id=${id}&month=${curMonth}`).then(r => r.json()),
+      fetch(`/api/sq/checklists?client_id=${id}&month=${checklistMonth}`).then(r => r.json()),
     ]).then(([clientData, briefingData, checklistData]) => {
       setClient(clientData.client)
       setEvents(clientData.events ?? [])
@@ -354,6 +357,16 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
       setChecklist(checklistData.checklist)
     }).catch(() => {}).finally(() => setLoading(false))
   }, [id])
+
+  // Reload checklist when month changes (after initial load)
+  useEffect(() => {
+    if (loading) return
+    setChecklistLoading(true)
+    fetch(`/api/sq/checklists?client_id=${id}&month=${checklistMonth}`)
+      .then(r => r.json())
+      .then(d => setChecklist(d.checklist))
+      .finally(() => setChecklistLoading(false))
+  }, [checklistMonth])
 
   async function generateBriefingLink() {
     setGenBriefing(true)
@@ -367,7 +380,7 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
     if (!checklist) return
     const items = checklist.items.map((i: any) => i.id === itemId ? { ...i, done: !i.done } : i)
     setChecklist({ ...checklist, items })
-    await fetch('/api/sq/checklists', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ client_id: id, month: curMonth, items }) })
+    await fetch('/api/sq/checklists', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ client_id: id, month: checklistMonth, items }) })
   }
 
   async function addChecklistTask() {
@@ -375,7 +388,18 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
     const items = [...checklist.items, { id: crypto.randomUUID(), category: 'Custom', task: newTask.trim(), done: false }]
     setChecklist({ ...checklist, items })
     setNewTask('')
-    await fetch('/api/sq/checklists', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ client_id: id, month: curMonth, items }) })
+    await fetch('/api/sq/checklists', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ client_id: id, month: checklistMonth, items }) })
+  }
+
+  function prevChecklistMonth() {
+    const [y, m] = checklistMonth.split('-').map(Number)
+    const d = new Date(y, m - 2, 1)
+    setChecklistMonth(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`)
+  }
+  function nextChecklistMonth() {
+    const [y, m] = checklistMonth.split('-').map(Number)
+    const d = new Date(y, m, 1)
+    setChecklistMonth(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`)
   }
 
   async function patchClient(patch: Partial<Client>) {
@@ -517,6 +541,9 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
           {[
             { label: 'Diagnostic client', icon: '◈', href: `/tools/clients/${id}/diagnostic` },
             { label: 'Devis',             icon: '◻', href: `/tools/clients/${id}/devis` },
+            { label: 'Rapport mensuel',   icon: '◑', href: `/tools/clients/${id}/rapport` },
+            { label: 'Calendrier',        icon: '▦', href: `/tools/clients/${id}/calendrier` },
+            { label: 'Facturation',       icon: '€', href: `/tools/clients/${id}/faturamento` },
           ].map(({ label, icon, href }) => (
             <a key={label} href={href}
               style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 18px', border: `0.5px solid ${C.ink}`, color: C.ink, textDecoration: 'none', fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.12em', fontSize: 11 }}>
@@ -646,64 +673,122 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
 
         </div>
 
+        {/* ── Briefing responses ── */}
+        {briefing?.filled_at && briefingOpen && (() => {
+          const FIELD_LABELS: Record<string, string> = {
+            brand_tone: 'En 3 mots, comment décririez-vous votre établissement ?',
+            goals: 'Principal objectif',
+            target_customers: 'Profil de clientèle',
+            visual_refs: 'Références visuelles',
+            dont_wants: 'Ce qu\'ils ne veulent pas',
+            color_prefs: 'Couleurs / style visuel',
+            extra_notes: 'Autres informations',
+          }
+          const entries = Object.entries(briefing).filter(([k, v]) => FIELD_LABELS[k] && v && typeof v === 'string')
+          return (
+            <div style={{ marginTop: 40, border: `0.5px solid rgba(28,25,23,0.3)`, padding: '24px 28px', background: C.warm }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+                <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.14em', fontSize: 11, color: C.ink }}>Réponses du briefing client</span>
+                <button onClick={() => setBriefingOpen(false)} style={{ fontFamily: sans, fontSize: 12, padding: '3px 8px', border: `0.5px solid ${C.muted}`, background: 'transparent', color: C.muted, cursor: 'pointer', borderRadius: 0 }}>× Fermer</button>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                {entries.map(([key, val]) => (
+                  <div key={key}>
+                    <div style={{ fontFamily: sans, fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.2em', color: C.muted, marginBottom: 4 }}>{FIELD_LABELS[key]}</div>
+                    <p style={{ fontFamily: sans, fontSize: 14, color: C.ink, margin: 0, lineHeight: 1.7 }}>{val as string}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )
+        })()}
+
         {/* ── Checklist mensuel ── */}
-        {checklist && (
-          <div style={{ marginTop: 56, paddingTop: 40, borderTop: `0.5px solid ${C.ink}` }}>
-            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 8 }}>
+        <div style={{ marginTop: 56, paddingTop: 40, borderTop: `0.5px solid ${C.ink}` }}>
+          {/* Briefing responses toggle */}
+          {briefing?.filled_at && !briefingOpen && (
+            <div style={{ marginBottom: 24, padding: '12px 16px', background: C.warm, border: `0.5px solid rgba(28,25,23,0.2)`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontFamily: sans, fontSize: 13, color: C.ink }}>✎ Briefing rempli par le client</span>
+              <button onClick={() => setBriefingOpen(true)} style={{ fontFamily: sans, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.12em', padding: '5px 12px', border: `0.5px solid ${C.ink}`, background: 'transparent', color: C.ink, cursor: 'pointer', borderRadius: 0 }}>Voir les réponses ↓</button>
+            </div>
+          )}
+
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, flexWrap: 'wrap', gap: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.14em', fontSize: 11, color: C.ink }}>
-                Checklist — {new Date(curMonth + '-01').toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}
+                Checklist
               </span>
+              {/* Month navigation */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <button onClick={prevChecklistMonth} style={{ fontFamily: sans, fontSize: 13, background: 'transparent', border: 'none', cursor: 'pointer', color: C.muted, padding: '2px 6px' }}>‹</button>
+                <span style={{ fontFamily: sans, fontSize: 12, color: C.ink, minWidth: 120, textAlign: 'center', textTransform: 'capitalize' }}>
+                  {new Date(checklistMonth + '-01').toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}
+                </span>
+                <button onClick={nextChecklistMonth} disabled={checklistMonth >= curMonth} style={{ fontFamily: sans, fontSize: 13, background: 'transparent', border: 'none', cursor: checklistMonth >= curMonth ? 'default' : 'pointer', color: checklistMonth >= curMonth ? 'transparent' : C.muted, padding: '2px 6px' }}>›</button>
+              </div>
+            </div>
+            {checklist && (
               <span style={{ fontFamily: sans, fontSize: 11, color: C.muted }}>
                 {checklist.items.filter((i: any) => i.done).length}/{checklist.items.length} complétées
               </span>
-            </div>
-            <p style={{ fontFamily: sans, fontSize: 11, color: C.muted, marginBottom: 20 }}>
-              Renouvelée automatiquement chaque mois. Passez la souris sur une tâche pour la supprimer.
-            </p>
-
-            {/* Progress bar */}
-            <div style={{ height: 3, background: C.warm, marginBottom: 24, position: 'relative', overflow: 'hidden' }}>
-              <div style={{ position: 'absolute', left: 0, top: 0, height: '100%', background: C.ink, width: `${checklist.items.length > 0 ? (checklist.items.filter((i: any) => i.done).length / checklist.items.length) * 100 : 0}%`, transition: 'width 0.3s' }} />
-            </div>
-
-            {/* Tasks grouped by category */}
-            {Object.entries(
-              checklist.items.reduce((acc: Record<string, any[]>, item: any) => {
-                const cat = item.category || 'Autre'
-                if (!acc[cat]) acc[cat] = []
-                acc[cat].push(item)
-                return acc
-              }, {})
-            ).map(([category, items]) => (
-              <div key={category} style={{ marginBottom: 20 }}>
-                <div style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.14em', fontSize: 9, color: C.muted, marginBottom: 8 }}>{category}</div>
-                {(items as any[]).map((item: any) => (
-                  <ChecklistItem
-                    key={item.id}
-                    item={item}
-                    onToggle={() => toggleChecklistItem(item.id)}
-                    onDelete={async () => {
-                      const updated = checklist.items.filter((i: any) => i.id !== item.id)
-                      setChecklist({ ...checklist, items: updated })
-                      await fetch('/api/sq/checklists', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ client_id: id, month: curMonth, items: updated }) })
-                    }}
-                  />
-                ))}
-              </div>
-            ))}
-
-            {/* Add custom task */}
-            <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
-              <input value={newTask} onChange={e => setNewTask(e.target.value)} placeholder="Ajouter une tâche…"
-                onKeyDown={e => e.key === 'Enter' && addChecklistTask()}
-                style={{ flex: 1, fontFamily: sans, fontSize: 13, color: C.ink, background: 'transparent', border: 'none', borderBottom: `0.5px solid ${C.ink}`, outline: 'none', padding: '6px 0' }} />
-              <button onClick={addChecklistTask} disabled={!newTask.trim()}
-                style={{ fontFamily: sans, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.1em', padding: '6px 14px', border: `0.5px solid ${C.ink}`, background: 'transparent', color: C.ink, cursor: 'pointer', borderRadius: 0, opacity: newTask.trim() ? 1 : 0.4 }}>
-                + Ajouter
-              </button>
-            </div>
+            )}
           </div>
-        )}
+          <p style={{ fontFamily: sans, fontSize: 11, color: C.muted, marginBottom: 20 }}>
+            Renouvelée automatiquement chaque mois. Passez la souris sur une tâche pour la supprimer.
+          </p>
+          {checklistLoading
+            ? <p style={{ fontFamily: sans, fontSize: 13, color: C.muted }}>Chargement…</p>
+            : checklist
+              ? (
+                <>
+                  {/* Progress bar */}
+                  <div style={{ height: 3, background: C.warm, marginBottom: 24, position: 'relative', overflow: 'hidden' }}>
+                    <div style={{ position: 'absolute', left: 0, top: 0, height: '100%', background: C.ink, width: `${checklist.items.length > 0 ? (checklist.items.filter((i: any) => i.done).length / checklist.items.length) * 100 : 0}%`, transition: 'width 0.3s' }} />
+                  </div>
+
+                  {/* Tasks grouped by category */}
+                  {Object.entries(
+                    checklist.items.reduce((acc: Record<string, any[]>, item: any) => {
+                      const cat = item.category || 'Autre'
+                      if (!acc[cat]) acc[cat] = []
+                      acc[cat].push(item)
+                      return acc
+                    }, {})
+                  ).map(([category, items]) => (
+                    <div key={category} style={{ marginBottom: 20 }}>
+                      <div style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.14em', fontSize: 9, color: C.muted, marginBottom: 8 }}>{category}</div>
+                      {(items as any[]).map((item: any) => (
+                        <ChecklistItem
+                          key={item.id}
+                          item={item}
+                          onToggle={() => toggleChecklistItem(item.id)}
+                          onDelete={async () => {
+                            const updated = checklist.items.filter((i: any) => i.id !== item.id)
+                            setChecklist({ ...checklist, items: updated })
+                            await fetch('/api/sq/checklists', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ client_id: id, month: checklistMonth, items: updated }) })
+                          }}
+                        />
+                      ))}
+                    </div>
+                  ))}
+
+                  {/* Add custom task — only for current month */}
+                  {checklistMonth === curMonth && (
+                    <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+                      <input value={newTask} onChange={e => setNewTask(e.target.value)} placeholder="Ajouter une tâche…"
+                        onKeyDown={e => e.key === 'Enter' && addChecklistTask()}
+                        style={{ flex: 1, fontFamily: sans, fontSize: 13, color: C.ink, background: 'transparent', border: 'none', borderBottom: `0.5px solid ${C.ink}`, outline: 'none', padding: '6px 0' }} />
+                      <button onClick={addChecklistTask} disabled={!newTask.trim()}
+                        style={{ fontFamily: sans, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.1em', padding: '6px 14px', border: `0.5px solid ${C.ink}`, background: 'transparent', color: C.ink, cursor: 'pointer', borderRadius: 0, opacity: newTask.trim() ? 1 : 0.4 }}>
+                        + Ajouter
+                      </button>
+                    </div>
+                  )}
+                </>
+              )
+              : <p style={{ fontFamily: sans, fontSize: 13, color: C.muted }}>Aucune checklist pour ce mois.</p>
+          }
+        </div>
 
       </main>
       <SQFooter />

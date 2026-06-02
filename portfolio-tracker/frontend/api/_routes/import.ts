@@ -18,6 +18,17 @@ export interface MergedOp {
   institution: string
 }
 
+export interface MovOp {
+  date: string
+  ticker: string      // resolved (e.g. HSML11, not HSML13)
+  ticker_raw: string  // from file
+  event_type: 'bonificacao' | 'desdobro' | 'subscricao'
+  quantity: number    // whole shares only (fractional go to leilão)
+  price: number
+  value_brl: number
+  institution: string
+}
+
 interface AssetStatus {
   ticker: string
   status: 'exists_with_contribs' | 'exists_no_contribs' | 'to_create'
@@ -252,7 +263,7 @@ router.post('/b3/execute', requireAuth, async (req, res: Response) => {
     if (newAsset) { assetMap.set(ticker, newAsset.id as number); created++ }
   }
 
-  // 3. Delete all existing contributions for every asset in this import
+  // 3. Delete negociação contributions (preserve movimentação entries)
   const importAssetIds = tickers.map(t => assetMap.get(t)).filter((id): id is number => id != null)
   let cleaned = 0
   if (importAssetIds.length > 0) {
@@ -260,6 +271,7 @@ router.post('/b3/execute', requireAuth, async (req, res: Response) => {
       .from('contributions')
       .delete({ count: 'exact' })
       .in('asset_id', importAssetIds)
+      .not('description', 'ilike', '%(B3 Movimentação)%')
     cleaned = count ?? 0
   }
 
@@ -344,6 +356,168 @@ router.post('/b3/execute', requireAuth, async (req, res: Response) => {
     }
     console.log('[import-sync] background sync complete for', syncAssets.length, 'assets')
   })().catch(err => console.error('[import-sync] fatal:', err))
+})
+
+// ─── Movimentação helpers ─────────────────────────────────────────────────────
+
+function parseMovimentacao(base64: string): MovOp[] {
+  const buf  = Buffer.from(base64, 'base64')
+  const wb   = XLSX.read(buf, { type: 'buffer' })
+  const ws   = wb.Sheets[wb.SheetNames[0]]
+  const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' }) as unknown[][]
+  // Columns: Entrada/Saída, Data, Movimentação, Produto, Instituição, Quantidade, Preço, Valor
+
+  // First pass: index subscription exercise payments by (approx_date, qty)
+  type SubscEntry = { date: string; ticker_raw: string; qty: number; value: number }
+  const subscExercised: SubscEntry[] = []
+  for (const row of rows.slice(1)) {
+    const r      = row as (string | number)[]
+    const entrada = String(r[0]).trim()
+    const tipo    = String(r[2]).trim()
+    if (entrada !== 'Debito' || tipo !== 'Direitos de Subscrição - Exercido') continue
+    const dateStr = String(r[1]).trim()
+    const produto = String(r[3]).trim()
+    const qty     = Number(r[5])
+    const valor   = r[7] !== '-' && r[7] !== '' ? Number(r[7]) : 0
+    if (!dateStr || isNaN(qty) || qty <= 0) continue
+    subscExercised.push({ date: parseDate(dateStr), ticker_raw: produto.split(' - ')[0].trim(), qty, value: valor })
+  }
+
+  // Second pass: build operations
+  const ops: MovOp[] = []
+  for (const row of rows.slice(1)) {
+    const r       = row as (string | number)[]
+    const entrada = String(r[0]).trim()
+    const dateStr = String(r[1]).trim()
+    const tipo    = String(r[2]).trim()
+    const produto = String(r[3]).trim()
+    const inst    = String(r[4]).trim()
+    const qty_raw = Number(r[5])
+
+    if (!dateStr || !tipo || isNaN(qty_raw)) continue
+    const qty_whole = Math.floor(qty_raw)
+    if (qty_whole <= 0) continue
+
+    const date       = parseDate(dateStr)
+    const ticker_raw = produto.split(' - ')[0].trim()
+
+    if ((tipo === 'Bonificação em Ativos' || tipo === 'Desdobro') && entrada === 'Credito') {
+      ops.push({
+        date, ticker: ticker_raw, ticker_raw,
+        event_type: tipo === 'Desdobro' ? 'desdobro' : 'bonificacao',
+        quantity: qty_whole, price: 0, value_brl: 0, institution: inst,
+      })
+    } else if (tipo === 'Recibo de Subscrição' && entrada === 'Credito') {
+      // Map receipt ticker (e.g. HSML13) to actual asset ticker (HSML11)
+      const ticker = ticker_raw.replace(/1[23]$/, '11')
+      // Find matching exercise payment (same qty, within 7 days)
+      const dateMs = new Date(date).getTime()
+      const match  = subscExercised.find(s =>
+        s.qty === qty_raw &&
+        Math.abs(new Date(s.date).getTime() - dateMs) <= 7 * 86_400_000
+      )
+      const value_brl = match?.value ?? 0
+      const price     = qty_whole > 0 ? Math.round((value_brl / qty_whole) * 100) / 100 : 0
+      ops.push({ date, ticker, ticker_raw, event_type: 'subscricao', quantity: qty_whole, price, value_brl, institution: inst })
+    }
+  }
+
+  return ops.sort((a, b) => a.date.localeCompare(b.date))
+}
+
+// ─── POST /api/import/movimentacao/parse ──────────────────────────────────────
+
+router.post('/movimentacao/parse', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const { file_base64 } = req.body as { file_base64?: string }
+  if (!file_base64) { res.status(400).json({ error: 'file_base64 obrigatório' }); return }
+
+  let operations: MovOp[]
+  try { operations = parseMovimentacao(file_base64) }
+  catch (e) { res.status(400).json({ error: `Falha ao ler arquivo: ${e instanceof Error ? e.message : e}` }); return }
+
+  if (operations.length === 0) { res.status(400).json({ error: 'Nenhum evento corporativo encontrado no arquivo' }); return }
+
+  const tickers = [...new Set(operations.map(o => o.ticker))]
+  const { data: existingAssets } = await supabaseAdmin
+    .from('assets').select('id, code').eq('user_id', userId).in('code', tickers)
+  const assetMap = new Map((existingAssets ?? []).map(a => [a.code as string, a.id as number]))
+
+  const asset_statuses = tickers.map(ticker => {
+    const ticker_raw = operations.find(o => o.ticker === ticker)?.ticker_raw ?? ticker
+    const asset_id   = assetMap.get(ticker)
+    return { ticker, ticker_raw, in_tracker: asset_id != null, asset_id }
+  })
+
+  const dates = operations.map(o => o.date).sort()
+  res.json({
+    operations,
+    asset_statuses,
+    summary: {
+      total_events:  operations.length,
+      bonificacoes:  operations.filter(o => o.event_type === 'bonificacao').length,
+      desdobros:     operations.filter(o => o.event_type === 'desdobro').length,
+      subscricoes:   operations.filter(o => o.event_type === 'subscricao').length,
+      qty_added:     operations.reduce((s, o) => s + o.quantity, 0),
+      value_brl:     Math.round(operations.reduce((s, o) => s + o.value_brl, 0) * 100) / 100,
+      date_from:     dates[0],
+      date_to:       dates[dates.length - 1],
+    },
+  })
+})
+
+// ─── POST /api/import/movimentacao/execute ────────────────────────────────────
+
+router.post('/movimentacao/execute', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const { operations } = req.body as { operations?: MovOp[] }
+  if (!Array.isArray(operations) || operations.length === 0) {
+    res.status(400).json({ error: 'operations obrigatório' }); return
+  }
+
+  const tickers = [...new Set(operations.map(o => o.ticker))]
+  const { data: assets } = await supabaseAdmin
+    .from('assets').select('id, code').eq('user_id', userId).in('code', tickers)
+  const assetMap = new Map((assets ?? []).map(a => [a.code as string, a.id as number]))
+
+  const knownIds = tickers.map(t => assetMap.get(t)).filter((id): id is number => id != null)
+
+  // Replace only movimentação contributions for these assets (idempotent re-import)
+  let replaced = 0
+  if (knownIds.length > 0) {
+    const { count } = await supabaseAdmin
+      .from('contributions')
+      .delete({ count: 'exact' })
+      .in('asset_id', knownIds)
+      .ilike('description', '%(B3 Movimentação)%')
+    replaced = count ?? 0
+  }
+
+  const toInsert = operations
+    .filter(op => assetMap.has(op.ticker))
+    .map(op => ({
+      asset_id:    assetMap.get(op.ticker)!,
+      date:        op.date,
+      type:        'buy',
+      quantity:    op.quantity,
+      price_orig:  op.price,
+      currency:    'BRL',
+      fx_rate_brl: 1,
+      value_brl:   op.value_brl,
+      description: `${op.event_type === 'bonificacao' ? 'Bonificação em Ativos' : op.event_type === 'desdobro' ? 'Desdobro' : 'Subscrição exercida'} (B3 Movimentação)`,
+      tax_withheld: 0,
+    }))
+
+  if (toInsert.length === 0) { res.status(400).json({ error: 'Nenhum ativo encontrado no sistema para os eventos' }); return }
+
+  const { error: insertErr } = await supabaseAdmin.from('contributions').insert(toInsert)
+  if (insertErr) { res.status(500).json({ error: `Erro ao inserir: ${insertErr.message}` }); return }
+
+  res.json({
+    imported: toInsert.length,
+    replaced,
+    skipped_tickers: tickers.filter(t => !assetMap.has(t)),
+  })
 })
 
 export default router

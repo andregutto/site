@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { apiFetch } from '../lib/api'
-import type { MergedOp } from '../lib/types'
+import type { MergedOp, MovOp } from '../lib/types'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -55,6 +55,36 @@ interface SyncResult {
   errors: number
   total: number
   details: SyncDetail[]
+}
+
+// ─── Movimentação types ───────────────────────────────────────────────────────
+
+interface MovAssetStatus {
+  ticker: string
+  ticker_raw: string
+  in_tracker: boolean
+  asset_id?: number
+}
+
+interface MovParseResult {
+  operations: MovOp[]
+  asset_statuses: MovAssetStatus[]
+  summary: {
+    total_events: number
+    bonificacoes: number
+    desdobros: number
+    subscricoes: number
+    qty_added: number
+    value_brl: number
+    date_from: string
+    date_to: string
+  }
+}
+
+interface MovExecResult {
+  imported: number
+  replaced: number
+  skipped_tickers: string[]
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -174,11 +204,17 @@ function StatCard({ label, value, sub, color = 'gray' }: { label: string; value:
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 
-type Step = 'upload' | 'preview' | 'executing' | 'done'
+type Step    = 'upload' | 'preview' | 'executing' | 'done'
+type MovStep = 'upload' | 'preview' | 'executing' | 'done'
 type ExecPhase = 'importing' | 'syncing'
 
 export default function ImportB3Page() {
   const navigate = useNavigate()
+
+  // Tab
+  const [activeTab, setActiveTab] = useState<'negociacao' | 'movimentacao'>('negociacao')
+
+  // Negociação state
   const [step,          setStep]          = useState<Step>('upload')
   const [execPhase,     setExecPhase]     = useState<ExecPhase>('importing')
   const [parseResult,   setParseResult]   = useState<ParseResult | null>(null)
@@ -189,6 +225,52 @@ export default function ImportB3Page() {
   const [dragOver,      setDragOver]      = useState(false)
   const [showAllOps,    setShowAllOps]    = useState(false)
   const [filterTicker,  setFilterTicker]  = useState('')
+
+  // Movimentação state
+  const [movStep,        setMovStep]        = useState<MovStep>('upload')
+  const [movParseResult, setMovParseResult] = useState<MovParseResult | null>(null)
+  const [movExecResult,  setMovExecResult]  = useState<MovExecResult | null>(null)
+  const [movLoading,     setMovLoading]     = useState(false)
+  const [movError,       setMovError]       = useState<string | null>(null)
+  const [movDragOver,    setMovDragOver]    = useState(false)
+  const [movShowAll,     setMovShowAll]     = useState(false)
+  const [movFilter,      setMovFilter]      = useState('')
+
+  const handleMovFile = useCallback(async (file: File) => {
+    if (!file.name.endsWith('.xlsx')) { setMovError('Selecione um arquivo .xlsx'); return }
+    setMovError(null)
+    setMovLoading(true)
+    try {
+      const file_base64 = await readBase64(file)
+      const result = await apiFetch<MovParseResult>('/import/movimentacao/parse', {
+        method: 'POST',
+        body: JSON.stringify({ file_base64 }),
+      })
+      setMovParseResult(result)
+      setMovStep('preview')
+    } catch (e) {
+      setMovError(e instanceof Error ? e.message : 'Erro ao processar arquivo')
+    } finally {
+      setMovLoading(false)
+    }
+  }, [])
+
+  async function handleMovExecute() {
+    if (!movParseResult) return
+    setMovStep('executing')
+    setMovError(null)
+    try {
+      const result = await apiFetch<MovExecResult>('/import/movimentacao/execute', {
+        method: 'POST',
+        body: JSON.stringify({ operations: movParseResult.operations }),
+      })
+      setMovExecResult(result)
+      setMovStep('done')
+    } catch (e) {
+      setMovError(e instanceof Error ? e.message : 'Erro ao executar importação')
+      setMovStep('preview')
+    }
+  }
 
   const handleFile = useCallback(async (file: File) => {
     if (!file.name.endsWith('.xlsx')) { setError('Selecione um arquivo .xlsx'); return }
@@ -254,6 +336,268 @@ export default function ImportB3Page() {
     }
   }
 
+  // ── Tab switcher (shown only on upload steps) ────────────────────────────────
+  const showTabs = (activeTab === 'negociacao' && step === 'upload') ||
+                   (activeTab === 'movimentacao' && movStep === 'upload')
+
+  const tabBar = showTabs ? (
+    <div className="flex gap-1 p-1 bg-gray-100 rounded-xl w-fit">
+      {(['negociacao', 'movimentacao'] as const).map(tab => (
+        <button
+          key={tab}
+          onClick={() => setActiveTab(tab)}
+          className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+            activeTab === tab ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          {tab === 'negociacao' ? 'Negociação' : 'Movimentação'}
+        </button>
+      ))}
+    </div>
+  ) : null
+
+  // ── Movimentação: Upload ──────────────────────────────────────────────────
+  if (activeTab === 'movimentacao' && movStep === 'upload') {
+    return (
+      <div className="space-y-6 max-w-2xl mx-auto">
+        <div className="flex items-center gap-3">
+          <button onClick={() => navigate(-1)} className="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center text-gray-500 hover:border-[#0D0D0D] hover:text-[#0D0D0D] transition-colors">‹</button>
+          <div>
+            <h1 className="text-xl font-bold text-gray-900">Importar eventos corporativos B3</h1>
+            <p className="text-sm text-gray-500">Extrato de Movimentação — Área do Investidor da B3</p>
+          </div>
+        </div>
+
+        {tabBar}
+
+        <div
+          onDragOver={e => { e.preventDefault(); setMovDragOver(true) }}
+          onDragLeave={() => setMovDragOver(false)}
+          onDrop={e => { e.preventDefault(); setMovDragOver(false); const f = e.dataTransfer.files[0]; if (f) handleMovFile(f) }}
+          className={`relative border-2 border-dashed rounded-2xl p-12 text-center transition-colors ${
+            movDragOver ? 'border-[#0D0D0D] bg-blue-50' : 'border-gray-200 bg-white hover:border-gray-300'
+          }`}
+        >
+          <div className="text-4xl mb-4">📋</div>
+          <p className="font-semibold text-gray-700 mb-1">Arraste o arquivo .xlsx aqui</p>
+          <p className="text-sm text-gray-400 mb-5">ou clique para selecionar</p>
+          <label className="cursor-pointer inline-flex items-center gap-2 px-5 py-2.5 bg-[#0D0D0D] text-white rounded-xl text-sm font-semibold hover:bg-[#0D0D0D]/90 transition-colors">
+            Selecionar arquivo
+            <input type="file" accept=".xlsx" onChange={e => { const f = e.target.files?.[0]; if (f) handleMovFile(f) }} className="hidden" />
+          </label>
+          {movLoading && (
+            <div className="absolute inset-0 bg-white/80 rounded-2xl flex items-center justify-center">
+              <div className="text-sm text-gray-500 animate-pulse">Processando arquivo...</div>
+            </div>
+          )}
+        </div>
+
+        {movError && <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-red-700 text-sm">{movError}</div>}
+
+        <div className="bg-gray-50 border border-gray-100 rounded-2xl p-5 text-sm text-gray-600 space-y-2">
+          <p className="font-semibold text-gray-800">Como obter o arquivo:</p>
+          <ol className="list-decimal list-inside space-y-1">
+            <li>Acesse a <strong>Área do Investidor</strong> em investidor.b3.com.br</li>
+            <li>Vá em <strong>Extrato</strong> → <strong>Movimentação</strong></li>
+            <li>Selecione o período desejado e exporte em <strong>.xlsx</strong></li>
+          </ol>
+          <p className="text-xs text-gray-400 mt-2">
+            Importa: bonificações, desdobramentos e subscrições exercidas. Compras/vendas e dividendos são ignorados (já tratados em Negociação).
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  // ── Movimentação: Preview ─────────────────────────────────────────────────
+  if (activeTab === 'movimentacao' && movStep === 'preview' && movParseResult) {
+    const { summary, asset_statuses, operations } = movParseResult
+    const notFound  = asset_statuses.filter(a => !a.in_tracker)
+    const inTracker = asset_statuses.filter(a => a.in_tracker)
+    const eventLabel = { bonificacao: 'Bonificação', desdobro: 'Desdobro', subscricao: 'Subscrição' } as const
+    const eventColor = {
+      bonificacao: 'bg-green-100 text-green-700',
+      desdobro:    'bg-blue-100 text-blue-700',
+      subscricao:  'bg-purple-100 text-purple-700',
+    } as const
+    const visible = (movShowAll ? operations : operations.slice(0, 30)).filter(o =>
+      !movFilter || o.ticker.toLowerCase().includes(movFilter.toLowerCase())
+    )
+
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-3">
+          <button onClick={() => setMovStep('upload')} className="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center text-gray-500 hover:border-[#0D0D0D] hover:text-[#0D0D0D] transition-colors">‹</button>
+          <div>
+            <h1 className="text-xl font-bold text-gray-900">Prévia — Eventos corporativos</h1>
+            <p className="text-sm text-gray-500">{fmtDate(summary.date_from)} → {fmtDate(summary.date_to)}</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <StatCard label="Eventos" value={summary.total_events} sub={`${summary.bonificacoes} bonif. · ${summary.desdobros} desdobros`} />
+          <StatCard label="Subscrições" value={summary.subscricoes} color="purple" sub={`${fmtBrl(summary.value_brl)} investidos`} />
+          <StatCard label="Cotas adicionadas" value={new Intl.NumberFormat('pt-BR').format(summary.qty_added)} color="green" />
+          <StatCard label="Ativos encontrados" value={inTracker.length} color={notFound.length > 0 ? 'amber' : 'green'} sub={notFound.length > 0 ? `${notFound.length} não cadastrados` : 'todos cadastrados'} />
+        </div>
+
+        {notFound.length > 0 && (
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
+            <h2 className="font-semibold text-amber-900 text-sm mb-2">Ativos não encontrados no sistema ({notFound.length})</h2>
+            <p className="text-xs text-amber-700 mb-3">Esses eventos serão ignorados. Cadastre os ativos primeiro e reimporte.</p>
+            <div className="flex flex-wrap gap-2">
+              {notFound.map(a => (
+                <span key={a.ticker} className="text-xs px-2.5 py-1 rounded-full bg-amber-100 border border-amber-300 text-amber-800 font-semibold">
+                  {a.ticker} <span className="font-normal opacity-60">({a.ticker_raw})</span>
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
+          <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between gap-3">
+            <h2 className="font-semibold text-gray-800">Eventos ({operations.length})</h2>
+            <input
+              type="text" placeholder="Filtrar ticker..."
+              value={movFilter} onChange={e => setMovFilter(e.target.value)}
+              className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm w-36 focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20"
+            />
+          </div>
+          <div className="hidden sm:block overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
+                <tr>
+                  <th className="px-4 py-3 text-left">Data</th>
+                  <th className="px-4 py-3 text-left">Ticker</th>
+                  <th className="px-4 py-3 text-left">Evento</th>
+                  <th className="px-4 py-3 text-right">Cotas</th>
+                  <th className="px-4 py-3 text-right">Preço/cota</th>
+                  <th className="px-4 py-3 text-right">Total pago</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {visible.map((op, i) => (
+                  <tr key={i} className="hover:bg-gray-50">
+                    <td className="px-4 py-2.5 text-gray-600 whitespace-nowrap">{fmtDate(op.date)}</td>
+                    <td className="px-4 py-2.5 font-semibold text-gray-900">
+                      {op.ticker}
+                      {op.ticker !== op.ticker_raw && <span className="ml-1 text-xs text-gray-400 font-normal">({op.ticker_raw})</span>}
+                    </td>
+                    <td className="px-4 py-2.5">
+                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${eventColor[op.event_type]}`}>
+                        {eventLabel[op.event_type]}
+                      </span>
+                    </td>
+                    <td className="px-4 py-2.5 text-right tabular-nums text-gray-700">
+                      +{new Intl.NumberFormat('pt-BR').format(op.quantity)}
+                    </td>
+                    <td className="px-4 py-2.5 text-right tabular-nums text-gray-600">
+                      {op.price > 0 ? fmtBrl(op.price) : '—'}
+                    </td>
+                    <td className="px-4 py-2.5 text-right tabular-nums font-medium text-gray-900">
+                      {op.value_brl > 0 ? fmtBrl(op.value_brl) : '—'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="sm:hidden divide-y divide-gray-50">
+            {visible.map((op, i) => (
+              <div key={i} className="px-4 py-3">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-gray-900">{op.ticker}</span>
+                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${eventColor[op.event_type]}`}>{eventLabel[op.event_type]}</span>
+                  </div>
+                  <span className="text-sm font-medium text-gray-700">+{new Intl.NumberFormat('pt-BR').format(op.quantity)}</span>
+                </div>
+                <div className="mt-1 text-xs text-gray-400 flex gap-3">
+                  <span>{fmtDate(op.date)}</span>
+                  {op.value_brl > 0 && <span>{fmtBrl(op.value_brl)}</span>}
+                </div>
+              </div>
+            ))}
+          </div>
+          {operations.length > 30 && !movShowAll && (
+            <div className="px-4 py-3 border-t border-gray-50 text-center">
+              <button onClick={() => setMovShowAll(true)} className="text-sm text-[#0D0D0D] hover:underline">
+                Ver todos ({operations.length - 30} restantes)
+              </button>
+            </div>
+          )}
+        </div>
+
+        {movError && <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-red-700 text-sm">{movError}</div>}
+
+        <div className="flex items-center justify-between gap-4 pb-4">
+          <p className="text-xs text-gray-400">
+            {inTracker.length} ativos serão atualizados · {notFound.length} ignorados · {operations.filter(o => asset_statuses.find(a => a.ticker === o.ticker)?.in_tracker).length} eventos a importar
+          </p>
+          <button
+            onClick={handleMovExecute}
+            className="px-6 py-2.5 bg-[#0D0D0D] text-white rounded-xl text-sm font-semibold hover:bg-[#0D0D0D]/90 transition-colors shrink-0"
+          >
+            Confirmar importação
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // ── Movimentação: Executing ───────────────────────────────────────────────
+  if (activeTab === 'movimentacao' && movStep === 'executing') {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center space-y-4 max-w-xs">
+          <div className="text-3xl animate-bounce">📋</div>
+          <p className="text-gray-700 text-sm font-medium animate-pulse">Importando eventos corporativos...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // ── Movimentação: Done ────────────────────────────────────────────────────
+  if (activeTab === 'movimentacao' && movStep === 'done' && movExecResult) {
+    return (
+      <div className="space-y-6 max-w-2xl mx-auto">
+        <div className="text-center py-8">
+          <div className="text-5xl mb-4">✅</div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Eventos importados!</h1>
+          <p className="text-gray-500 text-sm">Bonificações, desdobramentos e subscrições registrados.</p>
+        </div>
+
+        <div className="grid grid-cols-3 gap-3">
+          <StatCard label="Eventos importados" value={movExecResult.imported}  color="green" />
+          <StatCard label="Entradas substituídas" value={movExecResult.replaced} color="amber" sub="reimportação idempotente" />
+          <StatCard label="Ignorados" value={movExecResult.skipped_tickers.length} color={movExecResult.skipped_tickers.length > 0 ? 'red' : 'gray'} sub="ativo não cadastrado" />
+        </div>
+
+        {movExecResult.skipped_tickers.length > 0 && (
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
+            <h2 className="font-semibold text-amber-900 text-sm mb-2">Tickers não encontrados no sistema</h2>
+            <div className="flex flex-wrap gap-2">
+              {movExecResult.skipped_tickers.map(t => (
+                <span key={t} className="text-xs px-2.5 py-1 rounded-full bg-amber-100 border border-amber-300 text-amber-800 font-semibold">{t}</span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="flex gap-3 justify-center">
+          <button onClick={() => navigate('/')} className="px-6 py-2.5 bg-[#0D0D0D] text-white rounded-xl text-sm font-semibold hover:bg-[#0D0D0D]/90 transition-colors">
+            Ver Dashboard
+          </button>
+          <button onClick={() => { setMovStep('upload'); setMovParseResult(null); setMovExecResult(null) }}
+            className="px-6 py-2.5 border border-gray-200 text-gray-700 rounded-xl text-sm font-semibold hover:bg-gray-50 transition-colors">
+            Nova importação
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   // ── Upload step ─────────────────────────────────────────────────────────────
   if (step === 'upload') {
     return (
@@ -268,6 +612,8 @@ export default function ImportB3Page() {
             <p className="text-sm text-gray-500">Extrato de Negociação — Área do Investidor da B3</p>
           </div>
         </div>
+
+        {tabBar}
 
         <div
           onDragOver={e => { e.preventDefault(); setDragOver(true) }}
@@ -642,10 +988,10 @@ export default function ImportB3Page() {
           </div>
         )}
 
-        {/* Corporate events warning */}
+        {/* Corporate events reminder */}
         <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4 text-xs text-blue-800 space-y-1">
-          <p className="font-semibold">Atenção: eventos corporativos não estão no Extrato de Negociação</p>
-          <p>Splits, desdobramentos, bonificações e liquidações de fundos <strong>não aparecem</strong> nesse arquivo e não foram importados. Ativos que passaram por esses eventos podem ter posição final incorreta abaixo. Revise e ajuste manualmente se necessário.</p>
+          <p className="font-semibold">Lembrete: bonificações e desdobramentos não estão neste arquivo</p>
+          <p>Use a aba <strong>Movimentação</strong> (arquivo de Extrato de Movimentação da B3) para importar eventos corporativos e manter as posições corretas.</p>
         </div>
 
         {execResult.asset_positions.length > 0 && (

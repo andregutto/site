@@ -8,6 +8,17 @@ export interface MergedOp {
   institution: string
 }
 
+export interface MovOp {
+  date: string
+  ticker: string
+  ticker_raw: string
+  event_type: 'bonificacao' | 'desdobro' | 'subscricao'
+  quantity: number
+  price: number
+  value_brl: number
+  institution: string
+}
+
 export interface PortfolioAsset {
   id: number
   code: string

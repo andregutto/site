@@ -50,11 +50,17 @@ router.get('/value', requireAuth, async (req, res: Response, next) => {
     if (c.type === 'income') continue
     holdingsMap[c.asset_id] = (holdingsMap[c.asset_id] ?? 0) +
       (c.type === 'buy' ? c.quantity : -c.quantity)
-    if (c.type === 'buy' && c.value_brl && c.value_brl > 0) {
-      investedMap[c.asset_id] = (investedMap[c.asset_id] ?? 0) + c.value_brl
+    if (c.value_brl && c.value_brl > 0) {
+      if (c.type === 'buy') {
+        investedMap[c.asset_id] = (investedMap[c.asset_id] ?? 0) + c.value_brl
+      }
       if (rfAssetIds.includes(c.asset_id)) {
         if (!rfTranchesMap[c.asset_id]) rfTranchesMap[c.asset_id] = []
-        rfTranchesMap[c.asset_id].push({ principal: c.value_brl, start_date: c.date })
+        if (c.type === 'buy') {
+          rfTranchesMap[c.asset_id].push({ principal: c.value_brl, start_date: c.date })
+        } else if (c.type === 'sell') {
+          rfTranchesMap[c.asset_id].push({ principal: -c.value_brl, start_date: c.date })
+        }
       }
     }
   }
