@@ -436,7 +436,7 @@ export default function ImportB3Page() {
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <StatCard label="Eventos" value={summary.total_events} sub={`${summary.bonificacoes} bonif. · ${summary.desdobros} desdobros`} />
-          <StatCard label="Subscrições" value={summary.subscricoes} color="purple" sub={`${fmtBrl(summary.value_brl)} investidos`} />
+          <StatCard label="Subscrições" value={summary.subscricoes} color="blue" sub={`${fmtBrl(summary.value_brl)} investidos`} />
           <StatCard label="Cotas adicionadas" value={new Intl.NumberFormat('pt-BR').format(summary.qty_added)} color="green" />
           <StatCard label="Ativos encontrados" value={inTracker.length} color={notFound.length > 0 ? 'amber' : 'green'} sub={notFound.length > 0 ? `${notFound.length} não cadastrados` : 'todos cadastrados'} />
         </div>
