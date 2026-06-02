@@ -131,6 +131,7 @@ function ActivityTimeline({ clientId, events, setEvents, eventTypes, eventIcons,
   const [filter,     setFilter]     = useState<string>('all')
   const [editingId,  setEditingId]  = useState<string | null>(null)
   const [editText,   setEditText]   = useState('')
+  const [hoveredId,  setHoveredId]  = useState<string | null>(null)
 
   const systemTypes = ['statut_change']
   const filterOptions = ['all', ...eventTypes]
@@ -221,7 +222,10 @@ function ActivityTimeline({ clientId, events, setEvents, eventTypes, eventIcons,
           const isSystem = systemTypes.includes(evt.type)
           const isEditing = editingId === evt.id
           return (
-            <div key={evt.id} style={{ padding: '12px 0', borderBottom: `0.5px solid rgba(28,25,23,0.1)` }}>
+            <div key={evt.id}
+              onMouseEnter={() => setHoveredId(evt.id)}
+              onMouseLeave={() => setHoveredId(null)}
+              style={{ padding: '12px 0', borderBottom: `0.5px solid rgba(28,25,23,0.1)` }}>
               <div style={{ display: 'grid', gridTemplateColumns: '20px 1fr auto', gap: '0 10px', alignItems: 'start' }}>
                 <span style={{ fontFamily: sans, fontSize: 13, color: C.muted, marginTop: 1 }}>{eventIcons[evt.type] ?? '·'}</span>
                 <div>
@@ -252,10 +256,8 @@ function ActivityTimeline({ clientId, events, setEvents, eventTypes, eventIcons,
                     </p>
                   )}
                 </div>
-                {!isEditing && (
-                  <div style={{ display: 'flex', gap: 4, opacity: 0, transition: 'opacity 0.15s' }}
-                    onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
-                    onMouseLeave={e => (e.currentTarget.style.opacity = '0')}>
+                {!isEditing && hoveredId === evt.id && (
+                  <div style={{ display: 'flex', gap: 4 }}>
                     {!isSystem && (
                       <button onClick={() => { setEditingId(evt.id); setEditText(evt.content ?? '') }}
                         style={{ fontFamily: sans, fontSize: 10, padding: '3px 6px', border: `0.5px solid ${C.muted}`, background: 'transparent', color: C.muted, cursor: 'pointer', borderRadius: 0 }}>✎</button>
@@ -269,6 +271,25 @@ function ActivityTimeline({ clientId, events, setEvents, eventTypes, eventIcons,
           )
         })}
       </div>
+    </div>
+  )
+}
+
+function ChecklistItem({ item, onToggle, onDelete }: { item: any; onToggle: () => void; onDelete: () => void }) {
+  const [hovered, setHovered] = useState(false)
+  return (
+    <div onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}
+      style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: `0.5px solid rgba(28,25,23,0.06)` }}>
+      <span onClick={onToggle} style={{ width: 16, height: 16, border: `0.5px solid ${item.done ? C.ink : C.muted}`, background: item.done ? C.ink : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, cursor: 'pointer' }}>
+        {item.done && <span style={{ color: C.paper, fontSize: 9 }}>✓</span>}
+      </span>
+      <span onClick={onToggle} style={{ fontFamily: sans, fontSize: 13, color: item.done ? C.muted : C.ink, textDecoration: item.done ? 'line-through' : 'none', flex: 1, cursor: 'pointer' }}>{item.task}</span>
+      {hovered && (
+        <button onClick={e => { e.stopPropagation(); onDelete() }}
+          style={{ fontFamily: sans, fontSize: 12, padding: '2px 6px', border: `0.5px solid ${C.muted}`, background: 'transparent', color: C.muted, cursor: 'pointer', borderRadius: 0, flexShrink: 0 }}>
+          ×
+        </button>
+      )}
     </div>
   )
 }
@@ -522,6 +543,12 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
                 }} style={{ fontFamily: sans, fontSize: 10, padding: '3px 8px', border: `0.5px solid ${C.muted}`, background: 'transparent', color: C.muted, cursor: 'pointer', borderRadius: 0 }}>
                   {briefingCopied ? 'Copié ✓' : 'Copier lien'}
                 </button>
+                <button onClick={async () => {
+                  await fetch(`/api/sq/briefings/${briefing.token}`, { method: 'DELETE' })
+                  setBriefing(null)
+                }} style={{ fontFamily: sans, fontSize: 12, padding: '3px 8px', border: `0.5px solid ${C.muted}`, background: 'transparent', color: C.muted, cursor: 'pointer', borderRadius: 0 }}>
+                  ×
+                </button>
               </div>
           }
         </div>
@@ -622,7 +649,7 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
         {/* ── Checklist mensuel ── */}
         {checklist && (
           <div style={{ marginTop: 56, paddingTop: 40, borderTop: `0.5px solid ${C.ink}` }}>
-            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 24 }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 8 }}>
               <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.14em', fontSize: 11, color: C.ink }}>
                 Checklist — {new Date(curMonth + '-01').toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}
               </span>
@@ -630,6 +657,9 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
                 {checklist.items.filter((i: any) => i.done).length}/{checklist.items.length} complétées
               </span>
             </div>
+            <p style={{ fontFamily: sans, fontSize: 11, color: C.muted, marginBottom: 20 }}>
+              Renouvelée automatiquement chaque mois. Passez la souris sur une tâche pour la supprimer.
+            </p>
 
             {/* Progress bar */}
             <div style={{ height: 3, background: C.warm, marginBottom: 24, position: 'relative', overflow: 'hidden' }}>
@@ -648,13 +678,16 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
               <div key={category} style={{ marginBottom: 20 }}>
                 <div style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.14em', fontSize: 9, color: C.muted, marginBottom: 8 }}>{category}</div>
                 {(items as any[]).map((item: any) => (
-                  <div key={item.id} onClick={() => toggleChecklistItem(item.id)}
-                    style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 0', borderBottom: `0.5px solid rgba(28,25,23,0.06)`, cursor: 'pointer' }}>
-                    <span style={{ width: 16, height: 16, border: `0.5px solid ${item.done ? C.ink : C.muted}`, background: item.done ? C.ink : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      {item.done && <span style={{ color: C.paper, fontSize: 9 }}>✓</span>}
-                    </span>
-                    <span style={{ fontFamily: sans, fontSize: 13, color: item.done ? C.muted : C.ink, textDecoration: item.done ? 'line-through' : 'none' }}>{item.task}</span>
-                  </div>
+                  <ChecklistItem
+                    key={item.id}
+                    item={item}
+                    onToggle={() => toggleChecklistItem(item.id)}
+                    onDelete={async () => {
+                      const updated = checklist.items.filter((i: any) => i.id !== item.id)
+                      setChecklist({ ...checklist, items: updated })
+                      await fetch('/api/sq/checklists', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ client_id: id, month: curMonth, items: updated }) })
+                    }}
+                  />
                 ))}
               </div>
             ))}

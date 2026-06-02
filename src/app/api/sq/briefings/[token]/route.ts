@@ -26,6 +26,14 @@ export async function GET(_req: NextRequest, { params }: Ctx) {
   return NextResponse.json({ briefing: { ...(briefing as any), sq_clients: clientRaw } })
 }
 
+export async function DELETE(_req: NextRequest, { params }: Ctx) {
+  const { token } = await params
+  const sb = getSupabaseSQ()
+  if (!sb) return NextResponse.json({ error: 'no db' }, { status: 503 })
+  await sb.from('sq_briefings').delete().eq('token', token)
+  return NextResponse.json({ ok: true })
+}
+
 export async function PATCH(req: NextRequest, { params }: Ctx) {
   const { token } = await params
   const body = await req.json()
