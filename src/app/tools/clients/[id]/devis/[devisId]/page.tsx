@@ -10,7 +10,7 @@ interface DevisItem { id: string; service: string; description: string; price_mo
 interface Devis {
   id: string; client_id: string; status: string; items: DevisItem[]
   validity_days: number; intro_text: string | null; notes: string | null
-  created_at: string; sent_at: string | null
+  created_at: string; sent_at: string | null; auto_invoice: boolean
   sq_clients?: { name: string; address: string | null; neighborhood: string | null; category: string | null; contact_name: string | null; contact_email: string | null }
 }
 
@@ -150,10 +150,18 @@ export default function DevisPage({ params }: { params: Promise<{ id: string; de
             </button>
           ))}
           {devis.status === 'accepted' && (
-            <a href={`/tools/clients/${id}/faturamento?from_devis=${devisId}`}
-              style={{ fontFamily: sans, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.12em', padding: '5px 12px', border: 'none', background: '#186040', color: C.paper, textDecoration: 'none' }}>
-              Créer une facture →
-            </a>
+            <>
+              <a href={`/tools/clients/${id}/faturamento?from_devis=${devisId}`}
+                style={{ fontFamily: sans, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.12em', padding: '5px 12px', border: 'none', background: '#186040', color: C.paper, textDecoration: 'none' }}>
+                Créer une facture →
+              </a>
+              <button
+                onClick={() => save({ auto_invoice: !devis.auto_invoice })}
+                title="Générer automatiquement une facture le 1er de chaque mois"
+                style={{ fontFamily: sans, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.1em', padding: '5px 10px', border: `0.5px solid ${devis.auto_invoice ? '#186040' : C.muted}`, background: devis.auto_invoice ? '#186040' + '18' : 'transparent', color: devis.auto_invoice ? '#186040' : C.muted, cursor: 'pointer', borderRadius: 0 }}>
+                {devis.auto_invoice ? '↻ Récurrent ✓' : '↻ Récurrent'}
+              </button>
+            </>
           )}
           <div style={{ width: 1, background: C.muted, margin: '0 4px' }} />
           {mode === 'edit' ? (

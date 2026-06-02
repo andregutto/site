@@ -36,6 +36,8 @@ export default function FinancesPage() {
   const [filterStatus, setFilterStatus] = useState<string>('all')
   const [filterClient, setFilterClient] = useState<string>('all')
   const [viewMode,     setViewMode]     = useState<'table' | 'cashflow'>('table')
+  const [generating,   setGenerating]   = useState(false)
+  const [genResult,    setGenResult]    = useState<string | null>(null)
 
   useEffect(() => {
     fetch('/api/sq/invoices')
@@ -43,6 +45,21 @@ export default function FinancesPage() {
       .then(d => setInvoices(d.invoices ?? []))
       .finally(() => setLoading(false))
   }, [])
+
+  async function generateRecurring() {
+    setGenerating(true); setGenResult(null)
+    const res  = await fetch('/api/sq/invoices/auto-generate', { method: 'POST' })
+    const data = await res.json()
+    if (data.created > 0) {
+      setGenResult(`${data.created} facture(s) créée(s) : ${data.clients_created.join(', ')}`)
+      // Reload invoices
+      const inv = await fetch('/api/sq/invoices').then(r => r.json())
+      setInvoices(inv.invoices ?? [])
+    } else {
+      setGenResult('Aucune nouvelle facture à générer (déjà créées ce mois ou aucun devis récurrent actif).')
+    }
+    setGenerating(false)
+  }
 
   async function markStatus(inv: Invoice, status: string) {
     const patch: any = { status }
@@ -93,11 +110,20 @@ export default function FinancesPage() {
       <main style={{ maxWidth: 1200, margin: '0 auto', padding: '40px 48px 96px' }}>
 
         {/* Header */}
-        <div style={{ marginBottom: 36 }}>
-          <h1 className={barlow.className} style={{ fontWeight: 900, textTransform: 'uppercase', fontSize: 36, color: C.ink, margin: '0 0 4px' }}>
-            Finances
-          </h1>
-          <p style={{ fontFamily: sans, fontSize: 12, color: C.muted, margin: 0 }}>Suivi des factures et des encaissements</p>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 36, gap: 16, flexWrap: 'wrap' }}>
+          <div>
+            <h1 className={barlow.className} style={{ fontWeight: 900, textTransform: 'uppercase', fontSize: 36, color: C.ink, margin: '0 0 4px' }}>
+              Finances
+            </h1>
+            <p style={{ fontFamily: sans, fontSize: 12, color: C.muted, margin: 0 }}>Suivi des factures et des encaissements</p>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
+            <button onClick={generateRecurring} disabled={generating}
+              style={{ fontFamily: sans, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.12em', padding: '8px 16px', border: `0.5px solid ${C.ink}`, background: 'transparent', color: C.ink, cursor: generating ? 'wait' : 'pointer', borderRadius: 0, opacity: generating ? 0.6 : 1 }}>
+              {generating ? 'Génération…' : '↻ Générer factures récurrentes'}
+            </button>
+            {genResult && <span style={{ fontFamily: sans, fontSize: 11, color: C.muted, maxWidth: 320, textAlign: 'right' }}>{genResult}</span>}
+          </div>
         </div>
 
         {/* KPI strip */}

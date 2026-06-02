@@ -323,6 +323,16 @@ export default function FaturamentoPage({ params }: { params: Promise<{ id: stri
                 </div>
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                   <button onClick={() => setPreview(inv)} style={{ fontFamily: sans, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.1em', padding: '5px 10px', border: `0.5px solid ${C.muted}`, background: 'transparent', color: C.muted, cursor: 'pointer', borderRadius: 0 }}>Aperçu PDF</button>
+                  {/* Email button — opens mailto with public link, marks as sent */}
+                  <button onClick={async () => {
+                    const publicUrl = `${window.location.origin}/facturation/${inv.id}`
+                    const subject   = encodeURIComponent(`Facture ${invNum} — Studio Quartier`)
+                    const body      = encodeURIComponent(
+                      `Bonjour,\n\nVeuillez trouver ci-dessous votre facture ${invNum} pour le mois de ${new Date(`${inv.month}-01`).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}.\n\nMontant : ${Number(inv.total).toLocaleString('fr-FR')} € HT\n\nConsultez et téléchargez votre facture ici :\n${publicUrl}\n\nCordialement,\nStudio Quartier`
+                    )
+                    window.open(`mailto:?subject=${subject}&body=${body}`)
+                    if (inv.status === 'brouillon') await markStatus(inv, 'envoyee')
+                  }} style={{ fontFamily: sans, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.1em', padding: '5px 10px', border: `0.5px solid #2A42A8`, background: 'transparent', color: '#2A42A8', cursor: 'pointer', borderRadius: 0 }}>✉ Envoyer</button>
                   {inv.status === 'brouillon' && <button onClick={() => markStatus(inv, 'envoyee')} style={{ fontFamily: sans, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.1em', padding: '5px 10px', border: `0.5px solid #7c5a00`, background: 'transparent', color: '#7c5a00', cursor: 'pointer', borderRadius: 0 }}>Marquer envoyée</button>}
                   {inv.status === 'envoyee'   && <button onClick={() => markStatus(inv, 'payee')}   style={{ fontFamily: sans, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.1em', padding: '5px 10px', border: `0.5px solid #186040`, background: 'transparent', color: '#186040', cursor: 'pointer', borderRadius: 0 }}>Marquer payée ✓</button>}
                   <button onClick={() => setEditing(inv)} style={{ fontFamily: sans, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.1em', padding: '5px 10px', border: `0.5px solid ${C.muted}`, background: 'transparent', color: C.muted, cursor: 'pointer', borderRadius: 0 }}>Modifier</button>

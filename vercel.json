@@ -3,5 +3,11 @@
     "src/app/api/sq/analyze/route.ts": {
       "maxDuration": 10
     }
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/sq/invoices/auto-generate",
+      "schedule": "0 8 1 * *"
+    }
+  ]
 }
