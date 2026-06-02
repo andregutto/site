@@ -15,6 +15,7 @@ const NAV = [
   { href: '/tools/calendrier',          label: 'Calendrier',  match: (p: string) => p === '/tools/calendrier' },
   { href: '/tools/finances',            label: 'Finances',    match: (p: string) => p.startsWith('/tools/finances') },
   { href: '/tools/services',            label: 'Services',    match: (p: string) => p.startsWith('/tools/services') },
+  { href: '/tools/parametres',          label: 'Paramètres',  match: (p: string) => p.startsWith('/tools/parametres') },
 ]
 
 export function SQHeader() {

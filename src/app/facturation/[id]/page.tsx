@@ -6,16 +6,22 @@ import { C, sans } from '@/lib/sq-design'
 
 const barlow = Barlow_Condensed({ weight: ['900'], subsets: ['latin'] })
 
+const SETTINGS_DEFAULTS = { regime_fiscal: 'auto_entrepreneur', agency_name: 'Studio Quartier', agency_address: 'Paris, France', agency_email: '', agency_siret: '', agency_website: 'studioquartier.fr' }
+
 export default function PublicInvoicePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
-  const [invoice, setInvoice] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
+  const [invoice,  setInvoice]  = useState<any>(null)
+  const [settings, setSettings] = useState(SETTINGS_DEFAULTS)
+  const [loading,  setLoading]  = useState(true)
 
   useEffect(() => {
-    fetch(`/api/sq/invoices/${id}`)
-      .then(r => r.json())
-      .then(d => setInvoice(d.invoice))
-      .finally(() => setLoading(false))
+    Promise.all([
+      fetch(`/api/sq/invoices/${id}`).then(r => r.json()),
+      fetch('/api/sq/settings').then(r => r.json()),
+    ]).then(([inv, cfg]) => {
+      setInvoice(inv.invoice)
+      setSettings({ ...SETTINGS_DEFAULTS, ...cfg.settings })
+    }).finally(() => setLoading(false))
   }, [id])
 
   if (loading) return (
@@ -93,16 +99,24 @@ export default function PublicInvoicePage({ params }: { params: Promise<{ id: st
           {/* Total */}
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 40 }}>
             <div style={{ border: `0.5px solid ${C.ink}`, padding: '16px 24px', minWidth: 260 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 48, fontFamily: sans, fontSize: 13, color: C.muted, marginBottom: 8 }}>
-                <span>Sous-total HT</span><span>{Number(invoice.total).toLocaleString('fr-FR')} €</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 48, fontFamily: sans, fontSize: 13, color: C.muted, marginBottom: 12 }}>
-                <span>TVA (20%)</span><span>{(Number(invoice.total) * 0.2).toLocaleString('fr-FR', { maximumFractionDigits: 2 })} €</span>
-              </div>
-              <div style={{ height: '0.5px', background: C.ink, marginBottom: 12 }} />
-              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 48, fontFamily: sans, fontSize: 16, fontWeight: 700, color: C.ink }}>
-                <span>Total TTC</span><span>{(Number(invoice.total) * 1.2).toLocaleString('fr-FR', { maximumFractionDigits: 2 })} €</span>
-              </div>
+              {settings.regime_fiscal === 'societe' ? (
+                <>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 48, fontFamily: sans, fontSize: 13, color: C.muted, marginBottom: 8 }}>
+                    <span>Sous-total HT</span><span>{Number(invoice.total).toLocaleString('fr-FR')} €</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 48, fontFamily: sans, fontSize: 13, color: C.muted, marginBottom: 12 }}>
+                    <span>TVA (20%)</span><span>{(Number(invoice.total) * 0.2).toLocaleString('fr-FR', { maximumFractionDigits: 2 })} €</span>
+                  </div>
+                  <div style={{ height: '0.5px', background: C.ink, marginBottom: 12 }} />
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 48, fontFamily: sans, fontSize: 16, fontWeight: 700, color: C.ink }}>
+                    <span>Total TTC</span><span>{(Number(invoice.total) * 1.2).toLocaleString('fr-FR', { maximumFractionDigits: 2 })} €</span>
+                  </div>
+                </>
+              ) : (
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 48, fontFamily: sans, fontSize: 16, fontWeight: 700, color: C.ink }}>
+                  <span>Total</span><span>{Number(invoice.total).toLocaleString('fr-FR')} €</span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -113,12 +127,21 @@ export default function PublicInvoicePage({ params }: { params: Promise<{ id: st
           )}
 
           {/* Footer */}
-          <div style={{ borderTop: `0.5px solid rgba(28,25,23,0.2)`, paddingTop: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <div style={{ fontFamily: sans, fontWeight: 700, fontSize: 13, color: C.ink }}>Studio Quartier</div>
-              <div style={{ fontFamily: sans, fontSize: 11, color: C.muted }}>Agence de marketing digital · Paris</div>
+          <div style={{ borderTop: `0.5px solid rgba(28,25,23,0.2)`, paddingTop: 24 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+              <div>
+                <div style={{ fontFamily: sans, fontWeight: 700, fontSize: 13, color: C.ink }}>{settings.agency_name}</div>
+                <div style={{ fontFamily: sans, fontSize: 11, color: C.muted }}>{settings.agency_address}</div>
+                {settings.agency_email && <div style={{ fontFamily: sans, fontSize: 11, color: C.muted }}>{settings.agency_email}</div>}
+                {settings.agency_siret && <div style={{ fontFamily: sans, fontSize: 11, color: C.muted }}>SIRET : {settings.agency_siret}</div>}
+              </div>
+              <div style={{ fontFamily: sans, fontSize: 11, color: C.muted }}>{settings.agency_website}</div>
             </div>
-            <div style={{ fontFamily: sans, fontSize: 11, color: C.muted }}>studioquartier.fr</div>
+            {settings.regime_fiscal === 'auto_entrepreneur' && (
+              <div style={{ fontFamily: sans, fontSize: 10, color: C.muted, marginTop: 10, fontStyle: 'italic' }}>
+                TVA non applicable — art. 293 B du CGI
+              </div>
+            )}
           </div>
         </div>
       </div>
