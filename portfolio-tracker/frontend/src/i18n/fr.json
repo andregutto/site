@@ -585,6 +585,8 @@
     "overviewHistAvg": "moy.",
     "overviewPerDay": "/jour",
     "overviewNMonths": "mois",
+    "overviewRecurringIncluded": "récurrents prévus inclus",
+    "overviewNearLimit": "proche du plafond budgétaire",
     "overviewTopCategories": "Top catégories",
     "overviewHistory": "Historique",
     "overviewNextSteps": "Prochaines étapes",

@@ -395,23 +395,66 @@ export default function FinancesOverviewPage() {
   const daysElapsed  = isCurrentMonth ? Math.max(1, Math.round((todayMs - startMs) / MS_DAY) + 1) : daysTotal
   const daysRemaining = isCurrentMonth ? Math.max(0, daysTotal - daysElapsed) : 0
 
-  // Historical daily average: last 3 closed months with expenses
+  // #1 Outlier-resistant projection: median of per-month daily averages
   const pastMonthsData = data.months.filter(m => m.month < month && m.expenses > 0).slice(-3)
-  const histTotalExpenses = pastMonthsData.reduce((s, m) => s + m.expenses, 0)
-  const histTotalDays = pastMonthsData.reduce((s, m) => {
+  const perMonthStats = pastMonthsData.map(m => {
     const r = fmDateRange(m.month, cycleDay)
-    return s + Math.round((r.end.getTime() - r.start.getTime()) / MS_DAY) + 1
-  }, 0)
-  const histDailyAvg = histTotalDays > 0 ? histTotalExpenses / histTotalDays : 0
+    const days = Math.round((r.end.getTime() - r.start.getTime()) / MS_DAY) + 1
+    return { expenses: m.expenses, days, dailyAvg: m.expenses / days }
+  })
+  const sortedAvgs = [...perMonthStats].sort((a, b) => a.dailyAvg - b.dailyAvg)
+  const histDailyAvg = sortedAvgs.length > 0
+    ? sortedAvgs[Math.floor(sortedAvgs.length / 2)].dailyAvg
+    : 0
+  const avgMonthDays = perMonthStats.length > 0
+    ? perMonthStats.reduce((s, m) => s + m.days, 0) / perMonthStats.length
+    : 30
 
-  // For current month: project using actual + historical daily avg × remaining days
+  // #2 Recurring detection: categories present in ALL past months with large avg, missing this month
+  const catHistMap = new Map<number, { total: number; count: number; name: string; icon: string }>()
+  for (const pm of pastMonthsData) {
+    for (const env of pm.by_envelope) {
+      if (env.type === 'income') continue
+      for (const cat of env.categories ?? []) {
+        const prev = catHistMap.get(cat.id) ?? { total: 0, count: 0, name: cat.name, icon: cat.icon }
+        catHistMap.set(cat.id, { ...prev, total: prev.total + cat.actual, count: prev.count + 1 })
+      }
+    }
+  }
+  const currentCatActuals = new Map<number, number>()
+  for (const env of currentMonthData.by_envelope) {
+    for (const cat of env.categories ?? []) currentCatActuals.set(cat.id, cat.actual)
+  }
+  const missingRecurrents: { id: number; name: string; icon: string; amount: number }[] = []
+  let missingTotal = 0
+  if (isCurrentMonth && pastMonthsData.length > 0 && totalBudgeted > 0) {
+    for (const [catId, hist] of catHistMap.entries()) {
+      if (hist.count < pastMonthsData.length) continue // must appear in every past month
+      const avg = hist.total / hist.count
+      if (avg < totalBudgeted * 0.12) continue // only significant items (>12% of budget)
+      const current = currentCatActuals.get(catId) ?? 0
+      if (current < avg * 0.25) { // <25% recorded → treat as not yet imported
+        missingRecurrents.push({ id: catId, name: hist.name, icon: hist.icon, amount: Math.round(avg) })
+        missingTotal += avg
+      }
+    }
+  }
+  // Subtract recurring component from daily avg to avoid double-counting
+  const adjustedDailyAvg = Math.max(0, histDailyAvg - (avgMonthDays > 0 ? missingTotal / avgMonthDays : 0))
+
+  // For current month: project using actual + missing recurrents + adjusted daily avg × remaining
   // For past months: display value = actual expenses (the real result)
-  const projected = isCurrentMonth && histDailyAvg > 0
-    ? Math.round(totalExpenses + histDailyAvg * daysRemaining)
+  const projected = isCurrentMonth && (histDailyAvg > 0 || missingTotal > 0)
+    ? Math.round(totalExpenses + missingTotal + adjustedDailyAvg * daysRemaining)
     : null
   const displayValue = projected ?? (!isCurrentMonth && totalExpenses > 0 ? totalExpenses : null)
   const displayPct  = displayValue != null && totalBudgeted > 0 ? Math.min(Math.round((displayValue / totalBudgeted) * 100), 100) : null
   const displayOver = displayValue != null && totalBudgeted > 0 && displayValue > totalBudgeted
+
+  // #3 Budget alert: envelopes at 80–99% of budget this month
+  const approachingBudgetEnvs = isCurrentMonth
+    ? expenseEnvelopeBars.filter(e => e.budget > 0 && !e.over && e.actual / e.budget >= 0.80)
+    : []
 
   return (
     <div className="space-y-5">
@@ -595,6 +638,11 @@ export default function FinancesOverviewPage() {
                     {t.finances.overviewHistAvg} {fmt(cx(histDailyAvg), currency, true)}{t.finances.overviewPerDay} · {pastMonthsData.length} {t.finances.overviewNMonths}
                   </p>
                 )}
+                {isCurrentMonth && missingRecurrents.length > 0 && (
+                  <p style={{ fontSize: 10, color: 'rgba(13,13,13,0.42)', marginTop: 4 }}>
+                    {t.finances.overviewRecurringIncluded}: {missingRecurrents.map(r => `${r.icon} ${fmt(cx(r.amount), currency, true)}`).join(' · ')}
+                  </p>
+                )}
               </>
             ) : isCurrentMonth ? (
               <p style={{ fontSize: 12, color: 'rgba(13,13,13,0.38)', fontStyle: 'italic' }}>
@@ -606,6 +654,16 @@ export default function FinancesOverviewPage() {
           </div>
         </div>
       </div>
+
+      {/* #3 Budget alert: envelopes approaching limit */}
+      {approachingBudgetEnvs.length > 0 && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(232,160,32,0.08)', border: '1px solid rgba(232,160,32,0.28)', borderRadius: 12, padding: '8px 14px' }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--arvo-ocre)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <p style={{ flex: 1, fontSize: 12, color: 'var(--arvo-ocre)', margin: 0, fontFamily: 'var(--arvo-font-body)' }}>
+            {approachingBudgetEnvs.map(e => `${e.icon} ${resolveEnvName(e.name, e.type, e.name_key, nameKeys)} (${Math.round((e.actual / e.budget) * 100)}%)`).join('  ·  ')} — {t.finances.overviewNearLimit}
+          </p>
+        </div>
+      )}
 
       {/* Income envelope section */}
       {incomeEnvelopeBar && (
