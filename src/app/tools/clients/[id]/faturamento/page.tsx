@@ -10,7 +10,7 @@ const barlow = Barlow_Condensed({ weight: ['900'], subsets: ['latin'] })
 interface InvoiceItem { service: string; qty: number; unit_price: number }
 interface Invoice {
   id: string; client_id: string; month: string; items: InvoiceItem[]
-  total: number; status: string; notes: string | null
+  total: number; status: string; notes: string | null; invoice_number: string | null
   created_at: string; sent_at: string | null; paid_at: string | null
 }
 
@@ -117,7 +117,7 @@ function InvoiceEditor({ invoice, clientId, onSave, onCancel }: {
 
 function InvoicePreview({ invoice, clientName, onClose }: { invoice: Invoice; clientName: string; onClose: () => void }) {
   const monthLabel = new Date(`${invoice.month}-01`).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
-  const invoiceNum = `SQ-${invoice.month.replace('-', '')}-${invoice.id.slice(-4).toUpperCase()}`
+  const invoiceNum = invoice.invoice_number ?? `SQ-${invoice.month.replace('-', '')}-${invoice.id.slice(-4).toUpperCase()}`
 
   return (
     <>
@@ -308,7 +308,7 @@ export default function FaturamentoPage({ params }: { params: Promise<{ id: stri
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {invoices.map(inv => {
             const monthLabel = new Date(`${inv.month}-01`).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
-            const invNum = `SQ-${inv.month.replace('-', '')}-${inv.id.slice(-4).toUpperCase()}`
+            const invNum = inv.invoice_number ?? `SQ-${inv.month.replace('-', '')}-${inv.id.slice(-4).toUpperCase()}`
             return (
               <div key={inv.id} style={{ border: `0.5px solid ${C.ink}`, padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
                 <div style={{ flex: 1 }}>

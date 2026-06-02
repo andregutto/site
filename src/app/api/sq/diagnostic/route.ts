@@ -11,6 +11,16 @@ export async function POST(req: NextRequest) {
   const client = clientRaw as any
   if (!client) return NextResponse.json({ error: 'client not found' }, { status: 404 })
 
+  // Fetch briefing if filled
+  const { data: briefing } = await (sb as any)
+    .from('sq_briefings')
+    .select('*')
+    .eq('client_id', client_id)
+    .not('filled_at', 'is', null)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
   const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
 
   const signals: string[] = []
@@ -23,6 +33,17 @@ export async function POST(req: NextRequest) {
   if (client.google_reviews !== null && client.google_reviews < 30) signals.push(`Peu d'avis Google (${client.google_reviews})`)
 
   const servicesRaw: string[] = client.services_suggested ?? []
+
+  const briefingBlock = briefing ? `
+Informations recueillies directement auprès du client (briefing rempli) :
+${briefing.brand_tone       ? `- Comment il décrit son établissement : ${briefing.brand_tone}` : ''}
+${briefing.goals            ? `- Objectif principal : ${briefing.goals}` : ''}
+${briefing.target_customers ? `- Clientèle cible : ${briefing.target_customers}` : ''}
+${briefing.visual_refs      ? `- Références visuelles : ${briefing.visual_refs}` : ''}
+${briefing.dont_wants       ? `- Ce qu'il ne veut pas : ${briefing.dont_wants}` : ''}
+${briefing.color_prefs      ? `- Préférences visuelles : ${briefing.color_prefs}` : ''}
+${briefing.extra_notes      ? `- Notes complémentaires : ${briefing.extra_notes}` : ''}
+Utilise ces informations pour personnaliser le diagnostic — fais référence à leurs mots, leurs objectifs, leur vision.` : ''
 
   const prompt = `Tu es un consultant senior en marketing digital pour Studio Quartier, une agence parisienne spécialisée dans les commerces de quartier indépendants.
 
@@ -37,6 +58,7 @@ Observations internes (NE PAS citer directement) :
 ${signals.length > 0 ? signals.map(s => `- ${s}`).join('\n') : '- Présence digitale globalement correcte'}
 
 Services qui pourraient lui correspondre : ${servicesRaw.join(', ') || 'site web, réseaux sociaux, référencement local'}
+${briefingBlock}
 
 Génère UNIQUEMENT un objet JSON sans markdown avec cette structure :
 {
