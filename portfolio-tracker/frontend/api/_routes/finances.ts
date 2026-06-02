@@ -687,43 +687,61 @@ router.get('/accounts/linked', requireAuth, async (req, res: Response) => {
   res.json(data ?? null)
 })
 
-// POST /api/finances/accounts/:id/sync-portfolio
-// Reads account balance and upserts a manual_value for the linked asset
-router.post('/accounts/:id/sync-portfolio', requireAuth, async (req, res: Response) => {
-  const { userId } = req as AuthRequest
-  const accountId = Number(req.params.id)
-  const { data: account, error: accErr } = await supabaseAdmin
+// Helper: compute balance and upsert manual_value for linked asset (fire-and-forget safe)
+async function syncAccountToPortfolio(accountId: number, userId: string): Promise<void> {
+  const { data: account } = await supabaseAdmin
     .from('finance_accounts')
     .select('id, name, currency, linked_asset_id')
     .eq('id', accountId)
     .eq('user_id', userId)
     .single()
-  if (accErr || !account) { res.status(404).json({ error: 'Conta não encontrada' }); return }
-  if (!account.linked_asset_id) { res.status(400).json({ error: 'Conta não vinculada a nenhum ativo' }); return }
+  if (!account?.linked_asset_id) return
   let balance = 0
-  let syncOffset = 0
+  let offset = 0
   while (true) {
     const { data: page } = await supabaseAdmin
       .from('finance_transactions')
       .select('amount')
       .eq('user_id', userId)
       .eq('account_id', accountId)
-      .range(syncOffset, syncOffset + 999)
+      .range(offset, offset + 999)
     if (!page || page.length === 0) break
     balance += page.reduce((s, t) => s + Number(t.amount), 0)
     if (page.length < 1000) break
-    syncOffset += 1000
+    offset += 1000
   }
   balance = Math.round(balance * 100) / 100
   const today = new Date().toISOString().split('T')[0]
-  const { error: mvErr } = await supabaseAdmin
+  await supabaseAdmin
     .from('manual_values')
     .upsert(
       { asset_id: account.linked_asset_id, ref_date: today, value: balance, currency: account.currency, notes: `Sincronizado de ${account.name}` },
       { onConflict: 'asset_id,ref_date' }
     )
-  if (mvErr) { res.status(500).json({ error: mvErr.message }); return }
-  res.json({ ok: true, value: balance, currency: account.currency })
+}
+
+// POST /api/finances/accounts/:id/sync-portfolio
+router.post('/accounts/:id/sync-portfolio', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const accountId = Number(req.params.id)
+  const { data: account, error: accErr } = await supabaseAdmin
+    .from('finance_accounts')
+    .select('id, linked_asset_id, currency')
+    .eq('id', accountId)
+    .eq('user_id', userId)
+    .single()
+  if (accErr || !account) { res.status(404).json({ error: 'Conta não encontrada' }); return }
+  if (!account.linked_asset_id) { res.status(400).json({ error: 'Conta não vinculada a nenhum ativo' }); return }
+  await syncAccountToPortfolio(accountId, userId)
+  // Return current balance from manual_values
+  const today = new Date().toISOString().split('T')[0]
+  const { data: mv } = await supabaseAdmin
+    .from('manual_values')
+    .select('value, currency')
+    .eq('asset_id', account.linked_asset_id)
+    .eq('ref_date', today)
+    .single()
+  res.json({ ok: true, value: mv?.value ?? 0, currency: mv?.currency ?? account.currency })
 })
 
 // ── Transactions ───────────────────────────────────────────────────────────────
@@ -804,6 +822,7 @@ router.post('/transactions', requireAuth, async (req, res: Response) => {
     .select()
     .single()
   if (error) { res.status(500).json({ error: error.message }); return }
+  if (data.account_id) syncAccountToPortfolio(data.account_id, userId).catch(() => {})
   res.json(data)
 })
 
@@ -835,6 +854,7 @@ router.patch('/transactions/bulk-assign-account', requireAuth, async (req, res: 
     .in('id', transaction_ids)
     .eq('user_id', userId)
   if (error) { res.status(500).json({ error: error.message }); return }
+  if (account_id) syncAccountToPortfolio(account_id, userId).catch(() => {})
   res.json({ ok: true, updated: transaction_ids.length })
 })
 
@@ -873,6 +893,11 @@ router.patch('/transactions/:id', requireAuth, async (req, res: Response) => {
       .eq('id', id)
       .eq('user_id', userId)
     if (error) { res.status(500).json({ error: error.message }); return }
+    if (update.amount != null) {
+      const { data: tx } = await supabaseAdmin
+        .from('finance_transactions').select('account_id').eq('id', id).eq('user_id', userId).single()
+      if (tx?.account_id) syncAccountToPortfolio(tx.account_id, userId).catch(() => {})
+    }
   }
   res.json({ ok: true })
 })
@@ -881,12 +906,15 @@ router.patch('/transactions/:id', requireAuth, async (req, res: Response) => {
 router.delete('/transactions/:id', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const { id } = req.params
+  const { data: tx } = await supabaseAdmin
+    .from('finance_transactions').select('account_id').eq('id', id).eq('user_id', userId).single()
   const { error } = await supabaseAdmin
     .from('finance_transactions')
     .delete()
     .eq('id', id)
     .eq('user_id', userId)
   if (error) { res.status(500).json({ error: error.message }); return }
+  if (tx?.account_id) syncAccountToPortfolio(tx.account_id, userId).catch(() => {})
   res.json({ ok: true })
 })
 
@@ -1448,6 +1476,12 @@ router.post('/transactions/csv-import', requireAuth, async (req, res: Response) 
 
   // Fire-and-forget transfer detection after import
   detectTransferPairs(userId).catch(() => {})
+
+  // Auto-sync all affected finance accounts to portfolio
+  const importedAccountIds = [...new Set(newRows.map(r => r.account_id).filter((id): id is number => id != null))]
+  for (const aid of importedAccountIds) {
+    syncAccountToPortfolio(aid, userId).catch(() => {})
+  }
 
   res.json({ imported, skipped, total: transactions.length })
 })
