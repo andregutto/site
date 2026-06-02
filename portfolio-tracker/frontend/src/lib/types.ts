@@ -191,6 +191,13 @@ export interface AssetDetail {
   contributions: Contribution[]
 }
 
+export interface SplitEvent {
+  date: string
+  numerator: number
+  denominator: number
+  ratio: string
+}
+
 export interface ContributionRow {
   id: number
   date: string

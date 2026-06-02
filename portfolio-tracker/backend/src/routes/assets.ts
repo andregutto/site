@@ -3,6 +3,8 @@ import { requireAuth, AuthRequest } from '../middleware/auth.js'
 import { supabaseAdmin } from '../lib/supabase.js'
 import { getCurrentPrice } from '../services/priceService.js'
 import type { Asset, FITranche } from '../services/priceService.js'
+import { getSplitEvents } from '../services/yahooService.js'
+import { cache } from '../lib/cache.js'
 import { calculateTrancheProfits } from '../services/fixedIncomeService.js'
 import type { FixedIncomeAsset } from '../services/fixedIncomeService.js'
 import { getFxRate } from '../lib/fx.js'
@@ -346,6 +348,61 @@ router.patch('/:id', requireAuth, async (req, res: Response) => {
     .eq('user_id', userId)
   if (error) { res.status(500).json({ error: error.message }); return }
   res.json({ ok: true })
+})
+
+router.get('/:id/split-check', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const assetId = Number(req.params.id)
+  const { data: asset } = await supabaseAdmin
+    .from('assets').select('id, asset_type, ticker_yahoo')
+    .eq('id', assetId).eq('user_id', userId).single()
+  if (!asset || asset.asset_type !== 'ticker' || !asset.ticker_yahoo) {
+    res.json({ splits: [] }); return
+  }
+  const { data: contribs } = await supabaseAdmin
+    .from('contributions').select('date, type, price_orig')
+    .eq('asset_id', assetId).order('date', { ascending: true })
+  if (!contribs?.length) { res.json({ splits: [] }); return }
+  const firstDate = contribs[0].date
+  const allSplits = await getSplitEvents(asset.ticker_yahoo as string, firstDate)
+  const splitContribs = contribs.filter(c => c.type === 'buy' && (c.price_orig === 0 || c.price_orig === null))
+  const unaccounted = allSplits.filter(split => {
+    const splitTs = new Date(split.date).getTime()
+    return !splitContribs.some(c => Math.abs(new Date(c.date).getTime() - splitTs) <= 10 * 24 * 60 * 60 * 1000)
+  })
+  res.json({ splits: unaccounted })
+})
+
+router.post('/:id/split', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const assetId = Number(req.params.id)
+  const { data: asset } = await supabaseAdmin
+    .from('assets').select('id, asset_type, currency')
+    .eq('id', assetId).eq('user_id', userId).single()
+  if (!asset) { res.status(404).json({ error: 'Ativo não encontrado' }); return }
+  if (asset.asset_type !== 'ticker') { res.status(400).json({ error: 'Split só aplicável a ações/ETFs' }); return }
+  const { date, numerator, denominator } = req.body as { date: string; numerator: number; denominator: number }
+  if (!date || !numerator || !denominator || numerator === denominator) {
+    res.status(400).json({ error: 'date, numerator e denominator obrigatórios e diferentes' }); return
+  }
+  const { data: contribs } = await supabaseAdmin
+    .from('contributions').select('type, quantity').eq('asset_id', assetId).lte('date', date)
+  const holdingsAtDate = (contribs ?? []).reduce((s, c) => s + (c.type === 'buy' ? c.quantity : -c.quantity), 0)
+  if (holdingsAtDate <= 0) { res.status(400).json({ error: 'Sem posição na data do evento' }); return }
+  const delta = holdingsAtDate * (numerator / denominator - 1)
+  if (Math.abs(delta) < 0.0001) { res.status(400).json({ error: 'Delta de posição é zero' }); return }
+  const type = delta > 0 ? 'buy' : 'sell'
+  const quantity = Math.round(Math.abs(delta) * 1e6) / 1e6
+  const label = numerator > denominator
+    ? `Desdobro ${numerator}:${denominator}`
+    : `Grupamento ${numerator}:${denominator}`
+  const { error } = await supabaseAdmin.from('contributions').insert({
+    asset_id: assetId, date, type, quantity,
+    price_orig: 0, currency: asset.currency ?? 'USD', value_brl: 0, description: label,
+  })
+  if (error) { res.status(500).json({ error: error.message }); return }
+  cache.deletePattern(`portfolio:value:${userId}`)
+  res.json({ ok: true, delta, type, quantity, label })
 })
 
 router.post('/:id/archive', requireAuth, async (req, res: Response) => {

@@ -1204,7 +1204,17 @@
     "srcYahoo": "Cotação · Yahoo Finance",
     "srcCoingecko": "Cotação · CoinGecko",
     "srcManual": "Valor inserido manualmente",
-    "srcCostBasis": "Estimado pelo custo médio"
+    "srcCostBasis": "Estimado pelo custo médio",
+    "splitWarningTitle": "Desdobro / grupamento detectado",
+    "splitWarningBody": "Yahoo Finance registra {n} evento(s) corporativo(s) não cadastrado(s) neste ativo.",
+    "splitRegisterBtn": "Registrar",
+    "splitModalTitle": "Registrar desdobro / grupamento",
+    "splitDate": "Data do evento",
+    "splitNumerator": "Novas cotas",
+    "splitDenominator": "Cotas originais",
+    "splitTypeLabel": "Ex: desdobro 10:1 → 10 novas / 1 original",
+    "splitSubmit": "Registrar",
+    "splitSuccess": "Evento registrado com sucesso"
   },
   "dividends": {
     "title": "Dividendos",

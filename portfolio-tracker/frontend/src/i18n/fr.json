@@ -1204,7 +1204,17 @@
     "srcYahoo": "Cotation · Yahoo Finance",
     "srcCoingecko": "Cotation · CoinGecko",
     "srcManual": "Valeur saisie manuellement",
-    "srcCostBasis": "Estimé à partir du coût moyen"
+    "srcCostBasis": "Estimé à partir du coût moyen",
+    "splitWarningTitle": "Division / regroupement détecté",
+    "splitWarningBody": "Yahoo Finance enregistre {n} opération(s) sur titres non encore saisie(s) pour cet actif.",
+    "splitRegisterBtn": "Enregistrer",
+    "splitModalTitle": "Enregistrer une division / regroupement",
+    "splitDate": "Date de l operation",
+    "splitNumerator": "Nouvelles actions",
+    "splitDenominator": "Actions d origine",
+    "splitTypeLabel": "Ex. division 10:1 → 10 nouvelles / 1 d origine",
+    "splitSubmit": "Enregistrer",
+    "splitSuccess": "Opération enregistrée avec succès"
   },
   "dividends": {
     "title": "Dividendes",

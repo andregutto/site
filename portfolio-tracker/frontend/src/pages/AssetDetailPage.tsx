@@ -123,6 +123,11 @@ export default function AssetDetailPage() {
   const [showManualModal,    setShowManualModal]    = useState(false)
   const [manualValueHistory, setManualValueHistory] = useState<ManualValue[]>([])
   const [chartPeriod,        setChartPeriod]        = useState<number | null>(12)
+  const [splitWarnings,      setSplitWarnings]      = useState<import('../lib/types').SplitEvent[]>([])
+  const [showSplitModal,     setShowSplitModal]     = useState(false)
+  const [splitModalData,     setSplitModalData]     = useState<{ date: string; numerator: number; denominator: number } | null>(null)
+  const [splitSubmitting,    setSplitSubmitting]    = useState(false)
+  const [splitSuccess,       setSplitSuccess]       = useState(false)
 
   useEffect(() => {
     if (!id) return
@@ -131,6 +136,9 @@ export default function AssetDetailPage() {
       .catch(() => {})
     apiFetch<{ id: number; name: string; color: string }[]>('/assets/classes')
       .then(setAvailableClasses)
+      .catch(() => {})
+    apiFetch<{ splits: import('../lib/types').SplitEvent[] }>(`/assets/${id}/split-check`)
+      .then(r => setSplitWarnings(r.splits))
       .catch(() => {})
   }, [id])
 
@@ -229,6 +237,20 @@ export default function AssetDetailPage() {
     }
   }
 
+  async function handleSplitSubmit() {
+    if (!id || !splitModalData) return
+    setSplitSubmitting(true)
+    try {
+      await apiFetch(`/assets/${id}/split`, {
+        method: 'POST',
+        body: JSON.stringify(splitModalData),
+      })
+      setSplitSuccess(true)
+      setSplitWarnings(w => w.filter(s => s.date !== splitModalData.date))
+      setTimeout(() => { setShowSplitModal(false); setSplitSuccess(false); refresh() }, 1500)
+    } catch { /* keep modal open */ } finally { setSplitSubmitting(false) }
+  }
+
   // total_brl passado via navegação (do dashboard) para calcular % carteira
   const totalBrl: number = (location.state as { total_brl?: number } | null)?.total_brl ?? 0
 
@@ -307,6 +329,74 @@ export default function AssetDetailPage() {
 
   return (
     <div className="space-y-6">
+      {/* Split warning banner */}
+      {splitWarnings.length > 0 && (
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-start gap-3">
+          <span className="text-amber-500 text-lg shrink-0">⚠</span>
+          <div className="flex-1 min-w-0">
+            <p className="font-semibold text-amber-900 text-sm">{d.splitWarningTitle}</p>
+            <p className="text-xs text-amber-700 mt-0.5">{(d.splitWarningBody as string).replace('{n}', String(splitWarnings.length))}</p>
+            <div className="flex flex-wrap gap-2 mt-2">
+              {splitWarnings.map(s => (
+                <button
+                  key={s.date}
+                  onClick={() => { setSplitModalData({ date: s.date, numerator: s.numerator, denominator: s.denominator }); setShowSplitModal(true) }}
+                  className="text-xs bg-amber-100 hover:bg-amber-200 border border-amber-300 text-amber-800 px-2 py-1 rounded-lg transition-colors"
+                >
+                  {s.ratio} · {s.date} {d.splitRegisterBtn} →
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Split modal */}
+      {showSplitModal && splitModalData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 space-y-4">
+            <h2 className="font-bold text-gray-900">{d.splitModalTitle}</h2>
+            {splitSuccess ? (
+              <p className="text-green-600 text-sm font-medium">{d.splitSuccess}</p>
+            ) : (
+              <>
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-xs text-gray-500 uppercase tracking-wide">{d.splitDate}</label>
+                    <input type="date" value={splitModalData.date}
+                      onChange={e => setSplitModalData(p => p && { ...p, date: e.target.value })}
+                      className="mt-1 w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#0D0D0D]/30" />
+                  </div>
+                  <div className="flex gap-3">
+                    <div className="flex-1">
+                      <label className="text-xs text-gray-500 uppercase tracking-wide">{d.splitNumerator}</label>
+                      <input type="number" min="1" value={splitModalData.numerator}
+                        onChange={e => setSplitModalData(p => p && { ...p, numerator: Number(e.target.value) })}
+                        className="mt-1 w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#0D0D0D]/30" />
+                    </div>
+                    <div className="flex-1">
+                      <label className="text-xs text-gray-500 uppercase tracking-wide">{d.splitDenominator}</label>
+                      <input type="number" min="1" value={splitModalData.denominator}
+                        onChange={e => setSplitModalData(p => p && { ...p, denominator: Number(e.target.value) })}
+                        className="mt-1 w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#0D0D0D]/30" />
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-400">{d.splitTypeLabel}</p>
+                </div>
+                <div className="flex gap-2 pt-2">
+                  <button onClick={() => setShowSplitModal(false)}
+                    className="flex-1 border border-gray-200 rounded-xl py-2 text-sm text-gray-600 hover:bg-gray-50">✕</button>
+                  <button onClick={handleSplitSubmit} disabled={splitSubmitting}
+                    className="flex-1 bg-[#0D0D0D] text-white rounded-xl py-2 text-sm font-medium disabled:opacity-50">
+                    {splitSubmitting ? '…' : d.splitSubmit}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-start gap-2">
         <div className="flex-1 min-w-0">

@@ -1204,7 +1204,17 @@
     "srcYahoo": "Price · Yahoo Finance",
     "srcCoingecko": "Price · CoinGecko",
     "srcManual": "Manually entered value",
-    "srcCostBasis": "Estimated from average cost"
+    "srcCostBasis": "Estimated from average cost",
+    "splitWarningTitle": "Split / reverse split detected",
+    "splitWarningBody": "Yahoo Finance records {n} corporate event(s) not yet registered for this asset.",
+    "splitRegisterBtn": "Register",
+    "splitModalTitle": "Register split / reverse split",
+    "splitDate": "Event date",
+    "splitNumerator": "New shares",
+    "splitDenominator": "Original shares",
+    "splitTypeLabel": "E.g. 10:1 split → 10 new / 1 original",
+    "splitSubmit": "Register",
+    "splitSuccess": "Event registered successfully"
   },
   "dividends": {
     "title": "Dividends",

@@ -63,6 +63,31 @@ export async function getMonthlyHistory(ticker: string, months = 24): Promise<Pr
   )
 }
 
+export interface SplitEvent {
+  date: string
+  numerator: number
+  denominator: number
+  ratio: string
+}
+
+export async function getSplitEvents(ticker: string, sinceDate?: string): Promise<SplitEvent[]> {
+  try {
+    const result = await yf.quoteSummary(ticker, { modules: ['splitEvents'] as any })
+    const events = ((result as any).splitEvents ?? []) as Array<{ date: Date; numerator: number; denominator: number; splitRatio?: string }>
+    return events
+      .map(e => ({
+        date: e.date.toISOString().split('T')[0],
+        numerator: e.numerator,
+        denominator: e.denominator,
+        ratio: e.splitRatio ?? `${e.numerator}:${e.denominator}`,
+      }))
+      .filter(e => !sinceDate || e.date >= sinceDate)
+      .sort((a, b) => a.date.localeCompare(b.date))
+  } catch {
+    return []
+  }
+}
+
 export async function getDailyHistory(ticker: string, days = 365): Promise<PricePoint[]> {
   return cache.getOrFetch(
     `yahoo:daily:${ticker}:${days}`,
