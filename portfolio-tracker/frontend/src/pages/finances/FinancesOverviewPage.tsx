@@ -410,14 +410,14 @@ export default function FinancesOverviewPage() {
     ? perMonthStats.reduce((s, m) => s + m.days, 0) / perMonthStats.length
     : 30
 
-  // #2 Recurring detection: categories present in ALL past months with large avg, missing this month
-  const catHistMap = new Map<number, { total: number; count: number; name: string; icon: string }>()
+  // #2 Recurring detection: categories present in ALL past months, stable and large, missing this month
+  const catHistMap = new Map<number, { amounts: number[]; name: string; icon: string }>()
   for (const pm of pastMonthsData) {
     for (const env of pm.by_envelope) {
       if (env.type === 'income') continue
       for (const cat of env.categories ?? []) {
-        const prev = catHistMap.get(cat.id) ?? { total: 0, count: 0, name: cat.name, icon: cat.icon }
-        catHistMap.set(cat.id, { ...prev, total: prev.total + cat.actual, count: prev.count + 1 })
+        const prev = catHistMap.get(cat.id) ?? { amounts: [], name: cat.name, icon: cat.icon }
+        catHistMap.set(cat.id, { ...prev, amounts: [...prev.amounts, cat.actual] })
       }
     }
   }
@@ -429,13 +429,19 @@ export default function FinancesOverviewPage() {
   let missingTotal = 0
   if (isCurrentMonth && pastMonthsData.length > 0 && totalBudgeted > 0) {
     for (const [catId, hist] of catHistMap.entries()) {
-      if (hist.count < pastMonthsData.length) continue // must appear in every past month
-      const avg = hist.total / hist.count
-      if (avg < totalBudgeted * 0.12) continue // only significant items (>12% of budget)
+      if (hist.amounts.length < pastMonthsData.length) continue // must appear in every past month
+      const sorted = [...hist.amounts].sort((a, b) => a - b)
+      const minAmt = sorted[0]
+      const maxAmt = sorted[sorted.length - 1]
+      const medianAmt = sorted[Math.floor(sorted.length / 2)]
+      // Skip if amounts are inconsistent (one big month ≠ true recurring)
+      if (maxAmt > minAmt * 3) continue
+      // Only significant fixed items: median ≥ 20% of budget
+      if (medianAmt < totalBudgeted * 0.20) continue
       const current = currentCatActuals.get(catId) ?? 0
-      if (current < avg * 0.25) { // <25% recorded → treat as not yet imported
-        missingRecurrents.push({ id: catId, name: hist.name, icon: hist.icon, amount: Math.round(avg) })
-        missingTotal += avg
+      if (current < minAmt * 0.25) { // less than 25% of lowest historical month → not yet recorded
+        missingRecurrents.push({ id: catId, name: hist.name, icon: hist.icon, amount: Math.round(medianAmt) })
+        missingTotal += medianAmt
       }
     }
   }
