@@ -1019,7 +1019,7 @@ export default function FinancesTransactionsPage() {
                             className="text-xs border border-gray-200 rounded px-2 py-1 max-w-[150px]"
                           >
                             <option value="">{t.finances.noCategory}</option>
-                            {allCategories.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
+                            {catsForAmount(row.amount).map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
                           </select>
                         </div>
                       </td>
