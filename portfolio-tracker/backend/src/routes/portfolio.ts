@@ -3,6 +3,7 @@ import { Router, Response } from 'express'
 import { requireAuth, AuthRequest } from '../middleware/auth.js'
 import { supabaseAdmin } from '../lib/supabase.js'
 import { getCurrentPrice, getDailyHistory, getMonthlyHistory, Asset, FITranche } from '../services/priceService.js'
+import { getSplitEvents } from '../services/yahooService.js'
 import { getFxRate } from '../lib/fx.js'
 import { cache, TTL } from '../lib/cache.js'
 import * as yahoo from '../services/yahooService.js'
@@ -250,6 +251,50 @@ router.get('/value', requireAuth, async (req, res: Response, next) => {
   cache.set(cacheKey, result, TTL.PORTFOLIO_VALUE)
   res.json(result)
   } catch (err) { next(err) }
+})
+
+// GET /api/portfolio/split-check — all assets with unregistered splits (cached 24h)
+router.get('/split-check', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const cacheKey = `portfolio:split-check:${userId}`
+  const cached = cache.get<object>(cacheKey)
+  if (cached) { res.json(cached); return }
+
+  const { data: assets } = await supabaseAdmin
+    .from('assets')
+    .select('id, code, ticker_yahoo')
+    .eq('user_id', userId)
+    .eq('active', true)
+    .eq('asset_type', 'ticker')
+    .not('ticker_yahoo', 'is', null)
+
+  if (!assets?.length) { res.json({ warnings: [] }); return }
+
+  const { data: allContribs } = await supabaseAdmin
+    .from('contributions')
+    .select('asset_id, date, type, price_orig')
+    .in('asset_id', assets.map(a => a.id))
+    .order('date', { ascending: true })
+
+  const warnings: Array<{ asset_id: number; code: string; splits: Awaited<ReturnType<typeof getSplitEvents>> }> = []
+
+  await Promise.allSettled(assets.map(async (asset) => {
+    const contribs = (allContribs ?? []).filter(c => c.asset_id === asset.id)
+    if (!contribs.length) return
+    const firstDate = contribs[0].date
+    const splits = await getSplitEvents(asset.ticker_yahoo as string, firstDate)
+    if (!splits.length) return
+    const zeroPriceContribs = contribs.filter(c => c.type === 'buy' && (c.price_orig === 0 || c.price_orig === null))
+    const unaccounted = splits.filter(split => {
+      const splitTs = new Date(split.date).getTime()
+      return !zeroPriceContribs.some(c => Math.abs(new Date(c.date).getTime() - splitTs) <= 10 * 24 * 60 * 60 * 1000)
+    })
+    if (unaccounted.length) warnings.push({ asset_id: asset.id, code: asset.code as string, splits: unaccounted })
+  }))
+
+  const result = { warnings }
+  cache.set(cacheKey, result, 24 * 60 * 60 * 1000)
+  res.json(result)
 })
 
 // POST /api/portfolio/sync-history — popula price_history para todos os ativos ticker

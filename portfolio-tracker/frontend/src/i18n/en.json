@@ -209,7 +209,9 @@
     "tryAgain": "Try again",
     "calculating": "Calculating portfolio...",
     "targetLine": "Plan",
-    "createFreedomPlan": "Create freedom plan →"
+    "createFreedomPlan": "Create freedom plan →",
+    "splitWarningDashTitle": "Pending corporate event(s)",
+    "splitWarningDashBody": "Split or reverse split detected in {n} asset(s). Open the asset to register."
   },
   "footer": {
     "copyright": "© 2026 arvo",

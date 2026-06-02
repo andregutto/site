@@ -209,7 +209,9 @@
     "tryAgain": "Tentar novamente",
     "calculating": "Calculando portfólio...",
     "targetLine": "Plano",
-    "createFreedomPlan": "Criar plano de liberdade →"
+    "createFreedomPlan": "Criar plano de liberdade →",
+    "splitWarningDashTitle": "Evento(s) corporativo(s) pendente(s)",
+    "splitWarningDashBody": "Desdobro ou grupamento detectado em {n} ativo(s). Acesse o ativo para registrar."
   },
   "footer": {
     "copyright": "© 2026 arvo",

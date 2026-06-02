@@ -12,7 +12,7 @@ import ValueCards from '../components/ValueCards'
 import AllocationChart from '../components/AllocationChart'
 import AssetTable from '../components/AssetTable'
 import FixedIncomeSetupModal from '../components/FixedIncomeSetupModal'
-import type { PortfolioAsset } from '../lib/types'
+import type { PortfolioAsset, SplitEvent } from '../lib/types'
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
 
 interface FreedomPlan {
@@ -86,6 +86,13 @@ export default function DashboardPage() {
     apiFetch<FreedomPlan[]>('/finances/freedom-plans')
       .then(plans => setActivePlan(plans.find(p => p.is_active) ?? plans[0] ?? null))
       .catch(() => setActivePlan(null))
+  }, [])
+
+  const [splitWarnings, setSplitWarnings] = useState<Array<{ asset_id: number; code: string; splits: SplitEvent[] }>>([])
+  useEffect(() => {
+    apiFetch<{ warnings: Array<{ asset_id: number; code: string; splits: SplitEvent[] }> }>('/portfolio/split-check')
+      .then(r => setSplitWarnings(r.warnings))
+      .catch(() => {})
   }, [])
 
   const [periodMode, setPeriodMode] = useState<PeriodMode>('ytd')
@@ -239,6 +246,28 @@ export default function DashboardPage() {
           </button>
         </div>
       </div>
+
+      {/* Split warning banner */}
+      {splitWarnings.length > 0 && (
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-start gap-3">
+          <span className="text-amber-500 text-lg shrink-0">⚠</span>
+          <div className="flex-1 min-w-0">
+            <p className="font-semibold text-amber-900 text-sm">{t.dashboard.splitWarningDashTitle}</p>
+            <p className="text-xs text-amber-700 mt-0.5">{(t.dashboard.splitWarningDashBody as string).replace('{n}', String(splitWarnings.length))}</p>
+            <div className="flex flex-wrap gap-2 mt-2">
+              {splitWarnings.map(w => (
+                <button
+                  key={w.asset_id}
+                  onClick={() => navigate(`/assets/${w.asset_id}`, { state: { total_brl: data.total_brl } })}
+                  className="text-xs bg-amber-100 hover:bg-amber-200 border border-amber-300 text-amber-800 px-2 py-1 rounded-lg transition-colors"
+                >
+                  {w.code} · {w.splits.map(s => s.ratio).join(', ')} →
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Row 1: ValueCards */}
       <div className="grid grid-cols-1 gap-6">

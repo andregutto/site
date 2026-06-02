@@ -209,7 +209,9 @@
     "tryAgain": "Réessayer",
     "calculating": "Calcul du portefeuille...",
     "targetLine": "Plan",
-    "createFreedomPlan": "Créer un plan liberté →"
+    "createFreedomPlan": "Créer un plan liberté →",
+    "splitWarningDashTitle": "Opération(s) sur titres en attente",
+    "splitWarningDashBody": "Division ou regroupement détecté sur {n} actif(s). Ouvrez l actif pour enregistrer."
   },
   "footer": {
     "copyright": "© 2026 arvo",
