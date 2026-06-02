@@ -89,9 +89,9 @@ export default function FinancesPage() {
   const totalPending   = invoices.filter(i => i.status === 'envoyee').reduce((s, i) => s + Number(i.total), 0)
   const totalDraft     = invoices.filter(i => i.status === 'brouillon').reduce((s, i) => s + Number(i.total), 0)
 
-  // Estimativa de cotisações sobre o que foi realmente recebido
-  const cotisRate   = regime === 'auto_entrepreneur' ? 0.221 : 0.45 // auto ~22.1%, société ~45% (charges patronales)
-  const cotisations = totalReceived * cotisRate
+  // Estimativa só para auto-entrepreneur (société é variável — depende de salário, dividendos, IS)
+  const cotisRate   = 0.221
+  const cotisations = regime === 'auto_entrepreneur' ? totalReceived * cotisRate : 0
   const netEstime   = totalReceived - cotisations
 
   // Cash flow by month
@@ -155,30 +155,35 @@ export default function FinancesPage() {
         {/* Estimativa fiscal — só mostra se houver receita encaissada */}
         {totalReceived > 0 && (
           <div style={{ display: 'flex', gap: 0, border: `0.5px solid rgba(28,25,23,0.2)`, borderTop: 'none', marginBottom: 40, background: C.warm }}>
-            <div style={{ flex: 1, padding: '12px 24px', borderRight: `0.5px solid rgba(28,25,23,0.15)` }}>
-              <div style={{ fontFamily: sans, fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.2em', color: C.muted, marginBottom: 4 }}>
-                Cotisations URSSAF (~{Math.round(cotisRate * 100)}%)
-                <span style={{ fontSize: 8, marginLeft: 6, textTransform: 'none', letterSpacing: 0 }}>
-                  {regime === 'auto_entrepreneur' ? 'auto-entrepreneur' : 'société'}
+            {regime === 'auto_entrepreneur' ? (
+              <>
+                <div style={{ flex: 1, padding: '12px 24px', borderRight: `0.5px solid rgba(28,25,23,0.15)` }}>
+                  <div style={{ fontFamily: sans, fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.2em', color: C.muted, marginBottom: 4 }}>
+                    Cotisations URSSAF (~22%)
+                  </div>
+                  <div style={{ fontFamily: sans, fontSize: 18, fontWeight: 600, color: '#8C1A1A' }}>
+                    −{cotisations.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })}
+                  </div>
+                </div>
+                <div style={{ flex: 1, padding: '12px 24px', borderRight: `0.5px solid rgba(28,25,23,0.15)` }}>
+                  <div style={{ fontFamily: sans, fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.2em', color: C.muted, marginBottom: 4 }}>Net estimé</div>
+                  <div style={{ fontFamily: sans, fontSize: 18, fontWeight: 700, color: '#186040' }}>
+                    {netEstime.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })}
+                  </div>
+                </div>
+                <div style={{ flex: 2, padding: '12px 24px', display: 'flex', alignItems: 'center' }}>
+                  <span style={{ fontFamily: sans, fontSize: 11, color: C.muted, lineHeight: 1.5 }}>
+                    Estimation indicative. Cotisations sociales à déclarer sur <a href="https://www.autoentrepreneur.urssaf.fr" target="_blank" rel="noopener noreferrer" style={{ color: C.ink }}>urssaf.fr</a>. TVA non applicable.
+                  </span>
+                </div>
+              </>
+            ) : (
+              <div style={{ flex: 1, padding: '12px 24px', display: 'flex', alignItems: 'center' }}>
+                <span style={{ fontFamily: sans, fontSize: 11, color: C.muted, lineHeight: 1.5 }}>
+                  En société, les charges dépendent de votre rémunération, dividendes et résultat. Consultez un comptable pour estimer votre net.
                 </span>
               </div>
-              <div style={{ fontFamily: sans, fontSize: 18, fontWeight: 600, color: '#8C1A1A' }}>
-                −{cotisations.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })}
-              </div>
-            </div>
-            <div style={{ flex: 1, padding: '12px 24px', borderRight: `0.5px solid rgba(28,25,23,0.15)` }}>
-              <div style={{ fontFamily: sans, fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.2em', color: C.muted, marginBottom: 4 }}>Net estimé</div>
-              <div style={{ fontFamily: sans, fontSize: 18, fontWeight: 700, color: '#186040' }}>
-                {netEstime.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })}
-              </div>
-            </div>
-            <div style={{ flex: 2, padding: '12px 24px', display: 'flex', alignItems: 'center' }}>
-              <span style={{ fontFamily: sans, fontSize: 11, color: C.muted, lineHeight: 1.5 }}>
-                {regime === 'auto_entrepreneur'
-                  ? 'Estimation indicative. Cotisations sociales à déclarer sur urssaf.fr. TVA non applicable.'
-                  : 'Estimation indicative charges patronales. Consultez votre comptable pour le détail.'}
-              </span>
-            </div>
+            )}
           </div>
         )}
 
