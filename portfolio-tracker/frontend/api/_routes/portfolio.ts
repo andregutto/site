@@ -54,12 +54,10 @@ router.get('/value', requireAuth, async (req, res: Response, next) => {
   for (const c of (contributions ?? [])) {
     if (!rfAssetIds.includes(c.asset_id)) continue
     if (!c.value_brl || c.value_brl <= 0) continue
+    // Only 'buy' transactions = capital invested; 'sell' = interest/income withdrawals, not principal redemptions
     if (c.type === 'buy') {
       if (!rfTranchesMap[c.asset_id]) rfTranchesMap[c.asset_id] = []
       rfTranchesMap[c.asset_id].push({ principal: c.value_brl, start_date: c.date })
-    } else if (c.type === 'sell') {
-      if (!rfTranchesMap[c.asset_id]) rfTranchesMap[c.asset_id] = []
-      rfTranchesMap[c.asset_id].push({ principal: -c.value_brl, start_date: c.date })
     }
   }
 

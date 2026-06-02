@@ -2,7 +2,7 @@
 import { Router, Response } from 'express'
 import { requireAuth, AuthRequest } from '../middleware/auth.js'
 import { supabaseAdmin } from '../lib/supabase.js'
-import { getCurrentPrice, getDailyHistory, getMonthlyHistory, Asset } from '../services/priceService.js'
+import { getCurrentPrice, getDailyHistory, getMonthlyHistory, Asset, FITranche } from '../services/priceService.js'
 import { getFxRate } from '../lib/fx.js'
 import { cache, TTL } from '../lib/cache.js'
 import * as yahoo from '../services/yahooService.js'
@@ -44,12 +44,18 @@ router.get('/value', requireAuth, async (req, res: Response, next) => {
 
   const holdingsMap: Record<number, number> = {}
   const investedMap: Record<number, number> = {}
+  const rfAssetIds = assets.filter(a => a.asset_type === 'fixed_income').map(a => a.id)
+  const rfTranchesMap: Record<number, FITranche[]> = {}
   for (const c of (contributions ?? [])) {
     if (c.type === 'income') continue
     holdingsMap[c.asset_id] = (holdingsMap[c.asset_id] ?? 0) +
       (c.type === 'buy' ? c.quantity : -c.quantity)
     if (c.type === 'buy' && c.value_brl && c.value_brl > 0) {
       investedMap[c.asset_id] = (investedMap[c.asset_id] ?? 0) + c.value_brl
+      if (rfAssetIds.includes(c.asset_id)) {
+        if (!rfTranchesMap[c.asset_id]) rfTranchesMap[c.asset_id] = []
+        rfTranchesMap[c.asset_id].push({ principal: c.value_brl, start_date: c.date })
+      }
     }
   }
 
@@ -139,11 +145,14 @@ router.get('/value', requireAuth, async (req, res: Response, next) => {
           value_brl  = currency === 'BRL' ? value_orig : value_orig * await getFxRate(currency)
 
         } else if (a.asset_type === 'fixed_income') {
-          if (!a.fi_principal || !a.fi_start_date || !a.fi_type || (a.fi_type !== 'ipca_plus' && a.fi_rate == null)) {
+          const tranches = rfTranchesMap[a.id]
+          const hasTranches = tranches && tranches.length > 0
+          if (!a.fi_type || (a.fi_type !== 'ipca_plus' && a.fi_rate == null) ||
+              (!hasTranches && (!a.fi_principal || !a.fi_start_date))) {
             byAsset.push({ ...base, value_brl: 0, value_orig: 0, currency: a.currency || 'BRL', holdings: null, price: null, source: 'fixed_income', needs_manual: true, invested_brl: investedMap[a.id] ?? null, last_manual_date: null, fi_type: a.fi_type, fi_start_date: a.fi_start_date, fi_rate: a.fi_rate, fi_spread: a.fi_spread, fi_maturity: a.fi_maturity ?? null })
             return
           }
-          const result = await getCurrentPrice(a as Asset)
+          const result = await getCurrentPrice(a as Asset, hasTranches ? tranches : undefined)
           value_orig = result.price
           currency   = result.currency
           source     = result.source
