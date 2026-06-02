@@ -377,25 +377,48 @@ export default function FinancesOverviewPage() {
 
   const hasHistory = data.months.some(m => m.expenses > 0)
 
-  // Month projection
+  // Month projection — historical daily average approach
   const isCurrentMonth = month === defaultMonth
-  const fmDates = (() => {
-    const [y, mo] = month.split('-').map(Number)
-    if (cycleDay <= 1) return { start: new Date(y, mo - 1, 1), end: new Date(y, mo, 0) }
-    return { start: new Date(y, mo - 2, cycleDay), end: new Date(y, mo - 1, cycleDay - 1) }
-  })()
   const MS_DAY = 86400000
-  const todayMs  = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime()
-  const startMs  = new Date(fmDates.start.getFullYear(), fmDates.start.getMonth(), fmDates.start.getDate()).getTime()
-  const endMs    = new Date(fmDates.end.getFullYear(), fmDates.end.getMonth(), fmDates.end.getDate()).getTime()
+
+  function fmDateRange(ym: string, cd: number) {
+    const [y, mo] = ym.split('-').map(Number)
+    if (cd <= 1) return { start: new Date(y, mo - 1, 1), end: new Date(y, mo, 0) }
+    return { start: new Date(y, mo - 2, cd), end: new Date(y, mo - 1, cd - 1) }
+  }
+
+  const fmDates = fmDateRange(month, cycleDay)
+  const todayMs   = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime()
+  const startMs   = new Date(fmDates.start.getFullYear(), fmDates.start.getMonth(), fmDates.start.getDate()).getTime()
+  const endMs     = new Date(fmDates.end.getFullYear(), fmDates.end.getMonth(), fmDates.end.getDate()).getTime()
   const daysTotal    = Math.round((endMs - startMs) / MS_DAY) + 1
   const daysElapsed  = isCurrentMonth ? Math.max(1, Math.round((todayMs - startMs) / MS_DAY) + 1) : daysTotal
   const daysRemaining = isCurrentMonth ? Math.max(0, daysTotal - daysElapsed) : 0
-  const projected    = daysElapsed >= 3 && totalExpenses > 0
-    ? Math.round((totalExpenses / daysElapsed) * daysTotal)
+
+  // Historical daily average: last 3 closed months with expenses
+  const pastMonthsData = data.months.filter(m => m.month < month && m.expenses > 0).slice(-3)
+  const histTotalExpenses = pastMonthsData.reduce((s, m) => s + m.expenses, 0)
+  const histTotalDays = pastMonthsData.reduce((s, m) => {
+    const r = fmDateRange(m.month, cycleDay)
+    return s + Math.round((r.end.getTime() - r.start.getTime()) / MS_DAY) + 1
+  }, 0)
+  const histDailyAvg = histTotalDays > 0 ? histTotalExpenses / histTotalDays : 0
+
+  console.debug('[projection]', {
+    month, isCurrentMonth, cycleDay, daysElapsed, daysRemaining,
+    totalExpenses, histDailyAvg,
+    pastMonths: pastMonthsData.map(m => ({ month: m.month, expenses: m.expenses })),
+    allMonths: data.months.map(m => ({ month: m.month, expenses: m.expenses })),
+  })
+
+  // For current month: project using actual + historical daily avg × remaining days
+  // For past months: display value = actual expenses (the real result)
+  const projected = isCurrentMonth && histDailyAvg > 0
+    ? Math.round(totalExpenses + histDailyAvg * daysRemaining)
     : null
-  const projectedPct  = projected != null && totalBudgeted > 0 ? Math.min(Math.round((projected / totalBudgeted) * 100), 100) : null
-  const projectedOver = projected != null && totalBudgeted > 0 && projected > totalBudgeted
+  const displayValue = projected ?? (!isCurrentMonth && totalExpenses > 0 ? totalExpenses : null)
+  const displayPct  = displayValue != null && totalBudgeted > 0 ? Math.min(Math.round((displayValue / totalBudgeted) * 100), 100) : null
+  const displayOver = displayValue != null && totalBudgeted > 0 && displayValue > totalBudgeted
 
   return (
     <div className="space-y-5">
@@ -506,42 +529,50 @@ export default function FinancesOverviewPage() {
 
           {/* Right: month projection — desktop only */}
           <div className="hidden lg:flex lg:flex-col lg:justify-center" style={{ borderLeft: '1px solid rgba(13,13,13,0.07)', paddingLeft: 28 }}>
-            <p style={{ fontFamily: "var(--arvo-font-body)", fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.45)', marginBottom: 4 }}>
+            <p style={{ fontFamily: "var(--arvo-font-body)", fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.45)', marginBottom: 2 }}>
               {isCurrentMonth ? t.finances.overviewProjection : t.finances.overviewResult}
             </p>
-            <p style={{ fontFamily: "var(--arvo-font-body)", fontSize: 11, color: 'rgba(13,13,13,0.45)', marginBottom: 16 }}>
+            <p style={{ fontFamily: "var(--arvo-font-body)", fontSize: 10, color: 'rgba(13,13,13,0.38)', fontStyle: 'italic', marginBottom: 4 }}>
+              {isCurrentMonth ? t.finances.overviewProjectionHint : t.finances.overviewResultHint}
+            </p>
+            <p style={{ fontFamily: "var(--arvo-font-body)", fontSize: 11, color: 'rgba(13,13,13,0.45)', marginBottom: 14 }}>
               {t.finances.overviewDayOf} {daysElapsed} {t.finances.overviewDayOfSep} {daysTotal}
               {isCurrentMonth && daysRemaining > 0 && <span style={{ marginLeft: 6 }}>· {daysRemaining} {t.finances.overviewDaysLeft}</span>}
             </p>
 
-            {projected != null ? (
+            {displayValue != null ? (
               <>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 8 }}>
-                  <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 26, letterSpacing: '0.02em', color: projectedOver ? 'var(--arvo-red)' : 'var(--arvo-fg)' }}>
-                    {fmt(cx(projected), currency, true)}
+                  <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 26, letterSpacing: '0.02em', color: displayOver ? 'var(--arvo-red)' : 'var(--arvo-fg)' }}>
+                    {fmt(cx(displayValue), currency, true)}
                   </span>
                   {totalBudgeted > 0 && (
                     <span style={{ fontSize: 12, color: 'rgba(13,13,13,0.40)' }}>/ {fmt(cx(totalBudgeted), currency, true)}</span>
                   )}
                 </div>
-                {totalBudgeted > 0 && projectedPct != null && (
+                {totalBudgeted > 0 && displayPct != null && (
                   <>
                     <div style={{ height: 4, background: 'rgba(13,13,13,0.08)', borderRadius: 2, overflow: 'hidden', marginBottom: 8 }}>
                       <div style={{
                         height: '100%', borderRadius: 2, transition: 'width 0.5s ease',
-                        width: `${projectedPct}%`,
-                        background: projectedOver ? 'var(--arvo-red)' : 'var(--arvo-green)',
+                        width: `${displayPct}%`,
+                        background: displayOver ? 'var(--arvo-red)' : 'var(--arvo-green)',
                       }} />
                     </div>
-                    <span style={{ fontSize: 12, fontWeight: 600, color: projectedOver ? 'var(--arvo-red)' : 'var(--arvo-green)' }}>
-                      {projectedOver
-                        ? `+${fmt(cx(projected - totalBudgeted), currency, true)} ${t.finances.overviewOverBudget}`
-                        : `${fmt(cx(totalBudgeted - projected), currency, true)} ${t.finances.overviewUnderBudget}`}
+                    <span style={{ fontSize: 12, fontWeight: 600, color: displayOver ? 'var(--arvo-red)' : 'var(--arvo-green)', marginBottom: 10, display: 'block' }}>
+                      {displayOver
+                        ? `+${fmt(cx(displayValue - totalBudgeted), currency, true)} ${t.finances.overviewOverBudget}`
+                        : `${fmt(cx(totalBudgeted - displayValue), currency, true)} ${t.finances.overviewUnderBudget}`}
                     </span>
                   </>
                 )}
+                {isCurrentMonth && histDailyAvg > 0 && (
+                  <p style={{ fontSize: 10, color: 'rgba(13,13,13,0.35)', marginTop: 4 }}>
+                    {t.finances.overviewHistAvg} {fmt(cx(histDailyAvg), currency, true)}{t.finances.overviewPerDay} · {pastMonthsData.length} {t.finances.overviewNMonths}
+                  </p>
+                )}
               </>
-            ) : totalExpenses > 0 ? (
+            ) : isCurrentMonth ? (
               <p style={{ fontSize: 12, color: 'rgba(13,13,13,0.38)', fontStyle: 'italic' }}>
                 {daysElapsed} {t.finances.overviewInsufficientData}
               </p>
