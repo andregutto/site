@@ -404,13 +404,6 @@ export default function FinancesOverviewPage() {
   }, 0)
   const histDailyAvg = histTotalDays > 0 ? histTotalExpenses / histTotalDays : 0
 
-  console.debug('[projection]', {
-    month, isCurrentMonth, cycleDay, daysElapsed, daysRemaining,
-    totalExpenses, histDailyAvg,
-    pastMonths: pastMonthsData.map(m => ({ month: m.month, expenses: m.expenses })),
-    allMonths: data.months.map(m => ({ month: m.month, expenses: m.expenses })),
-  })
-
   // For current month: project using actual + historical daily avg × remaining days
   // For past months: display value = actual expenses (the real result)
   const projected = isCurrentMonth && histDailyAvg > 0
@@ -525,6 +518,37 @@ export default function FinancesOverviewPage() {
                 )}
               </div>
             </div>
+            {/* Mobile projection strip — hidden on desktop */}
+            {displayValue != null && (
+              <div className="lg:hidden" style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid rgba(13,13,13,0.08)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.45)' }}>
+                    {isCurrentMonth ? t.finances.overviewProjection : t.finances.overviewResult}
+                    {isCurrentMonth && <span style={{ marginLeft: 5, letterSpacing: 0, textTransform: 'none', fontWeight: 400 }}>· {t.finances.overviewDayOf} {daysElapsed} {t.finances.overviewDayOfSep} {daysTotal}</span>}
+                  </span>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 5 }}>
+                    <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 16, letterSpacing: '0.02em', color: displayOver ? 'var(--arvo-red)' : 'var(--arvo-fg)' }}>
+                      {fmt(cx(displayValue), currency, true)}
+                    </span>
+                    {totalBudgeted > 0 && (
+                      <span style={{ fontSize: 11, color: 'rgba(13,13,13,0.38)' }}>/ {fmt(cx(totalBudgeted), currency, true)}</span>
+                    )}
+                  </div>
+                </div>
+                {totalBudgeted > 0 && displayPct != null && (
+                  <>
+                    <div style={{ height: 3, background: 'rgba(13,13,13,0.08)', borderRadius: 2, overflow: 'hidden', marginBottom: 6 }}>
+                      <div style={{ height: '100%', borderRadius: 2, transition: 'width 0.5s ease', width: `${displayPct}%`, background: displayOver ? 'var(--arvo-red)' : 'var(--arvo-green)' }} />
+                    </div>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: displayOver ? 'var(--arvo-red)' : 'var(--arvo-green)' }}>
+                      {displayOver
+                        ? `+${fmt(cx(displayValue - totalBudgeted), currency, true)} ${t.finances.overviewOverBudget}`
+                        : `${fmt(cx(totalBudgeted - displayValue), currency, true)} ${t.finances.overviewUnderBudget}`}
+                    </span>
+                  </>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Right: month projection — desktop only */}
