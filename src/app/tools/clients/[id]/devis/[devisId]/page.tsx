@@ -21,11 +21,13 @@ interface CatalogService { id: string; name: string; description: string; price_
 
 export default function DevisPage({ params }: { params: Promise<{ id: string; devisId: string }> }) {
   const { id, devisId } = use(params)
-  const [devis,    setDevis]    = useState<Devis | null>(null)
-  const [catalog,  setCatalog]  = useState<CatalogService[]>([])
-  const [loading,  setLoading]  = useState(true)
-  const [mode,     setMode]     = useState<'edit' | 'preview'>('edit')
-  const [saving,   setSaving]   = useState(false)
+  const [devis,      setDevis]      = useState<Devis | null>(null)
+  const [catalog,    setCatalog]    = useState<CatalogService[]>([])
+  const [loading,    setLoading]    = useState(true)
+  const [mode,       setMode]       = useState<'edit' | 'preview'>('edit')
+  const [saving,     setSaving]     = useState(false)
+  const [generating, setGenerating] = useState(false)
+  const [genError,   setGenError]   = useState<string | null>(null)
 
   useEffect(() => {
     Promise.all([
@@ -88,6 +90,29 @@ export default function DevisPage({ params }: { params: Promise<{ id: string; de
     save({ items: devis.items.filter(i => i.id !== itemId) })
   }
 
+  async function generateWithAI() {
+    if (!devis || devis.items.length === 0) return
+    setGenerating(true); setGenError(null)
+    try {
+      const res  = await fetch(`/api/sq/devis/${devisId}/generate`, { method: 'POST' })
+      const data = await res.json()
+      if (!res.ok || data.error) throw new Error(data.error ?? 'Erreur de génération')
+      const { generated } = data
+      // Merge AI descriptions into existing items (keep prices)
+      const updatedItems = devis.items.map(item => {
+        const aiItem = (generated.items ?? []).find((g: any) => g.service === item.service)
+        return aiItem ? { ...item, description: aiItem.description } : item
+      })
+      const patch = { intro_text: generated.intro_text, items: updatedItems }
+      await save(patch)
+      setMode('preview')
+    } catch (e: any) {
+      setGenError(e.message)
+    } finally {
+      setGenerating(false)
+    }
+  }
+
   if (loading) return <div style={{ background: C.paper, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ fontFamily: sans, color: C.muted }}>Chargement…</span></div>
   if (!devis)  return <div style={{ background: C.paper, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><a href={`/tools/clients/${id}`} style={{ fontFamily: sans, color: C.ink }}>← Retour</a></div>
 
@@ -125,16 +150,37 @@ export default function DevisPage({ params }: { params: Promise<{ id: string; de
             </button>
           ))}
           <div style={{ width: 1, background: C.muted, margin: '0 4px' }} />
-          <button onClick={() => setMode(m => m === 'edit' ? 'preview' : 'edit')}
-            style={{ fontFamily: sans, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.12em', padding: '6px 14px', border: `0.5px solid ${C.ink}`, background: 'transparent', color: C.ink, cursor: 'pointer', borderRadius: 0 }}>
-            {mode === 'edit' ? 'Aperçu' : 'Éditer'}
-          </button>
-          <button onClick={() => window.print()}
-            style={{ fontFamily: sans, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.12em', padding: '6px 14px', border: 'none', background: C.ink, color: C.paper, cursor: 'pointer', borderRadius: 0 }}>
-            PDF ↓
-          </button>
+          {mode === 'edit' ? (
+            <>
+              <button onClick={() => setMode('preview')}
+                style={{ fontFamily: sans, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.12em', padding: '6px 14px', border: `0.5px solid ${C.ink}`, background: 'transparent', color: C.ink, cursor: 'pointer', borderRadius: 0 }}>
+                Aperçu
+              </button>
+              <button onClick={generateWithAI} disabled={generating || devis.items.length === 0}
+                style={{ fontFamily: sans, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.12em', padding: '6px 14px', border: 'none', background: C.accent, color: C.paper, cursor: generating || devis.items.length === 0 ? 'not-allowed' : 'pointer', opacity: generating || devis.items.length === 0 ? 0.6 : 1, borderRadius: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
+                {generating ? 'Génération…' : 'Générer avec l\'IA →'}
+              </button>
+            </>
+          ) : (
+            <>
+              <button onClick={() => setMode('edit')}
+                style={{ fontFamily: sans, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.12em', padding: '6px 14px', border: `0.5px solid ${C.ink}`, background: 'transparent', color: C.ink, cursor: 'pointer', borderRadius: 0 }}>
+                Éditer
+              </button>
+              <button onClick={() => window.print()}
+                style={{ fontFamily: sans, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.12em', padding: '6px 14px', border: 'none', background: C.ink, color: C.paper, cursor: 'pointer', borderRadius: 0 }}>
+                PDF ↓
+              </button>
+            </>
+          )}
         </div>
       </div>
+
+      {genError && (
+        <div style={{ position: 'fixed', top: 56, left: 0, right: 0, zIndex: 99, background: '#FEF0F0', borderBottom: `0.5px solid #8C1A1A`, padding: '10px 32px', fontFamily: sans, fontSize: 12, color: '#8C1A1A' }}>
+          Erreur IA : {genError} — <button onClick={() => setGenError(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#8C1A1A', textDecoration: 'underline', fontFamily: sans, fontSize: 12 }}>Fermer</button>
+        </div>
+      )}
 
       <div style={{ background: C.paper, minHeight: '100vh', paddingTop: 56 }}>
         <div style={{ maxWidth: 860, margin: '0 auto', padding: '48px 48px 96px' }}>
