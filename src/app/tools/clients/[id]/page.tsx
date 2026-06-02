@@ -113,6 +113,163 @@ function EditableField({ label, addLabel, editLabel, value, onSave }: { label: s
   )
 }
 
+// ── ActivityTimeline ──────────────────────────────────────────────────────────
+
+function ActivityTimeline({ clientId, events, setEvents, eventTypes, eventIcons, t }: {
+  clientId: string
+  events: Event[]
+  setEvents: React.Dispatch<React.SetStateAction<Event[]>>
+  eventTypes: string[]
+  eventIcons: Record<string, string>
+  t: (k: any) => string
+}) {
+  const [open,       setOpen]       = useState(false)
+  const [evtType,    setEvtType]    = useState(eventTypes[0] ?? 'note')
+  const [evtText,    setEvtText]    = useState('')
+  const [saving,     setSaving]     = useState(false)
+  const [filter,     setFilter]     = useState<string>('all')
+  const [editingId,  setEditingId]  = useState<string | null>(null)
+  const [editText,   setEditText]   = useState('')
+
+  const systemTypes = ['statut_change']
+  const filterOptions = ['all', ...eventTypes]
+
+  const visible = events.filter(e =>
+    filter === 'all' ? true : e.type === filter
+  )
+
+  async function handleAdd() {
+    if (!evtText.trim()) return
+    setSaving(true)
+    const res  = await fetch(`/api/sq/clients/${clientId}/events`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: evtType, content: evtText.trim() }) })
+    const data = await res.json()
+    if (data.event) { setEvents(prev => [data.event, ...prev]); setEvtText(''); setOpen(false) }
+    setSaving(false)
+  }
+
+  async function handleDelete(eventId: string) {
+    await fetch(`/api/sq/clients/${clientId}/events/${eventId}`, { method: 'DELETE' })
+    setEvents(prev => prev.filter(e => e.id !== eventId))
+  }
+
+  async function handleEdit(eventId: string) {
+    if (!editText.trim()) return
+    const res  = await fetch(`/api/sq/clients/${clientId}/events/${eventId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content: editText.trim() }) })
+    const data = await res.json()
+    if (data.event) setEvents(prev => prev.map(e => e.id === eventId ? data.event : e))
+    setEditingId(null)
+  }
+
+  return (
+    <div>
+      {/* Header with add button */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+        <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.14em', fontSize: 11, color: C.ink }}>{t('section_activity')}</span>
+        <button onClick={() => setOpen(o => !o)}
+          style={{ fontFamily: sans, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.12em', padding: '5px 12px', border: `0.5px solid ${C.ink}`, background: open ? C.ink : 'transparent', color: open ? C.paper : C.ink, cursor: 'pointer', borderRadius: 0 }}>
+          {open ? '× Fermer' : '+ Ajouter'}
+        </button>
+      </div>
+      <div style={{ height: '0.5px', background: C.ink, marginBottom: 20 }} />
+
+      {/* Add form (collapsible) */}
+      {open && (
+        <div style={{ border: `0.5px solid ${C.ink}`, padding: 16, marginBottom: 24, background: C.warm }}>
+          <div style={{ display: 'flex', gap: 0, marginBottom: 12, flexWrap: 'wrap' }}>
+            {eventTypes.map((type, i) => (
+              <button key={type} onClick={() => setEvtType(type)}
+                style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.12em', fontSize: 10, padding: '6px 10px', borderRadius: 0, cursor: 'pointer', border: `0.5px solid ${C.ink}`, borderLeft: i === 0 ? undefined : 'none', background: evtType === type ? C.ink : 'transparent', color: evtType === type ? C.paper : C.ink }}>
+                {type}
+              </button>
+            ))}
+          </div>
+          <textarea value={evtText} onChange={e => setEvtText(e.target.value)} rows={3}
+            placeholder={t('event_placeholder')}
+            onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleAdd() }}
+            style={{ width: '100%', fontFamily: sans, fontSize: 13, color: C.ink, background: 'transparent', border: 'none', borderBottom: `0.5px solid ${C.ink}`, outline: 'none', resize: 'none', padding: '6px 0', boxSizing: 'border-box' }} />
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 10 }}>
+            <span style={{ fontFamily: sans, fontSize: 10, color: C.muted }}>⌘+Entrée pour sauvegarder</span>
+            <button onClick={handleAdd} disabled={saving || !evtText.trim()}
+              style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px', border: 'none', background: C.accent, color: C.paper, cursor: 'pointer', opacity: (!evtText.trim() || saving) ? 0.5 : 1, borderRadius: 0 }}>
+              <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: 11, fontWeight: 700 }}>{saving ? '…' : t('btn_save')}</span>
+              <span>→</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Filter tabs */}
+      {events.length > 0 && (
+        <div style={{ display: 'flex', gap: 0, marginBottom: 20, overflowX: 'auto' }}>
+          {filterOptions.map((f, i) => (
+            <button key={f} onClick={() => setFilter(f)}
+              style={{ fontFamily: sans, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.1em', padding: '5px 10px', border: `0.5px solid ${C.ink}`, borderLeft: i === 0 ? undefined : 'none', background: filter === f ? C.ink : 'transparent', color: filter === f ? C.paper : C.muted, cursor: 'pointer', borderRadius: 0, whiteSpace: 'nowrap' }}>
+              {f === 'all' ? 'Tous' : f}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Empty state */}
+      {events.length === 0 && <p style={{ fontFamily: sans, fontSize: 13, color: C.muted }}>{t('empty_activity')}</p>}
+      {events.length > 0 && visible.length === 0 && <p style={{ fontFamily: sans, fontSize: 13, color: C.muted }}>Aucune activité de ce type.</p>}
+
+      {/* Events list */}
+      <div style={{ display: 'flex', flexDirection: 'column' }}>
+        {visible.map(evt => {
+          const isSystem = systemTypes.includes(evt.type)
+          const isEditing = editingId === evt.id
+          return (
+            <div key={evt.id} style={{ padding: '12px 0', borderBottom: `0.5px solid rgba(28,25,23,0.1)` }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '20px 1fr auto', gap: '0 10px', alignItems: 'start' }}>
+                <span style={{ fontFamily: sans, fontSize: 13, color: C.muted, marginTop: 1 }}>{eventIcons[evt.type] ?? '·'}</span>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 4 }}>
+                    <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.16em', fontSize: 9, color: C.ink }}>{evt.type}</span>
+                    <span style={{ fontFamily: sans, fontSize: 10, color: C.muted }}>
+                      {new Date(evt.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </span>
+                  </div>
+                  {isEditing ? (
+                    <div>
+                      <textarea value={editText} onChange={e => setEditText(e.target.value)} rows={3} autoFocus
+                        style={{ width: '100%', fontFamily: sans, fontSize: 13, color: C.ink, background: C.warm, border: `0.5px solid ${C.ink}`, outline: 'none', resize: 'vertical', padding: '6px 8px', boxSizing: 'border-box' }} />
+                      <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
+                        <button onClick={() => handleEdit(evt.id)}
+                          style={{ fontFamily: sans, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.1em', padding: '4px 10px', border: 'none', background: C.ink, color: C.paper, cursor: 'pointer', borderRadius: 0 }}>
+                          Sauvegarder
+                        </button>
+                        <button onClick={() => setEditingId(null)}
+                          style={{ fontFamily: sans, fontSize: 10, padding: '4px 10px', border: `0.5px solid ${C.muted}`, background: 'transparent', color: C.muted, cursor: 'pointer', borderRadius: 0 }}>
+                          Annuler
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <p style={{ fontFamily: sans, fontSize: 13, color: isSystem ? C.muted : C.ink, margin: 0, lineHeight: 1.6, whiteSpace: 'pre-wrap', fontStyle: isSystem ? 'italic' : 'normal' }}>
+                      {evt.content}
+                    </p>
+                  )}
+                </div>
+                {!isSystem && !isEditing && (
+                  <div style={{ display: 'flex', gap: 4, opacity: 0, transition: 'opacity 0.15s' }}
+                    onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
+                    onMouseLeave={e => (e.currentTarget.style.opacity = '0')}>
+                    <button onClick={() => { setEditingId(evt.id); setEditText(evt.content ?? '') }}
+                      style={{ fontFamily: sans, fontSize: 10, padding: '3px 6px', border: `0.5px solid ${C.muted}`, background: 'transparent', color: C.muted, cursor: 'pointer', borderRadius: 0 }}>✎</button>
+                    <button onClick={() => handleDelete(evt.id)}
+                      style={{ fontFamily: sans, fontSize: 12, padding: '3px 6px', border: `0.5px solid ${C.muted}`, background: 'transparent', color: C.muted, cursor: 'pointer', borderRadius: 0 }}>×</button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 function NotesField({ value, placeholder, saveLabel, onSave }: { value: string | null; placeholder: string; saveLabel: string; onSave: (v: string) => void }) {
   const [draft, setDraft] = useState(value ?? '')
   return (
@@ -135,8 +292,6 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
   const [client,    setClient]    = useState<Client | null>(null)
   const [events,    setEvents]    = useState<Event[]>([])
   const [loading,   setLoading]   = useState(true)
-  const [evtType,   setEvtType]   = useState('note')
-  const [evtText,   setEvtText]   = useState('')
   const [saving,    setSaving]    = useState(false)
   const [briefing,  setBriefing]  = useState<any>(null)
   const [genBriefing, setGenBriefing] = useState(false)
@@ -218,10 +373,7 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
     if (data.event) setEvents(prev => [data.event, ...prev])
   }
 
-  async function handleAddEvent() {
-    if (!evtText.trim()) return
-    setSaving(true); await addEvent(evtType, evtText.trim()); setEvtText(''); setSaving(false)
-  }
+
 
   if (loading) return (
     <div style={{ background: C.paper, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -435,45 +587,14 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
 
           {/* ── COL 3: Timeline ── */}
           <div>
-            <SectionTitle>{t('section_activity')}</SectionTitle>
-
-            {/* Add event */}
-            <div style={{ border: `0.5px solid ${C.ink}`, padding: 20, marginBottom: 32 }}>
-              <div style={{ display: 'flex', gap: 0, marginBottom: 14, flexWrap: 'wrap' }}>
-                {EVENT_TYPES.map((type, i) => (
-                  <button key={type} onClick={() => setEvtType(type)}
-                    style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.14em', fontSize: 11, padding: '7px 12px', borderRadius: 0, cursor: 'pointer', border: `0.5px solid ${C.ink}`, borderLeft: i === 0 ? undefined : 'none', background: evtType === type ? C.ink : 'transparent', color: evtType === type ? C.paper : C.ink }}>
-                    {type}
-                  </button>
-                ))}
-              </div>
-              <textarea value={evtText} onChange={e => setEvtText(e.target.value)} rows={3} placeholder={t('event_placeholder')}
-                style={{ width: '100%', fontFamily: sans, fontSize: 13, color: C.ink, background: 'transparent', border: 'none', borderBottom: `0.5px solid ${C.ink}`, outline: 'none', resize: 'none', padding: '8px 0', boxSizing: 'border-box' }} />
-              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 12 }}>
-                <button onClick={handleAddEvent} disabled={saving || !evtText.trim()}
-                  style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 18px', border: 'none', borderRadius: 0, background: C.accent, color: C.paper, cursor: 'pointer', opacity: (!evtText.trim() || saving) ? 0.45 : 1 }}>
-                  <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: 11, fontWeight: 700 }}>{t('btn_save')}</span>
-                  <span>→</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Events */}
-            {events.length === 0 && <p style={{ fontFamily: sans, fontSize: 13, color: C.muted }}>{t('empty_activity')}</p>}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-              {events.map(evt => (
-                <div key={evt.id} style={{ padding: '14px 0', borderBottom: `0.5px solid rgba(28,25,23,0.1)`, display: 'grid', gridTemplateColumns: '24px 1fr auto', gap: '0 12px', alignItems: 'start' }}>
-                  <span style={{ fontFamily: sans, fontSize: 14, color: C.muted, marginTop: 1 }}>{EVENT_ICONS[evt.type] ?? '·'}</span>
-                  <div>
-                    <span style={{ fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.18em', fontSize: 9, color: C.ink, display: 'block', marginBottom: 4 }}>{evt.type}</span>
-                    <p style={{ fontFamily: sans, fontSize: 13, color: C.ink, margin: 0, lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{evt.content}</p>
-                  </div>
-                  <span style={{ fontFamily: sans, fontSize: 10, color: C.muted, whiteSpace: 'nowrap' }}>
-                    {new Date(evt.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
-                  </span>
-                </div>
-              ))}
-            </div>
+            <ActivityTimeline
+              clientId={id}
+              events={events}
+              setEvents={setEvents}
+              eventTypes={EVENT_TYPES}
+              eventIcons={EVENT_ICONS}
+              t={t}
+            />
           </div>
 
         </div>
