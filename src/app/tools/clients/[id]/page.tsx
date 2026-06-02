@@ -23,6 +23,7 @@ interface Client {
   monthly_value: number | null; contract_months: number | null; notes: string | null; priority: number
   website_quality: string | null; review_response_quality: string | null
   score_breakdown: { website: number; social: number; local_seo: number; engagement: number } | null
+  google_drive_url: string | null
 }
 
 interface Event {
@@ -503,14 +504,19 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
           {!briefing
             ? <button onClick={generateBriefingLink} disabled={genBriefing}
                 style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 18px', border: `0.5px solid ${C.ink}`, background: 'transparent', color: C.ink, cursor: 'pointer', fontFamily: sans, textTransform: 'uppercase', letterSpacing: '0.12em', fontSize: 11, borderRadius: 0 }}>
-                <span style={{ opacity: 0.5 }}>✎</span> {genBriefing ? 'Génération…' : 'Générer lien briefing'}
+                <span style={{ opacity: 0.5 }}>✎</span> {genBriefing ? 'Génération…' : 'Préparer le briefing'}
               </button>
             : <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 18px', border: `0.5px solid ${briefing.filled_at ? '#186040' : C.muted}` }}>
                 <span style={{ fontFamily: sans, fontSize: 11, color: briefing.filled_at ? '#186040' : C.muted, textTransform: 'uppercase', letterSpacing: '0.12em' }}>
-                  ✎ Briefing {briefing.filled_at ? '— Rempli ✓' : '— En attente'}
+                  ✎ Briefing {briefing.filled_at ? '— Rempli ✓' : '— Prêt à envoyer'}
                 </span>
+                <a href={`/briefing/${briefing.token}`} target="_blank" rel="noopener noreferrer"
+                  style={{ fontFamily: sans, fontSize: 10, padding: '3px 8px', border: `0.5px solid ${C.muted}`, color: C.muted, textDecoration: 'none', cursor: 'pointer' }}>
+                  Prévisualiser ↗
+                </a>
                 <button onClick={() => {
-                  navigator.clipboard.writeText(`${window.location.origin}/briefing/${briefing.token}`)
+                  const base = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin
+                  navigator.clipboard.writeText(`${base}/briefing/${briefing.token}`)
                   setBriefingCopied(true); setTimeout(() => setBriefingCopied(false), 2000)
                 }} style={{ fontFamily: sans, fontSize: 10, padding: '3px 8px', border: `0.5px solid ${C.muted}`, background: 'transparent', color: C.muted, cursor: 'pointer', borderRadius: 0 }}>
                   {briefingCopied ? 'Copié ✓' : 'Copier lien'}
@@ -534,9 +540,22 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
             </div>
 
             <div style={{ marginBottom: 36 }}>
-              <SectionTitle>Liens</SectionTitle>
+              <SectionTitle>Liens & fichiers</SectionTitle>
               {client.maps_url && <Field label="Google Maps" link={client.maps_url} value="Voir sur Maps" />}
               {client.address  && <Field label="Adresse" value={client.address} />}
+              <EditableField
+                label="Dossier Google Drive"
+                addLabel="Coller le lien Drive…"
+                editLabel="Modifier"
+                value={client.google_drive_url ?? null}
+                onSave={v => patchClient({ google_drive_url: v.trim() || null })}
+              />
+              {client.google_drive_url && (
+                <a href={client.google_drive_url} target="_blank" rel="noopener noreferrer"
+                  style={{ fontFamily: sans, fontSize: 12, color: C.ink, textDecoration: 'underline', textUnderlineOffset: 2, display: 'inline-block', marginTop: -8, marginBottom: 14 }}>
+                  Ouvrir le dossier ↗
+                </a>
+              )}
             </div>
 
             <div>
