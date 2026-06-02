@@ -21,8 +21,21 @@ export async function GET(req: NextRequest) {
   const { data } = await sb.from('sq_checklists').select('*').eq('client_id', client_id).eq('month', month).maybeSingle()
   if (data) return NextResponse.json({ checklist: data })
 
-  // Create with standard tasks for new month
-  const items = STANDARD_TASKS.map((t, i) => ({ id: `std_${i}`, ...t, done: false }))
+  // Fetch previous month to carry over custom tasks
+  const [year, mon] = month.split('-').map(Number)
+  const prevDate = new Date(year, mon - 2, 1) // mon-2 because JS months are 0-indexed
+  const prevMonth = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, '0')}`
+  const { data: prevChecklist } = await sb.from('sq_checklists').select('items').eq('client_id', client_id).eq('month', prevMonth).maybeSingle()
+
+  const standardItems = STANDARD_TASKS.map((t, i) => ({ id: `std_${i}`, ...t, done: false }))
+  const standardTasks = new Set(STANDARD_TASKS.map(t => t.task))
+
+  // Carry over custom tasks (non-standard) from previous month, reset to undone
+  const customItems = prevChecklist
+    ? ((prevChecklist as any).items as any[]).filter(i => !standardTasks.has(i.task)).map(i => ({ ...i, done: false }))
+    : []
+
+  const items = [...standardItems, ...customItems]
   const { data: created } = await sb.from('sq_checklists').insert({ client_id, month, items } as any).select().maybeSingle()
   return NextResponse.json({ checklist: created })
 }

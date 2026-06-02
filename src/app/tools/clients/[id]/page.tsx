@@ -533,12 +533,12 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
                 <span style={{ fontFamily: sans, fontSize: 11, color: briefing.filled_at ? '#186040' : C.muted, textTransform: 'uppercase', letterSpacing: '0.12em' }}>
                   ✎ Briefing {briefing.filled_at ? '— Rempli ✓' : '— Prêt à envoyer'}
                 </span>
-                <a href={`/briefing/${briefing.token}`} target="_blank" rel="noopener noreferrer"
+                <a href={`/tools/briefing/${briefing.token}`} target="_blank" rel="noopener noreferrer"
                   style={{ fontFamily: sans, fontSize: 10, padding: '3px 8px', border: `0.5px solid ${C.muted}`, color: C.muted, textDecoration: 'none', cursor: 'pointer' }}>
                   Prévisualiser ↗
                 </a>
                 <button onClick={() => {
-                  navigator.clipboard.writeText(`${window.location.origin}/briefing/${briefing.token}`)
+                  navigator.clipboard.writeText(`${window.location.origin}/tools/briefing/${briefing.token}`)
                   setBriefingCopied(true); setTimeout(() => setBriefingCopied(false), 2000)
                 }} style={{ fontFamily: sans, fontSize: 10, padding: '3px 8px', border: `0.5px solid ${C.muted}`, background: 'transparent', color: C.muted, cursor: 'pointer', borderRadius: 0 }}>
                   {briefingCopied ? 'Copié ✓' : 'Copier lien'}
