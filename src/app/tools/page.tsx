@@ -61,6 +61,9 @@ export default function ToolsDashboard() {
     {
       num: '06', title: 'Services', desc: 'Catalogue des services proposés — prix, descriptions, activation. Référence pour les devis et analyses.', href: '/tools/services', statValue: null, statKey: null,
     },
+    {
+      num: '07', title: 'Paramètres', desc: 'Informations de l\'agence, régime fiscal (auto-entrepreneur / société), configuration appliquée sur toutes les factures.', href: '/tools/parametres', statValue: null, statKey: null,
+    },
   ]
 
   return (
