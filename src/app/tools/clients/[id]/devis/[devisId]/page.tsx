@@ -149,6 +149,12 @@ export default function DevisPage({ params }: { params: Promise<{ id: string; de
               {STATUS_LABELS[s]}
             </button>
           ))}
+          {devis.status === 'accepted' && (
+            <a href={`/tools/clients/${id}/faturamento?from_devis=${devisId}`}
+              style={{ fontFamily: sans, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.12em', padding: '5px 12px', border: 'none', background: '#186040', color: C.paper, textDecoration: 'none' }}>
+              Créer une facture →
+            </a>
+          )}
           <div style={{ width: 1, background: C.muted, margin: '0 4px' }} />
           {mode === 'edit' ? (
             <>

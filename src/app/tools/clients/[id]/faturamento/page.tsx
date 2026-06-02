@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, use } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { Barlow_Condensed } from 'next/font/google'
 import { C, sans } from '@/lib/sq-design'
 
@@ -214,6 +215,8 @@ function InvoicePreview({ invoice, clientName, onClose }: { invoice: Invoice; cl
 
 export default function FaturamentoPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
+  const searchParams = useSearchParams()
+  const fromDevis    = searchParams.get('from_devis')
   const [client,   setClient]   = useState<any>(null)
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [loading,  setLoading]  = useState(true)
@@ -221,12 +224,26 @@ export default function FaturamentoPage({ params }: { params: Promise<{ id: stri
   const [preview,  setPreview]  = useState<Invoice | null>(null)
 
   useEffect(() => {
-    Promise.all([
+    const requests: Promise<any>[] = [
       fetch(`/api/sq/clients/${id}`).then(r => r.json()),
       fetch(`/api/sq/invoices?client_id=${id}`).then(r => r.json()),
-    ]).then(([c, inv]) => {
+    ]
+    if (fromDevis) requests.push(fetch(`/api/sq/devis/${fromDevis}`).then(r => r.json()))
+
+    Promise.all(requests).then(([c, inv, devisData]) => {
       setClient(c.client)
       setInvoices(inv.invoices ?? [])
+      // Pre-populate editor from approved devis
+      if (devisData?.devis) {
+        const d = devisData.devis
+        const items: InvoiceItem[] = d.items.map((i: any) => ({
+          service:    i.service,
+          qty:        1,
+          unit_price: Number(i.price_monthly) || 0,
+        }))
+        const today = new Date().toISOString().slice(0, 7)
+        setEditing({ items, month: today, notes: d.notes ?? null })
+      }
     }).finally(() => setLoading(false))
   }, [id])
 
