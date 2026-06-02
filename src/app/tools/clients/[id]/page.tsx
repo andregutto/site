@@ -252,12 +252,14 @@ function ActivityTimeline({ clientId, events, setEvents, eventTypes, eventIcons,
                     </p>
                   )}
                 </div>
-                {!isSystem && !isEditing && (
+                {!isEditing && (
                   <div style={{ display: 'flex', gap: 4, opacity: 0, transition: 'opacity 0.15s' }}
                     onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
                     onMouseLeave={e => (e.currentTarget.style.opacity = '0')}>
-                    <button onClick={() => { setEditingId(evt.id); setEditText(evt.content ?? '') }}
-                      style={{ fontFamily: sans, fontSize: 10, padding: '3px 6px', border: `0.5px solid ${C.muted}`, background: 'transparent', color: C.muted, cursor: 'pointer', borderRadius: 0 }}>✎</button>
+                    {!isSystem && (
+                      <button onClick={() => { setEditingId(evt.id); setEditText(evt.content ?? '') }}
+                        style={{ fontFamily: sans, fontSize: 10, padding: '3px 6px', border: `0.5px solid ${C.muted}`, background: 'transparent', color: C.muted, cursor: 'pointer', borderRadius: 0 }}>✎</button>
+                    )}
                     <button onClick={() => handleDelete(evt.id)}
                       style={{ fontFamily: sans, fontSize: 12, padding: '3px 6px', border: `0.5px solid ${C.muted}`, background: 'transparent', color: C.muted, cursor: 'pointer', borderRadius: 0 }}>×</button>
                   </div>
@@ -515,8 +517,7 @@ export default function ClientDetailPage({ params }: { params: Promise<{ id: str
                   Prévisualiser ↗
                 </a>
                 <button onClick={() => {
-                  const base = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin
-                  navigator.clipboard.writeText(`${base}/briefing/${briefing.token}`)
+                  navigator.clipboard.writeText(`${window.location.origin}/briefing/${briefing.token}`)
                   setBriefingCopied(true); setTimeout(() => setBriefingCopied(false), 2000)
                 }} style={{ fontFamily: sans, fontSize: 10, padding: '3px 8px', border: `0.5px solid ${C.muted}`, background: 'transparent', color: C.muted, cursor: 'pointer', borderRadius: 0 }}>
                   {briefingCopied ? 'Copié ✓' : 'Copier lien'}
