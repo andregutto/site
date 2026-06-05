@@ -327,7 +327,7 @@ export default function AppLayout() {
 
       </header>
 
-      <main className="flex-1 max-w-6xl mx-auto w-full px-4 py-6 pb-28 sm:pb-6 main-content">
+      <main className="flex-1 max-w-6xl mx-auto w-full px-4 py-6 pb-40 sm:pb-6 main-content">
         <Outlet />
       </main>
 
@@ -335,49 +335,64 @@ export default function AppLayout() {
         <LoginFooter />
       </div>
 
-      {/* Mobile sub-nav — fixed just above the bottom nav */}
+      {/* Mobile sub-nav — floating glass pill above bottom nav */}
       {activeSubItems.length > 0 && (
-        <nav className="sm:hidden fixed left-0 right-0 z-20" style={{ bottom: 'calc(3.5rem + env(safe-area-inset-bottom, 0px))', background: 'rgba(255,255,255,0.96)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', borderTop: '1px solid var(--arvo-border-soft)', position: 'fixed' }}>
-          <div ref={subNavScrollRef} className="flex items-center gap-1 px-3 py-2 overflow-x-auto scrollbar-none">
+        <nav
+          className="sm:hidden fixed z-20"
+          style={{
+            bottom: 'calc(84px + env(safe-area-inset-bottom, 0px))',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            width: 'calc(100% - 32px)',
+            maxWidth: 500,
+            background: 'rgba(242,237,228,0.88)',
+            backdropFilter: 'blur(20px) saturate(180%)',
+            WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+            border: '1px solid rgba(255,255,255,0.55)',
+            borderRadius: 999,
+            boxShadow: '0 4px 20px rgba(0,0,0,0.10)',
+            overflow: 'hidden',
+          }}
+        >
+          <div ref={subNavScrollRef} className="flex items-center gap-0.5 overflow-x-auto scrollbar-none" style={{ padding: '5px' }}>
             {activeSubItems.map(({ to, label, end }) => (
               <NavLink
                 key={to} to={to} end={end}
-                className="flex items-center gap-2 whitespace-nowrap transition-all"
+                className="flex items-center gap-1.5 whitespace-nowrap shrink-0"
                 style={({ isActive }) => isActive
-                  ? { fontFamily: "var(--arvo-font-body)", fontSize: 13, letterSpacing: '0.05em', padding: '9px 14px', borderRadius: 9, border: '1px solid var(--arvo-border)', background: 'white', color: 'var(--arvo-fg)', boxShadow: '0 1px 2px rgba(13,13,13,0.06)', textDecoration: 'none' }
-                  : { fontFamily: "var(--arvo-font-body)", fontSize: 13, letterSpacing: '0.05em', padding: '9px 14px', borderRadius: 9, border: '1px solid transparent', background: 'transparent', color: 'rgba(13,13,13,0.5)', textDecoration: 'none' }}
+                  ? { fontFamily: "var(--arvo-font-body)", fontSize: 13, letterSpacing: '0.04em', padding: '8px 13px', borderRadius: 999, background: 'rgba(13,13,13,0.90)', color: 'var(--arvo-offwhite)', textDecoration: 'none', transition: 'all 240ms cubic-bezier(0.22,0.61,0.36,1)' }
+                  : { fontFamily: "var(--arvo-font-body)", fontSize: 13, letterSpacing: '0.04em', padding: '8px 13px', borderRadius: 999, background: 'transparent', color: 'rgba(13,13,13,0.52)', textDecoration: 'none', transition: 'all 240ms cubic-bezier(0.22,0.61,0.36,1)' }}
               >
                 {({ isActive }) => (
                   <>
-                    {isActive && <span style={{ width: 5, height: 5, borderRadius: 999, background: sectionAccent, flexShrink: 0, display: 'inline-block' }} />}
+                    {isActive && <span style={{ width: 5, height: 5, borderRadius: 999, background: 'rgba(255,255,255,0.75)', flexShrink: 0, display: 'inline-block' }} />}
                     {label}
                   </>
                 )}
               </NavLink>
             ))}
-            {/* Spacer so last item clears the chevron indicator */}
-            <div style={{ minWidth: 44, flexShrink: 0 }} />
-          </div>
-
-          {/* Soft fade + chevron — signals scrollability */}
-          <div
-            aria-hidden="true"
-            style={{
-              position: 'absolute', right: 0, top: 0, bottom: 0, width: 52, pointerEvents: 'none',
-              background: 'linear-gradient(to left, rgba(255,255,255,0.97) 45%, rgba(255,255,255,0))',
-              display: 'flex', alignItems: 'center', justifyContent: 'flex-end', paddingRight: 6,
-            }}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-              stroke={sectionAccent} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
-              <path d="M9 18l6-6-6-6" />
-            </svg>
           </div>
         </nav>
       )}
 
-      {/* Mobile bottom navigation */}
-      <nav className="sm:hidden fixed bottom-0 left-0 right-0 z-20 safe-bottom" style={{ background: 'rgba(255,255,255,0.96)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', borderTop: '1px solid var(--arvo-border-soft)' }}>
+      {/* Mobile bottom nav — floating glass pill */}
+      <nav
+        className="sm:hidden fixed z-20"
+        style={{
+          bottom: 'calc(16px + env(safe-area-inset-bottom, 0px))',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: 'calc(100% - 32px)',
+          maxWidth: 360,
+          background: 'rgba(242,237,228,0.88)',
+          backdropFilter: 'blur(20px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+          border: '1px solid rgba(255,255,255,0.55)',
+          borderRadius: 999,
+          boxShadow: '0 4px 24px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.06)',
+          padding: '5px',
+        }}
+      >
         <div className="flex">
           {[
             { to: '/dashboard', label: t.nav.investments, match: inInvestimentos, icon: (
@@ -398,11 +413,21 @@ export default function AppLayout() {
           ].map(({ to, label, match, icon }) => (
             <NavLink
               key={to} to={to}
-              className="flex-1 py-2.5 flex flex-col items-center gap-0.5 transition-colors text-[11px] leading-tight"
-              style={{ fontFamily: "var(--arvo-font-body)", color: match ? 'var(--arvo-black)' : 'rgba(13,13,13,0.35)', letterSpacing: '0.06em' }}
+              className="flex-1 flex flex-col items-center gap-1 shrink-0"
+              style={{
+                fontFamily: "var(--arvo-font-body)",
+                letterSpacing: '0.06em',
+                fontSize: 10,
+                padding: '8px 6px 7px',
+                borderRadius: 999,
+                color: match ? 'var(--arvo-offwhite)' : 'rgba(13,13,13,0.45)',
+                background: match ? 'rgba(13,13,13,0.92)' : 'transparent',
+                transition: 'all 280ms cubic-bezier(0.22,0.61,0.36,1)',
+                textDecoration: 'none',
+              }}
             >
               {icon}
-              <span className="truncate w-full text-center px-0.5">{label}</span>
+              <span className="truncate w-full text-center px-1">{label}</span>
             </NavLink>
           ))}
         </div>
