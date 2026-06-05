@@ -146,6 +146,7 @@ export interface AssetHistoryPoint {
   date: string
   price: number
   value_brl: number
+  invested_brl?: number
 }
 
 export interface Contribution {

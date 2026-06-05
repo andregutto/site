@@ -672,7 +672,7 @@ router.get('/:id/detail', requireAuth, async (req, res: Response) => {
     } catch { /* ignore per-tranche errors */ }
   }
 
-  type HistoryPoint = { date: string; price: number; value_brl: number }
+  type HistoryPoint = { date: string; price: number; value_brl: number; invested_brl?: number }
   let history: HistoryPoint[] = []
 
   // Shared interpolation helper used by both ticker (no price_history) and manual branches
@@ -788,6 +788,19 @@ router.get('/:id/detail', requireAuth, async (req, res: Response) => {
     const mv = mvRes.data
     fxApprox = priceCurrency === 'BRL' ? 1 : await getFxRate(priceCurrency).catch(() => 5.70)
 
+    const investedAtDate = (dateStr: string): number => {
+      let cumCost = 0, cumQty = 0
+      for (const c of contribs) {
+        if (c.date > dateStr) break
+        const qty = c.quantity ?? 0
+        const cFx = c.fx_rate_brl ?? (c.currency === 'BRL' ? 1 : fxApprox)
+        const cost = c.value_brl ?? (c.price_orig != null ? c.price_orig * qty * cFx : 0)
+        if (c.type === 'buy') { cumCost += cost; cumQty += qty }
+        else if (c.type !== 'income') { if (cumQty > 0) cumCost *= (1 - qty / cumQty); cumQty = Math.max(0, cumQty - qty) }
+      }
+      return Math.round(cumCost * 100) / 100
+    }
+
     if (ph && ph.length > 0) {
       const phDates = new Set(ph.map(p => p.ref_date))
       const phPoints: HistoryPoint[] = ph.map((p) => {
@@ -796,13 +809,13 @@ router.get('/:id/detail', requireAuth, async (req, res: Response) => {
           if (c.date <= p.ref_date) qtyAt += c.type === 'buy' ? (c.quantity ?? 0) : -(c.quantity ?? 0)
         }
         qtyAt = Math.max(0, qtyAt)
-        return { date: p.ref_date, price: p.price, value_brl: Math.round(qtyAt * p.price * fxApprox * 100) / 100 }
+        return { date: p.ref_date, price: p.price, value_brl: Math.round(qtyAt * p.price * fxApprox * 100) / 100, invested_brl: investedAtDate(p.ref_date) }
       })
       const mvPoints: HistoryPoint[] = (mv ?? [])
         .filter(m => !phDates.has(m.ref_date))
         .map(m => {
           const fx = m.currency === 'BRL' ? 1 : fxApprox
-          return { date: m.ref_date, price: m.value, value_brl: Math.round(m.value * fx * 100) / 100 }
+          return { date: m.ref_date, price: m.value, value_brl: Math.round(m.value * fx * 100) / 100, invested_brl: investedAtDate(m.ref_date) }
         })
       history = [...phPoints, ...mvPoints].sort((a, b) => a.date.localeCompare(b.date))
     } else if (mv && mv.length > 0) {

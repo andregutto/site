@@ -308,18 +308,19 @@ export default function AssetDetailPage() {
   // Daily chart data — use directly for short periods
   const allDailyData = data.history
     .filter(h => h.value_brl > 0)
-    .map(h => ({ label: fmtDate(h.date, intlLocale), value: convert(h.value_brl), date: h.date }))
+    .map(h => ({ label: fmtDate(h.date, intlLocale), value: convert(h.value_brl), date: h.date, invested: h.invested_brl != null ? convert(h.invested_brl) : undefined }))
 
   // Monthly chart data — for longer periods
   const allMonthlyData = (() => {
-    const byMonth = new Map<string, number>()
+    const byMonth = new Map<string, { value: number; invested?: number }>()
     for (const h of data.history) {
-      if (h.value_brl > 0) byMonth.set(h.date.substring(0, 7), convert(h.value_brl))
+      if (h.value_brl > 0) byMonth.set(h.date.substring(0, 7), { value: convert(h.value_brl), invested: h.invested_brl != null ? convert(h.invested_brl) : undefined })
     }
-    return Array.from(byMonth.entries()).map(([monthKey, value]) => ({
+    return Array.from(byMonth.entries()).map(([monthKey, { value, invested }]) => ({
       label: fmtMonth(monthKey + '-01', intlLocale),
       value,
       date: monthKey + '-01',
+      invested,
     }))
   })()
 
@@ -1018,25 +1019,40 @@ export default function AssetDetailPage() {
                     return String(v)
                   }}
                   width={50}
-                  domain={data.invested_brl > 0
-                    ? [(dMin: number) => Math.min(dMin, convert(data.invested_brl)) * 0.97, (dMax: number) => Math.max(dMax, convert(data.invested_brl)) * 1.03]
-                    : ['auto', 'auto']}
+                  domain={(() => {
+                    const maxInv = Math.max(0, ...chartData.map(pt => (pt as { invested?: number }).invested ?? 0))
+                    const ref = maxInv > 0 ? maxInv : convert(data.invested_brl)
+                    return ref > 0
+                      ? [(dMin: number) => Math.min(dMin, ref) * 0.97, (dMax: number) => Math.max(dMax, ref) * 1.03]
+                      : ['auto', 'auto' as const]
+                  })()}
                 />
                 <Tooltip
-                  formatter={(v) => [
+                  formatter={(v, name) => [
                     new Intl.NumberFormat(intlLocale, { style: 'currency', currency, maximumFractionDigits: 0 }).format(Number(v)),
-                    d.tooltipValue,
+                    name === 'invested' ? d.investedRef : d.tooltipValue,
                   ]}
                   contentStyle={{ borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 12 }}
                 />
-                {data.invested_brl > 0 && (
+                {chartData.some(pt => (pt as { invested?: number }).invested != null) ? (
+                  <Line
+                    type="stepAfter"
+                    dataKey="invested"
+                    stroke="#f59e0b"
+                    strokeWidth={1.5}
+                    strokeDasharray="4 2"
+                    dot={false}
+                    activeDot={false}
+                    name="invested"
+                  />
+                ) : data.invested_brl > 0 ? (
                   <ReferenceLine
                     y={convert(data.invested_brl)}
                     stroke="#f59e0b"
                     strokeDasharray="4 2"
                     label={{ value: d.investedRef, fontSize: 10, fill: '#f59e0b' }}
                   />
-                )}
+                ) : null}
                 <Line
                   type="monotone"
                   dataKey="value"
