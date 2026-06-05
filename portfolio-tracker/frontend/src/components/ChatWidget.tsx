@@ -183,8 +183,8 @@ export default function ChatWidget({ visible = true, onDismiss, forceOpen, onFor
         .arvo-bird-p5 { animation: arvo-bird-color 3s ease-in-out infinite; animation-delay: 1.0s; }
         .arvo-bird-p6 { animation: arvo-bird-color 3s ease-in-out infinite; animation-delay: 1.25s; }
         @keyframes arvo-header-pulse {
-          0%, 100% { opacity: 0.50; }
-          50%       { opacity: 0.85; }
+          0%, 100% { opacity: 0.18; }
+          50%       { opacity: 0.42; }
         }
         .arvo-chat-header-grad {
           position: absolute; inset: 0; border-radius: inherit;

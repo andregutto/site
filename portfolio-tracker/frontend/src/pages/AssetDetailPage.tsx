@@ -1151,7 +1151,7 @@ export default function AssetDetailPage() {
                         <th className="px-4 py-3 text-left">{d.tableType}</th>
                         <th className="px-4 py-3 text-right">{d.tableQty}</th>
                         <th className="px-4 py-3 text-right">{d.tableUnitPrice}</th>
-                        <th className="px-4 py-3 text-right">{d.tableTotalBrl}</th>
+                        <th className="px-4 py-3 text-right">{d.tableTotal} {currency}</th>
                         <th className="px-4 py-3 text-right">{d.tableProfit}</th>
                       </tr>
                     </thead>
@@ -1190,7 +1190,7 @@ export default function AssetDetailPage() {
                                 : '—'}
                             </td>
                             <td className="px-4 py-3 text-right font-medium text-gray-900">
-                              {totalBrlVal != null ? fmt(totalBrlVal) : '—'}
+                              {totalBrlVal != null ? fmt(convert(totalBrlVal)) : '—'}
                             </td>
                             <td className="px-4 py-3 text-right">
                               {profitBrl != null ? (
@@ -1239,7 +1239,7 @@ export default function AssetDetailPage() {
                             <div className="text-xs text-gray-500 mt-1">{fmtDate(c.date, intlLocale)}</div>
                           </div>
                           <div className="text-right shrink-0">
-                            <div className="font-medium text-sm text-gray-900">{totalBrlVal != null ? fmt(totalBrlVal) : '—'}</div>
+                            <div className="font-medium text-sm text-gray-900">{totalBrlVal != null ? fmt(convert(totalBrlVal)) : '—'}</div>
                             {profitBrl != null && (
                               <div>
                                 <div className={`text-xs font-semibold ${profitBrl >= 0 ? 'text-green-700' : 'text-red-600'}`}>

@@ -1208,7 +1208,7 @@
     "tableType": "Type",
     "tableQty": "Qty",
     "tableUnitPrice": "Unit price",
-    "tableTotalBrl": "Total BRL",
+    "tableTotal": "Total",
     "tableProfit": "P&L",
     "srcBcb": "Calculated via CDI · Central Bank",
     "srcBrapi": "B3 price · Brapi",

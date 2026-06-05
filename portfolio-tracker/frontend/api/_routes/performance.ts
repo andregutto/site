@@ -950,19 +950,27 @@ router.get('/asset-returns', requireAuth, async (req, res: Response) => {
 
   // ── Ticker assets: price_history ────────────────────────────────────────────
   if (tickerIds.length > 0) {
-    const phLimit2 = Math.max(10000, tickerIds.length * 240)
-    const [{ data: endPricesRaw }, { data: allHistory }] = await Promise.all([
+    // Three targeted queries replace the old single allHistory fetch:
+    // endPricesRaw: most recent price per asset up to period end
+    // preFromPrices: most recent price per asset strictly before period start (→ startMap)
+    // oldestPrices:  oldest price per asset ever (→ oldestMap fallback)
+    // Each limit(1000) is well within Supabase's row cap for any realistic portfolio size.
+    const [{ data: endPricesRaw }, { data: preFromPrices }, { data: oldestPrices }] = await Promise.all([
       supabaseAdmin.from('price_history').select('asset_id, price, ref_date')
-        .in('asset_id', tickerIds).lte('ref_date', toDate).order('ref_date', { ascending: false }).limit(phLimit2),
+        .in('asset_id', tickerIds).lte('ref_date', toDate).order('ref_date', { ascending: false }).limit(1000),
       supabaseAdmin.from('price_history').select('asset_id, price, ref_date')
-        .in('asset_id', tickerIds).order('ref_date', { ascending: true }).limit(phLimit2),
+        .in('asset_id', tickerIds).lt('ref_date', fromDate).order('ref_date', { ascending: false }).limit(1000),
+      supabaseAdmin.from('price_history').select('asset_id, price, ref_date')
+        .in('asset_id', tickerIds).order('ref_date', { ascending: true }).limit(1000),
     ])
 
     const startMap:  Record<number, number> = {}
     const oldestMap: Record<number, number> = {}
-    for (const p of (allHistory ?? [])) {
-      if (!(p.asset_id in oldestMap)) oldestMap[p.asset_id] = p.price
-      if (p.ref_date < fromDate) startMap[p.asset_id] = p.price
+    for (const p of (preFromPrices ?? [])) {
+      if (!(p.asset_id in startMap)) startMap[p.asset_id] = p.price  // DESC → first = most recent before fromDate
+    }
+    for (const p of (oldestPrices ?? [])) {
+      if (!(p.asset_id in oldestMap)) oldestMap[p.asset_id] = p.price  // ASC → first = oldest ever
     }
 
     const endMap: Record<number, { price: number; ref_date: string }> = {}

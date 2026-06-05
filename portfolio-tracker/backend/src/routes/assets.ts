@@ -705,20 +705,30 @@ router.get('/:id/detail', requireAuth, async (req, res: Response) => {
 
   if (asset.asset_type === 'ticker') {
     const today = new Date().toISOString().split('T')[0]
-    const [phRes, mvRes] = await Promise.all([
-      supabaseAdmin
-        .from('price_history')
-        .select('ref_date, price, currency')
-        .eq('asset_id', assetId)
-        .lte('ref_date', today)
-        .order('ref_date', { ascending: true }),
+    const [ph, mvRes] = await Promise.all([
+      (async () => {
+        const rows: Array<{ ref_date: string; price: number; currency: string }> = []
+        const pageSize = 1000
+        let offset = 0
+        while (true) {
+          const { data: batch } = await supabaseAdmin
+            .from('price_history').select('ref_date, price, currency')
+            .eq('asset_id', assetId).lte('ref_date', today)
+            .order('ref_date', { ascending: true })
+            .range(offset, offset + pageSize - 1)
+          if (!batch || batch.length === 0) break
+          rows.push(...(batch as Array<{ ref_date: string; price: number; currency: string }>))
+          if (batch.length < pageSize) break
+          offset += pageSize
+        }
+        return rows
+      })(),
       supabaseAdmin
         .from('manual_values')
         .select('ref_date, value, currency')
         .eq('asset_id', assetId)
         .order('ref_date', { ascending: true }),
     ])
-    const ph = phRes.data
     const mv = mvRes.data
     fxApprox = priceCurrency === 'BRL' ? 1 : await getFxRate(priceCurrency).catch(() => 5.70)
 

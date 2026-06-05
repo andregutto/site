@@ -1208,7 +1208,7 @@
     "tableType": "Tipo",
     "tableQty": "Qtd",
     "tableUnitPrice": "Preço Unit.",
-    "tableTotalBrl": "Total BRL",
+    "tableTotal": "Total",
     "tableProfit": "Lucro",
     "srcBcb": "Calculado via CDI · Banco Central",
     "srcBrapi": "Cotação B3 · Brapi",
