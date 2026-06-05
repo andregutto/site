@@ -283,11 +283,20 @@ export default function AppLayout() {
                     </svg>
                     {t.nav.profile}
                   </Link>
-                  <button onClick={openChat} className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors" style={{ color: 'rgba(13,13,13,0.75)' }} onMouseEnter={e => (e.currentTarget.style.background='rgba(13,13,13,0.04)')} onMouseLeave={e => (e.currentTarget.style.background='')}>
-                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4 shrink-0">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M2 2.5h12a1 1 0 011 1v6a1 1 0 01-1 1H9L6 13v-2.5H2a1 1 0 01-1-1v-6a1 1 0 011-1z"/>
+                  <button onClick={openChat} className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors" style={{ color: 'rgba(13,13,13,0.75)' }} onMouseEnter={e => (e.currentTarget.style.background='rgba(27,79,216,0.05)')} onMouseLeave={e => (e.currentTarget.style.background='')}>
+                    <svg viewBox="0 0 16 16" className="w-4 h-4 shrink-0" fill="none">
+                      <defs>
+                        <linearGradient id="ai-sparkle-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" stopColor="#1B4FD8"/>
+                          <stop offset="100%" stopColor="#E8A020"/>
+                        </linearGradient>
+                      </defs>
+                      <path d="M8 1.5L9.3 6.7L14.5 8L9.3 9.3L8 14.5L6.7 9.3L1.5 8L6.7 6.7L8 1.5Z" fill="url(#ai-sparkle-grad)"/>
+                      <circle cx="3" cy="3" r="1" fill="#1B4FD8" opacity="0.5"/>
+                      <circle cx="13" cy="13" r="0.75" fill="#E8A020" opacity="0.5"/>
                     </svg>
-                    {t.chat.open}
+                    <span className="flex-1 text-left">{t.chat.open}</span>
+                    <span style={{ fontSize: 9, padding: '2px 7px', borderRadius: 999, background: 'linear-gradient(105deg, #1B4FD8, #E8A020)', color: 'white', letterSpacing: '0.07em', fontFamily: "var(--arvo-font-body)" }}>IA</span>
                   </button>
                   <button onClick={() => signOut()} className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors" style={{ color: 'var(--arvo-red)' }} onMouseEnter={e => (e.currentTarget.style.background='rgba(214,59,47,0.06)')} onMouseLeave={e => (e.currentTarget.style.background='')}>
                     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4 shrink-0">

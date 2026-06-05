@@ -202,8 +202,8 @@ export default function ChatWidget({ visible = true, onDismiss, forceOpen, onFor
         }
       `}</style>
 
-      {/* Floating button */}
-      <div className="fixed chat-bubble-safe right-5 sm:right-10 z-50 sm:bottom-10">
+      {/* Floating button — desktop only */}
+      <div className="hidden sm:block fixed chat-bubble-safe right-5 sm:right-10 z-50 sm:bottom-10">
         <div style={{ position: 'relative', width: 48, height: 48 }}>
           {/* Rotating conic glow */}
           <div className="arvo-chat-glow" />
