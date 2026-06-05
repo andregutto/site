@@ -182,18 +182,23 @@ export default function ChatWidget({ visible = true, onDismiss, forceOpen, onFor
         .arvo-bird-p4 { animation: arvo-bird-color 3s ease-in-out infinite; animation-delay: 0.75s; }
         .arvo-bird-p5 { animation: arvo-bird-color 3s ease-in-out infinite; animation-delay: 1.0s; }
         .arvo-bird-p6 { animation: arvo-bird-color 3s ease-in-out infinite; animation-delay: 1.25s; }
-        @keyframes arvo-header-shift {
-          0%   { background-position: 0% center; }
-          100% { background-position: 300% center; }
+        @keyframes arvo-header-pulse {
+          0%, 100% { opacity: 0.50; }
+          50%       { opacity: 0.85; }
         }
-        .arvo-chat-header {
-          background: linear-gradient(90deg,
-            #0a0a0a 0%, #1B4FD8 18%, rgba(200,184,154,0.6) 35%,
-            #0a0a0a 50%, #c4890e 68%, rgba(200,184,154,0.5) 80%,
-            #c4341f 90%, #0a0a0a 100%
-          );
-          background-size: 300% 100%;
-          animation: arvo-header-shift 7s linear infinite;
+        .arvo-chat-header-grad {
+          position: absolute; inset: 0; border-radius: inherit;
+          background: linear-gradient(105deg, #1B4FD8 0%, #E8A020 52%, #D63B2F 100%);
+          animation: arvo-header-pulse 4s ease-in-out infinite;
+          pointer-events: none;
+        }
+        @keyframes arvo-chat-border {
+          0%, 100% { box-shadow: 0 0 0 1px rgba(27,79,216,0.28), 0 0 28px rgba(27,79,216,0.14), 0 8px 40px rgba(0,0,0,0.22); }
+          33%       { box-shadow: 0 0 0 1px rgba(232,160,32,0.28), 0 0 28px rgba(232,160,32,0.14), 0 8px 40px rgba(0,0,0,0.22); }
+          66%       { box-shadow: 0 0 0 1px rgba(214,59,47,0.28), 0 0 28px rgba(214,59,47,0.14), 0 8px 40px rgba(0,0,0,0.22); }
+        }
+        .arvo-chat-panel {
+          animation: arvo-chat-border 6s ease-in-out infinite;
         }
       `}</style>
 
@@ -244,22 +249,23 @@ export default function ChatWidget({ visible = true, onDismiss, forceOpen, onFor
 
       {/* Chat panel */}
       {open && (
-        <div className="fixed chat-dialog-safe right-5 z-50 w-[360px] max-w-[calc(100vw-2.5rem)] h-[520px] max-h-[calc(100vh-6rem)] rounded-2xl shadow-2xl flex flex-col overflow-hidden sm:bottom-20" style={{ background: 'var(--arvo-offwhite)', border: '1px solid var(--arvo-border-soft)' }}>
+        <div className="arvo-chat-panel fixed chat-dialog-safe right-5 z-50 w-[360px] max-w-[calc(100vw-2.5rem)] h-[520px] max-h-[calc(100vh-6rem)] rounded-2xl flex flex-col overflow-hidden sm:bottom-20" style={{ background: 'var(--arvo-offwhite)' }}>
           {/* Header */}
-          <div className="arvo-chat-header flex items-center gap-2.5 px-4 py-3 rounded-t-2xl" style={{ borderBottom: '1px solid rgba(200,184,154,0.15)' }}>
-            <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
+          <div className="relative flex items-center gap-2.5 px-4 py-3 rounded-t-2xl" style={{ background: '#0D0D0D', borderBottom: '1px solid rgba(200,184,154,0.15)' }}>
+            <div className="arvo-chat-header-grad rounded-t-2xl" />
+            <div className="relative z-10 w-7 h-7 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
               <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23-.693L5 14.5m14.8.8l1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0112 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5" />
               </svg>
             </div>
-            <div className="min-w-0">
+            <div className="relative z-10 min-w-0">
               <p className="text-white text-sm font-semibold leading-none">{t.chat.title}</p>
               <p className="text-white/60 text-[11px] mt-0.5">{t.chat.poweredBy}</p>
             </div>
             {messages.length > 0 && (
               <button
                 onClick={() => setMessages([])}
-                className="ml-auto text-white/50 hover:text-white/80 text-[11px] transition-colors"
+                className="relative z-10 ml-auto text-white/50 hover:text-white/80 text-[11px] transition-colors"
               >
                 {t.chat.clear}
               </button>
