@@ -26,6 +26,14 @@ function perfCacheSet(key: string, data: unknown) {
   } catch {}
 }
 
+export function clearPerfCache() {
+  try {
+    Object.keys(localStorage)
+      .filter(k => k.startsWith(CACHE_PREFIX))
+      .forEach(k => localStorage.removeItem(k))
+  } catch {}
+}
+
 export function usePortfolioValue() {
   const [data, setData]     = useState<PortfolioValue | null>(null)
   const [loading, setLoading] = useState(true)

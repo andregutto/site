@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom'
-import { useAssetDetail } from '../hooks/usePortfolio'
+import { useAssetDetail, clearPerfCache } from '../hooks/usePortfolio'
 import { useDividends } from '../hooks/useDividends'
 import { useCurrency } from '../contexts/CurrencyContext'
 import { useFavorites } from '../hooks/useFavorites'
@@ -93,6 +93,27 @@ export default function AssetDetailPage() {
   const navigate   = useNavigate()
   const location   = useLocation()
   const { data, loading, error, refresh } = useAssetDetail(assetId)
+
+  // Auto-sync price history (shared 6h gate with DashboardPage)
+  const refreshRef = useRef(refresh)
+  refreshRef.current = refresh
+  const detailSyncFired = useRef(false)
+  useEffect(() => {
+    if (detailSyncFired.current) return
+    const INTERVAL = 6 * 60 * 60 * 1000
+    const lastSync = localStorage.getItem('price_last_sync')
+    if (lastSync && Date.now() - new Date(lastSync).getTime() < INTERVAL) return
+    detailSyncFired.current = true
+    apiFetch('/portfolio/sync-history', { method: 'POST' })
+      .then(() => {
+        localStorage.setItem('price_last_sync', new Date().toISOString())
+        clearPerfCache()
+        refreshRef.current()
+      })
+      .catch(() => {})
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const { data: assetDividends, loading: divLoading } = useDividends(undefined, undefined, assetId ?? undefined)
   const { fmt, convert, currency } = useCurrency()
   const { t, locale } = useI18n()

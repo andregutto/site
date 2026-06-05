@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { PageLoader } from '../components/ArvoLoader'
-import { usePortfolioValue, usePerformanceMonthly, usePerformanceDaily, usePerformanceInception, usePerformanceSummary, useAssetReturns } from '../hooks/usePortfolio'
+import { usePortfolioValue, usePerformanceMonthly, usePerformanceDaily, usePerformanceInception, usePerformanceSummary, useAssetReturns, clearPerfCache } from '../hooks/usePortfolio'
 import { useDividendSummary, useDividendSync } from '../hooks/useDividends'
 import { useCurrency } from '../contexts/CurrencyContext'
 import { useFavorites } from '../hooks/useFavorites'
@@ -118,7 +118,7 @@ export default function DashboardPage() {
     }
   })()
 
-  const { data: periodSummary, loading: periodLoading } = usePerformanceSummary(perfFrom, perfTo)
+  const { data: periodSummary, loading: periodLoading, refresh: refreshPeriodSummary } = usePerformanceSummary(perfFrom, perfTo)
   const periodReturnPct = periodSummary?.return_pct ?? null
   const periodReturnAbs = periodSummary?.return_abs ?? null
 
@@ -137,7 +137,7 @@ export default function DashboardPage() {
   const divTo = now.toISOString().split('T')[0]
   const { data: divSummary, loading: divLoading } = useDividendSummary(divFrom, divTo)
 
-  const { data: perfData, loading: chartLoading } = usePerformanceMonthly(inception ?? currentYM, currentYM)
+  const { data: perfData, loading: chartLoading, refresh: refreshMonthly } = usePerformanceMonthly(inception ?? currentYM, currentYM)
 
   const useDailyChart = periodMode === 'current_month' || periodMode === 'last_30d'
   const dailyFrom = useDailyChart
@@ -146,7 +146,34 @@ export default function DashboardPage() {
       : localDate(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 29))
     : null
   const dailyTo = useDailyChart ? localDate(now) : null
-  const { data: dailyData, loading: dailyLoading } = usePerformanceDaily(dailyFrom, dailyTo)
+  const { data: dailyData, loading: dailyLoading, refresh: refreshDaily } = usePerformanceDaily(dailyFrom, dailyTo)
+
+  // Keep refs to the latest refresh functions so the async sync callback can call them
+  const refreshPeriodSummaryRef = useRef(refreshPeriodSummary)
+  const refreshMonthlyRef = useRef(refreshMonthly)
+  const refreshDailyRef = useRef(refreshDaily)
+  refreshPeriodSummaryRef.current = refreshPeriodSummary
+  refreshMonthlyRef.current = refreshMonthly
+  refreshDailyRef.current = refreshDaily
+
+  // Auto-sync price history once per 6 h — keeps period calculations accurate
+  const priceSyncFired = useRef(false)
+  useEffect(() => {
+    if (priceSyncFired.current) return
+    const INTERVAL = 6 * 60 * 60 * 1000
+    const lastSync = localStorage.getItem('price_last_sync')
+    if (lastSync && Date.now() - new Date(lastSync).getTime() < INTERVAL) return
+    priceSyncFired.current = true
+    apiFetch('/portfolio/sync-history', { method: 'POST' })
+      .then(() => {
+        localStorage.setItem('price_last_sync', new Date().toISOString())
+        clearPerfCache()
+        refreshPeriodSummaryRef.current()
+        refreshMonthlyRef.current()
+        refreshDailyRef.current()
+      })
+      .catch(() => {})
+  }, [])
 
   // Target line: project freedom plan trajectory onto the chart
   const planStartDate = activePlan ? (activePlan.start_date ?? activePlan.created_at.slice(0, 10)) : null
