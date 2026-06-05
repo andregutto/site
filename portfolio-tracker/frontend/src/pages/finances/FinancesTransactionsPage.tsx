@@ -1425,26 +1425,25 @@ export default function FinancesTransactionsPage() {
 
       {/* ── Floating multi-select action bar ── */}
       {selected.size > 0 && csvStep === 'idle' && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 bg-gray-900 text-white px-4 py-3 rounded-2xl shadow-2xl">
-          <span className="text-sm font-medium">{selected.size} selecionada{selected.size > 1 ? 's' : ''}</span>
-          <div className="w-px h-4 bg-white/20" />
+        <div className="fixed bottom-[160px] sm:bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 sm:gap-3 bg-gray-900 text-white px-3 sm:px-4 py-2.5 sm:py-3 rounded-2xl shadow-2xl max-w-[calc(100%-32px)]">
+          <span className="text-sm font-medium shrink-0">{selected.size} sel.</span>
+          <div className="hidden sm:block w-px h-4 bg-white/20 shrink-0" />
 
-          {/* Moment picker dropdown */}
-          <div ref={momentDropdownRef} className="relative">
+          {/* Moment picker */}
+          <div ref={momentDropdownRef} className="relative shrink-0">
             <button
               onClick={() => setShowMomentDropdown(v => !v)}
               disabled={assigning}
-              className="flex items-center gap-1.5 text-sm bg-white/10 hover:bg-white/20 transition-colors px-3 py-1.5 rounded-xl disabled:opacity-50"
+              className="flex items-center gap-1 sm:gap-1.5 text-sm bg-white/10 hover:bg-white/20 transition-colors px-2.5 sm:px-3 py-1.5 rounded-xl disabled:opacity-50"
             >
               <span>✨</span>
-              {t.finances.assignMoment}
+              <span className="hidden sm:inline">{t.finances.assignMoment}</span>
               <svg className={`w-3 h-3 transition-transform ${showMomentDropdown ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
               </svg>
             </button>
-
             {showMomentDropdown && (
-              <div className="absolute bottom-full mb-2 left-0 bg-white rounded-xl shadow-xl border border-gray-100 py-1.5 min-w-[200px] z-50">
+              <div className="absolute bottom-full mb-2 left-0 bg-white rounded-xl shadow-xl border border-gray-100 py-1.5 min-w-[200px] max-h-60 overflow-y-auto z-50">
                 {moments.length === 0 ? (
                   <p className="px-4 py-2 text-xs" style={{ color: 'var(--arvo-fg-soft)' }}>{t.finances.txNoMoment}</p>
                 ) : (
@@ -1462,8 +1461,8 @@ export default function FinancesTransactionsPage() {
                       >
                         <span className="text-base">{m.icon}</span>
                         <span className="flex-1 text-left">{m.name}</span>
-                        {allHave  && <span className="text-[10px] text-emerald-500 font-bold">✓ todos</span>}
-                        {someHave && <span className="text-[10px] text-gray-400">− parcial</span>}
+                        {allHave  && <span className="text-[10px] text-emerald-500 font-bold">✓</span>}
+                        {someHave && <span className="text-[10px] text-gray-400">−</span>}
                       </button>
                     )
                   })
@@ -1482,86 +1481,89 @@ export default function FinancesTransactionsPage() {
           </div>
 
           {accounts.length > 0 && (
-            <>
-              <div className="w-px h-4 bg-white/20" />
-              <div className="relative">
-                <button
-                  onClick={() => setShowAccountAssign(v => !v)}
-                  disabled={assigningAccount}
-                  className="flex items-center gap-1.5 text-sm bg-white/10 hover:bg-white/20 transition-colors px-3 py-1.5 rounded-xl disabled:opacity-50"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4"><path d="M14 3a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V3ZM2 8a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8Z"/></svg>
-                  {assigningAccount ? 'Atribuindo...' : 'Conta'}
-                  <svg className={`w-3 h-3 transition-transform ${showAccountAssign ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-                {showAccountAssign && (
-                  <div className="absolute bottom-full mb-2 left-0 bg-white rounded-xl shadow-xl border border-gray-100 py-1.5 min-w-[180px] z-50">
-                    <p className="px-4 py-1.5 text-[10px] text-gray-400 uppercase tracking-wide font-medium">Atribuir conta</p>
-                    {accounts.map(a => (
-                      <button
-                        key={a.id}
-                        onClick={() => bulkAssignAccount(a.id)}
-                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                      >
-                        <span>{a.icon}</span>
-                        <span>{a.name}</span>
-                      </button>
-                    ))}
-                    <div className="border-t border-gray-100 mt-1 pt-1">
-                      <button
-                        onClick={() => bulkAssignAccount(null)}
-                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-400 hover:bg-gray-50 transition-colors"
-                      >
-                        <span>✕</span>
-                        <span>Remover conta</span>
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </>
-          )}
-
-          <div className="w-px h-4 bg-white/20" />
-          <button
-            onClick={() => setShowGroupModal(true)}
-            className="flex items-center gap-1.5 text-sm bg-white/10 hover:bg-white/20 transition-colors px-3 py-1.5 rounded-xl"
-          >
-            <span>↩</span>
-            {t.finances.createReimbursementGroup}
-          </button>
-          {groups.length > 0 && (
-            <div ref={groupPickerRef} className="relative">
+            <div className="relative shrink-0">
               <button
-                onClick={() => setShowGroupPicker(v => !v)}
-                disabled={addingToGroup}
-                className="flex items-center gap-1.5 text-sm bg-white/10 hover:bg-white/20 transition-colors px-3 py-1.5 rounded-xl disabled:opacity-50"
+                onClick={() => setShowAccountAssign(v => !v)}
+                disabled={assigningAccount}
+                className="flex items-center gap-1 sm:gap-1.5 text-sm bg-white/10 hover:bg-white/20 transition-colors px-2.5 sm:px-3 py-1.5 rounded-xl disabled:opacity-50"
               >
-                <span>+</span>
-                {addingToGroup ? '…' : t.finances.addToGroup}
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4 shrink-0"><path d="M14 3a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V3ZM2 8a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8Z"/></svg>
+                <span className="hidden sm:inline">{assigningAccount ? 'Atribuindo...' : 'Conta'}</span>
+                <svg className={`w-3 h-3 transition-transform ${showAccountAssign ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
               </button>
-              {showGroupPicker && (
-                <div className="absolute bottom-full mb-1 left-0 min-w-[180px] bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-50">
-                  <p className="px-3 py-1.5 text-[11px] font-semibold text-gray-400 uppercase tracking-wide">{t.finances.addToGroupSelect}</p>
-                  {groups.map(g => (
+              {showAccountAssign && (
+                <div className="absolute bottom-full mb-2 left-0 bg-white rounded-xl shadow-xl border border-gray-100 py-1.5 min-w-[180px] max-h-60 overflow-y-auto z-50">
+                  <p className="px-4 py-1.5 text-[10px] text-gray-400 uppercase tracking-wide font-medium">Atribuir conta</p>
+                  {accounts.map(a => (
                     <button
-                      key={g.id}
-                      onClick={() => addToGroup(g.id)}
-                      className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors truncate"
+                      key={a.id}
+                      onClick={() => bulkAssignAccount(a.id)}
+                      className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                     >
-                      {g.name}
+                      <span>{a.icon}</span>
+                      <span>{a.name}</span>
                     </button>
                   ))}
+                  <div className="border-t border-gray-100 mt-1 pt-1">
+                    <button
+                      onClick={() => bulkAssignAccount(null)}
+                      className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-400 hover:bg-gray-50 transition-colors"
+                    >
+                      <span>✕</span>
+                      <span>Remover conta</span>
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
           )}
-          <div className="w-px h-4 bg-white/20" />
+
+          {/* Reimbursement: create new group or add to existing */}
+          <div className="relative shrink-0">
+            <button
+              onClick={() => groups.filter(g => !g.name.startsWith('auto: ')).length > 0 ? setShowGroupPicker(v => !v) : setShowGroupModal(true)}
+              disabled={addingToGroup}
+              className="flex items-center gap-1 sm:gap-1.5 text-sm bg-white/10 hover:bg-white/20 transition-colors px-2.5 sm:px-3 py-1.5 rounded-xl disabled:opacity-50"
+            >
+              <span>↩</span>
+              <span className="hidden sm:inline">{t.finances.createReimbursementGroup}</span>
+              {groups.filter(g => !g.name.startsWith('auto: ')).length > 0 && (
+                <svg className={`w-3 h-3 transition-transform ${showGroupPicker ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+              )}
+            </button>
+            {showGroupPicker && (
+              <div ref={groupPickerRef} className="absolute bottom-full mb-1 right-0 sm:left-0 min-w-[200px] max-h-56 overflow-y-auto bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-50">
+                <p className="px-3 py-1.5 text-[11px] font-semibold text-gray-400 uppercase tracking-wide">{t.finances.addToGroupSelect}</p>
+                {groups.filter(g => !g.name.startsWith('auto: ')).map(g => (
+                  <button
+                    key={g.id}
+                    onClick={() => addToGroup(g.id)}
+                    className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors truncate"
+                  >
+                    {g.name}
+                  </button>
+                ))}
+                <div className="border-t border-gray-100 mt-1 pt-1">
+                  <button
+                    onClick={() => { setShowGroupPicker(false); setShowGroupModal(true) }}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-500 hover:bg-gray-50 transition-colors"
+                  >
+                    <span>+</span>
+                    <span>{t.finances.createReimbursementGroup}</span>
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="w-px h-4 bg-white/20 shrink-0" />
           <button
             onClick={() => setSelected(new Set())}
-            className="text-sm text-white/60 hover:text-white transition-colors"
+            className="text-sm text-white/60 hover:text-white transition-colors shrink-0"
           >
             {t.common.cancel}
           </button>
