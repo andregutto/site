@@ -331,7 +331,7 @@ export default function DashboardPage() {
       {(() => {
         const td = t.dashboard as unknown as Record<string, string>
         const movingAssets = (data.by_asset ?? [])
-          .filter(a => !a.needs_manual && a.value_brl > 0 && dashReturns?.[a.id] != null)
+          .filter(a => !a.needs_manual && a.source !== 'manual' && a.value_brl > 0 && dashReturns?.[a.id] != null)
           .map(a => ({ ...a, ret: dashReturns![a.id]! }))
           .sort((a, b) => b.ret - a.ret)
         const gainers = movingAssets.filter(a => a.ret > 0).slice(0, 3)
