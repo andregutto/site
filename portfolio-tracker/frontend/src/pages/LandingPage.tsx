@@ -206,10 +206,23 @@ function DashboardMockupContent({ td, tn, tc, ti }: MockupLabels) {
   )
 }
 
-function FreedomMockupContent() {
+function FreedomMockupContent({ l, showStatusBar = true }: { l?: Record<string, string>; showStatusBar?: boolean }) {
   const FS = "'DM Sans', system-ui, sans-serif"
   const FD = "'Tenor Sans', serif"
   const ARARA = '#1B4FD8'
+  const txt = {
+    simulation:   l?.mkSimulation   ?? 'Simulação',
+    freedom:      l?.f4title        ?? 'Liberdade Financeira',
+    goalLbl:      l?.mkGoalLbl      ?? 'Meta',
+    yearsTarget:  l?.mkYearsTarget  ?? '15 anos · independência total',
+    wealthTarget: l?.mkWealthTarget ?? 'Patrimônio alvo',
+    withdrawal:   l?.mkWithdrawal   ?? '4% regra de retirada',
+    currentBal:   l?.mkCurrentBalance ?? 'R$ 284k atual',
+    projection:   l?.mkProjection   ?? 'Projeção patrimonial',
+    targetLbl:    l?.mkTargetLbl    ?? 'R$ 4,2M em 2041',
+    monthlyContrib: l?.mkMonthlyContrib ?? 'Aporte mensal',
+    annualReturn: l?.mkAnnualReturn ?? 'Retorno anual',
+  }
 
   const projData = [
     [0, 284], [6, 310], [12, 340], [18, 372], [24, 400], [30, 432],
@@ -230,17 +243,17 @@ function FreedomMockupContent() {
 
   return (
     <div style={{ width: '100%', height: '100%', background: '#F4F4F4', fontFamily: FS, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      {/* Status bar — 54px tall so content clears the 20px Dynamic Island at top:12 */}
-      <div style={{ height: 54, flexShrink: 0, background: '#fff', display: 'flex', alignItems: 'center', padding: '0 16px', fontSize: 11, color: DARK }}>
-        <span style={{ fontFamily: FS, fontWeight: 600, fontSize: 12, flex: 1 }}>14:30</span>
-        {/* spacer for Dynamic Island */}
-        <div style={{ width: 80 }} />
-        <div style={{ flex: 1, display: 'flex', gap: 5, alignItems: 'center', justifyContent: 'flex-end' }}>
-          <svg width="13" height="10" viewBox="0 0 14 10" fill={DARK}><rect x="0" y="3" width="3" height="7" rx="0.5"/><rect x="4" y="2" width="3" height="8" rx="0.5"/><rect x="8" y="0" width="3" height="10" rx="0.5"/><rect x="12" y="1" width="2" height="9" rx="0.5" opacity="0.3"/></svg>
-          <svg width="13" height="10" viewBox="0 0 14 10" fill="none"><path d="M7 2C9.2 2 11.2 2.9 12.6 4.4L14 3C12.2 1.1 9.7 0 7 0S1.8 1.1 0 3L1.4 4.4C2.8 2.9 4.8 2 7 2Z" fill={DARK} opacity="0.3"/><path d="M7 5C8.4 5 9.6 5.6 10.5 6.5L11.9 5.1C10.6 3.8 8.9 3 7 3S3.4 3.8 2.1 5.1L3.5 6.5C4.4 5.6 5.6 5 7 5Z" fill={DARK} opacity="0.6"/><path d="M7 8C7.8 8 8.5 8.3 9 8.8L10.4 7.4C9.5 6.5 8.3 6 7 6S4.5 6.5 3.6 7.4L5 8.8C5.5 8.3 6.2 8 7 8Z" fill={DARK}/><circle cx="7" cy="10" r="1" fill={DARK}/></svg>
-          <svg width="19" height="10" viewBox="0 0 20 10" fill="none"><rect x="0.5" y="0.5" width="17" height="9" rx="2" stroke={DARK} strokeWidth="1" opacity="0.35"/><rect x="1.5" y="1.5" width="14" height="7" rx="1.5" fill={DARK}/><path d="M18.5 3.5C19.3 3.5 19.3 6.5 18.5 6.5" stroke={DARK} strokeWidth="1" strokeLinecap="round" opacity="0.35"/></svg>
+      {showStatusBar && (
+        <div style={{ height: 54, flexShrink: 0, background: '#fff', display: 'flex', alignItems: 'center', padding: '0 16px', fontSize: 11, color: DARK }}>
+          <span style={{ fontFamily: FS, fontWeight: 600, fontSize: 12, flex: 1 }}>14:30</span>
+          <div style={{ width: 80 }} />
+          <div style={{ flex: 1, display: 'flex', gap: 5, alignItems: 'center', justifyContent: 'flex-end' }}>
+            <svg width="13" height="10" viewBox="0 0 14 10" fill={DARK}><rect x="0" y="3" width="3" height="7" rx="0.5"/><rect x="4" y="2" width="3" height="8" rx="0.5"/><rect x="8" y="0" width="3" height="10" rx="0.5"/><rect x="12" y="1" width="2" height="9" rx="0.5" opacity="0.3"/></svg>
+            <svg width="13" height="10" viewBox="0 0 14 10" fill="none"><path d="M7 2C9.2 2 11.2 2.9 12.6 4.4L14 3C12.2 1.1 9.7 0 7 0S1.8 1.1 0 3L1.4 4.4C2.8 2.9 4.8 2 7 2Z" fill={DARK} opacity="0.3"/><path d="M7 5C8.4 5 9.6 5.6 10.5 6.5L11.9 5.1C10.6 3.8 8.9 3 7 3S3.4 3.8 2.1 5.1L3.5 6.5C4.4 5.6 5.6 5 7 5Z" fill={DARK} opacity="0.6"/><path d="M7 8C7.8 8 8.5 8.3 9 8.8L10.4 7.4C9.5 6.5 8.3 6 7 6S4.5 6.5 3.6 7.4L5 8.8C5.5 8.3 6.2 8 7 8Z" fill={DARK}/><circle cx="7" cy="10" r="1" fill={DARK}/></svg>
+            <svg width="19" height="10" viewBox="0 0 20 10" fill="none"><rect x="0.5" y="0.5" width="17" height="9" rx="2" stroke={DARK} strokeWidth="1" opacity="0.35"/><rect x="1.5" y="1.5" width="14" height="7" rx="1.5" fill={DARK}/><path d="M18.5 3.5C19.3 3.5 19.3 6.5 18.5 6.5" stroke={DARK} strokeWidth="1" strokeLinecap="round" opacity="0.35"/></svg>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Nav bar */}
       <div style={{ height: 48, flexShrink: 0, background: '#fff', borderBottom: '1px solid rgba(13,13,13,0.07)', display: 'flex', alignItems: 'center', padding: '0 16px', gap: 8 }}>
@@ -251,33 +264,33 @@ function FreedomMockupContent() {
       </div>
 
       {/* Content */}
-      <div style={{ flex: 1, overflowY: 'hidden', padding: '14px 16px 0', display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <div style={{ flex: 1, overflowY: 'hidden', padding: '16px 18px 0', display: 'flex', flexDirection: 'column', gap: 10 }}>
 
         {/* Page title */}
         <div>
-          <p style={{ fontFamily: FS, fontSize: 9, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.45)', margin: 0 }}>Simulação</p>
-          <p style={{ fontFamily: FD, fontSize: 18, letterSpacing: '0.01em', color: DARK, margin: '2px 0 0' }}>Liberdade Financeira</p>
+          <p style={{ fontFamily: FS, fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.45)', margin: 0 }}>{txt.simulation}</p>
+          <p style={{ fontFamily: FD, fontSize: 20, letterSpacing: '0.01em', color: DARK, margin: '2px 0 0' }}>{txt.freedom}</p>
         </div>
 
         {/* Target year */}
-        <div style={{ background: '#fff', borderRadius: 14, padding: '12px 14px', border: '1px solid rgba(27,79,216,0.18)', boxShadow: '0 2px 12px rgba(27,79,216,0.07)' }}>
+        <div style={{ background: '#fff', borderRadius: 14, padding: '14px 16px', border: '1px solid rgba(27,79,216,0.18)', boxShadow: '0 2px 12px rgba(27,79,216,0.07)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
-              <p style={{ fontFamily: FS, fontSize: 9, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.42)', margin: 0 }}>Meta</p>
-              <p style={{ fontFamily: FD, fontSize: 22, letterSpacing: '0.01em', color: ARARA, margin: '2px 0 0', lineHeight: 1 }}>2041</p>
-              <p style={{ fontFamily: FS, fontSize: 10, color: 'rgba(13,13,13,0.50)', margin: '3px 0 0' }}>15 anos · independência total</p>
+              <p style={{ fontFamily: FS, fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.42)', margin: 0 }}>{txt.goalLbl}</p>
+              <p style={{ fontFamily: FD, fontSize: 24, letterSpacing: '0.01em', color: ARARA, margin: '3px 0 0', lineHeight: 1 }}>2041</p>
+              <p style={{ fontFamily: FS, fontSize: 11, color: 'rgba(13,13,13,0.50)', margin: '4px 0 0' }}>{txt.yearsTarget}</p>
             </div>
             <div style={{ textAlign: 'right' }}>
-              <p style={{ fontFamily: FS, fontSize: 9, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.42)', margin: 0 }}>Patrimônio alvo</p>
-              <p style={{ fontFamily: FD, fontSize: 16, color: DARK, margin: '2px 0 0' }}>R$ 4,2M</p>
-              <p style={{ fontFamily: FS, fontSize: 10, color: 'rgba(13,13,13,0.50)', margin: '3px 0 0' }}>4% regra de retirada</p>
+              <p style={{ fontFamily: FS, fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.42)', margin: 0 }}>{txt.wealthTarget}</p>
+              <p style={{ fontFamily: FD, fontSize: 18, color: DARK, margin: '3px 0 0' }}>R$ 4,2M</p>
+              <p style={{ fontFamily: FS, fontSize: 11, color: 'rgba(13,13,13,0.50)', margin: '4px 0 0' }}>{txt.withdrawal}</p>
             </div>
           </div>
           {/* Progress bar */}
-          <div style={{ marginTop: 12 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
-              <span style={{ fontFamily: FS, fontSize: 9, color: 'rgba(13,13,13,0.45)', letterSpacing: '0.08em' }}>R$ 284k atual</span>
-              <span style={{ fontFamily: FS, fontSize: 9, color: ARARA, fontWeight: 600 }}>6,8%</span>
+          <div style={{ marginTop: 14 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+              <span style={{ fontFamily: FS, fontSize: 10, color: 'rgba(13,13,13,0.45)', letterSpacing: '0.08em' }}>{txt.currentBal}</span>
+              <span style={{ fontFamily: FS, fontSize: 10, color: ARARA, fontWeight: 600 }}>6,8%</span>
             </div>
             <div style={{ height: 6, borderRadius: 99, background: 'rgba(27,79,216,0.10)', overflow: 'hidden' }}>
               <div style={{ width: '6.8%', height: '100%', borderRadius: 99, background: `linear-gradient(to right, ${ARARA}, #4B7BF0)` }} />
@@ -286,8 +299,8 @@ function FreedomMockupContent() {
         </div>
 
         {/* Projection chart */}
-        <div style={{ background: '#fff', borderRadius: 14, padding: '12px 14px', border: '1px solid rgba(13,13,13,0.07)' }}>
-          <p style={{ fontFamily: FS, fontSize: 9, letterSpacing: '0.20em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.42)', margin: '0 0 8px' }}>Projeção patrimonial</p>
+        <div style={{ background: '#fff', borderRadius: 14, padding: '14px 16px', border: '1px solid rgba(13,13,13,0.07)' }}>
+          <p style={{ fontFamily: FS, fontSize: 10, letterSpacing: '0.20em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.42)', margin: '0 0 8px' }}>{txt.projection}</p>
           <svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ display: 'block' }}>
             <defs>
               <linearGradient id="freedomGrad" x1="0" y1="0" x2="0" y2="1">
@@ -297,44 +310,29 @@ function FreedomMockupContent() {
             </defs>
             <path d={areaPath} fill="url(#freedomGrad)"/>
             <polyline points={pts} fill="none" stroke={ARARA} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round"/>
-            {/* Today dot */}
             <circle cx="0" cy={H} r="3.5" fill={ARARA}/>
-            {/* Target dot */}
             <circle cx={W} cy={(H - (3200/maxVal)*H).toFixed(1) as unknown as number} r="3.5" fill={ARARA}/>
           </svg>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
-            <span style={{ fontFamily: FS, fontSize: 9, color: 'rgba(13,13,13,0.38)' }}>2026</span>
-            <span style={{ fontFamily: FS, fontSize: 9, color: ARARA }}>R$ 4,2M em 2041</span>
+            <span style={{ fontFamily: FS, fontSize: 10, color: 'rgba(13,13,13,0.38)' }}>2026</span>
+            <span style={{ fontFamily: FS, fontSize: 10, color: ARARA }}>{txt.targetLbl}</span>
           </div>
         </div>
 
         {/* Monthly contribution */}
-        <div style={{ background: '#fff', borderRadius: 14, padding: '12px 14px', border: '1px solid rgba(13,13,13,0.07)' }}>
+        <div style={{ background: '#fff', borderRadius: 14, padding: '14px 16px', border: '1px solid rgba(13,13,13,0.07)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
-              <p style={{ fontFamily: FS, fontSize: 9, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.42)', margin: 0 }}>Aporte mensal</p>
-              <p style={{ fontFamily: FD, fontSize: 18, color: DARK, margin: '3px 0 0' }}>R$ 3.500</p>
+              <p style={{ fontFamily: FS, fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.42)', margin: 0 }}>{txt.monthlyContrib}</p>
+              <p style={{ fontFamily: FD, fontSize: 20, color: DARK, margin: '4px 0 0' }}>R$ 3.500</p>
             </div>
             <div style={{ textAlign: 'right' }}>
-              <p style={{ fontFamily: FS, fontSize: 9, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.42)', margin: 0 }}>Retorno anual</p>
-              <p style={{ fontFamily: FD, fontSize: 18, color: '#1F8A5B', margin: '3px 0 0' }}>+12,4%</p>
+              <p style={{ fontFamily: FS, fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.42)', margin: 0 }}>{txt.annualReturn}</p>
+              <p style={{ fontFamily: FD, fontSize: 20, color: '#1F8A5B', margin: '4px 0 0' }}>+12,4%</p>
             </div>
           </div>
         </div>
 
-      </div>
-    </div>
-  )
-}
-
-function StatusBar() {
-  return (
-    <div style={{ height: 54, flexShrink: 0, background: '#fff', display: 'flex', alignItems: 'center', padding: '0 16px' }}>
-      <span style={{ fontFamily: "'DM Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 12, flex: 1, color: DARK }}>14:30</span>
-      <div style={{ width: 80 }} />
-      <div style={{ flex: 1, display: 'flex', gap: 5, alignItems: 'center', justifyContent: 'flex-end' }}>
-        <svg width="13" height="10" viewBox="0 0 14 10" fill={DARK}><rect x="0" y="3" width="3" height="7" rx="0.5"/><rect x="4" y="2" width="3" height="8" rx="0.5"/><rect x="8" y="0" width="3" height="10" rx="0.5"/><rect x="12" y="1" width="2" height="9" rx="0.5" opacity="0.3"/></svg>
-        <svg width="19" height="10" viewBox="0 0 20 10" fill="none"><rect x="0.5" y="0.5" width="17" height="9" rx="2" stroke={DARK} strokeWidth="1" opacity="0.35"/><rect x="1.5" y="1.5" width="14" height="7" rx="1.5" fill={DARK}/></svg>
       </div>
     </div>
   )
@@ -351,7 +349,7 @@ function PhoneNav() {
   )
 }
 
-function PortfolioPhoneMockupContent() {
+function PortfolioPhoneMockupContent({ l }: { l: Record<string, string> }) {
   const FS = "'DM Sans', system-ui, sans-serif"
   const rows: [string, string, string][] = [
     ['BOVA11',    '+5,8%',  '#1F8A5B'],
@@ -362,32 +360,31 @@ function PortfolioPhoneMockupContent() {
   ]
   return (
     <div style={{ width: '100%', height: '100%', background: '#F4F4F4', fontFamily: FS, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      <StatusBar />
       <PhoneNav />
-      <div style={{ flex: 1, overflow: 'hidden', padding: '14px 16px 0', display: 'flex', flexDirection: 'column', gap: 8 }}>
-        <div style={{ background: '#fff', borderRadius: 16, padding: '14px 14px', border: '1px solid rgba(200,184,154,0.35)', boxShadow: '0 2px 12px rgba(200,184,154,0.14)', flexShrink: 0, position: 'relative', overflow: 'hidden' }}>
+      <div style={{ flex: 1, overflow: 'hidden', padding: '16px 18px 0', display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div style={{ background: '#fff', borderRadius: 16, padding: '16px 16px', border: '1px solid rgba(200,184,154,0.35)', boxShadow: '0 2px 12px rgba(200,184,154,0.14)', flexShrink: 0, position: 'relative', overflow: 'hidden' }}>
           <div style={{ position: 'absolute', top: -60, right: -30, width: 180, height: 180, borderRadius: '50%', background: 'rgba(200,184,154,0.10)', filter: 'blur(40px)', pointerEvents: 'none' }} />
-          <p style={{ fontFamily: FS, fontSize: 9, letterSpacing: '0.28em', textTransform: 'uppercase', color: '#8C6A28', margin: 0 }}>Total BRL</p>
-          <p style={{ fontFamily: FS, fontSize: 28, color: DARK, margin: '4px 0 0', lineHeight: 1 }}>R$ 284.500</p>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 12px', marginTop: 12, paddingTop: 10, borderTop: '1px solid rgba(13,13,13,0.07)' }}>
+          <p style={{ fontFamily: FS, fontSize: 10, letterSpacing: '0.28em', textTransform: 'uppercase', color: '#8C6A28', margin: 0 }}>Total BRL</p>
+          <p style={{ fontFamily: FS, fontSize: 30, color: DARK, margin: '4px 0 0', lineHeight: 1 }}>R$ 284.500</p>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px 14px', marginTop: 14, paddingTop: 12, borderTop: '1px solid rgba(13,13,13,0.07)' }}>
             {([
-              { label: 'Aplicado', val: 'R$ 236k', color: DARK },
-              { label: 'Resultado', val: '+20,6%', color: '#1F8A5B' },
-              { label: 'Mês', val: '+1,4%', color: '#1F8A5B' },
-              { label: 'YTD 2025', val: '+8,2%', color: '#1F8A5B' },
+              { label: l.mkInvested, val: 'R$ 236k', color: DARK },
+              { label: l.mkResult,   val: '+20,6%',  color: '#1F8A5B' },
+              { label: l.mkMonth,    val: '+1,4%',   color: '#1F8A5B' },
+              { label: 'YTD 2025',   val: '+8,2%',   color: '#1F8A5B' },
             ] as Array<{ label: string; val: string; color: string }>).map(({ label, val, color }) => (
               <div key={label}>
-                <p style={{ fontFamily: FS, fontSize: 8, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.50)', margin: 0 }}>{label}</p>
-                <p style={{ fontFamily: FS, fontSize: 13, color, margin: '2px 0 0' }}>{val}</p>
+                <p style={{ fontFamily: FS, fontSize: 9, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.50)', margin: 0 }}>{label}</p>
+                <p style={{ fontFamily: FS, fontSize: 14, color, margin: '3px 0 0' }}>{val}</p>
               </div>
             ))}
           </div>
         </div>
         <div style={{ background: '#fff', borderRadius: 14, overflow: 'hidden', border: '1px solid rgba(13,13,13,0.07)', flexShrink: 0 }}>
           {rows.map(([ticker, pct, color]) => (
-            <div key={ticker} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 14px', borderBottom: '1px solid rgba(13,13,13,0.04)' }}>
-              <span style={{ fontFamily: FS, fontSize: 12, fontWeight: 600, color: DARK }}>{ticker}</span>
-              <span style={{ fontFamily: FS, fontSize: 12, color }}>{pct}</span>
+            <div key={ticker} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 16px', borderBottom: '1px solid rgba(13,13,13,0.04)' }}>
+              <span style={{ fontFamily: FS, fontSize: 13, fontWeight: 600, color: DARK }}>{ticker}</span>
+              <span style={{ fontFamily: FS, fontSize: 13, color }}>{pct}</span>
             </div>
           ))}
         </div>
@@ -396,138 +393,135 @@ function PortfolioPhoneMockupContent() {
   )
 }
 
-function MultimoedaMockupContent() {
+function MultimoedaMockupContent({ l }: { l: Record<string, string> }) {
   const FS = "'DM Sans', system-ui, sans-serif"
   const FD = "'Tenor Sans', serif"
   const ARARA = '#1B4FD8'
   return (
     <div style={{ width: '100%', height: '100%', background: '#F4F4F4', fontFamily: FS, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      <StatusBar />
       <PhoneNav />
-      <div style={{ flex: 1, overflow: 'hidden', padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <div style={{ flex: 1, overflow: 'hidden', padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 10 }}>
         <div>
-          <p style={{ fontFamily: FS, fontSize: 9, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.45)', margin: 0 }}>Multimoeda</p>
-          <p style={{ fontFamily: FD, fontSize: 16, color: DARK, margin: '2px 0 0' }}>Câmbio automático</p>
+          <p style={{ fontFamily: FS, fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.45)', margin: 0 }}>{l.f2label}</p>
+          <p style={{ fontFamily: FD, fontSize: 18, color: DARK, margin: '2px 0 0' }}>{l.f2title}</p>
         </div>
-        <div style={{ background: DARK, borderRadius: 14, padding: '14px 14px', flexShrink: 0 }}>
-          <p style={{ fontFamily: FS, fontSize: 9, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'rgba(200,184,154,0.70)', margin: 0 }}>BRL · Principal</p>
-          <p style={{ fontFamily: FD, fontSize: 22, color: '#fff', margin: '4px 0 0', lineHeight: 1 }}>R$ 284.500</p>
-          <p style={{ fontFamily: FS, fontSize: 10, color: 'rgba(255,255,255,0.42)', margin: '4px 0 0' }}>patrimônio total</p>
+        <div style={{ background: DARK, borderRadius: 14, padding: '16px 16px', flexShrink: 0 }}>
+          <p style={{ fontFamily: FS, fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'rgba(200,184,154,0.70)', margin: 0 }}>{l.mkBRLPrimary}</p>
+          <p style={{ fontFamily: FD, fontSize: 24, color: '#fff', margin: '4px 0 0', lineHeight: 1 }}>R$ 284.500</p>
+          <p style={{ fontFamily: FS, fontSize: 11, color: 'rgba(255,255,255,0.42)', margin: '5px 0 0' }}>{l.mkTotalWealth}</p>
         </div>
-        <div style={{ background: '#fff', borderRadius: 14, padding: '12px 14px', border: '1px solid rgba(27,79,216,0.14)', flexShrink: 0 }}>
+        <div style={{ background: '#fff', borderRadius: 14, padding: '14px 16px', border: '1px solid rgba(27,79,216,0.14)', flexShrink: 0 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
-              <p style={{ fontFamily: FS, fontSize: 9, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.42)', margin: 0 }}>EUR</p>
-              <p style={{ fontFamily: FD, fontSize: 18, color: DARK, margin: '2px 0 0', lineHeight: 1 }}>€ 44.453</p>
+              <p style={{ fontFamily: FS, fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.42)', margin: 0 }}>EUR</p>
+              <p style={{ fontFamily: FD, fontSize: 20, color: DARK, margin: '3px 0 0', lineHeight: 1 }}>€ 44.453</p>
             </div>
             <div style={{ textAlign: 'right' }}>
-              <p style={{ fontFamily: FS, fontSize: 9, color: 'rgba(13,13,13,0.38)', margin: 0 }}>1 EUR =</p>
-              <p style={{ fontFamily: FS, fontSize: 12, color: ARARA, margin: '2px 0 0', fontWeight: 600 }}>R$ 6,40</p>
+              <p style={{ fontFamily: FS, fontSize: 10, color: 'rgba(13,13,13,0.38)', margin: 0 }}>1 EUR =</p>
+              <p style={{ fontFamily: FS, fontSize: 13, color: ARARA, margin: '3px 0 0', fontWeight: 600 }}>R$ 6,40</p>
             </div>
           </div>
         </div>
-        <div style={{ background: '#fff', borderRadius: 14, padding: '12px 14px', border: '1px solid rgba(13,13,13,0.07)', flexShrink: 0 }}>
+        <div style={{ background: '#fff', borderRadius: 14, padding: '14px 16px', border: '1px solid rgba(13,13,13,0.07)', flexShrink: 0 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
-              <p style={{ fontFamily: FS, fontSize: 9, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.42)', margin: 0 }}>USD</p>
-              <p style={{ fontFamily: FD, fontSize: 18, color: DARK, margin: '2px 0 0', lineHeight: 1 }}>$ 49.912</p>
+              <p style={{ fontFamily: FS, fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.42)', margin: 0 }}>USD</p>
+              <p style={{ fontFamily: FD, fontSize: 20, color: DARK, margin: '3px 0 0', lineHeight: 1 }}>$ 49.912</p>
             </div>
             <div style={{ textAlign: 'right' }}>
-              <p style={{ fontFamily: FS, fontSize: 9, color: 'rgba(13,13,13,0.38)', margin: 0 }}>1 USD =</p>
-              <p style={{ fontFamily: FS, fontSize: 12, color: 'rgba(13,13,13,0.55)', margin: '2px 0 0', fontWeight: 600 }}>R$ 5,70</p>
+              <p style={{ fontFamily: FS, fontSize: 10, color: 'rgba(13,13,13,0.38)', margin: 0 }}>1 USD =</p>
+              <p style={{ fontFamily: FS, fontSize: 13, color: 'rgba(13,13,13,0.55)', margin: '3px 0 0', fontWeight: 600 }}>R$ 5,70</p>
             </div>
           </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 12px', background: 'rgba(27,79,216,0.06)', borderRadius: 10, flexShrink: 0 }}>
-          <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke={ARARA} strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-          <span style={{ fontFamily: FS, fontSize: 9, color: ARARA, letterSpacing: '0.08em' }}>Atualizado automaticamente</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 14px', background: 'rgba(27,79,216,0.06)', borderRadius: 10, flexShrink: 0 }}>
+          <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke={ARARA} strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+          <span style={{ fontFamily: FS, fontSize: 10, color: ARARA, letterSpacing: '0.08em' }}>{l.mkAutoUpdated}</span>
         </div>
       </div>
     </div>
   )
 }
 
-function MomentosMockupContent() {
+function MomentosMockupContent({ l }: { l: Record<string, string> }) {
   const FS = "'DM Sans', system-ui, sans-serif"
   const FD = "'Tenor Sans', serif"
   const goals = [
-    { icon: '✈︎', name: 'Viagem Europa', target: 'R$ 8.000', pct: 78, color: '#A36A52' },
-    { icon: '⌂', name: 'Reforma do apê', target: 'R$ 15.000', pct: 30, color: '#1B4FD8' },
-    { icon: '◈', name: 'Emergência', target: 'R$ 12.000', pct: 82, color: '#1F8A5B' },
+    { icon: '✈︎', nameKey: 'mkGoal1', target: 'R$ 8.000',  pct: 78, color: '#A36A52' },
+    { icon: '⌂',  nameKey: 'mkGoal2', target: 'R$ 15.000', pct: 30, color: '#1B4FD8' },
+    { icon: '◈',  nameKey: 'mkGoal3', target: 'R$ 12.000', pct: 82, color: '#1F8A5B' },
   ]
   return (
     <div style={{ width: '100%', height: '100%', background: '#F4F4F4', fontFamily: FS, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      <StatusBar />
       <PhoneNav />
-      <div style={{ flex: 1, overflow: 'hidden', padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <div style={{ flex: 1, overflow: 'hidden', padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 10 }}>
         <div>
-          <p style={{ fontFamily: FS, fontSize: 9, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.45)', margin: 0 }}>Momentos</p>
-          <p style={{ fontFamily: FD, fontSize: 16, color: DARK, margin: '2px 0 0' }}>Metas e Objetivos</p>
+          <p style={{ fontFamily: FS, fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.45)', margin: 0 }}>{l.f3label}</p>
+          <p style={{ fontFamily: FD, fontSize: 18, color: DARK, margin: '2px 0 0' }}>{l.f3title}</p>
         </div>
         {goals.map(g => (
-          <div key={g.name} style={{ background: '#fff', borderRadius: 14, padding: '12px 14px', border: '1px solid rgba(13,13,13,0.07)', flexShrink: 0 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                <span style={{ fontSize: 14, lineHeight: 1 }}>{g.icon}</span>
-                <span style={{ fontSize: 11, fontWeight: 600, color: DARK, fontFamily: FS }}>{g.name}</span>
+          <div key={g.nameKey} style={{ background: '#fff', borderRadius: 14, padding: '14px 16px', border: '1px solid rgba(13,13,13,0.07)', flexShrink: 0 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 15, lineHeight: 1 }}>{g.icon}</span>
+                <span style={{ fontSize: 13, fontWeight: 600, color: DARK, fontFamily: FS }}>{l[g.nameKey]}</span>
               </div>
-              <span style={{ fontSize: 9, color: 'rgba(13,13,13,0.42)', fontFamily: FS }}>{g.target}</span>
+              <span style={{ fontSize: 10, color: 'rgba(13,13,13,0.42)', fontFamily: FS }}>{g.target}</span>
             </div>
-            <div style={{ height: 5, borderRadius: 99, background: 'rgba(13,13,13,0.08)', overflow: 'hidden' }}>
+            <div style={{ height: 6, borderRadius: 99, background: 'rgba(13,13,13,0.08)', overflow: 'hidden' }}>
               <div style={{ width: `${g.pct}%`, height: '100%', borderRadius: 99, background: g.color }} />
             </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 4 }}>
-              <span style={{ fontSize: 9, color: g.color, fontWeight: 600, fontFamily: FS }}>{g.pct}%</span>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 5 }}>
+              <span style={{ fontSize: 10, color: g.color, fontWeight: 600, fontFamily: FS }}>{g.pct}%</span>
             </div>
           </div>
         ))}
-        <div style={{ background: '#fff', borderRadius: 14, padding: '10px 14px', border: '1px solid rgba(13,13,13,0.06)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{ fontFamily: FS, fontSize: 10, color: 'rgba(13,13,13,0.55)' }}>Total comprometido</span>
-          <span style={{ fontFamily: "'Tenor Sans', serif", fontSize: 14, color: DARK }}>R$ 20.540</span>
+        <div style={{ background: '#fff', borderRadius: 14, padding: '12px 16px', border: '1px solid rgba(13,13,13,0.06)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span style={{ fontFamily: FS, fontSize: 11, color: 'rgba(13,13,13,0.55)' }}>{l.mkCommitted}</span>
+          <span style={{ fontFamily: FD, fontSize: 16, color: DARK }}>R$ 20.540</span>
         </div>
       </div>
     </div>
   )
 }
 
-function CasalMockupContent() {
+function CasalMockupContent({ l }: { l: Record<string, string> }) {
   const FS = "'DM Sans', system-ui, sans-serif"
   const FD = "'Tenor Sans', serif"
   const ARARA = '#1B4FD8'
   const cats = [
-    { name: 'Moradia',     ag: 1800, p: 1200, color: ARARA },
-    { name: 'Alimentação', ag: 900,  p: 600,  color: '#1F8A5B' },
-    { name: 'Lazer',       ag: 400,  p: 400,  color: '#E8A020' },
-    { name: 'Transporte',  ag: 350,  p: 200,  color: '#A36A52' },
+    { nameKey: 'mkCatHousing',   ag: 1800, p: 1200, color: ARARA },
+    { nameKey: 'mkCatFood',      ag: 900,  p: 600,  color: '#1F8A5B' },
+    { nameKey: 'mkCatLeisure',   ag: 400,  p: 400,  color: '#E8A020' },
+    { nameKey: 'mkCatTransport', ag: 350,  p: 200,  color: '#A36A52' },
   ]
   return (
     <div style={{ width: '100%', height: '100%', background: '#F4F4F4', fontFamily: FS, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      <StatusBar />
       <PhoneNav />
-      <div style={{ flex: 1, overflow: 'hidden', padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <div style={{ flex: 1, overflow: 'hidden', padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 10 }}>
         <div>
-          <p style={{ fontFamily: FS, fontSize: 9, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.45)', margin: 0 }}>Casal & Família</p>
-          <p style={{ fontFamily: FD, fontSize: 16, color: DARK, margin: '2px 0 0' }}>Orçamento conjunto</p>
+          <p style={{ fontFamily: FS, fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.45)', margin: 0 }}>{l.f6label}</p>
+          <p style={{ fontFamily: FD, fontSize: 18, color: DARK, margin: '2px 0 0' }}>{l.f6title}</p>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, flexShrink: 0 }}>
-          <div style={{ background: DARK, borderRadius: 12, padding: '10px 12px' }}>
-            <p style={{ fontFamily: FS, fontSize: 9, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'rgba(200,184,154,0.70)', margin: 0 }}>André</p>
-            <p style={{ fontFamily: FD, fontSize: 16, color: '#fff', margin: '3px 0 0' }}>R$ 3.450</p>
-            <p style={{ fontFamily: FS, fontSize: 9, color: 'rgba(255,255,255,0.42)', margin: '3px 0 0' }}>65% da renda</p>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, flexShrink: 0 }}>
+          <div style={{ background: DARK, borderRadius: 12, padding: '12px 14px' }}>
+            <p style={{ fontFamily: FS, fontSize: 10, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'rgba(200,184,154,0.70)', margin: 0 }}>André</p>
+            <p style={{ fontFamily: FD, fontSize: 18, color: '#fff', margin: '4px 0 0' }}>R$ 3.450</p>
+            <p style={{ fontFamily: FS, fontSize: 10, color: 'rgba(255,255,255,0.42)', margin: '4px 0 0' }}>{l.mkIncome1}</p>
           </div>
-          <div style={{ background: '#fff', borderRadius: 12, padding: '10px 12px', border: '1px solid rgba(13,13,13,0.08)' }}>
-            <p style={{ fontFamily: FS, fontSize: 9, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.45)', margin: 0 }}>Camille</p>
-            <p style={{ fontFamily: FD, fontSize: 16, color: DARK, margin: '3px 0 0' }}>R$ 1.800</p>
-            <p style={{ fontFamily: FS, fontSize: 9, color: 'rgba(13,13,13,0.42)', margin: '3px 0 0' }}>35% da renda</p>
+          <div style={{ background: '#fff', borderRadius: 12, padding: '12px 14px', border: '1px solid rgba(13,13,13,0.08)' }}>
+            <p style={{ fontFamily: FS, fontSize: 10, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.45)', margin: 0 }}>Camille</p>
+            <p style={{ fontFamily: FD, fontSize: 18, color: DARK, margin: '4px 0 0' }}>R$ 1.800</p>
+            <p style={{ fontFamily: FS, fontSize: 10, color: 'rgba(13,13,13,0.42)', margin: '4px 0 0' }}>{l.mkIncome2}</p>
           </div>
         </div>
         {cats.map(c => (
-          <div key={c.name} style={{ background: '#fff', borderRadius: 12, padding: '9px 12px', border: '1px solid rgba(13,13,13,0.06)', flexShrink: 0 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
-              <span style={{ fontFamily: FS, fontSize: 10, fontWeight: 600, color: DARK }}>{c.name}</span>
-              <span style={{ fontFamily: FS, fontSize: 9, color: 'rgba(13,13,13,0.42)' }}>R$ {c.ag + c.p}</span>
+          <div key={c.nameKey} style={{ background: '#fff', borderRadius: 12, padding: '11px 14px', border: '1px solid rgba(13,13,13,0.06)', flexShrink: 0 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 7 }}>
+              <span style={{ fontFamily: FS, fontSize: 12, fontWeight: 600, color: DARK }}>{l[c.nameKey]}</span>
+              <span style={{ fontFamily: FS, fontSize: 10, color: 'rgba(13,13,13,0.42)' }}>R$ {c.ag + c.p}</span>
             </div>
-            <div style={{ height: 5, borderRadius: 99, overflow: 'hidden', display: 'flex' }}>
+            <div style={{ height: 6, borderRadius: 99, overflow: 'hidden', display: 'flex' }}>
               <div style={{ flex: c.ag, background: c.color }} />
               <div style={{ flex: c.p, background: `${c.color}55` }} />
             </div>
@@ -895,7 +889,7 @@ export default function LandingPage() {
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(64px, 10vw, 96px)' }}>
 
-          {/* ── f1: Portfólio — text left, iPhone right ── */}
+          {/* ── f1: Portfólio — text left, card right ── */}
           <div className="arvo-reveal flex flex-col lg:flex-row items-center" style={{ gap: 'clamp(32px, 6vw, 72px)' }}>
             <div style={{ flex: 1, maxWidth: 460 }}>
               <p style={{ fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#1F8A5B', marginBottom: 12 }}>{l.f1label}</p>
@@ -903,14 +897,13 @@ export default function LandingPage() {
               <p style={{ fontFamily: F_SANS, fontSize: 15, color: T_BODY, lineHeight: 1.85 }}>{l.f1desc}</p>
             </div>
             <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
-              <div style={{ width: 240, height: 480, borderRadius: 44, border: '10px solid #1C1C1E', background: '#1C1C1E', boxShadow: '0 24px 64px rgba(0,0,0,0.20), 0 0 0 1px rgba(255,255,255,0.06) inset', position: 'relative', overflow: 'hidden' }}>
-                <div style={{ position: 'absolute', top: 10, left: '50%', transform: 'translateX(-50%)', width: 70, height: 18, borderRadius: 9, background: '#000', zIndex: 10 }} />
-                <div style={{ width: '100%', height: '100%', borderRadius: 34, overflow: 'hidden' }}><PortfolioPhoneMockupContent /></div>
+              <div style={{ width: 320, height: 370, borderRadius: 20, overflow: 'hidden', boxShadow: '0 16px 56px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.05)', border: '1px solid rgba(13,13,13,0.08)', flexShrink: 0 }}>
+                <PortfolioPhoneMockupContent l={l} />
               </div>
             </div>
           </div>
 
-          {/* ── f2: Multimoeda — iPhone left, text right ── */}
+          {/* ── f2: Multimoeda — card left, text right ── */}
           <div className="arvo-reveal flex flex-col lg:flex-row-reverse items-center" style={{ gap: 'clamp(32px, 6vw, 72px)' }}>
             <div style={{ flex: 1, maxWidth: 460 }}>
               <p style={{ fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#1B4FD8', marginBottom: 12 }}>{l.f2label}</p>
@@ -918,14 +911,13 @@ export default function LandingPage() {
               <p style={{ fontFamily: F_SANS, fontSize: 15, color: T_BODY, lineHeight: 1.85 }}>{l.f2desc}</p>
             </div>
             <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
-              <div style={{ width: 240, height: 480, borderRadius: 44, border: '10px solid #1C1C1E', background: '#1C1C1E', boxShadow: '0 24px 64px rgba(0,0,0,0.20), 0 0 0 1px rgba(255,255,255,0.06) inset', position: 'relative', overflow: 'hidden' }}>
-                <div style={{ position: 'absolute', top: 10, left: '50%', transform: 'translateX(-50%)', width: 70, height: 18, borderRadius: 9, background: '#000', zIndex: 10 }} />
-                <div style={{ width: '100%', height: '100%', borderRadius: 34, overflow: 'hidden' }}><MultimoedaMockupContent /></div>
+              <div style={{ width: 320, height: 380, borderRadius: 20, overflow: 'hidden', boxShadow: '0 16px 56px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.05)', border: '1px solid rgba(13,13,13,0.08)', flexShrink: 0 }}>
+                <MultimoedaMockupContent l={l} />
               </div>
             </div>
           </div>
 
-          {/* ── f3: Momentos — text left, iPhone right ── */}
+          {/* ── f3: Momentos — text left, card right ── */}
           <div className="arvo-reveal flex flex-col lg:flex-row items-center" style={{ gap: 'clamp(32px, 6vw, 72px)' }}>
             <div style={{ flex: 1, maxWidth: 460 }}>
               <p style={{ fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#A36A52', marginBottom: 12 }}>{l.f3label}</p>
@@ -933,14 +925,13 @@ export default function LandingPage() {
               <p style={{ fontFamily: F_SANS, fontSize: 15, color: T_BODY, lineHeight: 1.85 }}>{l.f3desc}</p>
             </div>
             <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
-              <div style={{ width: 240, height: 480, borderRadius: 44, border: '10px solid #1C1C1E', background: '#1C1C1E', boxShadow: '0 24px 64px rgba(0,0,0,0.20), 0 0 0 1px rgba(255,255,255,0.06) inset', position: 'relative', overflow: 'hidden' }}>
-                <div style={{ position: 'absolute', top: 10, left: '50%', transform: 'translateX(-50%)', width: 70, height: 18, borderRadius: 9, background: '#000', zIndex: 10 }} />
-                <div style={{ width: '100%', height: '100%', borderRadius: 34, overflow: 'hidden' }}><MomentosMockupContent /></div>
+              <div style={{ width: 320, height: 390, borderRadius: 20, overflow: 'hidden', boxShadow: '0 16px 56px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.05)', border: '1px solid rgba(13,13,13,0.08)', flexShrink: 0 }}>
+                <MomentosMockupContent l={l} />
               </div>
             </div>
           </div>
 
-          {/* ── f4: Liberdade Financeira — iPhone left, text right ── */}
+          {/* ── f4: Liberdade Financeira — card left, text right ── */}
           <div className="arvo-reveal flex flex-col lg:flex-row-reverse items-center" style={{ gap: 'clamp(32px, 6vw, 72px)' }}>
             <div style={{ flex: 1, maxWidth: 460 }}>
               <p style={{ fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#E8A020', marginBottom: 12 }}>{l.f4label}</p>
@@ -948,9 +939,8 @@ export default function LandingPage() {
               <p style={{ fontFamily: F_SANS, fontSize: 15, color: T_BODY, lineHeight: 1.85 }}>{l.f4desc}</p>
             </div>
             <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
-              <div style={{ width: 240, height: 480, borderRadius: 44, border: '10px solid #1C1C1E', background: '#1C1C1E', boxShadow: '0 24px 64px rgba(0,0,0,0.20), 0 0 0 1px rgba(255,255,255,0.06) inset', position: 'relative', overflow: 'hidden' }}>
-                <div style={{ position: 'absolute', top: 10, left: '50%', transform: 'translateX(-50%)', width: 70, height: 18, borderRadius: 9, background: '#000', zIndex: 10 }} />
-                <div style={{ width: '100%', height: '100%', borderRadius: 34, overflow: 'hidden' }}><FreedomMockupContent /></div>
+              <div style={{ width: 320, height: 400, borderRadius: 20, overflow: 'hidden', boxShadow: '0 16px 56px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.05)', border: '1px solid rgba(13,13,13,0.08)', flexShrink: 0 }}>
+                <FreedomMockupContent l={l} showStatusBar={false} />
               </div>
             </div>
           </div>
@@ -997,7 +987,7 @@ export default function LandingPage() {
             </div>
           </div>
 
-          {/* ── f6: Casal & Família — iPhone left, text right ── */}
+          {/* ── f6: Casal & Família — card left, text right ── */}
           <div className="arvo-reveal flex flex-col lg:flex-row-reverse items-center" style={{ gap: 'clamp(32px, 6vw, 72px)' }}>
             <div style={{ flex: 1, maxWidth: 460 }}>
               <p style={{ fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#1B4FD8', marginBottom: 12 }}>{l.f6label}</p>
@@ -1005,9 +995,8 @@ export default function LandingPage() {
               <p style={{ fontFamily: F_SANS, fontSize: 15, color: T_BODY, lineHeight: 1.85 }}>{l.f6desc}</p>
             </div>
             <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
-              <div style={{ width: 240, height: 480, borderRadius: 44, border: '10px solid #1C1C1E', background: '#1C1C1E', boxShadow: '0 24px 64px rgba(0,0,0,0.20), 0 0 0 1px rgba(255,255,255,0.06) inset', position: 'relative', overflow: 'hidden' }}>
-                <div style={{ position: 'absolute', top: 10, left: '50%', transform: 'translateX(-50%)', width: 70, height: 18, borderRadius: 9, background: '#000', zIndex: 10 }} />
-                <div style={{ width: '100%', height: '100%', borderRadius: 34, overflow: 'hidden' }}><CasalMockupContent /></div>
+              <div style={{ width: 320, height: 390, borderRadius: 20, overflow: 'hidden', boxShadow: '0 16px 56px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.05)', border: '1px solid rgba(13,13,13,0.08)', flexShrink: 0 }}>
+                <CasalMockupContent l={l} />
               </div>
             </div>
           </div>
