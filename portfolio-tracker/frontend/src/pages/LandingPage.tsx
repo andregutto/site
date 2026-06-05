@@ -18,16 +18,6 @@ const T_SECONDARY = 'rgba(13,13,13,0.72)'   // labels / eyebrows / metadata
 const F_SANS    = "'Tenor Sans', sans-serif"
 const F_DISPLAY = "'Playfair Display', serif"
 
-const ICONS = ['◈', '◎', '◉', '◉', '✦', '◑']
-const FEATURE_COLORS = ['#1F8A5B', '#1B4FD8', '#A36A52', '#E8A020', '#1B4FD8', '#1B4FD8']
-const FEATURE_TINTS  = [
-  'rgba(31,138,91,0.04)',
-  'rgba(27,79,216,0.04)',
-  'rgba(163,106,82,0.04)',
-  'rgba(232,160,32,0.04)',
-  'rgba(27,79,216,0.04)',
-  'rgba(27,79,216,0.04)',
-]
 
 const TABLE_ROWS: [string, string, string, string, string][] = [
   ['BOVA11',   'ETF',     'R$45,2k', '+5,8%',  '#1F8A5B'],
@@ -337,20 +327,224 @@ function FreedomMockupContent() {
   )
 }
 
+function StatusBar() {
+  return (
+    <div style={{ height: 54, flexShrink: 0, background: '#fff', display: 'flex', alignItems: 'center', padding: '0 16px' }}>
+      <span style={{ fontFamily: "'DM Sans', system-ui, sans-serif", fontWeight: 600, fontSize: 12, flex: 1, color: DARK }}>14:30</span>
+      <div style={{ width: 80 }} />
+      <div style={{ flex: 1, display: 'flex', gap: 5, alignItems: 'center', justifyContent: 'flex-end' }}>
+        <svg width="13" height="10" viewBox="0 0 14 10" fill={DARK}><rect x="0" y="3" width="3" height="7" rx="0.5"/><rect x="4" y="2" width="3" height="8" rx="0.5"/><rect x="8" y="0" width="3" height="10" rx="0.5"/><rect x="12" y="1" width="2" height="9" rx="0.5" opacity="0.3"/></svg>
+        <svg width="19" height="10" viewBox="0 0 20 10" fill="none"><rect x="0.5" y="0.5" width="17" height="9" rx="2" stroke={DARK} strokeWidth="1" opacity="0.35"/><rect x="1.5" y="1.5" width="14" height="7" rx="1.5" fill={DARK}/></svg>
+      </div>
+    </div>
+  )
+}
+
+function PhoneNav() {
+  return (
+    <div style={{ height: 48, flexShrink: 0, background: '#fff', borderBottom: '1px solid rgba(13,13,13,0.07)', display: 'flex', alignItems: 'center', padding: '0 16px', gap: 8 }}>
+      <img src="/brand/logo/arvo-symbol-black.svg" width="18" height="18" alt="" />
+      <span style={{ fontFamily: "'Tenor Sans', serif", fontSize: 13, letterSpacing: '0.28em', color: DARK }}>arvo</span>
+      <div style={{ flex: 1 }} />
+      <div style={{ width: 28, height: 28, borderRadius: '50%', background: DARK, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, color: '#C8B89A' }}>AG</div>
+    </div>
+  )
+}
+
+function PortfolioPhoneMockupContent() {
+  const FS = "'DM Sans', system-ui, sans-serif"
+  const FD = "'Tenor Sans', serif"
+  const rows: [string, string, string][] = [
+    ['BOVA11',    '+5,8%',  '#1F8A5B'],
+    ['WEGE3',     '+12,4%', '#1F8A5B'],
+    ['BTC',       '-2,1%',  '#D63B2F'],
+    ['KNRI11',    '+3,2%',  '#1F8A5B'],
+    ['TESOURO+',  '+1,1%',  '#1F8A5B'],
+  ]
+  return (
+    <div style={{ width: '100%', height: '100%', background: '#F4F4F4', fontFamily: FS, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <StatusBar />
+      <PhoneNav />
+      <div style={{ flex: 1, overflow: 'hidden', padding: '14px 16px 0', display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div style={{ background: '#fff', borderRadius: 16, padding: '14px 14px', border: '1px solid rgba(200,184,154,0.35)', boxShadow: '0 2px 12px rgba(200,184,154,0.14)', flexShrink: 0, position: 'relative', overflow: 'hidden' }}>
+          <div style={{ position: 'absolute', top: -60, right: -30, width: 180, height: 180, borderRadius: '50%', background: 'rgba(200,184,154,0.10)', filter: 'blur(40px)', pointerEvents: 'none' }} />
+          <p style={{ fontFamily: FS, fontSize: 9, letterSpacing: '0.28em', textTransform: 'uppercase', color: '#8C6A28', margin: 0 }}>Total BRL</p>
+          <p style={{ fontFamily: FS, fontSize: 28, color: DARK, margin: '4px 0 0', lineHeight: 1 }}>R$ 284.500</p>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 12px', marginTop: 12, paddingTop: 10, borderTop: '1px solid rgba(13,13,13,0.07)' }}>
+            {([
+              { label: 'Aplicado', val: 'R$ 236k', color: DARK },
+              { label: 'Resultado', val: '+20,6%', color: '#1F8A5B' },
+              { label: 'Mês', val: '+1,4%', color: '#1F8A5B' },
+              { label: 'YTD 2025', val: '+8,2%', color: '#1F8A5B' },
+            ] as Array<{ label: string; val: string; color: string }>).map(({ label, val, color }) => (
+              <div key={label}>
+                <p style={{ fontFamily: FS, fontSize: 8, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.50)', margin: 0 }}>{label}</p>
+                <p style={{ fontFamily: FS, fontSize: 13, color, margin: '2px 0 0' }}>{val}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div style={{ background: '#fff', borderRadius: 14, overflow: 'hidden', border: '1px solid rgba(13,13,13,0.07)', flexShrink: 0 }}>
+          {rows.map(([ticker, pct, color]) => (
+            <div key={ticker} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 14px', borderBottom: '1px solid rgba(13,13,13,0.04)' }}>
+              <span style={{ fontFamily: FS, fontSize: 12, fontWeight: 600, color: DARK }}>{ticker}</span>
+              <span style={{ fontFamily: FS, fontSize: 12, color }}>{pct}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function MultimoedaMockupContent() {
+  const FS = "'DM Sans', system-ui, sans-serif"
+  const FD = "'Tenor Sans', serif"
+  const ARARA = '#1B4FD8'
+  return (
+    <div style={{ width: '100%', height: '100%', background: '#F4F4F4', fontFamily: FS, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <StatusBar />
+      <PhoneNav />
+      <div style={{ flex: 1, overflow: 'hidden', padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div>
+          <p style={{ fontFamily: FS, fontSize: 9, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.45)', margin: 0 }}>Multimoeda</p>
+          <p style={{ fontFamily: FD, fontSize: 16, color: DARK, margin: '2px 0 0' }}>Câmbio automático</p>
+        </div>
+        <div style={{ background: DARK, borderRadius: 14, padding: '14px 14px', flexShrink: 0 }}>
+          <p style={{ fontFamily: FS, fontSize: 9, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'rgba(200,184,154,0.70)', margin: 0 }}>BRL · Principal</p>
+          <p style={{ fontFamily: FD, fontSize: 22, color: '#fff', margin: '4px 0 0', lineHeight: 1 }}>R$ 284.500</p>
+          <p style={{ fontFamily: FS, fontSize: 10, color: 'rgba(255,255,255,0.42)', margin: '4px 0 0' }}>patrimônio total</p>
+        </div>
+        <div style={{ background: '#fff', borderRadius: 14, padding: '12px 14px', border: '1px solid rgba(27,79,216,0.14)', flexShrink: 0 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <p style={{ fontFamily: FS, fontSize: 9, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.42)', margin: 0 }}>EUR</p>
+              <p style={{ fontFamily: FD, fontSize: 18, color: DARK, margin: '2px 0 0', lineHeight: 1 }}>€ 44.453</p>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <p style={{ fontFamily: FS, fontSize: 9, color: 'rgba(13,13,13,0.38)', margin: 0 }}>1 EUR =</p>
+              <p style={{ fontFamily: FS, fontSize: 12, color: ARARA, margin: '2px 0 0', fontWeight: 600 }}>R$ 6,40</p>
+            </div>
+          </div>
+        </div>
+        <div style={{ background: '#fff', borderRadius: 14, padding: '12px 14px', border: '1px solid rgba(13,13,13,0.07)', flexShrink: 0 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <p style={{ fontFamily: FS, fontSize: 9, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.42)', margin: 0 }}>USD</p>
+              <p style={{ fontFamily: FD, fontSize: 18, color: DARK, margin: '2px 0 0', lineHeight: 1 }}>$ 49.912</p>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <p style={{ fontFamily: FS, fontSize: 9, color: 'rgba(13,13,13,0.38)', margin: 0 }}>1 USD =</p>
+              <p style={{ fontFamily: FS, fontSize: 12, color: 'rgba(13,13,13,0.55)', margin: '2px 0 0', fontWeight: 600 }}>R$ 5,70</p>
+            </div>
+          </div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 12px', background: 'rgba(27,79,216,0.06)', borderRadius: 10, flexShrink: 0 }}>
+          <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke={ARARA} strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+          <span style={{ fontFamily: FS, fontSize: 9, color: ARARA, letterSpacing: '0.08em' }}>Atualizado automaticamente</span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function MomentosMockupContent() {
+  const FS = "'DM Sans', system-ui, sans-serif"
+  const FD = "'Tenor Sans', serif"
+  const goals = [
+    { icon: '✈︎', name: 'Viagem Europa', target: 'R$ 8.000', pct: 78, color: '#A36A52' },
+    { icon: '⌂', name: 'Reforma do apê', target: 'R$ 15.000', pct: 30, color: '#1B4FD8' },
+    { icon: '◈', name: 'Emergência', target: 'R$ 12.000', pct: 82, color: '#1F8A5B' },
+  ]
+  return (
+    <div style={{ width: '100%', height: '100%', background: '#F4F4F4', fontFamily: FS, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <StatusBar />
+      <PhoneNav />
+      <div style={{ flex: 1, overflow: 'hidden', padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div>
+          <p style={{ fontFamily: FS, fontSize: 9, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.45)', margin: 0 }}>Momentos</p>
+          <p style={{ fontFamily: FD, fontSize: 16, color: DARK, margin: '2px 0 0' }}>Metas e Objetivos</p>
+        </div>
+        {goals.map(g => (
+          <div key={g.name} style={{ background: '#fff', borderRadius: 14, padding: '12px 14px', border: '1px solid rgba(13,13,13,0.07)', flexShrink: 0 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                <span style={{ fontSize: 14, lineHeight: 1 }}>{g.icon}</span>
+                <span style={{ fontSize: 11, fontWeight: 600, color: DARK, fontFamily: FS }}>{g.name}</span>
+              </div>
+              <span style={{ fontSize: 9, color: 'rgba(13,13,13,0.42)', fontFamily: FS }}>{g.target}</span>
+            </div>
+            <div style={{ height: 5, borderRadius: 99, background: 'rgba(13,13,13,0.08)', overflow: 'hidden' }}>
+              <div style={{ width: `${g.pct}%`, height: '100%', borderRadius: 99, background: g.color }} />
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 4 }}>
+              <span style={{ fontSize: 9, color: g.color, fontWeight: 600, fontFamily: FS }}>{g.pct}%</span>
+            </div>
+          </div>
+        ))}
+        <div style={{ background: '#fff', borderRadius: 14, padding: '10px 14px', border: '1px solid rgba(13,13,13,0.06)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span style={{ fontFamily: FS, fontSize: 10, color: 'rgba(13,13,13,0.55)' }}>Total comprometido</span>
+          <span style={{ fontFamily: "'Tenor Sans', serif", fontSize: 14, color: DARK }}>R$ 20.540</span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function CasalMockupContent() {
+  const FS = "'DM Sans', system-ui, sans-serif"
+  const FD = "'Tenor Sans', serif"
+  const ARARA = '#1B4FD8'
+  const cats = [
+    { name: 'Moradia',     ag: 1800, p: 1200, color: ARARA },
+    { name: 'Alimentação', ag: 900,  p: 600,  color: '#1F8A5B' },
+    { name: 'Lazer',       ag: 400,  p: 400,  color: '#E8A020' },
+    { name: 'Transporte',  ag: 350,  p: 200,  color: '#A36A52' },
+  ]
+  return (
+    <div style={{ width: '100%', height: '100%', background: '#F4F4F4', fontFamily: FS, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <StatusBar />
+      <PhoneNav />
+      <div style={{ flex: 1, overflow: 'hidden', padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div>
+          <p style={{ fontFamily: FS, fontSize: 9, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.45)', margin: 0 }}>Casal & Família</p>
+          <p style={{ fontFamily: FD, fontSize: 16, color: DARK, margin: '2px 0 0' }}>Orçamento conjunto</p>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, flexShrink: 0 }}>
+          <div style={{ background: DARK, borderRadius: 12, padding: '10px 12px' }}>
+            <p style={{ fontFamily: FS, fontSize: 9, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'rgba(200,184,154,0.70)', margin: 0 }}>André</p>
+            <p style={{ fontFamily: FD, fontSize: 16, color: '#fff', margin: '3px 0 0' }}>R$ 3.450</p>
+            <p style={{ fontFamily: FS, fontSize: 9, color: 'rgba(255,255,255,0.42)', margin: '3px 0 0' }}>65% da renda</p>
+          </div>
+          <div style={{ background: '#fff', borderRadius: 12, padding: '10px 12px', border: '1px solid rgba(13,13,13,0.08)' }}>
+            <p style={{ fontFamily: FS, fontSize: 9, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.45)', margin: 0 }}>Camille</p>
+            <p style={{ fontFamily: FD, fontSize: 16, color: DARK, margin: '3px 0 0' }}>R$ 1.800</p>
+            <p style={{ fontFamily: FS, fontSize: 9, color: 'rgba(13,13,13,0.42)', margin: '3px 0 0' }}>35% da renda</p>
+          </div>
+        </div>
+        {cats.map(c => (
+          <div key={c.name} style={{ background: '#fff', borderRadius: 12, padding: '9px 12px', border: '1px solid rgba(13,13,13,0.06)', flexShrink: 0 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
+              <span style={{ fontFamily: FS, fontSize: 10, fontWeight: 600, color: DARK }}>{c.name}</span>
+              <span style={{ fontFamily: FS, fontSize: 9, color: 'rgba(13,13,13,0.42)' }}>R$ {c.ag + c.p}</span>
+            </div>
+            <div style={{ height: 5, borderRadius: 99, overflow: 'hidden', display: 'flex' }}>
+              <div style={{ flex: c.ag, background: c.color }} />
+              <div style={{ flex: c.p, background: `${c.color}55` }} />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export default function LandingPage() {
   const { signIn } = useAuth()
   const navigate = useNavigate()
   const { t } = useI18n()
   const l = (t as unknown as Record<string, Record<string, string>>).landing ?? {}
 
-  const FEATURES = [
-    { icon: ICONS[0], color: FEATURE_COLORS[0], label: l.f1label, title: l.f1title, desc: l.f1desc },
-    { icon: ICONS[1], color: FEATURE_COLORS[1], label: l.f2label, title: l.f2title, desc: l.f2desc },
-    { icon: ICONS[2], color: FEATURE_COLORS[2], label: l.f3label, title: l.f3title, desc: l.f3desc },
-    { icon: ICONS[3], color: FEATURE_COLORS[3], label: l.f4label, title: l.f4title, desc: l.f4desc },
-    { icon: ICONS[4], color: FEATURE_COLORS[4], label: l.f5label, title: l.f5title, desc: l.f5desc },
-    { icon: ICONS[5], color: FEATURE_COLORS[5], label: l.f6label, title: l.f6title, desc: l.f6desc },
-  ]
   const STEPS = [
     { num: l.s1num, title: l.s1title, desc: l.s1desc },
     { num: l.s2num, title: l.s2title, desc: l.s2desc },
@@ -425,6 +619,26 @@ export default function LandingPage() {
 
   return (
     <div style={{ background: BG, color: T_PRIMARY, fontFamily: F_SANS, minHeight: '100vh', overflowX: 'hidden' }}>
+      <style>{`
+        @keyframes arvo-feat-spin { to { transform: rotate(360deg); } }
+        @keyframes arvo-feat-bird {
+          0%,100% { fill: #1B4FD8; filter: drop-shadow(0 0 3px rgba(27,79,216,0.5)); }
+          33%      { fill: #E8A020; filter: drop-shadow(0 0 3px rgba(232,160,32,0.5)); }
+          66%      { fill: #D63B2F; filter: drop-shadow(0 0 3px rgba(214,59,47,0.5)); }
+        }
+        .arvo-feat-glow {
+          position: absolute; inset: -10px; border-radius: 50%;
+          background: conic-gradient(from 0deg, #1B4FD8, #E8A020, #D63B2F, #1B4FD8);
+          animation: arvo-feat-spin 2.8s linear infinite;
+          filter: blur(12px); opacity: 0.60; pointer-events: none;
+        }
+        .arvo-feat-p1 { animation: arvo-feat-bird 3s ease-in-out infinite; animation-delay: 0s; }
+        .arvo-feat-p2 { animation: arvo-feat-bird 3s ease-in-out infinite; animation-delay: 0.25s; }
+        .arvo-feat-p3 { animation: arvo-feat-bird 3s ease-in-out infinite; animation-delay: 0.5s; }
+        .arvo-feat-p4 { animation: arvo-feat-bird 3s ease-in-out infinite; animation-delay: 0.75s; }
+        .arvo-feat-p5 { animation: arvo-feat-bird 3s ease-in-out infinite; animation-delay: 1.0s; }
+        .arvo-feat-p6 { animation: arvo-feat-bird 3s ease-in-out infinite; animation-delay: 1.25s; }
+      `}</style>
 
       {/* ── HEADER ── */}
       <header style={{ position: 'sticky', top: 0, zIndex: 100, background: 'rgba(255,255,255,0.96)', backdropFilter: 'blur(16px)', borderBottom: `1px solid ${BORDER}`, paddingTop: 'env(safe-area-inset-top, 0px)' }}>
@@ -680,15 +894,125 @@ export default function LandingPage() {
           </h2>
         </div>
 
-        <div style={{ display: 'grid', gap: 1, background: BORDER }} className="grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-          {FEATURES.map((f, i) => (
-            <div key={i} className={`arvo-reveal arvo-reveal-d${i + 1}`} style={{ background: FEATURE_TINTS[i] || '#fff', padding: 'clamp(28px, 4vw, 40px) clamp(24px, 3vw, 36px)' }}>
-              <div style={{ fontFamily: F_SANS, fontSize: 28, color: f.color, marginBottom: 14, lineHeight: 1 }}>{f.icon}</div>
-              <p style={{ fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: f.color, marginBottom: 10, opacity: 0.85 }}>{f.label}</p>
-              <h3 style={{ fontFamily: F_DISPLAY, fontSize: 'clamp(1rem, 1.8vw, 1.25rem)', fontWeight: 400, color: DARK, marginBottom: 10, lineHeight: 1.25 }}>{f.title}</h3>
-              <p style={{ fontFamily: F_SANS, fontSize: 14, color: T_BODY, lineHeight: 1.8 }}>{f.desc}</p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(64px, 10vw, 96px)' }}>
+
+          {/* ── f1: Portfólio — text left, iPhone right ── */}
+          <div className="arvo-reveal flex flex-col lg:flex-row items-center" style={{ gap: 'clamp(32px, 6vw, 72px)' }}>
+            <div style={{ flex: 1, maxWidth: 460 }}>
+              <p style={{ fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#1F8A5B', marginBottom: 12 }}>{l.f1label}</p>
+              <h3 style={{ fontFamily: F_DISPLAY, fontSize: 'clamp(1.4rem, 2.4vw, 1.9rem)', fontWeight: 400, color: DARK, lineHeight: 1.2, marginBottom: 14 }}>{l.f1title}</h3>
+              <p style={{ fontFamily: F_SANS, fontSize: 15, color: T_BODY, lineHeight: 1.85 }}>{l.f1desc}</p>
             </div>
-          ))}
+            <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
+              <div style={{ width: 240, height: 480, borderRadius: 44, border: '10px solid #1C1C1E', background: '#1C1C1E', boxShadow: '0 24px 64px rgba(0,0,0,0.20), 0 0 0 1px rgba(255,255,255,0.06) inset', position: 'relative', overflow: 'hidden' }}>
+                <div style={{ position: 'absolute', top: 10, left: '50%', transform: 'translateX(-50%)', width: 70, height: 18, borderRadius: 9, background: '#000', zIndex: 10 }} />
+                <div style={{ width: '100%', height: '100%', borderRadius: 34, overflow: 'hidden' }}><PortfolioPhoneMockupContent /></div>
+              </div>
+            </div>
+          </div>
+
+          {/* ── f2: Multimoeda — iPhone left, text right ── */}
+          <div className="arvo-reveal flex flex-col lg:flex-row-reverse items-center" style={{ gap: 'clamp(32px, 6vw, 72px)' }}>
+            <div style={{ flex: 1, maxWidth: 460 }}>
+              <p style={{ fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#1B4FD8', marginBottom: 12 }}>{l.f2label}</p>
+              <h3 style={{ fontFamily: F_DISPLAY, fontSize: 'clamp(1.4rem, 2.4vw, 1.9rem)', fontWeight: 400, color: DARK, lineHeight: 1.2, marginBottom: 14 }}>{l.f2title}</h3>
+              <p style={{ fontFamily: F_SANS, fontSize: 15, color: T_BODY, lineHeight: 1.85 }}>{l.f2desc}</p>
+            </div>
+            <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
+              <div style={{ width: 240, height: 480, borderRadius: 44, border: '10px solid #1C1C1E', background: '#1C1C1E', boxShadow: '0 24px 64px rgba(0,0,0,0.20), 0 0 0 1px rgba(255,255,255,0.06) inset', position: 'relative', overflow: 'hidden' }}>
+                <div style={{ position: 'absolute', top: 10, left: '50%', transform: 'translateX(-50%)', width: 70, height: 18, borderRadius: 9, background: '#000', zIndex: 10 }} />
+                <div style={{ width: '100%', height: '100%', borderRadius: 34, overflow: 'hidden' }}><MultimoedaMockupContent /></div>
+              </div>
+            </div>
+          </div>
+
+          {/* ── f3: Momentos — text left, iPhone right ── */}
+          <div className="arvo-reveal flex flex-col lg:flex-row items-center" style={{ gap: 'clamp(32px, 6vw, 72px)' }}>
+            <div style={{ flex: 1, maxWidth: 460 }}>
+              <p style={{ fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#A36A52', marginBottom: 12 }}>{l.f3label}</p>
+              <h3 style={{ fontFamily: F_DISPLAY, fontSize: 'clamp(1.4rem, 2.4vw, 1.9rem)', fontWeight: 400, color: DARK, lineHeight: 1.2, marginBottom: 14 }}>{l.f3title}</h3>
+              <p style={{ fontFamily: F_SANS, fontSize: 15, color: T_BODY, lineHeight: 1.85 }}>{l.f3desc}</p>
+            </div>
+            <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
+              <div style={{ width: 240, height: 480, borderRadius: 44, border: '10px solid #1C1C1E', background: '#1C1C1E', boxShadow: '0 24px 64px rgba(0,0,0,0.20), 0 0 0 1px rgba(255,255,255,0.06) inset', position: 'relative', overflow: 'hidden' }}>
+                <div style={{ position: 'absolute', top: 10, left: '50%', transform: 'translateX(-50%)', width: 70, height: 18, borderRadius: 9, background: '#000', zIndex: 10 }} />
+                <div style={{ width: '100%', height: '100%', borderRadius: 34, overflow: 'hidden' }}><MomentosMockupContent /></div>
+              </div>
+            </div>
+          </div>
+
+          {/* ── f4: Liberdade Financeira — iPhone left, text right ── */}
+          <div className="arvo-reveal flex flex-col lg:flex-row-reverse items-center" style={{ gap: 'clamp(32px, 6vw, 72px)' }}>
+            <div style={{ flex: 1, maxWidth: 460 }}>
+              <p style={{ fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#E8A020', marginBottom: 12 }}>{l.f4label}</p>
+              <h3 style={{ fontFamily: F_DISPLAY, fontSize: 'clamp(1.4rem, 2.4vw, 1.9rem)', fontWeight: 400, color: DARK, lineHeight: 1.2, marginBottom: 14 }}>{l.f4title}</h3>
+              <p style={{ fontFamily: F_SANS, fontSize: 15, color: T_BODY, lineHeight: 1.85 }}>{l.f4desc}</p>
+            </div>
+            <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
+              <div style={{ width: 240, height: 480, borderRadius: 44, border: '10px solid #1C1C1E', background: '#1C1C1E', boxShadow: '0 24px 64px rgba(0,0,0,0.20), 0 0 0 1px rgba(255,255,255,0.06) inset', position: 'relative', overflow: 'hidden' }}>
+                <div style={{ position: 'absolute', top: 10, left: '50%', transform: 'translateX(-50%)', width: 70, height: 18, borderRadius: 9, background: '#000', zIndex: 10 }} />
+                <div style={{ width: '100%', height: '100%', borderRadius: 34, overflow: 'hidden' }}><FreedomMockupContent /></div>
+              </div>
+            </div>
+          </div>
+
+          {/* ── f5: IA Assistente — text left, AI mockup right (no frame) ── */}
+          <div className="arvo-reveal flex flex-col lg:flex-row items-center" style={{ gap: 'clamp(32px, 6vw, 72px)' }}>
+            <div style={{ flex: 1, maxWidth: 460 }}>
+              <p style={{ fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#1B4FD8', marginBottom: 12 }}>{l.f5label}</p>
+              <h3 style={{ fontFamily: F_DISPLAY, fontSize: 'clamp(1.4rem, 2.4vw, 1.9rem)', fontWeight: 400, color: DARK, lineHeight: 1.2, marginBottom: 14 }}>{l.f5title}</h3>
+              <p style={{ fontFamily: F_SANS, fontSize: 15, color: T_BODY, lineHeight: 1.85 }}>{l.f5desc}</p>
+            </div>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 28, padding: '8px 0' }}>
+              {/* Chat exchange */}
+              <div style={{ width: '100%', maxWidth: 380, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                  <div style={{ background: DARK, color: '#fff', borderRadius: '16px 16px 4px 16px', padding: '10px 16px', maxWidth: '80%', fontSize: 13, fontFamily: F_SANS, lineHeight: 1.55 }}>
+                    {l.f5mockQ}
+                  </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                  <div style={{ width: 30, height: 30, borderRadius: '50%', background: '#1B4FD8', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <img src="/brand/logo/arvo-symbol-black.svg" width="14" height="14" alt="" style={{ filter: 'invert(1)', opacity: 0.9 }} />
+                  </div>
+                  <div style={{ background: '#F0F0F0', color: DARK, borderRadius: '4px 16px 16px 16px', padding: '10px 16px', maxWidth: '80%', fontSize: 13, fontFamily: F_SANS, lineHeight: 1.55 }}>
+                    {l.f5mockA}
+                  </div>
+                </div>
+              </div>
+              {/* Animated glow bird button */}
+              <div style={{ position: 'relative', width: 68, height: 68 }}>
+                <div className="arvo-feat-glow" />
+                <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 16px rgba(0,0,0,0.12)' }}>
+                  <svg viewBox="0 0 174 180" width="30" height="30" fill="none">
+                    <path className="arvo-feat-p1" d="M96.9642 82.5762C83.7642 28.1762 141.798 5.2429 172.464 0.576233C173.464 15.7429 159.764 53.3762 96.9642 82.5762Z"/>
+                    <path className="arvo-feat-p2" d="M165.464 82.5762V53.5762L136.964 73.9631V111.674C144.263 106.015 151.778 100.102 155.964 96.5762C163.564 90.1762 165.464 84.5762 165.464 82.5762Z"/>
+                    <path className="arvo-feat-p3" d="M121.464 85.0507V123.576C125.207 120.732 131.014 116.287 136.964 111.674V73.9631L121.464 85.0507Z"/>
+                    <path className="arvo-feat-p4" d="M96.9642 102.576L121.464 123.576V85.0507L96.9642 102.576Z"/>
+                    <path className="arvo-feat-p5" d="M121.464 155.576V123.576L96.9642 102.576V178.576L121.464 155.576Z"/>
+                    <path className="arvo-feat-p6" d="M0.513985 24.5762V51.5762C0.513985 53.5762 -0.135759 66.6762 7.46424 73.0762L44.514 101.576V155.076L69.014 178.076V82.0762L37.9642 56.0762L0.513985 24.5762Z"/>
+                  </svg>
+                </div>
+              </div>
+              <p style={{ fontFamily: F_SANS, fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.35)' }}>Arvo · IA</p>
+            </div>
+          </div>
+
+          {/* ── f6: Casal & Família — iPhone left, text right ── */}
+          <div className="arvo-reveal flex flex-col lg:flex-row-reverse items-center" style={{ gap: 'clamp(32px, 6vw, 72px)' }}>
+            <div style={{ flex: 1, maxWidth: 460 }}>
+              <p style={{ fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#1B4FD8', marginBottom: 12 }}>{l.f6label}</p>
+              <h3 style={{ fontFamily: F_DISPLAY, fontSize: 'clamp(1.4rem, 2.4vw, 1.9rem)', fontWeight: 400, color: DARK, lineHeight: 1.2, marginBottom: 14 }}>{l.f6title}</h3>
+              <p style={{ fontFamily: F_SANS, fontSize: 15, color: T_BODY, lineHeight: 1.85 }}>{l.f6desc}</p>
+            </div>
+            <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
+              <div style={{ width: 240, height: 480, borderRadius: 44, border: '10px solid #1C1C1E', background: '#1C1C1E', boxShadow: '0 24px 64px rgba(0,0,0,0.20), 0 0 0 1px rgba(255,255,255,0.06) inset', position: 'relative', overflow: 'hidden' }}>
+                <div style={{ position: 'absolute', top: 10, left: '50%', transform: 'translateX(-50%)', width: 70, height: 18, borderRadius: 9, background: '#000', zIndex: 10 }} />
+                <div style={{ width: '100%', height: '100%', borderRadius: 34, overflow: 'hidden' }}><CasalMockupContent /></div>
+              </div>
+            </div>
+          </div>
+
         </div>
       </section>
 
