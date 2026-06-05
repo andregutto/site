@@ -984,7 +984,78 @@ export default function FinancesTransactionsPage() {
               </button>
             </div>
           </div>
-          <div className={`overflow-x-auto max-h-96 overflow-y-auto transition-opacity ${csvAiLoading ? 'opacity-50 pointer-events-none select-none' : ''}`}>
+          <div className={`transition-opacity ${csvAiLoading ? 'opacity-50 pointer-events-none select-none' : ''}`}>
+            {/* Mobile: card list */}
+            <div className="sm:hidden divide-y divide-gray-50 max-h-96 overflow-y-auto">
+              {csvRows.map((row, i) => {
+                if (csvFilterUncategorized && row.category_id) return null
+                const sameDescCount = csvRows.filter(r => r.description === row.description).length
+                return (
+                  <div key={i} className={`px-4 py-3 ${row.is_broker_transfer ? 'bg-amber-50' : ''}`}>
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1 flex-wrap mb-0.5">
+                          {row.is_broker_transfer && <span className="text-[10px] bg-amber-200 text-amber-800 rounded px-1 font-medium">{t.finances.brokerTransfer}</span>}
+                          {row.suggested_by === 'transfer' && <span className="text-[10px] bg-blue-100 text-blue-700 rounded px-1 font-medium">{t.finances.csvTransferBadge}</span>}
+                        </div>
+                        <p className="text-sm text-gray-800 truncate">{row.description}{sameDescCount > 1 && <span className="ml-1.5 text-[10px] text-gray-400">×{sameDescCount}</span>}</p>
+                        <p className="text-xs text-gray-400 mt-0.5">{fmtDate(row.date)}</p>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className={`text-sm font-medium whitespace-nowrap ${row.amount < 0 ? 'text-red-600' : 'text-green-600'}`}>{fmt(row.amount, row.currency)}</span>
+                        <button onClick={() => setCsvRows(prev => prev.filter((_, j) => j !== i))} className="text-gray-300 hover:text-red-400 transition-colors">
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5"><path d="M5.28 4.22a.75.75 0 0 0-1.06 1.06L6.94 8l-2.72 2.72a.75.75 0 1 0 1.06 1.06L8 9.06l2.72 2.72a.75.75 0 1 0 1.06-1.06L9.06 8l2.72-2.72a.75.75 0 0 0-1.06-1.06L8 6.94 5.28 4.22Z" /></svg>
+                        </button>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      {row.suggested_by === 'ai' && row.category_id === row.suggested_category_id && (
+                        <span title="Sugerido por IA" className="text-[10px] bg-violet-100 text-violet-600 rounded px-1 font-medium shrink-0">✦ IA</span>
+                      )}
+                      <select
+                        value={row.shared_category_id != null ? `s:${row.shared_category_id}` : (row.category_id != null ? `c:${row.category_id}` : '')}
+                        onChange={e => {
+                          const raw = e.target.value
+                          if (raw === '') {
+                            setCsvRows(prev => prev.map((r, j) => j === i ? { ...r, category_id: null, shared_category_id: null } : r))
+                          } else if (raw.startsWith('s:')) {
+                            const val = Number(raw.slice(2))
+                            setCsvRows(prev => prev.map((r, j) => j === i ? { ...r, category_id: null, shared_category_id: val } : r))
+                          } else {
+                            const val = Number(raw.slice(2))
+                            if (sameDescCount > 1) {
+                              const apply = window.confirm(t.finances.csvApplyAllConfirm.replace('{n}', String(sameDescCount)).replace('{desc}', row.description))
+                              setCsvRows(prev => prev.map((r, j) => {
+                                if (j === i) return { ...r, category_id: val, shared_category_id: null }
+                                if (apply && r.description === row.description) return { ...r, category_id: val, shared_category_id: null }
+                                return r
+                              }))
+                            } else {
+                              setCsvRows(prev => prev.map((r, j) => j === i ? { ...r, category_id: val, shared_category_id: null } : r))
+                            }
+                          }
+                        }}
+                        className="text-xs border border-gray-200 rounded px-2 py-1 w-full"
+                      >
+                        <option value="">{t.finances.noCategory}</option>
+                        {catsForAmount(row.amount).length > 0 && (
+                          <optgroup label={t.finances.category}>
+                            {catsForAmount(row.amount).map(c => <option key={c.id} value={`c:${c.id}`}>{c.icon} {c.name}</option>)}
+                          </optgroup>
+                        )}
+                        {sharedCats.length > 0 && (
+                          <optgroup label={t.shared?.tagTransaction ?? 'Compartilhada'}>
+                            {sharedCats.map(c => <option key={c.id} value={`s:${c.id}`}>{c.icon} {c.name}</option>)}
+                          </optgroup>
+                        )}
+                      </select>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+            {/* Desktop: table */}
+            <div className="hidden sm:block overflow-x-auto max-h-96 overflow-y-auto">
             <table className="w-full text-sm">
               <thead className="bg-gray-50 text-gray-500 text-xs uppercase sticky top-0">
                 <tr>
@@ -1841,35 +1912,32 @@ export default function FinancesTransactionsPage() {
             <p className="text-xs text-gray-400 mb-4">{fmtDate(editSheetTx.date)} · <span className={editSheetTx.amount < 0 ? 'text-red-500' : 'text-green-500'}>{fmt(editSheetTx.amount, editSheetTx.currency)}</span></p>
             <p className="text-xs text-gray-500 mb-2">{t.finances.category}</p>
             <select
-              value={sheetCatId ?? ''}
-              onChange={e => setSheetCatId(e.target.value === '' ? null : Number(e.target.value))}
-              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm mb-3 bg-white"
+              value={sheetSharedCatId != null ? `s:${sheetSharedCatId}` : (sheetCatId != null ? `c:${sheetCatId}` : '')}
+              onChange={e => {
+                const raw = e.target.value
+                if (raw === '') { setSheetCatId(null); setSheetSharedCatId(null) }
+                else if (raw.startsWith('s:')) { setSheetSharedCatId(Number(raw.slice(2))); setSheetCatId(null) }
+                else { setSheetCatId(Number(raw.slice(2))); setSheetSharedCatId(null) }
+              }}
+              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm mb-4 bg-white"
             >
               <option value="">{t.finances.noCategory}</option>
               {incomeCategories.length > 0 && (
                 <optgroup label={t.finances.incomeLabel}>
-                  {incomeCategories.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
+                  {incomeCategories.map(c => <option key={c.id} value={`c:${c.id}`}>{c.icon} {c.name}</option>)}
                 </optgroup>
               )}
               {expenseCategories.length > 0 && (
                 <optgroup label={t.finances.expenses}>
-                  {expenseCategories.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
+                  {expenseCategories.map(c => <option key={c.id} value={`c:${c.id}`}>{c.icon} {c.name}</option>)}
+                </optgroup>
+              )}
+              {sharedCats.length > 0 && (
+                <optgroup label={t.shared?.tagTransaction ?? 'Compartilhada'}>
+                  {sharedCats.map(c => <option key={c.id} value={`s:${c.id}`}>{c.icon} {c.name}</option>)}
                 </optgroup>
               )}
             </select>
-            {sharedCats.length > 0 && (
-              <>
-                <p className="text-xs text-gray-500 mb-2">{t.shared?.tagTransaction ?? 'Categoria compartilhada'}</p>
-                <select
-                  value={sheetSharedCatId ?? ''}
-                  onChange={e => setSheetSharedCatId(e.target.value === '' ? null : Number(e.target.value))}
-                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm mb-4 bg-white"
-                >
-                  <option value="">{t.finances.noCategory}</option>
-                  {sharedCats.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
-                </select>
-              </>
-            )}
             <div className="flex gap-3">
               <button
                 onClick={() => setEditSheetTx(null)}

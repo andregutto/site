@@ -137,15 +137,18 @@ export default function DashboardPage() {
   const divTo = now.toISOString().split('T')[0]
   const { data: divSummary, loading: divLoading } = useDividendSummary(divFrom, divTo)
 
-  const { data: perfData, loading: chartLoading, refresh: refreshMonthly } = usePerformanceMonthly(inception ?? currentYM, currentYM)
+  const { refresh: refreshMonthly } = usePerformanceMonthly(inception ?? currentYM, currentYM)
 
-  const useDailyChart = periodMode === 'current_month' || periodMode === 'last_30d'
-  const dailyFrom = useDailyChart
-    ? periodMode === 'current_month'
-      ? `${currentYM}-01`
-      : localDate(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 29))
-    : null
-  const dailyTo = useDailyChart ? localDate(now) : null
+  const dailyFrom = (() => {
+    switch (periodMode) {
+      case 'current_month': return `${currentYM}-01`
+      case 'last_30d': return localDate(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 29))
+      case 'last_12m': { const d = new Date(); d.setFullYear(d.getFullYear() - 1); return localDate(d) }
+      case 'ytd':      return `${currentYear}-01-01`
+      case 'inception': return inception ? `${inception}-01` : `${currentYear}-01-01`
+    }
+  })()
+  const dailyTo = localDate(now)
   const { data: dailyData, loading: dailyLoading, refresh: refreshDaily } = usePerformanceDaily(dailyFrom, dailyTo)
 
   // Keep refs to the latest refresh functions so the async sync callback can call them
@@ -189,23 +192,11 @@ export default function DashboardPage() {
     return v > 0 ? v : null
   }
 
-  const rawFiltered = (perfData?.monthly ?? []).filter(m => m.total > 0 && m.month >= perfFrom)
-  const portfolioChartData = useDailyChart
-    ? (dailyData?.daily ?? []).filter(d => d.total > 0).map(d => ({
-        month: fmtDayLabel(d.date),
-        value: convert(d.total),
-        target: targetAtDate(d.date),
-      }))
-    : (rawFiltered.length >= 2 ? rawFiltered : (perfData?.monthly ?? []).filter(m => m.total > 0))
-        .map(m => {
-          const [y, mo] = m.month.split('-').map(Number)
-          const lastDay = new Date(y, mo, 0).getDate()
-          return {
-            month: fmtMonthLabel(m.month),
-            value: convert(m.total),
-            target: targetAtDate(`${m.month}-${String(lastDay).padStart(2, '0')}`),
-          }
-        })
+  const portfolioChartData = (dailyData?.daily ?? []).filter(d => d.total > 0).map(d => ({
+    month: fmtDayLabel(d.date),
+    value: convert(d.total),
+    target: targetAtDate(d.date),
+  }))
 
   function handleAssetClick(asset: PortfolioAsset) {
     if (asset.needs_manual && asset.source === 'fixed_income') {
@@ -316,7 +307,7 @@ export default function DashboardPage() {
               gain_brl={gainLossBrl}
               gain_pct={gainLossPct}
               period_abs={hasInvested ? periodReturnAbs : null}
-              chartLoading={chartLoading || dailyLoading || periodLoading}
+              chartLoading={dailyLoading || periodLoading}
               period_pct={hasInvested ? periodReturnPct : null}
               period_label={periodLabel}
             />
@@ -334,8 +325,8 @@ export default function DashboardPage() {
           .filter(a => !a.needs_manual && a.source !== 'manual' && a.value_brl > 0 && dashReturns?.[a.id] != null)
           .map(a => ({ ...a, ret: dashReturns![a.id]! }))
           .sort((a, b) => b.ret - a.ret)
-        const gainers = movingAssets.filter(a => a.ret > 0).slice(0, 3)
-        const losers  = [...movingAssets].reverse().filter(a => a.ret < 0).slice(0, 3)
+        const gainers = movingAssets.filter(a => a.ret > 0).slice(0, 5)
+        const losers  = [...movingAssets].reverse().filter(a => a.ret < 0).slice(0, 5)
         if (!dashReturnsLoading && gainers.length === 0 && losers.length === 0) return null
         return (
           <div className="rounded-2xl p-5" style={{ background: 'white', border: '1px solid var(--arvo-border)' }}>
@@ -401,7 +392,7 @@ export default function DashboardPage() {
       })()}
 
       {/* Row 2: Evolution chart — full width */}
-      {(chartLoading || portfolioChartData.length > 0) && (
+      {(dailyLoading || portfolioChartData.length > 0) && (
         <div className="rounded-2xl p-5" style={{ background: 'white', border: '1px solid var(--arvo-border)' }}>
           <div className="flex items-center justify-between mb-3">
             <h2 style={{ fontFamily: "var(--arvo-font-body)", fontSize: 13, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--arvo-fg)' }}>{t.dashboard.portfolioEvolution}</h2>
@@ -417,7 +408,7 @@ export default function DashboardPage() {
             )}
           </div>
           <div className="h-52">
-          {chartLoading ? (
+          {dailyLoading ? (
             <div className="h-full flex items-end gap-1 px-2 pb-1">
               {[40, 55, 48, 62, 58, 70, 65, 80, 75, 88, 82, 95].map((h, i) => (
                 <div key={i} className="flex-1 bg-gray-100 rounded-t animate-pulse" style={{ height: `${h}%` }} />

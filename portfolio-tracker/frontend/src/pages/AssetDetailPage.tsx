@@ -1018,6 +1018,9 @@ export default function AssetDetailPage() {
                     return String(v)
                   }}
                   width={50}
+                  domain={data.invested_brl > 0
+                    ? [(dMin: number) => Math.min(dMin, convert(data.invested_brl)) * 0.97, (dMax: number) => Math.max(dMax, convert(data.invested_brl)) * 1.03]
+                    : ['auto', 'auto']}
                 />
                 <Tooltip
                   formatter={(v) => [
