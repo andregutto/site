@@ -1300,8 +1300,8 @@
     "f5title": "Talk to your portfolio",
     "f5desc": "Ask in natural language: \"How much did I invest in fixed income this year?\" or \"What was my biggest expense in October?\"",
     "f6label": "Couple & Family",
-    "f6title": "Fund together what you build together",
-    "f6desc": "Create shared categories, split the budget by income proportion, and track everything in real time — without mixing personal accounts.",
+    "f6title": "Shared expenses, separate accounts",
+    "f6desc": "Create expense groups with your partner, family or friends. Set goals per category, split proportionally, and see who spent what — without mixing personal finances.",
     "f5mockQ": "What dragged my portfolio down in May?",
     "f5mockA": "In May, BTC fell 8.2% and represented 12% of the portfolio — impact: −R$ 2,340. BOVA11 offset with +R$ 1,890.",
     "mkInvested": "Invested",
@@ -1429,7 +1429,8 @@
     "pickCategoryHint": "Pick a category from planning to use as a base. You can still adjust name, icon and goal.",
     "save": "Save",
     "loginToAccept": "You'll need to create an account or log in to accept the invite.",
-    "accountDeleted": "Account deleted"
+    "accountDeleted": "Account deleted",
+    "monthSpent": "Spent"
   },
   "frTax": {
     "loading": "Loading tax data…",

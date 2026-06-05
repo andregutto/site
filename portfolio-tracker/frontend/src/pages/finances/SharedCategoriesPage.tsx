@@ -23,6 +23,7 @@ interface SharedCategory {
   icon: string
   color: string
   total_goal: number
+  total_spent: number
   currency: string
   my_share_pct: number
   my_goal: number
@@ -39,9 +40,11 @@ interface DetailMember {
   user_id: string
   display: MemberDisplay
   share_pct: number
+  share_mode: 'salary_based' | 'manual'
   goal: number
   spent: number
   is_me: boolean
+  monthly_income: number | null
 }
 interface DetailTxn {
   id: number
@@ -534,6 +537,8 @@ function SharedCategoryCard({ cat, group, s, active, onClick, onEdit }: {
 }) {
   const memberAvatars = group.members.filter(m => m.status === 'active' && m.user_id)
   const myPct = cat.my_share_pct
+  const spentPct = cat.total_goal > 0 ? Math.min(100, Math.round(cat.total_spent / cat.total_goal * 100)) : 0
+  const over = cat.total_spent > cat.total_goal && cat.total_goal > 0
 
   return (
     <div
@@ -568,14 +573,20 @@ function SharedCategoryCard({ cat, group, s, active, onClick, onEdit }: {
           </button>
         </div>
       </div>
-      <div className="flex justify-between text-[10px] mb-1.5" style={{ color: 'var(--arvo-fg-soft)' }}>
-        <span>{s.yourGoal}: <strong style={{ color: 'var(--arvo-black)' }}>{fmt(cat.my_goal, cat.currency)}</strong> ({myPct}%)</span>
-        <span>{s.totalGoal}: <strong style={{ color: 'var(--arvo-black)' }}>{fmt(cat.total_goal, cat.currency)}</strong></span>
+
+      {/* Spent vs goal bar */}
+      <div className="flex justify-between text-[10px] mb-1" style={{ color: 'var(--arvo-fg-soft)' }}>
+        <span>{s.monthSpent ?? 'Gasto'}: <strong style={{ color: over ? 'var(--arvo-red)' : 'var(--arvo-black)' }}>{fmt(cat.total_spent, cat.currency)}</strong></span>
+        <span style={{ color: 'var(--arvo-fg-soft)' }}>{fmt(cat.total_goal, cat.currency)}</span>
       </div>
-      <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(13,13,13,0.08)' }}>
-        <div className="h-full rounded-full" style={{ width: `${myPct}%`, background: cat.color }} />
+      <div className="h-2 rounded-full overflow-hidden mb-1.5" style={{ background: 'rgba(13,13,13,0.08)' }}>
+        <div className="h-full rounded-full transition-all" style={{ width: `${spentPct}%`, background: over ? 'var(--arvo-red)' : cat.color }} />
       </div>
-      <p className="text-[10px] mt-1" style={{ color: 'var(--arvo-fg-soft)' }}>{s.shareGoal}: {myPct}% {s.ofTotal}</p>
+
+      {/* Share info */}
+      <p className="text-[10px]" style={{ color: 'var(--arvo-fg-soft)' }}>
+        {s.yourGoal}: <strong style={{ color: 'var(--arvo-black)' }}>{fmt(cat.my_goal, cat.currency)}</strong> · {myPct}% {s.ofTotal}
+      </p>
     </div>
   )
 }
@@ -615,13 +626,23 @@ function CategoryDetailPanel({ loading, detail, s, onClose }: {
               return (
                 <div key={m.member_id}>
                   <div className="flex items-center justify-between mb-1">
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5 min-w-0">
                       <Avatar display={m.display} size={20} />
-                      <span className="text-xs" style={{ color: 'var(--arvo-black)', fontWeight: m.is_me ? 600 : 400 }}>
-                        {m.is_me ? 'Você' : m.display.name}
-                      </span>
+                      <div className="min-w-0">
+                        <span className="text-xs block" style={{ color: 'var(--arvo-black)', fontWeight: m.is_me ? 600 : 400 }}>
+                          {m.is_me ? 'Você' : m.display.name}
+                          {m.share_mode === 'salary_based' && (
+                            <span className="ml-1 text-[9px] px-1 py-0.5 rounded" style={{ background: 'rgba(31,138,91,0.10)', color: 'var(--arvo-green)' }}>renda</span>
+                          )}
+                        </span>
+                        {m.monthly_income != null && (
+                          <span className="text-[9px]" style={{ color: 'var(--arvo-fg-soft)' }}>
+                            {fmt(m.monthly_income, detail.category.currency)}/mês · {m.share_pct}%
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    <span className="text-xs" style={{ color: over ? 'var(--arvo-red)' : 'var(--arvo-fg-soft)' }}>
+                    <span className="text-xs shrink-0 ml-2" style={{ color: over ? 'var(--arvo-red)' : 'var(--arvo-fg-soft)' }}>
                       {fmt(m.spent, detail.category.currency)} / {fmt(m.goal, detail.category.currency)}
                     </span>
                   </div>

@@ -59,14 +59,33 @@ router.get('/groups', requireAuth, async (req, res: Response) => {
     .in('group_id', groupIds)
   const allCatIds = (allSharedCats ?? []).map(c => c.id)
 
-  const { data: userEnvSettings } = allCatIds.length > 0
-    ? await supabaseAdmin
-        .from('shared_category_user_settings')
-        .select('shared_category_id, local_envelope_id')
-        .eq('user_id', userId)
-        .in('shared_category_id', allCatIds)
-    : { data: [] }
-  const envMap = new Map((userEnvSettings ?? []).map(s => [s.shared_category_id, s.local_envelope_id]))
+  const now = new Date()
+  const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`
+
+  const [envResult, txnResult] = await Promise.all([
+    allCatIds.length > 0
+      ? supabaseAdmin
+          .from('shared_category_user_settings')
+          .select('shared_category_id, local_envelope_id')
+          .eq('user_id', userId)
+          .in('shared_category_id', allCatIds)
+      : Promise.resolve({ data: [] }),
+    allCatIds.length > 0
+      ? supabaseAdmin
+          .from('finance_transactions')
+          .select('shared_category_id, amount')
+          .in('shared_category_id', allCatIds)
+          .gte('date', monthStart)
+      : Promise.resolve({ data: [] }),
+  ])
+
+  const envMap = new Map((envResult.data ?? []).map((s: { shared_category_id: number; local_envelope_id: number }) => [s.shared_category_id, s.local_envelope_id]))
+
+  const spentMap = new Map<number, number>()
+  for (const t of (txnResult.data ?? []) as Array<{ shared_category_id: number | null; amount: number }>) {
+    if (t.shared_category_id == null) continue
+    spentMap.set(t.shared_category_id, (spentMap.get(t.shared_category_id) ?? 0) + Math.abs(Number(t.amount)))
+  }
 
   // Enrich with members and categories
   const result = await Promise.all((groups ?? []).map(async g => {
@@ -91,6 +110,7 @@ router.get('/groups', requireAuth, async (req, res: Response) => {
     const categoriesWithEnv = (categories ?? []).map(c => ({
       ...c,
       local_envelope_id: envMap.get(c.id) ?? null,
+      total_spent: Math.round((spentMap.get(c.id) ?? 0) * 100) / 100,
     }))
 
     return { ...g, members: enrichedMembers, categories: categoriesWithEnv }
@@ -571,14 +591,21 @@ router.get('/categories/:id/detail', requireAuth, async (req, res: Response) => 
     const myTxns = (txns ?? []).filter(t => t.user_id === m.user_id)
     const spent = myTxns.reduce((s, t) => s + Math.abs(Number(t.amount)), 0)
     const goal = Math.round(Number(cat.total_goal) * Number(m.share_pct) / 100 * 100) / 100
+    let monthly_income: number | null = null
+    if (m.salary_authorized) {
+      const { data: inc } = await supabaseAdmin.from('finance_income').select('monthly_net').eq('user_id', m.user_id).single()
+      if (inc) monthly_income = Number(inc.monthly_net)
+    }
     return {
       member_id: m.id,
       user_id: m.user_id,
       display,
       share_pct: m.share_pct,
+      share_mode: m.share_mode,
       goal,
       spent,
       is_me: m.user_id === userId,
+      monthly_income,
     }
   }))
 

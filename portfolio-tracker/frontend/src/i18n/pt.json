@@ -1300,8 +1300,8 @@
     "f5title": "Converse com seu portfólio",
     "f5desc": "Pergunte em linguagem natural: \"Quanto investi em renda fixa este ano?\" ou \"Qual meu maior gasto em outubro?\"",
     "f6label": "Casal & Família",
-    "f6title": "Financiem juntos o que constroem juntos",
-    "f6desc": "Crie categorias compartilhadas, divida o orçamento por proporção de renda e acompanhe tudo em tempo real — sem misturar as contas pessoais.",
+    "f6title": "Gastos compartilhados, contas separadas",
+    "f6desc": "Crie grupos de despesas com parceiro, família ou amigos. Defina metas por categoria, divida proporcionalmente e veja quem gastou o quê — sem misturar as finanças pessoais.",
     "f5mockQ": "O que puxou meu portfólio pra baixo em maio?",
     "f5mockA": "Em maio, BTC caiu 8,2% e representou 12% do portfólio — impacto de −R$ 2.340. BOVA11 compensou com +R$ 1.890.",
     "mkInvested": "Aplicado",
@@ -1429,7 +1429,8 @@
     "pickCategoryHint": "Escolha uma categoria do planejamento para usar como base. Você poderá ajustar nome, ícone e meta.",
     "save": "Salvar",
     "loginToAccept": "Você precisará criar uma conta ou fazer login para aceitar o convite.",
-    "accountDeleted": "Conta excluída"
+    "accountDeleted": "Conta excluída",
+    "monthSpent": "Gasto"
   },
   "frTax": {
     "loading": "Carregando dados fiscais…",

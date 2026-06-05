@@ -102,8 +102,15 @@ export async function getDailyHistory(asset: Asset, days = 365): Promise<PricePo
   if (asset.ticker_brapi) {
     try {
       const pts = await brapi.getDailyHistory(asset.ticker_brapi, days)
-      return pts.map(p => ({ ...p, currency: 'BRL' }))
+      if (pts.length > 0) return pts.map(p => ({ ...p, currency: 'BRL' }))
     } catch { /* fallthrough */ }
+    // brapi empty or failed — try Yahoo Finance with .SA suffix as fallback
+    if (!asset.ticker_yahoo) {
+      try {
+        const pts = await yahoo.getDailyHistory(`${asset.ticker_brapi}.SA`, days)
+        if (pts.length > 0) return pts.map(p => ({ ...p, currency: 'BRL' }))
+      } catch { /* fallthrough */ }
+    }
   }
 
   if (asset.coingecko_id) {
@@ -132,9 +139,14 @@ export async function getMonthlyHistory(asset: Asset, months = 24): Promise<Pric
   if (asset.ticker_brapi) {
     try {
       const pts = await brapi.getMonthlyHistory(asset.ticker_brapi, months)
-      return pts.map((p) => ({ ...p, currency: 'BRL' }))
-    } catch {
-      // fallthrough
+      if (pts.length > 0) return pts.map((p) => ({ ...p, currency: 'BRL' }))
+    } catch { /* fallthrough */ }
+    // brapi empty or failed — try Yahoo Finance with .SA suffix as fallback
+    if (!asset.ticker_yahoo) {
+      try {
+        const pts = await yahoo.getMonthlyHistory(`${asset.ticker_brapi}.SA`, months)
+        if (pts.length > 0) return pts.map((p) => ({ ...p, currency: 'BRL' }))
+      } catch { /* fallthrough */ }
     }
   }
 

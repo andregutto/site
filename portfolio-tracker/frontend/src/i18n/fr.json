@@ -1300,8 +1300,8 @@
     "f5title": "Dialoguez avec votre portefeuille",
     "f5desc": "Posez des questions en langage naturel : «Combien ai-je investi en revenus fixes cette année ?» ou «Quelle était ma plus grande dépense en octobre ?»",
     "f6label": "Couple & Famille",
-    "f6title": "Financez ensemble ce que vous construisez",
-    "f6desc": "Créez des catégories partagées, divisez le budget selon les revenus et suivez tout en temps réel — sans mélanger les comptes personnels.",
+    "f6title": "Dépenses partagées, comptes séparés",
+    "f6desc": "Créez des groupes de dépenses avec votre partenaire, famille ou amis. Définissez des objectifs par catégorie, répartissez proportionnellement et voyez qui a dépensé quoi — sans mélanger les finances personnelles.",
     "f5mockQ": "Qu'est-ce qui a tiré mon portefeuille vers le bas en mai ?",
     "f5mockA": "En mai, le BTC a chuté de 8,2 % et représentait 12 % du portefeuille — impact : −R$ 2 340. BOVA11 a compensé avec +R$ 1 890.",
     "mkInvested": "Investi",
@@ -1429,7 +1429,8 @@
     "pickCategoryHint": "Choisissez une catégorie du planning comme base. Vous pourrez ajuster le nom, l'icône et l'objectif.",
     "save": "Enregistrer",
     "loginToAccept": "Vous devrez créer un compte ou vous connecter pour accepter l'invitation.",
-    "accountDeleted": "Compte supprimé"
+    "accountDeleted": "Compte supprimé",
+    "monthSpent": "Dépensé"
   },
   "frTax": {
     "loading": "Chargement des données fiscales…",
