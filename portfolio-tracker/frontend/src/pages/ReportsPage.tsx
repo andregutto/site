@@ -73,6 +73,12 @@ export default function ReportsPage() {
   const [year, setYear] = useState(CURRENT_YEAR - 1)
   const [tab, setTab]   = useState<'br' | 'fr'>('br')
 
+  useEffect(() => {
+    apiFetch<{ country?: string }>('/profile')
+      .then(p => { if (p.country?.toLowerCase().includes('fr')) setTab('fr') })
+      .catch(() => {})
+  }, [])
+
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="flex items-center justify-between gap-4 flex-wrap">
@@ -87,7 +93,11 @@ export default function ReportsPage() {
           </select>
           <div className="flex rounded-lg border border-gray-200 overflow-hidden text-sm">
             <button onClick={() => setTab('br')} className={`px-4 py-1.5 font-medium transition-colors ${tab === 'br' ? 'bg-[#0D0D0D] text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}>Brasil</button>
-            <button onClick={() => setTab('fr')} className={`px-4 py-1.5 font-medium transition-colors ${tab === 'fr' ? 'bg-[#0D0D0D] text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}>França</button>
+            <button onClick={() => setTab('fr')} className={`px-4 py-1.5 font-medium transition-colors border-l border-gray-200 ${tab === 'fr' ? 'bg-[#0D0D0D] text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}>França</button>
+            <div className="flex items-center gap-1.5 px-3 py-1.5 border-l border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed select-none" title="Em breve">
+              <span className="font-medium">Portugal</span>
+              <span className="text-[10px] bg-gray-200 text-gray-500 px-1.5 py-0.5 rounded-full leading-none">Em breve</span>
+            </div>
           </div>
         </div>
       </div>

@@ -447,9 +447,9 @@ function MomentosMockupContent({ l }: { l: Record<string, string> }) {
   const FS = "'DM Sans', system-ui, sans-serif"
   const FD = "'Tenor Sans', serif"
   const goals = [
-    { icon: '✈︎', nameKey: 'mkGoal1', target: 'R$ 8.000',  pct: 78, color: '#A36A52' },
-    { icon: '⌂',  nameKey: 'mkGoal2', target: 'R$ 15.000', pct: 30, color: '#1B4FD8' },
-    { icon: '◈',  nameKey: 'mkGoal3', target: 'R$ 12.000', pct: 82, color: '#1F8A5B' },
+    { icon: '✈︎', nameKey: 'mkGoal1', target: '€ 3.000',   pct: 78, color: '#1B4FD8' },
+    { icon: '⌂',  nameKey: 'mkGoal2', target: 'R$ 15.000', pct: 35, color: '#E8A020' },
+    { icon: '✦',  nameKey: 'mkGoal3', target: 'R$ 1.200',  pct: 60, color: '#D63B2F' },
   ]
   return (
     <div style={{ width: '100%', height: '100%', background: '#F4F4F4', fontFamily: FS, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -879,25 +879,25 @@ export default function LandingPage() {
       </div>
 
       {/* ── FUNCIONALIDADES ── */}
-      <section id="funcionalidades" style={{ padding: 'clamp(64px, 8vw, 100px) 24px', maxWidth: 1200, margin: '0 auto' }}>
-        <div className="arvo-reveal" style={{ marginBottom: 56 }}>
+      <section id="funcionalidades" style={{ padding: 'clamp(44px, 6vw, 68px) 24px', maxWidth: 1200, margin: '0 auto' }}>
+        <div className="arvo-reveal" style={{ marginBottom: 36 }}>
           <p style={{ fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.22em', textTransform: 'uppercase', color: T_SECONDARY, marginBottom: 16 }}>{l.featEyebrow}</p>
           <h2 style={{ fontFamily: F_DISPLAY, fontSize: 'clamp(1.9rem, 3.5vw, 2.7rem)', fontWeight: 400, lineHeight: 1.12, color: DARK, letterSpacing: '-0.3px', maxWidth: 560 }}>
             {l.featH2}
           </h2>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(64px, 10vw, 96px)' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(40px, 6vw, 60px)' }}>
 
           {/* ── f1: Portfólio — text left, card right ── */}
           <div className="arvo-reveal flex flex-col lg:flex-row items-center" style={{ gap: 'clamp(32px, 6vw, 72px)' }}>
             <div style={{ flex: 1, maxWidth: 460 }}>
-              <p style={{ fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#1F8A5B', marginBottom: 12 }}>{l.f1label}</p>
+              <p style={{ fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#1B4FD8', marginBottom: 12 }}>{l.f1label}</p>
               <h3 style={{ fontFamily: F_DISPLAY, fontSize: 'clamp(1.4rem, 2.4vw, 1.9rem)', fontWeight: 400, color: DARK, lineHeight: 1.2, marginBottom: 14 }}>{l.f1title}</h3>
               <p style={{ fontFamily: F_SANS, fontSize: 15, color: T_BODY, lineHeight: 1.85 }}>{l.f1desc}</p>
             </div>
             <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
-              <div style={{ width: 320, height: 370, borderRadius: 20, overflow: 'hidden', boxShadow: '0 16px 56px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.05)', border: '1px solid rgba(13,13,13,0.08)', flexShrink: 0 }}>
+              <div style={{ width: 320, height: 370, borderRadius: 20, overflow: 'hidden', boxShadow: '0 16px 56px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.05)', border: '1px solid rgba(13,13,13,0.08)', borderTop: '3px solid #1B4FD8', flexShrink: 0 }}>
                 <PortfolioPhoneMockupContent l={l} />
               </div>
             </div>
@@ -906,12 +906,12 @@ export default function LandingPage() {
           {/* ── f2: Multimoeda — card left, text right ── */}
           <div className="arvo-reveal flex flex-col lg:flex-row-reverse items-center" style={{ gap: 'clamp(32px, 6vw, 72px)' }}>
             <div style={{ flex: 1, maxWidth: 460 }}>
-              <p style={{ fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#1B4FD8', marginBottom: 12 }}>{l.f2label}</p>
+              <p style={{ fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#E8A020', marginBottom: 12 }}>{l.f2label}</p>
               <h3 style={{ fontFamily: F_DISPLAY, fontSize: 'clamp(1.4rem, 2.4vw, 1.9rem)', fontWeight: 400, color: DARK, lineHeight: 1.2, marginBottom: 14 }}>{l.f2title}</h3>
               <p style={{ fontFamily: F_SANS, fontSize: 15, color: T_BODY, lineHeight: 1.85 }}>{l.f2desc}</p>
             </div>
             <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
-              <div style={{ width: 320, height: 380, borderRadius: 20, overflow: 'hidden', boxShadow: '0 16px 56px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.05)', border: '1px solid rgba(13,13,13,0.08)', flexShrink: 0 }}>
+              <div style={{ width: 320, height: 380, borderRadius: 20, overflow: 'hidden', boxShadow: '0 16px 56px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.05)', border: '1px solid rgba(13,13,13,0.08)', borderTop: '3px solid #E8A020', flexShrink: 0 }}>
                 <MultimoedaMockupContent l={l} />
               </div>
             </div>
@@ -920,12 +920,12 @@ export default function LandingPage() {
           {/* ── f3: Momentos — text left, card right ── */}
           <div className="arvo-reveal flex flex-col lg:flex-row items-center" style={{ gap: 'clamp(32px, 6vw, 72px)' }}>
             <div style={{ flex: 1, maxWidth: 460 }}>
-              <p style={{ fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#A36A52', marginBottom: 12 }}>{l.f3label}</p>
+              <p style={{ fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#D63B2F', marginBottom: 12 }}>{l.f3label}</p>
               <h3 style={{ fontFamily: F_DISPLAY, fontSize: 'clamp(1.4rem, 2.4vw, 1.9rem)', fontWeight: 400, color: DARK, lineHeight: 1.2, marginBottom: 14 }}>{l.f3title}</h3>
               <p style={{ fontFamily: F_SANS, fontSize: 15, color: T_BODY, lineHeight: 1.85 }}>{l.f3desc}</p>
             </div>
             <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
-              <div style={{ width: 320, height: 390, borderRadius: 20, overflow: 'hidden', boxShadow: '0 16px 56px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.05)', border: '1px solid rgba(13,13,13,0.08)', flexShrink: 0 }}>
+              <div style={{ width: 320, height: 390, borderRadius: 20, overflow: 'hidden', boxShadow: '0 16px 56px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.05)', border: '1px solid rgba(13,13,13,0.08)', borderTop: '3px solid #D63B2F', flexShrink: 0 }}>
                 <MomentosMockupContent l={l} />
               </div>
             </div>
@@ -934,12 +934,12 @@ export default function LandingPage() {
           {/* ── f4: Liberdade Financeira — card left, text right ── */}
           <div className="arvo-reveal flex flex-col lg:flex-row-reverse items-center" style={{ gap: 'clamp(32px, 6vw, 72px)' }}>
             <div style={{ flex: 1, maxWidth: 460 }}>
-              <p style={{ fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#E8A020', marginBottom: 12 }}>{l.f4label}</p>
+              <p style={{ fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#1B4FD8', marginBottom: 12 }}>{l.f4label}</p>
               <h3 style={{ fontFamily: F_DISPLAY, fontSize: 'clamp(1.4rem, 2.4vw, 1.9rem)', fontWeight: 400, color: DARK, lineHeight: 1.2, marginBottom: 14 }}>{l.f4title}</h3>
               <p style={{ fontFamily: F_SANS, fontSize: 15, color: T_BODY, lineHeight: 1.85 }}>{l.f4desc}</p>
             </div>
             <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
-              <div style={{ width: 320, height: 400, borderRadius: 20, overflow: 'hidden', boxShadow: '0 16px 56px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.05)', border: '1px solid rgba(13,13,13,0.08)', flexShrink: 0 }}>
+              <div style={{ width: 320, height: 400, borderRadius: 20, overflow: 'hidden', boxShadow: '0 16px 56px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.05)', border: '1px solid rgba(13,13,13,0.08)', borderTop: '3px solid #1B4FD8', flexShrink: 0 }}>
                 <FreedomMockupContent l={l} showStatusBar={false} />
               </div>
             </div>
@@ -948,7 +948,7 @@ export default function LandingPage() {
           {/* ── f5: IA Assistente — text left, AI mockup right (no frame) ── */}
           <div className="arvo-reveal flex flex-col lg:flex-row items-center" style={{ gap: 'clamp(32px, 6vw, 72px)' }}>
             <div style={{ flex: 1, maxWidth: 460 }}>
-              <p style={{ fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#1B4FD8', marginBottom: 12 }}>{l.f5label}</p>
+              <p style={{ fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#E8A020', marginBottom: 12 }}>{l.f5label}</p>
               <h3 style={{ fontFamily: F_DISPLAY, fontSize: 'clamp(1.4rem, 2.4vw, 1.9rem)', fontWeight: 400, color: DARK, lineHeight: 1.2, marginBottom: 14 }}>{l.f5title}</h3>
               <p style={{ fontFamily: F_SANS, fontSize: 15, color: T_BODY, lineHeight: 1.85 }}>{l.f5desc}</p>
             </div>
@@ -990,12 +990,12 @@ export default function LandingPage() {
           {/* ── f6: Casal & Família — card left, text right ── */}
           <div className="arvo-reveal flex flex-col lg:flex-row-reverse items-center" style={{ gap: 'clamp(32px, 6vw, 72px)' }}>
             <div style={{ flex: 1, maxWidth: 460 }}>
-              <p style={{ fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#1B4FD8', marginBottom: 12 }}>{l.f6label}</p>
+              <p style={{ fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#D63B2F', marginBottom: 12 }}>{l.f6label}</p>
               <h3 style={{ fontFamily: F_DISPLAY, fontSize: 'clamp(1.4rem, 2.4vw, 1.9rem)', fontWeight: 400, color: DARK, lineHeight: 1.2, marginBottom: 14 }}>{l.f6title}</h3>
               <p style={{ fontFamily: F_SANS, fontSize: 15, color: T_BODY, lineHeight: 1.85 }}>{l.f6desc}</p>
             </div>
             <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
-              <div style={{ width: 320, height: 390, borderRadius: 20, overflow: 'hidden', boxShadow: '0 16px 56px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.05)', border: '1px solid rgba(13,13,13,0.08)', flexShrink: 0 }}>
+              <div style={{ width: 320, height: 390, borderRadius: 20, overflow: 'hidden', boxShadow: '0 16px 56px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.05)', border: '1px solid rgba(13,13,13,0.08)', borderTop: '3px solid #D63B2F', flexShrink: 0 }}>
                 <CasalMockupContent l={l} />
               </div>
             </div>

@@ -12,6 +12,7 @@ interface Moment {
   color: string
   start_date: string | null
   end_date: string | null
+  budget: number | null
   cover_image_url: string | null
   cover_image_position: string | null
   share_token: string | null
@@ -67,6 +68,7 @@ function MomentForm({ initial, onSave, onCancel, saving, userId }: FormProps) {
   const [color,        setColor]        = useState(initial?.color ?? '#7C3AED')
   const [startDate,    setStartDate]    = useState(initial?.start_date ?? '')
   const [endDate,      setEndDate]      = useState(initial?.end_date ?? '')
+  const [budget,       setBudget]       = useState(initial?.budget != null ? String(initial.budget) : '')
   const [photoPreview, setPhotoPreview] = useState<string | null>(initial?.cover_image_url ?? null)
   const [photoFile,    setPhotoFile]    = useState<File | null>(null)
   const [uploading,    setUploading]    = useState(false)
@@ -149,6 +151,7 @@ function MomentForm({ initial, onSave, onCancel, saving, userId }: FormProps) {
     await onSave({
       name, description: description || null, icon, color,
       start_date: startDate || null, end_date: endDate || null,
+      budget: budget !== '' ? Number(budget) : null,
       cover_image_url: coverImageUrl,
       cover_image_position: `${photoPos.x.toFixed(1)}% ${photoPos.y.toFixed(1)}%`,
     })
@@ -266,6 +269,19 @@ function MomentForm({ initial, onSave, onCancel, saving, userId }: FormProps) {
         <div>
           <label className={labelCls}>Fim (opcional)</label>
           <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className={fieldCls} />
+        </div>
+
+        <div className="col-span-2">
+          <label className={labelCls}>{t.finances.momentBudget} (opcional)</label>
+          <input
+            type="number"
+            min="0"
+            step="0.01"
+            value={budget}
+            onChange={e => setBudget(e.target.value)}
+            className={fieldCls}
+            placeholder="0,00"
+          />
         </div>
       </div>
 
@@ -531,6 +547,7 @@ export default function FinancesMomentsPage() {
   const [pickerMoments, setPickerMoments] = useState<MomentPickerRow[]>([])
   const [assignTarget,  setAssignTarget]  = useState<{ txId: number; currentMomentId: number | null } | null>(null)
   const [sharingMoment, setSharingMoment] = useState<Moment | null>(null)
+  const [spentByMoment, setSpentByMoment] = useState<Record<number, number>>({})
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -553,6 +570,7 @@ export default function FinancesMomentsPage() {
     try {
       const d = await apiFetch<MomentDetail>(`/finances/moments/${id}`)
       setDetail(d)
+      setSpentByMoment(prev => ({ ...prev, [id]: d.summary.total }))
     } finally {
       setDetailLoading(false)
     }
@@ -714,6 +732,29 @@ export default function FinancesMomentsPage() {
               </div>
             </div>
 
+            {/* Budget bar (collapsed preview — only once detail has been loaded once) */}
+            {m.budget != null && spentByMoment[m.id] != null && expanded !== m.id && (
+              <div className="px-5 pb-3">
+                {(() => {
+                  const spent = spentByMoment[m.id]
+                  const pct = Math.min(100, (spent / m.budget!) * 100)
+                  const over = spent > m.budget!
+                  const currency = 'EUR'
+                  return (
+                    <>
+                      <div className="flex justify-between text-xs mb-1" style={{ color: over ? '#D63B2F' : 'rgba(13,13,13,0.55)' }}>
+                        <span>{fmt(spent, currency)}</span>
+                        <span>{t.finances.momentBudgetOf} {fmt(m.budget!, currency)}{over ? ` · ${t.finances.momentBudgetOver}` : ''}</span>
+                      </div>
+                      <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                        <div className="h-full rounded-full transition-all" style={{ width: `${pct.toFixed(1)}%`, backgroundColor: over ? '#D63B2F' : m.color }} />
+                      </div>
+                    </>
+                  )
+                })()}
+              </div>
+            )}
+
             {/* Expanded detail */}
             {expanded === m.id && (
               <div className="border-t border-gray-100 px-5 py-4 space-y-4">
@@ -733,6 +774,25 @@ export default function FinancesMomentsPage() {
                         <p className="text-xl font-bold text-gray-700">{detail.transactions.filter(tx => tx.amount < 0).length}</p>
                       </div>
                     </div>
+
+                    {/* Budget progress (expanded) */}
+                    {m.budget != null && (() => {
+                      const spent = detail.summary.total
+                      const pct = Math.min(100, (spent / m.budget!) * 100)
+                      const over = spent > m.budget!
+                      const currency = detail.transactions[0]?.currency ?? 'EUR'
+                      return (
+                        <div>
+                          <div className="flex justify-between text-xs mb-1.5" style={{ color: over ? '#D63B2F' : 'rgba(13,13,13,0.55)' }}>
+                            <span className="font-medium">{t.finances.momentBudget}</span>
+                            <span>{fmt(spent, currency)} {t.finances.momentBudgetOf} {fmt(m.budget!, currency)}{over ? ` · ${t.finances.momentBudgetOver}` : ` · ${pct.toFixed(0)}%`}</span>
+                          </div>
+                          <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                            <div className="h-full rounded-full transition-all" style={{ width: `${pct.toFixed(1)}%`, backgroundColor: over ? '#D63B2F' : m.color }} />
+                          </div>
+                        </div>
+                      )
+                    })()}
 
                     {/* Category breakdown */}
                     {detail.summary.by_category.length > 0 && (
