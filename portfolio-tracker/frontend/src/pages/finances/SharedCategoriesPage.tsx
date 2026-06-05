@@ -500,14 +500,15 @@ function GroupPanel({ group, userId, s, onEditGroup, onInvite, onResendInvite, o
               const spent = memberTotals[m.user_id!] ?? 0
               const myMemberPct = m.share_pct
               return (
-                <div key={m.id} className="rounded-xl p-3" style={{ background: isMe ? 'var(--arvo-black)' : 'white', border: isMe ? 'none' : '1px solid var(--arvo-border-soft)' }}>
-                  <p className="text-[10px] uppercase tracking-widest mb-1 truncate" style={{ color: isMe ? 'rgba(200,184,154,0.7)' : 'var(--arvo-fg-soft)', fontFamily: 'var(--arvo-font-body)' }}>
-                    {m.display.name.split(' ')[0]}{isMe ? ' (você)' : ''}
+                <div key={m.id} className="rounded-xl p-3" style={{ background: isMe ? 'var(--arvo-offwhite)' : 'white', border: isMe ? '1.5px solid rgba(232,160,32,0.35)' : '1px solid var(--arvo-border-soft)' }}>
+                  <p className="text-[10px] uppercase tracking-widest mb-1 truncate" style={{ color: 'var(--arvo-fg-soft)', fontFamily: 'var(--arvo-font-body)' }}>
+                    {m.display.name.split(' ')[0]}{isMe ? ' ·' : ''}
+                    {isMe && <span style={{ marginLeft: 3, color: 'rgba(232,160,32,0.9)' }}>você</span>}
                   </p>
-                  <p className="text-base font-semibold" style={{ color: isMe ? '#fff' : 'var(--arvo-black)', fontFamily: 'var(--arvo-font-display)' }}>
+                  <p className="text-base font-semibold" style={{ color: 'var(--arvo-black)', fontFamily: 'var(--arvo-font-display)' }}>
                     {fmt(spent, currency)}
                   </p>
-                  <p className="text-[10px] mt-0.5" style={{ color: isMe ? 'rgba(255,255,255,0.42)' : 'var(--arvo-fg-soft)' }}>
+                  <p className="text-[10px] mt-0.5" style={{ color: 'var(--arvo-fg-soft)' }}>
                     {myMemberPct}% · {s.thisMonth ?? 'este mês'}
                   </p>
                 </div>
