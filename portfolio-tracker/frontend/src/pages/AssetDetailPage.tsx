@@ -730,10 +730,10 @@ export default function AssetDetailPage() {
           <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">{periodStats.isAllTime ? d.gainLoss : d.periodGain}</p>
           {periodStats.gainPct != null ? (
             <>
-              <p className={`text-3xl font-bold leading-tight ${periodStats.gainBrl > 0 ? 'text-green-600' : periodStats.gainBrl < 0 ? 'text-red-600' : 'text-gray-900'}`}>
+              <p className={`text-xl font-bold ${periodStats.gainBrl > 0 ? 'text-green-600' : periodStats.gainBrl < 0 ? 'text-red-600' : 'text-gray-900'}`}>
                 {periodStats.gainPct >= 0 ? '+' : ''}{periodStats.gainPct.toFixed(2)}%
               </p>
-              <p className={`text-sm mt-0.5 font-medium ${periodStats.gainBrl > 0 ? 'text-green-600' : periodStats.gainBrl < 0 ? 'text-red-600' : 'text-gray-500'}`}>
+              <p className={`text-xs mt-0.5 ${periodStats.gainBrl > 0 ? 'text-green-600' : periodStats.gainBrl < 0 ? 'text-red-600' : 'text-gray-500'}`}>
                 {periodStats.gainBrl >= 0 ? '+' : ''}{fmt(periodStats.gainBrl)}
               </p>
               {periodStats.nativeGainPct != null && (
