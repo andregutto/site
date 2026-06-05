@@ -143,7 +143,7 @@ export default function AssetDetailPage() {
   const [showMigrateModal,   setShowMigrateModal]   = useState(false)
   const [showManualModal,    setShowManualModal]    = useState(false)
   const [manualValueHistory, setManualValueHistory] = useState<ManualValue[]>([])
-  const [chartPeriod,        setChartPeriod]        = useState<number | null>(12)
+  const [chartPeriod,        setChartPeriod]        = useState<number | null | 'ytd'>(12)
   const [detailPeriod,       setDetailPeriod]       = useState<'all' | 'current_month' | 'last_30d' | 'last_12m' | 'ytd'>('all')
   const [splitWarnings,      setSplitWarnings]      = useState<import('../lib/types').SplitEvent[]>([])
   const [showSplitModal,     setShowSplitModal]     = useState(false)
@@ -305,29 +305,47 @@ export default function AssetDetailPage() {
     ? data.current_value_brl / data.holdings
     : null
 
-  const allChartData = (() => {
+  // Daily chart data — use directly for short periods
+  const allDailyData = data.history
+    .filter(h => h.value_brl > 0)
+    .map(h => ({ label: fmtDate(h.date, intlLocale), value: convert(h.value_brl), date: h.date }))
+
+  // Monthly chart data — for longer periods
+  const allMonthlyData = (() => {
     const byMonth = new Map<string, number>()
     for (const h of data.history) {
-      byMonth.set(h.date.substring(0, 7), convert(h.value_brl))
+      if (h.value_brl > 0) byMonth.set(h.date.substring(0, 7), convert(h.value_brl))
     }
     return Array.from(byMonth.entries()).map(([monthKey, value]) => ({
-      month: fmtMonth(monthKey + '-01', intlLocale),
+      label: fmtMonth(monthKey + '-01', intlLocale),
       value,
+      date: monthKey + '-01',
     }))
   })()
 
-  const CHART_PERIODS = [
+  const CHART_PERIODS: { label: string; months: number | null | 'ytd' }[] = [
     { label: '1M',              months: 1 },
     { label: '3M',              months: 3 },
     { label: '6M',              months: 6 },
+    { label: 'YTD',             months: 'ytd' },
     { label: `1${d.chartYear}`, months: 12 },
     { label: `2${d.chartYear}`, months: 24 },
     { label: d.chartAll,        months: null },
   ]
+
+  const ytdStartStr = `${new Date().getFullYear()}-01-01`
+
   const chartData = (() => {
-    if (chartPeriod !== null) return allChartData.slice(-chartPeriod)
-    const firstNonZero = allChartData.findIndex(dd => dd.value > 0)
-    return firstNonZero > 0 ? allChartData.slice(firstNonZero) : allChartData
+    if (chartPeriod === 'ytd') return allDailyData.filter(p => p.date >= ytdStartStr)
+    if (chartPeriod !== null && chartPeriod <= 6) {
+      // daily for ≤6 months
+      const cutoff = new Date(); cutoff.setMonth(cutoff.getMonth() - chartPeriod)
+      const cutStr = cutoff.toISOString().slice(0, 10)
+      return allDailyData.filter(p => p.date >= cutStr)
+    }
+    if (chartPeriod !== null) return allMonthlyData.slice(-chartPeriod)
+    const firstNonZero = allMonthlyData.findIndex(dd => dd.value > 0)
+    return firstNonZero > 0 ? allMonthlyData.slice(firstNonZero) : allMonthlyData
   })()
 
   const isManual = data.asset_type === 'manual'
@@ -357,17 +375,17 @@ export default function AssetDetailPage() {
 
   const periodStats = (() => {
     if (detailPeriod === 'all' || data.history.length === 0) {
-      return { gainBrl: data.gain_loss_brl, gainPct: data.gain_loss_pct, isAllTime: true }
+      return { gainBrl: data.gain_loss_brl, gainPct: data.gain_loss_pct, isAllTime: true, nativeGainPct: null as number | null }
     }
     const nowD = new Date()
-    function localD(d: Date) {
-      return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
+    function toStr(dt: Date) {
+      return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`
     }
     const startDate = (() => {
       switch (detailPeriod) {
         case 'current_month': return `${nowD.getFullYear()}-${String(nowD.getMonth()+1).padStart(2,'0')}-01`
-        case 'last_30d': { const x = new Date(nowD); x.setDate(x.getDate()-29); return localD(x) }
-        case 'last_12m': { const x = new Date(nowD); x.setFullYear(x.getFullYear()-1); return localD(x) }
+        case 'last_30d': { const x = new Date(nowD); x.setDate(x.getDate()-29); return toStr(x) }
+        case 'last_12m': { const x = new Date(nowD); x.setFullYear(x.getFullYear()-1); return toStr(x) }
         case 'ytd': return `${nowD.getFullYear()}-01-01`
       }
     })()
@@ -379,7 +397,17 @@ export default function AssetDetailPage() {
     const gainBrl = data.current_value_brl - valueAtStart - contribsInPeriod
     const dietzBase = valueAtStart + 0.5 * contribsInPeriod
     const gainPct = dietzBase > 0 ? (gainBrl / dietzBase) * 100 : null
-    return { gainBrl, gainPct, isAllTime: false }
+
+    // Native-currency return: (current_price / start_price_native - 1) — FX-neutral pure price return
+    let nativeGainPct: number | null = null
+    if (data.current_price && data.asset_type === 'ticker' && data.price_currency !== 'BRL') {
+      const startNativePrice = prevEntries.length > 0 ? prevEntries[prevEntries.length - 1].price : null
+      if (startNativePrice && startNativePrice > 0) {
+        nativeGainPct = Math.round((data.current_price / startNativePrice - 1) * 10000) / 100
+      }
+    }
+
+    return { gainBrl, gainPct, isAllTime: false, nativeGainPct }
   })()
 
   const mvEntriesWithChange = [...manualValueHistory]
@@ -697,16 +725,27 @@ export default function AssetDetailPage() {
           value={data.invested_brl > 0 ? fmt(data.invested_brl) : '—'}
           neutral
         />
-        <SummaryCard
-          label={periodStats.isAllTime ? d.gainLoss : d.periodGain}
-          value={periodStats.gainPct != null
-            ? `${periodStats.gainBrl >= 0 ? '+' : ''}${fmt(periodStats.gainBrl)}`
-            : '—'}
-          sub={periodStats.gainPct != null
-            ? `${periodStats.gainPct >= 0 ? '+' : ''}${periodStats.gainPct.toFixed(2)}%`
-            : undefined}
-          positive={periodStats.gainBrl > 0 ? true : periodStats.gainBrl < 0 ? false : null}
-        />
+        {/* P&L card — % prominent, absolute value secondary */}
+        <div className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm">
+          <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">{periodStats.isAllTime ? d.gainLoss : d.periodGain}</p>
+          {periodStats.gainPct != null ? (
+            <>
+              <p className={`text-3xl font-bold leading-tight ${periodStats.gainBrl > 0 ? 'text-green-600' : periodStats.gainBrl < 0 ? 'text-red-600' : 'text-gray-900'}`}>
+                {periodStats.gainPct >= 0 ? '+' : ''}{periodStats.gainPct.toFixed(2)}%
+              </p>
+              <p className={`text-sm mt-0.5 font-medium ${periodStats.gainBrl > 0 ? 'text-green-600' : periodStats.gainBrl < 0 ? 'text-red-600' : 'text-gray-500'}`}>
+                {periodStats.gainBrl >= 0 ? '+' : ''}{fmt(periodStats.gainBrl)}
+              </p>
+              {periodStats.nativeGainPct != null && (
+                <p className="text-xs text-gray-400 mt-0.5">
+                  {data.price_currency}: {periodStats.nativeGainPct >= 0 ? '+' : ''}{periodStats.nativeGainPct.toFixed(2)}%
+                </p>
+              )}
+            </>
+          ) : (
+            <p className="text-xl font-bold text-gray-900">—</p>
+          )}
+        </div>
         {data.holdings != null ? (
           <SummaryCard
             label={d.quantity}
@@ -929,12 +968,15 @@ export default function AssetDetailPage() {
       )}
 
       {/* Value evolution chart */}
-      {allChartData.length > 1 && (
+      {allDailyData.length > 1 && (
         <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-semibold text-gray-800">{d.chartTitle}</h2>
-            <div className="flex gap-1">
-              {CHART_PERIODS.filter(p => p.months == null || allChartData.length >= p.months).map(p => (
+            <div className="flex gap-1 flex-wrap justify-end">
+              {CHART_PERIODS.filter(p => {
+                if (p.months == null || p.months === 'ytd') return true
+                return allMonthlyData.length >= p.months
+              }).map(p => (
                 <button
                   key={p.label}
                   onClick={() => setChartPeriod(p.months)}
@@ -952,7 +994,7 @@ export default function AssetDetailPage() {
               <LineChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
                 <XAxis
-                  dataKey="month"
+                  dataKey="label"
                   tick={{ fontSize: 10, fill: '#9ca3af' }}
                   interval="preserveStartEnd"
                 />
