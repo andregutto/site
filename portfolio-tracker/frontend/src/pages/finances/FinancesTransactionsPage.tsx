@@ -1138,6 +1138,7 @@ export default function FinancesTransactionsPage() {
             </table>
           </div>
         </div>
+        </div>
       )}
 
       {/* Summary cards */}
