@@ -46,6 +46,7 @@ interface ParsedRow {
   broker_name: string | null
   category_id?: number | null
   suggested_category_id?: number | null
+  shared_category_id?: number | null
   source?: string
   is_duplicate?: boolean
 }
@@ -676,8 +677,8 @@ export default function FinancesTransactionsPage() {
           body: JSON.stringify({
             transactions: chunk.map(r => ({
               date: r.date, description: r.description, amount: r.amount, currency: r.currency,
-              category_id: r.category_id ?? null, account_id: csvAccountId,
-              is_internal_transfer: r.is_internal_transfer,
+              category_id: r.category_id ?? null, shared_category_id: r.shared_category_id ?? null,
+              account_id: csvAccountId, is_internal_transfer: r.is_internal_transfer,
               source: r.source,
             })),
             learn_rules: start === 0 ? learn_rules : [],
@@ -823,6 +824,18 @@ export default function FinancesTransactionsPage() {
             </div>
           )}
 
+          {/* CSV import — direct button */}
+          {accountsLoaded && accounts.length > 0 && (
+            <button
+              onClick={() => { setCsvStep('idle'); setCsvRows([]); setCsvDuplicateCount(0); setCsvError(''); setCsvAiDebug(null); setShowImportModal(true) }}
+              disabled={csvStep === 'parsing'}
+              title={t.finances.importCSV}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, border: '1px solid var(--arvo-border)', borderRadius: 10, background: '#fff', color: 'rgba(13,13,13,0.55)', cursor: 'pointer', flexShrink: 0 }}
+            >
+              <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M8.75 2.75a.75.75 0 0 0-1.5 0v5.69L5.03 6.22a.75.75 0 0 0-1.06 1.06l3.5 3.5a.75.75 0 0 0 1.06 0l3.5-3.5a.75.75 0 0 0-1.06-1.06L8.75 8.44V2.75Z"/><path d="M3.5 9.75a.75.75 0 0 0-1.5 0v1.5A2.75 2.75 0 0 0 4.75 14h6.5A2.75 2.75 0 0 0 14 11.25v-1.5a.75.75 0 0 0-1.5 0v1.5c0 .69-.56 1.25-1.25 1.25h-6.5c-.69 0-1.25-.56-1.25-1.25v-1.5Z"/></svg>
+            </button>
+          )}
+
           {/* Overflow menu — utility actions */}
           {accountsLoaded && accounts.length > 0 && (
             <div style={{ position: 'relative' }} ref={overflowMenuRef}>
@@ -850,10 +863,6 @@ export default function FinancesTransactionsPage() {
                   <button onClick={() => { setShowOverflowMenu(false); setDateMode('range') }} style={menuItemStyle}>
                     <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M5.75 7.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5ZM8 7.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm2.25 0a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5ZM5.75 10a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5ZM8 10a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm2.25 0a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5ZM4.75 2a.75.75 0 0 1 .75.75V4h5V2.75a.75.75 0 0 1 1.5 0V4h.25A2.75 2.75 0 0 1 15 6.75v6.5A2.75 2.75 0 0 1 12.25 16H3.75A2.75 2.75 0 0 1 1 13.25v-6.5A2.75 2.75 0 0 1 3.75 4H4V2.75A.75.75 0 0 1 4.75 2ZM2.5 7.5v5.75c0 .69.56 1.25 1.25 1.25h8.5c.69 0 1.25-.56 1.25-1.25V7.5h-11Z"/></svg>
                     <span>{t.performance.customPeriod}</span>
-                  </button>
-                  <button onClick={() => { setShowOverflowMenu(false); setCsvStep('idle'); setCsvRows([]); setCsvDuplicateCount(0); setCsvError(''); setCsvAiDebug(null); setShowImportModal(true) }} disabled={csvStep === 'parsing'} style={menuItemStyle}>
-                    <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M8.75 2.75a.75.75 0 0 0-1.5 0v5.69L5.03 6.22a.75.75 0 0 0-1.06 1.06l3.5 3.5a.75.75 0 0 0 1.06 0l3.5-3.5a.75.75 0 0 0-1.06-1.06L8.75 8.44V2.75Z"/><path d="M3.5 9.75a.75.75 0 0 0-1.5 0v1.5A2.75 2.75 0 0 0 4.75 14h6.5A2.75 2.75 0 0 0 14 11.25v-1.5a.75.75 0 0 0-1.5 0v1.5c0 .69-.56 1.25-1.25 1.25h-6.5c-.69 0-1.25-.56-1.25-1.25v-1.5Z"/></svg>
-                    <span>{t.finances.importCSV}</span>
                   </button>
                 </div>
               )}
@@ -983,6 +992,7 @@ export default function FinancesTransactionsPage() {
                   <th className="px-4 py-2 text-left">{t.common.description}</th>
                   <th className="px-4 py-2 text-right">{t.common.value}</th>
                   <th className="px-4 py-2 text-left">{t.finances.category}</th>
+                  {sharedCats.length > 0 && <th className="px-4 py-2 text-left">{t.shared?.tagTransaction ?? 'Compartilhada'}</th>}
                   <th className="px-4 py-2"></th>
                 </tr>
               </thead>
@@ -1025,6 +1035,21 @@ export default function FinancesTransactionsPage() {
                           </select>
                         </div>
                       </td>
+                      {sharedCats.length > 0 && (
+                        <td className="px-4 py-2">
+                          <select
+                            value={row.shared_category_id ?? ''}
+                            onChange={e => {
+                              const val = e.target.value === '' ? null : Number(e.target.value)
+                              setCsvRows(prev => prev.map((r, j) => j === i ? { ...r, shared_category_id: val } : r))
+                            }}
+                            className="text-xs border border-gray-200 rounded px-2 py-1 max-w-[150px]"
+                          >
+                            <option value="">—</option>
+                            {sharedCats.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
+                          </select>
+                        </td>
+                      )}
                       <td className="px-4 py-2">
                         <button onClick={() => setCsvRows(prev => prev.filter((_, j) => j !== i))} className="text-gray-300 hover:text-red-400 transition-colors">
                           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5"><path d="M5.28 4.22a.75.75 0 0 0-1.06 1.06L6.94 8l-2.72 2.72a.75.75 0 1 0 1.06 1.06L8 9.06l2.72 2.72a.75.75 0 1 0 1.06-1.06L9.06 8l2.72-2.72a.75.75 0 0 0-1.06-1.06L8 6.94 5.28 4.22Z" /></svg>

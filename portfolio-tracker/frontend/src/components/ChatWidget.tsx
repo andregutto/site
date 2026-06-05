@@ -203,7 +203,7 @@ export default function ChatWidget({ visible = true, onDismiss, forceOpen, onFor
       `}</style>
 
       {/* Floating button */}
-      <div className="fixed chat-bubble-safe right-5 z-50 sm:bottom-10">
+      <div className="fixed chat-bubble-safe left-5 sm:left-10 z-50 sm:bottom-10">
         <div style={{ position: 'relative', width: 48, height: 48 }}>
           {/* Rotating conic glow */}
           <div className="arvo-chat-glow" />
@@ -249,7 +249,7 @@ export default function ChatWidget({ visible = true, onDismiss, forceOpen, onFor
 
       {/* Chat panel */}
       {open && (
-        <div className="arvo-chat-panel fixed chat-dialog-safe right-5 z-50 w-[360px] max-w-[calc(100vw-2.5rem)] h-[520px] max-h-[calc(100vh-6rem)] rounded-2xl flex flex-col overflow-hidden sm:bottom-20" style={{ background: 'var(--arvo-offwhite)' }}>
+        <div className="arvo-chat-panel fixed chat-dialog-safe left-5 sm:left-10 z-50 w-[360px] max-w-[calc(100vw-2.5rem)] h-[520px] max-h-[calc(100vh-6rem)] rounded-2xl flex flex-col overflow-hidden sm:bottom-20" style={{ background: 'var(--arvo-offwhite)' }}>
           {/* Header */}
           <div className="relative flex items-center gap-2.5 px-4 py-3 rounded-t-2xl" style={{ background: '#0D0D0D', borderBottom: '1px solid rgba(200,184,154,0.15)' }}>
             <div className="arvo-chat-header-grad rounded-t-2xl" />
