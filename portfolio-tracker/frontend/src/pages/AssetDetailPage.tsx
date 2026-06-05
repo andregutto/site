@@ -375,7 +375,16 @@ export default function AssetDetailPage() {
 
   const periodStats = (() => {
     if (detailPeriod === 'all' || data.history.length === 0) {
-      return { gainBrl: data.gain_loss_brl, gainPct: data.gain_loss_pct, isAllTime: true, nativeGainPct: null as number | null }
+      // All-time BRL return (gain_loss_pct) uses invested_brl at historical FX → includes real FX effect
+      // Native return uses first price in history vs current price → pure price movement
+      let nativeGainPct: number | null = null
+      if (data.current_price && data.asset_type === 'ticker' && data.price_currency !== 'BRL') {
+        const firstPriced = data.history.find(h => h.price > 0)
+        if (firstPriced && firstPriced.price > 0) {
+          nativeGainPct = Math.round((data.current_price / firstPriced.price - 1) * 10000) / 100
+        }
+      }
+      return { gainBrl: data.gain_loss_brl, gainPct: data.gain_loss_pct, isAllTime: true, nativeGainPct }
     }
     const nowD = new Date()
     function toStr(dt: Date) {
@@ -732,14 +741,22 @@ export default function AssetDetailPage() {
             <>
               <p className={`text-xl font-bold ${periodStats.gainBrl > 0 ? 'text-green-600' : periodStats.gainBrl < 0 ? 'text-red-600' : 'text-gray-900'}`}>
                 {periodStats.gainPct >= 0 ? '+' : ''}{periodStats.gainPct.toFixed(2)}%
+                {periodStats.isAllTime && data.price_currency !== 'BRL' && (
+                  <span className="text-[10px] font-normal text-gray-400 ml-1">BRL</span>
+                )}
               </p>
               <p className={`text-xs mt-0.5 ${periodStats.gainBrl > 0 ? 'text-green-600' : periodStats.gainBrl < 0 ? 'text-red-600' : 'text-gray-500'}`}>
                 {periodStats.gainBrl >= 0 ? '+' : ''}{fmt(periodStats.gainBrl)}
               </p>
-              {periodStats.nativeGainPct != null && (
+              {/* For all-time: show native currency % (different because invested_brl used real historical FX) */}
+              {periodStats.nativeGainPct != null && periodStats.isAllTime && (
                 <p className="text-xs text-gray-400 mt-0.5">
                   {data.price_currency}: {periodStats.nativeGainPct >= 0 ? '+' : ''}{periodStats.nativeGainPct.toFixed(2)}%
                 </p>
+              )}
+              {/* For periods: show native currency label since BRL calc uses uniform FX (same number) */}
+              {!periodStats.isAllTime && data.price_currency !== 'BRL' && (
+                <p className="text-[10px] text-gray-400 mt-0.5">em {data.price_currency} · sem câmbio</p>
               )}
             </>
           ) : (
