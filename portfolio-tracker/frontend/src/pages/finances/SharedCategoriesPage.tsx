@@ -495,7 +495,7 @@ function GroupPanel({ group, userId, s, onEditGroup, onInvite, onResendInvite, o
         const currency = group.categories[0]?.currency ?? 'EUR'
         return (
           <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${Math.min(activeMembers.length, 3)}, 1fr)` }}>
-            {activeMembers.map((m, i) => {
+            {activeMembers.map((m) => {
               const isMe = m.user_id === userId
               const spent = memberTotals[m.user_id!] ?? 0
               const myMemberPct = m.share_pct

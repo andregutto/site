@@ -1879,7 +1879,7 @@ export default function FinancesTransactionsPage() {
                     body: JSON.stringify({ category_id: sheetCatId, shared_category_id: sheetSharedCatId }),
                   })
                   setEditSheetTx(null)
-                  load()
+                  loadTransactions()
                 }}
                 className="flex-1 py-2.5 rounded-xl bg-[#0D0D0D] text-white text-sm font-medium"
               >
