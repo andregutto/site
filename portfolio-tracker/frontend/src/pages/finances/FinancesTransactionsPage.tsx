@@ -15,6 +15,7 @@ interface Transaction {
   amount: number
   currency: string
   category_id: number | null
+  shared_category_id: number | null
   account_id: number | null
   moment_id: number | null
   finance_categories: Category | null
@@ -172,6 +173,7 @@ export default function FinancesTransactionsPage() {
   // Mobile bottom sheet for category edit
   const [editSheetTx, setEditSheetTx] = useState<Transaction | null>(null)
   const [sheetCatId, setSheetCatId]   = useState<number | null>(null)
+  const [sheetSharedCatId, setSheetSharedCatId] = useState<number | null>(null)
 
   // Date range mode
   const [dateMode, setDateMode]   = useState<'month' | 'range'>('month')
@@ -1193,7 +1195,7 @@ export default function FinancesTransactionsPage() {
                             {/* Category chip — only on mobile where the category column is hidden */}
                             <button
                               className="sm:hidden text-left"
-                              onClick={e => { e.stopPropagation(); setEditSheetTx(tx); setSheetCatId(tx.category_id) }}
+                              onClick={e => { e.stopPropagation(); setEditSheetTx(tx); setSheetCatId(tx.category_id); setSheetSharedCatId(tx.shared_category_id) }}
                             >
                               {tx.finance_categories ? (
                                 <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium" style={{ backgroundColor: tx.finance_categories.color + '22', color: tx.finance_categories.color }}>
@@ -1811,7 +1813,7 @@ export default function FinancesTransactionsPage() {
             <select
               value={sheetCatId ?? ''}
               onChange={e => setSheetCatId(e.target.value === '' ? null : Number(e.target.value))}
-              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm mb-4 bg-white"
+              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm mb-3 bg-white"
             >
               <option value="">{t.finances.noCategory}</option>
               {incomeCategories.length > 0 && (
@@ -1825,6 +1827,19 @@ export default function FinancesTransactionsPage() {
                 </optgroup>
               )}
             </select>
+            {sharedCats.length > 0 && (
+              <>
+                <p className="text-xs text-gray-500 mb-2">{t.shared?.tagTransaction ?? 'Categoria compartilhada'}</p>
+                <select
+                  value={sheetSharedCatId ?? ''}
+                  onChange={e => setSheetSharedCatId(e.target.value === '' ? null : Number(e.target.value))}
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm mb-4 bg-white"
+                >
+                  <option value="">{t.finances.noCategory}</option>
+                  {sharedCats.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
+                </select>
+              </>
+            )}
             <div className="flex gap-3">
               <button
                 onClick={() => setEditSheetTx(null)}
@@ -1834,8 +1849,12 @@ export default function FinancesTransactionsPage() {
               </button>
               <button
                 onClick={async () => {
-                  await updateCategory(editSheetTx.id, sheetCatId)
+                  await apiFetch(`/finances/transactions/${editSheetTx.id}`, {
+                    method: 'PATCH',
+                    body: JSON.stringify({ category_id: sheetCatId, shared_category_id: sheetSharedCatId }),
+                  })
                   setEditSheetTx(null)
+                  load()
                 }}
                 className="flex-1 py-2.5 rounded-xl bg-[#0D0D0D] text-white text-sm font-medium"
               >

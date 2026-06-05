@@ -752,7 +752,7 @@ router.get('/transactions', requireAuth, async (req, res: Response) => {
 
   let query = supabaseAdmin
     .from('finance_transactions')
-    .select('id, date, description, amount, currency, category_id, account_id, is_internal_transfer, linked_transfer_id, exclude_from_stats, reimbursement_group_id, source, moment_id, notes, finance_categories(id, name, icon, color), finance_transaction_moments(moment_id, finance_moments(id, name, icon, color))')
+    .select('id, date, description, amount, currency, category_id, shared_category_id, account_id, is_internal_transfer, linked_transfer_id, exclude_from_stats, reimbursement_group_id, source, moment_id, notes, finance_categories(id, name, icon, color), finance_transaction_moments(moment_id, finance_moments(id, name, icon, color))')
     .eq('user_id', userId)
     .order('date', { ascending: false })
     .order('id', { ascending: false })
@@ -859,9 +859,10 @@ router.patch('/transactions/bulk-assign-account', requireAuth, async (req, res: 
 router.patch('/transactions/:id', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const { id } = req.params
-  const { category_id, is_internal_transfer, description, amount, notes, moment_id, moment_ids, exclude_from_stats, reimbursement_group_id } = req.body
+  const { category_id, shared_category_id, is_internal_transfer, description, amount, notes, moment_id, moment_ids, exclude_from_stats, reimbursement_group_id } = req.body
   const update: Record<string, unknown> = {}
   if (category_id          !== undefined) update.category_id          = category_id
+  if (shared_category_id   !== undefined) update.shared_category_id   = shared_category_id
   if (is_internal_transfer !== undefined) update.is_internal_transfer  = is_internal_transfer
   if (exclude_from_stats   !== undefined) update.exclude_from_stats    = exclude_from_stats
   if (reimbursement_group_id !== undefined) update.reimbursement_group_id = reimbursement_group_id
