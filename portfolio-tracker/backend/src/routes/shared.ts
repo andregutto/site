@@ -73,7 +73,7 @@ router.get('/groups', requireAuth, async (req, res: Response) => {
     allCatIds.length > 0
       ? supabaseAdmin
           .from('finance_transactions')
-          .select('shared_category_id, amount')
+          .select('shared_category_id, amount, user_id')
           .in('shared_category_id', allCatIds)
           .gte('date', monthStart)
       : Promise.resolve({ data: [] }),
@@ -82,9 +82,17 @@ router.get('/groups', requireAuth, async (req, res: Response) => {
   const envMap = new Map((envResult.data ?? []).map((s: { shared_category_id: number; local_envelope_id: number }) => [s.shared_category_id, s.local_envelope_id]))
 
   const spentMap = new Map<number, number>()
-  for (const t of (txnResult.data ?? []) as Array<{ shared_category_id: number | null; amount: number }>) {
+  const memberCatMap = new Map<number, Map<string, number>>()
+  for (const t of (txnResult.data ?? []) as Array<{ shared_category_id: number | null; amount: number; user_id: string | null }>) {
     if (t.shared_category_id == null) continue
-    spentMap.set(t.shared_category_id, (spentMap.get(t.shared_category_id) ?? 0) + Math.abs(Number(t.amount)))
+    const catId = t.shared_category_id
+    const amt = Math.abs(Number(t.amount))
+    spentMap.set(catId, (spentMap.get(catId) ?? 0) + amt)
+    if (t.user_id) {
+      if (!memberCatMap.has(catId)) memberCatMap.set(catId, new Map())
+      const m = memberCatMap.get(catId)!
+      m.set(t.user_id, (m.get(t.user_id) ?? 0) + amt)
+    }
   }
 
   // Enrich with members and categories
@@ -111,6 +119,7 @@ router.get('/groups', requireAuth, async (req, res: Response) => {
       ...c,
       local_envelope_id: envMap.get(c.id) ?? null,
       total_spent: Math.round((spentMap.get(c.id) ?? 0) * 100) / 100,
+      member_spent: Object.fromEntries(memberCatMap.get(c.id) ?? new Map()),
     }))
 
     return { ...g, members: enrichedMembers, categories: categoriesWithEnv }

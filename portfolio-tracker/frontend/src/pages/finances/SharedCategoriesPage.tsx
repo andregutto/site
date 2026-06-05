@@ -24,6 +24,7 @@ interface SharedCategory {
   color: string
   total_goal: number
   total_spent: number
+  member_spent: Record<string, number>
   currency: string
   my_share_pct: number
   my_goal: number
@@ -481,6 +482,41 @@ function GroupPanel({ group, userId, s, onEditGroup, onInvite, onResendInvite, o
         </div>
       )}
 
+      {/* Member summary cards */}
+      {group.categories.length > 0 && (() => {
+        const activeMembers = group.members.filter(m => m.status === 'active' && m.user_id)
+        if (activeMembers.length < 2) return null
+        const memberTotals: Record<string, number> = {}
+        for (const cat of group.categories) {
+          for (const [uid, spent] of Object.entries(cat.member_spent ?? {})) {
+            memberTotals[uid] = (memberTotals[uid] ?? 0) + spent
+          }
+        }
+        const currency = group.categories[0]?.currency ?? 'EUR'
+        return (
+          <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${Math.min(activeMembers.length, 3)}, 1fr)` }}>
+            {activeMembers.map((m, i) => {
+              const isMe = m.user_id === userId
+              const spent = memberTotals[m.user_id!] ?? 0
+              const myMemberPct = m.share_pct
+              return (
+                <div key={m.id} className="rounded-xl p-3" style={{ background: isMe ? 'var(--arvo-black)' : 'white', border: isMe ? 'none' : '1px solid var(--arvo-border-soft)' }}>
+                  <p className="text-[10px] uppercase tracking-widest mb-1 truncate" style={{ color: isMe ? 'rgba(200,184,154,0.7)' : 'var(--arvo-fg-soft)', fontFamily: 'var(--arvo-font-body)' }}>
+                    {m.display.name.split(' ')[0]}{isMe ? ' (você)' : ''}
+                  </p>
+                  <p className="text-base font-semibold" style={{ color: isMe ? '#fff' : 'var(--arvo-black)', fontFamily: 'var(--arvo-font-display)' }}>
+                    {fmt(spent, currency)}
+                  </p>
+                  <p className="text-[10px] mt-0.5" style={{ color: isMe ? 'rgba(255,255,255,0.42)' : 'var(--arvo-fg-soft)' }}>
+                    {myMemberPct}% · {s.thisMonth ?? 'este mês'}
+                  </p>
+                </div>
+              )
+            })}
+          </div>
+        )
+      })()}
+
       {/* Categories */}
       <div className="flex flex-col gap-2">
         {group.categories.length === 0 ? (
@@ -494,6 +530,7 @@ function GroupPanel({ group, userId, s, onEditGroup, onInvite, onResendInvite, o
                 key={cat.id}
                 cat={{ ...cat, my_share_pct: myPct, my_goal: myGoal }}
                 group={group}
+                userId={userId}
                 s={s}
                 active={activeCatId === cat.id}
                 onClick={() => onSelectCat(cat.id)}
@@ -531,14 +568,20 @@ function GroupPanel({ group, userId, s, onEditGroup, onInvite, onResendInvite, o
 
 // ─── Shared Category Card ─────────────────────────────────────────────────────
 
-function SharedCategoryCard({ cat, group, s, active, onClick, onEdit }: {
-  cat: SharedCategory; group: Group; s: Record<string, string>
+function SharedCategoryCard({ cat, group, userId, s, active, onClick, onEdit }: {
+  cat: SharedCategory; group: Group; userId: string; s: Record<string, string>
   active: boolean; onClick: () => void; onEdit: () => void
 }) {
-  const memberAvatars = group.members.filter(m => m.status === 'active' && m.user_id)
-  const myPct = cat.my_share_pct
-  const spentPct = cat.total_goal > 0 ? Math.min(100, Math.round(cat.total_spent / cat.total_goal * 100)) : 0
+  const activeMembers = group.members.filter(m => m.status === 'active' && m.user_id)
   const over = cat.total_spent > cat.total_goal && cat.total_goal > 0
+
+  // Split bar: show each member's actual spending; if no spending yet, show goal allocation
+  const hasSpending = cat.total_spent > 0
+  const segments = activeMembers.map(m => {
+    const spent = cat.member_spent?.[m.user_id!] ?? 0
+    const goalPct = m.share_pct
+    return { member: m, spent, goalPct }
+  })
 
   return (
     <div
@@ -550,23 +593,18 @@ function SharedCategoryCard({ cat, group, s, active, onClick, onEdit }: {
         boxShadow: active ? `0 0 0 2px ${cat.color}30` : undefined,
       }}
     >
+      {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <span style={{ fontSize: 18 }}>{cat.icon}</span>
-          <div>
-            <p className="text-sm font-medium" style={{ color: 'var(--arvo-black)' }}>{cat.name}</p>
-            <p className="text-[10px]" style={{ color: 'var(--arvo-fg-soft)' }}>{s.sharedWith}: {memberAvatars.map(m => m.display.name.split(' ')[0]).join(', ')}</p>
-          </div>
+          <p className="text-sm font-medium" style={{ color: 'var(--arvo-black)' }}>{cat.name}</p>
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex -space-x-1.5">
-            {memberAvatars.slice(0, 2).map(m => (
-              <div key={m.id} style={{ border: '1.5px solid white', borderRadius: '50%' }}>
-                <Avatar display={m.display} size={20} />
-              </div>
-            ))}
-          </div>
-          <button onClick={e => { e.stopPropagation(); onEdit() }} style={{ color: 'var(--arvo-fg-soft)' }}>
+          <span className="text-xs font-semibold" style={{ color: over ? 'var(--arvo-red)' : 'var(--arvo-black)' }}>
+            {fmt(cat.total_spent, cat.currency)}
+          </span>
+          <span className="text-[10px]" style={{ color: 'var(--arvo-fg-soft)' }}>/ {fmt(cat.total_goal, cat.currency)}</span>
+          <button onClick={e => { e.stopPropagation(); onEdit() }} style={{ color: 'var(--arvo-fg-soft)' }} className="ml-1">
             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
               <path strokeLinecap="round" strokeLinejoin="round" d="M11.5 2.5l2 2-8 8H3.5v-2l8-8z" />
             </svg>
@@ -574,18 +612,48 @@ function SharedCategoryCard({ cat, group, s, active, onClick, onEdit }: {
         </div>
       </div>
 
-      {/* Spent vs goal bar */}
-      <div className="flex justify-between text-[10px] mb-1" style={{ color: 'var(--arvo-fg-soft)' }}>
-        <span>{s.monthSpent ?? 'Gasto'}: <strong style={{ color: over ? 'var(--arvo-red)' : 'var(--arvo-black)' }}>{fmt(cat.total_spent, cat.currency)}</strong></span>
-        <span style={{ color: 'var(--arvo-fg-soft)' }}>{fmt(cat.total_goal, cat.currency)}</span>
-      </div>
-      <div className="h-2 rounded-full overflow-hidden mb-1.5" style={{ background: 'rgba(13,13,13,0.08)' }}>
-        <div className="h-full rounded-full transition-all" style={{ width: `${spentPct}%`, background: over ? 'var(--arvo-red)' : cat.color }} />
+      {/* Split bar */}
+      <div className="h-2 rounded-full overflow-hidden flex mb-2" style={{ background: 'rgba(13,13,13,0.07)' }}>
+        {hasSpending ? (
+          segments.map((seg, i) => {
+            const pct = cat.total_spent > 0 ? Math.min(100, Math.round(seg.spent / cat.total_goal * 100)) : 0
+            return pct > 0 ? (
+              <div key={i} className="h-full transition-all"
+                style={{ width: `${pct}%`, background: i === 0 ? cat.color : `${cat.color}60` }} />
+            ) : null
+          })
+        ) : (
+          segments.map((seg, i) => (
+            <div key={i} className="h-full"
+              style={{ width: `${seg.goalPct}%`, background: i === 0 ? cat.color : `${cat.color}55` }} />
+          ))
+        )}
       </div>
 
-      {/* Share info */}
-      <p className="text-[10px]" style={{ color: 'var(--arvo-fg-soft)' }}>
-        {s.yourGoal}: <strong style={{ color: 'var(--arvo-black)' }}>{fmt(cat.my_goal, cat.currency)}</strong> · {myPct}% {s.ofTotal}
+      {/* Per-member legend */}
+      <div className="flex gap-3">
+        {segments.map((seg, i) => (
+          <div key={i} className="flex items-center gap-1 min-w-0">
+            <div className="w-2 h-2 rounded-full shrink-0" style={{ background: i === 0 ? cat.color : `${cat.color}60` }} />
+            <span className="text-[10px] truncate" style={{ color: 'var(--arvo-fg-soft)' }}>
+              {seg.member.display.name.split(' ')[0]}
+              {seg.member.user_id === userId ? ' (você)' : ''}
+            </span>
+            {hasSpending && (
+              <span className="text-[10px] font-medium shrink-0" style={{ color: 'var(--arvo-black)' }}>
+                {fmt(seg.spent, cat.currency)}
+              </span>
+            )}
+            {!hasSpending && (
+              <span className="text-[10px]" style={{ color: 'var(--arvo-fg-soft)' }}>{seg.goalPct}%</span>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Invisible spacer to keep original text structure — replaced by legend above */}
+      <p className="text-[10px] mt-1 hidden" style={{ color: 'var(--arvo-fg-soft)' }}>
+        {s.yourGoal}: <strong style={{ color: 'var(--arvo-black)' }}>{fmt(cat.my_goal, cat.currency)}</strong> · {cat.my_share_pct}% {s.ofTotal}
       </p>
     </div>
   )
