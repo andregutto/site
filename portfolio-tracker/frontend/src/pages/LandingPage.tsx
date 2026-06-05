@@ -353,7 +353,6 @@ function PhoneNav() {
 
 function PortfolioPhoneMockupContent() {
   const FS = "'DM Sans', system-ui, sans-serif"
-  const FD = "'Tenor Sans', serif"
   const rows: [string, string, string][] = [
     ['BOVA11',    '+5,8%',  '#1F8A5B'],
     ['WEGE3',     '+12,4%', '#1F8A5B'],
