@@ -345,12 +345,12 @@ export default function AppLayout() {
             transform: 'translateX(-50%)',
             width: 'calc(100% - 32px)',
             maxWidth: 500,
-            background: 'rgba(242,237,228,0.88)',
+            background: 'rgba(255,255,255,0.78)',
             backdropFilter: 'blur(20px) saturate(180%)',
             WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-            border: '1px solid rgba(255,255,255,0.55)',
+            border: '1px solid rgba(0,0,0,0.07)',
             borderRadius: 999,
-            boxShadow: '0 4px 20px rgba(0,0,0,0.10)',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.10), 0 2px 6px rgba(0,0,0,0.06)',
             overflow: 'hidden',
           }}
         >
@@ -360,12 +360,12 @@ export default function AppLayout() {
                 key={to} to={to} end={end}
                 className="flex items-center gap-1.5 whitespace-nowrap shrink-0"
                 style={({ isActive }) => isActive
-                  ? { fontFamily: "var(--arvo-font-body)", fontSize: 13, letterSpacing: '0.04em', padding: '8px 13px', borderRadius: 999, background: 'rgba(13,13,13,0.90)', color: 'var(--arvo-offwhite)', textDecoration: 'none', transition: 'all 240ms cubic-bezier(0.22,0.61,0.36,1)' }
-                  : { fontFamily: "var(--arvo-font-body)", fontSize: 13, letterSpacing: '0.04em', padding: '8px 13px', borderRadius: 999, background: 'transparent', color: 'rgba(13,13,13,0.52)', textDecoration: 'none', transition: 'all 240ms cubic-bezier(0.22,0.61,0.36,1)' }}
+                  ? { fontFamily: "var(--arvo-font-body)", fontSize: 13, letterSpacing: '0.04em', padding: '8px 13px', borderRadius: 999, background: sectionAccent, color: '#ffffff', textDecoration: 'none', transition: 'all 240ms cubic-bezier(0.22,0.61,0.36,1)' }
+                  : { fontFamily: "var(--arvo-font-body)", fontSize: 13, letterSpacing: '0.04em', padding: '8px 13px', borderRadius: 999, background: 'transparent', color: 'rgba(13,13,13,0.45)', textDecoration: 'none', transition: 'all 240ms cubic-bezier(0.22,0.61,0.36,1)' }}
               >
                 {({ isActive }) => (
                   <>
-                    {isActive && <span style={{ width: 5, height: 5, borderRadius: 999, background: 'rgba(255,255,255,0.75)', flexShrink: 0, display: 'inline-block' }} />}
+                    {isActive && <span style={{ width: 5, height: 5, borderRadius: 999, background: 'rgba(255,255,255,0.70)', flexShrink: 0, display: 'inline-block' }} />}
                     {label}
                   </>
                 )}
@@ -384,33 +384,33 @@ export default function AppLayout() {
           transform: 'translateX(-50%)',
           width: 'calc(100% - 32px)',
           maxWidth: 360,
-          background: 'rgba(242,237,228,0.88)',
+          background: 'rgba(255,255,255,0.78)',
           backdropFilter: 'blur(20px) saturate(180%)',
           WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-          border: '1px solid rgba(255,255,255,0.55)',
+          border: '1px solid rgba(0,0,0,0.07)',
           borderRadius: 999,
-          boxShadow: '0 4px 24px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.06)',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.12), 0 2px 6px rgba(0,0,0,0.06)',
           padding: '5px',
         }}
       >
         <div className="flex">
           {[
-            { to: '/dashboard', label: t.nav.investments, match: inInvestimentos, icon: (
+            { to: '/dashboard', label: t.nav.investments, match: inInvestimentos, accent: '#1B4FD8', icon: (
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.5l7.5-7.5 4 4L21 4.5M3 20.5h18" />
               </svg>
             )},
-            { to: '/finances', label: t.nav.finances, match: inFinances, icon: (
+            { to: '/finances', label: t.nav.finances, match: inFinances, accent: '#A36A52', icon: (
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75" />
               </svg>
             )},
-            { to: '/institutions', label: t.nav.institutions, match: inInstitutions, icon: (
+            { to: '/institutions', label: t.nav.institutions, match: inInstitutions, accent: 'rgba(13,13,13,0.88)', icon: (
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.008v.008h-.008v-.008Zm0 3h.008v.008h-.008v-.008Zm0 3h.008v.008h-.008v-.008Z" />
               </svg>
             )},
-          ].map(({ to, label, match, icon }) => (
+          ].map(({ to, label, match, accent, icon }) => (
             <NavLink
               key={to} to={to}
               className="flex-1 flex flex-col items-center gap-1 shrink-0"
@@ -420,8 +420,8 @@ export default function AppLayout() {
                 fontSize: 10,
                 padding: '8px 6px 7px',
                 borderRadius: 999,
-                color: match ? 'var(--arvo-offwhite)' : 'rgba(13,13,13,0.45)',
-                background: match ? 'rgba(13,13,13,0.92)' : 'transparent',
+                color: match ? '#ffffff' : 'rgba(13,13,13,0.40)',
+                background: match ? accent : 'transparent',
                 transition: 'all 280ms cubic-bezier(0.22,0.61,0.36,1)',
                 textDecoration: 'none',
               }}
