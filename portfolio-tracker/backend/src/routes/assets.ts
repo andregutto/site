@@ -507,7 +507,9 @@ router.get('/:id/detail', requireAuth, async (req, res: Response) => {
   const contribs = rawContribs ?? []
 
   const assetCurrency = asset.currency || 'BRL'
-  let fxApprox = assetCurrency === 'BRL' ? 1 : 5.70  // updated to real rate inside ticker block
+  // Fetch live FX upfront so invested_brl and chart values use the same rate.
+  // The ticker block may refine this to priceCurrency, but for cost-basis assets they match.
+  let fxApprox = assetCurrency === 'BRL' ? 1 : await getFxRate(assetCurrency).catch(() => 5.70)
 
   let totalQty = 0
   let totalCostBrl = 0

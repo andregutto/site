@@ -879,15 +879,15 @@ export default function LandingPage() {
       </div>
 
       {/* ── FUNCIONALIDADES ── */}
-      <section id="funcionalidades" style={{ padding: 'clamp(44px, 6vw, 68px) 24px', maxWidth: 1200, margin: '0 auto' }}>
-        <div className="arvo-reveal" style={{ marginBottom: 36 }}>
+      <section id="funcionalidades" style={{ padding: 'clamp(28px, 4vw, 48px) 24px', maxWidth: 1200, margin: '0 auto' }}>
+        <div className="arvo-reveal" style={{ marginBottom: 24 }}>
           <p style={{ fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.22em', textTransform: 'uppercase', color: T_SECONDARY, marginBottom: 16 }}>{l.featEyebrow}</p>
           <h2 style={{ fontFamily: F_DISPLAY, fontSize: 'clamp(1.9rem, 3.5vw, 2.7rem)', fontWeight: 400, lineHeight: 1.12, color: DARK, letterSpacing: '-0.3px', maxWidth: 560 }}>
             {l.featH2}
           </h2>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(40px, 6vw, 60px)' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(28px, 4vw, 44px)' }}>
 
           {/* ── f1: Portfólio — text left, card right ── */}
           <div className="arvo-reveal flex flex-col lg:flex-row items-center" style={{ gap: 'clamp(32px, 6vw, 72px)' }}>

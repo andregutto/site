@@ -522,7 +522,7 @@ router.get('/:id/detail', requireAuth, async (req, res: Response) => {
   const contribs = rawContribs ?? []
 
   const assetCurrency = asset.currency || 'BRL'
-  let fxApprox = assetCurrency === 'BRL' ? 1 : 5.70
+  let fxApprox = assetCurrency === 'BRL' ? 1 : await getFxRate(assetCurrency).catch(() => 5.70)
 
   let totalQty = 0
   let totalCostBrl = 0

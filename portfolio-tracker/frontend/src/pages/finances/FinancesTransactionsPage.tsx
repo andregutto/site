@@ -650,14 +650,6 @@ export default function FinancesTransactionsPage() {
     }
   }
 
-  function changeCsvRowCategory(idx: number, val: number | null, applyToAll: boolean) {
-    setCsvRows(prev => prev.map((r, j) => {
-      if (j === idx) return { ...r, category_id: val }
-      if (applyToAll && r.description === prev[idx].description) return { ...r, category_id: val }
-      return r
-    }))
-  }
-
   async function importCSV() {
     setCsvStep('importing')
     setCsvError('')
