@@ -123,6 +123,7 @@ export default function AssetDetailPage() {
   const [showManualModal,    setShowManualModal]    = useState(false)
   const [manualValueHistory, setManualValueHistory] = useState<ManualValue[]>([])
   const [chartPeriod,        setChartPeriod]        = useState<number | null>(12)
+  const [detailPeriod,       setDetailPeriod]       = useState<'all' | 'current_month' | 'last_30d' | 'last_12m' | 'ytd'>('all')
   const [splitWarnings,      setSplitWarnings]      = useState<import('../lib/types').SplitEvent[]>([])
   const [showSplitModal,     setShowSplitModal]     = useState(false)
   const [splitModalData,     setSplitModalData]     = useState<{ date: string; numerator: number; denominator: number } | null>(null)
@@ -279,10 +280,20 @@ export default function AssetDetailPage() {
     ? `${data.price_currency} ${fmtNum(data.current_price, 2, intlLocale)}`
     : '—'
 
-  const allChartData = data.history.map(h => ({
-    month: fmtMonth(h.date, intlLocale),
-    value: convert(h.value_brl),
-  }))
+  const currentPriceBrlDisplay = data.price_currency !== 'BRL' && data.holdings != null && data.holdings > 0 && data.current_value_brl > 0
+    ? data.current_value_brl / data.holdings
+    : null
+
+  const allChartData = (() => {
+    const byMonth = new Map<string, number>()
+    for (const h of data.history) {
+      byMonth.set(h.date.substring(0, 7), convert(h.value_brl))
+    }
+    return Array.from(byMonth.entries()).map(([monthKey, value]) => ({
+      month: fmtMonth(monthKey + '-01', intlLocale),
+      value,
+    }))
+  })()
 
   const CHART_PERIODS = [
     { label: '1M',              months: 1 },
@@ -313,6 +324,41 @@ export default function AssetDetailPage() {
       .filter(c => c.type === 'buy' && (c.value_brl ?? 0) > 0)
       .sort((a, b) => a.date.localeCompare(b.date))
     return buys.length > 0 ? (buys[0].value_brl ?? null) : null
+  })()
+
+  const detailPeriodOptions = [
+    { key: 'all'           as const, label: d.periodAll },
+    { key: 'ytd'           as const, label: 'YTD' },
+    { key: 'last_12m'      as const, label: t.performance.last12m },
+    { key: 'last_30d'      as const, label: t.performance.last30d },
+    { key: 'current_month' as const, label: t.performance.currentMonth },
+  ]
+
+  const periodStats = (() => {
+    if (detailPeriod === 'all' || data.history.length === 0) {
+      return { gainBrl: data.gain_loss_brl, gainPct: data.gain_loss_pct, isAllTime: true }
+    }
+    const nowD = new Date()
+    function localD(d: Date) {
+      return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
+    }
+    const startDate = (() => {
+      switch (detailPeriod) {
+        case 'current_month': return `${nowD.getFullYear()}-${String(nowD.getMonth()+1).padStart(2,'0')}-01`
+        case 'last_30d': { const x = new Date(nowD); x.setDate(x.getDate()-29); return localD(x) }
+        case 'last_12m': { const x = new Date(nowD); x.setFullYear(x.getFullYear()-1); return localD(x) }
+        case 'ytd': return `${nowD.getFullYear()}-01-01`
+      }
+    })()
+    const prevEntries = data.history.filter(h => h.date < startDate)
+    const valueAtStart = prevEntries.length > 0 ? prevEntries[prevEntries.length-1].value_brl : 0
+    const contribsInPeriod = data.contributions
+      .filter(c => c.date >= startDate && c.type === 'buy')
+      .reduce((s, c) => s + (c.value_brl ?? 0), 0)
+    const gainBrl = data.current_value_brl - valueAtStart - contribsInPeriod
+    const dietzBase = valueAtStart + 0.5 * contribsInPeriod
+    const gainPct = dietzBase > 0 ? (gainBrl / dietzBase) * 100 : null
+    return { gainBrl, gainPct, isAllTime: false }
   })()
 
   const mvEntriesWithChange = [...manualValueHistory]
@@ -565,6 +611,9 @@ export default function AssetDetailPage() {
           {data.current_price != null && (
             <>
               <p className="font-bold text-gray-900">{priceLabel}</p>
+              {currentPriceBrlDisplay != null && (
+                <p className="text-xs text-gray-500 font-medium">BRL {fmtNum(currentPriceBrlDisplay, 2, intlLocale)}</p>
+              )}
               <p className="text-xs text-gray-400">{priceSourceLabel(data.price_source, d)}</p>
             </>
           )}
@@ -596,6 +645,29 @@ export default function AssetDetailPage() {
         </div>
       </div>
 
+      {/* Period selector for summary cards */}
+      <div className="flex items-center gap-1.5 flex-wrap">
+        {detailPeriodOptions.map(({ key, label }) => (
+          <button
+            key={key}
+            onClick={() => setDetailPeriod(key)}
+            style={{
+              fontFamily: "var(--arvo-font-body)",
+              fontSize: 10,
+              letterSpacing: '0.12em',
+              textTransform: 'uppercase',
+              padding: '5px 10px',
+              borderRadius: 6,
+              border: `1px solid ${detailPeriod === key ? 'var(--arvo-black)' : 'var(--arvo-border)'}`,
+              background: detailPeriod === key ? 'var(--arvo-black)' : 'white',
+              color: detailPeriod === key ? 'var(--arvo-offwhite)' : 'rgba(13,13,13,0.55)',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+            }}
+          >{label}</button>
+        ))}
+      </div>
+
       {/* Summary cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <SummaryCard label={d.currentValue} value={fmt(data.current_value_brl)} neutral />
@@ -605,14 +677,14 @@ export default function AssetDetailPage() {
           neutral
         />
         <SummaryCard
-          label={d.gainLoss}
-          value={data.gain_loss_pct != null
-            ? `${data.gain_loss_brl >= 0 ? '+' : ''}${fmt(data.gain_loss_brl)}`
+          label={periodStats.isAllTime ? d.gainLoss : d.periodGain}
+          value={periodStats.gainPct != null
+            ? `${periodStats.gainBrl >= 0 ? '+' : ''}${fmt(periodStats.gainBrl)}`
             : '—'}
-          sub={data.gain_loss_pct != null
-            ? `${data.gain_loss_pct >= 0 ? '+' : ''}${data.gain_loss_pct.toFixed(2)}%`
+          sub={periodStats.gainPct != null
+            ? `${periodStats.gainPct >= 0 ? '+' : ''}${periodStats.gainPct.toFixed(2)}%`
             : undefined}
-          positive={gainPositive}
+          positive={periodStats.gainBrl > 0 ? true : periodStats.gainBrl < 0 ? false : null}
         />
         {data.holdings != null ? (
           <SummaryCard
@@ -659,6 +731,9 @@ export default function AssetDetailPage() {
                   <p className="font-bold text-indigo-900 text-sm">
                     {data.price_currency} {fmtNum(data.current_price, 2, intlLocale)}
                   </p>
+                  {currentPriceBrlDisplay != null && (
+                    <p className="text-xs text-indigo-400">BRL {fmtNum(currentPriceBrlDisplay, 2, intlLocale)}</p>
+                  )}
                   <p className="text-xs text-indigo-400">{priceSourceLabel(data.price_source, d)}</p>
                 </div>
                 <div className="w-px h-8 bg-indigo-200 hidden sm:block" />
@@ -1098,9 +1173,16 @@ export default function AssetDetailPage() {
                             </td>
                             <td className="px-4 py-3 text-right">
                               {profitBrl != null ? (
-                                <span className={`text-xs font-semibold ${profitBrl >= 0 ? 'text-green-700' : 'text-red-600'}`}>
-                                  {profitBrl >= 0 ? '+' : ''}{fmt(profitBrl)}
-                                </span>
+                                <div>
+                                  <span className={`text-xs font-semibold ${profitBrl >= 0 ? 'text-green-700' : 'text-red-600'}`}>
+                                    {profitBrl >= 0 ? '+' : ''}{fmt(profitBrl)}
+                                  </span>
+                                  {totalBrlVal != null && totalBrlVal > 0 && (
+                                    <div className={`text-[10px] ${profitBrl >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                                      {profitBrl >= 0 ? '+' : ''}{((profitBrl / totalBrlVal) * 100).toFixed(1)}%
+                                    </div>
+                                  )}
+                                </div>
                               ) : (
                                 <span className="text-xs text-gray-400">—</span>
                               )}
@@ -1138,8 +1220,15 @@ export default function AssetDetailPage() {
                           <div className="text-right shrink-0">
                             <div className="font-medium text-sm text-gray-900">{totalBrlVal != null ? fmt(totalBrlVal) : '—'}</div>
                             {profitBrl != null && (
-                              <div className={`text-xs font-semibold ${profitBrl >= 0 ? 'text-green-700' : 'text-red-600'}`}>
-                                {profitBrl >= 0 ? '+' : ''}{fmt(profitBrl)}
+                              <div>
+                                <div className={`text-xs font-semibold ${profitBrl >= 0 ? 'text-green-700' : 'text-red-600'}`}>
+                                  {profitBrl >= 0 ? '+' : ''}{fmt(profitBrl)}
+                                </div>
+                                {totalBrlVal != null && totalBrlVal > 0 && (
+                                  <div className={`text-[10px] ${profitBrl >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                                    {profitBrl >= 0 ? '+' : ''}{((profitBrl / totalBrlVal) * 100).toFixed(1)}%
+                                  </div>
+                                )}
                               </div>
                             )}
                           </div>

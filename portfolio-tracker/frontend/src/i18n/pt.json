@@ -211,7 +211,12 @@
     "targetLine": "Plano",
     "createFreedomPlan": "Criar plano de liberdade →",
     "splitWarningDashTitle": "Evento(s) corporativo(s) pendente(s)",
-    "splitWarningDashBody": "Desdobro ou grupamento detectado em {n} ativo(s). Acesse o ativo para registrar."
+    "splitWarningDashBody": "Desdobro ou grupamento detectado em {n} ativo(s). Acesse o ativo para registrar.",
+    "topMovers": "Destaques do período",
+    "topGainers": "Maiores altas",
+    "topLosers": "Maiores baixas",
+    "noMoversData": "Sem dados de rentabilidade",
+    "periodGainBrl": "Ganho no período"
   },
   "footer": {
     "copyright": "© 2026 arvo",
@@ -1216,7 +1221,9 @@
     "splitDenominator": "Cotas originais",
     "splitTypeLabel": "Ex: desdobro 10:1 → 10 novas / 1 original",
     "splitSubmit": "Registrar",
-    "splitSuccess": "Evento registrado com sucesso"
+    "splitSuccess": "Evento registrado com sucesso",
+    "periodGain": "Ganho no período",
+    "periodAll": "Desde início"
   },
   "dividends": {
     "title": "Dividendos",

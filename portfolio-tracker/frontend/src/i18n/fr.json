@@ -211,7 +211,12 @@
     "targetLine": "Plan",
     "createFreedomPlan": "Créer un plan liberté →",
     "splitWarningDashTitle": "Opération(s) sur titres en attente",
-    "splitWarningDashBody": "Division ou regroupement détecté sur {n} actif(s). Ouvrez l actif pour enregistrer."
+    "splitWarningDashBody": "Division ou regroupement détecté sur {n} actif(s). Ouvrez l actif pour enregistrer.",
+    "topMovers": "Faits marquants",
+    "topGainers": "Meilleures hausses",
+    "topLosers": "Meilleures baisses",
+    "noMoversData": "Aucune donnée de rendement",
+    "periodGainBrl": "Gain sur la période"
   },
   "footer": {
     "copyright": "© 2026 arvo",
@@ -1216,7 +1221,9 @@
     "splitDenominator": "Actions d origine",
     "splitTypeLabel": "Ex. division 10:1 → 10 nouvelles / 1 d origine",
     "splitSubmit": "Enregistrer",
-    "splitSuccess": "Opération enregistrée avec succès"
+    "splitSuccess": "Opération enregistrée avec succès",
+    "periodGain": "Gain sur la période",
+    "periodAll": "Depuis le début"
   },
   "dividends": {
     "title": "Dividendes",

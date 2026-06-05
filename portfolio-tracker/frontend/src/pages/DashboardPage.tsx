@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { PageLoader } from '../components/ArvoLoader'
-import { usePortfolioValue, usePerformanceMonthly, usePerformanceDaily, usePerformanceInception, usePerformanceSummary } from '../hooks/usePortfolio'
+import { usePortfolioValue, usePerformanceMonthly, usePerformanceDaily, usePerformanceInception, usePerformanceSummary, useAssetReturns } from '../hooks/usePortfolio'
 import { useDividendSummary, useDividendSync } from '../hooks/useDividends'
 import { useCurrency } from '../contexts/CurrencyContext'
 import { useFavorites } from '../hooks/useFavorites'
@@ -120,6 +120,9 @@ export default function DashboardPage() {
 
   const { data: periodSummary, loading: periodLoading } = usePerformanceSummary(perfFrom, perfTo)
   const periodReturnPct = periodSummary?.return_pct ?? null
+  const periodReturnAbs = periodSummary?.return_abs ?? null
+
+  const { data: dashReturns, loading: dashReturnsLoading } = useAssetReturns(perfFrom, perfTo)
 
   // Dividend date range (same period but as full dates)
   const divFrom = (() => {
@@ -297,9 +300,7 @@ export default function DashboardPage() {
               invested_brl={hasInvested ? totalInvestedBrl : null}
               gain_brl={gainLossBrl}
               gain_pct={gainLossPct}
-              month_pct={hasInvested ? monthReturn : null}
-              ytd_pct={hasInvested ? ytdReturn : null}
-              ytd_year={currentYearStr}
+              period_abs={hasInvested ? periodReturnAbs : null}
               chartLoading={chartLoading || dailyLoading || periodLoading}
               period_pct={hasInvested ? periodReturnPct : null}
               period_label={periodLabel}
@@ -310,6 +311,79 @@ export default function DashboardPage() {
           <AllocationChart data={data.by_class} currency={currency} convert={convert} />
         )}
       </div>
+
+      {/* Top movers strip */}
+      {(() => {
+        const td = t.dashboard as unknown as Record<string, string>
+        const movingAssets = (data.by_asset ?? [])
+          .filter(a => !a.needs_manual && a.value_brl > 0 && dashReturns?.[a.id] != null)
+          .map(a => ({ ...a, ret: dashReturns![a.id]! }))
+          .sort((a, b) => b.ret - a.ret)
+        const gainers = movingAssets.filter(a => a.ret > 0).slice(0, 3)
+        const losers  = [...movingAssets].reverse().filter(a => a.ret < 0).slice(0, 3)
+        if (!dashReturnsLoading && gainers.length === 0 && losers.length === 0) return null
+        return (
+          <div className="rounded-2xl p-5" style={{ background: 'white', border: '1px solid var(--arvo-border)' }}>
+            <h2 className="mb-3" style={{ fontFamily: "var(--arvo-font-body)", fontSize: 13, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--arvo-fg)' }}>
+              {td.topMovers} · {periodLabel}
+            </h2>
+            {dashReturnsLoading ? (
+              <div className="h-12 flex items-center">
+                <div className="text-xs animate-pulse" style={{ color: 'rgba(13,13,13,0.35)' }}>...</div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {gainers.length > 0 && (
+                  <div>
+                    <p className="text-xs mb-2" style={{ fontFamily: "var(--arvo-font-body)", letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.45)' }}>{td.topGainers}</p>
+                    <div className="space-y-2">
+                      {gainers.map(a => (
+                        <div key={a.id}
+                          className="flex items-center justify-between gap-2 cursor-pointer rounded-xl px-3 py-2 transition-colors"
+                          style={{ background: 'rgba(31,138,91,0.06)', border: '1px solid rgba(31,138,91,0.15)' }}
+                          onClick={() => navigate(`/assets/${a.id}`, { state: { total_brl: data.total_brl } })}
+                        >
+                          <div className="min-w-0">
+                            <div className="text-sm font-semibold" style={{ color: 'var(--arvo-black)' }}>{a.code}</div>
+                            <div className="text-xs truncate" style={{ color: 'rgba(13,13,13,0.45)' }}>{a.name}</div>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <div className="text-sm font-bold" style={{ color: 'var(--arvo-green)' }}>+{a.ret.toFixed(2)}%</div>
+                            <div className="text-xs" style={{ color: 'rgba(13,13,13,0.45)' }}>{fmt(convert(a.value_brl))}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {losers.length > 0 && (
+                  <div>
+                    <p className="text-xs mb-2" style={{ fontFamily: "var(--arvo-font-body)", letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.45)' }}>{td.topLosers}</p>
+                    <div className="space-y-2">
+                      {losers.map(a => (
+                        <div key={a.id}
+                          className="flex items-center justify-between gap-2 cursor-pointer rounded-xl px-3 py-2 transition-colors"
+                          style={{ background: 'rgba(214,59,47,0.06)', border: '1px solid rgba(214,59,47,0.15)' }}
+                          onClick={() => navigate(`/assets/${a.id}`, { state: { total_brl: data.total_brl } })}
+                        >
+                          <div className="min-w-0">
+                            <div className="text-sm font-semibold" style={{ color: 'var(--arvo-black)' }}>{a.code}</div>
+                            <div className="text-xs truncate" style={{ color: 'rgba(13,13,13,0.45)' }}>{a.name}</div>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <div className="text-sm font-bold" style={{ color: 'var(--arvo-red)' }}>{a.ret.toFixed(2)}%</div>
+                            <div className="text-xs" style={{ color: 'rgba(13,13,13,0.45)' }}>{fmt(convert(a.value_brl))}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )
+      })()}
 
       {/* Row 2: Evolution chart — full width */}
       {(chartLoading || portfolioChartData.length > 0) && (
@@ -372,6 +446,8 @@ export default function DashboardPage() {
           onAssetClick={handleAssetClick}
           favorites={favorites}
           onToggleFavorite={toggleFavorite}
+          externalReturns={dashReturns}
+          externalReturnsLoading={dashReturnsLoading}
         />
       ) : (
         <div className="rounded-2xl p-12 text-center" style={{ background: 'white', border: '1px solid var(--arvo-border)' }}>

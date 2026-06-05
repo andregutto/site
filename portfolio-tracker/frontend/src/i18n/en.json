@@ -211,7 +211,12 @@
     "targetLine": "Plan",
     "createFreedomPlan": "Create freedom plan →",
     "splitWarningDashTitle": "Pending corporate event(s)",
-    "splitWarningDashBody": "Split or reverse split detected in {n} asset(s). Open the asset to register."
+    "splitWarningDashBody": "Split or reverse split detected in {n} asset(s). Open the asset to register.",
+    "topMovers": "Period highlights",
+    "topGainers": "Top gainers",
+    "topLosers": "Top losers",
+    "noMoversData": "No return data available",
+    "periodGainBrl": "Period gain"
   },
   "footer": {
     "copyright": "© 2026 arvo",
@@ -1216,7 +1221,9 @@
     "splitDenominator": "Original shares",
     "splitTypeLabel": "E.g. 10:1 split → 10 new / 1 original",
     "splitSubmit": "Register",
-    "splitSuccess": "Event registered successfully"
+    "splitSuccess": "Event registered successfully",
+    "periodGain": "Period gain/loss",
+    "periodAll": "Since inception"
   },
   "dividends": {
     "title": "Dividends",

@@ -32,15 +32,13 @@ interface Props {
   invested_brl?: number | null
   gain_brl?: number | null
   gain_pct?: number | null
-  month_pct?: number | null
-  ytd_pct?: number | null
-  ytd_year?: string
+  period_abs?: number | null
   chartLoading?: boolean
   period_pct?: number | null
   period_label?: string
 }
 
-export default function ValueCards({ total_brl, generated_at, invested_brl, gain_brl, gain_pct, month_pct, ytd_pct, ytd_year, chartLoading, period_pct, period_label }: Props) {
+export default function ValueCards({ total_brl, generated_at, invested_brl, gain_brl, gain_pct, period_abs, chartLoading, period_pct, period_label }: Props) {
   const { currency, fmt } = useCurrency()
   const { t, locale } = useI18n()
   const ti = (t as unknown as Record<string, Record<string, string>>).indices ?? {}
@@ -69,8 +67,8 @@ export default function ValueCards({ total_brl, generated_at, invested_brl, gain
     return val >= 0 ? 'var(--arvo-green)' : 'var(--arvo-red)'
   }
 
-  const periodVal = period_pct !== undefined ? period_pct : ytd_pct
-  const periodLbl = period_label ?? t.dashboard.yearLabel.replace('{year}', ytd_year ?? '')
+  const periodVal = period_pct !== undefined ? period_pct : null
+  const periodLbl = period_label ?? 'YTD'
 
   const labelStyle: React.CSSProperties = {
     fontFamily: "var(--arvo-font-body)",
@@ -120,11 +118,15 @@ export default function ValueCards({ total_brl, generated_at, invested_brl, gain
             </span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <span style={labelStyle}>{t.dashboard.currentMonth}</span>
-            <span className="text-base sm:text-lg" style={{ fontFamily: "var(--arvo-font-body)", letterSpacing: '0.04em', color: pctColor(month_pct) }}>{pctText(month_pct)}</span>
+            <span style={labelStyle}>{t.dashboard.periodGainBrl} · {periodLbl}</span>
+            <span className="text-base sm:text-lg" style={{ fontFamily: "var(--arvo-font-body)", letterSpacing: '0.04em', color: pctColor(period_abs) }}>
+              {period_abs != null
+                ? `${period_abs >= 0 ? '+' : ''}${fmt(period_abs, 0)}`
+                : chartLoading ? '...' : '—'}
+            </span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <span style={labelStyle}>{periodLbl}</span>
+            <span style={labelStyle}>{periodLbl} %</span>
             <span className="text-base sm:text-lg" style={{ fontFamily: "var(--arvo-font-body)", letterSpacing: '0.04em', color: pctColor(periodVal) }}>{pctText(periodVal)}</span>
           </div>
         </div>

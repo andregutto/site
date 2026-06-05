@@ -9,6 +9,8 @@ interface Props {
   onAssetClick?: (asset: PortfolioAsset) => void
   favorites?: Set<number>
   onToggleFavorite?: (id: number) => void
+  externalReturns?: import('../lib/types').AssetReturns | null
+  externalReturnsLoading?: boolean
 }
 
 type SortKey = 'value_brl' | 'code' | 'pct' | 'return'
@@ -77,10 +79,12 @@ function StarButton({ filled, onClick }: { filled: boolean; onClick: (e: React.M
   )
 }
 
-export default function AssetTable({ assets, onAssetClick, favorites = new Set(), onToggleFavorite }: Props) {
+export default function AssetTable({ assets, onAssetClick, favorites = new Set(), onToggleFavorite, externalReturns, externalReturnsLoading }: Props) {
   const { fmt, currency } = useCurrency()
   const { t } = useI18n()
   const d = t.dashboard
+
+  const hasExternal = externalReturns !== undefined
 
   const [search,   setSearch]   = useState('')
   const [sortKey,  setSortKey]  = useState<SortKey>('value_brl')
@@ -118,7 +122,9 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
   }
 
   const { from, to } = getPeriodRange(period)
-  const { data: returns, loading: returnsLoading } = useAssetReturns(from, to)
+  const { data: internalReturns, loading: internalLoading } = useAssetReturns(hasExternal ? null : from, hasExternal ? null : to)
+  const returns = hasExternal ? externalReturns : internalReturns
+  const returnsLoading = hasExternal ? (externalReturnsLoading ?? false) : internalLoading
 
   function toggleSort(key: SortKey) {
     if (sortKey === key) setSortDir(dir => dir === 'asc' ? 'desc' : 'asc')
@@ -204,18 +210,20 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
           )}
         </div>
         <div className="flex items-center gap-2 flex-wrap justify-end">
-          <div className="flex items-center rounded-full p-0.5 gap-0.5" style={{ background: 'rgba(13,13,13,0.07)' }}>
-            {PERIOD_OPTIONS.map(({ key, label }) => (
-              <button
-                key={key}
-                onClick={() => setPeriod(key)}
-                className="px-2.5 py-1 text-xs rounded-full transition-all"
-                style={period === key
-                  ? { fontFamily: "var(--arvo-font-body)", background: 'var(--arvo-black)', color: 'var(--arvo-offwhite)', letterSpacing: '0.06em' }
-                  : { fontFamily: "var(--arvo-font-body)", color: 'rgba(13,13,13,0.45)', letterSpacing: '0.06em' }}
-              >{label}</button>
-            ))}
-          </div>
+          {!hasExternal && (
+            <div className="flex items-center rounded-full p-0.5 gap-0.5" style={{ background: 'rgba(13,13,13,0.07)' }}>
+              {PERIOD_OPTIONS.map(({ key, label }) => (
+                <button
+                  key={key}
+                  onClick={() => setPeriod(key)}
+                  className="px-2.5 py-1 text-xs rounded-full transition-all"
+                  style={period === key
+                    ? { fontFamily: "var(--arvo-font-body)", background: 'var(--arvo-black)', color: 'var(--arvo-offwhite)', letterSpacing: '0.06em' }
+                    : { fontFamily: "var(--arvo-font-body)", color: 'rgba(13,13,13,0.45)', letterSpacing: '0.06em' }}
+                >{label}</button>
+              ))}
+            </div>
+          )}
           <input
             type="text"
             placeholder={d.filterPlaceholder}
