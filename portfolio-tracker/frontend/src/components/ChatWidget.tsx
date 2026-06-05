@@ -158,42 +158,77 @@ export default function ChatWidget({ visible = true, onDismiss, forceOpen, onFor
 
   return (
     <>
+      <style>{`
+        @keyframes arvo-spin { to { transform: rotate(360deg); } }
+        @keyframes arvo-bird-color {
+          0%,100% { fill: #1B4FD8; filter: drop-shadow(0 0 3px rgba(27,79,216,0.5)); }
+          33%      { fill: #E8A020; filter: drop-shadow(0 0 3px rgba(232,160,32,0.5)); }
+          66%      { fill: #D63B2F; filter: drop-shadow(0 0 3px rgba(214,59,47,0.5)); }
+        }
+        .arvo-chat-glow {
+          position: absolute; inset: -5px; border-radius: 50%;
+          background: conic-gradient(from 0deg, #1B4FD8, #E8A020, #D63B2F, #1B4FD8);
+          animation: arvo-spin 2.8s linear infinite;
+          filter: blur(8px); opacity: 0.65; pointer-events: none;
+        }
+        .arvo-bird-p1 { animation: arvo-bird-color 3s ease-in-out infinite; animation-delay: 0s; }
+        .arvo-bird-p2 { animation: arvo-bird-color 3s ease-in-out infinite; animation-delay: 0.25s; }
+        .arvo-bird-p3 { animation: arvo-bird-color 3s ease-in-out infinite; animation-delay: 0.5s; }
+        .arvo-bird-p4 { animation: arvo-bird-color 3s ease-in-out infinite; animation-delay: 0.75s; }
+        .arvo-bird-p5 { animation: arvo-bird-color 3s ease-in-out infinite; animation-delay: 1.0s; }
+        .arvo-bird-p6 { animation: arvo-bird-color 3s ease-in-out infinite; animation-delay: 1.25s; }
+      `}</style>
+
       {/* Floating button */}
       <div className="fixed chat-bubble-safe right-5 z-50 sm:bottom-5">
-        <button
-          onClick={() => setOpen(o => !o)}
-          className="w-12 h-12 rounded-full text-white shadow-lg flex items-center justify-center transition-all"
-          style={{ background: 'var(--arvo-black)', border: '1px solid rgba(200,184,154,0.25)' }}
-          onMouseEnter={e => { e.currentTarget.style.border = '1px solid rgba(200,184,154,0.6)' }}
-          onMouseLeave={e => { e.currentTarget.style.border = '1px solid rgba(200,184,154,0.25)' }}
-          aria-label={t.chat.open}
-        >
-          {open ? (
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          ) : (
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-            </svg>
-          )}
-        </button>
-        {/* Dismiss badge — only when chat is closed */}
-        {!open && onDismiss && (
+        <div style={{ position: 'relative', width: 48, height: 48 }}>
+          {/* Rotating conic glow */}
+          <div className="arvo-chat-glow" />
+          {/* Main button — white circle */}
           <button
-            onClick={onDismiss}
-            className="absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center text-[10px] leading-none text-white transition-opacity hover:opacity-80"
-            style={{ background: 'rgba(13,13,13,0.55)' }}
-            aria-label={t.chat.dismiss ?? 'Fechar assistente'}
-          >×</button>
-        )}
+            onClick={() => setOpen(o => !o)}
+            style={{
+              position: 'absolute', inset: 0, borderRadius: '50%',
+              background: '#FFFFFF', border: 'none', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              boxShadow: '0 2px 14px rgba(0,0,0,0.12)', zIndex: 1,
+            }}
+            aria-label={open ? (t.chat.dismiss ?? 'Fechar') : t.chat.open}
+          >
+            {open ? (
+              /* Close icon — two diagonal lines, rounded, dark on white */
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M1.5 1.5L12.5 12.5M12.5 1.5L1.5 12.5" stroke="#0D0D0D" strokeWidth="2" strokeLinecap="round"/>
+              </svg>
+            ) : (
+              /* Arvo bird with color cascade */
+              <svg width="28" height="29" viewBox="0 0 174 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path className="arvo-bird-p1" d="M96.9642 82.5762C83.7642 28.1762 141.798 5.2429 172.464 0.576233C173.464 15.7429 159.764 53.3762 96.9642 82.5762Z"/>
+                <path className="arvo-bird-p2" d="M165.464 82.5762V53.5762L136.964 73.9631V111.674C144.263 106.015 151.778 100.102 155.964 96.5762C163.564 90.1762 165.464 84.5762 165.464 82.5762Z"/>
+                <path className="arvo-bird-p3" d="M121.464 85.0507V123.576C125.207 120.732 131.014 116.287 136.964 111.674V73.9631L121.464 85.0507Z"/>
+                <path className="arvo-bird-p4" d="M96.9642 102.576L121.464 123.576V85.0507L96.9642 102.576Z"/>
+                <path className="arvo-bird-p5" d="M121.464 155.576V123.576L96.9642 102.576V178.576L121.464 155.576Z"/>
+                <path className="arvo-bird-p6" d="M0.513985 24.5762V51.5762C0.513985 53.5762 -0.135759 66.6762 7.46424 73.0762L44.514 101.576V155.076L69.014 178.076V82.0762L37.9642 56.0762L0.513985 24.5762Z"/>
+              </svg>
+            )}
+          </button>
+          {/* Dismiss badge — only when chat is closed */}
+          {!open && onDismiss && (
+            <button
+              onClick={onDismiss}
+              className="absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center text-[10px] leading-none text-white transition-opacity hover:opacity-80"
+              style={{ background: 'rgba(13,13,13,0.55)', zIndex: 2 }}
+              aria-label={t.chat.dismiss ?? 'Fechar assistente'}
+            >×</button>
+          )}
+        </div>
       </div>
 
       {/* Chat panel */}
       {open && (
         <div className="fixed chat-dialog-safe right-5 z-50 w-[360px] max-w-[calc(100vw-2.5rem)] h-[520px] max-h-[calc(100vh-6rem)] rounded-2xl shadow-2xl flex flex-col overflow-hidden sm:bottom-20" style={{ background: 'var(--arvo-offwhite)', border: '1px solid var(--arvo-border-soft)' }}>
           {/* Header */}
-          <div className="flex items-center gap-2.5 px-4 py-3 rounded-t-2xl" style={{ background: 'var(--arvo-black)', borderBottom: '1px solid rgba(200,184,154,0.15)' }}>
+          <div className="flex items-center gap-2.5 px-4 py-3 rounded-t-2xl" style={{ background: 'linear-gradient(to right, #163fa8, #1B4FD8 30%, #c4890e 72%, #c4341f)', borderBottom: '1px solid rgba(200,184,154,0.15)' }}>
             <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
               <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23-.693L5 14.5m14.8.8l1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0112 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5" />

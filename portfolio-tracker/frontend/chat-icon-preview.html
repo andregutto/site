@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<title>Arvo Chat Icon — Opções</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #f5f3ee;
+    font-family: system-ui, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 48px;
+    padding: 48px 24px;
+  }
+  h1 { font-size: 14px; letter-spacing: 0.2em; text-transform: uppercase; color: #888; }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 40px;
+    width: 100%;
+    max-width: 640px;
+  }
+  .card {
+    background: white;
+    border: 1px solid rgba(200,184,154,0.35);
+    border-radius: 20px;
+    padding: 32px 24px 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+  }
+  .card-label {
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #999;
+    text-align: center;
+  }
+  .card-desc {
+    font-size: 12px;
+    color: #555;
+    text-align: center;
+    line-height: 1.6;
+    max-width: 220px;
+  }
+  .btn-wrap {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.18);
+    position: relative;
+  }
+
+  /* ─── OPÇÃO 1: Bird color cascade ─────────────────────────── */
+  .btn1 { background: #0D0D0D; }
+
+  @keyframes birdColor1 {
+    0%,100% { fill: #1B4FD8; filter: drop-shadow(0 0 4px #1B4FD8cc); }
+    33%      { fill: #E8A020; filter: drop-shadow(0 0 4px #E8A020cc); }
+    66%      { fill: #D63B2F; filter: drop-shadow(0 0 4px #D63B2Fcc); }
+  }
+  @keyframes birdColor2 {
+    0%,100% { fill: #1B4FD8; }
+    33%      { fill: #E8A020; }
+    66%      { fill: #D63B2F; }
+  }
+
+  .bc { animation: birdColor2 3s ease-in-out infinite; }
+  .bc1 { animation: birdColor1 3s ease-in-out infinite; animation-delay: 0s; }
+  .bc2 { animation: birdColor2 3s ease-in-out infinite; animation-delay: 0.25s; }
+  .bc3 { animation: birdColor2 3s ease-in-out infinite; animation-delay: 0.5s; }
+  .bc4 { animation: birdColor2 3s ease-in-out infinite; animation-delay: 0.75s; }
+  .bc5 { animation: birdColor2 3s ease-in-out infinite; animation-delay: 1.0s; }
+  .bc6 { animation: birdColor2 3s ease-in-out infinite; animation-delay: 1.25s; }
+
+  /* ─── OPÇÃO 2: Ring conic sweep ───────────────────────────── */
+  .btn2 {
+    background: #0D0D0D;
+    border: none;
+  }
+  .ring-wrap {
+    position: relative;
+    width: 56px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .ring-outer {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: conic-gradient(from 0deg, #1B4FD8, #E8A020, #D63B2F, #1B4FD8);
+    animation: spin 2.8s linear infinite;
+  }
+  .ring-inner {
+    position: absolute;
+    inset: 3px;
+    border-radius: 50%;
+    background: #0D0D0D;
+    z-index: 1;
+  }
+  .ring-glow {
+    position: absolute;
+    inset: -4px;
+    border-radius: 50%;
+    background: conic-gradient(from 0deg, #1B4FD8, #E8A020, #D63B2F, #1B4FD8);
+    animation: spin 2.8s linear infinite;
+    filter: blur(8px);
+    opacity: 0.55;
+  }
+  .ring-logo {
+    position: relative;
+    z-index: 2;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ─── OPÇÃO 3: Bird + glow pulse ──────────────────────────── */
+  .btn3 { background: #0D0D0D; }
+  @keyframes glowPulse {
+    0%,100% { box-shadow: 0 0 12px 4px rgba(27,79,216,0.55), 0 4px 20px rgba(0,0,0,0.3); }
+    33%      { box-shadow: 0 0 12px 4px rgba(232,160,32,0.55), 0 4px 20px rgba(0,0,0,0.3); }
+    66%      { box-shadow: 0 0 12px 4px rgba(214,59,47,0.55),  0 4px 20px rgba(0,0,0,0.3); }
+  }
+  .glow-pulse { animation: glowPulse 3s ease-in-out infinite; }
+
+  @keyframes birdWhite {
+    0%,100% { opacity: 1; }
+    50%      { opacity: 0.75; }
+  }
+  .bird-white { fill: white; animation: birdWhite 3s ease-in-out infinite; }
+
+  /* ─── OPÇÃO 4: "a" + orbiting dots ────────────────────────── */
+  .btn4 { background: #0D0D0D; overflow: visible; }
+  .orbit-wrap {
+    position: relative;
+    width: 56px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .orbit-a {
+    font-size: 22px;
+    font-weight: 700;
+    color: white;
+    font-family: 'Georgia', serif;
+    letter-spacing: -0.02em;
+    z-index: 2;
+    position: relative;
+    user-select: none;
+    @keyframes aGlow {
+      0%,100% { text-shadow: 0 0 8px rgba(200,184,154,0.6); }
+      50%      { text-shadow: 0 0 16px rgba(200,184,154,1); }
+    }
+    animation: aGlow 2.4s ease-in-out infinite;
+  }
+  @keyframes aGlow {
+    0%,100% { text-shadow: 0 0 8px rgba(200,184,154,0.5); }
+    50%      { text-shadow: 0 0 18px rgba(200,184,154,1); }
+  }
+  .orbit-ring {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+  }
+  .orbit-dot {
+    position: absolute;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    top: 50%;
+    left: 50%;
+    transform-origin: 0 0;
+  }
+  .dot-blue  { background: #1B4FD8; animation: orbitDot1 2.4s linear infinite; }
+  .dot-gold  { background: #E8A020; animation: orbitDot2 2.4s linear infinite; }
+  .dot-red   { background: #D63B2F; animation: orbitDot3 2.4s linear infinite; }
+
+  @keyframes orbitDot1 {
+    from { transform: rotate(0deg)   translateX(24px) translateY(-3.5px); }
+    to   { transform: rotate(360deg) translateX(24px) translateY(-3.5px); }
+  }
+  @keyframes orbitDot2 {
+    from { transform: rotate(120deg) translateX(24px) translateY(-3.5px); }
+    to   { transform: rotate(480deg) translateX(24px) translateY(-3.5px); }
+  }
+  @keyframes orbitDot3 {
+    from { transform: rotate(240deg) translateX(24px) translateY(-3.5px); }
+    to   { transform: rotate(600deg) translateX(24px) translateY(-3.5px); }
+  }
+  .dot-blue-glow  { filter: drop-shadow(0 0 3px #1B4FD8); }
+  .dot-gold-glow  { filter: drop-shadow(0 0 3px #E8A020); }
+  .dot-red-glow   { filter: drop-shadow(0 0 3px #D63B2F); }
+
+  /* Smaller version preview */
+  .size-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .size-note { font-size: 10px; color: #aaa; letter-spacing: 0.1em; text-transform: uppercase; }
+
+  /* ─── VARIANTES FUNDO BRANCO ──────────────────────────────── */
+  .btn1-white { background: #FFFFFF; box-shadow: 0 4px 20px rgba(0,0,0,0.12); }
+  .btn2-white { background: #FFFFFF; }
+
+  /* Ring branco: anel fica com cores da marca, interior branco */
+  .ring-inner-white {
+    position: absolute;
+    inset: 3px;
+    border-radius: 50%;
+    background: #FFFFFF;
+    z-index: 1;
+  }
+
+  /* Color cascade no fundo branco: cores mais escuras/saturadas para contrastar */
+  @keyframes birdColorWhiteBg {
+    0%,100% { fill: #1B4FD8; filter: drop-shadow(0 0 3px rgba(27,79,216,0.5)); }
+    33%      { fill: #E8A020; filter: drop-shadow(0 0 3px rgba(232,160,32,0.5)); }
+    66%      { fill: #D63B2F; filter: drop-shadow(0 0 3px rgba(214,59,47,0.5)); }
+  }
+  .bc-wb { animation: birdColorWhiteBg 3s ease-in-out infinite; }
+  .bc-wb1 { animation: birdColorWhiteBg 3s ease-in-out infinite; animation-delay: 0s; }
+  .bc-wb2 { animation: birdColorWhiteBg 3s ease-in-out infinite; animation-delay: 0.25s; }
+  .bc-wb3 { animation: birdColorWhiteBg 3s ease-in-out infinite; animation-delay: 0.5s; }
+  .bc-wb4 { animation: birdColorWhiteBg 3s ease-in-out infinite; animation-delay: 0.75s; }
+  .bc-wb5 { animation: birdColorWhiteBg 3s ease-in-out infinite; animation-delay: 1.0s; }
+  .bc-wb6 { animation: birdColorWhiteBg 3s ease-in-out infinite; animation-delay: 1.25s; }
+
+  /* Bird escuro no botão branco para opção 2 */
+  .bird-dark { fill: #0D0D0D; }
+
+  .section-label {
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: #bbb;
+    text-align: center;
+    margin-top: 8px;
+  }
+  .divider {
+    width: 100%;
+    max-width: 640px;
+    height: 1px;
+    background: rgba(200,184,154,0.25);
+    margin: 8px 0;
+  }
+</style>
+</head>
+<body>
+
+<h1>Arvo · Chat icon concepts</h1>
+
+<div class="grid">
+
+  <!-- OPÇÃO 1: Bird color cascade -->
+  <div class="card">
+    <div class="card-label">Opção 1</div>
+    <div class="btn-wrap btn1">
+      <svg width="32" height="33" viewBox="0 0 174 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path class="bc bc1" d="M96.9642 82.5762C83.7642 28.1762 141.798 5.2429 172.464 0.576233C173.464 15.7429 159.764 53.3762 96.9642 82.5762Z"/>
+        <path class="bc bc2" d="M165.464 82.5762V53.5762L136.964 73.9631V111.674C144.263 106.015 151.778 100.102 155.964 96.5762C163.564 90.1762 165.464 84.5762 165.464 82.5762Z"/>
+        <path class="bc bc3" d="M121.464 85.0507V123.576C125.207 120.732 131.014 116.287 136.964 111.674V73.9631L121.464 85.0507Z"/>
+        <path class="bc bc4" d="M96.9642 102.576L121.464 123.576V85.0507L96.9642 102.576Z"/>
+        <path class="bc bc5" d="M121.464 155.576V123.576L96.9642 102.576V178.576L121.464 155.576Z"/>
+        <path class="bc bc6" d="M0.513985 24.5762V51.5762C0.513985 53.5762 -0.135759 66.6762 7.46424 73.0762L44.514 101.576V155.076L69.014 178.076V82.0762L37.9642 56.0762L0.513985 24.5762Z"/>
+      </svg>
+    </div>
+    <div class="card-desc">Bird logo • cores ciclam azul → ocre → vermelho em cascata por segmento • drop-shadow por cor</div>
+  </div>
+
+  <!-- OPÇÃO 2: Conic ring sweep -->
+  <div class="card">
+    <div class="card-label">Opção 2</div>
+    <div class="ring-wrap" style="box-shadow:0 4px 20px rgba(0,0,0,0.18);border-radius:50%">
+      <div class="ring-glow"></div>
+      <div class="ring-outer"></div>
+      <div class="ring-inner"></div>
+      <div class="ring-logo">
+        <svg width="26" height="27" viewBox="0 0 174 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M96.9642 82.5762C83.7642 28.1762 141.798 5.2429 172.464 0.576233C173.464 15.7429 159.764 53.3762 96.9642 82.5762Z" fill="white"/>
+          <path d="M165.464 82.5762V53.5762L136.964 73.9631V111.674C144.263 106.015 151.778 100.102 155.964 96.5762C163.564 90.1762 165.464 84.5762 165.464 82.5762Z" fill="white"/>
+          <path d="M121.464 85.0507V123.576C125.207 120.732 131.014 116.287 136.964 111.674V73.9631L121.464 85.0507Z" fill="white"/>
+          <path d="M96.9642 102.576L121.464 123.576V85.0507L96.9642 102.576Z" fill="white"/>
+          <path d="M121.464 155.576V123.576L96.9642 102.576V178.576L121.464 155.576Z" fill="white"/>
+          <path d="M0.513985 24.5762V51.5762C0.513985 53.5762 -0.135759 66.6762 7.46424 73.0762L44.514 101.576V155.076L69.014 178.076V82.0762L37.9642 56.0762L0.513985 24.5762Z" fill="white"/>
+        </svg>
+      </div>
+    </div>
+    <div class="card-desc">Bird logo branca • anel conic-gradient girando (azul → ocre → vermelho) • glow externo suave</div>
+  </div>
+
+  <!-- OPÇÃO 3: Bird white + glow pulse -->
+  <div class="card">
+    <div class="card-label">Opção 3</div>
+    <div class="btn-wrap btn3 glow-pulse">
+      <svg width="30" height="31" viewBox="0 0 174 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path class="bird-white" d="M96.9642 82.5762C83.7642 28.1762 141.798 5.2429 172.464 0.576233C173.464 15.7429 159.764 53.3762 96.9642 82.5762Z"/>
+        <path class="bird-white" d="M165.464 82.5762V53.5762L136.964 73.9631V111.674C144.263 106.015 151.778 100.102 155.964 96.5762C163.564 90.1762 165.464 84.5762 165.464 82.5762Z"/>
+        <path class="bird-white" d="M121.464 85.0507V123.576C125.207 120.732 131.014 116.287 136.964 111.674V73.9631L121.464 85.0507Z"/>
+        <path class="bird-white" d="M96.9642 102.576L121.464 123.576V85.0507L96.9642 102.576Z"/>
+        <path class="bird-white" d="M121.464 155.576V123.576L96.9642 102.576V178.576L121.464 155.576Z"/>
+        <path class="bird-white" d="M0.513985 24.5762V51.5762C0.513985 53.5762 -0.135759 66.6762 7.46424 73.0762L44.514 101.576V155.076L69.014 178.076V82.0762L37.9642 56.0762L0.513985 24.5762Z"/>
+      </svg>
+    </div>
+    <div class="card-desc">Bird logo branca sólida • o BOTÃO pulsa com glow externo ciclando nas 3 cores da marca • mais sutil</div>
+  </div>
+
+  <!-- OPÇÃO 4: "a" + orbiting color dots -->
+  <div class="card">
+    <div class="card-label">Opção 4</div>
+    <div style="width:56px;height:56px;border-radius:50%;background:#0D0D0D;box-shadow:0 4px 20px rgba(0,0,0,0.18);display:flex;align-items:center;justify-content:center;position:relative;overflow:visible;">
+      <span style="font-size:22px;font-weight:700;color:white;font-family:Georgia,serif;z-index:2;position:relative;animation:aGlow 2.4s ease-in-out infinite;">a</span>
+      <svg style="position:absolute;inset:0;width:56px;height:56px;overflow:visible;" viewBox="0 0 56 56">
+        <!-- dot azul -->
+        <circle r="3.5" fill="#1B4FD8" filter="url(#gB)">
+          <animateTransform attributeName="transform" type="rotate" from="0 28 28" to="360 28 28" dur="2.4s" repeatCount="indefinite"/>
+          <animate attributeName="cx" from="52" to="52" dur="2.4s" repeatCount="indefinite"/>
+          <animate attributeName="cy" from="28" to="28" dur="2.4s" repeatCount="indefinite"/>
+        </circle>
+        <!-- dot gold -->
+        <circle r="3.5" fill="#E8A020" filter="url(#gG)">
+          <animateTransform attributeName="transform" type="rotate" from="120 28 28" to="480 28 28" dur="2.4s" repeatCount="indefinite"/>
+          <animate attributeName="cx" from="52" to="52" dur="2.4s" repeatCount="indefinite"/>
+          <animate attributeName="cy" from="28" to="28" dur="2.4s" repeatCount="indefinite"/>
+        </circle>
+        <!-- dot red -->
+        <circle r="3.5" fill="#D63B2F" filter="url(#gR)">
+          <animateTransform attributeName="transform" type="rotate" from="240 28 28" to="600 28 28" dur="2.4s" repeatCount="indefinite"/>
+          <animate attributeName="cx" from="52" to="52" dur="2.4s" repeatCount="indefinite"/>
+          <animate attributeName="cy" from="28" to="28" dur="2.4s" repeatCount="indefinite"/>
+        </circle>
+        <defs>
+          <filter id="gB"><feGaussianBlur stdDeviation="1.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          <filter id="gG"><feGaussianBlur stdDeviation="1.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          <filter id="gR"><feGaussianBlur stdDeviation="1.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        </defs>
+      </svg>
+    </div>
+    <div class="card-desc">Letra "a" serif • 3 pontos orbitando nas cores da marca • transmite "AI thinking" — inspirado no Apple Intelligence</div>
+  </div>
+
+</div>
+
+<!-- VARIANTES FUNDO BRANCO -->
+<div class="divider"></div>
+<p class="section-label">Opções com fundo branco</p>
+
+<div class="grid" style="grid-template-columns: repeat(2, 1fr); max-width: 640px;">
+
+  <!-- OPÇÃO 1B: Bird color cascade — fundo branco -->
+  <div class="card" style="background: #fafafa;">
+    <div class="card-label">Opção 1 · fundo branco</div>
+    <div class="btn-wrap btn1-white">
+      <svg width="32" height="33" viewBox="0 0 174 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path class="bc-wb bc-wb1" d="M96.9642 82.5762C83.7642 28.1762 141.798 5.2429 172.464 0.576233C173.464 15.7429 159.764 53.3762 96.9642 82.5762Z"/>
+        <path class="bc-wb bc-wb2" d="M165.464 82.5762V53.5762L136.964 73.9631V111.674C144.263 106.015 151.778 100.102 155.964 96.5762C163.564 90.1762 165.464 84.5762 165.464 82.5762Z"/>
+        <path class="bc-wb bc-wb3" d="M121.464 85.0507V123.576C125.207 120.732 131.014 116.287 136.964 111.674V73.9631L121.464 85.0507Z"/>
+        <path class="bc-wb bc-wb4" d="M96.9642 102.576L121.464 123.576V85.0507L96.9642 102.576Z"/>
+        <path class="bc-wb bc-wb5" d="M121.464 155.576V123.576L96.9642 102.576V178.576L121.464 155.576Z"/>
+        <path class="bc-wb bc-wb6" d="M0.513985 24.5762V51.5762C0.513985 53.5762 -0.135759 66.6762 7.46424 73.0762L44.514 101.576V155.076L69.014 178.076V82.0762L37.9642 56.0762L0.513985 24.5762Z"/>
+      </svg>
+    </div>
+    <div class="card-desc">Cascata de cores — sem glow externo</div>
+  </div>
+
+  <!-- OPÇÃO 2B: Conic ring — fundo branco, logo escura -->
+  <div class="card" style="background: #fafafa;">
+    <div class="card-label">Opção 2 · fundo branco</div>
+    <div class="ring-wrap" style="box-shadow:0 4px 20px rgba(0,0,0,0.12);border-radius:50%">
+      <div class="ring-glow" style="opacity:0.4;"></div>
+      <div class="ring-outer"></div>
+      <div class="ring-inner-white"></div>
+      <div class="ring-logo">
+        <svg width="26" height="27" viewBox="0 0 174 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path class="bird-dark" d="M96.9642 82.5762C83.7642 28.1762 141.798 5.2429 172.464 0.576233C173.464 15.7429 159.764 53.3762 96.9642 82.5762Z"/>
+          <path class="bird-dark" d="M165.464 82.5762V53.5762L136.964 73.9631V111.674C144.263 106.015 151.778 100.102 155.964 96.5762C163.564 90.1762 165.464 84.5762 165.464 82.5762Z"/>
+          <path class="bird-dark" d="M121.464 85.0507V123.576C125.207 120.732 131.014 116.287 136.964 111.674V73.9631L121.464 85.0507Z"/>
+          <path class="bird-dark" d="M96.9642 102.576L121.464 123.576V85.0507L96.9642 102.576Z"/>
+          <path class="bird-dark" d="M121.464 155.576V123.576L96.9642 102.576V178.576L121.464 155.576Z"/>
+          <path class="bird-dark" d="M0.513985 24.5762V51.5762C0.513985 53.5762 -0.135759 66.6762 7.46424 73.0762L44.514 101.576V155.076L69.014 178.076V82.0762L37.9642 56.0762L0.513985 24.5762Z"/>
+        </svg>
+      </div>
+    </div>
+    <div class="card-desc">Anel girando + interior branco com logo escura</div>
+  </div>
+
+</div>
+
+<!-- OPÇÕES HÍBRIDAS: 2 cards lado a lado -->
+<div class="grid" style="grid-template-columns: repeat(2, 1fr); max-width: 640px;">
+
+  <!-- HÍBRIDA A: Cascata + só glow (sem anel) -->
+  <div class="card" style="background: #fafafa;">
+    <div class="card-label" style="color:#1B4FD8;">★ Opção 1 + Glow · sem anel</div>
+    <div class="ring-wrap" style="border-radius:50%;">
+      <div class="ring-glow" style="opacity:0.6;"></div>
+      <!-- fundo branco sólido sem borda visível -->
+      <div style="position:absolute;inset:0;border-radius:50%;background:#FFFFFF;z-index:1;box-shadow:0 2px 12px rgba(0,0,0,0.10);"></div>
+      <div class="ring-logo" style="z-index:2;">
+        <svg width="32" height="33" viewBox="0 0 174 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path class="bc-wb bc-wb1" d="M96.9642 82.5762C83.7642 28.1762 141.798 5.2429 172.464 0.576233C173.464 15.7429 159.764 53.3762 96.9642 82.5762Z"/>
+          <path class="bc-wb bc-wb2" d="M165.464 82.5762V53.5762L136.964 73.9631V111.674C144.263 106.015 151.778 100.102 155.964 96.5762C163.564 90.1762 165.464 84.5762 165.464 82.5762Z"/>
+          <path class="bc-wb bc-wb3" d="M121.464 85.0507V123.576C125.207 120.732 131.014 116.287 136.964 111.674V73.9631L121.464 85.0507Z"/>
+          <path class="bc-wb bc-wb4" d="M96.9642 102.576L121.464 123.576V85.0507L96.9642 102.576Z"/>
+          <path class="bc-wb bc-wb5" d="M121.464 155.576V123.576L96.9642 102.576V178.576L121.464 155.576Z"/>
+          <path class="bc-wb bc-wb6" d="M0.513985 24.5762V51.5762C0.513985 53.5762 -0.135759 66.6762 7.46424 73.0762L44.514 101.576V155.076L69.014 178.076V82.0762L37.9642 56.0762L0.513985 24.5762Z"/>
+        </svg>
+      </div>
+    </div>
+    <div class="card-desc">Cascata de cores na logo + glow conic girando externo — sem borda, só o brilho</div>
+  </div>
+
+  <!-- HÍBRIDA B: Cascata + anel + glow -->
+  <div class="card" style="background: #fafafa;">
+    <div class="card-label" style="color:#1B4FD8;">★ Opção 1 + Anel + Glow</div>
+    <div class="ring-wrap" style="border-radius:50%;">
+      <div class="ring-glow" style="opacity:0.55;"></div>
+      <div class="ring-outer"></div>
+      <div class="ring-inner-white"></div>
+      <div class="ring-logo" style="z-index:2;">
+        <svg width="28" height="29" viewBox="0 0 174 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path class="bc-wb bc-wb1" d="M96.9642 82.5762C83.7642 28.1762 141.798 5.2429 172.464 0.576233C173.464 15.7429 159.764 53.3762 96.9642 82.5762Z"/>
+          <path class="bc-wb bc-wb2" d="M165.464 82.5762V53.5762L136.964 73.9631V111.674C144.263 106.015 151.778 100.102 155.964 96.5762C163.564 90.1762 165.464 84.5762 165.464 82.5762Z"/>
+          <path class="bc-wb bc-wb3" d="M121.464 85.0507V123.576C125.207 120.732 131.014 116.287 136.964 111.674V73.9631L121.464 85.0507Z"/>
+          <path class="bc-wb bc-wb4" d="M96.9642 102.576L121.464 123.576V85.0507L96.9642 102.576Z"/>
+          <path class="bc-wb bc-wb5" d="M121.464 155.576V123.576L96.9642 102.576V178.576L121.464 155.576Z"/>
+          <path class="bc-wb bc-wb6" d="M0.513985 24.5762V51.5762C0.513985 53.5762 -0.135759 66.6762 7.46424 73.0762L44.514 101.576V155.076L69.014 178.076V82.0762L37.9642 56.0762L0.513985 24.5762Z"/>
+        </svg>
+      </div>
+    </div>
+    <div class="card-desc">Cascata de cores na logo + anel conic girando + glow externo — a combinação completa</div>
+  </div>
+
+</div>
+
+<!-- Context strip: como fica na página -->
+<div style="background:#f0ece4;border-radius:16px;padding:24px 32px;max-width:640px;width:100%;text-align:center;">
+  <p style="font-size:11px;letter-spacing:0.15em;text-transform:uppercase;color:#999;margin-bottom:16px;">Contexto — simulação na tela</p>
+  <div style="background:#f5f3ee;border-radius:12px;height:200px;position:relative;overflow:hidden;border:1px solid rgba(200,184,154,0.3);">
+    <p style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#ccc;font-size:13px;">conteúdo do dashboard</p>
+    <!-- botão fixo canto inferior direito -->
+    <div style="position:absolute;bottom:16px;right:16px;">
+      <div class="ring-wrap" style="width:48px;height:48px;box-shadow:0 4px 20px rgba(0,0,0,0.18);border-radius:50%;">
+        <div class="ring-glow" style="animation-duration:2.8s;"></div>
+        <div class="ring-outer"></div>
+        <div class="ring-inner"></div>
+        <div class="ring-logo">
+          <svg width="22" height="23" viewBox="0 0 174 180" fill="none">
+            <path d="M96.9642 82.5762C83.7642 28.1762 141.798 5.2429 172.464 0.576233C173.464 15.7429 159.764 53.3762 96.9642 82.5762Z" fill="white"/>
+            <path d="M165.464 82.5762V53.5762L136.964 73.9631V111.674C144.263 106.015 151.778 100.102 155.964 96.5762C163.564 90.1762 165.464 84.5762 165.464 82.5762Z" fill="white"/>
+            <path d="M121.464 85.0507V123.576C125.207 120.732 131.014 116.287 136.964 111.674V73.9631L121.464 85.0507Z" fill="white"/>
+            <path d="M96.9642 102.576L121.464 123.576V85.0507L96.9642 102.576Z" fill="white"/>
+            <path d="M121.464 155.576V123.576L96.9642 102.576V178.576L121.464 155.576Z" fill="white"/>
+            <path d="M0.513985 24.5762V51.5762C0.513985 53.5762 -0.135759 66.6762 7.46424 73.0762L44.514 101.576V155.076L69.014 178.076V82.0762L37.9642 56.0762L0.513985 24.5762Z" fill="white"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p style="font-size:11px;color:#bbb;margin-top:12px;">Preview: Opção 2 no canto da página</p>
+</div>
+
+</body>
+</html>
