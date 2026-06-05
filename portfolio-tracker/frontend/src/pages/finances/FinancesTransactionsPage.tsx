@@ -753,7 +753,7 @@ export default function FinancesTransactionsPage() {
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
         <div style={{ minWidth: 0, flex: 1, overflow: 'hidden' }}>
           <h1 style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 18, letterSpacing: '0.06em', color: 'var(--arvo-black)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.finances.transactionsTitle}</h1>
-          <p className="text-sm mt-0.5" style={{ color: 'rgba(13,13,13,0.60)' }}>{t.finances.transactionsSubtitle}</p>
+          <p className="text-sm mt-0.5 hidden sm:block" style={{ color: 'rgba(13,13,13,0.60)' }}>{t.finances.transactionsSubtitle}</p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
           {/* Month nav / date range — inline with actions */}
@@ -992,7 +992,6 @@ export default function FinancesTransactionsPage() {
                   <th className="px-4 py-2 text-left">{t.common.description}</th>
                   <th className="px-4 py-2 text-right">{t.common.value}</th>
                   <th className="px-4 py-2 text-left">{t.finances.category}</th>
-                  {sharedCats.length > 0 && <th className="px-4 py-2 text-left">{t.shared?.tagTransaction ?? 'Compartilhada'}</th>}
                   <th className="px-4 py-2"></th>
                 </tr>
               </thead>
@@ -1018,38 +1017,44 @@ export default function FinancesTransactionsPage() {
                             <span title="Sugerido por IA" className="text-[10px] bg-violet-100 text-violet-600 rounded px-1 font-medium shrink-0">✦ IA</span>
                           )}
                           <select
-                            value={row.category_id ?? ''}
+                            value={row.shared_category_id != null ? `s:${row.shared_category_id}` : (row.category_id != null ? `c:${row.category_id}` : '')}
                             onChange={e => {
-                              const val = e.target.value === '' ? null : Number(e.target.value)
-                              if (sameDescCount > 1) {
-                                const apply = window.confirm(t.finances.csvApplyAllConfirm.replace('{n}', String(sameDescCount)).replace('{desc}', row.description))
-                                changeCsvRowCategory(i, val, apply)
+                              const raw = e.target.value
+                              if (raw === '') {
+                                setCsvRows(prev => prev.map((r, j) => j === i ? { ...r, category_id: null, shared_category_id: null } : r))
+                              } else if (raw.startsWith('s:')) {
+                                const val = Number(raw.slice(2))
+                                setCsvRows(prev => prev.map((r, j) => j === i ? { ...r, category_id: null, shared_category_id: val } : r))
                               } else {
-                                changeCsvRowCategory(i, val, false)
+                                const val = Number(raw.slice(2))
+                                if (sameDescCount > 1) {
+                                  const apply = window.confirm(t.finances.csvApplyAllConfirm.replace('{n}', String(sameDescCount)).replace('{desc}', row.description))
+                                  setCsvRows(prev => prev.map((r, j) => {
+                                    if (j === i) return { ...r, category_id: val, shared_category_id: null }
+                                    if (apply && r.description === row.description) return { ...r, category_id: val, shared_category_id: null }
+                                    return r
+                                  }))
+                                } else {
+                                  setCsvRows(prev => prev.map((r, j) => j === i ? { ...r, category_id: val, shared_category_id: null } : r))
+                                }
                               }
                             }}
-                            className="text-xs border border-gray-200 rounded px-2 py-1 max-w-[150px]"
+                            className="text-xs border border-gray-200 rounded px-2 py-1 max-w-[180px]"
                           >
                             <option value="">{t.finances.noCategory}</option>
-                            {catsForAmount(row.amount).map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
+                            {catsForAmount(row.amount).length > 0 && (
+                              <optgroup label={t.finances.category}>
+                                {catsForAmount(row.amount).map(c => <option key={c.id} value={`c:${c.id}`}>{c.icon} {c.name}</option>)}
+                              </optgroup>
+                            )}
+                            {sharedCats.length > 0 && (
+                              <optgroup label={t.shared?.tagTransaction ?? 'Compartilhada'}>
+                                {sharedCats.map(c => <option key={c.id} value={`s:${c.id}`}>{c.icon} {c.name}</option>)}
+                              </optgroup>
+                            )}
                           </select>
                         </div>
                       </td>
-                      {sharedCats.length > 0 && (
-                        <td className="px-4 py-2">
-                          <select
-                            value={row.shared_category_id ?? ''}
-                            onChange={e => {
-                              const val = e.target.value === '' ? null : Number(e.target.value)
-                              setCsvRows(prev => prev.map((r, j) => j === i ? { ...r, shared_category_id: val } : r))
-                            }}
-                            className="text-xs border border-gray-200 rounded px-2 py-1 max-w-[150px]"
-                          >
-                            <option value="">—</option>
-                            {sharedCats.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
-                          </select>
-                        </td>
-                      )}
                       <td className="px-4 py-2">
                         <button onClick={() => setCsvRows(prev => prev.filter((_, j) => j !== i))} className="text-gray-300 hover:text-red-400 transition-colors">
                           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5"><path d="M5.28 4.22a.75.75 0 0 0-1.06 1.06L6.94 8l-2.72 2.72a.75.75 0 1 0 1.06 1.06L8 9.06l2.72 2.72a.75.75 0 1 0 1.06-1.06L9.06 8l2.72-2.72a.75.75 0 0 0-1.06-1.06L8 6.94 5.28 4.22Z" /></svg>

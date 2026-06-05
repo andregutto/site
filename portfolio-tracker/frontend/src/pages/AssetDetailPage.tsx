@@ -754,10 +754,6 @@ export default function AssetDetailPage() {
                   {data.price_currency}: {periodStats.nativeGainPct >= 0 ? '+' : ''}{periodStats.nativeGainPct.toFixed(2)}%
                 </p>
               )}
-              {/* For periods: show native currency label since BRL calc uses uniform FX (same number) */}
-              {!periodStats.isAllTime && data.price_currency !== 'BRL' && (
-                <p className="text-[10px] text-gray-400 mt-0.5">em {data.price_currency} · sem câmbio</p>
-              )}
             </>
           ) : (
             <p className="text-xl font-bold text-gray-900">—</p>
