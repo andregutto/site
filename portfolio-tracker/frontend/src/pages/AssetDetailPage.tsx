@@ -273,7 +273,7 @@ export default function AssetDetailPage() {
     )
   }
 
-  const gainPositive = data.gain_loss_brl > 0 ? true : data.gain_loss_brl < 0 ? false : null
+
   const weightPct = totalBrl > 0 ? (data.current_value_brl / totalBrl) * 100 : null
 
   const priceLabel = data.current_price != null

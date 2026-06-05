@@ -182,6 +182,21 @@ const TOOLS: Anthropic.Tool[] = [
     description: 'List bank/finance accounts with currency and current balance. Use when the user asks about their accounts.',
     input_schema: { type: 'object' as const, properties: {} },
   },
+  {
+    name: 'get_period_performance',
+    description: 'Get per-asset performance (gain/loss in BRL and %) for a specific period. ALWAYS use this when the user asks what is dragging the portfolio down/up, which assets gained/lost most, or portfolio change this month/year/period. Returns assets ranked by BRL change.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        period: {
+          type: 'string',
+          enum: ['this_month', 'last_30d', 'ytd', 'last_12m'],
+          description: 'Time window: this_month = from 1st of current month; last_30d = rolling 30 days; ytd = since Jan 1; last_12m = rolling 12 months.',
+        },
+      },
+      required: ['period'],
+    },
+  },
 ]
 
 async function executeTool(
@@ -432,6 +447,122 @@ async function executeTool(
         const lines = Object.entries(byMonth).sort((a, b) => a[0].localeCompare(b[0]))
           .map(([m, v]) => `${m}: income ${v.income.toFixed(0)} | expense ${v.expense.toFixed(0)} | balance ${(v.income - v.expense).toFixed(0)} ${v.currency}`)
         return `Monthly summary (last ${months} months):\n${lines.join('\n')}`
+      }
+
+      case 'get_period_performance': {
+        const period = input.period as string
+        const now = new Date()
+        const pad = (n: number) => String(n).padStart(2, '0')
+        const today = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
+
+        let fromDate: string
+        if (period === 'this_month') {
+          fromDate = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-01`
+        } else if (period === 'last_30d') {
+          const d = new Date(now); d.setDate(d.getDate() - 30)
+          fromDate = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+        } else if (period === 'ytd') {
+          fromDate = `${now.getFullYear()}-01-01`
+        } else { // last_12m
+          const d = new Date(now); d.setFullYear(d.getFullYear() - 1)
+          fromDate = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+        }
+
+        // Get active assets
+        const { data: assets } = await supabaseAdmin
+          .from('assets')
+          .select('id, code, name, asset_type, asset_classes(name)')
+          .eq('user_id', userId)
+          .eq('active', true)
+
+        if (!assets?.length) return 'No assets found.'
+        const ids = assets.map(a => a.id as number)
+
+        // For each asset: find the latest price_history before fromDate (start) and the latest overall (end)
+        const { data: allHistory } = await supabaseAdmin
+          .from('price_history')
+          .select('asset_id, date, total_brl')
+          .in('asset_id', ids)
+          .order('date', { ascending: true })
+
+        if (!allHistory?.length) return 'No price history found. Run a portfolio sync first.'
+
+        // Contributions during period (for Simple Dietz)
+        const { data: contribsInPeriod } = await supabaseAdmin
+          .from('contributions')
+          .select('asset_id, type, value_brl, date')
+          .in('asset_id', ids)
+          .gte('date', fromDate)
+          .lte('date', today)
+
+        const contribMap: Record<number, number> = {}
+        for (const c of contribsInPeriod ?? []) {
+          const delta = c.type === 'sell' ? -(c.value_brl ?? 0) : (c.value_brl ?? 0)
+          contribMap[c.asset_id] = (contribMap[c.asset_id] ?? 0) + delta
+        }
+
+        type PerfRow = {
+          code: string; name: string; cls: string
+          valueStart: number; valueEnd: number
+          contributions: number; changeBrl: number; changePct: number | null
+        }
+
+        const rows: PerfRow[] = []
+        for (const asset of assets) {
+          const id = asset.id as number
+          const hist = (allHistory ?? []).filter(h => h.asset_id === id)
+          if (hist.length === 0) continue
+
+          // Latest entry before fromDate = value at period start
+          const beforeStart = hist.filter(h => h.date < fromDate)
+          const valueStart = beforeStart.length > 0 ? beforeStart[beforeStart.length - 1].total_brl : 0
+
+          // Latest entry overall = current value
+          const valueEnd = hist[hist.length - 1].total_brl
+
+          const contributions = contribMap[id] ?? 0
+          const changeBrl = valueEnd - valueStart - contributions
+          const dietzBase = valueStart + 0.5 * contributions
+          const changePct = dietzBase > 0 ? (changeBrl / dietzBase) * 100 : null
+
+          rows.push({
+            code: asset.code,
+            name: asset.name,
+            cls: (asset.asset_classes as unknown as { name: string } | null)?.name ?? 'No class',
+            valueStart, valueEnd, contributions, changeBrl,
+            changePct,
+          })
+        }
+
+        if (rows.length === 0) return 'No price history available for this period. Run a portfolio sync first.'
+
+        rows.sort((a, b) => a.changeBrl - b.changeBrl) // worst first
+
+        const periodLabel: Record<string, string> = {
+          this_month: `this month (from ${fromDate})`,
+          last_30d:   `last 30 days (from ${fromDate})`,
+          ytd:        `year to date (from ${fromDate})`,
+          last_12m:   `last 12 months (from ${fromDate})`,
+        }
+
+        const lines = rows.map(r => {
+          const sign = r.changeBrl >= 0 ? '+' : ''
+          const pctStr = r.changePct != null ? ` (${sign}${r.changePct.toFixed(1)}%)` : ''
+          return `${r.code} (${r.name}) | ${r.cls} | start: R$${r.valueStart.toFixed(0)} → now: R$${r.valueEnd.toFixed(0)} | change: ${sign}R$${r.changeBrl.toFixed(0)}${pctStr}${r.contributions !== 0 ? ` | net new capital: R$${r.contributions.toFixed(0)}` : ''}`
+        })
+
+        const totalChange = rows.reduce((s, r) => s + r.changeBrl, 0)
+        const losers  = rows.filter(r => r.changeBrl < 0)
+        const gainers = rows.filter(r => r.changeBrl > 0).reverse()
+
+        return [
+          `Portfolio performance — ${periodLabel[period] ?? period}`,
+          `Total change: ${totalChange >= 0 ? '+' : ''}R$${totalChange.toFixed(0)}`,
+          `Assets tracked: ${rows.length} | Losers: ${losers.length} | Gainers: ${gainers.length}`,
+          '',
+          '--- Ranked worst to best ---',
+          ...lines,
+        ].join('\n')
       }
 
       case 'get_accounts': {

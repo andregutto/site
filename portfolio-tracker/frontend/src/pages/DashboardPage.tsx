@@ -280,18 +280,6 @@ export default function DashboardPage() {
           const gainLossBrl = hasInvested ? data.total_brl - totalInvestedBrl : null
           const gainLossPct = hasInvested && gainLossBrl != null ? (gainLossBrl / totalInvestedBrl) * 100 : null
 
-          const currentYearStr = String(new Date().getFullYear())
-          const januaryData = (perfData?.monthly ?? []).find(m => m.month === `${currentYearStr}-01`)
-          const ytdStartValue = januaryData?.prev_total ?? 0
-          const yearMonthsWithData = (perfData?.monthly ?? []).filter(m => m.month.startsWith(currentYearStr) && m.total > 0)
-          const ytdEndValue = yearMonthsWithData.at(-1)?.total ?? 0
-          const ytdContribs = (perfData?.monthly ?? []).filter(m => m.month.startsWith(currentYearStr)).reduce((s, m) => s + m.contributions, 0)
-          const ytdReturn = ytdStartValue > 0 ? ((ytdEndValue - ytdStartValue - ytdContribs) / ytdStartValue) * 100 : null
-
-          const currentMonthEntry = (perfData?.monthly ?? []).find(m => m.month === currentYM)
-          const monthReturn = currentMonthEntry && currentMonthEntry.prev_total > 0
-            ? ((currentMonthEntry.total - currentMonthEntry.prev_total - currentMonthEntry.contributions) / currentMonthEntry.prev_total) * 100
-            : null
 
           return (
             <ValueCards
