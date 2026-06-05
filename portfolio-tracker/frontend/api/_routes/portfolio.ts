@@ -434,6 +434,39 @@ router.post('/reset-price-history', requireAuth, async (req, res: Response) => {
   })().catch(err => console.error('[reset-price-history] fatal:', err))
 })
 
+// GET /api/portfolio/sync-status — how many ticker assets have price_history rows
+router.get('/sync-status', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+
+  const { data: assets } = await supabaseAdmin
+    .from('assets')
+    .select('id, code, ticker_brapi, ticker_yahoo, coingecko_id')
+    .eq('user_id', userId)
+    .eq('asset_type', 'ticker')
+
+  if (!assets?.length) { res.json({ total: 0, withHistory: 0, empty: 0, emptyAssets: [] }); return }
+
+  const assetIds = assets.map(a => a.id as number)
+
+  const { data: counts } = await supabaseAdmin
+    .from('price_history')
+    .select('asset_id')
+    .in('asset_id', assetIds)
+
+  const withHistory = new Set((counts ?? []).map(r => r.asset_id))
+
+  const emptyAssets = assets
+    .filter(a => !withHistory.has(a.id))
+    .map(a => a.code as string)
+
+  res.json({
+    total: assets.length,
+    withHistory: withHistory.size,
+    empty: emptyAssets.length,
+    emptyAssets,
+  })
+})
+
 router.post('/reset-baseline', requireAuth, async (req, res: Response) => {
   const { userId }   = req as AuthRequest
   const SOURCE_DATE  = '2023-01-01'

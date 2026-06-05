@@ -9,7 +9,7 @@ import { useAchievementContext } from '../contexts/AchievementContext'
 import { useI18n } from '../contexts/I18nContext'
 import { getLevel, getNextLevel, getLevelProgress, ACHIEVEMENT_DEFS } from '../lib/achievementDefs'
 import { supabase } from '../lib/supabase'
-import { useResetPriceHistory } from '../hooks/usePortfolio'
+import { useResetPriceHistory, useSyncStatus } from '../hooks/usePortfolio'
 import { useDividendSync } from '../hooks/useDividends'
 
 interface ProfileData {
@@ -116,6 +116,7 @@ export default function ProfilePage() {
   }
 
   const { reset: rebuildHistory, loading: rebuilding, result: rebuildResult } = useResetPriceHistory()
+  const { check: checkSyncStatus, loading: checkingStatus, status: syncStatus } = useSyncStatus()
   const { sync: syncDividends, syncing: syncingDivs } = useDividendSync()
   const [showRebuildConfirm, setShowRebuildConfirm] = useState(false)
 
@@ -825,9 +826,34 @@ export default function ProfilePage() {
                 </div>
               )}
               {rebuildResult && !rebuilding && (
-                <p className="text-xs text-blue-600">
-                  {t.profile.rebuildStarted.replace('{total}', String(rebuildResult.total))}
-                </p>
+                <div className="flex flex-col gap-2">
+                  <p className="text-xs text-blue-600">
+                    {t.profile.rebuildStarted.replace('{total}', String(rebuildResult.total))}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={checkSyncStatus}
+                    disabled={checkingStatus}
+                    className="self-start px-3 py-1.5 text-xs font-medium border rounded-lg transition-colors disabled:opacity-50"
+                    style={{ borderColor: '#d97706', color: '#92400e', background: checkingStatus ? '#fef3c7' : 'white' }}
+                  >
+                    {checkingStatus ? '…' : (t.profile.checkSyncStatus ?? 'Verificar resultado')}
+                  </button>
+                  {syncStatus && !checkingStatus && (
+                    <div className="rounded-lg p-3 text-xs space-y-1" style={{ background: syncStatus.empty === 0 ? '#f0fdf4' : '#fffbeb', border: `1px solid ${syncStatus.empty === 0 ? '#bbf7d0' : '#fde68a'}` }}>
+                      <p style={{ color: syncStatus.empty === 0 ? '#166534' : '#92400e', fontWeight: 600 }}>
+                        {syncStatus.empty === 0
+                          ? `✓ ${t.profile.syncAllDone ?? 'Todos os ativos com histórico'} (${syncStatus.withHistory}/${syncStatus.total})`
+                          : `${syncStatus.withHistory}/${syncStatus.total} ${t.profile.syncDonePartial ?? 'ativos com histórico'}`}
+                      </p>
+                      {syncStatus.empty > 0 && (
+                        <p style={{ color: '#92400e' }}>
+                          {t.profile.syncStillEmpty ?? 'Sem dados'}: {syncStatus.emptyAssets.join(', ')}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
               )}
             </div>
           </div>

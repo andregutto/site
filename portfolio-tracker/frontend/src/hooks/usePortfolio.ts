@@ -105,6 +105,30 @@ export function useResetPriceHistory() {
   return { reset, loading, result }
 }
 
+export interface SyncStatus {
+  total: number
+  withHistory: number
+  empty: number
+  emptyAssets: string[]
+}
+
+export function useSyncStatus() {
+  const [loading, setLoading] = useState(false)
+  const [status, setStatus]   = useState<SyncStatus | null>(null)
+
+  const check = useCallback(async () => {
+    setLoading(true)
+    try {
+      const r = await apiFetch<SyncStatus>('/portfolio/sync-status')
+      setStatus(r)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  return { check, loading, status }
+}
+
 export function usePerformanceSummary(from: string, to: string) {
   const { user } = useAuth()
   const userId = user?.id ?? ''
