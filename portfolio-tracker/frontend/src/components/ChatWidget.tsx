@@ -48,12 +48,17 @@ export default function ChatWidget({ visible = true, onDismiss, forceOpen, onFor
   }, [forceOpen])
 
   const SUGGESTIONS = [t.chat.s1, t.chat.s2, t.chat.s3, t.chat.s4]
+  const tc = t.chat as unknown as Record<string, string>
   const TOOL_LABELS: Record<string, string> = {
-    get_portfolio_summary:     t.chat.toolPortfolio,
-    get_spending_by_category:  t.chat.toolSpending,
-    get_transactions:          t.chat.toolTransactions,
-    get_financial_summary:     t.chat.toolSummary,
-    get_accounts:              t.chat.toolAccounts,
+    get_portfolio_summary:     tc.toolPortfolio,
+    get_spending_by_category:  tc.toolSpending,
+    get_transactions:          tc.toolTransactions,
+    get_financial_summary:     tc.toolSummary,
+    get_accounts:              tc.toolAccounts,
+    get_period_performance:    tc.toolPerformance,
+    get_dividends:             tc.toolDividends,
+    get_tax_report:            tc.toolTax,
+    web_search:                tc.toolWebSearch,
   }
 
   useEffect(() => {
@@ -177,10 +182,23 @@ export default function ChatWidget({ visible = true, onDismiss, forceOpen, onFor
         .arvo-bird-p4 { animation: arvo-bird-color 3s ease-in-out infinite; animation-delay: 0.75s; }
         .arvo-bird-p5 { animation: arvo-bird-color 3s ease-in-out infinite; animation-delay: 1.0s; }
         .arvo-bird-p6 { animation: arvo-bird-color 3s ease-in-out infinite; animation-delay: 1.25s; }
+        @keyframes arvo-header-shift {
+          0%   { background-position: 0% center; }
+          100% { background-position: 300% center; }
+        }
+        .arvo-chat-header {
+          background: linear-gradient(90deg,
+            #0a0a0a 0%, #1B4FD8 18%, rgba(200,184,154,0.6) 35%,
+            #0a0a0a 50%, #c4890e 68%, rgba(200,184,154,0.5) 80%,
+            #c4341f 90%, #0a0a0a 100%
+          );
+          background-size: 300% 100%;
+          animation: arvo-header-shift 7s linear infinite;
+        }
       `}</style>
 
       {/* Floating button */}
-      <div className="fixed chat-bubble-safe right-5 z-50 sm:bottom-5">
+      <div className="fixed chat-bubble-safe right-5 z-50 sm:bottom-10">
         <div style={{ position: 'relative', width: 48, height: 48 }}>
           {/* Rotating conic glow */}
           <div className="arvo-chat-glow" />
@@ -228,7 +246,7 @@ export default function ChatWidget({ visible = true, onDismiss, forceOpen, onFor
       {open && (
         <div className="fixed chat-dialog-safe right-5 z-50 w-[360px] max-w-[calc(100vw-2.5rem)] h-[520px] max-h-[calc(100vh-6rem)] rounded-2xl shadow-2xl flex flex-col overflow-hidden sm:bottom-20" style={{ background: 'var(--arvo-offwhite)', border: '1px solid var(--arvo-border-soft)' }}>
           {/* Header */}
-          <div className="flex items-center gap-2.5 px-4 py-3 rounded-t-2xl" style={{ background: 'linear-gradient(to right, #163fa8, #1B4FD8 30%, #c4890e 72%, #c4341f)', borderBottom: '1px solid rgba(200,184,154,0.15)' }}>
+          <div className="arvo-chat-header flex items-center gap-2.5 px-4 py-3 rounded-t-2xl" style={{ borderBottom: '1px solid rgba(200,184,154,0.15)' }}>
             <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
               <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23-.693L5 14.5m14.8.8l1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0112 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5" />

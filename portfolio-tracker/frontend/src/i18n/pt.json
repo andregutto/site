@@ -948,6 +948,10 @@
     "toolTransactions": "Buscando transações…",
     "toolSummary": "Calculando resumo…",
     "toolAccounts": "Consultando contas…",
+    "toolPerformance": "Calculando performance…",
+    "toolDividends": "Consultando dividendos…",
+    "toolTax": "Calculando dados de IR…",
+    "toolWebSearch": "Pesquisando na internet…",
     "errorProcessing": "Erro ao processar sua pergunta.",
     "errorNoResponse": "Não consegui gerar uma resposta.",
     "dismiss": "Fechar assistente"

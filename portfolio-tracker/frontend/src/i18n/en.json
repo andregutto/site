@@ -948,6 +948,10 @@
     "toolTransactions": "Fetching transactions…",
     "toolSummary": "Calculating summary…",
     "toolAccounts": "Consulting accounts…",
+    "toolPerformance": "Calculating performance…",
+    "toolDividends": "Consulting dividends…",
+    "toolTax": "Calculating tax data…",
+    "toolWebSearch": "Searching the web…",
     "errorProcessing": "Error processing your question.",
     "errorNoResponse": "Could not generate a response.",
     "dismiss": "Close assistant"

@@ -34,10 +34,12 @@ You must NEVER:
 These restrictions exist because providing investment advice without a license violates regulations (CVM/BACEN in Brazil, MiFID II/ESMA in the EU). Politely decline if asked, and suggest a qualified advisor.
 
 ## What you CAN do
-- Show the user their data: portfolio, spending, transactions, accounts (use the tools)
-- Explain how any feature in the app works
+- Show the user their data: portfolio, performance, dividends, IR/tax report, spending, transactions, accounts (use the tools)
+- Explain how any feature in the app works, including IR report, rebalancing, moments, freedom simulator
 - Guide navigation step by step
 - Clarify what numbers mean in the app context
+- Search the web for recent market news, macro events, or company-specific news to contextualise why an asset or the portfolio moved — use web_search for this
+- After web search, summarise what happened in the market and correlate with the user's data — but NEVER suggest action based on it
 
 ## App navigation — exact routes
 
@@ -99,7 +101,12 @@ Finance concepts:
 - See accounts and balances: Investimentos → Instituições (or Finanças → Contas)`
 }
 
-const TOOLS: Anthropic.Tool[] = [
+const TOOLS: Anthropic.Messages.Tool[] = [
+  {
+    type: 'web_search_20250305' as const,
+    name: 'web_search',
+    max_uses: 4,
+  } as unknown as Anthropic.Messages.Tool,
   {
     name: 'search_asset',
     description: 'Search for a specific asset by partial code or name. ALWAYS use this when the user mentions an asset by any name or ticker — even partial. Returns current value, invested amount, and gain/loss.',
@@ -195,6 +202,28 @@ const TOOLS: Anthropic.Tool[] = [
         },
       },
       required: ['period'],
+    },
+  },
+  {
+    name: 'get_dividends',
+    description: 'Get dividend and income history (dividends, JCP, FII income, interest, coupons). Use when the user asks about dividends received, passive income, or yield from specific assets.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        from_date:  { type: 'string', description: 'Start date YYYY-MM-DD (optional)' },
+        to_date:    { type: 'string', description: 'End date YYYY-MM-DD (optional)' },
+        asset_code: { type: 'string', description: 'Filter by asset code/ticker (optional, partial match)' },
+      },
+    },
+  },
+  {
+    name: 'get_tax_report',
+    description: 'Get tax/IR report for a calendar year: capital gains from sells (simplified avg-cost FIFO), dividends and income received, and year-end positions. Use for any IR, imposto de renda, or tax-related question.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        year: { type: 'number', description: 'Calendar year (defaults to current year)' },
+      },
     },
   },
 ]
@@ -558,6 +587,106 @@ async function executeTool(
         ].join('\n')
       }
 
+      case 'get_dividends': {
+        const inp = input as { from_date?: string; to_date?: string; asset_code?: string }
+        const { data: assets } = await supabaseAdmin
+          .from('assets').select('id, code, name').eq('user_id', userId).eq('active', true)
+        let ids = (assets ?? []).map(a => a.id as number)
+        if (inp.asset_code) {
+          const q = inp.asset_code.toLowerCase()
+          ids = ids.filter(id => {
+            const a = assets?.find(x => x.id === id)
+            return a && (a.code.toLowerCase().includes(q) || a.name.toLowerCase().includes(q))
+          })
+        }
+        if (!ids.length) return 'No assets found.'
+        let q = supabaseAdmin.from('dividends')
+          .select('asset_id, ex_date, pay_date, amount_brl, amount_total, currency, dividend_type')
+          .in('asset_id', ids).eq('user_id', userId).order('ex_date', { ascending: false }).limit(200)
+        if (inp.from_date) q = q.gte('ex_date', inp.from_date)
+        if (inp.to_date)   q = q.lte('ex_date', inp.to_date)
+        const { data: divs } = await q
+        if (!divs?.length) return 'No dividends found for the given filters.'
+        const assetMap = Object.fromEntries((assets ?? []).map(a => [a.id, a]))
+        const totalBrl = divs.reduce((s, d) => s + (d.amount_brl ?? 0), 0)
+        const lines = divs.map(d => {
+          const a = assetMap[d.asset_id]
+          return `${d.ex_date} | ${a?.code ?? d.asset_id} | ${d.dividend_type ?? 'dividend'} | R$${(d.amount_brl ?? 0).toFixed(2)}${d.currency !== 'BRL' ? ` (${d.amount_total?.toFixed(4)} ${d.currency})` : ''}`
+        })
+        return [`Dividends/income (${divs.length}): Total R$${totalBrl.toFixed(2)}`, ...lines].join('\n')
+      }
+
+      case 'get_tax_report': {
+        const year = (input.year as number) ?? new Date().getFullYear()
+        const fromDate = `${year}-01-01`
+        const toDate   = `${year}-12-31`
+        const { data: assets } = await supabaseAdmin
+          .from('assets').select('id, code, name, asset_type, asset_classes(name)')
+          .eq('user_id', userId)
+        if (!assets?.length) return 'No assets found.'
+        const ids = assets.map(a => a.id as number)
+        const assetMap = Object.fromEntries(assets.map(a => [a.id as number, a]))
+
+        const [{ data: divs }, { data: sells }, { data: allBuys }, { data: yearEndHist }] = await Promise.all([
+          supabaseAdmin.from('dividends').select('asset_id, ex_date, amount_brl, dividend_type')
+            .in('asset_id', ids).eq('user_id', userId).gte('ex_date', fromDate).lte('ex_date', toDate),
+          supabaseAdmin.from('contributions').select('asset_id, date, quantity, value_brl')
+            .in('asset_id', ids).eq('type', 'sell').gte('date', fromDate).lte('date', toDate),
+          supabaseAdmin.from('contributions').select('asset_id, date, quantity, value_brl')
+            .in('asset_id', ids).eq('type', 'buy').lte('date', toDate),
+          supabaseAdmin.from('price_history').select('asset_id, date, total_brl')
+            .in('asset_id', ids).lte('date', toDate).order('date', { ascending: false }).limit(ids.length * 5),
+        ])
+
+        const divByType: Record<string, number> = {}
+        let totalDivBrl = 0
+        for (const d of divs ?? []) {
+          const type = d.dividend_type ?? 'dividend'
+          divByType[type] = (divByType[type] ?? 0) + (d.amount_brl ?? 0)
+          totalDivBrl += d.amount_brl ?? 0
+        }
+
+        const gainLines: string[] = []
+        for (const id of ids) {
+          const assetSells = (sells ?? []).filter(s => s.asset_id === id)
+          if (!assetSells.length) continue
+          const buys = (allBuys ?? []).filter(b => b.asset_id === id)
+          const totalBuyQty = buys.reduce((s, b) => s + (b.quantity ?? 0), 0)
+          const totalBuyVal = buys.reduce((s, b) => s + (b.value_brl ?? 0), 0)
+          const avgCost = totalBuyQty > 0 ? totalBuyVal / totalBuyQty : 0
+          const totalSellQty = assetSells.reduce((s, b) => s + (b.quantity ?? 0), 0)
+          const totalSellVal = assetSells.reduce((s, b) => s + (b.value_brl ?? 0), 0)
+          const costBasis = avgCost * totalSellQty
+          const gain = totalSellVal - costBasis
+          const a = assetMap[id]
+          gainLines.push(`  ${a?.code ?? id} (${a?.name ?? ''}): sold R$${totalSellVal.toFixed(0)} | avg cost basis R$${costBasis.toFixed(0)} | gain/loss: ${gain >= 0 ? '+' : ''}R$${gain.toFixed(0)}`)
+        }
+
+        const seenYE = new Set<number>()
+        const posLines: string[] = []
+        for (const ph of yearEndHist ?? []) {
+          if (seenYE.has(ph.asset_id)) continue
+          seenYE.add(ph.asset_id)
+          const a = assetMap[ph.asset_id]
+          if (a) posLines.push(`  ${a.code} (${a.name}): R$${ph.total_brl.toFixed(0)} (date: ${ph.date})`)
+        }
+
+        return [
+          `=== IR / TAX REPORT — ${year} ===`,
+          '',
+          `DIVIDENDS & INCOME — Total: R$${totalDivBrl.toFixed(2)}`,
+          ...(Object.keys(divByType).length
+            ? Object.entries(divByType).map(([t, v]) => `  ${t}: R$${v.toFixed(2)}`)
+            : ['  None recorded']),
+          '',
+          `CAPITAL GAINS (avg-cost method, simplified):`,
+          ...(gainLines.length ? gainLines : ['  No sell transactions in this year']),
+          '',
+          `YEAR-END POSITIONS (${year}-12-31 or closest prior date):`,
+          ...(posLines.length ? posLines : ['  No price history available — run a sync']),
+        ].join('\n')
+      }
+
       case 'get_accounts': {
         const { data: accounts } = await supabaseAdmin
           .from('finance_accounts')
@@ -617,12 +746,11 @@ router.post('/', requireAuth, async (req, res: Response) => {
       })
 
       for await (const event of stream) {
-        if (
-          event.type === 'content_block_delta' &&
-          event.delta.type === 'text_delta' &&
-          event.delta.text
-        ) {
+        if (event.type === 'content_block_delta' && event.delta.type === 'text_delta' && event.delta.text) {
           send({ type: 'delta', text: event.delta.text })
+        }
+        if (event.type === 'content_block_start' && (event.content_block as { type: string }).type === 'server_tool_use') {
+          send({ type: 'tool_call', tool: 'web_search' })
         }
       }
 
