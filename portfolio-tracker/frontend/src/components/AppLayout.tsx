@@ -436,7 +436,6 @@ export default function AppLayout() {
                 textDecoration: 'none',
               }}
             >
-              {match && <span style={{ width: 4, height: 4, borderRadius: 999, background: accent, display: 'block', marginBottom: 2 }} />}
               {icon}
               <span className="truncate w-full text-center px-1">{label}</span>
             </NavLink>
