@@ -141,11 +141,20 @@ router.delete('/classes/:id', requireAuth, async (req, res: Response) => {
   res.json({ ok: true })
 })
 
+function inferCountry(opts: { ticker_brapi?: string | null; coingecko_id?: string | null; currency: string; country?: string | null }): string {
+  if (opts.country) return opts.country
+  if (opts.ticker_brapi) return 'Brasil'
+  if (opts.coingecko_id) return 'Global'
+  if (opts.currency === 'BRL') return 'Brasil'
+  return 'USA'
+}
+
 router.post('/', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
-  const { code, name, asset_type, currency, asset_class_id, ticker_yahoo, ticker_brapi, coingecko_id } = req.body as {
+  const { code, name, asset_type, currency, asset_class_id, ticker_yahoo, ticker_brapi, coingecko_id, country, exchange } = req.body as {
     code: string; name: string; asset_type: string; currency: string
-    asset_class_id?: number | null; ticker_yahoo?: string; ticker_brapi?: string; coingecko_id?: string
+    asset_class_id?: number | null; ticker_yahoo?: string; ticker_brapi?: string
+    coingecko_id?: string; country?: string; exchange?: string
   }
   if (!code || !name || !asset_type || !currency) {
     res.status(400).json({ error: 'code, name, asset_type e currency são obrigatórios' }); return
@@ -162,6 +171,8 @@ router.post('/', requireAuth, async (req, res: Response) => {
       ticker_yahoo:   ticker_yahoo   ?? null,
       ticker_brapi:   ticker_brapi   ?? null,
       coingecko_id:   coingecko_id   ?? null,
+      country:        inferCountry({ ticker_brapi, coingecko_id, currency, country }),
+      exchange:       exchange       ?? null,
       active:         true,
     })
     .select('id, code, name, asset_type, currency')
@@ -326,7 +337,7 @@ router.delete('/:id/manual-value/:valueId', requireAuth, async (req, res: Respon
   res.json({ ok: true })
 })
 
-const PATCHABLE = ['fi_principal', 'fi_start_date', 'fi_type', 'fi_rate', 'fi_spread', 'fi_maturity', 'exchange', 'name', 'notes', 'asset_class_id', 'sector'] as const
+const PATCHABLE = ['fi_principal', 'fi_start_date', 'fi_type', 'fi_rate', 'fi_spread', 'fi_maturity', 'exchange', 'country', 'name', 'notes', 'asset_class_id', 'sector'] as const
 router.patch('/:id', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const assetId = Number(req.params.id)
