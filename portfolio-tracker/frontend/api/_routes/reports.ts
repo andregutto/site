@@ -601,19 +601,25 @@ router.get('/france/:year', requireAuth, async (req, res: Response) => {
 
         const taxWithheld = (sell.tax_withheld ?? 0) as number
         const saleValue   = (sell.value_brl    ?? 0) as number
-        const sellQty     = (sell.quantity      ?? 0) as number
-        const b           = fiCostBasis[sell.asset_id as number] ?? { totalQty: 0, totalCost: 0 }
-        const avgCostPerUnit = b.totalQty > 0 ? b.totalCost / b.totalQty : 0
-        const costBasis      = avgCostPerUnit * sellQty
-
-        // Gross interest = net received + IR already withheld – principal redeemed
-        const grossInterest = saleValue + taxWithheld - costBasis
-        if (grossInterest <= 0) continue
 
         const fiStart = (asset as { fi_start_date?: string | null }).fi_start_date ?? startDate
         const irRate  = getBrIrRate(fiStart, sell.date as string)
-        // Use actual withheld if available, else estimate via Brazilian IR bracket
-        const withheld = taxWithheld > 0 ? taxWithheld : grossInterest * irRate
+
+        let grossInterest: number
+        let withheld: number
+        if (taxWithheld > 0) {
+          // IRF available: derive gross from tax withheld (avoids broken cost-basis for partial redemptions)
+          grossInterest = taxWithheld / irRate
+          withheld = taxWithheld
+        } else {
+          // Fallback: cost-basis approach (quantity-based, only reliable for full redemptions)
+          const sellQty = (sell.quantity ?? 0) as number
+          const b = fiCostBasis[sell.asset_id as number] ?? { totalQty: 0, totalCost: 0 }
+          const avgCostPerUnit = b.totalQty > 0 ? b.totalCost / b.totalQty : 0
+          grossInterest = saleValue - avgCostPerUnit * sellQty
+          withheld = grossInterest * irRate
+        }
+        if (grossInterest <= 0) continue
 
         const broker = normaliseBroker(asset.exchange as string | null)
         const fxD  = getNearestRate(brlEurMap, sell.date as string, fallbackBrlEur)

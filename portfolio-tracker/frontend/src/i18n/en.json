@@ -1549,7 +1549,11 @@
     "incSaving": "Saving…",
     "incCancel": "Cancel",
     "eventsSync": "events auto-sync",
-    "salesDetected": "sales detected → case 3VG"
+    "salesDetected": "sales detected → case 3VG",
+    "saidaFiscalBannerTitle": "Brazilian Fiscal Exit active",
+    "saidaFiscalBannerDesc": "Your profile indicates permanent Brazilian fiscal exit. ARVO applies a flat 15% rate on Brazilian fixed income instead of the progressive bracket table. Please confirm before continuing.",
+    "saidaFiscalConfirmBtn": "Confirm and continue",
+    "saidaFiscalEditBtn": "Edit in Profile"
   },
   "brTax": {
     "loading": "Loading DIRPF report…",

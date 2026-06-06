@@ -1549,7 +1549,11 @@
     "incSaving": "Enregistrement…",
     "incCancel": "Annuler",
     "eventsSync": "événements sync automatique",
-    "salesDetected": "ventes détectées → case 3VG"
+    "salesDetected": "ventes détectées → case 3VG",
+    "saidaFiscalBannerTitle": "Sortie fiscale brésilienne active",
+    "saidaFiscalBannerDesc": "Votre profil indique une sortie fiscale définitive du Brésil. ARVO applique un taux forfaitaire de 15% sur les revenus de placements à revenu fixe brésiliens au lieu du barème progressif. Veuillez confirmer avant de continuer.",
+    "saidaFiscalConfirmBtn": "Confirmer et continuer",
+    "saidaFiscalEditBtn": "Modifier dans le Profil"
   },
   "brTax": {
     "loading": "Chargement du rapport DIRPF…",

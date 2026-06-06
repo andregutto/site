@@ -1549,7 +1549,11 @@
     "incSaving": "Salvando…",
     "incCancel": "Cancelar",
     "eventsSync": "eventos sync automático",
-    "salesDetected": "vendas detectadas → caso 3VG"
+    "salesDetected": "vendas detectadas → caso 3VG",
+    "saidaFiscalBannerTitle": "Saída Fiscal do Brasil ativo",
+    "saidaFiscalBannerDesc": "Seu perfil indica saída fiscal definitiva do Brasil. O ARVO aplica alíquota flat 15% sobre rendimentos de renda fixa brasileira ao invés da tabela regressiva. Confirme antes de continuar.",
+    "saidaFiscalConfirmBtn": "Confirmar e continuar",
+    "saidaFiscalEditBtn": "Alterar no Perfil"
   },
   "brTax": {
     "loading": "Carregando relatório DIRPF…",

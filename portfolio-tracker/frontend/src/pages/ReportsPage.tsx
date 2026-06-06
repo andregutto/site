@@ -868,6 +868,11 @@ function FrReport({ year }: { year: number }) {
   const [fxMethod, setFxMethod] = useState<'daily' | 'year_end'>('daily')
   const [step, setStep] = useState<'overview' | 'fx_choice' | 'preview'>('overview')
 
+  // Saída fiscal confirmation
+  const [saidaFiscal, setSaidaFiscal] = useState(false)
+  const [showSaidaConfirm, setShowSaidaConfirm] = useState(false)
+  const [saidaConfirmed, setSaidaConfirmed] = useState(false)
+
   // Quick-add income state
   const [userAssets, setUserAssets] = useState<Array<{id: number; code: string; name: string; asset_type: string}>>([])
   const [showAddIncome, setShowAddIncome] = useState(false)
@@ -887,6 +892,12 @@ function FrReport({ year }: { year: number }) {
   }
 
   useEffect(() => { setStep('overview'); fetchReport() }, [year]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    apiFetch<{ saida_fiscal_brasil?: boolean }>('/profile')
+      .then(p => { setSaidaFiscal(p.saida_fiscal_brasil ?? false) })
+      .catch(() => {})
+  }, [])
 
   useEffect(() => {
     apiFetch<Array<{id: number; code: string; name: string; asset_type: string}>>('/assets')
@@ -1216,12 +1227,51 @@ function FrReport({ year }: { year: number }) {
             </Section>
           )}
 
+          {saidaFiscal && (
+            <div className="flex items-start gap-3 p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900">
+              <span className="shrink-0 font-bold text-amber-600">!</span>
+              <div>
+                <p className="font-semibold">{ft.saidaFiscalBannerTitle}</p>
+                <p className="text-amber-700 mt-0.5">{ft.saidaFiscalBannerDesc}</p>
+              </div>
+            </div>
+          )}
+
           <div className="flex justify-end">
             <button
-              onClick={() => setStep('fx_choice')}
+              onClick={() => {
+                if (saidaFiscal && !saidaConfirmed) {
+                  setShowSaidaConfirm(true)
+                } else {
+                  setStep('fx_choice')
+                }
+              }}
               className="px-5 py-2 text-sm font-medium bg-[#0D0D0D] text-white rounded-xl hover:bg-gray-800 transition-colors"
             >{ft.btnContinue}</button>
           </div>
+
+          {showSaidaConfirm && (
+            <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => setShowSaidaConfirm(false)}>
+              <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 space-y-4" onClick={e => e.stopPropagation()}>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
+                    <span className="text-amber-600 font-bold text-lg">!</span>
+                  </div>
+                  <h3 className="font-semibold text-gray-900">{ft.saidaFiscalBannerTitle}</h3>
+                </div>
+                <p className="text-sm text-gray-600">{ft.saidaFiscalBannerDesc}</p>
+                <div className="flex flex-col gap-2">
+                  <button
+                    onClick={() => { setSaidaConfirmed(true); setShowSaidaConfirm(false); setStep('fx_choice') }}
+                    className="w-full py-2.5 text-sm font-semibold bg-[#0D0D0D] text-white rounded-xl hover:bg-gray-800 transition-colors"
+                  >{ft.saidaFiscalConfirmBtn}</button>
+                  <a href="/profile"
+                    className="w-full py-2.5 text-sm text-center text-gray-500 hover:text-gray-700 block"
+                  >{ft.saidaFiscalEditBtn}</a>
+                </div>
+              </div>
+            </div>
+          )}
         </>
       )}
 
