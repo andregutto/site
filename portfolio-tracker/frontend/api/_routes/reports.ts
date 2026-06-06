@@ -339,55 +339,28 @@ function mapEventType(dividendType: string | null, description: string | null): 
   return EVENT_TYPE_MAP[raw] ?? 'DIVIDEND'
 }
 
-async function fetchBcbSeries(
-  moeda: 'EUR' | 'USD',
+// Frankfurter (ECB) — free, no key, BRL+USD in one call
+async function fetchYearFxMaps(
   year: number,
-): Promise<Array<{ date: string; rate: number }>> {
-  const start = `01-01-${year}`
-  const end   = `12-31-${year}`
-  const url   = `https://olinda.bcb.gov.br/olinda/servico/PTAX/versao/v1/odata/CotacaoMoedaPeriodo(moeda=@moeda,dataInicial=@dataInicial,dataFinalCotacao=@dataFinalCotacao)?@moeda='${moeda}'&@dataInicial='${start}'&@dataFinalCotacao='${end}'&$top=400&$filter=tipoBoletim%20eq%20'Fechamento'&$format=json&$select=cotacaoVenda,dataHoraCotacao`
-  const res = await fetch(url)
-  if (!res.ok) throw new Error(`BCB PTAX ${res.status} for ${moeda}`)
-  const data = await res.json() as { value: Array<{ cotacaoVenda: number; dataHoraCotacao: string }> }
-  return (data.value ?? []).map(p => ({
-    date: p.dataHoraCotacao.split(' ')[0],
-    rate: p.cotacaoVenda,
-  }))
-}
-
-async function fetchYearFxRates(
-  year: number,
-  pair: string,
-): Promise<Record<string, number>> {
+): Promise<{ brlEur: Record<string, number>; usdEur: Record<string, number> }> {
   const TTL = 24 * 60 * 60 * 1000
-  const map: Record<string, number> = {}
-
-  if (pair === 'BRL-EUR') {
-    const series = await cache.getOrFetch(
-      `fx_bcb_eur_${year}`, TTL,
-      () => fetchBcbSeries('EUR', year),
-    ) as Array<{ date: string; rate: number }>
-    for (const { date, rate } of series) {
-      if (rate > 0) map[date] = 1 / rate
-    }
-    return map
+  type FrankRates = Record<string, { BRL?: number; USD?: number }>
+  const raw = await cache.getOrFetch(
+    `fx_frankfurter_${year}`, TTL,
+    async () => {
+      const url = `https://api.frankfurter.app/${year}-01-01..${year}-12-31?from=EUR&to=BRL,USD`
+      const r = await fetch(url)
+      if (!r.ok) throw new Error(`Frankfurter ${r.status}`)
+      return (await r.json() as { rates: FrankRates }).rates
+    },
+  ) as FrankRates
+  const brlEur: Record<string, number> = {}
+  const usdEur: Record<string, number> = {}
+  for (const [date, rates] of Object.entries(raw ?? {})) {
+    if (rates.BRL && rates.BRL > 0) brlEur[date] = 1 / rates.BRL
+    if (rates.USD && rates.USD > 0) usdEur[date] = 1 / rates.USD
   }
-
-  if (pair === 'USD-EUR') {
-    const [eurSeries, usdSeries] = await Promise.all([
-      cache.getOrFetch(`fx_bcb_eur_${year}`, TTL, () => fetchBcbSeries('EUR', year)),
-      cache.getOrFetch(`fx_bcb_usd_${year}`, TTL, () => fetchBcbSeries('USD', year)),
-    ]) as [Array<{ date: string; rate: number }>, Array<{ date: string; rate: number }>]
-    const eurBrl: Record<string, number> = {}
-    for (const { date, rate } of eurSeries) eurBrl[date] = rate
-    for (const { date, rate } of usdSeries) {
-      const eur = eurBrl[date]
-      if (eur && eur > 0) map[date] = rate / eur
-    }
-    return map
-  }
-
-  return map
+  return { brlEur, usdEur }
 }
 
 function getNearestRate(rateMap: Record<string, number>, date: string, fallback: number): number {
@@ -475,12 +448,11 @@ router.get('/france/:year', requireAuth, async (req, res: Response) => {
   let brlEurMap: Record<string, number> = {}
   let usdEurMap: Record<string, number> = {}
   try {
-    [brlEurMap, usdEurMap] = await Promise.all([
-      fetchYearFxRates(year, 'BRL-EUR'),
-      fetchYearFxRates(year, 'USD-EUR'),
-    ])
+    const fx = await fetchYearFxMaps(year)
+    brlEurMap = fx.brlEur
+    usdEurMap = fx.usdEur
   } catch (err) {
-    console.error('FX fetch error:', err)
+    console.error('FX fetch error (Frankfurter):', err)
   }
 
   const yearEndBrlEur = getYearEndRate(brlEurMap, year)
