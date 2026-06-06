@@ -69,15 +69,37 @@ function syncDividendsThen<T>(fn: () => Promise<T>): Promise<T> {
 const CURRENT_YEAR = new Date().getFullYear()
 const YEARS = Array.from({ length: 6 }, (_, i) => CURRENT_YEAR - i)
 
+function residenceTabType(country: string | null): 'fr' | 'coming_soon' {
+  if (!country) return 'coming_soon'
+  const c = country.toLowerCase()
+  if (c.includes('france') || c.includes('França') || c === 'fr') return 'fr'
+  return 'coming_soon'
+}
+
 export default function ReportsPage() {
-  const [year, setYear] = useState(CURRENT_YEAR - 1)
-  const [tab, setTab]   = useState<'br' | 'fr'>('br')
+  const [year, setYear]               = useState(CURRENT_YEAR - 1)
+  const [tab, setTab]                 = useState<'br' | 'fr'>('br')
+  const [saidaFiscal, setSaidaFiscal] = useState(false)
+  const [residenceCountry, setResidenceCountry] = useState<string | null>(null)
 
   useEffect(() => {
-    apiFetch<{ country?: string }>('/profile')
-      .then(p => { if (p.country?.toLowerCase().includes('fr')) setTab('fr') })
+    apiFetch<{ country?: string; saida_fiscal_brasil?: boolean }>('/profile')
+      .then(p => {
+        const sf      = p.saida_fiscal_brasil ?? false
+        const country = p.country ?? null
+        setSaidaFiscal(sf)
+        setResidenceCountry(country)
+        const resTab = residenceTabType(country)
+        // Default to residence country if it's supported; else Brasil (if visible)
+        if (resTab === 'fr') setTab('fr')
+        else if (!sf)        setTab('br')
+      })
       .catch(() => {})
   }, [])
+
+  const resTab  = residenceTabType(residenceCountry)
+  const showBr  = !saidaFiscal
+  const showRes = residenceCountry !== null
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -92,17 +114,29 @@ export default function ReportsPage() {
             {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
           </select>
           <div className="flex rounded-lg border border-gray-200 overflow-hidden text-sm">
-            <button onClick={() => setTab('br')} className={`px-4 py-1.5 font-medium transition-colors ${tab === 'br' ? 'bg-[#0D0D0D] text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}>Brasil</button>
-            <button onClick={() => setTab('fr')} className={`px-4 py-1.5 font-medium transition-colors border-l border-gray-200 ${tab === 'fr' ? 'bg-[#0D0D0D] text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}>França</button>
-            <div className="flex items-center gap-1.5 px-3 py-1.5 border-l border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed select-none" title="Em breve">
-              <span className="font-medium">Portugal</span>
-              <span className="text-[10px] bg-gray-200 text-gray-500 px-1.5 py-0.5 rounded-full leading-none">Em breve</span>
-            </div>
+            {showBr && (
+              <button
+                onClick={() => setTab('br')}
+                className={`px-4 py-1.5 font-medium transition-colors ${tab === 'br' ? 'bg-[#0D0D0D] text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
+              >Brasil</button>
+            )}
+            {showRes && resTab === 'fr' && (
+              <button
+                onClick={() => setTab('fr')}
+                className={`px-4 py-1.5 font-medium transition-colors ${showBr ? 'border-l border-gray-200' : ''} ${tab === 'fr' ? 'bg-[#0D0D0D] text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
+              >França</button>
+            )}
+            {showRes && resTab === 'coming_soon' && (
+              <div className={`flex items-center gap-1.5 px-3 py-1.5 ${showBr ? 'border-l border-gray-200' : ''} bg-gray-50 text-gray-400 cursor-not-allowed select-none`} title="Em breve">
+                <span className="font-medium">{residenceCountry}</span>
+                <span className="text-[10px] bg-gray-200 text-gray-500 px-1.5 py-0.5 rounded-full leading-none">Em breve</span>
+              </div>
+            )}
           </div>
         </div>
       </div>
 
-      {tab === 'br' && <BrReport year={year} />}
+      {tab === 'br' && showBr && <BrReport year={year} />}
       {tab === 'fr' && <FrReport year={year} />}
     </div>
   )
