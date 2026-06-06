@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import ExcelJS from 'exceljs'
 import { apiFetch } from '../lib/api'
 import { useI18n } from '../contexts/I18nContext'
@@ -71,8 +72,8 @@ const YEARS = Array.from({ length: 6 }, (_, i) => CURRENT_YEAR - i)
 
 function residenceTabType(country: string | null): 'fr' | 'coming_soon' {
   if (!country) return 'coming_soon'
-  const c = country.toLowerCase()
-  if (c.includes('france') || c.includes('França') || c === 'fr') return 'fr'
+  const c = country.toLowerCase().trim()
+  if (c === 'fr' || c.startsWith('fran')) return 'fr'
   return 'coming_soon'
 }
 
@@ -1299,9 +1300,9 @@ function FrReport({ year }: { year: number }) {
                     onClick={() => { setSaidaConfirmed(true); setShowSaidaConfirm(false); setStep('fx_choice') }}
                     className="w-full py-2.5 text-sm font-semibold bg-[#0D0D0D] text-white rounded-xl hover:bg-gray-800 transition-colors"
                   >{ft.saidaFiscalConfirmBtn}</button>
-                  <a href="/profile"
+                  <Link to="/profile"
                     className="w-full py-2.5 text-sm text-center text-gray-500 hover:text-gray-700 block"
-                  >{ft.saidaFiscalEditBtn}</a>
+                  >{ft.saidaFiscalEditBtn}</Link>
                 </div>
               </div>
             </div>
