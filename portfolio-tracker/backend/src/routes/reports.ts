@@ -468,9 +468,11 @@ router.get('/france/:year', requireAuth, async (req, res: Response) => {
   const fallbackBrlEur = yearEndBrlEur || 0.17
   const fallbackUsdEur = yearEndUsdEur || 1.05
 
-  // Fetch user profile early — needed for saida_fiscal_brasil in FI interest calc
+  // Fetch user profile early — needed for tax_country / saida_fiscal_brasil in FI interest calc
   const { data: { user: profileUser } } = await supabaseAdmin.auth.admin.getUserById(userId)
-  const saidaFiscal = (profileUser?.user_metadata?.saida_fiscal_brasil ?? false) as boolean
+  const taxCountry  = (profileUser?.user_metadata?.tax_country  ?? '') as string
+  const saidaFiscal = (taxCountry !== '' && taxCountry !== 'BR') ||
+                      ((profileUser?.user_metadata?.saida_fiscal_brasil ?? false) as boolean)
 
   // 5. Build tax events
   interface TaxEvent {
@@ -673,11 +675,20 @@ router.get('/france/:year', requireAuth, async (req, res: Response) => {
           grossInterest = taxWithheld / irRate
           withheld = taxWithheld
         } else {
-          // Fallback: cost-basis approach (quantity-based, only reliable for full redemptions)
-          const sellQty = (sell.quantity ?? 0) as number
-          const b = fiCostBasis[sell.asset_id as number] ?? { totalQty: 0, totalCost: 0 }
-          const avgCostPerUnit = b.totalQty > 0 ? b.totalCost / b.totalQty : 0
-          grossInterest = saleValue - avgCostPerUnit * sellQty
+          // Fallback: CDI-based estimation when IRF not recorded (quantity-based cost-basis
+          // breaks for FI because quantity=1 per transaction regardless of redemption size)
+          const AVG_CDI_BY_YEAR: Record<number, number> = {
+            2020: 0.0265, 2021: 0.0590, 2022: 0.1265,
+            2023: 0.1328, 2024: 0.1040, 2025: 0.1290,
+          }
+          const sellYear = new Date(sell.date as string).getFullYear()
+          const avgCDI = AVG_CDI_BY_YEAR[sellYear] ?? 0.12
+          const fiRatePct = ((asset as { fi_rate?: number | null }).fi_rate ?? 100) / 100
+          const calDays = Math.floor((new Date(sell.date as string).getTime() - new Date(fiStart).getTime()) / 86400000)
+          const bizDays = Math.round(calDays * 252 / 365)
+          const accumReturn = (Math.pow(1 + avgCDI, bizDays / 252) - 1) * fiRatePct
+          // saleValue = principal × (1 + accumReturn) → interest = saleValue × r / (1 + r)
+          grossInterest = accumReturn > 0 && saleValue > 0 ? saleValue * accumReturn / (1 + accumReturn) : 0
           withheld = grossInterest * irRate
         }
         if (grossInterest <= 0) continue

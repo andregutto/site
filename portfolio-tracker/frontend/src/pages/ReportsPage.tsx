@@ -80,26 +80,25 @@ function residenceTabType(country: string | null): 'fr' | 'coming_soon' {
 export default function ReportsPage() {
   const [year, setYear]               = useState(CURRENT_YEAR - 1)
   const [tab, setTab]                 = useState<'br' | 'fr'>('br')
-  const [saidaFiscal, setSaidaFiscal] = useState(false)
+  const [taxCountry, setTaxCountry]             = useState<string>('BR')
   const [residenceCountry, setResidenceCountry] = useState<string | null>(null)
 
   useEffect(() => {
-    apiFetch<{ country?: string; saida_fiscal_brasil?: boolean }>('/profile')
+    apiFetch<{ country?: string; tax_country?: string; saida_fiscal_brasil?: boolean }>('/profile')
       .then(p => {
-        const sf      = p.saida_fiscal_brasil ?? false
+        const tc      = p.tax_country || (p.saida_fiscal_brasil ? 'FR' : 'BR')
         const country = p.country ?? null
-        setSaidaFiscal(sf)
+        setTaxCountry(tc)
         setResidenceCountry(country)
         const resTab = residenceTabType(country)
-        // Default to residence country if it's supported; else Brasil (if visible)
         if (resTab === 'fr') setTab('fr')
-        else if (!sf)        setTab('br')
+        else if (tc === 'BR') setTab('br')
       })
       .catch(() => {})
   }, [])
 
   const resTab  = residenceTabType(residenceCountry)
-  const showBr  = !saidaFiscal
+  const showBr  = taxCountry === 'BR'
   const showRes = residenceCountry !== null
 
   return (
@@ -929,8 +928,11 @@ function FrReport({ year }: { year: number }) {
   useEffect(() => { setStep('overview'); fetchReport() }, [year]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    apiFetch<{ saida_fiscal_brasil?: boolean }>('/profile')
-      .then(p => { setSaidaFiscal(p.saida_fiscal_brasil ?? false) })
+    apiFetch<{ tax_country?: string; saida_fiscal_brasil?: boolean }>('/profile')
+      .then(p => {
+        const tc = p.tax_country || (p.saida_fiscal_brasil ? 'FR' : 'BR')
+        setSaidaFiscal(tc !== 'BR')
+      })
       .catch(() => {})
   }, [])
 
