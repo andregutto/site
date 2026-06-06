@@ -354,12 +354,12 @@ export default function AppLayout() {
             transform: 'translateX(-50%)',
             width: 'calc(100% - 32px)',
             maxWidth: 500,
-            background: 'rgba(255,255,255,0.78)',
-            backdropFilter: 'blur(20px) saturate(180%)',
-            WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-            border: '1px solid rgba(0,0,0,0.07)',
+            background: 'rgba(255,255,255,0.55)',
+            backdropFilter: 'blur(24px) saturate(200%)',
+            WebkitBackdropFilter: 'blur(24px) saturate(200%)',
+            border: '1px solid rgba(255,255,255,0.80)',
             borderRadius: 999,
-            boxShadow: '0 8px 32px rgba(0,0,0,0.10), 0 2px 6px rgba(0,0,0,0.06)',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.10), 0 2px 6px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.95)',
             overflow: 'hidden',
           }}
         >
@@ -369,12 +369,12 @@ export default function AppLayout() {
                 key={to} to={to} end={end}
                 className="flex items-center gap-1.5 whitespace-nowrap shrink-0"
                 style={({ isActive }) => isActive
-                  ? { fontFamily: "var(--arvo-font-body)", fontSize: 13, letterSpacing: '0.04em', padding: '8px 13px', borderRadius: 999, background: sectionAccent, color: '#ffffff', textDecoration: 'none', transition: 'all 240ms cubic-bezier(0.22,0.61,0.36,1)' }
+                  ? { fontFamily: "var(--arvo-font-body)", fontSize: 13, letterSpacing: '0.04em', padding: '8px 13px', borderRadius: 999, background: 'rgba(255,255,255,0.90)', color: 'rgba(13,13,13,0.88)', textDecoration: 'none', boxShadow: '0 1px 4px rgba(0,0,0,0.08)', transition: 'all 240ms cubic-bezier(0.22,0.61,0.36,1)' }
                   : { fontFamily: "var(--arvo-font-body)", fontSize: 13, letterSpacing: '0.04em', padding: '8px 13px', borderRadius: 999, background: 'transparent', color: 'rgba(13,13,13,0.45)', textDecoration: 'none', transition: 'all 240ms cubic-bezier(0.22,0.61,0.36,1)' }}
               >
                 {({ isActive }) => (
                   <>
-                    {isActive && <span style={{ width: 5, height: 5, borderRadius: 999, background: 'rgba(255,255,255,0.70)', flexShrink: 0, display: 'inline-block' }} />}
+                    {isActive && <span style={{ width: 5, height: 5, borderRadius: 999, background: sectionAccent, flexShrink: 0, display: 'inline-block' }} />}
                     {label}
                   </>
                 )}
@@ -393,12 +393,12 @@ export default function AppLayout() {
           transform: 'translateX(-50%)',
           width: 'calc(100% - 32px)',
           maxWidth: 360,
-          background: 'rgba(255,255,255,0.78)',
-          backdropFilter: 'blur(20px) saturate(180%)',
-          WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-          border: '1px solid rgba(0,0,0,0.07)',
+          background: 'rgba(255,255,255,0.55)',
+          backdropFilter: 'blur(24px) saturate(200%)',
+          WebkitBackdropFilter: 'blur(24px) saturate(200%)',
+          border: '1px solid rgba(255,255,255,0.80)',
           borderRadius: 999,
-          boxShadow: '0 8px 32px rgba(0,0,0,0.12), 0 2px 6px rgba(0,0,0,0.06)',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.12), 0 2px 6px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.95)',
           padding: '5px',
         }}
       >
@@ -414,7 +414,7 @@ export default function AppLayout() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75" />
               </svg>
             )},
-            { to: '/institutions', label: t.nav.institutions, match: inInstitutions, accent: 'rgba(13,13,13,0.88)', icon: (
+            { to: '/institutions', label: t.nav.institutions, match: inInstitutions, accent: 'rgba(13,13,13,0.70)', icon: (
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.008v.008h-.008v-.008Zm0 3h.008v.008h-.008v-.008Zm0 3h.008v.008h-.008v-.008Z" />
               </svg>
@@ -427,14 +427,16 @@ export default function AppLayout() {
                 fontFamily: "var(--arvo-font-body)",
                 letterSpacing: '0.06em',
                 fontSize: 10,
-                padding: '8px 6px 7px',
+                padding: '6px 6px 7px',
                 borderRadius: 999,
-                color: match ? '#ffffff' : 'rgba(13,13,13,0.40)',
-                background: match ? accent : 'transparent',
+                color: match ? 'rgba(13,13,13,0.88)' : 'rgba(13,13,13,0.38)',
+                background: match ? 'rgba(255,255,255,0.90)' : 'transparent',
+                boxShadow: match ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
                 transition: 'all 280ms cubic-bezier(0.22,0.61,0.36,1)',
                 textDecoration: 'none',
               }}
             >
+              {match && <span style={{ width: 4, height: 4, borderRadius: 999, background: accent, display: 'block', marginBottom: 2 }} />}
               {icon}
               <span className="truncate w-full text-center px-1">{label}</span>
             </NavLink>

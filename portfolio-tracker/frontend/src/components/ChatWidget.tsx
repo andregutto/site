@@ -262,14 +262,25 @@ export default function ChatWidget({ visible = true, onDismiss, forceOpen, onFor
               <p className="text-white text-sm font-semibold leading-none">{t.chat.title}</p>
               <p className="text-white/60 text-[11px] mt-0.5">{t.chat.poweredBy}</p>
             </div>
-            {messages.length > 0 && (
+            <div className="relative z-10 ml-auto flex items-center gap-2">
+              {messages.length > 0 && (
+                <button
+                  onClick={() => setMessages([])}
+                  className="text-white/50 hover:text-white/80 text-[11px] transition-colors"
+                >
+                  {t.chat.clear}
+                </button>
+              )}
               <button
-                onClick={() => setMessages([])}
-                className="relative z-10 ml-auto text-white/50 hover:text-white/80 text-[11px] transition-colors"
+                onClick={() => setOpen(false)}
+                className="w-6 h-6 rounded-full flex items-center justify-center text-white/50 hover:text-white/80 hover:bg-white/10 transition-all"
+                aria-label={t.chat.dismiss ?? 'Fechar'}
               >
-                {t.chat.clear}
+                <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                  <path d="M1 1L9 9M9 1L1 9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+                </svg>
               </button>
-            )}
+            </div>
           </div>
 
           {/* Messages */}
