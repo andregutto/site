@@ -96,16 +96,6 @@ function EmailConfirmGate({ email }: { email: string }) {
   )
 }
 
-function DashboardGate() {
-  const { user } = useAuth()
-  // Only redirect on launch (first visit this session), not when user explicitly navigates here
-  if (!sessionStorage.getItem('arvo_launch_redirect_done') && user?.user_metadata?.default_section === 'finances') {
-    sessionStorage.setItem('arvo_launch_redirect_done', '1')
-    return <Navigate to="/finances" replace />
-  }
-  sessionStorage.setItem('arvo_launch_redirect_done', '1')
-  return <DashboardPage />
-}
 
 function ProtectedRoutes() {
   const { user, loading } = useAuth()
@@ -133,7 +123,7 @@ function AppRoutes() {
       <Route path="/share/momento/:token"   element={<PublicMomentPage />} />
       <Route path="/invite/:token"           element={<AcceptInvitePage />} />
       <Route element={<ProtectedRoutes />}>
-        <Route path="/dashboard"      element={<DashboardGate />} />
+        <Route path="/dashboard"      element={<DashboardPage />} />
         <Route path="/performance"    element={<PerformancePage />} />
         <Route path="/assets/:id"     element={<AssetDetailPage />} />
         <Route path="/profile"        element={<ProfilePage />} />
