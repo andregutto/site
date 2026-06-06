@@ -1466,6 +1466,8 @@
     "section3916": "Formulaire 3916 — Comptes étrangers détectés",
     "no3916": "Aucun compte étranger reconnu dans vos actifs.",
     "reminder3916": "Rappel : comptes avec IBAN FR (N26, etc.) ne doivent pas être déclarés.",
+    "warn3916SystemFilled": "Données pré-remplies — vérification obligatoire",
+    "warn3916Institutions": "Certains établissements ont été identifiés depuis la base de données Arvo. Confirmez leurs coordonnées légales dans Institutions avant de soumettre votre déclaration.",
     "incomeByType": "Revenus par type — aperçu",
     "colCountry": "Pays",
     "colBroker": "Courtier",

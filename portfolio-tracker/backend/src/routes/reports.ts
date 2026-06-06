@@ -52,26 +52,225 @@ const WITHHOLDING_RATES: Record<string, number> = {
   IE_DIVIDEND:   0.15,
 }
 
-const BROKER_INFO: Record<string, { institution: string; address: string; country: string }> = {
+const BROKER_INFO: Record<string, { institution: string; address: string; country: string; registration: string }> = {
   'Interactive Brokers': {
-    institution: 'Interactive Brokers Ireland Ltd',
-    address:     'Two Harbourmaster Place, IFSC, Dublin 1, Ireland',
-    country:     'Irlande',
+    institution:  'Interactive Brokers Ireland Ltd',
+    address:      'Two Harbourmaster Place, IFSC, Dublin 1, Ireland',
+    country:      'Irlande',
+    registration: '',
   },
   'XP': {
-    institution: 'XP Investimentos CCTVM S/A',
-    address:     'Av. Chedid Jafet, 75 — Vila Olímpia, São Paulo, SP — Brésil',
-    country:     'Brésil',
+    institution:  'XP Investimentos CCTVM S/A',
+    address:      'Av. Chedid Jafet, 75 — Vila Olímpia, São Paulo, SP — Brésil',
+    country:      'Brésil',
+    registration: '02.332.886/0011-03',
   },
   'BTG': {
-    institution: 'Banco BTG Pactual S.A.',
-    address:     'Av. Brigadeiro Faria Lima, 3477 — Itaim Bibi, São Paulo, SP — Brésil',
-    country:     'Brésil',
+    institution:  'Banco BTG Pactual S.A.',
+    address:      'Av. Brigadeiro Faria Lima, 3477 — Itaim Bibi, São Paulo, SP — Brésil',
+    country:      'Brésil',
+    registration: '30.306.294/0001-45',
   },
   'C6': {
-    institution: 'Banco C6 S.A.',
-    address:     'Al. Joaquim Eugênio de Lima, 680 — Jardim Paulista, São Paulo, SP — Brésil',
-    country:     'Brésil',
+    institution:  'Banco C6 S.A.',
+    address:      'Al. Joaquim Eugênio de Lima, 680 — Jardim Paulista, São Paulo, SP — Brésil',
+    country:      'Brésil',
+    registration: '31.872.495/0001-72',
+  },
+  'Nubank': {
+    institution:  'Nu Pagamentos S.A.',
+    address:      'Rua Capote Valente, 39 — Pinheiros, São Paulo, SP — Brésil',
+    country:      'Brésil',
+    registration: '18.236.120/0001-58',
+  },
+  'Rico': {
+    institution:  'Rico Investimentos CTVM S.A. — Grupo XP',
+    address:      'Av. Chedid Jafet, 75 — Vila Olímpia, São Paulo, SP — Brésil',
+    country:      'Brésil',
+    registration: '02.332.886/0011-03',
+  },
+  'Clear': {
+    institution:  'Clear Corretora CTVM S.A. — Grupo XP',
+    address:      'Av. Chedid Jafet, 75 — Vila Olímpia, São Paulo, SP — Brésil',
+    country:      'Brésil',
+    registration: '02.332.886/0001-03',
+  },
+  'Itaú': {
+    institution:  'Itaú Unibanco S.A.',
+    address:      'Praça Alfredo Egydio de Souza Aranha, 100 — Jabaquara, São Paulo, SP — Brésil',
+    country:      'Brésil',
+    registration: '60.701.190/0001-04',
+  },
+  'Bradesco': {
+    institution:  'Banco Bradesco S.A.',
+    address:      'Núcleo Cidade de Deus, s/n — Vila Yara, Osasco, SP — Brésil',
+    country:      'Brésil',
+    registration: '60.746.948/0001-12',
+  },
+  'Santander': {
+    institution:  'Banco Santander (Brasil) S.A.',
+    address:      'Av. Presidente Juscelino Kubitschek, 2041 — Itaim Bibi, São Paulo, SP — Brésil',
+    country:      'Brésil',
+    registration: '90.400.888/0001-42',
+  },
+  'Banco do Brasil': {
+    institution:  'Banco do Brasil S.A.',
+    address:      'SBS — Quadra 1 — Bloco G — Lote 32, Brasília, DF — Brésil',
+    country:      'Brésil',
+    registration: '00.000.000/0001-91',
+  },
+  'Caixa': {
+    institution:  'Caixa Econômica Federal',
+    address:      'SBS — Quadra 4 — Lotes 3/4, Brasília, DF — Brésil',
+    country:      'Brésil',
+    registration: '00.360.305/0001-04',
+  },
+  'Banco Inter': {
+    institution:  'Banco Inter S.A.',
+    address:      'Av. José Cândido da Silveira, 2000 — Horto, Belo Horizonte, MG — Brésil',
+    country:      'Brésil',
+    registration: '00.416.968/0001-01',
+  },
+  'Avenue': {
+    institution:  'Avenue Securities LLC',
+    address:      '125 E. Palmetto Park Rd., Suite 105, Boca Raton, FL 33432 — États-Unis',
+    country:      'États-Unis',
+    registration: '',
+  },
+  'Genial': {
+    institution:  'Genial Investimentos CCTVM S.A.',
+    address:      'Av. Brigadeiro Faria Lima, 3400 — Itaim Bibi, São Paulo, SP — Brésil',
+    country:      'Brésil',
+    registration: '27.652.684/0001-62',
+  },
+  // ── Corretoras / Banques françaises ─────────────────────────────────────
+  'Boursorama': {
+    institution:  'Boursorama S.A.',
+    address:      '18 quai du Président Roosevelt, 92130 Issy-les-Moulineaux, France',
+    country:      'France',
+    registration: '351 058 444',
+  },
+  'Bourse Direct': {
+    institution:  'Bourse Direct S.A.',
+    address:      '253 rue de Saint-Honoré, 75001 Paris, France',
+    country:      'France',
+    registration: '753 127 736',
+  },
+  'Crédit Agricole': {
+    institution:  'Crédit Agricole S.A.',
+    address:      '12 place des États-Unis, 92120 Montrouge, France',
+    country:      'France',
+    registration: '784 608 416',
+  },
+  'Fortuneo': {
+    institution:  'Fortuneo Banque',
+    address:      '1 place Copernic, 92098 Paris La Défense Cedex, France',
+    country:      'France',
+    registration: '514 076 509',
+  },
+  'BNP Paribas': {
+    institution:  'BNP Paribas S.A.',
+    address:      '16 boulevard des Italiens, 75009 Paris, France',
+    country:      'France',
+    registration: '662 042 449',
+  },
+  'Société Générale': {
+    institution:  'Société Générale S.A.',
+    address:      '29 boulevard Haussmann, 75009 Paris, France',
+    country:      'France',
+    registration: '552 120 222',
+  },
+  "Caisse d'Épargne": {
+    institution:  "Caisse d'Épargne et de Prévoyance",
+    address:      '50 avenue Pierre Mendès France, 75013 Paris, France',
+    country:      'France',
+    registration: '778 282 066',
+  },
+  'LCL': {
+    institution:  'LCL — Le Crédit Lyonnais S.A.',
+    address:      '20 avenue de Paris, 94811 Villejuif Cedex, France',
+    country:      'France',
+    registration: '954 509 741',
+  },
+  'Banque Postale': {
+    institution:  'La Banque Postale',
+    address:      '115 rue de Sèvres, 75275 Paris Cedex 06, France',
+    country:      'France',
+    registration: '421 100 645',
+  },
+  // ── Courtiers européens ──────────────────────────────────────────────────
+  '212 Trading': {
+    institution:  'Trading 212 Markets Ltd',
+    address:      '3 Kallipoleos Street, Limassol 3036, Chypre',
+    country:      'Chypre',
+    registration: 'HE322334',
+  },
+  'Trade Republic': {
+    institution:  'Trade Republic Bank GmbH',
+    address:      'Kastanienallee 32, 10435 Berlin, Allemagne',
+    country:      'Allemagne',
+    registration: 'DE 324 929 578',
+  },
+  'Degiro': {
+    institution:  'DEGIRO B.V.',
+    address:      'Rembrandt Tower, Amstelplein 1, 1096 HA Amsterdam, Pays-Bas',
+    country:      'Pays-Bas',
+    registration: '59555939',
+  },
+  'Revolut': {
+    institution:  'Revolut Bank UAB',
+    address:      'Konstitucijos ave. 21B, Vilnius 08130, Lituanie',
+    country:      'Lituanie',
+    registration: '304580906',
+  },
+  'Wise': {
+    institution:  'Wise Europe SA',
+    address:      'Square de Meeûs 35, 1000 Bruxelles, Belgique',
+    country:      'Belgique',
+    registration: '0713.629.988',
+  },
+  'Saxo Bank': {
+    institution:  'Saxo Bank A/S',
+    address:      'Philip Heymans Allé 15, 2900 Hellerup, Danemark',
+    country:      'Danemark',
+    registration: '15731249',
+  },
+  'Swissquote': {
+    institution:  'Swissquote Bank Ltd',
+    address:      'Chemin de la Crêtaux 33, 1196 Gland, Suisse',
+    country:      'Suisse',
+    registration: 'CHE-113.540.212',
+  },
+  // ── Banques portugaises ──────────────────────────────────────────────────
+  'Millennium BCP': {
+    institution:  'Banco Comercial Português, S.A.',
+    address:      'Praça D. João I, 28, 4000-295 Porto, Portugal',
+    country:      'Portugal',
+    registration: '501 525 882',
+  },
+  'Banco BPI': {
+    institution:  'Banco BPI, S.A.',
+    address:      'Rua Tenente Valadim, 284, 4100-476 Porto, Portugal',
+    country:      'Portugal',
+    registration: '501 214 534',
+  },
+  'Caixa Geral de Depósitos': {
+    institution:  'Caixa Geral de Depósitos, S.A.',
+    address:      'Av. João XXI, 63, 1000-300 Lisboa, Portugal',
+    country:      'Portugal',
+    registration: '500 960 046',
+  },
+  'Banco Montepio': {
+    institution:  'Banco Montepio Geral, S.A.',
+    address:      'Rua Áurea, 219-241, 1100-060 Lisboa, Portugal',
+    country:      'Portugal',
+    registration: '500 702 409',
+  },
+  'ActivoBank': {
+    institution:  'ActivoBank, S.A.',
+    address:      'Rua Augusta, 84, 1100-053 Lisboa, Portugal',
+    country:      'Portugal',
+    registration: '501 680 729',
   },
 }
 
@@ -98,6 +297,41 @@ function normaliseBroker(exchange: string | null): string {
   if (v === 'xp' || v.includes('xp investimentos')) return 'XP'
   if (v === 'btg' || v.includes('btg')) return 'BTG'
   if (v === 'c6' || v.includes('banco c6') || v.includes('bco c6')) return 'C6'
+  if (v.includes('nubank') || v === 'nu') return 'Nubank'
+  if (v.includes('rico')) return 'Rico'
+  if (v.includes('clear')) return 'Clear'
+  if (v.includes('itaú') || v.includes('itau')) return 'Itaú'
+  if (v.includes('bradesco')) return 'Bradesco'
+  if (v.includes('santander')) return 'Santander'
+  if (v.includes('banco do brasil') || v === 'bb') return 'Banco do Brasil'
+  if (v.includes('caixa geral') || v === 'cgd') return 'Caixa Geral de Depósitos'
+  if (v.includes('caixa econômica') || v.includes('caixa economica') || v === 'cef') return 'Caixa'
+  if (v.includes('inter') && !v.includes('interactive')) return 'Banco Inter'
+  if (v.includes('avenue')) return 'Avenue'
+  if (v.includes('genial')) return 'Genial'
+  // francesas
+  if (v.includes('boursorama') || v === 'bourso') return 'Boursorama'
+  if (v.includes('bourse direct')) return 'Bourse Direct'
+  if (v.includes('crédit agricole') || v.includes('credit agricole') || v === 'ca') return 'Crédit Agricole'
+  if (v.includes('fortuneo')) return 'Fortuneo'
+  if (v.includes('bnp')) return 'BNP Paribas'
+  if (v.includes('société générale') || v.includes('societe generale') || v === 'sg') return 'Société Générale'
+  if (v.includes("caisse d'épargne") || v.includes('caisse epargne') || v === 'ce') return "Caisse d'Épargne"
+  if (v === 'lcl' || v.includes('crédit lyonnais') || v.includes('credit lyonnais')) return 'LCL'
+  if (v.includes('banque postale') || v === 'la banque postale') return 'Banque Postale'
+  // europeias
+  if (v.includes('212') || v.includes('trading 212') || v.includes('trading212')) return '212 Trading'
+  if (v.includes('trade republic') || v.includes('traderepublic')) return 'Trade Republic'
+  if (v.includes('degiro')) return 'Degiro'
+  if (v.includes('revolut')) return 'Revolut'
+  if (v.includes('wise') || v.includes('transferwise')) return 'Wise'
+  if (v.includes('saxo')) return 'Saxo Bank'
+  if (v.includes('swissquote')) return 'Swissquote'
+  // portuguesas
+  if (v.includes('millennium') || v.includes('bcp')) return 'Millennium BCP'
+  if (v === 'bpi' || v.includes('banco bpi')) return 'Banco BPI'
+  if (v.includes('montepio')) return 'Banco Montepio'
+  if (v.includes('activobank') || v.includes('activo bank')) return 'ActivoBank'
   return exchange
 }
 
@@ -519,18 +753,53 @@ router.get('/france/:year', requireAuth, async (req, res: Response) => {
   const totalGainEurDaily   = capitalGains.reduce((s, g) => s + g.gain_loss_eur_daily, 0)
   const totalGainEurYearEnd = capitalGains.reduce((s, g) => s + g.gain_loss_eur_year_end, 0)
 
-  // 8. Build 3916 accounts — include ALL asset brokers (not just those with dividend events)
+  // 8. Build 3916 accounts — user's saved institution_data first, BROKER_INFO as fallback
+  const { data: { user: profileUser } } = await supabaseAdmin.auth.admin.getUserById(userId)
+  const savedInstitutionData = (profileUser?.user_metadata?.institution_data ?? {}) as Record<string, {
+    official_name?: string; address?: string; country?: string; registration?: string
+    account_number?: string; iban?: string; swift?: string
+  }>
+
+  const COUNTRY_TO_FR: Record<string, string> = {
+    Brasil: 'Brésil', EUA: 'États-Unis', França: 'France', Irlanda: 'Irlande',
+    'Reino Unido': 'Royaume-Uni', Alemanha: 'Allemagne', Portugal: 'Portugal', Suíça: 'Suisse',
+    Holanda: 'Pays-Bas', Bélgica: 'Belgique', Lituânia: 'Lituanie', Chipre: 'Chypre',
+    Dinamarca: 'Danemark', Bulgária: 'Bulgarie', Luxemburgo: 'Luxembourg',
+  }
+
   const brokersSeen = new Set([
     ...events.map(e => e.broker),
     ...(assets ?? []).map(a => normaliseBroker(a.exchange as string | null)),
   ])
   const accounts = Array.from(brokersSeen)
-    .filter(b => BROKER_INFO[b])
-    .map(b => ({
-      broker: b,
-      ...BROKER_INFO[b],
-      status: 'Ouvert',
-    }))
+    .filter(b => b !== 'Outros')
+    .map(b => {
+      const userInst = savedInstitutionData[b]
+      if (userInst?.official_name) {
+        return {
+          broker:         b,
+          institution:    userInst.official_name,
+          address:        userInst.address ?? '',
+          country:        COUNTRY_TO_FR[userInst.country ?? ''] ?? userInst.country ?? '',
+          account_number: userInst.account_number ?? '',
+          status:         'Ouvert',
+          system_filled:  false,
+        }
+      }
+      if (BROKER_INFO[b]) {
+        return {
+          broker:         b,
+          institution:    BROKER_INFO[b].institution,
+          address:        BROKER_INFO[b].address,
+          country:        BROKER_INFO[b].country,
+          account_number: '',
+          status:         'Ouvert',
+          system_filled:  true,
+        }
+      }
+      return null
+    })
+    .filter((a): a is NonNullable<typeof a> => a !== null)
 
   res.json({
     year,

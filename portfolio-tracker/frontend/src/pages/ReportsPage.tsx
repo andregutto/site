@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import * as XLSX from 'xlsx'
+import ExcelJS from 'exceljs'
 import { apiFetch } from '../lib/api'
 import { useI18n } from '../contexts/I18nContext'
 
@@ -391,7 +391,7 @@ function BrReport({ year }: { year: number }) {
           <div className="flex justify-between items-center gap-3 flex-wrap">
             <button onClick={() => setStep('rv')} className="px-4 py-2 text-sm text-gray-500 hover:text-gray-700">{bt.btnBack}</button>
             <button
-              onClick={() => generateBrExcel(brData)}
+              onClick={() => void generateBrExcel(brData)}
               className="flex items-center gap-2 px-6 py-2.5 text-sm font-semibold bg-green-700 text-white rounded-xl hover:bg-green-800 transition-colors"
             >{bt.btnDownload}</button>
           </div>
@@ -442,6 +442,7 @@ interface FranceTotals { dividends_eur: number; interests_eur: number; credit_eu
 
 interface Account3916 {
   broker: string; institution: string; address: string; country: string; status: string
+  account_number?: string; system_filled?: boolean
 }
 
 interface FranceTaxData {
@@ -493,37 +494,58 @@ function formBadge(f: '2DC' | '2TR') {
 
 // ─── Excel generation ─────────────────────────────────────────────────────────
 
-// ── Arvo style presets for Excel ─────────────────────────────────────────────
-type XlsxStyle = { fill?: { patternType: string; fgColor: { rgb: string } }; font?: { bold?: boolean; color?: { rgb: string }; sz?: number }; alignment?: { wrapText?: boolean } }
-const XS = {
-  titleBg:    { fill: { patternType: 'solid', fgColor: { rgb: '1B4FD8' } }, font: { bold: true,  color: { rgb: 'FFFFFF' }, sz: 13 } } as XlsxStyle,
-  titleSub:   { fill: { patternType: 'solid', fgColor: { rgb: '1B4FD8' } }, font: { bold: false, color: { rgb: 'D9E4F7' }, sz: 10 } } as XlsxStyle,
-  secHead:    { fill: { patternType: 'solid', fgColor: { rgb: '2D3748' } }, font: { bold: true,  color: { rgb: 'FFFFFF' }, sz: 10 } } as XlsxStyle,
-  colHead:    { fill: { patternType: 'solid', fgColor: { rgb: '4A6BC4' } }, font: { bold: true,  color: { rgb: 'FFFFFF' } } } as XlsxStyle,
-  case2DC:    { fill: { patternType: 'solid', fgColor: { rgb: 'D9E4F7' } }, font: { bold: true  } } as XlsxStyle,
-  case2TR:    { fill: { patternType: 'solid', fgColor: { rgb: 'E8F5E9' } }, font: { bold: true  } } as XlsxStyle,
-  case2AB:    { fill: { patternType: 'solid', fgColor: { rgb: 'FFF3CD' } }, font: { bold: true  } } as XlsxStyle,
-  case8UU:    { fill: { patternType: 'solid', fgColor: { rgb: 'F5F5F5' } } } as XlsxStyle,
-  valYellow:  { fill: { patternType: 'solid', fgColor: { rgb: 'FFFACD' } }, font: { bold: true  } } as XlsxStyle,
-  warnBg:     { fill: { patternType: 'solid', fgColor: { rgb: 'FFF8E1' } }, font: { color: { rgb: '7B3F00' } } } as XlsxStyle,
-  warnIcon:   { fill: { patternType: 'solid', fgColor: { rgb: 'FFF8E1' } }, font: { bold: true,  color: { rgb: 'FE5815' } } } as XlsxStyle,
-  stepNum:    { fill: { patternType: 'solid', fgColor: { rgb: 'EFF6FF' } }, font: { bold: true,  color: { rgb: '1B4FD8' } } } as XlsxStyle,
-  stepTxt:    { fill: { patternType: 'solid', fgColor: { rgb: 'EFF6FF' } } } as XlsxStyle,
-  totalRow:   { fill: { patternType: 'solid', fgColor: { rgb: 'E8EFFF' } }, font: { bold: true  } } as XlsxStyle,
-  totalVal:   { fill: { patternType: 'solid', fgColor: { rgb: 'FE5815' } }, font: { bold: true,  color: { rgb: 'FFFFFF' } } } as XlsxStyle,
-  altRow:     { fill: { patternType: 'solid', fgColor: { rgb: 'F8FAFF' } } } as XlsxStyle,
-}
-function xc(v: unknown, s?: XlsxStyle): XLSX.CellObject {
-  if (v === null || v === undefined || v === '') return { v: '', t: 's', s: s as object | undefined }
-  if (typeof v === 'number') return { v, t: 'n', s: s as object | undefined }
-  return { v: String(v), t: 's', s: s as object | undefined }
-}
-function xcRow(cells: unknown[], s: XlsxStyle): unknown[] {
-  return cells.map(v => xc(v, s))
+// ── ExcelJS style helpers ─────────────────────────────────────────────────────
+type FS = { fill?: string; bold?: boolean; color?: string; size?: number }
+
+function applyFS(cell: ExcelJS.Cell, s: FS) {
+  if (s.fill) cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: s.fill } } as ExcelJS.Fill
+  const font: Partial<ExcelJS.Font> = {}
+  if (s.bold  !== undefined) font.bold  = s.bold
+  if (s.color !== undefined) font.color = { argb: s.color }
+  if (s.size  !== undefined) font.size  = s.size
+  if (Object.keys(font).length) cell.font = font as ExcelJS.Font
 }
 
-function generateExcel(d: FranceTaxData, method: 'daily' | 'year_end') {
-  const wb   = XLSX.utils.book_new()
+const S: Record<string, FS> = {
+  titleBg:  { fill: 'FF1B4FD8', bold: true,  color: 'FFFFFFFF', size: 13 },
+  titleSub: { fill: 'FF1B4FD8',               color: 'FFD9E4F7', size: 10 },
+  secHead:  { fill: 'FF2D3748', bold: true,  color: 'FFFFFFFF', size: 10 },
+  colHead:  { fill: 'FF4A6BC4', bold: true,  color: 'FFFFFFFF' },
+  case2DC:  { fill: 'FFD9E4F7', bold: true },
+  case2TR:  { fill: 'FFE8F5E9', bold: true },
+  case2AB:  { fill: 'FFFFF3CD', bold: true },
+  lightGray:{ fill: 'FFF5F5F5' },
+  valYellow:{ fill: 'FFFFFACD', bold: true },
+  warnBg:   { fill: 'FFFFF8E1',               color: 'FF7B3F00' },
+  warnIcon: { fill: 'FFFFF8E1', bold: true,  color: 'FFFE5815' },
+  stepNum:  { fill: 'FFEFF6FF', bold: true,  color: 'FF1B4FD8' },
+  stepTxt:  { fill: 'FFEFF6FF' },
+  totalRow: { fill: 'FFE8EFFF', bold: true },
+  totalVal: { fill: 'FFFE5815', bold: true,  color: 'FFFFFFFF' },
+  altRow:   { fill: 'FFF8FAFF' },
+  gain3VG:  { fill: 'FFEDE9FE', bold: true },
+  loss3VM:  { fill: 'FFFEE2E2', bold: true },
+  empty:    {},
+}
+
+function sRow(
+  ws: ExcelJS.Worksheet,
+  data: (string | number | null | undefined)[],
+  rowStyle?: FS,
+  perCell?: (FS | undefined)[],
+) {
+  const row = ws.addRow(data)
+  row.eachCell({ includeEmpty: true }, (cell, col) => {
+    const s = perCell?.[col - 1] ?? rowStyle
+    if (s) applyFS(cell, s)
+  })
+  return row
+}
+function blank(ws: ExcelJS.Worksheet) { ws.addRow([]) }
+
+async function generateExcel(d: FranceTaxData, method: 'daily' | 'year_end') {
+  const wb = new ExcelJS.Workbook()
+  wb.creator = 'Arvo'; wb.created = new Date()
   const secs = method === 'daily' ? d.sections_daily : d.sections_year_end
   const tots = method === 'daily' ? d.totals_daily   : d.totals_year_end
   const fxLabel = method === 'daily' ? 'Taux du jour' : 'Taux au 31/12'
@@ -531,300 +553,265 @@ function generateExcel(d: FranceTaxData, method: 'daily' | 'year_end') {
   const totalGainEur = method === 'daily' ? d.total_gain_eur_daily : d.total_gain_eur_year_end
 
   // ── Sheet 1: Resumo ──────────────────────────────────────────────────────
-  const resumo: unknown[][] = [
-    xcRow([`ARVO — Rapport Fiscal France ${d.year}`, '', '', ''], XS.titleBg),
-    xcRow([`Méthode : ${fxLabel}  ·  Généré le ${new Date().toLocaleDateString('fr-FR')}`, '', '', ''], XS.titleSub),
-    [],
-    xcRow(['RÉCAPITULATIF — FORMULAIRE 2042', '', '', ''], XS.secHead),
-    xcRow(['Case', 'Libellé', 'Montant (€)', 'Action'], XS.colHead),
-    [xc('2DC', XS.case2DC), xc('Revenus de capitaux mobiliers — Dividendes', XS.case2DC), xc(e2(tots.dividends_eur), XS.valYellow), xc('← à copier dans la case 2DC', XS.case2DC)],
-    [xc('2TR', XS.case2TR), xc('Produits de placement à revenu fixe — Intérêts', XS.case2TR), xc(e2(tots.interests_eur), XS.valYellow), xc('← à copier dans la case 2TR', XS.case2TR)],
-    [xc('2AB', XS.case2AB), xc("Crédit d'impôt conventionnel total", XS.case2AB), xc(e2(tots.credit_eur), XS.valYellow), xc('← à copier dans la case 2AB', XS.case2AB)],
-    ...(d.capital_gains.length > 0 ? [[
-      xc(totalGainEur >= 0 ? '3VG' : '3VM', totalGainEur >= 0
-        ? { fill: { patternType: 'solid', fgColor: { rgb: 'EDE9FE' } }, font: { bold: true } } as XlsxStyle
-        : { fill: { patternType: 'solid', fgColor: { rgb: 'FEE2E2' } }, font: { bold: true } } as XlsxStyle),
-      xc(totalGainEur >= 0 ? 'Plus-values nettes sur cessions (3VG)' : 'Moins-values nettes sur cessions (3VM)',
-        totalGainEur >= 0
-          ? { fill: { patternType: 'solid', fgColor: { rgb: 'EDE9FE' } } } as XlsxStyle
-          : { fill: { patternType: 'solid', fgColor: { rgb: 'FEE2E2' } } } as XlsxStyle),
-      xc(e2(Math.abs(totalGainEur)), XS.valYellow),
-      xc(`← à copier dans la case ${totalGainEur >= 0 ? '3VG' : '3VM'}`,
-        totalGainEur >= 0
-          ? { fill: { patternType: 'solid', fgColor: { rgb: 'EDE9FE' } } } as XlsxStyle
-          : { fill: { patternType: 'solid', fgColor: { rgb: 'FEE2E2' } } } as XlsxStyle),
-    ]] : []),
-    [xc('8UU', XS.case8UU), xc("Comptes à l'étranger déclarés (3916)", XS.case8UU), xc('Cocher', XS.case8UU), xc('← cocher si vous avez rempli le 3916', XS.case8UU)],
-    [],
-    xcRow(['ÉTAPES À SUIVRE', '', '', ''], XS.secHead),
-    [xc('1', XS.stepNum), xc('Remplir le formulaire 3916 pour chaque compte (onglet "3916")', XS.stepTxt), xc('', XS.stepTxt), xc('', XS.stepTxt)],
-    [xc('2', XS.stepNum), xc('Remplir le formulaire 2047 (onglet "2047 - Par pays")', XS.stepTxt), xc('', XS.stepTxt), xc('', XS.stepTxt)],
-    [xc('3', XS.stepNum), xc('Reporter les cases 2DC, 2TR, 2AB dans le formulaire 2042 (et 3VG/3VM si ventes)', XS.stepTxt), xc('', XS.stepTxt), xc('', XS.stepTxt)],
-    [xc('4', XS.stepNum), xc("Cocher la case 8UU si vous avez déclaré des comptes étrangers", XS.stepTxt), xc('', XS.stepTxt), xc('', XS.stepTxt)],
-    [],
-    xcRow(['AVERTISSEMENTS', '', '', ''], XS.secHead),
-    [xc('!', XS.warnIcon), xc('Ce rapport est indicatif. Consultez un expert-comptable avant de soumettre.', XS.warnBg), xc('', XS.warnBg), xc('', XS.warnBg)],
-    [xc('!', XS.warnIcon), xc('Le traitement JCP/FII dans la convention France-Brésil (1971) est juridiquement ambigu.', XS.warnBg), xc('', XS.warnBg), xc('', XS.warnBg)],
-    [xc('!', XS.warnIcon), xc('Les retenues à la source sont calculées sur des taux théoriques. Vérifiez vos relevés.', XS.warnBg), xc('', XS.warnBg), xc('', XS.warnBg)],
-    [xc('!', XS.warnIcon), xc(`Taux BRL/EUR au 31/12 : ${d.fx_rates.year_end_brl_eur.toFixed(6)} | USD/EUR au 31/12 : ${d.fx_rates.year_end_usd_eur.toFixed(6)}`, XS.warnBg), xc('', XS.warnBg), xc('', XS.warnBg)],
-  ]
-  const wsResumo = XLSX.utils.aoa_to_sheet(resumo)
-  wsResumo['!cols'] = [{ width: 8 }, { width: 58 }, { width: 18 }, { width: 40 }]
-  XLSX.utils.book_append_sheet(wb, wsResumo, '📋 Resumo')
+  const wsR = wb.addWorksheet('📋 Resumo')
+  wsR.columns = [{ width: 8 }, { width: 58 }, { width: 18 }, { width: 40 }]
+  sRow(wsR, [`ARVO — Rapport Fiscal France ${d.year}`, '', '', ''], S.titleBg)
+  sRow(wsR, [`Méthode : ${fxLabel}  ·  Généré le ${new Date().toLocaleDateString('fr-FR')}`, '', '', ''], S.titleSub)
+  blank(wsR)
+  sRow(wsR, ['RÉCAPITULATIF — FORMULAIRE 2042', '', '', ''], S.secHead)
+  sRow(wsR, ['Case', 'Libellé', 'Montant (€)', 'Action'], S.colHead)
+  sRow(wsR, ['2DC', 'Revenus de capitaux mobiliers — Dividendes', e2(tots.dividends_eur), '← à copier dans la case 2DC'], S.case2DC, [S.case2DC, S.case2DC, S.valYellow, S.case2DC])
+  sRow(wsR, ['2TR', 'Produits de placement à revenu fixe — Intérêts', e2(tots.interests_eur), '← à copier dans la case 2TR'], S.case2TR, [S.case2TR, S.case2TR, S.valYellow, S.case2TR])
+  sRow(wsR, ['2AB', "Crédit d'impôt conventionnel total", e2(tots.credit_eur), '← à copier dans la case 2AB'], S.case2AB, [S.case2AB, S.case2AB, S.valYellow, S.case2AB])
+  if (d.capital_gains.length > 0) {
+    const cs = totalGainEur >= 0 ? S.gain3VG : S.loss3VM
+    sRow(wsR, [
+      totalGainEur >= 0 ? '3VG' : '3VM',
+      totalGainEur >= 0 ? 'Plus-values nettes sur cessions (3VG)' : 'Moins-values nettes sur cessions (3VM)',
+      e2(Math.abs(totalGainEur)),
+      `← à copier dans la case ${totalGainEur >= 0 ? '3VG' : '3VM'}`,
+    ], cs, [cs, cs, S.valYellow, cs])
+  }
+  sRow(wsR, ['8UU', "Comptes à l'étranger déclarés (3916)", 'Cocher', '← cocher si vous avez rempli le 3916'], S.lightGray)
+  blank(wsR)
+  sRow(wsR, ['ÉTAPES À SUIVRE', '', '', ''], S.secHead)
+  sRow(wsR, ['1', "Remplir le formulaire 3916 pour chaque compte (onglet '3916')", '', ''], undefined, [S.stepNum, S.stepTxt, S.stepTxt, S.stepTxt])
+  sRow(wsR, ['2', "Remplir le formulaire 2047 (onglet '2047 - Par pays')", '', ''], undefined, [S.stepNum, S.stepTxt, S.stepTxt, S.stepTxt])
+  sRow(wsR, ['3', "Reporter les cases 2DC, 2TR, 2AB dans le formulaire 2042 (et 3VG/3VM si ventes)", '', ''], undefined, [S.stepNum, S.stepTxt, S.stepTxt, S.stepTxt])
+  sRow(wsR, ['4', "Cocher la case 8UU si vous avez déclaré des comptes étrangers", '', ''], undefined, [S.stepNum, S.stepTxt, S.stepTxt, S.stepTxt])
+  blank(wsR)
+  sRow(wsR, ['AVERTISSEMENTS', '', '', ''], S.secHead)
+  sRow(wsR, ['!', 'Ce rapport est indicatif. Consultez un expert-comptable avant de soumettre.', '', ''], undefined, [S.warnIcon, S.warnBg, S.warnBg, S.warnBg])
+  sRow(wsR, ['!', 'Le traitement JCP/FII dans la convention France-Brésil (1971) est juridiquement ambigu.', '', ''], undefined, [S.warnIcon, S.warnBg, S.warnBg, S.warnBg])
+  sRow(wsR, ['!', 'Les retenues à la source sont calculées sur des taux théoriques. Vérifiez vos relevés.', '', ''], undefined, [S.warnIcon, S.warnBg, S.warnBg, S.warnBg])
+  sRow(wsR, ['!', `Taux BRL/EUR 31/12 : ${d.fx_rates.year_end_brl_eur.toFixed(6)} | USD/EUR 31/12 : ${d.fx_rates.year_end_usd_eur.toFixed(6)}`, '', ''], undefined, [S.warnIcon, S.warnBg, S.warnBg, S.warnBg])
 
   // ── Sheet 2: 3916 ────────────────────────────────────────────────────────
-  const acc3916: unknown[][] = [
-    xcRow(["FORMULAIRE 3916 — COMPTES ET CONTRATS À L'ÉTRANGER", '', '', '', '', ''], XS.titleBg),
-    xcRow(["À remplir pour chaque compte/contrat détenu à l'étranger au cours de l'année.", '', '', '', '', ''], XS.titleSub),
-    [],
-    xcRow(['#', 'Établissement', 'Adresse', 'Pays', 'Numéro de compte', 'État au 31/12'], XS.colHead),
-    ...d.accounts.map((a, i) => xcRow([i + 1, a.institution, a.address, a.country, '(vérifier relevés)', a.status], i % 2 === 0 ? XS.altRow : {})),
-    [],
-    xcRow(["Rappel : N26 avec IBAN FR ne doit PAS être déclaré ici.", '', '', '', '', ''], XS.warnBg),
-  ]
-  const wsAcc = XLSX.utils.aoa_to_sheet(acc3916)
-  wsAcc['!cols'] = [{ width: 4 }, { width: 40 }, { width: 55 }, { width: 12 }, { width: 22 }, { width: 14 }]
-  XLSX.utils.book_append_sheet(wb, wsAcc, '3916 - Comptes')
+  const ws3916 = wb.addWorksheet('3916 - Comptes')
+  ws3916.columns = [{ width: 4 }, { width: 40 }, { width: 55 }, { width: 12 }, { width: 22 }, { width: 14 }]
+  sRow(ws3916, ["FORMULAIRE 3916 — COMPTES ET CONTRATS À L'ÉTRANGER", '', '', '', '', ''], S.titleBg)
+  sRow(ws3916, ["À remplir pour chaque compte/contrat détenu à l'étranger au cours de l'année.", '', '', '', '', ''], S.titleSub)
+  blank(ws3916)
+  sRow(ws3916, ['#', 'Établissement', 'Adresse', 'Pays', 'Numéro de compte', 'État au 31/12'], S.colHead)
+  d.accounts.forEach((a, i) => sRow(ws3916,
+    [i + 1, a.institution, a.address, a.country, a.account_number || '(vérifier relevés)', a.status],
+    i % 2 === 0 ? S.altRow : S.empty))
+  blank(ws3916)
+  sRow(ws3916, ["! Rappel : N26 avec IBAN FR ne doit PAS être déclaré ici.", '', '', '', '', ''], S.warnBg)
 
-  // ── Sheet 3: Détail par broker ─────────────────────────────────────────────
+  // ── Sheet 3: Détail par broker ────────────────────────────────────────────
   const brokers = [...new Set(d.events.map(e => e.broker))]
   for (const broker of brokers) {
-    const evs = d.events.filter(e => e.broker === broker)
-    const gross = (e: TaxEvent) => method === 'daily' ? e.gross_eur_daily : e.gross_eur_year_end
+    const evs   = d.events.filter(e => e.broker === broker)
+    const gross = (e: TaxEvent) => method === 'daily' ? e.gross_eur_daily        : e.gross_eur_year_end
     const wth   = (e: TaxEvent) => method === 'daily' ? e.tax_withheld_eur_daily : e.tax_withheld_eur_year_end
-    const fxR   = (e: TaxEvent) => method === 'daily' ? e.fx_rate_daily : e.fx_rate_year_end
-    const rows: unknown[][] = [
-      xcRow([`${broker} — Détail des revenus ${d.year}`, '', '', '', '', '', '', ''], XS.titleBg),
-      xcRow([`Méthode de change : ${fxLabel}`, '', '', '', '', '', '', ''], XS.titleSub),
-      [],
-      xcRow(['Date', 'Actif', 'Pays', 'Type', 'Case', 'Montant orig.', 'Taux EUR', 'Montant EUR', 'Retenue (théor.)'], XS.colHead),
-      ...evs.map((e, i) => xcRow([
-        e.date, `${e.asset_code} — ${e.asset_name}`, countryLabel(e.country),
-        eventTypeLabel(e.event_type), e.form_type,
-        e2(e.gross_amount), e2(fxR(e)), e2(gross(e)), e2(wth(e)),
-      ], i % 2 === 0 ? {} : XS.altRow)),
-      [],
-      [xc('', XS.totalRow), xc('', XS.totalRow), xc('', XS.totalRow), xc('', XS.totalRow), xc('TOTAL', XS.totalRow), xc('', XS.totalRow), xc('', XS.totalRow), xc(e2(evs.reduce((s, e) => s + gross(e), 0)), XS.totalVal), xc(e2(evs.reduce((s, e) => s + wth(e), 0)), XS.totalVal)],
-    ]
-    const ws = XLSX.utils.aoa_to_sheet(rows)
-    ws['!cols'] = [{ width: 12 }, { width: 35 }, { width: 14 }, { width: 18 }, { width: 6 }, { width: 14 }, { width: 10 }, { width: 14 }, { width: 16 }]
-    XLSX.utils.book_append_sheet(wb, ws, `${broker} - Détail`)
+    const fxR   = (e: TaxEvent) => method === 'daily' ? e.fx_rate_daily          : e.fx_rate_year_end
+    const safe  = broker.slice(0, 28).replace(/[[\]*/\\?:]/g, '-')
+    const wsBr  = wb.addWorksheet(`${safe} - Détail`)
+    wsBr.columns = [{ width: 12 }, { width: 35 }, { width: 14 }, { width: 18 }, { width: 6 }, { width: 14 }, { width: 10 }, { width: 14 }, { width: 16 }]
+    sRow(wsBr, [`${broker} — Détail des revenus ${d.year}`, '', '', '', '', '', '', ''], S.titleBg)
+    sRow(wsBr, [`Méthode de change : ${fxLabel}`, '', '', '', '', '', '', ''], S.titleSub)
+    blank(wsBr)
+    sRow(wsBr, ['Date', 'Actif', 'Pays', 'Type', 'Case', 'Montant orig.', 'Taux EUR', 'Montant EUR', 'Retenue (théor.)'], S.colHead)
+    evs.forEach((e, i) => sRow(wsBr, [
+      e.date, `${e.asset_code} — ${e.asset_name}`, countryLabel(e.country),
+      eventTypeLabel(e.event_type), e.form_type,
+      e2(e.gross_amount), e2(fxR(e)), e2(gross(e)), e2(wth(e)),
+    ], i % 2 === 0 ? S.empty : S.altRow))
+    blank(wsBr)
+    sRow(wsBr, ['', '', '', '', 'TOTAL', '', '', e2(evs.reduce((s, e) => s + gross(e), 0)), e2(evs.reduce((s, e) => s + wth(e), 0))],
+      S.totalRow, [S.totalRow, S.totalRow, S.totalRow, S.totalRow, S.totalRow, S.totalRow, S.totalRow, S.totalVal, S.totalVal])
   }
 
   // ── Sheet 4: 2047 ────────────────────────────────────────────────────────
-  const rows2047: unknown[][] = [
-    xcRow(["FORMULAIRE 2047 — REVENUS ENCAISSÉS À L'ÉTRANGER", '', '', '', '', '', '', ''], XS.titleBg),
-    xcRow([`Année ${d.year} — Méthode : ${fxLabel}`, '', '', '', '', '', '', ''], XS.titleSub),
-    [],
-    xcRow(['Case 201', 'Case 202', 'Broker', 'Case 203', 'Case 204', 'Case 205', 'Case 206', 'Case 207'], XS.colHead),
-    xcRow(['Pays', 'Nature', 'Courtier', 'Revenu brut (€)', 'Taux conv.', 'Crédit théor.', 'Retenue réelle', 'Crédit effectif'], XS.colHead),
-  ]
-  secs.forEach((s, i) => {
-    rows2047.push(xcRow([
-      countryLabel(s.country),
-      `${eventTypeLabel(s.event_type)} — ${s.form_type}`,
-      s.broker,
-      e2(s.gross_eur),
-      `${(s.convention_rate * 100).toFixed(0)}%`,
-      e2(s.theoretical_credit_eur),
-      e2(s.actual_withholding_eur),
-      e2(s.effective_credit_eur),
-    ], i % 2 === 0 ? {} : XS.altRow))
-  })
-  rows2047.push([])
-  rows2047.push([xc('', XS.totalRow), xc('TOTAL DIVIDENDES (2DC)', XS.totalRow), xc('', XS.totalRow), xc(e2(tots.dividends_eur), XS.totalVal), xc('', XS.totalRow), xc('', XS.totalRow), xc('', XS.totalRow), xc('', XS.totalRow)])
-  rows2047.push([xc('', XS.totalRow), xc('TOTAL INTÉRÊTS (2TR)',   XS.totalRow), xc('', XS.totalRow), xc(e2(tots.interests_eur),  XS.totalVal), xc('', XS.totalRow), xc('', XS.totalRow), xc('', XS.totalRow), xc('', XS.totalRow)])
-  rows2047.push([xc('', XS.totalRow), xc("TOTAL CRÉDIT (2AB)",     XS.totalRow), xc('', XS.totalRow), xc('', XS.totalRow),                      xc('', XS.totalRow), xc('', XS.totalRow), xc('', XS.totalRow), xc(e2(tots.credit_eur), XS.totalVal)])
-  const ws2047 = XLSX.utils.aoa_to_sheet(rows2047)
-  ws2047['!cols'] = [{ width: 14 }, { width: 30 }, { width: 22 }, { width: 16 }, { width: 10 }, { width: 14 }, { width: 14 }, { width: 14 }]
-  XLSX.utils.book_append_sheet(wb, ws2047, '2047 - Par pays')
+  const ws2047 = wb.addWorksheet('2047 - Par pays')
+  ws2047.columns = [{ width: 14 }, { width: 30 }, { width: 22 }, { width: 16 }, { width: 10 }, { width: 14 }, { width: 14 }, { width: 14 }]
+  sRow(ws2047, ["FORMULAIRE 2047 — REVENUS ENCAISSÉS À L'ÉTRANGER", '', '', '', '', '', '', ''], S.titleBg)
+  sRow(ws2047, [`Année ${d.year} — Méthode : ${fxLabel}`, '', '', '', '', '', '', ''], S.titleSub)
+  blank(ws2047)
+  sRow(ws2047, ['Case 201', 'Case 202', 'Broker', 'Case 203', 'Case 204', 'Case 205', 'Case 206', 'Case 207'], S.colHead)
+  sRow(ws2047, ['Pays', 'Nature', 'Courtier', 'Revenu brut (€)', 'Taux conv.', 'Crédit théor.', 'Retenue réelle', 'Crédit effectif'], S.colHead)
+  secs.forEach((s, i) => sRow(ws2047, [
+    countryLabel(s.country), `${eventTypeLabel(s.event_type)} — ${s.form_type}`, s.broker,
+    e2(s.gross_eur), `${(s.convention_rate * 100).toFixed(0)}%`,
+    e2(s.theoretical_credit_eur), e2(s.actual_withholding_eur), e2(s.effective_credit_eur),
+  ], i % 2 === 0 ? S.empty : S.altRow))
+  blank(ws2047)
+  sRow(ws2047, ['', 'TOTAL DIVIDENDES (2DC)', '', e2(tots.dividends_eur), '', '', '', ''], S.totalRow, [S.totalRow, S.totalRow, S.totalRow, S.totalVal, S.totalRow, S.totalRow, S.totalRow, S.totalRow])
+  sRow(ws2047, ['', 'TOTAL INTÉRÊTS (2TR)',   '', e2(tots.interests_eur), '', '', '', ''], S.totalRow, [S.totalRow, S.totalRow, S.totalRow, S.totalVal, S.totalRow, S.totalRow, S.totalRow, S.totalRow])
+  sRow(ws2047, ['', "TOTAL CRÉDIT (2AB)",     '', '',                     '', '', '', e2(tots.credit_eur)], S.totalRow, [S.totalRow, S.totalRow, S.totalRow, S.totalRow, S.totalRow, S.totalRow, S.totalRow, S.totalVal])
 
   // ── Sheet 5: 2042 ────────────────────────────────────────────────────────
+  const ws2042 = wb.addWorksheet('2042 - Cases')
+  ws2042.columns = [{ width: 8 }, { width: 58 }, { width: 22 }]
   const case3VG = totalGainEur >= 0
-  const case3Style = case3VG
-    ? { fill: { patternType: 'solid', fgColor: { rgb: 'EDE9FE' } }, font: { bold: true } } as XlsxStyle
-    : { fill: { patternType: 'solid', fgColor: { rgb: 'FEE2E2' } }, font: { bold: true } } as XlsxStyle
-
-  const rows2042: unknown[][] = [
-    xcRow(['FORMULAIRE 2042 — CASES À REPORTER', '', ''], XS.titleBg),
-    xcRow([`Année ${d.year}`, '', ''], XS.titleSub),
-    [],
-    xcRow(['Case', 'Libellé', 'Valeur à reporter (€)'], XS.colHead),
-    [xc('2DC', XS.case2DC), xc('Revenus de valeurs mobilières étrangères (dividendes + FII)', XS.case2DC), xc(e2(tots.dividends_eur), XS.valYellow)],
-    [xc('2TR', XS.case2TR), xc('Produits de placement à revenu fixe (intérêts + JCP + RF)', XS.case2TR), xc(e2(tots.interests_eur), XS.valYellow)],
-    [xc('2AB', XS.case2AB), xc("Crédit d'impôt imputé sur l'IR (total des cases 207)", XS.case2AB), xc(e2(tots.credit_eur), XS.valYellow)],
-    ...(d.capital_gains.length > 0 ? [
-      [xc(case3VG ? '3VG' : '3VM', case3Style), xc(case3VG ? 'Plus-values nettes sur cessions de valeurs mobilières' : 'Moins-values nettes sur cessions de valeurs mobilières', case3Style), xc(e2(Math.abs(totalGainEur)), XS.valYellow)],
-    ] : []),
-    [xc('8UU', XS.case8UU), xc("Avez-vous des comptes à l'étranger ? (3916)", XS.case8UU), xc(d.accounts.length > 0 ? 'OUI — cocher' : 'NON', XS.case8UU)],
-    [],
-    [xc('Total revenus déclarés (2DC + 2TR)', XS.totalRow), xc('', XS.totalRow), xc(e2(tots.dividends_eur + tots.interests_eur), XS.totalVal)],
-    ...(d.capital_gains.length > 0 ? [
-      [xc(`Total ${case3VG ? 'plus-values' : 'moins-values'} (${case3VG ? '3VG' : '3VM'})`, XS.totalRow), xc('', XS.totalRow), xc(e2(Math.abs(totalGainEur)), XS.totalVal)],
-    ] : []),
-  ]
-  const ws2042 = XLSX.utils.aoa_to_sheet(rows2042)
-  ws2042['!cols'] = [{ width: 8 }, { width: 58 }, { width: 22 }]
-  XLSX.utils.book_append_sheet(wb, ws2042, '2042 - Cases')
-
-  // ── Sheet 6: Plus-values (if any) ────────────────────────────────────────
+  sRow(ws2042, ['FORMULAIRE 2042 — CASES À REPORTER', '', ''], S.titleBg)
+  sRow(ws2042, [`Année ${d.year}`, '', ''], S.titleSub)
+  blank(ws2042)
+  sRow(ws2042, ['Case', 'Libellé', 'Valeur à reporter (€)'], S.colHead)
+  sRow(ws2042, ['2DC', 'Revenus de valeurs mobilières étrangères (dividendes + FII)', e2(tots.dividends_eur)], S.case2DC, [S.case2DC, S.case2DC, S.valYellow])
+  sRow(ws2042, ['2TR', 'Produits de placement à revenu fixe (intérêts + JCP + RF)', e2(tots.interests_eur)], S.case2TR, [S.case2TR, S.case2TR, S.valYellow])
+  sRow(ws2042, ['2AB', "Crédit d'impôt imputé sur l'IR (total des cases 207)", e2(tots.credit_eur)], S.case2AB, [S.case2AB, S.case2AB, S.valYellow])
   if (d.capital_gains.length > 0) {
-    const gainRows: unknown[][] = [
-      xcRow(['PLUS-VALUES — VENTES DE VALEURS MOBILIÈRES', '', '', '', '', '', '', ''], XS.titleBg),
-      xcRow([`Année ${d.year} — Méthode : ${fxLabel}`, '', '', '', '', '', '', ''], XS.titleSub),
-      [],
-      xcRow(['Date', 'Actif', 'Pays', 'Broker', 'Qtd', 'Prix vente (R$)', 'Coût moy. (R$)', 'G/P brut (R$)', 'Taux EUR', 'G/P net (€)'], XS.colHead),
-      ...d.capital_gains.map((g, i) => {
-        const gainEur = method === 'daily' ? g.gain_loss_eur_daily : g.gain_loss_eur_year_end
-        const fxR     = method === 'daily' ? g.fx_rate_daily : g.fx_rate_year_end
-        return xcRow([
-          g.date, `${g.asset_code} — ${g.asset_name}`, countryLabel(g.country), g.broker,
-          g.qty, e2(g.sale_value_brl), e2(g.cost_basis_brl), e2(g.gain_loss_brl),
-          fxR, e2(gainEur),
-        ], i % 2 === 0 ? {} : XS.altRow)
-      }),
-      [],
-      [xc('', XS.totalRow), xc('', XS.totalRow), xc('', XS.totalRow), xc('', XS.totalRow), xc('', XS.totalRow),
-       xc('', XS.totalRow), xc('', XS.totalRow),
-       xc(e2(d.capital_gains.reduce((s, g) => s + g.gain_loss_brl, 0)), XS.totalVal),
-       xc('', XS.totalRow),
-       xc(e2(totalGainEur), XS.totalVal)],
-    ]
-    const wsGains = XLSX.utils.aoa_to_sheet(gainRows)
-    wsGains['!cols'] = [{ width: 12 }, { width: 32 }, { width: 14 }, { width: 18 }, { width: 8 }, { width: 16 }, { width: 16 }, { width: 16 }, { width: 10 }, { width: 14 }]
-    XLSX.utils.book_append_sheet(wb, wsGains, '3VG - Plus-values')
+    const cs = case3VG ? S.gain3VG : S.loss3VM
+    sRow(ws2042, [
+      case3VG ? '3VG' : '3VM',
+      case3VG ? 'Plus-values nettes sur cessions de valeurs mobilières' : 'Moins-values nettes sur cessions de valeurs mobilières',
+      e2(Math.abs(totalGainEur)),
+    ], cs, [cs, cs, S.valYellow])
+  }
+  sRow(ws2042, ['8UU', "Avez-vous des comptes à l'étranger ? (3916)", d.accounts.length > 0 ? 'OUI — cocher' : 'NON'], S.lightGray)
+  blank(ws2042)
+  sRow(ws2042, ['Total revenus déclarés (2DC + 2TR)', '', e2(tots.dividends_eur + tots.interests_eur)], S.totalRow, [S.totalRow, S.totalRow, S.totalVal])
+  if (d.capital_gains.length > 0) {
+    sRow(ws2042, [`Total ${case3VG ? 'plus-values' : 'moins-values'} (${case3VG ? '3VG' : '3VM'})`, '', e2(Math.abs(totalGainEur))], S.totalRow, [S.totalRow, S.totalRow, S.totalVal])
   }
 
-  // Download
-  const out  = XLSX.write(wb, { bookType: 'xlsx', type: 'array', cellStyles: true })
-  const blob = new Blob([out], { type: 'application/octet-stream' })
+  // ── Sheet 6: Plus-values ─────────────────────────────────────────────────
+  if (d.capital_gains.length > 0) {
+    const wsG = wb.addWorksheet('3VG - Plus-values')
+    wsG.columns = [{ width: 12 }, { width: 32 }, { width: 14 }, { width: 18 }, { width: 8 }, { width: 16 }, { width: 16 }, { width: 16 }, { width: 10 }, { width: 14 }]
+    sRow(wsG, ['PLUS-VALUES — VENTES DE VALEURS MOBILIÈRES', '', '', '', '', '', '', ''], S.titleBg)
+    sRow(wsG, [`Année ${d.year} — Méthode : ${fxLabel}`, '', '', '', '', '', '', ''], S.titleSub)
+    blank(wsG)
+    sRow(wsG, ['Date', 'Actif', 'Pays', 'Broker', 'Qtd', 'Prix vente (R$)', 'Coût moy. (R$)', 'G/P brut (R$)', 'Taux EUR', 'G/P net (€)'], S.colHead)
+    d.capital_gains.forEach((g, i) => {
+      const gainEur = method === 'daily' ? g.gain_loss_eur_daily : g.gain_loss_eur_year_end
+      const fxR2    = method === 'daily' ? g.fx_rate_daily : g.fx_rate_year_end
+      sRow(wsG, [g.date, `${g.asset_code} — ${g.asset_name}`, countryLabel(g.country), g.broker, g.qty, e2(g.sale_value_brl), e2(g.cost_basis_brl), e2(g.gain_loss_brl), fxR2, e2(gainEur)],
+        i % 2 === 0 ? S.empty : S.altRow)
+    })
+    blank(wsG)
+    sRow(wsG, ['', '', '', '', '', '', '', e2(d.capital_gains.reduce((s, g) => s + g.gain_loss_brl, 0)), '', e2(totalGainEur)],
+      S.totalRow, [S.totalRow, S.totalRow, S.totalRow, S.totalRow, S.totalRow, S.totalRow, S.totalRow, S.totalVal, S.totalRow, S.totalVal])
+  }
+
+  const buf  = await wb.xlsx.writeBuffer()
+  const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
   const url  = URL.createObjectURL(blob)
   const a    = document.createElement('a')
-  a.href     = url
-  a.download = `ARVO_RelatorioFiscal_${d.year}.xlsx`
-  a.click()
+  a.href = url; a.download = `ARVO_RelatorioFiscal_${d.year}.xlsx`; a.click()
   URL.revokeObjectURL(url)
 }
 
-function generateBrExcel(d: BrazilTaxData) {
-  const wb  = XLSX.utils.book_new()
-  const r2  = (n: number) => Math.round(n * 100) / 100
+async function generateBrExcel(d: BrazilTaxData) {
+  const wb = new ExcelJS.Workbook()
+  wb.creator = 'Arvo'; wb.created = new Date()
+  const r2 = (n: number) => Math.round(n * 100) / 100
 
   // ── Sheet 1: Resumo ──────────────────────────────────────────────────────
-  const resumo: unknown[][] = [
-    xcRow([`ARVO — DIRPF ${d.year}`, '', ''], XS.titleBg),
-    xcRow([`Gerado em ${new Date().toLocaleDateString('pt-BR')}`, '', ''], XS.titleSub),
-    [],
-    xcRow(['RESUMO GERAL', '', ''], XS.secHead),
-    xcRow(['Item', 'Valor (R$)', 'Observação'], XS.colHead),
-    xcRow(['Rendimentos Isentos (total)', r2(d.total_isentos), 'Ficha: Rendimentos Isentos'], {}),
-    xcRow(['Tributação Exclusiva (total)', r2(d.total_exclusiva), 'Ficha: Trib. Exclusiva'], {}),
-    xcRow(['IR Retido na Fonte (total)', r2(d.ir_retido_total), 'Compensação de IR'], {}),
-    xcRow(['DARF Renda Variável (total)', r2(d.total_darf_rv), 'Código 6015 — já pago?'], d.total_darf_rv > 0 ? XS.warnBg : {}),
-    xcRow(['Carnê-Leão (total)', r2(d.total_carne_leao), 'Código 0190 — já pago?'], d.total_carne_leao > 0 ? XS.warnBg : {}),
-    xcRow(['Carryover final para próx. ano', r2(d.carryover_final), d.carryover_final < 0 ? 'Deduzir de ganhos futuros' : ''], d.carryover_final < 0 ? XS.case2TR : {}),
-    [],
-    xcRow(['BENS E DIREITOS', '', ''], XS.secHead),
-    xcRow([`${d.bens_direitos.length} ativos em posição em 31/12/${d.year}`, '', ''], XS.stepTxt),
-    [],
-    xcRow(['AVISOS', '', ''], XS.secHead),
-    [xc('!', XS.warnIcon), xc('Este relatório é indicativo. Consulte um contador antes de submeter.', XS.warnBg), xc('', XS.warnBg)],
-    [xc('!', XS.warnIcon), xc('Isenção de R$20.000/mês válida apenas para ações (swing trade). Day trade excluído.', XS.warnBg), xc('', XS.warnBg)],
-    [xc('!', XS.warnIcon), xc('Dividendos de FIIs são isentos para PF — verificar requisitos legais.', XS.warnBg), xc('', XS.warnBg)],
-    [xc('!', XS.warnIcon), xc('JCP sujeito a 15% retido na fonte. Verificar informes de cada instituição.', XS.warnBg), xc('', XS.warnBg)],
-  ]
-  const wsResumo = XLSX.utils.aoa_to_sheet(resumo)
-  wsResumo['!cols'] = [{ width: 42 }, { width: 18 }, { width: 40 }]
-  XLSX.utils.book_append_sheet(wb, wsResumo, '📋 Resumo')
+  const wsR = wb.addWorksheet('📋 Resumo')
+  wsR.columns = [{ width: 42 }, { width: 18 }, { width: 40 }]
+  sRow(wsR, [`ARVO — DIRPF ${d.year}`, '', ''], S.titleBg)
+  sRow(wsR, [`Gerado em ${new Date().toLocaleDateString('pt-BR')}`, '', ''], S.titleSub)
+  blank(wsR)
+  sRow(wsR, ['RESUMO GERAL', '', ''], S.secHead)
+  sRow(wsR, ['Item', 'Valor (R$)', 'Observação'], S.colHead)
+  sRow(wsR, ['Rendimentos Isentos (total)', r2(d.total_isentos), 'Ficha: Rendimentos Isentos'], S.empty)
+  sRow(wsR, ['Tributação Exclusiva (total)', r2(d.total_exclusiva), 'Ficha: Trib. Exclusiva'], S.empty)
+  sRow(wsR, ['IR Retido na Fonte (total)', r2(d.ir_retido_total), 'Compensação de IR'], S.empty)
+  sRow(wsR, ['DARF Renda Variável (total)', r2(d.total_darf_rv), 'Código 6015 — já pago?'], d.total_darf_rv > 0 ? S.warnBg : S.empty)
+  sRow(wsR, ['Carnê-Leão (total)', r2(d.total_carne_leao), 'Código 0190 — já pago?'], d.total_carne_leao > 0 ? S.warnBg : S.empty)
+  sRow(wsR, ['Carryover final para próx. ano', r2(d.carryover_final), d.carryover_final < 0 ? 'Deduzir de ganhos futuros' : ''], d.carryover_final < 0 ? S.case2TR : S.empty)
+  blank(wsR)
+  sRow(wsR, ['BENS E DIREITOS', '', ''], S.secHead)
+  sRow(wsR, [`${d.bens_direitos.length} ativos em posição em 31/12/${d.year}`, '', ''], S.stepTxt)
+  blank(wsR)
+  sRow(wsR, ['AVISOS', '', ''], S.secHead)
+  sRow(wsR, ['!', 'Este relatório é indicativo. Consulte um contador antes de submeter.', ''], undefined, [S.warnIcon, S.warnBg, S.warnBg])
+  sRow(wsR, ['!', 'Isenção de R$20.000/mês válida apenas para ações (swing trade). Day trade excluído.', ''], undefined, [S.warnIcon, S.warnBg, S.warnBg])
+  sRow(wsR, ['!', 'Dividendos de FIIs são isentos para PF — verificar requisitos legais.', ''], undefined, [S.warnIcon, S.warnBg, S.warnBg])
+  sRow(wsR, ['!', 'JCP sujeito a 15% retido na fonte. Verificar informes de cada instituição.', ''], undefined, [S.warnIcon, S.warnBg, S.warnBg])
 
   // ── Sheet 2: Bens e Direitos ─────────────────────────────────────────────
-  const bensRows: unknown[][] = [
-    xcRow([`BENS E DIREITOS — DECLARAÇÃO ANUAL ${d.year}`, '', '', '', '', ''], XS.titleBg),
-    xcRow(['Código PGDI: Grupo/Código — Situação anterior = posição em 31/12 do ano-calendário anterior', '', '', '', '', ''], XS.titleSub),
-    [],
-    xcRow(['PGDI Grupo', 'PGDI Código', 'Discriminação', 'Ativo', 'Situação Anterior (R$)', 'Situação Atual (R$)'], XS.colHead),
-    ...d.bens_direitos.map((b, i) => xcRow([b.pgdi_grupo, b.pgdi_codigo, b.discriminacao, `${b.code} — ${b.name}`, r2(b.situacao_anterior), r2(b.situacao_atual)], i % 2 === 0 ? {} : XS.altRow)),
-    [],
-    [xc('', XS.totalRow), xc('', XS.totalRow), xc('TOTAL', XS.totalRow), xc('', XS.totalRow), xc(r2(d.bens_direitos.reduce((s, b) => s + b.situacao_anterior, 0)), XS.totalVal), xc(r2(d.bens_direitos.reduce((s, b) => s + b.situacao_atual, 0)), XS.totalVal)],
-  ]
-  const wsBens = XLSX.utils.aoa_to_sheet(bensRows)
-  wsBens['!cols'] = [{ width: 12 }, { width: 12 }, { width: 50 }, { width: 28 }, { width: 22 }, { width: 22 }]
-  XLSX.utils.book_append_sheet(wb, wsBens, 'Bens e Direitos')
+  const wsBens = wb.addWorksheet('Bens e Direitos')
+  wsBens.columns = [{ width: 12 }, { width: 12 }, { width: 50 }, { width: 28 }, { width: 22 }, { width: 22 }]
+  sRow(wsBens, [`BENS E DIREITOS — DECLARAÇÃO ANUAL ${d.year}`, '', '', '', '', ''], S.titleBg)
+  sRow(wsBens, ['Código PGDI: Grupo/Código — Situação anterior = posição em 31/12 do ano-calendário anterior', '', '', '', '', ''], S.titleSub)
+  blank(wsBens)
+  sRow(wsBens, ['PGDI Grupo', 'PGDI Código', 'Discriminação', 'Ativo', 'Situação Anterior (R$)', 'Situação Atual (R$)'], S.colHead)
+  d.bens_direitos.forEach((b, i) => sRow(wsBens,
+    [b.pgdi_grupo, b.pgdi_codigo, b.discriminacao, `${b.code} — ${b.name}`, r2(b.situacao_anterior), r2(b.situacao_atual)],
+    i % 2 === 0 ? S.empty : S.altRow))
+  blank(wsBens)
+  sRow(wsBens, ['', '', 'TOTAL', '', r2(d.bens_direitos.reduce((s, b) => s + b.situacao_anterior, 0)), r2(d.bens_direitos.reduce((s, b) => s + b.situacao_atual, 0))],
+    S.totalRow, [S.totalRow, S.totalRow, S.totalRow, S.totalRow, S.totalVal, S.totalVal])
 
   // ── Sheet 3: Rendimentos ─────────────────────────────────────────────────
-  const rendRows: unknown[][] = [
-    xcRow([`RENDIMENTOS — DECLARAÇÃO ANUAL ${d.year}`, '', '', '', ''], XS.titleBg),
-    [],
-    xcRow(['RENDIMENTOS ISENTOS E NÃO TRIBUTÁVEIS', '', '', '', ''], XS.secHead),
-    xcRow(['Código', 'Descrição', 'Data', 'Ativo', 'Valor (R$)'], XS.colHead),
-  ]
+  const wsRend = wb.addWorksheet('Rendimentos')
+  wsRend.columns = [{ width: 8 }, { width: 48 }, { width: 12 }, { width: 16 }, { width: 16 }]
+  sRow(wsRend, [`RENDIMENTOS — DECLARAÇÃO ANUAL ${d.year}`, '', '', '', ''], S.titleBg)
+  blank(wsRend)
+  sRow(wsRend, ['RENDIMENTOS ISENTOS E NÃO TRIBUTÁVEIS', '', '', '', ''], S.secHead)
+  sRow(wsRend, ['Código', 'Descrição', 'Data', 'Ativo', 'Valor (R$)'], S.colHead)
   d.rendimentos_isentos.forEach(g => {
-    g.items.forEach((item, i) => {
-      rendRows.push(xcRow([i === 0 ? g.codigo : '', i === 0 ? g.descricao : '', item.date, item.asset_code, r2(item.valor)], i % 2 === 0 ? {} : XS.altRow))
-    })
-    rendRows.push([xc('', XS.totalRow), xc(`Total código ${g.codigo}`, XS.totalRow), xc('', XS.totalRow), xc('', XS.totalRow), xc(r2(g.total), XS.totalVal)])
-    rendRows.push([])
+    g.items.forEach((item, i) => sRow(wsRend,
+      [i === 0 ? g.codigo : '', i === 0 ? g.descricao : '', item.date, item.asset_code, r2(item.valor)],
+      i % 2 === 0 ? S.empty : S.altRow))
+    sRow(wsRend, ['', `Total código ${g.codigo}`, '', '', r2(g.total)], S.totalRow, [S.totalRow, S.totalRow, S.totalRow, S.totalRow, S.totalVal])
+    blank(wsRend)
   })
-  rendRows.push([])
-  rendRows.push(xcRow(['TRIBUTAÇÃO EXCLUSIVA/DEFINITIVA', '', '', '', ''], XS.secHead))
-  rendRows.push(xcRow(['Código', 'Descrição', 'Data', 'Ativo', 'Valor (R$)'], XS.colHead))
+  blank(wsRend)
+  sRow(wsRend, ['TRIBUTAÇÃO EXCLUSIVA/DEFINITIVA', '', '', '', ''], S.secHead)
+  sRow(wsRend, ['Código', 'Descrição', 'Data', 'Ativo', 'Valor (R$)'], S.colHead)
   d.tributacao_exclusiva.forEach(g => {
-    g.items.forEach((item, i) => {
-      rendRows.push(xcRow([i === 0 ? g.codigo : '', i === 0 ? g.descricao : '', item.date, item.asset_code, r2(item.valor)], i % 2 === 0 ? {} : XS.altRow))
-    })
-    rendRows.push([xc('', XS.totalRow), xc(`Total código ${g.codigo}`, XS.totalRow), xc('', XS.totalRow), xc('', XS.totalRow), xc(r2(g.total), XS.totalVal)])
-    rendRows.push([])
+    g.items.forEach((item, i) => sRow(wsRend,
+      [i === 0 ? g.codigo : '', i === 0 ? g.descricao : '', item.date, item.asset_code, r2(item.valor)],
+      i % 2 === 0 ? S.empty : S.altRow))
+    sRow(wsRend, ['', `Total código ${g.codigo}`, '', '', r2(g.total)], S.totalRow, [S.totalRow, S.totalRow, S.totalRow, S.totalRow, S.totalVal])
+    blank(wsRend)
   })
-  const wsRend = XLSX.utils.aoa_to_sheet(rendRows)
-  wsRend['!cols'] = [{ width: 8 }, { width: 48 }, { width: 12 }, { width: 16 }, { width: 16 }]
-  XLSX.utils.book_append_sheet(wb, wsRend, 'Rendimentos')
 
   // ── Sheet 4: Renda Variável ──────────────────────────────────────────────
-  const rvRows: unknown[][] = [
-    xcRow([`RENDA VARIÁVEL — OPERAÇÕES EM BOLSA ${d.year}`, '', '', '', '', '', '', ''], XS.titleBg),
-    xcRow(['DARF código 6015 — vencimento último dia útil do mês seguinte ao da operação', '', '', '', '', '', '', ''], XS.titleSub),
-    [],
-    xcRow(['Mês', 'Total Vendas', 'Ganho Bruto', 'Perda Bruta', 'Carryover Ant.', 'Ganho Líquido', 'Isento', 'DARF a Pagar'], XS.colHead),
-    ...d.renda_variavel.map((m, i) => xcRow([m.mes, r2(m.total_vendas), r2(m.ganho_bruto), r2(m.perda_bruta), r2(m.carryover_anterior), r2(m.ganho_liquido), m.isento ? 'Isento' : 'Tributado', r2(m.darf_a_pagar)], i % 2 === 0 ? {} : XS.altRow)),
-    [],
-    [xc('TOTAIS', XS.totalRow), xc('', XS.totalRow), xc(r2(d.total_ganho_rv), XS.totalVal), xc(r2(d.total_perda_rv), XS.totalVal), xc('', XS.totalRow), xc('', XS.totalRow), xc('', XS.totalRow), xc(r2(d.total_darf_rv), XS.totalVal)],
-    d.carryover_final !== 0 ? xcRow([`Carryover final para ${d.year + 1}`, '', '', '', '', r2(d.carryover_final), '', ''], XS.warnBg) : [],
-    [],
-    xcRow(['DETALHE DAS OPERAÇÕES', '', '', '', '', '', '', ''], XS.secHead),
-    xcRow(['Mês', 'Data', 'Ativo', 'Qtd', 'Venda (R$)', 'Custo (R$)', 'G/P (R$)', ''], XS.colHead),
-    ...d.renda_variavel.flatMap(m => m.operacoes.map((op, i) => xcRow([m.mes, op.date, op.code, op.qty, r2(op.sale_value), r2(op.cost_basis), r2(op.gain), ''], i % 2 === 0 ? {} : XS.altRow))),
-  ]
-  const wsRV = XLSX.utils.aoa_to_sheet(rvRows)
-  wsRV['!cols'] = [{ width: 10 }, { width: 14 }, { width: 14 }, { width: 14 }, { width: 16 }, { width: 14 }, { width: 14 }, { width: 14 }]
-  XLSX.utils.book_append_sheet(wb, wsRV, 'Renda Variável')
+  const wsRV = wb.addWorksheet('Renda Variável')
+  wsRV.columns = [{ width: 10 }, { width: 14 }, { width: 14 }, { width: 14 }, { width: 16 }, { width: 14 }, { width: 14 }, { width: 14 }]
+  sRow(wsRV, [`RENDA VARIÁVEL — OPERAÇÕES EM BOLSA ${d.year}`, '', '', '', '', '', '', ''], S.titleBg)
+  sRow(wsRV, ['DARF código 6015 — vencimento último dia útil do mês seguinte ao da operação', '', '', '', '', '', '', ''], S.titleSub)
+  blank(wsRV)
+  sRow(wsRV, ['Mês', 'Total Vendas', 'Ganho Bruto', 'Perda Bruta', 'Carryover Ant.', 'Ganho Líquido', 'Isento', 'DARF a Pagar'], S.colHead)
+  d.renda_variavel.forEach((m, i) => sRow(wsRV,
+    [m.mes, r2(m.total_vendas), r2(m.ganho_bruto), r2(m.perda_bruta), r2(m.carryover_anterior), r2(m.ganho_liquido), m.isento ? 'Isento' : 'Tributado', r2(m.darf_a_pagar)],
+    i % 2 === 0 ? S.empty : S.altRow))
+  blank(wsRV)
+  sRow(wsRV, ['TOTAIS', '', r2(d.total_ganho_rv), r2(d.total_perda_rv), '', '', '', r2(d.total_darf_rv)],
+    S.totalRow, [S.totalRow, S.totalRow, S.totalVal, S.totalVal, S.totalRow, S.totalRow, S.totalRow, S.totalVal])
+  if (d.carryover_final !== 0) sRow(wsRV, [`Carryover final para ${d.year + 1}`, '', '', '', '', r2(d.carryover_final), '', ''], S.warnBg)
+  if (d.renda_variavel.some(m => m.operacoes.length > 0)) {
+    blank(wsRV)
+    sRow(wsRV, ['DETALHE DAS OPERAÇÕES', '', '', '', '', '', '', ''], S.secHead)
+    sRow(wsRV, ['Mês', 'Data', 'Ativo', 'Qtd', 'Venda (R$)', 'Custo (R$)', 'G/P (R$)', ''], S.colHead)
+    d.renda_variavel.forEach(m => m.operacoes.forEach((op, i) => sRow(wsRV,
+      [m.mes, op.date, op.code, op.qty, r2(op.sale_value), r2(op.cost_basis), r2(op.gain), ''],
+      i % 2 === 0 ? S.empty : S.altRow)))
+  }
 
   // ── Sheet 5: Carnê-Leão ──────────────────────────────────────────────────
   if (d.carne_leao.length > 0) {
-    const clRows: unknown[][] = [
-      xcRow([`CARNÊ-LEÃO — DIVIDENDOS DO EXTERIOR ${d.year}`, '', '', '', ''], XS.titleBg),
-      xcRow(['DARF código 0190 — vencimento último dia útil do mês seguinte', '', '', '', ''], XS.titleSub),
-      [],
-      xcRow(['Mês', 'Dividendos (R$)', 'Alíquota', 'Dedução', 'IR Devido'], XS.colHead),
-      ...d.carne_leao.map((m, i) => xcRow([m.mes, r2(m.dividendos_brl), `${(m.aliquota * 100).toFixed(1)}%`, r2(m.deducao), r2(m.ir_devido)], i % 2 === 0 ? {} : XS.altRow)),
-      [],
-      [xc('TOTAL', XS.totalRow), xc(r2(d.carne_leao.reduce((s, m) => s + m.dividendos_brl, 0)), XS.totalVal), xc('', XS.totalRow), xc('', XS.totalRow), xc(r2(d.total_carne_leao), XS.totalVal)],
-      [],
-      xcRow(['DETALHE POR EVENTO', '', '', '', ''], XS.secHead),
-      xcRow(['Mês', 'Data', 'Ativo', 'País', 'Valor (R$)'], XS.colHead),
-      ...d.carne_leao.flatMap(m => m.items.map((it, i) => xcRow([m.mes, it.date, it.asset_code, it.country, r2(it.amount_brl)], i % 2 === 0 ? {} : XS.altRow))),
-    ]
-    const wsCL = XLSX.utils.aoa_to_sheet(clRows)
-    wsCL['!cols'] = [{ width: 10 }, { width: 18 }, { width: 14 }, { width: 14 }, { width: 16 }]
-    XLSX.utils.book_append_sheet(wb, wsCL, 'Carnê-Leão')
+    const wsCL = wb.addWorksheet('Carnê-Leão')
+    wsCL.columns = [{ width: 10 }, { width: 18 }, { width: 14 }, { width: 14 }, { width: 16 }]
+    sRow(wsCL, [`CARNÊ-LEÃO — DIVIDENDOS DO EXTERIOR ${d.year}`, '', '', '', ''], S.titleBg)
+    sRow(wsCL, ['DARF código 0190 — vencimento último dia útil do mês seguinte', '', '', '', ''], S.titleSub)
+    blank(wsCL)
+    sRow(wsCL, ['Mês', 'Dividendos (R$)', 'Alíquota', 'Dedução', 'IR Devido'], S.colHead)
+    d.carne_leao.forEach((m, i) => sRow(wsCL,
+      [m.mes, r2(m.dividendos_brl), `${(m.aliquota * 100).toFixed(1)}%`, r2(m.deducao), r2(m.ir_devido)],
+      i % 2 === 0 ? S.empty : S.altRow))
+    blank(wsCL)
+    sRow(wsCL, ['TOTAL', r2(d.carne_leao.reduce((s, m) => s + m.dividendos_brl, 0)), '', '', r2(d.total_carne_leao)],
+      S.totalRow, [S.totalRow, S.totalVal, S.totalRow, S.totalRow, S.totalVal])
+    blank(wsCL)
+    sRow(wsCL, ['DETALHE POR EVENTO', '', '', '', ''], S.secHead)
+    sRow(wsCL, ['Mês', 'Data', 'Ativo', 'País', 'Valor (R$)'], S.colHead)
+    d.carne_leao.forEach(m => m.items.forEach((it, i) => sRow(wsCL,
+      [m.mes, it.date, it.asset_code, it.country, r2(it.amount_brl)],
+      i % 2 === 0 ? S.empty : S.altRow)))
   }
 
-  const out  = XLSX.write(wb, { bookType: 'xlsx', type: 'array', cellStyles: true })
-  const blob = new Blob([out], { type: 'application/octet-stream' })
+  const buf  = await wb.xlsx.writeBuffer()
+  const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
   const url  = URL.createObjectURL(blob)
   const a    = document.createElement('a')
-  a.href     = url
-  a.download = `ARVO_DIRPF_${d.year}.xlsx`
-  a.click()
+  a.href = url; a.download = `ARVO_DIRPF_${d.year}.xlsx`; a.click()
   URL.revokeObjectURL(url)
 }
 
@@ -1107,20 +1094,39 @@ function FrReport({ year }: { year: number }) {
             {taxData.accounts.length === 0 ? (
               <p className="text-xs text-gray-400 py-3 text-center">{ft.no3916}</p>
             ) : (
-              <div className="divide-y divide-gray-50">
-                {taxData.accounts.map(a => (
-                  <div key={a.broker} className="py-3 flex items-start justify-between gap-3">
-                    <div>
-                      <p className="font-medium text-sm text-gray-900">{a.institution}</p>
-                      <p className="text-xs text-gray-400">{a.address}</p>
-                    </div>
-                    <div className="shrink-0 text-right">
-                      <span className="text-xs bg-gray-100 rounded px-2 py-0.5 text-gray-600">{a.country}</span>
-                      <p className="text-xs text-green-600 mt-0.5">{a.status}</p>
+              <div className="space-y-0">
+                {taxData.accounts.some(a => a.system_filled) && (
+                  <div className="flex gap-2 mb-3 p-3 bg-amber-50 border border-amber-200 rounded-xl">
+                    <span className="text-amber-500 shrink-0">⚠</span>
+                    <div className="text-xs text-amber-800">
+                      <p className="font-semibold mb-0.5">{ft.warn3916SystemFilled}</p>
+                      <p>{ft.warn3916Institutions}</p>
                     </div>
                   </div>
-                ))}
-                <p className="text-xs text-gray-400 py-2">{ft.reminder3916}</p>
+                )}
+                <div className="divide-y divide-gray-50">
+                  {taxData.accounts.map(a => (
+                    <div key={a.broker} className="py-3 flex items-start justify-between gap-3">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium text-sm text-gray-900">{a.institution}</p>
+                          {a.system_filled && (
+                            <span className="text-[10px] bg-amber-100 text-amber-700 rounded px-1.5 py-0.5 font-medium shrink-0">verificar</span>
+                          )}
+                        </div>
+                        <p className="text-xs text-gray-400">{a.address}</p>
+                        {a.account_number && (
+                          <p className="text-xs text-gray-500 mt-0.5">Conta: {a.account_number}</p>
+                        )}
+                      </div>
+                      <div className="shrink-0 text-right">
+                        <span className="text-xs bg-gray-100 rounded px-2 py-0.5 text-gray-600">{a.country}</span>
+                        <p className="text-xs text-green-600 mt-0.5">{a.status}</p>
+                      </div>
+                    </div>
+                  ))}
+                  <p className="text-xs text-gray-400 py-2">{ft.reminder3916}</p>
+                </div>
               </div>
             )}
           </Section>
@@ -1254,7 +1260,7 @@ function FrReport({ year }: { year: number }) {
               {ft.selectedMethod} : <span className="font-semibold text-gray-800">{fxMethod === 'daily' ? ft.methodA : ft.methodB}</span>
             </div>
             <button
-              onClick={() => generateExcel(taxData, fxMethod)}
+              onClick={() => void generateExcel(taxData, fxMethod)}
               className="flex items-center gap-2 px-5 py-2 text-sm font-medium bg-green-700 text-white rounded-xl hover:bg-green-800 transition-colors"
             >
               {ft.btnDownload}
@@ -1424,7 +1430,7 @@ function FrReport({ year }: { year: number }) {
           <div className="flex justify-between items-center flex-wrap gap-3">
             <button onClick={() => setStep('fx_choice')} className="px-4 py-2 text-sm text-gray-500 hover:text-gray-700">{ft.btnBack}</button>
             <button
-              onClick={() => generateExcel(taxData, fxMethod)}
+              onClick={() => void generateExcel(taxData, fxMethod)}
               className="flex items-center gap-2 px-6 py-2.5 text-sm font-semibold bg-green-700 text-white rounded-xl hover:bg-green-800 transition-colors"
             >{ft.btnDownload}</button>
           </div>

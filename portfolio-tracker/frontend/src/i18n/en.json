@@ -1466,6 +1466,8 @@
     "section3916": "Formulaire 3916 — Foreign accounts detected",
     "no3916": "No foreign accounts recognised in your assets.",
     "reminder3916": "Reminder: accounts with a French IBAN (N26, etc.) should not be declared.",
+    "warn3916SystemFilled": "Auto-filled data — verification required",
+    "warn3916Institutions": "Some institutions were identified from Arvo's database. Please confirm their legal details in Institutions before submitting your tax return.",
     "incomeByType": "Income by type — overview",
     "colCountry": "Country",
     "colBroker": "Broker",

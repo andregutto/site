@@ -336,7 +336,7 @@ export default function AppLayout() {
 
       </header>
 
-      <main className="flex-1 max-w-6xl mx-auto w-full px-4 py-6 pb-40 sm:pb-6 main-content">
+      <main className="flex-1 max-w-6xl mx-auto w-full px-4 py-6 pb-52 sm:pb-6 main-content">
         <Outlet />
       </main>
 

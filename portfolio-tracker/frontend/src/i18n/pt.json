@@ -1466,6 +1466,8 @@
     "section3916": "Formulaire 3916 — Contas estrangeiras detectadas",
     "no3916": "Nenhuma conta estrangeira reconhecida nos seus ativos.",
     "reminder3916": "Lembrete: contas com IBAN FR (N26, etc.) não devem ser declaradas.",
+    "warn3916SystemFilled": "Dados preenchidos automaticamente — verificação obrigatória",
+    "warn3916Institutions": "Algumas instituições foram identificadas pela base de dados do Arvo. Confirme os dados legais em Instituições antes de submeter sua declaração.",
     "incomeByType": "Receitas por tipo — prévia",
     "colCountry": "País",
     "colBroker": "Corretora",
