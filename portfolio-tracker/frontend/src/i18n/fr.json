@@ -84,6 +84,8 @@
     "defaultSectionFinances": "Finances",
     "monthCycleDayLabel": "Jour de début du mois financier",
     "monthCycleDayHint": "Les transactions à partir de ce jour sont comptées dans le budget du mois suivant. Utile si vous recevez votre salaire en fin de mois.",
+    "saidaFiscalLabel": "Sortie fiscale du Brésil déclarée",
+    "saidaFiscalDesc": "Cochez si vous avez déclaré une sortie fiscale définitive du Brésil. Cela affecte le calcul de la retenue à la source sur les revenus fixes (15% fixe au lieu des tranches progressives).",
     "maintenanceTitle": "Maintenance",
     "maintenanceDesc": "Outils pour corriger les données en cas d'incohérences.",
     "syncDividendsBtn": "Synchroniser les dividendes",

@@ -84,6 +84,8 @@
     "defaultSectionFinances": "Finanças",
     "monthCycleDayLabel": "Dia de início do mês financeiro",
     "monthCycleDayHint": "Transações a partir deste dia são contadas no orçamento do mês seguinte. Útil se você recebe salário no fim do mês.",
+    "saidaFiscalLabel": "Saída fiscal do Brasil",
+    "saidaFiscalDesc": "Marque se você declarou saída fiscal definitiva do Brasil. Afeta o cálculo do IR retido na renda fixa (15% flat em vez das faixas progressivas).",
     "maintenanceTitle": "Manutenção",
     "maintenanceDesc": "Ferramentas para corrigir dados em caso de inconsistências.",
     "syncDividendsBtn": "Sincronizar dividendos agora",

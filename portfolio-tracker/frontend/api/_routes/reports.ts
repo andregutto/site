@@ -421,7 +421,7 @@ router.get('/france/:year', requireAuth, async (req, res: Response) => {
 
   const { data: assets, error: ae } = await supabaseAdmin
     .from('assets')
-    .select('id, code, name, asset_type, currency, exchange, country')
+    .select('id, code, name, asset_type, currency, exchange, country, fi_start_date, fi_type, fi_rate, fi_spread')
     .eq('user_id', userId)
 
   if (ae) { res.status(500).json({ error: ae.message }); return }
@@ -497,6 +497,10 @@ router.get('/france/:year', requireAuth, async (req, res: Response) => {
     fx_rate_daily: number; fx_rate_year_end: number
   }
 
+  // Fetch user profile early — needed for saida_fiscal_brasil in FI interest calc
+  const { data: { user: profileUser } } = await supabaseAdmin.auth.admin.getUserById(userId)
+  const saidaFiscal = (profileUser?.user_metadata?.saida_fiscal_brasil ?? false) as boolean
+
   const events: TaxEvent[] = []
   const skippedAssets: string[] = []
 
@@ -548,6 +552,95 @@ router.get('/france/:year', requireAuth, async (req, res: Response) => {
     const fxD  = currency === 'EUR' ? 1 : currency === 'BRL' ? getNearestRate(brlEurMap, c.date as string, fallbackBrlEur) : getNearestRate(usdEurMap, c.date as string, fallbackUsdEur)
     const fxYE = currency === 'EUR' ? 1 : currency === 'BRL' ? (yearEndBrlEur || fallbackBrlEur) : (yearEndUsdEur || fallbackUsdEur)
     events.push({ id: `inc_${c.id}`, date: c.date as string, asset_code: asset.code as string, asset_name: asset.name as string, asset_type: asset.asset_type as string, event_type: eventType, form_type: formType, country, broker, currency, gross_amount: grossAmount, tax_withheld_src: withheld, gross_eur_daily: grossAmount * fxD, tax_withheld_eur_daily: withheld * fxD, gross_eur_year_end: grossAmount * fxYE, tax_withheld_eur_year_end: withheld * fxYE, fx_rate_daily: fxD, fx_rate_year_end: fxYE })
+  }
+
+  // ── FI sell (redemption) interest ─────────────────────────────────────────
+  // French "régime de l'encaissement" — taxable only when actually received
+  {
+    const fiAssetIds = (assets ?? [])
+      .filter(a => (a.asset_type as string) === 'fixed_income')
+      .map(a => a.id)
+
+    if (fiAssetIds.length > 0) {
+      const [{ data: fiBuys }, { data: fiSells }] = await Promise.all([
+        supabaseAdmin.from('contributions')
+          .select('asset_id, quantity, value_brl')
+          .in('asset_id', fiAssetIds).eq('user_id', userId).eq('type', 'buy')
+          .order('date'),
+        supabaseAdmin.from('contributions')
+          .select('id, asset_id, date, quantity, value_brl, tax_withheld')
+          .in('asset_id', fiAssetIds).eq('user_id', userId).eq('type', 'sell')
+          .gte('date', startDate).lte('date', endDate).order('date'),
+      ])
+
+      const fiCostBasis: Record<number, { totalQty: number; totalCost: number }> = {}
+      for (const b of (fiBuys ?? [])) {
+        const aid = b.asset_id as number
+        if (!fiCostBasis[aid]) fiCostBasis[aid] = { totalQty: 0, totalCost: 0 }
+        fiCostBasis[aid].totalQty  += (b.quantity  ?? 0) as number
+        fiCostBasis[aid].totalCost += (b.value_brl ?? 0) as number
+      }
+
+      function getBrIrRate(fiStartDate: string, sellDate: string): number {
+        if (saidaFiscal) return 0.15
+        const days = Math.floor((new Date(sellDate).getTime() - new Date(fiStartDate).getTime()) / 86400000)
+        if (days <= 180) return 0.225
+        if (days <= 360) return 0.20
+        if (days <= 720) return 0.175
+        return 0.15
+      }
+
+      for (const sell of (fiSells ?? [])) {
+        const asset = assetMap[sell.asset_id as number]
+        if (!asset) continue
+        const country = normaliseCountry(asset.country as string | null)
+        if (country === 'OTHER') {
+          skippedAssets.push(`${asset.code as string} (country: ${(asset.country as string | null) ?? 'null'})`)
+          continue
+        }
+
+        const taxWithheld = (sell.tax_withheld ?? 0) as number
+        const saleValue   = (sell.value_brl    ?? 0) as number
+        const sellQty     = (sell.quantity      ?? 0) as number
+        const b           = fiCostBasis[sell.asset_id as number] ?? { totalQty: 0, totalCost: 0 }
+        const avgCostPerUnit = b.totalQty > 0 ? b.totalCost / b.totalQty : 0
+        const costBasis      = avgCostPerUnit * sellQty
+
+        // Gross interest = net received + IR already withheld – principal redeemed
+        const grossInterest = saleValue + taxWithheld - costBasis
+        if (grossInterest <= 0) continue
+
+        const fiStart = (asset as { fi_start_date?: string | null }).fi_start_date ?? startDate
+        const irRate  = getBrIrRate(fiStart, sell.date as string)
+        // Use actual withheld if available, else estimate via Brazilian IR bracket
+        const withheld = taxWithheld > 0 ? taxWithheld : grossInterest * irRate
+
+        const broker = normaliseBroker(asset.exchange as string | null)
+        const fxD  = getNearestRate(brlEurMap, sell.date as string, fallbackBrlEur)
+        const fxYE = yearEndBrlEur || fallbackBrlEur
+
+        events.push({
+          id:                        `fi_${sell.id as string}`,
+          date:                      sell.date as string,
+          asset_code:                asset.code as string,
+          asset_name:                asset.name as string,
+          asset_type:                asset.asset_type as string,
+          event_type:                'INTEREST',
+          form_type:                 '2TR',
+          country,
+          broker,
+          currency:                  'BRL',
+          gross_amount:              grossInterest,
+          tax_withheld_src:          withheld,
+          gross_eur_daily:           grossInterest * fxD,
+          tax_withheld_eur_daily:    withheld * fxD,
+          gross_eur_year_end:        grossInterest * fxYE,
+          tax_withheld_eur_year_end: withheld * fxYE,
+          fx_rate_daily:             fxD,
+          fx_rate_year_end:          fxYE,
+        })
+      }
+    }
   }
 
   interface Section2047 {
@@ -631,7 +724,6 @@ router.get('/france/:year', requireAuth, async (req, res: Response) => {
   const totalGainEurYearEnd = capitalGains.reduce((s, g) => s + g.gain_loss_eur_year_end, 0)
 
   // Build 3916 accounts — user's saved institution_data first, BROKER_INFO as fallback
-  const { data: { user: profileUser } } = await supabaseAdmin.auth.admin.getUserById(userId)
   const savedInstitutionData = (profileUser?.user_metadata?.institution_data ?? {}) as Record<string, {
     official_name?: string; address?: string; country?: string
     account_number?: string; iban?: string; swift?: string

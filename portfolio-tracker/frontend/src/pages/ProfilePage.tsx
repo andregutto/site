@@ -22,6 +22,7 @@ interface ProfileData {
   avatar_url:         string
   default_section:    string
   month_cycle_day:    number
+  saida_fiscal_brasil: boolean
 }
 
 const COUNTRY_OPTIONS = [
@@ -115,6 +116,7 @@ export default function ProfilePage() {
     setCropOff(off)
   }
 
+  const [saidaFiscalBrasil, setSaidaFiscalBrasil] = useState(false)
   const { reset: rebuildHistory, loading: rebuilding, result: rebuildResult } = useResetPriceHistory()
   const { check: checkSyncStatus, loading: checkingStatus, status: syncStatus } = useSyncStatus()
   const { sync: syncDividends, syncing: syncingDivs } = useDividendSync()
@@ -131,6 +133,7 @@ export default function ProfilePage() {
         setAvatarUrl(d.avatar_url)
         setDefaultSection(d.default_section === 'finances' ? 'finances' : 'investments')
         setMonthCycleDay(d.month_cycle_day ?? 1)
+        setSaidaFiscalBrasil(d.saida_fiscal_brasil ?? false)
       })
       .catch(e => setError(e instanceof Error ? e.message : t.profile.errorLoad))
       .finally(() => setLoading(false))
@@ -320,6 +323,7 @@ export default function ProfilePage() {
           avatar_url: avatarUrl || undefined,
           default_section: defaultSection,
           month_cycle_day: monthCycleDay,
+          saida_fiscal_brasil: saidaFiscalBrasil,
         }),
       })
       // Refresh the session token so user_metadata (incl. default_section) is
@@ -699,6 +703,29 @@ export default function ProfilePage() {
                 onChange={e => setMonthCycleDay(Math.min(28, Math.max(1, parseInt(e.target.value) || 1)))}
                 className="w-20 border border-gray-200 rounded-lg px-3 py-2 text-sm text-center focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20"
               />
+            </div>
+
+            {/* Saída fiscal do Brasil */}
+            <div className="flex items-start gap-3">
+              <button
+                type="button"
+                role="switch"
+                aria-checked={saidaFiscalBrasil}
+                onClick={() => setSaidaFiscalBrasil(v => !v)}
+                className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20 ${
+                  saidaFiscalBrasil ? 'bg-[#0D0D0D]' : 'bg-gray-200'
+                }`}
+              >
+                <span
+                  className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow ring-0 transition-transform ${
+                    saidaFiscalBrasil ? 'translate-x-5' : 'translate-x-0'
+                  }`}
+                />
+              </button>
+              <div>
+                <p className="text-sm font-medium text-gray-700">{t.profile.saidaFiscalLabel}</p>
+                <p className="text-xs text-gray-400 mt-0.5">{t.profile.saidaFiscalDesc}</p>
+              </div>
             </div>
 
 {error    && <p className="text-xs text-red-600">{error}</p>}
