@@ -433,11 +433,11 @@ router.get('/france/:year', requireAuth, async (req, res: Response) => {
     return
   }
 
-  let divRows: Array<{ id: unknown; asset_id: unknown; ex_date: unknown; amount_brl: unknown; currency: unknown; dividend_type: unknown; tax_withheld?: unknown; country_of_dividend?: unknown }> | null = null
+  let divRows: Array<{ id: unknown; asset_id: unknown; ex_date: unknown; amount_brl: unknown; amount_total?: unknown; currency: unknown; dividend_type: unknown; tax_withheld?: unknown; country_of_dividend?: unknown }> | null = null
   {
     const { data: d1, error: e1 } = await supabaseAdmin
       .from('dividends')
-      .select('id, asset_id, ex_date, amount_brl, currency, dividend_type, tax_withheld, country_of_dividend')
+      .select('id, asset_id, ex_date, amount_brl, amount_total, currency, dividend_type, tax_withheld, country_of_dividend')
       .in('asset_id', assetIds)
       .eq('user_id', userId)
       .gte('ex_date', startDate)
@@ -446,7 +446,7 @@ router.get('/france/:year', requireAuth, async (req, res: Response) => {
     if (e1 && e1.message?.includes('does not exist')) {
       const { data: d2, error: e2 } = await supabaseAdmin
         .from('dividends')
-        .select('id, asset_id, ex_date, amount_brl, currency, dividend_type')
+        .select('id, asset_id, ex_date, amount_brl, amount_total, currency, dividend_type')
         .in('asset_id', assetIds)
         .eq('user_id', userId)
         .gte('ex_date', startDate)
@@ -498,16 +498,21 @@ router.get('/france/:year', requireAuth, async (req, res: Response) => {
   }
 
   const events: TaxEvent[] = []
+  const skippedAssets: string[] = []
 
   for (const d of (divRows ?? [])) {
     const asset = assetMap[d.asset_id]
     if (!asset) continue
-    const currency    = (d.currency ?? asset.currency ?? 'BRL') as string
-    const grossAmount = (d.amount_brl ?? 0) as number
+    const currency     = (d.currency ?? asset.currency ?? 'BRL') as string
+    const amountOrig   = (d.amount_total != null ? d.amount_total : d.amount_brl) as number
+    const grossAmount  = currency !== 'BRL' && amountOrig > 0 ? amountOrig : (d.amount_brl ?? 0) as number
     if (grossAmount <= 0) continue
 
     const country   = normaliseCountry((d.country_of_dividend ?? TICKER_COUNTRY_OVERRIDES[asset.code as string] ?? asset.country) as string | null)
-    if (country === 'OTHER') continue
+    if (country === 'OTHER') {
+      skippedAssets.push(`${asset.code as string} (country: ${((d.country_of_dividend ?? asset.country) as string | null) ?? 'null'})`)
+      continue
+    }
     const broker    = normaliseBroker(asset.exchange as string | null)
     const eventType = mapEventType(d.dividend_type as string | null, null)
     const formType  = FORM_TYPE_MAP[eventType]
@@ -527,7 +532,10 @@ router.get('/france/:year', requireAuth, async (req, res: Response) => {
     const grossAmount = (c.value_brl ?? 0) as number
     if (grossAmount <= 0) continue
     const country = normaliseCountry(asset.country as string | null)
-    if (country === 'OTHER') continue
+    if (country === 'OTHER') {
+      skippedAssets.push(`${asset.code as string} (country: ${(asset.country as string | null) ?? 'null'})`)
+      continue
+    }
     const broker    = normaliseBroker(asset.exchange as string | null)
     const desc      = (c.description ?? '') as string
     const eventType = mapEventType(null, desc.toLowerCase().includes('jcp') ? 'jcp' : desc.toLowerCase().includes('fii') ? 'fii' : asset.asset_type === 'fixed_income' ? 'interest' : null)
@@ -684,6 +692,7 @@ router.get('/france/:year', requireAuth, async (req, res: Response) => {
     total_gain_eur_daily:   totalGainEurDaily,
     total_gain_eur_year_end: totalGainEurYearEnd,
     fx_rates: { year_end_brl_eur: yearEndBrlEur, year_end_usd_eur: yearEndUsdEur },
+    skipped_assets: [...new Set(skippedAssets)],
   })
 })
 

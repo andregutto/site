@@ -60,13 +60,21 @@ export async function fetchStatusInvestDividends(ticker: string): Promise<RawDiv
     assetEarningsModels?: Array<{ ed: string; pd: string; et: string; etd: string; v: number }>
   }
   const models = data.assetEarningsModels ?? []
-  return models.flatMap(m => {
+  const raw = models.flatMap(m => {
     const ex_date = parseDate(m.ed)
     if (!ex_date || m.v <= 0) return []
     const et = (m.et ?? '').toUpperCase()
     const dividend_type = et === 'JCP' || et.includes('JUROS') ? 'jcp' : et === 'RENDIMENTO' ? 'rendimento' : 'dividend'
-    return [{ ex_date, pay_date: parseDate(m.pd), amount_per_share: m.v, dividend_type, source: 'statusinvest' }]
+    return [{ ex_date, pay_date: parseDate(m.pd), amount_per_share: m.v, dividend_type, source: 'statusinvest' as const }]
   })
+  const dedup = new Map<string, RawDividend>()
+  for (const d of raw) {
+    const key = `${d.ex_date}_${d.dividend_type}`
+    const existing = dedup.get(key)
+    if (existing) existing.amount_per_share = Math.round((existing.amount_per_share + d.amount_per_share) * 1e8) / 1e8
+    else dedup.set(key, { ...d })
+  }
+  return Array.from(dedup.values())
 }
 
 export async function fetchYahooDividends(ticker: string, from: string): Promise<RawDividend[]> {

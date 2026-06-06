@@ -440,11 +440,11 @@ router.get('/france/:year', requireAuth, async (req, res: Response) => {
 
   // 2. Dividends from dividends table
   // Try to include tax_withheld/country_of_dividend (migration 034); fall back silently if column absent
-  let divRows: Array<{ id: unknown; asset_id: unknown; ex_date: unknown; amount_brl: unknown; currency: unknown; dividend_type: unknown; tax_withheld?: unknown; country_of_dividend?: unknown }> | null = null
+  let divRows: Array<{ id: unknown; asset_id: unknown; ex_date: unknown; amount_brl: unknown; amount_total?: unknown; currency: unknown; dividend_type: unknown; tax_withheld?: unknown; country_of_dividend?: unknown }> | null = null
   {
     const { data: d1, error: e1 } = await supabaseAdmin
       .from('dividends')
-      .select('id, asset_id, ex_date, amount_brl, currency, dividend_type, tax_withheld, country_of_dividend')
+      .select('id, asset_id, ex_date, amount_brl, amount_total, currency, dividend_type, tax_withheld, country_of_dividend')
       .in('asset_id', assetIds)
       .eq('user_id', userId)
       .gte('ex_date', startDate)
@@ -454,7 +454,7 @@ router.get('/france/:year', requireAuth, async (req, res: Response) => {
       // Migration 034 not yet applied — query without new columns
       const { data: d2, error: e2 } = await supabaseAdmin
         .from('dividends')
-        .select('id, asset_id, ex_date, amount_brl, currency, dividend_type')
+        .select('id, asset_id, ex_date, amount_brl, amount_total, currency, dividend_type')
         .in('asset_id', assetIds)
         .eq('user_id', userId)
         .gte('ex_date', startDate)
@@ -539,16 +539,25 @@ router.get('/france/:year', requireAuth, async (req, res: Response) => {
     return 0
   }
 
+  const skippedAssets: string[] = []
+
   for (const d of (divRows ?? [])) {
     const asset = assetMap[d.asset_id as number]
     if (!asset) continue
-    const currency    = (d.currency ?? asset.currency ?? 'BRL') as string
-    const grossAmount = (d.amount_brl ?? 0) as number
+    const currency = (d.currency ?? asset.currency ?? 'BRL') as string
+    // Bug fix: dividendService converts non-BRL dividends to BRL before storing in amount_brl
+    // but keeps currency='USD'. amount_total holds the original-currency value, which is what
+    // we need here so fxRateDaily/YearEnd can apply the correct USD→EUR or BRL→EUR rate.
+    const amountOrig   = (d.amount_total != null ? d.amount_total : d.amount_brl) as number
+    const grossAmount  = currency !== 'BRL' && amountOrig > 0 ? amountOrig : (d.amount_brl ?? 0) as number
     if (grossAmount <= 0) continue
 
     const rawCountry  = (d.country_of_dividend ?? TICKER_COUNTRY_OVERRIDES[asset.code as string] ?? asset.country) as string | null
     const country     = normaliseCountry(rawCountry)
-    if (country === 'OTHER') continue // skip assets with no recognized country
+    if (country === 'OTHER') {
+      skippedAssets.push(`${asset.code as string} (country: ${rawCountry ?? 'null'})`)
+      continue
+    }
 
     const broker      = normaliseBroker(asset.exchange as string | null)
     const eventType   = mapEventType(d.dividend_type as string | null, null)
@@ -591,7 +600,10 @@ router.get('/france/:year', requireAuth, async (req, res: Response) => {
     if (grossAmount <= 0) continue
 
     const country   = normaliseCountry(asset.country as string | null)
-    if (country === 'OTHER') continue
+    if (country === 'OTHER') {
+      skippedAssets.push(`${asset.code as string} (country: ${(asset.country as string | null) ?? 'null'})`)
+      continue
+    }
 
     const broker    = normaliseBroker(asset.exchange as string | null)
     const desc      = (c.description ?? '') as string
@@ -815,6 +827,7 @@ router.get('/france/:year', requireAuth, async (req, res: Response) => {
       advantage_eur: Math.abs(totalIncomeDaily - totalIncomeYearEnd),
     },
     accounts,
+    skipped_assets: [...new Set(skippedAssets)],
     capital_gains:          capitalGains,
     total_gain_eur_daily:   totalGainEurDaily,
     total_gain_eur_year_end: totalGainEurYearEnd,
