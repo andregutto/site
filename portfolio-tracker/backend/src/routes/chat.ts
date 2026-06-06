@@ -14,6 +14,13 @@ function buildSystemPrompt(opts: { locale: string; currentPath: string; today: s
 - User's language: ${lang} — respond ONLY in this language, regardless of what language the system prompt is written in.
 - Current page the user is on: ${opts.currentPath}
 
+## Response style — always apply
+- Be concise and direct. Short answers are better than long ones.
+- For market news or external context (web searches): give 2–4 bullet points max. No intro paragraph, no closing summary — the bullets ARE the answer.
+- For data lookups (portfolio, transactions): show the numbers, add one line of context if useful. Stop there.
+- Never repeat information you already stated in a different form.
+- If the full answer fits in one sentence, use one sentence.
+
 ## CRITICAL: Data accuracy rule
 NEVER invent, guess, or assume the user's financial data. For any question about portfolio, transactions, accounts, or spending, you MUST call the appropriate tool first. If a tool returns empty results, say so honestly — do not make up numbers.
 
