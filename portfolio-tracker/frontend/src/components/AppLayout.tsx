@@ -90,7 +90,7 @@ export default function AppLayout() {
   const inFinances = location.pathname.startsWith('/finances')
   const inInstitutions = location.pathname.startsWith('/institutions')
 
-  const sectionAccent = inInvestimentos ? '#1B4FD8' : inFinances ? '#A36A52' : 'var(--arvo-black)'
+  const sectionAccent = inInvestimentos ? '#1B4FD8' : inFinances ? '#A36A52' : '#1F8A5B'
 
   const investimentosItems = [
     { to: '/dashboard', label: t.nav.dashboard, end: true, icon: (
@@ -414,7 +414,7 @@ export default function AppLayout() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75" />
               </svg>
             )},
-            { to: '/institutions', label: t.nav.institutions, match: inInstitutions, accent: 'rgba(13,13,13,0.70)', icon: (
+            { to: '/institutions', label: t.nav.institutions, match: inInstitutions, accent: '#1F8A5B', icon: (
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.008v.008h-.008v-.008Zm0 3h.008v.008h-.008v-.008Zm0 3h.008v.008h-.008v-.008Z" />
               </svg>
