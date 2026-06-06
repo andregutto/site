@@ -53,10 +53,12 @@ body {
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
-/* Main content bottom padding accounts for nav + sub-nav + safe area on mobile */
+/* Main content bottom padding — clears bottom nav + sub-nav pill + safe area on mobile.
+   sub-nav top sits at ~130px + safe-area-inset-bottom from viewport bottom;
+   adding safe-area to both sides means the 78px buffer is device-independent. */
 @media (max-width: 639px) {
   .main-content {
-    padding-bottom: calc(7rem + env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(13rem + env(safe-area-inset-bottom, 0px));
   }
 }
 
