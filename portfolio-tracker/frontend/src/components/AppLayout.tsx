@@ -206,6 +206,12 @@ export default function AppLayout() {
         <path strokeLinecap="round" strokeLinejoin="round" d="M8 9V5M5.5 6.5L8 5l2.5 1.5"/>
       </svg>
     )},
+    { to: '/finances/subscriptions', label: t.finances.navSubscriptions, end: false, icon: (
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M3.4 12.6l1.4-1.4M11.2 4.8l1.4-1.4"/>
+        <circle cx="8" cy="8" r="3"/>
+      </svg>
+    )},
   ]
 
   const activeSubItems = inInvestimentos ? investimentosItems : inFinances ? financesItems : []

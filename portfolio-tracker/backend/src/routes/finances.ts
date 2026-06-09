@@ -1914,4 +1914,105 @@ router.delete('/moments/:id/share', requireAuth, async (req, res: Response) => {
   res.json({ ok: true })
 })
 
+// ── Scanner de Assinaturas ────────────────────────────────────────────────────
+
+function normalizeSubscriptionDesc(raw: string): string {
+  return raw
+    .toLowerCase()
+    .replace(/\b(paiement|prlv|prélèvement|virement|vir|achat|carte|cb|payment|ref|no|num|#|debit|credit|débito|crédito|pagamento|pgto)\b/gi, '')
+    .replace(/\d{2}[/\-]\d{2}([/\-]\d{2,4})?/g, '')
+    .replace(/\b\d{5,}\b/g, '')
+    .replace(/[*@#.,\-_/\\]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+router.get('/subscriptions', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+
+  const since = new Date()
+  since.setMonth(since.getMonth() - 18)
+  const sinceStr = since.toISOString().split('T')[0]
+
+  const { data: transactions, error } = await supabaseAdmin
+    .from('finance_transactions')
+    .select('id, date, description, amount, currency, category_id, is_internal_transfer, exclude_from_stats, finance_categories(id, name, icon, color, name_key)')
+    .eq('user_id', userId)
+    .lt('amount', 0)
+    .gte('date', sinceStr)
+    .eq('is_internal_transfer', false)
+    .eq('exclude_from_stats', false)
+    .order('date', { ascending: true })
+
+  if (error) { res.status(500).json({ error: error.message }); return }
+  if (!transactions || transactions.length === 0) { res.json({ subscriptions: [] }); return }
+
+  const groups = new Map<string, typeof transactions>()
+  for (const tx of transactions) {
+    const key = normalizeSubscriptionDesc(tx.description ?? '')
+    if (!key || key.length < 3) continue
+    const list = groups.get(key) ?? []
+    list.push(tx)
+    groups.set(key, list)
+  }
+
+  type Freq = 'weekly' | 'biweekly' | 'monthly' | 'quarterly' | 'biannual' | 'annual'
+  const annualMultiplier: Record<Freq, number> = { weekly: 52, biweekly: 26, monthly: 12, quarterly: 4, biannual: 2, annual: 1 }
+
+  const subscriptions: Array<{
+    key: string; name: string; frequency: Freq
+    median_amount: number; currency: string; last_date: string
+    annual_cost: number; monthly_equivalent: number; occurrences: number
+    category: { id: number; name: string; icon: string; color: string; name_key?: string } | null
+  }> = []
+
+  for (const [key, txs] of groups) {
+    if (txs.length < 2) continue
+    const sorted = [...txs].sort((a, b) => a.date.localeCompare(b.date))
+
+    const gaps: number[] = []
+    for (let i = 1; i < sorted.length; i++) {
+      const ms = new Date(sorted[i].date).getTime() - new Date(sorted[i - 1].date).getTime()
+      gaps.push(Math.round(ms / 86400000))
+    }
+    const sortedGaps = [...gaps].sort((a, b) => a - b)
+    const medianGap = sortedGaps[Math.floor(sortedGaps.length / 2)]
+
+    let frequency: Freq | null = null
+    let minOcc = 3
+    if (medianGap >= 5  && medianGap <= 9)    { frequency = 'weekly';    minOcc = 4 }
+    else if (medianGap >= 11 && medianGap <= 17)  { frequency = 'biweekly';  minOcc = 4 }
+    else if (medianGap >= 25 && medianGap <= 38)  { frequency = 'monthly';   minOcc = 3 }
+    else if (medianGap >= 83 && medianGap <= 100) { frequency = 'quarterly'; minOcc = 2 }
+    else if (medianGap >= 165 && medianGap <= 200){ frequency = 'biannual';  minOcc = 2 }
+    else if (medianGap >= 330 && medianGap <= 400){ frequency = 'annual';    minOcc = 2 }
+    if (!frequency || sorted.length < minOcc) continue
+
+    const amounts = sorted.map(t => Math.abs(t.amount))
+    const sortedAmt = [...amounts].sort((a, b) => a - b)
+    const medianAmt = sortedAmt[Math.floor(sortedAmt.length / 2)]
+    if (!amounts.every(a => Math.abs(a - medianAmt) / medianAmt <= 0.25)) continue
+
+    const annualCost = Math.round(medianAmt * annualMultiplier[frequency] * 100) / 100
+    const withCat = sorted.filter(t => t.category_id).reverse()
+    const category = withCat.length > 0 ? (withCat[0] as any).finance_categories : null
+
+    subscriptions.push({
+      key,
+      name: sorted[sorted.length - 1].description.trim(),
+      frequency,
+      median_amount: Math.round(medianAmt * 100) / 100,
+      currency: sorted[sorted.length - 1].currency,
+      last_date: sorted[sorted.length - 1].date,
+      annual_cost: annualCost,
+      monthly_equivalent: Math.round(annualCost / 12 * 100) / 100,
+      occurrences: sorted.length,
+      category,
+    })
+  }
+
+  subscriptions.sort((a, b) => b.monthly_equivalent - a.monthly_equivalent)
+  res.json({ subscriptions })
+})
+
 export default router
