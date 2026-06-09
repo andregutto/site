@@ -795,6 +795,7 @@
     "markAsReal": "Marcar como transação real",
     "markAsTransfer": "Marcar como transferência interna",
     "unmarkInternalAll": "Desmarcar como transferência interna para todas as transações com a descrição \"{desc}\"?",
+    "markInternalAll": "Marcar como transferência interna para todas as transações com a descrição \"{desc}\"?",
     "txSearchNoResults": "Nenhum resultado encontrado",
     "groupRename": "Clique para renomear",
     "groupRenameAuto": "Clique para renomear (remove a marcação automática)",

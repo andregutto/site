@@ -794,6 +794,7 @@
     "notesPlaceholder": "Add note...",
     "markAsReal": "Mark as real transaction",
     "unmarkInternalAll": "Unmark as internal transfer for all transactions with description \"{desc}\"?",
+    "markInternalAll": "Mark as internal transfer for all transactions with description \"{desc}\"?",
     "txSearchNoResults": "No results found",
     "groupRename": "Click to rename",
     "groupRenameAuto": "Click to rename (removes auto-tagging)",

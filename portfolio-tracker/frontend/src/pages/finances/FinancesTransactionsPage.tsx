@@ -416,16 +416,15 @@ export default function FinancesTransactionsPage() {
 
   async function toggleInternal(id: number, current: boolean) {
     await apiFetch(`/finances/transactions/${id}`, { method: 'PATCH', body: JSON.stringify({ is_internal_transfer: !current }) })
-    if (current) {
-      const tx = transactions.find(tx2 => tx2.id === id)
-      if (tx?.description) {
-        const applyAll = window.confirm(t.finances.unmarkInternalAll.replace('{desc}', tx.description))
-        if (applyAll) {
-          await apiFetch('/finances/transactions/bulk-transfer', {
-            method: 'PATCH',
-            body: JSON.stringify({ description: tx.description, is_internal_transfer: false }),
-          })
-        }
+    const tx = transactions.find(tx2 => tx2.id === id)
+    if (tx?.description) {
+      const key = current ? t.finances.unmarkInternalAll : t.finances.markInternalAll
+      const applyAll = window.confirm(key.replace('{desc}', tx.description))
+      if (applyAll) {
+        await apiFetch('/finances/transactions/bulk-transfer', {
+          method: 'PATCH',
+          body: JSON.stringify({ description: tx.description, is_internal_transfer: !current }),
+        })
       }
     }
     loadTransactions()

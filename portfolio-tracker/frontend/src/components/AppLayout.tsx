@@ -353,8 +353,8 @@ export default function AppLayout() {
                   key={to} to={to} end={end}
                   className="flex items-center gap-2 whitespace-nowrap transition-all"
                   style={({ isActive }) => isActive
-                    ? { fontFamily: "var(--arvo-font-body)", fontSize: 11, letterSpacing: '0.08em', padding: '7px 14px', borderRadius: 8, border: '1px solid var(--arvo-border)', background: 'white', color: 'var(--arvo-fg)', boxShadow: '0 1px 2px rgba(13,13,13,0.04)', textDecoration: 'none' }
-                    : { fontFamily: "var(--arvo-font-body)", fontSize: 11, letterSpacing: '0.08em', padding: '7px 14px', borderRadius: 8, border: '1px solid transparent', background: 'transparent', color: 'rgba(13,13,13,0.70)', textDecoration: 'none' }}
+                    ? { fontFamily: "var(--arvo-font-body)", fontSize: 13, letterSpacing: '0.08em', padding: '7px 14px', borderRadius: 8, border: '1px solid var(--arvo-border)', background: 'white', color: 'var(--arvo-fg)', boxShadow: '0 1px 2px rgba(13,13,13,0.04)', textDecoration: 'none' }
+                    : { fontFamily: "var(--arvo-font-body)", fontSize: 13, letterSpacing: '0.08em', padding: '7px 14px', borderRadius: 8, border: '1px solid transparent', background: 'transparent', color: 'rgba(13,13,13,0.70)', textDecoration: 'none' }}
                 >
                   {({ isActive }) => (
                     <>

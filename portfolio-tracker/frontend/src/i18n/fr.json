@@ -794,6 +794,7 @@
     "notesPlaceholder": "Ajouter une note...",
     "markAsReal": "Marquer comme transaction réelle",
     "unmarkInternalAll": "Démarquer comme virement interne pour toutes les transactions avec la description \"{desc}\" ?",
+    "markInternalAll": "Marquer comme virement interne pour toutes les transactions avec la description \"{desc}\" ?",
     "txSearchNoResults": "Aucun résultat trouvé",
     "groupRename": "Cliquer pour renommer",
     "groupRenameAuto": "Cliquer pour renommer (supprime le marquage automatique)",
