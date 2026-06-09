@@ -1,30 +1,6 @@
 import type React from 'react'
-import { useState, useEffect } from 'react'
 import { useCurrency } from '../contexts/CurrencyContext'
 import { useI18n } from '../contexts/I18nContext'
-import { apiFetch } from '../lib/api'
-
-interface IndexSnapshot {
-  code: string
-  name: string
-  value: number | null
-  m1_pct: number | null
-  unit: string
-}
-
-const CARD_INDICES = ['IBOV', 'CDI', 'SP500', 'IPCA'] as const
-
-function fmtIdxVal(v: number | null, unit: string) {
-  if (v == null) return '—'
-  if (unit === 'pts') return v.toLocaleString('pt-BR', { maximumFractionDigits: 0 })
-  if (unit === '% a.a.' || unit === '% a.m.') return `${v.toFixed(2)}%`
-  return v.toFixed(2)
-}
-
-function fmtIdxPct(v: number | null) {
-  if (v == null) return '—'
-  return `${v >= 0 ? '+' : ''}${v.toFixed(2)}%`
-}
 
 interface Props {
   total_brl: number
@@ -41,19 +17,6 @@ interface Props {
 export default function ValueCards({ total_brl, generated_at, invested_brl, gain_brl, gain_pct, period_abs, chartLoading, period_pct, period_label }: Props) {
   const { currency, fmt } = useCurrency()
   const { t, locale } = useI18n()
-  const ti = (t as unknown as Record<string, Record<string, string>>).indices ?? {}
-
-  const [indices, setIndices] = useState<IndexSnapshot[]>([])
-  useEffect(() => {
-    apiFetch<IndexSnapshot[]>('/indices')
-      .then(data => {
-        const ordered = CARD_INDICES
-          .map(code => data.find(d => d.code === code))
-          .filter(Boolean) as IndexSnapshot[]
-        setIndices(ordered)
-      })
-      .catch(() => {})
-  }, [])
   const ts = new Date(generated_at).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })
   const showSecondary = invested_brl != null && gain_brl != null
 
@@ -132,30 +95,6 @@ export default function ValueCards({ total_brl, generated_at, invested_brl, gain
         </div>
       )}
 
-      {/* Market indices strip — desktop only */}
-      {indices.length > 0 && (
-        <div className="hidden sm:grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px 8px', marginTop: 16, paddingTop: 14, borderTop: '1px solid rgba(13,13,13,0.07)', position: 'relative', zIndex: 2 }}>
-          {indices.map(idx => {
-            const pct = idx.m1_pct
-            const isPos = pct != null && pct > 0
-            const isNeg = pct != null && pct < 0
-            return (
-              <div key={idx.code} style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.40)' }}>
-                  {idx.name}
-                </span>
-                <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 14, letterSpacing: '0.02em', color: 'var(--arvo-black)', lineHeight: 1 }}>
-                  {fmtIdxVal(idx.value, idx.unit)}
-                </span>
-                <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 11, color: isPos ? 'var(--arvo-green)' : isNeg ? 'var(--arvo-red)' : 'rgba(13,13,13,0.45)' }}>
-                  {fmtIdxPct(pct)}
-                  <span style={{ color: 'rgba(13,13,13,0.35)', marginLeft: 3 }}>{ti.month ?? 'mês'}</span>
-                </span>
-              </div>
-            )
-          })}
-        </div>
-      )}
     </div>
   )
 }

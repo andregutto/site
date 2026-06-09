@@ -10,6 +10,7 @@ import { useI18n } from '../contexts/I18nContext'
 import { apiFetch } from '../lib/api'
 import ValueCards from '../components/ValueCards'
 import AllocationChart from '../components/AllocationChart'
+import MarketIndicesCard from '../components/MarketIndicesCard'
 import AssetTable from '../components/AssetTable'
 import FixedIncomeSetupModal from '../components/FixedIncomeSetupModal'
 import type { PortfolioAsset, SplitEvent } from '../lib/types'
@@ -302,33 +303,34 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Row 1: ValueCards */}
-      <div className="grid grid-cols-1 gap-6">
-        {(() => {
-          const totalInvestedBrl = data.by_asset.reduce((s, a) => s + (a.invested_brl ?? 0), 0)
-          const hasInvested = totalInvestedBrl > 0
-          const gainLossBrl = hasInvested ? data.total_brl - totalInvestedBrl : null
-          const gainLossPct = hasInvested && gainLossBrl != null ? (gainLossBrl / totalInvestedBrl) * 100 : null
+      {/* Row 1: ValueCards (full width) */}
+      {(() => {
+        const totalInvestedBrl = data.by_asset.reduce((s, a) => s + (a.invested_brl ?? 0), 0)
+        const hasInvested = totalInvestedBrl > 0
+        const gainLossBrl = hasInvested ? data.total_brl - totalInvestedBrl : null
+        const gainLossPct = hasInvested && gainLossBrl != null ? (gainLossBrl / totalInvestedBrl) * 100 : null
+        return (
+          <ValueCards
+            total_brl={data.total_brl}
+            generated_at={data.generated_at}
+            invested_brl={hasInvested ? totalInvestedBrl : null}
+            gain_brl={gainLossBrl}
+            gain_pct={gainLossPct}
+            period_abs={hasInvested ? periodReturnAbs : null}
+            chartLoading={(useDailyChart ? dailyLoading : monthlyLoading) || periodLoading}
+            period_pct={hasInvested ? periodReturnPct : null}
+            period_label={periodLabel}
+          />
+        )
+      })()}
 
-
-          return (
-            <ValueCards
-              total_brl={data.total_brl}
-              generated_at={data.generated_at}
-              invested_brl={hasInvested ? totalInvestedBrl : null}
-              gain_brl={gainLossBrl}
-              gain_pct={gainLossPct}
-              period_abs={hasInvested ? periodReturnAbs : null}
-              chartLoading={(useDailyChart ? dailyLoading : monthlyLoading) || periodLoading}
-              period_pct={hasInvested ? periodReturnPct : null}
-              period_label={periodLabel}
-            />
-          )
-        })()}
-        {data.by_class.length > 0 && (
+      {/* Row 2: AllocationChart + MarketIndicesCard side by side on desktop */}
+      {data.by_class.length > 0 && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <AllocationChart data={data.by_class} currency={currency} convert={convert} />
-        )}
-      </div>
+          <MarketIndicesCard periodMode={periodMode} periodLabel={periodLabel} />
+        </div>
+      )}
 
       {/* Top movers strip */}
       {(() => {

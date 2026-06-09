@@ -221,6 +221,7 @@
     "enterValue": "Saisir →",
     "manual": "(manuel)",
     "allocationByClass": "Allocation par classe",
+    "allocationSubtitle": "où votre patrimoine est investi",
     "refresh": "Actualiser",
     "updatedAt": "mis à jour {time}",
     "portfolioEvolution": "Évolution du portefeuille",

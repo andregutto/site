@@ -250,6 +250,7 @@ export default function AppLayout() {
 
           {/* Right — user */}
           <div className="flex items-center gap-3 shrink-0 ml-auto">
+            <SetupChecklist firstName={meta.first_name as string | undefined} />
             <div ref={userMenuRef} className="relative">
               <button
                 onClick={() => setShowUserMenu(v => !v)}
@@ -370,8 +371,6 @@ export default function AppLayout() {
         )}
 
       </header>
-
-      <SetupChecklist firstName={meta.first_name as string | undefined} />
 
       {showBudgetSetup && (
         <div className="bg-amber-50 border-b border-amber-200 px-4 py-3 flex items-center justify-between gap-3">

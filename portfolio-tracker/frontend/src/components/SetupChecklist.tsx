@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useI18n } from '../contexts/I18nContext'
 import { apiFetch } from '../lib/api'
@@ -17,13 +17,31 @@ interface Props {
   firstName?: string
 }
 
+function useClickOutside(ref: React.RefObject<HTMLElement | null>, cb: () => void, active: boolean) {
+  useEffect(() => {
+    if (!active) return
+    function handler(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) cb()
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [ref, cb, active])
+}
+
+const SIZE = 28
+const R = 10
+const CIRC = 2 * Math.PI * R
+
 export default function SetupChecklist({ firstName }: Props) {
   const { t } = useI18n()
   const s = (t as unknown as Record<string, Record<string, string>>).setup
   const navigate = useNavigate()
   const [hidden, setHidden] = useState(() => !!sessionStorage.getItem(SESSION_KEY))
-  const [expanded, setExpanded] = useState(false)
+  const [open, setOpen] = useState(false)
   const [state, setState] = useState<SetupState | null>(null)
+  const wrapRef = useRef<HTMLDivElement>(null)
+
+  useClickOutside(wrapRef, () => setOpen(false), open)
 
   useEffect(() => {
     if (hidden) return
@@ -47,87 +65,174 @@ export default function SetupChecklist({ firstName }: Props) {
   function dismiss() {
     sessionStorage.setItem(SESSION_KEY, '1')
     setHidden(true)
+    setOpen(false)
   }
 
   if (hidden || !state) return null
 
   const steps = [
-    { key: 'assets',   done: state.hasAssets,      label: s.stepAssets,   desc: s.stepAssetsDesc,   to: '/import-b3' },
-    { key: 'account',  done: state.hasAccount,     label: s.stepAccount,  desc: s.stepAccountDesc,  to: '/finances/accounts' },
-    { key: 'income',   done: state.hasIncome,      label: s.stepIncome,   desc: s.stepIncomeDesc,   to: '/finances' },
-    { key: 'freedom',  done: state.hasFreedomPlan, label: s.stepFreedom,  desc: s.stepFreedomDesc,  to: '/finances/freedom' },
-    { key: 'planning', done: state.hasPlanning,    label: s.stepPlanning, desc: s.stepPlanningDesc, to: '/finances/budget' },
+    { key: 'assets',   done: state.hasAssets,      label: s.stepAssets,   to: '/import-b3' },
+    { key: 'account',  done: state.hasAccount,     label: s.stepAccount,  to: '/finances/accounts' },
+    { key: 'income',   done: state.hasIncome,      label: s.stepIncome,   to: '/finances' },
+    { key: 'freedom',  done: state.hasFreedomPlan, label: s.stepFreedom,  to: '/finances/freedom' },
+    { key: 'planning', done: state.hasPlanning,    label: s.stepPlanning, to: '/finances/budget' },
   ]
 
   const doneCount = steps.filter(st => st.done).length
   if (doneCount === steps.length) return null
 
-  const pct = Math.round((doneCount / steps.length) * 100)
+  const pct = doneCount / steps.length
+  const strokeOffset = CIRC * (1 - pct)
+
   const name = firstName?.split(' ')[0] ?? ''
 
   return (
-    <div style={{ borderBottom: '1px solid rgba(27,79,216,0.12)', background: 'rgba(27,79,216,0.04)' }}>
-      {/* Strip row */}
-      <div
-        style={{ maxWidth: 1152, margin: '0 auto', padding: '0 16px', height: 44, display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}
-        onClick={() => setExpanded(e => !e)}
+    <div ref={wrapRef} style={{ position: 'relative' }}>
+      {/* Circle trigger */}
+      <button
+        onClick={() => setOpen(v => !v)}
+        title={s.title}
+        style={{
+          width: SIZE, height: SIZE,
+          borderRadius: '50%',
+          border: 'none',
+          background: open ? 'rgba(27,79,216,0.08)' : 'transparent',
+          cursor: 'pointer',
+          padding: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          transition: 'background 0.15s',
+        }}
       >
-        <span style={{ fontSize: 15, flexShrink: 0 }}>🏆</span>
-        <span style={{ fontSize: 12, fontFamily: 'var(--arvo-font-body)', color: 'rgba(13,13,13,0.65)', flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-          {name ? `${name}, ` : ''}{s.title}
-        </span>
-        {/* Progress bar */}
-        <div style={{ width: 56, height: 4, background: 'rgba(27,79,216,0.15)', borderRadius: 2, overflow: 'hidden', flexShrink: 0 }}>
-          <div style={{ height: '100%', width: `${pct}%`, background: '#1B4FD8', borderRadius: 2, transition: 'width 0.4s ease' }} />
-        </div>
-        <span style={{ fontSize: 11, fontFamily: 'var(--arvo-font-body)', color: '#1B4FD8', fontWeight: 600, flexShrink: 0 }}>
-          {doneCount}/{steps.length}
-        </span>
-        <svg
-          width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(27,79,216,0.65)" strokeWidth={2.2}
-          style={{ flexShrink: 0, transition: 'transform 0.2s', transform: expanded ? 'rotate(180deg)' : 'none' }}
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M6 9l6 6 6-6"/>
+        <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`}>
+          {/* Background ring */}
+          <circle
+            cx={SIZE / 2} cy={SIZE / 2} r={R}
+            fill="none"
+            stroke="#1B4FD8"
+            strokeWidth={2.5}
+            strokeOpacity={0.18}
+          />
+          {/* Progress arc */}
+          <circle
+            cx={SIZE / 2} cy={SIZE / 2} r={R}
+            fill="none"
+            stroke="#1B4FD8"
+            strokeWidth={2.5}
+            strokeLinecap="round"
+            strokeDasharray={CIRC}
+            strokeDashoffset={strokeOffset}
+            style={{ transform: 'rotate(-90deg)', transformOrigin: 'center', transition: 'stroke-dashoffset 0.4s ease' }}
+          />
+          {/* Center count */}
+          <text
+            x={SIZE / 2} y={SIZE / 2 + 3.5}
+            textAnchor="middle"
+            fontSize={7.5}
+            fontFamily="var(--arvo-font-body)"
+            fontWeight={700}
+            fill="#1B4FD8"
+          >
+            {doneCount}/{steps.length}
+          </text>
         </svg>
-        <button
-          onClick={e => { e.stopPropagation(); dismiss() }}
-          title={s.dismiss}
-          style={{ flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: 'rgba(13,13,13,0.3)', display: 'flex', alignItems: 'center', lineHeight: 1 }}
-        >
-          <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-      </div>
+      </button>
 
-      {/* Expanded step list */}
-      {expanded && (
-        <div style={{ borderTop: '1px solid rgba(27,79,216,0.10)', maxWidth: 1152, margin: '0 auto', padding: '10px 16px 14px' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 6 }}>
+      {/* Dropdown panel */}
+      {open && (
+        <div
+          style={{
+            position: 'absolute',
+            right: 0,
+            top: 'calc(100% + 8px)',
+            width: 280,
+            borderRadius: 12,
+            boxShadow: '0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06)',
+            border: '1px solid var(--arvo-border-soft)',
+            background: '#FFFFFF',
+            zIndex: 50,
+            overflow: 'hidden',
+          }}
+        >
+          {/* Header */}
+          <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--arvo-border-soft)' }}>
+            <p style={{ margin: 0, fontFamily: 'var(--arvo-font-body)', fontSize: 12, fontWeight: 600, color: 'var(--arvo-black)', letterSpacing: '0.04em' }}>
+              {name ? `${name}, ` : ''}{s.title}
+            </p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
+              <div style={{ flex: 1, height: 3, background: 'rgba(27,79,216,0.12)', borderRadius: 2, overflow: 'hidden' }}>
+                <div style={{ height: '100%', width: `${pct * 100}%`, background: '#1B4FD8', borderRadius: 2, transition: 'width 0.4s ease' }} />
+              </div>
+              <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, fontWeight: 600, color: '#1B4FD8', flexShrink: 0 }}>
+                {doneCount}/{steps.length}
+              </span>
+            </div>
+          </div>
+
+          {/* Steps */}
+          <div style={{ padding: '6px 0' }}>
             {steps.map(step => (
               <button
                 key={step.key}
-                onClick={() => { if (!step.done) { setExpanded(false); navigate(step.to) } }}
-                disabled={step.done}
-                style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: 8, border: `1px solid ${step.done ? 'rgba(34,197,94,0.25)' : 'rgba(27,79,216,0.18)'}`, background: step.done ? 'rgba(34,197,94,0.05)' : '#fff', cursor: step.done ? 'default' : 'pointer', textAlign: 'left' }}
+                onClick={() => {
+                  if (!step.done) { setOpen(false); navigate(step.to) }
+                }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  width: '100%', padding: '9px 16px',
+                  border: 'none', background: 'none',
+                  cursor: step.done ? 'default' : 'pointer',
+                  textAlign: 'left',
+                }}
+                onMouseEnter={e => { if (!step.done) (e.currentTarget as HTMLButtonElement).style.background = 'rgba(27,79,216,0.04)' }}
+                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = '' }}
               >
-                <div style={{ width: 18, height: 18, borderRadius: '50%', border: `2px solid ${step.done ? '#22c55e' : '#1B4FD8'}`, background: step.done ? '#22c55e' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <div style={{
+                  width: 18, height: 18, borderRadius: '50%', flexShrink: 0,
+                  border: `2px solid ${step.done ? '#22c55e' : '#1B4FD8'}`,
+                  background: step.done ? '#22c55e' : 'transparent',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
                   {step.done && (
                     <svg width="9" height="9" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth={3}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                     </svg>
                   )}
                 </div>
-                <span style={{ fontSize: 12, fontFamily: 'var(--arvo-font-body)', fontWeight: 500, color: step.done ? 'rgba(13,13,13,0.38)' : 'rgba(13,13,13,0.8)', textDecoration: step.done ? 'line-through' : 'none', flex: 1, textAlign: 'left' }}>
+                <span style={{
+                  flex: 1, fontSize: 13, fontFamily: 'var(--arvo-font-body)',
+                  color: step.done ? 'rgba(13,13,13,0.38)' : 'rgba(13,13,13,0.8)',
+                  textDecoration: step.done ? 'line-through' : 'none',
+                }}>
                   {step.label}
                 </span>
                 {!step.done && (
-                  <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="rgba(27,79,216,0.5)" strokeWidth={2.2} style={{ flexShrink: 0 }}>
+                  <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="rgba(27,79,216,0.4)" strokeWidth={2.2} style={{ flexShrink: 0 }}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                   </svg>
                 )}
               </button>
             ))}
+          </div>
+
+          {/* Footer: dismiss */}
+          <div style={{ padding: '8px 16px 12px', borderTop: '1px solid var(--arvo-border-soft)' }}>
+            <button
+              onClick={dismiss}
+              style={{
+                width: '100%', padding: '6px 12px',
+                borderRadius: 8, border: '1px solid rgba(13,13,13,0.12)',
+                background: 'none', cursor: 'pointer',
+                fontFamily: 'var(--arvo-font-body)', fontSize: 12,
+                color: 'rgba(13,13,13,0.45)', textAlign: 'center',
+                transition: 'background 0.15s',
+              }}
+              onMouseEnter={e => (e.currentTarget.style.background = 'rgba(13,13,13,0.04)')}
+              onMouseLeave={e => (e.currentTarget.style.background = '')}
+            >
+              {s.dismiss}
+            </button>
           </div>
         </div>
       )}
