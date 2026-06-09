@@ -657,4 +657,88 @@ router.delete('/share-link', requireAuth, async (req, res: Response) => {
   res.json({ ok: true })
 })
 
+// GET /api/portfolio/sector-data — fetch real sector data per asset code
+const BRAPI_SECTOR_MAP: Record<string, string> = {
+  'Financial Services': 'Financeiro',
+  'Financial': 'Financeiro',
+  'Energy': 'Energia',
+  'Basic Materials': 'Materiais Básicos',
+  'Consumer Cyclical': 'Consumo Cíclico',
+  'Consumer Defensive': 'Consumo Essencial',
+  'Industrials': 'Industrial',
+  'Technology': 'Tecnologia',
+  'Healthcare': 'Saúde',
+  'Real Estate': 'Imóveis',
+  'Utilities': 'Utilidades Públicas',
+  'Communication Services': 'Telecom',
+  'Communications': 'Telecom',
+}
+
+function mapSectorPt(sector: string | null, classNameKey?: string | null): string | null {
+  if (sector) return BRAPI_SECTOR_MAP[sector] ?? sector
+  const k = (classNameKey ?? '').toLowerCase()
+  if (k.includes('fii') || k.includes('imoveis') || k.includes('imóveis')) return 'Imóveis'
+  if (k.includes('rendafixa') || k.includes('previdencia')) return 'Renda Fixa'
+  if (k.includes('cripto') || k.includes('crypto')) return 'Cripto'
+  return null
+}
+
+router.get('/sector-data', requireAuth, async (req, res: Response) => {
+  try {
+    const { userId } = (req as AuthRequest)
+    const cacheKey = `portfolio:sectors:${userId}`
+    const cached = cache.get<Record<string, string | null>>(cacheKey)
+    if (cached) { res.json({ sectors: cached }); return }
+
+    const { data: assets } = await supabaseAdmin
+      .from('assets')
+      .select('id, code, asset_type, ticker_brapi, coingecko_id, asset_classes(name_key)')
+      .eq('user_id', userId)
+      .eq('active', true)
+
+    const sectors: Record<string, string | null> = {}
+    const brapiTickers: Array<{ code: string; ticker: string; classKey: string | null }> = []
+
+    for (const a of (assets ?? [])) {
+      const classKey = (a.asset_classes as { name_key?: string } | null)?.name_key ?? null
+      if (a.asset_type === 'fixed_income') {
+        sectors[a.code] = 'Renda Fixa'
+      } else if (a.coingecko_id) {
+        sectors[a.code] = 'Cripto'
+      } else if (a.ticker_brapi) {
+        brapiTickers.push({ code: a.code, ticker: a.ticker_brapi as string, classKey })
+      } else {
+        sectors[a.code] = mapSectorPt(null, classKey)
+      }
+    }
+
+    if (brapiTickers.length > 0 && process.env.BRAPI_TOKEN) {
+      const tickerStr = brapiTickers.map(t => t.ticker).join(',')
+      const url = `https://brapi.dev/api/quote/${tickerStr}?token=${process.env.BRAPI_TOKEN}&fundamental=true`
+      try {
+        const resp = await fetch(url, { signal: AbortSignal.timeout(8000) })
+        if (resp.ok) {
+          const json = await resp.json() as { results?: Array<{ symbol: string; summaryProfile?: { sector?: string } }> }
+          for (const r of json.results ?? []) {
+            const match = brapiTickers.find(t => t.ticker.toUpperCase() === r.symbol?.toUpperCase())
+            if (match) {
+              sectors[match.code] = mapSectorPt(r.summaryProfile?.sector ?? null, match.classKey)
+            }
+          }
+        }
+      } catch { /* ignore — fill remaining below */ }
+    }
+
+    for (const t of brapiTickers) {
+      if (!(t.code in sectors)) sectors[t.code] = mapSectorPt(null, t.classKey)
+    }
+
+    const SIX_HOURS = 6 * 60 * 60 * 1000
+    cache.set(cacheKey, sectors, SIX_HOURS)
+    res.json({ sectors })
+  } catch (err) {
+    res.status(500).json({ error: String(err) })
+  }
+})
+
 export default router
