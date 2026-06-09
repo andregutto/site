@@ -83,8 +83,8 @@ function resolveKey(name: string, nameKey: string | null | undefined, keys: Reco
 }
 
 
-function EnvelopeBar({ env, expanded, onToggle, onEditCategory, onDeleteCategory, onAddCategory, onSaveDescription, onShareCategory, onSavePctTarget, actuals, currency }:
-  { env: Envelope; expanded: boolean; onToggle: () => void; onEditCategory: (c: Category) => void; onDeleteCategory: (id: number) => void; onAddCategory: (envId: number) => void; onSaveDescription: (id: number, desc: string) => void; onShareCategory: (c: Category) => void; onSavePctTarget: (id: number, pct: number) => void; actuals: Map<number, number>; currency: string }) {
+function EnvelopeBar({ env, expanded, onToggle, onEditCategory, onDeleteCategory, onAddCategory, onSaveDescription, onShareCategory, onSavePctTarget, actuals, historicals, currency }:
+  { env: Envelope; expanded: boolean; onToggle: () => void; onEditCategory: (c: Category) => void; onDeleteCategory: (id: number) => void; onAddCategory: (envId: number) => void; onSaveDescription: (id: number, desc: string) => void; onShareCategory: (c: Category) => void; onSavePctTarget: (id: number, pct: number) => void; actuals: Map<number, number>; historicals: Map<number, number>; currency: string }) {
   const { t } = useI18n()
   const { hideValues } = useCurrency()
   const fmt = (n: number, cur: string) => hideValues ? '•••' : _fmt(n, cur)
@@ -194,7 +194,7 @@ function EnvelopeBar({ env, expanded, onToggle, onEditCategory, onDeleteCategory
                   onClick={e => { e.stopPropagation(); setPctInput(String(env.pct_target)); setEditingPct(true) }}
                   className="text-xs text-gray-400 font-medium hover:text-[#0D0D0D] hover:underline transition-colors"
                   title={t.finances.editEnvelopeTitle}
-                >{env.pct_target}%</button>
+                >{env.pct_target}% {t.finances.ofIncome}</button>
               )}
               {isOver && <span className="text-xs bg-red-100 text-red-600 font-semibold px-1.5 py-0.5 rounded-full">{t.finances.overLimit}</span>}
               {isInvestment && allocated >= 100 && !isOver && <span className="text-xs bg-green-100 text-green-600 font-semibold px-1.5 py-0.5 rounded-full">{t.finances.goalReached}</span>}
@@ -262,22 +262,19 @@ function EnvelopeBar({ env, expanded, onToggle, onEditCategory, onDeleteCategory
           ) : (
             <ul className="divide-y divide-gray-50">
               {env.categories.map(cat => {
-                const actual = actuals.get(cat.id) ?? 0
                 const hasBudget = cat.budget_monthly != null && cat.budget_monthly > 0
-                const over = hasBudget && actual > cat.budget_monthly!
+                const hist = historicals.get(cat.id) ?? 0
                 return (
                   <li key={cat.id} className="px-5 py-2.5 flex items-center gap-3 group">
                     <span className="text-base leading-none w-6 shrink-0">{cat.icon}</span>
                     <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
                       <span className="text-sm text-gray-700 truncate">{resolveKey(cat.name, cat.name_key, nameKeys)}</span>
-                      <div className="flex items-center gap-1 shrink-0">
-                        {actual > 0 && (
-                          <span className={`text-sm font-medium ${over ? 'text-red-500' : 'text-gray-700'}`}>
-                            {fmt(actual, currency)}
-                          </span>
-                        )}
+                      <div className="flex flex-col items-end gap-0.5 shrink-0">
                         {hasBudget && (
-                          <span className="text-xs text-gray-400">/ {fmt(cat.budget_monthly!, currency)}</span>
+                          <span className="text-sm font-medium text-gray-700">{fmt(cat.budget_monthly!, currency)}</span>
+                        )}
+                        {hist > 0 && (
+                          <span className="text-xs text-gray-400">{t.finances.avg3m}: {fmt(hist, currency)}</span>
                         )}
                       </div>
                     </div>
@@ -396,7 +393,8 @@ export default function FinancesBudgetPage() {
   const [catIcon, setCatIcon]         = useState('🏷️')
   const [catBudget, setCatBudget]     = useState('')
   const [catEnvelopeId, setCatEnvelopeId] = useState<number>(0)
-  const [catActuals, setCatActuals]   = useState<Map<number, number>>(new Map())
+  const [catActuals, setCatActuals]       = useState<Map<number, number>>(new Map())
+  const [catHistoricals, setCatHistoricals] = useState<Map<number, number>>(new Map())
   const [sharedGroups, setSharedGroups] = useState<SharedGroup[]>([])
   const [shareModal, setShareModal]   = useState<Category | null>(null)
   const [sharingGroupId, setSharingGroupId] = useState<number | null>(null)
@@ -417,7 +415,7 @@ export default function FinancesBudgetPage() {
       })()
       const [d, spending, groups] = await Promise.all([
         apiFetch<BudgetData>('/finances/budget'),
-        apiFetch<SpendingSummary>('/finances/spending-summary?months=1'),
+        apiFetch<SpendingSummary>('/finances/spending-summary?months=4'),
         apiFetch<SharedGroup[]>('/shared/groups').catch(() => [] as SharedGroup[]),
       ])
       setData(d)
@@ -425,16 +423,38 @@ export default function FinancesBudgetPage() {
       setIncomeCur(d.income.currency)
       setExpandedIds(new Set(d.envelopes.map(e => e.id)))
       setSharedGroups(groups)
+
+      // Current month actuals (for total-consumed row at bottom)
       const monthData = spending.months.find(m => m.month === currentMonth)
       const actMap = new Map<number, number>()
       if (monthData) {
         for (const env of monthData.by_envelope) {
-          for (const cat of env.categories) {
-            actMap.set(cat.id, cat.actual)
-          }
+          for (const cat of env.categories) actMap.set(cat.id, cat.actual)
         }
       }
       setCatActuals(actMap)
+
+      // Historical averages: last 3 complete months (excluding current)
+      const pastMonths = spending.months.filter(m => m.month !== currentMonth).slice(0, 3)
+      const histMap = new Map<number, number>()
+      if (pastMonths.length > 0) {
+        const catSums = new Map<number, number>()
+        const catCounts = new Map<number, number>()
+        for (const month of pastMonths) {
+          for (const env of month.by_envelope) {
+            for (const cat of env.categories) {
+              if (cat.actual > 0) {
+                catSums.set(cat.id, (catSums.get(cat.id) ?? 0) + cat.actual)
+                catCounts.set(cat.id, (catCounts.get(cat.id) ?? 0) + 1)
+              }
+            }
+          }
+        }
+        for (const [id, sum] of catSums) {
+          histMap.set(id, Math.round(sum / (catCounts.get(id) ?? 1)))
+        }
+      }
+      setCatHistoricals(histMap)
     } finally {
       setLoading(false)
     }
@@ -738,6 +758,7 @@ export default function FinancesBudgetPage() {
             onShareCategory={openShareModal}
             onSavePctTarget={savePctTarget}
             actuals={catActuals}
+            historicals={catHistoricals}
             currency={data.income.currency}
           />
         ))}
