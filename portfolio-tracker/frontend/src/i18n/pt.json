@@ -19,7 +19,8 @@
     "investments": "Patrimônio",
     "moments": "Momentos",
     "banks": "Contas",
-    "dividends": "Dividendos"
+    "dividends": "Dividendos",
+    "assets": "Ativos"
   },
   "currency": {
     "label": "Moeda"

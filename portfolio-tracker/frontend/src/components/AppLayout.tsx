@@ -134,6 +134,11 @@ export default function AppLayout() {
         <rect x="1" y="9" width="3" height="6" rx=".5"/><rect x="6.5" y="5.5" width="3" height="9.5" rx=".5"/><rect x="12" y="2" width="3" height="13" rx=".5"/>
       </svg>
     )},
+    { to: '/assets', label: t.nav.assets, end: true, icon: (
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
+        <rect x="1" y="1.5" width="14" height="3" rx=".5"/><rect x="1" y="6.5" width="14" height="3" rx=".5"/><rect x="1" y="11.5" width="14" height="3" rx=".5"/>
+      </svg>
+    )},
     { to: '/performance', label: t.nav.performance, end: false, icon: (
       <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
         <path strokeLinecap="round" strokeLinejoin="round" d="M1 12l4-4 3 3 7-7M11.5 4H15v3.5"/>
@@ -152,12 +157,6 @@ export default function AppLayout() {
     { to: '/portfolio/rebalance', label: t.nav.rebalance, end: false, icon: (
       <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
         <path strokeLinecap="round" strokeLinejoin="round" d="M8 2v12M4 14h8M4 6l-3 4h6L4 6zM12 4l-3 4h6l-3-4z"/>
-      </svg>
-    )},
-    { to: '/portfolio/classes', label: t.nav.classes, end: false, icon: (
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M9.5 1.5H14v4.5L8 12a1.4 1.4 0 01-2 0L2 8a1.4 1.4 0 010-2l6-4.5z"/>
-        <circle cx="11.5" cy="4.5" r="1" fill="currentColor" stroke="none"/>
       </svg>
     )},
     { to: '/portfolio/reports', label: t.nav.ir, end: false, icon: (

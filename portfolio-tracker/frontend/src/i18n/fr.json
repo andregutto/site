@@ -19,7 +19,8 @@
     "investments": "Patrimoine",
     "moments": "Moments",
     "banks": "Comptes",
-    "dividends": "Dividendes"
+    "dividends": "Dividendes",
+    "assets": "Actifs"
   },
   "currency": {
     "label": "Devise"

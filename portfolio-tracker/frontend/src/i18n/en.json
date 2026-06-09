@@ -19,7 +19,8 @@
     "investments": "Wealth",
     "moments": "Moments",
     "banks": "Accounts",
-    "dividends": "Dividends"
+    "dividends": "Dividends",
+    "assets": "Assets"
   },
   "currency": {
     "label": "Currency"

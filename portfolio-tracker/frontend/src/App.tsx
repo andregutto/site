@@ -22,6 +22,7 @@ function ArvoSplash() {
 }
 import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
+import AssetsPage from './pages/AssetsPage'
 import PerformancePage from './pages/PerformancePage'
 import AssetDetailPage from './pages/AssetDetailPage'
 import ContributionsPage from './pages/ContributionsPage'
@@ -124,6 +125,7 @@ function AppRoutes() {
       <Route path="/invite/:token"           element={<AcceptInvitePage />} />
       <Route element={<ProtectedRoutes />}>
         <Route path="/dashboard"      element={<DashboardPage />} />
+        <Route path="/assets"         element={<AssetsPage />} />
         <Route path="/performance"    element={<PerformancePage />} />
         <Route path="/assets/:id"     element={<AssetDetailPage />} />
         <Route path="/profile"        element={<ProfilePage />} />

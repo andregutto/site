@@ -1,42 +1,17 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { PageLoader } from '../components/ArvoLoader'
-import { usePortfolioValue, usePerformanceMonthly, usePerformanceDaily, usePerformanceInception, usePerformanceSummary, useAssetReturns, clearPerfCache } from '../hooks/usePortfolio'
+import { usePortfolioValue, usePerformanceInception, usePerformanceSummary, useAssetReturns, clearPerfCache } from '../hooks/usePortfolio'
 import { useDividendSummary, useDividendSync } from '../hooks/useDividends'
 import { useCurrency } from '../contexts/CurrencyContext'
-import { useFavorites } from '../hooks/useFavorites'
 import { useAchievementContext } from '../contexts/AchievementContext'
 import { useI18n } from '../contexts/I18nContext'
 import { apiFetch } from '../lib/api'
 import ValueCards from '../components/ValueCards'
 import AllocationChart from '../components/AllocationChart'
 import MarketIndicesCard from '../components/MarketIndicesCard'
-import AssetTable from '../components/AssetTable'
-import FixedIncomeSetupModal from '../components/FixedIncomeSetupModal'
-import type { PortfolioAsset, SplitEvent } from '../lib/types'
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
-
-interface FreedomPlan {
-  id: number; is_active: boolean
-  initial_capital: number; monthly_contribution: number; monthly_return_rate: number
-  currency: string; start_date: string | null; created_at: string
-}
-
-function fmtMonthLabel(ym: string) {
-  const [y, m] = ym.split('-')
-  const names = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
-  return `${names[parseInt(m) - 1]}/${y.slice(2)}`
-}
-
-function fmtDayLabel(dateStr: string) {
-  const [, m, d] = dateStr.split('-')
-  const names = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
-  return `${parseInt(d)}/${names[parseInt(m) - 1]}`
-}
-
-function localDate(d: Date) {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-}
+import type { SplitEvent } from '../lib/types'
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 
 type PeriodMode = 'current_month' | 'last_30d' | 'last_12m' | 'ytd' | 'inception'
 
@@ -52,20 +27,16 @@ function addMonths(ym: string, n: number): string {
 
 export default function DashboardPage() {
   const { data, loading, error, refresh } = usePortfolioValue()
-  const { favorites, toggleFavorite } = useFavorites()
-  const [selectedAsset, setSelectedAsset] = useState<PortfolioAsset | null>(null)
   const navigate = useNavigate()
   const { triggerCheck } = useAchievementContext()
 
-  const { convert, fmt, currency, fxRates } = useCurrency()
+  const { convert, fmt, currency } = useCurrency()
   const { t, locale } = useI18n()
   const intlLocale = locale === 'pt' ? 'pt-BR' : locale === 'fr' ? 'fr-FR' : 'en-GB'
   const td = (t as unknown as Record<string, Record<string, string>>).dividends ?? {}
 
   useEffect(() => {
-    if (data?.total_brl != null) {
-      triggerCheck(data.total_brl)
-    }
+    if (data?.total_brl != null) triggerCheck(data.total_brl)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data?.total_brl])
 
@@ -74,7 +45,6 @@ export default function DashboardPage() {
   const currentYear = now.getFullYear()
   const currentYM = localYM(now)
 
-  // Dividend sync — fires once per 6 h
   const { sync: syncDividends, syncing } = useDividendSync()
   const divSyncFired = useRef(false)
   useEffect(() => {
@@ -82,13 +52,6 @@ export default function DashboardPage() {
     divSyncFired.current = true
     syncDividends()
   }, [syncDividends])
-
-  const [activePlan, setActivePlan] = useState<FreedomPlan | null | undefined>(undefined)
-  useEffect(() => {
-    apiFetch<FreedomPlan[]>('/finances/freedom-plans')
-      .then(plans => setActivePlan(plans.find(p => p.is_active) ?? plans[0] ?? null))
-      .catch(() => setActivePlan(null))
-  }, [])
 
   const [splitWarnings, setSplitWarnings] = useState<Array<{ asset_id: number; code: string; splits: SplitEvent[] }>>([])
   useEffect(() => {
@@ -126,40 +89,21 @@ export default function DashboardPage() {
 
   const { data: dashReturns, loading: dashReturnsLoading } = useAssetReturns(perfFrom, perfTo)
 
-  // Dividend date range (same period but as full dates)
   const divFrom = (() => {
     switch (periodMode) {
       case 'current_month': return `${currentYM}-01`
       case 'last_30d': { const d = new Date(); d.setDate(d.getDate() - 29); return d.toISOString().split('T')[0] }
       case 'last_12m': { const d = new Date(); d.setFullYear(d.getFullYear() - 1); return d.toISOString().split('T')[0] }
-      case 'ytd':     return `${currentYear}-01-01`
+      case 'ytd':      return `${currentYear}-01-01`
       case 'inception': return inception ? `${inception}-01` : `${currentYear}-01-01`
     }
   })()
   const divTo = now.toISOString().split('T')[0]
   const { data: divSummary, loading: divLoading } = useDividendSummary(divFrom, divTo)
 
-  const { data: perfData, loading: monthlyLoading, refresh: refreshMonthly } = usePerformanceMonthly(inception ?? currentYM, currentYM)
-
-  // Daily chart only for short periods (≤ YTD); monthly for last_12m and inception
-  const useDailyChart = periodMode === 'current_month' || periodMode === 'last_30d' || periodMode === 'ytd'
-  const dailyFrom = useDailyChart
-    ? periodMode === 'current_month' ? `${currentYM}-01`
-    : periodMode === 'ytd'          ? `${currentYear}-01-01`
-    : localDate(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 29))
-    : null
-  const dailyTo = useDailyChart ? localDate(now) : null
-  const { data: dailyData, loading: dailyLoading, refresh: refreshDaily } = usePerformanceDaily(dailyFrom, dailyTo)
-
-  // Keep refs to the latest refresh functions so the async sync callback can call them
   const refreshPeriodSummaryRef = useRef(refreshPeriodSummary)
-  const refreshMonthlyRef = useRef(refreshMonthly)
-  const refreshDailyRef = useRef(refreshDaily)
   refreshPeriodSummaryRef.current = refreshPeriodSummary
-  refreshMonthlyRef.current = refreshMonthly
-  refreshDailyRef.current = refreshDaily
 
-  // Auto-sync price history once per 6 h — keeps period calculations accurate
   const priceSyncFired = useRef(false)
   useEffect(() => {
     if (priceSyncFired.current) return
@@ -172,58 +116,11 @@ export default function DashboardPage() {
         localStorage.setItem('price_last_sync', new Date().toISOString())
         clearPerfCache()
         refreshPeriodSummaryRef.current()
-        refreshMonthlyRef.current()
-        refreshDailyRef.current()
       })
       .catch(() => {})
   }, [])
 
-  // Target line: project freedom plan trajectory onto the chart
-  const planStartDate = activePlan ? (activePlan.start_date ?? activePlan.created_at.slice(0, 10)) : null
-
-  function targetAtDate(dateStr: string): number | null {
-    if (!activePlan || !planStartDate) return null
-    const t = (new Date(dateStr + 'T12:00:00').getTime() - new Date(planStartDate + 'T12:00:00').getTime()) / (30.4375 * 24 * 3600 * 1000)
-    const brlPerUnit = activePlan.currency === 'BRL' ? 1 : (fxRates[activePlan.currency] ?? 1)
-    const IC = convert(activePlan.initial_capital * brlPerUnit)
-    const MC = convert(activePlan.monthly_contribution * brlPerUnit)
-    const r  = activePlan.monthly_return_rate
-    const v  = r === 0 ? IC + MC * t : IC * Math.pow(1 + r, t) + MC * (Math.pow(1 + r, t) - 1) / r
-    return v > 0 ? v : null
-  }
-
-  const rawFiltered = (perfData?.monthly ?? []).filter(m => m.total > 0 && m.month >= perfFrom)
-  const portfolioChartData = useDailyChart
-    ? (dailyData?.daily ?? []).filter(d => d.total > 0).map(d => ({
-        month: fmtDayLabel(d.date),
-        value: convert(d.total),
-        target: targetAtDate(d.date),
-      }))
-    : (rawFiltered.length >= 2 ? rawFiltered : (perfData?.monthly ?? []).filter(m => m.total > 0))
-        .map(m => {
-          const [y, mo] = m.month.split('-').map(Number)
-          const lastDay = new Date(y, mo, 0).getDate()
-          return {
-            month: fmtMonthLabel(m.month),
-            value: convert(m.total),
-            target: targetAtDate(`${m.month}-${String(lastDay).padStart(2, '0')}`),
-          }
-        })
-
-  function handleAssetClick(asset: PortfolioAsset) {
-    if (asset.needs_manual && asset.source === 'fixed_income') {
-      setSelectedAsset(asset)  // FixedIncomeSetupModal para RF sem configuração
-    } else {
-      navigate(`/assets/${asset.id}`, { state: { total_brl: data?.total_brl ?? 0 } })
-    }
-  }
-
-  function handleModalClose() { setSelectedAsset(null) }
-  function handleSaved() { setSelectedAsset(null); refresh() }
-
-  if (loading) {
-    return <PageLoader />
-  }
+  if (loading) return <PageLoader />
 
   if (error) {
     return (
@@ -239,8 +136,9 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
+      {/* Header + period buttons */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 style={{ fontFamily: "var(--arvo-font-body)", fontSize: 18, letterSpacing: '0.06em', color: 'var(--arvo-black)' }}>Dashboard</h1>
+        <h1 style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 18, letterSpacing: '0.06em', color: 'var(--arvo-black)' }}>Dashboard</h1>
         <div className="flex flex-wrap items-center gap-2">
           {([
             { key: 'current_month' as PeriodMode, label: t.performance.currentMonth },
@@ -254,23 +152,18 @@ export default function DashboardPage() {
               onClick={() => !disabled && setPeriodMode(key)}
               disabled={disabled}
               style={{
-                fontFamily: "var(--arvo-font-body)",
-                fontSize: 10,
-                letterSpacing: '0.12em',
-                textTransform: 'uppercase',
-                padding: '6px 12px',
-                borderRadius: 6,
+                fontFamily: 'var(--arvo-font-body)', fontSize: 10, letterSpacing: '0.12em',
+                textTransform: 'uppercase', padding: '6px 12px', borderRadius: 6,
                 border: `1px solid ${disabled ? 'var(--arvo-border-soft)' : periodMode === key ? 'var(--arvo-black)' : 'var(--arvo-border)'}`,
                 background: periodMode === key && !disabled ? 'var(--arvo-black)' : 'white',
                 color: disabled ? 'rgba(13,13,13,0.25)' : periodMode === key ? 'var(--arvo-offwhite)' : 'rgba(13,13,13,0.55)',
-                cursor: disabled ? 'not-allowed' : 'pointer',
-                transition: 'all 0.2s',
+                cursor: disabled ? 'not-allowed' : 'pointer', transition: 'all 0.2s',
               }}
             >{label}</button>
           ))}
           <button
             onClick={refresh}
-            style={{ fontFamily: "var(--arvo-font-body)", fontSize: 11, color: 'rgba(13,13,13,0.60)', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, marginLeft: 4 }}
+            style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'rgba(13,13,13,0.60)', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, marginLeft: 4 }}
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -280,8 +173,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-
-      {/* Split warning banner */}
+      {/* Split warnings */}
       {splitWarnings.length > 0 && (
         <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-start gap-3">
           <span className="text-amber-500 text-lg shrink-0">⚠</span>
@@ -303,7 +195,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Row 1: ValueCards (full width) */}
+      {/* ValueCards */}
       {(() => {
         const totalInvestedBrl = data.by_asset.reduce((s, a) => s + (a.invested_brl ?? 0), 0)
         const hasInvested = totalInvestedBrl > 0
@@ -317,14 +209,14 @@ export default function DashboardPage() {
             gain_brl={gainLossBrl}
             gain_pct={gainLossPct}
             period_abs={hasInvested ? periodReturnAbs : null}
-            chartLoading={(useDailyChart ? dailyLoading : monthlyLoading) || periodLoading}
+            chartLoading={periodLoading}
             period_pct={hasInvested ? periodReturnPct : null}
             period_label={periodLabel}
           />
         )
       })()}
 
-      {/* Row 2: AllocationChart + MarketIndicesCard side by side on desktop */}
+      {/* AllocationChart + MarketIndicesCard */}
       {data.by_class.length > 0 && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <AllocationChart data={data.by_class} currency={currency} convert={convert} />
@@ -332,9 +224,9 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Top movers strip */}
+      {/* Top movers */}
       {(() => {
-        const td = t.dashboard as unknown as Record<string, string>
+        const tdd = t.dashboard as unknown as Record<string, string>
         const movingAssets = (data.by_asset ?? [])
           .filter(a => !a.needs_manual && a.source !== 'manual' && a.value_brl > 0 && dashReturns?.[a.id] != null)
           .map(a => ({ ...a, ret: dashReturns![a.id]! }))
@@ -344,8 +236,8 @@ export default function DashboardPage() {
         if (!dashReturnsLoading && gainers.length === 0 && losers.length === 0) return null
         return (
           <div className="rounded-2xl p-5" style={{ background: 'white', border: '1px solid var(--arvo-border)' }}>
-            <h2 className="mb-3" style={{ fontFamily: "var(--arvo-font-body)", fontSize: 13, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--arvo-fg)' }}>
-              {td.topMovers} · {periodLabel}
+            <h2 className="mb-3" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--arvo-fg)' }}>
+              {tdd.topMovers} · {periodLabel}
             </h2>
             {dashReturnsLoading ? (
               <div className="h-12 flex items-center">
@@ -355,7 +247,7 @@ export default function DashboardPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {gainers.length > 0 && (
                   <div>
-                    <p className="text-xs mb-2" style={{ fontFamily: "var(--arvo-font-body)", letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.45)' }}>{td.topGainers}</p>
+                    <p className="text-xs mb-2" style={{ fontFamily: 'var(--arvo-font-body)', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.45)' }}>{tdd.topGainers}</p>
                     <div className="space-y-2">
                       {gainers.map(a => (
                         <div key={a.id}
@@ -378,7 +270,7 @@ export default function DashboardPage() {
                 )}
                 {losers.length > 0 && (
                   <div>
-                    <p className="text-xs mb-2" style={{ fontFamily: "var(--arvo-font-body)", letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.45)' }}>{td.topLosers}</p>
+                    <p className="text-xs mb-2" style={{ fontFamily: 'var(--arvo-font-body)', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.45)' }}>{tdd.topLosers}</p>
                     <div className="space-y-2">
                       {losers.map(a => (
                         <div key={a.id}
@@ -405,87 +297,28 @@ export default function DashboardPage() {
         )
       })()}
 
-      {/* Row 2: Evolution chart — full width */}
-      {((useDailyChart ? dailyLoading : monthlyLoading) || portfolioChartData.length > 0) && (
-        <div className="rounded-2xl p-5" style={{ background: 'white', border: '1px solid var(--arvo-border)' }}>
-          <div className="flex items-center justify-between mb-3">
-            <h2 style={{ fontFamily: "var(--arvo-font-body)", fontSize: 13, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--arvo-fg)' }}>{t.dashboard.portfolioEvolution}</h2>
-            {activePlan === null && (
-              <button
-                onClick={() => navigate('/finances/freedom')}
-                style={{
-                  fontFamily: 'var(--arvo-font-body)', fontSize: 10, letterSpacing: '0.1em',
-                  padding: '4px 10px', borderRadius: 6, border: '1px solid #1B4FD8',
-                  background: 'white', color: '#1B4FD8', cursor: 'pointer',
-                }}
-              >{(t.dashboard as unknown as Record<string,string>).createFreedomPlan ?? 'Criar plano de liberdade →'}</button>
-            )}
-          </div>
-          <div className="h-52">
-          {(useDailyChart ? dailyLoading : monthlyLoading) ? (
-            <div className="h-full flex items-end gap-1 px-2 pb-1">
-              {[40, 55, 48, 62, 58, 70, 65, 80, 75, 88, 82, 95].map((h, i) => (
-                <div key={i} className="flex-1 bg-gray-100 rounded-t animate-pulse" style={{ height: `${h}%` }} />
-              ))}
-            </div>
-          ) : (
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={portfolioChartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-                <XAxis dataKey="month" tick={{ fontSize: 10, fill: 'rgba(13,13,13,0.55)' }} interval="preserveStartEnd" />
-                <YAxis
-                  tick={{ fontSize: 10, fill: 'rgba(13,13,13,0.55)' }}
-                  tickFormatter={v => {
-                    const n = typeof v === 'number' ? v : 0
-                    return currency === 'BRL'
-                      ? `${(n / 1000).toFixed(0)}k`
-                      : n >= 1000 ? `${(n / 1000).toFixed(0)}k` : n.toFixed(0)
-                  }}
-                  width={52}
-                  domain={['auto', 'auto']}
-                />
-                <Tooltip
-                  formatter={(v, name) => [
-                    new Intl.NumberFormat(intlLocale, { style: 'currency', currency, maximumFractionDigits: 0 }).format(typeof v === 'number' ? v : 0),
-                    name,
-                  ]}
-                  contentStyle={{ borderRadius: 8, border: '1px solid var(--arvo-border)', fontSize: 12 }}
-                />
-                <Line type="monotone" dataKey="value" name={t.dashboard.patrimony} stroke="#0D0D0D" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
-                {activePlan && <Line type="monotone" dataKey="target" name={(t.dashboard as unknown as Record<string,string>).targetLine ?? 'Plano'} stroke="#1B4FD8" strokeWidth={1.5} dot={false} strokeDasharray="5 3" connectNulls />}
-              </LineChart>
-            </ResponsiveContainer>
-          )}
-          </div>
+      {/* Link to assets page */}
+      {data.by_asset.length > 0 && (
+        <div className="flex justify-end">
+          <button
+            onClick={() => navigate('/assets')}
+            style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, letterSpacing: '0.10em', color: 'rgba(13,13,13,0.45)', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
+          >
+            {t.nav.assets} ({data.by_asset.length})
+            <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
         </div>
       )}
 
-      {data.by_asset.length > 0 ? (
-        <AssetTable
-          assets={data.by_asset}
-          onAssetClick={handleAssetClick}
-          favorites={favorites}
-          onToggleFavorite={toggleFavorite}
-          externalReturns={dashReturns}
-          externalReturnsLoading={dashReturnsLoading}
-        />
-      ) : (
-        <div className="rounded-2xl p-12 text-center" style={{ background: 'white', border: '1px solid var(--arvo-border)' }}>
-          <p style={{ fontFamily: "var(--arvo-font-body)", fontSize: 16, letterSpacing: '0.06em', color: 'var(--arvo-fg-soft)' }}>{t.dashboard.noOpenPositions}</p>
-          <p className="text-sm mt-1" style={{ fontFamily: "'Playfair Display', serif", fontStyle: 'italic', color: 'var(--arvo-fg-soft)', opacity: 0.7 }}>{t.dashboard.addAssetsHint}</p>
-        </div>
-      )}
-
-      {/* Dividend section — compact, after assets */}
+      {/* Dividends */}
       {(divLoading || (divSummary && divSummary.total_brl > 0)) && (
         <div className="rounded-2xl p-5" style={{ background: 'white', border: '1px solid var(--arvo-border)' }}>
           <div className="flex items-center justify-between mb-3">
-            <h2 style={{ fontFamily: "var(--arvo-font-body)", fontSize: 13, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--arvo-fg)' }}>{td.title ?? 'Dividendos'}</h2>
-            <div className="flex items-center gap-2">
-              {syncing && <span className="text-xs animate-pulse" style={{ color: 'var(--arvo-fg-soft)' }}>{td.autoSyncing ?? 'Atualizando...'}</span>}
-            </div>
+            <h2 style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--arvo-fg)' }}>{td.title ?? 'Dividendos'}</h2>
+            {syncing && <span className="text-xs animate-pulse" style={{ color: 'var(--arvo-fg-soft)' }}>{td.autoSyncing ?? 'Atualizando...'}</span>}
           </div>
-
           {divLoading ? (
             <div className="h-14 flex items-center justify-center">
               <div className="text-xs animate-pulse" style={{ color: 'var(--arvo-fg-soft)' }}>{td.syncing ?? 'Carregando...'}</div>
@@ -533,15 +366,6 @@ export default function DashboardPage() {
             <p className="text-sm" style={{ color: 'var(--arvo-fg-soft)' }}>{td.noData ?? 'Nenhum dividendo no período'}</p>
           )}
         </div>
-      )}
-
-      {/* Modal apenas para RF sem configuração */}
-      {selectedAsset && (
-        <FixedIncomeSetupModal
-          asset={selectedAsset}
-          onClose={handleModalClose}
-          onSaved={handleSaved}
-        />
       )}
     </div>
   )
