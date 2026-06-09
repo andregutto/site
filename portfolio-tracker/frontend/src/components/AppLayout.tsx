@@ -122,7 +122,8 @@ export default function AppLayout() {
   const inInvestimentos = location.pathname === '/dashboard' || location.pathname === '/' ||
     location.pathname.startsWith('/performance') ||
     location.pathname.startsWith('/dividends') ||
-    location.pathname.startsWith('/portfolio')
+    location.pathname.startsWith('/portfolio') ||
+    location.pathname.startsWith('/diversification')
   const inFinances = location.pathname.startsWith('/finances')
   const inInstitutions = location.pathname.startsWith('/institutions')
 
@@ -167,6 +168,12 @@ export default function AppLayout() {
     { to: '/portfolio/indices', label: t.nav.indices, end: false, icon: (
       <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
         <path strokeLinecap="round" strokeLinejoin="round" d="M1 12l4-4 3 3 7-7M11.5 4H15v3.5"/>
+      </svg>
+    )},
+    { to: '/diversification', label: t.nav.diversification, end: false, icon: (
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
+        <circle cx="8" cy="8" r="6.5"/>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M8 1.5v13M1.5 8h13M3.2 3.2l9.6 9.6M12.8 3.2L3.2 12.8"/>
       </svg>
     )},
   ]

@@ -37,6 +37,7 @@ import IndicesPage from './pages/IndicesPage'
 import IndexDetailPage from './pages/IndexDetailPage'
 import FavoritesPage from './pages/FavoritesPage'
 import ArchivedPage from './pages/ArchivedPage'
+import DiversificationPage from './pages/DiversificationPage'
 import PortfolioLayout from './pages/portfolio/PortfolioLayout'
 import FinancesLayout from './pages/finances/FinancesLayout'
 import FinancesOverviewPage from './pages/finances/FinancesOverviewPage'
@@ -146,6 +147,7 @@ function AppRoutes() {
         <Route path="/favorites"      element={<FavoritesPage />} />
         <Route path="/achievements"   element={<AchievementsPage />} />
         <Route path="/archived"       element={<ArchivedPage />} />
+        <Route path="/diversification" element={<DiversificationPage />} />
         <Route path="/finances"       element={<FinancesLayout />}>
           <Route index                element={<FinancesOverviewPage />} />
           <Route path="transactions"  element={<FinancesTransactionsPage />} />
