@@ -120,6 +120,7 @@ export default function AppLayout() {
   const avatarInitials = headerLabel.slice(0, 2).toUpperCase()
 
   const inInvestimentos = location.pathname === '/dashboard' || location.pathname === '/' ||
+    location.pathname.startsWith('/assets') ||
     location.pathname.startsWith('/performance') ||
     location.pathname.startsWith('/dividends') ||
     location.pathname.startsWith('/portfolio') ||
