@@ -1769,7 +1769,8 @@
     "countryEU": "Europa",
     "countryCrypto": "Cripto Global",
     "countryOther": "Outros",
-    "noPassiveIncome": "Nenhum rendimento no período"
+    "noPassiveIncome": "Nenhum rendimento no período",
+    "downloadPdf": "Baixar PDF"
   },
   "fees": {
     "title": "Scanner de Taxas",

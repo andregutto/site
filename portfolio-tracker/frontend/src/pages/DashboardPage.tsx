@@ -490,6 +490,17 @@ export default function DashboardPage() {
                     </svg>
                     {s.openReport}
                   </a>
+                  <a
+                    href={`/share/portfolio/${shareLink.token}?print=1`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ padding: '10px 14px', background: '#F3F4F6', color: 'var(--arvo-black)', border: 'none', borderRadius: 8, fontSize: 12, fontFamily: 'var(--arvo-font-body)', cursor: 'pointer', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 5 }}
+                  >
+                    <svg style={{ width: 12, height: 12 }} fill="none" viewBox="0 0 16 16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M8 2v8M5 7l3 3 3-3M3 12h10"/>
+                    </svg>
+                    {s.downloadPdf}
+                  </a>
                   <button
                     onClick={handleDeactivateShare}
                     style={{ padding: '10px 14px', background: '#FEF2F2', color: '#DC2626', border: 'none', borderRadius: 8, fontSize: 12, cursor: 'pointer' }}

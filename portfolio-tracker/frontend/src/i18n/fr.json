@@ -1769,7 +1769,8 @@
     "countryEU": "Europe",
     "countryCrypto": "Crypto Global",
     "countryOther": "Autres",
-    "noPassiveIncome": "Aucun revenu sur la période"
+    "noPassiveIncome": "Aucun revenu sur la période",
+    "downloadPdf": "Télécharger PDF"
   },
   "fees": {
     "title": "Scanner de Frais",

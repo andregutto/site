@@ -55,6 +55,21 @@ const MONTH_SHORT: Record<string, Record<string, string>> = {
 }
 function shortMonth(ym: string, locale: string) { return MONTH_SHORT[locale]?.[ym.slice(5, 7)] ?? ym.slice(5, 7) }
 
+const PRINT_CSS = `
+  @media print {
+    .arvo-pdf-hide { display: none !important; }
+    .arvo-pdf-nobreak { page-break-inside: avoid; break-inside: avoid; }
+    .arvo-pdf-break { page-break-before: always; break-before: page; }
+    @page { size: A4 portrait; margin: 12mm 12mm 12mm 12mm; }
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
+    body { margin: 0 !important; padding: 0 !important; background: #F4F3F1 !important; }
+    .arvo-pdf-root { min-height: unset !important; }
+    .arvo-pdf-header { padding-bottom: 36px !important; }
+    .arvo-pdf-body { padding-top: 24px !important; padding-bottom: 24px !important; }
+    .arvo-recharts-wrapper { overflow: visible !important; }
+  }
+`
+
 export default function PublicPortfolioPage() {
   const { token } = useParams<{ token: string }>()
   const { t, locale } = useI18n()
@@ -63,6 +78,8 @@ export default function PublicPortfolioPage() {
 
   const [data, setData] = useState<PublicData | null>(null)
   const [status, setStatus] = useState<'loading' | 'ok' | 'not_found' | 'pending'>('loading')
+
+  const autoPrint = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('print') === '1'
 
   useEffect(() => {
     if (!token) return
@@ -77,8 +94,17 @@ export default function PublicPortfolioPage() {
       .catch(() => setStatus('not_found'))
   }, [token])
 
+  // Auto-print when opened via ?print=1
+  useEffect(() => {
+    if (status === 'ok' && autoPrint) {
+      const t = setTimeout(() => window.print(), 900)
+      return () => clearTimeout(t)
+    }
+  }, [status, autoPrint])
+
   if (status === 'loading') return (
     <div style={{ minHeight: '100vh', background: '#0D0D0D', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <style dangerouslySetInnerHTML={{ __html: PRINT_CSS }} />
       <div style={{ width: 40, height: 40, border: '3px solid rgba(255,255,255,0.1)', borderTopColor: '#E8A020', borderRadius: '50%', animation: 'spin 0.9s linear infinite' }} />
       <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
     </div>
@@ -86,6 +112,7 @@ export default function PublicPortfolioPage() {
 
   if (status === 'not_found') return (
     <div style={{ minHeight: '100vh', background: '#0D0D0D', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, padding: 32 }}>
+      <style dangerouslySetInnerHTML={{ __html: PRINT_CSS }} />
       <img src="/brand/logo/arvo-symbol-offwhite.svg" width={36} height={36} alt="arvo" />
       <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 15, fontFamily: 'var(--arvo-font-body)', textAlign: 'center' }}>{s.notFound}</p>
     </div>
@@ -93,6 +120,7 @@ export default function PublicPortfolioPage() {
 
   if (status === 'pending') return (
     <div style={{ minHeight: '100vh', background: '#0D0D0D', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, padding: 32 }}>
+      <style dangerouslySetInnerHTML={{ __html: PRINT_CSS }} />
       <img src="/brand/logo/arvo-symbol-offwhite.svg" width={36} height={36} alt="arvo" />
       <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 15, fontFamily: 'var(--arvo-font-body)', textAlign: 'center' }}>{s.snapshotPending}</p>
     </div>
@@ -140,10 +168,11 @@ export default function PublicPortfolioPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#F4F3F1', fontFamily: 'var(--arvo-font-body)' }}>
+    <div className="arvo-pdf-root" style={{ minHeight: '100vh', background: '#F4F3F1', fontFamily: 'var(--arvo-font-body)' }}>
+      <style dangerouslySetInnerHTML={{ __html: PRINT_CSS }} />
 
       {/* ── BRANDED HEADER ── */}
-      <div style={{ background: '#0D0D0D', padding: '0', position: 'relative', overflow: 'hidden' }}>
+      <div className="arvo-pdf-header" style={{ background: '#0D0D0D', padding: '0', position: 'relative', overflow: 'hidden' }}>
         {/* Subtle gradient accent */}
         <div style={{ position: 'absolute', top: -120, left: '50%', transform: 'translateX(-50%)', width: 600, height: 300, background: 'radial-gradient(ellipse, rgba(27,79,216,0.18) 0%, transparent 70%)', pointerEvents: 'none' }} />
 
@@ -154,11 +183,18 @@ export default function PublicPortfolioPage() {
             <span style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 14, letterSpacing: '0.30em', textIndent: '0.30em', color: 'rgba(255,255,255,0.9)', lineHeight: 1 }}>arvo</span>
             <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginLeft: 8, fontFamily: 'var(--arvo-font-body)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>Capital</span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div className="arvo-pdf-hide" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.06em' }}>
               {s.generatedAt} {fmtDate(data.updated_at, dateLocale)}
             </span>
             <LanguageSelector />
+          </div>
+          {/* Print-only date (visible only in PDF output) */}
+          <div style={{ display: 'none' }} aria-hidden="true">
+            <style dangerouslySetInnerHTML={{ __html: `@media print { .arvo-pdf-date { display: block !important; } }` }} />
+            <span className="arvo-pdf-date" style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.06em', display: 'none' }}>
+              {s.generatedAt} {fmtDate(data.updated_at, dateLocale)}
+            </span>
           </div>
         </div>
 
@@ -193,22 +229,22 @@ export default function PublicPortfolioPage() {
           </div>
         </div>
 
-        {/* Bottom separator wave */}
-        <svg viewBox="0 0 1440 40" style={{ display: 'block', marginBottom: -1 }} preserveAspectRatio="none">
+        {/* Bottom separator wave — hidden in print */}
+        <svg className="arvo-pdf-hide" viewBox="0 0 1440 40" style={{ display: 'block', marginBottom: -1 }} preserveAspectRatio="none">
           <path d="M0,40 L0,20 Q360,0 720,20 Q1080,40 1440,20 L1440,40 Z" fill="#F4F3F1" />
         </svg>
       </div>
 
       {/* ── BODY ── */}
-      <div style={{ maxWidth: 900, margin: '0 auto', padding: '32px 16px 80px' }}>
+      <div className="arvo-pdf-body" style={{ maxWidth: 900, margin: '0 auto', padding: '32px 16px 80px' }}>
 
         {/* Allocation + Geography — 2 columns */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 20, marginBottom: 20 }}>
+        <div className="arvo-pdf-nobreak" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 20, marginBottom: 20 }}>
 
           {/* Allocation */}
           <Section title={s.allocation}>
             <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-              <div style={{ flex: '0 0 140px', height: 140 }}>
+              <div className="arvo-recharts-wrapper" style={{ flex: '0 0 140px', height: 140 }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie data={data.by_class.map((c, i) => ({ ...c, fill: SECTOR_PALETTE[i % SECTOR_PALETTE.length] }))}
@@ -230,7 +266,7 @@ export default function PublicPortfolioPage() {
           {/* Geography */}
           <Section title={s.geography}>
             <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-              <div style={{ flex: '0 0 140px', height: 140 }}>
+              <div className="arvo-recharts-wrapper" style={{ flex: '0 0 140px', height: 140 }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie data={geoGroups} dataKey="pct" nameKey="flag" innerRadius={40} outerRadius={64} paddingAngle={2}>
@@ -253,7 +289,7 @@ export default function PublicPortfolioPage() {
         <Section title={s.topPositions} style={{ marginBottom: 20 }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 10 }}>
             {data.top_assets.map((a, i) => (
-              <div key={a.code} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', background: '#FAFAF8', borderRadius: 10, border: '1px solid rgba(0,0,0,0.06)' }}>
+              <div key={a.code} className="arvo-pdf-nobreak" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', background: '#FAFAF8', borderRadius: 10, border: '1px solid rgba(0,0,0,0.06)' }}>
                 <div style={{ width: 28, height: 28, borderRadius: 6, background: a.class_color + '22', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                   <span style={{ fontSize: 11, fontWeight: 700, color: a.class_color }}>{i + 1}</span>
                 </div>
@@ -277,7 +313,7 @@ export default function PublicPortfolioPage() {
 
         {/* Passive income */}
         {(data.dividends_12m != null || data.monthly_dividends.length > 0) && (
-          <Section title={s.passiveIncome} style={{ marginBottom: 20 }}>
+          <Section title={s.passiveIncome} style={{ marginBottom: 20 }} className="arvo-pdf-nobreak">
             {data.dividends_12m != null && (
               <div style={{ display: 'flex', gap: 24, marginBottom: 20, flexWrap: 'wrap' }}>
                 <div>
@@ -318,13 +354,48 @@ export default function PublicPortfolioPage() {
           </p>
         </div>
       </div>
+
+      {/* ── Floating PDF download button (hidden when printing) ── */}
+      <button
+        className="arvo-pdf-hide"
+        onClick={() => window.print()}
+        title={s.downloadPdf}
+        style={{
+          position: 'fixed',
+          bottom: 28,
+          right: 28,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          padding: '11px 18px',
+          background: '#0D0D0D',
+          color: '#fff',
+          border: 'none',
+          borderRadius: 24,
+          fontSize: 12,
+          fontFamily: 'var(--arvo-font-body)',
+          fontWeight: 500,
+          letterSpacing: '0.04em',
+          cursor: 'pointer',
+          boxShadow: '0 4px 16px rgba(0,0,0,0.22)',
+          zIndex: 100,
+          transition: 'opacity 0.2s, transform 0.2s',
+        }}
+        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.opacity = '0.85' }}
+        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.opacity = '1' }}
+      >
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M8 2v8M5 7l3 3 3-3M3 12h10" />
+        </svg>
+        {s.downloadPdf}
+      </button>
     </div>
   )
 }
 
-function Section({ title, children, style }: { title: string; children: React.ReactNode; style?: React.CSSProperties }) {
+function Section({ title, children, style, className }: { title: string; children: React.ReactNode; style?: React.CSSProperties; className?: string }) {
   return (
-    <div style={{ background: '#fff', borderRadius: 14, border: '1px solid rgba(0,0,0,0.07)', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', ...style }}>
+    <div className={className} style={{ background: '#fff', borderRadius: 14, border: '1px solid rgba(0,0,0,0.07)', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', ...style }}>
       <h2 style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, fontWeight: 600, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.12em', margin: '0 0 18px' }}>{title}</h2>
       {children}
     </div>
