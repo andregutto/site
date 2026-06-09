@@ -548,14 +548,16 @@ interface SnapshotAsset {
   class_name: string; class_color: string; exchange: string | null
 }
 interface PortfolioSnapshot {
-  total_brl: number; asset_count: number; generated_at: string
+  total_brl: number; portfolio_value: number; invested_value: number
+  total_return_pct: number | null; display_currency: string
+  asset_count: number; generated_at: string
   by_class: Array<{ name: string; key: string | null; color: string; value: number; pct: number }>
   top_assets: SnapshotAsset[]
   dividends_12m: number
   monthly_dividends: Array<{ month: string; amount: number }>
 }
 
-async function buildPortfolioSnapshot(userId: string): Promise<PortfolioSnapshot> {
+async function buildPortfolioSnapshot(userId: string, displayCurrency = 'BRL'): Promise<PortfolioSnapshot> {
   const [assetsRes, fxRes] = await Promise.all([
     supabaseAdmin
       .from('assets')
@@ -573,7 +575,7 @@ async function buildPortfolioSnapshot(userId: string): Promise<PortfolioSnapshot
   const assets = assetsRes.data ?? []
   const assetIds = assets.map(a => a.id)
   if (!assetIds.length) {
-    return { total_brl: 0, asset_count: 0, generated_at: new Date().toISOString(), by_class: [], top_assets: [], dividends_12m: 0, monthly_dividends: [] }
+    return { total_brl: 0, portfolio_value: 0, invested_value: 0, total_return_pct: null, display_currency: displayCurrency, asset_count: 0, generated_at: new Date().toISOString(), by_class: [], top_assets: [], dividends_12m: 0, monthly_dividends: [] }
   }
 
   const fxMap: Record<string, number> = { BRL: 1, USD: 5.70, EUR: 6.40, GBP: 7.20 }
@@ -631,6 +633,11 @@ async function buildPortfolioSnapshot(userId: string): Promise<PortfolioSnapshot
   }
 
   const total_brl = byAsset.reduce((s, a) => s + a.value_brl, 0)
+  const invested_brl_total = byAsset.reduce((s, a) => s + (investedMap[a.id] ?? 0), 0)
+  const total_return_pct = invested_brl_total > 0 ? (total_brl - invested_brl_total) / invested_brl_total : null
+  // fxMap[curr] = units of BRL per 1 unit of curr (e.g. EUR→6.40 means 1 EUR = 6.40 BRL)
+  const brlToDisplay = displayCurrency !== 'BRL' ? 1 / (fxMap[displayCurrency] ?? 1) : 1
+  const cvt = (n: number) => Math.round(n * brlToDisplay * 100) / 100
 
   const classMap: Record<string, { name: string; key: string | null; color: string; value: number }> = {}
   for (const a of byAsset) {
@@ -643,7 +650,7 @@ async function buildPortfolioSnapshot(userId: string): Promise<PortfolioSnapshot
 
   const sorted = [...byAsset].sort((a, b) => b.value_brl - a.value_brl)
   const top_assets: SnapshotAsset[] = sorted.slice(0, 12).map(a => ({
-    code: a.code, name: a.name, value_brl: a.value_brl,
+    code: a.code, name: a.name, value_brl: cvt(a.value_brl),
     pct: total_brl > 0 ? a.value_brl / total_brl : 0,
     class_name: a.class_name, class_color: a.class_color, exchange: a.exchange,
   }))
@@ -662,7 +669,19 @@ async function buildPortfolioSnapshot(userId: string): Promise<PortfolioSnapshot
   const monthly_dividends = Object.entries(monthDiv).sort(([a], [b]) => a.localeCompare(b))
     .map(([month, amount]) => ({ month, amount: Math.round(amount * 100) / 100 }))
 
-  return { total_brl: Math.round(total_brl * 100) / 100, asset_count: byAsset.length, generated_at: new Date().toISOString(), by_class, top_assets, dividends_12m: Math.round(dividends_12m * 100) / 100, monthly_dividends }
+  return {
+    total_brl: Math.round(total_brl * 100) / 100,
+    portfolio_value: cvt(total_brl),
+    invested_value: cvt(invested_brl_total),
+    total_return_pct,
+    display_currency: displayCurrency,
+    asset_count: byAsset.length,
+    generated_at: new Date().toISOString(),
+    by_class: by_class.map(c => ({ ...c, value: cvt(c.value) })),
+    top_assets,
+    dividends_12m: cvt(dividends_12m),
+    monthly_dividends: monthly_dividends.map(d => ({ ...d, amount: cvt(d.amount) })),
+  }
 }
 
 // GET /api/portfolio/share-link
@@ -678,8 +697,8 @@ router.get('/share-link', requireAuth, async (req, res: Response) => {
 // POST /api/portfolio/share-link — create or update, always refresh snapshot
 router.post('/share-link', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
-  const { show_values = false, label = null } = req.body ?? {}
-  const snapshot = await buildPortfolioSnapshot(userId)
+  const { show_values = false, label = null, display_currency = 'BRL' } = req.body ?? {}
+  const snapshot = await buildPortfolioSnapshot(userId, display_currency)
 
   const { data: existing } = await supabaseAdmin
     .from('portfolio_shares').select('id, token').eq('user_id', userId).maybeSingle()
@@ -695,6 +714,16 @@ router.post('/share-link', requireAuth, async (req, res: Response) => {
     .from('portfolio_shares').insert({ user_id: userId, show_values, label, snapshot }).select('token').single()
   if (error || !share) { res.status(500).json({ error: error?.message ?? 'Failed' }); return }
   res.json({ token: share.token, show_values, label, updated_at: new Date().toISOString() })
+})
+
+// PATCH /api/portfolio/share-link — update show_values without rebuilding snapshot
+router.patch('/share-link', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const { show_values } = req.body ?? {}
+  await supabaseAdmin.from('portfolio_shares')
+    .update({ show_values })
+    .eq('user_id', userId).eq('is_active', true)
+  res.json({ ok: true })
 })
 
 // DELETE /api/portfolio/share-link

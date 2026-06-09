@@ -1377,7 +1377,10 @@
     "passiveCoverageDesc": "% das despesas mensais cobertas por renda passiva",
     "passiveTopAssets": "Por ativo",
     "passiveNoData": "Nenhum dividendo encontrado",
-    "passiveNoDataHint": "Sincronize os dividendos para visualizar os rendimentos passivos do portfólio."
+    "passiveNoDataHint": "Sincronize os dividendos para visualizar os rendimentos passivos do portfólio.",
+    "projDisclaimer": "Projeção baseada em padrões históricos de pagamento por mês. Meramente indicativa — rendimentos passados não garantem resultados futuros.",
+    "showMorePayers": "Ver todos ({n})",
+    "showLessPayers": "Ver menos"
   },
   "landing": {
     "eyebrow": "Para brasileiros que vivem fora do Brasil · Beta gratuito",
@@ -1741,8 +1744,8 @@
     "linkLabel": "Link do relatório",
     "copied": "Copiado!",
     "copy": "Copiar",
-    "showValues": "Mostrar valores em BRL",
-    "showValuesHint": "Se desativado, apenas percentuais serão exibidos.",
+    "showValues": "Mostrar valores",
+    "showValuesHint": "Exibe os valores em números reais. Quando desativado, apenas percentuais são exibidos.",
     "generate": "Gerar link",
     "refresh": "Atualizar dados",
     "refreshing": "Atualizando...",
@@ -1770,7 +1773,9 @@
     "countryCrypto": "Cripto Global",
     "countryOther": "Outros",
     "noPassiveIncome": "Nenhum rendimento no período",
-    "downloadPdf": "Baixar PDF"
+    "downloadPdf": "Baixar PDF",
+    "invested": "Aportado",
+    "returnTotal": "retorno total"
   },
   "fees": {
     "title": "Scanner de Taxas",

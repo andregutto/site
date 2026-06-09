@@ -12,7 +12,11 @@ interface PublicData {
   owner_name: string | null
   show_values: boolean
   updated_at: string
+  display_currency: string
   total_brl: number | null
+  portfolio_value: number | null
+  invested_value: number | null
+  total_return_pct: number | null
   asset_count: number
   generated_at: string
   by_class: ClassEntry[]
@@ -40,8 +44,8 @@ function getCountryKey(exchange: string | null): string {
 const LOCALE_MAP: Record<string, string> = { pt: 'pt-BR', en: 'en-US', fr: 'fr-FR' }
 const SECTOR_PALETTE = ['#1B4FD8', '#E8A020', '#D63B2F', '#16A34A', '#9333EA', '#0891B2', '#EA580C', '#6B7280', '#0D9488', '#BE185D']
 
-function fmtBRL(n: number, locale: string) {
-  return new Intl.NumberFormat(locale, { style: 'currency', currency: 'BRL', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n)
+function fmtCurr(n: number, currency: string, locale: string) {
+  return new Intl.NumberFormat(locale, { style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n)
 }
 function fmtDate(iso: string, locale: string) {
   return new Date(iso).toLocaleDateString(locale, { day: '2-digit', month: 'long', year: 'numeric' })
@@ -213,13 +217,23 @@ export default function PublicPortfolioPage() {
           </p>
 
           {/* Key metrics strip */}
-          <div style={{ display: 'flex', justifyContent: 'center', gap: 'clamp(16px, 4vw, 48px)', flexWrap: 'wrap' }}>
-            {data.total_brl != null && (
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 'clamp(16px, 4vw, 48px)', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+            {data.portfolio_value != null && (
               <div>
                 <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 6 }}>{s.totalWealth}</div>
                 <div style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 'clamp(28px, 6vw, 44px)', color: '#fff', fontWeight: 400, lineHeight: 1 }}>
-                  {fmtBRL(data.total_brl, dateLocale)}
+                  {fmtCurr(data.portfolio_value, data.display_currency ?? 'BRL', dateLocale)}
                 </div>
+                {data.invested_value != null && data.total_return_pct != null && (
+                  <div style={{ marginTop: 8, display: 'flex', gap: 12, justifyContent: 'center' }}>
+                    <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)' }}>
+                      {s.invested}: {fmtCurr(data.invested_value, data.display_currency ?? 'BRL', dateLocale)}
+                    </span>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: data.total_return_pct >= 0 ? '#4ade80' : '#f87171' }}>
+                      {data.total_return_pct >= 0 ? '+' : ''}{(data.total_return_pct * 100).toFixed(1)}%
+                    </span>
+                  </div>
+                )}
               </div>
             )}
             <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', gap: 8 }}>
@@ -257,7 +271,7 @@ export default function PublicPortfolioPage() {
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 {data.by_class.map((c, i) => (
-                  <AllocRow key={c.name} color={SECTOR_PALETTE[i % SECTOR_PALETTE.length]} label={c.name} pct={c.pct} value={c.value} locale={dateLocale} />
+                  <AllocRow key={c.name} color={SECTOR_PALETTE[i % SECTOR_PALETTE.length]} label={c.name} pct={c.pct} value={c.value} locale={dateLocale} currency={data.display_currency ?? 'BRL'} />
                 ))}
               </div>
             </div>
@@ -278,7 +292,7 @@ export default function PublicPortfolioPage() {
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 {[...geoMap.entries()].sort(([, a], [, b]) => b.pct - a.pct).map(([key, g]) => (
-                  <AllocRow key={key} color={g.color} label={`${g.flag}  ${countryLabel(key)}`} pct={g.pct} value={null} locale={dateLocale} />
+                  <AllocRow key={key} color={g.color} label={`${g.flag}  ${countryLabel(key)}`} pct={g.pct} value={null} locale={dateLocale} currency={data.display_currency ?? 'BRL'} />
                 ))}
               </div>
             </div>
@@ -300,7 +314,7 @@ export default function PublicPortfolioPage() {
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 2 }}>
                     <span style={{ fontSize: 11, color: '#6B7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 110 }}>{a.name}</span>
-                    {a.value_brl != null && <span style={{ fontSize: 11, color: '#6B7280' }}>{fmtBRL(a.value_brl, dateLocale)}</span>}
+                    {a.value_brl != null && <span style={{ fontSize: 11, color: '#6B7280' }}>{fmtCurr(a.value_brl, data.display_currency ?? 'BRL', dateLocale)}</span>}
                   </div>
                   <div style={{ height: 2, background: 'rgba(0,0,0,0.06)', borderRadius: 1, marginTop: 6 }}>
                     <div style={{ height: '100%', width: `${a.pct * 100 / (data.top_assets[0]?.pct ?? 1) * 100}%`, background: a.class_color, borderRadius: 1, maxWidth: '100%' }} />
@@ -318,12 +332,12 @@ export default function PublicPortfolioPage() {
               <div style={{ display: 'flex', gap: 24, marginBottom: 20, flexWrap: 'wrap' }}>
                 <div>
                   <div style={{ fontSize: 11, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>{s.passiveIncome12m}</div>
-                  <div style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 24, color: '#0D0D0D', fontWeight: 400 }}>{fmtBRL(data.dividends_12m, dateLocale)}</div>
+                  <div style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 24, color: '#0D0D0D', fontWeight: 400 }}>{fmtCurr(data.dividends_12m, data.display_currency ?? 'BRL', dateLocale)}</div>
                 </div>
                 {avgMonthly > 0 && (
                   <div>
                     <div style={{ fontSize: 11, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>{s.passiveMonthly}</div>
-                    <div style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 24, color: '#0D0D0D', fontWeight: 400 }}>{fmtBRL(avgMonthly, dateLocale)}</div>
+                    <div style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 24, color: '#0D0D0D', fontWeight: 400 }}>{fmtCurr(avgMonthly, data.display_currency ?? 'BRL', dateLocale)}</div>
                   </div>
                 )}
               </div>
@@ -411,7 +425,7 @@ function Pill({ value, label }: { value: string; label: string }) {
   )
 }
 
-function AllocRow({ color, label, pct, value, locale }: { color: string; label: string; pct: number; value: number | null; locale: string }) {
+function AllocRow({ color, label, pct, value, locale, currency }: { color: string; label: string; pct: number; value: number | null; locale: string; currency: string }) {
   return (
     <div style={{ marginBottom: 10 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3, gap: 6 }}>
@@ -420,7 +434,7 @@ function AllocRow({ color, label, pct, value, locale }: { color: string; label: 
           <span style={{ fontSize: 12, color: '#374151', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{label}</span>
         </div>
         <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
-          {value != null && <span style={{ fontSize: 11, color: '#9CA3AF' }}>{fmtBRL(value, locale)}</span>}
+          {value != null && <span style={{ fontSize: 11, color: '#9CA3AF' }}>{fmtCurr(value, currency, locale)}</span>}
           <span style={{ fontSize: 12, fontWeight: 600, color: '#111827' }}>{fmtPct(pct)}</span>
         </div>
       </div>

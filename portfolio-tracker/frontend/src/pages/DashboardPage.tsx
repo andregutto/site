@@ -76,11 +76,20 @@ export default function DashboardPage() {
       .catch(() => {})
   }, [showShareModal])
 
+  async function handleToggleShowValues() {
+    const newVal = !shareShowValues
+    setShareShowValues(newVal)
+    if (shareLink) {
+      apiFetch('/portfolio/share-link', { method: 'PATCH', body: JSON.stringify({ show_values: newVal }) })
+        .catch(() => {})
+    }
+  }
+
   async function handleGenerateShare() {
     setShareLoading(true)
     try {
       const r = await apiFetch<{ token: string; show_values: boolean; updated_at: string }>('/portfolio/share-link', {
-        method: 'POST', body: JSON.stringify({ show_values: shareShowValues }),
+        method: 'POST', body: JSON.stringify({ show_values: shareShowValues, display_currency: currency }),
       })
       setShareLink(r)
     } finally { setShareLoading(false) }
@@ -441,7 +450,7 @@ export default function DashboardPage() {
                 <div style={{ fontSize: 11, color: 'var(--arvo-fg-soft)', marginTop: 2 }}>{s.showValuesHint}</div>
               </div>
               <button
-                onClick={() => setShareShowValues(v => !v)}
+                onClick={handleToggleShowValues}
                 style={{ width: 40, height: 22, borderRadius: 11, background: shareShowValues ? '#1B4FD8' : '#D1D5DB', border: 'none', cursor: 'pointer', position: 'relative', transition: 'background 0.2s', flexShrink: 0 }}
               >
                 <div style={{ position: 'absolute', top: 3, left: shareShowValues ? 21 : 3, width: 16, height: 16, borderRadius: '50%', background: '#fff', transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }} />

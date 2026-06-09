@@ -34,10 +34,11 @@ export default function DividendsPage() {
   const currentYear = now.getFullYear()
   const currentYM   = `${currentYear}-${String(now.getMonth() + 1).padStart(2, '0')}`
 
-  const [tab,     setTab]     = useState<Tab>('history')
-  const [period,  setPeriod]  = useState<Period>('ytd')
-  const [sortCol, setSortCol] = useState<'total_brl' | 'count'>('total_brl')
-  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
+  const [tab,          setTab]          = useState<Tab>('history')
+  const [period,       setPeriod]       = useState<Period>('ytd')
+  const [sortCol,      setSortCol]      = useState<'total_brl' | 'count'>('total_brl')
+  const [sortDir,      setSortDir]      = useState<'asc' | 'desc'>('desc')
+  const [showAllPayers, setShowAllPayers] = useState(false)
 
   const { from, to } = useMemo(() => {
     if (period === 'ytd')     return { from: `${currentYear}-01-01`, to: todayStr }
@@ -95,7 +96,7 @@ export default function DividendsPage() {
     else { setSortCol(col); setSortDir('desc') }
   }
 
-  // ── Projection logic ──────────────────────────────────────────────────────
+  // ── Projection logic (seasonal) ───────────────────────────────────────────
   const { projChartData, total12m, avgMonthly6m, projected12m } = useMemo(() => {
     if (!summary36m) return { projChartData: [], total12m: 0, avgMonthly6m: 0, projected12m: 0 }
     const byMonth = Object.fromEntries(summary36m.by_month.map(m => [m.month, m.total_brl]))
@@ -106,6 +107,21 @@ export default function DividendsPage() {
 
     const hist6 = hist12.slice(-6)
     const avgMonthly6m = hist6.reduce((s, m) => s + (byMonth[m] ?? 0), 0) / 6
+
+    // Build per-calendar-month averages from 36m of history for seasonal projection
+    const calTotals: Record<number, { sum: number; count: number }> = {}
+    for (const { month, total_brl } of summary36m.by_month) {
+      if (total_brl <= 0) continue
+      const cal = parseInt(month.slice(5, 7))
+      if (!calTotals[cal]) calTotals[cal] = { sum: 0, count: 0 }
+      calTotals[cal].sum += total_brl
+      calTotals[cal].count += 1
+    }
+    const overallAvg = avgMonthly6m
+    const seasonalFor = (cal: number) => {
+      const d = calTotals[cal]
+      return d && d.count > 0 ? d.sum / d.count : overallAvg
+    }
 
     const hist24: string[] = []
     for (let i = 24; i >= 1; i--) hist24.push(addMonths(currentYM, -i))
@@ -119,14 +135,15 @@ export default function DividendsPage() {
 
     const projMonths = Array.from({ length: 12 }, (_, i) => {
       const ym = addMonths(currentYM, i + 1)
-      return { label: fmtMonth(ym), received: 0, projected: Math.round(convert(avgMonthly6m) * 100) / 100 }
+      const cal = parseInt(ym.slice(5, 7))
+      return { label: fmtMonth(ym), received: 0, projected: Math.round(convert(seasonalFor(cal)) * 100) / 100 }
     })
 
     return {
       projChartData: [...historical, ...projMonths],
       total12m,
       avgMonthly6m,
-      projected12m: avgMonthly6m * 12,
+      projected12m: projMonths.reduce((s, m) => s + m.projected, 0),
     }
   }, [summary36m, currentYM, convert])
 
@@ -245,7 +262,7 @@ export default function DividendsPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
-                    {byAssetSorted.map(a => (
+                    {(showAllPayers ? byAssetSorted : byAssetSorted.slice(0, 5)).map(a => (
                       <tr key={a.asset_id} className="hover:bg-gray-50 transition-colors">
                         <td className="px-4 py-3">
                           <span className="font-semibold text-gray-900">{a.code}</span>
@@ -257,6 +274,16 @@ export default function DividendsPage() {
                     ))}
                   </tbody>
                 </table>
+                {byAssetSorted.length > 5 && (
+                  <button
+                    onClick={() => setShowAllPayers(v => !v)}
+                    className="w-full px-4 py-2.5 text-xs font-medium text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-colors border-t border-gray-50"
+                  >
+                    {showAllPayers
+                      ? d.showLessPayers
+                      : (d.showMorePayers ?? 'Ver todos').replace('{n}', String(byAssetSorted.length))}
+                  </button>
+                )}
               </div>
             )}
 
@@ -317,7 +344,9 @@ export default function DividendsPage() {
             </div>
 
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-              <p className="text-xs text-gray-400 uppercase tracking-wide font-medium mb-4">{d.monthlyChart}</p>
+              <div className="flex items-start justify-between mb-4 gap-3">
+                <p className="text-xs text-gray-400 uppercase tracking-wide font-medium">{d.monthlyChart}</p>
+              </div>
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={projChartData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }} barSize={7}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" vertical={false} />
@@ -332,6 +361,11 @@ export default function DividendsPage() {
                   <Bar dataKey="projected" name={d.passiveProjectedBar} fill={ARVO_GOLD} radius={[2, 2, 0, 0]} opacity={0.7} />
                 </BarChart>
               </ResponsiveContainer>
+              {d.projDisclaimer && (
+                <p className="text-xs text-gray-400 mt-3 leading-relaxed italic border-t border-gray-50 pt-3">
+                  ⚠ {d.projDisclaimer}
+                </p>
+              )}
             </div>
 
             {summary36m?.by_asset && summary36m.by_asset.length > 0 && (

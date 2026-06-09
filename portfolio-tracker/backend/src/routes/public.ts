@@ -78,7 +78,9 @@ router.get('/portfolio/:token', async (req, res: Response) => {
   } catch { /* ignore */ }
 
   const snap = share.snapshot as {
-    total_brl: number; asset_count: number; generated_at: string
+    total_brl: number; portfolio_value?: number; invested_value?: number
+    total_return_pct?: number | null; display_currency?: string
+    asset_count: number; generated_at: string
     by_class: Array<{ name: string; key: string | null; color: string; value: number; pct: number }>
     top_assets: Array<{ code: string; name: string; value_brl: number; pct: number; class_name: string; class_color: string; exchange: string | null }>
     dividends_12m: number
@@ -88,12 +90,18 @@ router.get('/portfolio/:token', async (req, res: Response) => {
   if (!snap) { res.status(503).json({ error: 'snapshot_pending' }); return }
 
   const showVal = share.show_values
+  const displayCurr = snap.display_currency ?? 'BRL'
+  const portfolioValue = snap.portfolio_value ?? snap.total_brl
 
   res.json({
     owner_name,
     show_values: showVal,
     updated_at: share.updated_at,
+    display_currency: displayCurr,
     total_brl: showVal ? snap.total_brl : null,
+    portfolio_value: showVal ? portfolioValue : null,
+    invested_value: showVal ? (snap.invested_value ?? null) : null,
+    total_return_pct: snap.total_return_pct ?? null,
     asset_count: snap.asset_count,
     generated_at: snap.generated_at,
     by_class: snap.by_class.map(c => ({

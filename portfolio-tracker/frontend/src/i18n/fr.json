@@ -1377,7 +1377,10 @@
     "passiveCoverageDesc": "% des dépenses mensuelles couvertes par les revenus passifs",
     "passiveTopAssets": "Par actif",
     "passiveNoData": "Aucun dividende trouvé",
-    "passiveNoDataHint": "Synchronisez les dividendes pour visualiser les revenus passifs de votre portefeuille."
+    "passiveNoDataHint": "Synchronisez les dividendes pour visualiser les revenus passifs de votre portefeuille.",
+    "projDisclaimer": "Projection basée sur les schémas de paiement historiques par mois. À titre indicatif uniquement — les résultats passés ne garantissent pas les résultats futurs.",
+    "showMorePayers": "Voir tout ({n})",
+    "showLessPayers": "Voir moins"
   },
   "landing": {
     "eyebrow": "Pour les Brésiliens vivant à l'étranger · Bêta gratuit",
@@ -1741,8 +1744,8 @@
     "linkLabel": "Lien du rapport",
     "copied": "Copié !",
     "copy": "Copier",
-    "showValues": "Afficher les valeurs en BRL",
-    "showValuesHint": "Si désactivé, seuls les pourcentages seront affichés.",
+    "showValues": "Afficher les valeurs",
+    "showValuesHint": "Affiche les valeurs monétaires réelles. Désactivé : uniquement des pourcentages.",
     "generate": "Générer le lien",
     "refresh": "Actualiser les données",
     "refreshing": "Actualisation...",
@@ -1770,7 +1773,9 @@
     "countryCrypto": "Crypto Global",
     "countryOther": "Autres",
     "noPassiveIncome": "Aucun revenu sur la période",
-    "downloadPdf": "Télécharger PDF"
+    "downloadPdf": "Télécharger PDF",
+    "invested": "Investi",
+    "returnTotal": "retour total"
   },
   "fees": {
     "title": "Scanner de Frais",
