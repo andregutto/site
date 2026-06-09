@@ -78,6 +78,7 @@ function residenceTabType(country: string | null): 'fr' | 'coming_soon' {
 }
 
 export default function ReportsPage() {
+  const { t } = useI18n()
   const [year, setYear]               = useState(CURRENT_YEAR - 1)
   const [tab, setTab]                 = useState<'br' | 'fr'>('br')
   const [taxCountry, setTaxCountry]             = useState<string>('BR')

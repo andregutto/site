@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { apiFetch } from '../lib/api'
 import { useNavigate } from 'react-router-dom'
+import { useI18n } from '../contexts/I18nContext'
 
 interface IndexSnapshot {
   code: string
@@ -26,6 +27,7 @@ function fmtPct(v: number | null) {
 
 export default function MarketIndicesBar() {
   const [data, setData] = useState<IndexSnapshot[] | null>(null)
+  const { t } = useI18n()
   const navigate = useNavigate()
 
   useEffect(() => {

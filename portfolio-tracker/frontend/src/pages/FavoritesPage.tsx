@@ -3,6 +3,7 @@ import { usePortfolioValue } from '../hooks/usePortfolio'
 import { useFavorites } from '../hooks/useFavorites'
 import { useCurrency } from '../contexts/CurrencyContext'
 import { PageLoader } from '../components/ArvoLoader'
+import { useI18n } from '../contexts/I18nContext'
 
 function StarIcon({ filled }: { filled: boolean }) {
   return (
@@ -22,6 +23,7 @@ export default function FavoritesPage() {
   const { data, loading } = usePortfolioValue()
   const { favorites, toggleFavorite } = useFavorites()
   const { fmt } = useCurrency()
+  const { t } = useI18n()
   const navigate = useNavigate()
 
   const favoriteAssets = (data?.by_asset ?? []).filter(a => favorites.has(a.id))
