@@ -201,12 +201,40 @@ export default function FinancesTransactionsPage() {
   const [showImportModal, setShowImportModal] = useState(false)
   // Search
   const [searchQuery, setSearchQuery] = useState('')
+  const [searchResults, setSearchResults] = useState<Array<{id: number; date: string; description: string; amount: number; currency: string; finance_categories: {name: string; icon: string; color: string} | null}>>([])
+  const [searchLoading, setSearchLoading] = useState(false)
+  const [showSearchDrop, setShowSearchDrop] = useState(false)
+  const searchDropRef = useRef<HTMLDivElement>(null)
 
   // Overflow menu + filter panel
   const [showOverflowMenu, setShowOverflowMenu] = useState(false)
   const [showFilterPanel, setShowFilterPanel]   = useState(false)
   const overflowMenuRef = useRef<HTMLDivElement>(null)
   const filterPanelRef  = useRef<HTMLDivElement>(null)
+
+  // Global search debounce
+  useEffect(() => {
+    if (searchQuery.trim().length < 2) { setSearchResults([]); setShowSearchDrop(false); return }
+    setSearchLoading(true)
+    setShowSearchDrop(true)
+    const timer = setTimeout(async () => {
+      try {
+        const data = await apiFetch<typeof searchResults>(`/finances/transactions/search?q=${encodeURIComponent(searchQuery.trim())}&limit=15`)
+        setSearchResults(data)
+      } catch { setSearchResults([]) }
+      finally { setSearchLoading(false) }
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [searchQuery])
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    function handler(e: MouseEvent) {
+      if (searchDropRef.current && !searchDropRef.current.contains(e.target as Node)) setShowSearchDrop(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
 
   const loadTransactions = useCallback(async () => {
     setLoading(true)
@@ -388,6 +416,18 @@ export default function FinancesTransactionsPage() {
 
   async function toggleInternal(id: number, current: boolean) {
     await apiFetch(`/finances/transactions/${id}`, { method: 'PATCH', body: JSON.stringify({ is_internal_transfer: !current }) })
+    if (current) {
+      const tx = transactions.find(tx2 => tx2.id === id)
+      if (tx?.description) {
+        const applyAll = window.confirm(t.finances.unmarkInternalAll.replace('{desc}', tx.description))
+        if (applyAll) {
+          await apiFetch('/finances/transactions/bulk-transfer', {
+            method: 'PATCH',
+            body: JSON.stringify({ description: tx.description, is_internal_transfer: false }),
+          })
+        }
+      }
+    }
     loadTransactions()
   }
 
@@ -1189,17 +1229,47 @@ export default function FinancesTransactionsPage() {
 
       {/* Search bar */}
       {csvStep === 'idle' && (
-        <div className="relative">
+        <div className="relative" ref={searchDropRef}>
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
             <path fillRule="evenodd" d="M9.965 11.026a5 5 0 1 1 1.06-1.06l2.755 2.754a.75.75 0 1 1-1.06 1.06l-2.755-2.754ZM10.5 7a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0Z" clipRule="evenodd" />
           </svg>
           <input
             type="search"
             value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
+            onChange={e => { setSearchQuery(e.target.value); if (e.target.value.trim().length >= 2) setShowSearchDrop(true) }}
+            onFocus={() => { if (searchQuery.trim().length >= 2) setShowSearchDrop(true) }}
             placeholder={t.finances.transactionsSearch}
-            className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/10"
+            className="w-full pl-9 pr-4 py-2.5 text-sm border border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/10"
           />
+          {showSearchDrop && (
+            <div className="absolute left-0 right-0 top-full mt-1 z-50 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden">
+              {searchLoading ? (
+                <div className="px-4 py-3 text-sm text-gray-400">…</div>
+              ) : searchResults.length === 0 ? (
+                <div className="px-4 py-3 text-sm text-gray-400">{t.finances.txSearchNoResults}</div>
+              ) : searchResults.map(r => (
+                <button
+                  key={r.id}
+                  type="button"
+                  className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-gray-50 transition-colors border-b border-gray-50 last:border-0"
+                  onClick={() => {
+                    const m = r.date.slice(0, 7)
+                    setDateMode('month'); setMonth(m)
+                    setShowSearchDrop(false)
+                  }}
+                >
+                  <span className="text-base shrink-0">{r.finance_categories?.icon ?? '📁'}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-gray-900 truncate">{r.description}</p>
+                    <p className="text-xs text-gray-400">{r.date} · {r.finance_categories?.name ?? '—'}</p>
+                  </div>
+                  <span className={`text-sm font-semibold shrink-0 ${r.amount < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                    {r.amount > 0 ? '+' : ''}{fmt(r.amount, r.currency)}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -1447,12 +1517,12 @@ export default function FinancesTransactionsPage() {
                           )}
                         </td>
                         <td className="px-1 sm:px-3 py-2.5 sm:py-3">
-                          <div className={`flex items-center gap-0.5 transition-opacity ${tx.exclude_from_stats || tx.is_internal_transfer ? 'opacity-100' : '[@media(hover:none)]:opacity-100 opacity-0 group-hover:opacity-100'}`}>
+                          <div className={`flex items-center gap-1 transition-opacity ${tx.exclude_from_stats || tx.is_internal_transfer ? 'opacity-100' : '[@media(hover:none)]:opacity-100 opacity-0 group-hover:opacity-100'}`}>
                             {/* Note */}
                             <button
                               onClick={() => { setEditingNotesId(tx.id); setNotesInput(tx.notes ?? '') }}
                               title={t.finances.notesPlaceholder}
-                              className={`p-1.5 rounded transition-colors ${tx.notes ? 'text-[#0D0D0D] hover:bg-[#0D0D0D]/10' : 'text-gray-300 hover:text-[#0D0D0D] hover:bg-[#0D0D0D]/10'}`}
+                              className={`p-2 rounded-lg transition-colors ${tx.notes ? 'text-[#0D0D0D] hover:bg-[#0D0D0D]/10' : 'text-gray-300 hover:text-[#0D0D0D] hover:bg-[#0D0D0D]/10'}`}
                             >
                               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4"><path d="M13.488 2.513a1.75 1.75 0 0 0-2.475 0L6.75 6.774a2.75 2.75 0 0 0-.596.892l-.471 1.179a.75.75 0 0 0 .98.98l1.179-.471a2.75 2.75 0 0 0 .892-.596l4.262-4.263a1.75 1.75 0 0 0 0-2.475ZM3.5 4.75A.75.75 0 0 1 4.25 4h3a.75.75 0 0 1 0 1.5h-3a.75.75 0 0 1-.75-.75Zm0 3A.75.75 0 0 1 4.25 7h1.5a.75.75 0 0 1 0 1.5h-1.5A.75.75 0 0 1 3.5 7.75ZM2 3.5A1.5 1.5 0 0 1 3.5 2h9A1.5 1.5 0 0 1 14 3.5V5a.75.75 0 0 1-1.5 0V3.5a.75.75 0 0 0-.75-.75h-9A.75.75 0 0 0 2 3.5V12a.75.75 0 0 0 .75.75H6a.75.75 0 0 1 0 1.5H2.75A1.5 1.5 0 0 1 2 12.75V3.5Z"/></svg>
                             </button>
@@ -1460,7 +1530,7 @@ export default function FinancesTransactionsPage() {
                             <button
                               onClick={() => toggleExclude(tx.id, tx.exclude_from_stats)}
                               title={tx.exclude_from_stats ? t.finances.includeInStats : t.finances.excludeFromStats}
-                              className={`p-1.5 rounded transition-colors ${tx.exclude_from_stats ? 'text-amber-500 hover:text-amber-700 hover:bg-amber-50' : 'text-gray-300 hover:text-amber-500 hover:bg-amber-50'}`}
+                              className={`p-2 rounded-lg transition-colors ${tx.exclude_from_stats ? 'text-amber-500 hover:text-amber-700 hover:bg-amber-50' : 'text-gray-300 hover:text-amber-500 hover:bg-amber-50'}`}
                             >
                               {tx.exclude_from_stats ? (
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4"><path d="M8 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"/><path d="M1.38 8a6.998 6.998 0 0 1 13.24 0 7 7 0 0 1-13.24 0ZM8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5Z"/></svg>
@@ -1472,12 +1542,12 @@ export default function FinancesTransactionsPage() {
                             <button
                               onClick={() => toggleInternal(tx.id, tx.is_internal_transfer)}
                               title={tx.is_internal_transfer ? t.finances.markAsReal : t.finances.markAsTransfer}
-                              className={`p-1.5 rounded transition-colors ${tx.is_internal_transfer ? 'text-blue-500 hover:bg-blue-50' : 'text-gray-300 hover:text-blue-500 hover:bg-blue-50'}`}
+                              className={`p-2 rounded-lg transition-colors ${tx.is_internal_transfer ? 'text-blue-500 hover:bg-blue-50' : 'text-gray-300 hover:text-blue-500 hover:bg-blue-50'}`}
                             >
                               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z" clipRule="evenodd" /></svg>
                             </button>
                             {/* Delete */}
-                            <button onClick={() => deleteTransaction(tx.id)} title={t.common.delete} className="p-1.5 rounded text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors">
+                            <button onClick={() => deleteTransaction(tx.id)} title={t.common.delete} className="p-2 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors">
                               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M5 3.25V4H2.75a.75.75 0 0 0 0 1.5h.3l.815 8.15A1.5 1.5 0 0 0 5.357 15h5.285a1.5 1.5 0 0 0 1.493-1.35l.815-8.15h.3a.75.75 0 0 0 0-1.5H11v-.75A2.25 2.25 0 0 0 8.75 1h-1.5A2.25 2.25 0 0 0 5 3.25Zm2.25-.75a.75.75 0 0 0-.75.75V4h3v-.75a.75.75 0 0 0-.75-.75h-1.5ZM6.05 6a.75.75 0 0 1 .787.713l.275 5.5a.75.75 0 0 1-1.498.075l-.275-5.5A.75.75 0 0 1 6.05 6Zm3.9 0a.75.75 0 0 1 .712.787l-.275 5.5a.75.75 0 0 1-1.498-.075l.275-5.5a.75.75 0 0 1 .786-.712Z" clipRule="evenodd" /></svg>
                             </button>
                           </div>

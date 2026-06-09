@@ -109,7 +109,9 @@
     "budgetReminderDue": "Time to review your budget!",
     "budgetReminderDueBody": "You set a {freq} reminder to review your envelopes and categories.",
     "budgetReminderGoTo": "Go to Budget",
-    "budgetReminderDismiss": "Dismiss"
+    "budgetReminderDismiss": "Dismiss",
+    "budgetReminderSetupBody": "Want to be reminded to review your budget plan?",
+    "budgetReminderSetupLink": "Set up reminder"
   },
   "reports": {
     "title": "Tax Reports",
@@ -784,6 +786,8 @@
     "connectError": "Connection error. Please try again.",
     "notesPlaceholder": "Add note...",
     "markAsReal": "Mark as real transaction",
+    "unmarkInternalAll": "Unmark as internal transfer for all transactions with description \"{desc}\"?",
+    "txSearchNoResults": "No results found",
     "markAsTransfer": "Mark as internal transfer",
     "linkedTransfer": "↔ Linked",
     "unlinkTransfer": "Unlink transfer",

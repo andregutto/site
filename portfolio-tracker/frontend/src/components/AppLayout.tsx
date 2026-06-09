@@ -79,10 +79,15 @@ export default function AppLayout() {
   }, [user?.id])
 
   const [showBudgetBanner, setShowBudgetBanner] = useState(false)
+  const [showBudgetSetup, setShowBudgetSetup] = useState(false)
   useEffect(() => {
     if (!user?.id) return
     const freq = parseInt(localStorage.getItem(`arvo_budget_reminder_freq_${user.id}`) ?? '0', 10)
-    if (freq === 0) return
+    if (freq === 0) {
+      const dismissed = localStorage.getItem(`arvo_budget_reminder_setup_dismissed_${user.id}`)
+      if (!dismissed) setShowBudgetSetup(true)
+      return
+    }
     const last = localStorage.getItem(`arvo_budget_reminder_last_${user.id}`)
     if (!last) {
       const today = new Date().toISOString().split('T')[0]
@@ -100,6 +105,11 @@ export default function AppLayout() {
       localStorage.setItem(`arvo_budget_reminder_last_${user.id}`, today)
     }
     setShowBudgetBanner(false)
+  }
+
+  function dismissBudgetSetup() {
+    if (user?.id) localStorage.setItem(`arvo_budget_reminder_setup_dismissed_${user.id}`, '1')
+    setShowBudgetSetup(false)
   }
 
   const meta = user?.user_metadata ?? {}
@@ -359,6 +369,23 @@ export default function AppLayout() {
         )}
 
       </header>
+
+      {showBudgetSetup && (
+        <div className="bg-amber-50 border-b border-amber-200 px-4 py-3 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <span className="text-amber-500 text-lg shrink-0">📋</span>
+            <p className="text-sm text-amber-800">{t.profile.budgetReminderSetupBody}</p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <NavLink to="/profile" onClick={dismissBudgetSetup} className="px-3 py-1.5 text-xs font-semibold bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors">
+              {t.profile.budgetReminderSetupLink}
+            </NavLink>
+            <button onClick={dismissBudgetSetup} className="px-3 py-1.5 text-xs text-amber-700 hover:text-amber-900 transition-colors">
+              {t.profile.budgetReminderDismiss}
+            </button>
+          </div>
+        </div>
+      )}
 
       {showBudgetBanner && (() => {
         const freq = user?.id ? parseInt(localStorage.getItem(`arvo_budget_reminder_freq_${user.id}`) ?? '0', 10) : 0

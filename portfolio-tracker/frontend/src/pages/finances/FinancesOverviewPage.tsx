@@ -46,7 +46,7 @@ interface SpendingSummary {
 }
 
 interface CatHistoryEntry {
-  id: number; name: string; icon: string; color: string
+  id: number; name: string; name_key?: string | null; icon: string; color: string
   months: { month: string; total: number }[]
 }
 
@@ -904,18 +904,33 @@ export default function FinancesOverviewPage() {
       {/* Category history chart — shares historyMonths toggle from envelope chart above */}
       {(catHistLoading || catHistory.length > 0) && (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-            <h2 style={{ fontFamily: "var(--arvo-font-body)", fontSize: 14, color: 'var(--arvo-fg)', fontWeight: 600 }}>{t.finances.categoryHistory}</h2>
-            <select
-              value={selectedCatId}
-              onChange={e => setSelectedCatId(e.target.value === '' ? '' : Number(e.target.value))}
-              style={{ border: '1px solid var(--arvo-border)', borderRadius: 8, padding: '4px 10px', fontSize: 12, background: 'white', color: 'var(--arvo-fg)' }}
-            >
-              <option value="">{t.finances.selectCategory}</option>
-              {catHistory.map(c => (
-                <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
+          <div className="mb-4">
+            <h2 style={{ fontFamily: "var(--arvo-font-body)", fontSize: 14, color: 'var(--arvo-fg)', fontWeight: 600 }} className="mb-3">{t.finances.categoryHistory}</h2>
+            <div className="flex flex-wrap gap-1.5">
+              <button
+                onClick={() => setSelectedCatId('')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                  selectedCatId === ''
+                    ? 'bg-[#0D0D0D] text-white border-[#0D0D0D]'
+                    : 'bg-white text-gray-500 border-gray-200 hover:border-[#0D0D0D] hover:text-[#0D0D0D]'
+                }`}
+              >{t.finances.selectCategory}</button>
+              {catHistory.map((c, i) => (
+                <button
+                  key={c.id}
+                  onClick={() => setSelectedCatId(selectedCatId === c.id ? '' : c.id)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                    selectedCatId === c.id
+                      ? 'text-white border-transparent'
+                      : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
+                  }`}
+                  style={selectedCatId === c.id ? { backgroundColor: c.color || CHART_PALETTE[i % CHART_PALETTE.length] } : {}}
+                >
+                  <span>{c.icon}</span>
+                  <span>{resolveKey(c.name, c.name_key, nameKeys)}</span>
+                </button>
               ))}
-            </select>
+            </div>
           </div>
           {catHistLoading ? (
             <div className="h-48 flex items-end gap-1 px-2 pb-1">
@@ -949,8 +964,8 @@ export default function FinancesOverviewPage() {
                     <Bar
                       key={cat.id}
                       dataKey={cat.name}
-                      name={cat.name}
-                      fill={CHART_PALETTE[i % CHART_PALETTE.length]}
+                      name={resolveKey(cat.name, cat.name_key, nameKeys)}
+                      fill={cat.color || CHART_PALETTE[i % CHART_PALETTE.length]}
                       stackId={isStacked ? 'a' : undefined}
                       radius={!isStacked || i === filtered.length - 1 ? [3, 3, 0, 0] : [0, 0, 0, 0]}
                     />

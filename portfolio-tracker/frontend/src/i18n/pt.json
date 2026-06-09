@@ -109,7 +109,9 @@
     "budgetReminderDue": "Hora de revisar seu planejamento!",
     "budgetReminderDueBody": "Você configurou um lembrete de {freq} para revisar seus envelopes e categorias.",
     "budgetReminderGoTo": "Ir ao Planejamento",
-    "budgetReminderDismiss": "Dispensar"
+    "budgetReminderDismiss": "Dispensar",
+    "budgetReminderSetupBody": "Quer ser lembrado de revisar seu planejamento financeiro?",
+    "budgetReminderSetupLink": "Configurar lembrete"
   },
   "reports": {
     "title": "Relatórios IR",
@@ -785,6 +787,8 @@
     "notesPlaceholder": "Adicionar nota...",
     "markAsReal": "Marcar como transação real",
     "markAsTransfer": "Marcar como transferência interna",
+    "unmarkInternalAll": "Desmarcar como transferência interna para todas as transações com a descrição \"{desc}\"?",
+    "txSearchNoResults": "Nenhum resultado encontrado",
     "linkedTransfer": "↔ Vinculada",
     "unlinkTransfer": "Desvincular",
     "excludeFromStats": "Ocultar dos cálculos",

@@ -798,6 +798,22 @@ router.get('/transactions/months', requireAuth, async (req, res: Response) => {
   res.json([...seen])
 })
 
+// GET /api/finances/transactions/search?q=xxx&limit=15 — full-history search by description
+router.get('/transactions/search', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const { q, limit } = req.query as Record<string, string>
+  if (!q || q.trim().length < 2) { res.json([]); return }
+  const { data, error } = await supabaseAdmin
+    .from('finance_transactions')
+    .select('id, date, description, amount, currency, finance_categories(id, name, icon, color)')
+    .eq('user_id', userId)
+    .ilike('description', `%${q.trim()}%`)
+    .order('date', { ascending: false })
+    .limit(Number(limit) || 15)
+  if (error) { res.status(500).json({ error: error.message }); return }
+  res.json(data ?? [])
+})
+
 // POST /api/finances/transactions — create manual
 router.post('/transactions', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
@@ -832,6 +848,20 @@ router.patch('/transactions/bulk-category', requireAuth, async (req, res: Respon
   const { error } = await supabaseAdmin
     .from('finance_transactions')
     .update({ category_id: category_id ?? null })
+    .eq('user_id', userId)
+    .eq('description', description)
+  if (error) { res.status(500).json({ error: error.message }); return }
+  res.json({ ok: true })
+})
+
+// PATCH /api/finances/transactions/bulk-transfer — mark/unmark all transactions with same description
+router.patch('/transactions/bulk-transfer', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const { description, is_internal_transfer } = req.body as { description: string; is_internal_transfer: boolean }
+  if (!description) { res.status(400).json({ error: 'description required' }); return }
+  const { error } = await supabaseAdmin
+    .from('finance_transactions')
+    .update({ is_internal_transfer })
     .eq('user_id', userId)
     .eq('description', description)
   if (error) { res.status(500).json({ error: error.message }); return }

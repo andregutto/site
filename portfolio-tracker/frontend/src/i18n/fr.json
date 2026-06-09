@@ -109,7 +109,9 @@
     "budgetReminderDue": "Il est temps de revoir votre budget !",
     "budgetReminderDueBody": "Vous avez configuré un rappel de {freq} pour revoir vos enveloppes et catégories.",
     "budgetReminderGoTo": "Aller au Budget",
-    "budgetReminderDismiss": "Ignorer"
+    "budgetReminderDismiss": "Ignorer",
+    "budgetReminderSetupBody": "Voulez-vous être rappelé de revoir votre budget ?",
+    "budgetReminderSetupLink": "Configurer un rappel"
   },
   "reports": {
     "title": "Rapports fiscaux",
@@ -784,6 +786,8 @@
     "connectError": "Erreur de connexion. Veuillez réessayer.",
     "notesPlaceholder": "Ajouter une note...",
     "markAsReal": "Marquer comme transaction réelle",
+    "unmarkInternalAll": "Démarquer comme virement interne pour toutes les transactions avec la description \"{desc}\" ?",
+    "txSearchNoResults": "Aucun résultat trouvé",
     "markAsTransfer": "Marquer comme virement interne",
     "linkedTransfer": "↔ Lié",
     "unlinkTransfer": "Dissocier le virement",
