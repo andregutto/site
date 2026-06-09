@@ -98,7 +98,18 @@
     "deleteModalDesc": "Esta ação excluirá permanentemente sua conta e todos os dados associados. Para confirmar, digite seu e-mail abaixo:",
     "deleteEmailPlaceholder": "Digite seu e-mail",
     "deleteConfirmBtn": "Excluir conta",
-    "deleting": "Excluindo..."
+    "deleting": "Excluindo...",
+    "budgetReminderSection": "Lembrete de revisão do planejamento",
+    "budgetReminderHint": "Receba um lembrete periódico para revisar seus envelopes e categorias",
+    "budgetReminderNever": "Nunca",
+    "budgetReminder1m": "A cada mês",
+    "budgetReminder2m": "A cada 2 meses",
+    "budgetReminder3m": "A cada 3 meses",
+    "budgetReminder6m": "A cada 6 meses",
+    "budgetReminderDue": "Hora de revisar seu planejamento!",
+    "budgetReminderDueBody": "Você configurou um lembrete de {freq} para revisar seus envelopes e categorias.",
+    "budgetReminderGoTo": "Ir ao Planejamento",
+    "budgetReminderDismiss": "Dispensar"
   },
   "reports": {
     "title": "Relatórios IR",
@@ -224,6 +235,22 @@
     "noMoversData": "Sem dados de rentabilidade",
     "periodGainBrl": "Ganho no período"
   },
+  "setup": {
+    "title": "Primeiros passos",
+    "subtitle": "Complete a configuração para aproveitar todos os recursos.",
+    "progress": "{done} de {total} concluídos",
+    "dismiss": "Dispensar",
+    "stepAssets": "Importar ativos",
+    "stepAssetsDesc": "Adicione seus ativos ao portfólio",
+    "stepAccount": "Conta bancária",
+    "stepAccountDesc": "Cadastre sua conta corrente ou de investimento",
+    "stepIncome": "Renda mensal",
+    "stepIncomeDesc": "Configure sua renda para o planejamento financeiro",
+    "stepFreedom": "Plano de liberdade",
+    "stepFreedomDesc": "Defina sua meta de independência financeira",
+    "stepPlanning": "Planejamento financeiro",
+    "stepPlanningDesc": "Defina metas de orçamento por categorias e envelopes"
+  },
   "footer": {
     "copyright": "© 2026 arvo",
     "privacy": "Política de Privacidade",
@@ -336,7 +363,15 @@
     "accountCurrency": "Moeda",
     "accountInstitution": "Banco / Corretora (opcional)",
     "accountSkip": "Pular por agora",
-    "accountCreate": "Criar conta"
+    "accountCreate": "Criar conta",
+    "freedomOnboardTitle": "Liberdade Financeira",
+    "freedomOnboardBody": "Simule sua trajetória para a independência financeira. Configure capital inicial, aportes mensais e veja quando você atingirá sua meta.",
+    "freedomOnboardFeature1": "Planejado vs realizado em tempo real",
+    "freedomOnboardFeature2": "Simulação com inflação e renda passiva",
+    "sharedOnboardTitle": "Categorias Compartilhadas",
+    "sharedOnboardBody": "Compartilhe categorias de orçamento com seu parceiro ou grupo familiar para acompanhar gastos conjuntos em tempo real.",
+    "sharedOnboardFeature1": "Gastos compartilhados visíveis para todos do grupo",
+    "sharedOnboardFeature2": "Cada pessoa mantém suas categorias privadas"
   },
   "achievements": {
     "title": "Conquistas",
@@ -879,7 +914,31 @@
     "freedomTargetAge": "Idade alvo",
     "freedomYearsOld": "anos de idade",
     "txMoment": "Momento",
-    "txNoMoment": "Nenhum Momento criado ainda"
+    "txNoMoment": "Nenhum Momento criado ainda",
+    "budgetEnvelopeLabel": "Envelope",
+    "categoryNamePlaceholder": "Ex: Moradia",
+    "editEnvelopeTitle": "Editar envelope",
+    "envelopePctTargetLabel": "% da renda",
+    "updateCategoryConfirm": "Aplicar esta categoria a todas as transações com a descrição \"{desc}\"?\n\nIsso inclui transações de outros períodos e meses.",
+    "transactionsSearch": "Buscar transações...",
+    "bulkAssigning": "Atribuindo...",
+    "bulkAccount": "Conta",
+    "momentPhotoLabel": "Foto (opcional)",
+    "momentPhotoChange": "Trocar",
+    "momentPhotoRemove": "Remover",
+    "momentPhotoDragHint": "↕ arraste para reposicionar",
+    "momentPhotoChangeLabel": "Trocar foto",
+    "momentPhotoAdd": "Adicionar foto",
+    "momentStartDate": "Início (opcional)",
+    "momentEndDate": "Fim (opcional)",
+    "momentNoTransactions": "Nenhuma transação neste Momento ainda. Vá em Transações e arraste para cá.",
+    "momentFromDate": "a partir de",
+    "momentPhotoUploadError": "Erro ao enviar foto. O momento foi salvo sem imagem.",
+    "freedomInflationRef": "Referências de inflação",
+    "freedomInflationIpca": "IPCA (Brasil)",
+    "freedomInflationHicp": "IHPC (França/EUR)",
+    "freedomInflationCpi": "CPI (EUA)",
+    "freedomInflationPrefill": "Usar {rate}% ({index})"
   },
   "classes": {
     "title": "Classes de Ativos",
@@ -1085,7 +1144,9 @@
     "finalValue": "Valor final",
     "noData": "Sem dados de preço para o período",
     "visitDashboard": "Acesse o Dashboard para carregar os preços dos ativos.",
-    "wallet": "Carteira"
+    "wallet": "Carteira",
+    "ytd": "Este ano (YTD)",
+    "daily": "Diário"
   },
   "indices": {
     "title": "Índices de mercado",

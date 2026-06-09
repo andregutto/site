@@ -82,8 +82,8 @@ function resolveKey(name: string, nameKey: string | null | undefined, keys: Reco
 }
 
 
-function EnvelopeBar({ env, expanded, onToggle, onEditCategory, onDeleteCategory, onAddCategory, onSaveDescription, onShareCategory, actuals, currency }:
-  { env: Envelope; expanded: boolean; onToggle: () => void; onEditCategory: (c: Category) => void; onDeleteCategory: (id: number) => void; onAddCategory: (envId: number) => void; onSaveDescription: (id: number, desc: string) => void; onShareCategory: (c: Category) => void; actuals: Map<number, number>; currency: string }) {
+function EnvelopeBar({ env, expanded, onToggle, onEditCategory, onDeleteCategory, onAddCategory, onSaveDescription, onShareCategory, onSavePctTarget, actuals, currency }:
+  { env: Envelope; expanded: boolean; onToggle: () => void; onEditCategory: (c: Category) => void; onDeleteCategory: (id: number) => void; onAddCategory: (envId: number) => void; onSaveDescription: (id: number, desc: string) => void; onShareCategory: (c: Category) => void; onSavePctTarget: (id: number, pct: number) => void; actuals: Map<number, number>; currency: string }) {
   const { t } = useI18n()
   const nameKeys: Record<string, string> = {
     envelopeEssential:     t.finances.envelopeEssential,
@@ -136,6 +136,8 @@ function EnvelopeBar({ env, expanded, onToggle, onEditCategory, onDeleteCategory
   const defaultDesc = (env.name_key ? descByNameKey[env.name_key] : null) ?? descByType[env.type] ?? ''
   const [editingDesc, setEditingDesc] = useState(false)
   const [descInput,   setDescInput]   = useState(env.description ?? defaultDesc)
+  const [editingPct, setEditingPct]   = useState(false)
+  const [pctInput,   setPctInput]     = useState(String(env.pct_target))
 
   const totalCategoryBudget = env.categories.reduce((s, c) => s + (c.budget_monthly ?? 0), 0)
   const allocated = totalCategoryBudget > 0 ? (totalCategoryBudget / env.budget_amount) * 100 : 0
@@ -153,6 +155,12 @@ function EnvelopeBar({ env, expanded, onToggle, onEditCategory, onDeleteCategory
     onSaveDescription(env.id, descInput)
   }
 
+  function savePct() {
+    setEditingPct(false)
+    const v = parseFloat(pctInput)
+    if (!isNaN(v) && v > 0 && v !== env.pct_target) onSavePctTarget(env.id, v)
+  }
+
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
       {/* Envelope header */}
@@ -165,7 +173,26 @@ function EnvelopeBar({ env, expanded, onToggle, onEditCategory, onDeleteCategory
           <div className="flex items-center justify-between mb-1.5">
             <div className="flex items-center gap-2">
               <span className="font-semibold text-gray-900 text-sm">{resolveEnvName(env.name, env.type, env.name_key, nameKeys)}</span>
-              <span className="text-xs text-gray-400 font-medium">{env.pct_target}%</span>
+              {editingPct ? (
+                <span className="flex items-center gap-0.5" onClick={e => e.stopPropagation()}>
+                  <input
+                    autoFocus
+                    type="number"
+                    value={pctInput}
+                    onChange={e => setPctInput(e.target.value)}
+                    onBlur={savePct}
+                    onKeyDown={e => { if (e.key === 'Enter') savePct(); if (e.key === 'Escape') setEditingPct(false) }}
+                    className="w-12 text-xs text-gray-600 border border-gray-300 rounded px-1 py-0.5 text-center focus:outline-none focus:ring-1 focus:ring-[#0D0D0D]/30"
+                  />
+                  <span className="text-xs text-gray-400">%</span>
+                </span>
+              ) : (
+                <button
+                  onClick={e => { e.stopPropagation(); setPctInput(String(env.pct_target)); setEditingPct(true) }}
+                  className="text-xs text-gray-400 font-medium hover:text-[#0D0D0D] hover:underline transition-colors"
+                  title={t.finances.editEnvelopeTitle}
+                >{env.pct_target}%</button>
+              )}
               {isOver && <span className="text-xs bg-red-100 text-red-600 font-semibold px-1.5 py-0.5 rounded-full">{t.finances.overLimit}</span>}
               {isInvestment && allocated >= 100 && !isOver && <span className="text-xs bg-green-100 text-green-600 font-semibold px-1.5 py-0.5 rounded-full">{t.finances.goalReached}</span>}
             </div>
@@ -254,28 +281,28 @@ function EnvelopeBar({ env, expanded, onToggle, onEditCategory, onDeleteCategory
                     <div className="flex items-center gap-1 [@media(hover:none)]:opacity-100 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button
                         onClick={() => onShareCategory(cat)}
-                        className="p-1 text-gray-400 hover:text-indigo-500 transition-colors rounded"
+                        className="p-2 text-gray-400 hover:text-indigo-500 transition-colors rounded"
                         title={t.finances.shareCategory}
                       >
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4">
                           <path d="M11.25 1.5a2.25 2.25 0 1 1 0 4.5 2.25 2.25 0 0 1 0-4.5ZM4.75 7.25a2.25 2.25 0 1 1 0 4.5 2.25 2.25 0 0 1 0-4.5ZM11.25 11a2.25 2.25 0 1 1 0 4.5 2.25 2.25 0 0 1 0-4.5ZM6.27 8.944l3.46-1.888.013.009-.013-.009-3.46 1.888Zm0-1.888 3.46 1.888-.013-.009.013.009-3.46-1.888Z" />
                         </svg>
                       </button>
                       <button
                         onClick={() => onEditCategory(cat)}
-                        className="p-1 text-gray-400 hover:text-[#0D0D0D] transition-colors rounded"
-                        title="Editar"
+                        className="p-2 text-gray-400 hover:text-[#0D0D0D] transition-colors rounded"
+                        title={t.common.edit}
                       >
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4">
                           <path d="M13.488 2.513a1.75 1.75 0 0 0-2.475 0L6.75 6.774a2.75 2.75 0 0 0-.596.892l-.848 2.047a.75.75 0 0 0 .98.98l2.047-.848a2.75 2.75 0 0 0 .892-.596l4.261-4.263a1.75 1.75 0 0 0 0-2.474ZM4.75 14a.75.75 0 0 0 0-1.5H3.5a.5.5 0 0 1-.5-.5V4a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v1.25a.75.75 0 0 0 1.5 0V4a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h1.25Z" />
                         </svg>
                       </button>
                       <button
                         onClick={() => onDeleteCategory(cat.id)}
-                        className="p-1 text-gray-400 hover:text-red-500 transition-colors rounded"
-                        title="Remover"
+                        className="p-2 text-gray-400 hover:text-red-500 transition-colors rounded"
+                        title={t.common.delete}
                       >
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4">
                           <path fillRule="evenodd" d="M5 3.25V4H2.75a.75.75 0 0 0 0 1.5h.3l.815 8.15A1.5 1.5 0 0 0 5.357 15h5.285a1.5 1.5 0 0 0 1.493-1.35l.815-8.15h.3a.75.75 0 0 0 0-1.5H11v-.75A2.25 2.25 0 0 0 8.75 1h-1.5A2.25 2.25 0 0 0 5 3.25Zm2.25-.75a.75.75 0 0 0-.75.75V4h3v-.75a.75.75 0 0 0-.75-.75h-1.5ZM6.05 6a.75.75 0 0 1 .787.713l.275 5.5a.75.75 0 0 1-1.498.075l-.275-5.5A.75.75 0 0 1 6.05 6Zm3.9 0a.75.75 0 0 1 .712.787l-.275 5.5a.75.75 0 0 1-1.498-.075l.275-5.5a.75.75 0 0 1 .786-.712Z" clipRule="evenodd" />
                         </svg>
                       </button>
@@ -437,7 +464,7 @@ export default function FinancesBudgetPage() {
   }
 
   function openEditCategory(cat: Category) {
-    setCatName(cat.name)
+    setCatName(resolveKey(cat.name, cat.name_key, nameKeys))
     setCatIcon(cat.icon)
     setCatBudget(cat.budget_monthly != null ? String(cat.budget_monthly) : '')
     setCatEnvelopeId(cat.envelope_id ?? 0)
@@ -474,6 +501,11 @@ export default function FinancesBudgetPage() {
 
   async function saveDescription(envId: number, description: string) {
     await apiFetch(`/finances/envelopes/${envId}`, { method: 'PATCH', body: JSON.stringify({ description }) })
+    await load()
+  }
+
+  async function savePctTarget(envId: number, pct: number) {
+    await apiFetch(`/finances/envelopes/${envId}`, { method: 'PATCH', body: JSON.stringify({ pct_target: pct }) })
     await load()
   }
 
@@ -697,6 +729,7 @@ export default function FinancesBudgetPage() {
             onAddCategory={openAddCategory}
             onSaveDescription={saveDescription}
             onShareCategory={openShareModal}
+            onSavePctTarget={savePctTarget}
             actuals={catActuals}
             currency={data.income.currency}
           />
@@ -784,7 +817,7 @@ export default function FinancesBudgetPage() {
             <div className="space-y-3">
               {modal.mode === 'edit' && data && (
                 <div>
-                  <label className="block text-xs text-gray-500 mb-1">Envelope</label>
+                  <label className="block text-xs text-gray-500 mb-1">{t.finances.budgetEnvelopeLabel}</label>
                   <select
                     value={catEnvelopeId}
                     onChange={e => setCatEnvelopeId(Number(e.target.value))}
@@ -803,7 +836,7 @@ export default function FinancesBudgetPage() {
                   value={catName}
                   onChange={e => setCatName(e.target.value)}
                   className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20"
-                  placeholder="Ex: Moradia"
+                  placeholder={t.finances.categoryNamePlaceholder}
                 />
               </div>
               <div>

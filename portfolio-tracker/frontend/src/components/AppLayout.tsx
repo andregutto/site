@@ -78,6 +78,30 @@ export default function AppLayout() {
       .catch(() => {})
   }, [user?.id])
 
+  const [showBudgetBanner, setShowBudgetBanner] = useState(false)
+  useEffect(() => {
+    if (!user?.id) return
+    const freq = parseInt(localStorage.getItem(`arvo_budget_reminder_freq_${user.id}`) ?? '0', 10)
+    if (freq === 0) return
+    const last = localStorage.getItem(`arvo_budget_reminder_last_${user.id}`)
+    if (!last) {
+      const today = new Date().toISOString().split('T')[0]
+      localStorage.setItem(`arvo_budget_reminder_last_${user.id}`, today)
+      return
+    }
+    const diffMs = Date.now() - new Date(last).getTime()
+    const diffMonths = diffMs / (1000 * 60 * 60 * 24 * 30.44)
+    if (diffMonths >= freq) setShowBudgetBanner(true)
+  }, [user?.id])
+
+  function dismissBudgetBanner() {
+    if (user?.id) {
+      const today = new Date().toISOString().split('T')[0]
+      localStorage.setItem(`arvo_budget_reminder_last_${user.id}`, today)
+    }
+    setShowBudgetBanner(false)
+  }
+
   const meta = user?.user_metadata ?? {}
   const headerLabel = [meta.first_name, meta.last_name].filter(Boolean).join(' ') || user?.email || ''
   const avatarUrl = meta.avatar_url as string | undefined
@@ -335,6 +359,36 @@ export default function AppLayout() {
         )}
 
       </header>
+
+      {showBudgetBanner && (() => {
+        const freq = user?.id ? parseInt(localStorage.getItem(`arvo_budget_reminder_freq_${user.id}`) ?? '0', 10) : 0
+        const freqLabel = freq === 1 ? t.profile.budgetReminder1m
+          : freq === 2 ? t.profile.budgetReminder2m
+          : freq === 3 ? t.profile.budgetReminder3m
+          : t.profile.budgetReminder6m
+        return (
+          <div className="bg-amber-50 border-b border-amber-200 px-4 py-3 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <span className="text-amber-500 text-lg shrink-0">📋</span>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-amber-800">{t.profile.budgetReminderDue}</p>
+                <p className="text-xs text-amber-700 truncate">{t.profile.budgetReminderDueBody.replace('{freq}', freqLabel)}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <NavLink
+                to="/finances/budget"
+                onClick={dismissBudgetBanner}
+                className="px-3 py-1.5 text-xs font-semibold bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors"
+              >{t.profile.budgetReminderGoTo}</NavLink>
+              <button
+                onClick={dismissBudgetBanner}
+                className="px-3 py-1.5 text-xs text-amber-700 hover:text-amber-900 transition-colors"
+              >{t.profile.budgetReminderDismiss}</button>
+            </div>
+          </div>
+        )
+      })()}
 
       <main className="flex-1 max-w-6xl mx-auto w-full px-4 py-6 sm:pb-6 main-content">
         <Outlet />

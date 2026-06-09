@@ -251,6 +251,22 @@ const BANK_DATABASE: Record<string, Partial<InstitutionProfile>> = {
   },
 }
 
+function findInBankDatabase(name: string): Partial<InstitutionProfile> | undefined {
+  if (!name) return undefined
+  // 1. Exact match
+  if (BANK_DATABASE[name]) return BANK_DATABASE[name]
+  // 2. Case-insensitive exact match
+  const lower = name.toLowerCase()
+  const exactCI = Object.keys(BANK_DATABASE).find(k => k.toLowerCase() === lower)
+  if (exactCI) return BANK_DATABASE[exactCI]
+  // 3. Any DB key (≥3 chars) appears as word/substring in the exchange name
+  const partial = Object.keys(BANK_DATABASE)
+    .filter(k => k.length >= 3)
+    .find(k => lower.includes(k.toLowerCase()))
+  if (partial) return BANK_DATABASE[partial]
+  return undefined
+}
+
 const COUNTRY_OPTIONS = [
   { value: '',            label: 'Selecione...' },
   { value: 'Brasil',      label: 'Brasil' },
@@ -304,7 +320,7 @@ export default function InstitutionsPage() {
         setForm({ ...EMPTY_PROFILE, ...saved })
         setAutoFilledFor(null)
       } else {
-        const dbEntry = BANK_DATABASE[name]
+        const dbEntry = findInBankDatabase(name)
         if (dbEntry) {
           setForm({ ...EMPTY_PROFILE, ...dbEntry })
           setAutoFilledFor(name)
@@ -418,7 +434,7 @@ export default function InstitutionsPage() {
                         )}
                         {hasData ? (
                           <span className="text-xs text-green-600 font-medium">✓ dados preenchidos</span>
-                        ) : BANK_DATABASE[name] ? (
+                        ) : findInBankDatabase(name) ? (
                           <span className="text-xs text-amber-600 font-medium">base Arvo — verificar</span>
                         ) : null}
                       </div>

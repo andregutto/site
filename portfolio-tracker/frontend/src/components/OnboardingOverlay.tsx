@@ -82,7 +82,7 @@ export default function OnboardingOverlay({ onDone, userId }: Props) {
   const [accountCreated, setAccountCreated] = useState(false)
 
   const o = t.onboarding
-  const TOTAL_STEPS = 7
+  const TOTAL_STEPS = 9
   const defaultClasses   = CLASSES_BY_LOCALE[locale]   ?? CLASSES_BY_LOCALE.pt
   const defaultEnvelopes = ENVELOPES_BY_LOCALE[locale] ?? ENVELOPES_BY_LOCALE.pt
 
@@ -149,7 +149,7 @@ export default function OnboardingOverlay({ onDone, userId }: Props) {
   }
 
   // Step layout:
-  // 0 Welcome → 1 Classes → 2 Income → 3 Account → 4 Asset Types (info) → 5 Envelopes → 6 Done
+  // 0 Welcome → 1 Classes → 2 Income → 3 Account → 4 Asset Types (info) → 5 Envelopes → 6 Freedom → 7 Shared Categories → 8 Done
 
   const ASSET_TYPES = [
     { icon: '💰',  label: o.assetCash,   desc: o.assetCashDesc   },
@@ -420,8 +420,56 @@ export default function OnboardingOverlay({ onDone, userId }: Props) {
             </div>
           )}
 
-          {/* Step 6: Done */}
+          {/* Step 6: Freedom */}
           {step === 6 && (
+            <div className="space-y-4">
+              <div>
+                <h2 className="text-lg font-bold text-gray-900">{o.freedomOnboardTitle}</h2>
+                <p className="text-gray-500 mt-1 text-sm leading-relaxed">{o.freedomOnboardBody}</p>
+              </div>
+              <div className="space-y-2">
+                {[o.freedomOnboardFeature1, o.freedomOnboardFeature2].map(f => (
+                  <div key={f} className="flex items-start gap-3 bg-gray-50 border border-gray-100 rounded-xl px-4 py-3">
+                    <span className="text-green-500 mt-0.5 shrink-0">✓</span>
+                    <span className="text-sm text-gray-700">{f}</span>
+                  </div>
+                ))}
+              </div>
+              <button
+                onClick={() => setStep(7)}
+                className="w-full bg-[#0D0D0D] text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-[#0D0D0D]/90 transition-colors"
+              >
+                {o.continue}
+              </button>
+            </div>
+          )}
+
+          {/* Step 7: Shared Categories */}
+          {step === 7 && (
+            <div className="space-y-4">
+              <div>
+                <h2 className="text-lg font-bold text-gray-900">{o.sharedOnboardTitle}</h2>
+                <p className="text-gray-500 mt-1 text-sm leading-relaxed">{o.sharedOnboardBody}</p>
+              </div>
+              <div className="space-y-2">
+                {[o.sharedOnboardFeature1, o.sharedOnboardFeature2].map(f => (
+                  <div key={f} className="flex items-start gap-3 bg-gray-50 border border-gray-100 rounded-xl px-4 py-3">
+                    <span className="text-blue-500 mt-0.5 shrink-0">✓</span>
+                    <span className="text-sm text-gray-700">{f}</span>
+                  </div>
+                ))}
+              </div>
+              <button
+                onClick={() => setStep(8)}
+                className="w-full bg-[#0D0D0D] text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-[#0D0D0D]/90 transition-colors"
+              >
+                {o.continue}
+              </button>
+            </div>
+          )}
+
+          {/* Step 8: Done */}
+          {step === 8 && (
             <div className="space-y-5 text-center">
               <div className="w-16 h-16 bg-emerald-50 border border-emerald-100 rounded-2xl flex items-center justify-center mx-auto">
                 <span className="text-3xl">✅</span>
@@ -462,8 +510,8 @@ export default function OnboardingOverlay({ onDone, userId }: Props) {
             </div>
           )}
 
-          {/* Back button for steps 1–5 */}
-          {step > 0 && step < 6 && (
+          {/* Back button for steps 1–7 */}
+          {step > 0 && step < 8 && (
             <button
               onClick={() => setStep(s => s - 1)}
               className="mt-4 w-full text-xs text-gray-400 hover:text-gray-600 py-1 transition-colors"

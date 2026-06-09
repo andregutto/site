@@ -12,6 +12,7 @@ import ValueCards from '../components/ValueCards'
 import AllocationChart from '../components/AllocationChart'
 import AssetTable from '../components/AssetTable'
 import FixedIncomeSetupModal from '../components/FixedIncomeSetupModal'
+import SetupChecklist from '../components/SetupChecklist'
 import type { PortfolioAsset, SplitEvent } from '../lib/types'
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
 
@@ -57,7 +58,8 @@ export default function DashboardPage() {
   const { triggerCheck } = useAchievementContext()
 
   const { convert, fmt, currency, fxRates } = useCurrency()
-  const { t } = useI18n()
+  const { t, locale } = useI18n()
+  const intlLocale = locale === 'pt' ? 'pt-BR' : locale === 'fr' ? 'fr-FR' : 'en-GB'
   const td = (t as unknown as Record<string, Record<string, string>>).dividends ?? {}
 
   useEffect(() => {
@@ -278,6 +280,8 @@ export default function DashboardPage() {
         </div>
       </div>
 
+      <SetupChecklist hasAssets={data.by_asset.length > 0} />
+
       {/* Split warning banner */}
       {splitWarnings.length > 0 && (
         <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-start gap-3">
@@ -442,7 +446,7 @@ export default function DashboardPage() {
                 />
                 <Tooltip
                   formatter={(v, name) => [
-                    new Intl.NumberFormat('pt-BR', { style: 'currency', currency, maximumFractionDigits: 0 }).format(typeof v === 'number' ? v : 0),
+                    new Intl.NumberFormat(intlLocale, { style: 'currency', currency, maximumFractionDigits: 0 }).format(typeof v === 'number' ? v : 0),
                     name,
                   ]}
                   contentStyle={{ borderRadius: 8, border: '1px solid var(--arvo-border)', fontSize: 12 }}
@@ -516,7 +520,7 @@ export default function DashboardPage() {
                       <XAxis dataKey="month" tick={{ fontSize: 9, fill: 'rgba(13,13,13,0.55)' }} />
                       <YAxis hide />
                       <Tooltip
-                        formatter={(v) => [new Intl.NumberFormat('pt-BR', { style: 'currency', currency, maximumFractionDigits: 0 }).format(typeof v === 'number' ? v : 0), td.title ?? 'Dividendos']}
+                        formatter={(v) => [new Intl.NumberFormat(intlLocale, { style: 'currency', currency, maximumFractionDigits: 0 }).format(typeof v === 'number' ? v : 0), td.title ?? 'Dividendos']}
                         contentStyle={{ borderRadius: 8, border: '1px solid var(--arvo-border)', fontSize: 12 }}
                       />
                       <Bar dataKey="value" fill="#1F8A5B" radius={[3, 3, 0, 0]} />

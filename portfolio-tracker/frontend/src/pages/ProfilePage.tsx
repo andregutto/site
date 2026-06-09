@@ -94,6 +94,10 @@ export default function ProfilePage() {
 
   const [defaultSection, setDefaultSection] = useState<'investments' | 'finances'>('investments')
   const [monthCycleDay, setMonthCycleDay]   = useState(1)
+  const [budgetReminderFreq, setBudgetReminderFreq] = useState<number>(() => {
+    if (!user?.id) return 0
+    return parseInt(localStorage.getItem(`arvo_budget_reminder_freq_${user.id}`) ?? '0', 10)
+  })
 
   // Cropper state
   const CROP_BOX  = 280
@@ -337,6 +341,16 @@ export default function ProfilePage() {
     } catch (e) {
       setError(e instanceof Error ? e.message : t.profile.errorSave)
     } finally { setSaving(false) }
+  }
+
+  function handleBudgetReminderChange(freq: number) {
+    setBudgetReminderFreq(freq)
+    if (!user?.id) return
+    localStorage.setItem(`arvo_budget_reminder_freq_${user.id}`, String(freq))
+    if (freq > 0) {
+      const today = new Date().toISOString().split('T')[0]
+      localStorage.setItem(`arvo_budget_reminder_last_${user.id}`, today)
+    }
   }
 
   async function handleChangePassword(ev: React.FormEvent) {
@@ -720,6 +734,32 @@ export default function ProfilePage() {
                 <option value="FR">França</option>
                 <option value="PT">Portugal</option>
               </select>
+            </div>
+
+            {/* Budget reminder */}
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">{t.profile.budgetReminderSection}</label>
+              <p className="text-xs text-gray-400 mb-2">{t.profile.budgetReminderHint}</p>
+              <div className="flex flex-wrap gap-2">
+                {([
+                  { val: 0, label: t.profile.budgetReminderNever },
+                  { val: 1, label: t.profile.budgetReminder1m },
+                  { val: 2, label: t.profile.budgetReminder2m },
+                  { val: 3, label: t.profile.budgetReminder3m },
+                  { val: 6, label: t.profile.budgetReminder6m },
+                ] as Array<{ val: number; label: string }>).map(({ val, label }) => (
+                  <button
+                    key={val}
+                    type="button"
+                    onClick={() => handleBudgetReminderChange(val)}
+                    className={`px-3 py-1.5 text-xs rounded-lg border transition-colors ${
+                      budgetReminderFreq === val
+                        ? 'bg-[#0D0D0D] text-white border-[#0D0D0D]'
+                        : 'bg-white text-gray-500 border-gray-200 hover:border-[#0D0D0D] hover:text-[#0D0D0D]'
+                    }`}
+                  >{label}</button>
+                ))}
+              </div>
             </div>
 
 {error    && <p className="text-xs text-red-600">{error}</p>}

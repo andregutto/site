@@ -98,7 +98,18 @@
     "deleteModalDesc": "This will permanently delete your account and all associated data. To confirm, enter your email below:",
     "deleteEmailPlaceholder": "Enter your email",
     "deleteConfirmBtn": "Delete account",
-    "deleting": "Deleting..."
+    "deleting": "Deleting...",
+    "budgetReminderSection": "Budget review reminder",
+    "budgetReminderHint": "Receive a periodic reminder to review your envelopes and categories",
+    "budgetReminderNever": "Never",
+    "budgetReminder1m": "Every month",
+    "budgetReminder2m": "Every 2 months",
+    "budgetReminder3m": "Every 3 months",
+    "budgetReminder6m": "Every 6 months",
+    "budgetReminderDue": "Time to review your budget!",
+    "budgetReminderDueBody": "You set a {freq} reminder to review your envelopes and categories.",
+    "budgetReminderGoTo": "Go to Budget",
+    "budgetReminderDismiss": "Dismiss"
   },
   "reports": {
     "title": "Tax Reports",
@@ -224,6 +235,22 @@
     "noMoversData": "No return data available",
     "periodGainBrl": "Period gain"
   },
+  "setup": {
+    "title": "Getting started",
+    "subtitle": "Complete your setup to get the most out of Arvo.",
+    "progress": "{done} of {total} completed",
+    "dismiss": "Dismiss",
+    "stepAssets": "Import assets",
+    "stepAssetsDesc": "Add your assets to the portfolio",
+    "stepAccount": "Bank account",
+    "stepAccountDesc": "Add your bank or investment account",
+    "stepIncome": "Monthly income",
+    "stepIncomeDesc": "Set your income for financial planning",
+    "stepFreedom": "Freedom plan",
+    "stepFreedomDesc": "Define your financial independence goal",
+    "stepPlanning": "Financial planning",
+    "stepPlanningDesc": "Set budget goals by categories and envelopes"
+  },
   "footer": {
     "copyright": "© 2026 arvo",
     "privacy": "Privacy Policy",
@@ -336,7 +363,15 @@
     "accountCurrency": "Currency",
     "accountInstitution": "Bank / Broker (optional)",
     "accountSkip": "Skip for now",
-    "accountCreate": "Create account"
+    "accountCreate": "Create account",
+    "freedomOnboardTitle": "Financial Freedom",
+    "freedomOnboardBody": "Simulate your path to financial independence. Set initial capital, monthly contributions and see when you'll reach your goal.",
+    "freedomOnboardFeature1": "Planned vs actual in real time",
+    "freedomOnboardFeature2": "Simulation with inflation and passive income",
+    "sharedOnboardTitle": "Shared Categories",
+    "sharedOnboardBody": "Share budget categories with your partner or family group to track joint expenses in real time.",
+    "sharedOnboardFeature1": "Shared expenses visible to all group members",
+    "sharedOnboardFeature2": "Each person keeps their private categories"
   },
   "achievements": {
     "title": "Achievements",
@@ -879,7 +914,31 @@
     "freedomTargetAge": "Target age",
     "freedomYearsOld": "years old",
     "txMoment": "Moment",
-    "txNoMoment": "No Moments created yet"
+    "txNoMoment": "No Moments created yet",
+    "budgetEnvelopeLabel": "Envelope",
+    "categoryNamePlaceholder": "E.g.: Housing",
+    "editEnvelopeTitle": "Edit envelope",
+    "envelopePctTargetLabel": "% of income",
+    "updateCategoryConfirm": "Apply this category to all transactions with description \"{desc}\"?\n\nThis includes transactions from other periods and months.",
+    "transactionsSearch": "Search transactions...",
+    "bulkAssigning": "Assigning...",
+    "bulkAccount": "Account",
+    "momentPhotoLabel": "Photo (optional)",
+    "momentPhotoChange": "Change",
+    "momentPhotoRemove": "Remove",
+    "momentPhotoDragHint": "↕ drag to reposition",
+    "momentPhotoChangeLabel": "Change photo",
+    "momentPhotoAdd": "Add photo",
+    "momentStartDate": "Start (optional)",
+    "momentEndDate": "End (optional)",
+    "momentNoTransactions": "No transactions in this Moment yet. Go to Transactions and drag here.",
+    "momentFromDate": "from",
+    "momentPhotoUploadError": "Error uploading photo. The moment was saved without an image.",
+    "freedomInflationRef": "Inflation references",
+    "freedomInflationIpca": "IPCA (Brazil)",
+    "freedomInflationHicp": "HICP (France/EUR)",
+    "freedomInflationCpi": "CPI (USA)",
+    "freedomInflationPrefill": "Use {rate}% ({index})"
   },
   "classes": {
     "title": "Asset Classes",
@@ -1085,7 +1144,9 @@
     "finalValue": "Final value",
     "noData": "No price data for the period",
     "visitDashboard": "Visit the Dashboard to load asset prices.",
-    "wallet": "Portfolio"
+    "wallet": "Portfolio",
+    "ytd": "This year (YTD)",
+    "daily": "Daily"
   },
   "indices": {
     "title": "Market Indices",

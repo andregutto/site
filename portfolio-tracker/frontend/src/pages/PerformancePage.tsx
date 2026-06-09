@@ -10,16 +10,16 @@ import {
   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend
 } from 'recharts'
 
-function fmtMonth(ym: string) {
+function fmtMonth(ym: string, locale = 'pt-BR') {
   const [y, m] = ym.split('-')
-  const names = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
-  return `${names[parseInt(m) - 1]}/${y.slice(2)}`
+  const monthName = new Intl.DateTimeFormat(locale, { month: 'short' }).format(new Date(parseInt(y), parseInt(m) - 1, 1))
+  return `${monthName.replace('.', '')}/${y.slice(2)}`
 }
 
-function fmtDayLabel(dateStr: string) {
+function fmtDayLabel(dateStr: string, locale = 'pt-BR') {
   const [, m, day] = dateStr.split('-')
-  const names = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
-  return `${parseInt(day)}/${names[parseInt(m) - 1]}`
+  const monthName = new Intl.DateTimeFormat(locale, { month: 'short' }).format(new Date(2000, parseInt(m) - 1, 1))
+  return `${parseInt(day)}/${monthName.replace('.', '')}`
 }
 
 function localYM(d: Date) {
@@ -61,18 +61,20 @@ export default function PerformancePage() {
 
   const navigate = useNavigate()
   const { convert, currency } = useCurrency()
-  const { t } = useI18n()
+  const { t, locale } = useI18n()
+  const intlLocale = locale === 'pt' ? 'pt-BR' : locale === 'fr' ? 'fr-FR' : 'en-US'
   const { data: livePortfolio } = usePortfolioValue()
   const inceptionYM = usePerformanceInception()
 
   function fmt(valueBrl: number) {
-    return new Intl.NumberFormat('pt-BR', {
+    return new Intl.NumberFormat(intlLocale, {
       style: 'currency', currency,
       maximumFractionDigits: 0,
     }).format(convert(valueBrl))
   }
 
   const [mode, setMode] = useState<PeriodMode>('ytd')
+  const [dailyYtd, setDailyYtd] = useState(false)
 
   function derivePeriod(): { from: string; to: string } {
     switch (mode) {
@@ -87,19 +89,21 @@ export default function PerformancePage() {
   const { from, to } = derivePeriod()
   const periodLabel = (() => {
     switch (mode) {
-      case 'current_month': return fmtMonth(currentYM)
-      case 'last_30d':      return `${fmtMonth(addMonths(currentYM, -1))} – ${fmtMonth(currentYM)}`
-      case 'last_12m':      return `${fmtMonth(addMonths(currentYM, -11))} – ${fmtMonth(currentYM)}`
-      case 'ytd':           return `Jan/${currentYear.toString().slice(2)} – ${fmtMonth(currentYM)}`
-      case 'inception':     return inceptionYM ? `${fmtMonth(inceptionYM)} – ${fmtMonth(currentYM)}` : `– ${fmtMonth(currentYM)}`
+      case 'current_month': return fmtMonth(currentYM, intlLocale)
+      case 'last_30d':      return `${fmtMonth(addMonths(currentYM, -1), intlLocale)} – ${fmtMonth(currentYM, intlLocale)}`
+      case 'last_12m':      return `${fmtMonth(addMonths(currentYM, -11), intlLocale)} – ${fmtMonth(currentYM, intlLocale)}`
+      case 'ytd':           return `Jan/${currentYear.toString().slice(2)} – ${fmtMonth(currentYM, intlLocale)}`
+      case 'inception':     return inceptionYM ? `${fmtMonth(inceptionYM, intlLocale)} – ${fmtMonth(currentYM, intlLocale)}` : `– ${fmtMonth(currentYM, intlLocale)}`
     }
   })()
 
-  const useDailyChart = mode === 'current_month' || mode === 'last_30d'
+  const useDailyChart = mode === 'current_month' || mode === 'last_30d' || (mode === 'ytd' && dailyYtd)
   const dailyFrom = useDailyChart
     ? mode === 'current_month'
       ? `${currentYM}-01`
-      : localDate(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 29))
+      : mode === 'ytd'
+        ? `${currentYear}-01-01`
+        : localDate(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 29))
     : null
   const dailyTo = useDailyChart ? localDate(now) : null
   const { data: dailyData, loading: dailyLoading } = usePerformanceDaily(dailyFrom, dailyTo)
@@ -149,7 +153,7 @@ export default function PerformancePage() {
       const cdi   = dayBm.cdi   != null && baseBm.cdi   != null && baseBm.cdi   > 0 ? Math.round((dayBm.cdi   / baseBm.cdi   - 1) * 10000) / 100 : null
       const ibov  = dayBm.ibov  != null && baseBm.ibov  != null && baseBm.ibov  > 0 ? Math.round((dayBm.ibov  / baseBm.ibov  - 1) * 10000) / 100 : null
       const sp500 = dayBm.sp500 != null && baseBm.sp500 != null && baseBm.sp500 > 0 ? Math.round((dayBm.sp500 / baseBm.sp500 - 1) * 10000) / 100 : null
-      return { month: fmtDayLabel(pt.date), portfolio: retPct, cdi, ibov, sp500 }
+      return { month: fmtDayLabel(pt.date, intlLocale), portfolio: retPct, cdi, ibov, sp500 }
     })
   })() : []
 
@@ -243,7 +247,7 @@ export default function PerformancePage() {
       : 0
     const b = benchmarkMap.get(m.month)
     return {
-      month:     fmtMonth(m.month),
+      month:     fmtMonth(m.month, intlLocale),
       portfolio: portfolioPct,
       cdi:       (b?.cdi_cum != null && baseCDI != null) ? pct(b.cdi_cum, baseCDI) : null,
       ibov:      (b?.ibov_cum  != null && baseIBOV  != null) ? pct(b.ibov_cum,  baseIBOV)  : null,
@@ -304,6 +308,17 @@ export default function PerformancePage() {
               }`}
             >{label}</button>
           ))}
+
+          {mode === 'ytd' && (
+            <button
+              onClick={() => setDailyYtd(v => !v)}
+              className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
+                dailyYtd
+                  ? 'bg-[#1B4FD8] text-white border-[#1B4FD8]'
+                  : 'bg-white text-gray-500 border-gray-200 hover:border-[#1B4FD8] hover:text-[#1B4FD8]'
+              }`}
+            >{t.performance.daily}</button>
+          )}
 
           <span className="text-gray-200 text-sm">|</span>
 
@@ -495,7 +510,7 @@ export default function PerformancePage() {
                                 {hasDetail && (
                                   <span className={`text-gray-400 text-xs transition-transform inline-block ${isExpanded ? 'rotate-90' : ''}`}>▶</span>
                                 )}
-                                {fmtMonth(m.month)}
+                                {fmtMonth(m.month, intlLocale)}
                               </span>
                             </td>
                             <td className="px-4 py-3 text-right text-gray-900">
@@ -631,7 +646,7 @@ export default function PerformancePage() {
                             {hasDetail && (
                               <span className={`text-gray-400 text-xs transition-transform inline-block ${isExpanded ? 'rotate-90' : ''}`}>▶</span>
                             )}
-                            <span className="font-medium text-gray-700 text-sm">{fmtMonth(m.month)}</span>
+                            <span className="font-medium text-gray-700 text-sm">{fmtMonth(m.month, intlLocale)}</span>
                           </div>
                           {cf !== 0 && (
                             <div className="text-xs text-gray-400 mt-0.5">

@@ -5,7 +5,12 @@ import { apiFetch } from '../../lib/api'
 import { useAuth } from '../../contexts/AuthContext'
 import { useI18n } from '../../contexts/I18nContext'
 
-interface Category { id: number; name: string; icon: string; color: string }
+interface Category { id: number; name: string; name_key?: string | null; icon: string; color: string }
+
+function resolveKey(name: string, nameKey: string | null | undefined, keys: Record<string, string>): string {
+  if (!nameKey) return name
+  return keys[nameKey] ?? name
+}
 interface MomentRef  { id: number; name: string; icon: string; color: string }
 interface FinanceAccount { id: number; name: string; icon: string; currency: string }
 interface Transaction {
@@ -194,6 +199,8 @@ export default function FinancesTransactionsPage() {
 
   // Import modal
   const [showImportModal, setShowImportModal] = useState(false)
+  // Search
+  const [searchQuery, setSearchQuery] = useState('')
 
   // Overflow menu + filter panel
   const [showOverflowMenu, setShowOverflowMenu] = useState(false)
@@ -365,7 +372,8 @@ export default function FinancesTransactionsPage() {
     await apiFetch(`/finances/transactions/${id}`, { method: 'PATCH', body: JSON.stringify({ category_id: categoryId }) })
 
     if (tx) {
-      const applyAll = window.confirm(`Aplicar esta categoria a todas as transações com a descrição "${tx.description}"?\n\nIsso inclui transações de outros períodos e meses.`)
+      const msg = t.finances.updateCategoryConfirm.replace('{desc}', tx.description ?? '')
+      const applyAll = window.confirm(msg)
       if (applyAll) {
         await apiFetch('/finances/transactions/bulk-category', {
           method: 'PATCH',
@@ -698,7 +706,37 @@ export default function FinancesTransactionsPage() {
     }
   }
 
-  const catsForAmount = (amount: number) => amount > 0 ? incomeCategories : expenseCategories
+  const nameKeys: Record<string, string> = {
+    categoryTransfer:      t.finances.categoryTransfer,
+    categorySalary:        t.finances.categorySalary,
+    categoryUncategorized: t.finances.categoryUncategorized,
+    categoryGroceries:     t.finances.categoryGroceries,
+    categoryRestaurant:    t.finances.categoryRestaurant,
+    categoryTransport:     t.finances.categoryTransport,
+    categoryHealth:        t.finances.categoryHealth,
+    categoryEntertainment: t.finances.categoryEntertainment,
+    categoryHousing:       t.finances.categoryHousing,
+    categoryStreaming:      t.finances.categoryStreaming,
+    categorySubscriptions:  t.finances.categorySubscriptions,
+    categoryPharmacy:       t.finances.categoryPharmacy,
+    categoryClothing:       t.finances.categoryClothing,
+    categoryTravel:         t.finances.categoryTravel,
+    categoryCoffee:         t.finances.categoryCoffee,
+    categoryUtilities:      t.finances.categoryUtilities,
+    categoryEducation:      t.finances.categoryEducation,
+    categoryPersonalCare:   t.finances.categoryPersonalCare,
+    categoryElectronics:    t.finances.categoryElectronics,
+    categoryAirbnb:         t.finances.categoryAirbnb,
+    categoryOther:          t.finances.categoryOther,
+    categoryGifts:          t.finances.categoryGifts,
+    categoryShopping:       t.finances.categoryShopping,
+    categoryTaxes:          t.finances.categoryTaxes,
+    categoryFees:           t.finances.categoryFees,
+    categoryBarsRestaurants: t.finances.categoryBarsRestaurants,
+    categoryShowsParties:    t.finances.categoryShowsParties,
+    categoryPhone:           t.finances.categoryPhone,
+    categoryInvestment:      t.finances.categoryInvestment,
+  }
 
   const isHidden = (tx: Transaction) => tx.is_internal_transfer || tx.exclude_from_stats
   const expenses = transactions.filter(tx => tx.amount < 0 && !isHidden(tx)).reduce((s, tx) => s + tx.amount, 0)
@@ -710,10 +748,16 @@ export default function FinancesTransactionsPage() {
     | { kind: 'tx'; tx: Transaction }
     | { kind: 'group'; groupId: string; name: string; txs: Transaction[]; net: number }
 
+  const filteredTransactions = useMemo(() => {
+    if (!searchQuery.trim()) return transactions
+    const q = searchQuery.trim().toLowerCase()
+    return transactions.filter(tx => tx.description?.toLowerCase().includes(q) || tx.notes?.toLowerCase().includes(q))
+  }, [transactions, searchQuery])
+
   const displayItems = useMemo((): DisplayItem[] => {
     const items: DisplayItem[] = []
     const seenGroups = new Set<string>()
-    for (const tx of transactions) {
+    for (const tx of filteredTransactions) {
       if (tx.reimbursement_group_id) {
         if (!seenGroups.has(tx.reimbursement_group_id)) {
           seenGroups.add(tx.reimbursement_group_id)
@@ -727,7 +771,7 @@ export default function FinancesTransactionsPage() {
       }
     }
     return items
-  }, [transactions, groups, t])
+  }, [filteredTransactions, groups, t])
 
   return (
     <div className="space-y-5">
@@ -1030,9 +1074,14 @@ export default function FinancesTransactionsPage() {
                         className="text-xs border border-gray-200 rounded px-2 py-1 w-full"
                       >
                         <option value="">{t.finances.noCategory}</option>
-                        {catsForAmount(row.amount).length > 0 && (
-                          <optgroup label={t.finances.category}>
-                            {catsForAmount(row.amount).map(c => <option key={c.id} value={`c:${c.id}`}>{c.icon} {c.name}</option>)}
+                        {incomeCategories.length > 0 && (
+                          <optgroup label={t.finances.incomeLabel}>
+                            {incomeCategories.map(c => <option key={c.id} value={`c:${c.id}`}>{c.icon} {resolveKey(c.name, c.name_key, nameKeys)}</option>)}
+                          </optgroup>
+                        )}
+                        {expenseCategories.length > 0 && (
+                          <optgroup label={t.finances.expenses}>
+                            {expenseCategories.map(c => <option key={c.id} value={`c:${c.id}`}>{c.icon} {resolveKey(c.name, c.name_key, nameKeys)}</option>)}
                           </optgroup>
                         )}
                         {sharedCats.length > 0 && (
@@ -1105,9 +1154,14 @@ export default function FinancesTransactionsPage() {
                             className="text-xs border border-gray-200 rounded px-2 py-1 max-w-[180px]"
                           >
                             <option value="">{t.finances.noCategory}</option>
-                            {catsForAmount(row.amount).length > 0 && (
-                              <optgroup label={t.finances.category}>
-                                {catsForAmount(row.amount).map(c => <option key={c.id} value={`c:${c.id}`}>{c.icon} {c.name}</option>)}
+                            {incomeCategories.length > 0 && (
+                              <optgroup label={t.finances.incomeLabel}>
+                                {incomeCategories.map(c => <option key={c.id} value={`c:${c.id}`}>{c.icon} {resolveKey(c.name, c.name_key, nameKeys)}</option>)}
+                              </optgroup>
+                            )}
+                            {expenseCategories.length > 0 && (
+                              <optgroup label={t.finances.expenses}>
+                                {expenseCategories.map(c => <option key={c.id} value={`c:${c.id}`}>{c.icon} {resolveKey(c.name, c.name_key, nameKeys)}</option>)}
                               </optgroup>
                             )}
                             {sharedCats.length > 0 && (
@@ -1130,6 +1184,22 @@ export default function FinancesTransactionsPage() {
             </table>
           </div>
         </div>
+        </div>
+      )}
+
+      {/* Search bar */}
+      {csvStep === 'idle' && (
+        <div className="relative">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+            <path fillRule="evenodd" d="M9.965 11.026a5 5 0 1 1 1.06-1.06l2.755 2.754a.75.75 0 1 1-1.06 1.06l-2.755-2.754ZM10.5 7a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0Z" clipRule="evenodd" />
+          </svg>
+          <input
+            type="search"
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            placeholder={t.finances.transactionsSearch}
+            className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/10"
+          />
         </div>
       )}
 
@@ -1332,13 +1402,13 @@ export default function FinancesTransactionsPage() {
                             >
                               <option value="">{t.finances.noCategory}</option>
                               {incomeCategories.length > 0 && (
-                                <optgroup label="Renda">
-                                  {incomeCategories.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
+                                <optgroup label={t.finances.incomeLabel}>
+                                  {incomeCategories.map(c => <option key={c.id} value={c.id}>{c.icon} {resolveKey(c.name, c.name_key, nameKeys)}</option>)}
                                 </optgroup>
                               )}
                               {expenseCategories.length > 0 && (
-                                <optgroup label="Despesas">
-                                  {expenseCategories.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
+                                <optgroup label={t.finances.expenses}>
+                                  {expenseCategories.map(c => <option key={c.id} value={c.id}>{c.icon} {resolveKey(c.name, c.name_key, nameKeys)}</option>)}
                                 </optgroup>
                               )}
                             </select>
@@ -1377,7 +1447,7 @@ export default function FinancesTransactionsPage() {
                           )}
                         </td>
                         <td className="px-1 sm:px-3 py-2.5 sm:py-3">
-                          <div className={`flex items-center gap-0.5 transition-opacity ${tx.exclude_from_stats ? 'opacity-100' : '[@media(hover:none)]:opacity-100 opacity-0 group-hover:opacity-100'}`}>
+                          <div className={`flex items-center gap-0.5 transition-opacity ${tx.exclude_from_stats || tx.is_internal_transfer ? 'opacity-100' : '[@media(hover:none)]:opacity-100 opacity-0 group-hover:opacity-100'}`}>
                             {/* Note */}
                             <button
                               onClick={() => { setEditingNotesId(tx.id); setNotesInput(tx.notes ?? '') }}
@@ -1407,7 +1477,7 @@ export default function FinancesTransactionsPage() {
                               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z" clipRule="evenodd" /></svg>
                             </button>
                             {/* Delete */}
-                            <button onClick={() => deleteTransaction(tx.id)} title="Excluir transação" className="p-1.5 rounded text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors">
+                            <button onClick={() => deleteTransaction(tx.id)} title={t.common.delete} className="p-1.5 rounded text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors">
                               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M5 3.25V4H2.75a.75.75 0 0 0 0 1.5h.3l.815 8.15A1.5 1.5 0 0 0 5.357 15h5.285a1.5 1.5 0 0 0 1.493-1.35l.815-8.15h.3a.75.75 0 0 0 0-1.5H11v-.75A2.25 2.25 0 0 0 8.75 1h-1.5A2.25 2.25 0 0 0 5 3.25Zm2.25-.75a.75.75 0 0 0-.75.75V4h3v-.75a.75.75 0 0 0-.75-.75h-1.5ZM6.05 6a.75.75 0 0 1 .787.713l.275 5.5a.75.75 0 0 1-1.498.075l-.275-5.5A.75.75 0 0 1 6.05 6Zm3.9 0a.75.75 0 0 1 .712.787l-.275 5.5a.75.75 0 0 1-1.498-.075l.275-5.5a.75.75 0 0 1 .786-.712Z" clipRule="evenodd" /></svg>
                             </button>
                           </div>
@@ -1488,7 +1558,7 @@ export default function FinancesTransactionsPage() {
                 className="flex items-center gap-1 sm:gap-1.5 text-sm bg-white/10 hover:bg-white/20 transition-colors px-2.5 sm:px-3 py-1.5 rounded-xl disabled:opacity-50"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4 shrink-0"><path d="M14 3a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V3ZM2 8a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8Z"/></svg>
-                <span className="hidden sm:inline">{assigningAccount ? 'Atribuindo...' : 'Conta'}</span>
+                <span className="hidden sm:inline">{assigningAccount ? t.finances.bulkAssigning : t.finances.bulkAccount}</span>
                 <svg className={`w-3 h-3 transition-transform ${showAccountAssign ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                 </svg>

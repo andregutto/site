@@ -78,6 +78,7 @@ function MomentForm({ initial, onSave, onCancel, saving, userId }: FormProps) {
     return { x: isNaN(x) ? 50 : x, y: isNaN(y) ? 50 : y }
   })
   const [isDragging,   setIsDragging]   = useState(false)
+  const [photoError,   setPhotoError]   = useState(false)
   const fileInputRef  = useRef<HTMLInputElement>(null)
   const photoContainerRef = useRef<HTMLDivElement>(null)
   const dragStart = useRef<{ mx: number; my: number; px: number; py: number } | null>(null)
@@ -135,6 +136,7 @@ function MomentForm({ initial, onSave, onCancel, saving, userId }: FormProps) {
 
     if (photoFile) {
       setUploading(true)
+      setPhotoError(false)
       try {
         const ext = photoFile.name.split('.').pop() ?? 'jpg'
         const path = `${userId}/${Date.now()}.${ext}`
@@ -142,6 +144,8 @@ function MomentForm({ initial, onSave, onCancel, saving, userId }: FormProps) {
         if (!error) {
           const { data } = supabase.storage.from('moment-photos').getPublicUrl(path)
           coverImageUrl = data.publicUrl
+        } else {
+          setPhotoError(true)
         }
       } finally {
         setUploading(false)
@@ -175,7 +179,7 @@ function MomentForm({ initial, onSave, onCancel, saving, userId }: FormProps) {
 
         {/* Photo */}
         <div className="col-span-2">
-          <label className={labelCls}>Foto (opcional)</label>
+          <label className={labelCls}>{t.finances.momentPhotoLabel}</label>
           <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={onFileChange} />
           {photoPreview ? (
             <div className="space-y-1">
@@ -199,29 +203,29 @@ function MomentForm({ initial, onSave, onCancel, saving, userId }: FormProps) {
                     <button type="button" onClick={e => { e.stopPropagation(); fileInputRef.current?.click() }}
                       onMouseDown={e => e.stopPropagation()}
                       className="text-xs text-white bg-black/50 rounded-lg px-2.5 py-1 opacity-0 group-hover:opacity-100 hover:opacity-100 transition-opacity">
-                      Trocar
+                      {t.finances.momentPhotoChange}
                     </button>
                     <button type="button"
                       onClick={e => { e.stopPropagation(); setPhotoPreview(null); setPhotoFile(null) }}
                       onMouseDown={e => e.stopPropagation()}
                       className="text-xs text-white bg-red-500/70 rounded-lg px-2.5 py-1 opacity-0 group-hover:opacity-100 hover:opacity-100 transition-opacity">
-                      Remover
+                      {t.finances.momentPhotoRemove}
                     </button>
                   </div>
                 )}
                 {/* Drag hint */}
                 <div className="absolute top-2 left-1/2 -translate-x-1/2 pointer-events-none">
                   <span className="text-[10px] text-white/70 bg-black/40 rounded px-2 py-0.5 tracking-wide">
-                    ↕ arraste para reposicionar
+                    {t.finances.momentPhotoDragHint}
                   </span>
                 </div>
               </div>
               <div className="flex justify-end gap-2 px-0.5">
                 <button type="button" onClick={() => fileInputRef.current?.click()}
-                  className="text-xs text-gray-400 hover:text-gray-700 transition-colors">Trocar foto</button>
+                  className="text-xs text-gray-400 hover:text-gray-700 transition-colors">{t.finances.momentPhotoChangeLabel}</button>
                 <span className="text-gray-200">·</span>
                 <button type="button" onClick={() => { setPhotoPreview(null); setPhotoFile(null) }}
-                  className="text-xs text-gray-400 hover:text-red-500 transition-colors">Remover</button>
+                  className="text-xs text-gray-400 hover:text-red-500 transition-colors">{t.finances.momentPhotoRemove}</button>
               </div>
             </div>
           ) : (
@@ -230,7 +234,7 @@ function MomentForm({ initial, onSave, onCancel, saving, userId }: FormProps) {
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M13.5 12a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
               </svg>
-              <span className="text-xs">Adicionar foto</span>
+              <span className="text-xs">{t.finances.momentPhotoAdd}</span>
             </button>
           )}
         </div>
@@ -263,11 +267,11 @@ function MomentForm({ initial, onSave, onCancel, saving, userId }: FormProps) {
         </div>
 
         <div>
-          <label className={labelCls}>Início (opcional)</label>
+          <label className={labelCls}>{t.finances.momentStartDate}</label>
           <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className={fieldCls} />
         </div>
         <div>
-          <label className={labelCls}>Fim (opcional)</label>
+          <label className={labelCls}>{t.finances.momentEndDate}</label>
           <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className={fieldCls} />
         </div>
 
@@ -285,6 +289,9 @@ function MomentForm({ initial, onSave, onCancel, saving, userId }: FormProps) {
         </div>
       </div>
 
+      {photoError && (
+        <p className="text-xs text-amber-600 bg-amber-50 rounded-lg px-3 py-2">{t.finances.momentPhotoUploadError}</p>
+      )}
       <div className="flex gap-2">
         <button type="submit" disabled={saving || uploading}
           className="flex-1 bg-[#0D0D0D] text-white text-sm py-2 rounded-xl hover:opacity-80 transition-opacity disabled:opacity-40">
@@ -695,7 +702,7 @@ export default function FinancesMomentsPage() {
                     {m.start_date && m.end_date
                       ? `${fmtDate(m.start_date)} – ${fmtDate(m.end_date)}`
                       : m.start_date
-                      ? `a partir de ${fmtDate(m.start_date)}`
+                      ? `${t.finances.momentFromDate} ${fmtDate(m.start_date)}`
                       : m.description}
                   </p>
                 )}
@@ -704,7 +711,7 @@ export default function FinancesMomentsPage() {
                 <button
                   onClick={e => { e.stopPropagation(); setSharingMoment(m) }}
                   className={`p-1.5 transition-colors rounded-lg hover:bg-gray-100 ${m.share_token ? 'text-[#0D0D0D]' : 'text-gray-400 hover:text-gray-700'}`}
-                  title="Compartilhar"
+                  title={t.finances.shareTitle}
                 >
                   <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
@@ -843,8 +850,7 @@ export default function FinancesMomentsPage() {
                       </div>
                     ) : (
                       <p className="text-xs text-gray-400 text-center py-4">
-                        Nenhuma transação neste Momento ainda.
-                        Vá em <strong>Transações</strong> e atribua gastos a este Momento.
+                        {t.finances.momentNoTransactions}
                       </p>
                     )}
                   </>

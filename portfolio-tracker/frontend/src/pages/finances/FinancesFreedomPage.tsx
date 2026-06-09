@@ -123,6 +123,9 @@ interface PlanFormProps {
   initial: Partial<FreedomPlan>
   portfolio: PortfolioValue
   ipcaAnnual?: number | null
+  hicpAnnual?: number | null
+  cpiAnnual?: number | null
+  userCountry?: string | null
   birthdate?: string | null
   onSave: (data: Omit<FreedomPlan, 'id' | 'is_active' | 'created_at'>) => Promise<void>
   onDelete?: () => void
@@ -130,7 +133,7 @@ interface PlanFormProps {
   saving: boolean
 }
 
-function PlanForm({ initial, portfolio, ipcaAnnual, birthdate, onSave, onDelete, onCancel, saving }: PlanFormProps) {
+function PlanForm({ initial, portfolio, ipcaAnnual, hicpAnnual, cpiAnnual, userCountry, birthdate, onSave, onDelete, onCancel, saving }: PlanFormProps) {
   const { t, locale } = useI18n()
   const intlLocale = ({ pt: 'pt-BR', en: 'en-US', fr: 'fr-FR' } as Record<string, string>)[locale] ?? 'pt-BR'
   const isNew = !initial.id
@@ -160,11 +163,15 @@ function PlanForm({ initial, portfolio, ipcaAnnual, birthdate, onSave, onDelete,
   const [horizon, setHorizon]     = useState(String(initial.horizon_years ?? 20))
   const [notes, setNotes]         = useState(initial.notes ?? '')
   const [desiredIncome, setDesiredIncome] = useState('')
-  const [inflation, setInflation] = useState(
-    !initial.id && (initial.currency ?? 'EUR') === 'BRL' && ipcaAnnual != null
-      ? String(ipcaAnnual)
-      : '2'
-  )
+  const [inflation, setInflation] = useState(() => {
+    if (initial.id) return '2'
+    const country = (userCountry ?? '').toUpperCase()
+    if (country === 'BR' && ipcaAnnual != null) return String(ipcaAnnual)
+    if ((country === 'FR' || country === 'DE' || country === 'NL' || country === 'BE' || country === 'ES') && hicpAnnual != null) return String(hicpAnnual)
+    if (country === 'US' && cpiAnnual != null) return String(cpiAnnual)
+    if (country === 'BR' && (initial.currency ?? 'EUR') === 'BRL' && ipcaAnnual != null) return String(ipcaAnnual)
+    return '2'
+  })
   const [showAdvanced, setShowAdvanced] = useState(false)
   // Strategy: 'fixContrib' = user sets contribution, horizon is calculated; 'fixHorizon' = user sets horizon, contrib is calculated
   const [stratMode, setStratMode] = useState<'fixContrib' | 'fixHorizon'>('fixHorizon')
@@ -488,14 +495,29 @@ function PlanForm({ initial, portfolio, ipcaAnnual, birthdate, onSave, onDelete,
                     className={fieldCls}
                     placeholder="2"
                   />
-                  {ipcaAnnual != null && (
-                    <p className="text-[11px] text-gray-400 mt-1">
-                      {t.finances.freedomIpcaLabel}&nbsp;
-                      <button type="button" onClick={() => setInflation(String(ipcaAnnual))} className="text-[#0D0D0D] underline underline-offset-2 hover:opacity-70 transition-opacity">
-                        {ipcaAnnual}%
-                      </button>
-                    </p>
-                  )}
+                  <div className="mt-1.5 space-y-1">
+                    <p className="text-[11px] text-gray-400">{t.finances.freedomInflationRef}</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {ipcaAnnual != null && (
+                        <button type="button" onClick={() => setInflation(String(ipcaAnnual))}
+                          className="text-[11px] px-2 py-0.5 rounded-full bg-gray-100 hover:bg-[#0D0D0D] hover:text-white transition-colors">
+                          {t.finances.freedomInflationIpca}: {ipcaAnnual}%
+                        </button>
+                      )}
+                      {hicpAnnual != null && (
+                        <button type="button" onClick={() => setInflation(String(hicpAnnual))}
+                          className="text-[11px] px-2 py-0.5 rounded-full bg-gray-100 hover:bg-[#0D0D0D] hover:text-white transition-colors">
+                          {t.finances.freedomInflationHicp}: {hicpAnnual}%
+                        </button>
+                      )}
+                      {cpiAnnual != null && (
+                        <button type="button" onClick={() => setInflation(String(cpiAnnual))}
+                          className="text-[11px] px-2 py-0.5 rounded-full bg-gray-100 hover:bg-[#0D0D0D] hover:text-white transition-colors">
+                          {t.finances.freedomInflationCpi}: {cpiAnnual}%
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
               <p className="text-[11px] text-gray-400 leading-snug">{t.finances.freedomDesiredIncomeHint}</p>
@@ -732,8 +754,8 @@ function PlanForm({ initial, portfolio, ipcaAnnual, birthdate, onSave, onDelete,
 }
 
 // Custom tooltip for chart
-function ChartTooltip({ active, payload, label, currency }: {
-  active?: boolean; payload?: { name: string; value: number; color: string }[]; label?: string; currency: string
+function ChartTooltip({ active, payload, label, currency, locale = 'pt-BR' }: {
+  active?: boolean; payload?: { name: string; value: number; color: string }[]; label?: string; currency: string; locale?: string
 }) {
   if (!active || !payload?.length) return null
   return (
@@ -741,7 +763,7 @@ function ChartTooltip({ active, payload, label, currency }: {
       <p className="text-gray-500 mb-1">{label}</p>
       {payload.map(p => p.value != null && (
         <p key={p.name} style={{ color: p.color }} className="font-semibold">
-          {p.name}: {fmt(p.value, currency)}
+          {p.name}: {fmt(p.value, currency, false, locale)}
         </p>
       ))}
     </div>
@@ -757,7 +779,12 @@ export default function FinancesFreedomPage() {
   const [perf,         setPerf]         = useState<MonthlyPerf[]>([])
   const [portfolio,    setPortfolio]    = useState<PortfolioValue | null>(null)
   const [ipcaM12,      setIpcaM12]      = useState<number | null>(null)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [hicpM12,      _setHicpM12]     = useState<number | null>(2.5)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [cpiM12,       _setCpiM12]      = useState<number | null>(3.0)
   const [userBirthdate, setUserBirthdate] = useState<string | null>(null)
+  const [userCountry,  setUserCountry]  = useState<string | null>(null)
   const [loading,      setLoading]      = useState(true)
   const [perfLoading,  setPerfLoading]  = useState(true)
   const [showForm,     setShowForm]     = useState(false)
@@ -785,11 +812,12 @@ export default function FinancesFreedomPage() {
       const [plansData, portfolioData, profileData] = await Promise.all([
         apiFetch<FreedomPlan[]>('/finances/freedom-plans'),
         apiFetch<PortfolioValue>('/portfolio/value'),
-        apiFetch<{ birthdate?: string }>('/profile'),
+        apiFetch<{ birthdate?: string; country?: string }>('/profile'),
       ])
       setPlans(plansData)
       setPortfolio(portfolioData)
       if (profileData.birthdate) setUserBirthdate(profileData.birthdate)
+      if (profileData.country) setUserCountry(profileData.country)
     } catch {
       // ignore
     } finally {
@@ -1065,6 +1093,9 @@ export default function FinancesFreedomPage() {
             initial={editingPlan ?? {}}
             portfolio={portfolio ?? { total_brl: 0, total_eur: null, total_usd: null }}
             ipcaAnnual={ipcaM12}
+            hicpAnnual={hicpM12}
+            cpiAnnual={cpiM12}
+            userCountry={userCountry}
             birthdate={userBirthdate}
             onSave={savePlan}
             onDelete={editingPlan ? () => deletePlan(editingPlan.id) : undefined}
@@ -1158,7 +1189,7 @@ export default function FinancesFreedomPage() {
                     tick={{ fontSize: 10 }}
                     width={80}
                   />
-                  <Tooltip content={<ChartTooltip currency={displayCurrency} />} />
+                  <Tooltip content={<ChartTooltip currency={displayCurrency} locale={intlLocale} />} />
                   <Legend wrapperStyle={{ fontSize: 11 }} />
                   <ReferenceLine
                     y={cxFreedom(activePlan!.target_amount)}

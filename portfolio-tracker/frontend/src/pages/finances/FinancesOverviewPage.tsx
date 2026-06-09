@@ -50,8 +50,8 @@ interface CatHistoryEntry {
   months: { month: string; total: number }[]
 }
 
-function fmt(n: number, currency: string, compact = false) {
-  return new Intl.NumberFormat('pt-BR', {
+function fmt(n: number, currency: string, compact = false, locale = 'pt-BR') {
+  return new Intl.NumberFormat(locale, {
     style: 'currency', currency,
     notation: compact ? 'compact' : 'standard',
     minimumFractionDigits: 0, maximumFractionDigits: compact ? 1 : 0,
@@ -101,11 +101,12 @@ function resolveKey(name: string, nameKey: string | null | undefined, keys: Reco
 }
 
 
-function ChartTooltip({ active, payload, label, currency }: {
+function ChartTooltip({ active, payload, label, currency, locale = 'pt-BR' }: {
   active?: boolean
   payload?: { name: string; value: number; color: string }[]
   label?: string
   currency: string
+  locale?: string
 }) {
   if (!active || !payload?.length) return null
   const total = payload.reduce((s, p) => s + (p.value ?? 0), 0)
@@ -115,12 +116,12 @@ function ChartTooltip({ active, payload, label, currency }: {
       {payload.map(p => p.value > 0 && (
         <div key={p.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 2 }}>
           <span style={{ color: p.color }}>{p.name}</span>
-          <span style={{ fontWeight: 600 }}>{fmt(p.value, currency, true)}</span>
+          <span style={{ fontWeight: 600 }}>{fmt(p.value, currency, true, locale)}</span>
         </div>
       ))}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginTop: 4, paddingTop: 4, borderTop: '1px solid var(--arvo-border)' }}>
         <span style={{ color: 'rgba(13,13,13,0.50)' }}>Total</span>
-        <span style={{ fontWeight: 700, color: 'var(--arvo-fg)' }}>{fmt(total, currency, true)}</span>
+        <span style={{ fontWeight: 700, color: 'var(--arvo-fg)' }}>{fmt(total, currency, true, locale)}</span>
       </div>
     </div>
   )
@@ -883,7 +884,7 @@ export default function FinancesOverviewPage() {
                 interval={historyMonths <= 6 ? 0 : historyMonths <= 12 ? 1 : Math.max(0, Math.ceil(chartData.length / 8) - 1)}
               />
               <YAxis tickFormatter={v => fmt(cx(v as number), currency, true)} tick={{ fontSize: 10 }} width={70} />
-              <Tooltip content={<ChartTooltip currency={currency} />} />
+              <Tooltip content={<ChartTooltip currency={currency} locale={browserLocale} />} />
               <Legend wrapperStyle={{ fontSize: 11 }} />
               {data.envelopes.filter(e => e.type !== 'income').map((env, i, arr) => (
                 <Bar
@@ -943,7 +944,7 @@ export default function FinancesOverviewPage() {
                   <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
                   <XAxis dataKey="month" tick={{ fontSize: 11 }} interval={historyMonths <= 6 ? 0 : historyMonths <= 12 ? 1 : Math.max(0, Math.ceil(catChartData.length / 8) - 1)} />
                   <YAxis tickFormatter={v => fmt(cx(Number(v)), currency, true)} tick={{ fontSize: 10 }} width={70} />
-                  <Tooltip content={<ChartTooltip currency={currency} />} />
+                  <Tooltip content={<ChartTooltip currency={currency} locale={browserLocale} />} />
                   {filtered.map((cat, i) => (
                     <Bar
                       key={cat.id}
