@@ -32,11 +32,11 @@ export default function AllocationChart({ data, currency = 'BRL', convert }: Pro
   const totalFormatted = fmtCompact(convert ? convert(total) : total, currency)
 
   const renderOuterLabel = (props: {
-    cx: number; cy: number; midAngle: number;
-    outerRadius: number; percent: number; payload: PortfolioClass
+    cx?: number; cy?: number; midAngle?: number;
+    outerRadius?: number; percent?: number; payload?: PortfolioClass
   }) => {
-    const { cx, cy, midAngle, outerRadius, percent, payload } = props
-    if (percent < 0.05) return null
+    const { cx = 0, cy = 0, midAngle = 0, outerRadius = 0, percent = 0, payload } = props
+    if (!payload || percent < 0.05) return null
     const radius = outerRadius + 26
     const x = cx + radius * Math.cos(-midAngle * RADIAN)
     const y = cy + radius * Math.sin(-midAngle * RADIAN)
