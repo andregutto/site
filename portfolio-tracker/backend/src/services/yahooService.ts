@@ -6,6 +6,21 @@ const yf = new YahooFinance({ suppressNotices: ['yahooSurvey', 'ripHistorical'] 
 
 export interface PricePoint { date: string; price: number }
 
+export async function getAssetSector(yahooTicker: string): Promise<string | null> {
+  return cache.getOrFetch(
+    `yahoo:sector:${yahooTicker}`,
+    24 * 60 * 60 * 1000,
+    async () => {
+      try {
+        const summary = await yf.quoteSummary(yahooTicker, { modules: ['assetProfile'] as any })
+        return (summary as any).assetProfile?.sector ?? null
+      } catch {
+        return null
+      }
+    }
+  )
+}
+
 export async function getCurrentPrice(ticker: string): Promise<number> {
   return cache.getOrFetch(
     `yahoo:current:${ticker}`,

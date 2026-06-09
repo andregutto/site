@@ -657,8 +657,8 @@ router.delete('/share-link', requireAuth, async (req, res: Response) => {
   res.json({ ok: true })
 })
 
-// GET /api/portfolio/sector-data — fetch real sector data per asset code
-const BRAPI_SECTOR_MAP: Record<string, string> = {
+// GET /api/portfolio/sector-data — fetch real sector data per asset code via Yahoo Finance
+const YAHOO_SECTOR_MAP: Record<string, string> = {
   'Financial Services': 'Financeiro',
   'Financial': 'Financeiro',
   'Energy': 'Energia',
@@ -675,7 +675,7 @@ const BRAPI_SECTOR_MAP: Record<string, string> = {
 }
 
 function mapSectorPt(sector: string | null, classNameKey?: string | null): string | null {
-  if (sector) return BRAPI_SECTOR_MAP[sector] ?? sector
+  if (sector) return YAHOO_SECTOR_MAP[sector] ?? sector
   const k = (classNameKey ?? '').toLowerCase()
   if (k.includes('fii') || k.includes('imoveis') || k.includes('imóveis')) return 'Imóveis'
   if (k.includes('rendafixa') || k.includes('previdencia')) return 'Renda Fixa'
@@ -692,49 +692,33 @@ router.get('/sector-data', requireAuth, async (req, res: Response) => {
 
     const { data: assets } = await supabaseAdmin
       .from('assets')
-      .select('id, code, asset_type, ticker_brapi, coingecko_id, asset_classes(name_key)')
+      .select('id, code, asset_type, ticker_brapi, ticker_yahoo, coingecko_id, asset_classes(name_key)')
       .eq('user_id', userId)
       .eq('active', true)
 
     const sectors: Record<string, string | null> = {}
-    const brapiTickers: Array<{ code: string; ticker: string; classKey: string | null }> = []
 
-    for (const a of (assets ?? [])) {
-      const classKey = (a.asset_classes as { name_key?: string } | null)?.name_key ?? null
-      if (a.asset_type === 'fixed_income') {
-        sectors[a.code] = 'Renda Fixa'
-      } else if (a.coingecko_id) {
-        sectors[a.code] = 'Cripto'
-      } else if (a.ticker_brapi) {
-        brapiTickers.push({ code: a.code, ticker: a.ticker_brapi as string, classKey })
-      } else {
-        sectors[a.code] = mapSectorPt(null, classKey)
-      }
-    }
-
-    if (brapiTickers.length > 0 && process.env.BRAPI_TOKEN) {
-      const tickerStr = brapiTickers.map(t => t.ticker).join(',')
-      const url = `https://brapi.dev/api/quote/${tickerStr}?token=${process.env.BRAPI_TOKEN}&fundamental=true`
-      try {
-        const resp = await fetch(url, { signal: AbortSignal.timeout(8000) })
-        if (resp.ok) {
-          const json = await resp.json() as { results?: Array<{ symbol: string; summaryProfile?: { sector?: string } }> }
-          for (const r of json.results ?? []) {
-            const match = brapiTickers.find(t => t.ticker.toUpperCase() === r.symbol?.toUpperCase())
-            if (match) {
-              sectors[match.code] = mapSectorPt(r.summaryProfile?.sector ?? null, match.classKey)
-            }
-          }
+    await Promise.allSettled(
+      (assets ?? []).map(async (a) => {
+        const classKey = (a.asset_classes as { name_key?: string } | null)?.name_key ?? null
+        if (a.asset_type === 'fixed_income') {
+          sectors[a.code] = 'Renda Fixa'; return
         }
-      } catch { /* ignore — fill remaining below */ }
-    }
+        if (a.coingecko_id) {
+          sectors[a.code] = 'Cripto'; return
+        }
+        const yahooTicker = (a.ticker_yahoo as string | null) ?? (a.ticker_brapi ? `${a.ticker_brapi}.SA` : null)
+        if (yahooTicker) {
+          const raw = await yahoo.getAssetSector(yahooTicker)
+          sectors[a.code] = mapSectorPt(raw, classKey)
+        } else {
+          sectors[a.code] = mapSectorPt(null, classKey)
+        }
+      })
+    )
 
-    for (const t of brapiTickers) {
-      if (!(t.code in sectors)) sectors[t.code] = mapSectorPt(null, t.classKey)
-    }
-
-    const SIX_HOURS = 6 * 60 * 60 * 1000
-    cache.set(cacheKey, sectors, SIX_HOURS)
+    const DAY = 24 * 60 * 60 * 1000
+    cache.set(cacheKey, sectors, DAY)
     res.json({ sectors })
   } catch (err) {
     res.status(500).json({ error: String(err) })
