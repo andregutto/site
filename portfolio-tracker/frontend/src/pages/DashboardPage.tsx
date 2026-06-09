@@ -12,7 +12,6 @@ import ValueCards from '../components/ValueCards'
 import AllocationChart from '../components/AllocationChart'
 import AssetTable from '../components/AssetTable'
 import FixedIncomeSetupModal from '../components/FixedIncomeSetupModal'
-import SetupChecklist from '../components/SetupChecklist'
 import type { PortfolioAsset, SplitEvent } from '../lib/types'
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
 
@@ -280,7 +279,6 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <SetupChecklist hasAssets={data.by_asset.length > 0} />
 
       {/* Split warning banner */}
       {splitWarnings.length > 0 && (

@@ -10,6 +10,7 @@ import LoginFooter from './LoginFooter'
 import OnboardingOverlay from './OnboardingOverlay'
 import LanguageSelector from './LanguageSelector'
 import ChatWidget from './ChatWidget'
+import SetupChecklist from './SetupChecklist'
 
 const onboardingKey = (userId: string) => `onboarding_v1_done_${userId}`
 const CURRENCIES: Currency[] = ['BRL', 'USD', 'EUR']
@@ -369,6 +370,8 @@ export default function AppLayout() {
         )}
 
       </header>
+
+      <SetupChecklist firstName={meta.first_name as string | undefined} />
 
       {showBudgetSetup && (
         <div className="bg-amber-50 border-b border-amber-200 px-4 py-3 flex items-center justify-between gap-3">

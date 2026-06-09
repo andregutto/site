@@ -310,7 +310,7 @@ router.get('/categories', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const { data } = await supabaseAdmin
     .from('finance_categories')
-    .select('id, name, icon, color')
+    .select('id, name, icon, color, budget_monthly')
     .eq('user_id', userId)
     .order('name')
   res.json(data ?? [])
