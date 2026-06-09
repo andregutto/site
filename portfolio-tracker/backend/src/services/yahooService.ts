@@ -12,8 +12,11 @@ export async function getAssetSector(yahooTicker: string): Promise<string | null
     24 * 60 * 60 * 1000,
     async () => {
       try {
-        const summary = await yf.quoteSummary(yahooTicker, { modules: ['assetProfile'] as any })
-        return (summary as any).assetProfile?.sector ?? null
+        const summary = await yf.quoteSummary(yahooTicker, { modules: ['quoteType', 'assetProfile'] as any })
+        const qType = (summary as any).quoteType?.quoteType as string | undefined
+        if (qType === 'ETF' || qType === 'MUTUALFUND') return 'ETF'
+        const sector = (summary as any).assetProfile?.sector as string | undefined
+        return (sector && sector.length > 0) ? sector : null
       } catch {
         return null
       }

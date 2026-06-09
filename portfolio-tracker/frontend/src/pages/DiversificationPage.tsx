@@ -137,13 +137,15 @@ export default function DiversificationPage() {
       .sort((a, b) => b.value - a.value)
   }, [assets, total])
 
-  // Real sector grouping (from BRAPI data)
+  // Real sector grouping (from Yahoo Finance data)
   const realSectorGroups = useMemo(() => {
     if (!sectorData) return null
+    const fallbackLabel = d.sectorOther ?? 'Outros'
     const map = new Map<string, { key: string; label: string; color: string; value: number; idx: number }>()
     let idx = 0
     for (const a of assets) {
-      const sector = sectorData[a.code] ?? a.class_name
+      // Use real sector; fall back to translated "Outros" (never class name in sector view)
+      const sector = sectorData[a.code] ?? fallbackLabel
       const key = sector.toLowerCase().replace(/\s+/g, '_').replace(/[^\w]/g, '')
       const existing = map.get(key)
       if (existing) { existing.value += a.value_brl }
@@ -152,7 +154,7 @@ export default function DiversificationPage() {
     return [...map.values()]
       .map(g => ({ ...g, pct: total > 0 ? g.value / total : 0 }))
       .sort((a, b) => b.value - a.value)
-  }, [assets, total, sectorData])
+  }, [assets, total, sectorData, d.sectorOther])
 
   const sectorGroups = realSectorGroups ?? classGroups
   const hasBrapiSectors = sectorData !== null && Object.values(sectorData).some(v => v && !['Renda Fixa', 'Cripto'].includes(v))

@@ -1857,7 +1857,8 @@
     "riskMethodologyTitle": "Comment est-il calculé ?",
     "riskMethodologyDesc": "Score = moyenne du portefeuille pondérée par la valeur de chaque classe. Échelle simplifiée : Liquidités = 1 · Revenu Fixe = 2 · Immobilier / SCPI = 3 · Actions / ETF = 4 · Crypto = 5. Il s'agit d'une classification indicative créée pour cette app — ce n'est pas un modèle de risque réglementé. Le risque au sein d'une même classe (ex : actions individuelles) n'est pas capté.",
     "riskByClassTitle": "Allocation et niveau de risque par classe",
-    "riskBarNote": "Les barres indiquent le % du portefeuille ; les couleurs indiquent le niveau de risque de la classe"
+    "riskBarNote": "Les barres indiquent le % du portefeuille ; les couleurs indiquent le niveau de risque de la classe",
+    "sectorOther": "Autres"
   },
   "institutions": {
     "title": "Registre des Institutions",

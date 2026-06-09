@@ -1857,7 +1857,8 @@
     "riskMethodologyTitle": "Como é calculado?",
     "riskMethodologyDesc": "Score = média do portfólio ponderada pelo valor de cada classe. Escala simplificada: Caixa = 1 · Renda Fixa = 2 · Imóveis / FIIs = 3 · Ações / ETFs = 4 · Cripto = 5. Esta é uma classificação indicativa criada para este app — não é um modelo de risco regulado. Risco dentro da mesma classe (ex: ações individuais) não é captado.",
     "riskByClassTitle": "Alocação e nível de risco por classe",
-    "riskBarNote": "Barras indicam % do portfólio; cores indicam o nível de risco da classe"
+    "riskBarNote": "Barras indicam % do portfólio; cores indicam o nível de risco da classe",
+    "sectorOther": "Outros"
   },
   "institutions": {
     "title": "Cadastro de Instituições",

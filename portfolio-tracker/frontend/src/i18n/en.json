@@ -1857,7 +1857,8 @@
     "riskMethodologyTitle": "How is it calculated?",
     "riskMethodologyDesc": "Score = portfolio average weighted by class value. Simplified scale: Cash = 1 · Fixed Income = 2 · Real Estate / REITs = 3 · Stocks / ETFs = 4 · Crypto = 5. This is an indicative classification created for this app — it is not a regulated risk model. Risk within the same class (e.g., individual stocks) is not captured.",
     "riskByClassTitle": "Allocation and risk level by class",
-    "riskBarNote": "Bars show % of portfolio; colors indicate the risk level of each class"
+    "riskBarNote": "Bars show % of portfolio; colors indicate the risk level of each class",
+    "sectorOther": "Other"
   },
   "institutions": {
     "title": "Institution Register",
