@@ -540,32 +540,32 @@ export default function FinancesOverviewPage() {
 
             <div style={{ marginTop: 20, paddingTop: 18, borderTop: '1px solid rgba(13,13,13,0.08)', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-                <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.62)' }}>{t.finances.income}</span>
+                <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.62)' }}>{t.finances.income}</span>
                 <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 18, letterSpacing: '0.04em', color: receivedIncome > 0 && receivedIncome >= configuredIncome ? 'var(--arvo-green)' : receivedIncome > 0 ? 'var(--arvo-ocre)' : 'var(--arvo-fg)' }}>
                   {receivedIncome > 0 ? fmt(cx(receivedIncome), currency, true) : '—'}
                 </span>
-                <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 10, color: 'rgba(13,13,13,0.58)' }}>
+                <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 11, color: 'rgba(13,13,13,0.58)' }}>
                   {t.finances.overviewPlanned} {fmt(cx(configuredIncome), currency, true)}
                 </span>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-                <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.62)' }}>{t.finances.expenses}</span>
+                <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.62)' }}>{t.finances.expenses}</span>
                 <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 18, letterSpacing: '0.04em', color: totalExpenses > totalBudgeted && totalBudgeted > 0 ? 'var(--arvo-red)' : 'var(--arvo-fg)' }}>
                   {totalExpenses > 0 ? fmt(cx(totalExpenses), currency, true) : '—'}
                 </span>
                 {totalBudgeted > 0 && (
-                  <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 10, color: 'rgba(13,13,13,0.58)' }}>
+                  <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 11, color: 'rgba(13,13,13,0.58)' }}>
                     {t.finances.overviewPlanned} {fmt(cx(totalBudgeted), currency, true)}
                   </span>
                 )}
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-                <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.62)' }}>{t.finances.heroSavingsRate}</span>
+                <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.62)' }}>{t.finances.heroSavingsRate}</span>
                 <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 18, letterSpacing: '0.04em', color: receivedIncome > 0 && netBalance >= 0 ? 'var(--arvo-green)' : receivedIncome > 0 ? 'var(--arvo-red)' : 'var(--arvo-fg)' }}>
                   {receivedIncome > 0 ? `${Math.round((netBalance / receivedIncome) * 100)}%` : '—'}
                 </span>
                 {receivedIncome > 0 && (
-                  <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 10, color: 'rgba(13,13,13,0.38)' }}>{t.finances.overviewStatus}</span>
+                  <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 11, color: 'rgba(13,13,13,0.38)' }}>{t.finances.overviewStatus}</span>
                 )}
               </div>
             </div>
@@ -604,13 +604,13 @@ export default function FinancesOverviewPage() {
 
           {/* Right: month projection — desktop only */}
           <div className="hidden lg:flex lg:flex-col lg:justify-center" style={{ borderLeft: '1px solid rgba(13,13,13,0.07)', paddingLeft: 28 }}>
-            <p style={{ fontFamily: "var(--arvo-font-body)", fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.45)', marginBottom: 2 }}>
+            <p style={{ fontFamily: "var(--arvo-font-body)", fontSize: 10, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.45)', marginBottom: 2 }}>
               {isCurrentMonth ? t.finances.overviewProjection : t.finances.overviewResult}
             </p>
-            <p style={{ fontFamily: "var(--arvo-font-body)", fontSize: 10, color: 'rgba(13,13,13,0.38)', fontStyle: 'italic', marginBottom: 4 }}>
+            <p style={{ fontFamily: "var(--arvo-font-body)", fontSize: 12, color: 'rgba(13,13,13,0.38)', fontStyle: 'italic', marginBottom: 4 }}>
               {isCurrentMonth ? t.finances.overviewProjectionHint : t.finances.overviewResultHint}
             </p>
-            <p style={{ fontFamily: "var(--arvo-font-body)", fontSize: 11, color: 'rgba(13,13,13,0.45)', marginBottom: 14 }}>
+            <p style={{ fontFamily: "var(--arvo-font-body)", fontSize: 12, color: 'rgba(13,13,13,0.45)', marginBottom: 14 }}>
               {t.finances.overviewDayOf} {daysElapsed} {t.finances.overviewDayOfSep} {daysTotal}
               {isCurrentMonth && daysRemaining > 0 && <span style={{ marginLeft: 6 }}>· {daysRemaining} {t.finances.overviewDaysLeft}</span>}
             </p>
@@ -642,12 +642,12 @@ export default function FinancesOverviewPage() {
                   </>
                 )}
                 {isCurrentMonth && histDailyAvg > 0 && (
-                  <p style={{ fontSize: 10, color: 'rgba(13,13,13,0.35)', marginTop: 4 }}>
+                  <p style={{ fontSize: 12, color: 'rgba(13,13,13,0.35)', marginTop: 4 }}>
                     {t.finances.overviewHistAvg} {fmt(cx(histDailyAvg), currency, true)}{t.finances.overviewPerDay} · {pastMonthsData.length} {t.finances.overviewNMonths}
                   </p>
                 )}
                 {isCurrentMonth && missingRecurrents.length > 0 && (
-                  <p style={{ fontSize: 10, color: 'rgba(13,13,13,0.42)', marginTop: 4 }}>
+                  <p style={{ fontSize: 12, color: 'rgba(13,13,13,0.42)', marginTop: 4 }}>
                     {t.finances.overviewRecurringIncluded}: {missingRecurrents.map(r => `${r.icon} ${fmt(cx(r.amount), currency, true)}`).join(' · ')}
                   </p>
                 )}

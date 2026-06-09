@@ -182,7 +182,7 @@ export default function FinancesTransactionsPage() {
   const [sheetSharedCatId, setSheetSharedCatId] = useState<number | null>(null)
 
   // Date range mode
-  const [dateMode, setDateMode]   = useState<'month' | 'range'>('month')
+  const [dateMode, setDateMode]   = useState<'month' | 'last30' | 'range'>('month')
   const [dateFrom, setDateFrom]   = useState(`${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-01`)
   const [dateTo, setDateTo]       = useState(today.toISOString().split('T')[0])
   // Filters
@@ -502,7 +502,7 @@ export default function FinancesTransactionsPage() {
     from.setDate(from.getDate() - 29)
     setDateFrom(from.toISOString().split('T')[0])
     setDateTo(d.toISOString().split('T')[0])
-    setDateMode('range')
+    setDateMode('last30')
   }
 
   async function addToGroup(groupId: string) {
@@ -824,34 +824,52 @@ export default function FinancesTransactionsPage() {
         </div>
       )}
 
-      {/* Header + month nav inline */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
-        <div style={{ minWidth: 0, flex: 1, overflow: 'hidden' }}>
-          <h1 style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 18, letterSpacing: '0.06em', color: 'var(--arvo-black)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.finances.transactionsTitle}</h1>
-          <p className="text-sm mt-0.5 hidden sm:block" style={{ color: 'rgba(13,13,13,0.60)' }}>{t.finances.transactionsSubtitle}</p>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-          {/* Month nav / date range — inline with actions */}
-          {csvStep === 'idle' && (
-            dateMode === 'month' ? (
-              <div style={{ display: 'flex', alignItems: 'center', marginRight: 4 }}>
-                <button onClick={prevMonth} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(13,13,13,0.40)', borderRadius: 6 }}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
-                </button>
-                <span style={{ fontSize: 13, fontFamily: 'var(--arvo-font-body)', fontWeight: 600, color: 'var(--arvo-black)', minWidth: 120, textAlign: 'center', textTransform: 'capitalize', letterSpacing: '0.01em' }}>{fmtMonthFull(month)}</span>
-                <button onClick={nextMonth} disabled={month >= defaultMonth} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, background: 'none', border: 'none', cursor: 'pointer', color: month >= defaultMonth ? 'rgba(13,13,13,0.18)' : 'rgba(13,13,13,0.40)', borderRadius: 6 }}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"/></svg>
-                </button>
+      {/* Header + month nav */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {/* Row 1 */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+          <div style={{ minWidth: 0, flex: 1, overflow: 'hidden' }}>
+            <h1 style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 18, letterSpacing: '0.06em', color: 'var(--arvo-black)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.finances.transactionsTitle}</h1>
+            <p className="text-sm mt-0.5 hidden sm:block" style={{ color: 'rgba(13,13,13,0.60)' }}>{t.finances.transactionsSubtitle}</p>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+            {/* Period tabs + nav: visible on sm+, hidden on mobile */}
+            {csvStep === 'idle' && (
+              <div className="hidden sm:flex items-center gap-2">
+                {/* Segmented period tabs */}
+                <div style={{ display: 'flex', gap: 2, background: '#f3f4f6', borderRadius: 8, padding: 2 }}>
+                  {([
+                    { mode: 'month' as const, label: t.performance.month, icon: <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M4.75 2a.75.75 0 0 1 .75.75V4h5V2.75a.75.75 0 0 1 1.5 0V4h.25A2.75 2.75 0 0 1 15 6.75v6.5A2.75 2.75 0 0 1 12.25 16H3.75A2.75 2.75 0 0 1 1 13.25v-6.5A2.75 2.75 0 0 1 3.75 4H4V2.75A.75.75 0 0 1 4.75 2ZM2.5 7.5v5.75c0 .69.56 1.25 1.25 1.25h8.5c.69 0 1.25-.56 1.25-1.25V7.5h-11Z"/></svg>, onClick: () => setDateMode('month') },
+                    { mode: 'last30' as const, label: t.performance.last30d, icon: null, onClick: setLast30Days },
+                    { mode: 'range' as const, label: t.finances.period, icon: <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M5.75 7.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5ZM8 7.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm2.25 0a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5ZM5.75 10a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5ZM8 10a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm2.25 0a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5ZM4.75 2a.75.75 0 0 1 .75.75V4h5V2.75a.75.75 0 0 1 1.5 0V4h.25A2.75 2.75 0 0 1 15 6.75v6.5A2.75 2.75 0 0 1 12.25 16H3.75A2.75 2.75 0 0 1 1 13.25v-6.5A2.75 2.75 0 0 1 3.75 4H4V2.75A.75.75 0 0 1 4.75 2ZM2.5 7.5v5.75c0 .69.56 1.25 1.25 1.25h8.5c.69 0 1.25-.56 1.25-1.25V7.5h-11Z"/></svg>, onClick: () => setDateMode('range') },
+                  ] as const).map(tab => (
+                    <button key={tab.mode} onClick={tab.onClick} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 9px', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 12, fontFamily: 'var(--arvo-font-body)', fontWeight: dateMode === tab.mode ? 600 : 400, background: dateMode === tab.mode ? '#fff' : 'transparent', color: dateMode === tab.mode ? 'var(--arvo-black)' : 'rgba(13,13,13,0.45)', boxShadow: dateMode === tab.mode ? '0 1px 3px rgba(0,0,0,0.10)' : 'none', transition: 'all 0.12s', whiteSpace: 'nowrap' }}>
+                      {tab.icon}
+                      <span>{tab.label}</span>
+                    </button>
+                  ))}
+                </div>
+                {/* Month nav or date inputs */}
+                {dateMode === 'month' && (
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <button onClick={prevMonth} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(13,13,13,0.40)', borderRadius: 6 }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+                    </button>
+                    <span style={{ fontSize: 13, fontFamily: 'var(--arvo-font-body)', fontWeight: 600, color: 'var(--arvo-black)', minWidth: 110, textAlign: 'center', textTransform: 'capitalize', letterSpacing: '0.01em' }}>{fmtMonthFull(month)}</span>
+                    <button onClick={nextMonth} disabled={month >= defaultMonth} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, background: 'none', border: 'none', cursor: 'pointer', color: month >= defaultMonth ? 'rgba(13,13,13,0.18)' : 'rgba(13,13,13,0.40)', borderRadius: 6 }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+                    </button>
+                  </div>
+                )}
+                {dateMode === 'range' && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} style={{ border: '1px solid var(--arvo-border)', borderRadius: 8, padding: '6px 8px', fontSize: 12, fontFamily: 'var(--arvo-font-body)' }} />
+                    <span style={{ fontSize: 11, color: 'rgba(13,13,13,0.35)' }}>→</span>
+                    <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} style={{ border: '1px solid var(--arvo-border)', borderRadius: 8, padding: '6px 8px', fontSize: 12, fontFamily: 'var(--arvo-font-body)' }} />
+                  </div>
+                )}
               </div>
-            ) : (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} style={{ border: '1px solid var(--arvo-border)', borderRadius: 8, padding: '6px 8px', fontSize: 12, fontFamily: 'var(--arvo-font-body)' }} />
-                <span style={{ fontSize: 11, color: 'rgba(13,13,13,0.35)' }}>→</span>
-                <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} style={{ border: '1px solid var(--arvo-border)', borderRadius: 8, padding: '6px 8px', fontSize: 12, fontFamily: 'var(--arvo-font-body)' }} />
-                <button onClick={() => setDateMode('month')} style={{ fontSize: 12, color: 'rgba(13,13,13,0.40)', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 6px', fontFamily: 'var(--arvo-font-body)' }}>✕</button>
-              </div>
-            )
-          )}
+            )}
           {/* Filter icon with active-count badge */}
           {csvStep === 'idle' && (allCategories.length > 0 || moments.length > 0 || accounts.length > 0) && (
             <div style={{ position: 'relative' }} ref={filterPanelRef}>
@@ -930,15 +948,6 @@ export default function FinancesTransactionsPage() {
                     <span style={{ fontSize: 15, lineHeight: 1 }}>↩</span>
                     <span>{detectingReimb ? t.finances.detecting : (detectReimbResult ?? t.finances.detectRefunds)}</span>
                   </button>
-                  <div style={{ height: 1, background: 'var(--arvo-border)', margin: '6px 0' }} />
-                  <button onClick={() => { setShowOverflowMenu(false); setLast30Days() }} style={menuItemStyle}>
-                    <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M4.75 2a.75.75 0 0 1 .75.75V4h5V2.75a.75.75 0 0 1 1.5 0V4h.25A2.75 2.75 0 0 1 15 6.75v6.5A2.75 2.75 0 0 1 12.25 16H3.75A2.75 2.75 0 0 1 1 13.25v-6.5A2.75 2.75 0 0 1 3.75 4H4V2.75A.75.75 0 0 1 4.75 2ZM2.5 7.5v5.75c0 .69.56 1.25 1.25 1.25h8.5c.69 0 1.25-.56 1.25-1.25V7.5h-11Z"/></svg>
-                    <span>{t.performance.last30d}</span>
-                  </button>
-                  <button onClick={() => { setShowOverflowMenu(false); setDateMode('range') }} style={menuItemStyle}>
-                    <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M5.75 7.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5ZM8 7.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm2.25 0a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5ZM5.75 10a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5ZM8 10a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm2.25 0a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5ZM4.75 2a.75.75 0 0 1 .75.75V4h5V2.75a.75.75 0 0 1 1.5 0V4h.25A2.75 2.75 0 0 1 15 6.75v6.5A2.75 2.75 0 0 1 12.25 16H3.75A2.75 2.75 0 0 1 1 13.25v-6.5A2.75 2.75 0 0 1 3.75 4H4V2.75A.75.75 0 0 1 4.75 2ZM2.5 7.5v5.75c0 .69.56 1.25 1.25 1.25h8.5c.69 0 1.25-.56 1.25-1.25V7.5h-11Z"/></svg>
-                    <span>{t.performance.customPeriod}</span>
-                  </button>
                 </div>
               )}
             </div>
@@ -955,6 +964,42 @@ export default function FinancesTransactionsPage() {
           )}
           <input ref={fileRef} type="file" accept=".csv,.txt,.xls,.xlsx,.ods" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) { setShowImportModal(false); handleCSVFile(f) } e.target.value = '' }} />
         </div>
+        </div>
+        {/* Row 2: mobile period tabs + nav */}
+        {csvStep === 'idle' && (
+          <div className="flex sm:hidden items-center" style={{ gap: 8 }}>
+            <div style={{ display: 'flex', gap: 2, background: '#f3f4f6', borderRadius: 8, padding: 2, flexShrink: 0 }}>
+              {([
+                { mode: 'month' as const, label: t.performance.month, icon: <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M4.75 2a.75.75 0 0 1 .75.75V4h5V2.75a.75.75 0 0 1 1.5 0V4h.25A2.75 2.75 0 0 1 15 6.75v6.5A2.75 2.75 0 0 1 12.25 16H3.75A2.75 2.75 0 0 1 1 13.25v-6.5A2.75 2.75 0 0 1 3.75 4H4V2.75A.75.75 0 0 1 4.75 2ZM2.5 7.5v5.75c0 .69.56 1.25 1.25 1.25h8.5c.69 0 1.25-.56 1.25-1.25V7.5h-11Z"/></svg>, onClick: () => setDateMode('month') },
+                { mode: 'last30' as const, label: '30d', icon: null, onClick: setLast30Days },
+                { mode: 'range' as const, label: t.finances.period, icon: <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M5.75 7.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5ZM8 7.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm2.25 0a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5ZM5.75 10a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5ZM8 10a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm2.25 0a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5ZM4.75 2a.75.75 0 0 1 .75.75V4h5V2.75a.75.75 0 0 1 1.5 0V4h.25A2.75 2.75 0 0 1 15 6.75v6.5A2.75 2.75 0 0 1 12.25 16H3.75A2.75 2.75 0 0 1 1 13.25v-6.5A2.75 2.75 0 0 1 3.75 4H4V2.75A.75.75 0 0 1 4.75 2ZM2.5 7.5v5.75c0 .69.56 1.25 1.25 1.25h8.5c.69 0 1.25-.56 1.25-1.25V7.5h-11Z"/></svg>, onClick: () => setDateMode('range') },
+              ] as const).map(tab => (
+                <button key={tab.mode} onClick={tab.onClick} style={{ display: 'flex', alignItems: 'center', gap: 3, padding: '4px 8px', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 12, fontFamily: 'var(--arvo-font-body)', fontWeight: dateMode === tab.mode ? 600 : 400, background: dateMode === tab.mode ? '#fff' : 'transparent', color: dateMode === tab.mode ? 'var(--arvo-black)' : 'rgba(13,13,13,0.45)', boxShadow: dateMode === tab.mode ? '0 1px 3px rgba(0,0,0,0.10)' : 'none', transition: 'all 0.12s', whiteSpace: 'nowrap' }}>
+                  {tab.icon}
+                  <span>{tab.label}</span>
+                </button>
+              ))}
+            </div>
+            {dateMode === 'month' && (
+              <div style={{ display: 'flex', alignItems: 'center', flex: 1, justifyContent: 'center' }}>
+                <button onClick={prevMonth} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(13,13,13,0.40)', borderRadius: 6 }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+                </button>
+                <span style={{ fontSize: 13, fontFamily: 'var(--arvo-font-body)', fontWeight: 600, color: 'var(--arvo-black)', minWidth: 110, textAlign: 'center', textTransform: 'capitalize', letterSpacing: '0.01em' }}>{fmtMonthFull(month)}</span>
+                <button onClick={nextMonth} disabled={month >= defaultMonth} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, background: 'none', border: 'none', cursor: 'pointer', color: month >= defaultMonth ? 'rgba(13,13,13,0.18)' : 'rgba(13,13,13,0.40)', borderRadius: 6 }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+                </button>
+              </div>
+            )}
+            {dateMode === 'range' && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4, flex: 1, minWidth: 0 }}>
+                <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} style={{ border: '1px solid var(--arvo-border)', borderRadius: 8, padding: '6px 6px', fontSize: 11, fontFamily: 'var(--arvo-font-body)', flex: 1, minWidth: 0 }} />
+                <span style={{ fontSize: 11, color: 'rgba(13,13,13,0.35)', flexShrink: 0 }}>→</span>
+                <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} style={{ border: '1px solid var(--arvo-border)', borderRadius: 8, padding: '6px 6px', fontSize: 11, fontFamily: 'var(--arvo-font-body)', flex: 1, minWidth: 0 }} />
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
 
