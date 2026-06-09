@@ -675,11 +675,14 @@ const YAHOO_SECTOR_MAP: Record<string, string> = {
 }
 
 function mapSectorPt(sector: string | null, classNameKey?: string | null): string | null {
-  if (sector) return YAHOO_SECTOR_MAP[sector] ?? sector
+  if (sector && sector.length > 0) return YAHOO_SECTOR_MAP[sector] ?? sector
   const k = (classNameKey ?? '').toLowerCase()
-  if (k.includes('fii') || k.includes('imoveis') || k.includes('imóveis')) return 'Imóveis'
+  if (k.includes('caixa') || k.includes('cash')) return 'Caixa'
   if (k.includes('rendafixa') || k.includes('previdencia')) return 'Renda Fixa'
+  if (k.includes('fii') || k.includes('imoveis') || k.includes('imóveis')) return 'Imóveis'
   if (k.includes('cripto') || k.includes('crypto')) return 'Cripto'
+  if (k.includes('acoes') || k.includes('ações') || k.includes('equit')) return 'Ações'
+  if (k.includes('etf')) return 'ETF'
   return null
 }
 
