@@ -169,10 +169,10 @@ export default function FeeScannerPage() {
                 <BarChart data={result.monthly} margin={{ left: 0, right: 8, top: 4, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--arvo-border)" />
                   <XAxis dataKey="month" tickFormatter={shortMonth} tick={{ fontSize: 11, fill: 'var(--arvo-fg-soft)' }} axisLine={false} tickLine={false} />
-                  <YAxis tickFormatter={v => (hideValues ? '•••' : fmt(v, 'BRL').replace(/[^0-9.,kKmM]/g, ''))} tick={{ fontSize: 11, fill: 'var(--arvo-fg-soft)' }} axisLine={false} tickLine={false} width={50} />
+                  <YAxis tickFormatter={v => (hideValues ? '•••' : fmt(Number(v)).replace(/[^0-9.,kKmM]/g, ''))} tick={{ fontSize: 11, fill: 'var(--arvo-fg-soft)' }} axisLine={false} tickLine={false} width={50} />
                   <Tooltip
-                    formatter={(v: number) => [fmtVal(v), f.totalFees]}
-                    labelFormatter={shortMonth}
+                    formatter={(v: unknown) => [fmtVal(Number(v)), f.totalFees]}
+                    labelFormatter={(label: unknown) => shortMonth(String(label))}
                     contentStyle={{ fontSize: 12, border: '1px solid var(--arvo-border)', borderRadius: 8 }}
                   />
                   <Bar dataKey="amount" radius={[3, 3, 0, 0]}>

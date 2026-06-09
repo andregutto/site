@@ -373,11 +373,11 @@ export default function DiversificationPage() {
                 <XAxis type="number" domain={[0, 100]} tickFormatter={v => `${v}%`} tick={{ fontSize: 11, fill: 'var(--arvo-fg-soft)' }} />
                 <YAxis type="category" dataKey="name" width={96} tick={{ fontSize: 12, fill: 'var(--arvo-black)' }} />
                 <Tooltip
-                  formatter={(v: number) => [`${v}%`, d.allocationPct]}
+                  formatter={(v: unknown) => [`${v}%`, d.allocationPct]}
                   contentStyle={{ fontSize: 12, border: '1px solid var(--arvo-border)', borderRadius: 8 }}
                 />
                 <Bar dataKey="pct" radius={[0, 4, 4, 0]}>
-                  {riskMetrics.byClass.map((entry, i) => (
+                  {riskMetrics.byClass.map((_entry, i) => (
                     <Cell key={i} fill={SECTOR_PALETTE[i % SECTOR_PALETTE.length]} />
                   ))}
                 </Bar>

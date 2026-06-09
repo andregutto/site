@@ -325,7 +325,7 @@ export default function DividendsPage() {
                   <YAxis tick={{ fontSize: 9, fill: '#9ca3af' }} tickLine={false} axisLine={false} />
                   <Tooltip
                     contentStyle={{ fontSize: 11, borderRadius: 8, border: '1px solid #e5e7eb' }}
-                    formatter={(v: number) => [fmt(v), '']}
+                    formatter={(v: unknown) => [fmt(Number(v)), '']}
                   />
                   <Legend iconSize={8} iconType="circle" wrapperStyle={{ fontSize: 10, paddingTop: 8 }} />
                   <Bar dataKey="received"  name={d.passiveReceivedBar}  fill={ARVO_BLUE} radius={[2, 2, 0, 0]} />

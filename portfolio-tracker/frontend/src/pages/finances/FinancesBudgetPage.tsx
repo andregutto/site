@@ -83,7 +83,7 @@ function resolveKey(name: string, nameKey: string | null | undefined, keys: Reco
 }
 
 
-function EnvelopeBar({ env, expanded, onToggle, onEditCategory, onDeleteCategory, onAddCategory, onSaveDescription, onShareCategory, onSavePctTarget, actuals, historicals, currency }:
+function EnvelopeBar({ env, expanded, onToggle, onEditCategory, onDeleteCategory, onAddCategory, onSaveDescription, onShareCategory, onSavePctTarget, actuals: _actuals, historicals, currency }:
   { env: Envelope; expanded: boolean; onToggle: () => void; onEditCategory: (c: Category) => void; onDeleteCategory: (id: number) => void; onAddCategory: (envId: number) => void; onSaveDescription: (id: number, desc: string) => void; onShareCategory: (c: Category) => void; onSavePctTarget: (id: number, pct: number) => void; actuals: Map<number, number>; historicals: Map<number, number>; currency: string }) {
   const { t } = useI18n()
   const { hideValues } = useCurrency()
