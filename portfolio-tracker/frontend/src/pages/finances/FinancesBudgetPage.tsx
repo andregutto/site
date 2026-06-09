@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { apiFetch } from '../../lib/api'
 import { useI18n } from '../../contexts/I18nContext'
 import { useAuth } from '../../contexts/AuthContext'
+import { useCurrency } from '../../contexts/CurrencyContext'
 
 interface Category {
   id: number
@@ -59,7 +60,7 @@ interface SharedGroup {
   categories: SharedCategory[]
 }
 
-function fmt(n: number, currency: string) {
+function _fmt(n: number, currency: string) {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n)
 }
 
@@ -85,6 +86,8 @@ function resolveKey(name: string, nameKey: string | null | undefined, keys: Reco
 function EnvelopeBar({ env, expanded, onToggle, onEditCategory, onDeleteCategory, onAddCategory, onSaveDescription, onShareCategory, onSavePctTarget, actuals, currency }:
   { env: Envelope; expanded: boolean; onToggle: () => void; onEditCategory: (c: Category) => void; onDeleteCategory: (id: number) => void; onAddCategory: (envId: number) => void; onSaveDescription: (id: number, desc: string) => void; onShareCategory: (c: Category) => void; onSavePctTarget: (id: number, pct: number) => void; actuals: Map<number, number>; currency: string }) {
   const { t } = useI18n()
+  const { hideValues } = useCurrency()
+  const fmt = (n: number, cur: string) => hideValues ? '•••' : _fmt(n, cur)
   const nameKeys: Record<string, string> = {
     envelopeEssential:     t.finances.envelopeEssential,
     envelopeInvestment:    t.finances.envelopeInvestment,
@@ -345,6 +348,8 @@ interface SpendingSummary { months: SpendingMonth[] }
 export default function FinancesBudgetPage() {
   const { t } = useI18n()
   const { user } = useAuth()
+  const { hideValues } = useCurrency()
+  const fmt = (n: number, currency: string) => hideValues ? '•••' : _fmt(n, currency)
   const navigate = useNavigate()
   const nameKeys: Record<string, string> = {
     envelopeEssential:     t.finances.envelopeEssential,

@@ -3,6 +3,7 @@ import { apiFetch } from '../../lib/api'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
 import { useI18n } from '../../contexts/I18nContext'
+import { useCurrency } from '../../contexts/CurrencyContext'
 
 interface Moment {
   id: number
@@ -40,7 +41,7 @@ interface MomentPickerRow {
 const ICONS = ['✨', '✈️', '🎉', '🎂', '🏖️', '🏔️', '🎭', '🎵', '🍽️', '🏠', '💒', '🎓', '🛒', '⚽', '🎮', '🚗', '💊', '🎁']
 const COLORS = ['#7C3AED', '#2563EB', '#16A34A', '#DC2626', '#D97706', '#0891B2', '#DB2777', '#65A30D', '#9333EA', '#EA580C']
 
-function fmt(n: number, currency: string) {
+function _fmt(n: number, currency: string) {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n)
 }
 
@@ -526,6 +527,8 @@ function resolveKey(name: string, nameKey: string | null | undefined, keys: Reco
 export default function FinancesMomentsPage() {
   const { t } = useI18n()
   const { user } = useAuth()
+  const { hideValues } = useCurrency()
+  const fmt = (n: number, currency: string) => hideValues ? '•••' : _fmt(n, currency)
   const nameKeys: Record<string, string> = {
     categoryTransfer: t.finances.categoryTransfer, categorySalary: t.finances.categorySalary,
     categoryUncategorized: t.finances.categoryUncategorized, categoryGroceries: t.finances.categoryGroceries,

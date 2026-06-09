@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { apiFetch } from '../../lib/api'
 import { useI18n } from '../../contexts/I18nContext'
 import { useAuth } from '../../contexts/AuthContext'
+import { useCurrency } from '../../contexts/CurrencyContext'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -66,7 +67,7 @@ interface FinanceCategory { id: number; name: string; icon: string; color?: stri
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function fmt(n: number, currency = 'EUR') {
+function _fmt(n: number, currency = 'EUR') {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n)
 }
 
@@ -301,6 +302,8 @@ function GroupPanel({ group, userId, s, onEditGroup, onInvite, onResendInvite, o
   onRefresh: () => void
   onDelete: () => void
 }) {
+  const { hideValues } = useCurrency()
+  const fmt = (n: number, cur = 'EUR') => hideValues ? '•••' : _fmt(n, cur)
   const [showMembers, setShowMembers] = useState(false)
   const [editingPct, setEditingPct] = useState<number | null>(null) // memberId
   const [pctVal, setPctVal] = useState('')
@@ -573,6 +576,8 @@ function SharedCategoryCard({ cat, group, userId, s, active, onClick, onEdit }: 
   cat: SharedCategory; group: Group; userId: string; s: Record<string, string>
   active: boolean; onClick: () => void; onEdit: () => void
 }) {
+  const { hideValues } = useCurrency()
+  const fmt = (n: number, cur = 'EUR') => hideValues ? '•••' : _fmt(n, cur)
   const activeMembers = group.members.filter(m => m.status === 'active' && m.user_id)
   const over = cat.total_spent > cat.total_goal && cat.total_goal > 0
 
@@ -665,6 +670,8 @@ function SharedCategoryCard({ cat, group, userId, s, active, onClick, onEdit }: 
 function CategoryDetailPanel({ loading, detail, s, onClose }: {
   loading: boolean; detail: CategoryDetail | null; s: Record<string, string>; onClose: () => void
 }) {
+  const { hideValues } = useCurrency()
+  const fmt = (n: number, cur = 'EUR') => hideValues ? '•••' : _fmt(n, cur)
   return (
     <div className="rounded-xl flex flex-col gap-4 p-4" style={{ background: 'white', border: '1px solid var(--arvo-border-soft)' }}>
       <div className="flex items-center justify-between">

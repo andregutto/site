@@ -4,6 +4,7 @@ import * as XLSX from 'xlsx'
 import { apiFetch } from '../../lib/api'
 import { useAuth } from '../../contexts/AuthContext'
 import { useI18n } from '../../contexts/I18nContext'
+import { useCurrency } from '../../contexts/CurrencyContext'
 
 interface Category { id: number; name: string; name_key?: string | null; icon: string; color: string }
 
@@ -58,7 +59,7 @@ interface ParsedRow {
 
 interface AiDebug { ran: boolean; assigned: number; unmatched: number; error: string | null }
 
-function fmt(n: number, currency = 'EUR') {
+function _fmt(n: number, currency = 'EUR') {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency, minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n)
 }
 function fmtDate(d: string) {
@@ -89,6 +90,8 @@ const chipXStyle: React.CSSProperties = {
 export default function FinancesTransactionsPage() {
   const { t, locale } = useI18n()
   const { user } = useAuth()
+  const { hideValues } = useCurrency()
+  const fmt = (n: number, currency = 'EUR') => hideValues ? '•••' : _fmt(n, currency)
   const [searchParams] = useSearchParams()
   const today = new Date()
   const cycleDay: number = (user?.user_metadata?.month_cycle_day as number) || 1

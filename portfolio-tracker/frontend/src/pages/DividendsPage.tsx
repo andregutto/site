@@ -16,7 +16,7 @@ function fmtMonth(ym: string) {
 }
 
 export default function DividendsPage() {
-  const { convert, currency } = useCurrency()
+  const { convert, currency, hideValues } = useCurrency()
   const { t } = useI18n()
   const d = t.dividends
   const now = new Date()
@@ -41,6 +41,7 @@ export default function DividendsPage() {
   const { sync, syncing } = useDividendSync()
 
   function fmt(brl: number) {
+    if (hideValues) return '•••'
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency, maximumFractionDigits: 2 }).format(convert(brl))
   }
 

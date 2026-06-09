@@ -50,7 +50,7 @@ interface CatHistoryEntry {
   months: { month: string; total: number }[]
 }
 
-function fmt(n: number, currency: string, compact = false, locale = 'pt-BR') {
+function _fmt(n: number, currency: string, compact = false, locale = 'pt-BR') {
   return new Intl.NumberFormat(locale, {
     style: 'currency', currency,
     notation: compact ? 'compact' : 'standard',
@@ -109,6 +109,8 @@ function ChartTooltip({ active, payload, label, currency, locale = 'pt-BR' }: {
   locale?: string
 }) {
   const { t } = useI18n()
+  const { hideValues } = useCurrency()
+  const fmt = (n: number, cur: string, compact = false, loc = 'pt-BR') => hideValues ? '•••' : _fmt(n, cur, compact, loc)
   if (!active || !payload?.length) return null
   const total = payload.reduce((s, p) => s + (p.value ?? 0), 0)
   return (
@@ -132,7 +134,8 @@ export default function FinancesOverviewPage() {
   const { t, locale } = useI18n()
   const navigate = useNavigate()
   const { user } = useAuth()
-  const { currency: displayCurrency, fxRates } = useCurrency()
+  const { currency: displayCurrency, fxRates, hideValues } = useCurrency()
+  const fmt = (n: number, currency: string, compact = false, locale = 'pt-BR') => hideValues ? '•••' : _fmt(n, currency, compact, locale)
 
   const [showHomePrompt, setShowHomePrompt] = useState(() =>
     user?.user_metadata?.default_section !== 'finances' &&

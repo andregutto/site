@@ -40,7 +40,7 @@ interface ChartPoint {
   actual: number | null
 }
 
-function fmt(n: number, currency: string, compact = false, locale = 'pt-BR') {
+function _fmt(n: number, currency: string, compact = false, locale = 'pt-BR') {
   return new Intl.NumberFormat(locale, {
     style: 'currency', currency,
     notation: compact ? 'compact' : 'standard',
@@ -757,6 +757,8 @@ function PlanForm({ initial, portfolio, ipcaAnnual, hicpAnnual, cpiAnnual, userC
 function ChartTooltip({ active, payload, label, currency, locale = 'pt-BR' }: {
   active?: boolean; payload?: { name: string; value: number; color: string }[]; label?: string; currency: string; locale?: string
 }) {
+  const { hideValues } = useCurrency()
+  const fmt = (n: number, cur: string, compact = false, loc = 'pt-BR') => hideValues ? '•••' : _fmt(n, cur, compact, loc)
   if (!active || !payload?.length) return null
   return (
     <div className="bg-white border border-gray-100 rounded-xl shadow-lg px-3 py-2 text-xs">
@@ -773,7 +775,8 @@ function ChartTooltip({ active, payload, label, currency, locale = 'pt-BR' }: {
 export default function FinancesFreedomPage() {
   const { t, locale } = useI18n()
   const intlLocale = ({ pt: 'pt-BR', en: 'en-US', fr: 'fr-FR' } as Record<string, string>)[locale] ?? 'pt-BR'
-  const { currency: displayCurrency, convert, fxRates } = useCurrency()
+  const { currency: displayCurrency, convert, fxRates, hideValues } = useCurrency()
+  const fmt = (n: number, currency: string, compact = false, locale = 'pt-BR') => hideValues ? '•••' : _fmt(n, currency, compact, locale)
 
   const [plans,        setPlans]        = useState<FreedomPlan[]>([])
   const [perf,         setPerf]         = useState<MonthlyPerf[]>([])

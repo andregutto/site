@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { apiFetch } from '../../lib/api'
 import { useI18n } from '../../contexts/I18nContext'
+import { useCurrency } from '../../contexts/CurrencyContext'
 
 interface FinanceAccount {
   id: number
@@ -31,7 +32,7 @@ function relativeTime(iso: string | null, neverLabel: string) {
   return `${Math.floor(hrs / 24)}d`
 }
 
-function fmt(n: number, currency: string) {
+function _fmt(n: number, currency: string) {
   return new Intl.NumberFormat('default', { style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n)
 }
 
@@ -204,6 +205,8 @@ function LinkPortfolioModal({ account, manualAssets, onLink, onClose, saving }: 
 
 export default function FinancesAccountsPage() {
   const { t } = useI18n()
+  const { hideValues } = useCurrency()
+  const fmt = (n: number, currency: string) => hideValues ? '•••' : _fmt(n, currency)
   const [searchParams] = useSearchParams()
   const [accounts,    setAccounts]    = useState<FinanceAccount[]>([])
   const [institutions, setInstitutions] = useState<string[]>([])
