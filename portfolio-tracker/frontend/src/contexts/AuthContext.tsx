@@ -36,8 +36,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const k = localStorage.key(i)
             if (k && (
               k.startsWith('perf7_') ||
-              k.startsWith('perf6_') ||       // legacy — purge old format
-              k.startsWith('perf_inception_v1')
+              k.startsWith('perf6_') ||           // legacy — purge old format
+              k.startsWith('perf_inception_v1') ||
+              k.startsWith('div_summary_') ||      // dividends cache — user-specific
+              k === 'div_last_sync'
             )) keys.push(k)
           }
           keys.forEach(k => localStorage.removeItem(k))
@@ -65,7 +67,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   async function signOut() {
-    await supabase.auth.signOut()
+    // Purge stale Supabase auth tokens from all URL configs (prevents header bloat → 494)
+    try {
+      const keys: string[] = []
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i)
+        if (k && k.startsWith('sb-') && k.endsWith('-auth-token')) keys.push(k)
+      }
+      keys.forEach(k => localStorage.removeItem(k))
+    } catch {}
+
+    try {
+      await supabase.auth.signOut({ scope: 'local' })
+    } catch {
+      // Force clear React state even if the API call fails
+      setUser(null)
+      setSession(null)
+    }
   }
 
   return (

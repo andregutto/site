@@ -16,10 +16,13 @@ interface CurrencyContextValue {
   fxRates: FxRates
   /** Converte valor em BRL para a moeda selecionada */
   convert: (valueBrl: number) => number
-  /** Formata valor em BRL na moeda selecionada */
+  /** Formata valor em BRL na moeda selecionada. Retorna "•••" quando hideValues=true */
   fmt: (valueBrl: number, decimals?: number) => string
   /** Símbolo da moeda selecionada */
   symbol: string
+  /** Se true, valores monetários são ocultados */
+  hideValues: boolean
+  toggleHideValues: () => void
 }
 
 const CurrencyContext = createContext<CurrencyContextValue | null>(null)
@@ -31,6 +34,9 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
     () => (localStorage.getItem('preferredCurrency') as Currency | null) ?? 'BRL'
   )
   const [fxRates, setFxRates] = useState<FxRates>({ USD: 5.70, EUR: 6.40 })
+  const [hideValues, setHideValues] = useState<boolean>(
+    () => localStorage.getItem('arvo_hide_values') === '1'
+  )
 
   useEffect(() => {
     apiFetch<Array<{ from: string; rate: number }>>('/fx/current?pairs=USD-BRL,EUR-BRL')
@@ -47,6 +53,14 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('preferredCurrency', c)
   }, [])
 
+  const toggleHideValues = useCallback(() => {
+    setHideValues(prev => {
+      const next = !prev
+      localStorage.setItem('arvo_hide_values', next ? '1' : '0')
+      return next
+    })
+  }, [])
+
   const convert = useCallback((valueBrl: number): number => {
     if (currency === 'BRL') return valueBrl
     if (currency === 'USD') return valueBrl / fxRates.USD
@@ -54,18 +68,20 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
   }, [currency, fxRates])
 
   const fmt = useCallback((valueBrl: number, decimals = 2): string => {
+    if (hideValues) return '•••'
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency,
       maximumFractionDigits: decimals,
       minimumFractionDigits: decimals,
     }).format(convert(valueBrl))
-  }, [currency, convert])
+  }, [currency, convert, hideValues])
 
   return (
     <CurrencyContext.Provider value={{
       currency, setCurrency, fxRates, convert, fmt,
       symbol: SYMBOLS[currency],
+      hideValues, toggleHideValues,
     }}>
       {children}
     </CurrencyContext.Provider>

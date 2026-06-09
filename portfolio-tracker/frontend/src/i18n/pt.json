@@ -151,6 +151,8 @@
     "name": "Nome",
     "code": "Código",
     "total": "Total",
+    "hideValues": "Ocultar valores",
+    "showValues": "Mostrar valores",
     "quantity": "Qtd",
     "noData": "Sem dados",
     "description": "Descrição",

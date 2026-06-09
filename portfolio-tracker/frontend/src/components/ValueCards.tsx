@@ -15,12 +15,13 @@ interface Props {
 }
 
 export default function ValueCards({ total_brl, generated_at, invested_brl, gain_brl, gain_pct, period_abs, chartLoading, period_pct, period_label }: Props) {
-  const { currency, fmt } = useCurrency()
+  const { currency, fmt, hideValues } = useCurrency()
   const { t, locale } = useI18n()
   const ts = new Date(generated_at).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })
   const showSecondary = invested_brl != null && gain_brl != null
 
   function pctText(val: number | null | undefined) {
+    if (hideValues) return '•••'
     if (val == null) return chartLoading ? '...' : '—'
     return `${val >= 0 ? '+' : ''}${val.toFixed(1)}%`
   }
@@ -77,7 +78,7 @@ export default function ValueCards({ total_brl, generated_at, invested_brl, gain
             <span style={labelStyle}>{t.dashboard.result}</span>
             <span className="text-base sm:text-lg" style={{ fontFamily: "var(--arvo-font-body)", letterSpacing: '0.04em', color: pctColor(gain_brl) }}>
               {gain_brl! >= 0 ? '+' : ''}{fmt(gain_brl!, 0)}
-              {gain_pct != null && <span style={{ fontSize: 12, opacity: 0.75, marginLeft: 4 }}>({gain_brl! >= 0 ? '+' : ''}{gain_pct.toFixed(1)}%)</span>}
+              {gain_pct != null && !hideValues && <span style={{ fontSize: 12, opacity: 0.75, marginLeft: 4 }}>({gain_brl! >= 0 ? '+' : ''}{gain_pct.toFixed(1)}%)</span>}
             </span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
