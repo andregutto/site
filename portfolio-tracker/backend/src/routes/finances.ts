@@ -1576,7 +1576,7 @@ router.get('/categories/monthly-history', requireAuth, async (req, res: Response
 
   const { data, error } = await supabaseAdmin
     .from('finance_transactions')
-    .select('date, amount, category_id, finance_categories(id, name, icon, color)')
+    .select('date, amount, category_id, finance_categories(id, name, name_key, icon, color)')
     .eq('user_id', userId)
     .gte('date', dateFrom)
     .lte('date', dateTo)
@@ -1587,7 +1587,7 @@ router.get('/categories/monthly-history', requireAuth, async (req, res: Response
 
   if (error) { res.status(500).json({ error: error.message }); return }
 
-  type CatInfo = { id: number; name: string; icon: string; color: string }
+  type CatInfo = { id: number; name: string; name_key: string | null; icon: string; color: string }
   const catMap = new Map<number, CatInfo>()
   const monthlyMap = new Map<number, Map<string, number>>()
 

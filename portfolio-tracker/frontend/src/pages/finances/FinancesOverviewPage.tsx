@@ -108,6 +108,7 @@ function ChartTooltip({ active, payload, label, currency, locale = 'pt-BR' }: {
   currency: string
   locale?: string
 }) {
+  const { t } = useI18n()
   if (!active || !payload?.length) return null
   const total = payload.reduce((s, p) => s + (p.value ?? 0), 0)
   return (
@@ -120,7 +121,7 @@ function ChartTooltip({ active, payload, label, currency, locale = 'pt-BR' }: {
         </div>
       ))}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginTop: 4, paddingTop: 4, borderTop: '1px solid var(--arvo-border)' }}>
-        <span style={{ color: 'rgba(13,13,13,0.50)' }}>Total</span>
+        <span style={{ color: 'rgba(13,13,13,0.50)' }}>{t.common.total}</span>
         <span style={{ fontWeight: 700, color: 'var(--arvo-fg)' }}>{fmt(total, currency, true, locale)}</span>
       </div>
     </div>
