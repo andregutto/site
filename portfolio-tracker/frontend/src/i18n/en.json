@@ -20,7 +20,8 @@
     "moments": "Moments",
     "banks": "Accounts",
     "dividends": "Dividends",
-    "assets": "Assets"
+    "assets": "Assets",
+    "passiveIncome": "Income"
   },
   "currency": {
     "label": "Currency"
@@ -1361,7 +1362,20 @@
     "yieldOnCost": "Yield on cost",
     "monthlyChart": "Dividends by month",
     "autoSyncing": "Fetching dividends...",
-    "count": "payments"
+    "count": "payments",
+    "passiveTitle": "Passive Income",
+    "passiveSubtitle": "Portfolio passive income history and projection",
+    "passiveYTD": "Received in {year}",
+    "passive12m": "Last 12 months",
+    "passiveAvgMonthly": "Monthly avg (6m)",
+    "passiveProjected12m": "Next 12m projection",
+    "passiveProjectedBar": "Projected",
+    "passiveReceivedBar": "Received",
+    "passiveCoverage": "Expense coverage",
+    "passiveCoverageDesc": "% of monthly expenses covered by passive income",
+    "passiveTopAssets": "By asset",
+    "passiveNoData": "No dividends found",
+    "passiveNoDataHint": "Sync dividends to visualise your portfolio's passive income."
   },
   "landing": {
     "eyebrow": "For Brazilians living abroad · Free Beta",

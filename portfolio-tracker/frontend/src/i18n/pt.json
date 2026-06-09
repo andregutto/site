@@ -20,7 +20,8 @@
     "moments": "Momentos",
     "banks": "Contas",
     "dividends": "Dividendos",
-    "assets": "Ativos"
+    "assets": "Ativos",
+    "passiveIncome": "Rendimentos"
   },
   "currency": {
     "label": "Moeda"
@@ -1361,7 +1362,20 @@
     "yieldOnCost": "Yield sobre custo",
     "monthlyChart": "Dividendos por mês",
     "autoSyncing": "Buscando dividendos...",
-    "count": "pagamentos"
+    "count": "pagamentos",
+    "passiveTitle": "Rendimentos Passivos",
+    "passiveSubtitle": "Histórico e projeção de renda passiva do portfólio",
+    "passiveYTD": "Recebido em {year}",
+    "passive12m": "Últimos 12 meses",
+    "passiveAvgMonthly": "Média mensal (6m)",
+    "passiveProjected12m": "Projeção próximos 12m",
+    "passiveProjectedBar": "Projeção",
+    "passiveReceivedBar": "Recebido",
+    "passiveCoverage": "Cobertura de despesas",
+    "passiveCoverageDesc": "% das despesas mensais cobertas por renda passiva",
+    "passiveTopAssets": "Por ativo",
+    "passiveNoData": "Nenhum dividendo encontrado",
+    "passiveNoDataHint": "Sincronize os dividendos para visualizar os rendimentos passivos do portfólio."
   },
   "landing": {
     "eyebrow": "Para brasileiros que vivem fora do Brasil · Beta gratuito",

@@ -20,7 +20,8 @@
     "moments": "Moments",
     "banks": "Comptes",
     "dividends": "Dividendes",
-    "assets": "Actifs"
+    "assets": "Actifs",
+    "passiveIncome": "Revenus"
   },
   "currency": {
     "label": "Devise"
@@ -1361,7 +1362,20 @@
     "yieldOnCost": "Rendement sur coût",
     "monthlyChart": "Dividendes par mois",
     "autoSyncing": "Récupération des dividendes...",
-    "count": "paiements"
+    "count": "paiements",
+    "passiveTitle": "Revenus passifs",
+    "passiveSubtitle": "Historique et projection des revenus passifs du portefeuille",
+    "passiveYTD": "Reçu en {year}",
+    "passive12m": "12 derniers mois",
+    "passiveAvgMonthly": "Moy. mensuelle (6m)",
+    "passiveProjected12m": "Projection 12 prochains mois",
+    "passiveProjectedBar": "Projection",
+    "passiveReceivedBar": "Reçu",
+    "passiveCoverage": "Couverture des dépenses",
+    "passiveCoverageDesc": "% des dépenses mensuelles couvertes par les revenus passifs",
+    "passiveTopAssets": "Par actif",
+    "passiveNoData": "Aucun dividende trouvé",
+    "passiveNoDataHint": "Synchronisez les dividendes pour visualiser les revenus passifs de votre portefeuille."
   },
   "landing": {
     "eyebrow": "Pour les Brésiliens vivant à l'étranger · Bêta gratuit",
