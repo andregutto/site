@@ -127,9 +127,9 @@ export default function ReportsPage() {
               >França</button>
             )}
             {showRes && resTab === 'coming_soon' && (
-              <div className={`flex items-center gap-1.5 px-3 py-1.5 ${showBr ? 'border-l border-gray-200' : ''} bg-gray-50 text-gray-400 cursor-not-allowed select-none`} title="Em breve">
+              <div className={`flex items-center gap-1.5 px-3 py-1.5 ${showBr ? 'border-l border-gray-200' : ''} bg-gray-50 text-gray-400 cursor-not-allowed select-none`} title={t.common.comingSoon}>
                 <span className="font-medium">{residenceCountry}</span>
-                <span className="text-[10px] bg-gray-200 text-gray-500 px-1.5 py-0.5 rounded-full leading-none">Em breve</span>
+                <span className="text-[10px] bg-gray-200 text-gray-500 px-1.5 py-0.5 rounded-full leading-none">{t.common.comingSoon}</span>
               </div>
             )}
           </div>

@@ -44,7 +44,7 @@ export default function MarketIndicesBar() {
     <div
       className="grid grid-cols-2 lg:grid-cols-4 gap-4 cursor-pointer"
       onClick={() => navigate('/indices')}
-      title="Ver todos os índices"
+      title={t.common.allIndices}
     >
       {indices.map(idx => {
         const pct = idx.m1_pct

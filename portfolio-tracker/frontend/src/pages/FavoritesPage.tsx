@@ -58,7 +58,7 @@ export default function FavoritesPage() {
                 <button
                   onClick={() => toggleFavorite(asset.id)}
                   className="shrink-0"
-                  title="Remover dos favoritos"
+                  title={t.common.removeFromFavorites}
                 >
                   <StarIcon filled />
                 </button>

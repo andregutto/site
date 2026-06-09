@@ -4,6 +4,7 @@ import { PageLoader } from '../components/ArvoLoader'
 import { apiFetch } from '../lib/api'
 import { usePortfolioValue } from '../hooks/usePortfolio'
 import InstitutionLogo from '../components/InstitutionLogo'
+import { useI18n } from '../contexts/I18nContext'
 
 interface InstitutionProfile {
   official_name:    string
@@ -259,9 +260,9 @@ function findInBankDatabase(name: string): Partial<InstitutionProfile> | undefin
   const lower = name.toLowerCase()
   const exactCI = Object.keys(BANK_DATABASE).find(k => k.toLowerCase() === lower)
   if (exactCI) return BANK_DATABASE[exactCI]
-  // 3. Any DB key (≥3 chars) appears as word/substring in the exchange name
+  // 3. Any DB key (≥2 chars) appears as word/substring in the exchange name
   const partial = Object.keys(BANK_DATABASE)
-    .filter(k => k.length >= 3)
+    .filter(k => k.length >= 2)
     .find(k => lower.includes(k.toLowerCase()))
   if (partial) return BANK_DATABASE[partial]
   return undefined
@@ -293,6 +294,7 @@ interface ProfileData {
 
 export default function InstitutionsPage() {
   const location = useLocation()
+  const { t } = useI18n()
   const focusName = (location.state as { focus?: string } | null)?.focus ?? null
 
   const { data: portfolio } = usePortfolioValue()
@@ -401,15 +403,15 @@ export default function InstitutionsPage() {
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div>
-        <h1 className="text-xl font-bold text-gray-900">Cadastro de Instituições</h1>
+        <h1 className="text-xl font-bold text-gray-900">{t.institutions.title}</h1>
         <p className="text-sm text-gray-400 mt-1">
-          Dados usados no relatório de imposto de renda. Clique numa instituição para editar.
+          {t.institutions.subtitle}
         </p>
       </div>
 
       {allInstitutions.length === 0 ? (
         <div className="bg-white border border-gray-100 rounded-2xl p-12 text-center text-gray-400 shadow-sm">
-          Nenhuma instituição encontrada. Atribua instituições aos ativos primeiro.
+          {t.institutions.noFound}
         </div>
       ) : (
         <div className="space-y-3">
@@ -430,12 +432,12 @@ export default function InstitutionsPage() {
                       <span className="font-semibold text-gray-800">{name}</span>
                       <div className="flex items-center gap-2 mt-0.5">
                         {!isActive && (
-                          <span className="text-xs text-gray-400 border border-gray-200 rounded px-1.5 py-0.5">sem ativos</span>
+                          <span className="text-xs text-gray-400 border border-gray-200 rounded px-1.5 py-0.5">{t.institutions.noAssets}</span>
                         )}
                         {hasData ? (
-                          <span className="text-xs text-green-600 font-medium">✓ dados preenchidos</span>
+                          <span className="text-xs text-green-600 font-medium">✓ {t.institutions.dataFilled}</span>
                         ) : findInBankDatabase(name) ? (
-                          <span className="text-xs text-amber-600 font-medium">base Arvo — verificar</span>
+                          <span className="text-xs text-amber-600 font-medium">{t.institutions.arvoBase}</span>
                         ) : null}
                       </div>
                     </div>
@@ -449,8 +451,7 @@ export default function InstitutionsPage() {
                       <div className="flex gap-2 p-3 bg-amber-50 border border-amber-200 rounded-xl">
                         <span className="text-amber-500 shrink-0">⚠</span>
                         <p className="text-xs text-amber-800">
-                          <span className="font-semibold">Dados preenchidos pela base de dados do Arvo.</span>{' '}
-                          Verifique e confirme as informações antes de salvar e gerar o relatório de IR.
+                          {t.institutions.arvoWarning}
                         </p>
                       </div>
                     )}
@@ -500,10 +501,10 @@ export default function InstitutionsPage() {
                         disabled={saving}
                         className="px-4 py-2 bg-[#0D0D0D] text-white rounded-xl text-sm font-semibold hover:bg-[#0D0D0D]/90 disabled:opacity-50 transition-colors"
                       >
-                        {saving ? 'Salvando...' : 'Salvar'}
+                        {saving ? t.common.loading : t.common.save}
                       </button>
                       {saveOk === name && (
-                        <span className="text-xs text-green-600">Salvo com sucesso.</span>
+                        <span className="text-xs text-green-600">{t.profile.saved}</span>
                       )}
                     </div>
                   </div>

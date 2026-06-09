@@ -409,7 +409,7 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
                                 <span
                                   className="text-xs font-semibold"
                                   style={{ color: r >= 0 ? 'var(--arvo-green)' : 'var(--arvo-red)' }}
-                                  title="Rentabilidade total desde o primeiro aporte"
+                                  title={t.common.totalReturnTip}
                                 >
                                   {r >= 0 ? '+' : ''}{r.toFixed(2)}%
                                 </span>

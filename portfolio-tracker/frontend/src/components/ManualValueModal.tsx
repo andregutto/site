@@ -350,7 +350,7 @@ export default function ManualValueModal({ asset, onClose, onSaved, initialMode 
                     <button
                       onClick={() => handleDelete(h.id)}
                       className="text-gray-300 hover:text-red-500 text-sm ml-2 transition-colors"
-                      title="Remover"
+                      title={t.common.remove}
                     >×</button>
                   </div>
                 ))}

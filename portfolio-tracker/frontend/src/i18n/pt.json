@@ -153,7 +153,14 @@
     "total": "Total",
     "quantity": "Qtd",
     "noData": "Sem dados",
-    "description": "Descrição"
+    "description": "Descrição",
+    "remove": "Remover",
+    "rename": "Renomear",
+    "comingSoon": "Em breve",
+    "allIndices": "Ver todos os índices",
+    "removeFromFavorites": "Remover dos favoritos",
+    "totalReturnTip": "Rentabilidade total desde o primeiro aporte",
+    "aiSuggested": "Sugerido por IA"
   },
   "login": {
     "subtitle": "Acompanhe seus investimentos globais",
@@ -789,6 +796,10 @@
     "markAsTransfer": "Marcar como transferência interna",
     "unmarkInternalAll": "Desmarcar como transferência interna para todas as transações com a descrição \"{desc}\"?",
     "txSearchNoResults": "Nenhum resultado encontrado",
+    "groupRename": "Clique para renomear",
+    "groupRenameAuto": "Clique para renomear (remove a marcação automática)",
+    "groupDelete": "Excluir grupo",
+    "removeFromGroup": "Remover do grupo",
     "linkedTransfer": "↔ Vinculada",
     "unlinkTransfer": "Desvincular",
     "excludeFromStats": "Ocultar dos cálculos",
@@ -1683,5 +1694,14 @@
     "warning2": "Isenção de R$20.000/mês válida apenas para ações no mercado à vista (swing trade). Day trade não incluído.",
     "warning3": "Dividendos de FIIs são isentos de IR para pessoa física — verifique se o FII cumpre os requisitos legais.",
     "warning4": "JCP é sujeito a 15% na fonte. Verifique os informes de rendimentos de cada instituição financeira."
+  },
+  "institutions": {
+    "title": "Cadastro de Instituições",
+    "subtitle": "Dados usados no relatório de imposto de renda. Clique numa instituição para editar.",
+    "noFound": "Nenhuma instituição encontrada. Atribua instituições aos ativos primeiro.",
+    "noAssets": "sem ativos",
+    "dataFilled": "dados preenchidos",
+    "arvoBase": "base Arvo — verificar",
+    "arvoWarning": "Dados preenchidos pela base de dados do Arvo. Verifique e confirme as informações antes de salvar e gerar o relatório de IR."
   }
 }

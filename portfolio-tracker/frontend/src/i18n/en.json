@@ -153,7 +153,14 @@
     "total": "Total",
     "quantity": "Qty",
     "noData": "No data",
-    "description": "Description"
+    "description": "Description",
+    "remove": "Remove",
+    "rename": "Rename",
+    "comingSoon": "Coming soon",
+    "allIndices": "View all indices",
+    "removeFromFavorites": "Remove from favorites",
+    "totalReturnTip": "Total return since first contribution",
+    "aiSuggested": "Suggested by AI"
   },
   "login": {
     "subtitle": "Track your global investments",
@@ -788,6 +795,10 @@
     "markAsReal": "Mark as real transaction",
     "unmarkInternalAll": "Unmark as internal transfer for all transactions with description \"{desc}\"?",
     "txSearchNoResults": "No results found",
+    "groupRename": "Click to rename",
+    "groupRenameAuto": "Click to rename (removes auto-tagging)",
+    "groupDelete": "Delete group",
+    "removeFromGroup": "Remove from group",
     "markAsTransfer": "Mark as internal transfer",
     "linkedTransfer": "↔ Linked",
     "unlinkTransfer": "Unlink transfer",
@@ -1683,5 +1694,14 @@
     "warning2": "R$20,000/month exemption applies only to stocks (swing trade). Day trade is not included.",
     "warning3": "FII dividends are tax-exempt for individuals — verify that the FII meets all legal requirements.",
     "warning4": "JCP is subject to 15% withholding at source. Verify income statements from each financial institution."
+  },
+  "institutions": {
+    "title": "Institution Register",
+    "subtitle": "Data used in the income tax report. Click an institution to edit.",
+    "noFound": "No institutions found. Assign institutions to assets first.",
+    "noAssets": "no assets",
+    "dataFilled": "data filled",
+    "arvoBase": "Arvo base — verify",
+    "arvoWarning": "Data filled from the Arvo database. Verify and confirm the information before saving and generating the tax report."
   }
 }

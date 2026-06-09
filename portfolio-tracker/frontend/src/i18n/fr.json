@@ -153,7 +153,14 @@
     "total": "Total",
     "quantity": "Qté",
     "noData": "Pas de données",
-    "description": "Description"
+    "description": "Description",
+    "remove": "Supprimer",
+    "rename": "Renommer",
+    "comingSoon": "Bientôt",
+    "allIndices": "Voir tous les indices",
+    "removeFromFavorites": "Retirer des favoris",
+    "totalReturnTip": "Rentabilité totale depuis le premier apport",
+    "aiSuggested": "Suggéré par IA"
   },
   "login": {
     "subtitle": "Suivez vos investissements mondiaux",
@@ -788,6 +795,10 @@
     "markAsReal": "Marquer comme transaction réelle",
     "unmarkInternalAll": "Démarquer comme virement interne pour toutes les transactions avec la description \"{desc}\" ?",
     "txSearchNoResults": "Aucun résultat trouvé",
+    "groupRename": "Cliquer pour renommer",
+    "groupRenameAuto": "Cliquer pour renommer (supprime le marquage automatique)",
+    "groupDelete": "Supprimer le groupe",
+    "removeFromGroup": "Retirer du groupe",
     "markAsTransfer": "Marquer comme virement interne",
     "linkedTransfer": "↔ Lié",
     "unlinkTransfer": "Dissocier le virement",
@@ -1683,5 +1694,14 @@
     "warning2": "L'exonération de R$20 000/mois s'applique uniquement aux actions (swing trade). Le day trade est exclu.",
     "warning3": "Les dividendes de FII sont exonérés pour les personnes physiques — vérifiez que le FII remplit les conditions légales.",
     "warning4": "Le JCP est soumis à 15% retenu à la source. Vérifiez les relevés de rendements de chaque établissement financier."
+  },
+  "institutions": {
+    "title": "Registre des Institutions",
+    "subtitle": "Données utilisées dans le rapport d'impôt sur le revenu. Cliquez sur une institution pour modifier.",
+    "noFound": "Aucune institution trouvée. Attribuez d'abord des institutions aux actifs.",
+    "noAssets": "sans actifs",
+    "dataFilled": "données renseignées",
+    "arvoBase": "base Arvo — vérifier",
+    "arvoWarning": "Données renseignées par la base Arvo. Vérifiez et confirmez les informations avant d'enregistrer et de générer le rapport fiscal."
   }
 }

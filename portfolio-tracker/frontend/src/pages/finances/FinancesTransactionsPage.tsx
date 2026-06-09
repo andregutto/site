@@ -1086,7 +1086,7 @@ export default function FinancesTransactionsPage() {
                     </div>
                     <div className="flex items-center gap-1">
                       {row.suggested_by === 'ai' && row.category_id === row.suggested_category_id && (
-                        <span title="Sugerido por IA" className="text-[10px] bg-violet-100 text-violet-600 rounded px-1 font-medium shrink-0">✦ IA</span>
+                        <span title={t.common.aiSuggested} className="text-[10px] bg-violet-100 text-violet-600 rounded px-1 font-medium shrink-0">✦ IA</span>
                       )}
                       <select
                         value={row.shared_category_id != null ? `s:${row.shared_category_id}` : (row.category_id != null ? `c:${row.category_id}` : '')}
@@ -1166,7 +1166,7 @@ export default function FinancesTransactionsPage() {
                       <td className="px-4 py-2">
                         <div className="flex items-center gap-1">
                           {row.suggested_by === 'ai' && row.category_id === row.suggested_category_id && (
-                            <span title="Sugerido por IA" className="text-[10px] bg-violet-100 text-violet-600 rounded px-1 font-medium shrink-0">✦ IA</span>
+                            <span title={t.common.aiSuggested} className="text-[10px] bg-violet-100 text-violet-600 rounded px-1 font-medium shrink-0">✦ IA</span>
                           )}
                           <select
                             value={row.shared_category_id != null ? `s:${row.shared_category_id}` : (row.category_id != null ? `c:${row.category_id}` : '')}
@@ -1791,7 +1791,7 @@ export default function FinancesTransactionsPage() {
                             <button
                               onClick={() => { setEditingGroupId(g.id); setEditingGroupNameInput(g.name) }}
                               className="flex-1 text-sm font-medium text-gray-800 text-left hover:text-[#0D0D0D] transition-colors"
-                              title="Clique para renomear"
+                              title={t.finances.groupRename}
                             >
                               {displayName(g)}
                             </button>
@@ -1801,7 +1801,7 @@ export default function FinancesTransactionsPage() {
                           </span>
                           <button
                             onClick={() => deleteGroup(g.id)}
-                            title="Excluir grupo"
+                            title={t.finances.groupDelete}
                             className="p-1 text-gray-300 hover:text-red-400 transition-colors"
                           >
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5"><path fillRule="evenodd" d="M5 3.25V4H2.75a.75.75 0 0 0 0 1.5h.3l.815 8.15A1.5 1.5 0 0 0 5.357 15h5.285a1.5 1.5 0 0 0 1.493-1.35l.815-8.15h.3a.75.75 0 0 0 0-1.5H11v-.75A2.25 2.25 0 0 0 8.75 1h-1.5A2.25 2.25 0 0 0 5 3.25Z" clipRule="evenodd"/></svg>
@@ -1815,7 +1815,7 @@ export default function FinancesTransactionsPage() {
                               <span className={`font-medium ${tx.amount < 0 ? 'text-red-500' : 'text-emerald-600'}`}>{fmt(tx.amount, tx.currency)}</span>
                               <button
                                 onClick={() => removeFromGroup(g.id, tx.id)}
-                                title="Remover do grupo"
+                                title={t.finances.removeFromGroup}
                                 className="p-0.5 text-gray-200 hover:text-red-400 transition-colors"
                               >
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3"><path d="M5.28 4.22a.75.75 0 0 0-1.06 1.06L6.94 8l-2.72 2.72a.75.75 0 1 0 1.06 1.06L8 9.06l2.72 2.72a.75.75 0 1 0 1.06-1.06L9.06 8l2.72-2.72a.75.75 0 0 0-1.06-1.06L8 6.94 5.28 4.22Z"/></svg>
@@ -1856,7 +1856,7 @@ export default function FinancesTransactionsPage() {
                                     <button
                                       onClick={() => { setEditingGroupId(g.id); setEditingGroupNameInput(displayName(g)) }}
                                       className="flex-1 text-sm font-medium text-gray-500 text-left hover:text-[#0D0D0D] transition-colors flex items-center gap-1.5"
-                                      title="Clique para renomear (remove a marcação automática)"
+                                      title={t.finances.groupRenameAuto}
                                     >
                                       <span className="text-[10px] bg-gray-100 text-gray-400 rounded px-1 py-0.5 font-medium shrink-0">auto</span>
                                       {displayName(g)}
@@ -1865,7 +1865,7 @@ export default function FinancesTransactionsPage() {
                                   <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${Math.abs(g.net) < 0.01 ? 'bg-gray-100 text-gray-500' : g.net > 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-600'}`}>
                                     {g.net >= 0 ? '+' : ''}{fmt(g.net, g.transactions[0]?.currency ?? 'EUR')}
                                   </span>
-                                  <button onClick={() => deleteGroup(g.id)} title="Excluir grupo" className="p-1 text-gray-300 hover:text-red-400 transition-colors">
+                                  <button onClick={() => deleteGroup(g.id)} title={t.finances.groupDelete} className="p-1 text-gray-300 hover:text-red-400 transition-colors">
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5"><path fillRule="evenodd" d="M5 3.25V4H2.75a.75.75 0 0 0 0 1.5h.3l.815 8.15A1.5 1.5 0 0 0 5.357 15h5.285a1.5 1.5 0 0 0 1.493-1.35l.815-8.15h.3a.75.75 0 0 0 0-1.5H11v-.75A2.25 2.25 0 0 0 8.75 1h-1.5A2.25 2.25 0 0 0 5 3.25Z" clipRule="evenodd"/></svg>
                                   </button>
                                 </div>
@@ -1875,7 +1875,7 @@ export default function FinancesTransactionsPage() {
                                       <span className="text-gray-300">·</span>
                                       <span className="flex-1 truncate">{tx.description}</span>
                                       <span className={`font-medium ${tx.amount < 0 ? 'text-red-500' : 'text-emerald-600'}`}>{fmt(tx.amount, tx.currency)}</span>
-                                      <button onClick={() => removeFromGroup(g.id, tx.id)} title="Remover do grupo" className="p-0.5 text-gray-200 hover:text-red-400 transition-colors">
+                                      <button onClick={() => removeFromGroup(g.id, tx.id)} title={t.finances.removeFromGroup} className="p-0.5 text-gray-200 hover:text-red-400 transition-colors">
                                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3"><path d="M5.28 4.22a.75.75 0 0 0-1.06 1.06L6.94 8l-2.72 2.72a.75.75 0 1 0 1.06 1.06L8 9.06l2.72 2.72a.75.75 0 1 0 1.06-1.06L9.06 8l2.72-2.72a.75.75 0 0 0-1.06-1.06L8 6.94 5.28 4.22Z"/></svg>
                                       </button>
                                     </div>
@@ -2001,7 +2001,16 @@ export default function FinancesTransactionsPage() {
                 <label className="block text-xs text-gray-500 mb-1">{t.finances.categoryOptional}</label>
                 <select value={addCat} onChange={e => setAddCat(e.target.value === '' ? '' : Number(e.target.value))} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
                   <option value="">{t.finances.noCategory}</option>
-                  {catsForAmount(addSign === '+' ? 1 : -1).map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
+                  {incomeCategories.length > 0 && (
+                    <optgroup label={t.finances.incomeLabel}>
+                      {incomeCategories.map(c => <option key={c.id} value={c.id}>{c.icon} {resolveKey(c.name, c.name_key, nameKeys)}</option>)}
+                    </optgroup>
+                  )}
+                  {expenseCategories.length > 0 && (
+                    <optgroup label={t.finances.expenses}>
+                      {expenseCategories.map(c => <option key={c.id} value={c.id}>{c.icon} {resolveKey(c.name, c.name_key, nameKeys)}</option>)}
+                    </optgroup>
+                  )}
                 </select>
               </div>
               {accounts.length > 0 && (
