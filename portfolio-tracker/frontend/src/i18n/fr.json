@@ -21,6 +21,7 @@
     "banks": "Comptes",
     "dividends": "Revenus Passifs",
     "diversification": "Analyse",
+    "fees": "Frais",
     "assets": "Actifs",
     "passiveIncome": "Revenus"
   },
@@ -1732,6 +1733,28 @@
     "warning2": "L'exonération de R$20 000/mois s'applique uniquement aux actions (swing trade). Le day trade est exclu.",
     "warning3": "Les dividendes de FII sont exonérés pour les personnes physiques — vérifiez que le FII remplit les conditions légales.",
     "warning4": "Le JCP est soumis à 15% retenu à la source. Vérifiez les relevés de rendements de chaque établissement financier."
+  },
+  "fees": {
+    "title": "Scanner de Frais",
+    "subtitle": "Frais et coûts identifiés dans vos transactions financières sur les 12 derniers mois",
+    "totalFees": "Total des frais (12 mois)",
+    "avgMonthly": "Moyenne mensuelle",
+    "occurrences": "occurrences",
+    "byCategory": "Par catégorie",
+    "monthlyTrend": "Tendance mensuelle",
+    "etfTitle": "Coût de gestion — ETF",
+    "etfSubtitle": "Ratio de frais annuel (TER) des ETF en portefeuille",
+    "etfCode": "Code",
+    "etfName": "ETF",
+    "etfTer": "TER",
+    "etfValue": "Valeur actuelle",
+    "etfAnnualCost": "Coût annuel est.",
+    "etfUnknown": "TER non répertorié",
+    "etfTotalCost": "Coût total de gestion/an",
+    "noFees": "Aucun frais détecté sur la période",
+    "noFeesHint": "Le scanner recherche des mots-clés tels que : frais, taxe, tarif, IOF, garde, courtage, spread, commission, change.",
+    "noEtfs": "Aucun ETF identifié en portefeuille",
+    "navFees": "Frais"
   },
   "diversification": {
     "title": "Scanner de Diversification",

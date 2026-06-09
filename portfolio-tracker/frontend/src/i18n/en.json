@@ -21,6 +21,7 @@
     "banks": "Accounts",
     "dividends": "Passive Income",
     "diversification": "Analysis",
+    "fees": "Fees",
     "assets": "Assets",
     "passiveIncome": "Income"
   },
@@ -1732,6 +1733,28 @@
     "warning2": "R$20,000/month exemption applies only to stocks (swing trade). Day trade is not included.",
     "warning3": "FII dividends are tax-exempt for individuals — verify that the FII meets all legal requirements.",
     "warning4": "JCP is subject to 15% withholding at source. Verify income statements from each financial institution."
+  },
+  "fees": {
+    "title": "Fee Scanner",
+    "subtitle": "Fees and costs identified in your financial transactions over the last 12 months",
+    "totalFees": "Total fees (12 months)",
+    "avgMonthly": "Monthly average",
+    "occurrences": "occurrences",
+    "byCategory": "By category",
+    "monthlyTrend": "Monthly trend",
+    "etfTitle": "Management Cost — ETFs",
+    "etfSubtitle": "Annual expense ratio (TER) for ETFs in portfolio",
+    "etfCode": "Code",
+    "etfName": "ETF",
+    "etfTer": "TER",
+    "etfValue": "Current value",
+    "etfAnnualCost": "Est. annual cost",
+    "etfUnknown": "TER not catalogued",
+    "etfTotalCost": "Total management cost/year",
+    "noFees": "No fees detected in the period",
+    "noFeesHint": "The scanner looks for keywords such as: fee, tax, tariff, IOF, custody, brokerage, spread, annual fee, FX.",
+    "noEtfs": "No ETFs identified in portfolio",
+    "navFees": "Fees"
   },
   "diversification": {
     "title": "Diversification Scanner",

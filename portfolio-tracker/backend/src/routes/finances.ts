@@ -2015,4 +2015,66 @@ router.get('/subscriptions', requireAuth, async (req, res: Response) => {
   res.json({ subscriptions })
 })
 
+// GET /api/finances/fee-scan
+router.get('/fee-scan', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+
+  const since = new Date()
+  since.setFullYear(since.getFullYear() - 1)
+  const sinceStr = since.toISOString().split('T')[0]
+
+  const { data: transactions, error } = await supabaseAdmin
+    .from('finance_transactions')
+    .select('id, date, description, amount, currency, finance_categories(id, name, icon, color, name_key)')
+    .eq('user_id', userId)
+    .lt('amount', 0)
+    .gte('date', sinceStr)
+    .eq('is_internal_transfer', false)
+    .eq('exclude_from_stats', false)
+    .order('date', { ascending: true })
+
+  if (error) { res.status(500).json({ error: error.message }); return }
+  if (!transactions) { res.json({ total: 0, by_category: [], monthly: [] }); return }
+
+  const FEE_DESC_KEYWORDS = [
+    'taxa', 'tarifa', 'iof', 'custód', 'custodi', 'corretag', 'spread',
+    'anuidade', 'manutenc', 'manutenç', 'emolument', 'liquidaç', 'liquidac',
+    'câmbio', 'cambio', 'imposto de', 'cpmf', 'cobrança', 'cobranca',
+    'juros mora', 'multa', 'ted ', ' ted', 'penalidade',
+  ]
+  const FEE_CAT_KEYWORDS = ['taxa', 'tarifa', 'imposto', 'iof', 'fee', 'bancár', 'bancar', 'corretor']
+
+  function isFee(tx: { description: string | null; finance_categories?: unknown }): boolean {
+    const desc = (tx.description ?? '').toLowerCase()
+    const cat = tx.finance_categories as { name?: string; name_key?: string } | null
+    const catStr = ((cat?.name ?? '') + ' ' + (cat?.name_key ?? '')).toLowerCase()
+    return FEE_DESC_KEYWORDS.some(k => desc.includes(k)) || FEE_CAT_KEYWORDS.some(k => catStr.includes(k))
+  }
+
+  const feeTxs = transactions.filter(isFee)
+
+  const catMap = new Map<string, { id: string; name: string; icon: string; color: string; total: number; count: number }>()
+  for (const tx of feeTxs) {
+    const cat = tx.finance_categories as { id: number; name: string; icon: string; color: string } | null
+    const key = cat ? String(cat.id) : '_uncat'
+    const existing = catMap.get(key)
+    if (existing) { existing.total += Math.abs(tx.amount); existing.count++ }
+    else catMap.set(key, { id: key, name: cat?.name ?? '—', icon: cat?.icon ?? '💸', color: cat?.color ?? '#94A3B8', total: Math.abs(tx.amount), count: 1 })
+  }
+
+  const monthMap = new Map<string, number>()
+  for (const tx of feeTxs) {
+    const m = tx.date.slice(0, 7)
+    monthMap.set(m, (monthMap.get(m) ?? 0) + Math.abs(tx.amount))
+  }
+
+  const by_category = [...catMap.values()].sort((a, b) => b.total - a.total)
+  const total = by_category.reduce((s, c) => s + c.total, 0)
+  const monthly = [...monthMap.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([month, amount]) => ({ month, amount: Math.round(amount * 100) / 100 }))
+
+  res.json({ total: Math.round(total * 100) / 100, by_category, monthly })
+})
+
 export default router

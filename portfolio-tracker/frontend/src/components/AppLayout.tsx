@@ -219,6 +219,11 @@ export default function AppLayout() {
         <circle cx="8" cy="8" r="3"/>
       </svg>
     )},
+    { to: '/finances/fees', label: t.nav.fees, end: false, icon: (
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M2 5.5h12M2 10.5h12M5.5 2l-1 12M11.5 2l-1 12"/>
+      </svg>
+    )},
   ]
 
   const activeSubItems = inInvestimentos ? investimentosItems : inFinances ? financesItems : []

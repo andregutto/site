@@ -56,6 +56,7 @@ import LandingPage from './pages/LandingPage'
 import AcceptInvitePage from './pages/AcceptInvitePage'
 import SharedCategoriesPage from './pages/finances/SharedCategoriesPage'
 import FinancesSubscriptionsPage from './pages/finances/FinancesSubscriptionsPage'
+import FeeScannerPage from './pages/finances/FeeScannerPage'
 
 function EmailConfirmGate({ email }: { email: string }) {
   const { signOut } = useAuth()
@@ -156,6 +157,7 @@ function AppRoutes() {
           <Route path="freedom"       element={<FinancesFreedomPage />} />
           <Route path="shared"         element={<SharedCategoriesPage />} />
           <Route path="subscriptions" element={<FinancesSubscriptionsPage />} />
+          <Route path="fees"          element={<FeeScannerPage />} />
           <Route path="accounts"      element={<Navigate to="/institutions" replace />} />
         </Route>
       </Route>
