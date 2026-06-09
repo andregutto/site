@@ -558,6 +558,7 @@ export default function FinancesBudgetPage() {
   const totalBudget    = expenseEnvelopes.reduce((s, e) => s + e.budget_amount, 0)
   const totalCatBudget = expenseEnvelopes.reduce((s, e) => s + e.categories.reduce((cs, c) => cs + (c.budget_monthly ?? 0), 0), 0)
   const unallocated    = data.income.monthly_net - totalCatBudget
+  const totalActual    = Array.from(catActuals.values()).reduce((s, v) => s + v, 0)
 
   return (
     <div className="space-y-5">
@@ -738,9 +739,19 @@ export default function FinancesBudgetPage() {
       </div>
 
       {/* Total row */}
-      <div className="bg-gray-50 rounded-xl px-5 py-3 flex items-center justify-between">
+      <div className="bg-gray-50 rounded-xl px-5 py-3 flex items-center justify-between gap-4">
         <span className="text-sm text-gray-500">{t.finances.totalBudgeted}</span>
-        <span className="text-sm font-semibold text-gray-900">{fmt(totalBudget, data.income.currency)}</span>
+        <div className="flex items-center gap-4">
+          {totalActual > 0 && (
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs text-gray-400">{t.finances.totalConsumed}</span>
+              <span className={`text-sm font-semibold ${totalActual > totalBudget ? 'text-red-600' : 'text-gray-700'}`}>
+                {fmt(totalActual, data.income.currency)}
+              </span>
+            </div>
+          )}
+          <span className="text-sm font-semibold text-gray-900">/ {fmt(totalBudget, data.income.currency)}</span>
+        </div>
       </div>
 
       {/* Shared categories section */}

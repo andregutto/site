@@ -16,7 +16,7 @@
     "finances": "Finances",
     "freedom": "Liberté",
     "portfolio": "Portefeuille",
-    "investments": "Investissements",
+    "investments": "Patrimoine",
     "moments": "Moments",
     "banks": "Comptes",
     "dividends": "Dividendes"
@@ -564,6 +564,7 @@
     "unallocated": "Non alloué",
     "overspent": "Dépassement",
     "totalBudgeted": "Total budgété",
+    "totalConsumed": "Consommé",
     "overLimit": "Dépassé",
     "goalReached": "Objectif atteint ✓",
     "noCategories": "Aucune catégorie dans cette enveloppe.",
