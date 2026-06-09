@@ -62,7 +62,7 @@ export default function MarketIndicesCard({ periodMode, periodLabel }: Props) {
 
   return (
     <div
-      className="rounded-2xl p-6 cursor-pointer hover:shadow-md transition-shadow"
+      className="rounded-2xl p-4 cursor-pointer hover:shadow-md transition-shadow"
       style={{ background: 'white', border: '1px solid var(--arvo-border)' }}
       onClick={() => navigate('/indices')}
       title={t.common.allIndices}
@@ -70,10 +70,10 @@ export default function MarketIndicesCard({ periodMode, periodLabel }: Props) {
       <h2 className="mb-1" style={{ fontFamily: "var(--arvo-font-body)", fontSize: 13, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--arvo-fg)' }}>
         {t.indices.title ?? 'Índices'}
       </h2>
-      <p className="mb-5" style={{ fontFamily: "'Playfair Display', serif", fontStyle: 'italic', fontSize: 13, color: 'var(--arvo-fg-soft)' }}>
+      <p className="mb-3" style={{ fontFamily: "'Playfair Display', serif", fontStyle: 'italic', fontSize: 13, color: 'var(--arvo-fg-soft)' }}>
         {periodLabel}
       </p>
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-3">
         {indices.map(idx => {
           const pct = getPct(idx)
           const isPos = pct != null && pct > 0

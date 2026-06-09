@@ -28,8 +28,8 @@ function useClickOutside(ref: React.RefObject<HTMLElement | null>, cb: () => voi
   }, [ref, cb, active])
 }
 
-const SIZE = 28
-const R = 11
+const SIZE = 32
+const R = 13
 const CIRC = 2 * Math.PI * R
 
 export default function SetupChecklist({ firstName }: Props) {
@@ -125,15 +125,15 @@ export default function SetupChecklist({ firstName }: Props) {
             strokeDashoffset={strokeOffset}
             style={{ transform: 'rotate(-90deg)', transformOrigin: 'center', transition: 'stroke-dashoffset 0.4s ease' }}
           />
-          {/* Center: small flag/goal icon */}
-          <path
-            d="M14 9 L14 19 M14 9 L19 11 L14 13"
-            stroke="#1B4FD8"
-            strokeWidth={1.6}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            fill="none"
-          />
+          {/* Center: Arvo logo (viewBox 174×180 → ~14px, centered at 16,16) */}
+          <g transform="translate(9, 8.76) scale(0.0805)" fill="#1B4FD8">
+            <path d="M96.9642 82.5762C83.7642 28.1762 141.798 5.2429 172.464 0.576233C173.464 15.7429 159.764 53.3762 96.9642 82.5762Z"/>
+            <path d="M165.464 82.5762V53.5762L136.964 73.9631V111.674C144.263 106.015 151.778 100.102 155.964 96.5762C163.564 90.1762 165.464 84.5762 165.464 82.5762Z" opacity="0.8"/>
+            <path d="M121.464 85.0507V123.576C125.207 120.732 131.014 116.287 136.964 111.674V73.9631L121.464 85.0507Z" opacity="0.65"/>
+            <path d="M96.9642 102.576L121.464 123.576V85.0507L96.9642 102.576Z" opacity="0.55"/>
+            <path d="M121.464 155.576V123.576L96.9642 102.576V178.576L121.464 155.576Z" opacity="0.75"/>
+            <path d="M0.513985 24.5762V51.5762C0.513985 53.5762 -0.135759 66.6762 7.46424 73.0762L44.514 101.576V155.076L69.014 178.076V82.0762L37.9642 56.0762L0.513985 24.5762Z" opacity="0.85"/>
+          </g>
         </svg>
       </button>
 

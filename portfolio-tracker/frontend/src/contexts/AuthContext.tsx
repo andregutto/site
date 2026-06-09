@@ -13,6 +13,22 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null)
 
+// Purge stale sb-*-auth-token keys from other URL configs (prevents HTTP 494).
+// Runs once at module load — safe because the Supabase client re-reads its own key after cleanup.
+function purgeStaleAuthTokens() {
+  try {
+    const PROJECT_REF = 'bkgpivxpzuzedezxtknd'
+    const canonical = `sb-${PROJECT_REF}-auth-token`
+    const stale: string[] = []
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i)
+      if (k && k.startsWith('sb-') && k.endsWith('-auth-token') && k !== canonical) stale.push(k)
+    }
+    stale.forEach(k => localStorage.removeItem(k))
+  } catch {}
+}
+purgeStaleAuthTokens()
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser]       = useState<User | null>(null)
   const [session, setSession] = useState<Session | null>(null)

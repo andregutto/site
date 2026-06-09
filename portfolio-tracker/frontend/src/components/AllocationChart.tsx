@@ -37,7 +37,7 @@ export default function AllocationChart({ data, currency = 'BRL', convert }: Pro
   }) => {
     const { cx = 0, cy = 0, midAngle = 0, outerRadius = 0, percent = 0, payload } = props
     if (!payload || percent < 0.05) return null
-    const radius = outerRadius + 26
+    const radius = outerRadius + 22
     const x = cx + radius * Math.cos(-midAngle * RADIAN)
     const y = cy + radius * Math.sin(-midAngle * RADIAN)
     const anchor = x > cx ? 'start' : 'end'
@@ -46,7 +46,7 @@ export default function AllocationChart({ data, currency = 'BRL', convert }: Pro
         x={x} y={y}
         textAnchor={anchor}
         dominantBaseline="central"
-        fontSize={10}
+        fontSize={12}
         fontFamily="var(--arvo-font-body)"
         fontWeight={500}
         fill={payload.color}
@@ -60,7 +60,7 @@ export default function AllocationChart({ data, currency = 'BRL', convert }: Pro
     <div className="rounded-2xl p-6" style={{ background: 'white', border: '1px solid var(--arvo-border)' }}>
       <h2 className="mb-1" style={{ fontFamily: "var(--arvo-font-body)", fontSize: 13, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--arvo-fg)' }}>{t.dashboard.allocationByClass}</h2>
       <p className="mb-4" style={{ fontFamily: "'Playfair Display', serif", fontStyle: 'italic', fontSize: 13, color: 'var(--arvo-fg-soft)' }}>{t.dashboard.allocationSubtitle}</p>
-      <div style={{ width: '100%', height: 260 }}>
+      <div style={{ width: '100%', height: 220 }}>
         <ResponsiveContainer width="100%" height="100%">
           <PieChart margin={{ top: 20, right: 70, bottom: 20, left: 70 }}>
             <Pie
@@ -69,8 +69,8 @@ export default function AllocationChart({ data, currency = 'BRL', convert }: Pro
               nameKey="name"
               cx="50%"
               cy="50%"
-              innerRadius={65}
-              outerRadius={95}
+              innerRadius={50}
+              outerRadius={75}
               paddingAngle={2}
               label={renderOuterLabel}
               labelLine={false}
@@ -83,10 +83,10 @@ export default function AllocationChart({ data, currency = 'BRL', convert }: Pro
                   const { cx, cy } = viewBox
                   return (
                     <g>
-                      <text x={cx} y={cy - 8} textAnchor="middle" fill="rgba(13,13,13,0.45)" fontSize={9} fontFamily="var(--arvo-font-body)" letterSpacing="0.12em" textDecoration="none">
+                      <text x={cx} y={cy - 7} textAnchor="middle" fill="rgba(13,13,13,0.45)" fontSize={9} fontFamily="var(--arvo-font-body)" letterSpacing="0.12em">
                         {t.common.total.toUpperCase()}
                       </text>
-                      <text x={cx} y={cy + 11} textAnchor="middle" fill="var(--arvo-black)" fontSize={14} fontFamily="var(--arvo-font-body)" fontWeight={600}>
+                      <text x={cx} y={cy + 9} textAnchor="middle" fill="var(--arvo-black)" fontSize={13} fontFamily="var(--arvo-font-body)" fontWeight={600}>
                         {totalFormatted}
                       </text>
                     </g>
