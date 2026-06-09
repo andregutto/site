@@ -29,7 +29,7 @@ function useClickOutside(ref: React.RefObject<HTMLElement | null>, cb: () => voi
 }
 
 const SIZE = 28
-const R = 10
+const R = 11
 const CIRC = 2 * Math.PI * R
 
 export default function SetupChecklist({ firstName }: Props) {
@@ -111,31 +111,29 @@ export default function SetupChecklist({ firstName }: Props) {
             cx={SIZE / 2} cy={SIZE / 2} r={R}
             fill="none"
             stroke="#1B4FD8"
-            strokeWidth={2.5}
-            strokeOpacity={0.18}
+            strokeWidth={3}
+            strokeOpacity={0.15}
           />
           {/* Progress arc */}
           <circle
             cx={SIZE / 2} cy={SIZE / 2} r={R}
             fill="none"
             stroke="#1B4FD8"
-            strokeWidth={2.5}
+            strokeWidth={3}
             strokeLinecap="round"
             strokeDasharray={CIRC}
             strokeDashoffset={strokeOffset}
             style={{ transform: 'rotate(-90deg)', transformOrigin: 'center', transition: 'stroke-dashoffset 0.4s ease' }}
           />
-          {/* Center count */}
-          <text
-            x={SIZE / 2} y={SIZE / 2 + 3.5}
-            textAnchor="middle"
-            fontSize={7.5}
-            fontFamily="var(--arvo-font-body)"
-            fontWeight={700}
-            fill="#1B4FD8"
-          >
-            {doneCount}/{steps.length}
-          </text>
+          {/* Center: small flag/goal icon */}
+          <path
+            d="M14 9 L14 19 M14 9 L19 11 L14 13"
+            stroke="#1B4FD8"
+            strokeWidth={1.6}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            fill="none"
+          />
         </svg>
       </button>
 
