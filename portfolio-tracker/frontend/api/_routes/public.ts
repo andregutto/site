@@ -58,4 +58,57 @@ router.get('/moments/:token', async (req, res: Response) => {
   })
 })
 
+// GET /api/public/portfolio/:token — no auth required
+router.get('/portfolio/:token', async (req, res: Response) => {
+  const { token } = req.params
+
+  const { data: share } = await supabaseAdmin
+    .from('portfolio_shares')
+    .select('user_id, show_values, label, updated_at, snapshot')
+    .eq('token', token)
+    .eq('is_active', true)
+    .single()
+
+  if (!share) { res.status(404).json({ error: 'not_found' }); return }
+
+  // Get owner first name
+  let owner_name: string | null = null
+  try {
+    const { data: { user } } = await supabaseAdmin.auth.admin.getUserById(share.user_id)
+    owner_name = (user?.user_metadata?.first_name as string | null) ?? null
+  } catch { /* ignore */ }
+
+  const snap = share.snapshot as {
+    total_brl: number; asset_count: number; generated_at: string
+    by_class: Array<{ name: string; key: string | null; color: string; value: number; pct: number }>
+    top_assets: Array<{ code: string; name: string; value_brl: number; pct: number; class_name: string; class_color: string; exchange: string | null }>
+    dividends_12m: number
+    monthly_dividends: Array<{ month: string; amount: number }>
+  } | null
+
+  if (!snap) { res.status(503).json({ error: 'snapshot_pending' }); return }
+
+  const showVal = share.show_values
+
+  res.json({
+    owner_name,
+    show_values: showVal,
+    updated_at: share.updated_at,
+    total_brl: showVal ? snap.total_brl : null,
+    asset_count: snap.asset_count,
+    generated_at: snap.generated_at,
+    by_class: snap.by_class.map(c => ({
+      name: c.name, key: c.key, color: c.color, pct: c.pct,
+      value: showVal ? c.value : null,
+    })),
+    top_assets: snap.top_assets.map(a => ({
+      code: a.code, name: a.name, pct: a.pct,
+      value_brl: showVal ? a.value_brl : null,
+      class_name: a.class_name, class_color: a.class_color, exchange: a.exchange,
+    })),
+    dividends_12m: showVal ? snap.dividends_12m : null,
+    monthly_dividends: snap.monthly_dividends,
+  })
+})
+
 export default router

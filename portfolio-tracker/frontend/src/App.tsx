@@ -51,6 +51,7 @@ import DividendsPage from './pages/DividendsPage'
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage'
 import TermsOfUsePage from './pages/TermsOfUsePage'
 import PublicMomentPage from './pages/PublicMomentPage'
+import PublicPortfolioPage from './pages/PublicPortfolioPage'
 import { AchievementProvider } from './contexts/AchievementContext'
 import LandingPage from './pages/LandingPage'
 import AcceptInvitePage from './pages/AcceptInvitePage'
@@ -125,6 +126,7 @@ function AppRoutes() {
       <Route path="/privacy"                element={<PrivacyPolicyPage />} />
       <Route path="/terms"                  element={<TermsOfUsePage />} />
       <Route path="/share/momento/:token"   element={<PublicMomentPage />} />
+      <Route path="/share/portfolio/:token"  element={<PublicPortfolioPage />} />
       <Route path="/invite/:token"           element={<AcceptInvitePage />} />
       <Route element={<ProtectedRoutes />}>
         <Route path="/dashboard"      element={<DashboardPage />} />

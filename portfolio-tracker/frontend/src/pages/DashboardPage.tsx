@@ -62,6 +62,44 @@ export default function DashboardPage() {
 
   const [periodMode, setPeriodMode] = useState<PeriodMode>('ytd')
 
+  // Share modal
+  const [showShareModal, setShowShareModal] = useState(false)
+  const [shareLink, setShareLink] = useState<{ token: string; show_values: boolean; updated_at?: string } | null>(null)
+  const [shareShowValues, setShareShowValues] = useState(false)
+  const [shareLoading, setShareLoading] = useState(false)
+  const [shareCopied, setShareCopied] = useState(false)
+
+  useEffect(() => {
+    if (!showShareModal) return
+    apiFetch<{ token: string; show_values: boolean; updated_at: string } | null>('/portfolio/share-link')
+      .then(r => { if (r) { setShareLink(r); setShareShowValues(r.show_values) } })
+      .catch(() => {})
+  }, [showShareModal])
+
+  async function handleGenerateShare() {
+    setShareLoading(true)
+    try {
+      const r = await apiFetch<{ token: string; show_values: boolean; updated_at: string }>('/portfolio/share-link', {
+        method: 'POST', body: JSON.stringify({ show_values: shareShowValues }),
+      })
+      setShareLink(r)
+    } finally { setShareLoading(false) }
+  }
+
+  async function handleDeactivateShare() {
+    await apiFetch('/portfolio/share-link', { method: 'DELETE' })
+    setShareLink(null)
+  }
+
+  function copyShareLink() {
+    if (!shareLink) return
+    navigator.clipboard.writeText(`${window.location.origin}/share/portfolio/${shareLink.token}`)
+    setShareCopied(true)
+    setTimeout(() => setShareCopied(false), 2000)
+  }
+
+  const s = t.sharePortfolio
+
   const perfFrom = (() => {
     switch (periodMode) {
       case 'current_month': return currentYM
@@ -135,6 +173,7 @@ export default function DashboardPage() {
   if (!data) return null
 
   return (
+    <>
     <div className="space-y-6">
       {/* Header + period buttons */}
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -169,6 +208,16 @@ export default function DashboardPage() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
             {t.dashboard.refresh}
+          </button>
+          <button
+            onClick={() => setShowShareModal(true)}
+            style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 10, letterSpacing: '0.10em', textTransform: 'uppercase', padding: '6px 12px', borderRadius: 6, border: '1px solid var(--arvo-border)', background: '#fff', color: 'rgba(13,13,13,0.65)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}
+          >
+            <svg style={{ width: 12, height: 12 }} fill="none" viewBox="0 0 16 16" stroke="currentColor" strokeWidth="1.5">
+              <circle cx="13" cy="3" r="1.5"/><circle cx="3" cy="8" r="1.5"/><circle cx="13" cy="13" r="1.5"/>
+              <path strokeLinecap="round" d="M4.3 7.3l7.4-3.6M4.3 8.7l7.4 3.6"/>
+            </svg>
+            {s.btnShare}
           </button>
         </div>
       </div>
@@ -368,5 +417,91 @@ export default function DashboardPage() {
         </div>
       )}
     </div>
+
+      {/* ── Share modal ── */}
+      {showShareModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
+          onClick={e => { if (e.target === e.currentTarget) setShowShareModal(false) }}>
+          <div style={{ background: '#fff', borderRadius: 16, padding: '28px', width: '100%', maxWidth: 440, boxShadow: '0 8px 32px rgba(0,0,0,0.18)' }}>
+            {/* Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
+              <div>
+                <h2 style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 18, fontWeight: 400, margin: 0, color: 'var(--arvo-black)' }}>{s.title}</h2>
+                <p style={{ fontSize: 12, color: 'var(--arvo-fg-soft)', margin: '4px 0 0', lineHeight: 1.4 }}>{s.subtitle}</p>
+              </div>
+              <button onClick={() => setShowShareModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--arvo-fg-soft)', padding: 4, lineHeight: 1 }}>✕</button>
+            </div>
+
+            <div style={{ height: 1, background: 'var(--arvo-border)', margin: '18px 0' }} />
+
+            {/* Show values toggle */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--arvo-black)' }}>{s.showValues}</div>
+                <div style={{ fontSize: 11, color: 'var(--arvo-fg-soft)', marginTop: 2 }}>{s.showValuesHint}</div>
+              </div>
+              <button
+                onClick={() => setShareShowValues(v => !v)}
+                style={{ width: 40, height: 22, borderRadius: 11, background: shareShowValues ? '#1B4FD8' : '#D1D5DB', border: 'none', cursor: 'pointer', position: 'relative', transition: 'background 0.2s', flexShrink: 0 }}
+              >
+                <div style={{ position: 'absolute', top: 3, left: shareShowValues ? 21 : 3, width: 16, height: 16, borderRadius: '50%', background: '#fff', transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }} />
+              </button>
+            </div>
+
+            {/* Link area */}
+            {shareLink && (
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--arvo-fg-soft)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>{s.linkLabel}</div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <div style={{ flex: 1, background: 'var(--arvo-bg-soft, #F8F7F5)', border: '1px solid var(--arvo-border)', borderRadius: 8, padding: '8px 12px', fontSize: 12, color: 'var(--arvo-fg-soft)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {window.location.origin}/share/portfolio/{shareLink.token}
+                  </div>
+                  <button onClick={copyShareLink} style={{ padding: '8px 14px', background: shareCopied ? '#16A34A' : 'var(--arvo-black)', color: '#fff', border: 'none', borderRadius: 8, fontSize: 12, cursor: 'pointer', flexShrink: 0, transition: 'background 0.2s' }}>
+                    {shareCopied ? s.copied : s.copy}
+                  </button>
+                </div>
+                {shareLink.updated_at && (
+                  <p style={{ fontSize: 11, color: 'var(--arvo-fg-soft)', marginTop: 6 }}>
+                    {s.updatedAt} {new Date(shareLink.updated_at).toLocaleDateString(locale === 'fr' ? 'fr-FR' : locale === 'en' ? 'en-GB' : 'pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Actions */}
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <button
+                onClick={handleGenerateShare}
+                disabled={shareLoading}
+                style={{ flex: 1, padding: '10px 16px', background: 'var(--arvo-black)', color: '#fff', border: 'none', borderRadius: 8, fontSize: 12, fontFamily: 'var(--arvo-font-body)', cursor: 'pointer', opacity: shareLoading ? 0.7 : 1 }}
+              >
+                {shareLoading ? s.refreshing : shareLink ? s.refresh : s.generate}
+              </button>
+              {shareLink && (
+                <>
+                  <a
+                    href={`/share/portfolio/${shareLink.token}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ padding: '10px 16px', background: '#F3F4F6', color: 'var(--arvo-black)', border: 'none', borderRadius: 8, fontSize: 12, fontFamily: 'var(--arvo-font-body)', cursor: 'pointer', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 5 }}
+                  >
+                    <svg style={{ width: 12, height: 12 }} fill="none" viewBox="0 0 16 16" stroke="currentColor" strokeWidth="1.5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M7 3H3a1 1 0 00-1 1v9a1 1 0 001 1h9a1 1 0 001-1V9M9 1h6v6M15 1L7.5 8.5"/>
+                    </svg>
+                    {s.openReport}
+                  </a>
+                  <button
+                    onClick={handleDeactivateShare}
+                    style={{ padding: '10px 14px', background: '#FEF2F2', color: '#DC2626', border: 'none', borderRadius: 8, fontSize: 12, cursor: 'pointer' }}
+                  >
+                    {s.deactivate}
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   )
 }
