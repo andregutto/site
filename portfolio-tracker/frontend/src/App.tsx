@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { CurrencyProvider } from './contexts/CurrencyContext'
+import { ThemeProvider } from './contexts/ThemeContext'
 import { I18nProvider, useI18n } from './contexts/I18nContext'
 import { supabase } from './lib/supabase'
 import ArvoLoader from './components/ArvoLoader'
@@ -174,7 +175,9 @@ export default function App() {
       <AuthProvider>
         <I18nProvider>
           <CurrencyProvider>
-            <AppRoutes />
+            <ThemeProvider>
+              <AppRoutes />
+            </ThemeProvider>
           </CurrencyProvider>
         </I18nProvider>
       </AuthProvider>

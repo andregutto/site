@@ -5,6 +5,7 @@ import * as XLSX from 'xlsx'
 import { apiFetch } from '../lib/api'
 import { useAuth } from '../contexts/AuthContext'
 import { useCurrency, type Currency } from '../contexts/CurrencyContext'
+import { useTheme, type Theme } from '../contexts/ThemeContext'
 import { useAchievementContext } from '../contexts/AchievementContext'
 import { useI18n } from '../contexts/I18nContext'
 import { getLevel, getNextLevel, getLevelProgress, ACHIEVEMENT_DEFS } from '../lib/achievementDefs'
@@ -42,6 +43,7 @@ const COUNTRY_OPTIONS = [
 ]
 
 const CURRENCIES: Currency[] = ['BRL', 'USD', 'EUR']
+const THEMES: Theme[] = ['auto', 'light', 'dark']
 
 function initials(firstName: string, lastName: string, email: string) {
   if (firstName.trim()) {
@@ -55,6 +57,7 @@ function initials(firstName: string, lastName: string, email: string) {
 export default function ProfilePage() {
   const { user } = useAuth()
   const { currency, setCurrency } = useCurrency()
+  const { theme, setTheme } = useTheme()
   const { totalXp, earnedKeys, triggerCheck } = useAchievementContext()
   const { t } = useI18n()
   const level = getLevel(totalXp)
@@ -680,6 +683,27 @@ export default function ProfilePage() {
                     }`}
                   >
                     {c}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Aparência (tema claro/escuro) */}
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">{t.profile.themeLabel}</label>
+              <div className="flex gap-2">
+                {THEMES.map(th => (
+                  <button
+                    key={th}
+                    type="button"
+                    onClick={() => setTheme(th)}
+                    className={`flex-1 py-2 text-sm font-semibold rounded-lg border transition-colors ${
+                      theme === th
+                        ? 'bg-[#0D0D0D] text-white border-[#0D0D0D]'
+                        : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'
+                    }`}
+                  >
+                    {th === 'auto' ? t.profile.themeAuto : th === 'light' ? t.profile.themeLight : t.profile.themeDark}
                   </button>
                 ))}
               </div>

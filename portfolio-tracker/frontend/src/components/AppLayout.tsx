@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { NavLink, Outlet, Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useCurrency, type Currency } from '../contexts/CurrencyContext'
+import { useTheme } from '../contexts/ThemeContext'
 import { useI18n } from '../contexts/I18nContext'
 import type React from 'react'
 import { useAchievementContext } from '../contexts/AchievementContext'
@@ -30,6 +31,7 @@ function useClickOutside(ref: React.RefObject<HTMLElement | null>, cb: () => voi
 export default function AppLayout() {
   const { user, signOut } = useAuth()
   const { currency, setCurrency, hideValues, toggleHideValues } = useCurrency()
+  const { resolvedTheme } = useTheme()
   const { t } = useI18n()
   const { totalXp } = useAchievementContext()
   const location = useLocation()
@@ -224,8 +226,8 @@ export default function AppLayout() {
   const activeSubItems = inInvestimentos ? investimentosItems : inFinances ? financesItems : []
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: 'var(--arvo-offwhite)' }}>
-      <header className="sticky top-0 z-10" style={{ background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(12px) saturate(1.05)', WebkitBackdropFilter: 'blur(12px) saturate(1.05)', borderBottom: '1px solid var(--arvo-border-soft)', paddingTop: 'env(safe-area-inset-top, 0px)' }}>
+    <div className={`min-h-screen flex flex-col${resolvedTheme === 'dark' ? ' dark' : ''}`} style={{ background: 'var(--arvo-bg)' }}>
+      <header className="sticky top-0 z-10" style={{ background: 'var(--arvo-header-bg)', backdropFilter: 'blur(12px) saturate(1.05)', WebkitBackdropFilter: 'blur(12px) saturate(1.05)', borderBottom: '1px solid var(--arvo-border-soft)', paddingTop: 'env(safe-area-inset-top, 0px)' }}>
 
         {/* ── Main bar ── */}
         <div className="h-14 flex items-center px-6 gap-4">
@@ -236,11 +238,11 @@ export default function AppLayout() {
             className="shrink-0 flex items-center gap-2.5 hover:opacity-70 transition-opacity"
             style={{ textDecoration: 'none' }}
           >
-            <img src="/brand/logo/arvo-symbol-black.svg" width="22" height="22" alt="" />
-            <span style={{ fontFamily: "var(--arvo-font-display)", fontSize: 16, letterSpacing: '0.30em', textIndent: '0.30em', color: 'var(--arvo-black)', lineHeight: 1 }}>arvo</span>
+            <img src={`/brand/logo/arvo-symbol-${resolvedTheme === 'dark' ? 'offwhite' : 'black'}.svg`} width="22" height="22" alt="" />
+            <span style={{ fontFamily: "var(--arvo-font-display)", fontSize: 16, letterSpacing: '0.30em', textIndent: '0.30em', color: 'var(--arvo-fg)', lineHeight: 1 }}>arvo</span>
           </Link>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, paddingLeft: 14, borderLeft: '1px solid var(--arvo-border)', height: 24 }}>
-            <span style={{ fontFamily: "var(--arvo-font-display)", fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.55)', lineHeight: 1 }}>Capital</span>
+            <span style={{ fontFamily: "var(--arvo-font-display)", fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)', lineHeight: 1 }}>Capital</span>
           </div>
 
           {/* Desktop — three section tabs (pill style) */}
@@ -254,8 +256,8 @@ export default function AppLayout() {
                 key={to} to={to}
                 className={() => `px-4 py-1.5 rounded-full text-xs whitespace-nowrap transition-all`}
                 style={{ fontFamily: "var(--arvo-font-body)", letterSpacing: '0.16em', textTransform: 'uppercase',
-                  background: active ? 'rgba(13,13,13,0.92)' : 'transparent',
-                  color: active ? 'var(--arvo-offwhite)' : 'rgba(13,13,13,0.72)',
+                  background: active ? 'var(--arvo-pill-active-bg)' : 'transparent',
+                  color: active ? 'var(--arvo-pill-active-fg)' : 'var(--arvo-fg-muted)',
                   transition: 'all 280ms cubic-bezier(0.22,0.61,0.36,1)' }}
               >{label}</NavLink>
             ))}
@@ -267,16 +269,16 @@ export default function AppLayout() {
             <button
               onClick={toggleHideValues}
               title={hideValues ? (t.common.showValues ?? 'Mostrar valores') : (t.common.hideValues ?? 'Ocultar valores')}
-              style={{ height: 32, padding: '0 8px', borderRadius: 8, border: hideValues ? '1px solid rgba(13,13,13,0.14)' : '1px solid transparent', background: hideValues ? 'rgba(13,13,13,0.05)' : 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, transition: 'all 0.15s', flexShrink: 0 }}
-              onMouseEnter={e => (e.currentTarget.style.background = 'rgba(13,13,13,0.05)')}
-              onMouseLeave={e => (e.currentTarget.style.background = hideValues ? 'rgba(13,13,13,0.05)' : 'transparent')}
+              style={{ height: 32, padding: '0 8px', borderRadius: 8, border: hideValues ? '1px solid var(--arvo-border)' : '1px solid transparent', background: hideValues ? 'var(--arvo-hover-bg)' : 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, transition: 'all 0.15s', flexShrink: 0 }}
+              onMouseEnter={e => (e.currentTarget.style.background = 'var(--arvo-hover-bg)')}
+              onMouseLeave={e => (e.currentTarget.style.background = hideValues ? 'var(--arvo-hover-bg)' : 'transparent')}
             >
               {hideValues ? (
-                <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="rgba(13,13,13,0.60)" strokeWidth={1.8}>
+                <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="var(--arvo-fg-muted)" strokeWidth={1.8}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
                 </svg>
               ) : (
-                <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="rgba(13,13,13,0.50)" strokeWidth={1.8}>
+                <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="var(--arvo-fg-soft)" strokeWidth={1.8}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
@@ -294,64 +296,64 @@ export default function AppLayout() {
                 ) : (
                   <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px]" style={{ background: 'var(--arvo-black)', color: 'var(--arvo-gold)', fontFamily: "var(--arvo-font-body)", letterSpacing: '0.08em' }}>{avatarInitials}</div>
                 )}
-                <span className="text-xs max-w-[100px] truncate transition-colors" style={{ color: 'rgba(13,13,13,0.5)' }}>{headerLabel}</span>
-                <svg className={`w-3 h-3 text-gray-400 transition-transform ${showUserMenu ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <span className="text-xs max-w-[100px] truncate transition-colors" style={{ color: 'var(--arvo-fg-soft)' }}>{headerLabel}</span>
+                <svg className={`w-3 h-3 transition-transform ${showUserMenu ? 'rotate-180' : ''}`} style={{ color: 'var(--arvo-fg-faint)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                 </svg>
               </button>
               {showUserMenu && (
-                <div className="absolute right-0 top-full mt-2 w-56 rounded-xl shadow-lg py-1 z-50 max-h-[85vh] overflow-y-auto" style={{ background: '#FFFFFF', border: '1px solid var(--arvo-border-soft)' }}>
+                <div className="absolute right-0 top-full mt-2 w-56 rounded-xl shadow-lg py-1 z-50 max-h-[85vh] overflow-y-auto" style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border-soft)' }}>
                   <div className="px-4 py-2.5 flex items-center justify-between" style={{ borderBottom: '1px solid var(--arvo-border-soft)' }}>
-                    <span className="text-xs" style={{ color: 'rgba(13,13,13,0.45)' }}>{t.common.language}</span>
+                    <span className="text-xs" style={{ color: 'var(--arvo-fg-soft)' }}>{t.common.language}</span>
                     <LanguageSelector />
                   </div>
                   <div className="px-4 py-2.5 flex items-center justify-between" style={{ borderBottom: '1px solid var(--arvo-border-soft)' }}>
-                    <span className="text-xs" style={{ color: 'rgba(13,13,13,0.45)' }}>{t.currency?.label ?? 'Moeda'}</span>
-                    <div className="flex items-center rounded-full p-0.5 gap-0.5" style={{ background: 'rgba(13,13,13,0.07)' }}>
+                    <span className="text-xs" style={{ color: 'var(--arvo-fg-soft)' }}>{t.currency?.label ?? 'Moeda'}</span>
+                    <div className="flex items-center rounded-full p-0.5 gap-0.5" style={{ background: 'var(--arvo-chip-bg)' }}>
                       {CURRENCIES.map(c => (
                         <button key={c} onClick={() => setCurrency(c)}
                           className="px-2.5 py-1 text-xs rounded-full transition-all"
                           style={currency === c
-                            ? { fontFamily: "var(--arvo-font-body)", background: 'var(--arvo-black)', color: 'var(--arvo-offwhite)', letterSpacing: '0.06em' }
-                            : { fontFamily: "var(--arvo-font-body)", color: 'rgba(13,13,13,0.45)', letterSpacing: '0.06em' }}
+                            ? { fontFamily: "var(--arvo-font-body)", background: 'var(--arvo-pill-active-bg)', color: 'var(--arvo-pill-active-fg)', letterSpacing: '0.06em' }
+                            : { fontFamily: "var(--arvo-font-body)", color: 'var(--arvo-fg-soft)', letterSpacing: '0.06em' }}
                         >{c}</button>
                       ))}
                     </div>
                   </div>
                   <div className="px-4 py-2.5" style={{ borderBottom: '1px solid var(--arvo-border-soft)' }}>
                     <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-xs" style={{ color: 'rgba(13,13,13,0.45)' }}>{(t.levels as Record<string, string>)[level.key] ?? level.name}</span>
-                      <span className="text-xs" style={{ fontFamily: "var(--arvo-font-body)", color: 'var(--arvo-black)' }}>{totalXp} XP</span>
+                      <span className="text-xs" style={{ color: 'var(--arvo-fg-soft)' }}>{(t.levels as Record<string, string>)[level.key] ?? level.name}</span>
+                      <span className="text-xs" style={{ fontFamily: "var(--arvo-font-body)", color: 'var(--arvo-fg)' }}>{totalXp} XP</span>
                     </div>
-                    <div className="h-1 rounded-full overflow-hidden" style={{ background: 'rgba(13,13,13,0.08)' }}>
-                      <div className="h-full rounded-full transition-all" style={{ width: `${levelProgress}%`, background: 'linear-gradient(90deg, var(--arvo-black), var(--arvo-gold))' }} />
+                    <div className="h-1 rounded-full overflow-hidden" style={{ background: 'var(--arvo-track-bg)' }}>
+                      <div className="h-full rounded-full transition-all" style={{ width: `${levelProgress}%`, background: 'linear-gradient(90deg, var(--arvo-fg), var(--arvo-gold))' }} />
                     </div>
                   </div>
-                  <Link to="/achievements" onClick={() => setShowUserMenu(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors" style={{ color: 'rgba(13,13,13,0.75)' }} onMouseEnter={e => (e.currentTarget.style.background='rgba(13,13,13,0.04)')} onMouseLeave={e => (e.currentTarget.style.background='')}>
+                  <Link to="/achievements" onClick={() => setShowUserMenu(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors" style={{ color: 'var(--arvo-fg-muted)' }} onMouseEnter={e => (e.currentTarget.style.background='var(--arvo-hover-bg)')} onMouseLeave={e => (e.currentTarget.style.background='')}>
                     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4 shrink-0">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M8 1.5l1.8 3.6 4 .6-2.9 2.8.7 4L8 10.4l-3.6 1.9.7-4L2.2 5.7l4-.6L8 1.5z"/>
                     </svg>
                     {t.nav.achievements}
                   </Link>
-                  <Link to="/favorites" onClick={() => setShowUserMenu(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors" style={{ color: 'rgba(13,13,13,0.75)' }} onMouseEnter={e => (e.currentTarget.style.background='rgba(13,13,13,0.04)')} onMouseLeave={e => (e.currentTarget.style.background='')}>
+                  <Link to="/favorites" onClick={() => setShowUserMenu(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors" style={{ color: 'var(--arvo-fg-muted)' }} onMouseEnter={e => (e.currentTarget.style.background='var(--arvo-hover-bg)')} onMouseLeave={e => (e.currentTarget.style.background='')}>
                     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4 shrink-0">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M8 2.5c1.5-2 5.5-1.5 5.5 2.5 0 3-5.5 7.5-5.5 7.5S2.5 8 2.5 5C2.5 1 6.5.5 8 2.5z"/>
                     </svg>
                     {t.nav.favorites}
                   </Link>
-                  <Link to="/archived" onClick={() => setShowUserMenu(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors" style={{ color: 'rgba(13,13,13,0.75)' }} onMouseEnter={e => (e.currentTarget.style.background='rgba(13,13,13,0.04)')} onMouseLeave={e => (e.currentTarget.style.background='')}>
+                  <Link to="/archived" onClick={() => setShowUserMenu(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors" style={{ color: 'var(--arvo-fg-muted)' }} onMouseEnter={e => (e.currentTarget.style.background='var(--arvo-hover-bg)')} onMouseLeave={e => (e.currentTarget.style.background='')}>
                     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4 shrink-0">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M2 4.5h12v1.5H2zM3.5 6v7h9V6M6 9h4"/>
                     </svg>
                     {t.nav.archived}
                   </Link>
-                  <Link to="/profile" onClick={() => setShowUserMenu(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors" style={{ color: 'rgba(13,13,13,0.75)' }} onMouseEnter={e => (e.currentTarget.style.background='rgba(13,13,13,0.04)')} onMouseLeave={e => (e.currentTarget.style.background='')}>
+                  <Link to="/profile" onClick={() => setShowUserMenu(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors" style={{ color: 'var(--arvo-fg-muted)' }} onMouseEnter={e => (e.currentTarget.style.background='var(--arvo-hover-bg)')} onMouseLeave={e => (e.currentTarget.style.background='')}>
                     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4 shrink-0">
                       <circle cx="8" cy="5" r="2.5"/><path strokeLinecap="round" d="M2.5 14c0-3 2.5-5 5.5-5s5.5 2 5.5 5"/>
                     </svg>
                     {t.nav.profile}
                   </Link>
-                  <button onClick={openChat} className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors" style={{ color: 'rgba(13,13,13,0.75)' }} onMouseEnter={e => (e.currentTarget.style.background='rgba(27,79,216,0.05)')} onMouseLeave={e => (e.currentTarget.style.background='')}>
+                  <button onClick={openChat} className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors" style={{ color: 'var(--arvo-fg-muted)' }} onMouseEnter={e => (e.currentTarget.style.background='rgba(27,79,216,0.05)')} onMouseLeave={e => (e.currentTarget.style.background='')}>
                     <svg viewBox="0 0 16 16" className="w-4 h-4 shrink-0" fill="none">
                       <defs>
                         <linearGradient id="ai-sparkle-grad" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -380,15 +382,15 @@ export default function AppLayout() {
 
         {/* ── Sub-nav bar — desktop only ── */}
         {activeSubItems.length > 0 && (
-          <div className="hidden sm:block" style={{ borderTop: '1px solid var(--arvo-border-soft)', background: 'rgba(0,0,0,0.025)' }}>
+          <div className="hidden sm:block" style={{ borderTop: '1px solid var(--arvo-border-soft)', background: 'var(--arvo-subnav-bg)' }}>
             <div className="flex items-center justify-center gap-1 px-6 py-2">
               {activeSubItems.map(({ to, label, end }) => (
                 <NavLink
                   key={to} to={to} end={end}
                   className="flex items-center gap-2 whitespace-nowrap transition-all"
                   style={({ isActive }) => isActive
-                    ? { fontFamily: "var(--arvo-font-body)", fontSize: 13, letterSpacing: '0.08em', padding: '7px 14px', borderRadius: 8, border: '1px solid var(--arvo-border)', background: 'white', color: 'var(--arvo-fg)', boxShadow: '0 1px 2px rgba(13,13,13,0.04)', textDecoration: 'none' }
-                    : { fontFamily: "var(--arvo-font-body)", fontSize: 13, letterSpacing: '0.08em', padding: '7px 14px', borderRadius: 8, border: '1px solid transparent', background: 'transparent', color: 'rgba(13,13,13,0.70)', textDecoration: 'none' }}
+                    ? { fontFamily: "var(--arvo-font-body)", fontSize: 13, letterSpacing: '0.08em', padding: '7px 14px', borderRadius: 8, border: '1px solid var(--arvo-border)', background: 'var(--arvo-surface)', color: 'var(--arvo-fg)', boxShadow: '0 1px 2px rgba(13,13,13,0.04)', textDecoration: 'none' }
+                    : { fontFamily: "var(--arvo-font-body)", fontSize: 13, letterSpacing: '0.08em', padding: '7px 14px', borderRadius: 8, border: '1px solid transparent', background: 'transparent', color: 'var(--arvo-fg-muted)', textDecoration: 'none' }}
                 >
                   {({ isActive }) => (
                     <>
@@ -469,12 +471,12 @@ export default function AppLayout() {
             transform: 'translateX(-50%)',
             width: 'calc(100% - 32px)',
             maxWidth: 500,
-            background: 'rgba(255,255,255,0.55)',
+            background: 'var(--arvo-glass-bg)',
             backdropFilter: 'blur(24px) saturate(200%)',
             WebkitBackdropFilter: 'blur(24px) saturate(200%)',
-            border: '1px solid rgba(255,255,255,0.80)',
+            border: '1px solid var(--arvo-glass-border)',
             borderRadius: 999,
-            boxShadow: '0 8px 32px rgba(0,0,0,0.10), 0 2px 6px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.95)',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.10), 0 2px 6px rgba(0,0,0,0.06), inset 0 1px 0 var(--arvo-glass-highlight)',
             overflow: 'hidden',
           }}
         >
@@ -484,8 +486,8 @@ export default function AppLayout() {
                 key={to} to={to} end={end}
                 className="flex items-center gap-1.5 whitespace-nowrap shrink-0"
                 style={({ isActive }) => isActive
-                  ? { fontFamily: "var(--arvo-font-body)", fontSize: 13, letterSpacing: '0.04em', padding: '8px 13px', borderRadius: 999, background: 'rgba(255,255,255,0.90)', color: 'rgba(13,13,13,0.88)', textDecoration: 'none', boxShadow: '0 1px 4px rgba(0,0,0,0.08)', transition: 'all 240ms cubic-bezier(0.22,0.61,0.36,1)' }
-                  : { fontFamily: "var(--arvo-font-body)", fontSize: 13, letterSpacing: '0.04em', padding: '8px 13px', borderRadius: 999, background: 'transparent', color: 'rgba(13,13,13,0.45)', textDecoration: 'none', transition: 'all 240ms cubic-bezier(0.22,0.61,0.36,1)' }}
+                  ? { fontFamily: "var(--arvo-font-body)", fontSize: 13, letterSpacing: '0.04em', padding: '8px 13px', borderRadius: 999, background: 'var(--arvo-glass-active-bg)', color: 'var(--arvo-fg)', textDecoration: 'none', boxShadow: '0 1px 4px rgba(0,0,0,0.08)', transition: 'all 240ms cubic-bezier(0.22,0.61,0.36,1)' }
+                  : { fontFamily: "var(--arvo-font-body)", fontSize: 13, letterSpacing: '0.04em', padding: '8px 13px', borderRadius: 999, background: 'transparent', color: 'var(--arvo-fg-soft)', textDecoration: 'none', transition: 'all 240ms cubic-bezier(0.22,0.61,0.36,1)' }}
               >
                 {({ isActive }) => (
                   <>
@@ -508,12 +510,12 @@ export default function AppLayout() {
           transform: 'translateX(-50%)',
           width: 'calc(100% - 32px)',
           maxWidth: 360,
-          background: 'rgba(255,255,255,0.55)',
+          background: 'var(--arvo-glass-bg)',
           backdropFilter: 'blur(24px) saturate(200%)',
           WebkitBackdropFilter: 'blur(24px) saturate(200%)',
-          border: '1px solid rgba(255,255,255,0.80)',
+          border: '1px solid var(--arvo-glass-border)',
           borderRadius: 999,
-          boxShadow: '0 8px 32px rgba(0,0,0,0.12), 0 2px 6px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.95)',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.12), 0 2px 6px rgba(0,0,0,0.06), inset 0 1px 0 var(--arvo-glass-highlight)',
           padding: '5px',
         }}
       >
@@ -544,8 +546,8 @@ export default function AppLayout() {
                 fontSize: 10,
                 padding: '6px 6px 7px',
                 borderRadius: 999,
-                color: match ? 'rgba(13,13,13,0.88)' : 'rgba(13,13,13,0.38)',
-                background: match ? 'rgba(255,255,255,0.90)' : 'transparent',
+                color: match ? 'var(--arvo-fg)' : 'var(--arvo-fg-soft)',
+                background: match ? 'var(--arvo-glass-active-bg)' : 'transparent',
                 boxShadow: match ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
                 transition: 'all 280ms cubic-bezier(0.22,0.61,0.36,1)',
                 textDecoration: 'none',

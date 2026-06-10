@@ -171,7 +171,7 @@ export default function DashboardPage() {
 
   if (error) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-red-700">
+      <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-red-700 dark:bg-red-950/40 dark:border-red-900 dark:text-red-300">
         <p className="font-medium">{t.dashboard.errorLoadingPortfolio}</p>
         <p className="text-sm mt-1">{error}</p>
         <button onClick={refresh} className="mt-3 text-sm underline">{t.dashboard.tryAgain}</button>
@@ -186,7 +186,7 @@ export default function DashboardPage() {
     <div className="space-y-6">
       {/* Header + period buttons */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 18, letterSpacing: '0.06em', color: 'var(--arvo-black)' }}>Dashboard</h1>
+        <h1 style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 18, letterSpacing: '0.06em', color: 'var(--arvo-fg)' }}>Dashboard</h1>
         <div className="flex flex-wrap items-center gap-2">
           {([
             { key: 'current_month' as PeriodMode, label: t.performance.currentMonth },
@@ -202,16 +202,16 @@ export default function DashboardPage() {
               style={{
                 fontFamily: 'var(--arvo-font-body)', fontSize: 10, letterSpacing: '0.12em',
                 textTransform: 'uppercase', padding: '6px 12px', borderRadius: 6,
-                border: `1px solid ${disabled ? 'var(--arvo-border-soft)' : periodMode === key ? 'var(--arvo-black)' : 'var(--arvo-border)'}`,
-                background: periodMode === key && !disabled ? 'var(--arvo-black)' : 'white',
-                color: disabled ? 'rgba(13,13,13,0.25)' : periodMode === key ? 'var(--arvo-offwhite)' : 'rgba(13,13,13,0.55)',
+                border: `1px solid ${disabled ? 'var(--arvo-border-soft)' : periodMode === key ? 'var(--arvo-pill-active-bg)' : 'var(--arvo-border)'}`,
+                background: periodMode === key && !disabled ? 'var(--arvo-pill-active-bg)' : 'var(--arvo-surface)',
+                color: disabled ? 'var(--arvo-fg-faint)' : periodMode === key ? 'var(--arvo-pill-active-fg)' : 'var(--arvo-fg-muted)',
                 cursor: disabled ? 'not-allowed' : 'pointer', transition: 'all 0.2s',
               }}
             >{label}</button>
           ))}
           <button
             onClick={refresh}
-            style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'rgba(13,13,13,0.60)', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, marginLeft: 4 }}
+            style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-muted)', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, marginLeft: 4 }}
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -220,7 +220,7 @@ export default function DashboardPage() {
           </button>
           <button
             onClick={() => setShowShareModal(true)}
-            style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 10, letterSpacing: '0.10em', textTransform: 'uppercase', padding: '6px 12px', borderRadius: 6, border: '1px solid var(--arvo-border)', background: '#fff', color: 'rgba(13,13,13,0.65)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}
+            style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 10, letterSpacing: '0.10em', textTransform: 'uppercase', padding: '6px 12px', borderRadius: 6, border: '1px solid var(--arvo-border)', background: 'var(--arvo-surface)', color: 'var(--arvo-fg-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}
           >
             <svg style={{ width: 12, height: 12 }} fill="none" viewBox="0 0 16 16" stroke="currentColor" strokeWidth="1.5">
               <circle cx="13" cy="3" r="1.5"/><circle cx="3" cy="8" r="1.5"/><circle cx="13" cy="13" r="1.5"/>
@@ -233,17 +233,17 @@ export default function DashboardPage() {
 
       {/* Split warnings */}
       {splitWarnings.length > 0 && (
-        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-start gap-3">
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-start gap-3 dark:bg-amber-950/40 dark:border-amber-900">
           <span className="text-amber-500 text-lg shrink-0">⚠</span>
           <div className="flex-1 min-w-0">
-            <p className="font-semibold text-amber-900 text-sm">{t.dashboard.splitWarningDashTitle}</p>
-            <p className="text-xs text-amber-700 mt-0.5">{(t.dashboard.splitWarningDashBody as string).replace('{n}', String(splitWarnings.length))}</p>
+            <p className="font-semibold text-amber-900 text-sm dark:text-amber-200">{t.dashboard.splitWarningDashTitle}</p>
+            <p className="text-xs text-amber-700 mt-0.5 dark:text-amber-300">{(t.dashboard.splitWarningDashBody as string).replace('{n}', String(splitWarnings.length))}</p>
             <div className="flex flex-wrap gap-2 mt-2">
               {splitWarnings.map(w => (
                 <button
                   key={w.asset_id}
                   onClick={() => navigate(`/assets/${w.asset_id}`, { state: { total_brl: data.total_brl } })}
-                  className="text-xs bg-amber-100 hover:bg-amber-200 border border-amber-300 text-amber-800 px-2 py-1 rounded-lg transition-colors"
+                  className="text-xs bg-amber-100 hover:bg-amber-200 border border-amber-300 text-amber-800 px-2 py-1 rounded-lg transition-colors dark:bg-amber-900/40 dark:hover:bg-amber-900/60 dark:border-amber-800 dark:text-amber-200"
                 >
                   {w.code} · {w.splits.map(s => s.ratio).join(', ')} →
                 </button>
@@ -293,19 +293,19 @@ export default function DashboardPage() {
         const losers  = [...movingAssets].reverse().filter(a => a.ret < 0).slice(0, 5)
         if (!dashReturnsLoading && gainers.length === 0 && losers.length === 0) return null
         return (
-          <div className="rounded-2xl p-5" style={{ background: 'white', border: '1px solid var(--arvo-border)' }}>
+          <div className="rounded-2xl p-5" style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)' }}>
             <h2 className="mb-3" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--arvo-fg)' }}>
               {tdd.topMovers} · {periodLabel}
             </h2>
             {dashReturnsLoading ? (
               <div className="h-12 flex items-center">
-                <div className="text-xs animate-pulse" style={{ color: 'rgba(13,13,13,0.35)' }}>...</div>
+                <div className="text-xs animate-pulse" style={{ color: 'var(--arvo-fg-faint)' }}>...</div>
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {gainers.length > 0 && (
                   <div>
-                    <p className="text-xs mb-2" style={{ fontFamily: 'var(--arvo-font-body)', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.45)' }}>{tdd.topGainers}</p>
+                    <p className="text-xs mb-2" style={{ fontFamily: 'var(--arvo-font-body)', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)' }}>{tdd.topGainers}</p>
                     <div className="space-y-2">
                       {gainers.map(a => (
                         <div key={a.id}
@@ -314,12 +314,12 @@ export default function DashboardPage() {
                           onClick={() => navigate(`/assets/${a.id}`, { state: { total_brl: data.total_brl } })}
                         >
                           <div className="min-w-0">
-                            <div className="text-sm font-semibold" style={{ color: 'var(--arvo-black)' }}>{a.code}</div>
-                            <div className="text-xs truncate" style={{ color: 'rgba(13,13,13,0.45)' }}>{a.name}</div>
+                            <div className="text-sm font-semibold" style={{ color: 'var(--arvo-fg)' }}>{a.code}</div>
+                            <div className="text-xs truncate" style={{ color: 'var(--arvo-fg-soft)' }}>{a.name}</div>
                           </div>
                           <div className="text-right shrink-0">
                             <div className="text-sm font-bold" style={{ color: 'var(--arvo-green)' }}>+{a.ret.toFixed(2)}%</div>
-                            <div className="text-xs" style={{ color: 'rgba(13,13,13,0.45)' }}>{fmt(convert(a.value_brl))}</div>
+                            <div className="text-xs" style={{ color: 'var(--arvo-fg-soft)' }}>{fmt(convert(a.value_brl))}</div>
                           </div>
                         </div>
                       ))}
@@ -328,7 +328,7 @@ export default function DashboardPage() {
                 )}
                 {losers.length > 0 && (
                   <div>
-                    <p className="text-xs mb-2" style={{ fontFamily: 'var(--arvo-font-body)', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.45)' }}>{tdd.topLosers}</p>
+                    <p className="text-xs mb-2" style={{ fontFamily: 'var(--arvo-font-body)', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)' }}>{tdd.topLosers}</p>
                     <div className="space-y-2">
                       {losers.map(a => (
                         <div key={a.id}
@@ -337,12 +337,12 @@ export default function DashboardPage() {
                           onClick={() => navigate(`/assets/${a.id}`, { state: { total_brl: data.total_brl } })}
                         >
                           <div className="min-w-0">
-                            <div className="text-sm font-semibold" style={{ color: 'var(--arvo-black)' }}>{a.code}</div>
-                            <div className="text-xs truncate" style={{ color: 'rgba(13,13,13,0.45)' }}>{a.name}</div>
+                            <div className="text-sm font-semibold" style={{ color: 'var(--arvo-fg)' }}>{a.code}</div>
+                            <div className="text-xs truncate" style={{ color: 'var(--arvo-fg-soft)' }}>{a.name}</div>
                           </div>
                           <div className="text-right shrink-0">
                             <div className="text-sm font-bold" style={{ color: 'var(--arvo-red)' }}>{a.ret.toFixed(2)}%</div>
-                            <div className="text-xs" style={{ color: 'rgba(13,13,13,0.45)' }}>{fmt(convert(a.value_brl))}</div>
+                            <div className="text-xs" style={{ color: 'var(--arvo-fg-soft)' }}>{fmt(convert(a.value_brl))}</div>
                           </div>
                         </div>
                       ))}
@@ -360,7 +360,7 @@ export default function DashboardPage() {
         <div className="flex justify-end">
           <button
             onClick={() => navigate('/assets')}
-            style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, letterSpacing: '0.10em', color: 'rgba(13,13,13,0.45)', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
+            style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, letterSpacing: '0.10em', color: 'var(--arvo-fg-soft)', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
           >
             {t.nav.assets} ({data.by_asset.length})
             <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -372,7 +372,7 @@ export default function DashboardPage() {
 
       {/* Dividends */}
       {(divLoading || (divSummary && divSummary.total_brl > 0)) && (
-        <div className="rounded-2xl p-5" style={{ background: 'white', border: '1px solid var(--arvo-border)' }}>
+        <div className="rounded-2xl p-5" style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)' }}>
           <div className="flex items-center justify-between mb-3">
             <h2 style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--arvo-fg)' }}>{td.title ?? 'Dividendos'}</h2>
             {syncing && <span className="text-xs animate-pulse" style={{ color: 'var(--arvo-fg-soft)' }}>{td.autoSyncing ?? 'Atualizando...'}</span>}
@@ -408,11 +408,11 @@ export default function DashboardPage() {
                 <div className="flex-1 min-w-[140px] h-20">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={divSummary.by_month.map(m => ({ month: m.month.slice(5), value: convert(m.total_brl) }))}>
-                      <XAxis dataKey="month" tick={{ fontSize: 9, fill: 'rgba(13,13,13,0.55)' }} />
+                      <XAxis dataKey="month" tick={{ fontSize: 9, fill: 'var(--arvo-fg-soft)' }} />
                       <YAxis hide />
                       <Tooltip
                         formatter={(v) => [new Intl.NumberFormat(intlLocale, { style: 'currency', currency, maximumFractionDigits: 0 }).format(typeof v === 'number' ? v : 0), td.title ?? 'Dividendos']}
-                        contentStyle={{ borderRadius: 8, border: '1px solid var(--arvo-border)', fontSize: 12 }}
+                        contentStyle={{ borderRadius: 8, border: '1px solid var(--arvo-border)', background: 'var(--arvo-surface)', color: 'var(--arvo-fg)', fontSize: 12 }}
                       />
                       <Bar dataKey="value" fill="#1F8A5B" radius={[3, 3, 0, 0]} />
                     </BarChart>
@@ -431,11 +431,11 @@ export default function DashboardPage() {
       {showShareModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
           onClick={e => { if (e.target === e.currentTarget) setShowShareModal(false) }}>
-          <div style={{ background: '#fff', borderRadius: 16, padding: '28px', width: '100%', maxWidth: 440, boxShadow: '0 8px 32px rgba(0,0,0,0.18)' }}>
+          <div style={{ background: 'var(--arvo-surface)', borderRadius: 16, padding: '28px', width: '100%', maxWidth: 440, boxShadow: '0 8px 32px rgba(0,0,0,0.18)' }}>
             {/* Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
               <div>
-                <h2 style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 18, fontWeight: 400, margin: 0, color: 'var(--arvo-black)' }}>{s.title}</h2>
+                <h2 style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 18, fontWeight: 400, margin: 0, color: 'var(--arvo-fg)' }}>{s.title}</h2>
                 <p style={{ fontSize: 12, color: 'var(--arvo-fg-soft)', margin: '4px 0 0', lineHeight: 1.4 }}>{s.subtitle}</p>
               </div>
               <button onClick={() => setShowShareModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--arvo-fg-soft)', padding: 4, lineHeight: 1 }}>✕</button>
@@ -446,7 +446,7 @@ export default function DashboardPage() {
             {/* Show values toggle */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
               <div>
-                <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--arvo-black)' }}>{s.showValues}</div>
+                <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--arvo-fg)' }}>{s.showValues}</div>
                 <div style={{ fontSize: 11, color: 'var(--arvo-fg-soft)', marginTop: 2 }}>{s.showValuesHint}</div>
               </div>
               <button
@@ -462,10 +462,10 @@ export default function DashboardPage() {
               <div style={{ marginBottom: 16 }}>
                 <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--arvo-fg-soft)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>{s.linkLabel}</div>
                 <div style={{ display: 'flex', gap: 8 }}>
-                  <div style={{ flex: 1, background: 'var(--arvo-bg-soft, #F8F7F5)', border: '1px solid var(--arvo-border)', borderRadius: 8, padding: '8px 12px', fontSize: 12, color: 'var(--arvo-fg-soft)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <div style={{ flex: 1, background: 'var(--arvo-surface-2)', border: '1px solid var(--arvo-border)', borderRadius: 8, padding: '8px 12px', fontSize: 12, color: 'var(--arvo-fg-soft)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {window.location.origin}/share/portfolio/{shareLink.token}
                   </div>
-                  <button onClick={copyShareLink} style={{ padding: '8px 14px', background: shareCopied ? '#16A34A' : 'var(--arvo-black)', color: '#fff', border: 'none', borderRadius: 8, fontSize: 12, cursor: 'pointer', flexShrink: 0, transition: 'background 0.2s' }}>
+                  <button onClick={copyShareLink} style={{ padding: '8px 14px', background: shareCopied ? '#16A34A' : 'var(--arvo-pill-active-bg)', color: shareCopied ? '#fff' : 'var(--arvo-pill-active-fg)', border: 'none', borderRadius: 8, fontSize: 12, cursor: 'pointer', flexShrink: 0, transition: 'background 0.2s' }}>
                     {shareCopied ? s.copied : s.copy}
                   </button>
                 </div>
@@ -482,7 +482,7 @@ export default function DashboardPage() {
               <button
                 onClick={handleGenerateShare}
                 disabled={shareLoading}
-                style={{ flex: 1, padding: '10px 16px', background: 'var(--arvo-black)', color: '#fff', border: 'none', borderRadius: 8, fontSize: 12, fontFamily: 'var(--arvo-font-body)', cursor: 'pointer', opacity: shareLoading ? 0.7 : 1 }}
+                style={{ flex: 1, padding: '10px 16px', background: 'var(--arvo-pill-active-bg)', color: 'var(--arvo-pill-active-fg)', border: 'none', borderRadius: 8, fontSize: 12, fontFamily: 'var(--arvo-font-body)', cursor: 'pointer', opacity: shareLoading ? 0.7 : 1 }}
               >
                 {shareLoading ? s.refreshing : shareLink ? s.refresh : s.generate}
               </button>
@@ -492,7 +492,7 @@ export default function DashboardPage() {
                     href={`/share/portfolio/${shareLink.token}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    style={{ padding: '10px 16px', background: '#F3F4F6', color: 'var(--arvo-black)', border: 'none', borderRadius: 8, fontSize: 12, fontFamily: 'var(--arvo-font-body)', cursor: 'pointer', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 5 }}
+                    style={{ padding: '10px 16px', background: 'var(--arvo-chip-bg)', color: 'var(--arvo-fg)', border: 'none', borderRadius: 8, fontSize: 12, fontFamily: 'var(--arvo-font-body)', cursor: 'pointer', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 5 }}
                   >
                     <svg style={{ width: 12, height: 12 }} fill="none" viewBox="0 0 16 16" stroke="currentColor" strokeWidth="1.5">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M7 3H3a1 1 0 00-1 1v9a1 1 0 001 1h9a1 1 0 001-1V9M9 1h6v6M15 1L7.5 8.5"/>
@@ -503,7 +503,7 @@ export default function DashboardPage() {
                     href={`/share/portfolio/${shareLink.token}?print=1`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    style={{ padding: '10px 14px', background: '#F3F4F6', color: 'var(--arvo-black)', border: 'none', borderRadius: 8, fontSize: 12, fontFamily: 'var(--arvo-font-body)', cursor: 'pointer', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 5 }}
+                    style={{ padding: '10px 14px', background: 'var(--arvo-chip-bg)', color: 'var(--arvo-fg)', border: 'none', borderRadius: 8, fontSize: 12, fontFamily: 'var(--arvo-font-body)', cursor: 'pointer', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 5 }}
                   >
                     <svg style={{ width: 12, height: 12 }} fill="none" viewBox="0 0 16 16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M8 2v8M5 7l3 3 3-3M3 12h10"/>
@@ -512,7 +512,7 @@ export default function DashboardPage() {
                   </a>
                   <button
                     onClick={handleDeactivateShare}
-                    style={{ padding: '10px 14px', background: '#FEF2F2', color: '#DC2626', border: 'none', borderRadius: 8, fontSize: 12, cursor: 'pointer' }}
+                    style={{ padding: '10px 14px', background: 'rgba(220,38,38,0.12)', color: '#DC2626', border: 'none', borderRadius: 8, fontSize: 12, cursor: 'pointer' }}
                   >
                     {s.deactivate}
                   </button>

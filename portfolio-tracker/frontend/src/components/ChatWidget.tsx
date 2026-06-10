@@ -207,21 +207,21 @@ export default function ChatWidget({ visible = true, onDismiss, forceOpen, onFor
         <div style={{ position: 'relative', width: 48, height: 48 }}>
           {/* Rotating conic glow */}
           <div className="arvo-chat-glow" />
-          {/* Main button — white circle */}
+          {/* Main button — surface circle, adapts to theme */}
           <button
             onClick={() => setOpen(o => !o)}
             style={{
               position: 'absolute', inset: 0, borderRadius: '50%',
-              background: '#FFFFFF', border: 'none', cursor: 'pointer',
+              background: 'var(--arvo-surface)', border: 'none', cursor: 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               boxShadow: '0 2px 14px rgba(0,0,0,0.12)', zIndex: 1,
             }}
             aria-label={open ? (t.chat.dismiss ?? 'Fechar') : t.chat.open}
           >
             {open ? (
-              /* Close icon — two diagonal lines, rounded, dark on white */
+              /* Close icon — two diagonal lines, rounded */
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M1.5 1.5L12.5 12.5M12.5 1.5L1.5 12.5" stroke="#0D0D0D" strokeWidth="2" strokeLinecap="round"/>
+                <path d="M1.5 1.5L12.5 12.5M12.5 1.5L1.5 12.5" stroke="var(--arvo-fg)" strokeWidth="2" strokeLinecap="round"/>
               </svg>
             ) : (
               /* Arvo bird with color cascade */
@@ -249,7 +249,7 @@ export default function ChatWidget({ visible = true, onDismiss, forceOpen, onFor
 
       {/* Chat panel */}
       {open && (
-        <div className="arvo-chat-panel fixed chat-dialog-safe right-5 sm:right-10 z-50 w-[360px] max-w-[calc(100vw-2.5rem)] h-[520px] max-h-[calc(100vh-6rem)] rounded-2xl flex flex-col overflow-hidden sm:bottom-20" style={{ background: 'var(--arvo-offwhite)' }}>
+        <div className="arvo-chat-panel fixed chat-dialog-safe right-5 sm:right-10 z-50 w-[360px] max-w-[calc(100vw-2.5rem)] h-[520px] max-h-[calc(100vh-6rem)] rounded-2xl flex flex-col overflow-hidden sm:bottom-20" style={{ background: 'var(--arvo-bg)' }}>
           {/* Header */}
           <div className="relative flex items-center gap-2.5 px-4 py-3 rounded-t-2xl" style={{ background: '#0D0D0D', borderBottom: '1px solid rgba(200,184,154,0.15)' }}>
             <div className="arvo-chat-header-grad rounded-t-2xl" />
@@ -287,7 +287,7 @@ export default function ChatWidget({ visible = true, onDismiss, forceOpen, onFor
           <div className="flex-1 overflow-y-auto px-3 py-3 space-y-3 text-sm">
             {isEmpty ? (
               <div className="flex flex-col h-full">
-                <p className="text-[13px] text-center mt-6 mb-4" style={{ color: 'rgba(13,13,13,0.45)', fontFamily: "var(--arvo-font-body)" }}>
+                <p className="text-[13px] text-center mt-6 mb-4" style={{ color: 'var(--arvo-fg-soft)', fontFamily: "var(--arvo-font-body)" }}>
                   {t.chat.greeting}
                 </p>
                 <div className="grid grid-cols-1 gap-1.5 mt-auto mb-2">
@@ -296,9 +296,9 @@ export default function ChatWidget({ visible = true, onDismiss, forceOpen, onFor
                       key={s}
                       onClick={() => sendMessage(s)}
                       className="text-left text-[12px] rounded-lg px-3 py-2 transition-all leading-snug"
-                      style={{ background: 'rgba(13,13,13,0.05)', color: 'var(--arvo-black)', fontFamily: "var(--arvo-font-body)" }}
-                      onMouseEnter={e => { e.currentTarget.style.background = 'rgba(13,13,13,0.09)' }}
-                      onMouseLeave={e => { e.currentTarget.style.background = 'rgba(13,13,13,0.05)' }}
+                      style={{ background: 'var(--arvo-hover-bg)', color: 'var(--arvo-fg)', fontFamily: "var(--arvo-font-body)" }}
+                      onMouseEnter={e => { e.currentTarget.style.background = 'var(--arvo-chip-bg)' }}
+                      onMouseLeave={e => { e.currentTarget.style.background = 'var(--arvo-hover-bg)' }}
                     >
                       {s}
                     </button>
@@ -312,8 +312,8 @@ export default function ChatWidget({ visible = true, onDismiss, forceOpen, onFor
                     <div
                       className="max-w-[85%] rounded-2xl px-3 py-2 text-[13px] leading-relaxed whitespace-pre-wrap"
                       style={m.role === 'user'
-                        ? { background: 'var(--arvo-black)', color: 'var(--arvo-offwhite)', borderBottomRightRadius: 4, fontFamily: "var(--arvo-font-body)" }
-                        : { background: 'rgba(13,13,13,0.07)', color: 'var(--arvo-black)', borderBottomLeftRadius: 4, fontFamily: "var(--arvo-font-body)" }}
+                        ? { background: 'var(--arvo-pill-active-bg)', color: 'var(--arvo-pill-active-fg)', borderBottomRightRadius: 4, fontFamily: "var(--arvo-font-body)" }
+                        : { background: 'var(--arvo-chip-bg)', color: 'var(--arvo-fg)', borderBottomLeftRadius: 4, fontFamily: "var(--arvo-font-body)" }}
                     >
                       {m.loading && !m.content ? (
                         <span className="flex gap-1 items-center h-4">
@@ -349,20 +349,20 @@ export default function ChatWidget({ visible = true, onDismiss, forceOpen, onFor
                 placeholder={t.chat.placeholder}
                 disabled={loading}
                 className="flex-1 resize-none rounded-xl px-3 py-2 text-[13px] focus:outline-none disabled:opacity-50 max-h-24 overflow-y-auto leading-relaxed bg-transparent"
-                style={{ minHeight: '36px', border: '1px solid var(--arvo-border-soft)', color: 'var(--arvo-black)', fontFamily: "var(--arvo-font-body)" }}
+                style={{ minHeight: '36px', border: '1px solid var(--arvo-border-soft)', color: 'var(--arvo-fg)', fontFamily: "var(--arvo-font-body)" }}
               />
               <button
                 onClick={() => sendMessage(input)}
                 disabled={loading || !input.trim()}
-                className="flex-shrink-0 w-8 h-8 rounded-full text-white flex items-center justify-center disabled:opacity-40 transition-all"
-                style={{ background: 'var(--arvo-black)' }}
+                className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center disabled:opacity-40 transition-all"
+                style={{ background: 'var(--arvo-pill-active-bg)', color: 'var(--arvo-pill-active-fg)' }}
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
                 </svg>
               </button>
             </div>
-            <p className="text-[10px] text-center mt-1.5" style={{ color: 'rgba(13,13,13,0.35)', fontFamily: "var(--arvo-font-body)" }}>{t.chat.enterHint}</p>
+            <p className="text-[10px] text-center mt-1.5" style={{ color: 'var(--arvo-fg-faint)', fontFamily: "var(--arvo-font-body)" }}>{t.chat.enterHint}</p>
           </div>
         </div>
       )}

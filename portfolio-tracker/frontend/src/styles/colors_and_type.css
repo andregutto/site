@@ -78,6 +78,7 @@
   --arvo-surface:      #FFFFFF;                  /* card on offwhite */
   --arvo-surface-2:    var(--arvo-beige);        /* sunken card / separator */
   --arvo-surface-dark: #161513;                  /* card on black */
+  --arvo-surface-2-dark: #201E1B;                /* sunken card / separator on black */
 
   /* ── FOREGROUND on LIGHT (offwhite) ────────────────────────────────── */
   --arvo-fg:           rgba(13, 13, 13, 0.92);   /* primary text */
@@ -95,6 +96,21 @@
   --arvo-border:       rgba(13, 13, 13, 0.10);
   --arvo-border-soft:  rgba(13, 13, 13, 0.06);
   --arvo-border-dark:  rgba(200, 184, 154, 0.12);
+  --arvo-border-soft-dark: rgba(200, 184, 154, 0.06);
+
+  /* ── CHROME — app shell surfaces (header, nav, menus). Theme-aware
+     via `.dark` overrides below; light values are the defaults. ──────── */
+  --arvo-header-bg:        rgba(255, 255, 255, 0.92);
+  --arvo-glass-bg:         rgba(255, 255, 255, 0.55);
+  --arvo-glass-border:     rgba(255, 255, 255, 0.80);
+  --arvo-glass-highlight:  rgba(255, 255, 255, 0.95);
+  --arvo-glass-active-bg:  rgba(255, 255, 255, 0.90);
+  --arvo-pill-active-bg:   rgba(13, 13, 13, 0.92);
+  --arvo-pill-active-fg:   var(--arvo-offwhite);
+  --arvo-hover-bg:         rgba(13, 13, 13, 0.04);
+  --arvo-chip-bg:          rgba(13, 13, 13, 0.07);
+  --arvo-track-bg:         rgba(13, 13, 13, 0.08);
+  --arvo-subnav-bg:        rgba(0, 0, 0, 0.025);
 
   /* ── TYPOGRAPHY ────────────────────────────────────────────────────── */
   --arvo-font-display: 'Tenor Sans', 'Times New Roman', serif;
@@ -157,6 +173,39 @@
 
   /* ── IMAGERY PRESET — apply to <img> on top of any photograph ─────── */
   --arvo-photo-filter: sepia(0.20) saturate(1.10) brightness(0.85);
+}
+
+/* ===================================================================
+   DARK MODE — applied via a `.dark` class on the authenticated app
+   shell root (AppLayout). Overrides SEMANTIC vars only — the BASE
+   PALETTE (--arvo-black, --arvo-offwhite, --arvo-gold, etc.) never
+   changes. Public/marketing pages (.arvo / .arvo--dark) are untouched.
+   =================================================================== */
+.dark {
+  --arvo-bg:          var(--arvo-bg-dark);
+  --arvo-surface:     var(--arvo-surface-dark);
+  --arvo-surface-2:   var(--arvo-surface-2-dark);
+
+  --arvo-fg:          var(--arvo-fg-on-dark);
+  --arvo-fg-muted:    var(--arvo-fg-on-dark-muted);
+  --arvo-fg-soft:     var(--arvo-fg-on-dark-soft);
+  --arvo-fg-faint:    var(--arvo-fg-on-dark-faint);
+
+  --arvo-border:      var(--arvo-border-dark);
+  --arvo-border-soft: var(--arvo-border-soft-dark);
+
+  /* Chrome surfaces */
+  --arvo-header-bg:        rgba(13, 13, 13, 0.80);
+  --arvo-glass-bg:         rgba(32, 30, 27, 0.55);
+  --arvo-glass-border:     rgba(200, 184, 154, 0.10);
+  --arvo-glass-highlight:  rgba(255, 255, 255, 0.04);
+  --arvo-glass-active-bg:  rgba(242, 237, 228, 0.10);
+  --arvo-pill-active-bg:   rgba(242, 237, 228, 0.92);
+  --arvo-pill-active-fg:   var(--arvo-black);
+  --arvo-hover-bg:         rgba(242, 237, 228, 0.05);
+  --arvo-chip-bg:          rgba(242, 237, 228, 0.08);
+  --arvo-track-bg:         rgba(242, 237, 228, 0.10);
+  --arvo-subnav-bg:        rgba(255, 255, 255, 0.02);
 }
 
 /* ===================================================================

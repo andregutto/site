@@ -287,20 +287,31 @@ export default function PerformancePage() {
   const ibovAccum  = useDailyChart ? (lastDailyPoint?.ibov  ?? null) : (lastPoint?.ibov  ?? null)
   const sp500Accum = useDailyChart ? (lastDailyPoint?.sp500 ?? null) : (lastPoint?.sp500 ?? null)
 
-  // Absolute portfolio value series (Patrimônio view), with optional Freedom Plan target line
+  // Absolute portfolio value series (Patrimônio view), with optional Freedom Plan target
+  // line and a cumulative contributions ("Aportes") line — the gap between the two
+  // represents gains from valorização/juros compostos.
+  const dailyValuePts = useDailyChart ? (dailyData?.daily ?? []).filter(pt => pt.total > 0) : []
+  const dailyValueBase = dailyValuePts.length > 0 ? dailyValuePts[0].total - (dailyValuePts[0].contributions ?? 0) : 0
+  let valueCfCumul = 0
   const valueChartData = useDailyChart
-    ? (dailyData?.daily ?? []).filter(pt => pt.total > 0).map(pt => ({
-        month: fmtDayLabel(pt.date, intlLocale),
-        value: convert(pt.total),
-        target: targetAtDate(pt.date),
-      }))
+    ? dailyValuePts.map(pt => {
+        valueCfCumul += (pt.contributions ?? 0)
+        return {
+          month: fmtDayLabel(pt.date, intlLocale),
+          value: convert(pt.total),
+          target: targetAtDate(pt.date),
+          contributions: convert(dailyValueBase + valueCfCumul),
+        }
+      })
     : monthsWithData.map(m => {
         const [y, mo] = m.month.split('-').map(Number)
         const lastDay = new Date(y, mo, 0).getDate()
+        valueCfCumul += (m.contributions ?? 0)
         return {
           month: fmtMonth(m.month, intlLocale),
           value: convert(m.total),
           target: targetAtDate(`${m.month}-${String(lastDay).padStart(2, '0')}`),
+          contributions: convert(periodStart + valueCfCumul),
         }
       })
 
@@ -472,6 +483,7 @@ export default function PerformancePage() {
                         />
                         <Legend wrapperStyle={{ fontSize: 11 }} />
                         <Line type="monotone" dataKey="value" name={t.dashboard.patrimony} stroke="#0D0D0D" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
+                        <Line type="monotone" dataKey="contributions" name={t.performance.contributions} stroke="#9ca3af" strokeWidth={1.5} dot={false} strokeDasharray="4 2" connectNulls />
                         {activePlan && <Line type="monotone" dataKey="target" name={t.dashboard.targetLine} stroke="#1B4FD8" strokeWidth={1.5} dot={false} strokeDasharray="5 3" connectNulls />}
                       </LineChart>
                     ) : (
