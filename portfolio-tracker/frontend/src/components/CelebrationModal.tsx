@@ -83,11 +83,11 @@ export default function CelebrationModal({ def, onClose }: Props) {
         </div>
 
         <h2 className="text-white text-2xl font-bold mt-5">{(t.achievementDefs as Record<string, {name: string; desc: string}>)[def.key]?.name ?? def.name}</h2>
-        <p className="text-gray-400 text-sm mt-1">{(t.achievementDefs as Record<string, {name: string; desc: string}>)[def.key]?.desc ?? def.description}</p>
+        <p className="text-[var(--arvo-fg-soft)] text-sm mt-1">{(t.achievementDefs as Record<string, {name: string; desc: string}>)[def.key]?.desc ?? def.description}</p>
 
         <div className="mt-4 inline-flex items-center gap-2 bg-[#C8B89A]/10 border border-[#C8B89A]/30 rounded-full px-4 py-1.5">
           <span className="text-[#C8B89A] font-bold text-lg">+{def.xp}</span>
-          <span className="text-gray-400 text-sm">{t.achievements.xp}</span>
+          <span className="text-[var(--arvo-fg-soft)] text-sm">{t.achievements.xp}</span>
         </div>
 
         <button

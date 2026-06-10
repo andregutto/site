@@ -56,7 +56,7 @@ export default function InstitutionLogo({ name, size = 32 }: { name: string; siz
         src={`https://logo.clearbit.com/${domain}`}
         alt={name}
         style={style}
-        className="rounded-lg object-contain shrink-0 bg-white border border-gray-100"
+        className="rounded-lg object-contain shrink-0 bg-[var(--arvo-surface)] border border-[var(--arvo-border)]"
         onError={() => setImgError(true)}
       />
     )

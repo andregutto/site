@@ -63,7 +63,7 @@ export default function MarketIndicesCard({ periodMode, periodLabel }: Props) {
   return (
     <div
       className="rounded-2xl p-4 cursor-pointer hover:shadow-md transition-shadow"
-      style={{ background: 'white', border: '1px solid var(--arvo-border)' }}
+      style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)' }}
       onClick={() => navigate('/portfolio/indices')}
       title={t.common.allIndices}
     >
@@ -81,14 +81,14 @@ export default function MarketIndicesCard({ periodMode, periodLabel }: Props) {
           return (
             <div key={idx.code} className="flex items-center justify-between gap-3">
               <div className="min-w-0">
-                <p style={{ fontFamily: "var(--arvo-font-body)", fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.42)', marginBottom: 2 }}>
+                <p style={{ fontFamily: "var(--arvo-font-body)", fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)', marginBottom: 2 }}>
                   {idx.name}
                 </p>
-                <p style={{ fontFamily: "var(--arvo-font-body)", fontSize: 16, letterSpacing: '0.01em', color: 'var(--arvo-black)', lineHeight: 1 }}>
+                <p style={{ fontFamily: "var(--arvo-font-body)", fontSize: 16, letterSpacing: '0.01em', color: 'var(--arvo-fg)', lineHeight: 1 }}>
                   {fmtVal(idx.value, idx.unit)}
                 </p>
               </div>
-              <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 14, fontWeight: 600, color: isPos ? 'var(--arvo-green)' : isNeg ? 'var(--arvo-red)' : 'rgba(13,13,13,0.40)', flexShrink: 0 }}>
+              <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 14, fontWeight: 600, color: isPos ? 'var(--arvo-green)' : isNeg ? 'var(--arvo-red)' : 'var(--arvo-fg-faint)', flexShrink: 0 }}>
                 {fmtPct(pct)}
               </span>
             </div>

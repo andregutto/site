@@ -162,8 +162,8 @@ function MomentForm({ initial, onSave, onCancel, saving, userId }: FormProps) {
     })
   }
 
-  const fieldCls = 'w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20'
-  const labelCls = 'block text-xs text-gray-500 mb-1'
+  const fieldCls = 'w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20'
+  const labelCls = 'block text-xs text-[var(--arvo-fg-muted)] mb-1'
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -223,15 +223,15 @@ function MomentForm({ initial, onSave, onCancel, saving, userId }: FormProps) {
               </div>
               <div className="flex justify-end gap-2 px-0.5">
                 <button type="button" onClick={() => fileInputRef.current?.click()}
-                  className="text-xs text-gray-400 hover:text-gray-700 transition-colors">{t.finances.momentPhotoChangeLabel}</button>
-                <span className="text-gray-200">·</span>
+                  className="text-xs text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg)] transition-colors">{t.finances.momentPhotoChangeLabel}</button>
+                <span className="text-[var(--arvo-fg-faint)]">·</span>
                 <button type="button" onClick={() => { setPhotoPreview(null); setPhotoFile(null) }}
-                  className="text-xs text-gray-400 hover:text-red-500 transition-colors">{t.finances.momentPhotoRemove}</button>
+                  className="text-xs text-[var(--arvo-fg-soft)] hover:text-red-500 transition-colors">{t.finances.momentPhotoRemove}</button>
               </div>
             </div>
           ) : (
             <button type="button" onClick={() => fileInputRef.current?.click()}
-              className="w-full h-20 border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center gap-1 text-gray-400 hover:border-[#0D0D0D]/40 hover:text-[#0D0D0D] transition-colors">
+              className="w-full h-20 border-2 border-dashed border-[var(--arvo-border)] rounded-xl flex flex-col items-center justify-center gap-1 text-[var(--arvo-fg-soft)] hover:border-[var(--arvo-fg)]/40 hover:text-[var(--arvo-fg)] transition-colors">
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M13.5 12a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
               </svg>
@@ -247,7 +247,7 @@ function MomentForm({ initial, onSave, onCancel, saving, userId }: FormProps) {
               <button
                 key={ic} type="button"
                 onClick={() => setIcon(ic)}
-                className={`text-lg w-9 h-9 rounded-lg flex items-center justify-center border-2 transition-colors ${icon === ic ? 'border-[#0D0D0D] bg-[#0D0D0D]/10' : 'border-transparent bg-gray-100'}`}
+                className={`text-lg w-9 h-9 rounded-lg flex items-center justify-center border-2 transition-colors ${icon === ic ? 'border-[var(--arvo-fg)] bg-[var(--arvo-fg)]/10' : 'border-transparent bg-[var(--arvo-track-bg)]'}`}
               >{ic}</button>
             ))}
           </div>
@@ -261,7 +261,7 @@ function MomentForm({ initial, onSave, onCancel, saving, userId }: FormProps) {
                 key={c} type="button"
                 onClick={() => setColor(c)}
                 style={{ backgroundColor: c }}
-                className={`w-7 h-7 rounded-full border-2 transition-all ${color === c ? 'border-gray-900 scale-110' : 'border-transparent'}`}
+                className={`w-7 h-7 rounded-full border-2 transition-all ${color === c ? 'border-[var(--arvo-fg)] scale-110' : 'border-transparent'}`}
               />
             ))}
           </div>
@@ -295,10 +295,10 @@ function MomentForm({ initial, onSave, onCancel, saving, userId }: FormProps) {
       )}
       <div className="flex gap-2">
         <button type="submit" disabled={saving || uploading}
-          className="flex-1 bg-[#0D0D0D] text-white text-sm py-2 rounded-xl hover:opacity-80 transition-opacity disabled:opacity-40">
+          className="flex-1 bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] text-sm py-2 rounded-xl hover:opacity-80 transition-opacity disabled:opacity-40">
           {uploading ? t.finances.uploadingPhoto : saving ? '…' : t.common.save}
         </button>
-        <button type="button" onClick={onCancel} className="px-4 text-sm text-gray-500 hover:text-gray-700 transition-colors">
+        <button type="button" onClick={onCancel} className="px-4 text-sm text-[var(--arvo-fg-muted)] hover:text-[var(--arvo-fg)] transition-colors">
           {t.common.cancel}
         </button>
       </div>
@@ -386,26 +386,26 @@ function ShareModal({ moment, onClose, onRevoke, onUpdate }: ShareModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 bg-black/40 flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={onClose}>
-      <div className="bg-white w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl shadow-xl p-6 space-y-5" onClick={e => e.stopPropagation()}>
+      <div className="bg-[var(--arvo-surface)] w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl shadow-xl p-6 space-y-5" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between">
-          <h3 className="font-semibold text-gray-900">{t.finances.shareTitle} {moment.icon} {moment.name}</h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
+          <h3 className="font-semibold text-[var(--arvo-fg)]">{t.finances.shareTitle} {moment.icon} {moment.name}</h3>
+          <button onClick={onClose} className="text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg-muted)] transition-colors">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </div>
 
         {loading ? (
-          <div className="text-center py-4 text-sm text-gray-400 animate-pulse">{t.finances.shareGenerating}</div>
+          <div className="text-center py-4 text-sm text-[var(--arvo-fg-soft)] animate-pulse">{t.finances.shareGenerating}</div>
         ) : (
           <>
             {/* Link */}
             <div>
-              <p className="text-xs text-gray-500 mb-1.5">{t.finances.shareLink}</p>
+              <p className="text-xs text-[var(--arvo-fg-muted)] mb-1.5">{t.finances.shareLink}</p>
               <div className="flex items-center gap-2">
-                <input readOnly value={shareUrl} className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-xs text-gray-600 bg-gray-50 truncate focus:outline-none" />
+                <input readOnly value={shareUrl} className="flex-1 border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-xs text-[var(--arvo-fg-muted)] bg-[var(--arvo-surface-2)] truncate focus:outline-none" />
                 <button
                   onClick={() => copyToClipboard(shareUrl)}
-                  className={`px-3 py-2 rounded-lg text-xs font-medium transition-colors shrink-0 ${copied ? 'bg-emerald-100 text-emerald-700' : 'bg-[#0D0D0D] text-white hover:opacity-80'}`}
+                  className={`px-3 py-2 rounded-lg text-xs font-medium transition-colors shrink-0 ${copied ? 'bg-emerald-100 text-emerald-700' : 'bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] hover:opacity-80'}`}
                 >
                   {copied ? t.finances.shareCopied : t.finances.shareCopy}
                 </button>
@@ -421,14 +421,14 @@ function ShareModal({ moment, onClose, onRevoke, onUpdate }: ShareModalProps) {
                 className="mt-0.5 w-4 h-4 accent-[#0D0D0D]"
               />
               <div>
-                <p className="text-sm text-gray-700 font-medium">{t.finances.shareHideDesc}</p>
-                <p className="text-xs text-gray-400 mt-0.5">{t.finances.shareHideDescSub}</p>
+                <p className="text-sm text-[var(--arvo-fg)] font-medium">{t.finances.shareHideDesc}</p>
+                <p className="text-xs text-[var(--arvo-fg-soft)] mt-0.5">{t.finances.shareHideDescSub}</p>
               </div>
             </label>
 
             {/* Expiry */}
             <div>
-              <p className="text-xs text-gray-500 mb-2">{t.finances.shareExpiry}</p>
+              <p className="text-xs text-[var(--arvo-fg-muted)] mb-2">{t.finances.shareExpiry}</p>
               <div className="flex flex-wrap gap-2">
                 {EXPIRY_OPTIONS.map(opt => (
                   <button
@@ -436,8 +436,8 @@ function ShareModal({ moment, onClose, onRevoke, onUpdate }: ShareModalProps) {
                     onClick={() => updateSetting({ expires_in_days: opt.value })}
                     className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
                       selectedDays === opt.value
-                        ? 'bg-[#0D0D0D] text-white border-[#0D0D0D]'
-                        : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                        ? 'bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] border-[var(--arvo-fg)]'
+                        : 'border-[var(--arvo-border)] text-[var(--arvo-fg-muted)] hover:border-[var(--arvo-border)]'
                     }`}
                   >
                     {opt.label}
@@ -447,7 +447,7 @@ function ShareModal({ moment, onClose, onRevoke, onUpdate }: ShareModalProps) {
             </div>
 
             {/* Revoke */}
-            <div className="pt-2 border-t border-gray-100">
+            <div className="pt-2 border-t border-[var(--arvo-border)]">
               <button
                 onClick={revoke}
                 disabled={revoking}
@@ -490,13 +490,13 @@ function AssignModal({ momentId: _momentId, moments, transactionId, currentMomen
 
   return (
     <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-xs p-5" onClick={e => e.stopPropagation()}>
-        <h3 className="font-semibold text-gray-900 mb-3 text-sm">{t.finances.assignMoment}</h3>
+      <div className="bg-[var(--arvo-surface)] rounded-2xl shadow-xl w-full max-w-xs p-5" onClick={e => e.stopPropagation()}>
+        <h3 className="font-semibold text-[var(--arvo-fg)] mb-3 text-sm">{t.finances.assignMoment}</h3>
         <div className="space-y-1">
           {moments.map(m => (
             <button key={m.id} disabled={saving}
               onClick={() => assign(m.id === currentMomentId ? null : m.id)}
-              className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors ${m.id === currentMomentId ? 'bg-[#0D0D0D]/10 text-[#0D0D0D]' : 'hover:bg-gray-50 text-gray-700'}`}>
+              className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors ${m.id === currentMomentId ? 'bg-[var(--arvo-fg)]/10 text-[var(--arvo-fg)]' : 'hover:bg-[var(--arvo-surface-2)] text-[var(--arvo-fg)]'}`}>
               <span className="text-base">{m.icon}</span>
               <span>{m.name}</span>
               {m.id === currentMomentId && <span className="ml-auto text-xs">✓</span>}
@@ -504,12 +504,12 @@ function AssignModal({ momentId: _momentId, moments, transactionId, currentMomen
           ))}
           {currentMomentId && (
             <button disabled={saving} onClick={() => assign(null)}
-              className="w-full text-left px-3 py-2 rounded-lg text-sm text-gray-400 hover:bg-gray-50 transition-colors">
+              className="w-full text-left px-3 py-2 rounded-lg text-sm text-[var(--arvo-fg-soft)] hover:bg-[var(--arvo-surface-2)] transition-colors">
               {t.finances.noMoment}
             </button>
           )}
         </div>
-        <button onClick={onClose} className="mt-3 w-full text-center text-xs text-gray-400 hover:text-gray-600 transition-colors">
+        <button onClick={onClose} className="mt-3 w-full text-center text-xs text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg-muted)] transition-colors">
           {t.common.cancel}
         </button>
       </div>
@@ -622,7 +622,7 @@ export default function FinancesMomentsPage() {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-12 text-center text-gray-400 text-sm">
+      <div className="bg-[var(--arvo-surface)] rounded-2xl border border-[var(--arvo-border)] shadow-sm p-12 text-center text-[var(--arvo-fg-soft)] text-sm">
         {t.common.loading}
       </div>
     )
@@ -633,12 +633,12 @@ export default function FinancesMomentsPage() {
       {/* Header */}
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
-          <h1 style={{ fontFamily: "var(--arvo-font-body)", fontSize: 18, letterSpacing: '0.06em', color: 'var(--arvo-black)' }}>{t.finances.momentsTitle}</h1>
-          <p className="text-sm mt-0.5" style={{ color: 'rgba(13,13,13,0.60)' }}>{t.finances.momentsSubtitle}</p>
+          <h1 style={{ fontFamily: "var(--arvo-font-body)", fontSize: 18, letterSpacing: '0.06em', color: 'var(--arvo-fg)' }}>{t.finances.momentsTitle}</h1>
+          <p className="text-sm mt-0.5" style={{ color: 'var(--arvo-fg-muted)' }}>{t.finances.momentsSubtitle}</p>
         </div>
         <button
           onClick={() => { setEditing(null); setShowForm(true) }}
-          className="px-3 py-1.5 bg-[#0D0D0D] text-white text-sm rounded-lg hover:opacity-80 transition-opacity"
+          className="px-3 py-1.5 bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] text-sm rounded-lg hover:opacity-80 transition-opacity"
         >
           + {t.finances.newMoment}
         </button>
@@ -646,8 +646,8 @@ export default function FinancesMomentsPage() {
 
       {/* Create/edit form */}
       {showForm && (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-          <h3 className="font-semibold text-gray-900 mb-4 text-sm">
+        <div className="bg-[var(--arvo-surface)] rounded-2xl border border-[var(--arvo-border)] shadow-sm p-6">
+          <h3 className="font-semibold text-[var(--arvo-fg)] mb-4 text-sm">
             {editing ? t.finances.editMoment : t.finances.newMoment}
           </h3>
           <MomentForm
@@ -662,13 +662,13 @@ export default function FinancesMomentsPage() {
 
       {/* Empty state */}
       {moments.length === 0 && !showForm && (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-12 text-center">
+        <div className="bg-[var(--arvo-surface)] rounded-2xl border border-[var(--arvo-border)] shadow-sm p-12 text-center">
           <p className="text-4xl mb-4">✨</p>
-          <p className="text-gray-700 font-medium mb-1">{t.finances.momentEmptyTitle}</p>
-          <p className="text-sm text-gray-400 mb-5">{t.finances.momentEmptyBody}</p>
+          <p className="text-[var(--arvo-fg)] font-medium mb-1">{t.finances.momentEmptyTitle}</p>
+          <p className="text-sm text-[var(--arvo-fg-soft)] mb-5">{t.finances.momentEmptyBody}</p>
           <button
             onClick={() => setShowForm(true)}
-            className="px-5 py-2 bg-[#0D0D0D] text-white text-sm rounded-xl hover:opacity-80 transition-opacity"
+            className="px-5 py-2 bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] text-sm rounded-xl hover:opacity-80 transition-opacity"
           >
             {t.finances.momentCreateFirst}
           </button>
@@ -678,7 +678,7 @@ export default function FinancesMomentsPage() {
       {/* Moments list */}
       <div className="space-y-3">
         {moments.map(m => (
-          <div key={m.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div key={m.id} className="bg-[var(--arvo-surface)] rounded-2xl border border-[var(--arvo-border)] shadow-sm overflow-hidden">
             {/* Cover photo or color gradient */}
             {m.cover_image_url ? (
               <div className="h-28 overflow-hidden">
@@ -692,16 +692,16 @@ export default function FinancesMomentsPage() {
             )}
             {/* Moment header */}
             <div
-              className="flex items-center gap-3 px-5 py-4 cursor-pointer hover:bg-gray-50 transition-colors"
+              className="flex items-center gap-3 px-5 py-4 cursor-pointer hover:bg-[var(--arvo-surface-2)] transition-colors"
               onClick={() => toggleExpand(m.id)}
             >
               <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0" style={{ backgroundColor: m.color + '20' }}>
                 {m.icon}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-gray-900 text-sm truncate">{m.name}</p>
+                <p className="font-semibold text-[var(--arvo-fg)] text-sm truncate">{m.name}</p>
                 {(m.start_date || m.description) && (
-                  <p className="text-xs text-gray-400 mt-0.5 truncate">
+                  <p className="text-xs text-[var(--arvo-fg-soft)] mt-0.5 truncate">
                     {m.start_date && m.end_date
                       ? `${fmtDate(m.start_date)} – ${fmtDate(m.end_date)}`
                       : m.start_date
@@ -713,7 +713,7 @@ export default function FinancesMomentsPage() {
               <div className="flex items-center gap-2 shrink-0">
                 <button
                   onClick={e => { e.stopPropagation(); setSharingMoment(m) }}
-                  className={`p-1.5 transition-colors rounded-lg hover:bg-gray-100 ${m.share_token ? 'text-[#0D0D0D]' : 'text-gray-400 hover:text-gray-700'}`}
+                  className={`p-1.5 transition-colors rounded-lg hover:bg-[var(--arvo-track-bg)] ${m.share_token ? 'text-[var(--arvo-fg)]' : 'text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg)]'}`}
                   title={t.finances.shareTitle}
                 >
                   <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -722,7 +722,7 @@ export default function FinancesMomentsPage() {
                 </button>
                 <button
                   onClick={e => { e.stopPropagation(); setEditing(m); setShowForm(true) }}
-                  className="p-1.5 text-gray-400 hover:text-gray-700 transition-colors rounded-lg hover:bg-gray-100"
+                  className="p-1.5 text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg)] transition-colors rounded-lg hover:bg-[var(--arvo-track-bg)]"
                 >
                   <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
@@ -730,13 +730,13 @@ export default function FinancesMomentsPage() {
                 </button>
                 <button
                   onClick={e => { e.stopPropagation(); deleteMoment(m.id) }}
-                  className="p-1.5 text-gray-400 hover:text-red-500 transition-colors rounded-lg hover:bg-red-50"
+                  className="p-1.5 text-[var(--arvo-fg-soft)] hover:text-red-500 transition-colors rounded-lg hover:bg-red-50"
                 >
                   <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                   </svg>
                 </button>
-                <svg className={`w-4 h-4 text-gray-400 transition-transform ${expanded === m.id ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <svg className={`w-4 h-4 text-[var(--arvo-fg-soft)] transition-transform ${expanded === m.id ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                 </svg>
               </div>
@@ -752,11 +752,11 @@ export default function FinancesMomentsPage() {
                   const currency = 'EUR'
                   return (
                     <>
-                      <div className="flex justify-between text-xs mb-1" style={{ color: over ? '#D63B2F' : 'rgba(13,13,13,0.55)' }}>
+                      <div className="flex justify-between text-xs mb-1" style={{ color: over ? '#D63B2F' : 'var(--arvo-fg-muted)' }}>
                         <span>{fmt(spent, currency)}</span>
                         <span>{t.finances.momentBudgetOf} {fmt(m.budget!, currency)}{over ? ` · ${t.finances.momentBudgetOver}` : ''}</span>
                       </div>
-                      <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                      <div className="h-1.5 bg-[var(--arvo-track-bg)] rounded-full overflow-hidden">
                         <div className="h-full rounded-full transition-all" style={{ width: `${pct.toFixed(1)}%`, backgroundColor: over ? '#D63B2F' : m.color }} />
                       </div>
                     </>
@@ -767,21 +767,21 @@ export default function FinancesMomentsPage() {
 
             {/* Expanded detail */}
             {expanded === m.id && (
-              <div className="border-t border-gray-100 px-5 py-4 space-y-4">
-                {detailLoading && <p className="text-center text-sm text-gray-400">{t.common.loading}</p>}
+              <div className="border-t border-[var(--arvo-border)] px-5 py-4 space-y-4">
+                {detailLoading && <p className="text-center text-sm text-[var(--arvo-fg-soft)]">{t.common.loading}</p>}
                 {detail && detail.moment.id === m.id && (
                   <>
                     {/* Summary */}
                     <div className="flex items-center gap-4 flex-wrap">
                       <div>
-                        <p className="text-xs text-gray-400">{t.finances.momentTotal}</p>
-                        <p className="text-xl font-bold text-gray-900">
+                        <p className="text-xs text-[var(--arvo-fg-soft)]">{t.finances.momentTotal}</p>
+                        <p className="text-xl font-bold text-[var(--arvo-fg)]">
                           {fmt(detail.summary.total, detail.transactions[0]?.currency ?? 'EUR')}
                         </p>
                       </div>
                       <div>
-                        <p className="text-xs text-gray-400">{t.finances.momentTransactions}</p>
-                        <p className="text-xl font-bold text-gray-700">{detail.transactions.filter(tx => tx.amount < 0).length}</p>
+                        <p className="text-xs text-[var(--arvo-fg-soft)]">{t.finances.momentTransactions}</p>
+                        <p className="text-xl font-bold text-[var(--arvo-fg)]">{detail.transactions.filter(tx => tx.amount < 0).length}</p>
                       </div>
                     </div>
 
@@ -793,11 +793,11 @@ export default function FinancesMomentsPage() {
                       const currency = detail.transactions[0]?.currency ?? 'EUR'
                       return (
                         <div>
-                          <div className="flex justify-between text-xs mb-1.5" style={{ color: over ? '#D63B2F' : 'rgba(13,13,13,0.55)' }}>
+                          <div className="flex justify-between text-xs mb-1.5" style={{ color: over ? '#D63B2F' : 'var(--arvo-fg-muted)' }}>
                             <span className="font-medium">{t.finances.momentBudget}</span>
                             <span>{fmt(spent, currency)} {t.finances.momentBudgetOf} {fmt(m.budget!, currency)}{over ? ` · ${t.finances.momentBudgetOver}` : ` · ${pct.toFixed(0)}%`}</span>
                           </div>
-                          <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                          <div className="h-2 bg-[var(--arvo-track-bg)] rounded-full overflow-hidden">
                             <div className="h-full rounded-full transition-all" style={{ width: `${pct.toFixed(1)}%`, backgroundColor: over ? '#D63B2F' : m.color }} />
                           </div>
                         </div>
@@ -812,11 +812,11 @@ export default function FinancesMomentsPage() {
                           return (
                             <div key={cat.name} className="flex items-center gap-2">
                               <span className="text-sm w-5 text-center">{cat.icon}</span>
-                              <span className="text-xs text-gray-600 w-28 truncate">{resolveKey(cat.name, cat.name_key, nameKeys)}</span>
-                              <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                              <span className="text-xs text-[var(--arvo-fg-muted)] w-28 truncate">{resolveKey(cat.name, cat.name_key, nameKeys)}</span>
+                              <div className="flex-1 h-1.5 bg-[var(--arvo-track-bg)] rounded-full overflow-hidden">
                                 <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: cat.color }} />
                               </div>
-                              <span className="text-xs text-gray-500 w-16 text-right">
+                              <span className="text-xs text-[var(--arvo-fg-muted)] w-16 text-right">
                                 {fmt(cat.total, detail.transactions[0]?.currency ?? 'EUR')}
                               </span>
                             </div>
@@ -827,21 +827,21 @@ export default function FinancesMomentsPage() {
 
                     {/* Transactions */}
                     {detail.transactions.length > 0 ? (
-                      <div className="space-y-0 border border-gray-100 rounded-xl overflow-hidden">
+                      <div className="space-y-0 border border-[var(--arvo-border)] rounded-xl overflow-hidden">
                         {detail.transactions.map((tx, i) => (
-                          <div key={tx.id} className={`flex items-center gap-3 px-4 py-2.5 text-sm ${i > 0 ? 'border-t border-gray-50' : ''}`}>
-                            <span className="text-gray-400 text-xs w-16 shrink-0">{fmtDate(tx.date)}</span>
+                          <div key={tx.id} className={`flex items-center gap-3 px-4 py-2.5 text-sm ${i > 0 ? 'border-t border-[var(--arvo-border-soft)]' : ''}`}>
+                            <span className="text-[var(--arvo-fg-soft)] text-xs w-16 shrink-0">{fmtDate(tx.date)}</span>
                             <span className="text-xs">{tx.finance_categories?.icon ?? '❓'}</span>
                             <div className="flex-1 min-w-0">
-                              <span className="text-gray-700 truncate text-xs block">{tx.description}</span>
-                              {tx.notes && <span className="text-[10px] text-gray-400 italic truncate block">{tx.notes}</span>}
+                              <span className="text-[var(--arvo-fg)] truncate text-xs block">{tx.description}</span>
+                              {tx.notes && <span className="text-[10px] text-[var(--arvo-fg-soft)] italic truncate block">{tx.notes}</span>}
                             </div>
-                            <span className={`text-xs font-semibold shrink-0 ${tx.amount < 0 ? 'text-gray-900' : 'text-emerald-600'}`}>
+                            <span className={`text-xs font-semibold shrink-0 ${tx.amount < 0 ? 'text-[var(--arvo-fg)]' : 'text-emerald-600'}`}>
                               {fmt(Math.abs(tx.amount), tx.currency)}
                             </span>
                             <button
                               onClick={() => setAssignTarget({ txId: tx.id, currentMomentId: m.id })}
-                              className="ml-1 p-1 text-gray-300 hover:text-[#0D0D0D] transition-colors"
+                              className="ml-1 p-1 text-[var(--arvo-fg-faint)] hover:text-[var(--arvo-fg)] transition-colors"
                               title={t.finances.assignMoment}
                             >
                               <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -852,7 +852,7 @@ export default function FinancesMomentsPage() {
                         ))}
                       </div>
                     ) : (
-                      <p className="text-xs text-gray-400 text-center py-4">
+                      <p className="text-xs text-[var(--arvo-fg-soft)] text-center py-4">
                         {t.finances.momentNoTransactions}
                       </p>
                     )}

@@ -53,11 +53,11 @@ export default function MarketIndicesBar() {
         const isPos = pct != null && pct > 0
         const isNeg = pct != null && pct < 0
         return (
-          <div key={idx.code} className="rounded-2xl p-4" style={{ background: 'white', border: '1px solid var(--arvo-border)' }}>
+          <div key={idx.code} className="rounded-2xl p-4" style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)' }}>
             <div style={{ fontFamily: "var(--arvo-font-body)", fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)', marginBottom: 4 }}>
               {idx.name}
             </div>
-            <div style={{ fontFamily: "var(--arvo-font-body)", fontSize: 17, letterSpacing: '0.01em', color: 'var(--arvo-black)', lineHeight: 1.1 }}>
+            <div style={{ fontFamily: "var(--arvo-font-body)", fontSize: 17, letterSpacing: '0.01em', color: 'var(--arvo-fg)', lineHeight: 1.1 }}>
               {fmtVal(idx.value, idx.unit)}
             </div>
             <div className="mt-1 text-xs" style={{ fontFamily: "var(--arvo-font-body)", color: isPos ? 'var(--arvo-green)' : isNeg ? 'var(--arvo-red)' : 'var(--arvo-fg-soft)' }}>

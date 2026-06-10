@@ -521,15 +521,17 @@ export default function ProfilePage() {
   const displayName     = [firstName, lastName].filter(Boolean).join(' ') || t.profile.noName
 
   return (
-    <div className="max-w-lg mx-auto space-y-6">
-      <h1 className="text-xl font-bold text-gray-900">{t.profile.title}</h1>
+    <div className="max-w-5xl mx-auto space-y-6">
+      <h1 className="text-xl font-bold text-[var(--arvo-fg)]">{t.profile.title}</h1>
 
       {loading ? (
         <PageLoader />
       ) : (
         <>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+        <div className="flex flex-col gap-6">
           {/* Avatar + nome */}
-          <div className="bg-white border border-gray-100 rounded-2xl p-6 flex items-center gap-5 shadow-sm">
+          <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl p-6 flex items-center gap-5 shadow-sm">
             <div className="relative shrink-0 group">
               {avatarUrl ? (
                 <img
@@ -538,7 +540,7 @@ export default function ProfilePage() {
                   className="w-16 h-16 rounded-full object-cover"
                 />
               ) : (
-                <div className="w-16 h-16 rounded-full bg-[#0D0D0D] text-white flex items-center justify-center text-xl font-bold">
+                <div className="w-16 h-16 rounded-full bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] flex items-center justify-center text-xl font-bold">
                   {avatarInitials}
                 </div>
               )}
@@ -551,12 +553,12 @@ export default function ProfilePage() {
               </button>
             </div>
             <div className="min-w-0 flex-1">
-              <p className="font-semibold text-gray-900 truncate">{displayName}</p>
-              <p className="text-sm text-gray-500 truncate">{emailForDisplay}</p>
+              <p className="font-semibold text-[var(--arvo-fg)] truncate">{displayName}</p>
+              <p className="text-sm text-[var(--arvo-fg-muted)] truncate">{emailForDisplay}</p>
               <button
                 type="button"
                 onClick={openAvatarModal}
-                className="text-xs text-[#0D0D0D] hover:underline mt-0.5"
+                className="text-xs text-[var(--arvo-fg)] hover:underline mt-0.5"
               >
                 {avatarUrl ? t.profile.changePhoto : t.profile.addPhoto}
               </button>
@@ -566,110 +568,112 @@ export default function ProfilePage() {
           {/* XP / Level card */}
           <Link
             to="/achievements"
-            className="block bg-white border border-gray-100 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group"
+            className="block bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group"
           >
             {/* accent bar */}
-            <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-[#0D0D0D] to-[#C8B89A] rounded-l-2xl" />
+            <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-[var(--arvo-fg)] to-[#C8B89A] rounded-l-2xl" />
 
             <div className="flex items-center justify-between mb-4 pl-3">
               <div className="flex items-center gap-3">
                 <span className="text-3xl">{level.emoji}</span>
                 <div>
-                  <p className="text-[10px] text-[#0D0D0D] font-bold uppercase tracking-widest">{t.achievements.currentLevel}</p>
-                  <p className="text-gray-900 font-bold text-base leading-tight">{t.levels[level.key as keyof typeof t.levels]}</p>
+                  <p className="text-[10px] text-[var(--arvo-fg)] font-bold uppercase tracking-widest">{t.achievements.currentLevel}</p>
+                  <p className="text-[var(--arvo-fg)] font-bold text-base leading-tight">{t.levels[level.key as keyof typeof t.levels]}</p>
                 </div>
               </div>
               <div className="text-right">
-                <p className="text-gray-900 font-bold text-xl">
+                <p className="text-[var(--arvo-fg)] font-bold text-xl">
                   {totalXp} <span className="text-[#C8B89A]">{t.achievements.xp}</span>
                 </p>
-                <p className="text-gray-400 text-xs">{earnedKeys.length}/{ACHIEVEMENT_DEFS.length} {t.achievements.subtitle}</p>
+                <p className="text-[var(--arvo-fg-soft)] text-xs">{earnedKeys.length}/{ACHIEVEMENT_DEFS.length} {t.achievements.subtitle}</p>
               </div>
             </div>
 
             <div className="pl-3">
-              <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+              <div className="h-1.5 bg-[var(--arvo-track-bg)] rounded-full overflow-hidden">
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-[#0D0D0D] to-[#C8B89A] transition-all duration-700"
+                  className="h-full rounded-full bg-gradient-to-r from-[var(--arvo-fg)] to-[#C8B89A] transition-all duration-700"
                   style={{ width: `${levelProgress}%` }}
                 />
               </div>
               {nextLevel && (
-                <p className="text-gray-400 text-xs mt-1.5">
+                <p className="text-[var(--arvo-fg-soft)] text-xs mt-1.5">
                   {t.achievements.nextLevel}: {nextLevel.emoji} {t.levels[nextLevel.key as keyof typeof t.levels]} · {nextLevel.minXp} {t.achievements.xp}
                 </p>
               )}
             </div>
 
-            <svg className="absolute right-4 top-4 w-3.5 h-3.5 text-gray-300 group-hover:text-[#0D0D0D] transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <svg className="absolute right-4 top-4 w-3.5 h-3.5 text-[var(--arvo-fg-faint)] group-hover:text-[var(--arvo-fg)] transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
             </svg>
           </Link>
 
           {/* Dados pessoais */}
-          <form onSubmit={handleSave} className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm space-y-4">
-            <h2 className="font-semibold text-gray-800">{t.profile.personalData}</h2>
+          <form onSubmit={handleSave} className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl p-6 shadow-sm space-y-4">
+            <h2 className="font-semibold text-[var(--arvo-fg)]">{t.profile.personalData}</h2>
 
             <div>
-              <label className="block text-xs text-gray-500 mb-1">{t.profile.email}</label>
+              <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{t.profile.email}</label>
               <input
                 type="email"
                 value={emailForDisplay}
                 readOnly
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-500 cursor-not-allowed"
+                className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm bg-[var(--arvo-surface-2)] text-[var(--arvo-fg-muted)] cursor-not-allowed"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs text-gray-500 mb-1">{t.profile.firstName}</label>
+                <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{t.profile.firstName}</label>
                 <input
                   type="text"
                   value={firstName}
                   onChange={e => setFirstName(e.target.value)}
                   placeholder="André"
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20"
+                  className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20"
                 />
               </div>
               <div>
-                <label className="block text-xs text-gray-500 mb-1">{t.profile.lastName}</label>
+                <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{t.profile.lastName}</label>
                 <input
                   type="text"
                   value={lastName}
                   onChange={e => setLastName(e.target.value)}
                   placeholder="Gutto"
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20"
+                  className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{t.profile.country}</label>
+                <select
+                  value={country}
+                  onChange={e => setCountry(e.target.value)}
+                  className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm bg-[var(--arvo-surface)] focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20"
+                >
+                  {COUNTRY_OPTIONS.map(o => (
+                    <option key={o.value} value={o.value}>
+                      {o.value === '' ? t.countries.select : (t.countries[o.value as keyof typeof t.countries] ?? o.label)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{t.profile.birthdate}</label>
+                <input
+                  type="date"
+                  value={birthdate}
+                  onChange={e => setBirthdate(e.target.value)}
+                  className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs text-gray-500 mb-1">{t.profile.country}</label>
-              <select
-                value={country}
-                onChange={e => setCountry(e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20"
-              >
-                {COUNTRY_OPTIONS.map(o => (
-                  <option key={o.value} value={o.value}>
-                    {o.value === '' ? t.countries.select : (t.countries[o.value as keyof typeof t.countries] ?? o.label)}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs text-gray-500 mb-1">{t.profile.birthdate}</label>
-              <input
-                type="date"
-                value={birthdate}
-                onChange={e => setBirthdate(e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs text-gray-500 mb-1">{t.profile.defaultCurrency}</label>
+              <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{t.profile.defaultCurrency}</label>
               <div className="flex gap-2">
                 {CURRENCIES.map(c => (
                   <button
@@ -678,8 +682,8 @@ export default function ProfilePage() {
                     onClick={() => setCurrency(c)}
                     className={`flex-1 py-2 text-sm font-semibold rounded-lg border transition-colors ${
                       currency === c
-                        ? 'bg-[#0D0D0D] text-white border-[#0D0D0D]'
-                        : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'
+                        ? 'bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] border-[var(--arvo-fg)]'
+                        : 'bg-[var(--arvo-surface)] text-[var(--arvo-fg-muted)] border-[var(--arvo-border)] hover:border-[var(--arvo-fg-faint)]'
                     }`}
                   >
                     {c}
@@ -690,7 +694,7 @@ export default function ProfilePage() {
 
             {/* Aparência (tema claro/escuro) */}
             <div>
-              <label className="block text-xs text-gray-500 mb-1">{t.profile.themeLabel}</label>
+              <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{t.profile.themeLabel}</label>
               <div className="flex gap-2">
                 {THEMES.map(th => (
                   <button
@@ -699,8 +703,8 @@ export default function ProfilePage() {
                     onClick={() => setTheme(th)}
                     className={`flex-1 py-2 text-sm font-semibold rounded-lg border transition-colors ${
                       theme === th
-                        ? 'bg-[#0D0D0D] text-white border-[#0D0D0D]'
-                        : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'
+                        ? 'bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] border-[var(--arvo-fg)]'
+                        : 'bg-[var(--arvo-surface)] text-[var(--arvo-fg-muted)] border-[var(--arvo-border)] hover:border-[var(--arvo-fg-faint)]'
                     }`}
                   >
                     {th === 'auto' ? t.profile.themeAuto : th === 'light' ? t.profile.themeLight : t.profile.themeDark}
@@ -711,8 +715,8 @@ export default function ProfilePage() {
 
             {/* Página inicial */}
             <div>
-              <label className="block text-xs text-gray-500 mb-1">{t.profile.defaultSectionLabel}</label>
-              <p className="text-xs text-gray-400 mb-2">{t.profile.defaultSectionHint}</p>
+              <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{t.profile.defaultSectionLabel}</label>
+              <p className="text-xs text-[var(--arvo-fg-soft)] mb-2">{t.profile.defaultSectionHint}</p>
               <div className="flex gap-2">
                 {(['investments', 'finances'] as const).map(s => (
                   <button
@@ -721,8 +725,8 @@ export default function ProfilePage() {
                     onClick={() => setDefaultSection(s)}
                     className={`flex-1 py-2 text-sm font-semibold rounded-lg border transition-colors ${
                       defaultSection === s
-                        ? 'bg-[#0D0D0D] text-white border-[#0D0D0D]'
-                        : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'
+                        ? 'bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] border-[var(--arvo-fg)]'
+                        : 'bg-[var(--arvo-surface)] text-[var(--arvo-fg-muted)] border-[var(--arvo-border)] hover:border-[var(--arvo-fg-faint)]'
                     }`}
                   >
                     {s === 'investments' ? t.profile.defaultSectionInvestments : t.profile.defaultSectionFinances}
@@ -731,39 +735,41 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            {/* Dia de início do mês financeiro */}
-            <div>
-              <label className="block text-xs text-gray-500 mb-1">{t.profile.monthCycleDayLabel}</label>
-              <p className="text-xs text-gray-400 mb-2">{t.profile.monthCycleDayHint}</p>
-              <input
-                type="number"
-                min={1}
-                max={28}
-                value={monthCycleDay}
-                onChange={e => setMonthCycleDay(Math.min(28, Math.max(1, parseInt(e.target.value) || 1)))}
-                className="w-20 border border-gray-200 rounded-lg px-3 py-2 text-sm text-center focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20"
-              />
-            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Dia de início do mês financeiro */}
+              <div>
+                <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{t.profile.monthCycleDayLabel}</label>
+                <p className="text-xs text-[var(--arvo-fg-soft)] mb-2">{t.profile.monthCycleDayHint}</p>
+                <input
+                  type="number"
+                  min={1}
+                  max={28}
+                  value={monthCycleDay}
+                  onChange={e => setMonthCycleDay(Math.min(28, Math.max(1, parseInt(e.target.value) || 1)))}
+                  className="w-20 border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm text-center focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20"
+                />
+              </div>
 
-            {/* Residência fiscal */}
-            <div>
-              <label className="block text-xs text-gray-500 mb-1">{t.profile.taxCountryLabel}</label>
-              <p className="text-xs text-gray-400 mb-2">{t.profile.taxCountryDesc}</p>
-              <select
-                value={taxCountry}
-                onChange={e => setTaxCountry(e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20"
-              >
-                <option value="BR">Brasil</option>
-                <option value="FR">França</option>
-                <option value="PT">Portugal</option>
-              </select>
+              {/* Residência fiscal */}
+              <div>
+                <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{t.profile.taxCountryLabel}</label>
+                <p className="text-xs text-[var(--arvo-fg-soft)] mb-2">{t.profile.taxCountryDesc}</p>
+                <select
+                  value={taxCountry}
+                  onChange={e => setTaxCountry(e.target.value)}
+                  className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm bg-[var(--arvo-surface)] focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20"
+                >
+                  <option value="BR">Brasil</option>
+                  <option value="FR">França</option>
+                  <option value="PT">Portugal</option>
+                </select>
+              </div>
             </div>
 
             {/* Budget reminder */}
             <div>
-              <label className="block text-xs text-gray-500 mb-1">{t.profile.budgetReminderSection}</label>
-              <p className="text-xs text-gray-400 mb-2">{t.profile.budgetReminderHint}</p>
+              <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{t.profile.budgetReminderSection}</label>
+              <p className="text-xs text-[var(--arvo-fg-soft)] mb-2">{t.profile.budgetReminderHint}</p>
               <div className="flex flex-wrap gap-2">
                 {([
                   { val: 0, label: t.profile.budgetReminderNever },
@@ -778,8 +784,8 @@ export default function ProfilePage() {
                     onClick={() => handleBudgetReminderChange(val)}
                     className={`px-3 py-1.5 text-xs rounded-lg border transition-colors ${
                       budgetReminderFreq === val
-                        ? 'bg-[#0D0D0D] text-white border-[#0D0D0D]'
-                        : 'bg-white text-gray-500 border-gray-200 hover:border-[#0D0D0D] hover:text-[#0D0D0D]'
+                        ? 'bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] border-[var(--arvo-fg)]'
+                        : 'bg-[var(--arvo-surface)] text-[var(--arvo-fg-muted)] border-[var(--arvo-border)] hover:border-[var(--arvo-fg)] hover:text-[var(--arvo-fg)]'
                     }`}
                   >{label}</button>
                 ))}
@@ -792,35 +798,37 @@ export default function ProfilePage() {
             <button
               type="submit"
               disabled={saving}
-              className="w-full bg-[#0D0D0D] text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-[#0D0D0D]/90 disabled:opacity-50 transition-colors"
+              className="w-full bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] rounded-xl py-2.5 text-sm font-semibold hover:bg-[var(--arvo-fg)]/90 disabled:opacity-50 transition-colors"
             >
               {saving ? t.profile.saving : t.profile.save}
             </button>
           </form>
+        </div>
 
+        <div className="flex flex-col gap-6">
           {/* Alterar senha */}
-          <form onSubmit={handleChangePassword} className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm space-y-4">
-            <h2 className="font-semibold text-gray-800">{t.profile.changePassword}</h2>
+          <form onSubmit={handleChangePassword} className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl p-6 shadow-sm space-y-4">
+            <h2 className="font-semibold text-[var(--arvo-fg)]">{t.profile.changePassword}</h2>
 
             <div>
-              <label className="block text-xs text-gray-500 mb-1">{t.profile.newPassword}</label>
+              <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{t.profile.newPassword}</label>
               <input
                 type="password"
                 value={newPassword}
                 onChange={e => setNewPassword(e.target.value)}
                 placeholder={t.profile.passwordMin}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20"
+                className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20"
               />
             </div>
 
             <div>
-              <label className="block text-xs text-gray-500 mb-1">{t.profile.confirmPassword}</label>
+              <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{t.profile.confirmPassword}</label>
               <input
                 type="password"
                 value={confirmPwd}
                 onChange={e => setConfirmPwd(e.target.value)}
                 placeholder={t.profile.repeatPassword}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20"
+                className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20"
               />
             </div>
 
@@ -830,21 +838,21 @@ export default function ProfilePage() {
             <button
               type="submit"
               disabled={savingPwd}
-              className="w-full border border-[#0D0D0D] text-[#0D0D0D] rounded-xl py-2.5 text-sm font-semibold hover:bg-[#0D0D0D]/5 disabled:opacity-50 transition-colors"
+              className="w-full border border-[var(--arvo-fg)] text-[var(--arvo-fg)] rounded-xl py-2.5 text-sm font-semibold hover:bg-[var(--arvo-fg)]/5 disabled:opacity-50 transition-colors"
             >
               {savingPwd ? t.profile.changing : t.profile.changePassword}
             </button>
           </form>
 
           {/* Exportar dados */}
-          <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm space-y-3">
-            <h2 className="font-semibold text-gray-800">{t.profile.exportTitle}</h2>
-            <p className="text-xs text-gray-500">{t.profile.exportDesc}</p>
+          <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl p-6 shadow-sm space-y-3">
+            <h2 className="font-semibold text-[var(--arvo-fg)]">{t.profile.exportTitle}</h2>
+            <p className="text-xs text-[var(--arvo-fg-muted)]">{t.profile.exportDesc}</p>
             <button
               type="button"
               onClick={handleExportData}
               disabled={exporting}
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-[#0D0D0D] border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-[var(--arvo-fg)] border border-[var(--arvo-border)] rounded-lg hover:bg-[var(--arvo-surface-2)] disabled:opacity-50 transition-colors"
             >
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4">
                 <path d="M8.75 2.75a.75.75 0 0 0-1.5 0v5.69L5.03 6.22a.75.75 0 0 0-1.06 1.06l3.5 3.5a.75.75 0 0 0 1.06 0l3.5-3.5a.75.75 0 0 0-1.06-1.06L8.75 8.44V2.75Z" />
@@ -861,39 +869,39 @@ export default function ProfilePage() {
           </div>
 
           {/* Manutenção */}
-          <div className="bg-white border border-amber-100 rounded-2xl p-6 shadow-sm space-y-4">
-            <h2 className="font-semibold text-amber-700">{t.profile.maintenanceTitle}</h2>
-            <p className="text-xs text-gray-500">{t.profile.maintenanceDesc}</p>
+          <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-ocre)]/20 rounded-2xl p-6 shadow-sm space-y-4">
+            <h2 className="font-semibold text-[var(--arvo-ocre)]">{t.profile.maintenanceTitle}</h2>
+            <p className="text-xs text-[var(--arvo-fg-muted)]">{t.profile.maintenanceDesc}</p>
 
             {/* Sync dividendos */}
             <div className="space-y-1">
-              <p className="text-xs font-medium text-gray-700">{t.profile.syncDividendsBtn}</p>
-              <p className="text-xs text-gray-500">{t.profile.syncDividendsDesc}</p>
+              <p className="text-xs font-medium text-[var(--arvo-fg)]">{t.profile.syncDividendsBtn}</p>
+              <p className="text-xs text-[var(--arvo-fg-muted)]">{t.profile.syncDividendsDesc}</p>
               <button
                 type="button"
                 disabled={syncingDivs}
                 onClick={() => syncDividends(true)}
-                className="px-4 py-2 text-sm font-semibold text-amber-700 border border-amber-200 rounded-lg hover:bg-amber-50 disabled:opacity-50 transition-colors"
+                className="px-4 py-2 text-sm font-semibold text-[var(--arvo-ocre)] border border-[var(--arvo-ocre)]/30 rounded-lg hover:bg-[var(--arvo-ocre-tint)] disabled:opacity-50 transition-colors"
               >
                 {syncingDivs ? t.profile.syncing : t.profile.syncDividendsBtn}
               </button>
             </div>
 
-            <div className="border-t border-amber-100 pt-4 space-y-2">
-              <p className="text-xs font-medium text-gray-700">{t.profile.rebuildHistory}</p>
-              <p className="text-xs text-gray-500">{t.profile.rebuildDesc}</p>
+            <div className="border-t border-[var(--arvo-ocre)]/20 pt-4 space-y-2">
+              <p className="text-xs font-medium text-[var(--arvo-fg)]">{t.profile.rebuildHistory}</p>
+              <p className="text-xs text-[var(--arvo-fg-muted)]">{t.profile.rebuildDesc}</p>
               {!showRebuildConfirm ? (
                 <button
                   type="button"
                   disabled={rebuilding}
                   onClick={() => setShowRebuildConfirm(true)}
-                  className="px-4 py-2 text-sm font-semibold text-amber-700 border border-amber-200 rounded-lg hover:bg-amber-50 disabled:opacity-50 transition-colors"
+                  className="px-4 py-2 text-sm font-semibold text-[var(--arvo-ocre)] border border-[var(--arvo-ocre)]/30 rounded-lg hover:bg-[var(--arvo-ocre-tint)] disabled:opacity-50 transition-colors"
                 >
                   {rebuilding ? t.profile.rebuilding : t.profile.rebuildBtn}
                 </button>
               ) : (
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-xs text-amber-700 font-medium">{t.profile.rebuildConfirmText}</span>
+                  <span className="text-xs text-[var(--arvo-ocre)] font-medium">{t.profile.rebuildConfirmText}</span>
                   <button
                     type="button"
                     onClick={() => { rebuildHistory(); setShowRebuildConfirm(false) }}
@@ -904,7 +912,7 @@ export default function ProfilePage() {
                   <button
                     type="button"
                     onClick={() => setShowRebuildConfirm(false)}
-                    className="px-3 py-1.5 text-xs font-semibold text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                    className="px-3 py-1.5 text-xs font-semibold text-[var(--arvo-fg-muted)] border border-[var(--arvo-border)] rounded-lg hover:bg-[var(--arvo-surface-2)] transition-colors"
                   >
                     {t.common.cancel}
                   </button>
@@ -920,19 +928,19 @@ export default function ProfilePage() {
                     onClick={checkSyncStatus}
                     disabled={checkingStatus}
                     className="self-start px-3 py-1.5 text-xs font-medium border rounded-lg transition-colors disabled:opacity-50"
-                    style={{ borderColor: '#d97706', color: '#92400e', background: checkingStatus ? '#fef3c7' : 'white' }}
+                    style={{ borderColor: 'var(--arvo-ocre)', color: 'var(--arvo-ocre)', background: checkingStatus ? 'var(--arvo-ocre-tint)' : 'var(--arvo-surface)' }}
                   >
                     {checkingStatus ? '…' : (t.profile.checkSyncStatus ?? 'Verificar resultado')}
                   </button>
                   {syncStatus && !checkingStatus && (
-                    <div className="rounded-lg p-3 text-xs space-y-1" style={{ background: syncStatus.empty === 0 ? '#f0fdf4' : '#fffbeb', border: `1px solid ${syncStatus.empty === 0 ? '#bbf7d0' : '#fde68a'}` }}>
-                      <p style={{ color: syncStatus.empty === 0 ? '#166534' : '#92400e', fontWeight: 600 }}>
+                    <div className="rounded-lg p-3 text-xs space-y-1" style={{ background: syncStatus.empty === 0 ? 'var(--arvo-green-tint)' : 'var(--arvo-ocre-tint)', border: `1px solid ${syncStatus.empty === 0 ? 'rgba(31,138,91,0.25)' : 'rgba(232,160,32,0.28)'}` }}>
+                      <p style={{ color: syncStatus.empty === 0 ? 'var(--arvo-green)' : 'var(--arvo-ocre)', fontWeight: 600 }}>
                         {syncStatus.empty === 0
                           ? `✓ ${t.profile.syncAllDone ?? 'Todos os ativos com histórico'} (${syncStatus.withHistory}/${syncStatus.total})`
                           : `${syncStatus.withHistory}/${syncStatus.total} ${t.profile.syncDonePartial ?? 'ativos com histórico'}`}
                       </p>
                       {syncStatus.empty > 0 && (
-                        <p style={{ color: '#92400e' }}>
+                        <p style={{ color: 'var(--arvo-ocre)' }}>
                           {t.profile.syncStillEmpty ?? 'Sem dados'}: {syncStatus.emptyAssets.join(', ')}
                         </p>
                       )}
@@ -944,26 +952,28 @@ export default function ProfilePage() {
           </div>
 
           {/* Zona de perigo */}
-          <div className="bg-white border border-red-100 rounded-2xl p-6 shadow-sm space-y-4">
-            <h2 className="font-semibold text-red-700">{t.profile.dangerZone}</h2>
+          <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-red)]/20 rounded-2xl p-6 shadow-sm space-y-4">
+            <h2 className="font-semibold text-[var(--arvo-red)]">{t.profile.dangerZone}</h2>
 
             <div className="space-y-2">
-              <p className="text-xs text-gray-500">{t.profile.deleteDesc}</p>
+              <p className="text-xs text-[var(--arvo-fg-muted)]">{t.profile.deleteDesc}</p>
               <button
                 type="button"
                 onClick={() => { setShowDeleteModal(true); setDeleteConfirm(''); setDeleteError(null) }}
-                className="px-4 py-2 text-sm font-semibold text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors"
+                className="px-4 py-2 text-sm font-semibold text-[var(--arvo-red)] border border-[var(--arvo-red)]/30 rounded-lg hover:bg-[var(--arvo-red-tint)] transition-colors"
               >
                 {t.profile.deleteBtn}
               </button>
             </div>
           </div>
+        </div>
+        </div>
 
           {/* Modal de foto de perfil */}
           {showAvatarModal && (
             <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-              <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
-                <h3 className="text-base font-bold text-gray-900">{t.profile.photoModalTitle}</h3>
+              <div className="bg-[var(--arvo-surface)] rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+                <h3 className="text-base font-bold text-[var(--arvo-fg)]">{t.profile.photoModalTitle}</h3>
 
                 {/* Cropper ou preview estático */}
                 {pendingAvatarUrl && imgNat ? (
@@ -1012,12 +1022,12 @@ export default function ProfilePage() {
                     </div>
 
                     {/* Hint */}
-                    <p className="text-xs text-gray-400 text-center">{t.profile.cropperHint}</p>
+                    <p className="text-xs text-[var(--arvo-fg-soft)] text-center">{t.profile.cropperHint}</p>
                   </div>
                 ) : (
                   /* Sem foto nova: mostra avatar atual */
                   <div className="flex flex-col items-center gap-4">
-                    <div className="w-24 h-24 rounded-full overflow-hidden bg-[#0D0D0D] flex items-center justify-center shrink-0">
+                    <div className="w-24 h-24 rounded-full overflow-hidden bg-[var(--arvo-fg)] flex items-center justify-center shrink-0">
                       {avatarUrl ? (
                         <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
                       ) : (
@@ -1031,7 +1041,7 @@ export default function ProfilePage() {
                 <button
                   type="button"
                   onClick={() => modalFileRef.current?.click()}
-                  className="w-full py-2 text-sm font-semibold border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors"
+                  className="w-full py-2 text-sm font-semibold border border-[var(--arvo-border)] rounded-xl hover:bg-[var(--arvo-surface-2)] transition-colors"
                 >
                   {t.profile.photoModalChoose}
                 </button>
@@ -1052,7 +1062,7 @@ export default function ProfilePage() {
                     type="button"
                     onClick={() => setShowAvatarModal(false)}
                     disabled={savingPhoto}
-                    className="flex-1 py-2.5 text-sm font-semibold border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                    className="flex-1 py-2.5 text-sm font-semibold border border-[var(--arvo-border)] rounded-xl text-[var(--arvo-fg-muted)] hover:bg-[var(--arvo-surface-2)] transition-colors disabled:opacity-50"
                   >
                     {t.common.cancel}
                   </button>
@@ -1060,7 +1070,7 @@ export default function ProfilePage() {
                     type="button"
                     onClick={handleAvatarSave}
                     disabled={savingPhoto || !pendingAvatarUrl}
-                    className="flex-1 py-2.5 text-sm font-semibold bg-[#0D0D0D] text-white rounded-xl hover:bg-[#0D0D0D]/90 disabled:opacity-40 transition-colors"
+                    className="flex-1 py-2.5 text-sm font-semibold bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] rounded-xl hover:bg-[var(--arvo-fg)]/90 disabled:opacity-40 transition-colors"
                   >
                     {savingPhoto ? t.profile.saving : t.profile.photoModalSave}
                   </button>
@@ -1084,34 +1094,34 @@ export default function ProfilePage() {
           {/* Modal de confirmacao de exclusao */}
           {showDeleteModal && (
             <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-              <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
-                <h3 className="text-lg font-bold text-gray-900">{t.profile.deleteModalTitle}</h3>
-                <p className="text-sm text-gray-500">{t.profile.deleteModalDesc}</p>
-                <p className="text-xs font-mono bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-gray-700 select-all">{emailForDisplay}</p>
+              <div className="bg-[var(--arvo-surface)] rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+                <h3 className="text-lg font-bold text-[var(--arvo-fg)]">{t.profile.deleteModalTitle}</h3>
+                <p className="text-sm text-[var(--arvo-fg-muted)]">{t.profile.deleteModalDesc}</p>
+                <p className="text-xs font-mono bg-[var(--arvo-surface-2)] border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-[var(--arvo-fg)] select-all">{emailForDisplay}</p>
 
                 <input
                   type="email"
                   value={deleteConfirm}
                   onChange={e => setDeleteConfirm(e.target.value)}
                   placeholder={t.profile.deleteEmailPlaceholder}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-300"
+                  className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-300"
                   autoFocus
                 />
 
-                <div className="bg-amber-50 border border-amber-100 rounded-xl px-4 py-3 flex items-start gap-3">
+                <div className="bg-[var(--arvo-ocre-tint)] border border-[var(--arvo-ocre)]/20 rounded-xl px-4 py-3 flex items-start gap-3">
                   <div className="shrink-0 mt-0.5">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4 text-amber-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4 text-[var(--arvo-ocre)]">
                       <path d="M8.75 2.75a.75.75 0 0 0-1.5 0v5.69L5.03 6.22a.75.75 0 0 0-1.06 1.06l3.5 3.5a.75.75 0 0 0 1.06 0l3.5-3.5a.75.75 0 0 0-1.06-1.06L8.75 8.44V2.75Z" />
                       <path d="M3.5 9.75a.75.75 0 0 0-1.5 0v1.5A2.75 2.75 0 0 0 4.75 14h6.5A2.75 2.75 0 0 0 14 11.25v-1.5a.75.75 0 0 0-1.5 0v1.5c0 .69-.56 1.25-1.25 1.25h-6.5c-.69 0-1.25-.56-1.25-1.25v-1.5Z" />
                     </svg>
                   </div>
                   <div className="min-w-0">
-                    <p className="text-xs text-amber-800">{t.profile.exportModalHint}</p>
+                    <p className="text-xs text-[var(--arvo-ocre)]">{t.profile.exportModalHint}</p>
                     <button
                       type="button"
                       onClick={handleExportData}
                       disabled={exporting}
-                      className="mt-1 text-xs font-semibold text-amber-700 hover:text-amber-900 underline underline-offset-2 disabled:opacity-50"
+                      className="mt-1 text-xs font-semibold text-[var(--arvo-ocre)] hover:opacity-80 underline underline-offset-2 disabled:opacity-50"
                     >
                       {exporting ? t.profile.exporting : t.profile.exportBtn}
                     </button>
@@ -1124,7 +1134,7 @@ export default function ProfilePage() {
                     type="button"
                     onClick={() => { setShowDeleteModal(false); setDeleteConfirm('') }}
                     disabled={deleting}
-                    className="flex-1 py-2.5 text-sm font-semibold border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-50 transition-colors"
+                    className="flex-1 py-2.5 text-sm font-semibold border border-[var(--arvo-border)] rounded-xl text-[var(--arvo-fg-muted)] hover:bg-[var(--arvo-surface-2)] transition-colors"
                   >
                     {t.common.cancel}
                   </button>
@@ -1142,11 +1152,11 @@ export default function ProfilePage() {
           )}
 
           {/* Termos */}
-          <div className="bg-gray-50 border border-gray-100 rounded-2xl p-5 text-xs text-gray-400 space-y-1">
-            <p className="font-semibold text-gray-500">{t.profile.terms}</p>
+          <div className="bg-[var(--arvo-surface-2)] border border-[var(--arvo-border)] rounded-2xl p-5 text-xs text-[var(--arvo-fg-soft)] space-y-1">
+            <p className="font-semibold text-[var(--arvo-fg-muted)]">{t.profile.terms}</p>
             <p>{t.profile.termsBody}</p>
             <p>{t.profile.termsDisclaimer}</p>
-            <p className="text-gray-300 pt-1">arvo · v1.1</p>
+            <p className="text-[var(--arvo-fg-faint)] pt-1">arvo · v1.1</p>
           </div>
         </>
       )}

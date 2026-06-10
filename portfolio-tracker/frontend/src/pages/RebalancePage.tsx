@@ -66,24 +66,24 @@ export default function RebalancePage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-gray-900">{r.title}</h1>
-          <p className="text-sm text-gray-400 mt-0.5">{r.subtitle}</p>
+          <h1 className="text-xl font-bold text-[var(--arvo-fg)]">{r.title}</h1>
+          <p className="text-sm text-[var(--arvo-fg-soft)] mt-0.5">{r.subtitle}</p>
         </div>
         <div className="flex items-center gap-3">
           {saveOk && <span className="text-xs text-green-600">{r.saved}</span>}
           <button
             onClick={handleSave}
             disabled={saving}
-            className="px-4 py-2 bg-[#0D0D0D] text-white rounded-xl text-sm font-semibold hover:bg-[#0D0D0D]/90 disabled:opacity-50 transition-colors"
+            className="px-4 py-2 bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] rounded-xl text-sm font-semibold hover:bg-[var(--arvo-fg)]/90 disabled:opacity-50 transition-colors"
           >
             {saving ? r.saving : r.saveTargets}
           </button>
         </div>
       </div>
 
-      <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
-        <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-          <h2 className="font-semibold text-gray-800">{r.allocationByClass}</h2>
+      <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl overflow-hidden shadow-sm">
+        <div className="px-5 py-4 border-b border-[var(--arvo-border)] flex items-center justify-between">
+          <h2 className="font-semibold text-[var(--arvo-fg)]">{r.allocationByClass}</h2>
           {totalTarget > 0 && (
             <span className={`text-xs font-medium ${targetSumOk ? 'text-green-600' : 'text-amber-600'}`}>
               {r.totalTarget.replace('{pct}', totalTarget.toFixed(1))}{!targetSumOk && ` ${r.mustSum100}`}
@@ -91,7 +91,7 @@ export default function RebalancePage() {
           )}
         </div>
 
-        <div className="divide-y divide-gray-50">
+        <div className="divide-y divide-[var(--arvo-border-soft)]">
           {classes.map(cls => {
             const target = parseFloat(targets[cls.name] ?? '') || null
             const diff   = target != null ? cls.pct - target : null
@@ -99,15 +99,15 @@ export default function RebalancePage() {
               <div key={cls.name} className="px-5 py-4">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: cls.color }} />
-                  <span className="font-medium text-gray-800 flex-1">{resolveClassName(cls.name, cls.name_key)}</span>
-                  <span className="text-sm text-gray-500">{fmt(cls.value_brl)}</span>
+                  <span className="font-medium text-[var(--arvo-fg)] flex-1">{resolveClassName(cls.name, cls.name_key)}</span>
+                  <span className="text-sm text-[var(--arvo-fg-muted)]">{fmt(cls.value_brl)}</span>
                 </div>
 
                 <div className="flex items-center gap-4">
                   <div className="flex-1">
                     <div className="flex items-center justify-between text-xs mb-1.5">
-                      <span className="text-gray-400">
-                        {r.current} <span className="font-semibold text-gray-700">{cls.pct.toFixed(1)}%</span>
+                      <span className="text-[var(--arvo-fg-soft)]">
+                        {r.current} <span className="font-semibold text-[var(--arvo-fg)]">{cls.pct.toFixed(1)}%</span>
                       </span>
                       {diff != null && (
                         <span className={
@@ -119,14 +119,14 @@ export default function RebalancePage() {
                         </span>
                       )}
                     </div>
-                    <div className="h-2 bg-gray-100 rounded-full overflow-hidden relative">
+                    <div className="h-2 bg-[var(--arvo-track-bg)] rounded-full overflow-hidden relative">
                       <div
                         className="h-full rounded-full transition-all"
                         style={{ width: `${Math.min(cls.pct, 100)}%`, backgroundColor: cls.color }}
                       />
                       {target != null && (
                         <div
-                          className="absolute top-0 h-full w-0.5 bg-gray-600 opacity-50"
+                          className="absolute top-0 h-full w-0.5 bg-[var(--arvo-fg-muted)] opacity-50"
                           style={{ left: `${Math.min(target, 100)}%` }}
                         />
                       )}
@@ -142,9 +142,9 @@ export default function RebalancePage() {
                       value={targets[cls.name] ?? ''}
                       onChange={e => setTargets(prev => ({ ...prev, [cls.name]: e.target.value }))}
                       placeholder="—"
-                      className="w-16 border border-gray-200 rounded-lg px-2 py-1.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20"
+                      className="w-16 border border-[var(--arvo-border)] rounded-lg px-2 py-1.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20"
                     />
-                    <span className="text-xs text-gray-400">%</span>
+                    <span className="text-xs text-[var(--arvo-fg-soft)]">%</span>
                   </div>
                 </div>
               </div>
@@ -158,11 +158,11 @@ export default function RebalancePage() {
         const t = parseFloat(targets[c.name] ?? '') || null
         return t != null && Math.abs(c.pct - t) >= 1
       }) && (
-        <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
-          <div className="px-5 py-4 border-b border-gray-100">
-            <h2 className="font-semibold text-gray-800">{r.suggestedActions}</h2>
+        <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl overflow-hidden shadow-sm">
+          <div className="px-5 py-4 border-b border-[var(--arvo-border)]">
+            <h2 className="font-semibold text-[var(--arvo-fg)]">{r.suggestedActions}</h2>
           </div>
-          <div className="divide-y divide-gray-50">
+          <div className="divide-y divide-[var(--arvo-border-soft)]">
             {classes.map(cls => {
               const target = parseFloat(targets[cls.name] ?? '') || null
               if (target == null) return null
@@ -172,11 +172,11 @@ export default function RebalancePage() {
               return (
                 <div key={cls.name} className="px-5 py-3 flex items-center gap-3">
                   <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: cls.color }} />
-                  <span className="text-sm text-gray-700 flex-1">{resolveClassName(cls.name, cls.name_key)}</span>
+                  <span className="text-sm text-[var(--arvo-fg)] flex-1">{resolveClassName(cls.name, cls.name_key)}</span>
                   <span className={`text-sm font-semibold ${diff > 0 ? 'text-red-600' : 'text-green-600'}`}>
                     {diff > 0 ? r.reduce : r.increase} {fmt(diffBrl)}
                   </span>
-                  <span className="text-xs text-gray-400">({Math.abs(diff).toFixed(1)}%)</span>
+                  <span className="text-xs text-[var(--arvo-fg-soft)]">({Math.abs(diff).toFixed(1)}%)</span>
                 </div>
               )
             })}

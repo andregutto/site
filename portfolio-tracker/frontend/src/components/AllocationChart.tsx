@@ -57,7 +57,7 @@ export default function AllocationChart({ data, currency = 'BRL', convert }: Pro
   }
 
   return (
-    <div className="rounded-2xl p-6" style={{ background: 'white', border: '1px solid var(--arvo-border)' }}>
+    <div className="rounded-2xl p-6" style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)' }}>
       <h2 className="mb-1" style={{ fontFamily: "var(--arvo-font-body)", fontSize: 13, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--arvo-fg)' }}>{t.dashboard.allocationByClass}</h2>
       <p className="mb-4" style={{ fontFamily: "'Playfair Display', serif", fontStyle: 'italic', fontSize: 13, color: 'var(--arvo-fg-soft)' }}>{t.dashboard.allocationSubtitle}</p>
       <div style={{ width: '100%', height: 220 }}>
@@ -83,10 +83,10 @@ export default function AllocationChart({ data, currency = 'BRL', convert }: Pro
                   const { cx, cy } = viewBox
                   return (
                     <g>
-                      <text x={cx} y={cy - 7} textAnchor="middle" fill="rgba(13,13,13,0.45)" fontSize={9} fontFamily="var(--arvo-font-body)" letterSpacing="0.12em">
+                      <text x={cx} y={cy - 7} textAnchor="middle" fill="var(--arvo-fg-soft)" fontSize={9} fontFamily="var(--arvo-font-body)" letterSpacing="0.12em">
                         {t.common.total.toUpperCase()}
                       </text>
-                      <text x={cx} y={cy + 9} textAnchor="middle" fill="var(--arvo-black)" fontSize={13} fontFamily="var(--arvo-font-body)" fontWeight={600}>
+                      <text x={cx} y={cy + 9} textAnchor="middle" fill="var(--arvo-fg)" fontSize={13} fontFamily="var(--arvo-font-body)" fontWeight={600}>
                         {totalFormatted}
                       </text>
                     </g>
@@ -101,7 +101,7 @@ export default function AllocationChart({ data, currency = 'BRL', convert }: Pro
                 const converted = convert ? convert(raw) : raw
                 return [new Intl.NumberFormat('pt-BR', { style: 'currency', currency, maximumFractionDigits: 0 }).format(converted), t.common.value]
               }}
-              contentStyle={{ borderRadius: 8, border: '1px solid var(--arvo-border-soft)', background: 'var(--arvo-offwhite)', fontSize: 12, fontFamily: "var(--arvo-font-body)" }}
+              contentStyle={{ borderRadius: 8, border: '1px solid var(--arvo-border)', background: 'var(--arvo-surface)', color: 'var(--arvo-fg)', fontSize: 12, fontFamily: "var(--arvo-font-body)" }}
             />
           </PieChart>
         </ResponsiveContainer>

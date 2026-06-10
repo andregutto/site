@@ -84,14 +84,14 @@ export default function InstitutionSelect({ value, onChange, placeholder = 'Banc
   }
 
   function SectionHeader({ label }: { label: string }) {
-    return <div className="px-3 py-1.5 text-xs font-semibold text-gray-400 uppercase tracking-wider bg-gray-50">{label}</div>
+    return <div className="px-3 py-1.5 text-xs font-semibold text-[var(--arvo-fg-soft)] uppercase tracking-wider bg-[var(--arvo-surface-2)]">{label}</div>
   }
 
   function Item({ name }: { name: string }) {
     return (
       <button
         type="button"
-        className="w-full text-left px-3 py-2 text-sm hover:bg-blue-50 hover:text-[#0D0D0D] transition-colors"
+        className="w-full text-left px-3 py-2 text-sm hover:bg-blue-50 hover:text-[var(--arvo-fg)] transition-colors"
         onPointerDown={() => select(name)}
       >
         {name}
@@ -113,7 +113,7 @@ export default function InstitutionSelect({ value, onChange, placeholder = 'Banc
           if (e.key === 'Enter' && query) { onChange(query); setOpen(false) }
           if (e.key === 'Escape') setOpen(false)
         }}
-        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20"
+        className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20"
       />
 
       {/* Dropdown com position:fixed para escapar de qualquer overflow:hidden */}
@@ -126,7 +126,7 @@ export default function InstitutionSelect({ value, onChange, placeholder = 'Banc
             width: dropPos.width,
             zIndex: 9999,
           }}
-          className="bg-white border border-gray-200 rounded-xl shadow-lg max-h-56 overflow-y-auto"
+          className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-xl shadow-lg max-h-56 overflow-y-auto"
         >
           {brFiltered.length > 0 && (
             <>
@@ -149,14 +149,14 @@ export default function InstitutionSelect({ value, onChange, placeholder = 'Banc
           {showAdd && (
             <button
               type="button"
-              className="w-full text-left px-3 py-2 text-sm text-[#0D0D0D] font-medium hover:bg-blue-50 border-t border-gray-100 transition-colors"
+              className="w-full text-left px-3 py-2 text-sm text-[var(--arvo-fg)] font-medium hover:bg-blue-50 border-t border-[var(--arvo-border)] transition-colors"
               onPointerDown={() => select(query)}
             >
               Adicionar "{query}"
             </button>
           )}
           {totalResults === 0 && !showAdd && (
-            <p className="px-3 py-3 text-xs text-gray-400">Nenhuma instituição encontrada.</p>
+            <p className="px-3 py-3 text-xs text-[var(--arvo-fg-soft)]">Nenhuma instituição encontrada.</p>
           )}
         </div>
       )}

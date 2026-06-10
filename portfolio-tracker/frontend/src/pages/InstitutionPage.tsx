@@ -60,20 +60,20 @@ function AddAccountModal({ prefillInstitution, onSave, onClose, saving }: AddAcc
   const [color,    setColor]    = useState('#0D0D0D')
   const [icon,     setIcon]     = useState('🏦')
 
-  const fieldCls = 'w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20'
-  const labelCls = 'text-xs font-medium text-gray-500 mb-1 block'
+  const fieldCls = 'w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20'
+  const labelCls = 'text-xs font-medium text-[var(--arvo-fg-muted)] mb-1 block'
 
   return (
     <div className="fixed inset-0 z-50 bg-black/40 flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={onClose}>
-      <div className="bg-white w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl shadow-xl p-6 space-y-4" onClick={e => e.stopPropagation()}>
+      <div className="bg-[var(--arvo-surface)] w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl shadow-xl p-6 space-y-4" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between">
-          <h3 className="font-semibold text-gray-900">{f.addAccount}</h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+          <h3 className="font-semibold text-[var(--arvo-fg)]">{f.addAccount}</h3>
+          <button onClick={onClose} className="text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg-muted)]">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </div>
 
-        <p className="text-xs text-gray-400 bg-gray-50 rounded-lg px-3 py-2">
+        <p className="text-xs text-[var(--arvo-fg-soft)] bg-[var(--arvo-surface-2)] rounded-lg px-3 py-2">
           {f.institutionsAutoAssetNote}
         </p>
 
@@ -99,7 +99,7 @@ function AddAccountModal({ prefillInstitution, onSave, onClose, saving }: AddAcc
             <div className="flex flex-wrap gap-1.5">
               {ACCOUNT_ICONS.map(ic => (
                 <button key={ic} type="button" onClick={() => setIcon(ic)}
-                  className={`w-9 h-9 rounded-lg text-lg flex items-center justify-center transition-colors ${icon === ic ? 'ring-2 ring-[#0D0D0D] bg-[#0D0D0D]/10' : 'bg-gray-50 hover:bg-gray-100'}`}
+                  className={`w-9 h-9 rounded-lg text-lg flex items-center justify-center transition-colors ${icon === ic ? 'ring-2 ring-[var(--arvo-fg)] bg-[var(--arvo-fg)]/10' : 'bg-[var(--arvo-surface-2)] hover:bg-[var(--arvo-track-bg)]'}`}
                 >{ic}</button>
               ))}
             </div>
@@ -109,17 +109,17 @@ function AddAccountModal({ prefillInstitution, onSave, onClose, saving }: AddAcc
             <div className="flex gap-2 flex-wrap">
               {ACCOUNT_COLORS.map(c => (
                 <button key={c} type="button" onClick={() => setColor(c)}
-                  className={`w-7 h-7 rounded-full transition-transform ${color === c ? 'ring-2 ring-offset-2 ring-gray-400 scale-110' : 'hover:scale-105'}`}
+                  className={`w-7 h-7 rounded-full transition-transform ${color === c ? 'ring-2 ring-offset-2 ring-[var(--arvo-fg-faint)] scale-110' : 'hover:scale-105'}`}
                   style={{ backgroundColor: c }}
                 />
               ))}
             </div>
           </div>
           <div className="flex gap-2 pt-1">
-            <button type="submit" disabled={saving} className="flex-1 bg-[#0D0D0D] text-white text-sm py-2.5 rounded-xl hover:opacity-80 disabled:opacity-40">
+            <button type="submit" disabled={saving} className="flex-1 bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] text-sm py-2.5 rounded-xl hover:opacity-80 disabled:opacity-40">
               {saving ? '…' : f.institutionsCreateAccount}
             </button>
-            <button type="button" onClick={onClose} className="px-4 text-sm text-gray-500 hover:text-gray-700">{t.common.cancel}</button>
+            <button type="button" onClick={onClose} className="px-4 text-sm text-[var(--arvo-fg-muted)] hover:text-[var(--arvo-fg)]">{t.common.cancel}</button>
           </div>
         </form>
       </div>
@@ -306,27 +306,27 @@ export default function InstitutionPage() {
     <div className="space-y-6">
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-xl font-semibold text-gray-900">{t.nav.institutions}</h1>
-          <p className="text-sm text-gray-400 mt-0.5">{f.institutionsSubtitle}</p>
+          <h1 className="text-xl font-semibold text-[var(--arvo-fg)]">{t.nav.institutions}</h1>
+          <p className="text-sm text-[var(--arvo-fg-soft)] mt-0.5">{f.institutionsSubtitle}</p>
         </div>
         <div className="flex items-center gap-2">
           <Link
             to="/institutions/profiles"
-            className="px-3 py-1.5 text-xs border border-gray-200 rounded-lg text-gray-500 hover:text-[#0D0D0D] hover:border-[#0D0D0D]/30 transition-colors"
+            className="px-3 py-1.5 text-xs border border-[var(--arvo-border)] rounded-lg text-[var(--arvo-fg-muted)] hover:text-[var(--arvo-fg)] hover:border-[var(--arvo-fg)]/30 transition-colors"
           >{f.institutionsLegalProfiles}</Link>
           <button
             onClick={() => setAddModal({})}
-            className="px-3 py-1.5 bg-[#0D0D0D] text-white text-sm rounded-lg hover:opacity-80 transition-opacity"
+            className="px-3 py-1.5 bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] text-sm rounded-lg hover:opacity-80 transition-opacity"
           >+ {f.addAccount}</button>
         </div>
       </div>
 
       {groups.length === 0 ? (
-        <div className="bg-white border border-gray-100 rounded-2xl p-12 text-center text-gray-400 shadow-sm">
+        <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl p-12 text-center text-[var(--arvo-fg-soft)] shadow-sm">
           <p className="text-4xl mb-4">🏦</p>
-          <p className="text-gray-700 font-medium mb-1">{f.institutionsNone}</p>
-          <p className="text-sm text-gray-400 mb-5">{f.institutionsNoneBody}</p>
-          <button onClick={() => setAddModal({})} className="px-5 py-2 bg-[#0D0D0D] text-white text-sm rounded-xl hover:opacity-80">
+          <p className="text-[var(--arvo-fg)] font-medium mb-1">{f.institutionsNone}</p>
+          <p className="text-sm text-[var(--arvo-fg-soft)] mb-5">{f.institutionsNoneBody}</p>
+          <button onClick={() => setAddModal({})} className="px-5 py-2 bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] text-sm rounded-xl hover:opacity-80">
             + {f.addAccount}
           </button>
         </div>
@@ -339,19 +339,19 @@ export default function InstitutionPage() {
           const nc = group.accounts.length
 
           return (
-            <div key={group.name} className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
+            <div key={group.name} className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl overflow-hidden shadow-sm">
               <button
                 onClick={() => toggle(group.name)}
-                className="w-full px-5 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors text-left"
+                className="w-full px-5 py-4 flex items-center justify-between hover:bg-[var(--arvo-surface-2)] transition-colors text-left"
               >
                 <div className="flex items-center gap-3 min-w-0">
                   {group.name !== NO_INST && <InstitutionLogo name={group.name} size={36} />}
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <h2 className="font-semibold text-gray-800">{groupLabel(group.name)}</h2>
-                      <span className="text-gray-300 text-xs">{isOpen ? '▲' : '▼'}</span>
+                      <h2 className="font-semibold text-[var(--arvo-fg)]">{groupLabel(group.name)}</h2>
+                      <span className="text-[var(--arvo-fg-faint)] text-xs">{isOpen ? '▲' : '▼'}</span>
                     </div>
-                    <p className="text-xs text-gray-400 mt-0.5">
+                    <p className="text-xs text-[var(--arvo-fg-soft)] mt-0.5">
                       {hasPortfolio && `${na} ${na !== 1 ? f.institutionsAssets : f.institutionsAsset}`}
                       {hasPortfolio && hasAccount && ' · '}
                       {hasAccount && `${nc} ${nc !== 1 ? f.institutionsAccountPlural : f.institutionsAccountSingular}`}
@@ -360,26 +360,26 @@ export default function InstitutionPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-3 shrink-0 ml-4">
-                  {group.total > 0 && <p className="font-bold text-gray-900">{fmt(group.total)}</p>}
+                  {group.total > 0 && <p className="font-bold text-[var(--arvo-fg)]">{fmt(group.total)}</p>}
                 </div>
               </button>
 
               {isOpen && (
-                <div className="border-t border-gray-100">
+                <div className="border-t border-[var(--arvo-border)]">
 
                   {group.assets.length > 0 && (
-                    <div className="divide-y divide-gray-50">
+                    <div className="divide-y divide-[var(--arvo-border-soft)]">
                       {group.assets.map(asset => (
                         <div key={asset.id} className="px-5 py-3 flex items-center gap-3">
                           {editingId === asset.id ? (
                             <>
                               <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: asset.class_color }} />
-                              <span className="text-sm font-medium text-gray-800 shrink-0 w-16">{asset.code}</span>
+                              <span className="text-sm font-medium text-[var(--arvo-fg)] shrink-0 w-16">{asset.code}</span>
                               <div className="flex-1">
                                 <InstitutionSelect value={editingValue} onChange={setEditingValue} placeholder={f.accountInstitution} autoFocus />
                               </div>
-                              <button onClick={() => handleMoveAsset(asset.id)} disabled={moveSaving} className="text-xs text-[#0D0D0D] font-semibold disabled:opacity-50 shrink-0">OK</button>
-                              <button onClick={() => setEditingId(null)} className="text-xs text-gray-400 shrink-0">✕</button>
+                              <button onClick={() => handleMoveAsset(asset.id)} disabled={moveSaving} className="text-xs text-[var(--arvo-fg)] font-semibold disabled:opacity-50 shrink-0">OK</button>
+                              <button onClick={() => setEditingId(null)} className="text-xs text-[var(--arvo-fg-soft)] shrink-0">✕</button>
                             </>
                           ) : (
                             <>
@@ -389,19 +389,19 @@ export default function InstitutionPage() {
                               >
                                 <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: asset.class_color }} />
                                 <div className="flex-1 min-w-0">
-                                  <p className="text-sm font-medium text-gray-800">{asset.code}</p>
-                                  <p className="text-xs text-gray-400 truncate">{asset.name}</p>
+                                  <p className="text-sm font-medium text-[var(--arvo-fg)]">{asset.code}</p>
+                                  <p className="text-xs text-[var(--arvo-fg-soft)] truncate">{asset.name}</p>
                                 </div>
                                 <div className="text-right shrink-0">
-                                  <p className="text-sm font-semibold text-gray-900">{fmt(asset.value_brl)}</p>
-                                  <p className="text-xs text-gray-400">
+                                  <p className="text-sm font-semibold text-[var(--arvo-fg)]">{fmt(asset.value_brl)}</p>
+                                  <p className="text-xs text-[var(--arvo-fg-soft)]">
                                     {portfolio.total_brl > 0 ? ((asset.value_brl / portfolio.total_brl) * 100).toFixed(1) : '0'}%
                                   </p>
                                 </div>
                               </button>
                               <button
                                 onClick={() => { setEditingId(asset.id); setEditingValue(asset.exchange ?? '') }}
-                                className="text-xs text-gray-400 hover:text-[#0D0D0D] border border-gray-200 hover:border-[#0D0D0D] rounded-lg px-2.5 py-1 transition-colors shrink-0"
+                                className="text-xs text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg)] border border-[var(--arvo-border)] hover:border-[var(--arvo-fg)] rounded-lg px-2.5 py-1 transition-colors shrink-0"
                               >{f.institutionsMoveAsset}</button>
                             </>
                           )}
@@ -411,15 +411,15 @@ export default function InstitutionPage() {
                   )}
 
                   {group.accounts.map(acc => (
-                    <div key={acc.id} className="border-t border-gray-100 bg-blue-50/30">
+                    <div key={acc.id} className="border-t border-[var(--arvo-border)] bg-blue-50/30">
                       <div className="px-5 py-3 flex items-center gap-3">
                         <div className="w-9 h-9 rounded-xl flex items-center justify-center text-xl shrink-0" style={{ backgroundColor: acc.color + '25' }}>
                           {acc.icon}
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
-                            <p className="text-sm font-medium text-gray-800">{acc.name}</p>
-                            <span className="text-xs px-1.5 py-0.5 rounded-md bg-gray-100 text-gray-500">{acc.currency}</span>
+                            <p className="text-sm font-medium text-[var(--arvo-fg)]">{acc.name}</p>
+                            <span className="text-xs px-1.5 py-0.5 rounded-md bg-[var(--arvo-track-bg)] text-[var(--arvo-fg-muted)]">{acc.currency}</span>
                             {acc.linked_asset_id && (
                               <span className="text-xs text-emerald-600 flex items-center gap-0.5">
                                 <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
@@ -427,7 +427,7 @@ export default function InstitutionPage() {
                               </span>
                             )}
                           </div>
-                          <p className={`text-lg font-bold ${acc.balance < 0 ? 'text-red-600' : 'text-gray-900'}`}>
+                          <p className={`text-lg font-bold ${acc.balance < 0 ? 'text-red-600' : 'text-[var(--arvo-fg)]'}`}>
                             {fmtBalance(acc.balance, acc.currency)}
                           </p>
                         </div>
@@ -441,30 +441,30 @@ export default function InstitutionPage() {
                               >
                                 {syncingPortfolio === acc.id ? '…' : syncOkId === acc.id ? f.institutionsSynced : f.syncNow}
                               </button>
-                              <button onClick={() => unlinkAccount(acc.id)} className="px-2.5 py-1 text-xs border border-gray-200 rounded-lg text-gray-400 hover:text-red-500 hover:border-red-100 transition-colors">
+                              <button onClick={() => unlinkAccount(acc.id)} className="px-2.5 py-1 text-xs border border-[var(--arvo-border)] rounded-lg text-[var(--arvo-fg-soft)] hover:text-red-500 hover:border-red-100 transition-colors">
                                 {f.institutionsUnlink}
                               </button>
                             </>
                           ) : (
                             <button
                               onClick={() => setLinkModal(acc.id)}
-                              className="px-2.5 py-1 text-xs border border-gray-200 rounded-lg text-gray-500 hover:text-[#0D0D0D] hover:border-[#0D0D0D]/30 transition-colors"
+                              className="px-2.5 py-1 text-xs border border-[var(--arvo-border)] rounded-lg text-[var(--arvo-fg-muted)] hover:text-[var(--arvo-fg)] hover:border-[var(--arvo-fg)]/30 transition-colors"
                             >{f.institutionsNotLinked} →</button>
                           )}
-                          <button onClick={() => deleteAccount(acc.id)} className="p-1.5 text-gray-300 hover:text-red-500 transition-colors">
+                          <button onClick={() => deleteAccount(acc.id)} className="p-1.5 text-[var(--arvo-fg-faint)] hover:text-red-500 transition-colors">
                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                           </button>
                         </div>
                       </div>
 
-                      <div className="px-5 py-2 flex items-center gap-3 bg-gray-50/60 border-t border-gray-100/60">
+                      <div className="px-5 py-2 flex items-center gap-3 bg-[var(--arvo-surface-2)]/60 border-t border-[var(--arvo-border)]/60">
                         {acc.bank_connection ? (
                           <>
-                            <span className="text-xs text-gray-400 flex-1">
+                            <span className="text-xs text-[var(--arvo-fg-soft)] flex-1">
                               🔗 {acc.bank_connection.display_name ?? f.institutionsBankConnected} · {f.lastSync}: {relativeTime(acc.bank_connection.last_synced_at, f.neverSynced)}
                             </span>
                             <button onClick={() => syncBank(acc.bank_connection!.id, acc.id)} disabled={syncingBank === acc.id}
-                              className="px-2.5 py-1 text-xs border border-gray-200 rounded-lg text-gray-600 hover:bg-white transition-colors disabled:opacity-50">
+                              className="px-2.5 py-1 text-xs border border-[var(--arvo-border)] rounded-lg text-[var(--arvo-fg-muted)] hover:bg-[var(--arvo-surface)] transition-colors disabled:opacity-50">
                               {syncingBank === acc.id ? '…' : f.syncNow}
                             </button>
                             <button onClick={() => disconnectBank(acc.bank_connection!.id)}
@@ -474,9 +474,9 @@ export default function InstitutionPage() {
                           </>
                         ) : (
                           <>
-                            <span className="text-xs text-gray-400 flex-1">{f.institutionsNoBank}</span>
+                            <span className="text-xs text-[var(--arvo-fg-soft)] flex-1">{f.institutionsNoBank}</span>
                             <button onClick={connectBank} disabled={connecting}
-                              className="px-2.5 py-1 text-xs border border-[#0D0D0D]/20 rounded-lg text-[#0D0D0D] hover:bg-[#0D0D0D]/5 transition-colors disabled:opacity-50">
+                              className="px-2.5 py-1 text-xs border border-[var(--arvo-fg)]/20 rounded-lg text-[var(--arvo-fg)] hover:bg-[var(--arvo-fg)]/5 transition-colors disabled:opacity-50">
                               {connecting ? '…' : f.connectBank}
                             </button>
                           </>
@@ -486,11 +486,11 @@ export default function InstitutionPage() {
                   ))}
 
                   {group.name !== NO_INST && group.accounts.length === 0 && (
-                    <div className="border-t border-gray-100 px-5 py-3 flex items-center justify-between bg-gray-50/40">
-                      <span className="text-xs text-gray-400">{f.institutionsNoFinanceAccount}</span>
+                    <div className="border-t border-[var(--arvo-border)] px-5 py-3 flex items-center justify-between bg-[var(--arvo-surface-2)]/40">
+                      <span className="text-xs text-[var(--arvo-fg-soft)]">{f.institutionsNoFinanceAccount}</span>
                       <button
                         onClick={() => setAddModal({ institution: group.name })}
-                        className="px-2.5 py-1 text-xs border border-[#0D0D0D]/20 rounded-lg text-[#0D0D0D] hover:bg-[#0D0D0D]/5 transition-colors"
+                        className="px-2.5 py-1 text-xs border border-[var(--arvo-fg)]/20 rounded-lg text-[var(--arvo-fg)] hover:bg-[var(--arvo-fg)]/5 transition-colors"
                       >+ {f.addAccount}</button>
                     </div>
                   )}
@@ -512,31 +512,31 @@ export default function InstitutionPage() {
 
       {linkModal !== null && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={() => setLinkModal(null)}>
-          <div className="bg-white w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl shadow-xl p-6 space-y-4" onClick={e => e.stopPropagation()}>
+          <div className="bg-[var(--arvo-surface)] w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl shadow-xl p-6 space-y-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
-              <h3 className="font-semibold text-gray-900">{f.institutionsLinked}</h3>
-              <button onClick={() => setLinkModal(null)} className="text-gray-400 hover:text-gray-600">
+              <h3 className="font-semibold text-[var(--arvo-fg)]">{f.institutionsLinked}</h3>
+              <button onClick={() => setLinkModal(null)} className="text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg-muted)]">
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
             </div>
-            <p className="text-xs text-gray-400">{f.institutionsAutoAssetNote}</p>
+            <p className="text-xs text-[var(--arvo-fg-soft)]">{f.institutionsAutoAssetNote}</p>
             <div className="space-y-1.5 max-h-64 overflow-y-auto">
               {portfolio.by_asset.length === 0 ? (
-                <p className="text-sm text-gray-400 text-center py-4">{f.institutionsNone}</p>
+                <p className="text-sm text-[var(--arvo-fg-soft)] text-center py-4">{f.institutionsNone}</p>
               ) : (
                 portfolio.by_asset.map(asset => (
                   <button
                     key={asset.id}
                     onClick={() => linkToAsset(linkModal, asset.id)}
                     disabled={linkSaving}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-blue-50 hover:border-[#0D0D0D]/20 border border-gray-100 text-left transition-colors disabled:opacity-50"
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-blue-50 hover:border-[var(--arvo-fg)]/20 border border-[var(--arvo-border)] text-left transition-colors disabled:opacity-50"
                   >
                     <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: asset.class_color }} />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-800">{asset.code}</p>
-                      <p className="text-xs text-gray-400 truncate">{asset.name}</p>
+                      <p className="text-sm font-medium text-[var(--arvo-fg)]">{asset.code}</p>
+                      <p className="text-xs text-[var(--arvo-fg-soft)] truncate">{asset.name}</p>
                     </div>
-                    <p className="text-sm font-semibold text-gray-700 shrink-0">{fmt(asset.value_brl)}</p>
+                    <p className="text-sm font-semibold text-[var(--arvo-fg)] shrink-0">{fmt(asset.value_brl)}</p>
                   </button>
                 ))
               )}

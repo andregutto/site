@@ -142,23 +142,23 @@ export default function ManualValueModal({ asset, onClose, onSaved, initialMode 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md flex flex-col max-h-[90vh]">
+      <div className="bg-[var(--arvo-surface)] rounded-2xl shadow-xl w-full max-w-md flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="flex items-start justify-between p-5 border-b border-gray-100">
+        <div className="flex items-start justify-between p-5 border-b border-[var(--arvo-border)]">
           <div>
-            <h2 className="font-bold text-gray-900 text-base">{asset.name}</h2>
-            <p className="text-xs text-gray-400 mt-0.5">{asset.code} · {asset.class_name}</p>
+            <h2 className="font-bold text-[var(--arvo-fg)] text-base">{asset.name}</h2>
+            <p className="text-xs text-[var(--arvo-fg-soft)] mt-0.5">{asset.code} · {asset.class_name}</p>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl leading-none ml-4">×</button>
+          <button onClick={onClose} className="text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg-muted)] text-xl leading-none ml-4">×</button>
         </div>
 
         <div className="overflow-y-auto flex-1 p-5 space-y-5">
           {/* Toggle */}
-          <div className="flex bg-gray-100 rounded-xl p-1 gap-1">
+          <div className="flex bg-[var(--arvo-track-bg)] rounded-xl p-1 gap-1">
             <button
               onClick={() => switchMode('valorizacao')}
               className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-colors ${
-                mode === 'valorizacao' ? 'bg-white text-[#0D0D0D] shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                mode === 'valorizacao' ? 'bg-[var(--arvo-surface)] text-[var(--arvo-fg)] shadow-sm' : 'text-[var(--arvo-fg-muted)] hover:text-[var(--arvo-fg)]'
               }`}
             >
               {t.modals.valorizacao}
@@ -166,7 +166,7 @@ export default function ManualValueModal({ asset, onClose, onSaved, initialMode 
             <button
               onClick={() => switchMode('aporte')}
               className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-colors ${
-                mode === 'aporte' ? 'bg-white text-[#0D0D0D] shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                mode === 'aporte' ? 'bg-[var(--arvo-surface)] text-[var(--arvo-fg)] shadow-sm' : 'text-[var(--arvo-fg-muted)] hover:text-[var(--arvo-fg)]'
               }`}
             >
               {t.modals.aporte}
@@ -175,27 +175,27 @@ export default function ManualValueModal({ asset, onClose, onSaved, initialMode 
 
           {mode === 'valorizacao' ? (
             <div className="space-y-3">
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-[var(--arvo-fg-muted)]">
                 {t.modals.updateMarketValue}
               </p>
 
               <div className="flex gap-2">
                 <div className="flex-1">
-                  <label className="block text-xs text-gray-500 mb-1">{t.modals.refDate}</label>
+                  <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{t.modals.refDate}</label>
                   <input
                     type="date"
                     value={refDate}
                     max={today}
                     onChange={e => setRefDate(e.target.value)}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20"
+                    className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-gray-500 mb-1">{t.modals.currency}</label>
+                  <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{t.modals.currency}</label>
                   <select
                     value={currency}
                     onChange={e => setCurrency(e.target.value)}
-                    className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20"
+                    className="border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20"
                   >
                     {CURRENCIES.map(c => <option key={c}>{c}</option>)}
                   </select>
@@ -203,7 +203,7 @@ export default function ManualValueModal({ asset, onClose, onSaved, initialMode 
               </div>
 
               <div>
-                <label className="block text-xs text-gray-500 mb-1">{t.modals.currentValue.replace('{currency}', currency)}</label>
+                <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{t.modals.currentValue.replace('{currency}', currency)}</label>
                 <input
                   type="text"
                   inputMode="decimal"
@@ -220,13 +220,13 @@ export default function ManualValueModal({ asset, onClose, onSaved, initialMode 
               </div>
 
               <div>
-                <label className="block text-xs text-gray-500 mb-1">{t.modals.notesOptional}</label>
+                <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{t.modals.notesOptional}</label>
                 <input
                   type="text"
                   value={notes}
                   onChange={e => setNotes(e.target.value)}
                   placeholder="ex: saldo em 01/05/2026"
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20"
+                  className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20"
                 />
               </div>
 
@@ -252,30 +252,30 @@ export default function ManualValueModal({ asset, onClose, onSaved, initialMode 
               <button
                 onClick={handleSaveValorizacao}
                 disabled={saving}
-                className="w-full bg-[#0D0D0D] text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-[#0D0D0D]/90 disabled:opacity-50 transition-colors"
+                className="w-full bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] rounded-xl py-2.5 text-sm font-semibold hover:bg-[var(--arvo-fg)]/90 disabled:opacity-50 transition-colors"
               >
                 {saving ? t.modals.saving : t.modals.saveValue}
               </button>
             </div>
           ) : (
             <div className="space-y-3">
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-[var(--arvo-fg-muted)]">
                 {t.modals.newCapital}
               </p>
 
               <div>
-                <label className="block text-xs text-gray-500 mb-1">{t.modals.contributionDate}</label>
+                <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{t.modals.contributionDate}</label>
                 <input
                   type="date"
                   value={aportDate}
                   max={today}
                   onChange={e => setAportDate(e.target.value)}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20"
+                  className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20"
                 />
               </div>
 
               <div>
-                <label className="block text-xs text-gray-500 mb-1">{t.modals.contributedAmount}</label>
+                <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{t.modals.contributedAmount}</label>
                 <input
                   type="text"
                   inputMode="decimal"
@@ -292,7 +292,7 @@ export default function ManualValueModal({ asset, onClose, onSaved, initialMode 
               </div>
 
               <div>
-                <label className="block text-xs text-gray-500 mb-1">{t.modals.newTotalOptional}</label>
+                <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{t.modals.newTotalOptional}</label>
                 <input
                   type="text"
                   inputMode="decimal"
@@ -309,13 +309,13 @@ export default function ManualValueModal({ asset, onClose, onSaved, initialMode 
               </div>
 
               <div>
-                <label className="block text-xs text-gray-500 mb-1">{t.modals.notesOptional}</label>
+                <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{t.modals.notesOptional}</label>
                 <input
                   type="text"
                   value={aportNotes}
                   onChange={e => setAportNotes(e.target.value)}
                   placeholder="ex: aporte mensal FIDC"
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20"
+                  className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20"
                 />
               </div>
 
@@ -324,7 +324,7 @@ export default function ManualValueModal({ asset, onClose, onSaved, initialMode 
               <button
                 onClick={handleSaveAporte}
                 disabled={saving}
-                className="w-full bg-[#0D0D0D] text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-[#0D0D0D]/90 disabled:opacity-50 transition-colors"
+                className="w-full bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] rounded-xl py-2.5 text-sm font-semibold hover:bg-[var(--arvo-fg)]/90 disabled:opacity-50 transition-colors"
               >
                 {saving ? t.modals.registering : t.modals.registerContrib}
               </button>
@@ -333,23 +333,23 @@ export default function ManualValueModal({ asset, onClose, onSaved, initialMode 
 
           {/* Histórico de valores */}
           <div>
-            <h3 className="text-sm font-semibold text-gray-700 mb-2">{t.modals.valueHistory}</h3>
+            <h3 className="text-sm font-semibold text-[var(--arvo-fg)] mb-2">{t.modals.valueHistory}</h3>
             {loadingH ? (
-              <p className="text-xs text-gray-400 animate-pulse">{t.common.loading}</p>
+              <p className="text-xs text-[var(--arvo-fg-soft)] animate-pulse">{t.common.loading}</p>
             ) : history.length === 0 ? (
-              <p className="text-xs text-gray-400">{t.modals.noValueHistory}</p>
+              <p className="text-xs text-[var(--arvo-fg-soft)]">{t.modals.noValueHistory}</p>
             ) : (
               <div className="space-y-1">
                 {history.map(h => (
-                  <div key={h.id} className="flex items-center justify-between py-1.5 border-b border-gray-50 last:border-0">
+                  <div key={h.id} className="flex items-center justify-between py-1.5 border-b border-[var(--arvo-border-soft)] last:border-0">
                     <div>
-                      <span className="text-sm font-medium text-gray-900">{fmtVal(h.value, h.currency)}</span>
-                      <span className="text-xs text-gray-400 ml-2">{fmtDate(h.ref_date)}</span>
-                      {h.notes && <span className="text-xs text-gray-400 ml-2 italic">{h.notes}</span>}
+                      <span className="text-sm font-medium text-[var(--arvo-fg)]">{fmtVal(h.value, h.currency)}</span>
+                      <span className="text-xs text-[var(--arvo-fg-soft)] ml-2">{fmtDate(h.ref_date)}</span>
+                      {h.notes && <span className="text-xs text-[var(--arvo-fg-soft)] ml-2 italic">{h.notes}</span>}
                     </div>
                     <button
                       onClick={() => handleDelete(h.id)}
-                      className="text-gray-300 hover:text-red-500 text-sm ml-2 transition-colors"
+                      className="text-[var(--arvo-fg-faint)] hover:text-red-500 text-sm ml-2 transition-colors"
                       title={t.common.remove}
                     >×</button>
                   </div>

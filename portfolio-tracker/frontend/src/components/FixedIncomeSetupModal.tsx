@@ -129,14 +129,14 @@ export default function FixedIncomeSetupModal({ asset, onClose, onSaved }: Props
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] flex flex-col">
+      <div className="bg-[var(--arvo-surface)] rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-start justify-between p-5 border-b border-gray-100">
+        <div className="flex items-start justify-between p-5 border-b border-[var(--arvo-border)]">
           <div>
-            <h2 className="font-bold text-gray-900 text-base">{asset.name}</h2>
-            <p className="text-xs text-gray-400 mt-0.5">{asset.code} · {asset.class_name}</p>
+            <h2 className="font-bold text-[var(--arvo-fg)] text-base">{asset.name}</h2>
+            <p className="text-xs text-[var(--arvo-fg-soft)] mt-0.5">{asset.code} · {asset.class_name}</p>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl leading-none ml-4">×</button>
+          <button onClick={onClose} className="text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg-muted)] text-xl leading-none ml-4">×</button>
         </div>
 
         <div className="overflow-y-auto flex-1 p-5 space-y-4">
@@ -146,11 +146,11 @@ export default function FixedIncomeSetupModal({ asset, onClose, onSaved }: Props
 
           {/* Tipo */}
           <div>
-            <label className="block text-xs text-gray-500 mb-1">{t.modals.fiType}</label>
+            <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{t.modals.fiType}</label>
             <select
               value={fiType}
               onChange={e => setFiType(e.target.value)}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20 bg-white"
+              className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20 bg-[var(--arvo-surface)]"
             >
               {FI_TYPE_OPTIONS_LOCAL.map(opt => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -160,7 +160,7 @@ export default function FixedIncomeSetupModal({ asset, onClose, onSaved }: Props
 
           {/* Principal */}
           <div>
-            <label className="block text-xs text-gray-500 mb-1">{t.modals.investedBrl}</label>
+            <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{t.modals.investedBrl}</label>
             <input
               type="text"
               inputMode="decimal"
@@ -179,7 +179,7 @@ export default function FixedIncomeSetupModal({ asset, onClose, onSaved }: Props
           {/* Taxa contratada */}
           {needsRate && (
             <div>
-              <label className="block text-xs text-gray-500 mb-1">{rateCfg.label}</label>
+              <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{rateCfg.label}</label>
               <input
                 type="text"
                 inputMode="decimal"
@@ -194,7 +194,7 @@ export default function FixedIncomeSetupModal({ asset, onClose, onSaved }: Props
               />
               {rateErr
                 ? <p className="text-xs text-red-500 mt-0.5">{rateErr}</p>
-                : rateCfg.hint && <p className="text-xs text-gray-400 mt-1">{rateCfg.hint}</p>
+                : rateCfg.hint && <p className="text-xs text-[var(--arvo-fg-soft)] mt-1">{rateCfg.hint}</p>
               }
             </div>
           )}
@@ -202,30 +202,30 @@ export default function FixedIncomeSetupModal({ asset, onClose, onSaved }: Props
           {/* Datas em linha */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs text-gray-500 mb-1">{t.modals.startDate}</label>
+              <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{t.modals.startDate}</label>
               <input
                 type="date"
                 value={startDate}
                 max={today}
                 onChange={e => setStartDate(e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20"
+                className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20"
               />
             </div>
             <div>
-              <label className="block text-xs text-gray-500 mb-1">{t.modals.maturityOpt}</label>
+              <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{t.modals.maturityOpt}</label>
               <input
                 type="date"
                 value={maturity}
                 min={today}
                 onChange={e => setMaturity(e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20"
+                className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20"
               />
             </div>
           </div>
 
           {/* Instituição */}
           <div>
-            <label className="block text-xs text-gray-500 mb-1">{t.modals.institution}</label>
+            <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{t.modals.institution}</label>
             <InstitutionSelect
               value={institution}
               onChange={setInstitution}
@@ -237,56 +237,56 @@ export default function FixedIncomeSetupModal({ asset, onClose, onSaved }: Props
           <div className="flex gap-2 pt-1">
             <button
               onClick={onClose}
-              className="flex-1 border border-gray-200 text-gray-600 rounded-xl py-2.5 text-sm font-medium hover:bg-gray-50 transition-colors"
+              className="flex-1 border border-[var(--arvo-border)] text-[var(--arvo-fg-muted)] rounded-xl py-2.5 text-sm font-medium hover:bg-[var(--arvo-surface-2)] transition-colors"
             >
               {t.common.cancel}
             </button>
             <button
               onClick={handleSave}
               disabled={saving}
-              className="flex-1 bg-[#0D0D0D] text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-[#0D0D0D]/90 disabled:opacity-50 transition-colors"
+              className="flex-1 bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] rounded-xl py-2.5 text-sm font-semibold hover:bg-[var(--arvo-fg)]/90 disabled:opacity-50 transition-colors"
             >
               {saving ? t.modals.saving : t.modals.saveAndCalculate}
             </button>
           </div>
 
           {/* Portabilidade */}
-          <div className="border-t border-gray-100 pt-4 mt-2">
+          <div className="border-t border-[var(--arvo-border)] pt-4 mt-2">
             <button
               type="button"
               onClick={() => { setShowPortability(v => !v); setPortError(null) }}
-              className="text-xs text-[#0D0D0D] hover:underline font-medium"
+              className="text-xs text-[var(--arvo-fg)] hover:underline font-medium"
             >
               {showPortability ? t.modals.portabilityClose : t.modals.portabilityOpen}
             </button>
 
             {showPortability && (
               <div className="mt-3 space-y-3">
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-[var(--arvo-fg-muted)]">
                   {t.modals.portabilityDesc}
                 </p>
                 {asset.exchange && (
-                  <p className="text-xs text-gray-400">{t.modals.currentCustodian} <span className="font-medium text-gray-700">{asset.exchange}</span></p>
+                  <p className="text-xs text-[var(--arvo-fg-soft)]">{t.modals.currentCustodian} <span className="font-medium text-[var(--arvo-fg)]">{asset.exchange}</span></p>
                 )}
                 <div>
-                  <label className="block text-xs text-gray-500 mb-1">{t.modals.newInstitution}</label>
+                  <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{t.modals.newInstitution}</label>
                   <InstitutionSelect value={portInstitution} onChange={setPortInstitution} />
                 </div>
                 <div>
-                  <label className="block text-xs text-gray-500 mb-1">{t.modals.portDate}</label>
+                  <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{t.modals.portDate}</label>
                   <input
                     type="date"
                     value={portDate}
                     max={new Date().toISOString().split('T')[0]}
                     onChange={e => setPortDate(e.target.value)}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20"
+                    className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20"
                   />
                 </div>
                 {portError && <p className="text-xs text-red-600">{portError}</p>}
                 <button
                   onClick={handlePortability}
                   disabled={savingPortability}
-                  className="w-full border border-[#0D0D0D] text-[#0D0D0D] rounded-xl py-2 text-sm font-semibold hover:bg-[#0D0D0D]/5 disabled:opacity-50 transition-colors"
+                  className="w-full border border-[var(--arvo-fg)] text-[var(--arvo-fg)] rounded-xl py-2 text-sm font-semibold hover:bg-[var(--arvo-fg)]/5 disabled:opacity-50 transition-colors"
                 >
                   {savingPortability ? t.modals.registering : t.modals.confirmPortability}
                 </button>

@@ -167,17 +167,17 @@ export default function DividendsPage() {
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 18, letterSpacing: '0.06em', color: 'var(--arvo-black)' }}>{d.title}</h1>
+          <h1 style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 18, letterSpacing: '0.06em', color: 'var(--arvo-fg)' }}>{d.title}</h1>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {tab === 'history' && periodBtns.map(({ key, label }) => (
             <button key={key} onClick={() => setPeriod(key)}
               className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
-                period === key ? 'bg-[#0D0D0D] text-white border-[#0D0D0D]' : 'bg-white text-gray-500 border-gray-200 hover:border-[#0D0D0D] hover:text-[#0D0D0D]'
+                period === key ? 'bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] border-[var(--arvo-fg)]' : 'bg-[var(--arvo-surface)] text-[var(--arvo-fg-muted)] border-[var(--arvo-border)] hover:border-[var(--arvo-fg)] hover:text-[var(--arvo-fg)]'
               }`}>{label}</button>
           ))}
           <button onClick={handleSync} disabled={syncing}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-200 text-gray-500 hover:border-[#0D0D0D] hover:text-[#0D0D0D] transition-colors disabled:opacity-40">
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-[var(--arvo-border)] text-[var(--arvo-fg-muted)] hover:border-[var(--arvo-fg)] hover:text-[var(--arvo-fg)] transition-colors disabled:opacity-40">
             <svg className={`w-3.5 h-3.5 ${syncing ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
@@ -187,13 +187,13 @@ export default function DividendsPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-gray-100 p-1 rounded-xl w-fit">
+      <div className="flex gap-1 bg-[var(--arvo-track-bg)] p-1 rounded-xl w-fit">
         {([['history', d.history], ['projection', d.passiveTitle]] as [Tab, string][]).map(([key, label]) => (
           <button
             key={key}
             onClick={() => setTab(key)}
             className={`px-4 py-1.5 text-xs font-medium rounded-lg transition-all ${
-              tab === key ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'
+              tab === key ? 'bg-[var(--arvo-surface)] shadow-sm text-[var(--arvo-fg)]' : 'text-[var(--arvo-fg-muted)] hover:text-[var(--arvo-fg)]'
             }`}
           >{label}</button>
         ))}
@@ -204,27 +204,27 @@ export default function DividendsPage() {
           <>
             {/* Summary cards */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
-                <p className="text-gray-400 text-xs uppercase tracking-wide">{d.totalReceived}</p>
+              <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl p-5 shadow-sm">
+                <p className="text-[var(--arvo-fg-soft)] text-xs uppercase tracking-wide">{d.totalReceived}</p>
                 <p className="text-2xl font-bold mt-1 text-green-600">{fmt(totalBrl)}</p>
-                <p className="text-xs text-gray-400 mt-1">{d.inPeriod}</p>
+                <p className="text-xs text-[var(--arvo-fg-soft)] mt-1">{d.inPeriod}</p>
               </div>
-              <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
-                <p className="text-gray-400 text-xs uppercase tracking-wide">{d.count}</p>
-                <p className="text-2xl font-bold mt-1 text-gray-900">{rows.length}</p>
-                <p className="text-xs text-gray-400 mt-1">{d.inPeriod}</p>
+              <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl p-5 shadow-sm">
+                <p className="text-[var(--arvo-fg-soft)] text-xs uppercase tracking-wide">{d.count}</p>
+                <p className="text-2xl font-bold mt-1 text-[var(--arvo-fg)]">{rows.length}</p>
+                <p className="text-xs text-[var(--arvo-fg-soft)] mt-1">{d.inPeriod}</p>
               </div>
-              <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm sm:col-span-1 col-span-2">
-                <p className="text-gray-400 text-xs uppercase tracking-wide">{d.topPayers}</p>
-                <p className="text-sm font-semibold mt-1 text-gray-800 truncate">{byAssetSorted[0]?.code ?? '—'}</p>
+              <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl p-5 shadow-sm sm:col-span-1 col-span-2">
+                <p className="text-[var(--arvo-fg-soft)] text-xs uppercase tracking-wide">{d.topPayers}</p>
+                <p className="text-sm font-semibold mt-1 text-[var(--arvo-fg)] truncate">{byAssetSorted[0]?.code ?? '—'}</p>
                 <p className="text-xs text-green-600 mt-0.5">{byAssetSorted[0] ? fmt(byAssetSorted[0].total_brl) : '—'}</p>
               </div>
             </div>
 
             {/* Monthly chart */}
             {chartData.length > 0 && (
-              <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
-                <h2 className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-4">{d.monthlyChart}</h2>
+              <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl p-5 shadow-sm">
+                <h2 className="text-xs font-medium text-[var(--arvo-fg-soft)] uppercase tracking-wide mb-4">{d.monthlyChart}</h2>
                 <div className="h-48">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={chartData} barSize={18}>
@@ -245,31 +245,31 @@ export default function DividendsPage() {
 
             {/* By-asset breakdown */}
             {byAssetSorted.length > 0 && (
-              <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
-                <div className="px-5 py-3 border-b border-gray-50">
-                  <h2 className="text-xs text-gray-400 uppercase tracking-wide font-medium">{d.topPayers}</h2>
+              <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl overflow-hidden shadow-sm">
+                <div className="px-5 py-3 border-b border-[var(--arvo-border-soft)]">
+                  <h2 className="text-xs text-[var(--arvo-fg-soft)] uppercase tracking-wide font-medium">{d.topPayers}</h2>
                 </div>
                 <table className="w-full text-sm">
-                  <thead className="bg-gray-50 text-gray-400 text-xs uppercase">
+                  <thead className="bg-[var(--arvo-surface-2)] text-[var(--arvo-fg-soft)] text-xs uppercase">
                     <tr>
                       <th className="px-4 py-3 text-left">Ativo</th>
-                      <th className="px-4 py-3 text-right cursor-pointer hover:text-gray-600 select-none" onClick={() => toggleSort('total_brl')}>
-                        {d.totalReceived} {sortCol === 'total_brl' ? (sortDir === 'asc' ? '↑' : '↓') : <span className="text-gray-300">↕</span>}
+                      <th className="px-4 py-3 text-right cursor-pointer hover:text-[var(--arvo-fg-muted)] select-none" onClick={() => toggleSort('total_brl')}>
+                        {d.totalReceived} {sortCol === 'total_brl' ? (sortDir === 'asc' ? '↑' : '↓') : <span className="text-[var(--arvo-fg-faint)]">↕</span>}
                       </th>
-                      <th className="px-4 py-3 text-right cursor-pointer hover:text-gray-600 select-none" onClick={() => toggleSort('count')}>
-                        {d.count} {sortCol === 'count' ? (sortDir === 'asc' ? '↑' : '↓') : <span className="text-gray-300">↕</span>}
+                      <th className="px-4 py-3 text-right cursor-pointer hover:text-[var(--arvo-fg-muted)] select-none" onClick={() => toggleSort('count')}>
+                        {d.count} {sortCol === 'count' ? (sortDir === 'asc' ? '↑' : '↓') : <span className="text-[var(--arvo-fg-faint)]">↕</span>}
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-50">
+                  <tbody className="divide-y divide-[var(--arvo-border-soft)]">
                     {(showAllPayers ? byAssetSorted : byAssetSorted.slice(0, 5)).map(a => (
-                      <tr key={a.asset_id} className="hover:bg-gray-50 transition-colors">
+                      <tr key={a.asset_id} className="hover:bg-[var(--arvo-surface-2)] transition-colors">
                         <td className="px-4 py-3">
-                          <span className="font-semibold text-gray-900">{a.code}</span>
-                          {a.name && a.name !== a.code && <span className="text-gray-400 text-xs ml-1.5">{a.name}</span>}
+                          <span className="font-semibold text-[var(--arvo-fg)]">{a.code}</span>
+                          {a.name && a.name !== a.code && <span className="text-[var(--arvo-fg-soft)] text-xs ml-1.5">{a.name}</span>}
                         </td>
                         <td className="px-4 py-3 text-right font-medium text-green-600">{fmt(a.total_brl)}</td>
-                        <td className="px-4 py-3 text-right text-gray-500">{a.count}</td>
+                        <td className="px-4 py-3 text-right text-[var(--arvo-fg-muted)]">{a.count}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -277,7 +277,7 @@ export default function DividendsPage() {
                 {byAssetSorted.length > 5 && (
                   <button
                     onClick={() => setShowAllPayers(v => !v)}
-                    className="w-full px-4 py-2.5 text-xs font-medium text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-colors border-t border-gray-50"
+                    className="w-full px-4 py-2.5 text-xs font-medium text-[var(--arvo-fg-muted)] hover:text-[var(--arvo-fg)] hover:bg-[var(--arvo-surface-2)] transition-colors border-t border-[var(--arvo-border-soft)]"
                   >
                     {showAllPayers
                       ? d.showLessPayers
@@ -289,13 +289,13 @@ export default function DividendsPage() {
 
             {/* Transaction log */}
             {rows.length > 0 ? (
-              <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
-                <div className="px-5 py-3 border-b border-gray-50">
-                  <h2 className="text-xs text-gray-400 uppercase tracking-wide font-medium">{d.history}</h2>
+              <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl overflow-hidden shadow-sm">
+                <div className="px-5 py-3 border-b border-[var(--arvo-border-soft)]">
+                  <h2 className="text-xs text-[var(--arvo-fg-soft)] uppercase tracking-wide font-medium">{d.history}</h2>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
-                    <thead className="bg-gray-50 text-gray-400 text-xs uppercase">
+                    <thead className="bg-[var(--arvo-surface-2)] text-[var(--arvo-fg-soft)] text-xs uppercase">
                       <tr>
                         <th className="px-4 py-3 text-left">Ativo</th>
                         <th className="px-4 py-3 text-left"><span title={d.colExDateTooltip} className="cursor-help">{d.colExDate} ⓘ</span></th>
@@ -305,15 +305,15 @@ export default function DividendsPage() {
                         <th className="px-4 py-3 text-left">{d.colType}</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-50">
+                    <tbody className="divide-y divide-[var(--arvo-border-soft)]">
                       {[...rows].sort((a, b) => b.ex_date.localeCompare(a.ex_date)).map(r => (
-                        <tr key={r.id} className="hover:bg-gray-50 transition-colors">
-                          <td className="px-4 py-3 font-semibold text-gray-900">{r.code}</td>
-                          <td className="px-4 py-3 text-gray-600">{fmtDate(r.ex_date)}</td>
-                          <td className="px-4 py-3 text-gray-400 text-xs">{fmtDate(r.pay_date)}</td>
-                          <td className="px-4 py-3 text-right text-gray-600 text-xs">{r.amount_per_share.toFixed(4)} {r.currency}</td>
+                        <tr key={r.id} className="hover:bg-[var(--arvo-surface-2)] transition-colors">
+                          <td className="px-4 py-3 font-semibold text-[var(--arvo-fg)]">{r.code}</td>
+                          <td className="px-4 py-3 text-[var(--arvo-fg-muted)]">{fmtDate(r.ex_date)}</td>
+                          <td className="px-4 py-3 text-[var(--arvo-fg-soft)] text-xs">{fmtDate(r.pay_date)}</td>
+                          <td className="px-4 py-3 text-right text-[var(--arvo-fg-muted)] text-xs">{r.amount_per_share.toFixed(4)} {r.currency}</td>
                           <td className="px-4 py-3 text-right font-medium text-green-600">{fmt(r.amount_brl)}</td>
-                          <td className="px-4 py-3 text-xs text-gray-400">{typeLabel(r.dividend_type)}</td>
+                          <td className="px-4 py-3 text-xs text-[var(--arvo-fg-soft)]">{typeLabel(r.dividend_type)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -321,8 +321,8 @@ export default function DividendsPage() {
                 </div>
               </div>
             ) : (
-              <div className="bg-white border border-gray-100 rounded-2xl p-12 text-center shadow-sm">
-                <p className="text-gray-500 font-medium">{d.noData}</p>
+              <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl p-12 text-center shadow-sm">
+                <p className="text-[var(--arvo-fg-muted)] font-medium">{d.noData}</p>
               </div>
             )}
           </>
@@ -336,16 +336,16 @@ export default function DividendsPage() {
                 { label: d.passiveAvgMonthly,   value: fmt(avgMonthly6m),   color: ARVO_GOLD  },
                 { label: d.passiveProjected12m, value: fmt(projected12m),   color: '#10b981'  },
               ].map(card => (
-                <div key={card.label} className="bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-4">
-                  <p className="text-xs text-gray-400 uppercase tracking-wide font-medium mb-1 leading-tight">{card.label}</p>
+                <div key={card.label} className="bg-[var(--arvo-surface)] rounded-2xl border border-[var(--arvo-border)] shadow-sm px-5 py-4">
+                  <p className="text-xs text-[var(--arvo-fg-soft)] uppercase tracking-wide font-medium mb-1 leading-tight">{card.label}</p>
                   <p className="text-xl font-bold" style={{ color: card.color, fontFamily: 'var(--arvo-font-body)' }}>{card.value}</p>
                 </div>
               ))}
             </div>
 
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+            <div className="bg-[var(--arvo-surface)] rounded-2xl border border-[var(--arvo-border)] shadow-sm p-5">
               <div className="flex items-start justify-between mb-4 gap-3">
-                <p className="text-xs text-gray-400 uppercase tracking-wide font-medium">{d.monthlyChart}</p>
+                <p className="text-xs text-[var(--arvo-fg-soft)] uppercase tracking-wide font-medium">{d.monthlyChart}</p>
               </div>
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={projChartData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }} barSize={7}>
@@ -362,32 +362,32 @@ export default function DividendsPage() {
                 </BarChart>
               </ResponsiveContainer>
               {d.projDisclaimer && (
-                <p className="text-xs text-gray-400 mt-3 leading-relaxed italic border-t border-gray-50 pt-3">
+                <p className="text-xs text-[var(--arvo-fg-soft)] mt-3 leading-relaxed italic border-t border-[var(--arvo-border-soft)] pt-3">
                   ⚠ {d.projDisclaimer}
                 </p>
               )}
             </div>
 
             {summary36m?.by_asset && summary36m.by_asset.length > 0 && (
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                <div className="px-5 py-3 border-b border-gray-50">
-                  <p className="text-xs text-gray-400 uppercase tracking-wide font-medium">{d.passiveTopAssets}</p>
+              <div className="bg-[var(--arvo-surface)] rounded-2xl border border-[var(--arvo-border)] shadow-sm overflow-hidden">
+                <div className="px-5 py-3 border-b border-[var(--arvo-border-soft)]">
+                  <p className="text-xs text-[var(--arvo-fg-soft)] uppercase tracking-wide font-medium">{d.passiveTopAssets}</p>
                 </div>
-                <ul className="divide-y divide-gray-50">
+                <ul className="divide-y divide-[var(--arvo-border-soft)]">
                   {summary36m.by_asset.slice(0, 8).map(a => {
                     const pct = (summary36m?.total_brl ?? 0) > 0 ? (a.total_brl / summary36m.total_brl) * 100 : 0
                     return (
                       <li key={a.asset_id} className="px-5 py-3">
                         <div className="flex items-center justify-between mb-1">
-                          <span className="text-sm font-medium text-gray-800">{a.code}</span>
-                          <span className="text-sm font-semibold text-gray-900">{fmt(a.total_brl)}</span>
+                          <span className="text-sm font-medium text-[var(--arvo-fg)]">{a.code}</span>
+                          <span className="text-sm font-semibold text-[var(--arvo-fg)]">{fmt(a.total_brl)}</span>
                         </div>
-                        <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                        <div className="h-1.5 bg-[var(--arvo-track-bg)] rounded-full overflow-hidden">
                           <div className="h-full rounded-full" style={{ width: `${Math.min(100, pct)}%`, backgroundColor: ARVO_BLUE }} />
                         </div>
                         <div className="flex justify-between mt-0.5">
-                          <span className="text-xs text-gray-400">{a.name !== a.code ? a.name : ''}</span>
-                          <span className="text-xs text-gray-400">{pct.toFixed(1)}%</span>
+                          <span className="text-xs text-[var(--arvo-fg-soft)]">{a.name !== a.code ? a.name : ''}</span>
+                          <span className="text-xs text-[var(--arvo-fg-soft)]">{pct.toFixed(1)}%</span>
                         </div>
                       </li>
                     )

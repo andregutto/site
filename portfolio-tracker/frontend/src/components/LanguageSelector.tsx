@@ -9,7 +9,7 @@ const LOCALES: { value: Locale; flag: string }[] = [
 export default function LanguageSelector() {
   const { locale, setLocale } = useI18n()
   return (
-    <div className="flex items-center rounded-full p-0.5 gap-0" style={{ background: 'rgba(13,13,13,0.07)' }}>
+    <div className="flex items-center rounded-full p-0.5 gap-0" style={{ background: 'var(--arvo-chip-bg)' }}>
       {LOCALES.map(l => (
         <button
           key={l.value}

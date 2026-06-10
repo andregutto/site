@@ -52,10 +52,10 @@ function MetricCard({ label, value, sub, badge, badgeColor }: {
   label: string; value: string; sub?: string; badge?: string; badgeColor?: string
 }) {
   return (
-    <div style={{ background: '#fff', borderRadius: 12, border: '1px solid var(--arvo-border)', padding: '20px' }}>
+    <div style={{ background: 'var(--arvo-surface)', borderRadius: 12, border: '1px solid var(--arvo-border)', padding: '20px' }}>
       <div style={{ fontSize: 11, fontWeight: 500, color: 'var(--arvo-fg-soft)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>{label}</div>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
-        <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--arvo-black)', lineHeight: 1 }}>{value}</div>
+        <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--arvo-fg)', lineHeight: 1 }}>{value}</div>
         {badge && (
           <span style={{ fontSize: 11, fontWeight: 600, color: badgeColor, background: (badgeColor ?? '#000') + '18', padding: '3px 8px', borderRadius: 20 }}>{badge}</span>
         )}
@@ -208,7 +208,7 @@ export default function DiversificationPage() {
     if (!active || !payload?.length) return null
     const entry = payload[0]
     return (
-      <div style={{ background: '#fff', border: '1px solid var(--arvo-border)', borderRadius: 8, padding: '8px 12px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', fontSize: 12 }}>
+      <div style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', borderRadius: 8, padding: '8px 12px', boxShadow: '0 2px 8px var(--arvo-border)', fontSize: 12 }}>
         <div style={{ fontWeight: 600, marginBottom: 2 }}>{entry.name}</div>
         <div>{fmtVal(entry.value)}</div>
         <div style={{ color: 'var(--arvo-fg-soft)' }}>{fmtPct(entry.payload?.pct ?? 0)}</div>
@@ -232,8 +232,8 @@ export default function DiversificationPage() {
       {/* ── GEO TAB ── */}
       {tab === 'geo' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <div style={{ background: '#fff', borderRadius: 12, border: '1px solid var(--arvo-border)', padding: '24px' }}>
-            <h2 style={{ fontSize: 15, fontWeight: 600, margin: '0 0 20px', color: 'var(--arvo-black)' }}>{d.geoTitle}</h2>
+          <div style={{ background: 'var(--arvo-surface)', borderRadius: 12, border: '1px solid var(--arvo-border)', padding: '24px' }}>
+            <h2 style={{ fontSize: 15, fontWeight: 600, margin: '0 0 20px', color: 'var(--arvo-fg)' }}>{d.geoTitle}</h2>
             <div style={{ display: 'flex', gap: 24, alignItems: 'center', flexWrap: 'wrap' }}>
               <div style={{ flex: '0 0 180px', height: 180 }}>
                 <ResponsiveContainer width="100%" height="100%">
@@ -251,7 +251,7 @@ export default function DiversificationPage() {
                     <span style={{ fontSize: 20, lineHeight: 1 }}>{g.flag}</span>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                        <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--arvo-black)' }}>{g.label}</span>
+                        <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--arvo-fg)' }}>{g.label}</span>
                         <span style={{ fontSize: 12, color: 'var(--arvo-fg-soft)' }}>{fmtPct(g.pct)}</span>
                       </div>
                       <div style={{ height: 4, background: 'var(--arvo-border)', borderRadius: 2 }}>
@@ -285,9 +285,9 @@ export default function DiversificationPage() {
       {/* ── SECTOR TAB ── */}
       {tab === 'sector' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <div style={{ background: '#fff', borderRadius: 12, border: '1px solid var(--arvo-border)', padding: '24px' }}>
+          <div style={{ background: 'var(--arvo-surface)', borderRadius: 12, border: '1px solid var(--arvo-border)', padding: '24px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20, gap: 8 }}>
-              <h2 style={{ fontSize: 15, fontWeight: 600, margin: 0, color: 'var(--arvo-black)' }}>{d.sectorTitle}</h2>
+              <h2 style={{ fontSize: 15, fontWeight: 600, margin: 0, color: 'var(--arvo-fg)' }}>{d.sectorTitle}</h2>
               {sectorLoading && <span style={{ fontSize: 11, color: 'var(--arvo-fg-soft)' }}>⏳</span>}
               {hasBrapiSectors && !sectorLoading && (
                 <span style={{ fontSize: 10, color: '#16A34A', background: '#dcfce7', padding: '2px 8px', borderRadius: 10, whiteSpace: 'nowrap' }}>{d.sectorRealDataNote ?? 'BRAPI'}</span>
@@ -313,7 +313,7 @@ export default function DiversificationPage() {
                     <div style={{ width: 10, height: 10, borderRadius: 2, background: SECTOR_PALETTE[i % SECTOR_PALETTE.length], flexShrink: 0 }} />
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                        <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--arvo-black)' }}>{g.label}</span>
+                        <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--arvo-fg)' }}>{g.label}</span>
                         <span style={{ fontSize: 12, color: 'var(--arvo-fg-soft)' }}>{fmtPct(g.pct)}</span>
                       </div>
                       <div style={{ height: 4, background: 'var(--arvo-border)', borderRadius: 2 }}>
@@ -370,14 +370,14 @@ export default function DiversificationPage() {
           </InfoCard>
 
           {/* Risk by class chart */}
-          <div style={{ background: '#fff', borderRadius: 12, border: '1px solid var(--arvo-border)', padding: '24px' }}>
-            <h2 style={{ fontSize: 15, fontWeight: 600, margin: '0 0 4px', color: 'var(--arvo-black)' }}>{d.riskByClassTitle ?? d.riskByClass}</h2>
+          <div style={{ background: 'var(--arvo-surface)', borderRadius: 12, border: '1px solid var(--arvo-border)', padding: '24px' }}>
+            <h2 style={{ fontSize: 15, fontWeight: 600, margin: '0 0 4px', color: 'var(--arvo-fg)' }}>{d.riskByClassTitle ?? d.riskByClass}</h2>
             <p style={{ fontSize: 11, color: 'var(--arvo-fg-soft)', margin: '0 0 20px' }}>{d.riskBarNote}</p>
             <ResponsiveContainer width="100%" height={Math.max(160, riskMetrics.byClass.length * 44)}>
               <BarChart data={riskMetrics.byClass} layout="vertical" margin={{ left: 12, right: 36, top: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="var(--arvo-border)" />
                 <XAxis type="number" domain={[0, 100]} tickFormatter={v => `${v}%`} tick={{ fontSize: 11, fill: 'var(--arvo-fg-soft)' }} />
-                <YAxis type="category" dataKey="name" width={100} tick={{ fontSize: 12, fill: 'var(--arvo-black)' }} />
+                <YAxis type="category" dataKey="name" width={100} tick={{ fontSize: 12, fill: 'var(--arvo-fg)' }} />
                 <Tooltip
                   formatter={(v: unknown, _name: unknown, props: { payload?: { risk?: number } }) => {
                     const riskLevel = props.payload?.risk ?? 0
@@ -454,8 +454,8 @@ export default function DiversificationPage() {
           </div>
 
           {/* HHI comparison panel */}
-          <div style={{ background: '#fff', borderRadius: 12, border: '1px solid var(--arvo-border)', padding: '20px' }}>
-            <h3 style={{ fontSize: 13, fontWeight: 600, margin: '0 0 16px', color: 'var(--arvo-black)' }}>{d.hhi}</h3>
+          <div style={{ background: 'var(--arvo-surface)', borderRadius: 12, border: '1px solid var(--arvo-border)', padding: '20px' }}>
+            <h3 style={{ fontSize: 13, fontWeight: 600, margin: '0 0 16px', color: 'var(--arvo-fg)' }}>{d.hhi}</h3>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
               {[
                 { label: d.assetHhi,  val: riskMetrics.assetHHI,  n: assets.length },
@@ -466,7 +466,7 @@ export default function DiversificationPage() {
                 return (
                   <div key={m.label} style={{ textAlign: 'center' }}>
                     <div style={{ fontSize: 11, color: 'var(--arvo-fg-soft)', marginBottom: 6 }}>{m.label}</div>
-                    <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--arvo-black)' }}>{m.val.toFixed(3)}</div>
+                    <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--arvo-fg)' }}>{m.val.toFixed(3)}</div>
                     <span style={{ fontSize: 11, fontWeight: 600, color, background: color + '18', padding: '2px 8px', borderRadius: 20, marginTop: 4, display: 'inline-block' }}>{text}</span>
                   </div>
                 )

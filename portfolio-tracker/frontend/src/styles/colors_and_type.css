@@ -359,3 +359,15 @@
   background-size: 256px;
   mix-blend-mode: overlay;
 }
+
+/* Recharts tooltips render with inline styles (white bg, default text
+   color) — override for dark mode so they match the surrounding card. */
+.dark .recharts-default-tooltip {
+  background-color: var(--arvo-surface) !important;
+  border-color: var(--arvo-border) !important;
+  color: var(--arvo-fg) !important;
+}
+.dark .recharts-tooltip-item,
+.dark .recharts-tooltip-label {
+  color: var(--arvo-fg) !important;
+}

@@ -51,7 +51,7 @@ type FormTypeValue = typeof FORM_TYPES[number]['value']
 
 
 const BASE_INPUT = 'w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2'
-const SMALL_INPUT = 'w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20 bg-white'
+const SMALL_INPUT = 'w-full border border-[var(--arvo-border)] rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20 bg-[var(--arvo-surface)]'
 
 export default function ContributionsPage() {
   const navigate = useNavigate()
@@ -593,19 +593,19 @@ export default function ContributionsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h1 style={{ fontFamily: "var(--arvo-font-body)", fontSize: 18, letterSpacing: '0.06em', color: 'var(--arvo-black)' }}>{t.contributions.title}</h1>
-          <p className="text-sm mt-0.5" style={{ color: 'rgba(13,13,13,0.60)' }}>{t.contributions.subtitle}</p>
+          <h1 style={{ fontFamily: "var(--arvo-font-body)", fontSize: 18, letterSpacing: '0.06em', color: 'var(--arvo-fg)' }}>{t.contributions.title}</h1>
+          <p className="text-sm mt-0.5" style={{ color: 'var(--arvo-fg-muted)' }}>{t.contributions.subtitle}</p>
         </div>
         <div className="flex items-center gap-2">
           <Link
             to="/import/b3"
-            style={{ padding: '8px 14px', background: '#FFFFFF', border: '1px solid var(--arvo-border)', color: 'var(--arvo-fg-muted)', fontSize: 14, fontFamily: "var(--arvo-font-body)", borderRadius: 12, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', transition: 'border-color 0.2s' }}
+            style={{ padding: '8px 14px', background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', color: 'var(--arvo-fg-muted)', fontSize: 14, fontFamily: "var(--arvo-font-body)", borderRadius: 12, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', transition: 'border-color 0.2s' }}
           >
             {t.contributions.importB3}
           </Link>
           <button
             onClick={() => { if (showForm) { cancelEdit() } else { setShowForm(true) } }}
-            className="px-4 py-2 bg-[#0D0D0D] text-white text-sm font-semibold rounded-xl hover:bg-[#0D0D0D]/90 transition-colors"
+            className="px-4 py-2 bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] text-sm font-semibold rounded-xl hover:bg-[var(--arvo-fg)]/90 transition-colors"
           >
             {showForm ? t.common.cancel : t.contributions.newBtn}
           </button>
@@ -613,17 +613,17 @@ export default function ContributionsPage() {
       </div>
 
       {showForm && (
-        <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm space-y-4">
-          <h2 className="font-semibold text-gray-800">
+        <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl p-5 shadow-sm space-y-4">
+          <h2 className="font-semibold text-[var(--arvo-fg)]">
             {editId ? t.contributions.editTitle : t.contributions.registerTitle}
           </h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {/* Asset selector */}
             <div className="sm:col-span-2 space-y-1.5">
-              <label className="block text-xs text-gray-500">Ativo</label>
+              <label className="block text-xs text-[var(--arvo-fg-muted)]">Ativo</label>
               {editId ? (
-                <div className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-600">
+                <div className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm bg-[var(--arvo-surface-2)] text-[var(--arvo-fg-muted)]">
                   {selectedAsset ? `${selectedAsset.code} — ${selectedAsset.name}` : t.contributions.unknownAsset}
                 </div>
               ) : (
@@ -633,13 +633,13 @@ export default function ContributionsPage() {
                     value={assetSearch}
                     onChange={e => setAssetSearch(e.target.value)}
                     placeholder={t.contributions.filterAsset}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20"
+                    className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20"
                   />
                   <div className="flex gap-2">
                     <select
                       value={assetId}
                       onChange={e => { setAssetId(e.target.value); setAssetSearch('') }}
-                      className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20"
+                      className="flex-1 border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20"
                     >
                       <option value="">{t.contributions.selectAsset}</option>
                       {filteredAssets.map(a => (
@@ -651,7 +651,7 @@ export default function ContributionsPage() {
                     <button
                       type="button"
                       onClick={() => { setShowNewAsset(v => !v); if (showNewAsset) resetNewAsset() }}
-                      className="px-3 py-2 text-sm border border-gray-200 rounded-lg text-[#0D0D0D] hover:bg-blue-50 transition-colors shrink-0"
+                      className="px-3 py-2 text-sm border border-[var(--arvo-border)] rounded-lg text-[var(--arvo-fg)] hover:bg-blue-50 transition-colors shrink-0"
                     >{t.contributions.newAssetBtn}</button>
                   </div>
                 </>
@@ -661,11 +661,11 @@ export default function ContributionsPage() {
             {/* New asset inline form */}
             {showNewAsset && (
               <div className="sm:col-span-2 bg-blue-50 border border-blue-100 rounded-xl p-4 space-y-3">
-                <p className="text-xs font-semibold text-[#0D0D0D]">{t.contributions.newAssetSection}</p>
+                <p className="text-xs font-semibold text-[var(--arvo-fg)]">{t.contributions.newAssetSection}</p>
                 <div className="grid grid-cols-2 gap-2">
                   {/* Type */}
                   <div className="col-span-2">
-                    <label className="block text-xs text-gray-500 mb-1">{t.contributions.typeLabel}</label>
+                    <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{t.contributions.typeLabel}</label>
                     <select
                       value={newFormType}
                       onChange={e => setNewFormType(e.target.value as FormTypeValue)}
@@ -677,7 +677,7 @@ export default function ContributionsPage() {
 
                   {/* Code */}
                   <div>
-                    <label className="block text-xs text-gray-500 mb-1">
+                    <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">
                       {newFormType === 'fixed_income' ? t.contributions.uniqueAlias : t.common.code}
                     </label>
                     <input
@@ -696,30 +696,30 @@ export default function ContributionsPage() {
                   {/* Currency (hidden for B3 and RF) */}
                   {newFormType === 'imovel' ? (
                     <div>
-                      <label className="block text-xs text-gray-500 mb-1">Moeda</label>
+                      <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">Moeda</label>
                       <select value={newCurrency} onChange={e => setNewCurrency(e.target.value)} className={SMALL_INPUT}>
                         {['BRL', 'EUR', 'USD'].map(c => <option key={c} value={c}>{c}</option>)}
                       </select>
                     </div>
                   ) : newFormType !== 'ticker_b3' && newFormType !== 'fixed_income' && newFormType !== 'manual' ? (
                     <div>
-                      <label className="block text-xs text-gray-500 mb-1">Moeda</label>
+                      <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">Moeda</label>
                       <select value={newCurrency} onChange={e => setNewCurrency(e.target.value)} className={SMALL_INPUT}>
                         {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
                       </select>
                     </div>
                   ) : (
                     <div className="flex items-end pb-1">
-                      <span className="text-xs text-gray-400">Moeda: {newCurrency}</span>
+                      <span className="text-xs text-[var(--arvo-fg-soft)]">Moeda: {newCurrency}</span>
                     </div>
                   )}
 
                   {/* Name */}
                   <div className="col-span-2">
-                    <label className="block text-xs text-gray-500 mb-1">
+                    <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">
                       {newFormType === 'fixed_income' ? t.contributions.titleDesc : t.contributions.fullName}
                       {isTickerForm && (
-                        <span className="ml-1 text-gray-400">
+                        <span className="ml-1 text-[var(--arvo-fg-soft)]">
                           {newNameLoading ? t.contributions.fetchingName : newName ? t.contributions.nameAutoFilled : newCode ? t.contributions.nameNotFound : t.contributions.nameFillHint}
                         </span>
                       )}
@@ -735,13 +735,13 @@ export default function ContributionsPage() {
                       placeholder={isTickerForm
                         ? newNameLoading ? t.common.loading : newCode ? t.contributions.nameNotFound.replace('· ', '') : t.contributions.nameAutoFilled.replace('· ', '')
                         : newFormType === 'fixed_income' ? 'Preenchido ao escolher tipo e taxa' : newFormType === 'imovel' ? 'ex: Apartamento Paris 11e' : 'ex: Fundo X'}
-                      className={`w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20 ${isTickerForm ? 'bg-gray-50 text-gray-500 cursor-default' : 'bg-white'}`}
+                      className={`w-full border border-[var(--arvo-border)] rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20 ${isTickerForm ? 'bg-[var(--arvo-surface-2)] text-[var(--arvo-fg-muted)] cursor-default' : 'bg-[var(--arvo-surface)]'}`}
                     />
                   </div>
 
                   {/* Class */}
                   <div className="col-span-2">
-                    <label className="block text-xs text-gray-500 mb-1">{t.contributions.assetClass}</label>
+                    <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{t.contributions.assetClass}</label>
                     <select value={newClassId} onChange={e => setNewClassId(e.target.value)} className={SMALL_INPUT}>
                       <option value="">{t.contributions.noClass}</option>
                       {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -752,10 +752,10 @@ export default function ContributionsPage() {
                   {newFormType === 'manual' && (
                     <>
                       <div className="col-span-2 border-t border-blue-200 pt-2">
-                        <p className="text-xs font-semibold text-[#0D0D0D] mb-2">{t.contributions.initialValueSection}</p>
+                        <p className="text-xs font-semibold text-[var(--arvo-fg)] mb-2">{t.contributions.initialValueSection}</p>
                       </div>
                       <div>
-                        <label className="block text-xs text-gray-500 mb-1">{t.contributions.currentValueBrl}</label>
+                        <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{t.contributions.currentValueBrl}</label>
                         <input
                           type="text"
                           inputMode="decimal"
@@ -766,7 +766,7 @@ export default function ContributionsPage() {
                         />
                       </div>
                       <div>
-                        <label className="block text-xs text-gray-500 mb-1">{t.contributions.refDate}</label>
+                        <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{t.contributions.refDate}</label>
                         <input
                           type="date"
                           value={newManualDate || today}
@@ -785,10 +785,10 @@ export default function ContributionsPage() {
                   {newFormType === 'imovel' && (
                     <>
                       <div className="col-span-2 border-t border-blue-200 pt-2">
-                        <p className="text-xs font-semibold text-[#0D0D0D] mb-2">{t.contributions.propertySection}</p>
+                        <p className="text-xs font-semibold text-[var(--arvo-fg)] mb-2">{t.contributions.propertySection}</p>
                       </div>
                       <div>
-                        <label className="block text-xs text-gray-500 mb-1">{t.contributions.purchaseDate}</label>
+                        <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{t.contributions.purchaseDate}</label>
                         <input
                           type="date"
                           value={newImvPurchaseDate}
@@ -798,7 +798,7 @@ export default function ContributionsPage() {
                         />
                       </div>
                       <div>
-                        <label className="block text-xs text-gray-500 mb-1">{t.contributions.purchaseValue.replace('{currency}', newCurrency)}</label>
+                        <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{t.contributions.purchaseValue.replace('{currency}', newCurrency)}</label>
                         <input
                           type="text"
                           inputMode="decimal"
@@ -810,7 +810,7 @@ export default function ContributionsPage() {
                       </div>
                       {newCurrency !== 'BRL' && (
                         <div className="col-span-2">
-                          <label className="block text-xs text-gray-500 mb-1">{t.contributions.brlEquivalent}</label>
+                          <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{t.contributions.brlEquivalent}</label>
                           <input
                             type="text"
                             inputMode="decimal"
@@ -828,12 +828,12 @@ export default function ContributionsPage() {
                   {newFormType === 'fixed_income' && (
                     <>
                       <div className="col-span-2 border-t border-blue-200 pt-2">
-                        <p className="text-xs font-semibold text-[#0D0D0D] mb-2">{t.contributions.fiSection}</p>
+                        <p className="text-xs font-semibold text-[var(--arvo-fg)] mb-2">{t.contributions.fiSection}</p>
                       </div>
 
                       {/* fi_type */}
                       <div className="col-span-2">
-                        <label className="block text-xs text-gray-500 mb-1">{t.contributions.typeLabel}</label>
+                        <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{t.contributions.typeLabel}</label>
                         <select value={newFiType} onChange={e => setNewFiType(e.target.value)} className={SMALL_INPUT}>
                           {FI_TYPE_OPTIONS.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
                         </select>
@@ -841,7 +841,7 @@ export default function ContributionsPage() {
 
                       {/* fi_rate */}
                       <div>
-                        <label className="block text-xs text-gray-500 mb-1">{rateCfg.label}</label>
+                        <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{rateCfg.label}</label>
                         <input
                           type="text"
                           inputMode="decimal"
@@ -854,7 +854,7 @@ export default function ContributionsPage() {
 
                       {/* fi_principal */}
                       <div>
-                        <label className="block text-xs text-gray-500 mb-1">{t.contributions.investedBrl}</label>
+                        <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{t.contributions.investedBrl}</label>
                         <input
                           type="text"
                           inputMode="decimal"
@@ -867,7 +867,7 @@ export default function ContributionsPage() {
 
                       {/* fi_start_date */}
                       <div>
-                        <label className="block text-xs text-gray-500 mb-1">{t.contributions.startDate}</label>
+                        <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{t.contributions.startDate}</label>
                         <input
                           type="date"
                           value={newFiStartDate}
@@ -879,7 +879,7 @@ export default function ContributionsPage() {
 
                       {/* fi_maturity */}
                       <div>
-                        <label className="block text-xs text-gray-500 mb-1">{t.contributions.maturityOpt}</label>
+                        <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{t.contributions.maturityOpt}</label>
                         <input
                           type="date"
                           value={newFiMaturity}
@@ -890,7 +890,7 @@ export default function ContributionsPage() {
 
                       {/* institution */}
                       <div className="col-span-2">
-                        <label className="block text-xs text-gray-500 mb-1">{t.contributions.institutionOpt}</label>
+                        <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{t.contributions.institutionOpt}</label>
                         <InstitutionSelect value={newFiInstitution} onChange={setNewFiInstitution} />
                       </div>
 
@@ -908,12 +908,12 @@ export default function ContributionsPage() {
                     type="button"
                     onClick={handleCreateAsset}
                     disabled={savingNewAsset || newNameLoading}
-                    className="px-3 py-1.5 bg-[#0D0D0D] text-white text-xs font-semibold rounded-lg disabled:opacity-50"
+                    className="px-3 py-1.5 bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] text-xs font-semibold rounded-lg disabled:opacity-50"
                   >{savingNewAsset ? t.contributions.creating : newFormType === 'fixed_income' ? t.contributions.createAndConfigure : newFormType === 'imovel' ? t.contributions.registerProperty : t.contributions.createAsset}</button>
                   <button
                     type="button"
                     onClick={() => { setShowNewAsset(false); resetNewAsset() }}
-                    className="px-3 py-1.5 text-xs text-gray-500 hover:text-gray-700"
+                    className="px-3 py-1.5 text-xs text-[var(--arvo-fg-muted)] hover:text-[var(--arvo-fg)]"
                   >{t.common.cancel}</button>
                 </div>
               </div>
@@ -921,17 +921,17 @@ export default function ContributionsPage() {
 
             {/* Date + Type */}
             <div>
-              <label className="block text-xs text-gray-500 mb-1">{t.contributions.date}</label>
+              <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{t.contributions.date}</label>
               <input
                 type="date"
                 value={date}
                 max={today}
                 onChange={e => setDate(e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20"
+                className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20"
               />
             </div>
             <div>
-              <label className="block text-xs text-gray-500 mb-1">{t.contributions.opType}</label>
+              <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{t.contributions.opType}</label>
               <div className="flex gap-2">
                 {(['buy', 'sell', 'income'] as const).map(btnType => {
                   const isSellDisabled = btnType === 'sell' && sellDisabled
@@ -949,8 +949,8 @@ export default function ContributionsPage() {
                       disabled={isSellDisabled}
                       className={`flex-1 py-2 text-sm font-medium rounded-lg border transition-colors ${
                         isSellDisabled
-                          ? 'border-gray-100 text-gray-300 cursor-not-allowed'
-                          : type === btnType ? activeColor : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                          ? 'border-[var(--arvo-border)] text-[var(--arvo-fg-faint)] cursor-not-allowed'
+                          : type === btnType ? activeColor : 'border-[var(--arvo-border)] text-[var(--arvo-fg-muted)] hover:bg-[var(--arvo-surface-2)]'
                       }`}
                     >{label}</button>
                   )
@@ -961,10 +961,10 @@ export default function ContributionsPage() {
             {/* RF buy: show current principal info */}
             {isRfBuy && selectedAsset?.fi_principal != null && (
               <div className="sm:col-span-2 bg-blue-50 border border-blue-100 rounded-lg px-4 py-3 text-sm">
-                <p className="text-xs text-gray-500">{t.contributions.currentPrincipal}</p>
-                <p className="font-semibold text-gray-800">{fmtBrl(selectedAsset.fi_principal)}</p>
+                <p className="text-xs text-[var(--arvo-fg-muted)]">{t.contributions.currentPrincipal}</p>
+                <p className="font-semibold text-[var(--arvo-fg)]">{fmtBrl(selectedAsset.fi_principal)}</p>
                 {selectedAsset.fi_type && (
-                  <p className="text-xs text-gray-400 mt-0.5">
+                  <p className="text-xs text-[var(--arvo-fg-soft)] mt-0.5">
                     {FI_TYPE_OPTIONS.find(opt => opt.value === selectedAsset.fi_type)?.label ?? selectedAsset.fi_type}
                     {selectedAsset.fi_start_date && ` · desde ${fmtDate(selectedAsset.fi_start_date)}`}
                     {selectedAsset.fi_maturity && ` · vence ${fmtDate(selectedAsset.fi_maturity)}`}
@@ -976,7 +976,7 @@ export default function ContributionsPage() {
             {/* Qty + Price (ticker only, not income) */}
             {!isSimpleAsset && !isIncome && (
               <div>
-                <label className="block text-xs text-gray-500 mb-1">{t.contributions.quantity}</label>
+                <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{t.contributions.quantity}</label>
                 <input
                   type="text"
                   inputMode="decimal"
@@ -991,12 +991,12 @@ export default function ContributionsPage() {
             )}
             {!isSimpleAsset && !isIncome && (
               <div>
-                <label className="block text-xs text-gray-500 mb-1">{t.contributions.unitPrice}</label>
+                <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{t.contributions.unitPrice}</label>
                 <div className="flex gap-1.5">
                   <select
                     value={priceCurrency}
                     onChange={e => setPriceCurrency(e.target.value)}
-                    className="border border-gray-200 rounded-lg px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20 bg-white w-20 shrink-0"
+                    className="border border-[var(--arvo-border)] rounded-lg px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20 bg-[var(--arvo-surface)] w-20 shrink-0"
                   >
                     {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
@@ -1016,19 +1016,19 @@ export default function ContributionsPage() {
 
             {/* Value */}
             <div className="sm:col-span-2">
-              <label className="block text-xs text-gray-500 mb-1">
+              <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">
                 {isIncome ? t.contributions.receivedBrl : isRfBuy ? t.contributions.additionalContrib : isRfAsset ? t.contributions.redeemedBrl : isManualAsset ? t.contributions.valueBrl : (
                   <>
                     {t.contributions.totalBrl}
                     {priceCurrency !== 'BRL' && (fxRates as Record<string, number>)[priceCurrency] && (
-                      <span className="ml-1 text-gray-400">
+                      <span className="ml-1 text-[var(--arvo-fg-soft)]">
                         (1 {priceCurrency} = {(fxRates as Record<string, number>)[priceCurrency].toFixed(2)} BRL)
                       </span>
                     )}
                   </>
                 )}
                 {(isIncome || isSimpleAsset) && simpleCurrency !== 'BRL' && (fxRates as Record<string, number>)[simpleCurrency] && (
-                  <span className="ml-1 text-gray-400">
+                  <span className="ml-1 text-[var(--arvo-fg-soft)]">
                     (1 {simpleCurrency} = {(fxRates as Record<string, number>)[simpleCurrency].toFixed(2)} BRL)
                   </span>
                 )}
@@ -1038,7 +1038,7 @@ export default function ContributionsPage() {
                   <select
                     value={simpleCurrency}
                     onChange={e => setSimpleCurrency(e.target.value)}
-                    className="border border-gray-200 rounded-lg px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20 bg-white w-20 shrink-0"
+                    className="border border-[var(--arvo-border)] rounded-lg px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20 bg-[var(--arvo-surface)] w-20 shrink-0"
                   >
                     {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
@@ -1059,8 +1059,8 @@ export default function ContributionsPage() {
             {/* IR retido na fonte — income contributions only, for France fiscal report */}
             {isIncome && (
               <div className="sm:col-span-2">
-                <label className="block text-xs text-gray-500 mb-1">
-                  IR retido na fonte (R$) <span className="text-gray-400 font-normal">— opcional, para crédito fiscal França (2AB)</span>
+                <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">
+                  IR retido na fonte (R$) <span className="text-[var(--arvo-fg-soft)] font-normal">— opcional, para crédito fiscal França (2AB)</span>
                 </label>
                 <input
                   type="text"
@@ -1068,14 +1068,14 @@ export default function ContributionsPage() {
                   value={taxWithheld}
                   onChange={e => setTaxWithheld(e.target.value)}
                   placeholder="0,00"
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20"
+                  className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20"
                 />
               </div>
             )}
 
             {/* Description */}
             <div className="sm:col-span-2">
-              <label className="block text-xs text-gray-500 mb-1">
+              <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">
                 {isRfBuy ? t.contributions.noteOptional : t.contributions.descOptional}
               </label>
               <input
@@ -1083,7 +1083,7 @@ export default function ContributionsPage() {
                 value={description}
                 onChange={e => setDescription(e.target.value)}
                 placeholder={isRfBuy ? 'ex: aporte mensal' : 'ex: compra na corretora XP'}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20"
+                className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20"
               />
             </div>
           </div>
@@ -1093,7 +1093,7 @@ export default function ContributionsPage() {
           <button
             onClick={editId ? handleUpdate : handleSave}
             disabled={saving}
-            className="w-full bg-[#0D0D0D] text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-[#0D0D0D]/90 disabled:opacity-50 transition-colors"
+            className="w-full bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] rounded-xl py-2.5 text-sm font-semibold hover:bg-[var(--arvo-fg)]/90 disabled:opacity-50 transition-colors"
           >
             {saving ? t.contributions.saving
               : editId ? t.contributions.saveChanges
@@ -1105,9 +1105,9 @@ export default function ContributionsPage() {
       )}
 
       {/* Historico */}
-      <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
-        <div className="px-5 py-4 border-b border-gray-100">
-          <h2 className="font-semibold text-gray-800">
+      <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl overflow-hidden shadow-sm">
+        <div className="px-5 py-4 border-b border-[var(--arvo-border)]">
+          <h2 className="font-semibold text-[var(--arvo-fg)]">
             {t.contributions.historyTitle}{contributions.length > 0 ? ` (${contributions.length})` : ''}
           </h2>
         </div>
@@ -1117,12 +1117,12 @@ export default function ContributionsPage() {
         ) : error ? (
           <p className="text-center text-red-500 py-8 text-sm">{error}</p>
         ) : contributions.length === 0 ? (
-          <p className="text-center text-gray-400 py-8 text-sm">{t.contributions.noContributions}</p>
+          <p className="text-center text-[var(--arvo-fg-soft)] py-8 text-sm">{t.contributions.noContributions}</p>
         ) : (
           <>
           <div className="hidden sm:block overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
+              <thead className="bg-[var(--arvo-surface-2)] text-[var(--arvo-fg-muted)] text-xs uppercase">
                 <tr>
                   <th className="px-4 py-3 text-left">{t.contributions.date}</th>
                   <th className="px-4 py-3 text-left">{t.common.name}</th>
@@ -1132,21 +1132,21 @@ export default function ContributionsPage() {
                   <th className="px-4 py-3"></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+              <tbody className="divide-y divide-[var(--arvo-border-soft)]">
                 {contributions.map(c => (
                   <tr
                     key={c.id}
-                    className="hover:bg-gray-50 cursor-pointer"
+                    className="hover:bg-[var(--arvo-surface-2)] cursor-pointer"
                     onClick={() => navigate(`/assets/${c.assets.id}`)}
                   >
-                    <td className="px-4 py-3 text-gray-500 text-xs whitespace-nowrap">{fmtDate(c.date)}</td>
+                    <td className="px-4 py-3 text-[var(--arvo-fg-muted)] text-xs whitespace-nowrap">{fmtDate(c.date)}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1.5">
                         {c.assets.asset_classes && (
                           <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: c.assets.asset_classes.color }} />
                         )}
-                        <span className="font-medium text-gray-900">{c.assets.code}</span>
-                        <span className="text-gray-400 text-xs truncate max-w-[120px]">{c.assets.name}</span>
+                        <span className="font-medium text-[var(--arvo-fg)]">{c.assets.code}</span>
+                        <span className="text-[var(--arvo-fg-soft)] text-xs truncate max-w-[120px]">{c.assets.name}</span>
                       </div>
                     </td>
                     <td className="px-4 py-3">
@@ -1158,8 +1158,8 @@ export default function ContributionsPage() {
                         {c.type === 'buy' ? t.contributions.buyLabel : c.type === 'income' ? t.contributions.incomeLabel : t.contributions.sellLabel}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-right text-gray-600">{fmtNum(c.quantity, 6)}</td>
-                    <td className="px-4 py-3 text-right font-medium text-gray-900">
+                    <td className="px-4 py-3 text-right text-[var(--arvo-fg-muted)]">{fmtNum(c.quantity, 6)}</td>
+                    <td className="px-4 py-3 text-right font-medium text-[var(--arvo-fg)]">
                       {c.value_brl != null ? fmt(c.value_brl) : '—'}
                     </td>
                     <td className="px-4 py-3 text-right" onClick={e => e.stopPropagation()}>
@@ -1171,14 +1171,14 @@ export default function ContributionsPage() {
                           >{t.common.confirm}</button>
                           <button
                             onClick={() => setConfirmDeleteId(null)}
-                            className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
+                            className="text-xs text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg-muted)] transition-colors"
                           >{t.common.cancel}</button>
                         </div>
                       ) : (
                         <div className="flex items-center justify-end gap-2">
                           <button
                             onClick={() => { setConfirmDeleteId(null); handleEditClick(c) }}
-                            className="text-gray-400 hover:text-[#0D0D0D] transition-colors"
+                            className="text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg)] transition-colors"
                             title={t.common.edit}
                           >
                             <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor">
@@ -1187,7 +1187,7 @@ export default function ContributionsPage() {
                           </button>
                           <button
                             onClick={() => handleDelete(c.id)}
-                            className="text-gray-300 hover:text-red-500 transition-colors text-base leading-none"
+                            className="text-[var(--arvo-fg-faint)] hover:text-red-500 transition-colors text-base leading-none"
                             title={t.common.remove}
                           >×</button>
                         </div>
@@ -1200,11 +1200,11 @@ export default function ContributionsPage() {
           </div>
 
           {/* Mobile card list */}
-          <div className="sm:hidden divide-y divide-gray-100">
+          <div className="sm:hidden divide-y divide-[var(--arvo-border)]">
             {contributions.map(c => (
               <div
                 key={c.id}
-                className="px-4 py-3 flex items-center gap-3 cursor-pointer hover:bg-gray-50 transition-colors"
+                className="px-4 py-3 flex items-center gap-3 cursor-pointer hover:bg-[var(--arvo-surface-2)] transition-colors"
                 onClick={() => navigate(`/assets/${c.assets.id}`)}
               >
                 <div className="flex-1 min-w-0">
@@ -1212,7 +1212,7 @@ export default function ContributionsPage() {
                     {c.assets.asset_classes && (
                       <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: c.assets.asset_classes.color }} />
                     )}
-                    <span className="font-medium text-gray-900 text-sm">{c.assets.code}</span>
+                    <span className="font-medium text-[var(--arvo-fg)] text-sm">{c.assets.code}</span>
                     <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${
                       c.type === 'buy' ? 'bg-green-100 text-green-700' :
                       c.type === 'income' ? 'bg-purple-100 text-purple-700' :
@@ -1221,10 +1221,10 @@ export default function ContributionsPage() {
                       {c.type === 'buy' ? t.contributions.buyLabel : c.type === 'income' ? t.contributions.incomeLabel : t.contributions.sellLabel}
                     </span>
                   </div>
-                  <div className="text-xs text-gray-400 mt-0.5">{fmtDate(c.date)} · {fmtNum(c.quantity, 4)}</div>
+                  <div className="text-xs text-[var(--arvo-fg-soft)] mt-0.5">{fmtDate(c.date)} · {fmtNum(c.quantity, 4)}</div>
                 </div>
                 <div className="text-right shrink-0">
-                  <div className="text-sm font-medium text-gray-900">{c.value_brl != null ? fmt(c.value_brl) : '—'}</div>
+                  <div className="text-sm font-medium text-[var(--arvo-fg)]">{c.value_brl != null ? fmt(c.value_brl) : '—'}</div>
                 </div>
               </div>
             ))}

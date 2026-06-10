@@ -371,10 +371,10 @@ export default function InstitutionsPage() {
   function Field({ label, field, placeholder, textarea }: {
     label: string; field: keyof InstitutionProfile; placeholder?: string; textarea?: boolean
   }) {
-    const inputClass = "w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20"
+    const inputClass = "w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20"
     return (
       <div>
-        <label className="block text-xs text-gray-500 mb-1">{label}</label>
+        <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{label}</label>
         {textarea ? (
           <textarea
             value={form[field]}
@@ -403,14 +403,14 @@ export default function InstitutionsPage() {
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div>
-        <h1 className="text-xl font-bold text-gray-900">{t.institutions.title}</h1>
-        <p className="text-sm text-gray-400 mt-1">
+        <h1 className="text-xl font-bold text-[var(--arvo-fg)]">{t.institutions.title}</h1>
+        <p className="text-sm text-[var(--arvo-fg-soft)] mt-1">
           {t.institutions.subtitle}
         </p>
       </div>
 
       {allInstitutions.length === 0 ? (
-        <div className="bg-white border border-gray-100 rounded-2xl p-12 text-center text-gray-400 shadow-sm">
+        <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl p-12 text-center text-[var(--arvo-fg-soft)] shadow-sm">
           {t.institutions.noFound}
         </div>
       ) : (
@@ -421,18 +421,18 @@ export default function InstitutionsPage() {
             const isActive  = usedInstitutions.includes(name)
 
             return (
-              <div key={name} className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
+              <div key={name} className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl overflow-hidden shadow-sm">
                 <button
                   onClick={() => openInstitution(name)}
-                  className="w-full px-5 py-4 flex items-center justify-between text-left hover:bg-gray-50 transition-colors"
+                  className="w-full px-5 py-4 flex items-center justify-between text-left hover:bg-[var(--arvo-surface-2)] transition-colors"
                 >
                   <div className="flex items-center gap-3">
                     <InstitutionLogo name={name} size={32} />
                     <div>
-                      <span className="font-semibold text-gray-800">{name}</span>
+                      <span className="font-semibold text-[var(--arvo-fg)]">{name}</span>
                       <div className="flex items-center gap-2 mt-0.5">
                         {!isActive && (
-                          <span className="text-xs text-gray-400 border border-gray-200 rounded px-1.5 py-0.5">{t.institutions.noAssets}</span>
+                          <span className="text-xs text-[var(--arvo-fg-soft)] border border-[var(--arvo-border)] rounded px-1.5 py-0.5">{t.institutions.noAssets}</span>
                         )}
                         {hasData ? (
                           <span className="text-xs text-green-600 font-medium">✓ {t.institutions.dataFilled}</span>
@@ -442,11 +442,11 @@ export default function InstitutionsPage() {
                       </div>
                     </div>
                   </div>
-                  <span className="text-gray-400 text-sm">{isOpen ? '▲' : '▼'}</span>
+                  <span className="text-[var(--arvo-fg-soft)] text-sm">{isOpen ? '▲' : '▼'}</span>
                 </button>
 
                 {isOpen && (
-                  <div className="px-5 pb-5 border-t border-gray-50 space-y-4 pt-4">
+                  <div className="px-5 pb-5 border-t border-[var(--arvo-border-soft)] space-y-4 pt-4">
                     {autoFilledFor === name && (
                       <div className="flex gap-2 p-3 bg-amber-50 border border-amber-200 rounded-xl">
                         <span className="text-amber-500 shrink-0">⚠</span>
@@ -460,11 +460,11 @@ export default function InstitutionsPage() {
                         <Field label="Nome oficial" field="official_name" placeholder="Ex: XP Investimentos CCTVM S.A." />
                       </div>
                       <div>
-                        <label className="block text-xs text-gray-500 mb-1">País</label>
+                        <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">País</label>
                         <select
                           value={form.country}
                           onChange={e => setForm(prev => ({ ...prev, country: e.target.value }))}
-                          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20"
+                          className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm bg-[var(--arvo-surface)] focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20"
                         >
                           {COUNTRY_OPTIONS.map(o => (
                             <option key={o.value} value={o.value}>{o.label}</option>
@@ -485,12 +485,12 @@ export default function InstitutionsPage() {
                         <Field label="Número da conta" field="account_number" placeholder="Nº da sua conta nesta instituição" />
                       </div>
                       <div>
-                        <label className="block text-xs text-gray-500 mb-1">Data de abertura da conta</label>
+                        <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">Data de abertura da conta</label>
                         <input
                           type="date"
                           value={form.account_open_date}
                           onChange={e => setForm(prev => ({ ...prev, account_open_date: e.target.value }))}
-                          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20"
+                          className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20"
                         />
                       </div>
                     </div>
@@ -499,7 +499,7 @@ export default function InstitutionsPage() {
                       <button
                         onClick={() => handleSave(name)}
                         disabled={saving}
-                        className="px-4 py-2 bg-[#0D0D0D] text-white rounded-xl text-sm font-semibold hover:bg-[#0D0D0D]/90 disabled:opacity-50 transition-colors"
+                        className="px-4 py-2 bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] rounded-xl text-sm font-semibold hover:bg-[var(--arvo-fg)]/90 disabled:opacity-50 transition-colors"
                       >
                         {saving ? t.common.loading : t.common.save}
                       </button>

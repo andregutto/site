@@ -27,10 +27,10 @@ const CATEGORY_LABELS: Record<string, { pt: string; en: string; fr: string }> = 
 }
 
 function pctColor(v: number | null) {
-  if (v == null) return 'text-gray-400'
+  if (v == null) return 'text-[var(--arvo-fg-soft)]'
   if (v > 0) return 'text-emerald-600'
   if (v < 0) return 'text-red-500'
-  return 'text-gray-500'
+  return 'text-[var(--arvo-fg-muted)]'
 }
 
 function fmtPct(v: number | null) {
@@ -48,7 +48,7 @@ function fmtValue(v: number | null, unit: string) {
 }
 
 function MiniSparkBar({ pct }: { pct: number | null }) {
-  if (pct == null) return <div className="w-1 h-4 bg-gray-100 rounded-full" />
+  if (pct == null) return <div className="w-1 h-4 bg-[var(--arvo-track-bg)] rounded-full" />
   const h = Math.min(Math.abs(pct) * 2.5, 28)
   return (
     <div className="flex items-end justify-center w-2 h-7">
@@ -103,13 +103,13 @@ export default function IndicesPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 style={{ fontFamily: "var(--arvo-font-body)", fontSize: 18, letterSpacing: '0.06em', color: 'var(--arvo-black)' }}>{t.indices.title}</h1>
-        <p className="text-sm mt-0.5" style={{ color: 'rgba(13,13,13,0.60)' }}>{t.indices.subtitle}</p>
+        <h1 style={{ fontFamily: "var(--arvo-font-body)", fontSize: 18, letterSpacing: '0.06em', color: 'var(--arvo-fg)' }}>{t.indices.title}</h1>
+        <p className="text-sm mt-0.5" style={{ color: 'var(--arvo-fg-muted)' }}>{t.indices.subtitle}</p>
       </div>
 
       {grouped.map(([category, items]) => (
         <section key={category}>
-          <h2 className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: 'rgba(13,13,13,0.55)', fontFamily: "var(--arvo-font-body)", letterSpacing: '0.18em' }}>
+          <h2 className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--arvo-fg-muted)', fontFamily: "var(--arvo-font-body)", letterSpacing: '0.18em' }}>
             {CATEGORY_LABELS[category]?.[locale as 'pt' | 'en' | 'fr'] ?? category}
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -122,15 +122,15 @@ export default function IndicesPage() {
                 <button
                   key={idx.code}
                   onClick={() => navigate(`/indices/${idx.code}`)}
-                  className="text-left bg-white border border-gray-100 rounded-2xl p-4 hover:border-[#0D0D0D]/30 hover:shadow-sm transition-all"
+                  className="text-left bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl p-4 hover:border-[var(--arvo-fg)]/30 hover:shadow-sm transition-all"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide">{idx.code}</div>
-                      <div className="text-sm font-semibold text-gray-800 truncate">{idx.name}</div>
+                      <div className="text-xs font-semibold text-[var(--arvo-fg-soft)] uppercase tracking-wide">{idx.code}</div>
+                      <div className="text-sm font-semibold text-[var(--arvo-fg)] truncate">{idx.name}</div>
                     </div>
                     <div className="text-right shrink-0">
-                      <div className="text-lg font-bold text-gray-900 tabular-nums">
+                      <div className="text-lg font-bold text-[var(--arvo-fg)] tabular-nums">
                         {fmtValue(idx.value, idx.unit)}
                       </div>
                       <div className={`text-xs font-medium ${pctColor(dayPct)}`}>
@@ -139,7 +139,7 @@ export default function IndicesPage() {
                     </div>
                   </div>
 
-                  <div className="mt-3 pt-3 border-t border-gray-50 grid grid-cols-3 gap-2">
+                  <div className="mt-3 pt-3 border-t border-[var(--arvo-border-soft)] grid grid-cols-3 gap-2">
                     <div className="text-center">
                       <div className="flex justify-center mb-1">
                         <MiniSparkBar pct={idx.m1_pct} />
@@ -147,7 +147,7 @@ export default function IndicesPage() {
                       <div className={`text-xs font-semibold tabular-nums ${pctColor(idx.m1_pct)}`}>
                         {fmtPct(idx.m1_pct)}
                       </div>
-                      <div className="text-[10px] text-gray-400">1m</div>
+                      <div className="text-[10px] text-[var(--arvo-fg-soft)]">1m</div>
                     </div>
                     <div className="text-center">
                       <div className="flex justify-center mb-1">
@@ -156,7 +156,7 @@ export default function IndicesPage() {
                       <div className={`text-xs font-semibold tabular-nums ${pctColor(idx.ytd_pct)}`}>
                         {fmtPct(idx.ytd_pct)}
                       </div>
-                      <div className="text-[10px] text-gray-400">YTD</div>
+                      <div className="text-[10px] text-[var(--arvo-fg-soft)]">YTD</div>
                     </div>
                     <div className="text-center">
                       <div className="flex justify-center mb-1">
@@ -165,7 +165,7 @@ export default function IndicesPage() {
                       <div className={`text-xs font-semibold tabular-nums ${pctColor(idx.m12_pct)}`}>
                         {fmtPct(idx.m12_pct)}
                       </div>
-                      <div className="text-[10px] text-gray-400">12m</div>
+                      <div className="text-[10px] text-[var(--arvo-fg-soft)]">12m</div>
                     </div>
                   </div>
                 </button>
@@ -175,7 +175,7 @@ export default function IndicesPage() {
         </section>
       ))}
 
-      <p className="text-[10px] text-gray-300 pb-2">{t.indices.source}</p>
+      <p className="text-[10px] text-[var(--arvo-fg-faint)] pb-2">{t.indices.source}</p>
     </div>
   )
 }

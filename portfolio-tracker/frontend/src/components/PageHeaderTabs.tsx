@@ -16,10 +16,10 @@ export default function PageHeaderTabs<K extends string>({ title, subtitle, tabs
   return (
     <div style={{ marginBottom }}>
       <div style={{ marginBottom: 10 }}>
-        <h1 style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 18, letterSpacing: '0.06em', color: 'var(--arvo-black)' }}>{title}</h1>
-        {subtitle && <p className="text-sm mt-0.5" style={{ color: 'rgba(13,13,13,0.60)' }}>{subtitle}</p>}
+        <h1 style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 18, letterSpacing: '0.06em', color: 'var(--arvo-fg)' }}>{title}</h1>
+        {subtitle && <p className="text-sm mt-0.5" style={{ color: 'var(--arvo-fg-muted)' }}>{subtitle}</p>}
       </div>
-      <div style={{ display: 'flex', gap: 4, background: 'rgba(0,0,0,0.05)', borderRadius: 10, padding: 4 }}>
+      <div style={{ display: 'flex', gap: 4, background: 'var(--arvo-track-bg)', borderRadius: 10, padding: 4 }}>
         {tabs.map(item => (
           <button
             key={item.key}
@@ -29,8 +29,8 @@ export default function PageHeaderTabs<K extends string>({ title, subtitle, tabs
               fontSize: 13, fontFamily: 'var(--arvo-font-body)',
               fontWeight: activeTab === item.key ? 600 : 400,
               cursor: 'pointer',
-              background: activeTab === item.key ? '#fff' : 'transparent',
-              color: activeTab === item.key ? 'var(--arvo-black)' : 'var(--arvo-fg-soft)',
+              background: activeTab === item.key ? 'var(--arvo-surface)' : 'transparent',
+              color: activeTab === item.key ? 'var(--arvo-fg)' : 'var(--arvo-fg-soft)',
               boxShadow: activeTab === item.key ? '0 1px 3px rgba(0,0,0,0.10)' : 'none',
               transition: 'all 0.15s',
             }}

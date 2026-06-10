@@ -74,14 +74,14 @@ interface SummaryCardProps {
 
 function SummaryCard({ label, value, sub, positive, neutral }: SummaryCardProps) {
   return (
-    <div className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm">
-      <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">{label}</p>
+    <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl p-4 shadow-sm">
+      <p className="text-xs text-[var(--arvo-fg-soft)] uppercase tracking-wide mb-1">{label}</p>
       <p className={`text-xl font-bold ${
-        neutral ? 'text-gray-900' :
+        neutral ? 'text-[var(--arvo-fg)]' :
         positive === true  ? 'text-green-600' :
-        positive === false ? 'text-red-600'   : 'text-gray-900'
+        positive === false ? 'text-red-600'   : 'text-[var(--arvo-fg)]'
       }`}>{value}</p>
-      {sub && <p className="text-xs text-gray-400 mt-0.5">{sub}</p>}
+      {sub && <p className="text-xs text-[var(--arvo-fg-soft)] mt-0.5">{sub}</p>}
     </div>
   )
 }
@@ -279,7 +279,7 @@ export default function AssetDetailPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-gray-400 text-sm animate-pulse">{d.loading}</div>
+        <div className="text-[var(--arvo-fg-soft)] text-sm animate-pulse">{d.loading}</div>
       </div>
     )
   }
@@ -459,40 +459,40 @@ export default function AssetDetailPage() {
       {/* Split modal */}
       {showSplitModal && splitModalData && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 space-y-4">
-            <h2 className="font-bold text-gray-900">{d.splitModalTitle}</h2>
+          <div className="bg-[var(--arvo-surface)] rounded-2xl shadow-xl w-full max-w-sm p-6 space-y-4">
+            <h2 className="font-bold text-[var(--arvo-fg)]">{d.splitModalTitle}</h2>
             {splitSuccess ? (
               <p className="text-green-600 text-sm font-medium">{d.splitSuccess}</p>
             ) : (
               <>
                 <div className="space-y-3">
                   <div>
-                    <label className="text-xs text-gray-500 uppercase tracking-wide">{d.splitDate}</label>
+                    <label className="text-xs text-[var(--arvo-fg-muted)] uppercase tracking-wide">{d.splitDate}</label>
                     <input type="date" value={splitModalData.date}
                       onChange={e => setSplitModalData(p => p && { ...p, date: e.target.value })}
-                      className="mt-1 w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#0D0D0D]/30" />
+                      className="mt-1 w-full border border-[var(--arvo-border)] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--arvo-fg)]/30" />
                   </div>
                   <div className="flex gap-3">
                     <div className="flex-1">
-                      <label className="text-xs text-gray-500 uppercase tracking-wide">{d.splitNumerator}</label>
+                      <label className="text-xs text-[var(--arvo-fg-muted)] uppercase tracking-wide">{d.splitNumerator}</label>
                       <input type="number" min="1" value={splitModalData.numerator}
                         onChange={e => setSplitModalData(p => p && { ...p, numerator: Number(e.target.value) })}
-                        className="mt-1 w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#0D0D0D]/30" />
+                        className="mt-1 w-full border border-[var(--arvo-border)] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--arvo-fg)]/30" />
                     </div>
                     <div className="flex-1">
-                      <label className="text-xs text-gray-500 uppercase tracking-wide">{d.splitDenominator}</label>
+                      <label className="text-xs text-[var(--arvo-fg-muted)] uppercase tracking-wide">{d.splitDenominator}</label>
                       <input type="number" min="1" value={splitModalData.denominator}
                         onChange={e => setSplitModalData(p => p && { ...p, denominator: Number(e.target.value) })}
-                        className="mt-1 w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#0D0D0D]/30" />
+                        className="mt-1 w-full border border-[var(--arvo-border)] rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--arvo-fg)]/30" />
                     </div>
                   </div>
-                  <p className="text-xs text-gray-400">{d.splitTypeLabel}</p>
+                  <p className="text-xs text-[var(--arvo-fg-soft)]">{d.splitTypeLabel}</p>
                 </div>
                 <div className="flex gap-2 pt-2">
                   <button onClick={() => setShowSplitModal(false)}
-                    className="flex-1 border border-gray-200 rounded-xl py-2 text-sm text-gray-600 hover:bg-gray-50">✕</button>
+                    className="flex-1 border border-[var(--arvo-border)] rounded-xl py-2 text-sm text-[var(--arvo-fg-muted)] hover:bg-[var(--arvo-surface-2)]">✕</button>
                   <button onClick={handleSplitSubmit} disabled={splitSubmitting}
-                    className="flex-1 bg-[#0D0D0D] text-white rounded-xl py-2 text-sm font-medium disabled:opacity-50">
+                    className="flex-1 bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] rounded-xl py-2 text-sm font-medium disabled:opacity-50">
                     {splitSubmitting ? '…' : d.splitSubmit}
                   </button>
                 </div>
@@ -509,16 +509,16 @@ export default function AssetDetailPage() {
           <div className="flex items-center gap-1.5">
             <button
               onClick={() => navigate(-1)}
-              className="w-7 h-7 rounded-lg border border-gray-200 flex items-center justify-center text-gray-500 hover:border-[#0D0D0D] hover:text-[#0D0D0D] transition-colors shrink-0"
+              className="w-7 h-7 rounded-lg border border-[var(--arvo-border)] flex items-center justify-center text-[var(--arvo-fg-muted)] hover:border-[var(--arvo-fg)] hover:text-[var(--arvo-fg)] transition-colors shrink-0"
             >‹</button>
             {assetId && (
               <button
                 onClick={() => toggleFavorite(assetId)}
-                className="w-7 h-7 rounded-lg border border-gray-200 flex items-center justify-center transition-colors shrink-0 hover:border-amber-400"
+                className="w-7 h-7 rounded-lg border border-[var(--arvo-border)] flex items-center justify-center transition-colors shrink-0 hover:border-amber-400"
                 title={favorites.has(assetId) ? d.removeFavorite : d.addFavorite}
               >
                 <svg
-                  className={`w-4 h-4 transition-colors ${favorites.has(assetId) ? 'text-amber-400' : 'text-gray-300'}`}
+                  className={`w-4 h-4 transition-colors ${favorites.has(assetId) ? 'text-amber-400' : 'text-[var(--arvo-fg-faint)]'}`}
                   fill={favorites.has(assetId) ? 'currentColor' : 'none'}
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -528,7 +528,7 @@ export default function AssetDetailPage() {
                 </svg>
               </button>
             )}
-            <h1 className="text-xl font-bold text-gray-900 flex-1 min-w-0">{data.code}</h1>
+            <h1 className="text-xl font-bold text-[var(--arvo-fg)] flex-1 min-w-0">{data.code}</h1>
           </div>
 
           {/* Name (editable) */}
@@ -539,17 +539,17 @@ export default function AssetDetailPage() {
                 value={nameValue}
                 onChange={e => setNameValue(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') handleSaveName(); if (e.key === 'Escape') setEditingName(false) }}
-                className="text-sm border border-gray-300 rounded-lg px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-[#0D0D0D]/30 flex-1 min-w-0"
+                className="text-sm border border-[var(--arvo-border)] rounded-lg px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-[var(--arvo-fg)]/30 flex-1 min-w-0"
                 autoFocus
               />
-              <button onClick={handleSaveName} disabled={savingName} className="text-xs text-[#0D0D0D] font-semibold disabled:opacity-50">OK</button>
-              <button onClick={() => setEditingName(false)} className="text-xs text-gray-400">✕</button>
+              <button onClick={handleSaveName} disabled={savingName} className="text-xs text-[var(--arvo-fg)] font-semibold disabled:opacity-50">OK</button>
+              <button onClick={() => setEditingName(false)} className="text-xs text-[var(--arvo-fg-soft)]">✕</button>
             </span>
           ) : (
             <button
               onClick={() => { setNameValue(data.name); setEditingName(true) }}
               title={d.editName}
-              className="text-sm text-gray-500 mt-0.5 truncate text-left max-w-full hover:text-[#0D0D0D] transition-colors"
+              className="text-sm text-[var(--arvo-fg-muted)] mt-0.5 truncate text-left max-w-full hover:text-[var(--arvo-fg)] transition-colors"
             >
               {data.name}
             </button>
@@ -568,13 +568,13 @@ export default function AssetDetailPage() {
                     handleSaveClass(val)
                   }}
                   disabled={savingClass}
-                  className="text-xs border border-gray-200 rounded-lg px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-[#0D0D0D]/30 bg-white disabled:opacity-50"
+                  className="text-xs border border-[var(--arvo-border)] rounded-lg px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-[var(--arvo-fg)]/30 bg-[var(--arvo-surface)] disabled:opacity-50"
                 >
                   <option value="">{d.noClass}</option>
                   {availableClasses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
                 {!savingClass && (
-                  <button onClick={() => setEditingClass(false)} className="text-xs text-gray-400">✕</button>
+                  <button onClick={() => setEditingClass(false)} className="text-xs text-[var(--arvo-fg-soft)]">✕</button>
                 )}
               </span>
             ) : (
@@ -596,12 +596,12 @@ export default function AssetDetailPage() {
               </span>
             )}
             {data.asset_type === 'manual' && (
-              <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 border border-gray-200 text-gray-500 font-medium">
+              <span className="text-xs px-2 py-0.5 rounded-full bg-[var(--arvo-track-bg)] border border-[var(--arvo-border)] text-[var(--arvo-fg-muted)] font-medium">
                 Manual
               </span>
             )}
             {data.asset_type === 'ticker' && data.avg_cost_brl != null && (
-              <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 border border-gray-200 text-gray-600 font-semibold">
+              <span className="text-xs px-2 py-0.5 rounded-full bg-[var(--arvo-track-bg)] border border-[var(--arvo-border)] text-[var(--arvo-fg-muted)] font-semibold">
                 PM {data.price_currency !== 'BRL' ? 'BRL' : data.price_currency} {fmtNum(data.avg_cost_brl, 2, intlLocale)}
               </span>
             )}
@@ -613,20 +613,20 @@ export default function AssetDetailPage() {
                   onChange={e => setSectorValue(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter') handleSaveSector(); if (e.key === 'Escape') setEditingSector(false) }}
                   placeholder={d.sectorPlaceholder}
-                  className="text-xs border border-gray-300 rounded-lg px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-[#0D0D0D]/30 w-36"
+                  className="text-xs border border-[var(--arvo-border)] rounded-lg px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-[var(--arvo-fg)]/30 w-36"
                   autoFocus
                 />
-                <button onClick={handleSaveSector} disabled={savingSector} className="text-xs text-[#0D0D0D] font-semibold disabled:opacity-50">OK</button>
-                <button onClick={() => setEditingSector(false)} className="text-xs text-gray-400">✕</button>
+                <button onClick={handleSaveSector} disabled={savingSector} className="text-xs text-[var(--arvo-fg)] font-semibold disabled:opacity-50">OK</button>
+                <button onClick={() => setEditingSector(false)} className="text-xs text-[var(--arvo-fg-soft)]">✕</button>
               </span>
             ) : (
               <button
                 onClick={() => { setSectorValue(data.sector ?? ''); setEditingSector(true) }}
                 title={d.setSector}
-                className={`text-xs px-2 py-0.5 rounded-full border font-medium transition-colors hover:border-[#0D0D0D]/50 ${
+                className={`text-xs px-2 py-0.5 rounded-full border font-medium transition-colors hover:border-[var(--arvo-fg)]/50 ${
                   data.sector
                     ? 'bg-teal-50 border-teal-200 text-teal-700'
-                    : 'border-dashed border-gray-300 text-gray-400 hover:text-gray-600'
+                    : 'border-dashed border-[var(--arvo-border)] text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg-muted)]'
                 }`}
               >
                 {data.sector ?? d.addSector}
@@ -639,13 +639,13 @@ export default function AssetDetailPage() {
             {!isManual && (
               <Link
                 to={`/portfolio?assetId=${id}&new=1`}
-                className="text-xs text-[#0D0D0D] border border-[#0D0D0D]/30 hover:bg-blue-50 rounded-lg px-2.5 py-1 transition-colors"
+                className="text-xs text-[var(--arvo-fg)] border border-[var(--arvo-fg)]/30 hover:bg-blue-50 rounded-lg px-2.5 py-1 transition-colors"
               >{d.addContrib}</Link>
             )}
             {canUpdateManualValue && (
               <button
                 onClick={() => setShowManualModal(true)}
-                className="text-xs text-[#0D0D0D] border border-[#0D0D0D]/30 hover:bg-blue-50 rounded-lg px-2.5 py-1 transition-colors font-medium"
+                className="text-xs text-[var(--arvo-fg)] border border-[var(--arvo-fg)]/30 hover:bg-blue-50 rounded-lg px-2.5 py-1 transition-colors font-medium"
               >{d.updateValue}</button>
             )}
             {isManual && (
@@ -669,11 +669,11 @@ export default function AssetDetailPage() {
         <div className="shrink-0 flex flex-col items-end gap-1">
           {data.current_price != null && (
             <>
-              <p className="font-bold text-gray-900">{priceLabel}</p>
+              <p className="font-bold text-[var(--arvo-fg)]">{priceLabel}</p>
               {currentPriceBrlDisplay != null && (
-                <p className="text-xs text-gray-500 font-medium">BRL {fmtNum(currentPriceBrlDisplay, 2, intlLocale)}</p>
+                <p className="text-xs text-[var(--arvo-fg-muted)] font-medium">BRL {fmtNum(currentPriceBrlDisplay, 2, intlLocale)}</p>
               )}
-              <p className="text-xs text-gray-400">{priceSourceLabel(data.price_source, d)}</p>
+              <p className="text-xs text-[var(--arvo-fg-soft)]">{priceSourceLabel(data.price_source, d)}</p>
             </>
           )}
           {editingInstitution ? (
@@ -689,14 +689,14 @@ export default function AssetDetailPage() {
               <button
                 onClick={handleSaveInstitution}
                 disabled={savingInstitution}
-                className="text-xs text-[#0D0D0D] font-semibold disabled:opacity-50 shrink-0"
+                className="text-xs text-[var(--arvo-fg)] font-semibold disabled:opacity-50 shrink-0"
               >OK</button>
-              <button onClick={() => setEditingInstitution(false)} className="text-xs text-gray-400 shrink-0">✕</button>
+              <button onClick={() => setEditingInstitution(false)} className="text-xs text-[var(--arvo-fg-soft)] shrink-0">✕</button>
             </div>
           ) : (
             <button
               onClick={() => { setInstitutionValue(data.exchange ?? ''); setEditingInstitution(true) }}
-              className="text-xs text-gray-400 hover:text-[#0D0D0D] border border-gray-200 hover:border-[#0D0D0D] rounded-lg px-2.5 py-1 transition-colors mt-1"
+              className="text-xs text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg)] border border-[var(--arvo-border)] hover:border-[var(--arvo-fg)] rounded-lg px-2.5 py-1 transition-colors mt-1"
             >
               {data.exchange || d.noInstitution}
             </button>
@@ -717,9 +717,9 @@ export default function AssetDetailPage() {
               textTransform: 'uppercase',
               padding: '5px 10px',
               borderRadius: 6,
-              border: `1px solid ${detailPeriod === key ? 'var(--arvo-black)' : 'var(--arvo-border)'}`,
-              background: detailPeriod === key ? 'var(--arvo-black)' : 'white',
-              color: detailPeriod === key ? 'var(--arvo-offwhite)' : 'rgba(13,13,13,0.55)',
+              border: `1px solid ${detailPeriod === key ? 'var(--arvo-fg)' : 'var(--arvo-border)'}`,
+              background: detailPeriod === key ? 'var(--arvo-fg)' : 'var(--arvo-surface)',
+              color: detailPeriod === key ? 'var(--arvo-pill-active-fg)' : 'var(--arvo-fg-muted)',
               cursor: 'pointer',
               transition: 'all 0.2s',
             }}
@@ -736,28 +736,28 @@ export default function AssetDetailPage() {
           neutral
         />
         {/* P&L card — % prominent, absolute value secondary */}
-        <div className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm">
-          <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">{periodStats.isAllTime ? d.gainLoss : d.periodGain}</p>
+        <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl p-4 shadow-sm">
+          <p className="text-xs text-[var(--arvo-fg-soft)] uppercase tracking-wide mb-1">{periodStats.isAllTime ? d.gainLoss : d.periodGain}</p>
           {periodStats.gainPct != null ? (
             <>
-              <p className={`text-xl font-bold ${periodStats.gainBrl > 0 ? 'text-green-600' : periodStats.gainBrl < 0 ? 'text-red-600' : 'text-gray-900'}`}>
+              <p className={`text-xl font-bold ${periodStats.gainBrl > 0 ? 'text-green-600' : periodStats.gainBrl < 0 ? 'text-red-600' : 'text-[var(--arvo-fg)]'}`}>
                 {periodStats.gainPct >= 0 ? '+' : ''}{periodStats.gainPct.toFixed(2)}%
                 {periodStats.isAllTime && data.price_currency !== 'BRL' && (
-                  <span className="text-[10px] font-normal text-gray-400 ml-1">BRL</span>
+                  <span className="text-[10px] font-normal text-[var(--arvo-fg-soft)] ml-1">BRL</span>
                 )}
               </p>
-              <p className={`text-xs mt-0.5 ${periodStats.gainBrl > 0 ? 'text-green-600' : periodStats.gainBrl < 0 ? 'text-red-600' : 'text-gray-500'}`}>
+              <p className={`text-xs mt-0.5 ${periodStats.gainBrl > 0 ? 'text-green-600' : periodStats.gainBrl < 0 ? 'text-red-600' : 'text-[var(--arvo-fg-muted)]'}`}>
                 {periodStats.gainBrl >= 0 ? '+' : ''}{fmt(periodStats.gainBrl)}
               </p>
               {/* For all-time: show native currency % (different because invested_brl used real historical FX) */}
               {periodStats.nativeGainPct != null && periodStats.isAllTime && (
-                <p className="text-xs text-gray-400 mt-0.5">
+                <p className="text-xs text-[var(--arvo-fg-soft)] mt-0.5">
                   {data.price_currency}: {periodStats.nativeGainPct >= 0 ? '+' : ''}{periodStats.nativeGainPct.toFixed(2)}%
                 </p>
               )}
             </>
           ) : (
-            <p className="text-xl font-bold text-gray-900">—</p>
+            <p className="text-xl font-bold text-[var(--arvo-fg)]">—</p>
           )}
         </div>
         {data.holdings != null ? (
@@ -851,7 +851,7 @@ export default function AssetDetailPage() {
                 className="text-xs text-blue-600 border border-blue-200 rounded-lg px-2.5 py-1 hover:bg-blue-100 transition-colors"
               >{d.editBtn}</button>
             ) : (
-              <button onClick={() => setEditingFiRate(false)} className="text-xs text-gray-400 hover:text-gray-600">✕</button>
+              <button onClick={() => setEditingFiRate(false)} className="text-xs text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg-muted)]">✕</button>
             )}
           </div>
           {editingFiRate ? (
@@ -861,7 +861,7 @@ export default function AssetDetailPage() {
                 <select
                   value={fiTypeValue}
                   onChange={e => setFiTypeValue(e.target.value)}
-                  className="text-sm border border-blue-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-300 bg-white"
+                  className="text-sm border border-blue-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-300 bg-[var(--arvo-surface)]"
                 >
                   <option value="pos_cdi">{d.fiPosCdi}</option>
                   <option value="selic">{d.fiSelic}</option>
@@ -967,14 +967,14 @@ export default function AssetDetailPage() {
 
       {/* Portfolio weight bar */}
       {data.holdings != null && weightPct != null && (
-        <div className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm">
+        <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl p-4 shadow-sm">
           <div className="flex items-center justify-between text-sm">
-            <span className="text-gray-500">{d.weight}</span>
-            <span className="font-semibold text-gray-900">{weightPct.toFixed(2)}%</span>
+            <span className="text-[var(--arvo-fg-muted)]">{d.weight}</span>
+            <span className="font-semibold text-[var(--arvo-fg)]">{weightPct.toFixed(2)}%</span>
           </div>
-          <div className="mt-2 h-2 bg-gray-100 rounded-full overflow-hidden">
+          <div className="mt-2 h-2 bg-[var(--arvo-track-bg)] rounded-full overflow-hidden">
             <div
-              className="h-full bg-[#0D0D0D] rounded-full transition-all"
+              className="h-full bg-[var(--arvo-fg)] rounded-full transition-all"
               style={{ width: `${Math.min(weightPct, 100)}%` }}
             />
           </div>
@@ -983,9 +983,9 @@ export default function AssetDetailPage() {
 
       {/* Value evolution chart */}
       {allDailyData.length > 1 && (
-        <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
+        <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl p-5 shadow-sm">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-gray-800">{d.chartTitle}</h2>
+            <h2 className="font-semibold text-[var(--arvo-fg)]">{d.chartTitle}</h2>
             <div className="flex gap-1 flex-wrap justify-end">
               {CHART_PERIODS.filter(p => {
                 if (p.months == null || p.months === 'ytd') return true
@@ -996,8 +996,8 @@ export default function AssetDetailPage() {
                   onClick={() => setChartPeriod(p.months)}
                   className={`text-xs px-2.5 py-1 rounded-lg font-medium transition-colors ${
                     chartPeriod === p.months
-                      ? 'bg-[#0D0D0D] text-white'
-                      : 'text-gray-500 hover:bg-gray-100'
+                      ? 'bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)]'
+                      : 'text-[var(--arvo-fg-muted)] hover:bg-[var(--arvo-track-bg)]'
                   }`}
                 >{p.label}</button>
               ))}
@@ -1056,7 +1056,7 @@ export default function AssetDetailPage() {
                 <Line
                   type="monotone"
                   dataKey="value"
-                  stroke="#0D0D0D"
+                  stroke="var(--arvo-fg)"
                   strokeWidth={2}
                   dot={false}
                   activeDot={{ r: 4 }}
@@ -1109,14 +1109,14 @@ export default function AssetDetailPage() {
 
       {/* Manual value history */}
       {canUpdateManualValue && mvEntriesWithChange.length > 0 && (
-        <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
-          <div className="px-5 py-4 border-b border-gray-100">
-            <h2 className="font-semibold text-gray-800">{d.manualHistTitle} ({mvEntriesWithChange.length})</h2>
+        <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl overflow-hidden shadow-sm">
+          <div className="px-5 py-4 border-b border-[var(--arvo-border)]">
+            <h2 className="font-semibold text-[var(--arvo-fg)]">{d.manualHistTitle} ({mvEntriesWithChange.length})</h2>
           </div>
           {/* desktop */}
           <div className="hidden sm:block overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
+              <thead className="bg-[var(--arvo-surface-2)] text-[var(--arvo-fg-muted)] text-xs uppercase">
                 <tr>
                   <th className="px-4 py-3 text-left">{d.tableDate}</th>
                   <th className="px-4 py-3 text-right">{d.tableValue}</th>
@@ -1126,35 +1126,35 @@ export default function AssetDetailPage() {
                   <th className="px-4 py-3" />
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+              <tbody className="divide-y divide-[var(--arvo-border-soft)]">
                 {mvEntriesWithChange.map(e => (
-                  <tr key={e.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 text-gray-600">{fmtDate(e.ref_date, intlLocale)}</td>
-                    <td className="px-4 py-3 text-right font-medium text-gray-900">
+                  <tr key={e.id} className="hover:bg-[var(--arvo-surface-2)]">
+                    <td className="px-4 py-3 text-[var(--arvo-fg-muted)]">{fmtDate(e.ref_date, intlLocale)}</td>
+                    <td className="px-4 py-3 text-right font-medium text-[var(--arvo-fg)]">
                       {new Intl.NumberFormat(intlLocale, { style: 'currency', currency: e.currency, maximumFractionDigits: 2 }).format(e.value)}
                     </td>
                     <td className="px-4 py-3 text-right">
                       {e.changePct != null ? (
                         <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
                           e.changePct > 0 ? 'bg-green-100 text-green-700' :
-                          e.changePct < 0 ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-500'
+                          e.changePct < 0 ? 'bg-red-100 text-red-700' : 'bg-[var(--arvo-track-bg)] text-[var(--arvo-fg-muted)]'
                         }`}>
                           {e.changePct >= 0 ? '+' : ''}{e.changePct.toFixed(2)}%
                         </span>
                       ) : (
-                        <span className="text-xs text-gray-400">—</span>
+                        <span className="text-xs text-[var(--arvo-fg-soft)]">—</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-right text-gray-500 text-xs">
+                    <td className="px-4 py-3 text-right text-[var(--arvo-fg-muted)] text-xs">
                       {e.changeAbs != null
                         ? `${e.changeAbs >= 0 ? '+' : ''}${new Intl.NumberFormat(intlLocale, { style: 'currency', currency: e.currency, maximumFractionDigits: 2 }).format(e.changeAbs)}`
                         : '—'}
                     </td>
-                    <td className="px-4 py-3 text-xs text-gray-400 italic">{e.notes ?? ''}</td>
+                    <td className="px-4 py-3 text-xs text-[var(--arvo-fg-soft)] italic">{e.notes ?? ''}</td>
                     <td className="px-4 py-3 text-center">
                       <button
                         onClick={() => handleDeleteManualValue(e.id)}
-                        className="text-gray-300 hover:text-red-500 transition-colors text-base leading-none"
+                        className="text-[var(--arvo-fg-faint)] hover:text-red-500 transition-colors text-base leading-none"
                         title={d.removeEntry}
                       >×</button>
                     </td>
@@ -1164,29 +1164,29 @@ export default function AssetDetailPage() {
             </table>
           </div>
           {/* mobile cards */}
-          <div className="sm:hidden divide-y divide-gray-50">
+          <div className="sm:hidden divide-y divide-[var(--arvo-border-soft)]">
             {mvEntriesWithChange.map(e => (
               <div key={e.id} className="px-4 py-3">
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <div className="text-sm font-medium text-gray-900">
+                    <div className="text-sm font-medium text-[var(--arvo-fg)]">
                       {new Intl.NumberFormat(intlLocale, { style: 'currency', currency: e.currency, maximumFractionDigits: 2 }).format(e.value)}
                     </div>
-                    <div className="text-xs text-gray-500 mt-0.5">{fmtDate(e.ref_date, intlLocale)}</div>
-                    {e.notes && <div className="text-xs text-gray-400 italic mt-0.5">{e.notes}</div>}
+                    <div className="text-xs text-[var(--arvo-fg-muted)] mt-0.5">{fmtDate(e.ref_date, intlLocale)}</div>
+                    {e.notes && <div className="text-xs text-[var(--arvo-fg-soft)] italic mt-0.5">{e.notes}</div>}
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     {e.changePct != null && (
                       <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
                         e.changePct > 0 ? 'bg-green-100 text-green-700' :
-                        e.changePct < 0 ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-500'
+                        e.changePct < 0 ? 'bg-red-100 text-red-700' : 'bg-[var(--arvo-track-bg)] text-[var(--arvo-fg-muted)]'
                       }`}>
                         {e.changePct >= 0 ? '+' : ''}{e.changePct.toFixed(2)}%
                       </span>
                     )}
                     <button
                       onClick={() => handleDeleteManualValue(e.id)}
-                      className="text-gray-300 hover:text-red-500 transition-colors text-lg leading-none"
+                      className="text-[var(--arvo-fg-faint)] hover:text-red-500 transition-colors text-lg leading-none"
                       title={d.removeEntry}
                     >×</button>
                   </div>
@@ -1204,14 +1204,14 @@ export default function AssetDetailPage() {
           : null
 
         return (
-          <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
-            <div className="px-5 py-4 border-b border-gray-100">
-              <h2 className="font-semibold text-gray-800">
+          <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl overflow-hidden shadow-sm">
+            <div className="px-5 py-4 border-b border-[var(--arvo-border)]">
+              <h2 className="font-semibold text-[var(--arvo-fg)]">
                 {d.contribTitle}{data.contributions.length > 0 ? ` (${data.contributions.length})` : ''}
               </h2>
             </div>
             {data.contributions.length === 0 ? (
-              <p className="text-center text-gray-400 py-8 text-sm">
+              <p className="text-center text-[var(--arvo-fg-soft)] py-8 text-sm">
                 {t.contributions.noContributions}
               </p>
             ) : (
@@ -1219,7 +1219,7 @@ export default function AssetDetailPage() {
                 {/* desktop */}
                 <div className="hidden sm:block overflow-x-auto">
                   <table className="w-full text-sm">
-                    <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
+                    <thead className="bg-[var(--arvo-surface-2)] text-[var(--arvo-fg-muted)] text-xs uppercase">
                       <tr>
                         <th className="px-4 py-3 text-left">{d.tableDate}</th>
                         <th className="px-4 py-3 text-left">{d.tableType}</th>
@@ -1229,7 +1229,7 @@ export default function AssetDetailPage() {
                         <th className="px-4 py-3 text-right">{d.tableProfit}</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-50">
+                    <tbody className="divide-y divide-[var(--arvo-border-soft)]">
                       {data.contributions.map(c => {
                         const totalBrlVal = c.value_brl ?? (c.price_orig != null
                           ? c.price_orig * c.quantity * (c.fx_rate_brl ?? 1)
@@ -1242,8 +1242,8 @@ export default function AssetDetailPage() {
                             : null)
 
                         return (
-                          <tr key={c.id} className="hover:bg-gray-50">
-                            <td className="px-4 py-3 text-gray-600">{fmtDate(c.date, intlLocale)}</td>
+                          <tr key={c.id} className="hover:bg-[var(--arvo-surface-2)]">
+                            <td className="px-4 py-3 text-[var(--arvo-fg-muted)]">{fmtDate(c.date, intlLocale)}</td>
                             <td className="px-4 py-3">
                               <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
                                 c.type === 'buy'    ? 'bg-green-100 text-green-700' :
@@ -1257,13 +1257,13 @@ export default function AssetDetailPage() {
                                   : t.contributions.sellLabel}
                               </span>
                             </td>
-                            <td className="px-4 py-3 text-right text-gray-700">{fmtNum(c.quantity, 6, intlLocale)}</td>
-                            <td className="px-4 py-3 text-right text-gray-500">
+                            <td className="px-4 py-3 text-right text-[var(--arvo-fg)]">{fmtNum(c.quantity, 6, intlLocale)}</td>
+                            <td className="px-4 py-3 text-right text-[var(--arvo-fg-muted)]">
                               {c.price_orig != null && c.currency
                                 ? `${c.currency} ${fmtNum(c.price_orig, 4, intlLocale)}`
                                 : '—'}
                             </td>
-                            <td className="px-4 py-3 text-right font-medium text-gray-900">
+                            <td className="px-4 py-3 text-right font-medium text-[var(--arvo-fg)]">
                               {totalBrlVal != null ? fmt(convert(totalBrlVal)) : '—'}
                             </td>
                             <td className="px-4 py-3 text-right">
@@ -1279,7 +1279,7 @@ export default function AssetDetailPage() {
                                   )}
                                 </div>
                               ) : (
-                                <span className="text-xs text-gray-400">—</span>
+                                <span className="text-xs text-[var(--arvo-fg-soft)]">—</span>
                               )}
                             </td>
                           </tr>
@@ -1289,7 +1289,7 @@ export default function AssetDetailPage() {
                   </table>
                 </div>
                 {/* mobile cards */}
-                <div className="sm:hidden divide-y divide-gray-50">
+                <div className="sm:hidden divide-y divide-[var(--arvo-border-soft)]">
                   {data.contributions.map(c => {
                     const totalBrlVal = c.value_brl ?? (c.price_orig != null
                       ? c.price_orig * c.quantity * (c.fx_rate_brl ?? 1)
@@ -1310,10 +1310,10 @@ export default function AssetDetailPage() {
                             }`}>
                               {c.type === 'buy' ? t.contributions.buyLabel : c.type === 'income' ? t.contributions.incomeLabel : t.contributions.sellLabel}
                             </span>
-                            <div className="text-xs text-gray-500 mt-1">{fmtDate(c.date, intlLocale)}</div>
+                            <div className="text-xs text-[var(--arvo-fg-muted)] mt-1">{fmtDate(c.date, intlLocale)}</div>
                           </div>
                           <div className="text-right shrink-0">
-                            <div className="font-medium text-sm text-gray-900">{totalBrlVal != null ? fmt(convert(totalBrlVal)) : '—'}</div>
+                            <div className="font-medium text-sm text-[var(--arvo-fg)]">{totalBrlVal != null ? fmt(convert(totalBrlVal)) : '—'}</div>
                             {profitBrl != null && (
                               <div>
                                 <div className={`text-xs font-semibold ${profitBrl >= 0 ? 'text-green-700' : 'text-red-600'}`}>
@@ -1340,12 +1340,12 @@ export default function AssetDetailPage() {
 
       {/* Dividend history — only for ticker assets */}
       {data.asset_type === 'ticker' && (
-        <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
-          <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-            <h2 className="font-semibold text-gray-800">
+        <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl overflow-hidden shadow-sm">
+          <div className="px-5 py-4 border-b border-[var(--arvo-border)] flex items-center justify-between">
+            <h2 className="font-semibold text-[var(--arvo-fg)]">
               {td.history ?? 'Dividendos Recebidos'}
               {assetDividends.length > 0 && (
-                <span className="ml-2 text-xs text-gray-400 font-normal">({assetDividends.length} {td.count ?? 'pagamentos'})</span>
+                <span className="ml-2 text-xs text-[var(--arvo-fg-soft)] font-normal">({assetDividends.length} {td.count ?? 'pagamentos'})</span>
               )}
             </h2>
             {assetDividends.length > 0 && (
@@ -1355,15 +1355,15 @@ export default function AssetDetailPage() {
             )}
           </div>
           {divLoading ? (
-            <div className="text-center text-gray-400 py-8 text-sm animate-pulse">{td.syncing ?? 'Carregando...'}</div>
+            <div className="text-center text-[var(--arvo-fg-soft)] py-8 text-sm animate-pulse">{td.syncing ?? 'Carregando...'}</div>
           ) : assetDividends.length === 0 ? (
-            <p className="text-center text-gray-400 py-8 text-sm">{td.noData ?? 'Nenhum dividendo registrado'}</p>
+            <p className="text-center text-[var(--arvo-fg-soft)] py-8 text-sm">{td.noData ?? 'Nenhum dividendo registrado'}</p>
           ) : (
             <>
               {/* desktop table */}
               <div className="hidden sm:block overflow-x-auto">
                 <table className="w-full text-sm">
-                  <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
+                  <thead className="bg-[var(--arvo-surface-2)] text-[var(--arvo-fg-muted)] text-xs uppercase">
                     <tr>
                       <th className="px-4 py-3 text-left">{td.colExDate ?? 'Data EX'}</th>
                       <th className="px-4 py-3 text-left">{td.colPayDate ?? 'Pagamento'}</th>
@@ -1372,11 +1372,11 @@ export default function AssetDetailPage() {
                       <th className="px-4 py-3 text-right">{td.colTotal ?? 'Total recebido'}</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-50">
+                  <tbody className="divide-y divide-[var(--arvo-border-soft)]">
                     {assetDividends.map(div => (
-                      <tr key={div.id} className="hover:bg-gray-50">
-                        <td className="px-4 py-3 text-gray-700">{fmtDate(div.ex_date, intlLocale)}</td>
-                        <td className="px-4 py-3 text-gray-500">{div.pay_date ? fmtDate(div.pay_date, intlLocale) : '—'}</td>
+                      <tr key={div.id} className="hover:bg-[var(--arvo-surface-2)]">
+                        <td className="px-4 py-3 text-[var(--arvo-fg)]">{fmtDate(div.ex_date, intlLocale)}</td>
+                        <td className="px-4 py-3 text-[var(--arvo-fg-muted)]">{div.pay_date ? fmtDate(div.pay_date, intlLocale) : '—'}</td>
                         <td className="px-4 py-3">
                           <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700">
                             {div.dividend_type === 'jcp' ? (td.typeJcp ?? 'JCP') :
@@ -1385,7 +1385,7 @@ export default function AssetDetailPage() {
                              (td.typeDividend ?? 'Dividendo')}
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-right text-gray-700">
+                        <td className="px-4 py-3 text-right text-[var(--arvo-fg)]">
                           {div.currency} {fmtNum(div.amount_per_share, 6, intlLocale)}
                         </td>
                         <td className="px-4 py-3 text-right font-medium text-green-600">
@@ -1397,7 +1397,7 @@ export default function AssetDetailPage() {
                 </table>
               </div>
               {/* mobile cards */}
-              <div className="sm:hidden divide-y divide-gray-50">
+              <div className="sm:hidden divide-y divide-[var(--arvo-border-soft)]">
                 {assetDividends.map(div => (
                   <div key={div.id} className="px-4 py-3">
                     <div className="flex items-center justify-between mb-1">
@@ -1408,7 +1408,7 @@ export default function AssetDetailPage() {
                       </span>
                       <span className="font-bold text-green-600">{fmt(convert(div.amount_brl ?? 0))}</span>
                     </div>
-                    <div className="flex items-center justify-between text-xs text-gray-500">
+                    <div className="flex items-center justify-between text-xs text-[var(--arvo-fg-muted)]">
                       <span>EX: {fmtDate(div.ex_date, intlLocale)}</span>
                       <span>{div.currency} {fmtNum(div.amount_per_share, 6, intlLocale)} / cota</span>
                     </div>

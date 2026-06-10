@@ -162,7 +162,7 @@ export default function OnboardingOverlay({ onDone, userId }: Props) {
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md relative flex flex-col max-h-[90vh]">
+      <div className="bg-[var(--arvo-surface)] rounded-2xl shadow-2xl w-full max-w-md relative flex flex-col max-h-[90vh]">
 
         {/* Header: progress dots + skip */}
         <div className="px-6 pt-5 pb-4 shrink-0">
@@ -172,16 +172,16 @@ export default function OnboardingOverlay({ onDone, userId }: Props) {
                 <div
                   key={i}
                   className={`h-1.5 rounded-full transition-all duration-300 ${
-                    i === step ? 'w-6 bg-[#0D0D0D]'
-                    : i < step  ? 'w-2.5 bg-[#0D0D0D]/40'
-                    :             'w-2.5 bg-gray-200'
+                    i === step ? 'w-6 bg-[var(--arvo-fg)]'
+                    : i < step  ? 'w-2.5 bg-[var(--arvo-fg)]/40'
+                    :             'w-2.5 bg-[var(--arvo-track-bg)]'
                   }`}
                 />
               ))}
             </div>
             <button
               onClick={finish}
-              className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
+              className="text-xs text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg-muted)] transition-colors"
             >
               {o.skip}
             </button>
@@ -194,16 +194,16 @@ export default function OnboardingOverlay({ onDone, userId }: Props) {
           {/* Step 0: Welcome */}
           {step === 0 && (
             <div className="space-y-5 text-center">
-              <div className="w-16 h-16 bg-[#0D0D0D] rounded-2xl flex items-center justify-center mx-auto shadow-lg">
+              <div className="w-16 h-16 bg-[var(--arvo-fg)] rounded-2xl flex items-center justify-center mx-auto shadow-lg">
                 <ArvoLoader size={36} style={{ color: 'var(--arvo-gold)' }} />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-[#0D0D0D]">{o.welcomeTitle}</h2>
-                <p className="text-gray-500 mt-2 text-sm leading-relaxed">{o.welcomeBody}</p>
+                <h2 className="text-xl font-bold text-[var(--arvo-fg)]">{o.welcomeTitle}</h2>
+                <p className="text-[var(--arvo-fg-muted)] mt-2 text-sm leading-relaxed">{o.welcomeBody}</p>
               </div>
               <button
                 onClick={() => setStep(1)}
-                className="w-full bg-[#0D0D0D] text-white rounded-xl py-3 text-sm font-semibold hover:bg-[#0D0D0D]/90 transition-colors"
+                className="w-full bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] rounded-xl py-3 text-sm font-semibold hover:bg-[var(--arvo-fg)]/90 transition-colors"
               >
                 {o.start}
               </button>
@@ -214,21 +214,21 @@ export default function OnboardingOverlay({ onDone, userId }: Props) {
           {step === 1 && (
             <div className="space-y-4">
               <div>
-                <h2 className="text-lg font-bold text-gray-900">{o.classesTitle}</h2>
-                <p className="text-gray-500 mt-1 text-sm leading-relaxed">{o.classesBody}</p>
+                <h2 className="text-lg font-bold text-[var(--arvo-fg)]">{o.classesTitle}</h2>
+                <p className="text-[var(--arvo-fg-muted)] mt-1 text-sm leading-relaxed">{o.classesBody}</p>
               </div>
               <div className="grid grid-cols-2 gap-2">
                 {defaultClasses.map(c => (
-                  <div key={c.nameKey} className="flex items-center gap-2 bg-gray-50 border border-gray-100 rounded-lg px-3 py-2.5">
+                  <div key={c.nameKey} className="flex items-center gap-2 bg-[var(--arvo-surface-2)] border border-[var(--arvo-border)] rounded-lg px-3 py-2.5">
                     <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: c.color }} />
-                    <span className="text-sm font-medium text-gray-700">{c.name}</span>
+                    <span className="text-sm font-medium text-[var(--arvo-fg)]">{c.name}</span>
                   </div>
                 ))}
               </div>
-              <p className="text-xs text-gray-400 leading-relaxed">{o.classesNote}</p>
+              <p className="text-xs text-[var(--arvo-fg-soft)] leading-relaxed">{o.classesNote}</p>
               <button
                 onClick={createClassesAndContinue}
-                className="w-full bg-[#0D0D0D] text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-[#0D0D0D]/90 transition-colors"
+                className="w-full bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] rounded-xl py-2.5 text-sm font-semibold hover:bg-[var(--arvo-fg)]/90 transition-colors"
               >
                 {o.continue}
               </button>
@@ -239,42 +239,42 @@ export default function OnboardingOverlay({ onDone, userId }: Props) {
           {step === 2 && (
             <div className="space-y-4">
               <div>
-                <h2 className="text-lg font-bold text-gray-900">{o.financeIncomeTitle}</h2>
-                <p className="text-gray-500 mt-1 text-sm leading-relaxed">{o.financeIncomeBody}</p>
+                <h2 className="text-lg font-bold text-[var(--arvo-fg)]">{o.financeIncomeTitle}</h2>
+                <p className="text-[var(--arvo-fg-muted)] mt-1 text-sm leading-relaxed">{o.financeIncomeBody}</p>
               </div>
               <div className="space-y-3">
                 <div>
-                  <label className="text-xs font-medium text-gray-500 block mb-1">{o.financeIncomeCurrency}</label>
+                  <label className="text-xs font-medium text-[var(--arvo-fg-muted)] block mb-1">{o.financeIncomeCurrency}</label>
                   <select
                     value={incomeCur}
                     onChange={e => setIncomeCur(e.target.value)}
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20"
+                    className="w-full border border-[var(--arvo-border)] rounded-xl px-3 py-2.5 text-sm bg-[var(--arvo-surface)] focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20"
                   >
                     {['EUR', 'BRL', 'USD'].map(c => <option key={c}>{c}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="text-xs font-medium text-gray-500 block mb-1">{o.financeIncomeLabel}</label>
+                  <label className="text-xs font-medium text-[var(--arvo-fg-muted)] block mb-1">{o.financeIncomeLabel}</label>
                   <input
                     type="number"
                     min="0"
                     value={incomeVal}
                     onChange={e => setIncomeVal(e.target.value)}
                     placeholder="3500"
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20"
+                    className="w-full border border-[var(--arvo-border)] rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20"
                   />
                 </div>
               </div>
               <button
                 onClick={saveIncomeAndContinue}
                 disabled={savingIncome}
-                className="w-full bg-[#0D0D0D] text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-[#0D0D0D]/90 transition-colors disabled:opacity-60"
+                className="w-full bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] rounded-xl py-2.5 text-sm font-semibold hover:bg-[var(--arvo-fg)]/90 transition-colors disabled:opacity-60"
               >
                 {savingIncome ? '…' : o.continue}
               </button>
               <button
                 onClick={() => setStep(3)}
-                className="w-full text-xs text-gray-400 hover:text-gray-600 py-1 transition-colors"
+                className="w-full text-xs text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg-muted)] py-1 transition-colors"
               >
                 {o.financeIncomeSkip}
               </button>
@@ -285,12 +285,12 @@ export default function OnboardingOverlay({ onDone, userId }: Props) {
           {step === 3 && (
             <div className="space-y-4">
               <div>
-                <h2 className="text-lg font-bold text-gray-900">{o.accountTitle}</h2>
-                <p className="text-gray-500 mt-1 text-sm leading-relaxed">{o.accountBody}</p>
+                <h2 className="text-lg font-bold text-[var(--arvo-fg)]">{o.accountTitle}</h2>
+                <p className="text-[var(--arvo-fg-muted)] mt-1 text-sm leading-relaxed">{o.accountBody}</p>
               </div>
               <div className="space-y-3">
                 <div>
-                  <label className="text-xs font-medium text-gray-500 block mb-1">{o.accountInstitution}</label>
+                  <label className="text-xs font-medium text-[var(--arvo-fg-muted)] block mb-1">{o.accountInstitution}</label>
                   <div style={{ position: 'relative' }}>
                     <input
                       type="text"
@@ -300,17 +300,17 @@ export default function OnboardingOverlay({ onDone, userId }: Props) {
                       onBlur={() => setTimeout(() => setShowInstitutionSuggestions(false), 150)}
                       placeholder="Revolut"
                       autoComplete="off"
-                      className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20"
+                      className="w-full border border-[var(--arvo-border)] rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20"
                     />
                     {showInstitutionSuggestions && institutionSuggestions.length > 0 && (
-                      <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 50, marginTop: 4, background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, boxShadow: '0 4px 16px rgba(0,0,0,0.10)', maxHeight: 180, overflowY: 'auto' }}>
+                      <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 50, marginTop: 4, background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', borderRadius: 12, boxShadow: '0 4px 16px rgba(0,0,0,0.10)', maxHeight: 180, overflowY: 'auto' }}>
                         {institutionSuggestions.map(name => (
                           <button
                             key={name}
                             type="button"
                             onPointerDown={() => { setAccountInstitution(name); setShowInstitutionSuggestions(false) }}
-                            style={{ display: 'block', width: '100%', textAlign: 'left', padding: '10px 14px', fontSize: 14, background: 'none', border: 'none', cursor: 'pointer', color: '#0D0D0D' }}
-                            onMouseEnter={e => (e.currentTarget.style.background = '#f9fafb')}
+                            style={{ display: 'block', width: '100%', textAlign: 'left', padding: '10px 14px', fontSize: 14, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--arvo-fg)' }}
+                            onMouseEnter={e => (e.currentTarget.style.background = 'var(--arvo-hover-bg)')}
                             onMouseLeave={e => (e.currentTarget.style.background = 'none')}
                           >
                             {name}
@@ -321,21 +321,21 @@ export default function OnboardingOverlay({ onDone, userId }: Props) {
                   </div>
                 </div>
                 <div>
-                  <label className="text-xs font-medium text-gray-500 block mb-1">{o.accountName}</label>
+                  <label className="text-xs font-medium text-[var(--arvo-fg-muted)] block mb-1">{o.accountName}</label>
                   <input
                     type="text"
                     value={accountName}
                     onChange={e => setAccountName(e.target.value)}
                     placeholder="Revolut EUR"
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20"
+                    className="w-full border border-[var(--arvo-border)] rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20"
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-medium text-gray-500 block mb-1">{o.accountCurrency}</label>
+                  <label className="text-xs font-medium text-[var(--arvo-fg-muted)] block mb-1">{o.accountCurrency}</label>
                   <select
                     value={accountCurrency}
                     onChange={e => setAccountCurrency(e.target.value)}
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20"
+                    className="w-full border border-[var(--arvo-border)] rounded-xl px-3 py-2.5 text-sm bg-[var(--arvo-surface)] focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20"
                   >
                     {['EUR', 'BRL', 'USD'].map(c => <option key={c}>{c}</option>)}
                   </select>
@@ -344,13 +344,13 @@ export default function OnboardingOverlay({ onDone, userId }: Props) {
               <button
                 onClick={createAccountAndContinue}
                 disabled={!accountName.trim() || !accountInstitution.trim() || savingAccount}
-                className="w-full bg-[#0D0D0D] text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-[#0D0D0D]/90 transition-colors disabled:opacity-60"
+                className="w-full bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] rounded-xl py-2.5 text-sm font-semibold hover:bg-[var(--arvo-fg)]/90 transition-colors disabled:opacity-60"
               >
                 {savingAccount ? '…' : o.accountCreate}
               </button>
               <button
                 onClick={() => setStep(4)}
-                className="w-full text-xs text-gray-400 hover:text-gray-600 py-1 transition-colors"
+                className="w-full text-xs text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg-muted)] py-1 transition-colors"
               >
                 {o.accountSkip} →
               </button>
@@ -361,26 +361,26 @@ export default function OnboardingOverlay({ onDone, userId }: Props) {
           {step === 4 && (
             <div className="space-y-4">
               <div>
-                <h2 className="text-lg font-bold text-gray-900">{o.assetsTitle}</h2>
-                <p className="text-gray-500 mt-1 text-sm">{o.assetsBody}</p>
+                <h2 className="text-lg font-bold text-[var(--arvo-fg)]">{o.assetsTitle}</h2>
+                <p className="text-[var(--arvo-fg-muted)] mt-1 text-sm">{o.assetsBody}</p>
               </div>
               <div className="space-y-2">
                 {ASSET_TYPES.map(a => (
                   <div
                     key={a.label}
-                    className="w-full flex items-center gap-3 bg-gray-50 border border-gray-100 rounded-xl px-4 py-3"
+                    className="w-full flex items-center gap-3 bg-[var(--arvo-surface-2)] border border-[var(--arvo-border)] rounded-xl px-4 py-3"
                   >
                     <span className="text-xl shrink-0">{a.icon}</span>
                     <div className="min-w-0">
-                      <p className="text-sm font-semibold text-gray-900">{a.label}</p>
-                      <p className="text-xs text-gray-400 truncate">{a.desc}</p>
+                      <p className="text-sm font-semibold text-[var(--arvo-fg)]">{a.label}</p>
+                      <p className="text-xs text-[var(--arvo-fg-soft)] truncate">{a.desc}</p>
                     </div>
                   </div>
                 ))}
               </div>
               <button
                 onClick={() => setStep(5)}
-                className="w-full bg-[#0D0D0D] text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-[#0D0D0D]/90 transition-colors"
+                className="w-full bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] rounded-xl py-2.5 text-sm font-semibold hover:bg-[var(--arvo-fg)]/90 transition-colors"
               >
                 {o.continue}
               </button>
@@ -391,29 +391,29 @@ export default function OnboardingOverlay({ onDone, userId }: Props) {
           {step === 5 && (
             <div className="space-y-4">
               <div>
-                <h2 className="text-lg font-bold text-gray-900">{o.financeEnvsTitle}</h2>
-                <p className="text-gray-500 mt-1 text-sm leading-relaxed">{o.financeEnvsBody}</p>
+                <h2 className="text-lg font-bold text-[var(--arvo-fg)]">{o.financeEnvsTitle}</h2>
+                <p className="text-[var(--arvo-fg-muted)] mt-1 text-sm leading-relaxed">{o.financeEnvsBody}</p>
               </div>
               <div className="space-y-2">
                 {defaultEnvelopes.map(env => (
-                  <div key={env.name} className="flex items-center gap-3 bg-gray-50 border border-gray-100 rounded-xl px-4 py-3">
+                  <div key={env.name} className="flex items-center gap-3 bg-[var(--arvo-surface-2)] border border-[var(--arvo-border)] rounded-xl px-4 py-3">
                     <span className="text-xl shrink-0">{env.icon}</span>
-                    <span className="flex-1 text-sm font-medium text-gray-700">{env.name}</span>
+                    <span className="flex-1 text-sm font-medium text-[var(--arvo-fg)]">{env.name}</span>
                     <div className="flex items-center gap-2 shrink-0">
-                      <div className="w-16 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                      <div className="w-16 h-1.5 bg-[var(--arvo-track-bg)] rounded-full overflow-hidden">
                         <div
                           className="h-full rounded-full"
                           style={{ width: `${env.pct}%`, backgroundColor: env.color }}
                         />
                       </div>
-                      <span className="text-xs font-semibold text-gray-500 w-7 text-right">{env.pct}%</span>
+                      <span className="text-xs font-semibold text-[var(--arvo-fg-muted)] w-7 text-right">{env.pct}%</span>
                     </div>
                   </div>
                 ))}
               </div>
               <button
                 onClick={() => setStep(6)}
-                className="w-full bg-[#0D0D0D] text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-[#0D0D0D]/90 transition-colors"
+                className="w-full bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] rounded-xl py-2.5 text-sm font-semibold hover:bg-[var(--arvo-fg)]/90 transition-colors"
               >
                 {o.continue}
               </button>
@@ -424,20 +424,20 @@ export default function OnboardingOverlay({ onDone, userId }: Props) {
           {step === 6 && (
             <div className="space-y-4">
               <div>
-                <h2 className="text-lg font-bold text-gray-900">{o.freedomOnboardTitle}</h2>
-                <p className="text-gray-500 mt-1 text-sm leading-relaxed">{o.freedomOnboardBody}</p>
+                <h2 className="text-lg font-bold text-[var(--arvo-fg)]">{o.freedomOnboardTitle}</h2>
+                <p className="text-[var(--arvo-fg-muted)] mt-1 text-sm leading-relaxed">{o.freedomOnboardBody}</p>
               </div>
               <div className="space-y-2">
                 {[o.freedomOnboardFeature1, o.freedomOnboardFeature2].map(f => (
-                  <div key={f} className="flex items-start gap-3 bg-gray-50 border border-gray-100 rounded-xl px-4 py-3">
+                  <div key={f} className="flex items-start gap-3 bg-[var(--arvo-surface-2)] border border-[var(--arvo-border)] rounded-xl px-4 py-3">
                     <span className="text-green-500 mt-0.5 shrink-0">✓</span>
-                    <span className="text-sm text-gray-700">{f}</span>
+                    <span className="text-sm text-[var(--arvo-fg)]">{f}</span>
                   </div>
                 ))}
               </div>
               <button
                 onClick={() => setStep(7)}
-                className="w-full bg-[#0D0D0D] text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-[#0D0D0D]/90 transition-colors"
+                className="w-full bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] rounded-xl py-2.5 text-sm font-semibold hover:bg-[var(--arvo-fg)]/90 transition-colors"
               >
                 {o.continue}
               </button>
@@ -448,20 +448,20 @@ export default function OnboardingOverlay({ onDone, userId }: Props) {
           {step === 7 && (
             <div className="space-y-4">
               <div>
-                <h2 className="text-lg font-bold text-gray-900">{o.sharedOnboardTitle}</h2>
-                <p className="text-gray-500 mt-1 text-sm leading-relaxed">{o.sharedOnboardBody}</p>
+                <h2 className="text-lg font-bold text-[var(--arvo-fg)]">{o.sharedOnboardTitle}</h2>
+                <p className="text-[var(--arvo-fg-muted)] mt-1 text-sm leading-relaxed">{o.sharedOnboardBody}</p>
               </div>
               <div className="space-y-2">
                 {[o.sharedOnboardFeature1, o.sharedOnboardFeature2].map(f => (
-                  <div key={f} className="flex items-start gap-3 bg-gray-50 border border-gray-100 rounded-xl px-4 py-3">
+                  <div key={f} className="flex items-start gap-3 bg-[var(--arvo-surface-2)] border border-[var(--arvo-border)] rounded-xl px-4 py-3">
                     <span className="text-blue-500 mt-0.5 shrink-0">✓</span>
-                    <span className="text-sm text-gray-700">{f}</span>
+                    <span className="text-sm text-[var(--arvo-fg)]">{f}</span>
                   </div>
                 ))}
               </div>
               <button
                 onClick={() => setStep(8)}
-                className="w-full bg-[#0D0D0D] text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-[#0D0D0D]/90 transition-colors"
+                className="w-full bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] rounded-xl py-2.5 text-sm font-semibold hover:bg-[var(--arvo-fg)]/90 transition-colors"
               >
                 {o.continue}
               </button>
@@ -475,34 +475,34 @@ export default function OnboardingOverlay({ onDone, userId }: Props) {
                 <span className="text-3xl">✅</span>
               </div>
               <div>
-                <h2 className="text-xl font-bold text-gray-900">{o.doneTitle}</h2>
-                <p className="text-gray-500 mt-2 text-sm leading-relaxed">{o.doneBody}</p>
+                <h2 className="text-xl font-bold text-[var(--arvo-fg)]">{o.doneTitle}</h2>
+                <p className="text-[var(--arvo-fg-muted)] mt-2 text-sm leading-relaxed">{o.doneBody}</p>
               </div>
               <div className="space-y-2">
                 <button
                   onClick={goToDashboard}
-                  className="w-full bg-[#0D0D0D] text-white rounded-xl py-3 text-sm font-semibold hover:bg-[#0D0D0D]/90 transition-colors"
+                  className="w-full bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] rounded-xl py-3 text-sm font-semibold hover:bg-[var(--arvo-fg)]/90 transition-colors"
                 >
                   {o.gotoDashboard}
                 </button>
                 {accountCreated ? (
                   <button
                     onClick={goToAccounts}
-                    className="w-full border border-[#0D0D0D]/20 text-[#0D0D0D] rounded-xl py-3 text-sm font-semibold hover:bg-[#0D0D0D]/5 transition-colors"
+                    className="w-full border border-[var(--arvo-fg)]/20 text-[var(--arvo-fg)] rounded-xl py-3 text-sm font-semibold hover:bg-[var(--arvo-fg)]/5 transition-colors"
                   >
                     {o.gotoAccounts}
                   </button>
                 ) : (
                   <button
                     onClick={goToInstitutions}
-                    className="w-full border border-[#0D0D0D]/20 text-[#0D0D0D] rounded-xl py-3 text-sm font-semibold hover:bg-[#0D0D0D]/5 transition-colors"
+                    className="w-full border border-[var(--arvo-fg)]/20 text-[var(--arvo-fg)] rounded-xl py-3 text-sm font-semibold hover:bg-[var(--arvo-fg)]/5 transition-colors"
                   >
                     {o.gotoInstitutions}
                   </button>
                 )}
                 <button
                   onClick={goToFinances}
-                  className="w-full text-xs text-gray-400 hover:text-gray-600 py-1 transition-colors"
+                  className="w-full text-xs text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg-muted)] py-1 transition-colors"
                 >
                   {o.gotoFinances}
                 </button>
@@ -514,7 +514,7 @@ export default function OnboardingOverlay({ onDone, userId }: Props) {
           {step > 0 && step < 8 && (
             <button
               onClick={() => setStep(s => s - 1)}
-              className="mt-4 w-full text-xs text-gray-400 hover:text-gray-600 py-1 transition-colors"
+              className="mt-4 w-full text-xs text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg-muted)] py-1 transition-colors"
             >
               ← {o.back}
             </button>

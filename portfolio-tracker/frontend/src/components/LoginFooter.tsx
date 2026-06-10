@@ -22,26 +22,26 @@ export default function LoginFooter() {
   const f = t.footer
 
   return (
-    <footer style={{ borderTop: '1px solid rgba(13,13,13,0.07)', paddingTop: 16, paddingBottom: 16 }}>
+    <footer style={{ borderTop: '1px solid var(--arvo-chip-bg)', paddingTop: 16, paddingBottom: 16 }}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         {/* Logo */}
         <div className="flex items-center gap-2">
           <img src="/brand/logo/arvo-symbol-black.svg" width="13" height="13" alt="" style={{ opacity: 0.28 }} />
-          <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 11, letterSpacing: '0.28em', color: 'rgba(13,13,13,0.28)', lineHeight: 1 }}>arvo</span>
+          <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 11, letterSpacing: '0.28em', color: 'var(--arvo-fg-faint)', lineHeight: 1 }}>arvo</span>
         </div>
 
         {/* Links + social */}
-        <div className="flex items-center gap-4" style={{ color: 'rgba(13,13,13,0.40)' }}>
-          <Link to="/privacy" className="text-xs hover:text-[#0D0D0D] transition-colors" style={{ fontFamily: "var(--arvo-font-body)", letterSpacing: '0.06em' }}>{f.privacy}</Link>
-          <Link to="/terms"   className="text-xs hover:text-[#0D0D0D] transition-colors" style={{ fontFamily: "var(--arvo-font-body)", letterSpacing: '0.06em' }}>{f.terms}</Link>
-          <a href="mailto:andre@andregutto.com" className="text-xs hover:text-[#0D0D0D] transition-colors" style={{ fontFamily: "var(--arvo-font-body)", letterSpacing: '0.06em' }}>{f.contact}</a>
-          <a href="https://www.instagram.com/andregutto/" target="_blank" rel="noopener noreferrer" className="hover:text-[#0D0D0D] transition-colors" aria-label="Instagram"><IconInstagram /></a>
-          <a href="https://www.youtube.com/@andregutto"   target="_blank" rel="noopener noreferrer" className="hover:text-[#0D0D0D] transition-colors" aria-label="YouTube"><IconYouTube /></a>
+        <div className="flex items-center gap-4" style={{ color: 'var(--arvo-fg-soft)' }}>
+          <Link to="/privacy" className="text-xs hover:text-[var(--arvo-fg)] transition-colors" style={{ fontFamily: "var(--arvo-font-body)", letterSpacing: '0.06em' }}>{f.privacy}</Link>
+          <Link to="/terms"   className="text-xs hover:text-[var(--arvo-fg)] transition-colors" style={{ fontFamily: "var(--arvo-font-body)", letterSpacing: '0.06em' }}>{f.terms}</Link>
+          <a href="mailto:andre@andregutto.com" className="text-xs hover:text-[var(--arvo-fg)] transition-colors" style={{ fontFamily: "var(--arvo-font-body)", letterSpacing: '0.06em' }}>{f.contact}</a>
+          <a href="https://www.instagram.com/andregutto/" target="_blank" rel="noopener noreferrer" className="hover:text-[var(--arvo-fg)] transition-colors" aria-label="Instagram"><IconInstagram /></a>
+          <a href="https://www.youtube.com/@andregutto"   target="_blank" rel="noopener noreferrer" className="hover:text-[var(--arvo-fg)] transition-colors" aria-label="YouTube"><IconYouTube /></a>
         </div>
       </div>
 
       {/* Copyright */}
-      <p className="text-center mt-2" style={{ fontFamily: "var(--arvo-font-body)", fontSize: 11, letterSpacing: '0.08em', color: 'rgba(13,13,13,0.28)' }}>{f.copyright}</p>
+      <p className="text-center mt-2" style={{ fontFamily: "var(--arvo-font-body)", fontSize: 11, letterSpacing: '0.08em', color: 'var(--arvo-fg-faint)' }}>{f.copyright}</p>
     </footer>
   )
 }

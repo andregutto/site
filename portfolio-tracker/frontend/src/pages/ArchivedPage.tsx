@@ -94,12 +94,12 @@ export default function ArchivedPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-gray-900">{t.archived.title}</h1>
-        <p className="text-sm text-gray-400 mt-0.5">{t.archived.subtitle}</p>
+        <h1 className="text-xl font-semibold text-[var(--arvo-fg)]">{t.archived.title}</h1>
+        <p className="text-sm text-[var(--arvo-fg-soft)] mt-0.5">{t.archived.subtitle}</p>
       </div>
 
       {assets.length === 0 ? (
-        <div className="text-center py-16 text-gray-400 text-sm">{t.archived.empty}</div>
+        <div className="text-center py-16 text-[var(--arvo-fg-soft)] text-sm">{t.archived.empty}</div>
       ) : (
         <div className="space-y-3">
           {assets.map(a => {
@@ -109,22 +109,22 @@ export default function ArchivedPage() {
             const className  = a.asset_classes?.name ?? '—'
 
             return (
-              <div key={a.id} className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+              <div key={a.id} className="bg-[var(--arvo-surface)] rounded-xl border border-[var(--arvo-border)] shadow-sm overflow-hidden">
                 {/* Header row */}
                 <div
-                  className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50 transition-colors"
+                  className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-[var(--arvo-surface-2)] transition-colors"
                   onClick={() => toggleExpand(a.id)}
                 >
                   <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: classColor }} />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="font-semibold text-gray-900 text-sm">{a.code}</span>
-                      <span className="text-xs text-gray-400 truncate hidden sm:inline">{a.name}</span>
-                      <span className="text-xs text-gray-300 hidden sm:inline">·</span>
-                      <span className="text-xs text-gray-400 hidden sm:inline">{className}</span>
+                      <span className="font-semibold text-[var(--arvo-fg)] text-sm">{a.code}</span>
+                      <span className="text-xs text-[var(--arvo-fg-soft)] truncate hidden sm:inline">{a.name}</span>
+                      <span className="text-xs text-[var(--arvo-fg-faint)] hidden sm:inline">·</span>
+                      <span className="text-xs text-[var(--arvo-fg-soft)] hidden sm:inline">{className}</span>
                     </div>
                     {a.firstDate && (
-                      <div className="text-xs text-gray-400 mt-0.5">
+                      <div className="text-xs text-[var(--arvo-fg-soft)] mt-0.5">
                         {t.archived.period}: {fmtDate(a.firstDate)} → {fmtDate(a.lastDate)}
                       </div>
                     )}
@@ -133,25 +133,25 @@ export default function ArchivedPage() {
                   {/* Summary figures */}
                   <div className="flex items-center gap-4 shrink-0">
                     <div className="text-right hidden sm:block">
-                      <div className="text-xs text-gray-400">{t.archived.invested}</div>
-                      <div className="text-sm font-medium text-gray-700">{fmt(a.totalInvested, a.currency)}</div>
+                      <div className="text-xs text-[var(--arvo-fg-soft)]">{t.archived.invested}</div>
+                      <div className="text-sm font-medium text-[var(--arvo-fg)]">{fmt(a.totalInvested, a.currency)}</div>
                     </div>
                     {a.totalReceived > 0 && (
                       <div className="text-right hidden sm:block">
-                        <div className="text-xs text-gray-400">{t.archived.received}</div>
-                        <div className="text-sm font-medium text-gray-700">{fmt(a.totalReceived, a.currency)}</div>
+                        <div className="text-xs text-[var(--arvo-fg-soft)]">{t.archived.received}</div>
+                        <div className="text-sm font-medium text-[var(--arvo-fg)]">{fmt(a.totalReceived, a.currency)}</div>
                       </div>
                     )}
                     {a.totalReceived > 0 && (
                       <div className="text-right">
-                        <div className="text-xs text-gray-400">{t.archived.pnl}</div>
+                        <div className="text-xs text-[var(--arvo-fg-soft)]">{t.archived.pnl}</div>
                         <div className={`text-sm font-semibold ${pnlPositive ? 'text-emerald-600' : 'text-red-500'}`}>
                           {pnlPositive ? '+' : ''}{fmt(a.pnl, a.currency)}
                         </div>
                       </div>
                     )}
                     <svg
-                      className={`w-4 h-4 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+                      className={`w-4 h-4 text-[var(--arvo-fg-soft)] transition-transform ${isOpen ? 'rotate-180' : ''}`}
                       fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
                     >
                       <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
@@ -161,8 +161,8 @@ export default function ArchivedPage() {
 
                 {/* Expanded: contribution list */}
                 {isOpen && (
-                  <div className="border-t border-gray-100 px-4 py-3 space-y-3">
-                    <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                  <div className="border-t border-[var(--arvo-border)] px-4 py-3 space-y-3">
+                    <div className="text-xs font-medium text-[var(--arvo-fg-muted)] uppercase tracking-wide">
                       {t.archived.contributions}
                     </div>
                     <div className="space-y-1.5">
@@ -176,11 +176,11 @@ export default function ArchivedPage() {
                             }`}>
                               {c.type === 'buy' ? '▲' : '▼'}
                             </span>
-                            <span className="text-gray-500">{fmtDate(c.date)}</span>
+                            <span className="text-[var(--arvo-fg-muted)]">{fmtDate(c.date)}</span>
                           </div>
-                          <div className="text-right text-gray-700">
+                          <div className="text-right text-[var(--arvo-fg)]">
                             {c.quantity} × {fmt(c.price_orig, c.currency)}
-                            <span className="text-gray-400 ml-2">= {fmt(c.quantity * c.price_orig, c.currency)}</span>
+                            <span className="text-[var(--arvo-fg-soft)] ml-2">= {fmt(c.quantity * c.price_orig, c.currency)}</span>
                           </div>
                         </div>
                       ))}

@@ -60,15 +60,15 @@ function AccountForm({ initial, institutionName, onSave, onClose, saving, title 
     await onSave({ name: name.trim(), currency, institution_name: instName.trim() || null, color, icon })
   }
 
-  const labelCls = 'text-xs font-medium text-gray-500 mb-1 block'
-  const fieldCls = 'w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20'
+  const labelCls = 'text-xs font-medium text-[var(--arvo-fg-muted)] mb-1 block'
+  const fieldCls = 'w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20'
 
   return (
     <div className="fixed inset-0 z-50 bg-black/40 flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={onClose}>
-      <div className="bg-white w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl shadow-xl p-6 space-y-4" onClick={e => e.stopPropagation()}>
+      <div className="bg-[var(--arvo-surface)] w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl shadow-xl p-6 space-y-4" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between">
-          <h3 className="font-semibold text-gray-900">{title}</h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+          <h3 className="font-semibold text-[var(--arvo-fg)]">{title}</h3>
+          <button onClick={onClose} className="text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg-muted)]">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </div>
@@ -97,7 +97,7 @@ function AccountForm({ initial, institutionName, onSave, onClose, saving, title 
             <div className="flex flex-wrap gap-1.5">
               {ACCOUNT_ICONS.map(ic => (
                 <button key={ic} type="button" onClick={() => setIcon(ic)}
-                  className={`w-9 h-9 rounded-lg text-lg flex items-center justify-center transition-colors ${icon === ic ? 'ring-2 ring-[#0D0D0D] bg-[#0D0D0D]/10' : 'bg-gray-50 hover:bg-gray-100'}`}
+                  className={`w-9 h-9 rounded-lg text-lg flex items-center justify-center transition-colors ${icon === ic ? 'ring-2 ring-[var(--arvo-fg)] bg-[var(--arvo-fg)]/10' : 'bg-[var(--arvo-surface-2)] hover:bg-[var(--arvo-track-bg)]'}`}
                 >{ic}</button>
               ))}
             </div>
@@ -108,7 +108,7 @@ function AccountForm({ initial, institutionName, onSave, onClose, saving, title 
             <div className="flex gap-2 flex-wrap">
               {ACCOUNT_COLORS.map(c => (
                 <button key={c} type="button" onClick={() => setColor(c)}
-                  className={`w-7 h-7 rounded-full transition-transform ${color === c ? 'ring-2 ring-offset-2 ring-gray-400 scale-110' : 'hover:scale-105'}`}
+                  className={`w-7 h-7 rounded-full transition-transform ${color === c ? 'ring-2 ring-offset-2 ring-[var(--arvo-fg-faint)] scale-110' : 'hover:scale-105'}`}
                   style={{ backgroundColor: c }}
                 />
               ))}
@@ -116,10 +116,10 @@ function AccountForm({ initial, institutionName, onSave, onClose, saving, title 
           </div>
 
           <div className="flex gap-2 pt-1">
-            <button type="submit" disabled={saving} className="flex-1 bg-[#0D0D0D] text-white text-sm py-2.5 rounded-xl hover:opacity-80 disabled:opacity-40">
+            <button type="submit" disabled={saving} className="flex-1 bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] text-sm py-2.5 rounded-xl hover:opacity-80 disabled:opacity-40">
               {saving ? '…' : t.common.save}
             </button>
-            <button type="button" onClick={onClose} className="px-4 text-sm text-gray-500 hover:text-gray-700">
+            <button type="button" onClick={onClose} className="px-4 text-sm text-[var(--arvo-fg-muted)] hover:text-[var(--arvo-fg)]">
               {t.common.cancel}
             </button>
           </div>
@@ -151,20 +151,20 @@ function LinkPortfolioModal({ account, manualAssets, onLink, onClose, saving }: 
 
   return (
     <div className="fixed inset-0 z-50 bg-black/40 flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={onClose}>
-      <div className="bg-white w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl shadow-xl p-6 space-y-4" onClick={e => e.stopPropagation()}>
+      <div className="bg-[var(--arvo-surface)] w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl shadow-xl p-6 space-y-4" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between">
-          <h3 className="font-semibold text-gray-900">Vincular ao portfólio</h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+          <h3 className="font-semibold text-[var(--arvo-fg)]">Vincular ao portfólio</h3>
+          <button onClick={onClose} className="text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg-muted)]">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </div>
 
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-[var(--arvo-fg-muted)]">
           Selecione um ativo manual do portfólio para vincular à conta <strong>{account.name}</strong>. O saldo da conta poderá ser sincronizado automaticamente como valor do ativo.
         </p>
 
         {manualAssets.length === 0 ? (
-          <p className="text-sm text-gray-400 text-center py-4">Nenhum ativo manual encontrado no portfólio.</p>
+          <p className="text-sm text-[var(--arvo-fg-soft)] text-center py-4">Nenhum ativo manual encontrado no portfólio.</p>
         ) : (
           <div className="space-y-1.5 max-h-60 overflow-y-auto">
             {manualAssets.map(a => (
@@ -173,12 +173,12 @@ function LinkPortfolioModal({ account, manualAssets, onLink, onClose, saving }: 
                 onClick={() => setSelectedId(a.id)}
                 className={`w-full text-left px-3 py-2.5 rounded-xl border text-sm transition-colors ${
                   selectedId === a.id
-                    ? 'border-[#0D0D0D] bg-[#0D0D0D]/5 text-[#0D0D0D] font-medium'
-                    : 'border-gray-200 hover:border-gray-300 text-gray-700'
+                    ? 'border-[var(--arvo-fg)] bg-[var(--arvo-fg)]/5 text-[var(--arvo-fg)] font-medium'
+                    : 'border-[var(--arvo-border)] hover:border-[var(--arvo-border)] text-[var(--arvo-fg)]'
                 }`}
               >
                 <span className="font-medium">{a.name}</span>
-                <span className="text-xs text-gray-400 ml-2">{a.currency}{a.exchange ? ` · ${a.exchange}` : ''}</span>
+                <span className="text-xs text-[var(--arvo-fg-soft)] ml-2">{a.currency}{a.exchange ? ` · ${a.exchange}` : ''}</span>
               </button>
             ))}
           </div>
@@ -188,11 +188,11 @@ function LinkPortfolioModal({ account, manualAssets, onLink, onClose, saving }: 
           <button
             onClick={() => selectedId && onLink(selectedId)}
             disabled={!selectedId || saving}
-            className="flex-1 bg-[#0D0D0D] text-white text-sm py-2.5 rounded-xl hover:opacity-80 disabled:opacity-40"
+            className="flex-1 bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] text-sm py-2.5 rounded-xl hover:opacity-80 disabled:opacity-40"
           >
             {saving ? '…' : 'Vincular'}
           </button>
-          <button onClick={onClose} className="px-4 text-sm text-gray-500 hover:text-gray-700">
+          <button onClick={onClose} className="px-4 text-sm text-[var(--arvo-fg-muted)] hover:text-[var(--arvo-fg)]">
             Cancelar
           </button>
         </div>
@@ -332,12 +332,12 @@ export default function FinancesAccountsPage() {
       {/* Header */}
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
-          <h1 style={{ fontFamily: "var(--arvo-font-body)", fontSize: 18, letterSpacing: '0.06em', color: 'var(--arvo-black)' }}>{t.finances.accountsPageTitle}</h1>
-          <p className="text-sm mt-0.5" style={{ color: 'rgba(13,13,13,0.60)' }}>{t.finances.accountsPageSubtitle}</p>
+          <h1 style={{ fontFamily: "var(--arvo-font-body)", fontSize: 18, letterSpacing: '0.06em', color: 'var(--arvo-fg)' }}>{t.finances.accountsPageTitle}</h1>
+          <p className="text-sm mt-0.5" style={{ color: 'var(--arvo-fg-muted)' }}>{t.finances.accountsPageSubtitle}</p>
         </div>
         <button
           onClick={() => setFormMode({ mode: 'new' })}
-          className="px-3 py-1.5 bg-[#0D0D0D] text-white text-sm rounded-lg hover:opacity-80 transition-opacity"
+          className="px-3 py-1.5 bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] text-sm rounded-lg hover:opacity-80 transition-opacity"
         >+ {t.finances.addAccount}</button>
       </div>
 
@@ -356,7 +356,7 @@ export default function FinancesAccountsPage() {
       )}
 
       {loading && (
-        <div className="bg-white rounded-xl border border-gray-100 p-12 text-center text-gray-400 text-sm animate-pulse">
+        <div className="bg-[var(--arvo-surface)] rounded-xl border border-[var(--arvo-border)] p-12 text-center text-[var(--arvo-fg-soft)] text-sm animate-pulse">
           {t.common.loading}
         </div>
       )}
@@ -365,7 +365,7 @@ export default function FinancesAccountsPage() {
       {!loading && accounts.length > 0 && (
         <div className="space-y-3">
           {accounts.map(acc => (
-            <div key={acc.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div key={acc.id} className="bg-[var(--arvo-surface)] rounded-2xl border border-[var(--arvo-border)] shadow-sm overflow-hidden">
               <div className="p-5 flex items-start gap-4">
                 {/* Icon */}
                 <div className="w-11 h-11 rounded-xl flex items-center justify-center text-2xl shrink-0 mt-0.5"
@@ -376,13 +376,13 @@ export default function FinancesAccountsPage() {
                 {/* Info */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <p className="font-semibold text-gray-900 text-sm">{acc.name}</p>
-                    <span className="text-xs px-1.5 py-0.5 rounded-md bg-gray-100 text-gray-500">{acc.currency}</span>
+                    <p className="font-semibold text-[var(--arvo-fg)] text-sm">{acc.name}</p>
+                    <span className="text-xs px-1.5 py-0.5 rounded-md bg-[var(--arvo-track-bg)] text-[var(--arvo-fg-muted)]">{acc.currency}</span>
                     {acc.institution_name && (
-                      <span className="text-xs px-1.5 py-0.5 rounded-md border border-gray-200 text-gray-400">{acc.institution_name}</span>
+                      <span className="text-xs px-1.5 py-0.5 rounded-md border border-[var(--arvo-border)] text-[var(--arvo-fg-soft)]">{acc.institution_name}</span>
                     )}
                   </div>
-                  <p className={`text-xl font-bold mt-1 ${acc.balance < 0 ? 'text-red-600' : 'text-gray-900'}`}>
+                  <p className={`text-xl font-bold mt-1 ${acc.balance < 0 ? 'text-red-600' : 'text-[var(--arvo-fg)]'}`}>
                     {fmt(acc.balance, acc.currency)}
                   </p>
                   {syncResult?.id === acc.id && (
@@ -395,18 +395,18 @@ export default function FinancesAccountsPage() {
                 {/* Actions */}
                 <div className="flex items-center gap-1.5 shrink-0">
                   <button onClick={() => setFormMode({ mode: 'edit', account: acc })}
-                    className="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-50 transition-colors" title={t.common.edit}>
+                    className="p-1.5 text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg-muted)] rounded-lg hover:bg-[var(--arvo-surface-2)] transition-colors" title={t.common.edit}>
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                   </button>
                   <button onClick={() => deleteAccount(acc.id)}
-                    className="p-1.5 text-gray-400 hover:text-red-500 rounded-lg hover:bg-red-50 transition-colors" title={t.common.delete}>
+                    className="p-1.5 text-[var(--arvo-fg-soft)] hover:text-red-500 rounded-lg hover:bg-red-50 transition-colors" title={t.common.delete}>
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                   </button>
                 </div>
               </div>
 
               {/* Portfolio link row */}
-              <div className="border-t border-gray-50 px-5 py-2.5 flex items-center gap-3 bg-gray-50/30">
+              <div className="border-t border-[var(--arvo-border-soft)] px-5 py-2.5 flex items-center gap-3 bg-[var(--arvo-surface-2)]/30">
                 {acc.linked_asset_id ? (
                   <>
                     <span className="text-xs text-emerald-600 flex-1 flex items-center gap-1">
@@ -424,17 +424,17 @@ export default function FinancesAccountsPage() {
                     </button>
                     <button
                       onClick={() => unlinkFromAsset(acc.id)}
-                      className="px-2.5 py-1 text-xs border border-gray-200 rounded-lg text-gray-400 hover:text-red-500 hover:border-red-100 transition-colors"
+                      className="px-2.5 py-1 text-xs border border-[var(--arvo-border)] rounded-lg text-[var(--arvo-fg-soft)] hover:text-red-500 hover:border-red-100 transition-colors"
                     >
                       Desvincular
                     </button>
                   </>
                 ) : (
                   <>
-                    <span className="text-xs text-gray-400 flex-1">Não vinculado ao portfólio</span>
+                    <span className="text-xs text-[var(--arvo-fg-soft)] flex-1">Não vinculado ao portfólio</span>
                     <button
                       onClick={() => openLinkModal(acc)}
-                      className="px-2.5 py-1 text-xs border border-[#0D0D0D]/20 rounded-lg text-[#0D0D0D] hover:bg-[#0D0D0D]/5 transition-colors"
+                      className="px-2.5 py-1 text-xs border border-[var(--arvo-fg)]/20 rounded-lg text-[var(--arvo-fg)] hover:bg-[var(--arvo-fg)]/5 transition-colors"
                     >
                       Vincular ao portfólio
                     </button>
@@ -443,14 +443,14 @@ export default function FinancesAccountsPage() {
               </div>
 
               {/* Bank connection row */}
-              <div className="border-t border-gray-50 px-5 py-3 flex items-center gap-3 bg-gray-50/50">
+              <div className="border-t border-[var(--arvo-border-soft)] px-5 py-3 flex items-center gap-3 bg-[var(--arvo-surface-2)]/50">
                 {acc.bank_connection ? (
                   <>
-                    <span className="text-xs text-gray-400 flex-1">
+                    <span className="text-xs text-[var(--arvo-fg-soft)] flex-1">
                       🔗 {acc.bank_connection.display_name ?? 'Banco conectado'} · {t.finances.lastSync}: {relativeTime(acc.bank_connection.last_synced_at, t.finances.neverSynced)}
                     </span>
                     <button onClick={() => syncConnection(acc.bank_connection!.id, acc.id)} disabled={syncing === acc.id}
-                      className="px-2.5 py-1 text-xs border border-gray-200 rounded-lg text-gray-600 hover:bg-white transition-colors disabled:opacity-50">
+                      className="px-2.5 py-1 text-xs border border-[var(--arvo-border)] rounded-lg text-[var(--arvo-fg-muted)] hover:bg-[var(--arvo-surface)] transition-colors disabled:opacity-50">
                       {syncing === acc.id ? t.finances.syncing : t.finances.syncNow}
                     </button>
                     <button onClick={() => disconnectBank(acc.bank_connection!.id)}
@@ -460,9 +460,9 @@ export default function FinancesAccountsPage() {
                   </>
                 ) : (
                   <>
-                    <span className="text-xs text-gray-400 flex-1">{t.finances.bankConnectionsBody}</span>
+                    <span className="text-xs text-[var(--arvo-fg-soft)] flex-1">{t.finances.bankConnectionsBody}</span>
                     <button onClick={connectBank} disabled={connecting}
-                      className="px-2.5 py-1 text-xs border border-[#0D0D0D]/20 rounded-lg text-[#0D0D0D] hover:bg-[#0D0D0D]/5 transition-colors disabled:opacity-50">
+                      className="px-2.5 py-1 text-xs border border-[var(--arvo-fg)]/20 rounded-lg text-[var(--arvo-fg)] hover:bg-[var(--arvo-fg)]/5 transition-colors disabled:opacity-50">
                       {connecting ? '…' : t.finances.connectBank}
                     </button>
                   </>
@@ -475,12 +475,12 @@ export default function FinancesAccountsPage() {
 
       {/* Empty state */}
       {!loading && accounts.length === 0 && institutions.length === 0 && (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-12 text-center">
+        <div className="bg-[var(--arvo-surface)] rounded-2xl border border-[var(--arvo-border)] shadow-sm p-12 text-center">
           <p className="text-4xl mb-4">🏦</p>
-          <p className="text-gray-700 font-medium mb-1">{t.finances.accountEmpty}</p>
-          <p className="text-sm text-gray-400 mb-5">{t.finances.accountEmptyBody}</p>
+          <p className="text-[var(--arvo-fg)] font-medium mb-1">{t.finances.accountEmpty}</p>
+          <p className="text-sm text-[var(--arvo-fg-soft)] mb-5">{t.finances.accountEmptyBody}</p>
           <button onClick={() => setFormMode({ mode: 'new' })}
-            className="px-5 py-2 bg-[#0D0D0D] text-white text-sm rounded-xl hover:opacity-80 transition-opacity">
+            className="px-5 py-2 bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] text-sm rounded-xl hover:opacity-80 transition-opacity">
             + {t.finances.addAccount}
           </button>
         </div>
@@ -488,22 +488,22 @@ export default function FinancesAccountsPage() {
 
       {/* From portfolio section */}
       {!loading && institutions.length > 0 && (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-4">
+        <div className="bg-[var(--arvo-surface)] rounded-2xl border border-[var(--arvo-border)] shadow-sm p-5 space-y-4">
           <div>
-            <p className="text-sm font-semibold text-gray-900">{t.finances.accountFromPortfolio}</p>
-            <p className="text-xs text-gray-400 mt-0.5">{t.finances.accountFromPortfolioSub}</p>
+            <p className="text-sm font-semibold text-[var(--arvo-fg)]">{t.finances.accountFromPortfolio}</p>
+            <p className="text-xs text-[var(--arvo-fg-soft)] mt-0.5">{t.finances.accountFromPortfolioSub}</p>
           </div>
           <div className="space-y-2">
             {institutions.map(inst => (
-              <div key={inst} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
+              <div key={inst} className="flex items-center justify-between py-2 border-b border-[var(--arvo-border-soft)] last:border-0">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-sm font-semibold text-gray-500">
+                  <div className="w-8 h-8 rounded-lg bg-[var(--arvo-track-bg)] flex items-center justify-center text-sm font-semibold text-[var(--arvo-fg-muted)]">
                     {inst.slice(0, 2).toUpperCase()}
                   </div>
-                  <span className="text-sm text-gray-700">{inst}</span>
+                  <span className="text-sm text-[var(--arvo-fg)]">{inst}</span>
                 </div>
                 <button onClick={() => activateInstitution(inst)}
-                  className="px-3 py-1 text-xs bg-[#0D0D0D] text-white rounded-lg hover:opacity-80 transition-opacity">
+                  className="px-3 py-1 text-xs bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] rounded-lg hover:opacity-80 transition-opacity">
                   + {t.finances.accountActivate}
                 </button>
               </div>

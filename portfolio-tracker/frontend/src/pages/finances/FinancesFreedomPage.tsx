@@ -291,8 +291,8 @@ function PlanForm({ initial, portfolio, ipcaAnnual, hicpAnnual, cpiAnnual, userC
     })
   }
 
-  const fieldCls = 'w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20'
-  const labelCls = 'block text-xs text-gray-500 mb-1'
+  const fieldCls = 'w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20'
+  const labelCls = 'block text-xs text-[var(--arvo-fg-muted)] mb-1'
 
   // Steps 0=goal(new only), 1=info, 2=capital, 3=target, 4=strategy
   // Edit mode starts at step 1, so totalSteps = 4; new mode starts at 0, totalSteps = 5
@@ -321,19 +321,19 @@ function PlanForm({ initial, portfolio, ipcaAnnual, hicpAnnual, cpiAnnual, userC
             <div className="flex flex-col items-center">
               <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${
                 s.key === step
-                  ? 'bg-[#0D0D0D] text-white shadow-sm'
+                  ? 'bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] shadow-sm'
                   : s.key < step
-                  ? 'bg-[#0D0D0D]/20 text-[#0D0D0D]'
-                  : 'bg-gray-100 text-gray-400'
+                  ? 'bg-[var(--arvo-fg)]/20 text-[var(--arvo-fg)]'
+                  : 'bg-[var(--arvo-track-bg)] text-[var(--arvo-fg-soft)]'
               }`}>
                 {s.key < step ? '✓' : idx + 1}
               </div>
               <span className={`text-[10px] mt-0.5 hidden sm:block max-w-[60px] text-center leading-tight ${
-                s.key === step ? 'text-[#0D0D0D] font-semibold' : 'text-gray-400'
+                s.key === step ? 'text-[var(--arvo-fg)] font-semibold' : 'text-[var(--arvo-fg-soft)]'
               }`}>{s.label}</span>
             </div>
             {idx < stepDefs.length - 1 && (
-              <div className={`h-px w-6 mx-1 mb-3 sm:mb-0 transition-colors ${s.key < step ? 'bg-[#0D0D0D]/30' : 'bg-gray-200'}`} />
+              <div className={`h-px w-6 mx-1 mb-3 sm:mb-0 transition-colors ${s.key < step ? 'bg-[var(--arvo-fg)]/30' : 'bg-[var(--arvo-track-bg)]'}`} />
             )}
           </div>
         ))}
@@ -342,7 +342,7 @@ function PlanForm({ initial, portfolio, ipcaAnnual, hicpAnnual, cpiAnnual, userC
       {/* ─── Step 0: Goal type (new plans only) ─── */}
       {step === 0 && (
         <div className="space-y-4">
-          <p className="text-sm text-gray-500">{t.finances.freedomStepGoal} — {t.finances.freedomStepGoalDesc}</p>
+          <p className="text-sm text-[var(--arvo-fg-muted)]">{t.finances.freedomStepGoal} — {t.finances.freedomStepGoalDesc}</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {([
               { mode: 'capital' as const, emoji: '🏦', title: t.finances.freedomGoalCardCapitalTitle, desc: t.finances.freedomGoalCardCapitalDesc },
@@ -354,18 +354,18 @@ function PlanForm({ initial, portfolio, ipcaAnnual, hicpAnnual, cpiAnnual, userC
                 onClick={() => { setGoalMode(mode); setStep(1) }}
                 className={`p-5 rounded-2xl border-2 text-left transition-all hover:shadow-md ${
                   goalMode === mode
-                    ? 'border-[#0D0D0D] bg-[#0D0D0D]/5 shadow-sm'
-                    : 'border-gray-200 hover:border-[#0D0D0D]/40'
+                    ? 'border-[var(--arvo-fg)] bg-[var(--arvo-fg)]/5 shadow-sm'
+                    : 'border-[var(--arvo-border)] hover:border-[var(--arvo-fg)]/40'
                 }`}
               >
                 <div className="text-3xl mb-3">{emoji}</div>
-                <div className="font-semibold text-gray-900 mb-1">{title}</div>
-                <div className="text-xs text-gray-500 leading-relaxed">{desc}</div>
+                <div className="font-semibold text-[var(--arvo-fg)] mb-1">{title}</div>
+                <div className="text-xs text-[var(--arvo-fg-muted)] leading-relaxed">{desc}</div>
               </button>
             ))}
           </div>
           <div className="flex justify-end pt-1">
-            <button type="button" onClick={onCancel} className="text-sm text-gray-400 hover:text-gray-600 transition-colors">
+            <button type="button" onClick={onCancel} className="text-sm text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg-muted)] transition-colors">
               {t.common.cancel}
             </button>
           </div>
@@ -387,7 +387,7 @@ function PlanForm({ initial, portfolio, ipcaAnnual, hicpAnnual, cpiAnnual, userC
           </div>
           <div>
             <label className={labelCls}>{t.finances.freedomCurrency}</label>
-            <div className="flex items-center bg-gray-100 rounded-lg p-0.5 gap-0.5 w-fit">
+            <div className="flex items-center bg-[var(--arvo-track-bg)] rounded-lg p-0.5 gap-0.5 w-fit">
               {['EUR', 'BRL', 'USD'].map(c => (
                 <button
                   key={c}
@@ -395,15 +395,15 @@ function PlanForm({ initial, portfolio, ipcaAnnual, hicpAnnual, cpiAnnual, userC
                   onClick={() => handleCurrencyChange(c)}
                   className={`px-4 py-2 text-sm font-semibold rounded-md transition-colors ${
                     currency === c
-                      ? 'bg-white text-[#0D0D0D] shadow-sm'
-                      : 'text-gray-400 hover:text-gray-700'
+                      ? 'bg-[var(--arvo-surface)] text-[var(--arvo-fg)] shadow-sm'
+                      : 'text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg)]'
                   }`}
                 >
                   {c}
                 </button>
               ))}
             </div>
-            <p className="text-[11px] text-gray-400 mt-1">{t.finances.freedomCurrencyHint}</p>
+            <p className="text-[11px] text-[var(--arvo-fg-soft)] mt-1">{t.finances.freedomCurrencyHint}</p>
           </div>
           <div>
             <label className={labelCls}>{t.finances.freedomPlanStartDate}</label>
@@ -420,19 +420,19 @@ function PlanForm({ initial, portfolio, ipcaAnnual, hicpAnnual, cpiAnnual, userC
       {/* ─── Step 2: Initial capital ─── */}
       {step === 2 && (
         <div className="space-y-4">
-          <p className="text-sm text-gray-600">{t.finances.freedomStepStarting} — {t.finances.freedomStepStartingDesc}</p>
+          <p className="text-sm text-[var(--arvo-fg-muted)]">{t.finances.freedomStepStarting} — {t.finances.freedomStepStartingDesc}</p>
           <div>
             <label className={labelCls}>{t.finances.freedomCapital} ({currency})</label>
             {isNew && Number(portfolioSuggestion) > 0 && (
               <div className="mb-2 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2.5 flex items-center justify-between">
-                <span className="text-xs text-gray-600">
+                <span className="text-xs text-[var(--arvo-fg-muted)]">
                   {t.finances.freedomCapitalHint}:&nbsp;
-                  <strong className="text-[#0D0D0D]">{fmtCur(Number(portfolioSuggestion))}</strong>
+                  <strong className="text-[var(--arvo-fg)]">{fmtCur(Number(portfolioSuggestion))}</strong>
                 </span>
                 <button
                   type="button"
                   onClick={() => setCapital(portfolioSuggestion)}
-                  className="text-xs text-[#0D0D0D] font-semibold hover:opacity-70 transition-opacity ml-3 whitespace-nowrap"
+                  className="text-xs text-[var(--arvo-fg)] font-semibold hover:opacity-70 transition-opacity ml-3 whitespace-nowrap"
                 >
                   {t.finances.freedomUseThisValue}
                 </button>
@@ -446,7 +446,7 @@ function PlanForm({ initial, portfolio, ipcaAnnual, hicpAnnual, cpiAnnual, userC
               className={fieldCls}
               placeholder="50000"
             />
-            <p className="text-[11px] text-gray-400 mt-1">{t.finances.freedomCapitalInclude}</p>
+            <p className="text-[11px] text-[var(--arvo-fg-soft)] mt-1">{t.finances.freedomCapitalInclude}</p>
           </div>
         </div>
       )}
@@ -454,7 +454,7 @@ function PlanForm({ initial, portfolio, ipcaAnnual, hicpAnnual, cpiAnnual, userC
       {/* ─── Step 3: Target ─── */}
       {step === 3 && (
         <div className="space-y-4">
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-[var(--arvo-fg-muted)]">
             {goalMode === 'capital' ? t.finances.freedomTargetCapitalDesc : t.finances.freedomTargetIncomeDesc}
           </p>
 
@@ -469,7 +469,7 @@ function PlanForm({ initial, portfolio, ipcaAnnual, hicpAnnual, cpiAnnual, userC
                 className={fieldCls}
                 placeholder="1000000"
               />
-              <p className="text-[11px] text-gray-400 mt-1 leading-snug">{t.finances.freedomCapitalNominalHint}</p>
+              <p className="text-[11px] text-[var(--arvo-fg-soft)] mt-1 leading-snug">{t.finances.freedomCapitalNominalHint}</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -496,23 +496,23 @@ function PlanForm({ initial, portfolio, ipcaAnnual, hicpAnnual, cpiAnnual, userC
                     placeholder="2"
                   />
                   <div className="mt-1.5 space-y-1">
-                    <p className="text-[11px] text-gray-400">{t.finances.freedomInflationRef}</p>
+                    <p className="text-[11px] text-[var(--arvo-fg-soft)]">{t.finances.freedomInflationRef}</p>
                     <div className="flex flex-wrap gap-1.5">
                       {ipcaAnnual != null && (
                         <button type="button" onClick={() => setInflation(String(ipcaAnnual))}
-                          className="text-[11px] px-2 py-0.5 rounded-full bg-gray-100 hover:bg-[#0D0D0D] hover:text-white transition-colors">
+                          className="text-[11px] px-2 py-0.5 rounded-full bg-[var(--arvo-track-bg)] hover:bg-[var(--arvo-fg)] hover:text-[var(--arvo-pill-active-fg)] transition-colors">
                           {t.finances.freedomInflationIpca}: {ipcaAnnual}%
                         </button>
                       )}
                       {hicpAnnual != null && (
                         <button type="button" onClick={() => setInflation(String(hicpAnnual))}
-                          className="text-[11px] px-2 py-0.5 rounded-full bg-gray-100 hover:bg-[#0D0D0D] hover:text-white transition-colors">
+                          className="text-[11px] px-2 py-0.5 rounded-full bg-[var(--arvo-track-bg)] hover:bg-[var(--arvo-fg)] hover:text-[var(--arvo-pill-active-fg)] transition-colors">
                           {t.finances.freedomInflationHicp}: {hicpAnnual}%
                         </button>
                       )}
                       {cpiAnnual != null && (
                         <button type="button" onClick={() => setInflation(String(cpiAnnual))}
-                          className="text-[11px] px-2 py-0.5 rounded-full bg-gray-100 hover:bg-[#0D0D0D] hover:text-white transition-colors">
+                          className="text-[11px] px-2 py-0.5 rounded-full bg-[var(--arvo-track-bg)] hover:bg-[var(--arvo-fg)] hover:text-[var(--arvo-pill-active-fg)] transition-colors">
                           {t.finances.freedomInflationCpi}: {cpiAnnual}%
                         </button>
                       )}
@@ -520,12 +520,12 @@ function PlanForm({ initial, portfolio, ipcaAnnual, hicpAnnual, cpiAnnual, userC
                   </div>
                 </div>
               </div>
-              <p className="text-[11px] text-gray-400 leading-snug">{t.finances.freedomDesiredIncomeHint}</p>
+              <p className="text-[11px] text-[var(--arvo-fg-soft)] leading-snug">{t.finances.freedomDesiredIncomeHint}</p>
               {computedTarget != null && (
                 <div className="bg-indigo-50 border border-indigo-100 rounded-xl px-4 py-3 space-y-1">
-                  <p className="text-xs text-gray-500">{t.finances.freedomComputedGoal}</p>
-                  <p className="text-xl font-bold text-[#0D0D0D]">{fmtCur(computedTarget)}</p>
-                  <p className="text-[10px] text-gray-500">
+                  <p className="text-xs text-[var(--arvo-fg-muted)]">{t.finances.freedomComputedGoal}</p>
+                  <p className="text-xl font-bold text-[var(--arvo-fg)]">{fmtCur(computedTarget)}</p>
+                  <p className="text-[10px] text-[var(--arvo-fg-muted)]">
                     {t.finances.freedomNominalInYear} {horizonInputYears || 20} {t.finances.freedomAgeAtTarget}:&nbsp;
                     <strong>{fmtCur(Math.round(parseFloat(desiredIncome || '0') * Math.pow(1 + parseFloat(inflation || '2') / 100, horizonInputYears || 20)))}{t.finances.freedomPerMonth}</strong>
                     &nbsp;— {t.finances.freedomRealToday}: <strong>{fmtCur(parseFloat(desiredIncome || '0'))}{t.finances.freedomPerMonth}</strong>
@@ -540,7 +540,7 @@ function PlanForm({ initial, portfolio, ipcaAnnual, hicpAnnual, cpiAnnual, userC
       {/* ─── Step 4: Strategy ─── */}
       {step === 4 && (
         <div className="space-y-4">
-          <p className="text-sm text-gray-600">{t.finances.freedomHowToGetThere}</p>
+          <p className="text-sm text-[var(--arvo-fg-muted)]">{t.finances.freedomHowToGetThere}</p>
 
           {/* Strategy mode toggle */}
           <div className="flex gap-2">
@@ -554,8 +554,8 @@ function PlanForm({ initial, portfolio, ipcaAnnual, hicpAnnual, cpiAnnual, userC
                 onClick={() => setStratMode(mode)}
                 className={`flex-1 py-2 text-xs font-semibold rounded-lg border transition-colors ${
                   stratMode === mode
-                    ? 'bg-[#0D0D0D] text-white border-[#0D0D0D]'
-                    : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'
+                    ? 'bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] border-[var(--arvo-fg)]'
+                    : 'bg-[var(--arvo-surface)] text-[var(--arvo-fg-muted)] border-[var(--arvo-border)] hover:border-[var(--arvo-fg-faint)]'
                 }`}
               >
                 {label}
@@ -577,9 +577,9 @@ function PlanForm({ initial, portfolio, ipcaAnnual, hicpAnnual, cpiAnnual, userC
                   placeholder="1000"
                 />
               ) : (
-                <div className={`${fieldCls} bg-gray-50 text-gray-700 flex items-center gap-1`}>
+                <div className={`${fieldCls} bg-[var(--arvo-surface-2)] text-[var(--arvo-fg)] flex items-center gap-1`}>
                   <span>{calculatedContrib != null ? fmtCur(calculatedContrib) : '—'}</span>
-                  <span className="text-[10px] text-gray-400 ml-1">{t.finances.freedomCalcLabel}</span>
+                  <span className="text-[10px] text-[var(--arvo-fg-soft)] ml-1">{t.finances.freedomCalcLabel}</span>
                 </div>
               )}
             </div>
@@ -595,8 +595,8 @@ function PlanForm({ initial, portfolio, ipcaAnnual, hicpAnnual, cpiAnnual, userC
                 placeholder="0.60"
               />
               {annualRatePct != null && (
-                <p className="text-[11px] text-gray-400 mt-1">
-                  ≈ <strong className="text-gray-600">{annualRatePct}% {t.finances.freedomRateAnnual}</strong>
+                <p className="text-[11px] text-[var(--arvo-fg-soft)] mt-1">
+                  ≈ <strong className="text-[var(--arvo-fg-muted)]">{annualRatePct}% {t.finances.freedomRateAnnual}</strong>
                 </p>
               )}
             </div>
@@ -613,7 +613,7 @@ function PlanForm({ initial, portfolio, ipcaAnnual, hicpAnnual, cpiAnnual, userC
                     if (!ageMode && currentAge != null) setTargetAge(String(currentAge + (parseInt(horizon) || 20)))
                     setAgeMode(v => !v)
                   }}
-                  className="text-[10px] text-[#0D0D0D] hover:underline"
+                  className="text-[10px] text-[var(--arvo-fg)] hover:underline"
                 >
                   {ageMode ? t.finances.freedomSwitchToYears : t.finances.freedomSwitchToAge}
                 </button>
@@ -623,7 +623,7 @@ function PlanForm({ initial, portfolio, ipcaAnnual, hicpAnnual, cpiAnnual, userC
             {ageMode && birthdate ? (
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <p className="text-[10px] text-gray-400 mb-1">{t.finances.freedomTargetAge}</p>
+                  <p className="text-[10px] text-[var(--arvo-fg-soft)] mb-1">{t.finances.freedomTargetAge}</p>
                   {stratMode === 'fixHorizon' ? (
                     <input
                       autoFocus
@@ -634,15 +634,15 @@ function PlanForm({ initial, portfolio, ipcaAnnual, hicpAnnual, cpiAnnual, userC
                       placeholder={String((currentAge ?? 30) + 20)}
                     />
                   ) : (
-                    <div className={`${fieldCls} bg-gray-50 text-gray-700 flex items-center gap-1`}>
+                    <div className={`${fieldCls} bg-[var(--arvo-surface-2)] text-[var(--arvo-fg)] flex items-center gap-1`}>
                       <span>{calculatedHorizonYears != null && currentAge != null ? Math.round(currentAge + calculatedHorizonYears) : '—'}</span>
-                      <span className="text-[10px] text-gray-400 ml-1">{t.finances.freedomCalcLabel}</span>
+                      <span className="text-[10px] text-[var(--arvo-fg-soft)] ml-1">{t.finances.freedomCalcLabel}</span>
                     </div>
                   )}
                 </div>
                 <div>
-                  <p className="text-[10px] text-gray-400 mb-1">{t.finances.freedomAgeAtTarget}</p>
-                  <div className={`${fieldCls} bg-gray-50 text-gray-500`}>
+                  <p className="text-[10px] text-[var(--arvo-fg-soft)] mb-1">{t.finances.freedomAgeAtTarget}</p>
+                  <div className={`${fieldCls} bg-[var(--arvo-surface-2)] text-[var(--arvo-fg-muted)]`}>
                     {stratMode === 'fixHorizon' && targetAge && currentAge != null
                       ? `${Math.max(0, parseInt(targetAge) - currentAge)} ${t.finances.freedomAgeAtTarget}`
                       : calculatedHorizonYears != null
@@ -662,13 +662,13 @@ function PlanForm({ initial, portfolio, ipcaAnnual, hicpAnnual, cpiAnnual, userC
                     placeholder="20"
                   />
                 ) : (
-                  <div className={`${fieldCls} max-w-[200px] bg-gray-50 text-gray-700 flex items-center gap-1`}>
+                  <div className={`${fieldCls} max-w-[200px] bg-[var(--arvo-surface-2)] text-[var(--arvo-fg)] flex items-center gap-1`}>
                     <span>{calculatedHorizonYears != null ? `${Math.round(calculatedHorizonYears * 10) / 10} ${t.finances.freedomAgeAtTarget}` : '—'}</span>
-                    <span className="text-[10px] text-gray-400 ml-1">{t.finances.freedomCalcLabel}</span>
+                    <span className="text-[10px] text-[var(--arvo-fg-soft)] ml-1">{t.finances.freedomCalcLabel}</span>
                   </div>
                 )}
                 {targetDate && (
-                  <p className="text-[11px] text-gray-400 mt-1">
+                  <p className="text-[11px] text-[var(--arvo-fg-soft)] mt-1">
                     {t.finances.freedomMetaEm} <strong>{targetDate}</strong>
                     {birthdate && targetDateISO && (
                       <span className="ml-1.5">· {ageAtDate(birthdate, targetDateISO)} {t.finances.freedomYearsOld}</span>
@@ -683,14 +683,14 @@ function PlanForm({ initial, portfolio, ipcaAnnual, hicpAnnual, cpiAnnual, userC
           <button
             type="button"
             onClick={() => setShowAdvanced(v => !v)}
-            className="text-xs text-gray-400 hover:text-gray-600 flex items-center gap-1 transition-colors"
+            className="text-xs text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg-muted)] flex items-center gap-1 transition-colors"
           >
             <span>{showAdvanced ? '▾' : '▸'}</span>
             {t.finances.freedomAdvanced}
           </button>
 
           {showAdvanced && (
-            <div className="grid grid-cols-2 gap-4 pl-3 border-l-2 border-gray-100">
+            <div className="grid grid-cols-2 gap-4 pl-3 border-l-2 border-[var(--arvo-border)]">
               <div>
                 <label className={labelCls}>{t.finances.freedomIncomeRate} % {t.finances.freedomPerMonth}</label>
                 <input
@@ -701,7 +701,7 @@ function PlanForm({ initial, portfolio, ipcaAnnual, hicpAnnual, cpiAnnual, userC
                   className={fieldCls}
                   placeholder="0.50"
                 />
-                <p className="text-[11px] text-gray-400 mt-1 leading-snug">{t.finances.freedomIncomeRateHint}</p>
+                <p className="text-[11px] text-[var(--arvo-fg-soft)] mt-1 leading-snug">{t.finances.freedomIncomeRateHint}</p>
               </div>
               <div>
                 <label className={labelCls}>{t.finances.freedomNotes}</label>
@@ -718,7 +718,7 @@ function PlanForm({ initial, portfolio, ipcaAnnual, hicpAnnual, cpiAnnual, userC
           <button
             type="button"
             onClick={() => setStep(s => s - 1)}
-            className="px-4 py-2 text-sm text-gray-500 hover:text-gray-700 border border-gray-200 rounded-lg transition-colors"
+            className="px-4 py-2 text-sm text-[var(--arvo-fg-muted)] hover:text-[var(--arvo-fg)] border border-[var(--arvo-border)] rounded-lg transition-colors"
           >
             ← {t.finances.freedomBack}
           </button>
@@ -727,13 +727,13 @@ function PlanForm({ initial, portfolio, ipcaAnnual, hicpAnnual, cpiAnnual, userC
             type="button"
             onClick={isLastStep ? handleSave : () => setStep(s => s + 1)}
             disabled={saving}
-            className="flex-1 bg-[#0D0D0D] text-white text-sm py-2 rounded-xl hover:opacity-80 transition-opacity disabled:opacity-40"
+            className="flex-1 bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] text-sm py-2 rounded-xl hover:opacity-80 transition-opacity disabled:opacity-40"
           >
             {saving ? '…' : isLastStep ? t.common.save : `${t.finances.freedomNext} →`}
           </button>
 
           {step === firstStep && (
-            <button type="button" onClick={onCancel} className="text-sm text-gray-400 hover:text-gray-600 transition-colors">
+            <button type="button" onClick={onCancel} className="text-sm text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg-muted)] transition-colors">
               {t.common.cancel}
             </button>
           )}
@@ -761,8 +761,8 @@ function ChartTooltip({ active, payload, label, currency, locale = 'pt-BR' }: {
   const fmt = (n: number, cur: string, compact = false, loc = 'pt-BR') => hideValues ? '•••' : _fmt(n, cur, compact, loc)
   if (!active || !payload?.length) return null
   return (
-    <div className="bg-white border border-gray-100 rounded-xl shadow-lg px-3 py-2 text-xs">
-      <p className="text-gray-500 mb-1">{label}</p>
+    <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-xl shadow-lg px-3 py-2 text-xs">
+      <p className="text-[var(--arvo-fg-muted)] mb-1">{label}</p>
       {payload.map(p => p.value != null && (
         <p key={p.name} style={{ color: p.color }} className="font-semibold">
           {p.name}: {fmt(p.value, currency, false, locale)}
@@ -1020,7 +1020,7 @@ export default function FinancesFreedomPage() {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-12 text-center text-gray-400 text-sm">
+      <div className="bg-[var(--arvo-surface)] rounded-2xl border border-[var(--arvo-border)] shadow-sm p-12 text-center text-[var(--arvo-fg-soft)] text-sm">
         {t.common.loading}
       </div>
     )
@@ -1033,21 +1033,21 @@ export default function FinancesFreedomPage() {
       {/* Header */}
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
-          <h1 style={{ fontFamily: "var(--arvo-font-body)", fontSize: 18, letterSpacing: '0.06em', color: 'var(--arvo-black)' }}>{t.finances.freedomTitle}</h1>
-          <p className="text-sm mt-0.5" style={{ color: 'rgba(13,13,13,0.60)' }}>{t.finances.freedomSubtitle}</p>
+          <h1 style={{ fontFamily: "var(--arvo-font-body)", fontSize: 18, letterSpacing: '0.06em', color: 'var(--arvo-fg)' }}>{t.finances.freedomTitle}</h1>
+          <p className="text-sm mt-0.5" style={{ color: 'var(--arvo-fg-muted)' }}>{t.finances.freedomSubtitle}</p>
         </div>
         <div className="flex items-center gap-2">
           {plans.length > 0 && (
             <button
               onClick={() => { setEditingPlan(activePlan); setShowForm(true) }}
-              className="px-3 py-1.5 border border-gray-200 text-sm text-gray-600 rounded-lg hover:bg-gray-50 transition-colors"
+              className="px-3 py-1.5 border border-[var(--arvo-border)] text-sm text-[var(--arvo-fg-muted)] rounded-lg hover:bg-[var(--arvo-surface-2)] transition-colors"
             >
               {t.common.edit}
             </button>
           )}
           <button
             onClick={() => { setEditingPlan(null); setShowForm(true) }}
-            className="px-3 py-1.5 bg-[#0D0D0D] text-white text-sm rounded-lg hover:opacity-80 transition-opacity"
+            className="px-3 py-1.5 bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] text-sm rounded-lg hover:opacity-80 transition-opacity"
           >
             + {t.finances.freedomNewPlan}
           </button>
@@ -1063,8 +1063,8 @@ export default function FinancesFreedomPage() {
               onClick={() => !p.is_active && setActive(p.id)}
               className={`px-3 py-1 text-xs rounded-full border transition-colors ${
                 p.is_active
-                  ? 'bg-[#0D0D0D] text-white border-[#0D0D0D] cursor-default'
-                  : 'border-gray-200 text-gray-500 hover:border-[#0D0D0D] hover:text-[#0D0D0D]'
+                  ? 'bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] border-[var(--arvo-fg)] cursor-default'
+                  : 'border-[var(--arvo-border)] text-[var(--arvo-fg-muted)] hover:border-[var(--arvo-fg)] hover:text-[var(--arvo-fg)]'
               }`}
             >
               {p.name}
@@ -1075,21 +1075,21 @@ export default function FinancesFreedomPage() {
 
       {!activePlan && !showForm ? (
         /* Empty state */
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-12 text-center">
+        <div className="bg-[var(--arvo-surface)] rounded-2xl border border-[var(--arvo-border)] shadow-sm p-12 text-center">
           <p className="text-4xl mb-4">🎯</p>
-          <p className="text-gray-700 font-medium mb-1">{t.finances.freedomEmptyTitle}</p>
-          <p className="text-sm text-gray-400 mb-5">{t.finances.freedomEmptyBody}</p>
+          <p className="text-[var(--arvo-fg)] font-medium mb-1">{t.finances.freedomEmptyTitle}</p>
+          <p className="text-sm text-[var(--arvo-fg-soft)] mb-5">{t.finances.freedomEmptyBody}</p>
           <button
             onClick={() => setShowForm(true)}
-            className="px-5 py-2 bg-[#0D0D0D] text-white text-sm rounded-xl hover:opacity-80 transition-opacity"
+            className="px-5 py-2 bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] text-sm rounded-xl hover:opacity-80 transition-opacity"
           >
             {t.finances.freedomCreatePlan}
           </button>
         </div>
       ) : showForm ? (
         /* Plan form */
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-          <h3 className="font-semibold text-gray-900 mb-4">
+        <div className="bg-[var(--arvo-surface)] rounded-2xl border border-[var(--arvo-border)] shadow-sm p-6">
+          <h3 className="font-semibold text-[var(--arvo-fg)] mb-4">
             {editingPlan ? t.finances.freedomEditPlan : t.finances.freedomNewPlan}
           </h3>
           <PlanForm
@@ -1110,47 +1110,47 @@ export default function FinancesFreedomPage() {
         <>
           {/* Summary cards — row 1: current comparison */}
           <div className="grid grid-cols-2 gap-3">
-            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
-              <p className="text-xs text-gray-500 mb-1">{t.finances.freedomToday}</p>
-              <p className="text-lg font-bold text-gray-900">{fmt(cxFreedom(currentValue), displayCurrency, true)}</p>
-              <p className="text-[10px] text-gray-400 mt-0.5">{t.finances.freedomActualNow}</p>
+            <div className="bg-[var(--arvo-surface)] rounded-xl border border-[var(--arvo-border)] shadow-sm p-4">
+              <p className="text-xs text-[var(--arvo-fg-muted)] mb-1">{t.finances.freedomToday}</p>
+              <p className="text-lg font-bold text-[var(--arvo-fg)]">{fmt(cxFreedom(currentValue), displayCurrency, true)}</p>
+              <p className="text-[10px] text-[var(--arvo-fg-soft)] mt-0.5">{t.finances.freedomActualNow}</p>
             </div>
-            <div className={`rounded-xl border shadow-sm p-4 ${planStatusText?.ahead ? 'bg-emerald-50 border-emerald-100' : planStatusText ? 'bg-amber-50 border-amber-100' : 'bg-white border-gray-100'}`}>
-              <p className="text-xs text-gray-500 mb-1">{t.finances.freedomPlannedToday}</p>
-              <p className="text-lg font-bold text-gray-900">{fmt(cxFreedom(plannedAtCurrentMonth), displayCurrency, true)}</p>
-              <p className="text-[10px] text-gray-400 mt-0.5">{t.finances.freedomAccordingToPlan}</p>
+            <div className={`rounded-xl border shadow-sm p-4 ${planStatusText?.ahead ? 'bg-emerald-50 border-emerald-100' : planStatusText ? 'bg-amber-50 border-amber-100' : 'bg-[var(--arvo-surface)] border-[var(--arvo-border)]'}`}>
+              <p className="text-xs text-[var(--arvo-fg-muted)] mb-1">{t.finances.freedomPlannedToday}</p>
+              <p className="text-lg font-bold text-[var(--arvo-fg)]">{fmt(cxFreedom(plannedAtCurrentMonth), displayCurrency, true)}</p>
+              <p className="text-[10px] text-[var(--arvo-fg-soft)] mt-0.5">{t.finances.freedomAccordingToPlan}</p>
             </div>
           </div>
           {/* Summary cards — row 2: goal metrics */}
           <div className="grid grid-cols-3 gap-3">
-            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
-              <p className="text-xs text-gray-500 mb-1">{t.finances.freedomGoal}</p>
-              <p className="text-base font-bold text-[#0D0D0D]">{fmt(cxFreedom(activePlan!.target_amount), displayCurrency, true)}</p>
+            <div className="bg-[var(--arvo-surface)] rounded-xl border border-[var(--arvo-border)] shadow-sm p-4">
+              <p className="text-xs text-[var(--arvo-fg-muted)] mb-1">{t.finances.freedomGoal}</p>
+              <p className="text-base font-bold text-[var(--arvo-fg)]">{fmt(cxFreedom(activePlan!.target_amount), displayCurrency, true)}</p>
             </div>
-            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
-              <p className="text-xs text-gray-500 mb-1">{t.finances.freedomPassive} {t.finances.freedomPerMonth}</p>
+            <div className="bg-[var(--arvo-surface)] rounded-xl border border-[var(--arvo-border)] shadow-sm p-4">
+              <p className="text-xs text-[var(--arvo-fg-muted)] mb-1">{t.finances.freedomPassive} {t.finances.freedomPerMonth}</p>
               <div className="flex items-baseline gap-2 flex-wrap">
                 <p className="text-base font-bold text-emerald-600">{fmt(cxFreedom(passiveIncome), displayCurrency, true)}</p>
                 {passiveIncomeReal != null && passiveIncomeReal !== passiveIncome && (
                   <p className="text-sm font-semibold text-emerald-500">≈ {fmt(cxFreedom(passiveIncomeReal), displayCurrency, true)} {t.finances.freedomRealToday}</p>
                 )}
               </div>
-              <p className="text-[10px] text-gray-400">{(activePlan!.monthly_income_rate * 100).toFixed(1)}% {t.finances.freedomIncomeNominalTag}</p>
+              <p className="text-[10px] text-[var(--arvo-fg-soft)]">{(activePlan!.monthly_income_rate * 100).toFixed(1)}% {t.finances.freedomIncomeNominalTag}</p>
             </div>
-            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
-              <p className="text-xs text-gray-500 mb-1">{t.finances.freedomTarget}</p>
+            <div className="bg-[var(--arvo-surface)] rounded-xl border border-[var(--arvo-border)] shadow-sm p-4">
+              <p className="text-xs text-[var(--arvo-fg-muted)] mb-1">{t.finances.freedomTarget}</p>
               {reachMonth ? (
-                <p className="text-base font-bold text-gray-900">
+                <p className="text-base font-bold text-[var(--arvo-fg)]">
                   {new Date(reachMonth + '-01').toLocaleDateString(intlLocale, { month: 'short', year: 'numeric' })}
                 </p>
               ) : (
-                <p className="text-base font-bold text-gray-400">—</p>
+                <p className="text-base font-bold text-[var(--arvo-fg-soft)]">—</p>
               )}
-              <p className="text-[10px] text-gray-400">
+              <p className="text-[10px] text-[var(--arvo-fg-soft)]">
                 {reachYearsFromNow != null && `${t.finances.freedomIn} ${reachYearsFromNow} ${t.finances.freedomAgeAtTarget}`}
                 {userBirthdate && reachMonth && ` · ${ageAtDate(userBirthdate, reachMonth + '-01')} ${t.finances.freedomAgeAtTarget}`}
               </p>
-              <p className="text-[10px] text-gray-300 mt-0.5">{t.finances.freedomBasedOnCurrent}</p>
+              <p className="text-[10px] text-[var(--arvo-fg-faint)] mt-0.5">{t.finances.freedomBasedOnCurrent}</p>
             </div>
           </div>
 
@@ -1172,13 +1172,13 @@ export default function FinancesFreedomPage() {
 
           {/* Chart */}
           {perfLoading && (
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-center justify-center h-40">
-              <div className="animate-spin h-6 w-6 rounded-full border-2 border-[#0D0D0D] border-t-transparent" />
+            <div className="bg-[var(--arvo-surface)] rounded-2xl border border-[var(--arvo-border)] shadow-sm p-5 flex items-center justify-center h-40">
+              <div className="animate-spin h-6 w-6 rounded-full border-2 border-[var(--arvo-fg)] border-t-transparent" />
             </div>
           )}
           {!perfLoading && chartData.length > 0 && (
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-              <h3 className="text-sm font-semibold text-gray-700 mb-4">{t.finances.freedomChartTitle}</h3>
+            <div className="bg-[var(--arvo-surface)] rounded-2xl border border-[var(--arvo-border)] shadow-sm p-5">
+              <h3 className="text-sm font-semibold text-[var(--arvo-fg)] mb-4">{t.finances.freedomChartTitle}</h3>
               <ResponsiveContainer width="100%" height={320}>
                 <LineChart data={displayChartData} margin={{ top: 5, right: 10, bottom: 5, left: 0 }}>
                   <XAxis
@@ -1204,7 +1204,7 @@ export default function FinancesFreedomPage() {
                     type="monotone"
                     dataKey="planned"
                     name={t.finances.freedomPlanned}
-                    stroke="#0D0D0D"
+                    stroke="var(--arvo-fg)"
                     strokeWidth={2}
                     strokeDasharray="6 3"
                     dot={false}
@@ -1221,15 +1221,15 @@ export default function FinancesFreedomPage() {
                   />
                 </LineChart>
               </ResponsiveContainer>
-              <p className="text-[10px] text-gray-400 mt-2 text-right">
+              <p className="text-[10px] text-[var(--arvo-fg-soft)] mt-2 text-right">
                 {t.finances.freedomApprox}
               </p>
             </div>
           )}
 
           {/* Plan details */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-            <h3 className="text-sm font-semibold text-gray-700 mb-3">{activePlan!.name}</h3>
+          <div className="bg-[var(--arvo-surface)] rounded-2xl border border-[var(--arvo-border)] shadow-sm p-5">
+            <h3 className="text-sm font-semibold text-[var(--arvo-fg)] mb-3">{activePlan!.name}</h3>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
               {[
                 { label: t.finances.freedomCapital, value: fmt(cxFreedom(activePlan!.initial_capital), displayCurrency) },
@@ -1240,13 +1240,13 @@ export default function FinancesFreedomPage() {
                 { label: t.finances.freedomCurrency, value: `${planCurrency}${planCurrency !== displayCurrency ? ` → ${displayCurrency}` : ''}` },
               ].map(({ label, value }) => (
                 <div key={label}>
-                  <p className="text-xs text-gray-400">{label}</p>
-                  <p className="font-medium text-gray-900">{value}</p>
+                  <p className="text-xs text-[var(--arvo-fg-soft)]">{label}</p>
+                  <p className="font-medium text-[var(--arvo-fg)]">{value}</p>
                 </div>
               ))}
             </div>
             {activePlan!.notes && (
-              <p className="text-xs text-gray-400 mt-3 border-t border-gray-50 pt-3">{activePlan!.notes}</p>
+              <p className="text-xs text-[var(--arvo-fg-soft)] mt-3 border-t border-[var(--arvo-border-soft)] pt-3">{activePlan!.notes}</p>
             )}
           </div>
         </>

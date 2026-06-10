@@ -148,14 +148,14 @@ export default function SetupChecklist({ firstName }: Props) {
             borderRadius: 12,
             boxShadow: '0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06)',
             border: '1px solid var(--arvo-border-soft)',
-            background: '#FFFFFF',
+            background: 'var(--arvo-surface)',
             zIndex: 50,
             overflow: 'hidden',
           }}
         >
           {/* Header */}
           <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--arvo-border-soft)' }}>
-            <p style={{ margin: 0, fontFamily: 'var(--arvo-font-body)', fontSize: 12, fontWeight: 600, color: 'var(--arvo-black)', letterSpacing: '0.04em' }}>
+            <p style={{ margin: 0, fontFamily: 'var(--arvo-font-body)', fontSize: 12, fontWeight: 600, color: 'var(--arvo-fg)', letterSpacing: '0.04em' }}>
               {name ? `${name}, ` : ''}{s.title}
             </p>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
@@ -200,7 +200,7 @@ export default function SetupChecklist({ firstName }: Props) {
                 </div>
                 <span style={{
                   flex: 1, fontSize: 13, fontFamily: 'var(--arvo-font-body)',
-                  color: step.done ? 'rgba(13,13,13,0.38)' : 'rgba(13,13,13,0.8)',
+                  color: step.done ? 'var(--arvo-fg-soft)' : 'var(--arvo-fg-muted)',
                   textDecoration: step.done ? 'line-through' : 'none',
                 }}>
                   {step.label}
@@ -220,13 +220,13 @@ export default function SetupChecklist({ firstName }: Props) {
               onClick={dismiss}
               style={{
                 width: '100%', padding: '6px 12px',
-                borderRadius: 8, border: '1px solid rgba(13,13,13,0.12)',
+                borderRadius: 8, border: '1px solid var(--arvo-fg-faint)',
                 background: 'none', cursor: 'pointer',
                 fontFamily: 'var(--arvo-font-body)', fontSize: 12,
-                color: 'rgba(13,13,13,0.45)', textAlign: 'center',
+                color: 'var(--arvo-fg-soft)', textAlign: 'center',
                 transition: 'background 0.15s',
               }}
-              onMouseEnter={e => (e.currentTarget.style.background = 'rgba(13,13,13,0.04)')}
+              onMouseEnter={e => (e.currentTarget.style.background = 'var(--arvo-hover-bg)')}
               onMouseLeave={e => (e.currentTarget.style.background = '')}
             >
               {s.dismiss}

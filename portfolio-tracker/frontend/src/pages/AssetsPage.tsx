@@ -40,7 +40,7 @@ export default function AssetsPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 18, letterSpacing: '0.06em', color: 'var(--arvo-black)' }}>
+        <h1 style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 18, letterSpacing: '0.06em', color: 'var(--arvo-fg)' }}>
           {t.nav.assets}
         </h1>
         <div className="flex items-center gap-3">
@@ -49,15 +49,15 @@ export default function AssetsPage() {
             style={{
               fontFamily: 'var(--arvo-font-body)', fontSize: 10, letterSpacing: '0.12em',
               textTransform: 'uppercase', padding: '6px 12px', borderRadius: 6,
-              border: '1px solid var(--arvo-border)', background: 'white',
-              color: 'rgba(13,13,13,0.55)', cursor: 'pointer',
+              border: '1px solid var(--arvo-border)', background: 'var(--arvo-surface)',
+              color: 'var(--arvo-fg-muted)', cursor: 'pointer',
             }}
           >
             {t.nav.classes} →
           </button>
           <button
             onClick={refresh}
-            style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'rgba(13,13,13,0.60)', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
+            style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-muted)', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -75,7 +75,7 @@ export default function AssetsPage() {
           onToggleFavorite={toggleFavorite}
         />
       ) : (
-        <div className="rounded-2xl p-12 text-center" style={{ background: 'white', border: '1px solid var(--arvo-border)' }}>
+        <div className="rounded-2xl p-12 text-center" style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)' }}>
           <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 16, letterSpacing: '0.06em', color: 'var(--arvo-fg-soft)' }}>
             {t.dashboard.noOpenPositions}
           </p>

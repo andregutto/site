@@ -48,14 +48,14 @@ function SummaryCard({ label, value, sub, positive }: {
   label: string; value: string; sub?: string; positive?: boolean | null
 }) {
   return (
-    <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
-      <p className="text-gray-400 text-xs uppercase tracking-wide">{label}</p>
+    <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl p-5 shadow-sm">
+      <p className="text-[var(--arvo-fg-soft)] text-xs uppercase tracking-wide">{label}</p>
       <p className={`text-2xl font-bold mt-1 ${
         positive === true ? 'text-green-600' :
         positive === false ? 'text-red-600' :
-        'text-gray-900'
+        'text-[var(--arvo-fg)]'
       }`}>{value}</p>
-      {sub && <p className="text-xs text-gray-400 mt-1">{sub}</p>}
+      {sub && <p className="text-xs text-[var(--arvo-fg-soft)] mt-1">{sub}</p>}
     </div>
   )
 }
@@ -226,8 +226,8 @@ export default function PerformancePage() {
     else { setDetailSort(key); setDetailDir('desc') }
   }
   function DetailSortIcon({ col }: { col: DetailSortKey }) {
-    if (detailSort !== col) return <span className="text-gray-300">↕</span>
-    return <span className="text-[#0D0D0D]">{detailDir === 'asc' ? '↑' : '↓'}</span>
+    if (detailSort !== col) return <span className="text-[var(--arvo-fg-faint)]">↕</span>
+    return <span className="text-[var(--arvo-fg)]">{detailDir === 'asc' ? '↑' : '↓'}</span>
   }
 
   const benchmarkMap = new Map(
@@ -344,8 +344,8 @@ export default function PerformancePage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 style={{ fontFamily: "var(--arvo-font-body)", fontSize: 18, letterSpacing: '0.06em', color: 'var(--arvo-black)' }}>Performance</h1>
-          <p className="text-sm mt-0.5" style={{ color: 'rgba(13,13,13,0.60)' }}>{t.performance.subtitle}</p>
+          <h1 style={{ fontFamily: "var(--arvo-font-body)", fontSize: 18, letterSpacing: '0.06em', color: 'var(--arvo-fg)' }}>Performance</h1>
+          <p className="text-sm mt-0.5" style={{ color: 'var(--arvo-fg-muted)' }}>{t.performance.subtitle}</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -356,10 +356,10 @@ export default function PerformancePage() {
               disabled={disabled}
               className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
                 disabled
-                  ? 'bg-white text-gray-300 border-gray-100 cursor-not-allowed'
+                  ? 'bg-[var(--arvo-surface)] text-[var(--arvo-fg-faint)] border-[var(--arvo-border)] cursor-not-allowed'
                   : mode === key
-                    ? 'bg-[#0D0D0D] text-white border-[#0D0D0D]'
-                    : 'bg-white text-gray-500 border-gray-200 hover:border-[#0D0D0D] hover:text-[#0D0D0D]'
+                    ? 'bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] border-[var(--arvo-fg)]'
+                    : 'bg-[var(--arvo-surface)] text-[var(--arvo-fg-muted)] border-[var(--arvo-border)] hover:border-[var(--arvo-fg)] hover:text-[var(--arvo-fg)]'
               }`}
             >{label}</button>
           ))}
@@ -370,18 +370,18 @@ export default function PerformancePage() {
               className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
                 dailyYtd
                   ? 'bg-[#1B4FD8] text-white border-[#1B4FD8]'
-                  : 'bg-white text-gray-500 border-gray-200 hover:border-[#1B4FD8] hover:text-[#1B4FD8]'
+                  : 'bg-[var(--arvo-surface)] text-[var(--arvo-fg-muted)] border-[var(--arvo-border)] hover:border-[#1B4FD8] hover:text-[#1B4FD8]'
               }`}
             >{t.performance.daily}</button>
           )}
 
-          <span className="text-gray-200 text-sm">|</span>
+          <span className="text-[var(--arvo-fg-faint)] text-sm">|</span>
 
           <button
             onClick={handleRefresh}
             disabled={isLoading}
             title={t.performance.recalculateTitle}
-            className="px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-200 text-gray-500 hover:border-[#0D0D0D] hover:text-[#0D0D0D] transition-colors disabled:opacity-40"
+            className="px-3 py-1.5 text-xs font-medium rounded-lg border border-[var(--arvo-border)] text-[var(--arvo-fg-muted)] hover:border-[var(--arvo-fg)] hover:text-[var(--arvo-fg)] transition-colors disabled:opacity-40"
           >
             {isLoading ? t.performance.calculating : t.performance.recalculate}
           </button>
@@ -417,29 +417,29 @@ export default function PerformancePage() {
             const chartDataActive = useDailyChart ? dailyChartData : chartData
             if (chartDataActive.length === 0) {
               return (
-                <div className="bg-white border border-gray-100 rounded-2xl p-12 text-center text-gray-400 shadow-sm">
-                  <p className="text-base font-medium text-gray-500">{t.performance.noData}</p>
+                <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl p-12 text-center text-[var(--arvo-fg-soft)] shadow-sm">
+                  <p className="text-base font-medium text-[var(--arvo-fg-muted)]">{t.performance.noData}</p>
                   <p className="text-sm mt-1">{t.performance.visitDashboard}</p>
                 </div>
               )
             }
-            const portfolioDot = useDailyChart ? { r: 2, fill: '#0D0D0D' } : { r: 3, fill: '#0D0D0D' }
+            const portfolioDot = useDailyChart ? { r: 2, fill: 'var(--arvo-fg)' } : { r: 3, fill: 'var(--arvo-fg)' }
             const portfolioActiveDot = useDailyChart ? { r: 4 } : { r: 5 }
             return (
-              <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
+              <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl p-6 shadow-sm">
                 <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
-                  <h2 className="font-semibold text-gray-800">
+                  <h2 className="font-semibold text-[var(--arvo-fg)]">
                     {chartView === 'value' ? t.dashboard.patrimony : t.performance.accumulatedReturn} · {periodLabel}
                   </h2>
                   <div className="flex items-center gap-2 flex-wrap">
-                    <div className="flex rounded-lg border border-gray-200 overflow-hidden text-xs font-semibold">
+                    <div className="flex rounded-lg border border-[var(--arvo-border)] overflow-hidden text-xs font-semibold">
                       <button
                         onClick={() => setChartView('return')}
-                        className={`px-2.5 py-1 transition-colors ${chartView === 'return' ? 'bg-[#0D0D0D] text-white' : 'bg-white text-gray-400 hover:text-gray-600'}`}
+                        className={`px-2.5 py-1 transition-colors ${chartView === 'return' ? 'bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)]' : 'bg-[var(--arvo-surface)] text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg-muted)]'}`}
                       >{t.performance.returnPct}</button>
                       <button
                         onClick={() => setChartView('value')}
-                        className={`px-2.5 py-1 transition-colors border-l border-gray-200 ${chartView === 'value' ? 'bg-[#0D0D0D] text-white' : 'bg-white text-gray-400 hover:text-gray-600'}`}
+                        className={`px-2.5 py-1 transition-colors border-l border-[var(--arvo-border)] ${chartView === 'value' ? 'bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)]' : 'bg-[var(--arvo-surface)] text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg-muted)]'}`}
                       >{t.dashboard.patrimony}</button>
                     </div>
                     {chartView === 'return' && (
@@ -450,7 +450,7 @@ export default function PerformancePage() {
                               key={lbl}
                               onClick={() => (setter as (v: boolean) => void)(!active)}
                               className={`px-2.5 py-1 text-xs font-semibold rounded-md border transition-colors ${
-                                active ? 'text-white border-transparent' : 'bg-white text-gray-400 border-gray-200 hover:border-gray-400'
+                                active ? 'text-white border-transparent' : 'bg-[var(--arvo-surface)] text-[var(--arvo-fg-soft)] border-[var(--arvo-border)] hover:border-[var(--arvo-fg-faint)]'
                               }`}
                               style={active ? { backgroundColor: color as string, borderColor: color as string } : {}}
                             >{lbl}</button>
@@ -464,10 +464,10 @@ export default function PerformancePage() {
                   <ResponsiveContainer width="100%" height="100%">
                     {chartView === 'value' ? (
                       <LineChart data={valueChartData}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-                        <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#9ca3af' }} interval="preserveStartEnd" />
+                        <CartesianGrid strokeDasharray="3 3" stroke="var(--arvo-border)" />
+                        <XAxis dataKey="month" tick={{ fontSize: 11, fill: 'var(--arvo-fg-soft)' }} interval="preserveStartEnd" />
                         <YAxis
-                          tick={{ fontSize: 11, fill: '#9ca3af' }}
+                          tick={{ fontSize: 11, fill: 'var(--arvo-fg-soft)' }}
                           tickFormatter={v => {
                             const n = typeof v === 'number' ? v : 0
                             return currency === 'BRL' ? `${(n / 1000).toFixed(0)}k` : (n >= 1000 ? `${(n / 1000).toFixed(0)}k` : n.toFixed(0))
@@ -479,27 +479,27 @@ export default function PerformancePage() {
                             new Intl.NumberFormat(intlLocale, { style: 'currency', currency, maximumFractionDigits: 0 }).format(typeof v === 'number' ? v : 0),
                             name,
                           ]}
-                          contentStyle={{ borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 12 }}
+                          contentStyle={{ borderRadius: 8, border: '1px solid var(--arvo-border)', fontSize: 12 }}
                         />
                         <Legend wrapperStyle={{ fontSize: 11 }} />
-                        <Line type="monotone" dataKey="value" name={t.dashboard.patrimony} stroke="#0D0D0D" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
-                        <Line type="monotone" dataKey="contributions" name={t.performance.contributions} stroke="#9ca3af" strokeWidth={1.5} dot={false} strokeDasharray="4 2" connectNulls />
+                        <Line type="monotone" dataKey="value" name={t.dashboard.patrimony} stroke="var(--arvo-fg)" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
+                        <Line type="monotone" dataKey="contributions" name={t.performance.contributions} stroke="var(--arvo-fg-soft)" strokeWidth={1.5} dot={false} strokeDasharray="4 2" connectNulls />
                         {activePlan && <Line type="monotone" dataKey="target" name={t.dashboard.targetLine} stroke="#1B4FD8" strokeWidth={1.5} dot={false} strokeDasharray="5 3" connectNulls />}
                       </LineChart>
                     ) : (
                       <LineChart data={chartDataActive}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-                        <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#9ca3af' }} interval="preserveStartEnd" />
+                        <CartesianGrid strokeDasharray="3 3" stroke="var(--arvo-border)" />
+                        <XAxis dataKey="month" tick={{ fontSize: 11, fill: 'var(--arvo-fg-soft)' }} interval="preserveStartEnd" />
                         <YAxis
-                          tick={{ fontSize: 11, fill: '#9ca3af' }}
+                          tick={{ fontSize: 11, fill: 'var(--arvo-fg-soft)' }}
                           tickFormatter={v => `${Number(v) > 0 ? '+' : ''}${Number(v).toFixed(1)}%`}
                         />
                         <Tooltip
                           formatter={(v) => [`${Number(v) >= 0 ? '+' : ''}${Number(v).toFixed(2)}%`]}
-                          contentStyle={{ borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 12 }}
+                          contentStyle={{ borderRadius: 8, border: '1px solid var(--arvo-border)', fontSize: 12 }}
                         />
                         <Legend wrapperStyle={{ fontSize: 11 }} />
-                        <Line type="monotone" dataKey="portfolio" name={t.performance.wallet} stroke="#0D0D0D" strokeWidth={2} dot={portfolioDot} activeDot={portfolioActiveDot} />
+                        <Line type="monotone" dataKey="portfolio" name={t.performance.wallet} stroke="var(--arvo-fg)" strokeWidth={2} dot={portfolioDot} activeDot={portfolioActiveDot} />
                         {showCDI   && <Line type="monotone" dataKey="cdi"   name="CDI"    stroke="#16a34a" strokeWidth={1.5} dot={false} strokeDasharray="4 2" connectNulls />}
                         {showIBOV  && <Line type="monotone" dataKey="ibov"  name="IBOV"   stroke="#7c3aed" strokeWidth={1.5} dot={false} strokeDasharray="4 2" connectNulls />}
                         {showSP500 && <Line type="monotone" dataKey="sp500" name="S&P500" stroke="#f59e0b" strokeWidth={1.5} dot={false} strokeDasharray="4 2" connectNulls />}
@@ -515,14 +515,14 @@ export default function PerformancePage() {
           {(useDailyChart ? dailyChartData.length > 0 : chartData.length > 0) && (
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
               {[
-                { label: t.performance.wallet, value: portfolioAccum, text: 'text-[#0D0D0D]' },
+                { label: t.performance.wallet, value: portfolioAccum, text: 'text-[var(--arvo-fg)]' },
                 { label: 'CDI',       value: cdiAccum,       text: 'text-green-600' },
                 { label: 'IBOV',      value: ibovAccum,      text: 'text-violet-700' },
                 { label: 'S&P500',    value: sp500Accum,     text: 'text-amber-600' },
               ].map(({ label, value, text }) => (
-                <div key={label} className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm">
-                  <p className="text-gray-400 text-xs">{label}</p>
-                  <p className={`text-xl font-bold mt-1 ${value != null ? text : 'text-gray-300'}`}>
+                <div key={label} className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl p-4 shadow-sm">
+                  <p className="text-[var(--arvo-fg-soft)] text-xs">{label}</p>
+                  <p className={`text-xl font-bold mt-1 ${value != null ? text : 'text-[var(--arvo-fg-faint)]'}`}>
                     {value != null ? `${value >= 0 ? '+' : ''}${value.toFixed(2)}%` : '—'}
                   </p>
                 </div>
@@ -531,13 +531,13 @@ export default function PerformancePage() {
           )}
 
           {monthly && (
-            <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
-              <div className="px-6 py-4 border-b border-gray-100">
-                <h2 className="font-semibold text-gray-800">{t.performance.monthlyEvolution}</h2>
+            <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl overflow-hidden shadow-sm">
+              <div className="px-6 py-4 border-b border-[var(--arvo-border)]">
+                <h2 className="font-semibold text-[var(--arvo-fg)]">{t.performance.monthlyEvolution}</h2>
               </div>
               <div className="hidden sm:block overflow-x-auto">
                 <table className="w-full text-sm">
-                  <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
+                  <thead className="bg-[var(--arvo-surface-2)] text-[var(--arvo-fg-muted)] text-xs uppercase">
                     <tr>
                       <th className="px-4 py-3 text-left">{t.performance.month}</th>
                       <th className="px-4 py-3 text-right">{t.performance.wealth}</th>
@@ -547,7 +547,7 @@ export default function PerformancePage() {
                       <th className="px-4 py-3 text-right">{t.performance.returnAbbr}</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-50">
+                  <tbody className="divide-y divide-[var(--arvo-border-soft)]">
                     {monthly.monthly.map((m) => {
                       const cf        = m.contributions ?? 0
                       const gain      = m.prev_total > 0 ? m.total - m.prev_total - cf : null
@@ -560,63 +560,63 @@ export default function PerformancePage() {
                           <tr
                             key={m.month}
                             onClick={() => hasDetail && toggleMonth(m.month)}
-                            className={`${hasDetail ? 'cursor-pointer' : ''} hover:bg-gray-50 transition-colors`}
+                            className={`${hasDetail ? 'cursor-pointer' : ''} hover:bg-[var(--arvo-surface-2)] transition-colors`}
                           >
-                            <td className="px-4 py-3 font-medium text-gray-700">
+                            <td className="px-4 py-3 font-medium text-[var(--arvo-fg)]">
                               <span className="flex items-center gap-1.5">
                                 {hasDetail && (
-                                  <span className={`text-gray-400 text-xs transition-transform inline-block ${isExpanded ? 'rotate-90' : ''}`}>▶</span>
+                                  <span className={`text-[var(--arvo-fg-soft)] text-xs transition-transform inline-block ${isExpanded ? 'rotate-90' : ''}`}>▶</span>
                                 )}
                                 {fmtMonth(m.month, intlLocale)}
                               </span>
                             </td>
-                            <td className="px-4 py-3 text-right text-gray-900">
+                            <td className="px-4 py-3 text-right text-[var(--arvo-fg)]">
                               {m.total > 0 ? fmt(m.total) : '—'}
                             </td>
-                            <td className="px-4 py-3 text-right text-gray-500 text-xs">
+                            <td className="px-4 py-3 text-right text-[var(--arvo-fg-muted)] text-xs">
                               {cf !== 0 ? `${cf > 0 ? '+' : ''}${fmt(cf)}` : '—'}
                             </td>
                             <td className="px-4 py-3 text-right text-xs font-medium text-green-600">
                               {(() => { const v = divByMonth.get(m.month); return v ? `+${fmt(convert(v))}` : '—' })()}
                             </td>
                             <td className={`px-4 py-3 text-right font-medium ${
-                              gain == null ? 'text-gray-400' :
+                              gain == null ? 'text-[var(--arvo-fg-soft)]' :
                               gain >= 0 ? 'text-green-600' : 'text-red-600'
                             }`}>
                               {gain != null ? `${gain >= 0 ? '+' : ''}${fmt(gain)}` : '—'}
                             </td>
                             <td className={`px-4 py-3 text-right text-xs font-semibold ${
-                              gainPct == null ? 'text-gray-300' :
+                              gainPct == null ? 'text-[var(--arvo-fg-faint)]' :
                               gainPct >= 0 ? 'text-green-600' : 'text-red-600'
                             }`}>
                               {gainPct != null ? `${gainPct >= 0 ? '+' : ''}${gainPct.toFixed(2)}%` : '—'}
                             </td>
                           </tr>
                           {isExpanded && m.detail && (
-                            <tr key={`${m.month}-detail`} className="bg-gray-50/70">
+                            <tr key={`${m.month}-detail`} className="bg-[var(--arvo-surface-2)]/70">
                               <td colSpan={6} className="px-6 pb-3 pt-1">
                                 <table className="w-full text-xs">
                                   <thead>
-                                    <tr className="text-gray-400 border-b border-gray-200">
+                                    <tr className="text-[var(--arvo-fg-soft)] border-b border-[var(--arvo-border)]">
                                       <th className="py-1.5 text-left font-medium">{t.performance.asset}</th>
-                                      <th className="py-1.5 text-right font-medium cursor-pointer hover:text-gray-600 select-none" onClick={e => { e.stopPropagation(); toggleDetailSort('value') }}>
+                                      <th className="py-1.5 text-right font-medium cursor-pointer hover:text-[var(--arvo-fg-muted)] select-none" onClick={e => { e.stopPropagation(); toggleDetailSort('value') }}>
                                         {t.performance.finalValue} <DetailSortIcon col="value" />
                                       </th>
-                                      <th className="py-1.5 text-right font-medium cursor-pointer hover:text-gray-600 select-none" onClick={e => { e.stopPropagation(); toggleDetailSort('contributions') }}>
+                                      <th className="py-1.5 text-right font-medium cursor-pointer hover:text-[var(--arvo-fg-muted)] select-none" onClick={e => { e.stopPropagation(); toggleDetailSort('contributions') }}>
                                         {t.performance.contributions} <DetailSortIcon col="contributions" />
                                       </th>
                                       <th className="py-1.5 text-right font-medium text-green-700 select-none">
                                         {(t as unknown as Record<string,Record<string,string>>).dividends?.title ?? 'Div.'}
                                       </th>
-                                      <th className="py-1.5 text-right font-medium cursor-pointer hover:text-gray-600 select-none" onClick={e => { e.stopPropagation(); toggleDetailSort('gain') }}>
+                                      <th className="py-1.5 text-right font-medium cursor-pointer hover:text-[var(--arvo-fg-muted)] select-none" onClick={e => { e.stopPropagation(); toggleDetailSort('gain') }}>
                                         {t.performance.gainLoss} <DetailSortIcon col="gain" />
                                       </th>
-                                      <th className="py-1.5 text-right font-medium cursor-pointer hover:text-gray-600 select-none" onClick={e => { e.stopPropagation(); toggleDetailSort('pct') }}>
+                                      <th className="py-1.5 text-right font-medium cursor-pointer hover:text-[var(--arvo-fg-muted)] select-none" onClick={e => { e.stopPropagation(); toggleDetailSort('pct') }}>
                                         % <DetailSortIcon col="pct" />
                                       </th>
                                     </tr>
                                   </thead>
-                                  <tbody className="divide-y divide-gray-100">
+                                  <tbody className="divide-y divide-[var(--arvo-border)]">
                                     {m.detail
                                       .filter(d => d.value > 0)
                                       .slice()
@@ -642,18 +642,18 @@ export default function PerformancePage() {
                                           <tr
                                             key={d.asset_id}
                                             onClick={() => navigate(`/assets/${d.asset_id}`)}
-                                            className="cursor-pointer hover:bg-[#0D0D0D]/5 transition-colors rounded"
+                                            className="cursor-pointer hover:bg-[var(--arvo-fg)]/5 transition-colors rounded"
                                           >
-                                            <td className="py-1.5 text-gray-700">
-                                              <span className="font-semibold hover:text-[#0D0D0D] transition-colors">{d.code}</span>
+                                            <td className="py-1.5 text-[var(--arvo-fg)]">
+                                              <span className="font-semibold hover:text-[var(--arvo-fg)] transition-colors">{d.code}</span>
                                               {d.name && d.name !== d.code && (
-                                                <span className="text-gray-400 ml-1 truncate max-w-[120px] inline-block align-bottom">{d.name}</span>
+                                                <span className="text-[var(--arvo-fg-soft)] ml-1 truncate max-w-[120px] inline-block align-bottom">{d.name}</span>
                                               )}
                                             </td>
-                                            <td className="py-1.5 text-right text-gray-800">
+                                            <td className="py-1.5 text-right text-[var(--arvo-fg)]">
                                               {fmt(d.value)}
                                             </td>
-                                            <td className="py-1.5 text-right text-gray-500">
+                                            <td className="py-1.5 text-right text-[var(--arvo-fg-muted)]">
                                               {d.contributions !== 0 ? `${d.contributions > 0 ? '+' : ''}${fmt(d.contributions)}` : '—'}
                                             </td>
                                             <td className="py-1.5 text-right text-xs font-medium text-green-600">
@@ -662,10 +662,10 @@ export default function PerformancePage() {
                                                 return v ? `+${fmt(convert(v))}` : '—'
                                               })()}
                                             </td>
-                                            <td className={`py-1.5 text-right font-medium ${!hasGainData ? 'text-gray-300' : d.gain >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                            <td className={`py-1.5 text-right font-medium ${!hasGainData ? 'text-[var(--arvo-fg-faint)]' : d.gain >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                                               {!hasGainData ? '—' : `${d.gain >= 0 ? '+' : ''}${fmt(d.gain)}`}
                                             </td>
-                                            <td className={`py-1.5 text-right font-semibold ${gainPct == null ? 'text-gray-300' : gainPct >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                            <td className={`py-1.5 text-right font-semibold ${gainPct == null ? 'text-[var(--arvo-fg-faint)]' : gainPct >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                                               {gainPct != null ? `${gainPct >= 0 ? '+' : ''}${gainPct.toFixed(2)}%` : '—'}
                                             </td>
                                           </tr>
@@ -684,7 +684,7 @@ export default function PerformancePage() {
               </div>
 
               {/* Mobile card list */}
-              <div className="sm:hidden divide-y divide-gray-50">
+              <div className="sm:hidden divide-y divide-[var(--arvo-border-soft)]">
                 {monthly.monthly.map((m) => {
                   const cf      = m.contributions ?? 0
                   const gain    = m.prev_total > 0 ? m.total - m.prev_total - cf : null
@@ -696,38 +696,38 @@ export default function PerformancePage() {
                     <div key={m.month}>
                       <div
                         onClick={() => hasDetail && toggleMonth(m.month)}
-                        className={`px-4 py-3 flex items-center gap-3 ${hasDetail ? 'cursor-pointer' : ''} hover:bg-gray-50 transition-colors`}
+                        className={`px-4 py-3 flex items-center gap-3 ${hasDetail ? 'cursor-pointer' : ''} hover:bg-[var(--arvo-surface-2)] transition-colors`}
                       >
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1.5">
                             {hasDetail && (
-                              <span className={`text-gray-400 text-xs transition-transform inline-block ${isExpanded ? 'rotate-90' : ''}`}>▶</span>
+                              <span className={`text-[var(--arvo-fg-soft)] text-xs transition-transform inline-block ${isExpanded ? 'rotate-90' : ''}`}>▶</span>
                             )}
-                            <span className="font-medium text-gray-700 text-sm">{fmtMonth(m.month, intlLocale)}</span>
+                            <span className="font-medium text-[var(--arvo-fg)] text-sm">{fmtMonth(m.month, intlLocale)}</span>
                           </div>
                           {cf !== 0 && (
-                            <div className="text-xs text-gray-400 mt-0.5">
+                            <div className="text-xs text-[var(--arvo-fg-soft)] mt-0.5">
                               {t.performance.contributions}: {cf > 0 ? '+' : ''}{fmt(cf)}
                             </div>
                           )}
                         </div>
                         <div className="text-right shrink-0">
-                          <div className="text-sm font-medium text-gray-900">{m.total > 0 ? fmt(m.total) : '—'}</div>
+                          <div className="text-sm font-medium text-[var(--arvo-fg)]">{m.total > 0 ? fmt(m.total) : '—'}</div>
                           <div className="flex items-center justify-end gap-2 mt-0.5">
                             {gain != null && (
                               <span className={`text-xs font-medium ${gain >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                                 {gain >= 0 ? '+' : ''}{fmt(gain)}
                               </span>
                             )}
-                            <span className={`text-xs font-semibold ${gainPct == null ? 'text-gray-300' : gainPct >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            <span className={`text-xs font-semibold ${gainPct == null ? 'text-[var(--arvo-fg-faint)]' : gainPct >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                               {gainPct != null ? `${gainPct >= 0 ? '+' : ''}${gainPct.toFixed(2)}%` : '—'}
                             </span>
                           </div>
                         </div>
                       </div>
                       {isExpanded && m.detail && (
-                        <div className="bg-gray-50/70 px-4 pb-3">
-                          <div className="divide-y divide-gray-100">
+                        <div className="bg-[var(--arvo-surface-2)]/70 px-4 pb-3">
+                          <div className="divide-y divide-[var(--arvo-border)]">
                             {m.detail.filter(d => d.value > 0).sort((a, b) => b.value - a.value).map(d => {
                               const hasGainData = d.prev_value > 0
                               const dd = d.prev_value + 0.5 * d.contributions
@@ -738,10 +738,10 @@ export default function PerformancePage() {
                                   onClick={() => navigate(`/assets/${d.asset_id}`)}
                                   className="py-2 flex items-center justify-between cursor-pointer hover:opacity-80 transition-opacity"
                                 >
-                                  <span className="text-xs font-semibold text-gray-700">{d.code}</span>
+                                  <span className="text-xs font-semibold text-[var(--arvo-fg)]">{d.code}</span>
                                   <div className="text-right">
-                                    <div className="text-xs text-gray-800">{fmt(d.value)}</div>
-                                    <div className={`text-[11px] font-semibold ${gp == null ? 'text-gray-300' : gp >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                    <div className="text-xs text-[var(--arvo-fg)]">{fmt(d.value)}</div>
+                                    <div className={`text-[11px] font-semibold ${gp == null ? 'text-[var(--arvo-fg-faint)]' : gp >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                                       {gp != null ? `${gp >= 0 ? '+' : ''}${gp.toFixed(2)}%` : '—'}
                                     </div>
                                   </div>

@@ -105,32 +105,32 @@ export default function ReportsPage() {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="flex items-center justify-between gap-4 flex-wrap">
-        <h1 className="text-xl font-bold text-gray-900">Relatorios IR</h1>
+        <h1 className="text-xl font-bold text-[var(--arvo-fg)]">Relatorios IR</h1>
         <div className="flex items-center gap-3">
           <select
             value={year}
             onChange={e => setYear(Number(e.target.value))}
-            className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20"
+            className="border border-[var(--arvo-border)] rounded-lg px-3 py-1.5 text-sm bg-[var(--arvo-surface)] focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20"
           >
             {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
           </select>
-          <div className="flex rounded-lg border border-gray-200 overflow-hidden text-sm">
+          <div className="flex rounded-lg border border-[var(--arvo-border)] overflow-hidden text-sm">
             {showBr && (
               <button
                 onClick={() => setTab('br')}
-                className={`px-4 py-1.5 font-medium transition-colors ${tab === 'br' ? 'bg-[#0D0D0D] text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
+                className={`px-4 py-1.5 font-medium transition-colors ${tab === 'br' ? 'bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)]' : 'bg-[var(--arvo-surface)] text-[var(--arvo-fg-muted)] hover:bg-[var(--arvo-surface-2)]'}`}
               >Brasil</button>
             )}
             {showRes && resTab === 'fr' && (
               <button
                 onClick={() => setTab('fr')}
-                className={`px-4 py-1.5 font-medium transition-colors ${showBr ? 'border-l border-gray-200' : ''} ${tab === 'fr' ? 'bg-[#0D0D0D] text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
+                className={`px-4 py-1.5 font-medium transition-colors ${showBr ? 'border-l border-[var(--arvo-border)]' : ''} ${tab === 'fr' ? 'bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)]' : 'bg-[var(--arvo-surface)] text-[var(--arvo-fg-muted)] hover:bg-[var(--arvo-surface-2)]'}`}
               >França</button>
             )}
             {showRes && resTab === 'coming_soon' && (
-              <div className={`flex items-center gap-1.5 px-3 py-1.5 ${showBr ? 'border-l border-gray-200' : ''} bg-gray-50 text-gray-400 cursor-not-allowed select-none`} title={t.common.comingSoon}>
+              <div className={`flex items-center gap-1.5 px-3 py-1.5 ${showBr ? 'border-l border-[var(--arvo-border)]' : ''} bg-[var(--arvo-surface-2)] text-[var(--arvo-fg-soft)] cursor-not-allowed select-none`} title={t.common.comingSoon}>
                 <span className="font-medium">{residenceCountry}</span>
-                <span className="text-[10px] bg-gray-200 text-gray-500 px-1.5 py-0.5 rounded-full leading-none">{t.common.comingSoon}</span>
+                <span className="text-[10px] bg-[var(--arvo-track-bg)] text-[var(--arvo-fg-muted)] px-1.5 py-0.5 rounded-full leading-none">{t.common.comingSoon}</span>
               </div>
             )}
           </div>
@@ -158,8 +158,8 @@ function BrReport({ year }: { year: number }) {
       .catch(e => { setError(e instanceof Error ? e.message : 'Erro'); setLoading(false) })
   }, [year])
 
-  if (loading) return <div className="bg-white border border-gray-100 rounded-2xl p-10 text-center text-gray-400 text-sm">{bt.loading}</div>
-  if (error)   return <div className="bg-white border border-gray-100 rounded-2xl p-6 text-red-600 text-sm">{error}</div>
+  if (loading) return <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl p-10 text-center text-[var(--arvo-fg-soft)] text-sm">{bt.loading}</div>
+  if (error)   return <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl p-6 text-red-600 text-sm">{error}</div>
   if (!brData) return null
 
   const totalRend = brData.total_isentos + brData.total_exclusiva
@@ -172,7 +172,7 @@ function BrReport({ year }: { year: number }) {
           const labels = [bt.step1, bt.step2, bt.step3]
           return (
             <button key={s} onClick={() => setStep(s)}
-              className={`px-3 py-1.5 rounded-full border transition-colors ${step === s ? 'bg-[#0D0D0D] text-white border-[#0D0D0D]' : 'border-gray-200 text-gray-500 hover:bg-gray-50'}`}
+              className={`px-3 py-1.5 rounded-full border transition-colors ${step === s ? 'bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] border-[var(--arvo-fg)]' : 'border-[var(--arvo-border)] text-[var(--arvo-fg-muted)] hover:bg-[var(--arvo-surface-2)]'}`}
             >{labels[i]}</button>
           )
         })}
@@ -183,17 +183,17 @@ function BrReport({ year }: { year: number }) {
         <>
           {/* KPI cards */}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            <Card label={bt.kpiBens}     value={String(brData.bens_direitos.length)}  valueClass="text-gray-800" />
+            <Card label={bt.kpiBens}     value={String(brData.bens_direitos.length)}  valueClass="text-[var(--arvo-fg)]" />
             <Card label={bt.kpiIsentos}  value={fmtBRL(brData.total_isentos)}         valueClass="text-green-600" />
             <Card label={bt.kpiExclusiva} value={fmtBRL(brData.total_exclusiva)}      valueClass="text-purple-600" />
-            <Card label={bt.kpiDARF}     value={fmtBRL(brData.total_darf_rv)}         valueClass={brData.total_darf_rv > 0 ? 'text-red-600' : 'text-gray-400'} />
-            <Card label={bt.kpiCarneLeao} value={fmtBRL(brData.total_carne_leao)}     valueClass={brData.total_carne_leao > 0 ? 'text-orange-600' : 'text-gray-400'} />
+            <Card label={bt.kpiDARF}     value={fmtBRL(brData.total_darf_rv)}         valueClass={brData.total_darf_rv > 0 ? 'text-red-600' : 'text-[var(--arvo-fg-soft)]'} />
+            <Card label={bt.kpiCarneLeao} value={fmtBRL(brData.total_carne_leao)}     valueClass={brData.total_carne_leao > 0 ? 'text-orange-600' : 'text-[var(--arvo-fg-soft)]'} />
             <Card label={bt.kpiIRRetido} value={fmtBRL(brData.ir_retido_total)}       valueClass="text-blue-600" />
           </div>
 
           {/* Auto sources */}
           <Section title={bt.autoSources}>
-            <div className="py-3 space-y-1 text-sm text-gray-600">
+            <div className="py-3 space-y-1 text-sm text-[var(--arvo-fg-muted)]">
               <p>• {brData.bens_direitos.length} {bt.kpiBens.toLowerCase()}</p>
               {brData.rendimentos_isentos.map(g => (
                 <p key={g.codigo}>• {bt.sectionIsentos} — Código {g.codigo}: {g.descricao} ({fmtBRL(g.total)})</p>
@@ -218,16 +218,16 @@ function BrReport({ year }: { year: number }) {
 
           {/* Summary totals */}
           {(brData.total_darf_rv > 0 || brData.total_carne_leao > 0 || totalRend > 0) && (
-            <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-5 space-y-2 text-sm">
-              {totalRend > 0 && <div className="flex justify-between"><span className="text-gray-500">Total rendimentos declarados</span><span className="font-semibold">{fmtBRL(totalRend)}</span></div>}
-              {brData.total_darf_rv > 0 && <div className="flex justify-between"><span className="text-gray-500">{bt.rvTotalDARF}</span><span className="font-semibold text-red-600">{fmtBRL(brData.total_darf_rv)}</span></div>}
-              {brData.total_carne_leao > 0 && <div className="flex justify-between"><span className="text-gray-500">{bt.clTotal}</span><span className="font-semibold text-orange-600">{fmtBRL(brData.total_carne_leao)}</span></div>}
-              {brData.ir_retido_total > 0 && <div className="flex justify-between border-t border-gray-100 pt-2"><span className="text-gray-500">{bt.kpiIRRetido}</span><span className="font-semibold text-blue-600">{fmtBRL(brData.ir_retido_total)}</span></div>}
+            <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl shadow-sm p-5 space-y-2 text-sm">
+              {totalRend > 0 && <div className="flex justify-between"><span className="text-[var(--arvo-fg-muted)]">Total rendimentos declarados</span><span className="font-semibold">{fmtBRL(totalRend)}</span></div>}
+              {brData.total_darf_rv > 0 && <div className="flex justify-between"><span className="text-[var(--arvo-fg-muted)]">{bt.rvTotalDARF}</span><span className="font-semibold text-red-600">{fmtBRL(brData.total_darf_rv)}</span></div>}
+              {brData.total_carne_leao > 0 && <div className="flex justify-between"><span className="text-[var(--arvo-fg-muted)]">{bt.clTotal}</span><span className="font-semibold text-orange-600">{fmtBRL(brData.total_carne_leao)}</span></div>}
+              {brData.ir_retido_total > 0 && <div className="flex justify-between border-t border-[var(--arvo-border)] pt-2"><span className="text-[var(--arvo-fg-muted)]">{bt.kpiIRRetido}</span><span className="font-semibold text-blue-600">{fmtBRL(brData.ir_retido_total)}</span></div>}
             </div>
           )}
 
           <div className="flex justify-end">
-            <button onClick={() => setStep('rv')} className="px-6 py-2.5 text-sm font-semibold bg-[#0D0D0D] text-white rounded-xl hover:bg-gray-800 transition-colors">{bt.btnContinue}</button>
+            <button onClick={() => setStep('rv')} className="px-6 py-2.5 text-sm font-semibold bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] rounded-xl hover:bg-[var(--arvo-fg)]/90 transition-colors">{bt.btnContinue}</button>
           </div>
         </>
       )}
@@ -237,13 +237,13 @@ function BrReport({ year }: { year: number }) {
         <>
           {/* Renda Variável */}
           <Section title={bt.sectionRV}>
-            <p className="text-xs text-gray-400 py-2">{bt.rvDesc}</p>
+            <p className="text-xs text-[var(--arvo-fg-soft)] py-2">{bt.rvDesc}</p>
             {brData.renda_variavel.length === 0 ? (
-              <p className="text-sm text-gray-400 py-4 text-center">{bt.noRV} {year}</p>
+              <p className="text-sm text-[var(--arvo-fg-soft)] py-4 text-center">{bt.noRV} {year}</p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
-                  <thead><tr className="text-xs text-gray-400 border-b border-gray-100">
+                  <thead><tr className="text-xs text-[var(--arvo-fg-soft)] border-b border-[var(--arvo-border)]">
                     <th className="text-left py-2 font-medium">{bt.rvColMes}</th>
                     <th className="text-right py-2 font-medium">{bt.rvColVendas}</th>
                     <th className="text-right py-2 font-medium">{bt.rvColGanho}</th>
@@ -255,12 +255,12 @@ function BrReport({ year }: { year: number }) {
                   </tr></thead>
                   <tbody>
                     {brData.renda_variavel.map((m, i) => (
-                      <tr key={m.mes} className={`border-b border-gray-50 ${i % 2 === 0 ? '' : 'bg-gray-50/50'}`}>
+                      <tr key={m.mes} className={`border-b border-[var(--arvo-border-soft)] ${i % 2 === 0 ? '' : 'bg-[var(--arvo-surface-2)]/50'}`}>
                         <td className="py-1.5 font-medium">{m.mes}</td>
-                        <td className="py-1.5 text-right text-gray-600">{fmtBRL(m.total_vendas)}</td>
+                        <td className="py-1.5 text-right text-[var(--arvo-fg-muted)]">{fmtBRL(m.total_vendas)}</td>
                         <td className="py-1.5 text-right text-green-700">{m.ganho_bruto > 0 ? fmtBRL(m.ganho_bruto) : '—'}</td>
                         <td className="py-1.5 text-right text-red-500">{m.perda_bruta < 0 ? fmtBRL(m.perda_bruta) : '—'}</td>
-                        <td className="py-1.5 text-right text-gray-400 font-mono text-xs">{m.carryover_anterior !== 0 ? fmtBRL(m.carryover_anterior) : '—'}</td>
+                        <td className="py-1.5 text-right text-[var(--arvo-fg-soft)] font-mono text-xs">{m.carryover_anterior !== 0 ? fmtBRL(m.carryover_anterior) : '—'}</td>
                         <td className="py-1.5 text-right font-semibold">{m.ganho_liquido > 0 ? fmtBRL(m.ganho_liquido) : '—'}</td>
                         <td className="py-1.5 text-center">
                           <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${m.isento ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
@@ -270,8 +270,8 @@ function BrReport({ year }: { year: number }) {
                         <td className="py-1.5 text-right font-semibold text-red-600">{m.darf_a_pagar > 0 ? fmtBRL(m.darf_a_pagar) : '—'}</td>
                       </tr>
                     ))}
-                    <tr className="border-t border-gray-200 bg-gray-50 font-semibold">
-                      <td className="py-2 text-gray-500 text-xs">{bt.rvTotalDARF}</td>
+                    <tr className="border-t border-[var(--arvo-border)] bg-[var(--arvo-surface-2)] font-semibold">
+                      <td className="py-2 text-[var(--arvo-fg-muted)] text-xs">{bt.rvTotalDARF}</td>
                       <td />
                       <td className="py-2 text-right text-green-700">{fmtBRL(brData.total_ganho_rv)}</td>
                       <td className="py-2 text-right text-red-500">{brData.total_perda_rv !== 0 ? fmtBRL(brData.total_perda_rv) : '—'}</td>
@@ -281,9 +281,9 @@ function BrReport({ year }: { year: number }) {
                       <td className="py-2 text-right text-red-600">{fmtBRL(brData.total_darf_rv)}</td>
                     </tr>
                     {brData.carryover_final !== 0 && (
-                      <tr className="border-t border-gray-100 text-xs text-gray-400">
+                      <tr className="border-t border-[var(--arvo-border)] text-xs text-[var(--arvo-fg-soft)]">
                         <td colSpan={7} className="py-1.5 text-right">{bt.rvCarryover}</td>
-                        <td className="py-1.5 text-right font-semibold text-gray-600">{fmtBRL(brData.carryover_final)}</td>
+                        <td className="py-1.5 text-right font-semibold text-[var(--arvo-fg-muted)]">{fmtBRL(brData.carryover_final)}</td>
                       </tr>
                     )}
                   </tbody>
@@ -294,13 +294,13 @@ function BrReport({ year }: { year: number }) {
 
           {/* Carnê-Leão */}
           <Section title={bt.sectionCL}>
-            <p className="text-xs text-gray-400 py-2">{bt.clDesc}</p>
+            <p className="text-xs text-[var(--arvo-fg-soft)] py-2">{bt.clDesc}</p>
             {brData.carne_leao.length === 0 ? (
-              <p className="text-sm text-gray-400 py-4 text-center">{bt.noCL} {year}</p>
+              <p className="text-sm text-[var(--arvo-fg-soft)] py-4 text-center">{bt.noCL} {year}</p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
-                  <thead><tr className="text-xs text-gray-400 border-b border-gray-100">
+                  <thead><tr className="text-xs text-[var(--arvo-fg-soft)] border-b border-[var(--arvo-border)]">
                     <th className="text-left py-2 font-medium">{bt.clColMes}</th>
                     <th className="text-right py-2 font-medium">{bt.clColDivs}</th>
                     <th className="text-right py-2 font-medium">{bt.clColAliq}</th>
@@ -309,16 +309,16 @@ function BrReport({ year }: { year: number }) {
                   </tr></thead>
                   <tbody>
                     {brData.carne_leao.map((m, i) => (
-                      <tr key={m.mes} className={`border-b border-gray-50 ${i % 2 === 0 ? '' : 'bg-gray-50/50'}`}>
+                      <tr key={m.mes} className={`border-b border-[var(--arvo-border-soft)] ${i % 2 === 0 ? '' : 'bg-[var(--arvo-surface-2)]/50'}`}>
                         <td className="py-1.5 font-medium">{m.mes}</td>
-                        <td className="py-1.5 text-right text-gray-600">{fmtBRL(m.dividendos_brl)}</td>
+                        <td className="py-1.5 text-right text-[var(--arvo-fg-muted)]">{fmtBRL(m.dividendos_brl)}</td>
                         <td className="py-1.5 text-right">{(m.aliquota * 100).toFixed(1)}%</td>
-                        <td className="py-1.5 text-right text-gray-400">{m.deducao > 0 ? fmtBRL(m.deducao) : '—'}</td>
+                        <td className="py-1.5 text-right text-[var(--arvo-fg-soft)]">{m.deducao > 0 ? fmtBRL(m.deducao) : '—'}</td>
                         <td className="py-1.5 text-right font-semibold text-orange-600">{m.ir_devido > 0 ? fmtBRL(m.ir_devido) : '—'}</td>
                       </tr>
                     ))}
-                    <tr className="border-t border-gray-200 bg-gray-50 font-semibold">
-                      <td colSpan={4} className="py-2 text-right text-xs text-gray-500">{bt.clTotal}</td>
+                    <tr className="border-t border-[var(--arvo-border)] bg-[var(--arvo-surface-2)] font-semibold">
+                      <td colSpan={4} className="py-2 text-right text-xs text-[var(--arvo-fg-muted)]">{bt.clTotal}</td>
                       <td className="py-2 text-right text-orange-600">{fmtBRL(brData.total_carne_leao)}</td>
                     </tr>
                   </tbody>
@@ -328,8 +328,8 @@ function BrReport({ year }: { year: number }) {
           </Section>
 
           <div className="flex justify-between items-center gap-3">
-            <button onClick={() => setStep('overview')} className="px-4 py-2 text-sm text-gray-500 hover:text-gray-700">{bt.btnBack}</button>
-            <button onClick={() => setStep('bens')} className="px-6 py-2.5 text-sm font-semibold bg-[#0D0D0D] text-white rounded-xl hover:bg-gray-800 transition-colors">{bt.btnContinue}</button>
+            <button onClick={() => setStep('overview')} className="px-4 py-2 text-sm text-[var(--arvo-fg-muted)] hover:text-[var(--arvo-fg)]">{bt.btnBack}</button>
+            <button onClick={() => setStep('bens')} className="px-6 py-2.5 text-sm font-semibold bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] rounded-xl hover:bg-[var(--arvo-fg)]/90 transition-colors">{bt.btnContinue}</button>
           </div>
         </>
       )}
@@ -339,13 +339,13 @@ function BrReport({ year }: { year: number }) {
         <>
           {/* Bens e Direitos */}
           <Section title={`${bt.sectionBens} ${year}`}>
-            <p className="text-xs text-gray-400 py-2">{bt.bensDesc}</p>
+            <p className="text-xs text-[var(--arvo-fg-soft)] py-2">{bt.bensDesc}</p>
             {brData.bens_direitos.length === 0 ? (
-              <p className="text-sm text-gray-400 py-4 text-center">{bt.noBens}{year}</p>
+              <p className="text-sm text-[var(--arvo-fg-soft)] py-4 text-center">{bt.noBens}{year}</p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
-                  <thead><tr className="text-xs text-gray-400 border-b border-gray-100">
+                  <thead><tr className="text-xs text-[var(--arvo-fg-soft)] border-b border-[var(--arvo-border)]">
                     <th className="text-left py-2 font-medium">{bt.bensColPGDI}</th>
                     <th className="text-left py-2 font-medium">{bt.bensColAtivo}</th>
                     <th className="text-left py-2 font-medium hidden md:table-cell">{bt.bensColDescr}</th>
@@ -354,13 +354,13 @@ function BrReport({ year }: { year: number }) {
                   </tr></thead>
                   <tbody>
                     {brData.bens_direitos.map((b, i) => (
-                      <tr key={b.asset_id} className={`border-b border-gray-50 ${i % 2 === 0 ? '' : 'bg-gray-50/50'}`}>
+                      <tr key={b.asset_id} className={`border-b border-[var(--arvo-border-soft)] ${i % 2 === 0 ? '' : 'bg-[var(--arvo-surface-2)]/50'}`}>
                         <td className="py-1.5">
                           <span className="font-mono text-xs text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded">{b.pgdi_grupo}/{b.pgdi_codigo}</span>
                         </td>
-                        <td className="py-1.5"><span className="font-semibold">{b.code}</span> <span className="text-xs text-gray-400">{b.name}</span></td>
-                        <td className="py-1.5 text-xs text-gray-500 hidden md:table-cell">{b.discriminacao}</td>
-                        <td className="py-1.5 text-right text-gray-500">{b.situacao_anterior > 0 ? fmtBRL(b.situacao_anterior) : '—'}</td>
+                        <td className="py-1.5"><span className="font-semibold">{b.code}</span> <span className="text-xs text-[var(--arvo-fg-soft)]">{b.name}</span></td>
+                        <td className="py-1.5 text-xs text-[var(--arvo-fg-muted)] hidden md:table-cell">{b.discriminacao}</td>
+                        <td className="py-1.5 text-right text-[var(--arvo-fg-muted)]">{b.situacao_anterior > 0 ? fmtBRL(b.situacao_anterior) : '—'}</td>
                         <td className="py-1.5 text-right font-semibold">{fmtBRL(b.situacao_atual)}</td>
                       </tr>
                     ))}
@@ -374,17 +374,17 @@ function BrReport({ year }: { year: number }) {
           {brData.rendimentos_isentos.length > 0 && (
             <Section title={bt.sectionIsentos}>
               {brData.rendimentos_isentos.map(g => (
-                <div key={g.codigo} className="py-3 border-b border-gray-50 last:border-0">
+                <div key={g.codigo} className="py-3 border-b border-[var(--arvo-border-soft)] last:border-0">
                   <div className="flex items-center justify-between gap-2 mb-2">
                     <div className="flex items-center gap-2">
                       <span className="font-mono text-xs text-green-700 bg-green-50 px-1.5 py-0.5 rounded">{g.codigo}</span>
-                      <span className="text-sm font-medium text-gray-700">{g.descricao}</span>
+                      <span className="text-sm font-medium text-[var(--arvo-fg)]">{g.descricao}</span>
                     </div>
                     <span className="font-semibold text-green-700">{fmtBRL(g.total)}</span>
                   </div>
                   <div className="ml-8 space-y-0.5">
                     {g.items.map(item => (
-                      <div key={item.id} className="flex justify-between text-xs text-gray-500">
+                      <div key={item.id} className="flex justify-between text-xs text-[var(--arvo-fg-muted)]">
                         <span>{item.date} · {item.asset_code}</span>
                         <span>{fmtBRL(item.valor)}</span>
                       </div>
@@ -399,20 +399,20 @@ function BrReport({ year }: { year: number }) {
           {brData.tributacao_exclusiva.length > 0 && (
             <Section title={bt.sectionExclusiva}>
               {brData.tributacao_exclusiva.map(g => (
-                <div key={g.codigo} className="py-3 border-b border-gray-50 last:border-0">
+                <div key={g.codigo} className="py-3 border-b border-[var(--arvo-border-soft)] last:border-0">
                   <div className="flex items-center justify-between gap-2 mb-2">
                     <div className="flex items-center gap-2">
                       <span className="font-mono text-xs text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded">{g.codigo}</span>
-                      <span className="text-sm font-medium text-gray-700">{g.descricao}</span>
+                      <span className="text-sm font-medium text-[var(--arvo-fg)]">{g.descricao}</span>
                     </div>
                     <div className="text-right">
                       <span className="font-semibold text-purple-700">{fmtBRL(g.total)}</span>
-                      {g.ir_retido_total > 0 && <span className="text-xs text-gray-400 ml-2">IR retido: {fmtBRL(g.ir_retido_total)}</span>}
+                      {g.ir_retido_total > 0 && <span className="text-xs text-[var(--arvo-fg-soft)] ml-2">IR retido: {fmtBRL(g.ir_retido_total)}</span>}
                     </div>
                   </div>
                   <div className="ml-8 space-y-0.5">
                     {g.items.map(item => (
-                      <div key={item.id} className="flex justify-between text-xs text-gray-500">
+                      <div key={item.id} className="flex justify-between text-xs text-[var(--arvo-fg-muted)]">
                         <span>{item.date} · {item.asset_code}</span>
                         <span>{fmtBRL(item.valor)}{item.ir_retido > 0 ? ` (IR: ${fmtBRL(item.ir_retido)})` : ''}</span>
                       </div>
@@ -424,7 +424,7 @@ function BrReport({ year }: { year: number }) {
           )}
 
           <div className="flex justify-between items-center gap-3 flex-wrap">
-            <button onClick={() => setStep('rv')} className="px-4 py-2 text-sm text-gray-500 hover:text-gray-700">{bt.btnBack}</button>
+            <button onClick={() => setStep('rv')} className="px-4 py-2 text-sm text-[var(--arvo-fg-muted)] hover:text-[var(--arvo-fg)]">{bt.btnBack}</button>
             <button
               onClick={() => void generateBrExcel(brData)}
               className="flex items-center gap-2 px-6 py-2.5 text-sm font-semibold bg-green-700 text-white rounded-xl hover:bg-green-800 transition-colors"
@@ -432,7 +432,7 @@ function BrReport({ year }: { year: number }) {
           </div>
 
           {/* Disclaimers */}
-          <div className="text-xs text-gray-400 bg-red-50 border border-red-100 rounded-xl p-4 space-y-1">
+          <div className="text-xs text-[var(--arvo-fg-soft)] bg-red-50 border border-red-100 rounded-xl p-4 space-y-1">
             <p className="font-semibold text-red-600 mb-2">{bt.warningTitle}</p>
             <p>• {bt.warning1}</p>
             <p>• {bt.warning2}</p>
@@ -968,8 +968,8 @@ function FrReport({ year }: { year: number }) {
     } finally { setSavingInc(false) }
   }
 
-  if (loading) return <div className="bg-white border border-gray-100 rounded-2xl p-10 text-center text-gray-400 text-sm">{ft.loading}</div>
-  if (error)   return <div className="bg-white border border-gray-100 rounded-2xl p-6 text-red-600 text-sm">{error}</div>
+  if (loading) return <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl p-10 text-center text-[var(--arvo-fg-soft)] text-sm">{ft.loading}</div>
+  if (error)   return <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl p-6 text-red-600 text-sm">{error}</div>
   if (!taxData) return null
 
   const noEvents = taxData.events.length === 0
@@ -988,7 +988,7 @@ function FrReport({ year }: { year: number }) {
             <button
               key={s}
               onClick={() => setStep(s)}
-              className={`px-3 py-1.5 rounded-full border transition-colors ${step === s ? 'bg-[#0D0D0D] text-white border-[#0D0D0D]' : 'border-gray-200 text-gray-500 hover:bg-gray-50'}`}
+              className={`px-3 py-1.5 rounded-full border transition-colors ${step === s ? 'bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] border-[var(--arvo-fg)]' : 'border-[var(--arvo-border)] text-[var(--arvo-fg-muted)] hover:bg-[var(--arvo-surface-2)]'}`}
             >{labels[i]}</button>
           )
         })}
@@ -1011,32 +1011,32 @@ function FrReport({ year }: { year: number }) {
 
               {/* Detected sources */}
               <div>
-                <p className="text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wide">{ft.autoSources}</p>
+                <p className="text-xs font-semibold text-[var(--arvo-fg-muted)] mb-2 uppercase tracking-wide">{ft.autoSources}</p>
                 {taxData.sections_daily.length > 0 ? (
                   <div className="space-y-1.5">
                     {[...new Map(taxData.events.map(e => [e.broker, e])).values()].map(e => (
                       <div key={e.broker} className="flex items-center gap-2 text-xs">
                         <span className="text-green-500 font-bold">✓</span>
-                        <span className="text-gray-700 font-medium">{e.broker}</span>
-                        <span className="text-gray-400">— {taxData.events.filter(ev => ev.broker === e.broker).length} {ft.eventsSync}</span>
+                        <span className="text-[var(--arvo-fg)] font-medium">{e.broker}</span>
+                        <span className="text-[var(--arvo-fg-soft)]">— {taxData.events.filter(ev => ev.broker === e.broker).length} {ft.eventsSync}</span>
                       </div>
                     ))}
                     {taxData.capital_gains.length > 0 && (
                       <div className="flex items-center gap-2 text-xs">
                         <span className="text-green-500 font-bold">✓</span>
-                        <span className="text-gray-700 font-medium">Plus-values (ventes)</span>
-                        <span className="text-gray-400">— {taxData.capital_gains.length} {ft.salesDetected}</span>
+                        <span className="text-[var(--arvo-fg)] font-medium">Plus-values (ventes)</span>
+                        <span className="text-[var(--arvo-fg-soft)]">— {taxData.capital_gains.length} {ft.salesDetected}</span>
                       </div>
                     )}
                   </div>
                 ) : (
-                  <p className="text-xs text-gray-400">{ft.noAutoSources}</p>
+                  <p className="text-xs text-[var(--arvo-fg-soft)]">{ft.noAutoSources}</p>
                 )}
               </div>
 
               {/* Manual sources */}
-              <div className="border-t border-gray-100 pt-4">
-                <p className="text-xs font-semibold text-gray-600 mb-3 uppercase tracking-wide">{ft.manualSources}</p>
+              <div className="border-t border-[var(--arvo-border)] pt-4">
+                <p className="text-xs font-semibold text-[var(--arvo-fg-muted)] mb-3 uppercase tracking-wide">{ft.manualSources}</p>
 
                 {/* JCP */}
                 <div className="flex gap-2 mb-4 p-3 bg-blue-50 rounded-xl border border-blue-100">
@@ -1055,16 +1055,16 @@ function FrReport({ year }: { year: number }) {
                     <div className="text-xs text-amber-900">
                       <p className="font-semibold mb-1">{ft.rfTitle}</p>
                       <p className="mb-2">{ft.rfDesc}</p>
-                      <div className="grid grid-cols-2 gap-x-4 gap-y-1 bg-white rounded-lg p-2 border border-amber-100">
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-1 bg-[var(--arvo-surface)] rounded-lg p-2 border border-amber-100">
                         <div>
                           <p className="text-amber-700 font-medium">{ft.rfColInforme}</p>
-                          <p className="text-gray-600">{ft.rfField1}</p>
-                          <p className="text-gray-600">{ft.rfField2}</p>
+                          <p className="text-[var(--arvo-fg-muted)]">{ft.rfField1}</p>
+                          <p className="text-[var(--arvo-fg-muted)]">{ft.rfField2}</p>
                         </div>
                         <div>
                           <p className="text-amber-700 font-medium">{ft.rfColArvo}</p>
-                          <p className="font-semibold text-gray-800">{ft.rfArrow1}</p>
-                          <p className="font-semibold text-gray-800">{ft.rfArrow2}</p>
+                          <p className="font-semibold text-[var(--arvo-fg)]">{ft.rfArrow1}</p>
+                          <p className="font-semibold text-[var(--arvo-fg)]">{ft.rfArrow2}</p>
                         </div>
                       </div>
                     </div>
@@ -1080,16 +1080,16 @@ function FrReport({ year }: { year: number }) {
                   </button>
 
                   {showAddIncome && (
-                    <div className="bg-white border border-amber-200 rounded-xl p-4 space-y-3">
-                      <p className="text-xs font-semibold text-gray-700">{ft.newIncomeTitle}</p>
+                    <div className="bg-[var(--arvo-surface)] border border-amber-200 rounded-xl p-4 space-y-3">
+                      <p className="text-xs font-semibold text-[var(--arvo-fg)]">{ft.newIncomeTitle}</p>
 
                       <div className="grid sm:grid-cols-2 gap-3">
                         <div className="sm:col-span-2">
-                          <label className="block text-xs text-gray-500 mb-1">{ft.incAsset}</label>
+                          <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{ft.incAsset}</label>
                           <select
                             value={incAssetId}
                             onChange={e => setIncAssetId(e.target.value)}
-                            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-300 bg-white"
+                            className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-300 bg-[var(--arvo-surface)]"
                           >
                             <option value="">{ft.selectAsset}</option>
                             {userAssets.filter(a => a.asset_type === 'fixed_income').length > 0 && (
@@ -1113,15 +1113,15 @@ function FrReport({ year }: { year: number }) {
                         </div>
 
                         <div>
-                          <label className="block text-xs text-gray-500 mb-1">{ft.incDate}</label>
+                          <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{ft.incDate}</label>
                           <input type="date" value={incDate} onChange={e => setIncDate(e.target.value)}
-                            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-300" />
+                            className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-300" />
                         </div>
 
                         <div>
-                          <label className="block text-xs text-gray-500 mb-1">{ft.incDesc}</label>
+                          <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{ft.incDesc}</label>
                           <select value={incDesc} onChange={e => setIncDesc(e.target.value)}
-                            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-300 bg-white">
+                            className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-300 bg-[var(--arvo-surface)]">
                             <option value="cdb">CDB</option>
                             <option value="lci">LCI</option>
                             <option value="lca">LCA</option>
@@ -1133,22 +1133,22 @@ function FrReport({ year }: { year: number }) {
                         </div>
 
                         <div>
-                          <label className="block text-xs text-gray-500 mb-1">
+                          <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">
                             {ft.incGross} <span className="text-amber-600 font-semibold">{ft.incGrossHint}</span>
                           </label>
                           <input type="text" inputMode="decimal" value={incGross} onChange={e => setIncGross(e.target.value)}
                             placeholder="ex: 1234,56"
-                            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-300" />
+                            className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-300" />
                         </div>
 
                         <div>
-                          <label className="block text-xs text-gray-500 mb-1">
+                          <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">
                             {ft.incIR} <span className="text-amber-600 font-semibold">{ft.incIRHint}</span>
                           </label>
                           <input type="text" inputMode="decimal" value={incIR} onChange={e => setIncIR(e.target.value)}
                             placeholder="ex: 185,18"
-                            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-300" />
-                          <p className="text-xs text-gray-400 mt-0.5">{ft.incIRNote}</p>
+                            className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-300" />
+                          <p className="text-xs text-[var(--arvo-fg-soft)] mt-0.5">{ft.incIRNote}</p>
                         </div>
                       </div>
 
@@ -1156,11 +1156,11 @@ function FrReport({ year }: { year: number }) {
 
                       <div className="flex gap-2">
                         <button onClick={handleAddIncome} disabled={savingInc}
-                          className="flex-1 py-2 text-sm font-semibold bg-[#0D0D0D] text-white rounded-lg hover:bg-gray-800 disabled:opacity-50 transition-colors">
+                          className="flex-1 py-2 text-sm font-semibold bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] rounded-lg hover:bg-[var(--arvo-fg)]/90 disabled:opacity-50 transition-colors">
                           {savingInc ? ft.incSaving : ft.incSave}
                         </button>
                         <button onClick={() => { setShowAddIncome(false); setIncErr(null) }}
-                          className="px-4 py-2 text-sm text-gray-500 hover:text-gray-700">
+                          className="px-4 py-2 text-sm text-[var(--arvo-fg-muted)] hover:text-[var(--arvo-fg)]">
                           {ft.incCancel}
                         </button>
                       </div>
@@ -1169,9 +1169,9 @@ function FrReport({ year }: { year: number }) {
                 </div>
 
                 {/* French broker note */}
-                <div className="flex gap-2 mt-3 p-3 bg-gray-50 rounded-xl border border-gray-100">
-                  <span className="text-gray-400 shrink-0 mt-0.5">ℹ</span>
-                  <div className="text-xs text-gray-600">
+                <div className="flex gap-2 mt-3 p-3 bg-[var(--arvo-surface-2)] rounded-xl border border-[var(--arvo-border)]">
+                  <span className="text-[var(--arvo-fg-soft)] shrink-0 mt-0.5">ℹ</span>
+                  <div className="text-xs text-[var(--arvo-fg-muted)]">
                     <p className="font-semibold mb-0.5">{ft.frenchBrokerTitle}</p>
                     <p>{ft.frenchBrokerDesc}</p>
                   </div>
@@ -1183,7 +1183,7 @@ function FrReport({ year }: { year: number }) {
           {/* Accounts 3916 */}
           <Section title={ft.section3916}>
             {taxData.accounts.length === 0 ? (
-              <p className="text-xs text-gray-400 py-3 text-center">{ft.no3916}</p>
+              <p className="text-xs text-[var(--arvo-fg-soft)] py-3 text-center">{ft.no3916}</p>
             ) : (
               <div className="space-y-0">
                 {taxData.accounts.some(a => a.system_filled) && (
@@ -1195,28 +1195,28 @@ function FrReport({ year }: { year: number }) {
                     </div>
                   </div>
                 )}
-                <div className="divide-y divide-gray-50">
+                <div className="divide-y divide-[var(--arvo-border-soft)]">
                   {taxData.accounts.map(a => (
                     <div key={a.broker} className="py-3 flex items-start justify-between gap-3">
                       <div>
                         <div className="flex items-center gap-2">
-                          <p className="font-medium text-sm text-gray-900">{a.institution}</p>
+                          <p className="font-medium text-sm text-[var(--arvo-fg)]">{a.institution}</p>
                           {a.system_filled && (
                             <span className="text-[10px] bg-amber-100 text-amber-700 rounded px-1.5 py-0.5 font-medium shrink-0">verificar</span>
                           )}
                         </div>
-                        <p className="text-xs text-gray-400">{a.address}</p>
+                        <p className="text-xs text-[var(--arvo-fg-soft)]">{a.address}</p>
                         {a.account_number && (
-                          <p className="text-xs text-gray-500 mt-0.5">Conta: {a.account_number}</p>
+                          <p className="text-xs text-[var(--arvo-fg-muted)] mt-0.5">Conta: {a.account_number}</p>
                         )}
                       </div>
                       <div className="shrink-0 text-right">
-                        <span className="text-xs bg-gray-100 rounded px-2 py-0.5 text-gray-600">{a.country}</span>
+                        <span className="text-xs bg-[var(--arvo-track-bg)] rounded px-2 py-0.5 text-[var(--arvo-fg-muted)]">{a.country}</span>
                         <p className="text-xs text-green-600 mt-0.5">{a.status}</p>
                       </div>
                     </div>
                   ))}
-                  <p className="text-xs text-gray-400 py-2">{ft.reminder3916}</p>
+                  <p className="text-xs text-[var(--arvo-fg-soft)] py-2">{ft.reminder3916}</p>
                 </div>
               </div>
             )}
@@ -1226,7 +1226,7 @@ function FrReport({ year }: { year: number }) {
           {!noEvents && (
             <Section title={ft.incomeByType}>
               <table className="w-full text-sm">
-                <thead><tr className="text-xs text-gray-400 border-b border-gray-100">
+                <thead><tr className="text-xs text-[var(--arvo-fg-soft)] border-b border-[var(--arvo-border)]">
                   <th className="text-left py-2 font-medium">{ft.colCountry}</th>
                   <th className="text-left py-2 font-medium">{ft.colBroker}</th>
                   <th className="text-left py-2 font-medium">{ft.colType}</th>
@@ -1236,27 +1236,27 @@ function FrReport({ year }: { year: number }) {
                 </tr></thead>
                 <tbody>
                   {taxData.sections_daily.map(s => (
-                    <tr key={s.key} className="border-b border-gray-50 hover:bg-gray-50">
-                      <td className="py-2 text-gray-700">{countryLabel(s.country)}</td>
-                      <td className="py-2 text-gray-600 text-xs">{s.broker}</td>
-                      <td className="py-2 text-gray-700">{eventTypeLabel(s.event_type)}</td>
+                    <tr key={s.key} className="border-b border-[var(--arvo-border-soft)] hover:bg-[var(--arvo-surface-2)]">
+                      <td className="py-2 text-[var(--arvo-fg)]">{countryLabel(s.country)}</td>
+                      <td className="py-2 text-[var(--arvo-fg-muted)] text-xs">{s.broker}</td>
+                      <td className="py-2 text-[var(--arvo-fg)]">{eventTypeLabel(s.event_type)}</td>
                       <td className="py-2 text-center">{formBadge(s.form_type)}</td>
-                      <td className="py-2 text-right font-semibold text-gray-800">{fmtEUR(s.gross_eur)}</td>
-                      <td className="py-2 text-right text-gray-400 text-xs">{s.event_count}</td>
+                      <td className="py-2 text-right font-semibold text-[var(--arvo-fg)]">{fmtEUR(s.gross_eur)}</td>
+                      <td className="py-2 text-right text-[var(--arvo-fg-soft)] text-xs">{s.event_count}</td>
                     </tr>
                   ))}
                   {taxData.capital_gains.length > 0 && (
-                    <tr className="border-b border-gray-50 hover:bg-gray-50">
-                      <td className="py-2 text-gray-700">—</td>
-                      <td className="py-2 text-gray-600 text-xs">—</td>
-                      <td className="py-2 text-gray-700">{ft.descCapGain}</td>
+                    <tr className="border-b border-[var(--arvo-border-soft)] hover:bg-[var(--arvo-surface-2)]">
+                      <td className="py-2 text-[var(--arvo-fg)]">—</td>
+                      <td className="py-2 text-[var(--arvo-fg-muted)] text-xs">—</td>
+                      <td className="py-2 text-[var(--arvo-fg)]">{ft.descCapGain}</td>
                       <td className="py-2 text-center"><span className="text-xs bg-violet-100 text-violet-700 rounded px-1.5 py-0.5 font-mono">3VG</span></td>
                       <td className={`py-2 text-right font-semibold ${taxData.total_gain_eur_daily >= 0 ? 'text-violet-700' : 'text-red-600'}`}>{fmtEUR(taxData.total_gain_eur_daily)}</td>
-                      <td className="py-2 text-right text-gray-400 text-xs">{taxData.capital_gains.length}</td>
+                      <td className="py-2 text-right text-[var(--arvo-fg-soft)] text-xs">{taxData.capital_gains.length}</td>
                     </tr>
                   )}
-                  <tr className="border-t border-gray-200 bg-gray-50 font-semibold text-sm">
-                    <td colSpan={4} className="py-2 text-right text-xs text-gray-500">{ft.totals}</td>
+                  <tr className="border-t border-[var(--arvo-border)] bg-[var(--arvo-surface-2)] font-semibold text-sm">
+                    <td colSpan={4} className="py-2 text-right text-xs text-[var(--arvo-fg-muted)]">{ft.totals}</td>
                     <td className="py-2 text-right">{fmtEUR(comp.daily.total_eur)}</td>
                     <td />
                   </tr>
@@ -1284,27 +1284,27 @@ function FrReport({ year }: { year: number }) {
                   setStep('fx_choice')
                 }
               }}
-              className="px-5 py-2 text-sm font-medium bg-[#0D0D0D] text-white rounded-xl hover:bg-gray-800 transition-colors"
+              className="px-5 py-2 text-sm font-medium bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] rounded-xl hover:bg-[var(--arvo-fg)]/90 transition-colors"
             >{ft.btnContinue}</button>
           </div>
 
           {showSaidaConfirm && (
             <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => setShowSaidaConfirm(false)}>
-              <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 space-y-4" onClick={e => e.stopPropagation()}>
+              <div className="bg-[var(--arvo-surface)] rounded-2xl shadow-xl max-w-md w-full p-6 space-y-4" onClick={e => e.stopPropagation()}>
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
                     <span className="text-amber-600 font-bold text-lg">!</span>
                   </div>
-                  <h3 className="font-semibold text-gray-900">{ft.saidaFiscalBannerTitle}</h3>
+                  <h3 className="font-semibold text-[var(--arvo-fg)]">{ft.saidaFiscalBannerTitle}</h3>
                 </div>
-                <p className="text-sm text-gray-600">{ft.saidaFiscalBannerDesc}</p>
+                <p className="text-sm text-[var(--arvo-fg-muted)]">{ft.saidaFiscalBannerDesc}</p>
                 <div className="flex flex-col gap-2">
                   <button
                     onClick={() => { setSaidaConfirmed(true); setShowSaidaConfirm(false); setStep('fx_choice') }}
-                    className="w-full py-2.5 text-sm font-semibold bg-[#0D0D0D] text-white rounded-xl hover:bg-gray-800 transition-colors"
+                    className="w-full py-2.5 text-sm font-semibold bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] rounded-xl hover:bg-[var(--arvo-fg)]/90 transition-colors"
                   >{ft.saidaFiscalConfirmBtn}</button>
                   <Link to="/profile"
-                    className="w-full py-2.5 text-sm text-center text-gray-500 hover:text-gray-700 block"
+                    className="w-full py-2.5 text-sm text-center text-[var(--arvo-fg-muted)] hover:text-[var(--arvo-fg)] block"
                   >{ft.saidaFiscalEditBtn}</Link>
                 </div>
               </div>
@@ -1318,51 +1318,51 @@ function FrReport({ year }: { year: number }) {
         <>
           <Section title={ft.sectionFX}>
             <div className="py-3 space-y-4">
-              <p className="text-xs text-gray-500">{ft.fxDesc}</p>
+              <p className="text-xs text-[var(--arvo-fg-muted)]">{ft.fxDesc}</p>
 
               <div className="grid sm:grid-cols-2 gap-4">
                 {/* Option A */}
                 <button
                   onClick={() => setFxMethod('daily')}
-                  className={`text-left p-4 rounded-xl border-2 transition-colors ${fxMethod === 'daily' ? 'border-[#0D0D0D] bg-gray-50' : 'border-gray-200 hover:border-gray-300'}`}
+                  className={`text-left p-4 rounded-xl border-2 transition-colors ${fxMethod === 'daily' ? 'border-[var(--arvo-fg)] bg-[var(--arvo-surface-2)]' : 'border-[var(--arvo-border)] hover:border-[var(--arvo-border)]'}`}
                 >
                   <div className="flex items-center justify-between mb-2">
                     <span className="font-semibold text-sm">{ft.optionATitle}</span>
                     {comp.recommended === 'daily' && <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">{ft.recommended}</span>}
                   </div>
-                  <p className="text-xs text-gray-500 mb-3">{ft.optionADesc}</p>
+                  <p className="text-xs text-[var(--arvo-fg-muted)] mb-3">{ft.optionADesc}</p>
                   <div className="space-y-1 text-xs">
-                    <div className="flex justify-between"><span className="text-gray-500">{ft.lblDividends}</span><span className="font-medium">{fmtEUR(comp.daily.dividends_eur)}</span></div>
-                    <div className="flex justify-between"><span className="text-gray-500">{ft.lblInterests}</span><span className="font-medium">{fmtEUR(comp.daily.interests_eur)}</span></div>
+                    <div className="flex justify-between"><span className="text-[var(--arvo-fg-muted)]">{ft.lblDividends}</span><span className="font-medium">{fmtEUR(comp.daily.dividends_eur)}</span></div>
+                    <div className="flex justify-between"><span className="text-[var(--arvo-fg-muted)]">{ft.lblInterests}</span><span className="font-medium">{fmtEUR(comp.daily.interests_eur)}</span></div>
                     {taxData.capital_gains.length > 0 && (
-                      <div className="flex justify-between"><span className="text-gray-500">{ft.lblCapGains}</span><span className={`font-medium ${taxData.total_gain_eur_daily >= 0 ? 'text-violet-700' : 'text-red-500'}`}>{fmtEUR(taxData.total_gain_eur_daily)}</span></div>
+                      <div className="flex justify-between"><span className="text-[var(--arvo-fg-muted)]">{ft.lblCapGains}</span><span className={`font-medium ${taxData.total_gain_eur_daily >= 0 ? 'text-violet-700' : 'text-red-500'}`}>{fmtEUR(taxData.total_gain_eur_daily)}</span></div>
                     )}
-                    <div className="flex justify-between border-t border-gray-200 pt-1 mt-1"><span className="font-semibold">{ft.lblTotal}</span><span className="font-bold text-blue-700">{fmtEUR(comp.daily.total_eur)}</span></div>
-                    <div className="flex justify-between"><span className="text-gray-500">{ft.lblCredit}</span><span className="font-medium text-orange-600">{fmtEUR(comp.daily.credit_eur)}</span></div>
+                    <div className="flex justify-between border-t border-[var(--arvo-border)] pt-1 mt-1"><span className="font-semibold">{ft.lblTotal}</span><span className="font-bold text-blue-700">{fmtEUR(comp.daily.total_eur)}</span></div>
+                    <div className="flex justify-between"><span className="text-[var(--arvo-fg-muted)]">{ft.lblCredit}</span><span className="font-medium text-orange-600">{fmtEUR(comp.daily.credit_eur)}</span></div>
                   </div>
                 </button>
 
                 {/* Option B */}
                 <button
                   onClick={() => setFxMethod('year_end')}
-                  className={`text-left p-4 rounded-xl border-2 transition-colors ${fxMethod === 'year_end' ? 'border-[#0D0D0D] bg-gray-50' : 'border-gray-200 hover:border-gray-300'}`}
+                  className={`text-left p-4 rounded-xl border-2 transition-colors ${fxMethod === 'year_end' ? 'border-[var(--arvo-fg)] bg-[var(--arvo-surface-2)]' : 'border-[var(--arvo-border)] hover:border-[var(--arvo-border)]'}`}
                 >
                   <div className="flex items-center justify-between mb-2">
                     <span className="font-semibold text-sm">{ft.optionBTitle}</span>
                     {comp.recommended === 'year_end' && <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">{ft.recommended}</span>}
                   </div>
-                  <p className="text-xs text-gray-500 mb-3">{ft.optionBDesc}</p>
+                  <p className="text-xs text-[var(--arvo-fg-muted)] mb-3">{ft.optionBDesc}</p>
                   <div className="space-y-1 text-xs">
-                    <div className="flex justify-between"><span className="text-gray-500">{ft.lblBrlEur}</span><span className="font-mono">{taxData.fx_rates.year_end_brl_eur.toFixed(6)}</span></div>
-                    <div className="flex justify-between"><span className="text-gray-500">{ft.lblUsdEur}</span><span className="font-mono">{taxData.fx_rates.year_end_usd_eur.toFixed(6)}</span></div>
-                    <div className="border-t border-gray-200 pt-1 mt-1 space-y-1">
-                      <div className="flex justify-between"><span className="text-gray-500">{ft.lblDividends}</span><span className="font-medium">{fmtEUR(comp.year_end.dividends_eur)}</span></div>
-                      <div className="flex justify-between"><span className="text-gray-500">{ft.lblInterests}</span><span className="font-medium">{fmtEUR(comp.year_end.interests_eur)}</span></div>
+                    <div className="flex justify-between"><span className="text-[var(--arvo-fg-muted)]">{ft.lblBrlEur}</span><span className="font-mono">{taxData.fx_rates.year_end_brl_eur.toFixed(6)}</span></div>
+                    <div className="flex justify-between"><span className="text-[var(--arvo-fg-muted)]">{ft.lblUsdEur}</span><span className="font-mono">{taxData.fx_rates.year_end_usd_eur.toFixed(6)}</span></div>
+                    <div className="border-t border-[var(--arvo-border)] pt-1 mt-1 space-y-1">
+                      <div className="flex justify-between"><span className="text-[var(--arvo-fg-muted)]">{ft.lblDividends}</span><span className="font-medium">{fmtEUR(comp.year_end.dividends_eur)}</span></div>
+                      <div className="flex justify-between"><span className="text-[var(--arvo-fg-muted)]">{ft.lblInterests}</span><span className="font-medium">{fmtEUR(comp.year_end.interests_eur)}</span></div>
                       {taxData.capital_gains.length > 0 && (
-                        <div className="flex justify-between"><span className="text-gray-500">{ft.lblCapGains}</span><span className={`font-medium ${taxData.total_gain_eur_year_end >= 0 ? 'text-violet-700' : 'text-red-500'}`}>{fmtEUR(taxData.total_gain_eur_year_end)}</span></div>
+                        <div className="flex justify-between"><span className="text-[var(--arvo-fg-muted)]">{ft.lblCapGains}</span><span className={`font-medium ${taxData.total_gain_eur_year_end >= 0 ? 'text-violet-700' : 'text-red-500'}`}>{fmtEUR(taxData.total_gain_eur_year_end)}</span></div>
                       )}
-                      <div className="flex justify-between border-t border-gray-200 pt-1 mt-1"><span className="font-semibold">{ft.lblTotal}</span><span className="font-bold text-blue-700">{fmtEUR(comp.year_end.total_eur)}</span></div>
-                      <div className="flex justify-between"><span className="text-gray-500">{ft.lblCredit}</span><span className="font-medium text-orange-600">{fmtEUR(comp.year_end.credit_eur)}</span></div>
+                      <div className="flex justify-between border-t border-[var(--arvo-border)] pt-1 mt-1"><span className="font-semibold">{ft.lblTotal}</span><span className="font-bold text-blue-700">{fmtEUR(comp.year_end.total_eur)}</span></div>
+                      <div className="flex justify-between"><span className="text-[var(--arvo-fg-muted)]">{ft.lblCredit}</span><span className="font-medium text-orange-600">{fmtEUR(comp.year_end.credit_eur)}</span></div>
                     </div>
                   </div>
                 </button>
@@ -1376,8 +1376,8 @@ function FrReport({ year }: { year: number }) {
           </Section>
 
           <div className="flex justify-between">
-            <button onClick={() => setStep('overview')} className="px-4 py-2 text-sm text-gray-500 hover:text-gray-700">{ft.btnBack}</button>
-            <button onClick={() => setStep('preview')} className="px-5 py-2 text-sm font-medium bg-[#0D0D0D] text-white rounded-xl hover:bg-gray-800 transition-colors">{ft.btnPreview}</button>
+            <button onClick={() => setStep('overview')} className="px-4 py-2 text-sm text-[var(--arvo-fg-muted)] hover:text-[var(--arvo-fg)]">{ft.btnBack}</button>
+            <button onClick={() => setStep('preview')} className="px-5 py-2 text-sm font-medium bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] rounded-xl hover:bg-[var(--arvo-fg)]/90 transition-colors">{ft.btnPreview}</button>
           </div>
         </>
       )}
@@ -1386,8 +1386,8 @@ function FrReport({ year }: { year: number }) {
       {step === 'preview' && (
         <>
           <div className="flex items-center justify-between gap-4 flex-wrap">
-            <div className="text-xs text-gray-500">
-              {ft.selectedMethod} : <span className="font-semibold text-gray-800">{fxMethod === 'daily' ? ft.methodA : ft.methodB}</span>
+            <div className="text-xs text-[var(--arvo-fg-muted)]">
+              {ft.selectedMethod} : <span className="font-semibold text-[var(--arvo-fg)]">{fxMethod === 'daily' ? ft.methodA : ft.methodB}</span>
             </div>
             <button
               onClick={() => void generateExcel(taxData, fxMethod)}
@@ -1427,9 +1427,9 @@ function FrReport({ year }: { year: number }) {
                 )
               })()}
             </div>
-            <div className="py-2 border-t border-gray-100 flex justify-between text-sm font-semibold">
-              <span className="text-gray-600">{ft.totalRevDecl}</span>
-              <span className="text-gray-900">{fmtEUR(totals.dividends_eur + totals.interests_eur)}</span>
+            <div className="py-2 border-t border-[var(--arvo-border)] flex justify-between text-sm font-semibold">
+              <span className="text-[var(--arvo-fg-muted)]">{ft.totalRevDecl}</span>
+              <span className="text-[var(--arvo-fg)]">{fmtEUR(totals.dividends_eur + totals.interests_eur)}</span>
             </div>
           </Section>
 
@@ -1438,7 +1438,7 @@ function FrReport({ year }: { year: number }) {
             <Section title={ft.sectionCapGains}>
               <div className="overflow-x-auto">
                 <table className="w-full text-xs min-w-[700px]">
-                  <thead><tr className="text-gray-400 border-b border-gray-100">
+                  <thead><tr className="text-[var(--arvo-fg-soft)] border-b border-[var(--arvo-border)]">
                     <th className="text-left py-2 font-medium">{t.reports.colDate}</th>
                     <th className="text-left py-2 font-medium">{t.reports.colAsset}</th>
                     <th className="text-left py-2 font-medium">{ft.colTypeBroker}</th>
@@ -1453,23 +1453,23 @@ function FrReport({ year }: { year: number }) {
                       const gainEur = fxMethod === 'daily' ? g.gain_loss_eur_daily : g.gain_loss_eur_year_end
                       const fxR     = fxMethod === 'daily' ? g.fx_rate_daily : g.fx_rate_year_end
                       return (
-                        <tr key={g.id} className="border-b border-gray-50 hover:bg-gray-50">
-                          <td className="py-1.5 text-gray-500">{g.date}</td>
-                          <td className="py-1.5 font-medium">{g.asset_code} <span className="text-gray-400 font-normal">{g.asset_name}</span></td>
-                          <td className="py-1.5 text-gray-500">{countryLabel(g.country)} · {g.broker}</td>
-                          <td className="py-1.5 text-right text-gray-600">{g.qty.toFixed(4)}</td>
-                          <td className="py-1.5 text-right text-gray-600">{fmtBRL(g.sale_value_brl)}</td>
-                          <td className="py-1.5 text-right text-gray-600">{fmtBRL(g.cost_basis_brl)}</td>
+                        <tr key={g.id} className="border-b border-[var(--arvo-border-soft)] hover:bg-[var(--arvo-surface-2)]">
+                          <td className="py-1.5 text-[var(--arvo-fg-muted)]">{g.date}</td>
+                          <td className="py-1.5 font-medium">{g.asset_code} <span className="text-[var(--arvo-fg-soft)] font-normal">{g.asset_name}</span></td>
+                          <td className="py-1.5 text-[var(--arvo-fg-muted)]">{countryLabel(g.country)} · {g.broker}</td>
+                          <td className="py-1.5 text-right text-[var(--arvo-fg-muted)]">{g.qty.toFixed(4)}</td>
+                          <td className="py-1.5 text-right text-[var(--arvo-fg-muted)]">{fmtBRL(g.sale_value_brl)}</td>
+                          <td className="py-1.5 text-right text-[var(--arvo-fg-muted)]">{fmtBRL(g.cost_basis_brl)}</td>
                           <td className={`py-1.5 text-right font-semibold ${g.gain_loss_brl >= 0 ? 'text-green-700' : 'text-red-600'}`}>{fmtBRL(g.gain_loss_brl)}</td>
                           <td className={`py-1.5 text-right font-semibold ${gainEur >= 0 ? 'text-violet-700' : 'text-red-600'}`}>
                             {fmtEUR(gainEur)}
-                            <span className="text-gray-300 font-normal ml-1">{fxR.toFixed(4)}</span>
+                            <span className="text-[var(--arvo-fg-faint)] font-normal ml-1">{fxR.toFixed(4)}</span>
                           </td>
                         </tr>
                       )
                     })}
-                    <tr className="border-t-2 border-gray-200 bg-gray-50 font-semibold text-sm">
-                      <td colSpan={7} className="py-2 text-right text-xs text-gray-500">{ft.totalNetGain}</td>
+                    <tr className="border-t-2 border-[var(--arvo-border)] bg-[var(--arvo-surface-2)] font-semibold text-sm">
+                      <td colSpan={7} className="py-2 text-right text-xs text-[var(--arvo-fg-muted)]">{ft.totalNetGain}</td>
                       <td className={`py-2 text-right ${(fxMethod === 'daily' ? taxData.total_gain_eur_daily : taxData.total_gain_eur_year_end) >= 0 ? 'text-violet-700' : 'text-red-600'}`}>
                         {fmtEUR(fxMethod === 'daily' ? taxData.total_gain_eur_daily : taxData.total_gain_eur_year_end)}
                       </td>
@@ -1477,14 +1477,14 @@ function FrReport({ year }: { year: number }) {
                   </tbody>
                 </table>
               </div>
-              <p className="text-xs text-gray-400 py-3">{ft.capGainsNote}</p>
+              <p className="text-xs text-[var(--arvo-fg-soft)] py-3">{ft.capGainsNote}</p>
             </Section>
           )}
 
           {/* 2047 sections */}
           <Section title={ft.section2047}>
             <table className="w-full text-sm">
-              <thead><tr className="text-xs text-gray-400 border-b border-gray-100">
+              <thead><tr className="text-xs text-[var(--arvo-fg-soft)] border-b border-[var(--arvo-border)]">
                 <th className="text-left py-2 font-medium">{ft.colCountry}</th>
                 <th className="text-left py-2 font-medium">{ft.colTypeBroker}</th>
                 <th className="text-center py-2 font-medium">{ft.colCase}</th>
@@ -1496,26 +1496,26 @@ function FrReport({ year }: { year: number }) {
               </tr></thead>
               <tbody>
                 {sections.map(s => (
-                  <tr key={s.key} className={`border-b border-gray-50 hover:bg-gray-50 ${s.form_type === '2DC' ? '' : ''}`}>
-                    <td className="py-2 text-gray-700">{countryLabel(s.country)}</td>
+                  <tr key={s.key} className={`border-b border-[var(--arvo-border-soft)] hover:bg-[var(--arvo-surface-2)] ${s.form_type === '2DC' ? '' : ''}`}>
+                    <td className="py-2 text-[var(--arvo-fg)]">{countryLabel(s.country)}</td>
                     <td className="py-2">
-                      <span className="text-gray-800">{eventTypeLabel(s.event_type)}</span>
-                      <span className="text-gray-400 text-xs ml-1.5">{s.broker}</span>
+                      <span className="text-[var(--arvo-fg)]">{eventTypeLabel(s.event_type)}</span>
+                      <span className="text-[var(--arvo-fg-soft)] text-xs ml-1.5">{s.broker}</span>
                     </td>
                     <td className="py-2 text-center">{formBadge(s.form_type)}</td>
                     <td className="py-2 text-right font-semibold">{fmtEUR(s.gross_eur)}</td>
-                    <td className="py-2 text-right text-gray-500">{(s.convention_rate * 100).toFixed(0)}%</td>
-                    <td className="py-2 text-right text-gray-500">{fmtEUR(s.theoretical_credit_eur)}</td>
-                    <td className="py-2 text-right text-gray-500">{fmtEUR(s.actual_withholding_eur)}</td>
+                    <td className="py-2 text-right text-[var(--arvo-fg-muted)]">{(s.convention_rate * 100).toFixed(0)}%</td>
+                    <td className="py-2 text-right text-[var(--arvo-fg-muted)]">{fmtEUR(s.theoretical_credit_eur)}</td>
+                    <td className="py-2 text-right text-[var(--arvo-fg-muted)]">{fmtEUR(s.actual_withholding_eur)}</td>
                     <td className="py-2 text-right font-semibold text-orange-600">{fmtEUR(s.effective_credit_eur)}</td>
                   </tr>
                 ))}
-                <tr className="border-t-2 border-gray-200 bg-gray-50 font-semibold">
-                  <td colSpan={3} className="py-2 text-right text-xs text-gray-500">{ft.totals}</td>
+                <tr className="border-t-2 border-[var(--arvo-border)] bg-[var(--arvo-surface-2)] font-semibold">
+                  <td colSpan={3} className="py-2 text-right text-xs text-[var(--arvo-fg-muted)]">{ft.totals}</td>
                   <td className="py-2 text-right">{fmtEUR(totals.dividends_eur + totals.interests_eur)}</td>
                   <td />
-                  <td className="py-2 text-right text-gray-500">{fmtEUR(sections.reduce((s, r) => s + r.theoretical_credit_eur, 0))}</td>
-                  <td className="py-2 text-right text-gray-500">{fmtEUR(sections.reduce((s, r) => s + r.actual_withholding_eur, 0))}</td>
+                  <td className="py-2 text-right text-[var(--arvo-fg-muted)]">{fmtEUR(sections.reduce((s, r) => s + r.theoretical_credit_eur, 0))}</td>
+                  <td className="py-2 text-right text-[var(--arvo-fg-muted)]">{fmtEUR(sections.reduce((s, r) => s + r.actual_withholding_eur, 0))}</td>
                   <td className="py-2 text-right text-orange-600">{fmtEUR(totals.credit_eur)}</td>
                 </tr>
               </tbody>
@@ -1526,7 +1526,7 @@ function FrReport({ year }: { year: number }) {
           <Section title={ft.sectionEvents}>
             <div className="overflow-x-auto">
               <table className="w-full text-xs min-w-[700px]">
-                <thead><tr className="text-gray-400 border-b border-gray-100">
+                <thead><tr className="text-[var(--arvo-fg-soft)] border-b border-[var(--arvo-border)]">
                   <th className="text-left py-2 font-medium">{t.reports.colDate}</th>
                   <th className="text-left py-2 font-medium">{t.reports.colAsset}</th>
                   <th className="text-left py-2 font-medium">{ft.colTypeBroker}</th>
@@ -1541,12 +1541,12 @@ function FrReport({ year }: { year: number }) {
                     const wth   = fxMethod === 'daily' ? e.tax_withheld_eur_daily : e.tax_withheld_eur_year_end
                     const fxR   = fxMethod === 'daily' ? e.fx_rate_daily : e.fx_rate_year_end
                     return (
-                      <tr key={e.id} className="border-b border-gray-50 hover:bg-gray-50">
-                        <td className="py-1.5 text-gray-500">{e.date}</td>
-                        <td className="py-1.5 font-medium">{e.asset_code} <span className="text-gray-400 font-normal">{e.asset_name}</span></td>
-                        <td className="py-1.5 text-gray-500">{countryLabel(e.country)} · {e.broker}</td>
+                      <tr key={e.id} className="border-b border-[var(--arvo-border-soft)] hover:bg-[var(--arvo-surface-2)]">
+                        <td className="py-1.5 text-[var(--arvo-fg-muted)]">{e.date}</td>
+                        <td className="py-1.5 font-medium">{e.asset_code} <span className="text-[var(--arvo-fg-soft)] font-normal">{e.asset_name}</span></td>
+                        <td className="py-1.5 text-[var(--arvo-fg-muted)]">{countryLabel(e.country)} · {e.broker}</td>
                         <td className="py-1.5 text-center">{formBadge(e.form_type)}</td>
-                        <td className="py-1.5 text-right font-mono text-gray-400">{fxR.toFixed(5)}</td>
+                        <td className="py-1.5 text-right font-mono text-[var(--arvo-fg-soft)]">{fxR.toFixed(5)}</td>
                         <td className="py-1.5 text-right font-semibold">{fmtEUR(gross)}</td>
                         <td className="py-1.5 text-right text-orange-600">{wth > 0 ? fmtEUR(wth) : '—'}</td>
                       </tr>
@@ -1558,7 +1558,7 @@ function FrReport({ year }: { year: number }) {
           </Section>
 
           <div className="flex justify-between items-center flex-wrap gap-3">
-            <button onClick={() => setStep('fx_choice')} className="px-4 py-2 text-sm text-gray-500 hover:text-gray-700">{ft.btnBack}</button>
+            <button onClick={() => setStep('fx_choice')} className="px-4 py-2 text-sm text-[var(--arvo-fg-muted)] hover:text-[var(--arvo-fg)]">{ft.btnBack}</button>
             <button
               onClick={() => void generateExcel(taxData, fxMethod)}
               className="flex items-center gap-2 px-6 py-2.5 text-sm font-semibold bg-green-700 text-white rounded-xl hover:bg-green-800 transition-colors"
@@ -1566,7 +1566,7 @@ function FrReport({ year }: { year: number }) {
           </div>
 
           {/* Disclaimers */}
-          <div className="text-xs text-gray-400 bg-red-50 border border-red-100 rounded-xl p-4 space-y-1">
+          <div className="text-xs text-[var(--arvo-fg-soft)] bg-red-50 border border-red-100 rounded-xl p-4 space-y-1">
             <p className="font-semibold text-red-600 mb-2">{ft.warningTitle}</p>
             <p>• {ft.warning1}</p>
             <p>• {ft.warning2}</p>
@@ -1581,9 +1581,9 @@ function FrReport({ year }: { year: number }) {
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
-      <div className="px-6 py-4 border-b border-gray-100">
-        <h2 className="font-semibold text-gray-800 text-sm">{title}</h2>
+    <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl shadow-sm overflow-hidden">
+      <div className="px-6 py-4 border-b border-[var(--arvo-border)]">
+        <h2 className="font-semibold text-[var(--arvo-fg)] text-sm">{title}</h2>
       </div>
       <div className="px-6 py-2 overflow-x-auto">{children}</div>
     </div>
@@ -1592,9 +1592,9 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 function Card({ label, value, valueClass }: { label: string; value: string; valueClass?: string }) {
   return (
-    <div className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm">
-      <p className="text-xs text-gray-400 mb-1">{label}</p>
-      <p className={`text-lg font-bold ${valueClass ?? 'text-gray-800'}`}>{value}</p>
+    <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl p-4 shadow-sm">
+      <p className="text-xs text-[var(--arvo-fg-soft)] mb-1">{label}</p>
+      <p className={`text-lg font-bold ${valueClass ?? 'text-[var(--arvo-fg)]'}`}>{value}</p>
     </div>
   )
 }

@@ -8,7 +8,7 @@ import { useI18n } from '../contexts/I18nContext'
 function StarIcon({ filled }: { filled: boolean }) {
   return (
     <svg
-      className={`w-4 h-4 transition-colors ${filled ? 'text-amber-400' : 'text-gray-300 hover:text-amber-300'}`}
+      className={`w-4 h-4 transition-colors ${filled ? 'text-amber-400' : 'text-[var(--arvo-fg-faint)] hover:text-amber-300'}`}
       fill={filled ? 'currentColor' : 'none'}
       viewBox="0 0 24 24"
       stroke="currentColor"
@@ -37,25 +37,25 @@ export default function FavoritesPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-gray-900">Favoritos</h1>
-        <p className="text-sm text-gray-400 mt-0.5">Ativos marcados com estrela</p>
+        <h1 className="text-xl font-semibold text-[var(--arvo-fg)]">Favoritos</h1>
+        <p className="text-sm text-[var(--arvo-fg-soft)] mt-0.5">Ativos marcados com estrela</p>
       </div>
 
       {favoriteAssets.length === 0 ? (
-        <div className="bg-white border border-gray-100 rounded-2xl p-12 text-center">
+        <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl p-12 text-center">
           <div className="text-4xl mb-3">★</div>
-          <p className="text-gray-500 font-medium">Nenhum favorito ainda</p>
-          <p className="text-sm text-gray-400 mt-1">
+          <p className="text-[var(--arvo-fg-muted)] font-medium">Nenhum favorito ainda</p>
+          <p className="text-sm text-[var(--arvo-fg-soft)] mt-1">
             Clique na estrela ao lado de um ativo no Dashboard para adicioná-lo aqui.
           </p>
         </div>
       ) : (
-        <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden">
-          <div className="divide-y divide-gray-50">
+        <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl overflow-hidden">
+          <div className="divide-y divide-[var(--arvo-border-soft)]">
             {favoriteAssets.map(asset => (
               <div
                 key={asset.id}
-                className="flex items-center gap-4 px-5 py-4 hover:bg-gray-50 transition-colors"
+                className="flex items-center gap-4 px-5 py-4 hover:bg-[var(--arvo-surface-2)] transition-colors"
               >
                 <button
                   onClick={() => toggleFavorite(asset.id)}
@@ -72,12 +72,12 @@ export default function FavoritesPage() {
                   onClick={() => navigate(`/assets/${asset.id}`)}
                   className="flex-1 min-w-0 text-left"
                 >
-                  <div className="font-medium text-gray-900">{asset.code}</div>
-                  <div className="text-xs text-gray-400 truncate">{asset.name}</div>
+                  <div className="font-medium text-[var(--arvo-fg)]">{asset.code}</div>
+                  <div className="text-xs text-[var(--arvo-fg-soft)] truncate">{asset.name}</div>
                 </button>
                 <div className="text-right shrink-0">
-                  <div className="font-semibold text-gray-900">{fmt(asset.value_brl)}</div>
-                  <div className="text-xs text-gray-400">{asset.class_name}</div>
+                  <div className="font-semibold text-[var(--arvo-fg)]">{fmt(asset.value_brl)}</div>
+                  <div className="text-xs text-[var(--arvo-fg-soft)]">{asset.class_name}</div>
                 </div>
               </div>
             ))}

@@ -94,13 +94,13 @@ export default function MigrateToFIModal({ assetId, assetName, assetCode, invest
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] flex flex-col">
-        <div className="flex items-start justify-between p-5 border-b border-gray-100">
+      <div className="bg-[var(--arvo-surface)] rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] flex flex-col">
+        <div className="flex items-start justify-between p-5 border-b border-[var(--arvo-border)]">
           <div>
-            <h2 className="font-bold text-gray-900 text-base">Converter para Renda Fixa</h2>
-            <p className="text-xs text-gray-400 mt-0.5">{assetCode} · {assetName}</p>
+            <h2 className="font-bold text-[var(--arvo-fg)] text-base">Converter para Renda Fixa</h2>
+            <p className="text-xs text-[var(--arvo-fg-soft)] mt-0.5">{assetCode} · {assetName}</p>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl leading-none ml-4">x</button>
+          <button onClick={onClose} className="text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg-muted)] text-xl leading-none ml-4">x</button>
         </div>
 
         <div className="overflow-y-auto flex-1 p-5 space-y-4">
@@ -111,11 +111,11 @@ export default function MigrateToFIModal({ assetId, assetName, assetCode, invest
           </div>
 
           <div>
-            <label className="block text-xs text-gray-500 mb-1">Tipo de renda fixa</label>
+            <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">Tipo de renda fixa</label>
             <select
               value={fiType}
               onChange={e => setFiType(e.target.value)}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20 bg-white"
+              className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20 bg-[var(--arvo-surface)]"
             >
               {Object.entries(FI_TYPE_LABELS).map(([v, label]) => (
                 <option key={v} value={v}>{label}</option>
@@ -124,7 +124,7 @@ export default function MigrateToFIModal({ assetId, assetName, assetCode, invest
           </div>
 
           <div>
-            <label className="block text-xs text-gray-500 mb-1">{rateCfg.label}</label>
+            <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{rateCfg.label}</label>
             <input
               type="text"
               inputMode="decimal"
@@ -139,13 +139,13 @@ export default function MigrateToFIModal({ assetId, assetName, assetCode, invest
             />
             {rateErr
               ? <p className="text-xs text-red-500 mt-0.5">{rateErr}</p>
-              : rateCfg.hint && <p className="text-xs text-gray-400 mt-1">{rateCfg.hint}</p>}
+              : rateCfg.hint && <p className="text-xs text-[var(--arvo-fg-soft)] mt-1">{rateCfg.hint}</p>}
           </div>
 
           {!hasContributions && (
             <>
               <div>
-                <label className="block text-xs text-gray-500 mb-1">Valor investido (R$)</label>
+                <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">Valor investido (R$)</label>
                 <input
                   type="text"
                   inputMode="decimal"
@@ -162,13 +162,13 @@ export default function MigrateToFIModal({ assetId, assetName, assetCode, invest
               </div>
 
               <div>
-                <label className="block text-xs text-gray-500 mb-1">Data de inicio</label>
+                <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">Data de inicio</label>
                 <input
                   type="date"
                   value={startDate}
                   max={today}
                   onChange={e => setStartDate(e.target.value)}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20"
+                  className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20"
                 />
               </div>
             </>
@@ -176,17 +176,17 @@ export default function MigrateToFIModal({ assetId, assetName, assetCode, invest
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Vencimento (opc.)</label>
+              <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">Vencimento (opc.)</label>
               <input
                 type="date"
                 value={maturity}
                 min={today}
                 onChange={e => setMaturity(e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20"
+                className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20"
               />
             </div>
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Instituicao (opc.)</label>
+              <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">Instituicao (opc.)</label>
               <InstitutionSelect value={institution} onChange={setInstitution} />
             </div>
           </div>
@@ -196,14 +196,14 @@ export default function MigrateToFIModal({ assetId, assetName, assetCode, invest
           <div className="flex gap-2 pt-1">
             <button
               onClick={onClose}
-              className="flex-1 border border-gray-200 text-gray-600 rounded-xl py-2.5 text-sm font-medium hover:bg-gray-50 transition-colors"
+              className="flex-1 border border-[var(--arvo-border)] text-[var(--arvo-fg-muted)] rounded-xl py-2.5 text-sm font-medium hover:bg-[var(--arvo-surface-2)] transition-colors"
             >
               Cancelar
             </button>
             <button
               onClick={handleSave}
               disabled={saving}
-              className="flex-1 bg-[#0D0D0D] text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-[#0D0D0D]/90 disabled:opacity-50 transition-colors"
+              className="flex-1 bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] rounded-xl py-2.5 text-sm font-semibold hover:bg-[var(--arvo-fg)]/90 disabled:opacity-50 transition-colors"
             >
               {saving ? 'Convertendo...' : 'Converter para RF'}
             </button>

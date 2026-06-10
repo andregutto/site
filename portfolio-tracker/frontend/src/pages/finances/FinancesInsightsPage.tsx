@@ -217,46 +217,46 @@ export default function FinancesInsightsPage() {
       {tab === 'subscriptions' && (
       <div className="space-y-3">
         <div>
-          <h2 className="text-sm font-semibold text-gray-900">{t.finances.subscriptionsTitle}</h2>
-          <p className="text-xs text-gray-400 mt-0.5">{t.finances.subscriptionsSubtitle}</p>
+          <h2 className="text-sm font-semibold text-[var(--arvo-fg)]">{t.finances.subscriptionsTitle}</h2>
+          <p className="text-xs text-[var(--arvo-fg-soft)] mt-0.5">{t.finances.subscriptionsSubtitle}</p>
         </div>
 
         {subscriptions.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-12 text-center">
+          <div className="bg-[var(--arvo-surface)] rounded-2xl border border-[var(--arvo-border)] shadow-sm p-12 text-center">
             <div className="text-4xl mb-3">🔍</div>
-            <p className="text-sm font-medium text-gray-700">{t.finances.noSubscriptions}</p>
-            <p className="text-xs text-gray-400 mt-1 max-w-xs mx-auto">{t.finances.noSubscriptionsHint}</p>
+            <p className="text-sm font-medium text-[var(--arvo-fg)]">{t.finances.noSubscriptions}</p>
+            <p className="text-xs text-[var(--arvo-fg-soft)] mt-1 max-w-xs mx-auto">{t.finances.noSubscriptionsHint}</p>
           </div>
         ) : (
           <>
             {/* Summary strip */}
             <div className="grid grid-cols-2 gap-3">
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-4">
-                <p className="text-xs text-gray-400 uppercase tracking-wide font-medium mb-1">
+              <div className="bg-[var(--arvo-surface)] rounded-2xl border border-[var(--arvo-border)] shadow-sm px-5 py-4">
+                <p className="text-xs text-[var(--arvo-fg-soft)] uppercase tracking-wide font-medium mb-1">
                   {t.finances.subscriptionsTotalMonthly}
                 </p>
-                <p className="text-2xl font-bold" style={{ color: 'var(--arvo-black)', fontFamily: 'var(--arvo-font-body)' }}>
+                <p className="text-2xl font-bold" style={{ color: 'var(--arvo-fg)', fontFamily: 'var(--arvo-font-body)' }}>
                   {fmtSub(totalMonthly, mainCurrency)}
                 </p>
-                <p className="text-xs text-gray-400 mt-0.5">
+                <p className="text-xs text-[var(--arvo-fg-soft)] mt-0.5">
                   {subscriptions.length} {subscriptions.length === 1 ? t.finances.navSubscriptions.replace(/s$/, '') : t.finances.navSubscriptions}
                 </p>
               </div>
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-4">
-                <p className="text-xs text-gray-400 uppercase tracking-wide font-medium mb-1">
+              <div className="bg-[var(--arvo-surface)] rounded-2xl border border-[var(--arvo-border)] shadow-sm px-5 py-4">
+                <p className="text-xs text-[var(--arvo-fg-soft)] uppercase tracking-wide font-medium mb-1">
                   {t.finances.subscriptionsTotalAnnual}
                 </p>
-                <p className="text-2xl font-bold" style={{ color: 'var(--arvo-black)', fontFamily: 'var(--arvo-font-body)' }}>
+                <p className="text-2xl font-bold" style={{ color: 'var(--arvo-fg)', fontFamily: 'var(--arvo-font-body)' }}>
                   {fmtSub(totalAnnual, mainCurrency)}
                 </p>
-                <p className="text-xs text-gray-400 mt-0.5">{t.finances.perYear}</p>
+                <p className="text-xs text-[var(--arvo-fg-soft)] mt-0.5">{t.finances.perYear}</p>
               </div>
             </div>
 
             {/* Subscription cards */}
             <div className="space-y-2">
               {subscriptions.map(sub => (
-                <div key={sub.key} className="bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-4 flex items-center gap-4">
+                <div key={sub.key} className="bg-[var(--arvo-surface)] rounded-2xl border border-[var(--arvo-border)] shadow-sm px-5 py-4 flex items-center gap-4">
                   {/* Icon */}
                   <div
                     className="w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0"
@@ -268,7 +268,7 @@ export default function FinancesInsightsPage() {
                   {/* Info */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-0.5">
-                      <span className="text-sm font-semibold text-gray-900 truncate">{sub.name}</span>
+                      <span className="text-sm font-semibold text-[var(--arvo-fg)] truncate">{sub.name}</span>
                       <span
                         className="text-xs font-medium px-1.5 py-0.5 rounded-full shrink-0"
                         style={{ background: `${FREQ_COLORS[sub.frequency]}18`, color: FREQ_COLORS[sub.frequency] }}
@@ -276,23 +276,23 @@ export default function FinancesInsightsPage() {
                         {freqLabel[sub.frequency]}
                       </span>
                     </div>
-                    <p className="text-xs text-gray-400">
+                    <p className="text-xs text-[var(--arvo-fg-soft)]">
                       {t.finances.lastCharged}: {formatDate(sub.last_date, locale)}
-                      {sub.category && <span className="ml-2 text-gray-300">·</span>}
+                      {sub.category && <span className="ml-2 text-[var(--arvo-fg-faint)]">·</span>}
                       {sub.category && <span className="ml-2">{sub.category.name}</span>}
                     </p>
                   </div>
 
                   {/* Amounts */}
                   <div className="text-right shrink-0">
-                    <p className="text-base font-bold text-gray-900">{fmtSub(sub.median_amount, sub.currency)}</p>
-                    <p className="text-xs text-gray-400">{fmtSub(sub.annual_cost, sub.currency)}{t.finances.perYear}</p>
+                    <p className="text-base font-bold text-[var(--arvo-fg)]">{fmtSub(sub.median_amount, sub.currency)}</p>
+                    <p className="text-xs text-[var(--arvo-fg-soft)]">{fmtSub(sub.annual_cost, sub.currency)}{t.finances.perYear}</p>
                   </div>
 
                   {/* Dismiss */}
                   <button
                     onClick={() => dismissSub(sub)}
-                    className="p-1.5 text-gray-300 hover:text-gray-500 transition-colors shrink-0 rounded-lg hover:bg-gray-50"
+                    className="p-1.5 text-[var(--arvo-fg-faint)] hover:text-[var(--arvo-fg-muted)] transition-colors shrink-0 rounded-lg hover:bg-[var(--arvo-surface-2)]"
                     title={t.finances.subscriptionDismiss}
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5">
@@ -310,15 +310,15 @@ export default function FinancesInsightsPage() {
           <div>
             <button
               onClick={() => setShowIgnored(v => !v)}
-              className="text-xs font-medium text-gray-400 hover:text-gray-600 transition-colors"
+              className="text-xs font-medium text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg-muted)] transition-colors"
             >
               {showIgnored ? t.finances.hideIgnored : t.finances.viewIgnored} ({dismissed.length})
             </button>
             {showIgnored && (
               <div className="mt-2 space-y-1.5">
                 {dismissed.map(d => (
-                  <div key={d.key} className="bg-white rounded-xl border border-gray-100 px-4 py-2.5 flex items-center justify-between gap-3">
-                    <span className="text-sm text-gray-500 truncate">{d.name || d.key}</span>
+                  <div key={d.key} className="bg-[var(--arvo-surface)] rounded-xl border border-[var(--arvo-border)] px-4 py-2.5 flex items-center justify-between gap-3">
+                    <span className="text-sm text-[var(--arvo-fg-muted)] truncate">{d.name || d.key}</span>
                     <button
                       onClick={() => restoreSub(d.key)}
                       className="text-xs font-medium shrink-0"
@@ -339,29 +339,29 @@ export default function FinancesInsightsPage() {
       {tab === 'fees' && (
       <div className="space-y-3">
         <div>
-          <h2 className="text-sm font-semibold text-gray-900">{f.title}</h2>
-          <p className="text-xs text-gray-400 mt-0.5">{f.subtitle}</p>
+          <h2 className="text-sm font-semibold text-[var(--arvo-fg)]">{f.title}</h2>
+          <p className="text-xs text-[var(--arvo-fg-soft)] mt-0.5">{f.subtitle}</p>
         </div>
 
         {feeError ? (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 text-center text-sm" style={{ color: '#D63B2F' }}>
+          <div className="bg-[var(--arvo-surface)] rounded-2xl border border-[var(--arvo-border)] shadow-sm p-6 text-center text-sm" style={{ color: '#D63B2F' }}>
             {feeError}
           </div>
         ) : (
           <>
             {/* KPIs */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-4">
-                <p className="text-xs text-gray-400 uppercase tracking-wide font-medium mb-1">{f.totalFees}</p>
+              <div className="bg-[var(--arvo-surface)] rounded-2xl border border-[var(--arvo-border)] shadow-sm px-5 py-4">
+                <p className="text-xs text-[var(--arvo-fg-soft)] uppercase tracking-wide font-medium mb-1">{f.totalFees}</p>
                 <p className="text-2xl font-bold" style={{ color: '#D63B2F', fontFamily: 'var(--arvo-font-body)' }}>{fmt(feeResult?.total ?? 0)}</p>
               </div>
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-4">
-                <p className="text-xs text-gray-400 uppercase tracking-wide font-medium mb-1">{f.avgMonthly}</p>
-                <p className="text-2xl font-bold" style={{ color: 'var(--arvo-black)', fontFamily: 'var(--arvo-font-body)' }}>{fmt(avgMonthly)}</p>
+              <div className="bg-[var(--arvo-surface)] rounded-2xl border border-[var(--arvo-border)] shadow-sm px-5 py-4">
+                <p className="text-xs text-[var(--arvo-fg-soft)] uppercase tracking-wide font-medium mb-1">{f.avgMonthly}</p>
+                <p className="text-2xl font-bold" style={{ color: 'var(--arvo-fg)', fontFamily: 'var(--arvo-font-body)' }}>{fmt(avgMonthly)}</p>
               </div>
               {etfTotalCost > 0 && (
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-4">
-                  <p className="text-xs text-gray-400 uppercase tracking-wide font-medium mb-1">{f.etfTotalCost}</p>
+                <div className="bg-[var(--arvo-surface)] rounded-2xl border border-[var(--arvo-border)] shadow-sm px-5 py-4">
+                  <p className="text-xs text-[var(--arvo-fg-soft)] uppercase tracking-wide font-medium mb-1">{f.etfTotalCost}</p>
                   <p className="text-2xl font-bold" style={{ color: '#E8A020', fontFamily: 'var(--arvo-font-body)' }}>{fmt(etfTotalCost)}</p>
                 </div>
               )}
@@ -370,28 +370,28 @@ export default function FinancesInsightsPage() {
             {/* Breakdown + monthly trend */}
             {feeResult && feeResult.by_category.length > 0 ? (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-                  <h3 className="text-sm font-semibold text-gray-900 mb-4">{f.byCategory}</h3>
+                <div className="bg-[var(--arvo-surface)] rounded-2xl border border-[var(--arvo-border)] shadow-sm p-6">
+                  <h3 className="text-sm font-semibold text-[var(--arvo-fg)] mb-4">{f.byCategory}</h3>
                   {feeResult.by_category.map(cat => (
                     <div key={cat.id} className="flex items-center gap-3 mb-3.5 last:mb-0">
                       <span className="text-xl leading-none shrink-0">{cat.icon}</span>
                       <div className="flex-1 min-w-0">
                         <div className="flex justify-between items-baseline gap-2 mb-1">
-                          <span className="text-sm font-medium text-gray-900 truncate">{cat.name}</span>
+                          <span className="text-sm font-medium text-[var(--arvo-fg)] truncate">{cat.name}</span>
                           <span className="text-xs font-semibold shrink-0" style={{ color: '#D63B2F' }}>{fmt(cat.total)}</span>
                         </div>
-                        <div className="h-1 rounded-full bg-gray-100">
+                        <div className="h-1 rounded-full bg-[var(--arvo-track-bg)]">
                           <div className="h-full rounded-full" style={{ width: `${(cat.total / (feeResult?.total ?? 1)) * 100}%`, background: cat.color || CHART_COLOR }} />
                         </div>
-                        <div className="text-xs text-gray-400 mt-0.5">{cat.count} {f.occurrences}</div>
+                        <div className="text-xs text-[var(--arvo-fg-soft)] mt-0.5">{cat.count} {f.occurrences}</div>
                       </div>
                     </div>
                   ))}
                 </div>
 
                 {feeResult.monthly.length > 1 && (
-                  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-                    <h3 className="text-sm font-semibold text-gray-900 mb-4">{f.monthlyTrend}</h3>
+                  <div className="bg-[var(--arvo-surface)] rounded-2xl border border-[var(--arvo-border)] shadow-sm p-6">
+                    <h3 className="text-sm font-semibold text-[var(--arvo-fg)] mb-4">{f.monthlyTrend}</h3>
                     <ResponsiveContainer width="100%" height={180}>
                       <BarChart data={feeResult.monthly} margin={{ left: 0, right: 8, top: 4, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--arvo-border)" />
@@ -411,38 +411,38 @@ export default function FinancesInsightsPage() {
                 )}
               </div>
             ) : (
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center">
+              <div className="bg-[var(--arvo-surface)] rounded-2xl border border-[var(--arvo-border)] shadow-sm p-8 text-center">
                 <div className="text-3xl mb-3">✅</div>
-                <div className="text-sm font-semibold text-gray-900 mb-1">{f.noFees}</div>
-                <div className="text-xs text-gray-400 max-w-sm mx-auto">{f.noFeesHint}</div>
+                <div className="text-sm font-semibold text-[var(--arvo-fg)] mb-1">{f.noFees}</div>
+                <div className="text-xs text-[var(--arvo-fg-soft)] max-w-sm mx-auto">{f.noFeesHint}</div>
               </div>
             )}
 
             {/* ETF expense ratios */}
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-              <h3 className="text-sm font-semibold text-gray-900">{f.etfTitle}</h3>
-              <p className="text-xs text-gray-400 mt-0.5 mb-4">{f.etfSubtitle}</p>
+            <div className="bg-[var(--arvo-surface)] rounded-2xl border border-[var(--arvo-border)] shadow-sm p-6">
+              <h3 className="text-sm font-semibold text-[var(--arvo-fg)]">{f.etfTitle}</h3>
+              <p className="text-xs text-[var(--arvo-fg-soft)] mt-0.5 mb-4">{f.etfSubtitle}</p>
 
               {etfsInPortfolio.length === 0 ? (
-                <div className="text-center py-4 text-sm text-gray-400">{f.noEtfs}</div>
+                <div className="text-center py-4 text-sm text-[var(--arvo-fg-soft)]">{f.noEtfs}</div>
               ) : (
                 <div>
-                  <div className="grid gap-2 pb-2.5 mb-2 border-b border-gray-100" style={{ gridTemplateColumns: '64px 1fr 56px 80px 80px' }}>
+                  <div className="grid gap-2 pb-2.5 mb-2 border-b border-[var(--arvo-border)]" style={{ gridTemplateColumns: '64px 1fr 56px 80px 80px' }}>
                     {[f.etfCode, f.etfName, f.etfTer, f.etfValue, f.etfAnnualCost].map(h => (
-                      <div key={h} className="text-xs font-semibold text-gray-400 uppercase tracking-wide">{h}</div>
+                      <div key={h} className="text-xs font-semibold text-[var(--arvo-fg-soft)] uppercase tracking-wide">{h}</div>
                     ))}
                   </div>
                   {etfsInPortfolio.map(etf => (
-                    <div key={etf.code} className="grid gap-2 py-2.5 border-b border-gray-100" style={{ gridTemplateColumns: '64px 1fr 56px 80px 80px' }}>
-                      <div className="text-sm font-bold text-gray-900">{etf.code}</div>
-                      <div className="text-xs text-gray-400 overflow-hidden text-ellipsis whitespace-nowrap">{etf.name}</div>
+                    <div key={etf.code} className="grid gap-2 py-2.5 border-b border-[var(--arvo-border)]" style={{ gridTemplateColumns: '64px 1fr 56px 80px 80px' }}>
+                      <div className="text-sm font-bold text-[var(--arvo-fg)]">{etf.code}</div>
+                      <div className="text-xs text-[var(--arvo-fg-soft)] overflow-hidden text-ellipsis whitespace-nowrap">{etf.name}</div>
                       <div className="text-xs font-semibold" style={{ color: '#E8A020' }}>{etf.ter.toFixed(3)}%</div>
-                      <div className="text-xs text-gray-400 text-right">{fmt(etf.value)}</div>
+                      <div className="text-xs text-[var(--arvo-fg-soft)] text-right">{fmt(etf.value)}</div>
                       <div className="text-xs font-medium text-right" style={{ color: '#D63B2F' }}>{fmt(etf.annualCost)}</div>
                     </div>
                   ))}
                   <div className="flex justify-end items-baseline gap-2 mt-3">
-                    <span className="text-xs text-gray-400">{f.etfTotalCost}</span>
+                    <span className="text-xs text-[var(--arvo-fg-soft)]">{f.etfTotalCost}</span>
                     <span className="text-base font-bold" style={{ color: '#D63B2F' }}>{fmt(etfTotalCost)}</span>
                   </div>
                 </div>

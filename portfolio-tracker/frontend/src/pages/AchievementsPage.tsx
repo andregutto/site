@@ -66,20 +66,20 @@ export default function AchievementsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl" style={{ fontFamily: "var(--arvo-font-body)", color: 'var(--arvo-black)', letterSpacing: '0.04em' }}>{t.achievements.title}</h1>
-          <p className="text-sm mt-0.5" style={{ color: 'rgba(13,13,13,0.5)' }}>{earnedKeys.length} {t.achievements.of} {ACHIEVEMENT_DEFS.length} {t.achievements.subtitle}</p>
+          <h1 className="text-xl" style={{ fontFamily: "var(--arvo-font-body)", color: 'var(--arvo-fg)', letterSpacing: '0.04em' }}>{t.achievements.title}</h1>
+          <p className="text-sm mt-0.5" style={{ color: 'var(--arvo-fg-soft)' }}>{earnedKeys.length} {t.achievements.of} {ACHIEVEMENT_DEFS.length} {t.achievements.subtitle}</p>
         </div>
         <div className="flex items-center gap-3">
           {(loading || checking) && (
-            <div className="flex items-center gap-2 text-sm" style={{ color: 'rgba(13,13,13,0.45)' }}>
-              <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-[#0D0D0D]" />
+            <div className="flex items-center gap-2 text-sm" style={{ color: 'var(--arvo-fg-soft)' }}>
+              <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-[var(--arvo-fg)]" />
               {t.achievements.checking}
             </div>
           )}
           <button
             onClick={() => setPreview(true)}
             className="text-xs rounded-lg px-3 py-1.5 transition-colors"
-            style={{ color: 'rgba(13,13,13,0.45)', border: '1px solid var(--arvo-border-soft)' }}
+            style={{ color: 'var(--arvo-fg-soft)', border: '1px solid var(--arvo-border-soft)' }}
           >
             {t.achievements.preview}
           </button>
@@ -87,7 +87,7 @@ export default function AchievementsPage() {
       </div>
 
       {/* Level card */}
-      <div className="rounded-2xl p-5" style={{ background: '#FFFFFF', border: '1px solid rgba(200,184,154,0.30)', boxShadow: '0 4px 24px rgba(200,184,154,0.16)', position: 'relative', overflow: 'hidden' }}>
+      <div className="rounded-2xl p-5" style={{ background: 'var(--arvo-surface)', border: '1px solid rgba(200,184,154,0.30)', boxShadow: '0 4px 24px rgba(200,184,154,0.16)', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', top: -80, right: -40, width: 260, height: 260, borderRadius: '50%', background: 'rgba(200,184,154,0.09)', filter: 'blur(60px)', pointerEvents: 'none' }} />
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 1, background: 'linear-gradient(to right, transparent, rgba(200,184,154,0.55), transparent)', pointerEvents: 'none' }} />
         <div className="flex items-center justify-between mb-3" style={{ position: 'relative', zIndex: 1 }}>
@@ -95,25 +95,25 @@ export default function AchievementsPage() {
             <span className="text-3xl">{level.emoji}</span>
             <div>
               <p className="text-xs uppercase tracking-widest" style={{ fontFamily: "var(--arvo-font-body)", color: 'var(--arvo-gold-text)' }}>{t.achievements.currentLevel}</p>
-              <p style={{ fontFamily: "var(--arvo-font-body)", fontSize: 18, color: 'var(--arvo-black)' }}>{(t.levels as Record<string,string>)[level.key] ?? level.name}</p>
+              <p style={{ fontFamily: "var(--arvo-font-body)", fontSize: 18, color: 'var(--arvo-fg)' }}>{(t.levels as Record<string,string>)[level.key] ?? level.name}</p>
             </div>
           </div>
           <div className="text-right">
-            <p className="font-bold text-xl" style={{ color: 'var(--arvo-black)' }}>
+            <p className="font-bold text-xl" style={{ color: 'var(--arvo-fg)' }}>
               {totalXp} <span style={{ color: 'var(--arvo-gold)' }}>{t.achievements.xp}</span>
             </p>
-            <p className="text-xs" style={{ color: 'rgba(13,13,13,0.45)' }}>{earnedKeys.length}/{ACHIEVEMENT_DEFS.length} {t.achievements.subtitle}</p>
+            <p className="text-xs" style={{ color: 'var(--arvo-fg-soft)' }}>{earnedKeys.length}/{ACHIEVEMENT_DEFS.length} {t.achievements.subtitle}</p>
           </div>
         </div>
 
-        <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(13,13,13,0.08)', position: 'relative', zIndex: 1 }}>
+        <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--arvo-track-bg)', position: 'relative', zIndex: 1 }}>
           <div
             className="h-full rounded-full transition-all duration-700"
-            style={{ width: `${progress}%`, background: 'linear-gradient(90deg, var(--arvo-gold), var(--arvo-black))' }}
+            style={{ width: `${progress}%`, background: 'linear-gradient(90deg, var(--arvo-gold), var(--arvo-fg))' }}
           />
         </div>
 
-        <div className="flex justify-between mt-2 text-xs" style={{ color: 'rgba(13,13,13,0.60)', fontFamily: "var(--arvo-font-body)", position: 'relative', zIndex: 1 }}>
+        <div className="flex justify-between mt-2 text-xs" style={{ color: 'var(--arvo-fg-muted)', fontFamily: "var(--arvo-font-body)", position: 'relative', zIndex: 1 }}>
           <span>{level.minXp} XP</span>
           {nextLevel
             ? <span>{t.achievements.nextLevel}: {nextLevel.emoji} {(t.levels as Record<string,string>)[nextLevel.key] ?? nextLevel.name} · {nextLevel.minXp} {t.achievements.xp}</span>
@@ -134,10 +134,10 @@ export default function AchievementsPage() {
               key={l.name}
               className="flex-1 rounded-xl py-2.5 text-center text-xs transition-all"
               style={isActive
-                ? { border: '1px solid var(--arvo-black)', background: 'rgba(13,13,13,0.08)', color: 'var(--arvo-black)', fontFamily: "var(--arvo-font-body)" }
+                ? { border: '1px solid var(--arvo-fg)', background: 'var(--arvo-track-bg)', color: 'var(--arvo-fg)', fontFamily: "var(--arvo-font-body)" }
                 : isPast
                 ? { border: '1px solid rgba(31,138,91,0.3)', background: 'rgba(31,138,91,0.07)', color: 'var(--arvo-green)', fontFamily: "var(--arvo-font-body)" }
-                : { border: '1px solid var(--arvo-border-soft)', background: 'transparent', color: 'rgba(13,13,13,0.35)', fontFamily: "var(--arvo-font-body)" }}
+                : { border: '1px solid var(--arvo-border-soft)', background: 'transparent', color: 'var(--arvo-fg-soft)', fontFamily: "var(--arvo-font-body)" }}
             >
               <div className="text-base">{l.emoji}</div>
               <div className="truncate px-1 mt-0.5">{(t.levels as Record<string,string>)[l.key] ?? l.name}</div>
@@ -156,15 +156,15 @@ export default function AchievementsPage() {
               key={def.key}
               className="rounded-2xl p-4 flex flex-col items-center text-center transition-all"
               style={isEarned
-                ? { border: '1px solid rgba(200,184,154,0.30)', background: '#FFFFFF', boxShadow: '0 1px 8px rgba(200,184,154,0.12)' }
+                ? { border: '1px solid rgba(200,184,154,0.30)', background: 'var(--arvo-surface)', boxShadow: '0 1px 8px rgba(200,184,154,0.12)' }
                 : { border: '1px solid var(--arvo-border-soft)', background: 'rgba(232,223,208,0.20)', opacity: 0.55 }}
             >
               <Medal def={def} earned={isEarned} size={80} />
 
-              <p className="mt-3 text-sm leading-tight" style={{ fontFamily: "var(--arvo-font-body)", color: isEarned ? 'var(--arvo-black)' : 'rgba(13,13,13,0.4)' }}>
+              <p className="mt-3 text-sm leading-tight" style={{ fontFamily: "var(--arvo-font-body)", color: isEarned ? 'var(--arvo-fg)' : 'var(--arvo-fg-soft)' }}>
                 {(t.achievementDefs as Record<string, { name: string; desc: string }>)[def.key]?.name ?? def.name}
               </p>
-              <p className="mt-1 text-xs leading-snug" style={{ color: isEarned ? 'rgba(13,13,13,0.55)' : 'rgba(13,13,13,0.35)' }}>
+              <p className="mt-1 text-xs leading-snug" style={{ color: isEarned ? 'var(--arvo-fg-muted)' : 'var(--arvo-fg-soft)' }}>
                 {resolveDesc(def.key, (t.achievementDefs as Record<string, { name: string; desc: string }>)[def.key]?.desc ?? def.description)}
               </p>
 
@@ -172,13 +172,13 @@ export default function AchievementsPage() {
                 <div className="mt-2 flex items-center gap-1 flex-wrap justify-center">
                   <span className="text-xs" style={{ fontFamily: "var(--arvo-font-body)", color: 'var(--arvo-gold-text)' }}>+{def.xp} {t.achievements.xp}</span>
                   {earnedAt && (
-                    <span className="text-xs" style={{ color: 'rgba(13,13,13,0.35)' }}>
+                    <span className="text-xs" style={{ color: 'var(--arvo-fg-soft)' }}>
                       · {new Date(earnedAt).toLocaleDateString(undefined, { day: '2-digit', month: 'short' })}
                     </span>
                   )}
                 </div>
               ) : (
-                <span className="mt-2 text-xs" style={{ color: 'rgba(13,13,13,0.35)', fontFamily: "var(--arvo-font-body)" }}>🔒 {def.xp} {t.achievements.xp}</span>
+                <span className="mt-2 text-xs" style={{ color: 'var(--arvo-fg-soft)', fontFamily: "var(--arvo-font-body)" }}>🔒 {def.xp} {t.achievements.xp}</span>
               )}
             </div>
           )

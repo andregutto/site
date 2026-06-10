@@ -62,7 +62,7 @@ function ColorPicker({ value, onChange }: { value: string; onChange: (c: string)
           key={c}
           type="button"
           onClick={() => onChange(c)}
-          className={`w-6 h-6 rounded-full transition-transform hover:scale-110 ${value === c ? 'ring-2 ring-offset-1 ring-gray-600 scale-110' : ''}`}
+          className={`w-6 h-6 rounded-full transition-transform hover:scale-110 ${value === c ? 'ring-2 ring-offset-1 ring-[var(--arvo-fg-muted)] scale-110' : ''}`}
           style={{ backgroundColor: c }}
         />
       ))}
@@ -78,7 +78,7 @@ function IconPicker({ value, onChange }: { value: string | null; onChange: (i: s
           type="button"
           onClick={() => onChange(null)}
           className={`w-8 h-8 rounded-lg text-xs border transition-all hover:scale-110 ${
-            value == null ? 'border-[#0D0D0D] bg-[#0D0D0D]/10 ring-1 ring-[#0D0D0D]' : 'border-gray-200 bg-gray-50'
+            value == null ? 'border-[var(--arvo-fg)] bg-[var(--arvo-fg)]/10 ring-1 ring-[var(--arvo-fg)]' : 'border-[var(--arvo-border)] bg-[var(--arvo-surface-2)]'
           }`}
           title="—"
         >—</button>
@@ -88,7 +88,7 @@ function IconPicker({ value, onChange }: { value: string | null; onChange: (i: s
             type="button"
             onClick={() => onChange(icon)}
             className={`w-8 h-8 rounded-lg text-base transition-all hover:scale-110 ${
-              value === icon ? 'ring-2 ring-[#0D0D0D] bg-[#0D0D0D]/10 scale-110' : 'hover:bg-gray-100'
+              value === icon ? 'ring-2 ring-[var(--arvo-fg)] bg-[var(--arvo-fg)]/10 scale-110' : 'hover:bg-[var(--arvo-track-bg)]'
             }`}
           >{icon}</button>
         ))}
@@ -227,10 +227,10 @@ export default function ClassesPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-gray-900">{t.classes.title}</h1>
+        <h1 className="text-xl font-bold text-[var(--arvo-fg)]">{t.classes.title}</h1>
         <button
           onClick={() => { setShowCreate(v => !v); setCreateErr(null) }}
-          className="px-4 py-2 bg-[#0D0D0D] text-white text-sm font-semibold rounded-xl hover:bg-[#0D0D0D]/90 transition-colors"
+          className="px-4 py-2 bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] text-sm font-semibold rounded-xl hover:bg-[var(--arvo-fg)]/90 transition-colors"
         >
           {showCreate ? t.classes.cancel : t.classes.newClass}
         </button>
@@ -238,8 +238,8 @@ export default function ClassesPage() {
 
       {/* Create form */}
       {showCreate && (
-        <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm space-y-3">
-          <h2 className="font-semibold text-gray-800 text-sm">{t.classes.newClassTitle}</h2>
+        <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl p-5 shadow-sm space-y-3">
+          <h2 className="font-semibold text-[var(--arvo-fg)] text-sm">{t.classes.newClassTitle}</h2>
           <div className="flex gap-3 items-start">
             <div
               className="w-8 h-8 rounded-full shrink-0 mt-1 border-2 border-white shadow"
@@ -252,12 +252,12 @@ export default function ClassesPage() {
                 onChange={e => setNewName(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') handleCreate() }}
                 placeholder={t.classes.classNamePlaceholder}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20"
+                className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20"
                 autoFocus
               />
               <ColorPicker value={newColor} onChange={setNewColor} />
               <div>
-                <p className="text-xs text-gray-500 mb-1">{t.classes.icon}</p>
+                <p className="text-xs text-[var(--arvo-fg-muted)] mb-1">{t.classes.icon}</p>
                 <IconPicker value={newIcon} onChange={setNewIcon} />
               </div>
             </div>
@@ -266,21 +266,21 @@ export default function ClassesPage() {
           <button
             onClick={handleCreate}
             disabled={creating}
-            className="px-4 py-2 bg-[#0D0D0D] text-white text-sm font-semibold rounded-xl hover:bg-[#0D0D0D]/90 disabled:opacity-50 transition-colors"
+            className="px-4 py-2 bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] text-sm font-semibold rounded-xl hover:bg-[var(--arvo-fg)]/90 disabled:opacity-50 transition-colors"
           >{creating ? t.classes.creating : t.classes.create}</button>
         </div>
       )}
 
       {/* Classes list */}
-      <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
-        <div className="px-5 py-4 border-b border-gray-100">
-          <h2 className="font-semibold text-gray-800">{t.classes.manage}</h2>
+      <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl shadow-sm overflow-hidden">
+        <div className="px-5 py-4 border-b border-[var(--arvo-border)]">
+          <h2 className="font-semibold text-[var(--arvo-fg)]">{t.classes.manage}</h2>
         </div>
 
         {classes.length === 0 ? (
-          <p className="text-center text-gray-400 text-sm py-8">{t.classes.empty}</p>
+          <p className="text-center text-[var(--arvo-fg-soft)] text-sm py-8">{t.classes.empty}</p>
         ) : (
-          <div className="divide-y divide-gray-50">
+          <div className="divide-y divide-[var(--arvo-border-soft)]">
             {classes.map(cls => {
               const count = assets.filter(a => a.asset_classes?.id === cls.id).length
               const isEditing = editId === cls.id
@@ -301,12 +301,12 @@ export default function ClassesPage() {
                             value={editName}
                             onChange={e => setEditName(e.target.value)}
                             onKeyDown={e => { if (e.key === 'Enter') handleSaveEdit(cls.id) }}
-                            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20"
+                            className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20"
                             autoFocus
                           />
                           <ColorPicker value={editColor} onChange={setEditColor} />
                           <div>
-                            <p className="text-xs text-gray-500 mb-1">{t.classes.icon}</p>
+                            <p className="text-xs text-[var(--arvo-fg-muted)] mb-1">{t.classes.icon}</p>
                             <IconPicker value={editIcon} onChange={setEditIcon} />
                           </div>
                         </div>
@@ -316,11 +316,11 @@ export default function ClassesPage() {
                         <button
                           onClick={() => handleSaveEdit(cls.id)}
                           disabled={isSaving}
-                          className="px-3 py-1.5 bg-[#0D0D0D] text-white text-xs font-semibold rounded-lg disabled:opacity-50"
+                          className="px-3 py-1.5 bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] text-xs font-semibold rounded-lg disabled:opacity-50"
                         >{isSaving ? t.classes.saving : t.classes.save}</button>
                         <button
                           onClick={() => setEditId(null)}
-                          className="px-3 py-1.5 text-xs text-gray-500 hover:text-gray-700"
+                          className="px-3 py-1.5 text-xs text-[var(--arvo-fg-muted)] hover:text-[var(--arvo-fg)]"
                         >{t.classes.cancel}</button>
                       </div>
                     </div>
@@ -334,18 +334,18 @@ export default function ClassesPage() {
                           style={{ backgroundColor: cls.color }}
                         />
                       )}
-                      <span className="font-medium text-gray-800 flex-1">{resolveClassName(cls)}</span>
-                      <span className="text-xs text-gray-400 mr-2">
+                      <span className="font-medium text-[var(--arvo-fg)] flex-1">{resolveClassName(cls)}</span>
+                      <span className="text-xs text-[var(--arvo-fg-soft)] mr-2">
                         {count} {count === 1 ? t.classes.assetSingular : t.classes.assetPlural}
                       </span>
                       <button
                         onClick={() => startEdit(cls)}
-                        className="text-xs text-[#0D0D0D] hover:underline"
+                        className="text-xs text-[var(--arvo-fg)] hover:underline"
                       >{t.classes.edit}</button>
                       <button
                         onClick={() => handleDelete(cls.id, cls.name)}
                         className={`text-xs transition-colors ${
-                          count > 0 ? 'text-gray-200 cursor-not-allowed' : 'text-gray-400 hover:text-red-500'
+                          count > 0 ? 'text-[var(--arvo-fg-faint)] cursor-not-allowed' : 'text-[var(--arvo-fg-soft)] hover:text-red-500'
                         }`}
                         disabled={count > 0}
                         title={count > 0 ? t.classes.cannotDelete : t.classes.delete}
@@ -360,17 +360,17 @@ export default function ClassesPage() {
       </div>
 
       {/* Assets by class */}
-      <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
+      <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl shadow-sm overflow-hidden">
         <button
           onClick={() => setShowAssetsByClass(v => !v)}
-          className="w-full px-5 py-4 border-b border-gray-100 text-left flex items-center justify-between hover:bg-gray-50/60 transition-colors"
+          className="w-full px-5 py-4 border-b border-[var(--arvo-border)] text-left flex items-center justify-between hover:bg-[var(--arvo-surface-2)]/60 transition-colors"
         >
           <div>
-            <h2 className="font-semibold text-gray-800">{t.classes.assetsByClass}</h2>
-            <p className="text-xs text-gray-400 mt-0.5">{t.classes.assetsByClassHint}</p>
+            <h2 className="font-semibold text-[var(--arvo-fg)]">{t.classes.assetsByClass}</h2>
+            <p className="text-xs text-[var(--arvo-fg-soft)] mt-0.5">{t.classes.assetsByClassHint}</p>
           </div>
           <svg
-            className={`w-4 h-4 text-gray-400 transition-transform ${showAssetsByClass ? 'rotate-180' : ''}`}
+            className={`w-4 h-4 text-[var(--arvo-fg-soft)] transition-transform ${showAssetsByClass ? 'rotate-180' : ''}`}
             fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
           >
             <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
@@ -384,17 +384,17 @@ export default function ClassesPage() {
           </div>
         )}
 
-        <div className="divide-y divide-gray-100">
+        <div className="divide-y divide-[var(--arvo-border)]">
           {/* Grouped by class */}
           {grouped.map(({ cls, assets: groupAssets }) => (
             <div key={cls.id}>
-              <div className="px-5 py-2.5 bg-gray-50/60 flex items-center gap-2">
+              <div className="px-5 py-2.5 bg-[var(--arvo-surface-2)]/60 flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: cls.color }} />
-                <span className="text-xs font-semibold text-gray-600 uppercase tracking-wide">{resolveClassName(cls)}</span>
-                <span className="text-xs text-gray-400">({groupAssets.length})</span>
+                <span className="text-xs font-semibold text-[var(--arvo-fg-muted)] uppercase tracking-wide">{resolveClassName(cls)}</span>
+                <span className="text-xs text-[var(--arvo-fg-soft)]">({groupAssets.length})</span>
               </div>
               {groupAssets.length === 0 ? (
-                <p className="px-5 py-3 text-xs text-gray-400 italic">{t.classes.noAssetsInClass}</p>
+                <p className="px-5 py-3 text-xs text-[var(--arvo-fg-soft)] italic">{t.classes.noAssetsInClass}</p>
               ) : (
                 groupAssets.map(asset => (
                   <AssetClassRow
@@ -412,10 +412,10 @@ export default function ClassesPage() {
           {/* Unclassed */}
           {unclassed.length > 0 && (
             <div>
-              <div className="px-5 py-2.5 bg-gray-50/60 flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-gray-300" />
-                <span className="text-xs font-semibold text-gray-600 uppercase tracking-wide">{t.classes.noClass}</span>
-                <span className="text-xs text-gray-400">({unclassed.length})</span>
+              <div className="px-5 py-2.5 bg-[var(--arvo-surface-2)]/60 flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-[var(--arvo-track-bg)]" />
+                <span className="text-xs font-semibold text-[var(--arvo-fg-muted)] uppercase tracking-wide">{t.classes.noClass}</span>
+                <span className="text-xs text-[var(--arvo-fg-soft)]">({unclassed.length})</span>
               </div>
               {unclassed.map(asset => (
                 <AssetClassRow
@@ -446,19 +446,19 @@ function AssetClassRow({
   const { t } = useI18n()
   const typeLabel = useTypeLabel()
   return (
-    <div className="px-5 py-3 flex items-center gap-3 border-t border-gray-50 hover:bg-gray-50/50 transition-colors">
+    <div className="px-5 py-3 flex items-center gap-3 border-t border-[var(--arvo-border-soft)] hover:bg-[var(--arvo-surface-2)]/50 transition-colors">
       <div className="flex-1 min-w-0">
-        <div className="font-medium text-gray-900 text-sm">{asset.code}</div>
-        <div className="text-xs text-gray-400 truncate">{asset.name}</div>
+        <div className="font-medium text-[var(--arvo-fg)] text-sm">{asset.code}</div>
+        <div className="text-xs text-[var(--arvo-fg-soft)] truncate">{asset.name}</div>
       </div>
-      <span className="text-xs text-gray-400 shrink-0 hidden sm:block">
+      <span className="text-xs text-[var(--arvo-fg-soft)] shrink-0 hidden sm:block">
         {typeLabel(asset.asset_type)}
       </span>
       <select
         value={asset.asset_classes?.id ?? ''}
         onChange={e => onMove(asset.id, e.target.value)}
         disabled={moving}
-        className="border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20 bg-white disabled:opacity-50 shrink-0"
+        className="border border-[var(--arvo-border)] rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20 bg-[var(--arvo-surface)] disabled:opacity-50 shrink-0"
       >
         <option value="">{t.classes.noClass}</option>
         {classes.map(c => (

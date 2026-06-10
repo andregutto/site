@@ -135,36 +135,36 @@ function PositionsReview({ positions }: { positions: AssetPosition[] }) {
   const visible  = expanded ? positions : positions.slice(0, 10)
 
   return (
-    <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
+    <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl overflow-hidden shadow-sm">
       <button
         onClick={() => setExpanded(v => !v)}
-        className="w-full px-5 py-3.5 flex items-center justify-between hover:bg-gray-50 transition-colors"
+        className="w-full px-5 py-3.5 flex items-center justify-between hover:bg-[var(--arvo-surface-2)] transition-colors"
       >
-        <span className="font-semibold text-gray-800 text-sm">
+        <span className="font-semibold text-[var(--arvo-fg)] text-sm">
           Posições finais ({active.length} em carteira · {inactive.length} zeradas)
         </span>
-        <span className="text-gray-400 text-xs">{expanded ? '▲ Recolher' : '▼ Expandir'}</span>
+        <span className="text-[var(--arvo-fg-soft)] text-xs">{expanded ? '▲ Recolher' : '▼ Expandir'}</span>
       </button>
       {expanded && (
-        <div className="border-t border-gray-100 overflow-x-auto">
+        <div className="border-t border-[var(--arvo-border)] overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 text-xs text-gray-500 uppercase">
+            <thead className="bg-[var(--arvo-surface-2)] text-xs text-[var(--arvo-fg-muted)] uppercase">
               <tr>
                 <th className="px-4 py-2 text-left">Ticker</th>
                 <th className="px-4 py-2 text-right">Qtd final</th>
                 <th className="px-4 py-2 text-left">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody className="divide-y divide-[var(--arvo-border-soft)]">
               {visible.map(p => (
                 <tr key={p.ticker} className={p.active ? '' : 'opacity-50'}>
-                  <td className="px-4 py-2 font-semibold text-gray-900">{p.ticker}</td>
-                  <td className={`px-4 py-2 text-right tabular-nums ${p.net_qty < 0 ? 'text-red-600 font-semibold' : 'text-gray-700'}`}>
+                  <td className="px-4 py-2 font-semibold text-[var(--arvo-fg)]">{p.ticker}</td>
+                  <td className={`px-4 py-2 text-right tabular-nums ${p.net_qty < 0 ? 'text-red-600 font-semibold' : 'text-[var(--arvo-fg)]'}`}>
                     {new Intl.NumberFormat('pt-BR').format(p.net_qty)}
                     {p.net_qty < 0 && <span className="ml-1 text-xs font-normal text-red-500" title="Qtd negativa pode indicar evento corporativo não registrado">⚠</span>}
                   </td>
                   <td className="px-4 py-2">
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${p.active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${p.active ? 'bg-green-100 text-green-700' : 'bg-[var(--arvo-track-bg)] text-[var(--arvo-fg-muted)]'}`}>
                       {p.active ? 'Em carteira' : 'Zerado'}
                     </span>
                   </td>
@@ -173,8 +173,8 @@ function PositionsReview({ positions }: { positions: AssetPosition[] }) {
             </tbody>
           </table>
           {positions.length > 10 && (
-            <div className="px-4 py-2 border-t border-gray-50 text-center">
-              <button onClick={() => setExpanded(v => !v)} className="text-xs text-gray-400 hover:text-gray-600">
+            <div className="px-4 py-2 border-t border-[var(--arvo-border-soft)] text-center">
+              <button onClick={() => setExpanded(v => !v)} className="text-xs text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg-muted)]">
                 Mostrando {visible.length} de {positions.length}
               </button>
             </div>
@@ -187,7 +187,7 @@ function PositionsReview({ positions }: { positions: AssetPosition[] }) {
 
 function StatCard({ label, value, sub, color = 'gray' }: { label: string; value: string | number; sub?: string; color?: 'gray' | 'blue' | 'amber' | 'green' | 'red' }) {
   const colors = {
-    gray:  'bg-white border-gray-100 text-gray-900',
+    gray:  'bg-[var(--arvo-surface)] border-[var(--arvo-border)] text-[var(--arvo-fg)]',
     blue:  'bg-blue-50 border-blue-100 text-blue-900',
     amber: 'bg-amber-50 border-amber-100 text-amber-900',
     green: 'bg-green-50 border-green-100 text-green-900',
@@ -341,13 +341,13 @@ export default function ImportB3Page() {
                    (activeTab === 'movimentacao' && movStep === 'upload')
 
   const tabBar = showTabs ? (
-    <div className="flex gap-1 p-1 bg-gray-100 rounded-xl w-fit">
+    <div className="flex gap-1 p-1 bg-[var(--arvo-track-bg)] rounded-xl w-fit">
       {(['negociacao', 'movimentacao'] as const).map(tab => (
         <button
           key={tab}
           onClick={() => setActiveTab(tab)}
           className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-            activeTab === tab ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+            activeTab === tab ? 'bg-[var(--arvo-surface)] text-[var(--arvo-fg)] shadow-sm' : 'text-[var(--arvo-fg-muted)] hover:text-[var(--arvo-fg)]'
           }`}
         >
           {tab === 'negociacao' ? 'Negociação' : 'Movimentação'}
@@ -361,10 +361,10 @@ export default function ImportB3Page() {
     return (
       <div className="space-y-6 max-w-2xl mx-auto">
         <div className="flex items-center gap-3">
-          <button onClick={() => navigate(-1)} className="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center text-gray-500 hover:border-[#0D0D0D] hover:text-[#0D0D0D] transition-colors">‹</button>
+          <button onClick={() => navigate(-1)} className="w-8 h-8 rounded-lg border border-[var(--arvo-border)] flex items-center justify-center text-[var(--arvo-fg-muted)] hover:border-[var(--arvo-fg)] hover:text-[var(--arvo-fg)] transition-colors">‹</button>
           <div>
-            <h1 className="text-xl font-bold text-gray-900">Importar eventos corporativos B3</h1>
-            <p className="text-sm text-gray-500">Extrato de Movimentação — Área do Investidor da B3</p>
+            <h1 className="text-xl font-bold text-[var(--arvo-fg)]">Importar eventos corporativos B3</h1>
+            <p className="text-sm text-[var(--arvo-fg-muted)]">Extrato de Movimentação — Área do Investidor da B3</p>
           </div>
         </div>
 
@@ -375,33 +375,33 @@ export default function ImportB3Page() {
           onDragLeave={() => setMovDragOver(false)}
           onDrop={e => { e.preventDefault(); setMovDragOver(false); const f = e.dataTransfer.files[0]; if (f) handleMovFile(f) }}
           className={`relative border-2 border-dashed rounded-2xl p-12 text-center transition-colors ${
-            movDragOver ? 'border-[#0D0D0D] bg-blue-50' : 'border-gray-200 bg-white hover:border-gray-300'
+            movDragOver ? 'border-[var(--arvo-fg)] bg-blue-50' : 'border-[var(--arvo-border)] bg-[var(--arvo-surface)] hover:border-[var(--arvo-border)]'
           }`}
         >
           <div className="text-4xl mb-4">📋</div>
-          <p className="font-semibold text-gray-700 mb-1">Arraste o arquivo .xlsx aqui</p>
-          <p className="text-sm text-gray-400 mb-5">ou clique para selecionar</p>
-          <label className="cursor-pointer inline-flex items-center gap-2 px-5 py-2.5 bg-[#0D0D0D] text-white rounded-xl text-sm font-semibold hover:bg-[#0D0D0D]/90 transition-colors">
+          <p className="font-semibold text-[var(--arvo-fg)] mb-1">Arraste o arquivo .xlsx aqui</p>
+          <p className="text-sm text-[var(--arvo-fg-soft)] mb-5">ou clique para selecionar</p>
+          <label className="cursor-pointer inline-flex items-center gap-2 px-5 py-2.5 bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] rounded-xl text-sm font-semibold hover:bg-[var(--arvo-fg)]/90 transition-colors">
             Selecionar arquivo
             <input type="file" accept=".xlsx" onChange={e => { const f = e.target.files?.[0]; if (f) handleMovFile(f) }} className="hidden" />
           </label>
           {movLoading && (
-            <div className="absolute inset-0 bg-white/80 rounded-2xl flex items-center justify-center">
-              <div className="text-sm text-gray-500 animate-pulse">Processando arquivo...</div>
+            <div className="absolute inset-0 bg-[var(--arvo-surface)]/80 rounded-2xl flex items-center justify-center">
+              <div className="text-sm text-[var(--arvo-fg-muted)] animate-pulse">Processando arquivo...</div>
             </div>
           )}
         </div>
 
         {movError && <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-red-700 text-sm">{movError}</div>}
 
-        <div className="bg-gray-50 border border-gray-100 rounded-2xl p-5 text-sm text-gray-600 space-y-2">
-          <p className="font-semibold text-gray-800">Como obter o arquivo:</p>
+        <div className="bg-[var(--arvo-surface-2)] border border-[var(--arvo-border)] rounded-2xl p-5 text-sm text-[var(--arvo-fg-muted)] space-y-2">
+          <p className="font-semibold text-[var(--arvo-fg)]">Como obter o arquivo:</p>
           <ol className="list-decimal list-inside space-y-1">
             <li>Acesse a <strong>Área do Investidor</strong> em investidor.b3.com.br</li>
             <li>Vá em <strong>Extrato</strong> → <strong>Movimentação</strong></li>
             <li>Selecione o período desejado e exporte em <strong>.xlsx</strong></li>
           </ol>
-          <p className="text-xs text-gray-400 mt-2">
+          <p className="text-xs text-[var(--arvo-fg-soft)] mt-2">
             Importa: bonificações, desdobramentos e subscrições exercidas. Compras/vendas e dividendos são ignorados (já tratados em Negociação).
           </p>
         </div>
@@ -427,10 +427,10 @@ export default function ImportB3Page() {
     return (
       <div className="space-y-6">
         <div className="flex items-center gap-3">
-          <button onClick={() => setMovStep('upload')} className="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center text-gray-500 hover:border-[#0D0D0D] hover:text-[#0D0D0D] transition-colors">‹</button>
+          <button onClick={() => setMovStep('upload')} className="w-8 h-8 rounded-lg border border-[var(--arvo-border)] flex items-center justify-center text-[var(--arvo-fg-muted)] hover:border-[var(--arvo-fg)] hover:text-[var(--arvo-fg)] transition-colors">‹</button>
           <div>
-            <h1 className="text-xl font-bold text-gray-900">Prévia — Eventos corporativos</h1>
-            <p className="text-sm text-gray-500">{fmtDate(summary.date_from)} → {fmtDate(summary.date_to)}</p>
+            <h1 className="text-xl font-bold text-[var(--arvo-fg)]">Prévia — Eventos corporativos</h1>
+            <p className="text-sm text-[var(--arvo-fg-muted)]">{fmtDate(summary.date_from)} → {fmtDate(summary.date_to)}</p>
           </div>
         </div>
 
@@ -455,18 +455,18 @@ export default function ImportB3Page() {
           </div>
         )}
 
-        <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
-          <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between gap-3">
-            <h2 className="font-semibold text-gray-800">Eventos ({operations.length})</h2>
+        <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl overflow-hidden shadow-sm">
+          <div className="px-5 py-4 border-b border-[var(--arvo-border)] flex items-center justify-between gap-3">
+            <h2 className="font-semibold text-[var(--arvo-fg)]">Eventos ({operations.length})</h2>
             <input
               type="text" placeholder="Filtrar ticker..."
               value={movFilter} onChange={e => setMovFilter(e.target.value)}
-              className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm w-36 focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20"
+              className="border border-[var(--arvo-border)] rounded-lg px-3 py-1.5 text-sm w-36 focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20"
             />
           </div>
           <div className="hidden sm:block overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
+              <thead className="bg-[var(--arvo-surface-2)] text-[var(--arvo-fg-muted)] text-xs uppercase">
                 <tr>
                   <th className="px-4 py-3 text-left">Data</th>
                   <th className="px-4 py-3 text-left">Ticker</th>
@@ -476,26 +476,26 @@ export default function ImportB3Page() {
                   <th className="px-4 py-3 text-right">Total pago</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+              <tbody className="divide-y divide-[var(--arvo-border-soft)]">
                 {visible.map((op, i) => (
-                  <tr key={i} className="hover:bg-gray-50">
-                    <td className="px-4 py-2.5 text-gray-600 whitespace-nowrap">{fmtDate(op.date)}</td>
-                    <td className="px-4 py-2.5 font-semibold text-gray-900">
+                  <tr key={i} className="hover:bg-[var(--arvo-surface-2)]">
+                    <td className="px-4 py-2.5 text-[var(--arvo-fg-muted)] whitespace-nowrap">{fmtDate(op.date)}</td>
+                    <td className="px-4 py-2.5 font-semibold text-[var(--arvo-fg)]">
                       {op.ticker}
-                      {op.ticker !== op.ticker_raw && <span className="ml-1 text-xs text-gray-400 font-normal">({op.ticker_raw})</span>}
+                      {op.ticker !== op.ticker_raw && <span className="ml-1 text-xs text-[var(--arvo-fg-soft)] font-normal">({op.ticker_raw})</span>}
                     </td>
                     <td className="px-4 py-2.5">
                       <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${eventColor[op.event_type]}`}>
                         {eventLabel[op.event_type]}
                       </span>
                     </td>
-                    <td className="px-4 py-2.5 text-right tabular-nums text-gray-700">
+                    <td className="px-4 py-2.5 text-right tabular-nums text-[var(--arvo-fg)]">
                       +{new Intl.NumberFormat('pt-BR').format(op.quantity)}
                     </td>
-                    <td className="px-4 py-2.5 text-right tabular-nums text-gray-600">
+                    <td className="px-4 py-2.5 text-right tabular-nums text-[var(--arvo-fg-muted)]">
                       {op.price > 0 ? fmtBrl(op.price) : '—'}
                     </td>
-                    <td className="px-4 py-2.5 text-right tabular-nums font-medium text-gray-900">
+                    <td className="px-4 py-2.5 text-right tabular-nums font-medium text-[var(--arvo-fg)]">
                       {op.value_brl > 0 ? fmtBrl(op.value_brl) : '—'}
                     </td>
                   </tr>
@@ -503,17 +503,17 @@ export default function ImportB3Page() {
               </tbody>
             </table>
           </div>
-          <div className="sm:hidden divide-y divide-gray-50">
+          <div className="sm:hidden divide-y divide-[var(--arvo-border-soft)]">
             {visible.map((op, i) => (
               <div key={i} className="px-4 py-3">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
-                    <span className="font-semibold text-gray-900">{op.ticker}</span>
+                    <span className="font-semibold text-[var(--arvo-fg)]">{op.ticker}</span>
                     <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${eventColor[op.event_type]}`}>{eventLabel[op.event_type]}</span>
                   </div>
-                  <span className="text-sm font-medium text-gray-700">+{new Intl.NumberFormat('pt-BR').format(op.quantity)}</span>
+                  <span className="text-sm font-medium text-[var(--arvo-fg)]">+{new Intl.NumberFormat('pt-BR').format(op.quantity)}</span>
                 </div>
-                <div className="mt-1 text-xs text-gray-400 flex gap-3">
+                <div className="mt-1 text-xs text-[var(--arvo-fg-soft)] flex gap-3">
                   <span>{fmtDate(op.date)}</span>
                   {op.value_brl > 0 && <span>{fmtBrl(op.value_brl)}</span>}
                 </div>
@@ -521,8 +521,8 @@ export default function ImportB3Page() {
             ))}
           </div>
           {operations.length > 30 && !movShowAll && (
-            <div className="px-4 py-3 border-t border-gray-50 text-center">
-              <button onClick={() => setMovShowAll(true)} className="text-sm text-[#0D0D0D] hover:underline">
+            <div className="px-4 py-3 border-t border-[var(--arvo-border-soft)] text-center">
+              <button onClick={() => setMovShowAll(true)} className="text-sm text-[var(--arvo-fg)] hover:underline">
                 Ver todos ({operations.length - 30} restantes)
               </button>
             </div>
@@ -532,12 +532,12 @@ export default function ImportB3Page() {
         {movError && <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-red-700 text-sm">{movError}</div>}
 
         <div className="flex items-center justify-between gap-4 pb-4">
-          <p className="text-xs text-gray-400">
+          <p className="text-xs text-[var(--arvo-fg-soft)]">
             {inTracker.length} ativos serão atualizados · {notFound.length} ignorados · {operations.filter(o => asset_statuses.find(a => a.ticker === o.ticker)?.in_tracker).length} eventos a importar
           </p>
           <button
             onClick={handleMovExecute}
-            className="px-6 py-2.5 bg-[#0D0D0D] text-white rounded-xl text-sm font-semibold hover:bg-[#0D0D0D]/90 transition-colors shrink-0"
+            className="px-6 py-2.5 bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] rounded-xl text-sm font-semibold hover:bg-[var(--arvo-fg)]/90 transition-colors shrink-0"
           >
             Confirmar importação
           </button>
@@ -552,7 +552,7 @@ export default function ImportB3Page() {
       <div className="flex items-center justify-center h-64">
         <div className="text-center space-y-4 max-w-xs">
           <div className="text-3xl animate-bounce">📋</div>
-          <p className="text-gray-700 text-sm font-medium animate-pulse">Importando eventos corporativos...</p>
+          <p className="text-[var(--arvo-fg)] text-sm font-medium animate-pulse">Importando eventos corporativos...</p>
         </div>
       </div>
     )
@@ -564,8 +564,8 @@ export default function ImportB3Page() {
       <div className="space-y-6 max-w-2xl mx-auto">
         <div className="text-center py-8">
           <div className="text-5xl mb-4">✅</div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Eventos importados!</h1>
-          <p className="text-gray-500 text-sm">Bonificações, desdobramentos e subscrições registrados.</p>
+          <h1 className="text-2xl font-bold text-[var(--arvo-fg)] mb-2">Eventos importados!</h1>
+          <p className="text-[var(--arvo-fg-muted)] text-sm">Bonificações, desdobramentos e subscrições registrados.</p>
         </div>
 
         <div className="grid grid-cols-3 gap-3">
@@ -586,11 +586,11 @@ export default function ImportB3Page() {
         )}
 
         <div className="flex gap-3 justify-center">
-          <button onClick={() => navigate('/')} className="px-6 py-2.5 bg-[#0D0D0D] text-white rounded-xl text-sm font-semibold hover:bg-[#0D0D0D]/90 transition-colors">
+          <button onClick={() => navigate('/')} className="px-6 py-2.5 bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] rounded-xl text-sm font-semibold hover:bg-[var(--arvo-fg)]/90 transition-colors">
             Ver Dashboard
           </button>
           <button onClick={() => { setMovStep('upload'); setMovParseResult(null); setMovExecResult(null) }}
-            className="px-6 py-2.5 border border-gray-200 text-gray-700 rounded-xl text-sm font-semibold hover:bg-gray-50 transition-colors">
+            className="px-6 py-2.5 border border-[var(--arvo-border)] text-[var(--arvo-fg)] rounded-xl text-sm font-semibold hover:bg-[var(--arvo-surface-2)] transition-colors">
             Nova importação
           </button>
         </div>
@@ -605,11 +605,11 @@ export default function ImportB3Page() {
         <div className="flex items-center gap-3">
           <button
             onClick={() => navigate(-1)}
-            className="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center text-gray-500 hover:border-[#0D0D0D] hover:text-[#0D0D0D] transition-colors"
+            className="w-8 h-8 rounded-lg border border-[var(--arvo-border)] flex items-center justify-center text-[var(--arvo-fg-muted)] hover:border-[var(--arvo-fg)] hover:text-[var(--arvo-fg)] transition-colors"
           >‹</button>
           <div>
-            <h1 className="text-xl font-bold text-gray-900">Importar negociações B3</h1>
-            <p className="text-sm text-gray-500">Extrato de Negociação — Área do Investidor da B3</p>
+            <h1 className="text-xl font-bold text-[var(--arvo-fg)]">Importar negociações B3</h1>
+            <p className="text-sm text-[var(--arvo-fg-muted)]">Extrato de Negociação — Área do Investidor da B3</p>
           </div>
         </div>
 
@@ -620,20 +620,20 @@ export default function ImportB3Page() {
           onDragLeave={() => setDragOver(false)}
           onDrop={onDrop}
           className={`relative border-2 border-dashed rounded-2xl p-12 text-center transition-colors ${
-            dragOver ? 'border-[#0D0D0D] bg-blue-50' : 'border-gray-200 bg-white hover:border-gray-300'
+            dragOver ? 'border-[var(--arvo-fg)] bg-blue-50' : 'border-[var(--arvo-border)] bg-[var(--arvo-surface)] hover:border-[var(--arvo-border)]'
           }`}
         >
           <div className="text-4xl mb-4">📊</div>
-          <p className="font-semibold text-gray-700 mb-1">Arraste o arquivo .xlsx aqui</p>
-          <p className="text-sm text-gray-400 mb-5">ou clique para selecionar</p>
-          <label className="cursor-pointer inline-flex items-center gap-2 px-5 py-2.5 bg-[#0D0D0D] text-white rounded-xl text-sm font-semibold hover:bg-[#0D0D0D]/90 transition-colors">
+          <p className="font-semibold text-[var(--arvo-fg)] mb-1">Arraste o arquivo .xlsx aqui</p>
+          <p className="text-sm text-[var(--arvo-fg-soft)] mb-5">ou clique para selecionar</p>
+          <label className="cursor-pointer inline-flex items-center gap-2 px-5 py-2.5 bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] rounded-xl text-sm font-semibold hover:bg-[var(--arvo-fg)]/90 transition-colors">
             Selecionar arquivo
             <input type="file" accept=".xlsx" onChange={onInputChange} className="hidden" />
           </label>
 
           {loading && (
-            <div className="absolute inset-0 bg-white/80 rounded-2xl flex items-center justify-center">
-              <div className="text-sm text-gray-500 animate-pulse">Processando arquivo...</div>
+            <div className="absolute inset-0 bg-[var(--arvo-surface)]/80 rounded-2xl flex items-center justify-center">
+              <div className="text-sm text-[var(--arvo-fg-muted)] animate-pulse">Processando arquivo...</div>
             </div>
           )}
         </div>
@@ -642,14 +642,14 @@ export default function ImportB3Page() {
           <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-red-700 text-sm">{error}</div>
         )}
 
-        <div className="bg-gray-50 border border-gray-100 rounded-2xl p-5 text-sm text-gray-600 space-y-2">
-          <p className="font-semibold text-gray-800">Como obter o arquivo:</p>
+        <div className="bg-[var(--arvo-surface-2)] border border-[var(--arvo-border)] rounded-2xl p-5 text-sm text-[var(--arvo-fg-muted)] space-y-2">
+          <p className="font-semibold text-[var(--arvo-fg)]">Como obter o arquivo:</p>
           <ol className="list-decimal list-inside space-y-1">
             <li>Acesse a <strong>Área do Investidor</strong> em investidor.b3.com.br</li>
             <li>Vá em <strong>Extrato</strong> → <strong>Negociação</strong></li>
             <li>Selecione o período desejado e exporte em <strong>.xlsx</strong></li>
           </ol>
-          <p className="text-xs text-gray-400 mt-3">
+          <p className="text-xs text-[var(--arvo-fg-soft)] mt-3">
             O arquivo passará por uma <strong>prévia</strong> antes de qualquer alteração no banco de dados.
           </p>
         </div>
@@ -675,11 +675,11 @@ export default function ImportB3Page() {
         <div className="flex items-center gap-3">
           <button
             onClick={() => setStep('upload')}
-            className="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center text-gray-500 hover:border-[#0D0D0D] hover:text-[#0D0D0D] transition-colors"
+            className="w-8 h-8 rounded-lg border border-[var(--arvo-border)] flex items-center justify-center text-[var(--arvo-fg-muted)] hover:border-[var(--arvo-fg)] hover:text-[var(--arvo-fg)] transition-colors"
           >‹</button>
           <div>
-            <h1 className="text-xl font-bold text-gray-900">Prévia da importação</h1>
-            <p className="text-sm text-gray-500">{fmtDate(summary.date_from)} → {fmtDate(summary.date_to)}</p>
+            <h1 className="text-xl font-bold text-[var(--arvo-fg)]">Prévia da importação</h1>
+            <p className="text-sm text-[var(--arvo-fg-muted)]">{fmtDate(summary.date_from)} → {fmtDate(summary.date_to)}</p>
           </div>
         </div>
 
@@ -702,7 +702,7 @@ export default function ImportB3Page() {
                 <span key={a.ticker} className={`text-xs px-2.5 py-1 rounded-full font-semibold border ${
                   a.net_qty > 0
                     ? 'bg-blue-100 border-blue-200 text-blue-800'
-                    : 'bg-gray-100 border-gray-200 text-gray-600'
+                    : 'bg-[var(--arvo-track-bg)] border-[var(--arvo-border)] text-[var(--arvo-fg-muted)]'
                 }`}>
                   {a.ticker}
                   <span className="ml-1 font-normal opacity-60">
@@ -750,21 +750,21 @@ export default function ImportB3Page() {
         )}
 
         {/* Operations table */}
-        <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
-          <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between gap-3">
-            <h2 className="font-semibold text-gray-800">Operações ({operations.length})</h2>
+        <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl overflow-hidden shadow-sm">
+          <div className="px-5 py-4 border-b border-[var(--arvo-border)] flex items-center justify-between gap-3">
+            <h2 className="font-semibold text-[var(--arvo-fg)]">Operações ({operations.length})</h2>
             <input
               type="text"
               placeholder="Filtrar ticker..."
               value={filterTicker}
               onChange={e => setFilterTicker(e.target.value)}
-              className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm w-36 focus:outline-none focus:ring-2 focus:ring-[#0D0D0D]/20"
+              className="border border-[var(--arvo-border)] rounded-lg px-3 py-1.5 text-sm w-36 focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20"
             />
           </div>
           {/* desktop table */}
           <div className="hidden sm:block overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
+              <thead className="bg-[var(--arvo-surface-2)] text-[var(--arvo-fg-muted)] text-xs uppercase">
                 <tr>
                   <th className="px-4 py-3 text-left">Data</th>
                   <th className="px-4 py-3 text-left">Ticker</th>
@@ -775,11 +775,11 @@ export default function ImportB3Page() {
                   <th className="px-4 py-3 text-left text-xs normal-case">Instituição</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+              <tbody className="divide-y divide-[var(--arvo-border-soft)]">
                 {displayOps.map((op, i) => (
-                  <tr key={i} className="hover:bg-gray-50">
-                    <td className="px-4 py-2.5 text-gray-600 whitespace-nowrap">{fmtDate(op.date)}</td>
-                    <td className="px-4 py-2.5 font-semibold text-gray-900">{op.ticker}</td>
+                  <tr key={i} className="hover:bg-[var(--arvo-surface-2)]">
+                    <td className="px-4 py-2.5 text-[var(--arvo-fg-muted)] whitespace-nowrap">{fmtDate(op.date)}</td>
+                    <td className="px-4 py-2.5 font-semibold text-[var(--arvo-fg)]">{op.ticker}</td>
                     <td className="px-4 py-2.5">
                       <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
                         op.type === 'buy' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
@@ -787,16 +787,16 @@ export default function ImportB3Page() {
                         {op.type === 'buy' ? 'Compra' : 'Venda'}
                       </span>
                     </td>
-                    <td className="px-4 py-2.5 text-right tabular-nums text-gray-700">
+                    <td className="px-4 py-2.5 text-right tabular-nums text-[var(--arvo-fg)]">
                       {new Intl.NumberFormat('pt-BR').format(op.quantity)}
                     </td>
-                    <td className="px-4 py-2.5 text-right tabular-nums text-gray-600">
+                    <td className="px-4 py-2.5 text-right tabular-nums text-[var(--arvo-fg-muted)]">
                       {fmtBrl(op.price)}
                     </td>
-                    <td className="px-4 py-2.5 text-right tabular-nums font-medium text-gray-900">
+                    <td className="px-4 py-2.5 text-right tabular-nums font-medium text-[var(--arvo-fg)]">
                       {fmtBrl(op.value_brl)}
                     </td>
-                    <td className="px-4 py-2.5 text-gray-400 text-xs truncate max-w-[140px]">
+                    <td className="px-4 py-2.5 text-[var(--arvo-fg-soft)] text-xs truncate max-w-[140px]">
                       {op.institution.split(' ')[0]}
                     </td>
                   </tr>
@@ -805,12 +805,12 @@ export default function ImportB3Page() {
             </table>
           </div>
           {/* mobile cards */}
-          <div className="sm:hidden divide-y divide-gray-50">
+          <div className="sm:hidden divide-y divide-[var(--arvo-border-soft)]">
             {displayOps.map((op, i) => (
               <div key={i} className="px-4 py-3">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
-                    <span className="font-semibold text-gray-900">{op.ticker}</span>
+                    <span className="font-semibold text-[var(--arvo-fg)]">{op.ticker}</span>
                     <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
                       op.type === 'buy' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
                     }`}>
@@ -818,10 +818,10 @@ export default function ImportB3Page() {
                     </span>
                   </div>
                   <div className="text-right shrink-0">
-                    <div className="font-medium text-sm text-gray-900">{fmtBrl(op.value_brl)}</div>
+                    <div className="font-medium text-sm text-[var(--arvo-fg)]">{fmtBrl(op.value_brl)}</div>
                   </div>
                 </div>
-                <div className="mt-1 text-xs text-gray-400 flex flex-wrap gap-x-3">
+                <div className="mt-1 text-xs text-[var(--arvo-fg-soft)] flex flex-wrap gap-x-3">
                   <span>{fmtDate(op.date)}</span>
                   <span>{new Intl.NumberFormat('pt-BR').format(op.quantity)} un. · {fmtBrl(op.price)}</span>
                 </div>
@@ -829,10 +829,10 @@ export default function ImportB3Page() {
             ))}
           </div>
           {visibleOps.length > 30 && !showAllOps && (
-            <div className="px-4 py-3 border-t border-gray-50 text-center">
+            <div className="px-4 py-3 border-t border-[var(--arvo-border-soft)] text-center">
               <button
                 onClick={() => setShowAllOps(true)}
-                className="text-sm text-[#0D0D0D] hover:underline"
+                className="text-sm text-[var(--arvo-fg)] hover:underline"
               >
                 Ver todas ({visibleOps.length - 30} restantes)
               </button>
@@ -854,21 +854,21 @@ export default function ImportB3Page() {
           </div>
           <button
             onClick={downloadBackupCsv}
-            className="px-4 py-2 border border-amber-400 text-amber-800 bg-white rounded-xl text-sm font-semibold hover:bg-amber-50 transition-colors shrink-0"
+            className="px-4 py-2 border border-amber-400 text-amber-800 bg-[var(--arvo-surface)] rounded-xl text-sm font-semibold hover:bg-amber-50 transition-colors shrink-0"
           >
             ⬇ Baixar backup CSV
           </button>
         </div>
 
         <div className="flex items-center justify-between gap-4 pb-4">
-          <p className="text-xs text-gray-400">
+          <p className="text-xs text-[var(--arvo-fg-soft)]">
             Esta ação irá criar <strong>{toCreate.length}</strong> ativos,
             deletar aportes de <strong>{toClean.length}</strong> ativos
             e importar <strong>{operations.length}</strong> operações.
           </p>
           <button
             onClick={handleExecute}
-            className="px-6 py-2.5 bg-[#0D0D0D] text-white rounded-xl text-sm font-semibold hover:bg-[#0D0D0D]/90 transition-colors shrink-0"
+            className="px-6 py-2.5 bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] rounded-xl text-sm font-semibold hover:bg-[var(--arvo-fg)]/90 transition-colors shrink-0"
           >
             Confirmar importação
           </button>
@@ -883,18 +883,18 @@ export default function ImportB3Page() {
       <div className="flex items-center justify-center h-64">
         <div className="text-center space-y-4 max-w-xs">
           <div className="text-3xl animate-bounce">{execPhase === 'importing' ? '📥' : '📊'}</div>
-          <p className="text-gray-700 text-sm font-medium animate-pulse">
+          <p className="text-[var(--arvo-fg)] text-sm font-medium animate-pulse">
             {execPhase === 'importing' ? 'Importando operações...' : 'Sincronizando histórico de preços...'}
           </p>
-          <p className="text-xs text-gray-400">
+          <p className="text-xs text-[var(--arvo-fg-soft)]">
             {execPhase === 'syncing' && 'Isso pode levar até 1 minuto dependendo da quantidade de ativos.'}
           </p>
           <div className="flex items-center gap-2 justify-center">
-            <div className={`w-2 h-2 rounded-full ${execPhase === 'importing' ? 'bg-[#0D0D0D] animate-pulse' : 'bg-green-500'}`} />
-            <span className={`text-xs ${execPhase === 'importing' ? 'text-[#0D0D0D] font-medium' : 'text-gray-400'}`}>Importação</span>
-            <div className="w-6 h-px bg-gray-200" />
-            <div className={`w-2 h-2 rounded-full ${execPhase === 'syncing' ? 'bg-[#0D0D0D] animate-pulse' : 'bg-gray-200'}`} />
-            <span className={`text-xs ${execPhase === 'syncing' ? 'text-[#0D0D0D] font-medium' : 'text-gray-400'}`}>Histórico</span>
+            <div className={`w-2 h-2 rounded-full ${execPhase === 'importing' ? 'bg-[var(--arvo-fg)] animate-pulse' : 'bg-green-500'}`} />
+            <span className={`text-xs ${execPhase === 'importing' ? 'text-[var(--arvo-fg)] font-medium' : 'text-[var(--arvo-fg-soft)]'}`}>Importação</span>
+            <div className="w-6 h-px bg-[var(--arvo-track-bg)]" />
+            <div className={`w-2 h-2 rounded-full ${execPhase === 'syncing' ? 'bg-[var(--arvo-fg)] animate-pulse' : 'bg-[var(--arvo-track-bg)]'}`} />
+            <span className={`text-xs ${execPhase === 'syncing' ? 'text-[var(--arvo-fg)] font-medium' : 'text-[var(--arvo-fg-soft)]'}`}>Histórico</span>
           </div>
         </div>
       </div>
@@ -907,8 +907,8 @@ export default function ImportB3Page() {
       <div className="space-y-6 max-w-2xl mx-auto">
         <div className="text-center py-8">
           <div className="text-5xl mb-4">✅</div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Importação concluída!</h1>
-          <p className="text-gray-500 text-sm">Os dados foram salvos com sucesso.</p>
+          <h1 className="text-2xl font-bold text-[var(--arvo-fg)] mb-2">Importação concluída!</h1>
+          <p className="text-[var(--arvo-fg-muted)] text-sm">Os dados foram salvos com sucesso.</p>
         </div>
 
         <div className="grid grid-cols-3 gap-3">
@@ -969,15 +969,15 @@ export default function ImportB3Page() {
 
                   {inactive.length > 0 && (
                     <div className="space-y-1.5">
-                      <p className="text-xs font-medium text-gray-500">Já vendidos — sem impacto relevante:</p>
+                      <p className="text-xs font-medium text-[var(--arvo-fg-muted)]">Já vendidos — sem impacto relevante:</p>
                       <div className="flex flex-wrap gap-2">
                         {inactive.map(d => (
-                          <span key={d.code} className="text-xs px-2.5 py-1 rounded-full bg-gray-100 border border-gray-200 text-gray-500 font-semibold">
+                          <span key={d.code} className="text-xs px-2.5 py-1 rounded-full bg-[var(--arvo-track-bg)] border border-[var(--arvo-border)] text-[var(--arvo-fg-muted)] font-semibold">
                             {d.code}
                           </span>
                         ))}
                       </div>
-                      <p className="text-xs text-gray-400">
+                      <p className="text-xs text-[var(--arvo-fg-soft)]">
                         Posição zerada — o histórico ausente afeta apenas períodos em que você os detinha, sem impacto no saldo atual.
                       </p>
                     </div>
@@ -1012,13 +1012,13 @@ export default function ImportB3Page() {
         <div className="flex gap-3 justify-center">
           <button
             onClick={() => navigate('/')}
-            className="px-6 py-2.5 bg-[#0D0D0D] text-white rounded-xl text-sm font-semibold hover:bg-[#0D0D0D]/90 transition-colors"
+            className="px-6 py-2.5 bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] rounded-xl text-sm font-semibold hover:bg-[var(--arvo-fg)]/90 transition-colors"
           >
             Ver Dashboard
           </button>
           <button
             onClick={() => navigate('/performance')}
-            className="px-6 py-2.5 border border-gray-200 text-gray-700 rounded-xl text-sm font-semibold hover:bg-gray-50 transition-colors"
+            className="px-6 py-2.5 border border-[var(--arvo-border)] text-[var(--arvo-fg)] rounded-xl text-sm font-semibold hover:bg-[var(--arvo-surface-2)] transition-colors"
           >
             Ver Performance
           </button>

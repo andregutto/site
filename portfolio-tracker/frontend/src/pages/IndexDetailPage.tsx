@@ -67,9 +67,9 @@ function CustomTooltip({ active, payload, unit, viewMode }: CustomTooltipProps) 
   const d = payload[0].payload
   const val = viewMode === 'price' ? d.value : d.pct_month
   return (
-    <div className="bg-white border border-gray-100 shadow-lg rounded-xl px-3 py-2 text-xs">
-      <div className="font-semibold text-gray-500 mb-0.5">{monthLabel(d.month)}</div>
-      <div className="font-bold text-gray-900">
+    <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] shadow-lg rounded-xl px-3 py-2 text-xs">
+      <div className="font-semibold text-[var(--arvo-fg-muted)] mb-0.5">{monthLabel(d.month)}</div>
+      <div className="font-bold text-[var(--arvo-fg)]">
         {viewMode === 'price' ? fmtValue(d.value, unit) : fmtPct(val)}
       </div>
     </div>
@@ -164,31 +164,31 @@ export default function IndexDetailPage() {
       <div className="flex items-start gap-3">
         <button
           onClick={() => navigate('/indices')}
-          className="mt-0.5 text-gray-400 hover:text-gray-700 transition-colors text-sm"
+          className="mt-0.5 text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg)] transition-colors text-sm"
         >
           ← Índices
         </button>
         <div>
-          <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide">{data.code}</div>
-          <h1 className="text-xl font-semibold text-gray-900">{data.name}</h1>
-          <p className="text-xs text-gray-400">{data.description}</p>
+          <div className="text-xs font-semibold text-[var(--arvo-fg-soft)] uppercase tracking-wide">{data.code}</div>
+          <h1 className="text-xl font-semibold text-[var(--arvo-fg)]">{data.name}</h1>
+          <p className="text-xs text-[var(--arvo-fg-soft)]">{data.description}</p>
         </div>
       </div>
 
       {/* Hero stats */}
-      <div className="bg-white border border-gray-100 rounded-2xl p-5 flex flex-wrap gap-6">
+      <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl p-5 flex flex-wrap gap-6">
         <div>
-          <div className="text-2xl font-bold text-gray-900 tabular-nums">
+          <div className="text-2xl font-bold text-[var(--arvo-fg)] tabular-nums">
             {last ? fmtValue(last.value, data.unit) : '—'}
           </div>
-          <div className="text-xs text-gray-400 mt-0.5">{data.unit}</div>
+          <div className="text-xs text-[var(--arvo-fg-soft)] mt-0.5">{data.unit}</div>
         </div>
         {dayPct != null && (
           <div>
             <div className={`text-lg font-bold tabular-nums ${dayPct >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
               {fmtPct(dayPct)}
             </div>
-            <div className="text-xs text-gray-400 mt-0.5">mês atual</div>
+            <div className="text-xs text-[var(--arvo-fg-soft)] mt-0.5">mês atual</div>
           </div>
         )}
         {ytd != null && (
@@ -196,7 +196,7 @@ export default function IndexDetailPage() {
             <div className={`text-lg font-bold tabular-nums ${ytd >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
               {fmtPct(ytd)}
             </div>
-            <div className="text-xs text-gray-400 mt-0.5">YTD</div>
+            <div className="text-xs text-[var(--arvo-fg-soft)] mt-0.5">YTD</div>
           </div>
         )}
         {m12 != null && (
@@ -204,21 +204,21 @@ export default function IndexDetailPage() {
             <div className={`text-lg font-bold tabular-nums ${m12 >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
               {fmtPct(m12)}
             </div>
-            <div className="text-xs text-gray-400 mt-0.5">12 meses</div>
+            <div className="text-xs text-[var(--arvo-fg-soft)] mt-0.5">12 meses</div>
           </div>
         )}
       </div>
 
       {/* Chart controls */}
-      <div className="bg-white border border-gray-100 rounded-2xl p-5">
+      <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl p-5">
         <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
-          <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-0.5">
+          <div className="flex items-center gap-1 bg-[var(--arvo-track-bg)] rounded-lg p-0.5">
             {(['1y', '3y', '5y'] as Period[]).map(p => (
               <button
                 key={p}
                 onClick={() => setPeriod(p)}
                 className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors ${
-                  period === p ? 'bg-white text-[#0D0D0D] shadow-sm' : 'text-gray-400 hover:text-gray-700'
+                  period === p ? 'bg-[var(--arvo-surface)] text-[var(--arvo-fg)] shadow-sm' : 'text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg)]'
                 }`}
               >
                 {p === '1y' ? '1 ano' : p === '3y' ? '3 anos' : '5 anos'}
@@ -226,11 +226,11 @@ export default function IndexDetailPage() {
             ))}
           </div>
           {canToggle && (
-            <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-0.5">
+            <div className="flex items-center gap-1 bg-[var(--arvo-track-bg)] rounded-lg p-0.5">
               <button
                 onClick={() => setViewMode('price')}
                 className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors ${
-                  viewMode === 'price' ? 'bg-white text-[#0D0D0D] shadow-sm' : 'text-gray-400 hover:text-gray-700'
+                  viewMode === 'price' ? 'bg-[var(--arvo-surface)] text-[var(--arvo-fg)] shadow-sm' : 'text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg)]'
                 }`}
               >
                 Valor
@@ -238,7 +238,7 @@ export default function IndexDetailPage() {
               <button
                 onClick={() => setViewMode('pct_month')}
                 className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors ${
-                  viewMode === 'pct_month' ? 'bg-white text-[#0D0D0D] shadow-sm' : 'text-gray-400 hover:text-gray-700'
+                  viewMode === 'pct_month' ? 'bg-[var(--arvo-surface)] text-[var(--arvo-fg)] shadow-sm' : 'text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg)]'
                 }`}
               >
                 % mês
@@ -279,7 +279,7 @@ export default function IndexDetailPage() {
                   fill={
                     viewMode === 'pct_month'
                       ? pctColor(entry.pct_month)
-                      : '#0D0D0D'
+                      : 'var(--arvo-fg)'
                   }
                   fillOpacity={viewMode === 'price' ? 0.75 : 0.85}
                 />
@@ -291,28 +291,28 @@ export default function IndexDetailPage() {
 
       {/* Annual table */}
       {data.annual.length > 0 && (
-        <div className="bg-white border border-gray-100 rounded-2xl p-5">
-          <h2 className="text-sm font-semibold text-gray-700 mb-4">Retorno anual</h2>
+        <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl p-5">
+          <h2 className="text-sm font-semibold text-[var(--arvo-fg)] mb-4">Retorno anual</h2>
           {/* desktop */}
           <div className="hidden sm:block overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-100">
-                  <th className="text-left text-xs font-semibold text-gray-400 pb-2 pr-4">Ano</th>
-                  <th className="text-right text-xs font-semibold text-gray-400 pb-2">Retorno</th>
-                  <th className="text-right text-xs font-semibold text-gray-400 pb-2 pl-4 w-32">Barra</th>
+                <tr className="border-b border-[var(--arvo-border)]">
+                  <th className="text-left text-xs font-semibold text-[var(--arvo-fg-soft)] pb-2 pr-4">Ano</th>
+                  <th className="text-right text-xs font-semibold text-[var(--arvo-fg-soft)] pb-2">Retorno</th>
+                  <th className="text-right text-xs font-semibold text-[var(--arvo-fg-soft)] pb-2 pl-4 w-32">Barra</th>
                 </tr>
               </thead>
               <tbody>
                 {[...data.annual].reverse().map(row => (
-                  <tr key={row.year} className="border-b border-gray-50 last:border-0">
-                    <td className="py-2 pr-4 font-medium text-gray-700">{row.year}</td>
+                  <tr key={row.year} className="border-b border-[var(--arvo-border-soft)] last:border-0">
+                    <td className="py-2 pr-4 font-medium text-[var(--arvo-fg)]">{row.year}</td>
                     <td className={`py-2 text-right font-semibold tabular-nums ${row.pct != null && row.pct >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
                       {fmtPct(row.pct)}
                     </td>
                     <td className="py-2 pl-4">
                       <div className="flex items-center justify-end gap-1">
-                        <div className="flex-1 bg-gray-100 rounded-full h-1.5 max-w-[80px]">
+                        <div className="flex-1 bg-[var(--arvo-track-bg)] rounded-full h-1.5 max-w-[80px]">
                           {row.pct != null && (
                             <div
                               className={`h-1.5 rounded-full ${row.pct >= 0 ? 'bg-emerald-400' : 'bg-red-400'}`}
@@ -331,8 +331,8 @@ export default function IndexDetailPage() {
           <div className="sm:hidden space-y-2">
             {[...data.annual].reverse().map(row => (
               <div key={row.year} className="flex items-center gap-3">
-                <span className="text-sm font-medium text-gray-700 w-12 shrink-0">{row.year}</span>
-                <div className="flex-1 bg-gray-100 rounded-full h-2">
+                <span className="text-sm font-medium text-[var(--arvo-fg)] w-12 shrink-0">{row.year}</span>
+                <div className="flex-1 bg-[var(--arvo-track-bg)] rounded-full h-2">
                   {row.pct != null && (
                     <div
                       className={`h-2 rounded-full ${row.pct >= 0 ? 'bg-emerald-400' : 'bg-red-400'}`}
@@ -349,7 +349,7 @@ export default function IndexDetailPage() {
         </div>
       )}
 
-      <p className="text-[10px] text-gray-300 pb-2">
+      <p className="text-[10px] text-[var(--arvo-fg-faint)] pb-2">
         Fonte: Yahoo Finance · BCB · Atualizado em tempo real com cache de 1h
       </p>
     </div>
