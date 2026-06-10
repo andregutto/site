@@ -468,9 +468,9 @@ export default function FinancesOverviewPage() {
     : []
 
   return (
-    <div className="space-y-5">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
       {showHomePrompt && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'rgba(200,184,154,0.12)', border: '1px solid rgba(200,184,154,0.35)', borderRadius: 12, padding: '10px 14px' }}>
+        <div className="lg:col-span-2" style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'rgba(200,184,154,0.12)', border: '1px solid rgba(200,184,154,0.35)', borderRadius: 12, padding: '10px 14px' }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(13,13,13,0.55)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
             <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z"/>
             <path d="M9 21V12h6v9"/>
@@ -496,7 +496,7 @@ export default function FinancesOverviewPage() {
       )}
 
       {/* Header + month nav inline */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+      <div className="lg:col-span-2" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
         <div style={{ minWidth: 0, flex: 1, overflow: 'hidden' }}>
           <h1 style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 18, letterSpacing: '0.06em', color: 'var(--arvo-black)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.finances.overviewTitle}</h1>
           <p className="text-sm mt-0.5" style={{ color: 'rgba(13,13,13,0.60)' }}>{t.finances.overviewSubtitle}</p>
@@ -513,7 +513,7 @@ export default function FinancesOverviewPage() {
       </div>
 
       {/* Hero card — white with gold glow */}
-      <div style={{ background: '#FFFFFF', color: 'var(--arvo-fg)', borderRadius: 16, padding: 24, position: 'relative', overflow: 'hidden', border: '1px solid rgba(200,184,154,0.35)', boxShadow: '0 4px 24px rgba(200,184,154,0.18), 0 1px 0 rgba(200,184,154,0.22)' }}>
+      <div className="lg:col-span-2" style={{ background: '#FFFFFF', color: 'var(--arvo-fg)', borderRadius: 16, padding: 24, position: 'relative', overflow: 'hidden', border: '1px solid rgba(200,184,154,0.35)', boxShadow: '0 4px 24px rgba(200,184,154,0.18), 0 1px 0 rgba(200,184,154,0.22)' }}>
         {/* Gold glow — top-right */}
         <div style={{ position: 'absolute', top: -100, right: -60, width: 320, height: 320, borderRadius: '50%', background: 'rgba(200,184,154,0.10)', filter: 'blur(60px)', pointerEvents: 'none' }} />
         {/* Gold glow — bottom-left */}
@@ -668,7 +668,7 @@ export default function FinancesOverviewPage() {
 
       {/* #3 Budget alert: envelopes approaching limit */}
       {approachingBudgetEnvs.length > 0 && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(232,160,32,0.08)', border: '1px solid rgba(232,160,32,0.28)', borderRadius: 12, padding: '8px 14px' }}>
+        <div className="lg:col-span-2" style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(232,160,32,0.08)', border: '1px solid rgba(232,160,32,0.28)', borderRadius: 12, padding: '8px 14px' }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--arvo-ocre)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
           <p style={{ flex: 1, fontSize: 12, color: 'var(--arvo-ocre)', margin: 0, fontFamily: 'var(--arvo-font-body)' }}>
             {approachingBudgetEnvs.map(e => `${e.icon} ${resolveEnvName(e.name, e.type, e.name_key, nameKeys)} (${Math.round((e.actual / e.budget) * 100)}%)`).join('  ·  ')} — {t.finances.overviewNearLimit}
@@ -678,7 +678,7 @@ export default function FinancesOverviewPage() {
 
       {/* Income envelope section */}
       {incomeEnvelopeBar && (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className={`bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden ${topCategories.length === 0 ? 'lg:col-span-2' : ''}`}>
           <div
             className={`px-5 py-3 flex items-center gap-3 transition-colors ${incomeEnvelopeBar.categories.length > 0 ? 'cursor-pointer hover:bg-gray-50' : ''}`}
             onClick={() => incomeEnvelopeBar.categories.length > 0 && toggleEnv(incomeEnvelopeBar.id)}
@@ -731,7 +731,7 @@ export default function FinancesOverviewPage() {
       )}
 
       {/* Envelope spending vs budget */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+      <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         <div className="px-5 py-4 border-b border-gray-50 flex items-center justify-between">
           <h2 style={{ fontFamily: "var(--arvo-font-body)", fontSize: 14, color: 'var(--arvo-fg)', fontWeight: 600 }}>{t.finances.overviewSpendingVsBudget}</h2>
           <Link to="/finances/budget" className="text-xs text-[#0D0D0D] hover:opacity-70 transition-opacity">
@@ -817,7 +817,7 @@ export default function FinancesOverviewPage() {
 
       {/* Top categories this month */}
       {topCategories.length > 0 && (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className={`bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden ${!incomeEnvelopeBar ? 'lg:col-span-2' : ''}`}>
           <div className="px-5 py-4 border-b border-gray-50 flex items-center justify-between">
             <h2 style={{ fontFamily: "var(--arvo-font-body)", fontSize: 14, color: 'var(--arvo-fg)', fontWeight: 600 }}>{t.finances.overviewTopCategories}</h2>
             <Link to="/finances/transactions" className="text-xs text-[#0D0D0D] hover:opacity-70 transition-opacity">
@@ -850,7 +850,7 @@ export default function FinancesOverviewPage() {
 
       {/* Historical trend with time range toggle */}
       {hasHistory && (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+        <div className={`bg-white rounded-2xl border border-gray-100 shadow-sm p-5 ${!(catHistLoading || catHistory.length > 0) ? 'lg:col-span-2' : ''}`}>
           <div className="flex items-center justify-between mb-4">
             <h2 style={{ fontFamily: "var(--arvo-font-body)", fontSize: 14, color: 'var(--arvo-fg)', fontWeight: 600 }}>{t.finances.overviewHistory}</h2>
             <div className="flex gap-1">
@@ -907,7 +907,7 @@ export default function FinancesOverviewPage() {
 
       {/* Category history chart — shares historyMonths toggle from envelope chart above */}
       {(catHistLoading || catHistory.length > 0) && (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+        <div className={`bg-white rounded-2xl border border-gray-100 shadow-sm p-5 ${!hasHistory ? 'lg:col-span-2' : ''}`}>
           <div className="mb-4">
             <h2 style={{ fontFamily: "var(--arvo-font-body)", fontSize: 14, color: 'var(--arvo-fg)', fontWeight: 600 }} className="mb-3">{t.finances.categoryHistory}</h2>
             <div className="flex flex-wrap gap-1.5">
@@ -983,7 +983,7 @@ export default function FinancesOverviewPage() {
 
       {/* Empty state / next steps */}
       {!hasHistory && (
-        <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-5">
+        <div className="lg:col-span-2 bg-indigo-50 border border-indigo-100 rounded-2xl p-5">
           <h3 className="font-semibold text-indigo-900 text-sm mb-2">{t.finances.overviewNextSteps}</h3>
           <ul className="space-y-1.5">
             <li className="flex items-center gap-2 text-xs text-indigo-700">

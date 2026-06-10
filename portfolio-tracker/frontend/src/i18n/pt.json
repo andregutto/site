@@ -21,7 +21,6 @@
     "banks": "Contas",
     "dividends": "Renda Passiva",
     "diversification": "Análise",
-    "fees": "Taxas",
     "assets": "Ativos",
     "passiveIncome": "Rendimentos"
   },
@@ -569,6 +568,15 @@
     "frequencyAnnual": "Anual",
     "lastCharged": "Última cobrança",
     "perYear": "/ ano",
+    "navInsights": "Insights",
+    "insightsTitle": "Insights Financeiros",
+    "insightsSubtitle": "Assinaturas, taxas e custos escondidos na sua carteira",
+    "ignoredSubscriptions": "Assinaturas ignoradas",
+    "noIgnoredSubscriptions": "Nenhuma assinatura ignorada",
+    "viewIgnored": "Ver ignoradas",
+    "hideIgnored": "Ocultar ignoradas",
+    "subscriptionDismiss": "Marcar como não-assinatura",
+    "subscriptionRestore": "Restaurar",
     "overviewTitle": "Finanças",
     "overviewSubtitle": "Resumo das suas finanças pessoais",
     "homePromptText": "Abrir sempre em Finanças ao entrar no app?",
@@ -1796,8 +1804,7 @@
     "etfTotalCost": "Custo total de gestão/ano",
     "noFees": "Nenhuma taxa detectada no período",
     "noFeesHint": "O scanner busca por palavras-chave como: taxa, tarifa, IOF, custódia, corretagem, spread, anuidade, câmbio.",
-    "noEtfs": "Nenhum ETF identificado em carteira",
-    "navFees": "Taxas"
+    "noEtfs": "Nenhum ETF identificado em carteira"
   },
   "diversification": {
     "title": "Scanner de Diversificação",

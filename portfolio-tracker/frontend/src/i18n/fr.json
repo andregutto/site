@@ -21,7 +21,6 @@
     "banks": "Comptes",
     "dividends": "Revenus Passifs",
     "diversification": "Analyse",
-    "fees": "Frais",
     "assets": "Actifs",
     "passiveIncome": "Revenus"
   },
@@ -569,6 +568,15 @@
     "frequencyAnnual": "Annuel",
     "lastCharged": "Dernière facturation",
     "perYear": "/ an",
+    "navInsights": "Insights",
+    "insightsTitle": "Insights Financiers",
+    "insightsSubtitle": "Abonnements, frais et coûts cachés de votre portefeuille",
+    "ignoredSubscriptions": "Abonnements ignorés",
+    "noIgnoredSubscriptions": "Aucun abonnement ignoré",
+    "viewIgnored": "Voir ignorés",
+    "hideIgnored": "Masquer ignorés",
+    "subscriptionDismiss": "Marquer comme non-abonnement",
+    "subscriptionRestore": "Restaurer",
     "overviewTitle": "Finances",
     "overviewSubtitle": "Résumé de vos finances personnelles",
     "homePromptText": "Toujours ouvrir Finances au lancement de l'app ?",
@@ -1796,8 +1804,7 @@
     "etfTotalCost": "Coût total de gestion/an",
     "noFees": "Aucun frais détecté sur la période",
     "noFeesHint": "Le scanner recherche des mots-clés tels que : frais, taxe, tarif, IOF, garde, courtage, spread, commission, change.",
-    "noEtfs": "Aucun ETF identifié en portefeuille",
-    "navFees": "Frais"
+    "noEtfs": "Aucun ETF identifié en portefeuille"
   },
   "diversification": {
     "title": "Scanner de Diversification",

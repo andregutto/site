@@ -1916,6 +1916,20 @@ router.delete('/moments/:id/share', requireAuth, async (req, res: Response) => {
 
 // ── Scanner de Assinaturas ────────────────────────────────────────────────────
 
+// Categorias que nunca são assinatura, mesmo que recorram com valor estável
+// (aluguel, mercado, restaurantes...) — excluídas da detecção independente do padrão.
+const SUBSCRIPTION_CATEGORY_DENYLIST = new Set([
+  'categoryHousing', 'categoryRestaurant', 'categoryBarsRestaurants', 'categoryGroceries',
+  'categoryCoffee', 'categoryTransport', 'categoryPharmacy', 'categoryTravel', 'categoryAirbnb',
+  'categoryShowsParties', 'categoryGifts', 'categoryClothing', 'categoryPersonalCare',
+  'categoryElectronics', 'categoryShopping', 'categoryFees', 'categoryTaxes', 'categoryEducation',
+])
+
+// Categorias com cara de assinatura toleram variação maior de valor (reajustes de plano)
+const SUBSCRIPTION_LOOSE_TOLERANCE_CATEGORIES = new Set([
+  'categoryStreaming', 'categorySubscriptions', 'categoryPhone', 'categoryUtilities',
+])
+
 function normalizeSubscriptionDesc(raw: string): string {
   return raw
     .toLowerCase()
@@ -1934,23 +1948,33 @@ router.get('/subscriptions', requireAuth, async (req, res: Response) => {
   since.setMonth(since.getMonth() - 18)
   const sinceStr = since.toISOString().split('T')[0]
 
-  const { data: transactions, error } = await supabaseAdmin
-    .from('finance_transactions')
-    .select('id, date, description, amount, currency, category_id, is_internal_transfer, exclude_from_stats, finance_categories(id, name, icon, color, name_key)')
-    .eq('user_id', userId)
-    .lt('amount', 0)
-    .gte('date', sinceStr)
-    .eq('is_internal_transfer', false)
-    .eq('exclude_from_stats', false)
-    .order('date', { ascending: true })
+  const [{ data: transactions, error }, { data: dismissals }] = await Promise.all([
+    supabaseAdmin
+      .from('finance_transactions')
+      .select('id, date, description, amount, currency, category_id, is_internal_transfer, exclude_from_stats, finance_categories(id, name, icon, color, name_key)')
+      .eq('user_id', userId)
+      .lt('amount', 0)
+      .gte('date', sinceStr)
+      .eq('is_internal_transfer', false)
+      .eq('exclude_from_stats', false)
+      .order('date', { ascending: true }),
+    supabaseAdmin
+      .from('finance_subscription_dismissals')
+      .select('key')
+      .eq('user_id', userId),
+  ])
 
   if (error) { res.status(500).json({ error: error.message }); return }
   if (!transactions || transactions.length === 0) { res.json({ subscriptions: [] }); return }
 
+  const dismissedKeys = new Set((dismissals ?? []).map(d => d.key))
+
   const groups = new Map<string, typeof transactions>()
   for (const tx of transactions) {
+    const nameKey = (tx.finance_categories as unknown as { name_key?: string } | null)?.name_key
+    if (nameKey && SUBSCRIPTION_CATEGORY_DENYLIST.has(nameKey)) continue
     const key = normalizeSubscriptionDesc(tx.description ?? '')
-    if (!key || key.length < 3) continue
+    if (!key || key.length < 3 || dismissedKeys.has(key)) continue
     const list = groups.get(key) ?? []
     list.push(tx)
     groups.set(key, list)
@@ -1988,14 +2012,16 @@ router.get('/subscriptions', requireAuth, async (req, res: Response) => {
     else if (medianGap >= 330 && medianGap <= 400){ frequency = 'annual';    minOcc = 2 }
     if (!frequency || sorted.length < minOcc) continue
 
+    const withCat = sorted.filter(t => t.category_id).reverse()
+    const category = withCat.length > 0 ? (withCat[0] as any).finance_categories : null
+
     const amounts = sorted.map(t => Math.abs(t.amount))
     const sortedAmt = [...amounts].sort((a, b) => a - b)
     const medianAmt = sortedAmt[Math.floor(sortedAmt.length / 2)]
-    if (!amounts.every(a => Math.abs(a - medianAmt) / medianAmt <= 0.25)) continue
+    const tolerance = category?.name_key && SUBSCRIPTION_LOOSE_TOLERANCE_CATEGORIES.has(category.name_key) ? 0.20 : 0.08
+    if (!amounts.every(a => Math.abs(a - medianAmt) / medianAmt <= tolerance)) continue
 
     const annualCost = Math.round(medianAmt * annualMultiplier[frequency] * 100) / 100
-    const withCat = sorted.filter(t => t.category_id).reverse()
-    const category = withCat.length > 0 ? (withCat[0] as any).finance_categories : null
 
     subscriptions.push({
       key,
@@ -2013,6 +2039,43 @@ router.get('/subscriptions', requireAuth, async (req, res: Response) => {
 
   subscriptions.sort((a, b) => b.monthly_equivalent - a.monthly_equivalent)
   res.json({ subscriptions })
+})
+
+// GET /api/finances/subscriptions/dismissed
+router.get('/subscriptions/dismissed', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const { data, error } = await supabaseAdmin
+    .from('finance_subscription_dismissals')
+    .select('key, name, dismissed_at')
+    .eq('user_id', userId)
+    .order('dismissed_at', { ascending: false })
+  if (error) { res.status(500).json({ error: error.message }); return }
+  res.json({ dismissed: data ?? [] })
+})
+
+// POST /api/finances/subscriptions/dismiss
+router.post('/subscriptions/dismiss', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const { key, name } = req.body as { key?: string; name?: string }
+  if (!key) { res.status(400).json({ error: 'key required' }); return }
+  const { error } = await supabaseAdmin
+    .from('finance_subscription_dismissals')
+    .upsert({ user_id: userId, key, name: name ?? '' }, { onConflict: 'user_id,key' })
+  if (error) { res.status(500).json({ error: error.message }); return }
+  res.json({ ok: true })
+})
+
+// DELETE /api/finances/subscriptions/dismiss/:key
+router.delete('/subscriptions/dismiss/:key', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const { key } = req.params
+  const { error } = await supabaseAdmin
+    .from('finance_subscription_dismissals')
+    .delete()
+    .eq('user_id', userId)
+    .eq('key', key)
+  if (error) { res.status(500).json({ error: error.message }); return }
+  res.json({ ok: true })
 })
 
 // GET /api/finances/fee-scan
