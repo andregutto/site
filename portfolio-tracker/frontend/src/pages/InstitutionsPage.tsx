@@ -435,9 +435,9 @@ export default function InstitutionsPage() {
                           <span className="text-xs text-[var(--arvo-fg-soft)] border border-[var(--arvo-border)] rounded px-1.5 py-0.5">{t.institutions.noAssets}</span>
                         )}
                         {hasData ? (
-                          <span className="text-xs text-green-600 font-medium">✓ {t.institutions.dataFilled}</span>
+                          <span className="text-xs text-green-600 font-medium dark:text-green-300">✓ {t.institutions.dataFilled}</span>
                         ) : findInBankDatabase(name) ? (
-                          <span className="text-xs text-amber-600 font-medium">{t.institutions.arvoBase}</span>
+                          <span className="text-xs text-amber-600 font-medium dark:text-amber-300">{t.institutions.arvoBase}</span>
                         ) : null}
                       </div>
                     </div>
@@ -448,9 +448,9 @@ export default function InstitutionsPage() {
                 {isOpen && (
                   <div className="px-5 pb-5 border-t border-[var(--arvo-border-soft)] space-y-4 pt-4">
                     {autoFilledFor === name && (
-                      <div className="flex gap-2 p-3 bg-amber-50 border border-amber-200 rounded-xl">
-                        <span className="text-amber-500 shrink-0">⚠</span>
-                        <p className="text-xs text-amber-800">
+                      <div className="flex gap-2 p-3 bg-amber-50 border border-amber-200 rounded-xl dark:bg-amber-950/40 dark:border-amber-900">
+                        <span className="text-amber-500 shrink-0 dark:text-amber-400">⚠</span>
+                        <p className="text-xs text-amber-800 dark:text-amber-200">
                           {t.institutions.arvoWarning}
                         </p>
                       </div>
@@ -504,7 +504,7 @@ export default function InstitutionsPage() {
                         {saving ? t.common.loading : t.common.save}
                       </button>
                       {saveOk === name && (
-                        <span className="text-xs text-green-600">{t.profile.saved}</span>
+                        <span className="text-xs text-green-600 dark:text-green-300">{t.profile.saved}</span>
                       )}
                     </div>
                   </div>

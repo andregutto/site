@@ -159,7 +159,7 @@ function BrReport({ year }: { year: number }) {
   }, [year])
 
   if (loading) return <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl p-10 text-center text-[var(--arvo-fg-soft)] text-sm">{bt.loading}</div>
-  if (error)   return <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl p-6 text-red-600 text-sm">{error}</div>
+  if (error)   return <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl p-6 text-red-600 text-sm dark:text-red-300">{error}</div>
   if (!brData) return null
 
   const totalRend = brData.total_isentos + brData.total_exclusiva
@@ -184,11 +184,11 @@ function BrReport({ year }: { year: number }) {
           {/* KPI cards */}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             <Card label={bt.kpiBens}     value={String(brData.bens_direitos.length)}  valueClass="text-[var(--arvo-fg)]" />
-            <Card label={bt.kpiIsentos}  value={fmtBRL(brData.total_isentos)}         valueClass="text-green-600" />
-            <Card label={bt.kpiExclusiva} value={fmtBRL(brData.total_exclusiva)}      valueClass="text-purple-600" />
-            <Card label={bt.kpiDARF}     value={fmtBRL(brData.total_darf_rv)}         valueClass={brData.total_darf_rv > 0 ? 'text-red-600' : 'text-[var(--arvo-fg-soft)]'} />
-            <Card label={bt.kpiCarneLeao} value={fmtBRL(brData.total_carne_leao)}     valueClass={brData.total_carne_leao > 0 ? 'text-orange-600' : 'text-[var(--arvo-fg-soft)]'} />
-            <Card label={bt.kpiIRRetido} value={fmtBRL(brData.ir_retido_total)}       valueClass="text-blue-600" />
+            <Card label={bt.kpiIsentos}  value={fmtBRL(brData.total_isentos)}         valueClass="text-green-600 dark:text-green-300" />
+            <Card label={bt.kpiExclusiva} value={fmtBRL(brData.total_exclusiva)}      valueClass="text-purple-600 dark:text-purple-300" />
+            <Card label={bt.kpiDARF}     value={fmtBRL(brData.total_darf_rv)}         valueClass={brData.total_darf_rv > 0 ? 'text-red-600 dark:text-red-300' : 'text-[var(--arvo-fg-soft)]'} />
+            <Card label={bt.kpiCarneLeao} value={fmtBRL(brData.total_carne_leao)}     valueClass={brData.total_carne_leao > 0 ? 'text-orange-600 dark:text-orange-300' : 'text-[var(--arvo-fg-soft)]'} />
+            <Card label={bt.kpiIRRetido} value={fmtBRL(brData.ir_retido_total)}       valueClass="text-blue-600 dark:text-blue-300" />
           </div>
 
           {/* Auto sources */}
@@ -211,7 +211,7 @@ function BrReport({ year }: { year: number }) {
           </Section>
 
           {/* Manual instructions */}
-          <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 text-sm text-blue-800">
+          <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 text-sm text-blue-800 dark:bg-blue-950/40 dark:border-blue-900 dark:text-blue-200">
             <p className="font-semibold mb-1">{bt.instrTitle}</p>
             <p>{bt.instrText}</p>
           </div>
@@ -220,9 +220,9 @@ function BrReport({ year }: { year: number }) {
           {(brData.total_darf_rv > 0 || brData.total_carne_leao > 0 || totalRend > 0) && (
             <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl shadow-sm p-5 space-y-2 text-sm">
               {totalRend > 0 && <div className="flex justify-between"><span className="text-[var(--arvo-fg-muted)]">Total rendimentos declarados</span><span className="font-semibold">{fmtBRL(totalRend)}</span></div>}
-              {brData.total_darf_rv > 0 && <div className="flex justify-between"><span className="text-[var(--arvo-fg-muted)]">{bt.rvTotalDARF}</span><span className="font-semibold text-red-600">{fmtBRL(brData.total_darf_rv)}</span></div>}
-              {brData.total_carne_leao > 0 && <div className="flex justify-between"><span className="text-[var(--arvo-fg-muted)]">{bt.clTotal}</span><span className="font-semibold text-orange-600">{fmtBRL(brData.total_carne_leao)}</span></div>}
-              {brData.ir_retido_total > 0 && <div className="flex justify-between border-t border-[var(--arvo-border)] pt-2"><span className="text-[var(--arvo-fg-muted)]">{bt.kpiIRRetido}</span><span className="font-semibold text-blue-600">{fmtBRL(brData.ir_retido_total)}</span></div>}
+              {brData.total_darf_rv > 0 && <div className="flex justify-between"><span className="text-[var(--arvo-fg-muted)]">{bt.rvTotalDARF}</span><span className="font-semibold text-red-600 dark:text-red-300">{fmtBRL(brData.total_darf_rv)}</span></div>}
+              {brData.total_carne_leao > 0 && <div className="flex justify-between"><span className="text-[var(--arvo-fg-muted)]">{bt.clTotal}</span><span className="font-semibold text-orange-600 dark:text-orange-300">{fmtBRL(brData.total_carne_leao)}</span></div>}
+              {brData.ir_retido_total > 0 && <div className="flex justify-between border-t border-[var(--arvo-border)] pt-2"><span className="text-[var(--arvo-fg-muted)]">{bt.kpiIRRetido}</span><span className="font-semibold text-blue-600 dark:text-blue-300">{fmtBRL(brData.ir_retido_total)}</span></div>}
             </div>
           )}
 
@@ -258,27 +258,27 @@ function BrReport({ year }: { year: number }) {
                       <tr key={m.mes} className={`border-b border-[var(--arvo-border-soft)] ${i % 2 === 0 ? '' : 'bg-[var(--arvo-surface-2)]/50'}`}>
                         <td className="py-1.5 font-medium">{m.mes}</td>
                         <td className="py-1.5 text-right text-[var(--arvo-fg-muted)]">{fmtBRL(m.total_vendas)}</td>
-                        <td className="py-1.5 text-right text-green-700">{m.ganho_bruto > 0 ? fmtBRL(m.ganho_bruto) : '—'}</td>
-                        <td className="py-1.5 text-right text-red-500">{m.perda_bruta < 0 ? fmtBRL(m.perda_bruta) : '—'}</td>
+                        <td className="py-1.5 text-right text-green-700 dark:text-green-300">{m.ganho_bruto > 0 ? fmtBRL(m.ganho_bruto) : '—'}</td>
+                        <td className="py-1.5 text-right text-red-500 dark:text-red-400">{m.perda_bruta < 0 ? fmtBRL(m.perda_bruta) : '—'}</td>
                         <td className="py-1.5 text-right text-[var(--arvo-fg-soft)] font-mono text-xs">{m.carryover_anterior !== 0 ? fmtBRL(m.carryover_anterior) : '—'}</td>
                         <td className="py-1.5 text-right font-semibold">{m.ganho_liquido > 0 ? fmtBRL(m.ganho_liquido) : '—'}</td>
                         <td className="py-1.5 text-center">
-                          <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${m.isento ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
+                          <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${m.isento ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300' : 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300'}`}>
                             {m.isento ? bt.rvIsento : bt.rvTributado}
                           </span>
                         </td>
-                        <td className="py-1.5 text-right font-semibold text-red-600">{m.darf_a_pagar > 0 ? fmtBRL(m.darf_a_pagar) : '—'}</td>
+                        <td className="py-1.5 text-right font-semibold text-red-600 dark:text-red-300">{m.darf_a_pagar > 0 ? fmtBRL(m.darf_a_pagar) : '—'}</td>
                       </tr>
                     ))}
                     <tr className="border-t border-[var(--arvo-border)] bg-[var(--arvo-surface-2)] font-semibold">
                       <td className="py-2 text-[var(--arvo-fg-muted)] text-xs">{bt.rvTotalDARF}</td>
                       <td />
-                      <td className="py-2 text-right text-green-700">{fmtBRL(brData.total_ganho_rv)}</td>
-                      <td className="py-2 text-right text-red-500">{brData.total_perda_rv !== 0 ? fmtBRL(brData.total_perda_rv) : '—'}</td>
+                      <td className="py-2 text-right text-green-700 dark:text-green-300">{fmtBRL(brData.total_ganho_rv)}</td>
+                      <td className="py-2 text-right text-red-500 dark:text-red-400">{brData.total_perda_rv !== 0 ? fmtBRL(brData.total_perda_rv) : '—'}</td>
                       <td />
                       <td />
                       <td />
-                      <td className="py-2 text-right text-red-600">{fmtBRL(brData.total_darf_rv)}</td>
+                      <td className="py-2 text-right text-red-600 dark:text-red-300">{fmtBRL(brData.total_darf_rv)}</td>
                     </tr>
                     {brData.carryover_final !== 0 && (
                       <tr className="border-t border-[var(--arvo-border)] text-xs text-[var(--arvo-fg-soft)]">
@@ -314,12 +314,12 @@ function BrReport({ year }: { year: number }) {
                         <td className="py-1.5 text-right text-[var(--arvo-fg-muted)]">{fmtBRL(m.dividendos_brl)}</td>
                         <td className="py-1.5 text-right">{(m.aliquota * 100).toFixed(1)}%</td>
                         <td className="py-1.5 text-right text-[var(--arvo-fg-soft)]">{m.deducao > 0 ? fmtBRL(m.deducao) : '—'}</td>
-                        <td className="py-1.5 text-right font-semibold text-orange-600">{m.ir_devido > 0 ? fmtBRL(m.ir_devido) : '—'}</td>
+                        <td className="py-1.5 text-right font-semibold text-orange-600 dark:text-orange-300">{m.ir_devido > 0 ? fmtBRL(m.ir_devido) : '—'}</td>
                       </tr>
                     ))}
                     <tr className="border-t border-[var(--arvo-border)] bg-[var(--arvo-surface-2)] font-semibold">
                       <td colSpan={4} className="py-2 text-right text-xs text-[var(--arvo-fg-muted)]">{bt.clTotal}</td>
-                      <td className="py-2 text-right text-orange-600">{fmtBRL(brData.total_carne_leao)}</td>
+                      <td className="py-2 text-right text-orange-600 dark:text-orange-300">{fmtBRL(brData.total_carne_leao)}</td>
                     </tr>
                   </tbody>
                 </table>
@@ -356,7 +356,7 @@ function BrReport({ year }: { year: number }) {
                     {brData.bens_direitos.map((b, i) => (
                       <tr key={b.asset_id} className={`border-b border-[var(--arvo-border-soft)] ${i % 2 === 0 ? '' : 'bg-[var(--arvo-surface-2)]/50'}`}>
                         <td className="py-1.5">
-                          <span className="font-mono text-xs text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded">{b.pgdi_grupo}/{b.pgdi_codigo}</span>
+                          <span className="font-mono text-xs text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded dark:text-blue-300 dark:bg-blue-950/40">{b.pgdi_grupo}/{b.pgdi_codigo}</span>
                         </td>
                         <td className="py-1.5"><span className="font-semibold">{b.code}</span> <span className="text-xs text-[var(--arvo-fg-soft)]">{b.name}</span></td>
                         <td className="py-1.5 text-xs text-[var(--arvo-fg-muted)] hidden md:table-cell">{b.discriminacao}</td>
@@ -377,10 +377,10 @@ function BrReport({ year }: { year: number }) {
                 <div key={g.codigo} className="py-3 border-b border-[var(--arvo-border-soft)] last:border-0">
                   <div className="flex items-center justify-between gap-2 mb-2">
                     <div className="flex items-center gap-2">
-                      <span className="font-mono text-xs text-green-700 bg-green-50 px-1.5 py-0.5 rounded">{g.codigo}</span>
+                      <span className="font-mono text-xs text-green-700 bg-green-50 px-1.5 py-0.5 rounded dark:text-green-300 dark:bg-green-950/40">{g.codigo}</span>
                       <span className="text-sm font-medium text-[var(--arvo-fg)]">{g.descricao}</span>
                     </div>
-                    <span className="font-semibold text-green-700">{fmtBRL(g.total)}</span>
+                    <span className="font-semibold text-green-700 dark:text-green-300">{fmtBRL(g.total)}</span>
                   </div>
                   <div className="ml-8 space-y-0.5">
                     {g.items.map(item => (
@@ -402,11 +402,11 @@ function BrReport({ year }: { year: number }) {
                 <div key={g.codigo} className="py-3 border-b border-[var(--arvo-border-soft)] last:border-0">
                   <div className="flex items-center justify-between gap-2 mb-2">
                     <div className="flex items-center gap-2">
-                      <span className="font-mono text-xs text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded">{g.codigo}</span>
+                      <span className="font-mono text-xs text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded dark:text-purple-300 dark:bg-purple-950/40">{g.codigo}</span>
                       <span className="text-sm font-medium text-[var(--arvo-fg)]">{g.descricao}</span>
                     </div>
                     <div className="text-right">
-                      <span className="font-semibold text-purple-700">{fmtBRL(g.total)}</span>
+                      <span className="font-semibold text-purple-700 dark:text-purple-300">{fmtBRL(g.total)}</span>
                       {g.ir_retido_total > 0 && <span className="text-xs text-[var(--arvo-fg-soft)] ml-2">IR retido: {fmtBRL(g.ir_retido_total)}</span>}
                     </div>
                   </div>
@@ -432,8 +432,8 @@ function BrReport({ year }: { year: number }) {
           </div>
 
           {/* Disclaimers */}
-          <div className="text-xs text-[var(--arvo-fg-soft)] bg-red-50 border border-red-100 rounded-xl p-4 space-y-1">
-            <p className="font-semibold text-red-600 mb-2">{bt.warningTitle}</p>
+          <div className="text-xs text-[var(--arvo-fg-soft)] bg-red-50 border border-red-100 rounded-xl p-4 space-y-1 dark:bg-red-950/40 dark:border-red-900">
+            <p className="font-semibold text-red-600 mb-2 dark:text-red-300">{bt.warningTitle}</p>
             <p>• {bt.warning1}</p>
             <p>• {bt.warning2}</p>
             <p>• {bt.warning3}</p>
@@ -523,8 +523,8 @@ function countryLabel(c: string) {
 
 function formBadge(f: '2DC' | '2TR') {
   return f === '2DC'
-    ? <span className="inline-block text-xs px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 font-mono">2DC</span>
-    : <span className="inline-block text-xs px-1.5 py-0.5 rounded bg-green-100 text-green-700 font-mono">2TR</span>
+    ? <span className="inline-block text-xs px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 font-mono dark:bg-blue-900/40 dark:text-blue-300">2DC</span>
+    : <span className="inline-block text-xs px-1.5 py-0.5 rounded bg-green-100 text-green-700 font-mono dark:bg-green-900/40 dark:text-green-300">2TR</span>
 }
 
 // ─── Excel generation ─────────────────────────────────────────────────────────
@@ -969,7 +969,7 @@ function FrReport({ year }: { year: number }) {
   }
 
   if (loading) return <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl p-10 text-center text-[var(--arvo-fg-soft)] text-sm">{ft.loading}</div>
-  if (error)   return <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl p-6 text-red-600 text-sm">{error}</div>
+  if (error)   return <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl p-6 text-red-600 text-sm dark:text-red-300">{error}</div>
   if (!taxData) return null
 
   const noEvents = taxData.events.length === 0
@@ -999,10 +999,10 @@ function FrReport({ year }: { year: number }) {
         <>
           {/* KPI cards — always shown */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <Card label={ft.kpiRevenues} value={noEvents ? '—' : fmtEUR(comp.daily.total_eur)} valueClass="text-blue-700" />
-            <Card label={ft.kpiDividends} value={noEvents ? '—' : fmtEUR(comp.daily.dividends_eur)} valueClass="text-blue-600" />
-            <Card label={ft.kpiInterests} value={noEvents ? '—' : fmtEUR(comp.daily.interests_eur)} valueClass="text-green-700" />
-            <Card label={ft.kpiCapGains} value={fmtEUR(taxData.total_gain_eur_daily)} valueClass={taxData.total_gain_eur_daily >= 0 ? 'text-violet-700' : 'text-red-600'} />
+            <Card label={ft.kpiRevenues} value={noEvents ? '—' : fmtEUR(comp.daily.total_eur)} valueClass="text-blue-700 dark:text-blue-300" />
+            <Card label={ft.kpiDividends} value={noEvents ? '—' : fmtEUR(comp.daily.dividends_eur)} valueClass="text-blue-600 dark:text-blue-300" />
+            <Card label={ft.kpiInterests} value={noEvents ? '—' : fmtEUR(comp.daily.interests_eur)} valueClass="text-green-700 dark:text-green-300" />
+            <Card label={ft.kpiCapGains} value={fmtEUR(taxData.total_gain_eur_daily)} valueClass={taxData.total_gain_eur_daily >= 0 ? 'text-violet-700 dark:text-violet-300' : 'text-red-600 dark:text-red-300'} />
           </div>
 
           {/* ── Compléter votre déclaration ───────────────────────────────────── */}
@@ -1016,14 +1016,14 @@ function FrReport({ year }: { year: number }) {
                   <div className="space-y-1.5">
                     {[...new Map(taxData.events.map(e => [e.broker, e])).values()].map(e => (
                       <div key={e.broker} className="flex items-center gap-2 text-xs">
-                        <span className="text-green-500 font-bold">✓</span>
+                        <span className="text-green-500 font-bold dark:text-green-400">✓</span>
                         <span className="text-[var(--arvo-fg)] font-medium">{e.broker}</span>
                         <span className="text-[var(--arvo-fg-soft)]">— {taxData.events.filter(ev => ev.broker === e.broker).length} {ft.eventsSync}</span>
                       </div>
                     ))}
                     {taxData.capital_gains.length > 0 && (
                       <div className="flex items-center gap-2 text-xs">
-                        <span className="text-green-500 font-bold">✓</span>
+                        <span className="text-green-500 font-bold dark:text-green-400">✓</span>
                         <span className="text-[var(--arvo-fg)] font-medium">Plus-values (ventes)</span>
                         <span className="text-[var(--arvo-fg-soft)]">— {taxData.capital_gains.length} {ft.salesDetected}</span>
                       </div>
@@ -1039,30 +1039,30 @@ function FrReport({ year }: { year: number }) {
                 <p className="text-xs font-semibold text-[var(--arvo-fg-muted)] mb-3 uppercase tracking-wide">{ft.manualSources}</p>
 
                 {/* JCP */}
-                <div className="flex gap-2 mb-4 p-3 bg-blue-50 rounded-xl border border-blue-100">
-                  <span className="text-blue-400 shrink-0 mt-0.5">ℹ</span>
-                  <div className="text-xs text-blue-800 space-y-0.5">
+                <div className="flex gap-2 mb-4 p-3 bg-blue-50 rounded-xl border border-blue-100 dark:bg-blue-950/40 dark:border-blue-900">
+                  <span className="text-blue-400 shrink-0 mt-0.5 dark:text-blue-500">ℹ</span>
+                  <div className="text-xs text-blue-800 space-y-0.5 dark:text-blue-200">
                     <p className="font-semibold">{ft.jcpTitle}</p>
                     <p>{ft.jcpDesc}</p>
-                    <p className="text-blue-600">{ft.jcpNote}</p>
+                    <p className="text-blue-600 dark:text-blue-300">{ft.jcpNote}</p>
                   </div>
                 </div>
 
                 {/* Renda fixa */}
-                <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 space-y-3">
+                <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 space-y-3 dark:bg-amber-950/40 dark:border-amber-900">
                   <div className="flex gap-2">
-                    <span className="text-amber-500 shrink-0 mt-0.5 font-bold">!</span>
-                    <div className="text-xs text-amber-900">
+                    <span className="text-amber-500 shrink-0 mt-0.5 font-bold dark:text-amber-400">!</span>
+                    <div className="text-xs text-amber-900 dark:text-amber-200">
                       <p className="font-semibold mb-1">{ft.rfTitle}</p>
                       <p className="mb-2">{ft.rfDesc}</p>
-                      <div className="grid grid-cols-2 gap-x-4 gap-y-1 bg-[var(--arvo-surface)] rounded-lg p-2 border border-amber-100">
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-1 bg-[var(--arvo-surface)] rounded-lg p-2 border border-amber-100 dark:border-amber-900">
                         <div>
-                          <p className="text-amber-700 font-medium">{ft.rfColInforme}</p>
+                          <p className="text-amber-700 font-medium dark:text-amber-300">{ft.rfColInforme}</p>
                           <p className="text-[var(--arvo-fg-muted)]">{ft.rfField1}</p>
                           <p className="text-[var(--arvo-fg-muted)]">{ft.rfField2}</p>
                         </div>
                         <div>
-                          <p className="text-amber-700 font-medium">{ft.rfColArvo}</p>
+                          <p className="text-amber-700 font-medium dark:text-amber-300">{ft.rfColArvo}</p>
                           <p className="font-semibold text-[var(--arvo-fg)]">{ft.rfArrow1}</p>
                           <p className="font-semibold text-[var(--arvo-fg)]">{ft.rfArrow2}</p>
                         </div>
@@ -1073,14 +1073,14 @@ function FrReport({ year }: { year: number }) {
                   {/* Quick-add toggle */}
                   <button
                     onClick={() => setShowAddIncome(v => !v)}
-                    className="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold bg-amber-100 hover:bg-amber-200 text-amber-900 rounded-lg transition-colors"
+                    className="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold bg-amber-100 hover:bg-amber-200 text-amber-900 rounded-lg transition-colors dark:bg-amber-900/40 dark:hover:bg-amber-900/60 dark:text-amber-200"
                   >
                     <span>{ft.addIncomBtn}</span>
                     <span>{showAddIncome ? '▲' : '▼'}</span>
                   </button>
 
                   {showAddIncome && (
-                    <div className="bg-[var(--arvo-surface)] border border-amber-200 rounded-xl p-4 space-y-3">
+                    <div className="bg-[var(--arvo-surface)] border border-amber-200 rounded-xl p-4 space-y-3 dark:border-amber-900">
                       <p className="text-xs font-semibold text-[var(--arvo-fg)]">{ft.newIncomeTitle}</p>
 
                       <div className="grid sm:grid-cols-2 gap-3">
@@ -1089,7 +1089,7 @@ function FrReport({ year }: { year: number }) {
                           <select
                             value={incAssetId}
                             onChange={e => setIncAssetId(e.target.value)}
-                            className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-300 bg-[var(--arvo-surface)]"
+                            className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-300 bg-[var(--arvo-surface)] dark:focus:ring-amber-700"
                           >
                             <option value="">{ft.selectAsset}</option>
                             {userAssets.filter(a => a.asset_type === 'fixed_income').length > 0 && (
@@ -1108,20 +1108,20 @@ function FrReport({ year }: { year: number }) {
                             )}
                           </select>
                           {userAssets.filter(a => a.asset_type === 'fixed_income').length === 0 && (
-                            <p className="text-xs text-amber-600 mt-1">{ft.noFixedIncome}</p>
+                            <p className="text-xs text-amber-600 mt-1 dark:text-amber-300">{ft.noFixedIncome}</p>
                           )}
                         </div>
 
                         <div>
                           <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{ft.incDate}</label>
                           <input type="date" value={incDate} onChange={e => setIncDate(e.target.value)}
-                            className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-300" />
+                            className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-300 dark:focus:ring-amber-700" />
                         </div>
 
                         <div>
                           <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{ft.incDesc}</label>
                           <select value={incDesc} onChange={e => setIncDesc(e.target.value)}
-                            className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-300 bg-[var(--arvo-surface)]">
+                            className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-300 bg-[var(--arvo-surface)] dark:focus:ring-amber-700">
                             <option value="cdb">CDB</option>
                             <option value="lci">LCI</option>
                             <option value="lca">LCA</option>
@@ -1134,25 +1134,25 @@ function FrReport({ year }: { year: number }) {
 
                         <div>
                           <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">
-                            {ft.incGross} <span className="text-amber-600 font-semibold">{ft.incGrossHint}</span>
+                            {ft.incGross} <span className="text-amber-600 font-semibold dark:text-amber-300">{ft.incGrossHint}</span>
                           </label>
                           <input type="text" inputMode="decimal" value={incGross} onChange={e => setIncGross(e.target.value)}
                             placeholder="ex: 1234,56"
-                            className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-300" />
+                            className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-300 dark:focus:ring-amber-700" />
                         </div>
 
                         <div>
                           <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">
-                            {ft.incIR} <span className="text-amber-600 font-semibold">{ft.incIRHint}</span>
+                            {ft.incIR} <span className="text-amber-600 font-semibold dark:text-amber-300">{ft.incIRHint}</span>
                           </label>
                           <input type="text" inputMode="decimal" value={incIR} onChange={e => setIncIR(e.target.value)}
                             placeholder="ex: 185,18"
-                            className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-300" />
+                            className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-300 dark:focus:ring-amber-700" />
                           <p className="text-xs text-[var(--arvo-fg-soft)] mt-0.5">{ft.incIRNote}</p>
                         </div>
                       </div>
 
-                      {incErr && <p className="text-xs text-red-600">{incErr}</p>}
+                      {incErr && <p className="text-xs text-red-600 dark:text-red-300">{incErr}</p>}
 
                       <div className="flex gap-2">
                         <button onClick={handleAddIncome} disabled={savingInc}
@@ -1187,9 +1187,9 @@ function FrReport({ year }: { year: number }) {
             ) : (
               <div className="space-y-0">
                 {taxData.accounts.some(a => a.system_filled) && (
-                  <div className="flex gap-2 mb-3 p-3 bg-amber-50 border border-amber-200 rounded-xl">
-                    <span className="text-amber-500 shrink-0">⚠</span>
-                    <div className="text-xs text-amber-800">
+                  <div className="flex gap-2 mb-3 p-3 bg-amber-50 border border-amber-200 rounded-xl dark:bg-amber-950/40 dark:border-amber-900">
+                    <span className="text-amber-500 shrink-0 dark:text-amber-400">⚠</span>
+                    <div className="text-xs text-amber-800 dark:text-amber-200">
                       <p className="font-semibold mb-0.5">{ft.warn3916SystemFilled}</p>
                       <p>{ft.warn3916Institutions}</p>
                     </div>
@@ -1202,7 +1202,7 @@ function FrReport({ year }: { year: number }) {
                         <div className="flex items-center gap-2">
                           <p className="font-medium text-sm text-[var(--arvo-fg)]">{a.institution}</p>
                           {a.system_filled && (
-                            <span className="text-[10px] bg-amber-100 text-amber-700 rounded px-1.5 py-0.5 font-medium shrink-0">verificar</span>
+                            <span className="text-[10px] bg-amber-100 text-amber-700 rounded px-1.5 py-0.5 font-medium shrink-0 dark:bg-amber-900/40 dark:text-amber-300">verificar</span>
                           )}
                         </div>
                         <p className="text-xs text-[var(--arvo-fg-soft)]">{a.address}</p>
@@ -1212,7 +1212,7 @@ function FrReport({ year }: { year: number }) {
                       </div>
                       <div className="shrink-0 text-right">
                         <span className="text-xs bg-[var(--arvo-track-bg)] rounded px-2 py-0.5 text-[var(--arvo-fg-muted)]">{a.country}</span>
-                        <p className="text-xs text-green-600 mt-0.5">{a.status}</p>
+                        <p className="text-xs text-green-600 mt-0.5 dark:text-green-300">{a.status}</p>
                       </div>
                     </div>
                   ))}
@@ -1250,8 +1250,8 @@ function FrReport({ year }: { year: number }) {
                       <td className="py-2 text-[var(--arvo-fg)]">—</td>
                       <td className="py-2 text-[var(--arvo-fg-muted)] text-xs">—</td>
                       <td className="py-2 text-[var(--arvo-fg)]">{ft.descCapGain}</td>
-                      <td className="py-2 text-center"><span className="text-xs bg-violet-100 text-violet-700 rounded px-1.5 py-0.5 font-mono">3VG</span></td>
-                      <td className={`py-2 text-right font-semibold ${taxData.total_gain_eur_daily >= 0 ? 'text-violet-700' : 'text-red-600'}`}>{fmtEUR(taxData.total_gain_eur_daily)}</td>
+                      <td className="py-2 text-center"><span className="text-xs bg-violet-100 text-violet-700 rounded px-1.5 py-0.5 font-mono dark:bg-violet-900/40 dark:text-violet-300">3VG</span></td>
+                      <td className={`py-2 text-right font-semibold ${taxData.total_gain_eur_daily >= 0 ? 'text-violet-700 dark:text-violet-300' : 'text-red-600 dark:text-red-300'}`}>{fmtEUR(taxData.total_gain_eur_daily)}</td>
                       <td className="py-2 text-right text-[var(--arvo-fg-soft)] text-xs">{taxData.capital_gains.length}</td>
                     </tr>
                   )}
@@ -1266,11 +1266,11 @@ function FrReport({ year }: { year: number }) {
           )}
 
           {saidaFiscal && (
-            <div className="flex items-start gap-3 p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900">
-              <span className="shrink-0 font-bold text-amber-600">!</span>
+            <div className="flex items-start gap-3 p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 dark:bg-amber-950/40 dark:border-amber-900 dark:text-amber-200">
+              <span className="shrink-0 font-bold text-amber-600 dark:text-amber-300">!</span>
               <div>
                 <p className="font-semibold">{ft.saidaFiscalBannerTitle}</p>
-                <p className="text-amber-700 mt-0.5">{ft.saidaFiscalBannerDesc}</p>
+                <p className="text-amber-700 mt-0.5 dark:text-amber-300">{ft.saidaFiscalBannerDesc}</p>
               </div>
             </div>
           )}
@@ -1292,8 +1292,8 @@ function FrReport({ year }: { year: number }) {
             <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => setShowSaidaConfirm(false)}>
               <div className="bg-[var(--arvo-surface)] rounded-2xl shadow-xl max-w-md w-full p-6 space-y-4" onClick={e => e.stopPropagation()}>
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
-                    <span className="text-amber-600 font-bold text-lg">!</span>
+                  <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center shrink-0 dark:bg-amber-900/40">
+                    <span className="text-amber-600 font-bold text-lg dark:text-amber-300">!</span>
                   </div>
                   <h3 className="font-semibold text-[var(--arvo-fg)]">{ft.saidaFiscalBannerTitle}</h3>
                 </div>
@@ -1328,17 +1328,17 @@ function FrReport({ year }: { year: number }) {
                 >
                   <div className="flex items-center justify-between mb-2">
                     <span className="font-semibold text-sm">{ft.optionATitle}</span>
-                    {comp.recommended === 'daily' && <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">{ft.recommended}</span>}
+                    {comp.recommended === 'daily' && <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium dark:bg-green-900/40 dark:text-green-300">{ft.recommended}</span>}
                   </div>
                   <p className="text-xs text-[var(--arvo-fg-muted)] mb-3">{ft.optionADesc}</p>
                   <div className="space-y-1 text-xs">
                     <div className="flex justify-between"><span className="text-[var(--arvo-fg-muted)]">{ft.lblDividends}</span><span className="font-medium">{fmtEUR(comp.daily.dividends_eur)}</span></div>
                     <div className="flex justify-between"><span className="text-[var(--arvo-fg-muted)]">{ft.lblInterests}</span><span className="font-medium">{fmtEUR(comp.daily.interests_eur)}</span></div>
                     {taxData.capital_gains.length > 0 && (
-                      <div className="flex justify-between"><span className="text-[var(--arvo-fg-muted)]">{ft.lblCapGains}</span><span className={`font-medium ${taxData.total_gain_eur_daily >= 0 ? 'text-violet-700' : 'text-red-500'}`}>{fmtEUR(taxData.total_gain_eur_daily)}</span></div>
+                      <div className="flex justify-between"><span className="text-[var(--arvo-fg-muted)]">{ft.lblCapGains}</span><span className={`font-medium ${taxData.total_gain_eur_daily >= 0 ? 'text-violet-700 dark:text-violet-300' : 'text-red-500 dark:text-red-400'}`}>{fmtEUR(taxData.total_gain_eur_daily)}</span></div>
                     )}
-                    <div className="flex justify-between border-t border-[var(--arvo-border)] pt-1 mt-1"><span className="font-semibold">{ft.lblTotal}</span><span className="font-bold text-blue-700">{fmtEUR(comp.daily.total_eur)}</span></div>
-                    <div className="flex justify-between"><span className="text-[var(--arvo-fg-muted)]">{ft.lblCredit}</span><span className="font-medium text-orange-600">{fmtEUR(comp.daily.credit_eur)}</span></div>
+                    <div className="flex justify-between border-t border-[var(--arvo-border)] pt-1 mt-1"><span className="font-semibold">{ft.lblTotal}</span><span className="font-bold text-blue-700 dark:text-blue-300">{fmtEUR(comp.daily.total_eur)}</span></div>
+                    <div className="flex justify-between"><span className="text-[var(--arvo-fg-muted)]">{ft.lblCredit}</span><span className="font-medium text-orange-600 dark:text-orange-300">{fmtEUR(comp.daily.credit_eur)}</span></div>
                   </div>
                 </button>
 
@@ -1349,7 +1349,7 @@ function FrReport({ year }: { year: number }) {
                 >
                   <div className="flex items-center justify-between mb-2">
                     <span className="font-semibold text-sm">{ft.optionBTitle}</span>
-                    {comp.recommended === 'year_end' && <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">{ft.recommended}</span>}
+                    {comp.recommended === 'year_end' && <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium dark:bg-green-900/40 dark:text-green-300">{ft.recommended}</span>}
                   </div>
                   <p className="text-xs text-[var(--arvo-fg-muted)] mb-3">{ft.optionBDesc}</p>
                   <div className="space-y-1 text-xs">
@@ -1359,16 +1359,16 @@ function FrReport({ year }: { year: number }) {
                       <div className="flex justify-between"><span className="text-[var(--arvo-fg-muted)]">{ft.lblDividends}</span><span className="font-medium">{fmtEUR(comp.year_end.dividends_eur)}</span></div>
                       <div className="flex justify-between"><span className="text-[var(--arvo-fg-muted)]">{ft.lblInterests}</span><span className="font-medium">{fmtEUR(comp.year_end.interests_eur)}</span></div>
                       {taxData.capital_gains.length > 0 && (
-                        <div className="flex justify-between"><span className="text-[var(--arvo-fg-muted)]">{ft.lblCapGains}</span><span className={`font-medium ${taxData.total_gain_eur_year_end >= 0 ? 'text-violet-700' : 'text-red-500'}`}>{fmtEUR(taxData.total_gain_eur_year_end)}</span></div>
+                        <div className="flex justify-between"><span className="text-[var(--arvo-fg-muted)]">{ft.lblCapGains}</span><span className={`font-medium ${taxData.total_gain_eur_year_end >= 0 ? 'text-violet-700 dark:text-violet-300' : 'text-red-500 dark:text-red-400'}`}>{fmtEUR(taxData.total_gain_eur_year_end)}</span></div>
                       )}
-                      <div className="flex justify-between border-t border-[var(--arvo-border)] pt-1 mt-1"><span className="font-semibold">{ft.lblTotal}</span><span className="font-bold text-blue-700">{fmtEUR(comp.year_end.total_eur)}</span></div>
-                      <div className="flex justify-between"><span className="text-[var(--arvo-fg-muted)]">{ft.lblCredit}</span><span className="font-medium text-orange-600">{fmtEUR(comp.year_end.credit_eur)}</span></div>
+                      <div className="flex justify-between border-t border-[var(--arvo-border)] pt-1 mt-1"><span className="font-semibold">{ft.lblTotal}</span><span className="font-bold text-blue-700 dark:text-blue-300">{fmtEUR(comp.year_end.total_eur)}</span></div>
+                      <div className="flex justify-between"><span className="text-[var(--arvo-fg-muted)]">{ft.lblCredit}</span><span className="font-medium text-orange-600 dark:text-orange-300">{fmtEUR(comp.year_end.credit_eur)}</span></div>
                     </div>
                   </div>
                 </button>
               </div>
 
-              <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 text-xs text-blue-800">
+              <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 text-xs text-blue-800 dark:bg-blue-950/40 dark:border-blue-900 dark:text-blue-200">
                 <span className="font-medium">{ft.fxDiff} : {fmtEUR(comp.advantage_eur)}</span>
                 {' '}— {comp.recommended === 'daily' ? ft.optionATitle : ft.optionBTitle} ({fmtEUR(comp.advantage_eur)} {ft.fxAdvantage}).
               </div>
@@ -1400,29 +1400,29 @@ function FrReport({ year }: { year: number }) {
           {/* 2042 Cases */}
           <Section title={ft.section2042}>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 py-3">
-              <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
-                <p className="text-xs text-blue-600 font-mono mb-1">Case 2DC</p>
-                <p className="text-xl font-bold text-blue-800">{fmtEUR(totals.dividends_eur)}</p>
-                <p className="text-xs text-blue-500 mt-1">{ft.desc2DC}</p>
+              <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 dark:bg-blue-950/40 dark:border-blue-900">
+                <p className="text-xs text-blue-600 font-mono mb-1 dark:text-blue-300">Case 2DC</p>
+                <p className="text-xl font-bold text-blue-800 dark:text-blue-200">{fmtEUR(totals.dividends_eur)}</p>
+                <p className="text-xs text-blue-500 mt-1 dark:text-blue-400">{ft.desc2DC}</p>
               </div>
-              <div className="bg-green-50 border border-green-100 rounded-xl p-4">
-                <p className="text-xs text-green-600 font-mono mb-1">Case 2TR</p>
-                <p className="text-xl font-bold text-green-800">{fmtEUR(totals.interests_eur)}</p>
-                <p className="text-xs text-green-500 mt-1">{ft.desc2TR}</p>
+              <div className="bg-green-50 border border-green-100 rounded-xl p-4 dark:bg-green-950/40 dark:border-green-900">
+                <p className="text-xs text-green-600 font-mono mb-1 dark:text-green-300">Case 2TR</p>
+                <p className="text-xl font-bold text-green-800 dark:text-green-200">{fmtEUR(totals.interests_eur)}</p>
+                <p className="text-xs text-green-500 mt-1 dark:text-green-400">{ft.desc2TR}</p>
               </div>
-              <div className="bg-orange-50 border border-orange-100 rounded-xl p-4">
-                <p className="text-xs text-orange-600 font-mono mb-1">Case 2AB</p>
-                <p className="text-xl font-bold text-orange-800">{fmtEUR(totals.credit_eur)}</p>
-                <p className="text-xs text-orange-500 mt-1">{ft.desc2AB}</p>
+              <div className="bg-orange-50 border border-orange-100 rounded-xl p-4 dark:bg-orange-950/40 dark:border-orange-900">
+                <p className="text-xs text-orange-600 font-mono mb-1 dark:text-orange-300">Case 2AB</p>
+                <p className="text-xl font-bold text-orange-800 dark:text-orange-200">{fmtEUR(totals.credit_eur)}</p>
+                <p className="text-xs text-orange-500 mt-1 dark:text-orange-400">{ft.desc2AB}</p>
               </div>
               {(() => {
                 const gainEur = fxMethod === 'daily' ? taxData.total_gain_eur_daily : taxData.total_gain_eur_year_end
                 const isGain  = gainEur >= 0
                 return (
-                  <div className={`${isGain ? 'bg-violet-50 border-violet-100' : 'bg-red-50 border-red-100'} border rounded-xl p-4`}>
-                    <p className={`text-xs font-mono mb-1 ${isGain ? 'text-violet-600' : 'text-red-500'}`}>{isGain ? 'Case 3VG' : 'Case 3VM'}</p>
-                    <p className={`text-xl font-bold ${isGain ? 'text-violet-800' : 'text-red-700'}`}>{fmtEUR(Math.abs(gainEur))}</p>
-                    <p className={`text-xs mt-1 ${isGain ? 'text-violet-500' : 'text-red-400'}`}>{isGain ? ft.descCapGain : ft.descCapLoss}</p>
+                  <div className={`${isGain ? 'bg-violet-50 border-violet-100 dark:bg-violet-950/40 dark:border-violet-900' : 'bg-red-50 border-red-100 dark:bg-red-950/40 dark:border-red-900'} border rounded-xl p-4`}>
+                    <p className={`text-xs font-mono mb-1 ${isGain ? 'text-violet-600 dark:text-violet-300' : 'text-red-500 dark:text-red-400'}`}>{isGain ? 'Case 3VG' : 'Case 3VM'}</p>
+                    <p className={`text-xl font-bold ${isGain ? 'text-violet-800 dark:text-violet-200' : 'text-red-700 dark:text-red-300'}`}>{fmtEUR(Math.abs(gainEur))}</p>
+                    <p className={`text-xs mt-1 ${isGain ? 'text-violet-500 dark:text-violet-400' : 'text-red-400 dark:text-red-500'}`}>{isGain ? ft.descCapGain : ft.descCapLoss}</p>
                   </div>
                 )
               })()}
@@ -1460,8 +1460,8 @@ function FrReport({ year }: { year: number }) {
                           <td className="py-1.5 text-right text-[var(--arvo-fg-muted)]">{g.qty.toFixed(4)}</td>
                           <td className="py-1.5 text-right text-[var(--arvo-fg-muted)]">{fmtBRL(g.sale_value_brl)}</td>
                           <td className="py-1.5 text-right text-[var(--arvo-fg-muted)]">{fmtBRL(g.cost_basis_brl)}</td>
-                          <td className={`py-1.5 text-right font-semibold ${g.gain_loss_brl >= 0 ? 'text-green-700' : 'text-red-600'}`}>{fmtBRL(g.gain_loss_brl)}</td>
-                          <td className={`py-1.5 text-right font-semibold ${gainEur >= 0 ? 'text-violet-700' : 'text-red-600'}`}>
+                          <td className={`py-1.5 text-right font-semibold ${g.gain_loss_brl >= 0 ? 'text-green-700 dark:text-green-300' : 'text-red-600 dark:text-red-300'}`}>{fmtBRL(g.gain_loss_brl)}</td>
+                          <td className={`py-1.5 text-right font-semibold ${gainEur >= 0 ? 'text-violet-700 dark:text-violet-300' : 'text-red-600 dark:text-red-300'}`}>
                             {fmtEUR(gainEur)}
                             <span className="text-[var(--arvo-fg-faint)] font-normal ml-1">{fxR.toFixed(4)}</span>
                           </td>
@@ -1470,7 +1470,7 @@ function FrReport({ year }: { year: number }) {
                     })}
                     <tr className="border-t-2 border-[var(--arvo-border)] bg-[var(--arvo-surface-2)] font-semibold text-sm">
                       <td colSpan={7} className="py-2 text-right text-xs text-[var(--arvo-fg-muted)]">{ft.totalNetGain}</td>
-                      <td className={`py-2 text-right ${(fxMethod === 'daily' ? taxData.total_gain_eur_daily : taxData.total_gain_eur_year_end) >= 0 ? 'text-violet-700' : 'text-red-600'}`}>
+                      <td className={`py-2 text-right ${(fxMethod === 'daily' ? taxData.total_gain_eur_daily : taxData.total_gain_eur_year_end) >= 0 ? 'text-violet-700 dark:text-violet-300' : 'text-red-600 dark:text-red-300'}`}>
                         {fmtEUR(fxMethod === 'daily' ? taxData.total_gain_eur_daily : taxData.total_gain_eur_year_end)}
                       </td>
                     </tr>
@@ -1507,7 +1507,7 @@ function FrReport({ year }: { year: number }) {
                     <td className="py-2 text-right text-[var(--arvo-fg-muted)]">{(s.convention_rate * 100).toFixed(0)}%</td>
                     <td className="py-2 text-right text-[var(--arvo-fg-muted)]">{fmtEUR(s.theoretical_credit_eur)}</td>
                     <td className="py-2 text-right text-[var(--arvo-fg-muted)]">{fmtEUR(s.actual_withholding_eur)}</td>
-                    <td className="py-2 text-right font-semibold text-orange-600">{fmtEUR(s.effective_credit_eur)}</td>
+                    <td className="py-2 text-right font-semibold text-orange-600 dark:text-orange-300">{fmtEUR(s.effective_credit_eur)}</td>
                   </tr>
                 ))}
                 <tr className="border-t-2 border-[var(--arvo-border)] bg-[var(--arvo-surface-2)] font-semibold">
@@ -1516,7 +1516,7 @@ function FrReport({ year }: { year: number }) {
                   <td />
                   <td className="py-2 text-right text-[var(--arvo-fg-muted)]">{fmtEUR(sections.reduce((s, r) => s + r.theoretical_credit_eur, 0))}</td>
                   <td className="py-2 text-right text-[var(--arvo-fg-muted)]">{fmtEUR(sections.reduce((s, r) => s + r.actual_withholding_eur, 0))}</td>
-                  <td className="py-2 text-right text-orange-600">{fmtEUR(totals.credit_eur)}</td>
+                  <td className="py-2 text-right text-orange-600 dark:text-orange-300">{fmtEUR(totals.credit_eur)}</td>
                 </tr>
               </tbody>
             </table>
@@ -1548,7 +1548,7 @@ function FrReport({ year }: { year: number }) {
                         <td className="py-1.5 text-center">{formBadge(e.form_type)}</td>
                         <td className="py-1.5 text-right font-mono text-[var(--arvo-fg-soft)]">{fxR.toFixed(5)}</td>
                         <td className="py-1.5 text-right font-semibold">{fmtEUR(gross)}</td>
-                        <td className="py-1.5 text-right text-orange-600">{wth > 0 ? fmtEUR(wth) : '—'}</td>
+                        <td className="py-1.5 text-right text-orange-600 dark:text-orange-300">{wth > 0 ? fmtEUR(wth) : '—'}</td>
                       </tr>
                     )
                   })}
@@ -1566,8 +1566,8 @@ function FrReport({ year }: { year: number }) {
           </div>
 
           {/* Disclaimers */}
-          <div className="text-xs text-[var(--arvo-fg-soft)] bg-red-50 border border-red-100 rounded-xl p-4 space-y-1">
-            <p className="font-semibold text-red-600 mb-2">{ft.warningTitle}</p>
+          <div className="text-xs text-[var(--arvo-fg-soft)] bg-red-50 border border-red-100 rounded-xl p-4 space-y-1 dark:bg-red-950/40 dark:border-red-900">
+            <p className="font-semibold text-red-600 mb-2 dark:text-red-300">{ft.warningTitle}</p>
             <p>• {ft.warning1}</p>
             <p>• {ft.warning2}</p>
             <p>• {ft.warning3}</p>

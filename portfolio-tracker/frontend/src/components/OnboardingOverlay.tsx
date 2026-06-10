@@ -430,7 +430,7 @@ export default function OnboardingOverlay({ onDone, userId }: Props) {
               <div className="space-y-2">
                 {[o.freedomOnboardFeature1, o.freedomOnboardFeature2].map(f => (
                   <div key={f} className="flex items-start gap-3 bg-[var(--arvo-surface-2)] border border-[var(--arvo-border)] rounded-xl px-4 py-3">
-                    <span className="text-green-500 mt-0.5 shrink-0">✓</span>
+                    <span className="text-green-500 mt-0.5 shrink-0 dark:text-green-400">✓</span>
                     <span className="text-sm text-[var(--arvo-fg)]">{f}</span>
                   </div>
                 ))}
@@ -454,7 +454,7 @@ export default function OnboardingOverlay({ onDone, userId }: Props) {
               <div className="space-y-2">
                 {[o.sharedOnboardFeature1, o.sharedOnboardFeature2].map(f => (
                   <div key={f} className="flex items-start gap-3 bg-[var(--arvo-surface-2)] border border-[var(--arvo-border)] rounded-xl px-4 py-3">
-                    <span className="text-blue-500 mt-0.5 shrink-0">✓</span>
+                    <span className="text-blue-500 mt-0.5 shrink-0 dark:text-blue-400">✓</span>
                     <span className="text-sm text-[var(--arvo-fg)]">{f}</span>
                   </div>
                 ))}
@@ -471,7 +471,7 @@ export default function OnboardingOverlay({ onDone, userId }: Props) {
           {/* Step 8: Done */}
           {step === 8 && (
             <div className="space-y-5 text-center">
-              <div className="w-16 h-16 bg-emerald-50 border border-emerald-100 rounded-2xl flex items-center justify-center mx-auto">
+              <div className="w-16 h-16 bg-emerald-50 border border-emerald-100 rounded-2xl flex items-center justify-center mx-auto dark:bg-emerald-950/40 dark:border-emerald-900">
                 <span className="text-3xl">✅</span>
               </div>
               <div>

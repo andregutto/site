@@ -145,7 +145,7 @@ export default function ArchivedPage() {
                     {a.totalReceived > 0 && (
                       <div className="text-right">
                         <div className="text-xs text-[var(--arvo-fg-soft)]">{t.archived.pnl}</div>
-                        <div className={`text-sm font-semibold ${pnlPositive ? 'text-emerald-600' : 'text-red-500'}`}>
+                        <div className={`text-sm font-semibold ${pnlPositive ? 'text-emerald-600 dark:text-emerald-300' : 'text-red-500 dark:text-red-400'}`}>
                           {pnlPositive ? '+' : ''}{fmt(a.pnl, a.currency)}
                         </div>
                       </div>
@@ -171,8 +171,8 @@ export default function ArchivedPage() {
                           <div className="flex items-center gap-2">
                             <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${
                               c.type === 'buy'
-                                ? 'bg-emerald-50 text-emerald-700'
-                                : 'bg-red-50 text-red-600'
+                                ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
+                                : 'bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-300'
                             }`}>
                               {c.type === 'buy' ? '▲' : '▼'}
                             </span>
@@ -190,14 +190,14 @@ export default function ArchivedPage() {
                       <button
                         onClick={() => handleDelete(a.id, a.name)}
                         disabled={deleting === a.id || reactivating === a.id}
-                        className="text-xs text-red-500 hover:text-red-600 disabled:opacity-50 border border-red-200 hover:border-red-300 rounded-lg px-3 py-1.5 transition-colors"
+                        className="text-xs text-red-500 hover:text-red-600 disabled:opacity-50 border border-red-200 hover:border-red-300 rounded-lg px-3 py-1.5 transition-colors dark:text-red-400 dark:hover:text-red-300 dark:border-red-900 dark:hover:border-red-800"
                       >
                         {deleting === a.id ? '...' : t.archived.deletePermanently}
                       </button>
                       <button
                         onClick={() => handleReactivate(a.id)}
                         disabled={reactivating === a.id || deleting === a.id}
-                        className="text-xs text-blue-600 hover:text-blue-700 disabled:opacity-50 border border-blue-200 hover:border-blue-300 rounded-lg px-3 py-1.5 transition-colors"
+                        className="text-xs text-blue-600 hover:text-blue-700 disabled:opacity-50 border border-blue-200 hover:border-blue-300 rounded-lg px-3 py-1.5 transition-colors dark:text-blue-300 dark:hover:text-blue-300 dark:border-blue-900 dark:hover:border-blue-800"
                       >
                         {reactivating === a.id ? '...' : t.archived.reactivate}
                       </button>

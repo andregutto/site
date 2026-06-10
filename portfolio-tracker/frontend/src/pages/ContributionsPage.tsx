@@ -651,7 +651,7 @@ export default function ContributionsPage() {
                     <button
                       type="button"
                       onClick={() => { setShowNewAsset(v => !v); if (showNewAsset) resetNewAsset() }}
-                      className="px-3 py-2 text-sm border border-[var(--arvo-border)] rounded-lg text-[var(--arvo-fg)] hover:bg-blue-50 transition-colors shrink-0"
+                      className="px-3 py-2 text-sm border border-[var(--arvo-border)] rounded-lg text-[var(--arvo-fg)] hover:bg-blue-50 transition-colors shrink-0 dark:hover:bg-blue-950/60"
                     >{t.contributions.newAssetBtn}</button>
                   </div>
                 </>
@@ -660,7 +660,7 @@ export default function ContributionsPage() {
 
             {/* New asset inline form */}
             {showNewAsset && (
-              <div className="sm:col-span-2 bg-blue-50 border border-blue-100 rounded-xl p-4 space-y-3">
+              <div className="sm:col-span-2 bg-blue-50 border border-blue-100 rounded-xl p-4 space-y-3 dark:bg-blue-950/40 dark:border-blue-900">
                 <p className="text-xs font-semibold text-[var(--arvo-fg)]">{t.contributions.newAssetSection}</p>
                 <div className="grid grid-cols-2 gap-2">
                   {/* Type */}
@@ -724,7 +724,7 @@ export default function ContributionsPage() {
                         </span>
                       )}
                       {newFormType === 'fixed_income' && newName && (
-                        <span className="ml-1 text-blue-400">{t.contributions.autoSuggestion}</span>
+                        <span className="ml-1 text-blue-400 dark:text-blue-500">{t.contributions.autoSuggestion}</span>
                       )}
                     </label>
                     <input
@@ -751,7 +751,7 @@ export default function ContributionsPage() {
                   {/* Manual-specific fields */}
                   {newFormType === 'manual' && (
                     <>
-                      <div className="col-span-2 border-t border-blue-200 pt-2">
+                      <div className="col-span-2 border-t border-blue-200 pt-2 dark:border-blue-900">
                         <p className="text-xs font-semibold text-[var(--arvo-fg)] mb-2">{t.contributions.initialValueSection}</p>
                       </div>
                       <div>
@@ -775,7 +775,7 @@ export default function ContributionsPage() {
                           className={SMALL_INPUT}
                         />
                       </div>
-                      <div className="col-span-2 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2 text-[11px] text-blue-700 leading-relaxed">
+                      <div className="col-span-2 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2 text-[11px] text-blue-700 leading-relaxed dark:bg-blue-950/40 dark:border-blue-900 dark:text-blue-300">
                         {t.contributions.manualHint}
                       </div>
                     </>
@@ -784,7 +784,7 @@ export default function ContributionsPage() {
                   {/* Imóvel-specific fields */}
                   {newFormType === 'imovel' && (
                     <>
-                      <div className="col-span-2 border-t border-blue-200 pt-2">
+                      <div className="col-span-2 border-t border-blue-200 pt-2 dark:border-blue-900">
                         <p className="text-xs font-semibold text-[var(--arvo-fg)] mb-2">{t.contributions.propertySection}</p>
                       </div>
                       <div>
@@ -827,7 +827,7 @@ export default function ContributionsPage() {
                   {/* RF-specific fields */}
                   {newFormType === 'fixed_income' && (
                     <>
-                      <div className="col-span-2 border-t border-blue-200 pt-2">
+                      <div className="col-span-2 border-t border-blue-200 pt-2 dark:border-blue-900">
                         <p className="text-xs font-semibold text-[var(--arvo-fg)] mb-2">{t.contributions.fiSection}</p>
                       </div>
 
@@ -894,14 +894,14 @@ export default function ContributionsPage() {
                         <InstitutionSelect value={newFiInstitution} onChange={setNewFiInstitution} />
                       </div>
 
-                      <div className="col-span-2 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2 text-[11px] text-blue-700 leading-relaxed">
+                      <div className="col-span-2 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2 text-[11px] text-blue-700 leading-relaxed dark:bg-blue-950/40 dark:border-blue-900 dark:text-blue-300">
                         <strong>Cada título com taxa diferente é um ativo separado.</strong> Ex: Tesouro IPCA+ 6,5% 2035 e Tesouro IPCA+ 5,8% 2045 são dois ativos distintos. Use o <em>Apelido único</em> para distingui-los (ex: <em>TD-IPCA-2035</em>). O aporte inicial é registrado automaticamente ao criar o ativo.
                       </div>
                     </>
                   )}
                 </div>
 
-                {newAssetErr && <p className="text-xs text-red-600">{newAssetErr}</p>}
+                {newAssetErr && <p className="text-xs text-red-600 dark:text-red-300">{newAssetErr}</p>}
 
                 <div className="flex gap-2">
                   <button
@@ -960,7 +960,7 @@ export default function ContributionsPage() {
 
             {/* RF buy: show current principal info */}
             {isRfBuy && selectedAsset?.fi_principal != null && (
-              <div className="sm:col-span-2 bg-blue-50 border border-blue-100 rounded-lg px-4 py-3 text-sm">
+              <div className="sm:col-span-2 bg-blue-50 border border-blue-100 rounded-lg px-4 py-3 text-sm dark:bg-blue-950/40 dark:border-blue-900">
                 <p className="text-xs text-[var(--arvo-fg-muted)]">{t.contributions.currentPrincipal}</p>
                 <p className="font-semibold text-[var(--arvo-fg)]">{fmtBrl(selectedAsset.fi_principal)}</p>
                 {selectedAsset.fi_type && (
@@ -986,7 +986,7 @@ export default function ContributionsPage() {
                   placeholder="0,00"
                   className={inputCls(BASE_INPUT, !!fieldErrors.quantity)}
                 />
-                {fieldErrors.quantity && <p className="text-xs text-red-500 mt-0.5">{fieldErrors.quantity}</p>}
+                {fieldErrors.quantity && <p className="text-xs text-red-500 mt-0.5 dark:text-red-400">{fieldErrors.quantity}</p>}
               </div>
             )}
             {!isSimpleAsset && !isIncome && (
@@ -1010,7 +1010,7 @@ export default function ContributionsPage() {
                     className={inputCls('flex-1 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2', !!fieldErrors.price)}
                   />
                 </div>
-                {fieldErrors.price && <p className="text-xs text-red-500 mt-0.5">{fieldErrors.price}</p>}
+                {fieldErrors.price && <p className="text-xs text-red-500 mt-0.5 dark:text-red-400">{fieldErrors.price}</p>}
               </div>
             )}
 
@@ -1053,7 +1053,7 @@ export default function ContributionsPage() {
                   className={inputCls(`flex-1 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2`, !!fieldErrors.valueBrl)}
                 />
               </div>
-              {fieldErrors.valueBrl && <p className="text-xs text-red-500 mt-0.5">{fieldErrors.valueBrl}</p>}
+              {fieldErrors.valueBrl && <p className="text-xs text-red-500 mt-0.5 dark:text-red-400">{fieldErrors.valueBrl}</p>}
             </div>
 
             {/* IR retido na fonte — income contributions only, for France fiscal report */}
@@ -1088,7 +1088,7 @@ export default function ContributionsPage() {
             </div>
           </div>
 
-          {formErr && <p className="text-xs text-red-600">{formErr}</p>}
+          {formErr && <p className="text-xs text-red-600 dark:text-red-300">{formErr}</p>}
 
           <button
             onClick={editId ? handleUpdate : handleSave}
@@ -1115,7 +1115,7 @@ export default function ContributionsPage() {
         {loading ? (
           <PageLoader />
         ) : error ? (
-          <p className="text-center text-red-500 py-8 text-sm">{error}</p>
+          <p className="text-center text-red-500 py-8 text-sm dark:text-red-400">{error}</p>
         ) : contributions.length === 0 ? (
           <p className="text-center text-[var(--arvo-fg-soft)] py-8 text-sm">{t.contributions.noContributions}</p>
         ) : (
@@ -1151,9 +1151,9 @@ export default function ContributionsPage() {
                     </td>
                     <td className="px-4 py-3">
                       <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-                        c.type === 'buy' ? 'bg-green-100 text-green-700' :
-                        c.type === 'income' ? 'bg-purple-100 text-purple-700' :
-                        'bg-red-100 text-red-700'
+                        c.type === 'buy' ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300' :
+                        c.type === 'income' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300' :
+                        'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'
                       }`}>
                         {c.type === 'buy' ? t.contributions.buyLabel : c.type === 'income' ? t.contributions.incomeLabel : t.contributions.sellLabel}
                       </span>
@@ -1167,7 +1167,7 @@ export default function ContributionsPage() {
                         <div className="flex items-center justify-end gap-2">
                           <button
                             onClick={() => handleDelete(c.id)}
-                            className="text-xs font-semibold text-red-600 hover:text-red-700 transition-colors"
+                            className="text-xs font-semibold text-red-600 hover:text-red-700 transition-colors dark:text-red-300 dark:hover:text-red-300"
                           >{t.common.confirm}</button>
                           <button
                             onClick={() => setConfirmDeleteId(null)}
@@ -1187,7 +1187,7 @@ export default function ContributionsPage() {
                           </button>
                           <button
                             onClick={() => handleDelete(c.id)}
-                            className="text-[var(--arvo-fg-faint)] hover:text-red-500 transition-colors text-base leading-none"
+                            className="text-[var(--arvo-fg-faint)] hover:text-red-500 transition-colors text-base leading-none dark:hover:text-red-400"
                             title={t.common.remove}
                           >×</button>
                         </div>
@@ -1214,9 +1214,9 @@ export default function ContributionsPage() {
                     )}
                     <span className="font-medium text-[var(--arvo-fg)] text-sm">{c.assets.code}</span>
                     <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${
-                      c.type === 'buy' ? 'bg-green-100 text-green-700' :
-                      c.type === 'income' ? 'bg-purple-100 text-purple-700' :
-                      'bg-red-100 text-red-700'
+                      c.type === 'buy' ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300' :
+                      c.type === 'income' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300' :
+                      'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'
                     }`}>
                       {c.type === 'buy' ? t.contributions.buyLabel : c.type === 'income' ? t.contributions.incomeLabel : t.contributions.sellLabel}
                     </span>

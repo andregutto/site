@@ -104,7 +104,7 @@ export default function MigrateToFIModal({ assetId, assetName, assetCode, invest
         </div>
 
         <div className="overflow-y-auto flex-1 p-5 space-y-4">
-          <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-blue-700 text-xs">
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-blue-700 text-xs dark:bg-blue-950/40 dark:border-blue-900 dark:text-blue-300">
             {hasContributions
               ? 'Este ativo ja tem aportes registrados. Informe apenas os parametros do titulo e o sistema calculara automaticamente.'
               : 'Informe os parametros do titulo e o valor investido. Um aporte inicial sera criado automaticamente.'}
@@ -138,7 +138,7 @@ export default function MigrateToFIModal({ assetId, assetName, assetCode, invest
               className={inputCls('w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2', !!rateErr)}
             />
             {rateErr
-              ? <p className="text-xs text-red-500 mt-0.5">{rateErr}</p>
+              ? <p className="text-xs text-red-500 mt-0.5 dark:text-red-400">{rateErr}</p>
               : rateCfg.hint && <p className="text-xs text-[var(--arvo-fg-soft)] mt-1">{rateCfg.hint}</p>}
           </div>
 
@@ -158,7 +158,7 @@ export default function MigrateToFIModal({ assetId, assetName, assetCode, invest
                   placeholder="ex: 50.000,00"
                   className={inputCls('w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2', !!principalErr)}
                 />
-                {principalErr && <p className="text-xs text-red-500 mt-0.5">{principalErr}</p>}
+                {principalErr && <p className="text-xs text-red-500 mt-0.5 dark:text-red-400">{principalErr}</p>}
               </div>
 
               <div>
@@ -191,7 +191,7 @@ export default function MigrateToFIModal({ assetId, assetName, assetCode, invest
             </div>
           </div>
 
-          {error && <p className="text-xs text-red-600">{error}</p>}
+          {error && <p className="text-xs text-red-600 dark:text-red-300">{error}</p>}
 
           <div className="flex gap-2 pt-1">
             <button
