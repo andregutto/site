@@ -553,6 +553,7 @@
     "navAccounts": "Accounts",
     "navFreedom": "Freedom",
     "navSubscriptions": "Subscriptions",
+    "navFees": "Fees",
     "subscriptionsTitle": "Subscription Scanner",
     "subscriptionsSubtitle": "Recurring expenses detected automatically",
     "noSubscriptions": "No subscriptions detected",

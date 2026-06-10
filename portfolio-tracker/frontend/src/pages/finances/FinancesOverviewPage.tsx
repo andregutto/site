@@ -678,7 +678,7 @@ export default function FinancesOverviewPage() {
 
       {/* Income envelope section */}
       {incomeEnvelopeBar && (
-        <div className={`bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden ${topCategories.length === 0 ? 'lg:col-span-2' : ''}`}>
+        <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           <div
             className={`px-5 py-3 flex items-center gap-3 transition-colors ${incomeEnvelopeBar.categories.length > 0 ? 'cursor-pointer hover:bg-gray-50' : ''}`}
             onClick={() => incomeEnvelopeBar.categories.length > 0 && toggleEnv(incomeEnvelopeBar.id)}
@@ -731,7 +731,7 @@ export default function FinancesOverviewPage() {
       )}
 
       {/* Envelope spending vs budget */}
-      <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+      <div className={`bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden ${topCategories.length === 0 ? 'lg:col-span-2' : ''}`}>
         <div className="px-5 py-4 border-b border-gray-50 flex items-center justify-between">
           <h2 style={{ fontFamily: "var(--arvo-font-body)", fontSize: 14, color: 'var(--arvo-fg)', fontWeight: 600 }}>{t.finances.overviewSpendingVsBudget}</h2>
           <Link to="/finances/budget" className="text-xs text-[#0D0D0D] hover:opacity-70 transition-opacity">
@@ -817,7 +817,7 @@ export default function FinancesOverviewPage() {
 
       {/* Top categories this month */}
       {topCategories.length > 0 && (
-        <div className={`bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden ${!incomeEnvelopeBar ? 'lg:col-span-2' : ''}`}>
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           <div className="px-5 py-4 border-b border-gray-50 flex items-center justify-between">
             <h2 style={{ fontFamily: "var(--arvo-font-body)", fontSize: 14, color: 'var(--arvo-fg)', fontWeight: 600 }}>{t.finances.overviewTopCategories}</h2>
             <Link to="/finances/transactions" className="text-xs text-[#0D0D0D] hover:opacity-70 transition-opacity">

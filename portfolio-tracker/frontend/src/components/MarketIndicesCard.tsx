@@ -64,7 +64,7 @@ export default function MarketIndicesCard({ periodMode, periodLabel }: Props) {
     <div
       className="rounded-2xl p-4 cursor-pointer hover:shadow-md transition-shadow"
       style={{ background: 'white', border: '1px solid var(--arvo-border)' }}
-      onClick={() => navigate('/indices')}
+      onClick={() => navigate('/portfolio/indices')}
       title={t.common.allIndices}
     >
       <h2 className="mb-1" style={{ fontFamily: "var(--arvo-font-body)", fontSize: 13, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--arvo-fg)' }}>

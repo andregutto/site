@@ -4,6 +4,7 @@ import { usePortfolioValue } from '../hooks/usePortfolio'
 import { useCurrency } from '../contexts/CurrencyContext'
 import { useI18n } from '../contexts/I18nContext'
 import { apiFetch } from '../lib/api'
+import PageHeaderTabs from '../components/PageHeaderTabs'
 import type { PortfolioAsset } from '../lib/types'
 
 type Tab = 'geo' | 'sector' | 'risk'
@@ -226,33 +227,7 @@ export default function DiversificationPage() {
   return (
     <div style={{ maxWidth: 800, margin: '0 auto', padding: '24px 16px 64px', fontFamily: 'var(--arvo-font-body)' }}>
 
-      {/* Header */}
-      <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 22, fontWeight: 700, color: 'var(--arvo-black)', margin: '0 0 4px' }}>{d.title}</h1>
-        <p style={{ fontSize: 13, color: 'var(--arvo-fg-soft)', margin: 0 }}>{d.subtitle}</p>
-      </div>
-
-      {/* Tab pills */}
-      <div style={{ display: 'flex', gap: 4, marginBottom: 24, background: 'rgba(0,0,0,0.05)', borderRadius: 10, padding: 4 }}>
-        {TABS.map(item => (
-          <button
-            key={item.key}
-            onClick={() => setTab(item.key)}
-            style={{
-              flex: 1, padding: '8px 0', border: 'none', borderRadius: 7,
-              fontSize: 13, fontFamily: 'var(--arvo-font-body)',
-              fontWeight: tab === item.key ? 600 : 400,
-              cursor: 'pointer',
-              background: tab === item.key ? '#fff' : 'transparent',
-              color: tab === item.key ? 'var(--arvo-black)' : 'var(--arvo-fg-soft)',
-              boxShadow: tab === item.key ? '0 1px 3px rgba(0,0,0,0.10)' : 'none',
-              transition: 'all 0.15s',
-            }}
-          >
-            {item.label}
-          </button>
-        ))}
-      </div>
+      <PageHeaderTabs title={d.title} subtitle={d.subtitle} tabs={TABS} activeTab={tab} onTabChange={setTab} />
 
       {/* ── GEO TAB ── */}
       {tab === 'geo' && (

@@ -5,6 +5,7 @@ import { useI18n } from '../../contexts/I18nContext'
 import { useCurrency } from '../../contexts/CurrencyContext'
 import { usePortfolioValue } from '../../hooks/usePortfolio'
 import { PageLoader } from '../../components/ArvoLoader'
+import PageHeaderTabs from '../../components/PageHeaderTabs'
 
 function _fmt(n: number, currency: string) {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n)
@@ -116,6 +117,7 @@ export default function FinancesInsightsPage() {
   const fmtSub = (n: number, cur: string) => hideValues ? '•••' : _fmt(n, cur)
   const f = t.fees
 
+  const [tab, setTab] = useState<'subscriptions' | 'fees'>('subscriptions')
   const [loading, setLoading] = useState(true)
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([])
   const [dismissed, setDismissed] = useState<DismissedSub[]>([])
@@ -202,19 +204,17 @@ export default function FinancesInsightsPage() {
 
   if (loading) return <PageLoader />
 
+  const TABS: { key: 'subscriptions' | 'fees'; label: string }[] = [
+    { key: 'subscriptions', label: t.finances.navSubscriptions },
+    { key: 'fees', label: t.finances.navFees },
+  ]
+
   return (
     <div className="space-y-5">
-      {/* Header */}
-      <div>
-        <h1 style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 18, letterSpacing: '0.06em', color: 'var(--arvo-black)' }}>
-          {t.finances.insightsTitle}
-        </h1>
-        <p className="text-sm mt-0.5" style={{ color: 'rgba(13,13,13,0.60)' }}>
-          {t.finances.insightsSubtitle}
-        </p>
-      </div>
+      <PageHeaderTabs title={t.finances.insightsTitle} subtitle={t.finances.insightsSubtitle} tabs={TABS} activeTab={tab} onTabChange={setTab} marginBottom={0} />
 
       {/* ── Subscriptions ────────────────────────────────────────── */}
+      {tab === 'subscriptions' && (
       <div className="space-y-3">
         <div>
           <h2 className="text-sm font-semibold text-gray-900">{t.finances.subscriptionsTitle}</h2>
@@ -333,8 +333,10 @@ export default function FinancesInsightsPage() {
           </div>
         )}
       </div>
+      )}
 
       {/* ── Fees ─────────────────────────────────────────────────── */}
+      {tab === 'fees' && (
       <div className="space-y-3">
         <div>
           <h2 className="text-sm font-semibold text-gray-900">{f.title}</h2>
@@ -449,6 +451,7 @@ export default function FinancesInsightsPage() {
           </>
         )}
       </div>
+      )}
     </div>
   )
 }
