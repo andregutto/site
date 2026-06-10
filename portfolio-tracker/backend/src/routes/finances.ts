@@ -1917,9 +1917,13 @@ router.delete('/moments/:id/share', requireAuth, async (req, res: Response) => {
 // ── Scanner de Assinaturas ────────────────────────────────────────────────────
 
 // Categorias que nunca são assinatura, mesmo que recorram com valor estável
-// (aluguel, mercado, restaurantes...) — excluídas da detecção independente do padrão.
+// (mercado, restaurantes...) — excluídas da detecção independente do padrão.
+// Nota: categoryHousing NÃO está aqui — contas como EDF/Freebox costumam ser
+// categorizadas como Moradia mas são contratos recorrentes reais (assinaturas).
+// Itens de aluguel em si têm variação de valor alta o suficiente para falhar
+// no teste de tolerância abaixo; falsos positivos podem ser ignorados na UI.
 const SUBSCRIPTION_CATEGORY_DENYLIST = new Set([
-  'categoryHousing', 'categoryRestaurant', 'categoryBarsRestaurants', 'categoryGroceries',
+  'categoryRestaurant', 'categoryBarsRestaurants', 'categoryGroceries',
   'categoryCoffee', 'categoryTransport', 'categoryPharmacy', 'categoryTravel', 'categoryAirbnb',
   'categoryShowsParties', 'categoryGifts', 'categoryClothing', 'categoryPersonalCare',
   'categoryElectronics', 'categoryShopping', 'categoryFees', 'categoryTaxes', 'categoryEducation',
