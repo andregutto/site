@@ -10,6 +10,12 @@ import {
   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend
 } from 'recharts'
 
+interface FreedomPlan {
+  id: number; is_active: boolean
+  initial_capital: number; monthly_contribution: number; monthly_return_rate: number
+  currency: string; start_date: string | null; created_at: string
+}
+
 function fmtMonth(ym: string, locale = 'pt-BR') {
   const [y, m] = ym.split('-')
   const monthName = new Intl.DateTimeFormat(locale, { month: 'short' }).format(new Date(parseInt(y), parseInt(m) - 1, 1))
@@ -60,7 +66,7 @@ export default function PerformancePage() {
   const currentYM   = localYM(now)
 
   const navigate = useNavigate()
-  const { convert, currency } = useCurrency()
+  const { convert, currency, fxRates } = useCurrency()
   const { t, locale } = useI18n()
   const intlLocale = locale === 'pt' ? 'pt-BR' : locale === 'fr' ? 'fr-FR' : 'en-US'
   const { data: livePortfolio } = usePortfolioValue()
@@ -184,6 +190,27 @@ export default function PerformancePage() {
   const [showCDI,   setShowCDI]   = useState(true)
   const [showIBOV,  setShowIBOV]  = useState(false)
   const [showSP500, setShowSP500] = useState(false)
+  const [chartView, setChartView] = useState<'return' | 'value'>('return')
+
+  const [activePlan, setActivePlan] = useState<FreedomPlan | null | undefined>(undefined)
+  useEffect(() => {
+    apiFetch<FreedomPlan[]>('/finances/freedom-plans')
+      .then(plans => setActivePlan(plans.find(p => p.is_active) ?? plans[0] ?? null))
+      .catch(() => setActivePlan(null))
+  }, [])
+
+  // Target line: project freedom plan trajectory onto the chart
+  const planStartDate = activePlan ? (activePlan.start_date ?? activePlan.created_at.slice(0, 10)) : null
+  function targetAtDate(dateStr: string): number | null {
+    if (!activePlan || !planStartDate) return null
+    const t = (new Date(dateStr + 'T12:00:00').getTime() - new Date(planStartDate + 'T12:00:00').getTime()) / (30.4375 * 24 * 3600 * 1000)
+    const brlPerUnit = activePlan.currency === 'BRL' ? 1 : (fxRates[activePlan.currency] ?? 1)
+    const IC = convert(activePlan.initial_capital * brlPerUnit)
+    const MC = convert(activePlan.monthly_contribution * brlPerUnit)
+    const r  = activePlan.monthly_return_rate
+    const v  = r === 0 ? IC + MC * t : IC * Math.pow(1 + r, t) + MC * (Math.pow(1 + r, t) - 1) / r
+    return v > 0 ? v : null
+  }
   const [expandedMonths, setExpandedMonths] = useState<Set<string>>(new Set())
   const toggleMonth = useCallback((m: string) => setExpandedMonths(prev => {
     const next = new Set(prev)
@@ -259,6 +286,23 @@ export default function PerformancePage() {
   const cdiAccum   = useDailyChart ? (lastDailyPoint?.cdi   ?? null) : (lastPoint?.cdi   ?? null)
   const ibovAccum  = useDailyChart ? (lastDailyPoint?.ibov  ?? null) : (lastPoint?.ibov  ?? null)
   const sp500Accum = useDailyChart ? (lastDailyPoint?.sp500 ?? null) : (lastPoint?.sp500 ?? null)
+
+  // Absolute portfolio value series (Patrimônio view), with optional Freedom Plan target line
+  const valueChartData = useDailyChart
+    ? (dailyData?.daily ?? []).filter(pt => pt.total > 0).map(pt => ({
+        month: fmtDayLabel(pt.date, intlLocale),
+        value: convert(pt.total),
+        target: targetAtDate(pt.date),
+      }))
+    : monthsWithData.map(m => {
+        const [y, mo] = m.month.split('-').map(Number)
+        const lastDay = new Date(y, mo, 0).getDate()
+        return {
+          month: fmtMonth(m.month, intlLocale),
+          value: convert(m.total),
+          target: targetAtDate(`${m.month}-${String(lastDay).padStart(2, '0')}`),
+        }
+      })
 
   // "Fim do período" card: use live total when available so the BRL amount matches dashboard.
   const endsAtCurrentMonth = to === currentYM
@@ -358,101 +402,102 @@ export default function PerformancePage() {
             </div>
           )}
 
-          {useDailyChart ? (
-            dailyChartData.length > 0 ? (
+          {(() => {
+            const chartDataActive = useDailyChart ? dailyChartData : chartData
+            if (chartDataActive.length === 0) {
+              return (
+                <div className="bg-white border border-gray-100 rounded-2xl p-12 text-center text-gray-400 shadow-sm">
+                  <p className="text-base font-medium text-gray-500">{t.performance.noData}</p>
+                  <p className="text-sm mt-1">{t.performance.visitDashboard}</p>
+                </div>
+              )
+            }
+            const portfolioDot = useDailyChart ? { r: 2, fill: '#0D0D0D' } : { r: 3, fill: '#0D0D0D' }
+            const portfolioActiveDot = useDailyChart ? { r: 4 } : { r: 5 }
+            return (
               <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
                 <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
-                  <h2 className="font-semibold text-gray-800">{t.performance.accumulatedReturn} · {periodLabel}</h2>
-                  <div className="flex items-center gap-2">
-                    {([['CDI', showCDI, setShowCDI, '#16a34a'], ['IBOV', showIBOV, setShowIBOV, '#7c3aed'], ['S&P500', showSP500, setShowSP500, '#f59e0b']] as const).map(
-                      ([lbl, active, setter, color]) => (
-                        <button
-                          key={lbl}
-                          onClick={() => (setter as (v: boolean) => void)(!active)}
-                          className={`px-2.5 py-1 text-xs font-semibold rounded-md border transition-colors ${
-                            active ? 'text-white border-transparent' : 'bg-white text-gray-400 border-gray-200 hover:border-gray-400'
-                          }`}
-                          style={active ? { backgroundColor: color as string, borderColor: color as string } : {}}
-                        >{lbl}</button>
-                      )
+                  <h2 className="font-semibold text-gray-800">
+                    {chartView === 'value' ? t.dashboard.patrimony : t.performance.accumulatedReturn} · {periodLabel}
+                  </h2>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <div className="flex rounded-lg border border-gray-200 overflow-hidden text-xs font-semibold">
+                      <button
+                        onClick={() => setChartView('return')}
+                        className={`px-2.5 py-1 transition-colors ${chartView === 'return' ? 'bg-[#0D0D0D] text-white' : 'bg-white text-gray-400 hover:text-gray-600'}`}
+                      >{t.performance.returnPct}</button>
+                      <button
+                        onClick={() => setChartView('value')}
+                        className={`px-2.5 py-1 transition-colors border-l border-gray-200 ${chartView === 'value' ? 'bg-[#0D0D0D] text-white' : 'bg-white text-gray-400 hover:text-gray-600'}`}
+                      >{t.dashboard.patrimony}</button>
+                    </div>
+                    {chartView === 'return' && (
+                      <div className="flex items-center gap-2">
+                        {([['CDI', showCDI, setShowCDI, '#16a34a'], ['IBOV', showIBOV, setShowIBOV, '#7c3aed'], ['S&P500', showSP500, setShowSP500, '#f59e0b']] as const).map(
+                          ([lbl, active, setter, color]) => (
+                            <button
+                              key={lbl}
+                              onClick={() => (setter as (v: boolean) => void)(!active)}
+                              className={`px-2.5 py-1 text-xs font-semibold rounded-md border transition-colors ${
+                                active ? 'text-white border-transparent' : 'bg-white text-gray-400 border-gray-200 hover:border-gray-400'
+                              }`}
+                              style={active ? { backgroundColor: color as string, borderColor: color as string } : {}}
+                            >{lbl}</button>
+                          )
+                        )}
+                      </div>
                     )}
                   </div>
                 </div>
                 <div className="h-64">
                   <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={dailyChartData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-                      <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#9ca3af' }} interval="preserveStartEnd" />
-                      <YAxis
-                        tick={{ fontSize: 11, fill: '#9ca3af' }}
-                        tickFormatter={v => `${Number(v) > 0 ? '+' : ''}${Number(v).toFixed(1)}%`}
-                      />
-                      <Tooltip
-                        formatter={(v) => [`${Number(v) >= 0 ? '+' : ''}${Number(v).toFixed(2)}%`]}
-                        contentStyle={{ borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 12 }}
-                      />
-                      <Legend wrapperStyle={{ fontSize: 11 }} />
-                      <Line type="monotone" dataKey="portfolio" name={t.performance.wallet} stroke="#0D0D0D" strokeWidth={2} dot={{ r: 2, fill: '#0D0D0D' }} activeDot={{ r: 4 }} />
-                      {showCDI   && <Line type="monotone" dataKey="cdi"   name="CDI"    stroke="#16a34a" strokeWidth={1.5} dot={false} strokeDasharray="4 2" connectNulls />}
-                      {showIBOV  && <Line type="monotone" dataKey="ibov"  name="IBOV"   stroke="#7c3aed" strokeWidth={1.5} dot={false} strokeDasharray="4 2" connectNulls />}
-                      {showSP500 && <Line type="monotone" dataKey="sp500" name="S&P500" stroke="#f59e0b" strokeWidth={1.5} dot={false} strokeDasharray="4 2" connectNulls />}
-                    </LineChart>
+                    {chartView === 'value' ? (
+                      <LineChart data={valueChartData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+                        <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#9ca3af' }} interval="preserveStartEnd" />
+                        <YAxis
+                          tick={{ fontSize: 11, fill: '#9ca3af' }}
+                          tickFormatter={v => {
+                            const n = typeof v === 'number' ? v : 0
+                            return currency === 'BRL' ? `${(n / 1000).toFixed(0)}k` : (n >= 1000 ? `${(n / 1000).toFixed(0)}k` : n.toFixed(0))
+                          }}
+                          domain={['auto', 'auto']}
+                        />
+                        <Tooltip
+                          formatter={(v, name) => [
+                            new Intl.NumberFormat(intlLocale, { style: 'currency', currency, maximumFractionDigits: 0 }).format(typeof v === 'number' ? v : 0),
+                            name,
+                          ]}
+                          contentStyle={{ borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 12 }}
+                        />
+                        <Legend wrapperStyle={{ fontSize: 11 }} />
+                        <Line type="monotone" dataKey="value" name={t.dashboard.patrimony} stroke="#0D0D0D" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
+                        {activePlan && <Line type="monotone" dataKey="target" name={t.dashboard.targetLine} stroke="#1B4FD8" strokeWidth={1.5} dot={false} strokeDasharray="5 3" connectNulls />}
+                      </LineChart>
+                    ) : (
+                      <LineChart data={chartDataActive}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+                        <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#9ca3af' }} interval="preserveStartEnd" />
+                        <YAxis
+                          tick={{ fontSize: 11, fill: '#9ca3af' }}
+                          tickFormatter={v => `${Number(v) > 0 ? '+' : ''}${Number(v).toFixed(1)}%`}
+                        />
+                        <Tooltip
+                          formatter={(v) => [`${Number(v) >= 0 ? '+' : ''}${Number(v).toFixed(2)}%`]}
+                          contentStyle={{ borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 12 }}
+                        />
+                        <Legend wrapperStyle={{ fontSize: 11 }} />
+                        <Line type="monotone" dataKey="portfolio" name={t.performance.wallet} stroke="#0D0D0D" strokeWidth={2} dot={portfolioDot} activeDot={portfolioActiveDot} />
+                        {showCDI   && <Line type="monotone" dataKey="cdi"   name="CDI"    stroke="#16a34a" strokeWidth={1.5} dot={false} strokeDasharray="4 2" connectNulls />}
+                        {showIBOV  && <Line type="monotone" dataKey="ibov"  name="IBOV"   stroke="#7c3aed" strokeWidth={1.5} dot={false} strokeDasharray="4 2" connectNulls />}
+                        {showSP500 && <Line type="monotone" dataKey="sp500" name="S&P500" stroke="#f59e0b" strokeWidth={1.5} dot={false} strokeDasharray="4 2" connectNulls />}
+                      </LineChart>
+                    )}
                   </ResponsiveContainer>
                 </div>
               </div>
-            ) : (
-              <div className="bg-white border border-gray-100 rounded-2xl p-12 text-center text-gray-400 shadow-sm">
-                <p className="text-base font-medium text-gray-500">{t.performance.noData}</p>
-                <p className="text-sm mt-1">{t.performance.visitDashboard}</p>
-              </div>
             )
-          ) : chartData.length > 0 ? (
-            <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
-              <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
-                <h2 className="font-semibold text-gray-800">{t.performance.accumulatedReturn} · {periodLabel}</h2>
-                <div className="flex items-center gap-2">
-                  {([['CDI', showCDI, setShowCDI, '#16a34a'], ['IBOV', showIBOV, setShowIBOV, '#7c3aed'], ['S&P500', showSP500, setShowSP500, '#f59e0b']] as const).map(
-                    ([lbl, active, setter, color]) => (
-                      <button
-                        key={lbl}
-                        onClick={() => (setter as (v: boolean) => void)(!active)}
-                        className={`px-2.5 py-1 text-xs font-semibold rounded-md border transition-colors ${
-                          active ? 'text-white border-transparent' : 'bg-white text-gray-400 border-gray-200 hover:border-gray-400'
-                        }`}
-                        style={active ? { backgroundColor: color as string, borderColor: color as string } : {}}
-                      >{lbl}</button>
-                    )
-                  )}
-                </div>
-              </div>
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={chartData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-                    <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#9ca3af' }} />
-                    <YAxis
-                      tick={{ fontSize: 11, fill: '#9ca3af' }}
-                      tickFormatter={v => `${v > 0 ? '+' : ''}${v.toFixed(1)}%`}
-                    />
-                    <Tooltip
-                      formatter={(v) => [`${Number(v) >= 0 ? '+' : ''}${Number(v).toFixed(2)}%`]}
-                      contentStyle={{ borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 12 }}
-                    />
-                    <Legend wrapperStyle={{ fontSize: 11 }} />
-                    <Line type="monotone" dataKey="portfolio" name={t.performance.wallet}  stroke="#0D0D0D" strokeWidth={2}   dot={{ r: 3, fill: '#0D0D0D' }} activeDot={{ r: 5 }} />
-                    {showCDI   && <Line type="monotone" dataKey="cdi"   name="CDI"    stroke="#16a34a" strokeWidth={1.5} dot={false} strokeDasharray="4 2" connectNulls />}
-                    {showIBOV  && <Line type="monotone" dataKey="ibov"  name="IBOV"   stroke="#7c3aed" strokeWidth={1.5} dot={false} strokeDasharray="4 2" connectNulls />}
-                    {showSP500 && <Line type="monotone" dataKey="sp500" name="S&P500" stroke="#f59e0b" strokeWidth={1.5} dot={false} strokeDasharray="4 2" connectNulls />}
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-          ) : (
-            <div className="bg-white border border-gray-100 rounded-2xl p-12 text-center text-gray-400 shadow-sm">
-              <p className="text-base font-medium text-gray-500">{t.performance.noData}</p>
-              <p className="text-sm mt-1">{t.performance.visitDashboard}</p>
-            </div>
-          )}
+          })()}
 
           {/* Benchmark comparison cards */}
           {(useDailyChart ? dailyChartData.length > 0 : chartData.length > 0) && (
