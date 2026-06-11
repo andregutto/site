@@ -177,6 +177,16 @@ export default function DashboardPage() {
 
   if (!data) return null
 
+  const tdd = t.dashboard as unknown as Record<string, string>
+  const movingAssets = (data.by_asset ?? [])
+    .filter(a => !a.needs_manual && a.source !== 'manual' && a.value_brl > 0 && dashReturns?.[a.id] != null)
+    .map(a => ({ ...a, ret: dashReturns![a.id]! }))
+    .sort((a, b) => b.ret - a.ret)
+  const gainers = movingAssets.filter(a => a.ret > 0).slice(0, 5)
+  const losers  = [...movingAssets].reverse().filter(a => a.ret < 0).slice(0, 5)
+  const hasAllocation = data.by_class.length > 0
+  const hasMovers = dashReturnsLoading || gainers.length > 0 || losers.length > 0
+
   return (
     <>
     <div className="space-y-6">
@@ -289,93 +299,94 @@ export default function DashboardPage() {
       </div>
 
       {/* Row 2: AllocationChart + Top movers */}
-      {(() => {
-        const tdd = t.dashboard as unknown as Record<string, string>
-        const movingAssets = (data.by_asset ?? [])
-          .filter(a => !a.needs_manual && a.source !== 'manual' && a.value_brl > 0 && dashReturns?.[a.id] != null)
-          .map(a => ({ ...a, ret: dashReturns![a.id]! }))
-          .sort((a, b) => b.ret - a.ret)
-        const gainers = movingAssets.filter(a => a.ret > 0).slice(0, 5)
-        const losers  = [...movingAssets].reverse().filter(a => a.ret < 0).slice(0, 5)
-        const hasAllocation = data.by_class.length > 0
-        const hasMovers = dashReturnsLoading || gainers.length > 0 || losers.length > 0
-        if (!hasAllocation && !hasMovers) return null
-        return (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {hasAllocation && (
-              <div className={hasMovers ? undefined : 'lg:col-span-2'}>
-                <AllocationChart data={data.by_class} currency={currency} convert={convert} />
-              </div>
-            )}
-            {hasMovers && (
-            <div className={hasAllocation ? undefined : 'lg:col-span-2'}>
-            <div className="rounded-2xl p-5" style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)' }}>
-            <h2 className="mb-3" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--arvo-fg)' }}>
-              {tdd.topMovers} · {periodLabel}
-            </h2>
-            {dashReturnsLoading ? (
-              <div className="h-12 flex items-center">
-                <div className="text-xs animate-pulse" style={{ color: 'var(--arvo-fg-faint)' }}>...</div>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {gainers.length > 0 && (
-                  <div>
-                    <p className="text-xs mb-2" style={{ fontFamily: 'var(--arvo-font-body)', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)' }}>{tdd.topGainers}</p>
-                    <div className="space-y-2">
-                      {gainers.map(a => (
-                        <div key={a.id}
-                          className="flex items-center justify-between gap-2 cursor-pointer rounded-xl px-3 py-2 transition-colors"
-                          style={{ background: 'rgba(31,138,91,0.06)', border: '1px solid rgba(31,138,91,0.15)' }}
-                          onClick={() => navigate(`/assets/${a.id}`, { state: { total_brl: data.total_brl } })}
-                        >
-                          <div className="min-w-0">
-                            <div className="text-sm font-semibold" style={{ color: 'var(--arvo-fg)' }}>{a.code}</div>
-                            <div className="text-xs truncate" style={{ color: 'var(--arvo-fg-soft)' }}>{a.name}</div>
-                          </div>
-                          <div className="text-right shrink-0">
-                            <div className="text-sm font-bold" style={{ color: 'var(--arvo-green)' }}>+{a.ret.toFixed(2)}%</div>
-                            <div className="text-xs" style={{ color: 'var(--arvo-fg-soft)' }}>{fmt(convert(a.value_brl))}</div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {losers.length > 0 && (
-                  <div>
-                    <p className="text-xs mb-2" style={{ fontFamily: 'var(--arvo-font-body)', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)' }}>{tdd.topLosers}</p>
-                    <div className="space-y-2">
-                      {losers.map(a => (
-                        <div key={a.id}
-                          className="flex items-center justify-between gap-2 cursor-pointer rounded-xl px-3 py-2 transition-colors"
-                          style={{ background: 'rgba(214,59,47,0.06)', border: '1px solid rgba(214,59,47,0.15)' }}
-                          onClick={() => navigate(`/assets/${a.id}`, { state: { total_brl: data.total_brl } })}
-                        >
-                          <div className="min-w-0">
-                            <div className="text-sm font-semibold" style={{ color: 'var(--arvo-fg)' }}>{a.code}</div>
-                            <div className="text-xs truncate" style={{ color: 'var(--arvo-fg-soft)' }}>{a.name}</div>
-                          </div>
-                          <div className="text-right shrink-0">
-                            <div className="text-sm font-bold" style={{ color: 'var(--arvo-red)' }}>{a.ret.toFixed(2)}%</div>
-                            <div className="text-xs" style={{ color: 'var(--arvo-fg-soft)' }}>{fmt(convert(a.value_brl))}</div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
+      {(hasAllocation || hasMovers) && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+          {hasAllocation && (
+            <div className={hasMovers ? undefined : 'lg:col-span-2'}>
+              <AllocationChart data={data.by_class} currency={currency} convert={convert} />
             </div>
+          )}
+          {hasMovers && (
+          <div className={hasAllocation ? undefined : 'lg:col-span-2'}>
+          <div className="rounded-2xl p-5 h-full flex flex-col" style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)' }}>
+          <h2 className="mb-3" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--arvo-fg)' }}>
+            {tdd.topMovers} · {periodLabel}
+          </h2>
+          {dashReturnsLoading ? (
+            <div className="h-12 flex items-center">
+              <div className="text-xs animate-pulse" style={{ color: 'var(--arvo-fg-faint)' }}>...</div>
             </div>
-            )}
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {gainers.length > 0 && (
+                <div>
+                  <p className="text-xs mb-2" style={{ fontFamily: 'var(--arvo-font-body)', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)' }}>{tdd.topGainers}</p>
+                  <div className="space-y-2">
+                    {gainers.map(a => (
+                      <div key={a.id}
+                        className="flex items-center justify-between gap-2 cursor-pointer rounded-xl px-3 py-2 transition-colors"
+                        style={{ background: 'rgba(31,138,91,0.06)', border: '1px solid rgba(31,138,91,0.15)' }}
+                        onClick={() => navigate(`/assets/${a.id}`, { state: { total_brl: data.total_brl } })}
+                      >
+                        <div className="min-w-0">
+                          <div className="text-sm font-semibold" style={{ color: 'var(--arvo-fg)' }}>{a.code}</div>
+                          <div className="text-xs truncate" style={{ color: 'var(--arvo-fg-soft)' }}>{a.name}</div>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <div className="text-sm font-bold" style={{ color: 'var(--arvo-green)' }}>+{a.ret.toFixed(2)}%</div>
+                          <div className="text-xs" style={{ color: 'var(--arvo-fg-soft)' }}>{fmt(convert(a.value_brl))}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {losers.length > 0 && (
+                <div>
+                  <p className="text-xs mb-2" style={{ fontFamily: 'var(--arvo-font-body)', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)' }}>{tdd.topLosers}</p>
+                  <div className="space-y-2">
+                    {losers.map(a => (
+                      <div key={a.id}
+                        className="flex items-center justify-between gap-2 cursor-pointer rounded-xl px-3 py-2 transition-colors"
+                        style={{ background: 'rgba(214,59,47,0.06)', border: '1px solid rgba(214,59,47,0.15)' }}
+                        onClick={() => navigate(`/assets/${a.id}`, { state: { total_brl: data.total_brl } })}
+                      >
+                        <div className="min-w-0">
+                          <div className="text-sm font-semibold" style={{ color: 'var(--arvo-fg)' }}>{a.code}</div>
+                          <div className="text-xs truncate" style={{ color: 'var(--arvo-fg-soft)' }}>{a.name}</div>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <div className="text-sm font-bold" style={{ color: 'var(--arvo-red)' }}>{a.ret.toFixed(2)}%</div>
+                          <div className="text-xs" style={{ color: 'var(--arvo-fg-soft)' }}>{fmt(convert(a.value_brl))}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          {data.by_asset.length > 0 && (
+            <div className="flex justify-end mt-auto pt-3">
+              <button
+                onClick={() => navigate('/assets')}
+                style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, letterSpacing: '0.10em', color: 'var(--arvo-fg-soft)', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
+              >
+                {t.nav.assets} ({data.by_asset.length})
+                <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
+          )}
           </div>
-        )
-      })()}
+          </div>
+          )}
+        </div>
+      )}
 
-      {/* Link to assets page */}
-      {data.by_asset.length > 0 && (
+      {/* Link to assets page (fallback when Top Movers card isn't shown) */}
+      {!hasMovers && data.by_asset.length > 0 && (
         <div className="flex justify-end">
           <button
             onClick={() => navigate('/assets')}

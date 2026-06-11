@@ -63,7 +63,7 @@ export default function MarketIndicesCard({ periodMode, periodLabel }: Props) {
 
   return (
     <div
-      className="rounded-2xl p-4 cursor-pointer hover:shadow-md transition-shadow"
+      className="rounded-2xl p-4 h-full flex flex-col cursor-pointer hover:shadow-md transition-shadow"
       style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)' }}
       onClick={() => navigate('/portfolio/indices')}
       title={t.common.allIndices}
@@ -74,14 +74,14 @@ export default function MarketIndicesCard({ periodMode, periodLabel }: Props) {
       <p className="mb-3" style={{ fontFamily: "'Playfair Display', serif", fontStyle: 'italic', fontSize: 13, color: 'var(--arvo-fg-soft)' }}>
         {periodLabel}
       </p>
-      <div className="flex flex-col gap-3">
+      <div className="flex-1 grid grid-cols-2 gap-x-4 gap-y-3 content-center">
         {indices
           ? indices.map(idx => {
               const pct = getPct(idx)
               const isPos = pct != null && pct > 0
               const isNeg = pct != null && pct < 0
               return (
-                <div key={idx.code} className="flex items-center justify-between gap-3">
+                <div key={idx.code} className="flex items-center justify-between gap-3 min-w-0">
                   <div className="min-w-0">
                     <p style={{ fontFamily: "var(--arvo-font-body)", fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)', marginBottom: 2 }}>
                       {idx.name}
@@ -97,7 +97,7 @@ export default function MarketIndicesCard({ periodMode, periodLabel }: Props) {
               )
             })
           : CARD_INDICES.map(code => (
-              <div key={code} className="flex items-center justify-between gap-3">
+              <div key={code} className="flex items-center justify-between gap-3 min-w-0">
                 <div className="min-w-0 flex flex-col gap-1.5">
                   <div className="h-2.5 w-16 rounded animate-pulse" style={{ background: 'var(--arvo-track-bg)' }} />
                   <div className="h-4 w-20 rounded animate-pulse" style={{ background: 'var(--arvo-track-bg)' }} />
