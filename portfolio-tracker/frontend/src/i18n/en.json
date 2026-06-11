@@ -34,6 +34,8 @@
     "tabPreferences": "Preferences",
     "tabAdvanced": "Advanced",
     "preferencesTitle": "Preferences",
+    "preferencesAppearanceTitle": "Appearance & navigation",
+    "preferencesFinancialTitle": "Financial",
     "personalData": "Personal data",
     "email": "Email (read only)",
     "firstName": "First name",

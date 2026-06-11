@@ -537,10 +537,11 @@ export default function ProfilePage() {
       ) : (
         <>
         {tab === 'personal' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
         <div className="flex flex-col gap-6">
+          {/* Row: Avatar + nível atual */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
           {/* Avatar + nome */}
-          <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl p-6 flex items-center gap-5 shadow-sm">
+          <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl p-6 flex items-center gap-5 shadow-sm h-full">
             <div className="relative shrink-0 group">
               {avatarUrl ? (
                 <img
@@ -577,7 +578,7 @@ export default function ProfilePage() {
           {/* XP / Level card */}
           <Link
             to="/achievements"
-            className="block bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group"
+            className="block bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group h-full"
           >
             {/* accent bar */}
             <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-[var(--arvo-fg)] to-[#C8B89A] rounded-l-2xl" />
@@ -616,7 +617,10 @@ export default function ProfilePage() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
             </svg>
           </Link>
+          </div>
 
+          {/* Row: Dados pessoais | Senha + Zona de perigo */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
           {/* Dados pessoais */}
           <form onSubmit={handleSave} className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl p-6 shadow-sm space-y-4">
             <h2 className="font-semibold text-[var(--arvo-fg)]">{t.profile.personalData}</h2>
@@ -692,7 +696,6 @@ export default function ProfilePage() {
               {saving ? t.profile.saving : t.profile.save}
             </button>
           </form>
-        </div>
 
         <div className="flex flex-col gap-6">
           {/* Alterar senha */}
@@ -750,129 +753,141 @@ export default function ProfilePage() {
           </div>
         </div>
         </div>
+        </div>
         )}
 
         {tab === 'preferences' && (
-        <form onSubmit={handleSave} className="max-w-2xl bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl p-6 shadow-sm space-y-4">
-          <h2 className="font-semibold text-[var(--arvo-fg)]">{t.profile.preferencesTitle}</h2>
+        <form onSubmit={handleSave} className="flex flex-col gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+            {/* Aparência e navegação */}
+            <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl p-6 shadow-sm space-y-5">
+              <h2 className="font-semibold text-[var(--arvo-fg)]">{t.profile.preferencesAppearanceTitle}</h2>
 
-          <div>
-            <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{t.profile.defaultCurrency}</label>
-            <div className="flex gap-2">
-              {CURRENCIES.map(c => (
-                <button
-                  key={c}
-                  type="button"
-                  onClick={() => setCurrency(c)}
-                  className={`flex-1 py-2 text-sm font-semibold rounded-lg border transition-colors ${
-                    currency === c
-                      ? 'bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] border-[var(--arvo-fg)]'
-                      : 'bg-[var(--arvo-surface)] text-[var(--arvo-fg-muted)] border-[var(--arvo-border)] hover:border-[var(--arvo-fg-faint)]'
-                  }`}
-                >
-                  {c}
-                </button>
-              ))}
-            </div>
-          </div>
+              {/* Moeda padrão */}
+              <div>
+                <label className="block text-sm font-medium text-[var(--arvo-fg)] mb-2">{t.profile.defaultCurrency}</label>
+                <div className="flex flex-wrap gap-2">
+                  {CURRENCIES.map(c => (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => setCurrency(c)}
+                      className={`px-4 py-1.5 text-sm font-semibold rounded-lg border transition-colors ${
+                        currency === c
+                          ? 'bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] border-[var(--arvo-fg)]'
+                          : 'bg-[var(--arvo-surface)] text-[var(--arvo-fg-muted)] border-[var(--arvo-border)] hover:border-[var(--arvo-fg-faint)]'
+                      }`}
+                    >
+                      {c}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
-          {/* Aparência (tema claro/escuro) */}
-          <div>
-            <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{t.profile.themeLabel}</label>
-            <div className="flex gap-2">
-              {THEMES.map(th => (
-                <button
-                  key={th}
-                  type="button"
-                  onClick={() => setTheme(th)}
-                  className={`flex-1 py-2 text-sm font-semibold rounded-lg border transition-colors ${
-                    theme === th
-                      ? 'bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] border-[var(--arvo-fg)]'
-                      : 'bg-[var(--arvo-surface)] text-[var(--arvo-fg-muted)] border-[var(--arvo-border)] hover:border-[var(--arvo-fg-faint)]'
-                  }`}
-                >
-                  {th === 'auto' ? t.profile.themeAuto : th === 'light' ? t.profile.themeLight : t.profile.themeDark}
-                </button>
-              ))}
-            </div>
-          </div>
+              {/* Aparência (tema claro/escuro) */}
+              <div>
+                <label className="block text-sm font-medium text-[var(--arvo-fg)] mb-2">{t.profile.themeLabel}</label>
+                <div className="flex flex-wrap gap-2">
+                  {THEMES.map(th => (
+                    <button
+                      key={th}
+                      type="button"
+                      onClick={() => setTheme(th)}
+                      className={`px-4 py-1.5 text-sm font-semibold rounded-lg border transition-colors ${
+                        theme === th
+                          ? 'bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] border-[var(--arvo-fg)]'
+                          : 'bg-[var(--arvo-surface)] text-[var(--arvo-fg-muted)] border-[var(--arvo-border)] hover:border-[var(--arvo-fg-faint)]'
+                      }`}
+                    >
+                      {th === 'auto' ? t.profile.themeAuto : th === 'light' ? t.profile.themeLight : t.profile.themeDark}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
-          {/* Página inicial */}
-          <div>
-            <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{t.profile.defaultSectionLabel}</label>
-            <p className="text-xs text-[var(--arvo-fg-soft)] mb-2">{t.profile.defaultSectionHint}</p>
-            <div className="flex gap-2">
-              {(['investments', 'finances'] as const).map(s => (
-                <button
-                  key={s}
-                  type="button"
-                  onClick={() => setDefaultSection(s)}
-                  className={`flex-1 py-2 text-sm font-semibold rounded-lg border transition-colors ${
-                    defaultSection === s
-                      ? 'bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] border-[var(--arvo-fg)]'
-                      : 'bg-[var(--arvo-surface)] text-[var(--arvo-fg-muted)] border-[var(--arvo-border)] hover:border-[var(--arvo-fg-faint)]'
-                  }`}
-                >
-                  {s === 'investments' ? t.profile.defaultSectionInvestments : t.profile.defaultSectionFinances}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {/* Dia de início do mês financeiro */}
-            <div>
-              <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{t.profile.monthCycleDayLabel}</label>
-              <p className="text-xs text-[var(--arvo-fg-soft)] mb-2">{t.profile.monthCycleDayHint}</p>
-              <input
-                type="number"
-                min={1}
-                max={28}
-                value={monthCycleDay}
-                onChange={e => setMonthCycleDay(Math.min(28, Math.max(1, parseInt(e.target.value) || 1)))}
-                className="w-20 border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm text-center bg-[var(--arvo-surface-2)] text-[var(--arvo-fg)] focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20"
-              />
+              {/* Página inicial */}
+              <div>
+                <label className="block text-sm font-medium text-[var(--arvo-fg)] mb-1">{t.profile.defaultSectionLabel}</label>
+                <p className="text-xs text-[var(--arvo-fg-soft)] mb-2">{t.profile.defaultSectionHint}</p>
+                <div className="flex flex-wrap gap-2">
+                  {(['investments', 'finances'] as const).map(s => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => setDefaultSection(s)}
+                      className={`px-4 py-1.5 text-sm font-semibold rounded-lg border transition-colors ${
+                        defaultSection === s
+                          ? 'bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] border-[var(--arvo-fg)]'
+                          : 'bg-[var(--arvo-surface)] text-[var(--arvo-fg-muted)] border-[var(--arvo-border)] hover:border-[var(--arvo-fg-faint)]'
+                      }`}
+                    >
+                      {s === 'investments' ? t.profile.defaultSectionInvestments : t.profile.defaultSectionFinances}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
 
-            {/* Residência fiscal */}
-            <div>
-              <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{t.profile.taxCountryLabel}</label>
-              <p className="text-xs text-[var(--arvo-fg-soft)] mb-2">{t.profile.taxCountryDesc}</p>
-              <select
-                value={taxCountry}
-                onChange={e => setTaxCountry(e.target.value)}
-                className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm bg-[var(--arvo-surface)] text-[var(--arvo-fg)] focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20"
-              >
-                <option value="BR">Brasil</option>
-                <option value="FR">França</option>
-                <option value="PT">Portugal</option>
-              </select>
-            </div>
-          </div>
+            {/* Financeiro */}
+            <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl p-6 shadow-sm space-y-5">
+              <h2 className="font-semibold text-[var(--arvo-fg)]">{t.profile.preferencesFinancialTitle}</h2>
 
-          {/* Budget reminder */}
-          <div>
-            <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{t.profile.budgetReminderSection}</label>
-            <p className="text-xs text-[var(--arvo-fg-soft)] mb-2">{t.profile.budgetReminderHint}</p>
-            <div className="flex flex-wrap gap-2">
-              {([
-                { val: 0, label: t.profile.budgetReminderNever },
-                { val: 1, label: t.profile.budgetReminder1m },
-                { val: 2, label: t.profile.budgetReminder2m },
-                { val: 3, label: t.profile.budgetReminder3m },
-                { val: 6, label: t.profile.budgetReminder6m },
-              ] as Array<{ val: number; label: string }>).map(({ val, label }) => (
-                <button
-                  key={val}
-                  type="button"
-                  onClick={() => handleBudgetReminderChange(val)}
-                  className={`px-3 py-1.5 text-xs rounded-lg border transition-colors ${
-                    budgetReminderFreq === val
-                      ? 'bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] border-[var(--arvo-fg)]'
-                      : 'bg-[var(--arvo-surface)] text-[var(--arvo-fg-muted)] border-[var(--arvo-border)] hover:border-[var(--arvo-fg)] hover:text-[var(--arvo-fg)]'
-                  }`}
-                >{label}</button>
-              ))}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Dia de início do mês financeiro */}
+                <div>
+                  <label className="block text-sm font-medium text-[var(--arvo-fg)] mb-1">{t.profile.monthCycleDayLabel}</label>
+                  <p className="text-xs text-[var(--arvo-fg-soft)] mb-2">{t.profile.monthCycleDayHint}</p>
+                  <input
+                    type="number"
+                    min={1}
+                    max={28}
+                    value={monthCycleDay}
+                    onChange={e => setMonthCycleDay(Math.min(28, Math.max(1, parseInt(e.target.value) || 1)))}
+                    className="w-20 border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm text-center bg-[var(--arvo-surface-2)] text-[var(--arvo-fg)] focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20"
+                  />
+                </div>
+
+                {/* Residência fiscal */}
+                <div>
+                  <label className="block text-sm font-medium text-[var(--arvo-fg)] mb-1">{t.profile.taxCountryLabel}</label>
+                  <p className="text-xs text-[var(--arvo-fg-soft)] mb-2">{t.profile.taxCountryDesc}</p>
+                  <select
+                    value={taxCountry}
+                    onChange={e => setTaxCountry(e.target.value)}
+                    className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm bg-[var(--arvo-surface)] text-[var(--arvo-fg)] focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20"
+                  >
+                    <option value="BR">Brasil</option>
+                    <option value="FR">França</option>
+                    <option value="PT">Portugal</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Budget reminder */}
+              <div>
+                <label className="block text-sm font-medium text-[var(--arvo-fg)] mb-1">{t.profile.budgetReminderSection}</label>
+                <p className="text-xs text-[var(--arvo-fg-soft)] mb-2">{t.profile.budgetReminderHint}</p>
+                <div className="flex flex-wrap gap-2">
+                  {([
+                    { val: 0, label: t.profile.budgetReminderNever },
+                    { val: 1, label: t.profile.budgetReminder1m },
+                    { val: 2, label: t.profile.budgetReminder2m },
+                    { val: 3, label: t.profile.budgetReminder3m },
+                    { val: 6, label: t.profile.budgetReminder6m },
+                  ] as Array<{ val: number; label: string }>).map(({ val, label }) => (
+                    <button
+                      key={val}
+                      type="button"
+                      onClick={() => handleBudgetReminderChange(val)}
+                      className={`px-3 py-1.5 text-xs rounded-lg border transition-colors ${
+                        budgetReminderFreq === val
+                          ? 'bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] border-[var(--arvo-fg)]'
+                          : 'bg-[var(--arvo-surface)] text-[var(--arvo-fg-muted)] border-[var(--arvo-border)] hover:border-[var(--arvo-fg)] hover:text-[var(--arvo-fg)]'
+                      }`}
+                    >{label}</button>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
 
@@ -882,7 +897,7 @@ export default function ProfilePage() {
           <button
             type="submit"
             disabled={saving}
-            className="w-full bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] rounded-xl py-2.5 text-sm font-semibold hover:bg-[var(--arvo-fg)]/90 disabled:opacity-50 transition-colors"
+            className="self-start px-8 bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] rounded-xl py-2.5 text-sm font-semibold hover:bg-[var(--arvo-fg)]/90 disabled:opacity-50 transition-colors"
           >
             {saving ? t.profile.saving : t.profile.save}
           </button>
@@ -890,7 +905,7 @@ export default function ProfilePage() {
         )}
 
         {tab === 'advanced' && (
-        <div className="max-w-2xl flex flex-col gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
           {/* Exportar dados */}
           <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl p-6 shadow-sm space-y-3">
             <h2 className="font-semibold text-[var(--arvo-fg)]">{t.profile.exportTitle}</h2>

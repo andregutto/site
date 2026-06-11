@@ -54,21 +54,31 @@ function MetricCard({ label, value, sub, badge, badgeColor }: {
   return (
     <div style={{ background: 'var(--arvo-surface)', borderRadius: 12, border: '1px solid var(--arvo-border)', padding: '20px' }}>
       <div style={{ fontSize: 11, fontWeight: 500, color: 'var(--arvo-fg-soft)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>{label}</div>
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
-        <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--arvo-fg)', lineHeight: 1 }}>{value}</div>
-        {badge && (
-          <span style={{ fontSize: 11, fontWeight: 600, color: badgeColor, background: (badgeColor ?? '#000') + '18', padding: '3px 8px', borderRadius: 20 }}>{badge}</span>
-        )}
-      </div>
+      <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--arvo-fg)', lineHeight: 1 }}>{value}</div>
+      {badge && (
+        <span style={{ display: 'inline-block', fontSize: 11, fontWeight: 600, color: badgeColor, background: (badgeColor ?? '#000') + '18', padding: '3px 8px', borderRadius: 20, marginTop: 8 }}>{badge}</span>
+      )}
       {sub && <div style={{ fontSize: 12, color: 'var(--arvo-fg-soft)', marginTop: 6, lineHeight: 1.4 }}>{sub}</div>}
     </div>
   )
 }
 
-function InfoCard({ children }: { children: React.ReactNode }) {
+function CollapsibleInfoCard({ title, children }: { title: string; children: React.ReactNode }) {
+  const [expanded, setExpanded] = useState(false)
   return (
-    <div style={{ background: '#F0F4FF', borderRadius: 10, border: '1px solid #C7D7FF', padding: '14px 16px', fontSize: 12, color: '#1B4FD8', lineHeight: 1.6 }}>
-      {children}
+    <div style={{ background: 'var(--arvo-blue-tint)', borderRadius: 10, border: '1px solid rgba(27,79,216,0.20)', padding: '14px 16px', fontSize: 12, lineHeight: 1.6 }}>
+      <button
+        onClick={() => setExpanded(v => !v)}
+        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 12, color: 'var(--arvo-blue)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}
+      >
+        <span style={{ fontSize: 14 }}>ℹ️</span>
+        {title} — {expanded ? '▲' : '▼'}
+      </button>
+      {expanded && (
+        <div style={{ marginTop: 10, color: 'var(--arvo-fg-muted)' }}>
+          {children}
+        </div>
+      )}
     </div>
   )
 }
@@ -179,7 +189,9 @@ export default function DiversificationPage() {
       risk: getRiskWeight(g.key, ''),
       color: RISK_COLORS[Math.min(getRiskWeight(g.key, '') - 1, 4)],
     }))
-    return { assetHHI, effectiveN, geoHHI, sectorHHI, top3, top10, weightedRisk, byClass }
+    const maxClassPct = Math.max(...byClass.map(c => c.pct), 0)
+    const xAxisMax = Math.min(100, Math.ceil((maxClassPct + 5) / 10) * 10)
+    return { assetHHI, effectiveN, geoHHI, sectorHHI, top3, top10, weightedRisk, byClass, xAxisMax }
   }, [assets, total, geoGroups, sectorGroups, classGroups])
 
   // HHI badge uses normalized HHI to account for bucket count
@@ -363,12 +375,6 @@ export default function DiversificationPage() {
             )
           })()}
 
-          {/* Risk methodology info */}
-          <InfoCard>
-            <strong>{d.riskMethodologyTitle ?? 'Como é calculado?'}</strong><br />
-            {d.riskMethodologyDesc}
-          </InfoCard>
-
           {/* Risk by class chart */}
           <div style={{ background: 'var(--arvo-surface)', borderRadius: 12, border: '1px solid var(--arvo-border)', padding: '24px' }}>
             <h2 style={{ fontSize: 15, fontWeight: 600, margin: '0 0 4px', color: 'var(--arvo-fg)' }}>{d.riskByClassTitle ?? d.riskByClass}</h2>
@@ -376,7 +382,7 @@ export default function DiversificationPage() {
             <ResponsiveContainer width="100%" height={Math.max(160, riskMetrics.byClass.length * 44)}>
               <BarChart data={riskMetrics.byClass} layout="vertical" margin={{ left: 12, right: 36, top: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="var(--arvo-border)" />
-                <XAxis type="number" domain={[0, 100]} tickFormatter={v => `${v}%`} tick={{ fontSize: 11, fill: 'var(--arvo-fg-soft)' }} />
+                <XAxis type="number" domain={[0, riskMetrics.xAxisMax]} tickFormatter={v => `${v}%`} tick={{ fontSize: 11, fill: 'var(--arvo-fg-soft)' }} />
                 <YAxis type="category" dataKey="name" width={100} tick={{ fontSize: 12, fill: 'var(--arvo-fg)' }} />
                 <Tooltip
                   formatter={(v: unknown, _name: unknown, props: { payload?: { risk?: number } }) => {
@@ -410,6 +416,11 @@ export default function DiversificationPage() {
               ))}
             </div>
           </div>
+
+          {/* Risk methodology info */}
+          <CollapsibleInfoCard title={d.riskMethodologyTitle ?? 'Como é calculado?'}>
+            <p style={{ margin: 0 }}>{d.riskMethodologyDesc}</p>
+          </CollapsibleInfoCard>
 
           {/* Asset & geo concentration */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12 }}>
@@ -482,22 +493,10 @@ export default function DiversificationPage() {
 }
 
 function HhiInfoCard({ d }: { d: ReturnType<typeof useI18n>['t']['diversification'] }) {
-  const [expanded, setExpanded] = useState(false)
   return (
-    <div style={{ background: '#F8FAFF', borderRadius: 10, border: '1px solid #C7D7FF', padding: '14px 16px', fontSize: 12, lineHeight: 1.6 }}>
-      <button
-        onClick={() => setExpanded(v => !v)}
-        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 12, color: '#1B4FD8', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}
-      >
-        <span style={{ fontSize: 14 }}>ℹ️</span>
-        {d.hhi} — {expanded ? '▲' : '▼'}
-      </button>
-      {expanded && (
-        <div style={{ marginTop: 10, color: '#334155' }}>
-          <p style={{ margin: '0 0 8px' }}>{d.hhiDesc}</p>
-          <p style={{ margin: 0 }}>{d.hhiExplain}</p>
-        </div>
-      )}
-    </div>
+    <CollapsibleInfoCard title={d.hhi}>
+      <p style={{ margin: '0 0 8px' }}>{d.hhiDesc}</p>
+      <p style={{ margin: 0 }}>{d.hhiExplain}</p>
+    </CollapsibleInfoCard>
   )
 }
