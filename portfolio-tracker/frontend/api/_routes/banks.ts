@@ -97,6 +97,10 @@ router.get('/callback', async (req, res: Response) => {
 
   if (!tokenRes.ok) {
     console.error('TrueLayer token error:', await tokenRes.text())
+    await supabaseAdmin.from('notification_dismissals').insert({
+      user_id: userId, key: `bank_connect:${Date.now()}`, type: 'bank_connect_error',
+      severity: 'danger', params: { reason: 'token' }, link: '/finances/accounts',
+    })
     res.redirect(`${frontend}/finances/accounts?error=token`); return
   }
 
@@ -124,6 +128,11 @@ router.get('/callback', async (req, res: Response) => {
       token_expires_at: expiresAt,
     })
   }
+
+  await supabaseAdmin.from('notification_dismissals').insert({
+    user_id: userId, key: `bank_connect:${Date.now()}`, type: 'bank_connected',
+    severity: 'success', params: {}, link: '/finances/accounts',
+  })
 
   res.redirect(`${frontend}/finances/accounts?connected=1`)
 })

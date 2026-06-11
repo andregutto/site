@@ -244,12 +244,17 @@ router.get('/value', requireAuth, async (req, res: Response, next) => {
   } catch (err) { next(err) }
 })
 
-// GET /api/portfolio/split-check — all assets with unregistered splits (cached 24h)
-router.get('/split-check', requireAuth, async (req, res: Response) => {
-  const { userId } = req as AuthRequest
+// All assets with unregistered splits for a user (cached 24h)
+export interface SplitWarning {
+  asset_id: number
+  code: string
+  splits: Awaited<ReturnType<typeof getSplitEvents>>
+}
+
+export async function getSplitWarnings(userId: string): Promise<SplitWarning[]> {
   const cacheKey = `portfolio:split-check:${userId}`
-  const cached = cache.get<object>(cacheKey)
-  if (cached) { res.json(cached); return }
+  const cached = cache.get<SplitWarning[]>(cacheKey)
+  if (cached) return cached
 
   const { data: assets } = await supabaseAdmin
     .from('assets')
@@ -259,7 +264,7 @@ router.get('/split-check', requireAuth, async (req, res: Response) => {
     .eq('asset_type', 'ticker')
     .not('ticker_yahoo', 'is', null)
 
-  if (!assets?.length) { res.json({ warnings: [] }); return }
+  if (!assets?.length) return []
 
   const { data: allContribs } = await supabaseAdmin
     .from('contributions')
@@ -267,7 +272,7 @@ router.get('/split-check', requireAuth, async (req, res: Response) => {
     .in('asset_id', assets.map(a => a.id))
     .order('date', { ascending: true })
 
-  const warnings: Array<{ asset_id: number; code: string; splits: ReturnType<typeof getSplitEvents> extends Promise<infer T> ? T : never }> = []
+  const warnings: SplitWarning[] = []
 
   await Promise.allSettled(assets.map(async (asset) => {
     const contribs = (allContribs ?? []).filter(c => c.asset_id === asset.id)
@@ -283,9 +288,15 @@ router.get('/split-check', requireAuth, async (req, res: Response) => {
     if (unaccounted.length) warnings.push({ asset_id: asset.id, code: asset.code as string, splits: unaccounted })
   }))
 
-  const result = { warnings }
-  cache.set(cacheKey, result, 24 * 60 * 60 * 1000)
-  res.json(result)
+  cache.set(cacheKey, warnings, 24 * 60 * 60 * 1000)
+  return warnings
+}
+
+// GET /api/portfolio/split-check
+router.get('/split-check', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const warnings = await getSplitWarnings(userId)
+  res.json({ warnings })
 })
 
 router.post('/sync-history', requireAuth, async (req, res: Response) => {

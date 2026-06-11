@@ -10,6 +10,7 @@
     "indices": "Indices",
     "signout": "Sign out",
     "achievements": "Achievements",
+    "notifications": "Notifications",
     "favorites": "Favourites",
     "profile": "Profile",
     "archived": "Archived",
@@ -547,6 +548,21 @@
       "name": "Night Owl",
       "desc": "Use portfolio and finances together"
     }
+  },
+  "notifications": {
+    "title": "Notifications",
+    "activeSection": "Active",
+    "historySection": "History",
+    "emptyActive": "No active notifications right now.",
+    "emptyHistory": "Your notification history will appear here.",
+    "dismiss": "Dismiss",
+    "restore": "Restore",
+    "type_achievement": "Achievement unlocked",
+    "type_bank_connected": "Bank account connected successfully",
+    "type_bank_connect_error": "Couldn't connect the bank account",
+    "type_subscription_detected": "Possible subscription: {name} · {amount}/month",
+    "type_split_warning": "Possible split/reverse split for {code} ({ratio})",
+    "type_budget_alert": "{name} is at {pct}% of this month's budget"
   },
   "finances": {
     "navOverview": "Overview",

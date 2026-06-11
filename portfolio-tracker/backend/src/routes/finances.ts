@@ -43,6 +43,110 @@ async function getUserCycleDay(userId: string): Promise<number> {
   return typeof day === 'number' && day >= 1 && day <= 28 ? day : 1
 }
 
+// ── Budget alerts (envelopes approaching their monthly budget) ────────────────
+
+export interface BudgetAlertItem {
+  envelope_id: number
+  name: string
+  name_key: string | null
+  icon: string
+  type: string
+  pct: number
+  month: string
+}
+
+// Envelopes (non-income) that are at 80–100% of their budget for the current financial month.
+export async function getBudgetAlerts(userId: string): Promise<BudgetAlertItem[]> {
+  const cycleDay = await getUserCycleDay(userId)
+  const todayStr = new Date().toISOString().slice(0, 10)
+  const currentFM = financialMonthKey(todayStr, cycleDay)
+  const { start, end } = financialMonthRange(currentFM, cycleDay)
+
+  const [txnRes, catRes, envRes, sharedEnvRes] = await Promise.all([
+    supabaseAdmin
+      .from('finance_transactions')
+      .select('amount, category_id, shared_category_id, is_internal_transfer, exclude_from_stats')
+      .eq('user_id', userId)
+      .gte('date', start)
+      .lte('date', end),
+    supabaseAdmin
+      .from('finance_categories')
+      .select('id, envelope_id, budget_monthly')
+      .eq('user_id', userId),
+    supabaseAdmin
+      .from('finance_envelopes')
+      .select('id, name, name_key, icon, type')
+      .eq('user_id', userId)
+      .neq('type', 'income'),
+    supabaseAdmin
+      .from('shared_category_user_settings')
+      .select('shared_category_id, local_envelope_id')
+      .eq('user_id', userId),
+  ])
+
+  const txns = txnRes.data ?? []
+  const cats = (catRes.data ?? []) as { id: number; envelope_id: number | null; budget_monthly: number | null }[]
+  const envs = (envRes.data ?? []) as { id: number; name: string; name_key: string | null; icon: string; type: string }[]
+
+  const catToEnv = new Map(cats.map(c => [c.id, c.envelope_id]))
+  const envCatBudget = new Map<number, number>()
+  for (const c of cats) {
+    if (c.envelope_id != null && c.budget_monthly != null) {
+      envCatBudget.set(c.envelope_id, (envCatBudget.get(c.envelope_id) ?? 0) + c.budget_monthly)
+    }
+  }
+
+  // Shared category envelope mappings + goals (mirrors /spending-summary)
+  const sharedCatToEnv = new Map<number, number>(
+    (sharedEnvRes.data ?? [])
+      .filter(r => r.local_envelope_id != null)
+      .map(r => [r.shared_category_id, r.local_envelope_id as number])
+  )
+  if (sharedCatToEnv.size > 0) {
+    const sharedCatIds = [...sharedCatToEnv.keys()]
+    const { data: sharedCatRows } = await supabaseAdmin
+      .from('shared_categories')
+      .select('id, total_goal, group_id')
+      .in('id', sharedCatIds)
+    const groupIds = [...new Set((sharedCatRows ?? []).map(c => c.group_id))]
+    const { data: myMemberships } = await supabaseAdmin
+      .from('shared_group_members')
+      .select('group_id, share_pct')
+      .eq('user_id', userId)
+      .eq('status', 'active')
+      .in('group_id', groupIds.length > 0 ? groupIds : [-1])
+    const pctByGroup = new Map((myMemberships ?? []).map(m => [m.group_id, Number(m.share_pct ?? 50)]))
+    for (const cat of sharedCatRows ?? []) {
+      const envId = sharedCatToEnv.get(cat.id)
+      if (!envId) continue
+      const pct = pctByGroup.get(cat.group_id) ?? 50
+      const myGoal = Number(cat.total_goal) * pct / 100
+      envCatBudget.set(envId, (envCatBudget.get(envId) ?? 0) + myGoal)
+    }
+  }
+
+  const envActual = new Map<number, number>()
+  for (const tx of txns) {
+    if (tx.is_internal_transfer || tx.exclude_from_stats || tx.amount >= 0) continue
+    const sharedEnvId = tx.shared_category_id ? sharedCatToEnv.get(tx.shared_category_id) : undefined
+    const envId = sharedEnvId ?? (tx.category_id ? catToEnv.get(tx.category_id) ?? null : null)
+    if (envId == null) continue
+    envActual.set(envId, (envActual.get(envId) ?? 0) + Math.abs(tx.amount))
+  }
+
+  const alerts: BudgetAlertItem[] = []
+  for (const env of envs) {
+    const budget = envCatBudget.get(env.id) ?? 0
+    if (budget <= 0) continue
+    const actual = envActual.get(env.id) ?? 0
+    const ratio = actual / budget
+    if (ratio >= 0.80 && ratio <= 1) {
+      alerts.push({ envelope_id: env.id, name: env.name, name_key: env.name_key, icon: env.icon, type: env.type, pct: Math.round(ratio * 100), month: currentFM })
+    }
+  }
+  return alerts
+}
+
 const DEFAULT_NAMES: Record<string, { income: string; transfer: string; salary: string; essential: string; investment: string; savings: string; free: string }> = {
   pt: { income: 'Rendas',  transfer: 'Transferência', salary: 'Salário',  essential: 'Gastos Essenciais',      investment: 'Investimentos',    savings: 'Reserva', free: 'Lazer'    },
   en: { income: 'Income',  transfer: 'Transfer',      salary: 'Salary',   essential: 'Essential Expenses',     investment: 'Investments',      savings: 'Savings', free: 'Fun Money' },
@@ -1945,9 +2049,16 @@ function normalizeSubscriptionDesc(raw: string): string {
     .trim()
 }
 
-router.get('/subscriptions', requireAuth, async (req, res: Response) => {
-  const { userId } = req as AuthRequest
+export type SubscriptionFrequency = 'weekly' | 'biweekly' | 'monthly' | 'quarterly' | 'biannual' | 'annual'
 
+export interface SubscriptionItem {
+  key: string; name: string; frequency: SubscriptionFrequency
+  median_amount: number; currency: string; last_date: string
+  annual_cost: number; monthly_equivalent: number; occurrences: number
+  category: { id: number; name: string; icon: string; color: string; name_key?: string } | null
+}
+
+export async function getActiveSubscriptions(userId: string): Promise<{ subscriptions: SubscriptionItem[]; error?: string }> {
   const since = new Date()
   since.setMonth(since.getMonth() - 18)
   const sinceStr = since.toISOString().split('T')[0]
@@ -1968,8 +2079,8 @@ router.get('/subscriptions', requireAuth, async (req, res: Response) => {
       .eq('user_id', userId),
   ])
 
-  if (error) { res.status(500).json({ error: error.message }); return }
-  if (!transactions || transactions.length === 0) { res.json({ subscriptions: [] }); return }
+  if (error) return { subscriptions: [], error: error.message }
+  if (!transactions || transactions.length === 0) return { subscriptions: [] }
 
   const dismissedKeys = new Set((dismissals ?? []).map(d => d.key))
 
@@ -1984,15 +2095,9 @@ router.get('/subscriptions', requireAuth, async (req, res: Response) => {
     groups.set(key, list)
   }
 
-  type Freq = 'weekly' | 'biweekly' | 'monthly' | 'quarterly' | 'biannual' | 'annual'
-  const annualMultiplier: Record<Freq, number> = { weekly: 52, biweekly: 26, monthly: 12, quarterly: 4, biannual: 2, annual: 1 }
+  const annualMultiplier: Record<SubscriptionFrequency, number> = { weekly: 52, biweekly: 26, monthly: 12, quarterly: 4, biannual: 2, annual: 1 }
 
-  const subscriptions: Array<{
-    key: string; name: string; frequency: Freq
-    median_amount: number; currency: string; last_date: string
-    annual_cost: number; monthly_equivalent: number; occurrences: number
-    category: { id: number; name: string; icon: string; color: string; name_key?: string } | null
-  }> = []
+  const subscriptions: SubscriptionItem[] = []
 
   for (const [key, txs] of groups) {
     if (txs.length < 2) continue
@@ -2006,7 +2111,7 @@ router.get('/subscriptions', requireAuth, async (req, res: Response) => {
     const sortedGaps = [...gaps].sort((a, b) => a - b)
     const medianGap = sortedGaps[Math.floor(sortedGaps.length / 2)]
 
-    let frequency: Freq | null = null
+    let frequency: SubscriptionFrequency | null = null
     let minOcc = 3
     if (medianGap >= 5  && medianGap <= 9)    { frequency = 'weekly';    minOcc = 4 }
     else if (medianGap >= 11 && medianGap <= 17)  { frequency = 'biweekly';  minOcc = 4 }
@@ -2042,7 +2147,14 @@ router.get('/subscriptions', requireAuth, async (req, res: Response) => {
   }
 
   subscriptions.sort((a, b) => b.monthly_equivalent - a.monthly_equivalent)
-  res.json({ subscriptions })
+  return { subscriptions }
+}
+
+router.get('/subscriptions', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const result = await getActiveSubscriptions(userId)
+  if (result.error) { res.status(500).json({ error: result.error }); return }
+  res.json({ subscriptions: result.subscriptions })
 })
 
 // GET /api/finances/subscriptions/dismissed

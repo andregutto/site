@@ -10,6 +10,7 @@
     "indices": "Indices",
     "signout": "Déconnexion",
     "achievements": "Succès",
+    "notifications": "Notifications",
     "favorites": "Favoris",
     "profile": "Profil",
     "archived": "Archivés",
@@ -547,6 +548,21 @@
       "name": "Hibou",
       "desc": "Utiliser portefeuille et finances ensemble"
     }
+  },
+  "notifications": {
+    "title": "Notifications",
+    "activeSection": "Actives",
+    "historySection": "Historique",
+    "emptyActive": "Aucune notification active pour le moment.",
+    "emptyHistory": "Votre historique de notifications apparaîtra ici.",
+    "dismiss": "Ignorer",
+    "restore": "Restaurer",
+    "type_achievement": "Succès débloqué",
+    "type_bank_connected": "Compte bancaire connecté avec succès",
+    "type_bank_connect_error": "Impossible de connecter le compte bancaire",
+    "type_subscription_detected": "Abonnement potentiel : {name} · {amount}/mois",
+    "type_split_warning": "Possible split/regroupement pour {code} ({ratio})",
+    "type_budget_alert": "{name} est à {pct}% du budget de ce mois"
   },
   "finances": {
     "navOverview": "Vue d'ensemble",

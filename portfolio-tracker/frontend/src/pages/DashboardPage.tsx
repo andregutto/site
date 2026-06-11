@@ -5,12 +5,12 @@ import { usePortfolioValue, usePerformanceInception, usePerformanceSummary, useA
 import { useDividendSummary, useDividendSync } from '../hooks/useDividends'
 import { useCurrency } from '../contexts/CurrencyContext'
 import { useAchievementContext } from '../contexts/AchievementContext'
+import { useNotificationsContext } from '../contexts/NotificationsContext'
 import { useI18n } from '../contexts/I18nContext'
 import { apiFetch } from '../lib/api'
 import ValueCards from '../components/ValueCards'
 import AllocationChart from '../components/AllocationChart'
 import MarketIndicesCard from '../components/MarketIndicesCard'
-import type { SplitEvent } from '../lib/types'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 
 type PeriodMode = 'current_month' | 'last_30d' | 'last_12m' | 'ytd' | 'inception'
@@ -34,6 +34,8 @@ export default function DashboardPage() {
   const { t, locale } = useI18n()
   const intlLocale = locale === 'pt' ? 'pt-BR' : locale === 'fr' ? 'fr-FR' : 'en-GB'
   const td = (t as unknown as Record<string, Record<string, string>>).dividends ?? {}
+  const { active: activeNotifications, dismiss: dismissNotification } = useNotificationsContext()
+  const splitWarnings = activeNotifications.filter(i => i.type === 'split_warning')
 
   useEffect(() => {
     if (data?.total_brl != null) triggerCheck(data.total_brl)
@@ -53,12 +55,6 @@ export default function DashboardPage() {
     syncDividends()
   }, [syncDividends])
 
-  const [splitWarnings, setSplitWarnings] = useState<Array<{ asset_id: number; code: string; splits: SplitEvent[] }>>([])
-  useEffect(() => {
-    apiFetch<{ warnings: Array<{ asset_id: number; code: string; splits: SplitEvent[] }> }>('/portfolio/split-check')
-      .then(r => setSplitWarnings(r.warnings))
-      .catch(() => {})
-  }, [])
 
   const [periodMode, setPeriodMode] = useState<PeriodMode>('ytd')
 
@@ -239,15 +235,26 @@ export default function DashboardPage() {
             <p className="font-semibold text-amber-900 text-sm dark:text-amber-200">{t.dashboard.splitWarningDashTitle}</p>
             <p className="text-xs text-amber-700 mt-0.5 dark:text-amber-300">{(t.dashboard.splitWarningDashBody as string).replace('{n}', String(splitWarnings.length))}</p>
             <div className="flex flex-wrap gap-2 mt-2">
-              {splitWarnings.map(w => (
-                <button
-                  key={w.asset_id}
-                  onClick={() => navigate(`/assets/${w.asset_id}`, { state: { total_brl: data.total_brl } })}
-                  className="text-xs bg-amber-100 hover:bg-amber-200 border border-amber-300 text-amber-800 px-2 py-1 rounded-lg transition-colors dark:bg-amber-900/40 dark:hover:bg-amber-900/60 dark:border-amber-800 dark:text-amber-200"
-                >
-                  {w.code} · {w.splits.map(s => s.ratio).join(', ')} →
-                </button>
-              ))}
+              {splitWarnings.map(item => {
+                const assetId = item.key.split(':')[1]
+                return (
+                  <div key={item.key} className="flex items-center gap-1 bg-amber-100 border border-amber-300 rounded-lg dark:bg-amber-900/40 dark:border-amber-800">
+                    <button
+                      onClick={() => navigate(`/assets/${assetId}`, { state: { total_brl: data.total_brl } })}
+                      className="text-xs hover:bg-amber-200 text-amber-800 pl-2 pr-1 py-1 rounded-l-lg transition-colors dark:hover:bg-amber-900/60 dark:text-amber-200"
+                    >
+                      {item.params.code as string} · {item.params.ratio as string} →
+                    </button>
+                    <button
+                      onClick={() => dismissNotification(item)}
+                      className="text-amber-500 hover:text-amber-800 px-1.5 py-1 transition-colors dark:text-amber-400 dark:hover:text-amber-200"
+                      aria-label={t.notifications.dismiss}
+                    >
+                      <svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor"><path d="M5.28 4.22a.75.75 0 0 0-1.06 1.06L6.94 8l-2.72 2.72a.75.75 0 1 0 1.06 1.06L8 9.06l2.72 2.72a.75.75 0 1 0 1.06-1.06L9.06 8l2.72-2.72a.75.75 0 0 0-1.06-1.06L8 6.94 5.28 4.22Z" /></svg>
+                    </button>
+                  </div>
+                )
+              })}
             </div>
           </div>
         </div>

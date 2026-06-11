@@ -10,6 +10,7 @@
     "indices": "Índices",
     "signout": "Sair",
     "achievements": "Conquistas",
+    "notifications": "Notificações",
     "favorites": "Favoritos",
     "profile": "Perfil",
     "archived": "Arquivados",
@@ -547,6 +548,21 @@
       "name": "Coruja",
       "desc": "Usar portfólio e finanças juntos"
     }
+  },
+  "notifications": {
+    "title": "Notificações",
+    "activeSection": "Ativas",
+    "historySection": "Histórico",
+    "emptyActive": "Nenhuma notificação ativa no momento.",
+    "emptyHistory": "Seu histórico de notificações vai aparecer aqui.",
+    "dismiss": "Dispensar",
+    "restore": "Restaurar",
+    "type_achievement": "Conquista desbloqueada",
+    "type_bank_connected": "Conta bancária conectada com sucesso",
+    "type_bank_connect_error": "Não foi possível conectar a conta bancária",
+    "type_subscription_detected": "Possível assinatura: {name} · {amount}/mês",
+    "type_split_warning": "Possível desdobramento/grupamento em {code} ({ratio})",
+    "type_budget_alert": "{name} está em {pct}% do orçamento do mês"
   },
   "finances": {
     "navOverview": "Visão Geral",

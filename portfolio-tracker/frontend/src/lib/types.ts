@@ -217,3 +217,32 @@ export interface ContributionRow {
     asset_classes: { name: string; color: string } | null
   }
 }
+
+export type NotificationType =
+  | 'achievement'
+  | 'bank_connected'
+  | 'bank_connect_error'
+  | 'split_warning'
+  | 'budget_alert'
+  | 'shared_category_alert'
+  | 'home_prompt'
+  | 'budget_reminder_setup'
+  | 'budget_reminder_due'
+  | 'subscription_detected'
+
+export interface NotificationItem {
+  key: string
+  type: NotificationType
+  severity: 'info' | 'warning' | 'danger' | 'success'
+  params: Record<string, unknown>
+  link?: string
+  occurred_at: string
+  dismissed_at: string | null
+  dismissible: boolean
+}
+
+export interface NotificationsResponse {
+  active: NotificationItem[]
+  history: NotificationItem[]
+  unread_count: number
+}

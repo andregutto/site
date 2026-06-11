@@ -48,12 +48,14 @@ import FinancesFreedomPage from './pages/finances/FinancesFreedomPage'
 import FinancesMomentsPage from './pages/finances/FinancesMomentsPage'
 import AppLayout from './components/AppLayout'
 import AchievementsPage from './pages/AchievementsPage'
+import NotificationsPage from './pages/NotificationsPage'
 import DividendsPage from './pages/DividendsPage'
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage'
 import TermsOfUsePage from './pages/TermsOfUsePage'
 import PublicMomentPage from './pages/PublicMomentPage'
 import PublicPortfolioPage from './pages/PublicPortfolioPage'
 import { AchievementProvider } from './contexts/AchievementContext'
+import { NotificationsProvider } from './contexts/NotificationsContext'
 import LandingPage from './pages/LandingPage'
 import AcceptInvitePage from './pages/AcceptInvitePage'
 import SharedCategoriesPage from './pages/finances/SharedCategoriesPage'
@@ -111,7 +113,7 @@ function ProtectedRoutes() {
 
   if (!user.email_confirmed_at) return <EmailConfirmGate email={user.email ?? ''} />
 
-  return <AchievementProvider><AppLayout /></AchievementProvider>
+  return <AchievementProvider><NotificationsProvider><AppLayout /></NotificationsProvider></AchievementProvider>
 }
 
 function AppRoutes() {
@@ -149,6 +151,7 @@ function AppRoutes() {
         <Route path="/dividends"      element={<DividendsPage />} />
         <Route path="/favorites"      element={<FavoritesPage />} />
         <Route path="/achievements"   element={<AchievementsPage />} />
+        <Route path="/notifications"  element={<NotificationsPage />} />
         <Route path="/archived"       element={<ArchivedPage />} />
         <Route path="/diversification" element={<DiversificationPage />} />
         <Route path="/finances"       element={<FinancesLayout />}>

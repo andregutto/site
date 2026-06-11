@@ -9,6 +9,8 @@ import { useI18n } from '../../contexts/I18nContext'
 import { useCurrency } from '../../contexts/CurrencyContext'
 import { useAuth } from '../../contexts/AuthContext'
 import { supabase } from '../../lib/supabase'
+import { useNotificationsContext } from '../../contexts/NotificationsContext'
+import { resolveNotificationText } from '../../lib/notifications'
 
 interface CategorySummary {
   id: number
@@ -136,6 +138,8 @@ export default function FinancesOverviewPage() {
   const { user } = useAuth()
   const { currency: displayCurrency, fxRates, hideValues } = useCurrency()
   const fmt = (n: number, currency: string, compact = false, locale = 'pt-BR') => hideValues ? '•••' : _fmt(n, currency, compact, locale)
+  const { active: activeNotifications, dismiss: dismissNotification } = useNotificationsContext()
+  const budgetAlerts = activeNotifications.filter(i => i.type === 'budget_alert')
 
   const [showHomePrompt, setShowHomePrompt] = useState(() =>
     user?.user_metadata?.default_section !== 'finances' &&
@@ -462,11 +466,6 @@ export default function FinancesOverviewPage() {
   const displayPct  = displayValue != null && totalBudgeted > 0 ? Math.min(Math.round((displayValue / totalBudgeted) * 100), 100) : null
   const displayOver = displayValue != null && totalBudgeted > 0 && displayValue > totalBudgeted
 
-  // #3 Budget alert: envelopes at 80–99% of budget this month
-  const approachingBudgetEnvs = isCurrentMonth
-    ? expenseEnvelopeBars.filter(e => e.budget > 0 && !e.over && e.actual / e.budget >= 0.80)
-    : []
-
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
       {showHomePrompt && (
@@ -526,10 +525,10 @@ export default function FinancesOverviewPage() {
           <div>
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
               <div>
-                <p style={{ fontFamily: "var(--arvo-font-body)", fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'var(--arvo-gold-text)', margin: 0 }}>{t.finances.overviewBalance}</p>
-                <p style={{ fontFamily: "var(--arvo-font-body)", fontSize: 42, letterSpacing: '0.02em', lineHeight: 1.05, marginTop: 10, color: receivedIncome > 0 && netBalance < 0 ? 'var(--arvo-red)' : 'var(--arvo-fg)' }}>
+                <p style={{ fontFamily: "var(--arvo-font-body)", fontSize: 42, letterSpacing: '0.02em', lineHeight: 1.05, margin: 0, color: receivedIncome > 0 && netBalance < 0 ? 'var(--arvo-red)' : 'var(--arvo-fg)' }}>
                   {receivedIncome > 0 ? fmt(cx(netBalance), currency, true) : '—'}
                 </p>
+                <p style={{ fontFamily: "var(--arvo-font-body)", fontSize: 9, fontWeight: 600, letterSpacing: '0.10em', textTransform: 'uppercase', color: 'var(--arvo-gold-text)', marginTop: 8, marginBottom: 0 }}>{t.finances.overviewBalance}</p>
               </div>
               <div style={{ flexShrink: 0, padding: '4px 12px', borderRadius: 999, fontSize: 11, fontFamily: "var(--arvo-font-body)", letterSpacing: '0.06em',
                 background: totalExpenses === 0 ? 'var(--arvo-chip-bg)' : isWithinBudget ? 'rgba(31,138,91,0.10)' : 'rgba(214,59,47,0.10)',
@@ -543,7 +542,7 @@ export default function FinancesOverviewPage() {
 
             <div style={{ marginTop: 20, paddingTop: 18, borderTop: '1px solid var(--arvo-border)', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-                <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)' }}>{t.finances.income}</span>
+                <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 10, fontWeight: 600, letterSpacing: '0.10em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)' }}>{t.finances.income}</span>
                 <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 18, letterSpacing: '0.04em', color: receivedIncome > 0 && receivedIncome >= configuredIncome ? 'var(--arvo-green)' : receivedIncome > 0 ? 'var(--arvo-ocre)' : 'var(--arvo-fg)' }}>
                   {receivedIncome > 0 ? fmt(cx(receivedIncome), currency, true) : '—'}
                 </span>
@@ -552,7 +551,7 @@ export default function FinancesOverviewPage() {
                 </span>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-                <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)' }}>{t.finances.expenses}</span>
+                <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 10, fontWeight: 600, letterSpacing: '0.10em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)' }}>{t.finances.expenses}</span>
                 <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 18, letterSpacing: '0.04em', color: totalExpenses > totalBudgeted && totalBudgeted > 0 ? 'var(--arvo-red)' : 'var(--arvo-fg)' }}>
                   {totalExpenses > 0 ? fmt(cx(totalExpenses), currency, true) : '—'}
                 </span>
@@ -563,7 +562,7 @@ export default function FinancesOverviewPage() {
                 )}
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-                <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)' }}>{t.finances.heroSavingsRate}</span>
+                <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 10, fontWeight: 600, letterSpacing: '0.10em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)' }}>{t.finances.heroSavingsRate}</span>
                 <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 18, letterSpacing: '0.04em', color: receivedIncome > 0 && netBalance >= 0 ? 'var(--arvo-green)' : receivedIncome > 0 ? 'var(--arvo-red)' : 'var(--arvo-fg)' }}>
                   {receivedIncome > 0 ? `${Math.round((netBalance / receivedIncome) * 100)}%` : '—'}
                 </span>
@@ -576,7 +575,7 @@ export default function FinancesOverviewPage() {
             {displayValue != null && (
               <div className="lg:hidden" style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--arvo-border)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                  <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)' }}>
+                  <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 9, fontWeight: 600, letterSpacing: '0.10em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)' }}>
                     {isCurrentMonth ? t.finances.overviewProjection : t.finances.overviewResult}
                     {isCurrentMonth && <span style={{ marginLeft: 5, letterSpacing: 0, textTransform: 'none', fontWeight: 400 }}>· {t.finances.overviewDayOf} {daysElapsed} {t.finances.overviewDayOfSep} {daysTotal}</span>}
                   </span>
@@ -607,7 +606,7 @@ export default function FinancesOverviewPage() {
 
           {/* Right: month projection — desktop only */}
           <div className="hidden lg:flex lg:flex-col lg:justify-center" style={{ borderLeft: '1px solid var(--arvo-border-soft)', paddingLeft: 28 }}>
-            <p style={{ fontFamily: "var(--arvo-font-body)", fontSize: 10, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)', marginBottom: 2 }}>
+            <p style={{ fontFamily: "var(--arvo-font-body)", fontSize: 10, fontWeight: 600, letterSpacing: '0.10em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)', marginBottom: 2 }}>
               {isCurrentMonth ? t.finances.overviewProjection : t.finances.overviewResult}
             </p>
             <p style={{ fontFamily: "var(--arvo-font-body)", fontSize: 12, color: 'var(--arvo-fg-faint)', fontStyle: 'italic', marginBottom: 4 }}>
@@ -666,15 +665,22 @@ export default function FinancesOverviewPage() {
         </div>
       </div>
 
-      {/* #3 Budget alert: envelopes approaching limit */}
-      {approachingBudgetEnvs.length > 0 && (
-        <div className="lg:col-span-2" style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(232,160,32,0.08)', border: '1px solid rgba(232,160,32,0.28)', borderRadius: 12, padding: '8px 14px' }}>
+      {/* #4 Budget alert: envelopes approaching limit */}
+      {budgetAlerts.map(item => (
+        <div key={item.key} className="lg:col-span-2" style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(232,160,32,0.08)', border: '1px solid rgba(232,160,32,0.28)', borderRadius: 12, padding: '8px 14px' }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--arvo-ocre)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
           <p style={{ flex: 1, fontSize: 12, color: 'var(--arvo-ocre)', margin: 0, fontFamily: 'var(--arvo-font-body)' }}>
-            {approachingBudgetEnvs.map(e => `${e.icon} ${resolveEnvName(e.name, e.type, e.name_key, nameKeys)} (${Math.round((e.actual / e.budget) * 100)}%)`).join('  ·  ')} — {t.finances.overviewNearLimit}
+            {resolveNotificationText(item, t, locale).title}
           </p>
+          <button
+            onClick={() => dismissNotification(item)}
+            style={{ flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer', padding: 2, display: 'flex', alignItems: 'center', color: 'var(--arvo-ocre)', opacity: 0.7 }}
+            aria-label={t.notifications.dismiss}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
         </div>
-      )}
+      ))}
 
       {/* Income envelope section */}
       {incomeEnvelopeBar && (

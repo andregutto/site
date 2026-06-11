@@ -37,7 +37,8 @@ export default function ValueCards({ total_brl, generated_at, invested_brl, gain
   const labelStyle: React.CSSProperties = {
     fontFamily: "var(--arvo-font-body)",
     fontSize: 11,
-    letterSpacing: '0.20em',
+    fontWeight: 600,
+    letterSpacing: '0.10em',
     textTransform: 'uppercase',
     color: 'var(--arvo-fg-soft)',
   }
@@ -55,14 +56,14 @@ export default function ValueCards({ total_brl, generated_at, invested_brl, gain
       {/* Top row */}
       <div style={{ position: 'relative', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, zIndex: 2 }}>
         <div>
-          <p style={{ fontFamily: "var(--arvo-font-body)", fontSize: 10, letterSpacing: '0.30em', textTransform: 'uppercase', color: 'var(--arvo-gold-text)', margin: 0 }}>
+          <p style={{ fontFamily: "var(--arvo-font-body)", fontSize: 10, fontWeight: 600, letterSpacing: '0.10em', textTransform: 'uppercase', color: 'var(--arvo-gold-text)', margin: 0 }}>
             Total {currency}
           </p>
           <p className="text-[28px] sm:text-[40px]" style={{ fontFamily: "var(--arvo-font-body)", letterSpacing: '0.02em', lineHeight: 1.05, color: 'var(--arvo-fg)', margin: '6px 0 0' }}>
             {fmt(total_brl, 0)}
           </p>
         </div>
-        <p className="hidden sm:block" style={{ fontFamily: "var(--arvo-font-body)", fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)', marginTop: 4, whiteSpace: 'nowrap' }}>
+        <p className="hidden sm:block" style={{ fontFamily: "var(--arvo-font-body)", fontSize: 10, fontWeight: 600, letterSpacing: '0.10em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)', marginTop: 4, whiteSpace: 'nowrap' }}>
           {t.dashboard.updatedAt.replace('{time}', ts)}
         </p>
       </div>

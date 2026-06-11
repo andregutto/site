@@ -1374,7 +1374,7 @@ export default function FinancesTransactionsPage() {
                       const expanded = expandedGroups.has(item.groupId)
                       return (
                         <>
-                          <tr key={`group-${item.groupId}`} className="bg-amber-50/40 hover:bg-amber-50/60 transition-colors cursor-pointer" onClick={() => toggleExpandGroup(item.groupId)}>
+                          <tr key={`group-${item.groupId}`} className="hover:bg-[var(--arvo-surface-2)] transition-colors cursor-pointer" onClick={() => toggleExpandGroup(item.groupId)}>
                             <td className="pl-4 pr-2 py-2.5 w-8" />
                             <td colSpan={6} className="px-3 py-2.5">
                               <div className="flex items-center gap-2.5">
@@ -1384,7 +1384,7 @@ export default function FinancesTransactionsPage() {
                                 <span className="text-xs font-semibold text-amber-700">↩</span>
                                 <span className="text-sm font-medium text-[var(--arvo-fg)]">{item.name}</span>
                                 <span className="text-xs text-[var(--arvo-fg-soft)]">{item.txs.length} transações</span>
-                                <span className={`ml-auto text-sm font-semibold ${Math.abs(item.net) < 0.01 ? 'text-[var(--arvo-fg-soft)]' : item.net > 0 ? 'text-green-600' : 'text-red-500'}`}>
+                                <span className={`ml-auto text-xs sm:text-sm font-semibold ${Math.abs(item.net) < 0.01 ? 'text-[var(--arvo-fg-soft)]' : item.net > 0 ? 'text-green-600' : 'text-red-500'}`}>
                                   {t.finances.reimbursementGroupNet}: {fmt(item.net, item.txs[0]?.currency)}
                                 </span>
                                 <button

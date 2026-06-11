@@ -6,6 +6,7 @@ import { useTheme } from '../contexts/ThemeContext'
 import { useI18n } from '../contexts/I18nContext'
 import type React from 'react'
 import { useAchievementContext } from '../contexts/AchievementContext'
+import { useNotificationsContext } from '../contexts/NotificationsContext'
 import { getLevel, getLevelProgress } from '../lib/achievementDefs'
 import { apiFetch } from '../lib/api'
 import LoginFooter from './LoginFooter'
@@ -34,6 +35,7 @@ export default function AppLayout() {
   const { resolvedTheme } = useTheme()
   const { t } = useI18n()
   const { totalXp } = useAchievementContext()
+  const { unreadCount } = useNotificationsContext()
   const location = useLocation()
   const level = getLevel(totalXp)
   const levelProgress = getLevelProgress(totalXp)
@@ -284,6 +286,23 @@ export default function AppLayout() {
                 </svg>
               )}
             </button>
+            {/* Bell: notifications */}
+            <Link
+              to="/notifications"
+              title={t.notifications.title}
+              style={{ height: 32, width: 32, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', flexShrink: 0, transition: 'all 0.15s' }}
+              onMouseEnter={e => (e.currentTarget.style.background = 'var(--arvo-hover-bg)')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+            >
+              <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="var(--arvo-fg-soft)" strokeWidth={1.8}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
+              </svg>
+              {unreadCount > 0 && (
+                <span style={{ position: 'absolute', top: 2, right: 2, minWidth: 14, height: 14, padding: '0 3px', borderRadius: 999, background: 'var(--arvo-red)', color: 'white', fontSize: 9, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--arvo-font-body)', lineHeight: 1 }}>
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
+            </Link>
             <SetupChecklist firstName={meta.first_name as string | undefined} />
             <div ref={userMenuRef} className="relative">
               <button
@@ -296,7 +315,7 @@ export default function AppLayout() {
                 ) : (
                   <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px]" style={{ background: 'var(--arvo-black)', color: 'var(--arvo-gold)', fontFamily: "var(--arvo-font-body)", letterSpacing: '0.08em' }}>{avatarInitials}</div>
                 )}
-                <span className="text-xs max-w-[100px] truncate transition-colors" style={{ color: 'var(--arvo-fg-soft)' }}>{headerLabel}</span>
+                <span className="hidden sm:inline text-xs max-w-[100px] truncate transition-colors" style={{ color: 'var(--arvo-fg-soft)' }}>{headerLabel}</span>
                 <svg className={`w-3 h-3 transition-transform ${showUserMenu ? 'rotate-180' : ''}`} style={{ color: 'var(--arvo-fg-faint)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                 </svg>
@@ -334,6 +353,17 @@ export default function AppLayout() {
                       <path strokeLinecap="round" strokeLinejoin="round" d="M8 1.5l1.8 3.6 4 .6-2.9 2.8.7 4L8 10.4l-3.6 1.9.7-4L2.2 5.7l4-.6L8 1.5z"/>
                     </svg>
                     {t.nav.achievements}
+                  </Link>
+                  <Link to="/notifications" onClick={() => setShowUserMenu(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors" style={{ color: 'var(--arvo-fg-muted)' }} onMouseEnter={e => (e.currentTarget.style.background='var(--arvo-hover-bg)')} onMouseLeave={e => (e.currentTarget.style.background='')}>
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4 shrink-0">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M8 1.5A3 3 0 005 4.5v.75c0 1.42-.55 2.79-1.53 3.82l-.4.43A.75.75 0 003.6 10.8h8.8a.75.75 0 00.53-1.3l-.4-.43A5.25 5.25 0 0111 5.25V4.5A3 3 0 008 1.5zM6.5 12a1.5 1.5 0 003 0h-3z"/>
+                    </svg>
+                    {t.nav.notifications}
+                    {unreadCount > 0 && (
+                      <span className="ml-auto text-[10px] font-semibold rounded-full px-1.5 py-0.5" style={{ background: 'var(--arvo-red)', color: 'white', fontFamily: 'var(--arvo-font-body)', lineHeight: 1 }}>
+                        {unreadCount > 9 ? '9+' : unreadCount}
+                      </span>
+                    )}
                   </Link>
                   <Link to="/favorites" onClick={() => setShowUserMenu(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors" style={{ color: 'var(--arvo-fg-muted)' }} onMouseEnter={e => (e.currentTarget.style.background='var(--arvo-hover-bg)')} onMouseLeave={e => (e.currentTarget.style.background='')}>
                     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4 shrink-0">
