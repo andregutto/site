@@ -36,20 +36,21 @@ interface Props {
 
 export default function MarketIndicesCard({ periodMode, periodLabel }: Props) {
   const [data, setData] = useState<IndexSnapshot[] | null>(null)
+  const [failed, setFailed] = useState(false)
   const { t } = useI18n()
   const navigate = useNavigate()
 
   useEffect(() => {
-    apiFetch<IndexSnapshot[]>('/indices').then(setData).catch(() => {})
+    apiFetch<IndexSnapshot[]>('/indices').then(setData).catch(() => setFailed(true))
   }, [])
 
-  if (!data) return null
+  if (failed) return null
 
-  const indices = CARD_INDICES
-    .map(code => data.find(d => d.code === code))
-    .filter(Boolean) as IndexSnapshot[]
+  const indices = data
+    ? (CARD_INDICES.map(code => data.find(d => d.code === code)).filter(Boolean) as IndexSnapshot[])
+    : null
 
-  if (!indices.length) return null
+  if (indices && !indices.length) return null
 
   function getPct(idx: IndexSnapshot): number | null {
     switch (periodMode) {
@@ -74,26 +75,36 @@ export default function MarketIndicesCard({ periodMode, periodLabel }: Props) {
         {periodLabel}
       </p>
       <div className="flex flex-col gap-3">
-        {indices.map(idx => {
-          const pct = getPct(idx)
-          const isPos = pct != null && pct > 0
-          const isNeg = pct != null && pct < 0
-          return (
-            <div key={idx.code} className="flex items-center justify-between gap-3">
-              <div className="min-w-0">
-                <p style={{ fontFamily: "var(--arvo-font-body)", fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)', marginBottom: 2 }}>
-                  {idx.name}
-                </p>
-                <p style={{ fontFamily: "var(--arvo-font-body)", fontSize: 16, letterSpacing: '0.01em', color: 'var(--arvo-fg)', lineHeight: 1 }}>
-                  {fmtVal(idx.value, idx.unit)}
-                </p>
+        {indices
+          ? indices.map(idx => {
+              const pct = getPct(idx)
+              const isPos = pct != null && pct > 0
+              const isNeg = pct != null && pct < 0
+              return (
+                <div key={idx.code} className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p style={{ fontFamily: "var(--arvo-font-body)", fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)', marginBottom: 2 }}>
+                      {idx.name}
+                    </p>
+                    <p style={{ fontFamily: "var(--arvo-font-body)", fontSize: 16, letterSpacing: '0.01em', color: 'var(--arvo-fg)', lineHeight: 1 }}>
+                      {fmtVal(idx.value, idx.unit)}
+                    </p>
+                  </div>
+                  <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 14, fontWeight: 600, color: isPos ? 'var(--arvo-green)' : isNeg ? 'var(--arvo-red)' : 'var(--arvo-fg-faint)', flexShrink: 0 }}>
+                    {fmtPct(pct)}
+                  </span>
+                </div>
+              )
+            })
+          : CARD_INDICES.map(code => (
+              <div key={code} className="flex items-center justify-between gap-3">
+                <div className="min-w-0 flex flex-col gap-1.5">
+                  <div className="h-2.5 w-16 rounded animate-pulse" style={{ background: 'var(--arvo-track-bg)' }} />
+                  <div className="h-4 w-20 rounded animate-pulse" style={{ background: 'var(--arvo-track-bg)' }} />
+                </div>
+                <div className="h-4 w-12 rounded animate-pulse shrink-0" style={{ background: 'var(--arvo-track-bg)' }} />
               </div>
-              <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 14, fontWeight: 600, color: isPos ? 'var(--arvo-green)' : isNeg ? 'var(--arvo-red)' : 'var(--arvo-fg-faint)', flexShrink: 0 }}>
-                {fmtPct(pct)}
-              </span>
-            </div>
-          )
-        })}
+            ))}
       </div>
     </div>
   )

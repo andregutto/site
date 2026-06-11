@@ -30,6 +30,10 @@
   },
   "profile": {
     "title": "Profile",
+    "tabPersonal": "Profile",
+    "tabPreferences": "Preferences",
+    "tabAdvanced": "Advanced",
+    "preferencesTitle": "Preferences",
     "personalData": "Personal data",
     "email": "Email (read only)",
     "firstName": "First name",

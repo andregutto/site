@@ -260,36 +260,35 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* ValueCards */}
-      {(() => {
-        const totalInvestedBrl = data.by_asset.reduce((s, a) => s + (a.invested_brl ?? 0), 0)
-        const hasInvested = totalInvestedBrl > 0
-        const gainLossBrl = hasInvested ? data.total_brl - totalInvestedBrl : null
-        const gainLossPct = hasInvested && gainLossBrl != null ? (gainLossBrl / totalInvestedBrl) * 100 : null
-        return (
-          <ValueCards
-            total_brl={data.total_brl}
-            generated_at={data.generated_at}
-            invested_brl={hasInvested ? totalInvestedBrl : null}
-            gain_brl={gainLossBrl}
-            gain_pct={gainLossPct}
-            period_abs={hasInvested ? periodReturnAbs : null}
-            chartLoading={periodLoading}
-            period_pct={hasInvested ? periodReturnPct : null}
-            period_label={periodLabel}
-          />
-        )
-      })()}
-
-      {/* AllocationChart + MarketIndicesCard */}
-      {data.by_class.length > 0 && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <AllocationChart data={data.by_class} currency={currency} convert={convert} />
+      {/* Row 1: ValueCards + MarketIndicesCard */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2">
+          {(() => {
+            const totalInvestedBrl = data.by_asset.reduce((s, a) => s + (a.invested_brl ?? 0), 0)
+            const hasInvested = totalInvestedBrl > 0
+            const gainLossBrl = hasInvested ? data.total_brl - totalInvestedBrl : null
+            const gainLossPct = hasInvested && gainLossBrl != null ? (gainLossBrl / totalInvestedBrl) * 100 : null
+            return (
+              <ValueCards
+                total_brl={data.total_brl}
+                generated_at={data.generated_at}
+                invested_brl={hasInvested ? totalInvestedBrl : null}
+                gain_brl={gainLossBrl}
+                gain_pct={gainLossPct}
+                period_abs={hasInvested ? periodReturnAbs : null}
+                chartLoading={periodLoading}
+                period_pct={hasInvested ? periodReturnPct : null}
+                period_label={periodLabel}
+              />
+            )
+          })()}
+        </div>
+        <div className="lg:col-span-1">
           <MarketIndicesCard periodMode={periodMode} periodLabel={periodLabel} />
         </div>
-      )}
+      </div>
 
-      {/* Top movers */}
+      {/* Row 2: AllocationChart + Top movers */}
       {(() => {
         const tdd = t.dashboard as unknown as Record<string, string>
         const movingAssets = (data.by_asset ?? [])
@@ -298,9 +297,19 @@ export default function DashboardPage() {
           .sort((a, b) => b.ret - a.ret)
         const gainers = movingAssets.filter(a => a.ret > 0).slice(0, 5)
         const losers  = [...movingAssets].reverse().filter(a => a.ret < 0).slice(0, 5)
-        if (!dashReturnsLoading && gainers.length === 0 && losers.length === 0) return null
+        const hasAllocation = data.by_class.length > 0
+        const hasMovers = dashReturnsLoading || gainers.length > 0 || losers.length > 0
+        if (!hasAllocation && !hasMovers) return null
         return (
-          <div className="rounded-2xl p-5" style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)' }}>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {hasAllocation && (
+              <div className={hasMovers ? undefined : 'lg:col-span-2'}>
+                <AllocationChart data={data.by_class} currency={currency} convert={convert} />
+              </div>
+            )}
+            {hasMovers && (
+            <div className={hasAllocation ? undefined : 'lg:col-span-2'}>
+            <div className="rounded-2xl p-5" style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)' }}>
             <h2 className="mb-3" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--arvo-fg)' }}>
               {tdd.topMovers} · {periodLabel}
             </h2>
@@ -357,6 +366,9 @@ export default function DashboardPage() {
                   </div>
                 )}
               </div>
+            )}
+            </div>
+            </div>
             )}
           </div>
         )

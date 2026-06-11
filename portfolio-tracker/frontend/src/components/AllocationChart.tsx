@@ -59,8 +59,8 @@ export default function AllocationChart({ data, currency = 'BRL', convert }: Pro
   return (
     <div className="rounded-2xl p-6" style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)' }}>
       <h2 className="mb-1" style={{ fontFamily: "var(--arvo-font-body)", fontSize: 13, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--arvo-fg)' }}>{t.dashboard.allocationByClass}</h2>
-      <p className="mb-4" style={{ fontFamily: "'Playfair Display', serif", fontStyle: 'italic', fontSize: 13, color: 'var(--arvo-fg-soft)' }}>{t.dashboard.allocationSubtitle}</p>
-      <div style={{ width: '100%', height: 220 }}>
+      <p className="mb-2" style={{ fontFamily: "'Playfair Display', serif", fontStyle: 'italic', fontSize: 13, color: 'var(--arvo-fg-soft)' }}>{t.dashboard.allocationSubtitle}</p>
+      <div style={{ width: '100%', height: 260 }}>
         <ResponsiveContainer width="100%" height="100%">
           <PieChart margin={{ top: 20, right: 70, bottom: 20, left: 70 }}>
             <Pie
@@ -69,9 +69,11 @@ export default function AllocationChart({ data, currency = 'BRL', convert }: Pro
               nameKey="name"
               cx="50%"
               cy="50%"
-              innerRadius={50}
-              outerRadius={75}
+              innerRadius={58}
+              outerRadius={85}
               paddingAngle={2}
+              stroke="var(--arvo-surface)"
+              strokeWidth={2}
               label={renderOuterLabel}
               labelLine={false}
             >
