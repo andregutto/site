@@ -63,6 +63,27 @@ function MetricCard({ label, value, sub, badge, badgeColor }: {
   )
 }
 
+// Lead card for each subnav: a large, color-coded conclusion (the tool's analysis),
+// followed by a short contextual sentence and a supporting stat.
+function ConclusionCard({ label, headline, headlineColor, description, stat, statLabel }: {
+  label: string; headline: string; headlineColor: string
+  description?: string; stat?: string; statLabel?: string
+}) {
+  return (
+    <div style={{ background: 'var(--arvo-surface)', borderRadius: 12, border: '1px solid var(--arvo-border)', padding: '24px' }}>
+      <div style={{ fontSize: 11, fontWeight: 500, color: 'var(--arvo-fg-soft)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>{label}</div>
+      <div style={{ fontSize: 30, fontWeight: 800, color: headlineColor, lineHeight: 1.15, marginBottom: description ? 8 : 0 }}>{headline}</div>
+      {description && <p style={{ fontSize: 13, color: 'var(--arvo-fg-muted)', margin: 0, lineHeight: 1.5 }}>{description}</p>}
+      {stat && (
+        <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--arvo-border)', display: 'flex', alignItems: 'baseline', gap: 8 }}>
+          <span style={{ fontSize: 20, fontWeight: 700, color: 'var(--arvo-fg)' }}>{stat}</span>
+          {statLabel && <span style={{ fontSize: 12, color: 'var(--arvo-fg-soft)' }}>{statLabel}</span>}
+        </div>
+      )}
+    </div>
+  )
+}
+
 function CollapsibleInfoCard({ title, children }: { title: string; children: React.ReactNode }) {
   const [expanded, setExpanded] = useState(false)
   return (
@@ -244,13 +265,31 @@ export default function DiversificationPage() {
       {/* ── GEO TAB ── */}
       {tab === 'geo' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {riskMetrics && (() => {
+            const { text, color } = hhiBadge(riskMetrics.geoHHI, geoGroups.length)
+            const top = geoGroups[0]
+            const description = top
+              ? d.geoConclusionDesc.replace('{country}', top.label).replace('{pct}', fmtPct(top.pct))
+              : undefined
+            return (
+              <ConclusionCard
+                label={d.geoConcentrationLabel}
+                headline={text}
+                headlineColor={color}
+                description={description}
+                stat={riskMetrics.geoHHI.toFixed(3)}
+                statLabel={d.geoHhi}
+              />
+            )
+          })()}
+
           <div style={{ background: 'var(--arvo-surface)', borderRadius: 12, border: '1px solid var(--arvo-border)', padding: '24px' }}>
             <h2 style={{ fontSize: 15, fontWeight: 600, margin: '0 0 20px', color: 'var(--arvo-fg)' }}>{d.geoTitle}</h2>
             <div style={{ display: 'flex', gap: 24, alignItems: 'center', flexWrap: 'wrap' }}>
               <div style={{ flex: '0 0 180px', height: 180 }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
-                    <Pie data={geoGroups} dataKey="value" nameKey="label" innerRadius={52} outerRadius={82} paddingAngle={2}>
+                    <Pie data={geoGroups} dataKey="value" nameKey="label" innerRadius={52} outerRadius={82} paddingAngle={2} stroke="var(--arvo-surface)" strokeWidth={2}>
                       {geoGroups.map(g => <Cell key={g.key} fill={g.color} />)}
                     </Pie>
                     <Tooltip content={customTooltip as any} />
@@ -277,19 +316,6 @@ export default function DiversificationPage() {
             </div>
           </div>
 
-          {riskMetrics && (() => {
-            const { text, color, norm } = hhiBadge(riskMetrics.geoHHI, geoGroups.length)
-            return (
-              <MetricCard
-                label={d.geoHhi}
-                value={riskMetrics.geoHHI.toFixed(3)}
-                badge={text}
-                badgeColor={color}
-                sub={`${d.hhiLow} ← ${Math.round(norm * 100)}% → ${d.hhiHigh}`}
-              />
-            )
-          })()}
-
           <HhiInfoCard d={d} />
         </div>
       )}
@@ -297,6 +323,24 @@ export default function DiversificationPage() {
       {/* ── SECTOR TAB ── */}
       {tab === 'sector' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {riskMetrics && (() => {
+            const { text, color } = hhiBadge(riskMetrics.sectorHHI, sectorGroups.length)
+            const top = sectorGroups[0]
+            const description = top
+              ? d.sectorConclusionDesc.replace('{sector}', top.label).replace('{pct}', fmtPct(top.pct))
+              : undefined
+            return (
+              <ConclusionCard
+                label={d.sectorConcentrationLabel}
+                headline={text}
+                headlineColor={color}
+                description={description}
+                stat={riskMetrics.sectorHHI.toFixed(3)}
+                statLabel={d.sectorHhi}
+              />
+            )
+          })()}
+
           <div style={{ background: 'var(--arvo-surface)', borderRadius: 12, border: '1px solid var(--arvo-border)', padding: '24px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20, gap: 8 }}>
               <h2 style={{ fontSize: 15, fontWeight: 600, margin: 0, color: 'var(--arvo-fg)' }}>{d.sectorTitle}</h2>
@@ -312,7 +356,7 @@ export default function DiversificationPage() {
               <div style={{ flex: '0 0 180px', height: 180 }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
-                    <Pie data={sectorGroups} dataKey="value" nameKey="label" innerRadius={52} outerRadius={82} paddingAngle={2}>
+                    <Pie data={sectorGroups} dataKey="value" nameKey="label" innerRadius={52} outerRadius={82} paddingAngle={2} stroke="var(--arvo-surface)" strokeWidth={2}>
                       {sectorGroups.map((g, i) => <Cell key={g.key} fill={SECTOR_PALETTE[i % SECTOR_PALETTE.length]} />)}
                     </Pie>
                     <Tooltip content={customTooltip as any} />
@@ -339,20 +383,6 @@ export default function DiversificationPage() {
             </div>
           </div>
 
-          {riskMetrics && (() => {
-            const n = sectorGroups.length
-            const { text, color, norm } = hhiBadge(riskMetrics.sectorHHI, n)
-            return (
-              <MetricCard
-                label={d.sectorHhi}
-                value={riskMetrics.sectorHHI.toFixed(3)}
-                badge={text}
-                badgeColor={color}
-                sub={`${d.hhiLow} ← ${Math.round(norm * 100)}% → ${d.hhiHigh}`}
-              />
-            )
-          })()}
-
           <HhiInfoCard d={d} />
         </div>
       )}
@@ -365,12 +395,12 @@ export default function DiversificationPage() {
           {(() => {
             const { text, color } = riskBadge(riskMetrics.weightedRisk)
             return (
-              <MetricCard
+              <ConclusionCard
                 label={d.riskScore}
-                value={riskMetrics.weightedRisk.toFixed(2)}
-                badge={text}
-                badgeColor={color}
-                sub={`/5 — ${d.riskScoreDesc}`}
+                headline={text}
+                headlineColor={color}
+                description={d.riskScoreDesc}
+                stat={`${riskMetrics.weightedRisk.toFixed(2)} / 5`}
               />
             )
           })()}

@@ -1286,7 +1286,7 @@ export default function FinancesTransactionsPage() {
             onChange={e => { setSearchQuery(e.target.value); if (e.target.value.trim().length >= 2) setShowSearchDrop(true) }}
             onFocus={() => { if (searchQuery.trim().length >= 2) setShowSearchDrop(true) }}
             placeholder={t.finances.transactionsSearch}
-            className="w-full pl-9 pr-4 py-2.5 text-sm border border-[var(--arvo-border)] rounded-xl bg-[var(--arvo-surface)] focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/10"
+            className="w-full pl-9 pr-4 py-2.5 text-sm border border-[var(--arvo-border)] rounded-xl bg-[var(--arvo-surface)] text-[var(--arvo-fg)] focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/10"
           />
           {showSearchDrop && (
             <div className="absolute left-0 right-0 top-full mt-1 z-50 bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-xl shadow-lg overflow-hidden">

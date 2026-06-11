@@ -110,7 +110,7 @@ export default function ReportsPage() {
           <select
             value={year}
             onChange={e => setYear(Number(e.target.value))}
-            className="border border-[var(--arvo-border)] rounded-lg px-3 py-1.5 text-sm bg-[var(--arvo-surface)] focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20"
+            className="border border-[var(--arvo-border)] rounded-lg px-3 py-1.5 text-sm bg-[var(--arvo-surface)] text-[var(--arvo-fg)] focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20"
           >
             {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
           </select>
