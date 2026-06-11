@@ -256,47 +256,49 @@ export default function FinancesInsightsPage() {
             {/* Subscription cards */}
             <div className="space-y-2">
               {subscriptions.map(sub => (
-                <div key={sub.key} className="bg-[var(--arvo-surface)] rounded-2xl border border-[var(--arvo-border)] shadow-sm px-5 py-4 flex items-center gap-4">
-                  {/* Icon */}
-                  <div
-                    className="w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0"
-                    style={{ background: `${FREQ_COLORS[sub.frequency]}14` }}
-                  >
-                    {sub.category ? sub.category.icon : '🔄'}
-                  </div>
-
-                  {/* Info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-0.5">
-                      <span className="text-sm font-semibold text-[var(--arvo-fg)] truncate">{sub.name}</span>
-                      <span
-                        className="text-xs font-medium px-1.5 py-0.5 rounded-full shrink-0"
-                        style={{ background: `${FREQ_COLORS[sub.frequency]}18`, color: FREQ_COLORS[sub.frequency] }}
-                      >
-                        {freqLabel[sub.frequency]}
-                      </span>
+                <div key={sub.key} className="bg-[var(--arvo-surface)] rounded-2xl border border-[var(--arvo-border)] shadow-sm px-4 sm:px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+                  {/* Icon + Info */}
+                  <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
+                    <div
+                      className="w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0"
+                      style={{ background: `${FREQ_COLORS[sub.frequency]}14` }}
+                    >
+                      {sub.category ? sub.category.icon : '🔄'}
                     </div>
-                    <p className="text-xs text-[var(--arvo-fg-soft)]">
-                      {t.finances.lastCharged}: {formatDate(sub.last_date, locale)}
-                      {sub.category && <span className="ml-2 text-[var(--arvo-fg-faint)]">·</span>}
-                      {sub.category && <span className="ml-2">{sub.category.name}</span>}
-                    </p>
+
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <span className="text-sm font-semibold text-[var(--arvo-fg)] truncate">{sub.name}</span>
+                        <span
+                          className="text-xs font-medium px-1.5 py-0.5 rounded-full shrink-0"
+                          style={{ background: `${FREQ_COLORS[sub.frequency]}18`, color: FREQ_COLORS[sub.frequency] }}
+                        >
+                          {freqLabel[sub.frequency]}
+                        </span>
+                      </div>
+                      <p className="text-xs text-[var(--arvo-fg-soft)]">
+                        {t.finances.lastCharged}: {formatDate(sub.last_date, locale)}
+                        {sub.category && <span className="ml-2 text-[var(--arvo-fg-faint)]">·</span>}
+                        {sub.category && <span className="ml-2">{sub.category.name}</span>}
+                      </p>
+                    </div>
                   </div>
 
-                  {/* Amounts */}
-                  <div className="text-right shrink-0">
-                    <p className="text-base font-bold text-[var(--arvo-fg)]">{fmtSub(sub.median_amount, sub.currency)}</p>
-                    <p className="text-xs text-[var(--arvo-fg-soft)]">{fmtSub(sub.annual_cost, sub.currency)}{t.finances.perYear}</p>
-                  </div>
+                  {/* Amounts + Dismiss */}
+                  <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-6 sm:shrink-0">
+                    <div className="text-left sm:text-right shrink-0">
+                      <p className="text-base font-bold text-[var(--arvo-fg)]">{fmtSub(sub.median_amount, sub.currency)}</p>
+                      <p className="text-xs text-[var(--arvo-fg-soft)]">{fmtSub(sub.annual_cost, sub.currency)}{t.finances.perYear}</p>
+                    </div>
 
-                  {/* Dismiss */}
-                  <button
-                    onClick={() => dismissSub(sub)}
-                    className="text-[11px] font-medium shrink-0 px-2.5 py-1.5 rounded-lg border border-[var(--arvo-border)] text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg-muted)] hover:border-[var(--arvo-fg-soft)] hover:bg-[var(--arvo-surface-2)] transition-colors whitespace-nowrap"
-                    title={t.finances.subscriptionDismissHint}
-                  >
-                    {t.finances.subscriptionDismiss}
-                  </button>
+                    <button
+                      onClick={() => dismissSub(sub)}
+                      className="text-[11px] font-medium shrink-0 px-2.5 py-1.5 rounded-lg border border-[var(--arvo-border)] text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg-muted)] hover:border-[var(--arvo-fg-soft)] hover:bg-[var(--arvo-surface-2)] transition-colors whitespace-nowrap"
+                      title={t.finances.subscriptionDismissHint}
+                    >
+                      {t.finances.subscriptionDismiss}
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
