@@ -2,9 +2,10 @@ import { Router, Response } from 'express'
 import { requireAuth, AuthRequest } from '../middleware/auth.js'
 import { supabaseAdmin } from '../lib/supabase.js'
 import { getFxRate } from '../lib/fx.js'
-import { getRates, SERIES } from '../services/bcbService.js'
+import { getRates, SERIES, getCDIRates, getSelicRates, getIPCARates } from '../services/bcbService.js'
 import { getCurrentPrice } from '../services/priceService.js'
 import type { Asset, FITranche } from '../services/priceService.js'
+import { cache, TTL } from '../lib/cache.js'
 import YahooFinance from 'yahoo-finance2'
 
 const yf = new YahooFinance({ suppressNotices: ['yahooSurvey', 'ripHistorical'] })
@@ -136,6 +137,31 @@ async function fetchPrefetchedData(userId: string, priceFrom?: string): Promise<
     prices,
     manualValues: (manualValues ?? []) as PrefetchedData['manualValues'],
   }
+}
+
+// Pre-warms BCB rate caches for all fixed-income assets in parallel, before the
+// per-month/per-day loops below process assets sequentially. Same getCDIRates/
+// getSelicRates/getIPCARates calls (same args, same cache keys) calculateCurrentValue
+// would make anyway — this only changes when the underlying HTTP fetch happens
+// (parallel, up front) instead of changing any rate or computed value.
+async function prefetchFIRates(data: PrefetchedData): Promise<void> {
+  const today = new Date()
+  const fiAssets = data.assets.filter(a => a.asset_type === 'fixed_income' && a.active)
+
+  await Promise.all(fiAssets.map(async (a) => {
+    const minStartStr = a.fi_start_date
+      ?? data.contributions.find(c => c.asset_id === a.id && c.type === 'buy' && Number(c.value_brl) > 0)?.date
+      ?? null
+    if (!minStartStr) return
+    const minStart = new Date(minStartStr)
+    try {
+      switch (a.fi_type) {
+        case 'pos_cdi':   await getCDIRates(minStart, today);   break
+        case 'selic':     await getSelicRates(minStart, today); break
+        case 'ipca_plus': await getIPCARates(minStart, today);  break
+      }
+    } catch { /* best-effort: the real computation will retry and surface any error */ }
+  }))
 }
 
 function estimateContribValue(c: {
@@ -367,6 +393,7 @@ router.get('/summary', requireAuth, async (req, res: Response) => {
 
   // Pre-fetch all data once — shared across both computePortfolioValueAtMonth calls
   const prefetched = await fetchPrefetchedData(userId)
+  await prefetchFIRates(prefetched)
 
   // Contributions: filter in memory instead of a separate DB query
   const totalContribs = prefetched.contributions
@@ -436,6 +463,7 @@ router.get('/monthly', requireAuth, async (req, res: Response) => {
 
   // Pre-fetch all data once — eliminates N+1 DB round-trips (was N×4 queries, now 4 total)
   const prefetched = await fetchPrefetchedData(userId)
+  await prefetchFIRates(prefetched)
 
   const assetInfo: Record<number, { code: string; name: string }> = {}
   const nativeFIIds = new Set<number>()
@@ -675,6 +703,7 @@ router.get('/daily', requireAuth, async (req, res: Response) => {
   priceFromDate.setDate(priceFromDate.getDate() - 90)
   const priceFrom = localDate(priceFromDate)
   const prefetched = await fetchPrefetchedData(userId, priceFrom)
+  await prefetchFIRates(prefetched)
 
   // Pre-build per-asset price arrays (sorted ascending by ref_date, as fetched)
   const pricesByAsset: Record<number, Array<{ ref_date: string; price: number; currency: string }>> = {}
@@ -767,7 +796,11 @@ router.get('/benchmarks', requireAuth, async (req, res: Response) => {
   async function fetchRangeMonthly(ticker: string) {
     const p1 = `${fromY}-${String(fromM).padStart(2, '0')}-01`
     const p2 = today < `${toY}-${String(toM).padStart(2, '0')}-28` ? today : `${toY}-${String(toM).padStart(2, '0')}-28`
-    const rows = await yf.historical(ticker, { period1: p1, period2: p2, interval: '1mo' })
+    const rows = await cache.getOrFetch(
+      `benchmark:monthly:${ticker}:${p1}:${p2}`,
+      TTL.PRICE_HISTORICAL,
+      () => yf.historical(ticker, { period1: p1, period2: p2, interval: '1mo' }),
+    )
     const pts = rows.map(r => ({
       ym:    localYM(r.date),
       price: r.close ?? r.adjClose ?? 0,
@@ -776,7 +809,11 @@ router.get('/benchmarks', requireAuth, async (req, res: Response) => {
     if (todayYM <= toStr) {
       try {
         const d2ago = localDate(new Date(Date.now() - 2 * 86400000))
-        const daily = await yf.historical(ticker, { period1: d2ago, period2: today, interval: '1d' })
+        const daily = await cache.getOrFetch(
+          `benchmark:daily:${ticker}:${d2ago}:${today}`,
+          TTL.PRICE_CURRENT,
+          () => yf.historical(ticker, { period1: d2ago, period2: today, interval: '1d' }),
+        )
         if (daily.length > 0) {
           const latestClose = daily[daily.length - 1].close ?? daily[daily.length - 1].adjClose
           if (latestClose) {
@@ -790,29 +827,28 @@ router.get('/benchmarks', requireAuth, async (req, res: Response) => {
     return pts
   }
 
+  const [ibovPts, sp500Pts] = await Promise.all([
+    fetchRangeMonthly('^BVSP').catch(() => []),
+    fetchRangeMonthly('^GSPC').catch(() => []),
+  ])
+
   let ibovPct: number | null = null
-  try {
-    const pts = await fetchRangeMonthly('^BVSP')
-    if (pts.length >= 1) {
-      const base = pts[0].price
-      for (const entry of monthly) {
-        const match = pts.find(p => p.ym === entry.month)
-        entry.ibov_cum = match ? Math.round((match.price / base) * 10000) / 10000 : null
-      }
+  if (ibovPts.length >= 1) {
+    const base = ibovPts[0].price
+    for (const entry of monthly) {
+      const match = ibovPts.find(p => p.ym === entry.month)
+      entry.ibov_cum = match ? Math.round((match.price / base) * 10000) / 10000 : null
     }
-  } catch { /* sem dados IBOV */ }
+  }
 
   let sp500Pct: number | null = null
-  try {
-    const pts = await fetchRangeMonthly('^GSPC')
-    if (pts.length >= 1) {
-      const base = pts[0].price
-      for (const entry of monthly) {
-        const match = pts.find(p => p.ym === entry.month)
-        entry.sp500_cum = match ? Math.round((match.price / base) * 10000) / 10000 : null
-      }
+  if (sp500Pts.length >= 1) {
+    const base = sp500Pts[0].price
+    for (const entry of monthly) {
+      const match = sp500Pts.find(p => p.ym === entry.month)
+      entry.sp500_cum = match ? Math.round((match.price / base) * 10000) / 10000 : null
     }
-  } catch { /* sem dados S&P500 */ }
+  }
 
   let lastIbov: number | null = null
   let lastSp500: number | null = null
