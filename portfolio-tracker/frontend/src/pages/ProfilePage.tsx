@@ -530,7 +530,7 @@ export default function ProfilePage() {
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
-      <PageHeaderTabs title={t.profile.title} tabs={TABS} activeTab={tab} onTabChange={setTab} marginBottom={0} />
+      <PageHeaderTabs title={t.profile.title} tabs={TABS} activeTab={tab} onTabChange={setTab} />
 
       {loading ? (
         <PageLoader />
@@ -685,6 +685,21 @@ export default function ProfilePage() {
               </div>
             </div>
 
+            {/* Residência fiscal */}
+            <div>
+              <label className="block text-sm font-medium text-[var(--arvo-fg)] mb-1">{t.profile.taxCountryLabel}</label>
+              <p className="text-xs text-[var(--arvo-fg-soft)] mb-2">{t.profile.taxCountryDesc}</p>
+              <select
+                value={taxCountry}
+                onChange={e => setTaxCountry(e.target.value)}
+                className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm bg-[var(--arvo-surface)] text-[var(--arvo-fg)] focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20"
+              >
+                <option value="BR">Brasil</option>
+                <option value="FR">França</option>
+                <option value="PT">Portugal</option>
+              </select>
+            </div>
+
 {error    && <p className="text-xs text-red-600">{error}</p>}
             {saveOk   && <p className="text-xs text-green-600">{t.profile.saved}</p>}
 
@@ -832,35 +847,18 @@ export default function ProfilePage() {
             <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl p-6 shadow-sm space-y-5">
               <h2 className="font-semibold text-[var(--arvo-fg)]">{t.profile.preferencesFinancialTitle}</h2>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Dia de início do mês financeiro */}
-                <div>
-                  <label className="block text-sm font-medium text-[var(--arvo-fg)] mb-1">{t.profile.monthCycleDayLabel}</label>
-                  <p className="text-xs text-[var(--arvo-fg-soft)] mb-2">{t.profile.monthCycleDayHint}</p>
-                  <input
-                    type="number"
-                    min={1}
-                    max={28}
-                    value={monthCycleDay}
-                    onChange={e => setMonthCycleDay(Math.min(28, Math.max(1, parseInt(e.target.value) || 1)))}
-                    className="w-20 border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm text-center bg-[var(--arvo-surface-2)] text-[var(--arvo-fg)] focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20"
-                  />
-                </div>
-
-                {/* Residência fiscal */}
-                <div>
-                  <label className="block text-sm font-medium text-[var(--arvo-fg)] mb-1">{t.profile.taxCountryLabel}</label>
-                  <p className="text-xs text-[var(--arvo-fg-soft)] mb-2">{t.profile.taxCountryDesc}</p>
-                  <select
-                    value={taxCountry}
-                    onChange={e => setTaxCountry(e.target.value)}
-                    className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm bg-[var(--arvo-surface)] text-[var(--arvo-fg)] focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20"
-                  >
-                    <option value="BR">Brasil</option>
-                    <option value="FR">França</option>
-                    <option value="PT">Portugal</option>
-                  </select>
-                </div>
+              {/* Dia de início do mês financeiro */}
+              <div>
+                <label className="block text-sm font-medium text-[var(--arvo-fg)] mb-1">{t.profile.monthCycleDayLabel}</label>
+                <p className="text-xs text-[var(--arvo-fg-soft)] mb-2">{t.profile.monthCycleDayHint}</p>
+                <input
+                  type="number"
+                  min={1}
+                  max={28}
+                  value={monthCycleDay}
+                  onChange={e => setMonthCycleDay(Math.min(28, Math.max(1, parseInt(e.target.value) || 1)))}
+                  className="w-20 border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm text-center bg-[var(--arvo-surface-2)] text-[var(--arvo-fg)] focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20"
+                />
               </div>
 
               {/* Budget reminder */}
