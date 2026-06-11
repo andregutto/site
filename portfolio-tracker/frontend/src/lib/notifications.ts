@@ -21,6 +21,7 @@ export const TYPE_ICONS: Record<string, string> = {
   budget_reminder_setup: '⏰',
   budget_reminder_due: '⏰',
   subscription_detected: '🔄',
+  shared_group_invite: '✉️',
 }
 
 export function formatTimestamp(iso: string, locale: Locale): string {
@@ -61,6 +62,11 @@ export function resolveNotificationText(item: NotificationItem, t: any, locale: 
       const code = String(item.params.code ?? '')
       const ratio = String(item.params.ratio ?? '')
       return { title: n.type_split_warning.replace('{code}', code).replace('{ratio}', ratio) }
+    }
+    case 'shared_group_invite': {
+      const inviter = String(item.params.inviter_name ?? '')
+      const group = String(item.params.group_name ?? '')
+      return { title: n.type_shared_group_invite.replace('{inviter}', inviter).replace('{group}', group) }
     }
     case 'budget_alert': {
       const nameKey = item.params.name_key ? String(item.params.name_key) : null

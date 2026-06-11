@@ -562,6 +562,7 @@
     "emptyActive": "Aucune notification active pour le moment.",
     "emptyHistory": "Votre historique de notifications apparaîtra ici.",
     "dismiss": "Ignorer",
+    "dismissAll": "Tout effacer",
     "restore": "Restaurer",
     "viewAll": "Voir toutes les notifications",
     "type_achievement": "Succès débloqué",
@@ -569,7 +570,8 @@
     "type_bank_connect_error": "Impossible de connecter le compte bancaire",
     "type_subscription_detected": "Abonnement potentiel : {name} · {amount}/mois",
     "type_split_warning": "Possible split/regroupement pour {code} ({ratio})",
-    "type_budget_alert": "{name} est à {pct}% du budget de ce mois"
+    "type_budget_alert": "{name} est à {pct}% du budget de ce mois",
+    "type_shared_group_invite": "{inviter} vous a invité au groupe « {group} »"
   },
   "finances": {
     "navOverview": "Vue d'ensemble",

@@ -9,6 +9,7 @@ interface NotificationsContextValue {
   loading: boolean
   refresh: () => Promise<void>
   dismiss: (item: NotificationItem) => Promise<void>
+  dismissAll: () => Promise<void>
   restore: (item: NotificationItem) => Promise<void>
 }
 
@@ -68,6 +69,10 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
     }
   }, [refresh])
 
+  const dismissAll = useCallback(async () => {
+    await Promise.all(active.map(item => dismiss(item)))
+  }, [active, dismiss])
+
   const restore = useCallback(async (item: NotificationItem) => {
     setHistory(prev => prev.filter(i => i.key !== item.key))
     setActive(prev => [...prev, { ...item, dismissed_at: null }])
@@ -84,7 +89,7 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
   }, [refresh])
 
   return (
-    <NotificationsContext.Provider value={{ active, history, unreadCount: active.length, loading, refresh, dismiss, restore }}>
+    <NotificationsContext.Provider value={{ active, history, unreadCount: active.length, loading, refresh, dismiss, dismissAll, restore }}>
       {children}
     </NotificationsContext.Provider>
   )

@@ -74,7 +74,7 @@ function EmptyState({ text }: { text: string }) {
 
 export default function NotificationsPage() {
   const { t } = useI18n()
-  const { active, history, dismiss, restore } = useNotificationsContext()
+  const { active, history, dismiss, dismissAll, restore } = useNotificationsContext()
 
   return (
     <div className="space-y-6">
@@ -85,7 +85,18 @@ export default function NotificationsPage() {
       </div>
 
       <section className="space-y-3">
-        <h2 className="text-sm font-semibold" style={{ color: 'var(--arvo-fg)' }}>{t.notifications.activeSection}</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold" style={{ color: 'var(--arvo-fg)' }}>{t.notifications.activeSection}</h2>
+          {active.length > 0 && (
+            <button
+              onClick={() => dismissAll()}
+              className="text-xs font-medium transition-colors"
+              style={{ color: 'var(--arvo-blue)' }}
+            >
+              {t.notifications.dismissAll}
+            </button>
+          )}
+        </div>
         {active.length === 0 ? (
           <EmptyState text={t.notifications.emptyActive} />
         ) : (

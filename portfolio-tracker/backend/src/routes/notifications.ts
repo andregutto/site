@@ -3,6 +3,7 @@ import { requireAuth, AuthRequest } from '../middleware/auth.js'
 import { supabaseAdmin } from '../lib/supabase.js'
 import { getActiveSubscriptions, getBudgetAlerts } from './finances.js'
 import { getSplitWarnings } from './portfolio.js'
+import { getPendingGroupInvites } from './shared.js'
 
 const router = Router()
 
@@ -22,13 +23,14 @@ const NON_DISMISSIBLE_HISTORY_TYPES = new Set(['bank_connected', 'bank_connect_e
 router.get('/', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
 
-  const [achievementsRes, subsResult, subDismissalsRes, notifDismissalsRes, budgetAlerts, splitWarnings] = await Promise.all([
+  const [achievementsRes, subsResult, subDismissalsRes, notifDismissalsRes, budgetAlerts, splitWarnings, pendingInvites] = await Promise.all([
     supabaseAdmin.from('achievements').select('achievement_key, earned_at').eq('user_id', userId).order('earned_at', { ascending: true }),
     getActiveSubscriptions(userId),
     supabaseAdmin.from('finance_subscription_dismissals').select('key, name, dismissed_at').eq('user_id', userId),
     supabaseAdmin.from('notification_dismissals').select('key, type, params, severity, link, occurred_at, dismissed_at').eq('user_id', userId),
     getBudgetAlerts(userId),
     getSplitWarnings(userId),
+    getPendingGroupInvites(userId),
   ])
 
   const dismissedKeys = new Set((notifDismissalsRes.data ?? []).map(n => n.key))
@@ -108,6 +110,21 @@ router.get('/', requireAuth, async (req, res: Response) => {
       params: { code: w.code, ratio: w.splits.map(s => s.ratio).join(', ') },
       link: `/assets/${w.asset_id}`,
       occurred_at: w.splits[w.splits.length - 1]?.date ?? new Date().toISOString(),
+      dismissed_at: null,
+      dismissible: true,
+    })
+  }
+
+  // Category 11: pending shared-group invites -> active (unless dismissed)
+  for (const inv of pendingInvites) {
+    if (dismissedKeys.has(inv.key)) continue
+    active.push({
+      key: inv.key,
+      type: 'shared_group_invite',
+      severity: 'info',
+      params: { group_name: inv.group_name, inviter_name: inv.inviter_name },
+      link: `/invite/${inv.token}`,
+      occurred_at: inv.occurred_at,
       dismissed_at: null,
       dismissible: true,
     })

@@ -36,7 +36,7 @@ export default function AppLayout() {
   const { resolvedTheme } = useTheme()
   const { t, locale } = useI18n()
   const { totalXp } = useAchievementContext()
-  const { active: activeNotifications, unreadCount } = useNotificationsContext()
+  const { active: activeNotifications, unreadCount, dismissAll } = useNotificationsContext()
   const location = useLocation()
   const level = getLevel(totalXp)
   const levelProgress = getLevelProgress(totalXp)
@@ -312,8 +312,17 @@ export default function AppLayout() {
               </button>
               {showNotifMenu && (
                 <div className="absolute right-0 top-full mt-2 w-80 max-w-[calc(100vw-32px)] rounded-xl shadow-lg z-50" style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border-soft)' }}>
-                  <div className="px-4 py-2.5" style={{ borderBottom: '1px solid var(--arvo-border-soft)' }}>
+                  <div className="px-4 py-2.5 flex items-center justify-between" style={{ borderBottom: '1px solid var(--arvo-border-soft)' }}>
                     <span className="text-xs font-semibold" style={{ color: 'var(--arvo-fg)' }}>{t.notifications.activeSection}</span>
+                    {activeNotifications.length > 0 && (
+                      <button
+                        onClick={() => dismissAll()}
+                        className="text-[11px] font-medium transition-colors"
+                        style={{ color: 'var(--arvo-blue)' }}
+                      >
+                        {t.notifications.dismissAll}
+                      </button>
+                    )}
                   </div>
                   <div className="max-h-[60vh] overflow-y-auto py-1">
                     {activeNotifications.length === 0 ? (

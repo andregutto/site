@@ -562,6 +562,7 @@
     "emptyActive": "Nenhuma notificação ativa no momento.",
     "emptyHistory": "Seu histórico de notificações vai aparecer aqui.",
     "dismiss": "Dispensar",
+    "dismissAll": "Limpar tudo",
     "restore": "Restaurar",
     "viewAll": "Ver todas as notificações",
     "type_achievement": "Conquista desbloqueada",
@@ -569,7 +570,8 @@
     "type_bank_connect_error": "Não foi possível conectar a conta bancária",
     "type_subscription_detected": "Possível assinatura: {name} · {amount}/mês",
     "type_split_warning": "Possível desdobramento/grupamento em {code} ({ratio})",
-    "type_budget_alert": "{name} está em {pct}% do orçamento do mês"
+    "type_budget_alert": "{name} está em {pct}% do orçamento do mês",
+    "type_shared_group_invite": "{inviter} convidou você para o grupo \"{group}\""
   },
   "finances": {
     "navOverview": "Visão Geral",

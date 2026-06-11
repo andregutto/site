@@ -19,6 +19,52 @@ async function userDisplay(userId: string): Promise<{ name: string; email: strin
   return { name, email: data?.user?.email ?? '', avatar_url: meta.avatar_url }
 }
 
+export interface PendingGroupInvite {
+  key: string
+  group_name: string
+  inviter_name: string
+  token: string
+  occurred_at: string
+}
+
+// Pending invites addressed to this user, either by user_id (set if the
+// invitee already had an account when the invite was created) or by
+// invite_email (matched once the invitee signs up / for not-yet-detected accounts).
+export async function getPendingGroupInvites(userId: string): Promise<PendingGroupInvite[]> {
+  const { data: userData } = await supabaseAdmin.auth.admin.getUserById(userId)
+  const email = userData?.user?.email
+  const nowIso = new Date().toISOString()
+  const select = 'invite_token, created_at, shared_groups(name, created_by)'
+
+  const [byUser, byEmail] = await Promise.all([
+    supabaseAdmin.from('shared_group_members').select(select)
+      .eq('status', 'pending').eq('user_id', userId)
+      .not('invite_token', 'is', null).gte('invite_expires_at', nowIso),
+    email
+      ? supabaseAdmin.from('shared_group_members').select(select)
+          .eq('status', 'pending').eq('invite_email', email)
+          .not('invite_token', 'is', null).gte('invite_expires_at', nowIso)
+      : Promise.resolve({ data: [] as unknown[] }),
+  ])
+
+  const seen = new Set<string>()
+  const result: PendingGroupInvite[] = []
+  for (const row of [...(byUser.data ?? []), ...(byEmail.data ?? [])] as any[]) {
+    const group = row.shared_groups
+    if (!group || seen.has(row.invite_token)) continue
+    seen.add(row.invite_token)
+    const inviter = await userDisplay(group.created_by)
+    result.push({
+      key: `shared_group_invite:${row.invite_token}`,
+      group_name: group.name,
+      inviter_name: inviter.name,
+      token: row.invite_token,
+      occurred_at: row.created_at,
+    })
+  }
+  return result
+}
+
 // ─── Groups ──────────────────────────────────────────────────────────────────
 
 // GET /api/shared/groups

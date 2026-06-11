@@ -229,6 +229,7 @@ export type NotificationType =
   | 'budget_reminder_setup'
   | 'budget_reminder_due'
   | 'subscription_detected'
+  | 'shared_group_invite'
 
 export interface NotificationItem {
   key: string

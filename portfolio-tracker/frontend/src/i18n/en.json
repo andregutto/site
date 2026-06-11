@@ -562,6 +562,7 @@
     "emptyActive": "No active notifications right now.",
     "emptyHistory": "Your notification history will appear here.",
     "dismiss": "Dismiss",
+    "dismissAll": "Clear all",
     "restore": "Restore",
     "viewAll": "View all notifications",
     "type_achievement": "Achievement unlocked",
@@ -569,7 +570,8 @@
     "type_bank_connect_error": "Couldn't connect the bank account",
     "type_subscription_detected": "Possible subscription: {name} · {amount}/month",
     "type_split_warning": "Possible split/reverse split for {code} ({ratio})",
-    "type_budget_alert": "{name} is at {pct}% of this month's budget"
+    "type_budget_alert": "{name} is at {pct}% of this month's budget",
+    "type_shared_group_invite": "{inviter} invited you to the group \"{group}\""
   },
   "finances": {
     "navOverview": "Overview",
