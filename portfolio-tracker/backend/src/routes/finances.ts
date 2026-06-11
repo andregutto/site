@@ -2064,6 +2064,90 @@ type SubscriptionTxRow = {
   finance_categories: { id: number; name: string; icon: string; color: string; name_key?: string } | null
 }
 
+const SUBSCRIPTION_ANNUAL_MULTIPLIER: Record<SubscriptionFrequency, number> = { weekly: 52, biweekly: 26, monthly: 12, quarterly: 4, biannual: 2, annual: 1 }
+
+// Minimum occurrences (within the 18-month window) to be considered recurring.
+const SUBSCRIPTION_MIN_OCCURRENCES: Record<SubscriptionFrequency, number> = { weekly: 4, biweekly: 4, monthly: 3, quarterly: 2, biannual: 2, annual: 2 }
+
+function detectSubscriptionFrequency(sorted: SubscriptionTxRow[]): SubscriptionFrequency | null {
+  const gaps: number[] = []
+  for (let i = 1; i < sorted.length; i++) {
+    const ms = new Date(sorted[i].date).getTime() - new Date(sorted[i - 1].date).getTime()
+    gaps.push(Math.round(ms / 86400000))
+  }
+  const sortedGaps = [...gaps].sort((a, b) => a - b)
+  const medianGap = sortedGaps[Math.floor(sortedGaps.length / 2)]
+  if (medianGap >= 5   && medianGap <= 9)   return 'weekly'
+  if (medianGap >= 11  && medianGap <= 17)  return 'biweekly'
+  if (medianGap >= 25  && medianGap <= 38)  return 'monthly'
+  if (medianGap >= 83  && medianGap <= 100) return 'quarterly'
+  if (medianGap >= 165 && medianGap <= 200) return 'biannual'
+  if (medianGap >= 330 && medianGap <= 400) return 'annual'
+  return null
+}
+
+// True if at least 75% of `values` fall within `window` of the median, measured
+// circularly over `period` (so e.g. day 30 and day 1 of the month are 2 apart,
+// not 29 — tolerating the occasional bank-processing delay around month-end).
+function isDateConsistent(values: number[], period: number, window: number): boolean {
+  const sorted = [...values].sort((a, b) => a - b)
+  const median = sorted[Math.floor(sorted.length / 2)]
+  const within = values.filter(v => {
+    const diff = Math.abs(v - median)
+    return Math.min(diff, period - diff) <= window
+  }).length
+  return within / values.length >= 0.75
+}
+
+// Builds a SubscriptionItem from a cluster of same-description transactions.
+// `strict` is used for categories in SUBSCRIPTION_CATEGORY_DENYLIST: the cluster
+// already has identical amounts (split by exact cents beforehand), so it
+// additionally requires one extra occurrence and a consistent billing date —
+// distinguishing real recurring contracts (transit pass, app subscription) from
+// purchases that merely happen to repeat at a similar value (e.g. Uber rides).
+function buildSubscription(
+  key: string, sorted: SubscriptionTxRow[], category: SubscriptionItem['category'], strict: boolean,
+): SubscriptionItem | null {
+  const frequency = detectSubscriptionFrequency(sorted)
+  if (!frequency) return null
+  // Annual cadence needs 2 gaps (~2 years) to require an extra occurrence,
+  // which doesn't fit the 18-month lookback window — keep its minimum as-is.
+  const minOcc = SUBSCRIPTION_MIN_OCCURRENCES[frequency] + (strict && frequency !== 'annual' ? 1 : 0)
+  if (sorted.length < minOcc) return null
+
+  const amounts = sorted.map(t => Math.abs(t.amount))
+  const sortedAmt = [...amounts].sort((a, b) => a - b)
+  const medianAmt = sortedAmt[Math.floor(sortedAmt.length / 2)]
+
+  // Sub-cent/few-cent fees (e.g. FX-rounding remainders) aren't meaningful
+  // recurring charges, even if they happen to repeat at the same value.
+  if (strict && medianAmt < 1) return null
+
+  if (strict) {
+    const consistent = frequency === 'weekly' || frequency === 'biweekly'
+      ? isDateConsistent(sorted.map(t => new Date(`${t.date}T00:00:00Z`).getUTCDay()), 7, 1)
+      : isDateConsistent(sorted.map(t => Number(t.date.split('-')[2])), 31, 3)
+    if (!consistent) return null
+  } else {
+    const tolerance = category?.name_key && SUBSCRIPTION_LOOSE_TOLERANCE_CATEGORIES.has(category.name_key) ? 0.20 : 0.08
+    if (!amounts.every(a => Math.abs(a - medianAmt) / medianAmt <= tolerance)) return null
+  }
+
+  const annualCost = Math.round(medianAmt * SUBSCRIPTION_ANNUAL_MULTIPLIER[frequency] * 100) / 100
+  return {
+    key,
+    name: sorted[sorted.length - 1].description.trim(),
+    frequency,
+    median_amount: Math.round(medianAmt * 100) / 100,
+    currency: sorted[sorted.length - 1].currency,
+    last_date: sorted[sorted.length - 1].date,
+    annual_cost: annualCost,
+    monthly_equivalent: Math.round(annualCost / 12 * 100) / 100,
+    occurrences: sorted.length,
+    category,
+  }
+}
+
 export async function getActiveSubscriptions(userId: string): Promise<{ subscriptions: SubscriptionItem[]; error?: string }> {
   const since = new Date()
   since.setMonth(since.getMonth() - 18)
@@ -2100,10 +2184,8 @@ export async function getActiveSubscriptions(userId: string): Promise<{ subscrip
   const { data: dismissals } = await dismissalsPromise
   const dismissedKeys = new Set((dismissals ?? []).map(d => d.key))
 
-  const groups = new Map<string, typeof transactions>()
+  const groups = new Map<string, SubscriptionTxRow[]>()
   for (const tx of transactions) {
-    const nameKey = (tx.finance_categories as unknown as { name_key?: string } | null)?.name_key
-    if (nameKey && SUBSCRIPTION_CATEGORY_DENYLIST.has(nameKey)) continue
     const key = normalizeSubscriptionDesc(tx.description ?? '')
     if (!key || key.length < 3 || dismissedKeys.has(key)) continue
     const list = groups.get(key) ?? []
@@ -2111,55 +2193,38 @@ export async function getActiveSubscriptions(userId: string): Promise<{ subscrip
     groups.set(key, list)
   }
 
-  const annualMultiplier: Record<SubscriptionFrequency, number> = { weekly: 52, biweekly: 26, monthly: 12, quarterly: 4, biannual: 2, annual: 1 }
-
   const subscriptions: SubscriptionItem[] = []
 
   for (const [key, txs] of groups) {
     if (txs.length < 2) continue
     const sorted = [...txs].sort((a, b) => a.date.localeCompare(b.date))
 
-    const gaps: number[] = []
-    for (let i = 1; i < sorted.length; i++) {
-      const ms = new Date(sorted[i].date).getTime() - new Date(sorted[i - 1].date).getTime()
-      gaps.push(Math.round(ms / 86400000))
-    }
-    const sortedGaps = [...gaps].sort((a, b) => a - b)
-    const medianGap = sortedGaps[Math.floor(sortedGaps.length / 2)]
-
-    let frequency: SubscriptionFrequency | null = null
-    let minOcc = 3
-    if (medianGap >= 5  && medianGap <= 9)    { frequency = 'weekly';    minOcc = 4 }
-    else if (medianGap >= 11 && medianGap <= 17)  { frequency = 'biweekly';  minOcc = 4 }
-    else if (medianGap >= 25 && medianGap <= 38)  { frequency = 'monthly';   minOcc = 3 }
-    else if (medianGap >= 83 && medianGap <= 100) { frequency = 'quarterly'; minOcc = 2 }
-    else if (medianGap >= 165 && medianGap <= 200){ frequency = 'biannual';  minOcc = 2 }
-    else if (medianGap >= 330 && medianGap <= 400){ frequency = 'annual';    minOcc = 2 }
-    if (!frequency || sorted.length < minOcc) continue
-
     const withCat = sorted.filter(t => t.category_id).reverse()
     const category = withCat.length > 0 ? (withCat[0] as any).finance_categories : null
+    const isDenylisted = !!(category?.name_key && SUBSCRIPTION_CATEGORY_DENYLIST.has(category.name_key))
 
-    const amounts = sorted.map(t => Math.abs(t.amount))
-    const sortedAmt = [...amounts].sort((a, b) => a - b)
-    const medianAmt = sortedAmt[Math.floor(sortedAmt.length / 2)]
-    const tolerance = category?.name_key && SUBSCRIPTION_LOOSE_TOLERANCE_CATEGORIES.has(category.name_key) ? 0.20 : 0.08
-    if (!amounts.every(a => Math.abs(a - medianAmt) / medianAmt <= tolerance)) continue
+    if (!isDenylisted) {
+      const sub = buildSubscription(key, sorted, category, false)
+      if (sub) subscriptions.push(sub)
+      continue
+    }
 
-    const annualCost = Math.round(medianAmt * annualMultiplier[frequency] * 100) / 100
-
-    subscriptions.push({
-      key,
-      name: sorted[sorted.length - 1].description.trim(),
-      frequency,
-      median_amount: Math.round(medianAmt * 100) / 100,
-      currency: sorted[sorted.length - 1].currency,
-      last_date: sorted[sorted.length - 1].date,
-      annual_cost: annualCost,
-      monthly_equivalent: Math.round(annualCost / 12 * 100) / 100,
-      occurrences: sorted.length,
-      category,
-    })
+    // Denylisted category: split by exact amount and only surface tight,
+    // date-regular sub-clusters (see buildSubscription's `strict` criteria).
+    const byAmount = new Map<number, SubscriptionTxRow[]>()
+    for (const t of sorted) {
+      const cents = Math.round(Math.abs(t.amount) * 100)
+      const list = byAmount.get(cents) ?? []
+      list.push(t)
+      byAmount.set(cents, list)
+    }
+    for (const [cents, cluster] of byAmount) {
+      if (cluster.length < 2) continue
+      const subKey = `${key}_${cents}`
+      if (dismissedKeys.has(subKey)) continue
+      const sub = buildSubscription(subKey, cluster, category, true)
+      if (sub) subscriptions.push(sub)
+    }
   }
 
   subscriptions.sort((a, b) => b.monthly_equivalent - a.monthly_equivalent)
