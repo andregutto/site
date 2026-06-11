@@ -311,7 +311,11 @@ export default function PerformancePage() {
           month: fmtMonth(m.month, intlLocale),
           value: convert(m.total),
           target: targetAtDate(`${m.month}-${String(lastDay).padStart(2, '0')}`),
-          contributions: convert(periodStart + valueCfCumul),
+          // No periodStart offset here (unlike daily): "inception" mode starts at the
+          // first tracked contribution, so Aportes is purely the running sum of
+          // contributions from that point — periodStart includes pre-existing asset
+          // value with no associated contribution, which would distort this line.
+          contributions: convert(valueCfCumul),
         }
       })
 

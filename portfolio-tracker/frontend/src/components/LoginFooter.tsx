@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useI18n } from '../contexts/I18nContext'
+import { useTheme } from '../contexts/ThemeContext'
 
 function IconInstagram() {
   return (
@@ -19,6 +20,7 @@ function IconYouTube() {
 
 export default function LoginFooter() {
   const { t } = useI18n()
+  const { resolvedTheme } = useTheme()
   const f = t.footer
 
   return (
@@ -26,8 +28,8 @@ export default function LoginFooter() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         {/* Logo */}
         <div className="flex items-center gap-2">
-          <img src="/brand/logo/arvo-symbol-black.svg" width="13" height="13" alt="" style={{ opacity: 0.28 }} />
-          <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 11, letterSpacing: '0.28em', color: 'var(--arvo-fg-faint)', lineHeight: 1 }}>arvo</span>
+          <img src={`/brand/logo/arvo-symbol-${resolvedTheme === 'dark' ? 'offwhite' : 'black'}.svg`} width="13" height="13" alt="" style={{ opacity: 0.5 }} />
+          <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 11, letterSpacing: '0.28em', color: 'var(--arvo-fg-soft)', lineHeight: 1 }}>arvo</span>
         </div>
 
         {/* Links + social */}
@@ -41,7 +43,7 @@ export default function LoginFooter() {
       </div>
 
       {/* Copyright */}
-      <p className="text-center mt-2" style={{ fontFamily: "var(--arvo-font-body)", fontSize: 11, letterSpacing: '0.08em', color: 'var(--arvo-fg-faint)' }}>{f.copyright}</p>
+      <p className="text-center mt-2" style={{ fontFamily: "var(--arvo-font-body)", fontSize: 11, letterSpacing: '0.08em', color: 'var(--arvo-fg-soft)' }}>{f.copyright}</p>
     </footer>
   )
 }

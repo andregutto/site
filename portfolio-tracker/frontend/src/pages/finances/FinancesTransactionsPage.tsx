@@ -1126,7 +1126,7 @@ export default function FinancesTransactionsPage() {
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
                         <span className={`text-sm font-medium whitespace-nowrap ${row.amount < 0 ? 'text-red-600' : 'text-green-600'}`}>{fmt(row.amount, row.currency)}</span>
-                        <button onClick={() => setCsvRows(prev => prev.filter((_, j) => j !== i))} className="text-[var(--arvo-fg-faint)] hover:text-red-400 transition-colors">
+                        <button onClick={() => setCsvRows(prev => prev.filter((_, j) => j !== i))} className="text-[var(--arvo-fg-soft)] hover:text-red-400 transition-colors">
                           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5"><path d="M5.28 4.22a.75.75 0 0 0-1.06 1.06L6.94 8l-2.72 2.72a.75.75 0 1 0 1.06 1.06L8 9.06l2.72 2.72a.75.75 0 1 0 1.06-1.06L9.06 8l2.72-2.72a.75.75 0 0 0-1.06-1.06L8 6.94 5.28 4.22Z" /></svg>
                         </button>
                       </div>
@@ -1260,7 +1260,7 @@ export default function FinancesTransactionsPage() {
                         </div>
                       </td>
                       <td className="px-4 py-2">
-                        <button onClick={() => setCsvRows(prev => prev.filter((_, j) => j !== i))} className="text-[var(--arvo-fg-faint)] hover:text-red-400 transition-colors">
+                        <button onClick={() => setCsvRows(prev => prev.filter((_, j) => j !== i))} className="text-[var(--arvo-fg-soft)] hover:text-red-400 transition-colors">
                           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5"><path d="M5.28 4.22a.75.75 0 0 0-1.06 1.06L6.94 8l-2.72 2.72a.75.75 0 1 0 1.06 1.06L8 9.06l2.72 2.72a.75.75 0 1 0 1.06-1.06L9.06 8l2.72-2.72a.75.75 0 0 0-1.06-1.06L8 6.94 5.28 4.22Z" /></svg>
                         </button>
                       </td>
@@ -1390,7 +1390,7 @@ export default function FinancesTransactionsPage() {
                                 <button
                                   onClick={e => { e.stopPropagation(); deleteGroup(item.groupId) }}
                                   title={t.finances.reimbursementGroupDelete}
-                                  className="p-1 text-[var(--arvo-fg-faint)] hover:text-red-400 transition-colors"
+                                  className="p-1 text-[var(--arvo-fg-soft)] hover:text-red-400 transition-colors"
                                 >
                                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5"><path fillRule="evenodd" d="M5 3.25V4H2.75a.75.75 0 0 0 0 1.5h.3l.815 8.15A1.5 1.5 0 0 0 5.357 15h5.285a1.5 1.5 0 0 0 1.493-1.35l.815-8.15h.3a.75.75 0 0 0 0-1.5H11v-.75A2.25 2.25 0 0 0 8.75 1h-1.5A2.25 2.25 0 0 0 5 3.25Z" clipRule="evenodd"/></svg>
                                 </button>
@@ -1483,7 +1483,7 @@ export default function FinancesTransactionsPage() {
                                   {tx.finance_categories.icon} {tx.finance_categories.name}
                                 </span>
                               ) : (
-                                <span className="text-[10px] text-[var(--arvo-fg-faint)]">+ {t.finances.category}</span>
+                                <span className="text-[10px] text-[var(--arvo-fg-soft)]">+ {t.finances.category}</span>
                               )}
                             </button>
                           </div>
@@ -1569,7 +1569,7 @@ export default function FinancesTransactionsPage() {
                             <button
                               onClick={() => { setEditingNotesId(tx.id); setNotesInput(tx.notes ?? '') }}
                               title={t.finances.notesPlaceholder}
-                              className={`p-2 rounded-lg transition-colors ${tx.notes ? 'text-[var(--arvo-fg)] hover:bg-[var(--arvo-fg)]/10' : 'text-[var(--arvo-fg-faint)] hover:text-[var(--arvo-fg)] hover:bg-[var(--arvo-fg)]/10'}`}
+                              className={`p-2 rounded-lg transition-colors ${tx.notes ? 'text-[var(--arvo-fg)] hover:bg-[var(--arvo-fg)]/10' : 'text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg)] hover:bg-[var(--arvo-fg)]/10'}`}
                             >
                               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4"><path d="M13.488 2.513a1.75 1.75 0 0 0-2.475 0L6.75 6.774a2.75 2.75 0 0 0-.596.892l-.471 1.179a.75.75 0 0 0 .98.98l1.179-.471a2.75 2.75 0 0 0 .892-.596l4.262-4.263a1.75 1.75 0 0 0 0-2.475ZM3.5 4.75A.75.75 0 0 1 4.25 4h3a.75.75 0 0 1 0 1.5h-3a.75.75 0 0 1-.75-.75Zm0 3A.75.75 0 0 1 4.25 7h1.5a.75.75 0 0 1 0 1.5h-1.5A.75.75 0 0 1 3.5 7.75ZM2 3.5A1.5 1.5 0 0 1 3.5 2h9A1.5 1.5 0 0 1 14 3.5V5a.75.75 0 0 1-1.5 0V3.5a.75.75 0 0 0-.75-.75h-9A.75.75 0 0 0 2 3.5V12a.75.75 0 0 0 .75.75H6a.75.75 0 0 1 0 1.5H2.75A1.5 1.5 0 0 1 2 12.75V3.5Z"/></svg>
                             </button>
@@ -1577,7 +1577,7 @@ export default function FinancesTransactionsPage() {
                             <button
                               onClick={() => toggleExclude(tx.id, tx.exclude_from_stats)}
                               title={tx.exclude_from_stats ? t.finances.includeInStats : t.finances.excludeFromStats}
-                              className={`p-2 rounded-lg transition-colors ${tx.exclude_from_stats ? 'text-amber-500 hover:text-amber-700 hover:bg-amber-50' : 'text-[var(--arvo-fg-faint)] hover:text-amber-500 hover:bg-amber-50'}`}
+                              className={`p-2 rounded-lg transition-colors ${tx.exclude_from_stats ? 'text-amber-500 hover:text-amber-700 hover:bg-amber-50' : 'text-[var(--arvo-fg-soft)] hover:text-amber-500 hover:bg-amber-50'}`}
                             >
                               {tx.exclude_from_stats ? (
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4"><path d="M8 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"/><path d="M1.38 8a6.998 6.998 0 0 1 13.24 0 7 7 0 0 1-13.24 0ZM8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5Z"/></svg>
@@ -1589,12 +1589,12 @@ export default function FinancesTransactionsPage() {
                             <button
                               onClick={() => toggleInternal(tx.id, tx.is_internal_transfer)}
                               title={tx.is_internal_transfer ? t.finances.markAsReal : t.finances.markAsTransfer}
-                              className={`p-2 rounded-lg transition-colors ${tx.is_internal_transfer ? 'text-blue-500 hover:bg-blue-50' : 'text-[var(--arvo-fg-faint)] hover:text-blue-500 hover:bg-blue-50'}`}
+                              className={`p-2 rounded-lg transition-colors ${tx.is_internal_transfer ? 'text-blue-500 hover:bg-blue-50' : 'text-[var(--arvo-fg-soft)] hover:text-blue-500 hover:bg-blue-50'}`}
                             >
                               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z" clipRule="evenodd" /></svg>
                             </button>
                             {/* Delete */}
-                            <button onClick={() => deleteTransaction(tx.id)} title={t.common.delete} className="p-2 rounded-lg text-[var(--arvo-fg-faint)] hover:text-red-500 hover:bg-red-50 transition-colors">
+                            <button onClick={() => deleteTransaction(tx.id)} title={t.common.delete} className="p-2 rounded-lg text-[var(--arvo-fg-soft)] hover:text-red-500 hover:bg-red-50 transition-colors">
                               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M5 3.25V4H2.75a.75.75 0 0 0 0 1.5h.3l.815 8.15A1.5 1.5 0 0 0 5.357 15h5.285a1.5 1.5 0 0 0 1.493-1.35l.815-8.15h.3a.75.75 0 0 0 0-1.5H11v-.75A2.25 2.25 0 0 0 8.75 1h-1.5A2.25 2.25 0 0 0 5 3.25Zm2.25-.75a.75.75 0 0 0-.75.75V4h3v-.75a.75.75 0 0 0-.75-.75h-1.5ZM6.05 6a.75.75 0 0 1 .787.713l.275 5.5a.75.75 0 0 1-1.498.075l-.275-5.5A.75.75 0 0 1 6.05 6Zm3.9 0a.75.75 0 0 1 .712.787l-.275 5.5a.75.75 0 0 1-1.498-.075l.275-5.5a.75.75 0 0 1 .786-.712Z" clipRule="evenodd" /></svg>
                             </button>
                           </div>
@@ -1849,7 +1849,7 @@ export default function FinancesTransactionsPage() {
                           <button
                             onClick={() => deleteGroup(g.id)}
                             title={t.finances.groupDelete}
-                            className="p-1 text-[var(--arvo-fg-faint)] hover:text-red-400 transition-colors"
+                            className="p-1 text-[var(--arvo-fg-soft)] hover:text-red-400 transition-colors"
                           >
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5"><path fillRule="evenodd" d="M5 3.25V4H2.75a.75.75 0 0 0 0 1.5h.3l.815 8.15A1.5 1.5 0 0 0 5.357 15h5.285a1.5 1.5 0 0 0 1.493-1.35l.815-8.15h.3a.75.75 0 0 0 0-1.5H11v-.75A2.25 2.25 0 0 0 8.75 1h-1.5A2.25 2.25 0 0 0 5 3.25Z" clipRule="evenodd"/></svg>
                           </button>
@@ -1863,7 +1863,7 @@ export default function FinancesTransactionsPage() {
                               <button
                                 onClick={() => removeFromGroup(g.id, tx.id)}
                                 title={t.finances.removeFromGroup}
-                                className="p-0.5 text-[var(--arvo-fg-faint)] hover:text-red-400 transition-colors"
+                                className="p-0.5 text-[var(--arvo-fg-soft)] hover:text-red-400 transition-colors"
                               >
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3"><path d="M5.28 4.22a.75.75 0 0 0-1.06 1.06L6.94 8l-2.72 2.72a.75.75 0 1 0 1.06 1.06L8 9.06l2.72 2.72a.75.75 0 1 0 1.06-1.06L9.06 8l2.72-2.72a.75.75 0 0 0-1.06-1.06L8 6.94 5.28 4.22Z"/></svg>
                               </button>
@@ -1912,7 +1912,7 @@ export default function FinancesTransactionsPage() {
                                   <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${Math.abs(g.net) < 0.01 ? 'bg-[var(--arvo-track-bg)] text-[var(--arvo-fg-muted)]' : g.net > 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-600'}`}>
                                     {g.net >= 0 ? '+' : ''}{fmt(g.net, g.transactions[0]?.currency ?? 'EUR')}
                                   </span>
-                                  <button onClick={() => deleteGroup(g.id)} title={t.finances.groupDelete} className="p-1 text-[var(--arvo-fg-faint)] hover:text-red-400 transition-colors">
+                                  <button onClick={() => deleteGroup(g.id)} title={t.finances.groupDelete} className="p-1 text-[var(--arvo-fg-soft)] hover:text-red-400 transition-colors">
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5"><path fillRule="evenodd" d="M5 3.25V4H2.75a.75.75 0 0 0 0 1.5h.3l.815 8.15A1.5 1.5 0 0 0 5.357 15h5.285a1.5 1.5 0 0 0 1.493-1.35l.815-8.15h.3a.75.75 0 0 0 0-1.5H11v-.75A2.25 2.25 0 0 0 8.75 1h-1.5A2.25 2.25 0 0 0 5 3.25Z" clipRule="evenodd"/></svg>
                                   </button>
                                 </div>
@@ -1922,7 +1922,7 @@ export default function FinancesTransactionsPage() {
                                       <span className="text-[var(--arvo-fg-faint)]">·</span>
                                       <span className="flex-1 truncate">{tx.description}</span>
                                       <span className={`font-medium ${tx.amount < 0 ? 'text-red-500' : 'text-emerald-600'}`}>{fmt(tx.amount, tx.currency)}</span>
-                                      <button onClick={() => removeFromGroup(g.id, tx.id)} title={t.finances.removeFromGroup} className="p-0.5 text-[var(--arvo-fg-faint)] hover:text-red-400 transition-colors">
+                                      <button onClick={() => removeFromGroup(g.id, tx.id)} title={t.finances.removeFromGroup} className="p-0.5 text-[var(--arvo-fg-soft)] hover:text-red-400 transition-colors">
                                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3"><path d="M5.28 4.22a.75.75 0 0 0-1.06 1.06L6.94 8l-2.72 2.72a.75.75 0 1 0 1.06 1.06L8 9.06l2.72 2.72a.75.75 0 1 0 1.06-1.06L9.06 8l2.72-2.72a.75.75 0 0 0-1.06-1.06L8 6.94 5.28 4.22Z"/></svg>
                                       </button>
                                     </div>

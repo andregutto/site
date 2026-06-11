@@ -8,6 +8,7 @@ import type React from 'react'
 import { useAchievementContext } from '../contexts/AchievementContext'
 import { useNotificationsContext } from '../contexts/NotificationsContext'
 import { getLevel, getLevelProgress } from '../lib/achievementDefs'
+import { resolveNotificationText, SEVERITY_COLORS, TYPE_ICONS, formatTimestamp } from '../lib/notifications'
 import { apiFetch } from '../lib/api'
 import LoginFooter from './LoginFooter'
 import OnboardingOverlay from './OnboardingOverlay'
@@ -33,15 +34,16 @@ export default function AppLayout() {
   const { user, signOut } = useAuth()
   const { currency, setCurrency, hideValues, toggleHideValues } = useCurrency()
   const { resolvedTheme } = useTheme()
-  const { t } = useI18n()
+  const { t, locale } = useI18n()
   const { totalXp } = useAchievementContext()
-  const { unreadCount } = useNotificationsContext()
+  const { active: activeNotifications, unreadCount } = useNotificationsContext()
   const location = useLocation()
   const level = getLevel(totalXp)
   const levelProgress = getLevelProgress(totalXp)
 
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [showUserMenu,   setShowUserMenu]   = useState(false)
+  const [showNotifMenu,  setShowNotifMenu]  = useState(false)
   const subNavScrollRef = useRef<HTMLDivElement>(null)
   const [chatVisible,    setChatVisible]    = useState(() => localStorage.getItem('arvo_chat_visible') !== 'false')
   const [openChatNow,    setOpenChatNow]    = useState(false)
@@ -60,8 +62,12 @@ export default function AppLayout() {
   const userMenuRef = useRef<HTMLDivElement>(null)
   useClickOutside(userMenuRef, () => setShowUserMenu(false), showUserMenu)
 
+  const notifMenuRef = useRef<HTMLDivElement>(null)
+  useClickOutside(notifMenuRef, () => setShowNotifMenu(false), showNotifMenu)
+
   useEffect(() => {
     setShowUserMenu(false)
+    setShowNotifMenu(false)
   }, [location.pathname])
 
   // Auto-scroll active sub-nav tab into center view (Option B)
@@ -287,22 +293,66 @@ export default function AppLayout() {
               )}
             </button>
             {/* Bell: notifications */}
-            <Link
-              to="/notifications"
-              title={t.notifications.title}
-              style={{ height: 32, width: 32, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', flexShrink: 0, transition: 'all 0.15s' }}
-              onMouseEnter={e => (e.currentTarget.style.background = 'var(--arvo-hover-bg)')}
-              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-            >
-              <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="var(--arvo-fg-soft)" strokeWidth={1.8}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
-              </svg>
-              {unreadCount > 0 && (
-                <span style={{ position: 'absolute', top: 2, right: 2, minWidth: 14, height: 14, padding: '0 3px', borderRadius: 999, background: 'var(--arvo-red)', color: 'white', fontSize: 9, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--arvo-font-body)', lineHeight: 1 }}>
-                  {unreadCount > 9 ? '9+' : unreadCount}
-                </span>
+            <div ref={notifMenuRef} className="relative">
+              <button
+                onClick={() => setShowNotifMenu(v => !v)}
+                title={t.notifications.title}
+                style={{ height: 32, width: 32, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', flexShrink: 0, transition: 'all 0.15s' }}
+                onMouseEnter={e => (e.currentTarget.style.background = 'var(--arvo-hover-bg)')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+              >
+                <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="var(--arvo-fg-soft)" strokeWidth={1.8}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
+                </svg>
+                {unreadCount > 0 && (
+                  <span style={{ position: 'absolute', top: 2, right: 2, minWidth: 14, height: 14, padding: '0 3px', borderRadius: 999, background: 'var(--arvo-red)', color: 'white', fontSize: 9, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--arvo-font-body)', lineHeight: 1 }}>
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
+              </button>
+              {showNotifMenu && (
+                <div className="absolute right-0 top-full mt-2 w-80 max-w-[calc(100vw-32px)] rounded-xl shadow-lg z-50" style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border-soft)' }}>
+                  <div className="px-4 py-2.5" style={{ borderBottom: '1px solid var(--arvo-border-soft)' }}>
+                    <span className="text-xs font-semibold" style={{ color: 'var(--arvo-fg)' }}>{t.notifications.activeSection}</span>
+                  </div>
+                  <div className="max-h-[60vh] overflow-y-auto py-1">
+                    {activeNotifications.length === 0 ? (
+                      <p className="px-4 py-6 text-center text-xs" style={{ color: 'var(--arvo-fg-soft)' }}>{t.notifications.emptyActive}</p>
+                    ) : activeNotifications.map(item => {
+                      const { title, subtitle } = resolveNotificationText(item, t, locale)
+                      const color = SEVERITY_COLORS[item.severity] ?? SEVERITY_COLORS.info
+                      const icon = TYPE_ICONS[item.type] ?? '🔔'
+                      const inner = (
+                        <>
+                          <div className="w-8 h-8 rounded-lg flex items-center justify-center text-sm shrink-0" style={{ background: `${color}1A` }}>{icon}</div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-medium truncate" style={{ color: 'var(--arvo-fg)' }}>{title}</p>
+                            <p className="text-[11px] mt-0.5 truncate" style={{ color: 'var(--arvo-fg-soft)' }}>
+                              {subtitle ? `${subtitle} · ` : ''}{formatTimestamp(item.occurred_at, locale)}
+                            </p>
+                          </div>
+                        </>
+                      )
+                      return item.link ? (
+                        <Link key={item.key} to={item.link} onClick={() => setShowNotifMenu(false)} className="flex items-center gap-3 px-4 py-2.5 hover:bg-[var(--arvo-surface-2)] transition-colors">{inner}</Link>
+                      ) : (
+                        <div key={item.key} className="flex items-center gap-3 px-4 py-2.5">{inner}</div>
+                      )
+                    })}
+                  </div>
+                  <div className="p-2" style={{ borderTop: '1px solid var(--arvo-border-soft)' }}>
+                    <Link
+                      to="/notifications"
+                      onClick={() => setShowNotifMenu(false)}
+                      className="block text-center text-xs font-medium py-2 rounded-lg hover:bg-[var(--arvo-surface-2)] transition-colors"
+                      style={{ color: 'var(--arvo-blue)' }}
+                    >
+                      {t.notifications.viewAll}
+                    </Link>
+                  </div>
+                </div>
               )}
-            </Link>
+            </div>
             <SetupChecklist firstName={meta.first_name as string | undefined} />
             <div ref={userMenuRef} className="relative">
               <button

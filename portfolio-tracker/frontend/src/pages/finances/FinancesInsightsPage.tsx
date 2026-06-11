@@ -292,12 +292,10 @@ export default function FinancesInsightsPage() {
                   {/* Dismiss */}
                   <button
                     onClick={() => dismissSub(sub)}
-                    className="p-1.5 text-[var(--arvo-fg-faint)] hover:text-[var(--arvo-fg-muted)] transition-colors shrink-0 rounded-lg hover:bg-[var(--arvo-surface-2)]"
-                    title={t.finances.subscriptionDismiss}
+                    className="text-[11px] font-medium shrink-0 px-2.5 py-1.5 rounded-lg border border-[var(--arvo-border)] text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg-muted)] hover:border-[var(--arvo-fg-soft)] hover:bg-[var(--arvo-surface-2)] transition-colors whitespace-nowrap"
+                    title={t.finances.subscriptionDismissHint}
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5">
-                      <path d="M5.28 4.22a.75.75 0 0 0-1.06 1.06L6.94 8l-2.72 2.72a.75.75 0 1 0 1.06 1.06L8 9.06l2.72 2.72a.75.75 0 1 0 1.06-1.06L9.06 8l2.72-2.72a.75.75 0 0 0-1.06-1.06L8 6.94 5.28 4.22Z" />
-                    </svg>
+                    {t.finances.subscriptionDismiss}
                   </button>
                 </div>
               ))}

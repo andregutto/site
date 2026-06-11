@@ -2098,13 +2098,27 @@ export interface SubscriptionItem {
   category: { id: number; name: string; icon: string; color: string; name_key?: string } | null
 }
 
+type SubscriptionTxRow = {
+  id: number; date: string; description: string; amount: number; currency: string
+  category_id: number | null; is_internal_transfer: boolean; exclude_from_stats: boolean
+  finance_categories: { id: number; name: string; icon: string; color: string; name_key?: string } | null
+}
+
 export async function getActiveSubscriptions(userId: string): Promise<{ subscriptions: SubscriptionItem[]; error?: string }> {
   const since = new Date()
   since.setMonth(since.getMonth() - 18)
   const sinceStr = since.toISOString().split('T')[0]
 
-  const [{ data: transactions, error }, { data: dismissals }] = await Promise.all([
-    supabaseAdmin
+  const dismissalsPromise = supabaseAdmin
+    .from('finance_subscription_dismissals')
+    .select('key')
+    .eq('user_id', userId)
+
+  // Paginate to bypass Supabase PostgREST default 1000-row limit
+  const PAGE_SIZE = 1000
+  const transactions: SubscriptionTxRow[] = []
+  for (let from = 0; ; from += PAGE_SIZE) {
+    const { data, error } = await supabaseAdmin
       .from('finance_transactions')
       .select('id, date, description, amount, currency, category_id, is_internal_transfer, exclude_from_stats, finance_categories(id, name, icon, color, name_key)')
       .eq('user_id', userId)
@@ -2112,16 +2126,18 @@ export async function getActiveSubscriptions(userId: string): Promise<{ subscrip
       .gte('date', sinceStr)
       .eq('is_internal_transfer', false)
       .eq('exclude_from_stats', false)
-      .order('date', { ascending: true }),
-    supabaseAdmin
-      .from('finance_subscription_dismissals')
-      .select('key')
-      .eq('user_id', userId),
-  ])
+      .order('date', { ascending: true })
+      .order('id', { ascending: true })
+      .range(from, from + PAGE_SIZE - 1)
+    if (error) return { subscriptions: [], error: error.message }
+    if (!data?.length) break
+    transactions.push(...(data as unknown as SubscriptionTxRow[]))
+    if (data.length < PAGE_SIZE) break
+  }
 
-  if (error) return { subscriptions: [], error: error.message }
-  if (!transactions || transactions.length === 0) return { subscriptions: [] }
+  if (transactions.length === 0) return { subscriptions: [] }
 
+  const { data: dismissals } = await dismissalsPromise
   const dismissedKeys = new Set((dismissals ?? []).map(d => d.key))
 
   const groups = new Map<string, typeof transactions>()

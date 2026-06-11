@@ -3,6 +3,33 @@ import type { Locale } from '../contexts/I18nContext'
 
 const CURRENCY_LOCALES: Record<Locale, string> = { pt: 'pt-BR', en: 'en-US', fr: 'fr-FR' }
 
+export const SEVERITY_COLORS: Record<NotificationItem['severity'], string> = {
+  info: 'var(--arvo-blue)',
+  warning: 'var(--arvo-ocre)',
+  danger: 'var(--arvo-red)',
+  success: 'var(--arvo-green)',
+}
+
+export const TYPE_ICONS: Record<string, string> = {
+  achievement: '🏆',
+  bank_connected: '🏦',
+  bank_connect_error: '⚠️',
+  split_warning: '✂️',
+  budget_alert: '💰',
+  shared_category_alert: '👥',
+  home_prompt: '🏠',
+  budget_reminder_setup: '⏰',
+  budget_reminder_due: '⏰',
+  subscription_detected: '🔄',
+}
+
+export function formatTimestamp(iso: string, locale: Locale): string {
+  return new Date(iso).toLocaleString(
+    locale === 'pt' ? 'pt-BR' : locale === 'fr' ? 'fr-FR' : 'en-GB',
+    { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' },
+  )
+}
+
 export function formatMoney(value: number, currency: string, locale: Locale): string {
   return new Intl.NumberFormat(CURRENCY_LOCALES[locale] ?? 'pt-BR', {
     style: 'currency',

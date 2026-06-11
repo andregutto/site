@@ -2,35 +2,8 @@ import type React from 'react'
 import { Link } from 'react-router-dom'
 import { useI18n } from '../contexts/I18nContext'
 import { useNotificationsContext } from '../contexts/NotificationsContext'
-import { resolveNotificationText } from '../lib/notifications'
+import { resolveNotificationText, SEVERITY_COLORS, TYPE_ICONS, formatTimestamp } from '../lib/notifications'
 import type { NotificationItem } from '../lib/types'
-
-const SEVERITY_COLORS: Record<NotificationItem['severity'], string> = {
-  info: 'var(--arvo-blue)',
-  warning: 'var(--arvo-ocre)',
-  danger: 'var(--arvo-red)',
-  success: 'var(--arvo-green)',
-}
-
-const TYPE_ICONS: Record<string, string> = {
-  achievement: '🏆',
-  bank_connected: '🏦',
-  bank_connect_error: '⚠️',
-  split_warning: '✂️',
-  budget_alert: '💰',
-  shared_category_alert: '👥',
-  home_prompt: '🏠',
-  budget_reminder_setup: '⏰',
-  budget_reminder_due: '⏰',
-  subscription_detected: '🔄',
-}
-
-function formatTimestamp(iso: string, locale: string) {
-  return new Date(iso).toLocaleString(
-    locale === 'pt' ? 'pt-BR' : locale === 'fr' ? 'fr-FR' : 'en-GB',
-    { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' },
-  )
-}
 
 function NotificationRow({ item, action }: { item: NotificationItem; action: React.ReactNode }) {
   const { t, locale } = useI18n()
