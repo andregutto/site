@@ -218,6 +218,7 @@
     "emailResent": "E-mail renvoyé. Vérifiez votre boîte de réception."
   },
   "dashboard": {
+    "eyebrow": "Capital · Investissements",
     "assetsTitle": "Actifs",
     "awaitingValue": "en attente de valeur",
     "asset": "actif",
@@ -259,7 +260,7 @@
     "topGainers": "Meilleures hausses",
     "topLosers": "Meilleures baisses",
     "noMoversData": "Aucune donnée de rendement",
-    "periodGainBrl": "Gain sur la période"
+    "periodGainBrl": "Gain"
   },
   "setup": {
     "title": "Premiers pas",
@@ -1234,7 +1235,9 @@
     "loading": "Chargement des indices...",
     "error": "Erreur lors du chargement des indices",
     "source": "Source: Yahoo Finance · BCB · Mis à jour en temps réel avec cache de 15 min",
-    "month": "mois"
+    "month": "mois",
+    "cdiDeltaTooltip": "Le CDI est déjà un taux annualisé — variation cumulée indisponible pour cette période",
+    "deltaUnavailable": "Variation indisponible pour cette période"
   },
   "modals": {
     "valorizacao": "Valorisation",

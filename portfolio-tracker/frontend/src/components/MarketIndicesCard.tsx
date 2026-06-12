@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { Fragment, useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { apiFetch } from '../lib/api'
 import { useI18n } from '../contexts/I18nContext'
@@ -74,36 +74,37 @@ export default function MarketIndicesCard({ periodMode, periodLabel }: Props) {
       <p className="mb-3" style={{ fontFamily: "'Playfair Display', serif", fontStyle: 'italic', fontSize: 13, color: 'var(--arvo-fg-soft)' }}>
         {periodLabel}
       </p>
-      <div className="flex-1 grid grid-cols-2 gap-x-4 gap-y-3 content-center">
+      <div className="flex-1 grid items-baseline content-center" style={{ gridTemplateColumns: 'auto 1fr auto', columnGap: 14, rowGap: 10 }}>
         {indices
           ? indices.map(idx => {
               const pct = getPct(idx)
               const isPos = pct != null && pct > 0
               const isNeg = pct != null && pct < 0
+              const isCDI = idx.code === 'CDI'
               return (
-                <div key={idx.code} className="flex items-center justify-between gap-3 min-w-0">
-                  <div className="min-w-0">
-                    <p style={{ fontFamily: "var(--arvo-font-body)", fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)', marginBottom: 2 }}>
-                      {idx.name}
-                    </p>
-                    <p style={{ fontFamily: "var(--arvo-font-body)", fontSize: 16, letterSpacing: '0.01em', color: 'var(--arvo-fg)', lineHeight: 1 }}>
-                      {fmtVal(idx.value, idx.unit)}
-                    </p>
-                  </div>
-                  <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 14, fontWeight: 600, color: isPos ? 'var(--arvo-green)' : isNeg ? 'var(--arvo-red)' : 'var(--arvo-fg-faint)', flexShrink: 0 }}>
+                <Fragment key={idx.code}>
+                  <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)' }}>
+                    {idx.name}
+                  </span>
+                  <span className="arvo-num" style={{ fontFamily: "var(--arvo-font-body)", fontSize: 16, letterSpacing: '0.01em', color: 'var(--arvo-fg)' }}>
+                    {fmtVal(idx.value, idx.unit)}
+                  </span>
+                  <span
+                    className="arvo-num"
+                    style={{ fontFamily: "var(--arvo-font-body)", fontSize: 13, fontWeight: 600, color: isPos ? 'var(--arvo-green)' : isNeg ? 'var(--arvo-red)' : 'var(--arvo-fg-faint)', justifySelf: 'end' }}
+                    title={pct == null ? (isCDI ? t.indices.cdiDeltaTooltip : t.indices.deltaUnavailable) : undefined}
+                  >
                     {fmtPct(pct)}
                   </span>
-                </div>
+                </Fragment>
               )
             })
           : CARD_INDICES.map(code => (
-              <div key={code} className="flex items-center justify-between gap-3 min-w-0">
-                <div className="min-w-0 flex flex-col gap-1.5">
-                  <div className="h-2.5 w-16 rounded animate-pulse" style={{ background: 'var(--arvo-track-bg)' }} />
-                  <div className="h-4 w-20 rounded animate-pulse" style={{ background: 'var(--arvo-track-bg)' }} />
-                </div>
-                <div className="h-4 w-12 rounded animate-pulse shrink-0" style={{ background: 'var(--arvo-track-bg)' }} />
-              </div>
+              <Fragment key={code}>
+                <div className="h-2.5 w-16 rounded animate-pulse" style={{ background: 'var(--arvo-track-bg)' }} />
+                <div className="h-4 w-20 rounded animate-pulse" style={{ background: 'var(--arvo-track-bg)' }} />
+                <div className="h-4 w-12 rounded animate-pulse justify-self-end" style={{ background: 'var(--arvo-track-bg)' }} />
+              </Fragment>
             ))}
       </div>
     </div>

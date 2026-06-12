@@ -22,7 +22,7 @@ const CLASSES = [
   { id: 1, name: 'Ações Brasil',   color: '#1B4FD8', icon: '📊' },
   { id: 2, name: 'FIIs',           color: '#A36A52', icon: '🏢' },
   { id: 3, name: 'Renda Fixa',     color: '#C8B89A', icon: '🏦' },
-  { id: 4, name: 'Cripto',         color: '#0D0D0D', icon: '💎' },
+  { id: 4, name: 'Cripto',         color: '#5A5248', icon: '💎' },
   { id: 5, name: 'Ações Exterior', color: '#E8A020', icon: '🌍' },
 ]
 
@@ -239,6 +239,7 @@ const FIXTURES: Array<[RegExp, (path: string) => unknown]> = [
   [/^\/notifications\/dismiss/, () => ({ ok: true })],
   [/^\/notifications/, () => ({
     active: [
+      { key: 'split:7', type: 'split_warning', severity: 'warning', params: { code: 'BTC', ratio: '1:10' }, occurred_at: '2026-06-11T09:00:00Z', dismissed_at: null, dismissible: true },
       { key: 'n1', type: 'achievement', severity: 'success', params: { name: 'Um quarto de milhão' }, occurred_at: '2026-06-10T09:12:00Z', dismissed_at: null, dismissible: true },
       { key: 'n2', type: 'budget_alert', severity: 'warning', params: { category: 'Restaurantes', pct: 92 }, link: '/finances/budget', occurred_at: '2026-06-08T18:40:00Z', dismissed_at: null, dismissible: true },
       { key: 'n3', type: 'subscription_detected', severity: 'info', params: { name: 'Netflix', amount: 13.49, currency: 'EUR' }, link: '/finances/insights', occurred_at: '2026-06-05T07:00:00Z', dismissed_at: null, dismissible: true },

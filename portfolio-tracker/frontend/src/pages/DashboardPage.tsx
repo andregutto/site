@@ -11,7 +11,9 @@ import { apiFetch } from '../lib/api'
 import ValueCards from '../components/ValueCards'
 import AllocationChart from '../components/AllocationChart'
 import MarketIndicesCard from '../components/MarketIndicesCard'
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
+import DividendsCard from '../components/DividendsCard'
+import { PageTitle, Segmented, Button, Banner } from '../components/ui'
+import { Icon } from '../components/icons'
 
 type PeriodMode = 'current_month' | 'last_30d' | 'last_12m' | 'ytd' | 'inception'
 
@@ -186,89 +188,67 @@ export default function DashboardPage() {
   const losers  = [...movingAssets].reverse().filter(a => a.ret < 0).slice(0, 5)
   const hasAllocation = data.by_class.length > 0
   const hasMovers = dashReturnsLoading || gainers.length > 0 || losers.length > 0
+  const hasDividends = divLoading || (divSummary != null && divSummary.total_brl > 0)
 
   return (
     <>
     <div className="space-y-6">
-      {/* Header + period buttons */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 18, letterSpacing: '0.06em', color: 'var(--arvo-fg)' }}>Dashboard</h1>
-        <div className="flex flex-wrap items-center gap-2">
-          {([
-            { key: 'current_month' as PeriodMode, label: t.performance.currentMonth },
-            { key: 'last_30d'      as PeriodMode, label: t.performance.last30d },
-            { key: 'last_12m'      as PeriodMode, label: t.performance.last12m },
-            { key: 'ytd'           as PeriodMode, label: 'YTD' },
-            { key: 'inception'     as PeriodMode, label: t.performance.inception, disabled: !inception },
-          ] as Array<{ key: PeriodMode; label: string; disabled?: boolean }>).map(({ key, label, disabled }) => (
+      {/* Header + controls */}
+      <PageTitle
+        eyebrow={t.dashboard.eyebrow}
+        title="Dashboard"
+        actions={
+          <>
+            <Segmented
+              ariaLabel={t.archived.period}
+              value={periodMode}
+              onChange={setPeriodMode}
+              options={[
+                { value: 'current_month' as PeriodMode, label: t.performance.currentMonth },
+                { value: 'last_30d'      as PeriodMode, label: t.performance.last30d },
+                { value: 'last_12m'      as PeriodMode, label: t.performance.last12m },
+                { value: 'ytd'           as PeriodMode, label: 'YTD' },
+                { value: 'inception'     as PeriodMode, label: t.performance.inception, disabled: !inception },
+              ]}
+            />
             <button
-              key={key}
-              onClick={() => !disabled && setPeriodMode(key)}
-              disabled={disabled}
-              style={{
-                fontFamily: 'var(--arvo-font-body)', fontSize: 10, letterSpacing: '0.12em',
-                textTransform: 'uppercase', padding: '6px 12px', borderRadius: 6,
-                border: `1px solid ${disabled ? 'var(--arvo-border-soft)' : periodMode === key ? 'var(--arvo-pill-active-bg)' : 'var(--arvo-border)'}`,
-                background: periodMode === key && !disabled ? 'var(--arvo-pill-active-bg)' : 'var(--arvo-surface)',
-                color: disabled ? 'var(--arvo-fg-faint)' : periodMode === key ? 'var(--arvo-pill-active-fg)' : 'var(--arvo-fg-muted)',
-                cursor: disabled ? 'not-allowed' : 'pointer', transition: 'all 0.2s',
-              }}
-            >{label}</button>
-          ))}
-          <button
-            onClick={refresh}
-            style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-muted)', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, marginLeft: 4 }}
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
-            {t.dashboard.refresh}
-          </button>
-          <button
-            onClick={() => setShowShareModal(true)}
-            style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 10, letterSpacing: '0.10em', textTransform: 'uppercase', padding: '6px 12px', borderRadius: 6, border: '1px solid var(--arvo-border)', background: 'var(--arvo-surface)', color: 'var(--arvo-fg-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}
-          >
-            <svg style={{ width: 12, height: 12 }} fill="none" viewBox="0 0 16 16" stroke="currentColor" strokeWidth="1.5">
-              <circle cx="13" cy="3" r="1.5"/><circle cx="3" cy="8" r="1.5"/><circle cx="13" cy="13" r="1.5"/>
-              <path strokeLinecap="round" d="M4.3 7.3l7.4-3.6M4.3 8.7l7.4 3.6"/>
-            </svg>
-            {s.btnShare}
-          </button>
-        </div>
-      </div>
+              onClick={refresh}
+              aria-label={t.dashboard.refresh}
+              title={t.dashboard.refresh}
+              className="arvo-btn arvo-btn--ghost"
+              style={{ width: 32, height: 32, padding: 0 }}
+            >
+              <Icon name="refresh" size={14} />
+            </button>
+            <Button variant="ghost" size="sm" onClick={() => setShowShareModal(true)}>
+              <Icon name="share" size={12} />
+              {s.btnShare}
+            </Button>
+          </>
+        }
+      />
 
-      {/* Split warnings */}
-      {splitWarnings.length > 0 && (
-        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-start gap-3 dark:bg-amber-950/40 dark:border-amber-900">
-          <span className="text-amber-500 text-lg shrink-0">⚠</span>
-          <div className="flex-1 min-w-0">
-            <p className="font-semibold text-amber-900 text-sm dark:text-amber-200">{t.dashboard.splitWarningDashTitle}</p>
-            <p className="text-xs text-amber-700 mt-0.5 dark:text-amber-300">{(t.dashboard.splitWarningDashBody as string).replace('{n}', String(splitWarnings.length))}</p>
-            <div className="flex flex-wrap gap-2 mt-2">
-              {splitWarnings.map(item => {
-                const assetId = item.key.split(':')[1]
-                return (
-                  <div key={item.key} className="flex items-center gap-1 bg-amber-100 border border-amber-300 rounded-lg dark:bg-amber-900/40 dark:border-amber-800">
-                    <button
-                      onClick={() => navigate(`/assets/${assetId}`, { state: { total_brl: data.total_brl } })}
-                      className="text-xs hover:bg-amber-200 text-amber-800 pl-2 pr-1 py-1 rounded-l-lg transition-colors dark:hover:bg-amber-900/60 dark:text-amber-200"
-                    >
-                      {item.params.code as string} · {item.params.ratio as string} →
-                    </button>
-                    <button
-                      onClick={() => dismissNotification(item)}
-                      className="text-amber-500 hover:text-amber-800 px-1.5 py-1 transition-colors dark:text-amber-400 dark:hover:text-amber-200"
-                      aria-label={t.notifications.dismiss}
-                    >
-                      <svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor"><path d="M5.28 4.22a.75.75 0 0 0-1.06 1.06L6.94 8l-2.72 2.72a.75.75 0 1 0 1.06 1.06L8 9.06l2.72 2.72a.75.75 0 1 0 1.06-1.06L9.06 8l2.72-2.72a.75.75 0 0 0-1.06-1.06L8 6.94 5.28 4.22Z" /></svg>
-                    </button>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Split warning — single banner (D9); dismiss advances to the next item */}
+      {splitWarnings.length > 0 && (() => {
+        const item = splitWarnings[0]
+        const assetId = item.key.split(':')[1]
+        return (
+          <Banner
+            variant="alert"
+            onDismiss={() => dismissNotification(item)}
+            action={
+              <button
+                onClick={() => navigate(`/assets/${assetId}`, { state: { total_brl: data.total_brl } })}
+                className="arvo-btn arvo-btn--link shrink-0"
+              >
+                {item.params.code as string} · {item.params.ratio as string} →
+              </button>
+            }
+          >
+            {(t.dashboard.splitWarningDashBody as string).replace('{n}', String(splitWarnings.length))}
+          </Banner>
+        )
+      })()}
 
       {/* Row 1: ValueCards + MarketIndicesCard */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -298,16 +278,16 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Row 2: AllocationChart + Top movers */}
-      {(hasAllocation || hasMovers) && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+      {/* Row 2: AllocationChart + Top movers + Dividends (2xl bento) */}
+      {(hasAllocation || hasMovers || hasDividends) && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-12 gap-6 items-stretch">
           {hasAllocation && (
-            <div className={hasMovers ? undefined : 'lg:col-span-2'}>
+            <div className={`${hasMovers ? '' : 'lg:col-span-2'} 2xl:col-span-5`}>
               <AllocationChart data={data.by_class} currency={currency} convert={convert} />
             </div>
           )}
           {hasMovers && (
-          <div className={hasAllocation ? undefined : 'lg:col-span-2'}>
+          <div className={`${hasAllocation ? '' : 'lg:col-span-2'} 2xl:col-span-4`}>
           <div className="rounded-2xl p-5 h-full flex flex-col" style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)' }}>
           <h2 className="mb-3" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--arvo-fg)' }}>
             {tdd.topMovers} · {periodLabel}
@@ -382,6 +362,22 @@ export default function DashboardPage() {
           </div>
           </div>
           )}
+          {hasDividends && (
+            <div className="hidden 2xl:block 2xl:col-span-3">
+              <DividendsCard
+                vertical
+                divLoading={divLoading}
+                divSummary={divSummary}
+                syncing={syncing}
+                convert={convert}
+                fmt={fmt}
+                currency={currency}
+                intlLocale={intlLocale}
+                periodLabel={periodLabel}
+                td={td}
+              />
+            </div>
+          )}
         </div>
       )}
 
@@ -400,59 +396,20 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Dividends */}
-      {(divLoading || (divSummary && divSummary.total_brl > 0)) && (
-        <div className="rounded-2xl p-5" style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)' }}>
-          <div className="flex items-center justify-between mb-3">
-            <h2 style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--arvo-fg)' }}>{td.title ?? 'Dividendos'}</h2>
-            {syncing && <span className="text-xs animate-pulse" style={{ color: 'var(--arvo-fg-soft)' }}>{td.autoSyncing ?? 'Atualizando...'}</span>}
-          </div>
-          {divLoading ? (
-            <div className="h-14 flex items-center justify-center">
-              <div className="text-xs animate-pulse" style={{ color: 'var(--arvo-fg-soft)' }}>{td.syncing ?? 'Carregando...'}</div>
-            </div>
-          ) : divSummary && divSummary.total_brl > 0 ? (
-            <div className="flex flex-wrap gap-4 items-start">
-              <div className="shrink-0">
-                <p className="text-xs uppercase tracking-wide mb-0.5" style={{ color: 'var(--arvo-fg-soft)' }}>{td.totalReceived ?? 'Total recebido'}</p>
-                <p className="text-xl font-bold" style={{ color: 'var(--arvo-green)' }}>{fmt(convert(divSummary.total_brl))}</p>
-                <p className="text-xs mt-0.5" style={{ color: 'var(--arvo-fg-soft)' }}>{periodLabel}</p>
-              </div>
-              <div className="flex-1 min-w-[160px]">
-                <p className="text-xs uppercase tracking-wide mb-1.5" style={{ color: 'var(--arvo-fg-soft)' }}>{td.topPayers ?? 'Maiores pagadores'}</p>
-                <div className="space-y-1">
-                  {divSummary.by_asset.slice(0, 3).map(a => (
-                    <div key={a.asset_id} className="flex items-center justify-between gap-2">
-                      <span className="text-xs font-medium truncate" style={{ color: 'var(--arvo-fg-muted)' }}>{a.code}</span>
-                      <div className="flex items-center gap-2">
-                        <div className="w-16 h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--arvo-border)' }}>
-                          <div className="h-full rounded-full" style={{ background: 'var(--arvo-green)', width: `${Math.min(100, (a.total_brl / divSummary.by_asset[0].total_brl) * 100)}%` }} />
-                        </div>
-                        <span className="text-xs w-16 text-right" style={{ color: 'var(--arvo-fg-muted)' }}>{fmt(convert(a.total_brl))}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              {divSummary.by_month.length > 1 && (
-                <div className="flex-1 min-w-[140px] h-20">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={divSummary.by_month.map(m => ({ month: m.month.slice(5), value: convert(m.total_brl) }))}>
-                      <XAxis dataKey="month" tick={{ fontSize: 9, fill: 'var(--arvo-fg-soft)' }} />
-                      <YAxis hide />
-                      <Tooltip
-                        formatter={(v) => [new Intl.NumberFormat(intlLocale, { style: 'currency', currency, maximumFractionDigits: 0 }).format(typeof v === 'number' ? v : 0), td.title ?? 'Dividendos']}
-                        contentStyle={{ borderRadius: 8, border: '1px solid var(--arvo-border)', background: 'var(--arvo-surface)', color: 'var(--arvo-fg)', fontSize: 12 }}
-                      />
-                      <Bar dataKey="value" fill="#1F8A5B" radius={[3, 3, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              )}
-            </div>
-          ) : (
-            <p className="text-sm" style={{ color: 'var(--arvo-fg-soft)' }}>{td.noData ?? 'Nenhum dividendo no período'}</p>
-          )}
+      {/* Dividends — footer strip below 2xl (becomes a bento column at 2xl) */}
+      {hasDividends && (
+        <div className="2xl:hidden">
+          <DividendsCard
+            divLoading={divLoading}
+            divSummary={divSummary}
+            syncing={syncing}
+            convert={convert}
+            fmt={fmt}
+            currency={currency}
+            intlLocale={intlLocale}
+            periodLabel={periodLabel}
+            td={td}
+          />
         </div>
       )}
     </div>

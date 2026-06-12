@@ -1,6 +1,7 @@
 interface SegmentedOption<T extends string> {
   value: T
   label: string
+  disabled?: boolean
 }
 
 interface SegmentedProps<T extends string> {
@@ -29,16 +30,17 @@ export function Segmented<T extends string>({ options, value, onChange, ariaLabe
             type="button"
             role="tab"
             aria-selected={active}
-            onClick={() => onChange(opt.value)}
+            disabled={opt.disabled}
+            onClick={() => !opt.disabled && onChange(opt.value)}
             className="px-3 py-1.5"
             style={{
               fontFamily: 'var(--arvo-font-body)',
               fontSize: 11,
               letterSpacing: '0.04em',
               border: 'none',
-              cursor: 'pointer',
-              background: active ? 'var(--arvo-pill-active-bg)' : 'transparent',
-              color: active ? 'var(--arvo-pill-active-fg)' : 'var(--arvo-fg-muted)',
+              cursor: opt.disabled ? 'not-allowed' : 'pointer',
+              background: active && !opt.disabled ? 'var(--arvo-pill-active-bg)' : 'transparent',
+              color: opt.disabled ? 'var(--arvo-fg-faint)' : active ? 'var(--arvo-pill-active-fg)' : 'var(--arvo-fg-muted)',
               transition: 'background var(--arvo-dur-fast) var(--arvo-ease), color var(--arvo-dur-fast) var(--arvo-ease)',
             }}
           >

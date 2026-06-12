@@ -218,6 +218,7 @@
     "emailResent": "Email resent. Check your inbox."
   },
   "dashboard": {
+    "eyebrow": "Capital · Investments",
     "assetsTitle": "Assets",
     "awaitingValue": "awaiting value",
     "asset": "asset",
@@ -259,7 +260,7 @@
     "topGainers": "Top gainers",
     "topLosers": "Top losers",
     "noMoversData": "No return data available",
-    "periodGainBrl": "Period gain"
+    "periodGainBrl": "Gain"
   },
   "setup": {
     "title": "Getting started",
@@ -1234,7 +1235,9 @@
     "loading": "Loading indices...",
     "error": "Error loading indices",
     "source": "Source: Yahoo Finance · BCB · Updated in real time with 15-min cache",
-    "month": "month"
+    "month": "month",
+    "cdiDeltaTooltip": "CDI is already an annualized rate — accumulated change unavailable for this period",
+    "deltaUnavailable": "Change unavailable for this period"
   },
   "modals": {
     "valorizacao": "Appreciation",

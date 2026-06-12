@@ -41,15 +41,14 @@ export default function ValueCards({ total_brl, generated_at, invested_brl, gain
     letterSpacing: '0.10em',
     textTransform: 'uppercase',
     color: 'var(--arvo-fg-soft)',
+    whiteSpace: 'nowrap',
   }
 
   return (
     <div className="h-full" style={{ background: 'var(--arvo-surface)', color: 'var(--arvo-fg)', borderRadius: 16, padding: 20, position: 'relative', overflow: 'hidden', border: '1px solid rgba(200,184,154,0.35)', boxShadow: '0 4px 24px rgba(200,184,154,0.18), 0 1px 0 rgba(200,184,154,0.22)' }}>
 
-      {/* Gold glow — top-right */}
+      {/* Gold glow — top-right (only glow on this screen, §3.4) */}
       <div style={{ position: 'absolute', top: -120, right: -60, width: 360, height: 360, borderRadius: '50%', background: 'rgba(200,184,154,0.10)', filter: 'blur(70px)', pointerEvents: 'none' }} />
-      {/* Gold glow — bottom-left */}
-      <div style={{ position: 'absolute', bottom: -80, left: -40, width: 220, height: 220, borderRadius: '50%', background: 'rgba(200,184,154,0.07)', filter: 'blur(50px)', pointerEvents: 'none' }} />
       {/* Gold shimmer line at top */}
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 1, background: 'linear-gradient(to right, transparent, rgba(200,184,154,0.65), transparent)', pointerEvents: 'none' }} />
 
@@ -59,7 +58,7 @@ export default function ValueCards({ total_brl, generated_at, invested_brl, gain
           <p style={{ fontFamily: "var(--arvo-font-body)", fontSize: 10, fontWeight: 600, letterSpacing: '0.10em', textTransform: 'uppercase', color: 'var(--arvo-gold-text)', margin: 0 }}>
             Total {currency}
           </p>
-          <p className="text-[28px] sm:text-[40px]" style={{ fontFamily: "var(--arvo-font-body)", letterSpacing: '0.02em', lineHeight: 1.05, color: 'var(--arvo-fg)', margin: '6px 0 0' }}>
+          <p className="arvo-num text-[28px] sm:text-[44px]" style={{ fontFamily: "var(--arvo-font-body)", letterSpacing: '0.02em', lineHeight: 1.05, color: 'var(--arvo-fg)', margin: '6px 0 0' }}>
             {fmt(total_brl, 0)}
           </p>
         </div>
@@ -70,29 +69,29 @@ export default function ValueCards({ total_brl, generated_at, invested_brl, gain
 
       {/* KPI grid */}
       {showSecondary && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6" style={{ position: 'relative', zIndex: 2, marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--arvo-border)' }}>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6 2xl:gap-0" style={{ position: 'relative', zIndex: 2, marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--arvo-border)' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             <span style={labelStyle}>{t.dashboard.invested}</span>
-            <span className="text-base sm:text-lg" style={{ fontFamily: "var(--arvo-font-body)", letterSpacing: '0.04em', color: 'var(--arvo-fg)' }}>{fmt(invested_brl!, 0)}</span>
+            <span className="arvo-num text-base sm:text-lg" style={{ fontFamily: "var(--arvo-font-body)", letterSpacing: '0.04em', color: 'var(--arvo-fg)' }}>{fmt(invested_brl!, 0)}</span>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <div className="2xl:border-l 2xl:pl-6" style={{ display: 'flex', flexDirection: 'column', gap: 6, borderColor: 'var(--arvo-border)' }}>
             <span style={labelStyle}>{t.dashboard.result}</span>
-            <span className="text-base sm:text-lg" style={{ fontFamily: "var(--arvo-font-body)", letterSpacing: '0.04em', color: pctColor(gain_brl) }}>
+            <span className="arvo-num text-base sm:text-lg" style={{ fontFamily: "var(--arvo-font-body)", letterSpacing: '0.04em', color: pctColor(gain_brl) }}>
               {gain_brl! >= 0 ? '+' : ''}{fmt(gain_brl!, 0)}
               {gain_pct != null && !hideValues && <span style={{ fontSize: 12, opacity: 0.75, marginLeft: 4 }}>({gain_brl! >= 0 ? '+' : ''}{gain_pct.toFixed(1)}%)</span>}
             </span>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <div className="2xl:border-l 2xl:pl-6" style={{ display: 'flex', flexDirection: 'column', gap: 6, borderColor: 'var(--arvo-border)' }}>
             <span style={labelStyle}>{t.dashboard.periodGainBrl} · {periodLbl}</span>
-            <span className="text-base sm:text-lg" style={{ fontFamily: "var(--arvo-font-body)", letterSpacing: '0.04em', color: pctColor(period_abs) }}>
+            <span className="arvo-num text-base sm:text-lg" style={{ fontFamily: "var(--arvo-font-body)", letterSpacing: '0.04em', color: pctColor(period_abs) }}>
               {period_abs != null
                 ? `${period_abs >= 0 ? '+' : ''}${fmt(period_abs, 0)}`
                 : chartLoading ? '...' : '—'}
             </span>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <div className="2xl:border-l 2xl:pl-6" style={{ display: 'flex', flexDirection: 'column', gap: 6, borderColor: 'var(--arvo-border)' }}>
             <span style={labelStyle}>{periodLbl} %</span>
-            <span className="text-base sm:text-lg" style={{ fontFamily: "var(--arvo-font-body)", letterSpacing: '0.04em', color: pctColor(periodVal) }}>{pctText(periodVal)}</span>
+            <span className="arvo-num text-base sm:text-lg" style={{ fontFamily: "var(--arvo-font-body)", letterSpacing: '0.04em', color: pctColor(periodVal) }}>{pctText(periodVal)}</span>
           </div>
         </div>
       )}

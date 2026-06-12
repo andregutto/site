@@ -537,11 +537,11 @@ export default function AppLayout() {
         )
       })() : null}
 
-      <main className="flex-1 max-w-6xl 2xl:max-w-[1600px] mx-auto w-full px-4 py-6 sm:pb-6 main-content">
+      <main className="flex-1 max-w-6xl 2xl:max-w-[1440px] mx-auto w-full px-4 2xl:px-8 py-6 sm:pb-6 main-content">
         <Outlet />
       </main>
 
-      <div className="hidden sm:block max-w-6xl 2xl:max-w-[1600px] mx-auto w-full px-4 pb-2">
+      <div className="hidden sm:block max-w-6xl 2xl:max-w-[1440px] mx-auto w-full px-4 2xl:px-8 pb-2">
         <LoginFooter />
       </div>
 

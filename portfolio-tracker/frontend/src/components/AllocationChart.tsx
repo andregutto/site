@@ -1,7 +1,7 @@
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Label } from 'recharts'
 import type { PortfolioClass } from '../lib/types'
 import { useI18n } from '../contexts/I18nContext'
-import { useIsMobile } from '../hooks/useIsMobile'
+import { ArvoTooltip, LegendDot } from './charts'
 
 interface Props {
   data: PortfolioClass[]
@@ -9,36 +9,16 @@ interface Props {
   convert?: (v: number) => number
 }
 
-function fmtCompact(v: number, cur = 'BRL') {
+function fmtCompact(v: number, cur = 'BRL', locale = 'pt-BR') {
   if (Math.abs(v) >= 1_000_000) {
-    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: cur, maximumFractionDigits: 1, notation: 'compact' }).format(v)
+    return new Intl.NumberFormat(locale, { style: 'currency', currency: cur, maximumFractionDigits: 1, notation: 'compact' }).format(v)
   }
-  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: cur, maximumFractionDigits: 0 }).format(v)
-}
-
-const RADIAN = Math.PI / 180
-const LABEL_LINE_HEIGHT_EM = 1.1
-
-function wrapLabel(text: string, maxChars: number): string[] {
-  const words = text.split(' ')
-  const lines: string[] = []
-  let current = ''
-  for (const word of words) {
-    const candidate = current ? `${current} ${word}` : word
-    if (current && candidate.length > maxChars) {
-      lines.push(current)
-      current = word
-    } else {
-      current = candidate
-    }
-  }
-  if (current) lines.push(current)
-  return lines
+  return new Intl.NumberFormat(locale, { style: 'currency', currency: cur, maximumFractionDigits: 0 }).format(v)
 }
 
 export default function AllocationChart({ data, currency = 'BRL', convert }: Props) {
-  const { t } = useI18n()
-  const isMobile = useIsMobile()
+  const { t, locale } = useI18n()
+  const intlLocale = locale === 'pt' ? 'pt-BR' : locale === 'fr' ? 'fr-FR' : 'en-GB'
   if (!data.length) return null
 
   const classNames = (t.classes.names as Record<string, string>) ?? {}
@@ -49,105 +29,72 @@ export default function AllocationChart({ data, currency = 'BRL', convert }: Pro
   }
 
   const total = data.reduce((s, d) => s + d.value_brl, 0)
-  const totalFormatted = fmtCompact(convert ? convert(total) : total, currency)
-
-  const renderOuterLabel = (props: {
-    cx?: number; cy?: number; midAngle?: number;
-    outerRadius?: number; percent?: number; payload?: PortfolioClass
-  }) => {
-    const { cx = 0, cy = 0, midAngle = 0, outerRadius = 0, percent = 0, payload } = props
-    if (!payload || percent < 0.05) return null
-    const radius = outerRadius + (isMobile ? 10 : 22)
-    const x = cx + radius * Math.cos(-midAngle * RADIAN)
-    const y = cy + radius * Math.sin(-midAngle * RADIAN)
-    const anchor = x > cx ? 'start' : 'end'
-    const pct = `${(percent * 100).toFixed(0)}%`
-
-    if (isMobile) {
-      const lines = wrapLabel(`${resolveClassName(payload)} ${pct}`, 10)
-      const firstDy = -((lines.length - 1) / 2) * LABEL_LINE_HEIGHT_EM
-      return (
-        <text
-          x={x} y={y}
-          textAnchor={anchor}
-          fontSize={11}
-          fontFamily="var(--arvo-font-body)"
-          fontWeight={500}
-          fill={payload.color}
-        >
-          {lines.map((line, i) => (
-            <tspan key={i} x={x} dy={`${i === 0 ? firstDy : LABEL_LINE_HEIGHT_EM}em`}>{line}</tspan>
-          ))}
-        </text>
-      )
-    }
-
-    return (
-      <text
-        x={x} y={y}
-        textAnchor={anchor}
-        dominantBaseline="central"
-        fontSize={12}
-        fontFamily="var(--arvo-font-body)"
-        fontWeight={500}
-        fill={payload.color}
-      >
-        {`${resolveClassName(payload)} ${pct}`}
-      </text>
-    )
-  }
+  const totalFormatted = fmtCompact(convert ? convert(total) : total, currency, intlLocale)
 
   return (
     <div className="rounded-2xl p-4 sm:p-6 h-full flex flex-col" style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)' }}>
       <h2 className="mb-1" style={{ fontFamily: "var(--arvo-font-body)", fontSize: 13, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--arvo-fg)' }}>{t.dashboard.allocationByClass}</h2>
       <p className="mb-2" style={{ fontFamily: "'Playfair Display', serif", fontStyle: 'italic', fontSize: 13, color: 'var(--arvo-fg-soft)' }}>{t.dashboard.allocationSubtitle}</p>
-      <div className="flex-1 min-h-[280px]" style={{ width: '100%' }}>
-        <ResponsiveContainer width="100%" height="100%">
-          <PieChart margin={isMobile ? { top: 10, right: 18, bottom: 10, left: 18 } : { top: 10, right: 55, bottom: 10, left: 55 }}>
-            <Pie
-              data={data}
-              dataKey="value_brl"
-              nameKey="name"
-              cx="50%"
-              cy="50%"
-              innerRadius={isMobile ? '50%' : '55%'}
-              outerRadius={isMobile ? '72%' : '78%'}
-              paddingAngle={2}
-              stroke="var(--arvo-surface)"
-              strokeWidth={2}
-              label={renderOuterLabel}
-              labelLine={false}
-            >
-              {data.map((entry, i) => (
-                <Cell key={i} fill={entry.color} />
-              ))}
-              <Label
-                content={({ viewBox }: any) => {
-                  const { cx, cy } = viewBox
-                  return (
-                    <g>
-                      <text x={cx} y={cy - 7} textAnchor="middle" fill="var(--arvo-fg-soft)" fontSize={9} fontFamily="var(--arvo-font-body)" letterSpacing="0.12em">
-                        {t.common.total.toUpperCase()}
-                      </text>
-                      <text x={cx} y={cy + 9} textAnchor="middle" fill="var(--arvo-fg)" fontSize={13} fontFamily="var(--arvo-font-body)" fontWeight={600}>
-                        {totalFormatted}
-                      </text>
-                    </g>
-                  )
-                }}
-                position="center"
+      <div className="flex-1 min-h-[280px] flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
+        <div className="w-full sm:flex-1 sm:h-full" style={{ minHeight: 220 }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart margin={{ top: 8, right: 8, bottom: 8, left: 8 }}>
+              <Pie
+                data={data}
+                dataKey="value_brl"
+                nameKey="name"
+                cx="50%"
+                cy="50%"
+                innerRadius="55%"
+                outerRadius="85%"
+                paddingAngle={2}
+                stroke="var(--arvo-surface)"
+                strokeWidth={2}
+              >
+                {data.map((entry, i) => (
+                  <Cell key={i} fill={entry.color} />
+                ))}
+                <Label
+                  content={(props) => {
+                    const { cx = 0, cy = 0 } = (props.viewBox as unknown as { cx?: number; cy?: number }) ?? {}
+                    return (
+                      <g>
+                        <text x={cx} y={cy - 7} textAnchor="middle" fill="var(--arvo-fg-soft)" fontSize={9} fontFamily="var(--arvo-font-body)" letterSpacing="0.12em">
+                          {t.common.total.toUpperCase()}
+                        </text>
+                        <text x={cx} y={cy + 9} textAnchor="middle" fill="var(--arvo-fg)" fontSize={13} fontFamily="var(--arvo-font-body)" fontWeight={600} className="arvo-num">
+                          {totalFormatted}
+                        </text>
+                      </g>
+                    )
+                  }}
+                  position="center"
+                />
+              </Pie>
+              <Tooltip
+                content={
+                  <ArvoTooltip
+                    formatter={(v, _name, item) => [
+                      new Intl.NumberFormat(intlLocale, { style: 'currency', currency, maximumFractionDigits: 0 }).format(convert ? convert(v) : v),
+                      resolveClassName(item.payload as unknown as PortfolioClass) ?? item.name,
+                    ]}
+                  />
+                }
               />
-            </Pie>
-            <Tooltip
-              formatter={(value) => {
-                const raw = Number(value)
-                const converted = convert ? convert(raw) : raw
-                return [new Intl.NumberFormat('pt-BR', { style: 'currency', currency, maximumFractionDigits: 0 }).format(converted), t.common.value]
-              }}
-              contentStyle={{ borderRadius: 8, border: '1px solid var(--arvo-border)', background: 'var(--arvo-surface)', color: 'var(--arvo-fg)', fontSize: 12, fontFamily: "var(--arvo-font-body)" }}
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+        <div className="w-full sm:w-[210px] flex flex-col gap-2.5 shrink-0">
+          {data.map((d, i) => (
+            <LegendDot
+              key={i}
+              color={d.color}
+              label={resolveClassName(d)}
+              pct={`${Math.round(d.pct)}%`}
+              value={fmtCompact(convert ? convert(d.value_brl) : d.value_brl, currency, intlLocale)}
             />
-          </PieChart>
-        </ResponsiveContainer>
+          ))}
+        </div>
       </div>
     </div>
   )
