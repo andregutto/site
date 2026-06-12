@@ -17,6 +17,24 @@ function fmtCompact(v: number, cur = 'BRL') {
 }
 
 const RADIAN = Math.PI / 180
+const LABEL_LINE_HEIGHT_EM = 1.1
+
+function wrapLabel(text: string, maxChars: number): string[] {
+  const words = text.split(' ')
+  const lines: string[] = []
+  let current = ''
+  for (const word of words) {
+    const candidate = current ? `${current} ${word}` : word
+    if (current && candidate.length > maxChars) {
+      lines.push(current)
+      current = word
+    } else {
+      current = candidate
+    }
+  }
+  if (current) lines.push(current)
+  return lines
+}
 
 export default function AllocationChart({ data, currency = 'BRL', convert }: Props) {
   const { t } = useI18n()
@@ -46,6 +64,8 @@ export default function AllocationChart({ data, currency = 'BRL', convert }: Pro
     const pct = `${(percent * 100).toFixed(0)}%`
 
     if (isMobile) {
+      const lines = wrapLabel(`${resolveClassName(payload)} ${pct}`, 10)
+      const firstDy = -((lines.length - 1) / 2) * LABEL_LINE_HEIGHT_EM
       return (
         <text
           x={x} y={y}
@@ -55,8 +75,9 @@ export default function AllocationChart({ data, currency = 'BRL', convert }: Pro
           fontWeight={500}
           fill={payload.color}
         >
-          <tspan x={x} dy="-0.5em">{resolveClassName(payload)}</tspan>
-          <tspan x={x} dy="1.1em">{pct}</tspan>
+          {lines.map((line, i) => (
+            <tspan key={i} x={x} dy={`${i === 0 ? firstDy : LABEL_LINE_HEIGHT_EM}em`}>{line}</tspan>
+          ))}
         </text>
       )
     }
