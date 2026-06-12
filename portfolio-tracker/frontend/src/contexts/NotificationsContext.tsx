@@ -50,20 +50,13 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
     setHistory(prev => [{ ...item, dismissed_at: new Date().toISOString() }, ...prev.filter(i => i.key !== item.key)])
 
     try {
-      if (item.type === 'subscription_detected') {
-        await apiFetch('/finances/subscriptions/dismiss', {
-          method: 'POST',
-          body: JSON.stringify({ key: item.key, name: (item.params.name as string) ?? '' }),
-        })
-      } else {
-        await apiFetch('/notifications/dismiss', {
-          method: 'POST',
-          body: JSON.stringify({
-            key: item.key, type: item.type, params: item.params,
-            severity: item.severity, link: item.link, occurred_at: item.occurred_at,
-          }),
-        })
-      }
+      await apiFetch('/notifications/dismiss', {
+        method: 'POST',
+        body: JSON.stringify({
+          key: item.key, type: item.type, params: item.params,
+          severity: item.severity, link: item.link, occurred_at: item.occurred_at,
+        }),
+      })
     } catch {
       await refresh()
     }
@@ -78,11 +71,7 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
     setActive(prev => [...prev, { ...item, dismissed_at: null }])
 
     try {
-      if (item.type === 'subscription_detected') {
-        await apiFetch(`/finances/subscriptions/dismiss/${encodeURIComponent(item.key)}`, { method: 'DELETE' })
-      } else {
-        await apiFetch(`/notifications/dismiss/${encodeURIComponent(item.key)}`, { method: 'DELETE' })
-      }
+      await apiFetch(`/notifications/dismiss/${encodeURIComponent(item.key)}`, { method: 'DELETE' })
     } finally {
       await refresh()
     }

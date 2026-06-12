@@ -1,6 +1,7 @@
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Label } from 'recharts'
 import type { PortfolioClass } from '../lib/types'
 import { useI18n } from '../contexts/I18nContext'
+import { useIsMobile } from '../hooks/useIsMobile'
 
 interface Props {
   data: PortfolioClass[]
@@ -19,6 +20,7 @@ const RADIAN = Math.PI / 180
 
 export default function AllocationChart({ data, currency = 'BRL', convert }: Props) {
   const { t } = useI18n()
+  const isMobile = useIsMobile()
   if (!data.length) return null
 
   const classNames = (t.classes.names as Record<string, string>) ?? {}
@@ -37,7 +39,7 @@ export default function AllocationChart({ data, currency = 'BRL', convert }: Pro
   }) => {
     const { cx = 0, cy = 0, midAngle = 0, outerRadius = 0, percent = 0, payload } = props
     if (!payload || percent < 0.05) return null
-    const radius = outerRadius + 22
+    const radius = outerRadius + (isMobile ? 14 : 22)
     const x = cx + radius * Math.cos(-midAngle * RADIAN)
     const y = cy + radius * Math.sin(-midAngle * RADIAN)
     const anchor = x > cx ? 'start' : 'end'
@@ -51,7 +53,7 @@ export default function AllocationChart({ data, currency = 'BRL', convert }: Pro
         fontWeight={500}
         fill={payload.color}
       >
-        {resolveClassName(payload)} {(percent * 100).toFixed(0)}%
+        {isMobile ? `${(percent * 100).toFixed(0)}%` : `${resolveClassName(payload)} ${(percent * 100).toFixed(0)}%`}
       </text>
     )
   }
@@ -62,15 +64,15 @@ export default function AllocationChart({ data, currency = 'BRL', convert }: Pro
       <p className="mb-2" style={{ fontFamily: "'Playfair Display', serif", fontStyle: 'italic', fontSize: 13, color: 'var(--arvo-fg-soft)' }}>{t.dashboard.allocationSubtitle}</p>
       <div className="flex-1 min-h-[260px]" style={{ width: '100%' }}>
         <ResponsiveContainer width="100%" height="100%">
-          <PieChart margin={{ top: 10, right: 55, bottom: 10, left: 55 }}>
+          <PieChart margin={isMobile ? { top: 10, right: 25, bottom: 10, left: 25 } : { top: 10, right: 55, bottom: 10, left: 55 }}>
             <Pie
               data={data}
               dataKey="value_brl"
               nameKey="name"
               cx="50%"
               cy="50%"
-              innerRadius="55%"
-              outerRadius="78%"
+              innerRadius={isMobile ? '45%' : '55%'}
+              outerRadius={isMobile ? '65%' : '78%'}
               paddingAngle={2}
               stroke="var(--arvo-surface)"
               strokeWidth={2}

@@ -23,10 +23,9 @@ const NON_DISMISSIBLE_HISTORY_TYPES = new Set(['bank_connected', 'bank_connect_e
 router.get('/', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
 
-  const [achievementsRes, subsResult, subDismissalsRes, notifDismissalsRes, budgetAlerts, splitWarnings, pendingInvites] = await Promise.all([
+  const [achievementsRes, subsResult, notifDismissalsRes, budgetAlerts, splitWarnings, pendingInvites] = await Promise.all([
     supabaseAdmin.from('achievements').select('achievement_key, earned_at').eq('user_id', userId).order('earned_at', { ascending: true }),
     getActiveSubscriptions(userId),
-    supabaseAdmin.from('finance_subscription_dismissals').select('key, name, dismissed_at').eq('user_id', userId),
     supabaseAdmin.from('notification_dismissals').select('key, type, params, severity, link, occurred_at, dismissed_at').eq('user_id', userId),
     getBudgetAlerts(userId),
     getSplitWarnings(userId),
@@ -51,8 +50,9 @@ router.get('/', requireAuth, async (req, res: Response) => {
     })
   }
 
-  // Category 10: subscriptions detected -> active + history (dismissed)
+  // Category 10: subscriptions detected -> active (unless dismissed)
   for (const sub of subsResult.subscriptions) {
+    if (dismissedKeys.has(sub.key)) continue
     active.push({
       key: sub.key,
       type: 'subscription_detected',
@@ -67,18 +67,6 @@ router.get('/', requireAuth, async (req, res: Response) => {
       link: '/finances/insights',
       occurred_at: sub.last_date,
       dismissed_at: null,
-      dismissible: true,
-    })
-  }
-  for (const d of subDismissalsRes.data ?? []) {
-    history.push({
-      key: d.key,
-      type: 'subscription_detected',
-      severity: 'info',
-      params: { name: d.name },
-      link: '/finances/insights',
-      occurred_at: d.dismissed_at,
-      dismissed_at: d.dismissed_at,
       dismissible: true,
     })
   }
