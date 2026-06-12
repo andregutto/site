@@ -43,6 +43,24 @@ export default function AllocationChart({ data, currency = 'BRL', convert }: Pro
     const x = cx + radius * Math.cos(-midAngle * RADIAN)
     const y = cy + radius * Math.sin(-midAngle * RADIAN)
     const anchor = x > cx ? 'start' : 'end'
+    const pct = `${(percent * 100).toFixed(0)}%`
+
+    if (isMobile) {
+      return (
+        <text
+          x={x} y={y}
+          textAnchor={anchor}
+          fontSize={11}
+          fontFamily="var(--arvo-font-body)"
+          fontWeight={500}
+          fill={payload.color}
+        >
+          <tspan x={x} dy="-0.5em">{resolveClassName(payload)}</tspan>
+          <tspan x={x} dy="1.1em">{pct}</tspan>
+        </text>
+      )
+    }
+
     return (
       <text
         x={x} y={y}
@@ -53,7 +71,7 @@ export default function AllocationChart({ data, currency = 'BRL', convert }: Pro
         fontWeight={500}
         fill={payload.color}
       >
-        {isMobile ? `${(percent * 100).toFixed(0)}%` : `${resolveClassName(payload)} ${(percent * 100).toFixed(0)}%`}
+        {`${resolveClassName(payload)} ${pct}`}
       </text>
     )
   }
