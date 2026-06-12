@@ -57,7 +57,7 @@ export default function AllocationChart({ data, currency = 'BRL', convert }: Pro
   }) => {
     const { cx = 0, cy = 0, midAngle = 0, outerRadius = 0, percent = 0, payload } = props
     if (!payload || percent < 0.05) return null
-    const radius = outerRadius + (isMobile ? 14 : 22)
+    const radius = outerRadius + (isMobile ? 10 : 22)
     const x = cx + radius * Math.cos(-midAngle * RADIAN)
     const y = cy + radius * Math.sin(-midAngle * RADIAN)
     const anchor = x > cx ? 'start' : 'end'
@@ -98,20 +98,20 @@ export default function AllocationChart({ data, currency = 'BRL', convert }: Pro
   }
 
   return (
-    <div className="rounded-2xl p-6 h-full flex flex-col" style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)' }}>
+    <div className="rounded-2xl p-4 sm:p-6 h-full flex flex-col" style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)' }}>
       <h2 className="mb-1" style={{ fontFamily: "var(--arvo-font-body)", fontSize: 13, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--arvo-fg)' }}>{t.dashboard.allocationByClass}</h2>
       <p className="mb-2" style={{ fontFamily: "'Playfair Display', serif", fontStyle: 'italic', fontSize: 13, color: 'var(--arvo-fg-soft)' }}>{t.dashboard.allocationSubtitle}</p>
-      <div className="flex-1 min-h-[260px]" style={{ width: '100%' }}>
+      <div className="flex-1 min-h-[280px]" style={{ width: '100%' }}>
         <ResponsiveContainer width="100%" height="100%">
-          <PieChart margin={isMobile ? { top: 10, right: 25, bottom: 10, left: 25 } : { top: 10, right: 55, bottom: 10, left: 55 }}>
+          <PieChart margin={isMobile ? { top: 10, right: 18, bottom: 10, left: 18 } : { top: 10, right: 55, bottom: 10, left: 55 }}>
             <Pie
               data={data}
               dataKey="value_brl"
               nameKey="name"
               cx="50%"
               cy="50%"
-              innerRadius={isMobile ? '45%' : '55%'}
-              outerRadius={isMobile ? '65%' : '78%'}
+              innerRadius={isMobile ? '50%' : '55%'}
+              outerRadius={isMobile ? '72%' : '78%'}
               paddingAngle={2}
               stroke="var(--arvo-surface)"
               strokeWidth={2}
