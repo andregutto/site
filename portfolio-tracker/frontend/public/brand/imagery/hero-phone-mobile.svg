@@ -1,0 +1,67 @@
+<svg width="260" height="520" viewBox="0 0 260 520" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true">
+  <defs>
+    <clipPath id="hpm-screen"><rect x="9" y="9" width="242" height="502" rx="41"/></clipPath>
+    <linearGradient id="hpm-chart" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#C8B89A" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#C8B89A" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="0" y="0" width="260" height="520" rx="50" fill="#1C1C1E"/>
+
+  <g clip-path="url(#hpm-screen)">
+    <rect x="9" y="9" width="242" height="502" fill="#F4F4F4"/>
+
+    <!-- nav bar -->
+    <rect x="9" y="9" width="242" height="48" fill="#fff"/>
+    <line x1="9" y1="57" x2="251" y2="57" stroke="rgba(13,13,13,0.07)"/>
+    <text x="48" y="38" font-family="'Tenor Sans', Georgia, serif" font-size="13" letter-spacing="3" fill="#0D0D0D">arvo</text>
+    <circle cx="230" cy="33" r="14" fill="#0D0D0D"/>
+    <text x="230" y="36.5" font-family="'DM Sans', sans-serif" font-size="9" letter-spacing="0.5" fill="#C8B89A" text-anchor="middle">AG</text>
+
+    <!-- title -->
+    <text x="27" y="84" font-family="'DM Sans', sans-serif" font-size="8" letter-spacing="2" fill="rgba(13,13,13,0.45)">SIMULAÇÃO</text>
+    <text x="27" y="106" font-family="'Tenor Sans', Georgia, serif" font-size="18" fill="#0D0D0D">Liberdade Financeira</text>
+
+    <!-- goal card -->
+    <rect x="27" y="122" width="224" height="84" rx="12" fill="#fff" stroke="rgba(27,79,216,0.18)"/>
+    <text x="39" y="142" font-family="'DM Sans', sans-serif" font-size="8" letter-spacing="2" fill="rgba(13,13,13,0.42)">META</text>
+    <text x="39" y="167" font-family="'Tenor Sans', Georgia, serif" font-size="22" fill="#1B4FD8">2041</text>
+    <text x="39" y="185" font-family="'DM Sans', sans-serif" font-size="9" fill="rgba(13,13,13,0.50)">15 anos</text>
+    <text x="239" y="142" font-family="'DM Sans', sans-serif" font-size="8" letter-spacing="2" fill="rgba(13,13,13,0.42)" text-anchor="end">PATRIMÔNIO ALVO</text>
+    <text x="239" y="167" font-family="'Tenor Sans', Georgia, serif" font-size="17" fill="#0D0D0D" text-anchor="end">R$ 4,2M</text>
+    <text x="239" y="185" font-family="'DM Sans', sans-serif" font-size="9" fill="rgba(13,13,13,0.50)" text-anchor="end">regra de 4%</text>
+    <rect x="39" y="194" width="200" height="4" rx="2" fill="rgba(27,79,216,0.10)"/>
+    <rect x="39" y="194" width="16" height="4" rx="2" fill="#1B4FD8"/>
+
+    <!-- projection chart card -->
+    <rect x="27" y="218" width="224" height="106" rx="12" fill="#fff" stroke="rgba(13,13,13,0.07)"/>
+    <text x="39" y="236" font-family="'DM Sans', sans-serif" font-size="8" letter-spacing="2" fill="rgba(13,13,13,0.42)">PROJEÇÃO PATRIMONIAL</text>
+    <path d="M39,310 C 80,308 110,300 140,280 C 175,256 210,236 239,228 L 239,316 L 39,316 Z" fill="url(#hpm-chart)"/>
+    <path d="M39,310 C 80,308 110,300 140,280 C 175,256 210,236 239,228" fill="none" stroke="#C8B89A" stroke-width="2"/>
+
+    <!-- allocation rows -->
+    <rect x="27" y="338" width="224" height="40" rx="10" fill="#fff" stroke="rgba(13,13,13,0.06)"/>
+    <rect x="39" y="354" width="6" height="10" rx="2" fill="#1B4FD8"/>
+    <rect x="55" y="354" width="120" height="10" rx="5" fill="rgba(27,79,216,0.12)"/>
+    <rect x="55" y="354" width="76" height="10" rx="5" fill="#1B4FD8"/>
+    <text x="239" y="363" font-family="'DM Sans', sans-serif" font-size="10" fill="rgba(13,13,13,0.55)" text-anchor="end">38%</text>
+
+    <rect x="27" y="386" width="224" height="40" rx="10" fill="#fff" stroke="rgba(13,13,13,0.06)"/>
+    <rect x="39" y="402" width="6" height="10" rx="2" fill="#A36A52"/>
+    <rect x="55" y="402" width="120" height="10" rx="5" fill="rgba(163,106,82,0.12)"/>
+    <rect x="55" y="402" width="44" height="10" rx="5" fill="#A36A52"/>
+    <text x="239" y="411" font-family="'DM Sans', sans-serif" font-size="10" fill="rgba(13,13,13,0.55)" text-anchor="end">22%</text>
+
+    <rect x="27" y="434" width="224" height="40" rx="10" fill="#fff" stroke="rgba(13,13,13,0.06)"/>
+    <rect x="39" y="450" width="6" height="10" rx="2" fill="#C8B89A"/>
+    <rect x="55" y="450" width="120" height="10" rx="5" fill="rgba(200,184,154,0.20)"/>
+    <rect x="55" y="450" width="40" height="10" rx="5" fill="#C8B89A"/>
+    <text x="239" y="459" font-family="'DM Sans', sans-serif" font-size="10" fill="rgba(13,13,13,0.55)" text-anchor="end">20%</text>
+
+    <rect x="27" y="482" width="224" height="3" rx="1.5" fill="rgba(13,13,13,0.06)"/>
+  </g>
+
+  <!-- dynamic island -->
+  <rect x="98" y="21" width="64" height="18" rx="9" fill="#000"/>
+</svg>

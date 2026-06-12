@@ -631,7 +631,7 @@ export default function ProfilePage() {
                 type="email"
                 value={emailForDisplay}
                 readOnly
-                className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm bg-[var(--arvo-surface-2)] text-[var(--arvo-fg-muted)] cursor-not-allowed"
+                className="w-full border border-[var(--arvo-border)] rounded-[3px] px-3 py-2 text-sm bg-[var(--arvo-surface)] text-[var(--arvo-fg-muted)] cursor-not-allowed"
               />
             </div>
 
@@ -643,7 +643,7 @@ export default function ProfilePage() {
                   value={firstName}
                   onChange={e => setFirstName(e.target.value)}
                   placeholder="André"
-                  className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm bg-[var(--arvo-surface-2)] text-[var(--arvo-fg)] focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20"
+                  className="w-full border border-[var(--arvo-border)] rounded-[3px] px-3 py-2 text-sm bg-[var(--arvo-surface)] text-[var(--arvo-fg)] focus:outline-none focus:border-[var(--arvo-gold)] focus:ring-2 focus:ring-[var(--arvo-gold)]/25"
                 />
               </div>
               <div>
@@ -653,7 +653,7 @@ export default function ProfilePage() {
                   value={lastName}
                   onChange={e => setLastName(e.target.value)}
                   placeholder="Gutto"
-                  className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm bg-[var(--arvo-surface-2)] text-[var(--arvo-fg)] focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20"
+                  className="w-full border border-[var(--arvo-border)] rounded-[3px] px-3 py-2 text-sm bg-[var(--arvo-surface)] text-[var(--arvo-fg)] focus:outline-none focus:border-[var(--arvo-gold)] focus:ring-2 focus:ring-[var(--arvo-gold)]/25"
                 />
               </div>
             </div>
@@ -664,7 +664,7 @@ export default function ProfilePage() {
                 <select
                   value={country}
                   onChange={e => setCountry(e.target.value)}
-                  className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm bg-[var(--arvo-surface)] text-[var(--arvo-fg)] focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20"
+                  className="w-full border border-[var(--arvo-border)] rounded-[3px] px-3 py-2 text-sm bg-[var(--arvo-surface)] text-[var(--arvo-fg)] focus:outline-none focus:border-[var(--arvo-gold)] focus:ring-2 focus:ring-[var(--arvo-gold)]/25"
                 >
                   {COUNTRY_OPTIONS.map(o => (
                     <option key={o.value} value={o.value}>
@@ -680,7 +680,7 @@ export default function ProfilePage() {
                   type="date"
                   value={birthdate}
                   onChange={e => setBirthdate(e.target.value)}
-                  className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm bg-[var(--arvo-surface-2)] text-[var(--arvo-fg)] focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20"
+                  className="w-full border border-[var(--arvo-border)] rounded-[3px] px-3 py-2 text-sm bg-[var(--arvo-surface)] text-[var(--arvo-fg)] focus:outline-none focus:border-[var(--arvo-gold)] focus:ring-2 focus:ring-[var(--arvo-gold)]/25"
                 />
               </div>
             </div>
@@ -692,7 +692,7 @@ export default function ProfilePage() {
               <select
                 value={taxCountry}
                 onChange={e => setTaxCountry(e.target.value)}
-                className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm bg-[var(--arvo-surface)] text-[var(--arvo-fg)] focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20"
+                className="w-full border border-[var(--arvo-border)] rounded-[3px] px-3 py-2 text-sm bg-[var(--arvo-surface)] text-[var(--arvo-fg)] focus:outline-none focus:border-[var(--arvo-gold)] focus:ring-2 focus:ring-[var(--arvo-gold)]/25"
               >
                 <option value="BR">Brasil</option>
                 <option value="FR">França</option>
@@ -724,7 +724,7 @@ export default function ProfilePage() {
                 value={newPassword}
                 onChange={e => setNewPassword(e.target.value)}
                 placeholder={t.profile.passwordMin}
-                className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm bg-[var(--arvo-surface-2)] text-[var(--arvo-fg)] focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20"
+                className="w-full border border-[var(--arvo-border)] rounded-[3px] px-3 py-2 text-sm bg-[var(--arvo-surface)] text-[var(--arvo-fg)] focus:outline-none focus:border-[var(--arvo-gold)] focus:ring-2 focus:ring-[var(--arvo-gold)]/25"
               />
             </div>
 
@@ -735,7 +735,7 @@ export default function ProfilePage() {
                 value={confirmPwd}
                 onChange={e => setConfirmPwd(e.target.value)}
                 placeholder={t.profile.repeatPassword}
-                className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm bg-[var(--arvo-surface-2)] text-[var(--arvo-fg)] focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20"
+                className="w-full border border-[var(--arvo-border)] rounded-[3px] px-3 py-2 text-sm bg-[var(--arvo-surface)] text-[var(--arvo-fg)] focus:outline-none focus:border-[var(--arvo-gold)] focus:ring-2 focus:ring-[var(--arvo-gold)]/25"
               />
             </div>
 
@@ -857,7 +857,7 @@ export default function ProfilePage() {
                   max={28}
                   value={monthCycleDay}
                   onChange={e => setMonthCycleDay(Math.min(28, Math.max(1, parseInt(e.target.value) || 1)))}
-                  className="w-20 border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm text-center bg-[var(--arvo-surface-2)] text-[var(--arvo-fg)] focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20"
+                  className="w-20 border border-[var(--arvo-border)] rounded-[3px] px-3 py-2 text-sm text-center bg-[var(--arvo-surface)] text-[var(--arvo-fg)] focus:outline-none focus:border-[var(--arvo-gold)] focus:ring-2 focus:ring-[var(--arvo-gold)]/25"
                 />
               </div>
 
@@ -1148,7 +1148,7 @@ export default function ProfilePage() {
                   value={deleteConfirm}
                   onChange={e => setDeleteConfirm(e.target.value)}
                   placeholder={t.profile.deleteEmailPlaceholder}
-                  className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm bg-[var(--arvo-surface-2)] text-[var(--arvo-fg)] focus:outline-none focus:ring-2 focus:ring-red-300"
+                  className="w-full border border-[var(--arvo-border)] rounded-[3px] px-3 py-2 text-sm bg-[var(--arvo-surface)] text-[var(--arvo-fg)] focus:outline-none focus:border-[var(--arvo-red)] focus:ring-2 focus:ring-[var(--arvo-red)]/25"
                   autoFocus
                 />
 

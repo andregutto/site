@@ -371,7 +371,7 @@ export default function InstitutionsPage() {
   function Field({ label, field, placeholder, textarea }: {
     label: string; field: keyof InstitutionProfile; placeholder?: string; textarea?: boolean
   }) {
-    const inputClass = "w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20"
+    const inputClass = "w-full border border-[var(--arvo-border)] rounded-[3px] px-3 py-2 text-sm bg-[var(--arvo-surface)] text-[var(--arvo-fg)] focus:outline-none focus:border-[var(--arvo-gold)] focus:ring-2 focus:ring-[var(--arvo-gold)]/25"
     return (
       <div>
         <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{label}</label>
@@ -464,7 +464,7 @@ export default function InstitutionsPage() {
                         <select
                           value={form.country}
                           onChange={e => setForm(prev => ({ ...prev, country: e.target.value }))}
-                          className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm bg-[var(--arvo-surface)] focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20"
+                          className="w-full border border-[var(--arvo-border)] rounded-[3px] px-3 py-2 text-sm bg-[var(--arvo-surface)] focus:outline-none focus:border-[var(--arvo-gold)] focus:ring-2 focus:ring-[var(--arvo-gold)]/25"
                         >
                           {COUNTRY_OPTIONS.map(o => (
                             <option key={o.value} value={o.value}>{o.label}</option>
@@ -490,7 +490,7 @@ export default function InstitutionsPage() {
                           type="date"
                           value={form.account_open_date}
                           onChange={e => setForm(prev => ({ ...prev, account_open_date: e.target.value }))}
-                          className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20"
+                          className="w-full border border-[var(--arvo-border)] rounded-[3px] px-3 py-2 text-sm bg-[var(--arvo-surface)] focus:outline-none focus:border-[var(--arvo-gold)] focus:ring-2 focus:ring-[var(--arvo-gold)]/25"
                         />
                       </div>
                     </div>

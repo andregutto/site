@@ -5,19 +5,33 @@ import { useCurrency, type Currency } from '../contexts/CurrencyContext'
 import { useTheme } from '../contexts/ThemeContext'
 import { useI18n } from '../contexts/I18nContext'
 import type React from 'react'
-import { useAchievementContext } from '../contexts/AchievementContext'
 import { useNotificationsContext } from '../contexts/NotificationsContext'
-import { getLevel, getLevelProgress } from '../lib/achievementDefs'
-import { resolveNotificationText, SEVERITY_COLORS, TYPE_ICONS, formatTimestamp } from '../lib/notifications'
+import { resolveNotificationText, SEVERITY_COLORS, formatTimestamp } from '../lib/notifications'
 import { apiFetch } from '../lib/api'
 import LoginFooter from './LoginFooter'
 import OnboardingOverlay from './OnboardingOverlay'
 import LanguageSelector from './LanguageSelector'
 import ChatWidget from './ChatWidget'
 import SetupChecklist from './SetupChecklist'
+import { Icon, type IconName } from './icons'
+import { Banner } from './ui'
 
 const onboardingKey = (userId: string) => `onboarding_v1_done_${userId}`
 const CURRENCIES: Currency[] = ['BRL', 'USD', 'EUR']
+
+const NOTIF_ICON: Record<string, IconName> = {
+  achievement: 'seal',
+  bank_connected: 'bank',
+  bank_connect_error: 'alert',
+  split_warning: 'scissors',
+  budget_alert: 'coin',
+  shared_category_alert: 'share',
+  home_prompt: 'home',
+  budget_reminder_setup: 'clock',
+  budget_reminder_due: 'clock',
+  subscription_detected: 'repeat',
+  shared_group_invite: 'share',
+}
 
 function useClickOutside(ref: React.RefObject<HTMLElement | null>, cb: () => void, active: boolean) {
   useEffect(() => {
@@ -35,11 +49,8 @@ export default function AppLayout() {
   const { currency, setCurrency, hideValues, toggleHideValues } = useCurrency()
   const { resolvedTheme } = useTheme()
   const { t, locale } = useI18n()
-  const { totalXp } = useAchievementContext()
   const { active: activeNotifications, unreadCount, dismissAll } = useNotificationsContext()
   const location = useLocation()
-  const level = getLevel(totalXp)
-  const levelProgress = getLevelProgress(totalXp)
 
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [showUserMenu,   setShowUserMenu]   = useState(false)
@@ -277,7 +288,7 @@ export default function AppLayout() {
             <button
               onClick={toggleHideValues}
               title={hideValues ? (t.common.showValues ?? 'Mostrar valores') : (t.common.hideValues ?? 'Ocultar valores')}
-              style={{ height: 32, padding: '0 8px', borderRadius: 8, border: hideValues ? '1px solid var(--arvo-border)' : '1px solid transparent', background: hideValues ? 'var(--arvo-hover-bg)' : 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, transition: 'all 0.15s', flexShrink: 0 }}
+              style={{ height: 32, padding: '0 8px', borderRadius: 8, border: hideValues ? '1px solid var(--arvo-border)' : '1px solid transparent', background: hideValues ? 'var(--arvo-hover-bg)' : 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, transition: 'all 160ms ease', flexShrink: 0 }}
               onMouseEnter={e => (e.currentTarget.style.background = 'var(--arvo-hover-bg)')}
               onMouseLeave={e => (e.currentTarget.style.background = hideValues ? 'var(--arvo-hover-bg)' : 'transparent')}
             >
@@ -297,7 +308,7 @@ export default function AppLayout() {
               <button
                 onClick={() => setShowNotifMenu(v => !v)}
                 title={t.notifications.title}
-                style={{ height: 32, width: 32, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', flexShrink: 0, transition: 'all 0.15s' }}
+                style={{ height: 32, width: 32, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', flexShrink: 0, transition: 'all 160ms ease' }}
                 onMouseEnter={e => (e.currentTarget.style.background = 'var(--arvo-hover-bg)')}
                 onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
               >
@@ -330,10 +341,10 @@ export default function AppLayout() {
                     ) : activeNotifications.map(item => {
                       const { title, subtitle } = resolveNotificationText(item, t, locale)
                       const color = SEVERITY_COLORS[item.severity] ?? SEVERITY_COLORS.info
-                      const icon = TYPE_ICONS[item.type] ?? '🔔'
+                      const iconName = NOTIF_ICON[item.type] ?? 'bell'
                       const inner = (
                         <>
-                          <div className="w-8 h-8 rounded-lg flex items-center justify-center text-sm shrink-0" style={{ background: `${color}1A` }}>{icon}</div>
+                          <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: `${color}1A`, color }}><Icon name={iconName} size={15} /></div>
                           <div className="flex-1 min-w-0">
                             <p className="text-xs font-medium truncate" style={{ color: 'var(--arvo-fg)' }}>{title}</p>
                             <p className="text-[11px] mt-0.5 truncate" style={{ color: 'var(--arvo-fg-soft)' }}>
@@ -370,9 +381,9 @@ export default function AppLayout() {
                 title={headerLabel}
               >
                 {avatarUrl ? (
-                  <img src={avatarUrl} alt="Avatar" className="w-7 h-7 rounded-full object-cover" />
+                  <img src={avatarUrl} alt="Avatar" className="w-7 h-7 rounded-full object-cover" style={{ outline: '1px solid var(--arvo-gold)', outlineOffset: 1 }} />
                 ) : (
-                  <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px]" style={{ background: 'var(--arvo-black)', color: 'var(--arvo-gold)', fontFamily: "var(--arvo-font-body)", letterSpacing: '0.08em' }}>{avatarInitials}</div>
+                  <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px]" style={{ background: 'var(--arvo-black)', color: 'var(--arvo-gold)', fontFamily: "var(--arvo-font-body)", letterSpacing: '0.08em', outline: '1px solid var(--arvo-gold)', outlineOffset: 1 }}>{avatarInitials}</div>
                 )}
                 <span className="hidden sm:inline text-xs max-w-[100px] truncate transition-colors" style={{ color: 'var(--arvo-fg-soft)' }}>{headerLabel}</span>
                 <svg className={`w-3 h-3 transition-transform ${showUserMenu ? 'rotate-180' : ''}`} style={{ color: 'var(--arvo-fg-faint)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -396,15 +407,6 @@ export default function AppLayout() {
                             : { fontFamily: "var(--arvo-font-body)", color: 'var(--arvo-fg-soft)', letterSpacing: '0.06em' }}
                         >{c}</button>
                       ))}
-                    </div>
-                  </div>
-                  <div className="px-4 py-2.5" style={{ borderBottom: '1px solid var(--arvo-border-soft)' }}>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-xs" style={{ color: 'var(--arvo-fg-soft)' }}>{(t.levels as Record<string, string>)[level.key] ?? level.name}</span>
-                      <span className="text-xs" style={{ fontFamily: "var(--arvo-font-body)", color: 'var(--arvo-fg)' }}>{totalXp} XP</span>
-                    </div>
-                    <div className="h-1 rounded-full overflow-hidden" style={{ background: 'var(--arvo-track-bg)' }}>
-                      <div className="h-full rounded-full transition-all" style={{ width: `${levelProgress}%`, background: 'linear-gradient(90deg, var(--arvo-fg), var(--arvo-gold))' }} />
                     </div>
                   </div>
                   <Link to="/achievements" onClick={() => setShowUserMenu(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors" style={{ color: 'var(--arvo-fg-muted)' }} onMouseEnter={e => (e.currentTarget.style.background='var(--arvo-hover-bg)')} onMouseLeave={e => (e.currentTarget.style.background='')}>
@@ -469,25 +471,41 @@ export default function AppLayout() {
           </div>
         </div>
 
-        {/* ── Sub-nav bar — desktop only ── */}
+        {/* ── Sub-nav bar — desktop: centered, sliding underline ── */}
         {activeSubItems.length > 0 && (
           <div className="hidden sm:block" style={{ borderTop: '1px solid var(--arvo-border-soft)', background: 'var(--arvo-subnav-bg)' }}>
-            <div className="flex items-center justify-center gap-1 px-6 py-2">
+            <div className="flex items-center justify-center gap-6 px-6">
               {activeSubItems.map(({ to, label, end }) => (
                 <NavLink
                   key={to} to={to} end={end}
-                  className="flex items-center gap-2 whitespace-nowrap transition-all"
-                  style={({ isActive }) => isActive
-                    ? { fontFamily: "var(--arvo-font-body)", fontSize: 13, letterSpacing: '0.08em', padding: '7px 14px', borderRadius: 8, border: '1px solid var(--arvo-border)', background: 'var(--arvo-surface)', color: 'var(--arvo-fg)', boxShadow: '0 1px 2px rgba(13,13,13,0.04)', textDecoration: 'none' }
-                    : { fontFamily: "var(--arvo-font-body)", fontSize: 13, letterSpacing: '0.08em', padding: '7px 14px', borderRadius: 8, border: '1px solid transparent', background: 'transparent', color: 'var(--arvo-fg-muted)', textDecoration: 'none' }}
-                >
-                  {({ isActive }) => (
-                    <>
-                      {isActive && <span style={{ width: 5, height: 5, borderRadius: 999, background: sectionAccent, flexShrink: 0, display: 'inline-block' }} />}
-                      {label}
-                    </>
-                  )}
-                </NavLink>
+                  className="whitespace-nowrap transition-colors"
+                  style={({ isActive }) => ({
+                    fontFamily: "var(--arvo-font-body)", fontSize: 13, letterSpacing: '0.06em',
+                    padding: '9px 1px', borderBottom: isActive ? `2px solid ${sectionAccent}` : '2px solid transparent',
+                    color: isActive ? 'var(--arvo-fg)' : 'var(--arvo-fg-muted)', textDecoration: 'none',
+                    transition: 'color 160ms ease, border-color 160ms ease',
+                  })}
+                >{label}</NavLink>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── Sub-nav bar — mobile: horizontal scroll, docked under header ── */}
+        {activeSubItems.length > 0 && (
+          <div className="sm:hidden" style={{ borderTop: '1px solid var(--arvo-border-soft)', background: 'var(--arvo-subnav-bg)' }}>
+            <div ref={subNavScrollRef} className="flex items-center gap-5 px-4 overflow-x-auto scrollbar-none">
+              {activeSubItems.map(({ to, label, end }) => (
+                <NavLink
+                  key={to} to={to} end={end}
+                  className="whitespace-nowrap shrink-0 transition-colors"
+                  style={({ isActive }) => ({
+                    fontFamily: "var(--arvo-font-body)", fontSize: 12.5, letterSpacing: '0.04em',
+                    padding: '9px 1px', borderBottom: isActive ? `2px solid ${sectionAccent}` : '2px solid transparent',
+                    color: isActive ? 'var(--arvo-fg)' : 'var(--arvo-fg-muted)', textDecoration: 'none',
+                    transition: 'color 160ms ease, border-color 160ms ease',
+                  })}
+                >{label}</NavLink>
               ))}
             </div>
           </div>
@@ -495,52 +513,29 @@ export default function AppLayout() {
 
       </header>
 
-      {showBudgetSetup && (
-        <div className="bg-amber-50 border-b border-amber-200 px-4 py-3 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3 min-w-0">
-            <span className="text-amber-500 text-lg shrink-0">📋</span>
-            <p className="text-sm text-amber-800">{t.profile.budgetReminderSetupBody}</p>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <NavLink to="/profile" onClick={dismissBudgetSetup} className="px-3 py-1.5 text-xs font-semibold bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors">
-              {t.profile.budgetReminderSetupLink}
-            </NavLink>
-            <button onClick={dismissBudgetSetup} className="px-3 py-1.5 text-xs text-amber-700 hover:text-amber-900 transition-colors">
-              {t.profile.budgetReminderDismiss}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {showBudgetBanner && (() => {
+      {/* Banner queue (D9) — max one visible: budget setup takes priority over the recurring reminder */}
+      {showBudgetSetup ? (
+        <Banner
+          onDismiss={dismissBudgetSetup}
+          action={<NavLink to="/profile" onClick={dismissBudgetSetup} className="arvo-btn arvo-btn--link shrink-0">{t.profile.budgetReminderSetupLink}</NavLink>}
+        >
+          {t.profile.budgetReminderSetupBody}
+        </Banner>
+      ) : showBudgetBanner ? (() => {
         const freq = user?.id ? parseInt(localStorage.getItem(`arvo_budget_reminder_freq_${user.id}`) ?? '0', 10) : 0
         const freqLabel = freq === 1 ? t.profile.budgetReminder1m
           : freq === 2 ? t.profile.budgetReminder2m
           : freq === 3 ? t.profile.budgetReminder3m
           : t.profile.budgetReminder6m
         return (
-          <div className="bg-amber-50 border-b border-amber-200 px-4 py-3 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3 min-w-0">
-              <span className="text-amber-500 text-lg shrink-0">📋</span>
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-amber-800">{t.profile.budgetReminderDue}</p>
-                <p className="text-xs text-amber-700 truncate">{t.profile.budgetReminderDueBody.replace('{freq}', freqLabel)}</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <NavLink
-                to="/finances/budget"
-                onClick={dismissBudgetBanner}
-                className="px-3 py-1.5 text-xs font-semibold bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors"
-              >{t.profile.budgetReminderGoTo}</NavLink>
-              <button
-                onClick={dismissBudgetBanner}
-                className="px-3 py-1.5 text-xs text-amber-700 hover:text-amber-900 transition-colors"
-              >{t.profile.budgetReminderDismiss}</button>
-            </div>
-          </div>
+          <Banner
+            onDismiss={dismissBudgetBanner}
+            action={<NavLink to="/finances/budget" onClick={dismissBudgetBanner} className="arvo-btn arvo-btn--link shrink-0">{t.profile.budgetReminderGoTo}</NavLink>}
+          >
+            {t.profile.budgetReminderDue} — {t.profile.budgetReminderDueBody.replace('{freq}', freqLabel)}
+          </Banner>
         )
-      })()}
+      })() : null}
 
       <main className="flex-1 max-w-6xl 2xl:max-w-[1600px] mx-auto w-full px-4 py-6 sm:pb-6 main-content">
         <Outlet />
@@ -549,46 +544,6 @@ export default function AppLayout() {
       <div className="hidden sm:block max-w-6xl 2xl:max-w-[1600px] mx-auto w-full px-4 pb-2">
         <LoginFooter />
       </div>
-
-      {/* Mobile sub-nav — floating glass pill above bottom nav */}
-      {activeSubItems.length > 0 && (
-        <nav
-          className="sm:hidden fixed z-20"
-          style={{
-            bottom: 'calc(84px + env(safe-area-inset-bottom, 0px))',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            width: 'calc(100% - 32px)',
-            maxWidth: 500,
-            background: 'var(--arvo-glass-bg)',
-            backdropFilter: 'blur(24px) saturate(200%)',
-            WebkitBackdropFilter: 'blur(24px) saturate(200%)',
-            border: '1px solid var(--arvo-glass-border)',
-            borderRadius: 999,
-            boxShadow: '0 8px 32px rgba(0,0,0,0.10), 0 2px 6px rgba(0,0,0,0.06), inset 0 1px 0 var(--arvo-glass-highlight)',
-            overflow: 'hidden',
-          }}
-        >
-          <div ref={subNavScrollRef} className="flex items-center gap-0.5 overflow-x-auto scrollbar-none" style={{ padding: '5px' }}>
-            {activeSubItems.map(({ to, label, end }) => (
-              <NavLink
-                key={to} to={to} end={end}
-                className="flex items-center gap-1.5 whitespace-nowrap shrink-0"
-                style={({ isActive }) => isActive
-                  ? { fontFamily: "var(--arvo-font-body)", fontSize: 13, letterSpacing: '0.04em', padding: '8px 13px', borderRadius: 999, background: 'var(--arvo-glass-active-bg)', color: 'var(--arvo-fg)', textDecoration: 'none', boxShadow: '0 1px 4px rgba(0,0,0,0.08)', transition: 'all 240ms cubic-bezier(0.22,0.61,0.36,1)' }
-                  : { fontFamily: "var(--arvo-font-body)", fontSize: 13, letterSpacing: '0.04em', padding: '8px 13px', borderRadius: 999, background: 'transparent', color: 'var(--arvo-fg-soft)', textDecoration: 'none', transition: 'all 240ms cubic-bezier(0.22,0.61,0.36,1)' }}
-              >
-                {({ isActive }) => (
-                  <>
-                    {isActive && <span style={{ width: 5, height: 5, borderRadius: 999, background: sectionAccent, flexShrink: 0, display: 'inline-block' }} />}
-                    {label}
-                  </>
-                )}
-              </NavLink>
-            ))}
-          </div>
-        </nav>
-      )}
 
       {/* Mobile bottom nav — floating glass pill */}
       <nav

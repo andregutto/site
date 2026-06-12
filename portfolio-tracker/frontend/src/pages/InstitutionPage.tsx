@@ -60,7 +60,7 @@ function AddAccountModal({ prefillInstitution, onSave, onClose, saving }: AddAcc
   const [color,    setColor]    = useState('#0D0D0D')
   const [icon,     setIcon]     = useState('🏦')
 
-  const fieldCls = 'w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20'
+  const fieldCls = 'w-full border border-[var(--arvo-border)] rounded-[3px] px-3 py-2 text-sm bg-[var(--arvo-surface)] text-[var(--arvo-fg)] focus:outline-none focus:border-[var(--arvo-gold)] focus:ring-2 focus:ring-[var(--arvo-gold)]/25'
   const labelCls = 'text-xs font-medium text-[var(--arvo-fg-muted)] mb-1 block'
 
   return (

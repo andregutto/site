@@ -156,8 +156,8 @@ export default function LoginPage() {
                           l.panelForgot
 
   return (
-    <div style={{ minHeight: '100vh', fontFamily: F_SANS, background: 'var(--arvo-offwhite)', paddingTop: 'env(safe-area-inset-top, 0px)' }}
-      className="grid grid-cols-1 lg:grid-cols-[1fr_1.1fr]"
+    <div style={{ minHeight: '100dvh', fontFamily: F_SANS, background: 'var(--arvo-offwhite)', paddingTop: 'env(safe-area-inset-top, 0px)' }}
+      className="grid grid-cols-1 lg:grid-cols-[45%_1fr]"
     >
 
       {/* ── Left — editorial ── */}
@@ -205,14 +205,14 @@ export default function LoginPage() {
 
         {/* Success state */}
         {registered && (
-          <div style={{ maxWidth: 440, width: '100%', margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 24, textAlign: 'center' }}>
+          <div style={{ maxWidth: 400, width: '100%', margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 24, textAlign: 'center' }}>
             <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(13,13,13,0.06)', border: '1px solid var(--arvo-border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} style={{ width: 28, height: 28, color: 'var(--arvo-black)' }}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
               </svg>
             </div>
             <div>
-              <h1 style={{ fontFamily: F_SANS, fontSize: 32, letterSpacing: '0.04em', color: 'var(--arvo-fg)', marginBottom: 12 }}>
+              <h1 style={{ fontFamily: 'var(--arvo-font-display)', fontWeight: 400, fontSize: 30, letterSpacing: 'var(--arvo-track-normal)', color: 'var(--arvo-fg)', marginBottom: 12 }}>
                 {l.registrationDone}
               </h1>
               <p style={{ fontFamily: F_SANS, fontSize: 14, color: 'var(--arvo-fg-soft)', lineHeight: 1.6 }}>
@@ -230,7 +230,7 @@ export default function LoginPage() {
         )}
 
         {!registered && (
-          <div style={{ maxWidth: 440, width: '100%', margin: '0 auto' }}>
+          <div style={{ maxWidth: 400, width: '100%', margin: '0 auto' }}>
 
             {/* Eyebrow */}
             <div style={{ fontFamily: F_SANS, fontSize: 10, letterSpacing: '0.30em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)', marginBottom: 16 }}>
@@ -238,7 +238,7 @@ export default function LoginPage() {
             </div>
 
             {/* h1 */}
-            <h1 style={{ fontFamily: F_SANS, fontSize: 44, letterSpacing: '0.06em', lineHeight: 1.15, color: 'var(--arvo-fg)', marginBottom: 12, maxWidth: 460 }}>
+            <h1 style={{ fontFamily: 'var(--arvo-font-display)', fontWeight: 400, fontSize: 'clamp(30px, 3vw, 38px)', letterSpacing: 'var(--arvo-track-normal)', lineHeight: 1.15, color: 'var(--arvo-fg)', marginBottom: 12 }}>
               {panelTitle}
             </h1>
 
@@ -350,9 +350,9 @@ export default function LoginPage() {
                 <div>
                   <label style={labelStyle}>{l.confirmPwd}</label>
                   <input type="password" value={confirmPwd} onChange={e => setConfirmPwd(e.target.value)} required autoComplete="new-password" placeholder="••••••••"
-                    style={{ ...inputBase, borderColor: confirmPwd && confirmPwd !== password ? '#ef4444' : 'var(--arvo-border)' }}
+                    style={{ ...inputBase, borderColor: confirmPwd && confirmPwd !== password ? 'var(--arvo-red)' : 'var(--arvo-border)' }}
                     onFocus={e => { e.currentTarget.style.borderColor = 'var(--arvo-gold)'; e.currentTarget.style.boxShadow = '0 0 0 2px rgba(200,184,154,0.25)' }}
-                    onBlur={e => { e.currentTarget.style.borderColor = confirmPwd && confirmPwd !== password ? '#ef4444' : 'var(--arvo-border)'; e.currentTarget.style.boxShadow = 'none' }}
+                    onBlur={e => { e.currentTarget.style.borderColor = confirmPwd && confirmPwd !== password ? 'var(--arvo-red)' : 'var(--arvo-border)'; e.currentTarget.style.boxShadow = 'none' }}
                   />
                 </div>
               )}
@@ -410,18 +410,18 @@ export default function LoginPage() {
               )}
 
               {error && (
-                <div style={{ fontFamily: F_SANS, fontSize: 13, padding: '12px 16px', borderRadius: 3, background: '#fef2f2', color: '#991b1b', border: '1px solid #fecaca' }}>
+                <div style={{ fontFamily: F_SANS, fontSize: 13, padding: '12px 16px', borderRadius: 3, background: 'var(--arvo-beige)', borderLeft: '2px solid var(--arvo-red)', color: 'var(--arvo-fg)' }}>
                   <p style={{ margin: 0 }}>{error}</p>
                   {error === l.errEmailNotConfirmed && (
                     <div style={{ marginTop: 10 }}>
                       {resent ? (
-                        <p style={{ margin: 0, fontSize: 12, color: '#166534' }}>{l.emailResent ?? 'E-mail reenviado. Verifique sua caixa de entrada.'}</p>
+                        <p style={{ margin: 0, fontSize: 12, color: 'var(--arvo-green)' }}>{l.emailResent ?? 'E-mail reenviado. Verifique sua caixa de entrada.'}</p>
                       ) : (
                         <button
                           type="button"
                           onClick={handleResend}
                           disabled={resending || !email}
-                          style={{ background: 'none', border: '1px solid #991b1b', borderRadius: 3, padding: '5px 12px', fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#991b1b', cursor: resending || !email ? 'not-allowed' : 'pointer', opacity: resending || !email ? 0.6 : 1 }}
+                          style={{ background: 'none', border: '1px solid var(--arvo-border)', borderRadius: 3, padding: '5px 12px', fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--arvo-fg)', cursor: resending || !email ? 'not-allowed' : 'pointer', opacity: resending || !email ? 0.6 : 1 }}
                         >
                           {resending ? (l.loading ?? '...') : (l.resendEmail ?? 'Reenviar e-mail')}
                         </button>
@@ -431,7 +431,7 @@ export default function LoginPage() {
                 </div>
               )}
               {info && (
-                <p style={{ fontFamily: F_SANS, fontSize: 13, padding: '12px 16px', borderRadius: 3, background: '#eff6ff', color: '#1e3a5f', border: '1px solid var(--arvo-border)' }}>
+                <p style={{ fontFamily: F_SANS, fontSize: 13, padding: '12px 16px', borderRadius: 3, background: 'var(--arvo-beige)', borderLeft: '2px solid var(--arvo-gold)', color: 'var(--arvo-fg-muted)' }}>
                   {info}
                 </p>
               )}
@@ -451,7 +451,7 @@ export default function LoginPage() {
               </button>
             </form>
 
-            <p style={{ fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.05em', color: 'var(--arvo-fg-soft)', marginTop: 32, maxWidth: 440, lineHeight: 1.7 }}>
+            <p style={{ fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.05em', color: 'var(--arvo-fg-soft)', marginTop: 32, maxWidth: 400, lineHeight: 1.7 }}>
               ao entrar, você aceita os termos de uso e a política de privacidade. arvo guarda seus dados em servidores na União Europeia.
             </p>
           </div>

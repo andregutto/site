@@ -162,7 +162,7 @@ function MomentForm({ initial, onSave, onCancel, saving, userId }: FormProps) {
     })
   }
 
-  const fieldCls = 'w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20'
+  const fieldCls = 'w-full border border-[var(--arvo-border)] rounded-[3px] px-3 py-2 text-sm bg-[var(--arvo-surface)] text-[var(--arvo-fg)] focus:outline-none focus:border-[var(--arvo-gold)] focus:ring-2 focus:ring-[var(--arvo-gold)]/25'
   const labelCls = 'block text-xs text-[var(--arvo-fg-muted)] mb-1'
 
   return (
@@ -402,7 +402,7 @@ function ShareModal({ moment, onClose, onRevoke, onUpdate }: ShareModalProps) {
             <div>
               <p className="text-xs text-[var(--arvo-fg-muted)] mb-1.5">{t.finances.shareLink}</p>
               <div className="flex items-center gap-2">
-                <input readOnly value={shareUrl} className="flex-1 border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-xs text-[var(--arvo-fg-muted)] bg-[var(--arvo-surface-2)] truncate focus:outline-none" />
+                <input readOnly value={shareUrl} className="flex-1 border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-xs text-[var(--arvo-fg-muted)] bg-[var(--arvo-surface)] truncate focus:outline-none" />
                 <button
                   onClick={() => copyToClipboard(shareUrl)}
                   className={`px-3 py-2 rounded-lg text-xs font-medium transition-colors shrink-0 ${copied ? 'bg-emerald-100 text-emerald-700' : 'bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] hover:opacity-80'}`}

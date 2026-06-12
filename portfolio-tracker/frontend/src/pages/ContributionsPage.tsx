@@ -623,7 +623,7 @@ export default function ContributionsPage() {
             <div className="sm:col-span-2 space-y-1.5">
               <label className="block text-xs text-[var(--arvo-fg-muted)]">Ativo</label>
               {editId ? (
-                <div className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm bg-[var(--arvo-surface-2)] text-[var(--arvo-fg-muted)]">
+                <div className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm bg-[var(--arvo-surface)] text-[var(--arvo-fg-muted)]">
                   {selectedAsset ? `${selectedAsset.code} — ${selectedAsset.name}` : t.contributions.unknownAsset}
                 </div>
               ) : (
@@ -735,7 +735,7 @@ export default function ContributionsPage() {
                       placeholder={isTickerForm
                         ? newNameLoading ? t.common.loading : newCode ? t.contributions.nameNotFound.replace('· ', '') : t.contributions.nameAutoFilled.replace('· ', '')
                         : newFormType === 'fixed_income' ? 'Preenchido ao escolher tipo e taxa' : newFormType === 'imovel' ? 'ex: Apartamento Paris 11e' : 'ex: Fundo X'}
-                      className={`w-full border border-[var(--arvo-border)] rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20 ${isTickerForm ? 'bg-[var(--arvo-surface-2)] text-[var(--arvo-fg-muted)] cursor-default' : 'bg-[var(--arvo-surface)]'}`}
+                      className={`w-full border border-[var(--arvo-border)] rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20 ${isTickerForm ? 'bg-[var(--arvo-surface)] text-[var(--arvo-fg-muted)] cursor-default' : 'bg-[var(--arvo-surface)]'}`}
                     />
                   </div>
 

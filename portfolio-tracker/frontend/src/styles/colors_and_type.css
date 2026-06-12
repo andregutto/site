@@ -52,8 +52,8 @@
   --arvo-black:       #0D0D0D;   /* landing, header, hero, video intros, logo */
   --arvo-gold:        #C8B89A;   /* the through-line — borders, glows, accents */
   --arvo-gold-text:   #8C6A28;   /* readable gold for text on white (contrast ≥ 4.5:1) */
-  --arvo-offwhite:    #FFFFFF;   /* primary background of tools & content */
-  --arvo-beige:       #F4F4F4;   /* secondary surfaces, separators, cards */
+  --arvo-offwhite:    #FAF8F4;   /* warm app background — cards stay #FFFFFF via --arvo-surface */
+  --arvo-beige:       #F1EDE5;   /* sunken surfaces, hover, separators */
   --arvo-terracotta:  #A36A52;   /* warm accent, editorial details */
 
   /* ── ACCENT HIERARCHY — appears ONLY in data, actions and tags. ─────
@@ -71,6 +71,15 @@
   --arvo-green-tint:       rgba(31, 138, 91, 0.10);
   --arvo-gold-tint:        rgba(200, 184, 154, 0.12);
   --arvo-gold-line:        rgba(200, 184, 154, 0.15);
+
+  /* ── INTERACTION TOKENS ────────────────────────────────────────────── */
+  --arvo-black-hover:  #2A2620;                  /* primary button hover */
+  --arvo-overlay:      rgba(13, 13, 13, 0.55);   /* modal backdrop */
+
+  /* Button (light defaults; .dark flips to gold-on-black) */
+  --arvo-btn-primary-bg:       var(--arvo-black);
+  --arvo-btn-primary-fg:       var(--arvo-offwhite);
+  --arvo-btn-primary-hover-bg: var(--arvo-black-hover);
 
   /* ── SEMANTIC SURFACES ─────────────────────────────────────────────── */
   --arvo-bg:           var(--arvo-offwhite);
@@ -154,6 +163,7 @@
   --arvo-radius-sm: 6px;
   --arvo-radius-md: 10px;    /* swatches */
   --arvo-radius-lg: 14px;    /* cards */
+  --arvo-radius-modal: 16px; /* modals (shadow-lg + overlay) */
   --arvo-radius-xl: 18px;    /* hero panels */
   --arvo-radius-pill: 999px; /* tags only */
 
@@ -206,6 +216,11 @@
   --arvo-chip-bg:          rgba(242, 237, 228, 0.08);
   --arvo-track-bg:         rgba(242, 237, 228, 0.10);
   --arvo-subnav-bg:        rgba(255, 255, 255, 0.02);
+
+  /* Primary button on dark: gold with black text (§ buttons) */
+  --arvo-btn-primary-bg:       var(--arvo-gold);
+  --arvo-btn-primary-fg:       var(--arvo-black);
+  --arvo-btn-primary-hover-bg: color-mix(in srgb, var(--arvo-gold) 90%, #000);
 }
 
 /* ===================================================================
@@ -282,6 +297,10 @@
   color: var(--arvo-gold-text);
 }
 
+/* Financial numbers — tabular digits so columns align. Apply to EVERY
+   money/percent value; pair with right-aligned columns. */
+.arvo-num { font-variant-numeric: tabular-nums; }
+
 /* Body, small, meta */
 .arvo-body  { font-size: var(--arvo-text-body);  color: var(--arvo-fg-muted); line-height: var(--arvo-leading-body); }
 .arvo-small { font-size: var(--arvo-text-small); color: var(--arvo-fg-soft);  line-height: 1.6; }
@@ -324,10 +343,10 @@
   border-radius: var(--arvo-radius-lg);
 }
 
-/* Form inputs — always white, never beige */
+/* Form inputs — always surface (white on light, card-dark in .dark), never beige */
 .arvo-input {
   width: 100%;
-  background: #FFFFFF;
+  background: var(--arvo-surface);
   border: 1px solid var(--arvo-border);
   border-radius: var(--arvo-radius-xs);
   color: var(--arvo-fg);
@@ -359,6 +378,58 @@
   background-size: 256px;
   mix-blend-mode: overlay;
 }
+
+/* ── UI PRIMITIVES (components/ui) — keep colors token-only ─────────── */
+.arvo-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: var(--arvo-font-body);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  border: 1px solid transparent;
+  border-radius: var(--arvo-radius-xs);
+  padding: 12px 24px;
+  cursor: pointer;
+  transition: background var(--arvo-dur-fast) var(--arvo-ease),
+              color      var(--arvo-dur-fast) var(--arvo-ease),
+              border-color var(--arvo-dur-fast) var(--arvo-ease);
+}
+.arvo-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.arvo-btn--sm { padding: 8px 16px; font-size: 10px; }
+.arvo-btn--primary {
+  background: var(--arvo-btn-primary-bg);
+  color: var(--arvo-btn-primary-fg);
+}
+.arvo-btn--primary:hover:not(:disabled) { background: var(--arvo-btn-primary-hover-bg); }
+.arvo-btn--ghost {
+  background: transparent;
+  border-color: var(--arvo-border);
+  color: var(--arvo-fg);
+}
+.arvo-btn--ghost:hover:not(:disabled) { background: var(--arvo-hover-bg); }
+.arvo-btn--link {
+  background: transparent;
+  border: none;
+  padding: 0;
+  color: var(--arvo-fg-muted);
+}
+.arvo-btn--link:hover:not(:disabled) { color: var(--arvo-gold-text); }
+
+/* Interactive card — flat by default, md shadow on hover (§ cards) */
+.arvo-card-interactive {
+  transition: box-shadow var(--arvo-dur-fast) var(--arvo-ease);
+}
+.arvo-card-interactive:hover { box-shadow: var(--arvo-shadow-md); }
+
+/* StatDelta — green/red reserved for signed variation */
+.arvo-delta-pos { color: var(--arvo-green); }
+.dark .arvo-delta-pos { color: var(--arvo-green-on-dark); }
+.arvo-delta-neg { color: var(--arvo-red); }
+.arvo-delta-neutral { color: var(--arvo-fg-soft); }
 
 /* Recharts tooltips render with inline styles (white bg, default text
    color) — override for dark mode so they match the surrounding card. */

@@ -8,8 +8,8 @@
   --color-arvo-black:      #0D0D0D;
   --color-arvo-gold:       #C8B89A;
   --color-arvo-gold-text:  #8C6A28;
-  --color-arvo-offwhite:   #FFFFFF;
-  --color-arvo-beige:      #F4F4F4;
+  --color-arvo-offwhite:   #FAF8F4;
+  --color-arvo-beige:      #F1EDE5;
   --color-arvo-terracotta: #A36A52;
 
   /* Accents — Brazilian birds */
@@ -59,17 +59,53 @@ body {
   overflow-x: hidden;
 }
 
+/* D2: editable fields are NEVER beige — white surface regardless of the
+   container (wells, modals, beige bands). @layer base so bg-* utilities
+   can still override deliberately. Flips with .dark via the token. */
+@layer base {
+  input:not([type='checkbox']):not([type='radio']):not([type='file']):not([type='range']):not([type='color']),
+  select,
+  textarea {
+    background-color: var(--arvo-surface);
+  }
+}
+
+/* Keyboard focus — gold ring instead of the native blue outline.
+   :focus-visible only, so mouse/touch interaction stays untouched. */
+:focus-visible {
+  outline: 2px solid var(--arvo-gold);
+  outline-offset: 2px;
+}
+.arvo-input:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: none; /* inputs keep their gold border + shadow focus style */
+}
+
+/* Reduced motion — collapse animations/transitions; scroll reveals show
+   immediately. The AI aurora handles its own static fallback (§3.7). */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .arvo-reveal { opacity: 1; transform: none; }
+}
+
 /* Safe area utility — used by the mobile bottom nav */
 .safe-bottom {
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
-/* Main content bottom padding — clears bottom nav + sub-nav pill + safe area on mobile.
-   sub-nav top sits at ~130px + safe-area-inset-bottom from viewport bottom;
-   adding safe-area to both sides means the 78px buffer is device-independent. */
+/* Main content bottom padding — clears the floating bottom nav + safe area on
+   mobile. The sub-nav is docked under the header (in normal flow), so this
+   only needs to clear the bottom tab bar. */
 @media (max-width: 639px) {
   .main-content {
-    padding-bottom: calc(13rem + env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
   }
 }
 
@@ -103,6 +139,13 @@ body {
   50%       { transform: translateY(-16px); }
 }
 .arvo-float { animation: arvo-float 6s ease-in-out infinite; }
+
+/* Hero background — slow ken-burns zoom */
+@keyframes arvo-kenburns {
+  from { transform: scale(1); }
+  to   { transform: scale(1.05); }
+}
+.arvo-kenburns { animation: arvo-kenburns 20s ease-in-out infinite alternate; }
 
 .arvo-reveal {
   opacity: 0;
