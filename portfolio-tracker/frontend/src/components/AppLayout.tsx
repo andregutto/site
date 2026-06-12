@@ -146,37 +146,7 @@ export default function AppLayout() {
         <rect x="1" y="9" width="3" height="6" rx=".5"/><rect x="6.5" y="5.5" width="3" height="9.5" rx=".5"/><rect x="12" y="2" width="3" height="13" rx=".5"/>
       </svg>
     )},
-    { to: '/assets', label: t.nav.assets, end: true, icon: (
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
-        <rect x="1" y="1.5" width="14" height="3" rx=".5"/><rect x="1" y="6.5" width="14" height="3" rx=".5"/><rect x="1" y="11.5" width="14" height="3" rx=".5"/>
-      </svg>
-    )},
     { to: '/performance', label: t.nav.performance, end: false, icon: (
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M1 12l4-4 3 3 7-7M11.5 4H15v3.5"/>
-      </svg>
-    )},
-    { to: '/dividends', label: t.nav.dividends, end: true, icon: (
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
-        <circle cx="8" cy="8" r="6.5"/><path strokeLinecap="round" strokeLinejoin="round" d="M8 5v6M6 7h3a1 1 0 010 2H6"/>
-      </svg>
-    )},
-    { to: '/portfolio', label: t.nav.contributions, end: true, icon: (
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M8 1v14M1 8h14"/>
-      </svg>
-    )},
-    { to: '/portfolio/rebalance', label: t.nav.rebalance, end: false, icon: (
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M8 2v12M4 14h8M4 6l-3 4h6L4 6zM12 4l-3 4h6l-3-4z"/>
-      </svg>
-    )},
-    { to: '/portfolio/reports', label: t.nav.ir, end: false, icon: (
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M3 1.5h6.5L13 5v9.5H3zM9 1.5V5h4M5 8h6M5 11h4"/>
-      </svg>
-    )},
-    { to: '/portfolio/indices', label: t.nav.indices, end: false, icon: (
       <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
         <path strokeLinecap="round" strokeLinejoin="round" d="M1 12l4-4 3 3 7-7M11.5 4H15v3.5"/>
       </svg>
@@ -187,6 +157,36 @@ export default function AppLayout() {
         <path strokeLinecap="round" strokeLinejoin="round" d="M8 1.5v13M1.5 8h13M3.2 3.2l9.6 9.6M12.8 3.2L3.2 12.8"/>
       </svg>
     )},
+    { to: '/assets', label: t.nav.assets, end: true, icon: (
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
+        <rect x="1" y="1.5" width="14" height="3" rx=".5"/><rect x="1" y="6.5" width="14" height="3" rx=".5"/><rect x="1" y="11.5" width="14" height="3" rx=".5"/>
+      </svg>
+    )},
+    { to: '/portfolio', label: t.nav.contributions, end: true, icon: (
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M8 1v14M1 8h14"/>
+      </svg>
+    )},
+    { to: '/dividends', label: t.nav.dividends, end: true, icon: (
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
+        <circle cx="8" cy="8" r="6.5"/><path strokeLinecap="round" strokeLinejoin="round" d="M8 5v6M6 7h3a1 1 0 010 2H6"/>
+      </svg>
+    )},
+    { to: '/portfolio/rebalance', label: t.nav.rebalance, end: false, icon: (
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M8 2v12M4 14h8M4 6l-3 4h6L4 6zM12 4l-3 4h6l-3-4z"/>
+      </svg>
+    )},
+    { to: '/portfolio/indices', label: t.nav.indices, end: false, icon: (
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M1 12l4-4 3 3 7-7M11.5 4H15v3.5"/>
+      </svg>
+    )},
+    { to: '/portfolio/reports', label: t.nav.ir, end: false, icon: (
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3 1.5h6.5L13 5v9.5H3zM9 1.5V5h4M5 8h6M5 11h4"/>
+      </svg>
+    )},
   ]
 
   const financesItems = [
@@ -195,15 +195,15 @@ export default function AppLayout() {
         <path strokeLinecap="round" strokeLinejoin="round" d="M1.5 7.5L8 2l6.5 5.5V14.5H10V10H6v4.5H1.5z"/>
       </svg>
     )},
+    { to: '/finances/transactions', label: t.finances.navTransactions, end: false, icon: (
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
+        <rect x="1" y="3" width="14" height="10" rx="1.5"/><path strokeLinecap="round" d="M1 6.5h14M4 10h2M9 10h3"/>
+      </svg>
+    )},
     { to: '/finances/budget', label: t.finances.navBudget, end: false, icon: (
       <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
         <circle cx="8" cy="8" r="6.5"/><circle cx="8" cy="8" r="3"/>
         <circle cx="8" cy="8" r=".75" fill="currentColor" stroke="none"/>
-      </svg>
-    )},
-    { to: '/finances/transactions', label: t.finances.navTransactions, end: false, icon: (
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
-        <rect x="1" y="3" width="14" height="10" rx="1.5"/><path strokeLinecap="round" d="M1 6.5h14M4 10h2M9 10h3"/>
       </svg>
     )},
     { to: '/finances/moments', label: t.finances.navMoments, end: false, icon: (
