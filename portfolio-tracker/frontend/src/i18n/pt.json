@@ -1119,6 +1119,12 @@
     "deletePermanently": "Excluir permanentemente",
     "errorDelete": "Erro ao excluir ativo."
   },
+  "favorites": {
+    "title": "Favoritos",
+    "subtitle": "Ativos marcados com estrela",
+    "empty": "Nenhum favorito ainda",
+    "emptyDescription": "Clique na estrela ao lado de um ativo no Dashboard para adicioná-lo aqui."
+  },
   "contributions": {
     "title": "Aportes",
     "subtitle": "Histórico de compras e vendas",

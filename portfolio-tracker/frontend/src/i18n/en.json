@@ -1119,6 +1119,12 @@
     "deletePermanently": "Delete permanently",
     "errorDelete": "Error deleting asset."
   },
+  "favorites": {
+    "title": "Favorites",
+    "subtitle": "Assets marked with a star",
+    "empty": "No favorites yet",
+    "emptyDescription": "Click the star next to an asset on the Dashboard to add it here."
+  },
   "contributions": {
     "title": "Contributions",
     "subtitle": "Purchase and sale history",

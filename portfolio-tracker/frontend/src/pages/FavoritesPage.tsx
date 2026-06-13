@@ -4,6 +4,7 @@ import { useFavorites } from '../hooks/useFavorites'
 import { useCurrency } from '../contexts/CurrencyContext'
 import { PageLoader } from '../components/ArvoLoader'
 import { useI18n } from '../contexts/I18nContext'
+import { PageTitle, EmptyState } from '../components/ui'
 
 function StarIcon({ filled }: { filled: boolean }) {
   return (
@@ -36,19 +37,14 @@ export default function FavoritesPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-semibold text-[var(--arvo-fg)]">Favoritos</h1>
-        <p className="text-sm text-[var(--arvo-fg-soft)] mt-0.5">Ativos marcados com estrela</p>
-      </div>
+      <PageTitle eyebrow={t.dashboard.eyebrow} title={t.favorites.title} />
 
       {favoriteAssets.length === 0 ? (
-        <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl p-12 text-center">
-          <div className="text-4xl mb-3">★</div>
-          <p className="text-[var(--arvo-fg-muted)] font-medium">Nenhum favorito ainda</p>
-          <p className="text-sm text-[var(--arvo-fg-soft)] mt-1">
-            Clique na estrela ao lado de um ativo no Dashboard para adicioná-lo aqui.
-          </p>
-        </div>
+        <EmptyState
+          title={t.favorites.empty}
+          description={t.favorites.emptyDescription}
+          className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl"
+        />
       ) : (
         <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl overflow-hidden">
           <div className="divide-y divide-[var(--arvo-border-soft)]">

@@ -1119,6 +1119,12 @@
     "deletePermanently": "Supprimer définitivement",
     "errorDelete": "Erreur lors de la suppression."
   },
+  "favorites": {
+    "title": "Favoris",
+    "subtitle": "Actifs marqués d'une étoile",
+    "empty": "Aucun favori pour le moment",
+    "emptyDescription": "Cliquez sur l'étoile à côté d'un actif sur le tableau de bord pour l'ajouter ici."
+  },
   "contributions": {
     "title": "Apports",
     "subtitle": "Historique des achats et ventes",
