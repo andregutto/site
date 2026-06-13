@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { PageLoader } from '../components/ArvoLoader'
+import { Button } from '../components/ui/Button'
 import { usePortfolioValue } from '../hooks/usePortfolio'
 import { useFavorites } from '../hooks/useFavorites'
 import { useI18n } from '../contexts/I18nContext'
@@ -44,17 +45,9 @@ export default function AssetsPage() {
           {t.nav.assets}
         </h1>
         <div className="flex items-center gap-3">
-          <button
-            onClick={() => navigate('/portfolio/classes')}
-            style={{
-              fontFamily: 'var(--arvo-font-body)', fontSize: 10, letterSpacing: '0.12em',
-              textTransform: 'uppercase', padding: '6px 12px', borderRadius: 6,
-              border: '1px solid var(--arvo-border)', background: 'var(--arvo-surface)',
-              color: 'var(--arvo-fg-muted)', cursor: 'pointer',
-            }}
-          >
+          <Button variant="ghost" size="sm" onClick={() => navigate('/portfolio/classes')}>
             {t.nav.classes} →
-          </button>
+          </Button>
           <button
             onClick={refresh}
             style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-muted)', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}

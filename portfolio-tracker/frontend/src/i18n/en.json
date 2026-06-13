@@ -1237,7 +1237,15 @@
     "source": "Source: Yahoo Finance · BCB · Updated in real time with 15-min cache",
     "month": "month",
     "cdiDeltaTooltip": "CDI is already an annualized rate — accumulated change unavailable for this period",
-    "deltaUnavailable": "Change unavailable for this period"
+    "deltaUnavailable": "Change unavailable for this period",
+    "categories": {
+      "br_equity": "BR Equities",
+      "us_equity": "US Equities",
+      "br_rate": "BR Rates",
+      "br_inflation": "BR Inflation",
+      "fx": "FX",
+      "commodity": "Commodities"
+    }
   },
   "modals": {
     "valorizacao": "Appreciation",

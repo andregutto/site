@@ -3,6 +3,8 @@ import type { PortfolioAsset } from '../lib/types'
 import { useCurrency } from '../contexts/CurrencyContext'
 import { useI18n } from '../contexts/I18nContext'
 import { useAssetReturns } from '../hooks/usePortfolio'
+import { Icon } from './icons'
+import { getClassIcon } from '../lib/classIcons'
 
 interface Props {
   assets: PortfolioAsset[]
@@ -30,22 +32,15 @@ function fmtNumber(v: number, decimals = 4) {
   return new Intl.NumberFormat('pt-BR', { maximumFractionDigits: decimals }).format(v)
 }
 
-const CLASS_ICON_MAP: [RegExp, string][] = [
-  [/ações?\s*brasil|brazil|b3/i,        '📊'],
-  [/exterior|eua|usa|intl|internacional|ações?\s*exterior/i, '🌍'],
-  [/fii|imobiliário|imobiliario/i,      '🏢'],
-  [/cripto|crypto|bitcoin/i,            '💎'],
-  [/renda\s*fixa|fixed|tesouro|cdb|lci|lca/i, '🏦'],
-  [/previdên|previdencia|pgbl|vgbl/i,   '🛡️'],
-  [/imóveis|imoveis|real\s*estate/i,    '🏠'],
-  [/commodit/i,                          '🛢️'],
-  [/etf/i,                               '📊'],
-  [/caixa|cash/i,                        '💰'],
-]
-
-function inferIcon(name: string): string | null {
-  for (const [re, icon] of CLASS_ICON_MAP) if (re.test(name)) return icon
-  return null
+function ClassIcon({ name, color }: { name: string; color: string }) {
+  return (
+    <span
+      className="w-6 h-6 rounded-full flex items-center justify-center shrink-0"
+      style={{ background: `color-mix(in srgb, ${color} 14%, transparent)`, color }}
+    >
+      <Icon name={getClassIcon(name)} size={13} />
+    </span>
+  )
 }
 
 function ChevronIcon({ open }: { open: boolean }) {
@@ -286,17 +281,12 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
                   <tr
                     onClick={() => toggleExpand(group.name)}
                     className="cursor-pointer select-none transition-colors"
-                    style={{ background: 'rgba(0,0,0,0.018)', borderTop: '1px solid var(--arvo-border-soft)' }}
+                    style={{ background: 'var(--arvo-surface-2)', borderTop: '1px solid var(--arvo-border-soft)' }}
                   >
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <ChevronIcon open={isOpen} />
-                        {(() => {
-                          const icon = group.assets[0]?.class_icon ?? inferIcon(group.name)
-                          return icon
-                            ? <span className="text-base leading-none shrink-0">{icon}</span>
-                            : <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: group.color }} />
-                        })()}
+                        <ClassIcon name={group.name} color={group.color} />
                         <span className="text-sm tracking-tight" style={{ fontFamily: "var(--arvo-font-body)", fontWeight: 600, color: 'var(--arvo-fg)' }}>{resolveClassName(group.name, group.name_key)}</span>
                         <span className="text-xs" style={{ color: 'var(--arvo-fg-muted)' }}>
                           {group.assets.length} {group.assets.length === 1 ? d.asset : d.assets}
@@ -306,17 +296,17 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
                     <td />
                     <td />
                     <td />
-                    <td className="px-4 py-3 text-right tabular-nums" style={{ fontFamily: "var(--arvo-font-body)", fontWeight: 600, color: 'var(--arvo-fg)' }}>
+                    <td className="px-4 py-3 text-right arvo-num" style={{ fontFamily: "var(--arvo-font-body)", fontWeight: 600, color: 'var(--arvo-fg)' }}>
                       {fmt(group.total)}
                     </td>
-                    <td className="px-4 py-3 text-right text-sm" style={{ color: 'var(--arvo-fg-soft)' }}>
+                    <td className="px-4 py-3 text-right text-sm arvo-num" style={{ color: 'var(--arvo-fg-soft)' }}>
                       {groupPct.toFixed(1)}%
                     </td>
                     <td className="px-4 py-3 text-right">
                       {returnsLoading ? (
                         <span className="text-xs" style={{ color: 'var(--arvo-fg-faint)' }}>...</span>
                       ) : groupRentab !== null ? (
-                        <span className="text-xs font-semibold" style={{ color: groupRentab >= 0 ? 'var(--arvo-green)' : 'var(--arvo-red)' }}>
+                        <span className="text-xs font-semibold arvo-num" style={{ color: groupRentab >= 0 ? 'var(--arvo-green)' : 'var(--arvo-red)' }}>
                           {groupRentab >= 0 ? '+' : ''}{groupRentab.toFixed(2)}%
                         </span>
                       ) : (
@@ -332,10 +322,8 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
                       <tr
                         key={asset.id}
                         onClick={() => onAssetClick?.(asset)}
-                        className={`group transition-colors ${onAssetClick ? 'cursor-pointer' : ''}`}
-                        style={{ borderTop: '1px solid var(--arvo-border-soft)', background: asset.needs_manual ? 'rgba(232,160,32,0.04)' : 'transparent' }}
-                        onMouseEnter={e => { if (!asset.needs_manual) e.currentTarget.style.background = 'rgba(13,13,13,0.02)' }}
-                        onMouseLeave={e => { e.currentTarget.style.background = asset.needs_manual ? 'rgba(232,160,32,0.04)' : 'transparent' }}
+                        className={`group transition-colors ${onAssetClick ? 'cursor-pointer' : ''} ${asset.needs_manual ? '' : 'hover:bg-[var(--arvo-hover-bg)]'}`}
+                        style={{ borderTop: '1px solid var(--arvo-border-soft)', background: asset.needs_manual ? 'rgba(232,160,32,0.04)' : undefined }}
                       >
                         <td className="px-4 py-3 pl-10">
                           <div className="flex items-center gap-1">
@@ -346,7 +334,7 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
                               />
                             )}
                             <div>
-                              <div className="font-medium" style={{ color: 'var(--arvo-fg)' }}>{asset.code}</div>
+                              <div style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, fontWeight: 500, color: 'var(--arvo-fg)' }}>{asset.code}</div>
                               <div className="text-xs truncate max-w-[200px]" style={{ color: 'var(--arvo-fg-soft)' }}>{asset.name}</div>
                               {!asset.needs_manual && asset.source === 'manual' && (() => {
                                 if (!asset.last_manual_date) return null
@@ -361,10 +349,10 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
                             </div>
                           </div>
                         </td>
-                        <td className="px-4 py-3 text-right" style={{ color: 'var(--arvo-fg-muted)' }}>
+                        <td className="px-4 py-3 text-right arvo-num" style={{ color: 'var(--arvo-fg-muted)' }}>
                           {asset.holdings != null ? fmtNumber(asset.holdings, 6) : '—'}
                         </td>
-                        <td className="px-4 py-3 text-right" style={{ color: 'var(--arvo-fg-muted)' }}>
+                        <td className="px-4 py-3 text-right arvo-num" style={{ color: 'var(--arvo-fg-muted)' }}>
                           {asset.price != null ? (
                             <div>
                               <div>{asset.currency} {fmtNumber(asset.price, 2)}</div>
@@ -376,21 +364,21 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
                             </div>
                           ) : '—'}
                         </td>
-                        <td className="px-4 py-3 text-right" style={{ color: 'var(--arvo-fg-muted)' }}>
+                        <td className="px-4 py-3 text-right arvo-num" style={{ color: 'var(--arvo-fg-muted)' }}>
                           {asset.needs_manual && asset.invested_brl == null ? (
                             <span className="text-xs font-medium" style={{ color: 'var(--arvo-ocre)' }}>{d.enterValue}</span>
                           ) : asset.invested_brl != null ? (
                             fmt(asset.invested_brl)
                           ) : '—'}
                         </td>
-                        <td className="px-4 py-3 text-right font-medium">
+                        <td className="px-4 py-3 text-right font-medium arvo-num">
                           {asset.needs_manual ? (
                             <span className="text-xs" style={{ color: 'var(--arvo-fg-soft)' }}>—</span>
                           ) : (
                             <span style={{ color: 'var(--arvo-fg)' }}>{fmt(asset.value_brl)}</span>
                           )}
                         </td>
-                        <td className="px-4 py-3 text-right" style={{ color: 'var(--arvo-fg-soft)' }}>
+                        <td className="px-4 py-3 text-right arvo-num" style={{ color: 'var(--arvo-fg-soft)' }}>
                           {asset.needs_manual || portfolioTotal === 0
                             ? '—'
                             : ((asset.value_brl / portfolioTotal) * 100).toFixed(1) + '%'}
@@ -399,7 +387,7 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
                           {returnsLoading ? (
                             <span className="text-xs" style={{ color: 'var(--arvo-fg-faint)' }}>...</span>
                           ) : ret != null ? (
-                            <span className="text-xs font-semibold" style={{ color: ret >= 0 ? 'var(--arvo-green)' : 'var(--arvo-red)' }}>
+                            <span className="text-xs font-semibold arvo-num" style={{ color: ret >= 0 ? 'var(--arvo-green)' : 'var(--arvo-red)' }}>
                               {ret >= 0 ? '+' : ''}{ret.toFixed(2)}%
                             </span>
                           ) : asset.invested_brl != null && asset.invested_brl > 0 && asset.value_brl > 0 ? (
@@ -407,7 +395,7 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
                               const r = (asset.value_brl - asset.invested_brl) / asset.invested_brl * 100
                               return (
                                 <span
-                                  className="text-xs font-semibold"
+                                  className="text-xs font-semibold arvo-num"
                                   style={{ color: r >= 0 ? 'var(--arvo-green)' : 'var(--arvo-red)' }}
                                   title={t.common.totalReturnTip}
                                 >
@@ -429,8 +417,8 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
           <tfoot style={{ background: 'rgba(0,0,0,0.025)', borderTop: '1px solid var(--arvo-border-soft)' }}>
             <tr>
               <td colSpan={4} className="px-4 py-3 text-sm" style={{ fontFamily: "var(--arvo-font-body)", color: 'var(--arvo-fg)', letterSpacing: '0.06em' }}>{t.common.total}</td>
-              <td className="px-4 py-3 text-right" style={{ fontFamily: "var(--arvo-font-body)", fontWeight: 600, color: 'var(--arvo-fg)' }}>{fmt(portfolioTotal)}</td>
-              <td className="px-4 py-3 text-right" style={{ color: 'var(--arvo-fg-soft)' }}>100%</td>
+              <td className="px-4 py-3 text-right arvo-num" style={{ fontFamily: "var(--arvo-font-body)", fontWeight: 600, color: 'var(--arvo-fg)' }}>{fmt(portfolioTotal)}</td>
+              <td className="px-4 py-3 text-right arvo-num" style={{ color: 'var(--arvo-fg-soft)' }}>100%</td>
               <td className="px-4 py-3" />
             </tr>
           </tfoot>
@@ -473,23 +461,18 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
               <div
                 onClick={() => toggleExpand(group.name)}
                 className="flex items-center gap-2 px-4 py-3 cursor-pointer select-none"
-                style={{ background: 'rgba(0,0,0,0.018)', borderTop: '1px solid var(--arvo-border-soft)' }}
+                style={{ background: 'var(--arvo-surface-2)', borderTop: '1px solid var(--arvo-border-soft)' }}
               >
                 <ChevronIcon open={isOpen} />
-                {(() => {
-                  const icon = group.assets[0]?.class_icon ?? inferIcon(group.name)
-                  return icon
-                    ? <span className="text-base leading-none shrink-0">{icon}</span>
-                    : <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: group.color }} />
-                })()}
+                <ClassIcon name={group.name} color={group.color} />
                 <span className="flex-1 truncate text-sm" style={{ fontFamily: "var(--arvo-font-body)", fontWeight: 600, color: 'var(--arvo-fg)' }}>{resolveClassName(group.name, group.name_key)}</span>
                 {!returnsLoading && groupRentabM !== null && (
-                  <span className="text-xs font-semibold" style={{ color: groupRentabM >= 0 ? 'var(--arvo-green)' : 'var(--arvo-red)' }}>
+                  <span className="text-xs font-semibold arvo-num" style={{ color: groupRentabM >= 0 ? 'var(--arvo-green)' : 'var(--arvo-red)' }}>
                     {groupRentabM >= 0 ? '+' : ''}{groupRentabM.toFixed(2)}%
                   </span>
                 )}
-                <span className="text-sm tabular-nums" style={{ fontFamily: "var(--arvo-font-body)", fontWeight: 600, color: 'var(--arvo-fg)' }}>{fmt(group.total)}</span>
-                <span className="text-xs w-10 text-right" style={{ color: 'var(--arvo-fg-muted)' }}>{groupPct.toFixed(1)}%</span>
+                <span className="text-sm arvo-num" style={{ fontFamily: "var(--arvo-font-body)", fontWeight: 600, color: 'var(--arvo-fg)' }}>{fmt(group.total)}</span>
+                <span className="text-xs w-10 text-right arvo-num" style={{ color: 'var(--arvo-fg-muted)' }}>{groupPct.toFixed(1)}%</span>
               </div>
 
               {/* Asset cards */}
@@ -518,16 +501,16 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
                             />
                           )}
                           <div className="flex-1 min-w-0">
-                            <div className="font-medium text-sm" style={{ color: 'var(--arvo-fg)' }}>{asset.code}</div>
+                            <div style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, fontWeight: 500, color: 'var(--arvo-fg)' }}>{asset.code}</div>
                             <div className="text-xs truncate" style={{ color: 'var(--arvo-fg-soft)' }}>{asset.name}</div>
                           </div>
                           <div className="flex items-center gap-2 shrink-0">
                             <div className="text-right">
-                              <div className="text-sm font-medium" style={{ color: 'var(--arvo-fg)' }}>
+                              <div className="text-sm font-medium arvo-num" style={{ color: 'var(--arvo-fg)' }}>
                                 {asset.needs_manual ? '—' : fmt(asset.value_brl)}
                               </div>
                               {!returnsLoading && displayRet != null && (
-                                <div className="text-xs font-semibold" style={{ color: displayRet >= 0 ? 'var(--arvo-green)' : 'var(--arvo-red)' }}>
+                                <div className="text-xs font-semibold arvo-num" style={{ color: displayRet >= 0 ? 'var(--arvo-green)' : 'var(--arvo-red)' }}>
                                   {displayRet >= 0 ? '+' : ''}{displayRet.toFixed(2)}%
                                 </div>
                               )}
@@ -557,24 +540,24 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
                             {asset.holdings != null && (
                               <div className="flex justify-between gap-2">
                                 <span style={{ color: 'var(--arvo-fg-soft)' }}>{d.colHoldings}</span>
-                                <span className="font-medium tabular-nums" style={{ color: 'var(--arvo-fg)' }}>{fmtNumber(asset.holdings, 6)}</span>
+                                <span className="font-medium arvo-num" style={{ color: 'var(--arvo-fg)' }}>{fmtNumber(asset.holdings, 6)}</span>
                               </div>
                             )}
                             {asset.price != null && (
                               <div className="flex justify-between gap-2">
                                 <span style={{ color: 'var(--arvo-fg-soft)' }}>{d.colPrice}</span>
-                                <span className="font-medium tabular-nums" style={{ color: 'var(--arvo-fg)' }}>{asset.currency} {fmtNumber(asset.price, 2)}</span>
+                                <span className="font-medium arvo-num" style={{ color: 'var(--arvo-fg)' }}>{asset.currency} {fmtNumber(asset.price, 2)}</span>
                               </div>
                             )}
                             {asset.invested_brl != null && asset.holdings != null && asset.holdings > 0 && (
                               <div className="flex justify-between gap-2">
                                 <span style={{ color: 'var(--arvo-fg-soft)' }}>PM</span>
-                                <span className="font-medium tabular-nums" style={{ color: 'var(--arvo-fg)' }}>{fmt(asset.invested_brl / asset.holdings)}</span>
+                                <span className="font-medium arvo-num" style={{ color: 'var(--arvo-fg)' }}>{fmt(asset.invested_brl / asset.holdings)}</span>
                               </div>
                             )}
                             <div className="flex justify-between gap-2">
                               <span style={{ color: 'var(--arvo-fg-soft)' }}>{d.colInvested}</span>
-                              <span className="font-medium tabular-nums" style={{ color: 'var(--arvo-fg)' }}>
+                              <span className="font-medium arvo-num" style={{ color: 'var(--arvo-fg)' }}>
                                 {asset.needs_manual && asset.invested_brl == null
                                   ? <span style={{ color: 'var(--arvo-ocre)' }}>{d.enterValue}</span>
                                   : asset.invested_brl != null ? fmt(asset.invested_brl) : '—'}
@@ -583,7 +566,7 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
                             {!asset.needs_manual && portfolioTotal > 0 && (
                               <div className="flex justify-between gap-2">
                                 <span style={{ color: 'var(--arvo-fg-soft)' }}>{d.colPct}</span>
-                                <span className="font-medium" style={{ color: 'var(--arvo-fg)' }}>{((asset.value_brl / portfolioTotal) * 100).toFixed(1)}%</span>
+                                <span className="font-medium arvo-num" style={{ color: 'var(--arvo-fg)' }}>{((asset.value_brl / portfolioTotal) * 100).toFixed(1)}%</span>
                               </div>
                             )}
                           </div>
@@ -600,7 +583,7 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
         {groups.length > 0 && (
           <div className="flex justify-between items-center px-4 py-3" style={{ background: 'rgba(0,0,0,0.025)', borderTop: '1px solid var(--arvo-border-soft)' }}>
             <span className="text-sm" style={{ fontFamily: "var(--arvo-font-body)", color: 'var(--arvo-fg)', letterSpacing: '0.06em' }}>{t.common.total}</span>
-            <span style={{ fontFamily: "var(--arvo-font-body)", fontWeight: 600, color: 'var(--arvo-fg)' }}>{fmt(portfolioTotal)}</span>
+            <span className="arvo-num" style={{ fontFamily: "var(--arvo-font-body)", fontWeight: 600, color: 'var(--arvo-fg)' }}>{fmt(portfolioTotal)}</span>
           </div>
         )}
       </div>

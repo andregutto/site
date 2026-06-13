@@ -4,6 +4,7 @@ import { useCurrency } from '../contexts/CurrencyContext'
 import { useI18n } from '../contexts/I18nContext'
 import { apiFetch } from '../lib/api'
 import { PageLoader } from '../components/ArvoLoader'
+import { Icon } from '../components/icons'
 
 export default function RebalancePage() {
   const { data, loading: portfolioLoading } = usePortfolioValue()
@@ -110,10 +111,7 @@ export default function RebalancePage() {
                         {r.current} <span className="font-semibold text-[var(--arvo-fg)]">{cls.pct.toFixed(1)}%</span>
                       </span>
                       {diff != null && (
-                        <span className={
-                          Math.abs(diff) < 1 ? 'text-green-600' :
-                          diff > 0 ? 'text-red-500' : 'text-blue-500'
-                        }>
+                        <span className="arvo-num arvo-delta-neutral">
                           {diff > 0 ? '+' : ''}{diff.toFixed(1)}%
                           {' '}{Math.abs(diff) < 1 ? r.onTarget : diff > 0 ? r.above : r.below}
                         </span>
@@ -126,7 +124,7 @@ export default function RebalancePage() {
                       />
                       {target != null && (
                         <div
-                          className="absolute top-0 h-full w-0.5 bg-[var(--arvo-fg-muted)] opacity-50"
+                          className="absolute -top-0.5 -bottom-0.5 w-0.5 bg-[var(--arvo-fg)] rounded-full"
                           style={{ left: `${Math.min(target, 100)}%` }}
                         />
                       )}
@@ -142,7 +140,7 @@ export default function RebalancePage() {
                       value={targets[cls.name] ?? ''}
                       onChange={e => setTargets(prev => ({ ...prev, [cls.name]: e.target.value }))}
                       placeholder="—"
-                      className="w-16 border border-[var(--arvo-border)] rounded-lg px-2 py-1.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20"
+                      className="w-16 border border-[var(--arvo-border)] rounded-[3px] px-2 py-1.5 text-sm text-center arvo-num bg-[var(--arvo-surface)] text-[var(--arvo-fg)] focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20"
                     />
                     <span className="text-xs text-[var(--arvo-fg-soft)]">%</span>
                   </div>
@@ -173,10 +171,12 @@ export default function RebalancePage() {
                 <div key={cls.name} className="px-5 py-3 flex items-center gap-3">
                   <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: cls.color }} />
                   <span className="text-sm text-[var(--arvo-fg)] flex-1">{resolveClassName(cls.name, cls.name_key)}</span>
-                  <span className={`text-sm font-semibold ${diff > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                    {diff > 0 ? r.reduce : r.increase} {fmt(diffBrl)}
+                  <span className="text-sm font-medium text-[var(--arvo-fg-muted)] flex items-center gap-1.5">
+                    <Icon name={diff > 0 ? 'arrow-down-right' : 'arrow-up-right'} size={14} />
+                    {diff > 0 ? r.reduce : r.increase}
+                    <span className={`arvo-num font-semibold ${diff > 0 ? 'arvo-delta-neg' : 'arvo-delta-pos'}`}>{fmt(diffBrl)}</span>
                   </span>
-                  <span className="text-xs text-[var(--arvo-fg-soft)]">({Math.abs(diff).toFixed(1)}%)</span>
+                  <span className="text-xs text-[var(--arvo-fg-soft)] arvo-num">({Math.abs(diff).toFixed(1)}%)</span>
                 </div>
               )
             })}

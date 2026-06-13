@@ -56,7 +56,9 @@ export default function AllocationChart({ data, currency = 'BRL', convert }: Pro
                 ))}
                 <Label
                   content={(props) => {
-                    const { cx = 0, cy = 0 } = (props.viewBox as unknown as { cx?: number; cy?: number }) ?? {}
+                    const vb = (props.viewBox as unknown as { cx?: number; cy?: number; x?: number; y?: number; width?: number; height?: number }) ?? {}
+                    const cx = vb.cx ?? (vb.x ?? 0) + (vb.width ?? 0) / 2
+                    const cy = vb.cy ?? (vb.y ?? 0) + (vb.height ?? 0) / 2
                     return (
                       <g>
                         <text x={cx} y={cy - 7} textAnchor="middle" fill="var(--arvo-fg-soft)" fontSize={9} fontFamily="var(--arvo-font-body)" letterSpacing="0.12em">

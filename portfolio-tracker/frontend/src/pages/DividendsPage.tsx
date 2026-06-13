@@ -3,15 +3,14 @@ import { useDividends, useDividendSummary, useDividendSync } from '../hooks/useD
 import { PageLoader } from '../components/ArvoLoader'
 import { useCurrency } from '../contexts/CurrencyContext'
 import { useI18n } from '../contexts/I18nContext'
+import { StatDelta } from '../components/ui'
+import { ArvoTooltip, CHART_AXIS_TICK, CHART_GRID_STROKE, CHART_SERIES } from '../components/charts'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend,
 } from 'recharts'
 
 type Period = 'ytd' | 'last12m' | 'all'
 type Tab    = 'history' | 'projection'
-
-const ARVO_GOLD = '#E8A020'
-const ARVO_BLUE = '#1B4FD8'
 
 function fmtMonth(ym: string) {
   const [y, m] = ym.split('-')
@@ -81,6 +80,15 @@ export default function DividendsPage() {
   const chartData = (summary?.by_month ?? []).map(m => ({
     month: fmtMonth(m.month), value: convert(m.total_brl),
   }))
+
+  const monthlyDelta = useMemo(() => {
+    const months = summary?.by_month ?? []
+    if (months.length < 2) return null
+    const prev = months[months.length - 2].total_brl
+    const last = months[months.length - 1].total_brl
+    if (prev <= 0) return null
+    return ((last - prev) / prev) * 100
+  }, [summary?.by_month])
 
   const byAssetSorted = useMemo(() => {
     const list = [...(summary?.by_asset ?? [])]
@@ -203,23 +211,46 @@ export default function DividendsPage() {
         tab === 'history' ? (
           <>
             {/* Summary cards */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 gap-3">
               <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl p-5 shadow-sm">
                 <p className="text-[var(--arvo-fg-soft)] text-xs uppercase tracking-wide">{d.totalReceived}</p>
-                <p className="text-2xl font-bold mt-1 text-green-600">{fmt(totalBrl)}</p>
+                <div className="flex items-baseline gap-2 mt-1">
+                  <p className="text-2xl font-bold arvo-num" style={{ color: 'var(--arvo-fg)' }}>{fmt(totalBrl)}</p>
+                  {monthlyDelta != null && (
+                    <StatDelta className="text-xs" value={monthlyDelta} formatted={`${Math.abs(monthlyDelta).toFixed(0)}%`} />
+                  )}
+                </div>
                 <p className="text-xs text-[var(--arvo-fg-soft)] mt-1">{d.inPeriod}</p>
               </div>
               <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl p-5 shadow-sm">
                 <p className="text-[var(--arvo-fg-soft)] text-xs uppercase tracking-wide">{d.count}</p>
-                <p className="text-2xl font-bold mt-1 text-[var(--arvo-fg)]">{rows.length}</p>
+                <p className="text-2xl font-bold mt-1 arvo-num" style={{ color: 'var(--arvo-fg)' }}>{rows.length}</p>
                 <p className="text-xs text-[var(--arvo-fg-soft)] mt-1">{d.inPeriod}</p>
               </div>
-              <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl p-5 shadow-sm sm:col-span-1 col-span-2">
-                <p className="text-[var(--arvo-fg-soft)] text-xs uppercase tracking-wide">{d.topPayers}</p>
-                <p className="text-sm font-semibold mt-1 text-[var(--arvo-fg)] truncate">{byAssetSorted[0]?.code ?? '—'}</p>
-                <p className="text-xs text-green-600 mt-0.5">{byAssetSorted[0] ? fmt(byAssetSorted[0].total_brl) : '—'}</p>
-              </div>
             </div>
+
+            {/* Top payers mini-ranking */}
+            {byAssetSorted.length > 0 && (
+              <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl p-5 shadow-sm">
+                <p className="text-[var(--arvo-fg-soft)] text-xs uppercase tracking-wide mb-3">{d.topPayers}</p>
+                <div className="space-y-3">
+                  {byAssetSorted.slice(0, 3).map(a => {
+                    const pct = byAssetSorted[0].total_brl > 0 ? (a.total_brl / byAssetSorted[0].total_brl) * 100 : 0
+                    return (
+                      <div key={a.asset_id}>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-sm font-medium text-[var(--arvo-fg)]">{a.code}</span>
+                          <span className="text-sm font-semibold arvo-num" style={{ color: 'var(--arvo-fg)' }}>{fmt(a.total_brl)}</span>
+                        </div>
+                        <div className="h-1.5 bg-[var(--arvo-track-bg)] rounded-full overflow-hidden">
+                          <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: CHART_SERIES.ocre }} />
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* Monthly chart */}
             {chartData.length > 0 && (
@@ -227,16 +258,13 @@ export default function DividendsPage() {
                 <h2 className="text-xs font-medium text-[var(--arvo-fg-soft)] uppercase tracking-wide mb-4">{d.monthlyChart}</h2>
                 <div className="h-48">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={chartData} barSize={18}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" vertical={false} />
-                      <XAxis dataKey="month" tick={{ fontSize: 10, fill: '#9ca3af' }} tickLine={false} axisLine={false} />
-                      <YAxis tick={{ fontSize: 10, fill: '#9ca3af' }} tickLine={false} axisLine={false}
+                    <BarChart data={chartData} barSize={28}>
+                      <CartesianGrid stroke={CHART_GRID_STROKE} vertical={false} />
+                      <XAxis dataKey="month" tick={CHART_AXIS_TICK} tickLine={false} axisLine={false} />
+                      <YAxis tick={CHART_AXIS_TICK} tickLine={false} axisLine={false}
                         tickFormatter={v => new Intl.NumberFormat('pt-BR', { notation: 'compact', currency, style: 'currency', maximumFractionDigits: 0 }).format(v)} />
-                      <Tooltip
-                        formatter={(v) => [fmtFull(Number(v)), d.totalReceived]}
-                        contentStyle={{ borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 11 }}
-                      />
-                      <Bar dataKey="value" fill="#16a34a" radius={[3, 3, 0, 0]} />
+                      <Tooltip content={<ArvoTooltip formatter={(v) => [fmtFull(v), d.totalReceived]} />} />
+                      <Bar dataKey="value" fill={CHART_SERIES.green} radius={[2, 2, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -268,8 +296,8 @@ export default function DividendsPage() {
                           <span className="font-semibold text-[var(--arvo-fg)]">{a.code}</span>
                           {a.name && a.name !== a.code && <span className="text-[var(--arvo-fg-soft)] text-xs ml-1.5">{a.name}</span>}
                         </td>
-                        <td className="px-4 py-3 text-right font-medium text-green-600">{fmt(a.total_brl)}</td>
-                        <td className="px-4 py-3 text-right text-[var(--arvo-fg-muted)]">{a.count}</td>
+                        <td className="px-4 py-3 text-right font-medium arvo-num" style={{ color: 'var(--arvo-fg)' }}>{fmt(a.total_brl)}</td>
+                        <td className="px-4 py-3 text-right text-[var(--arvo-fg-muted)] arvo-num">{a.count}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -311,8 +339,8 @@ export default function DividendsPage() {
                           <td className="px-4 py-3 font-semibold text-[var(--arvo-fg)]">{r.code}</td>
                           <td className="px-4 py-3 text-[var(--arvo-fg-muted)]">{fmtDate(r.ex_date)}</td>
                           <td className="px-4 py-3 text-[var(--arvo-fg-soft)] text-xs">{fmtDate(r.pay_date)}</td>
-                          <td className="px-4 py-3 text-right text-[var(--arvo-fg-muted)] text-xs">{r.amount_per_share.toFixed(4)} {r.currency}</td>
-                          <td className="px-4 py-3 text-right font-medium text-green-600">{fmt(r.amount_brl)}</td>
+                          <td className="px-4 py-3 text-right text-[var(--arvo-fg-muted)] text-xs arvo-num">{r.amount_per_share.toFixed(4)} {r.currency}</td>
+                          <td className="px-4 py-3 text-right font-medium arvo-num" style={{ color: 'var(--arvo-fg)' }}>{fmt(r.amount_brl)}</td>
                           <td className="px-4 py-3 text-xs text-[var(--arvo-fg-soft)]">{typeLabel(r.dividend_type)}</td>
                         </tr>
                       ))}
@@ -331,14 +359,14 @@ export default function DividendsPage() {
           <>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {[
-                { label: d.passiveYTD.replace('{year}', String(currentYear)), value: fmt(ytdTotal),      color: ARVO_BLUE  },
-                { label: d.passive12m,          value: fmt(total12m),       color: ARVO_BLUE  },
-                { label: d.passiveAvgMonthly,   value: fmt(avgMonthly6m),   color: ARVO_GOLD  },
-                { label: d.passiveProjected12m, value: fmt(projected12m),   color: '#10b981'  },
+                { label: d.passiveYTD.replace('{year}', String(currentYear)), value: fmt(ytdTotal),      color: 'var(--arvo-fg)' },
+                { label: d.passive12m,          value: fmt(total12m),       color: 'var(--arvo-fg)' },
+                { label: d.passiveAvgMonthly,   value: fmt(avgMonthly6m),   color: 'var(--arvo-fg)' },
+                { label: d.passiveProjected12m, value: fmt(projected12m),   color: CHART_SERIES.green },
               ].map(card => (
                 <div key={card.label} className="bg-[var(--arvo-surface)] rounded-2xl border border-[var(--arvo-border)] shadow-sm px-5 py-4">
                   <p className="text-xs text-[var(--arvo-fg-soft)] uppercase tracking-wide font-medium mb-1 leading-tight">{card.label}</p>
-                  <p className="text-xl font-bold" style={{ color: card.color, fontFamily: 'var(--arvo-font-body)' }}>{card.value}</p>
+                  <p className="text-xl font-bold arvo-num" style={{ color: card.color, fontFamily: 'var(--arvo-font-body)' }}>{card.value}</p>
                 </div>
               ))}
             </div>
@@ -349,16 +377,13 @@ export default function DividendsPage() {
               </div>
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={projChartData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }} barSize={7}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" vertical={false} />
-                  <XAxis dataKey="label" tick={{ fontSize: 9, fill: '#9ca3af' }} tickLine={false} axisLine={false} interval={3} />
-                  <YAxis tick={{ fontSize: 9, fill: '#9ca3af' }} tickLine={false} axisLine={false} />
-                  <Tooltip
-                    contentStyle={{ fontSize: 11, borderRadius: 8, border: '1px solid #e5e7eb' }}
-                    formatter={(v: unknown) => [fmt(Number(v)), '']}
-                  />
-                  <Legend iconSize={8} iconType="circle" wrapperStyle={{ fontSize: 10, paddingTop: 8 }} />
-                  <Bar dataKey="received"  name={d.passiveReceivedBar}  fill={ARVO_BLUE} radius={[2, 2, 0, 0]} />
-                  <Bar dataKey="projected" name={d.passiveProjectedBar} fill={ARVO_GOLD} radius={[2, 2, 0, 0]} opacity={0.7} />
+                  <CartesianGrid stroke={CHART_GRID_STROKE} vertical={false} />
+                  <XAxis dataKey="label" tick={CHART_AXIS_TICK} tickLine={false} axisLine={false} interval={3} />
+                  <YAxis tick={CHART_AXIS_TICK} tickLine={false} axisLine={false} />
+                  <Tooltip content={<ArvoTooltip formatter={(v) => [fmt(v), '']} />} />
+                  <Legend iconSize={8} iconType="circle" wrapperStyle={{ fontSize: 10, paddingTop: 8, color: 'var(--arvo-fg-muted)' }} />
+                  <Bar dataKey="received"  name={d.passiveReceivedBar}  fill={CHART_SERIES.ibov} radius={[2, 2, 0, 0]} />
+                  <Bar dataKey="projected" name={d.passiveProjectedBar} fill={CHART_SERIES.ocre} radius={[2, 2, 0, 0]} opacity={0.7} />
                 </BarChart>
               </ResponsiveContainer>
               {d.projDisclaimer && (
@@ -380,10 +405,10 @@ export default function DividendsPage() {
                       <li key={a.asset_id} className="px-5 py-3">
                         <div className="flex items-center justify-between mb-1">
                           <span className="text-sm font-medium text-[var(--arvo-fg)]">{a.code}</span>
-                          <span className="text-sm font-semibold text-[var(--arvo-fg)]">{fmt(a.total_brl)}</span>
+                          <span className="text-sm font-semibold arvo-num text-[var(--arvo-fg)]">{fmt(a.total_brl)}</span>
                         </div>
                         <div className="h-1.5 bg-[var(--arvo-track-bg)] rounded-full overflow-hidden">
-                          <div className="h-full rounded-full" style={{ width: `${Math.min(100, pct)}%`, backgroundColor: ARVO_BLUE }} />
+                          <div className="h-full rounded-full" style={{ width: `${Math.min(100, pct)}%`, backgroundColor: CHART_SERIES.ibov }} />
                         </div>
                         <div className="flex justify-between mt-0.5">
                           <span className="text-xs text-[var(--arvo-fg-soft)]">{a.name !== a.code ? a.name : ''}</span>

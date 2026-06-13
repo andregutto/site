@@ -74,7 +74,7 @@ export default function MarketIndicesCard({ periodMode, periodLabel }: Props) {
       <p className="mb-3" style={{ fontFamily: "'Playfair Display', serif", fontStyle: 'italic', fontSize: 13, color: 'var(--arvo-fg-soft)' }}>
         {periodLabel}
       </p>
-      <div className="flex-1 grid items-baseline content-center" style={{ gridTemplateColumns: 'auto 1fr auto', columnGap: 14, rowGap: 10 }}>
+      <div className="flex-1 grid items-baseline content-center" style={{ gridTemplateColumns: '1fr auto auto', columnGap: 14, rowGap: 10 }}>
         {indices
           ? indices.map(idx => {
               const pct = getPct(idx)
@@ -86,12 +86,12 @@ export default function MarketIndicesCard({ periodMode, periodLabel }: Props) {
                   <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)' }}>
                     {idx.name}
                   </span>
-                  <span className="arvo-num" style={{ fontFamily: "var(--arvo-font-body)", fontSize: 16, letterSpacing: '0.01em', color: 'var(--arvo-fg)' }}>
+                  <span className="arvo-num" style={{ fontFamily: "var(--arvo-font-body)", fontSize: 16, letterSpacing: '0.01em', color: 'var(--arvo-fg)', justifySelf: 'end' }}>
                     {fmtVal(idx.value, idx.unit)}
                   </span>
                   <span
                     className="arvo-num"
-                    style={{ fontFamily: "var(--arvo-font-body)", fontSize: 13, fontWeight: 600, color: isPos ? 'var(--arvo-green)' : isNeg ? 'var(--arvo-red)' : 'var(--arvo-fg-faint)', justifySelf: 'end' }}
+                    style={{ fontFamily: "var(--arvo-font-body)", fontSize: 13, fontWeight: 600, color: isPos ? 'var(--arvo-green)' : isNeg ? 'var(--arvo-red)' : 'var(--arvo-fg-faint)', justifySelf: 'end', minWidth: 56, textAlign: 'right' }}
                     title={pct == null ? (isCDI ? t.indices.cdiDeltaTooltip : t.indices.deltaUnavailable) : undefined}
                   >
                     {fmtPct(pct)}
@@ -102,7 +102,7 @@ export default function MarketIndicesCard({ periodMode, periodLabel }: Props) {
           : CARD_INDICES.map(code => (
               <Fragment key={code}>
                 <div className="h-2.5 w-16 rounded animate-pulse" style={{ background: 'var(--arvo-track-bg)' }} />
-                <div className="h-4 w-20 rounded animate-pulse" style={{ background: 'var(--arvo-track-bg)' }} />
+                <div className="h-4 w-20 rounded animate-pulse justify-self-end" style={{ background: 'var(--arvo-track-bg)' }} />
                 <div className="h-4 w-12 rounded animate-pulse justify-self-end" style={{ background: 'var(--arvo-track-bg)' }} />
               </Fragment>
             ))}

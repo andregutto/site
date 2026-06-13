@@ -19,8 +19,8 @@ export function Segmented<T extends string>({ options, value, onChange, ariaLabe
     <div
       role="tablist"
       aria-label={ariaLabel}
-      className={`inline-flex ${className}`}
-      style={{ border: '1px solid var(--arvo-border)', borderRadius: 'var(--arvo-radius-xs)', overflow: 'hidden' }}
+      className={`inline-flex min-w-0 max-w-full overflow-x-auto scrollbar-none ${className}`}
+      style={{ border: '1px solid var(--arvo-border)', borderRadius: 'var(--arvo-radius-xs)' }}
     >
       {options.map((opt) => {
         const active = opt.value === value
@@ -32,7 +32,7 @@ export function Segmented<T extends string>({ options, value, onChange, ariaLabe
             aria-selected={active}
             disabled={opt.disabled}
             onClick={() => !opt.disabled && onChange(opt.value)}
-            className="px-3 py-1.5"
+            className="px-3 py-1.5 shrink-0 whitespace-nowrap"
             style={{
               fontFamily: 'var(--arvo-font-body)',
               fontSize: 11,

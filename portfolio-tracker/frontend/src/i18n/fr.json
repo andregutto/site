@@ -1237,7 +1237,15 @@
     "source": "Source: Yahoo Finance · BCB · Mis à jour en temps réel avec cache de 15 min",
     "month": "mois",
     "cdiDeltaTooltip": "Le CDI est déjà un taux annualisé — variation cumulée indisponible pour cette période",
-    "deltaUnavailable": "Variation indisponible pour cette période"
+    "deltaUnavailable": "Variation indisponible pour cette période",
+    "categories": {
+      "br_equity": "Actions BR",
+      "us_equity": "Actions USA",
+      "br_rate": "Taux BR",
+      "br_inflation": "Inflation BR",
+      "fx": "Change",
+      "commodity": "Matières premières"
+    }
   },
   "modals": {
     "valorizacao": "Valorisation",

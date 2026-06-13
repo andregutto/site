@@ -21,6 +21,12 @@ function fmtBrl(v: number) {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v)
 }
 
+function typePillStyle(type: string) {
+  return type === 'income'
+    ? { background: 'var(--arvo-gold-tint)', color: 'var(--arvo-gold-text)' }
+    : { background: 'var(--arvo-surface-2)', color: 'var(--arvo-fg-muted)' }
+}
+
 interface AssetOption {
   id: number
   code: string
@@ -1136,7 +1142,7 @@ export default function ContributionsPage() {
                 {contributions.map(c => (
                   <tr
                     key={c.id}
-                    className="hover:bg-[var(--arvo-surface-2)] cursor-pointer"
+                    className="group hover:bg-[var(--arvo-surface-2)] cursor-pointer"
                     onClick={() => navigate(`/assets/${c.assets.id}`)}
                   >
                     <td className="px-4 py-3 text-[var(--arvo-fg-muted)] text-xs whitespace-nowrap">{fmtDate(c.date)}</td>
@@ -1150,11 +1156,7 @@ export default function ContributionsPage() {
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-                        c.type === 'buy' ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300' :
-                        c.type === 'income' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300' :
-                        'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'
-                      }`}>
+                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={typePillStyle(c.type)}>
                         {c.type === 'buy' ? t.contributions.buyLabel : c.type === 'income' ? t.contributions.incomeLabel : t.contributions.sellLabel}
                       </span>
                     </td>
@@ -1175,7 +1177,7 @@ export default function ContributionsPage() {
                           >{t.common.cancel}</button>
                         </div>
                       ) : (
-                        <div className="flex items-center justify-end gap-2">
+                        <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity [@media(hover:none)]:opacity-100">
                           <button
                             onClick={() => { setConfirmDeleteId(null); handleEditClick(c) }}
                             className="text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg)] transition-colors"
@@ -1213,11 +1215,7 @@ export default function ContributionsPage() {
                       <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: c.assets.asset_classes.color }} />
                     )}
                     <span className="font-medium text-[var(--arvo-fg)] text-sm">{c.assets.code}</span>
-                    <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${
-                      c.type === 'buy' ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300' :
-                      c.type === 'income' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300' :
-                      'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'
-                    }`}>
+                    <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full" style={typePillStyle(c.type)}>
                       {c.type === 'buy' ? t.contributions.buyLabel : c.type === 'income' ? t.contributions.incomeLabel : t.contributions.sellLabel}
                     </span>
                   </div>

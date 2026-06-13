@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { apiFetch } from '../lib/api'
 import { useI18n } from '../contexts/I18nContext'
 import { PageLoader } from '../components/ArvoLoader'
+import { StatDelta } from '../components/ui'
 
 interface IndexSnapshot {
   code: string
@@ -17,20 +18,11 @@ interface IndexSnapshot {
   m1_pct: number | null
 }
 
-const CATEGORY_LABELS: Record<string, { pt: string; en: string; fr: string }> = {
-  br_equity:    { pt: 'Renda variável BR', en: 'BR Equities',    fr: 'Actions BR' },
-  us_equity:    { pt: 'Renda variável EUA', en: 'US Equities',   fr: 'Actions USA' },
-  br_rate:      { pt: 'Taxas BR',          en: 'BR Rates',       fr: 'Taux BR' },
-  br_inflation: { pt: 'Inflação BR',       en: 'BR Inflation',   fr: 'Inflation BR' },
-  fx:           { pt: 'Câmbio',            en: 'FX',             fr: 'Change' },
-  commodity:    { pt: 'Commodities',       en: 'Commodities',    fr: 'Matières premières' },
-}
-
-function pctColor(v: number | null) {
-  if (v == null) return 'text-[var(--arvo-fg-soft)]'
-  if (v > 0) return 'text-emerald-600'
-  if (v < 0) return 'text-red-500'
-  return 'text-[var(--arvo-fg-muted)]'
+function dayPctColor(v: number | null, neutral: boolean) {
+  if (v == null || neutral) return 'arvo-delta-neutral'
+  if (v > 0) return 'arvo-delta-pos'
+  if (v < 0) return 'arvo-delta-neg'
+  return 'arvo-delta-neutral'
 }
 
 function fmtPct(v: number | null) {
@@ -47,21 +39,9 @@ function fmtValue(v: number | null, unit: string) {
   return v.toFixed(2)
 }
 
-function MiniSparkBar({ pct }: { pct: number | null }) {
-  if (pct == null) return <div className="w-1 h-4 bg-[var(--arvo-track-bg)] rounded-full" />
-  const h = Math.min(Math.abs(pct) * 2.5, 28)
-  return (
-    <div className="flex items-end justify-center w-2 h-7">
-      <div
-        className={`w-full rounded-sm ${pct >= 0 ? 'bg-emerald-400' : 'bg-red-400'}`}
-        style={{ height: `${Math.max(h, 3)}px` }}
-      />
-    </div>
-  )
-}
-
 export default function IndicesPage() {
-  const { locale, t } = useI18n()
+  const { t } = useI18n()
+  const categoryLabels = t.indices.categories as Record<string, string>
   const navigate = useNavigate()
   const [data, setData] = useState<IndexSnapshot[] | null>(null)
   const [loading, setLoading] = useState(true)
@@ -110,13 +90,14 @@ export default function IndicesPage() {
       {grouped.map(([category, items]) => (
         <section key={category}>
           <h2 className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--arvo-fg-muted)', fontFamily: "var(--arvo-font-body)", letterSpacing: '0.18em' }}>
-            {CATEGORY_LABELS[category]?.[locale as 'pt' | 'en' | 'fr'] ?? category}
+            {categoryLabels?.[category] ?? category}
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {items.map(idx => {
               const dayPct = idx.prev_value && idx.value
                 ? Math.round((idx.value / idx.prev_value - 1) * 10000) / 100
                 : null
+              const isInflation = idx.category === 'br_inflation'
 
               return (
                 <button
@@ -133,40 +114,27 @@ export default function IndicesPage() {
                       <div className="text-lg font-bold text-[var(--arvo-fg)] tabular-nums">
                         {fmtValue(idx.value, idx.unit)}
                       </div>
-                      <div className={`text-xs font-medium ${pctColor(dayPct)}`}>
+                      <div className={`text-xs font-medium arvo-num ${dayPctColor(dayPct, isInflation)}`}>
                         {fmtPct(dayPct)} {t.indices.month}
                       </div>
                     </div>
                   </div>
 
                   <div className="mt-3 pt-3 border-t border-[var(--arvo-border-soft)] grid grid-cols-3 gap-2">
-                    <div className="text-center">
-                      <div className="flex justify-center mb-1">
-                        <MiniSparkBar pct={idx.m1_pct} />
+                    {[
+                      { pct: idx.m1_pct, label: '1m' },
+                      { pct: idx.ytd_pct, label: 'YTD' },
+                      { pct: idx.m12_pct, label: '12m' },
+                    ].map(({ pct, label }) => (
+                      <div key={label} className="text-center">
+                        <div className="text-xs font-semibold">
+                          {pct == null
+                            ? <span className="arvo-num arvo-delta-neutral">—</span>
+                            : <StatDelta value={pct} neutral={isInflation} formatted={`${Math.abs(pct).toFixed(2)}%`} />}
+                        </div>
+                        <div className="text-[10px] text-[var(--arvo-fg-soft)] mt-0.5">{label}</div>
                       </div>
-                      <div className={`text-xs font-semibold tabular-nums ${pctColor(idx.m1_pct)}`}>
-                        {fmtPct(idx.m1_pct)}
-                      </div>
-                      <div className="text-[10px] text-[var(--arvo-fg-soft)]">1m</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="flex justify-center mb-1">
-                        <MiniSparkBar pct={idx.ytd_pct} />
-                      </div>
-                      <div className={`text-xs font-semibold tabular-nums ${pctColor(idx.ytd_pct)}`}>
-                        {fmtPct(idx.ytd_pct)}
-                      </div>
-                      <div className="text-[10px] text-[var(--arvo-fg-soft)]">YTD</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="flex justify-center mb-1">
-                        <MiniSparkBar pct={idx.m12_pct} />
-                      </div>
-                      <div className={`text-xs font-semibold tabular-nums ${pctColor(idx.m12_pct)}`}>
-                        {fmtPct(idx.m12_pct)}
-                      </div>
-                      <div className="text-[10px] text-[var(--arvo-fg-soft)]">12m</div>
-                    </div>
+                    ))}
                   </div>
                 </button>
               )

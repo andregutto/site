@@ -440,15 +440,15 @@ Especificação:
 > novo `lib/classIcons.ts`, correção do botão aninhado no BudgetPage e guards do
 > AssetDetailPage.
 
-**Fase 0 — Fundações (½ dia)** — tokens quentes (`#FAF8F4`/`#F1EDE5`), `.arvo-num`,
+**Fase 0 — Fundações (½ dia)** — **[CONCLUÍDA]** tokens quentes (`#FAF8F4`/`#F1EDE5`), `.arvo-num`,
 `:focus-visible` dourado, `prefers-reduced-motion`, radius canônicos, primitivos
 `ui/` (Button, Card, Eyebrow, PageTitle, SectionHeading, EmptyState, StatDelta,
 Modal, Banner, Segmented), `icons.tsx`. ✓ build + app igual com fundo aquecido.
 
-**Fase 1 — Login (½ dia)** — split editorial (§2.2); seletor de idioma tipográfico
+**Fase 1 — Login (½ dia)** — **[CONCLUÍDA]** split editorial (§2.2); seletor de idioma tipográfico
 global; estilo único de input. ✓ screenshots 1440/390 sem vazio morto.
 
-**Fase 2 — Shell do app (1 dia)** — Banner-padrão com fila (substitui todos os
+**Fase 2 — Shell do app (1 dia)** — **[CONCLUÍDA]** Banner-padrão com fila (substitui todos os
 amarelos); sub-nav underline; mobile bottom integrado (§2.3); XP fora do header;
 notificações com ícones; hover/press 160ms. ✓ máx 1 banner; mobile com 1 barra
 flutuante só.
@@ -463,16 +463,18 @@ o header, fica como está). Ajustar `.main-content padding-bottom` e
 no alcance do polegar; ainda 1 barra flutuante só; sem sobreposição de conteúdo;
 páginas sem sub-nav (Instituições, Perfil etc.) mostram só a linha de 3 ícones.
 
-**Fase 3 — Landing (2-3 dias)** — itens §2.1. ✓ 9 seções em 1440/390; um glow; zero
+**Fase 3 — Landing (2-3 dias)** — **[CONCLUÍDA]** itens §2.1. ✓ 9 seções em 1440/390; um glow; zero
 hex fora de token; OG tags.
 
-**Fase 4 — Dashboard + kit de gráficos (1 dia)** — §2.4-Dashboard + §3.5 + bento 2xl da §3.6; aplicar
+**Fase 4 — Dashboard + kit de gráficos (1 dia)** — **[CONCLUÍDA]** §2.4-Dashboard + §3.5 + bento 2xl da §3.6; aplicar
 Segmented; ValueCards refinado. ✓ screenshot completo desktop+mobile.
 
-**Fase 5 — Páginas core Patrimônio (2 dias)** — Performance, Análise, Ativos,
+**Fase 5 — Páginas core Patrimônio (2 dias)** — **[EM ANDAMENTO]** Performance, Análise, Ativos,
 Aportes, Renda Passiva, Balanceamento, Índices, IR, Instituições, Classes (+
 classIcons), AssetDetail (guards + redesign), ImportB3, Favorites, Archived —
 conforme §2.4. ✓ gate §6 por página.
+  - Concluído: Performance, Análise, Ativos, Aportes, Renda Passiva, Balanceamento, Índices.
+  - Pendente: IR, Instituições, Classes, AssetDetail, ImportB3/Favorites/Archived, Verificação final (§6).
 
 **Fase 6 — Finanças (2 dias)** — Visão Geral, Transações (despesas em preto!),
 Planejamento (bug button + redesign), Momentos (capas fotográficas), Liberdade

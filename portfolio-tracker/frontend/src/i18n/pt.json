@@ -1237,7 +1237,15 @@
     "source": "Fonte: Yahoo Finance · BCB · Atualizado em tempo real com cache de 15 min",
     "month": "mês",
     "cdiDeltaTooltip": "CDI já é uma taxa anualizada — variação acumulada indisponível para este período",
-    "deltaUnavailable": "Variação indisponível para este período"
+    "deltaUnavailable": "Variação indisponível para este período",
+    "categories": {
+      "br_equity": "Renda variável BR",
+      "us_equity": "Renda variável EUA",
+      "br_rate": "Taxas BR",
+      "br_inflation": "Inflação BR",
+      "fx": "Câmbio",
+      "commodity": "Commodities"
+    }
   },
   "modals": {
     "valorizacao": "Valorização",
