@@ -871,7 +871,7 @@ export default function FinancesTransactionsPage() {
                     <button onClick={prevMonth} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--arvo-fg-soft)', borderRadius: 6 }}>
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
                     </button>
-                    <span style={{ fontSize: 13, fontFamily: 'var(--arvo-font-body)', fontWeight: 600, color: 'var(--arvo-fg)', minWidth: 110, textAlign: 'center', textTransform: 'capitalize', letterSpacing: '0.01em' }}>{fmtMonthFull(month)}</span>
+                    <span style={{ fontSize: 13, fontFamily: 'var(--arvo-font-body)', fontWeight: 600, color: 'var(--arvo-fg)', minWidth: 110, textAlign: 'center', letterSpacing: '0.01em' }}>{fmtMonthFull(month)}</span>
                     <button onClick={nextMonth} disabled={month >= defaultMonth} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, background: 'none', border: 'none', cursor: 'pointer', color: month >= defaultMonth ? 'var(--arvo-fg-faint)' : 'var(--arvo-fg-soft)', borderRadius: 6 }}>
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"/></svg>
                     </button>
@@ -1001,7 +1001,7 @@ export default function FinancesTransactionsPage() {
                 <button onClick={prevMonth} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--arvo-fg-soft)', borderRadius: 6 }}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
                 </button>
-                <span style={{ fontSize: 13, fontFamily: 'var(--arvo-font-body)', fontWeight: 600, color: 'var(--arvo-fg)', minWidth: 110, textAlign: 'center', textTransform: 'capitalize', letterSpacing: '0.01em' }}>{fmtMonthFull(month)}</span>
+                <span style={{ fontSize: 13, fontFamily: 'var(--arvo-font-body)', fontWeight: 600, color: 'var(--arvo-fg)', minWidth: 110, textAlign: 'center', letterSpacing: '0.01em' }}>{fmtMonthFull(month)}</span>
                 <button onClick={nextMonth} disabled={month >= defaultMonth} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, background: 'none', border: 'none', cursor: 'pointer', color: month >= defaultMonth ? 'var(--arvo-fg-faint)' : 'var(--arvo-fg-soft)', borderRadius: 6 }}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"/></svg>
                 </button>
@@ -1362,7 +1362,7 @@ export default function FinancesTransactionsPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="bg-[var(--arvo-surface-2)] text-[var(--arvo-fg-muted)] text-xs uppercase">
-                  <tr>
+                  <tr className="group">
                     {/* Select-all checkbox */}
                     <th className="pl-3 pr-1 sm:pl-4 sm:pr-2 py-3 w-8">
                       <input
@@ -1370,7 +1370,7 @@ export default function FinancesTransactionsPage() {
                         checked={allSelected}
                         ref={el => { if (el) el.indeterminate = someSelected }}
                         onChange={toggleSelectAll}
-                        className="rounded border-[var(--arvo-border)] text-[var(--arvo-fg)] focus:ring-[var(--arvo-fg)]/20 cursor-pointer"
+                        className={`rounded border-[var(--arvo-border)] text-[var(--arvo-fg)] focus:ring-[var(--arvo-fg)]/20 cursor-pointer transition-opacity ${selected.size > 0 ? 'opacity-100' : 'opacity-100 sm:opacity-0 sm:group-hover:opacity-100'}`}
                       />
                     </th>
                     <th className="px-2 sm:px-3 py-3 text-left whitespace-nowrap">{t.common.date}</th>
@@ -1422,8 +1422,9 @@ export default function FinancesTransactionsPage() {
                               </td>
                               <td className="px-2 sm:px-3 py-2 hidden sm:table-cell">
                                 {tx.finance_categories && (
-                                  <span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ backgroundColor: tx.finance_categories.color + '22', color: tx.finance_categories.color }}>
-                                    {tx.finance_categories.icon} {tx.finance_categories.name}
+                                  <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full bg-[var(--arvo-track-bg)] text-[var(--arvo-fg-muted)]">
+                                    <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: tx.finance_categories.color }} />
+                                    {tx.finance_categories.name}
                                   </span>
                                 )}
                               </td>
@@ -1446,7 +1447,7 @@ export default function FinancesTransactionsPage() {
                             type="checkbox"
                             checked={isSelected}
                             onChange={() => toggleSelect(tx.id)}
-                            className="rounded border-[var(--arvo-border)] text-[var(--arvo-fg)] focus:ring-[var(--arvo-fg)]/20 cursor-pointer"
+                            className={`rounded border-[var(--arvo-border)] text-[var(--arvo-fg)] focus:ring-[var(--arvo-fg)]/20 cursor-pointer transition-opacity ${selected.size > 0 ? 'opacity-100' : 'opacity-100 sm:opacity-0 sm:group-hover:opacity-100'}`}
                           />
                         </td>
                         <td className="px-2 sm:px-3 py-2.5 sm:py-3 text-[var(--arvo-fg-muted)] whitespace-nowrap text-xs sm:text-sm">{fmtDate(tx.date)}</td>
@@ -1492,8 +1493,9 @@ export default function FinancesTransactionsPage() {
                               onClick={e => { e.stopPropagation(); setEditSheetTx(tx); setSheetCatId(tx.category_id); setSheetSharedCatId(tx.shared_category_id) }}
                             >
                               {tx.finance_categories ? (
-                                <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium" style={{ backgroundColor: tx.finance_categories.color + '22', color: tx.finance_categories.color }}>
-                                  {tx.finance_categories.icon} {tx.finance_categories.name}
+                                <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-[var(--arvo-track-bg)] text-[var(--arvo-fg-muted)]">
+                                  <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: tx.finance_categories.color }} />
+                                  {tx.finance_categories.name}
                                 </span>
                               ) : (
                                 <span className="text-[10px] text-[var(--arvo-fg-soft)]">+ {t.finances.category}</span>
@@ -1545,8 +1547,9 @@ export default function FinancesTransactionsPage() {
                           ) : (
                             <button onClick={() => setEditingId(tx.id)} className="flex items-center gap-1.5 group/cat">
                               {tx.finance_categories ? (
-                                <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: tx.finance_categories.color + '22', color: tx.finance_categories.color }}>
-                                  {tx.finance_categories.icon} {tx.finance_categories.name}
+                                <span className="inline-flex items-center gap-1.5 text-xs px-2 py-0.5 rounded-full font-medium bg-[var(--arvo-track-bg)] text-[var(--arvo-fg-muted)]">
+                                  <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: tx.finance_categories.color }} />
+                                  {tx.finance_categories.name}
                                 </span>
                               ) : (
                                 <span className="text-xs text-[var(--arvo-fg-soft)] [@media(hover:hover)]:text-[var(--arvo-fg-faint)] group-hover/cat:text-[var(--arvo-fg-muted)] transition-colors">+ {t.finances.category}</span>
