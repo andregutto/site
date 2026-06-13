@@ -6,6 +6,7 @@ import { useCurrency } from '../../contexts/CurrencyContext'
 import { usePortfolioValue } from '../../hooks/usePortfolio'
 import { PageLoader } from '../../components/ArvoLoader'
 import PageHeaderTabs from '../../components/PageHeaderTabs'
+import { Icon } from '../../components/icons'
 
 function _fmt(n: number, currency: string) {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n)
@@ -223,7 +224,7 @@ export default function FinancesInsightsPage() {
 
         {subscriptions.length === 0 ? (
           <div className="bg-[var(--arvo-surface)] rounded-2xl border border-[var(--arvo-border)] shadow-sm p-12 text-center">
-            <div className="text-4xl mb-3">🔍</div>
+            <Icon name="search" size={40} className="mx-auto mb-3 text-[var(--arvo-fg-faint)]" />
             <p className="text-sm font-medium text-[var(--arvo-fg)]">{t.finances.noSubscriptions}</p>
             <p className="text-xs text-[var(--arvo-fg-soft)] mt-1 max-w-xs mx-auto">{t.finances.noSubscriptionsHint}</p>
           </div>
@@ -235,7 +236,7 @@ export default function FinancesInsightsPage() {
                 <p className="text-xs text-[var(--arvo-fg-soft)] uppercase tracking-wide font-medium mb-1">
                   {t.finances.subscriptionsTotalMonthly}
                 </p>
-                <p className="text-2xl font-bold" style={{ color: 'var(--arvo-fg)', fontFamily: 'var(--arvo-font-body)' }}>
+                <p className="text-2xl font-bold arvo-num" style={{ color: 'var(--arvo-fg)', fontFamily: 'var(--arvo-font-body)' }}>
                   {fmtSub(totalMonthly, mainCurrency)}
                 </p>
                 <p className="text-xs text-[var(--arvo-fg-soft)] mt-0.5">
@@ -246,7 +247,7 @@ export default function FinancesInsightsPage() {
                 <p className="text-xs text-[var(--arvo-fg-soft)] uppercase tracking-wide font-medium mb-1">
                   {t.finances.subscriptionsTotalAnnual}
                 </p>
-                <p className="text-2xl font-bold" style={{ color: 'var(--arvo-fg)', fontFamily: 'var(--arvo-font-body)' }}>
+                <p className="text-2xl font-bold arvo-num" style={{ color: 'var(--arvo-fg)', fontFamily: 'var(--arvo-font-body)' }}>
                   {fmtSub(totalAnnual, mainCurrency)}
                 </p>
                 <p className="text-xs text-[var(--arvo-fg-soft)] mt-0.5">{t.finances.perYear}</p>
@@ -263,7 +264,7 @@ export default function FinancesInsightsPage() {
                       className="w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0"
                       style={{ background: `${FREQ_COLORS[sub.frequency]}14` }}
                     >
-                      {sub.category ? sub.category.icon : '🔄'}
+                      {sub.category ? sub.category.icon : <Icon name="repeat" size={18} style={{ color: FREQ_COLORS[sub.frequency] }} />}
                     </div>
 
                     <div className="flex-1 min-w-0">
@@ -271,7 +272,9 @@ export default function FinancesInsightsPage() {
                         <span className="text-sm font-semibold text-[var(--arvo-fg)] truncate">{sub.name}</span>
                         <span
                           className="text-xs font-medium px-1.5 py-0.5 rounded-full shrink-0"
-                          style={{ background: `${FREQ_COLORS[sub.frequency]}18`, color: FREQ_COLORS[sub.frequency] }}
+                          style={sub.frequency === 'monthly'
+                            ? { background: 'var(--arvo-gold-tint)', color: 'var(--arvo-gold-text)' }
+                            : { background: `${FREQ_COLORS[sub.frequency]}18`, color: FREQ_COLORS[sub.frequency] }}
                         >
                           {freqLabel[sub.frequency]}
                         </span>
@@ -287,8 +290,8 @@ export default function FinancesInsightsPage() {
                   {/* Amounts + Dismiss */}
                   <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-6 sm:shrink-0">
                     <div className="text-left sm:text-right shrink-0">
-                      <p className="text-base font-bold text-[var(--arvo-fg)]">{fmtSub(sub.median_amount, sub.currency)}</p>
-                      <p className="text-xs text-[var(--arvo-fg-soft)]">{fmtSub(sub.annual_cost, sub.currency)}{t.finances.perYear}</p>
+                      <p className="text-base font-bold text-[var(--arvo-fg)] arvo-num">{fmtSub(sub.median_amount, sub.currency)}</p>
+                      <p className="text-xs text-[var(--arvo-fg-soft)] arvo-num">{fmtSub(sub.annual_cost, sub.currency)}{t.finances.perYear}</p>
                     </div>
 
                     <button
@@ -353,16 +356,16 @@ export default function FinancesInsightsPage() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="bg-[var(--arvo-surface)] rounded-2xl border border-[var(--arvo-border)] shadow-sm px-5 py-4">
                 <p className="text-xs text-[var(--arvo-fg-soft)] uppercase tracking-wide font-medium mb-1">{f.totalFees}</p>
-                <p className="text-2xl font-bold" style={{ color: '#D63B2F', fontFamily: 'var(--arvo-font-body)' }}>{fmt(feeResult?.total ?? 0)}</p>
+                <p className="text-2xl font-bold arvo-num" style={{ color: '#D63B2F', fontFamily: 'var(--arvo-font-body)' }}>{fmt(feeResult?.total ?? 0)}</p>
               </div>
               <div className="bg-[var(--arvo-surface)] rounded-2xl border border-[var(--arvo-border)] shadow-sm px-5 py-4">
                 <p className="text-xs text-[var(--arvo-fg-soft)] uppercase tracking-wide font-medium mb-1">{f.avgMonthly}</p>
-                <p className="text-2xl font-bold" style={{ color: 'var(--arvo-fg)', fontFamily: 'var(--arvo-font-body)' }}>{fmt(avgMonthly)}</p>
+                <p className="text-2xl font-bold arvo-num" style={{ color: 'var(--arvo-fg)', fontFamily: 'var(--arvo-font-body)' }}>{fmt(avgMonthly)}</p>
               </div>
               {etfTotalCost > 0 && (
                 <div className="bg-[var(--arvo-surface)] rounded-2xl border border-[var(--arvo-border)] shadow-sm px-5 py-4">
                   <p className="text-xs text-[var(--arvo-fg-soft)] uppercase tracking-wide font-medium mb-1">{f.etfTotalCost}</p>
-                  <p className="text-2xl font-bold" style={{ color: '#E8A020', fontFamily: 'var(--arvo-font-body)' }}>{fmt(etfTotalCost)}</p>
+                  <p className="text-2xl font-bold arvo-num" style={{ color: '#E8A020', fontFamily: 'var(--arvo-font-body)' }}>{fmt(etfTotalCost)}</p>
                 </div>
               )}
             </div>
@@ -378,7 +381,7 @@ export default function FinancesInsightsPage() {
                       <div className="flex-1 min-w-0">
                         <div className="flex justify-between items-baseline gap-2 mb-1">
                           <span className="text-sm font-medium text-[var(--arvo-fg)] truncate">{cat.name}</span>
-                          <span className="text-xs font-semibold shrink-0" style={{ color: '#D63B2F' }}>{fmt(cat.total)}</span>
+                          <span className="text-xs font-semibold shrink-0 arvo-num" style={{ color: '#D63B2F' }}>{fmt(cat.total)}</span>
                         </div>
                         <div className="h-1 rounded-full bg-[var(--arvo-track-bg)]">
                           <div className="h-full rounded-full" style={{ width: `${(cat.total / (feeResult?.total ?? 1)) * 100}%`, background: cat.color || CHART_COLOR }} />
@@ -412,7 +415,7 @@ export default function FinancesInsightsPage() {
               </div>
             ) : (
               <div className="bg-[var(--arvo-surface)] rounded-2xl border border-[var(--arvo-border)] shadow-sm p-8 text-center">
-                <div className="text-3xl mb-3">✅</div>
+                <Icon name="check" size={28} className="mx-auto mb-3" style={{ color: 'var(--arvo-green)' }} />
                 <div className="text-sm font-semibold text-[var(--arvo-fg)] mb-1">{f.noFees}</div>
                 <div className="text-xs text-[var(--arvo-fg-soft)] max-w-sm mx-auto">{f.noFeesHint}</div>
               </div>
@@ -436,14 +439,14 @@ export default function FinancesInsightsPage() {
                     <div key={etf.code} className="grid gap-2 py-2.5 border-b border-[var(--arvo-border)]" style={{ gridTemplateColumns: '64px 1fr 56px 80px 80px' }}>
                       <div className="text-sm font-bold text-[var(--arvo-fg)]">{etf.code}</div>
                       <div className="text-xs text-[var(--arvo-fg-soft)] overflow-hidden text-ellipsis whitespace-nowrap">{etf.name}</div>
-                      <div className="text-xs font-semibold" style={{ color: '#E8A020' }}>{etf.ter.toFixed(3)}%</div>
-                      <div className="text-xs text-[var(--arvo-fg-soft)] text-right">{fmt(etf.value)}</div>
-                      <div className="text-xs font-medium text-right" style={{ color: '#D63B2F' }}>{fmt(etf.annualCost)}</div>
+                      <div className="text-xs font-semibold arvo-num" style={{ color: '#E8A020' }}>{etf.ter.toFixed(3)}%</div>
+                      <div className="text-xs text-[var(--arvo-fg-soft)] text-right arvo-num">{fmt(etf.value)}</div>
+                      <div className="text-xs font-medium text-right arvo-num" style={{ color: '#D63B2F' }}>{fmt(etf.annualCost)}</div>
                     </div>
                   ))}
                   <div className="flex justify-end items-baseline gap-2 mt-3">
                     <span className="text-xs text-[var(--arvo-fg-soft)]">{f.etfTotalCost}</span>
-                    <span className="text-base font-bold" style={{ color: '#D63B2F' }}>{fmt(etfTotalCost)}</span>
+                    <span className="text-base font-bold arvo-num" style={{ color: '#D63B2F' }}>{fmt(etfTotalCost)}</span>
                   </div>
                 </div>
               )}
