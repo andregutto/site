@@ -168,7 +168,7 @@ function BrReport({ year }: { year: number }) {
   return (
     <div className="space-y-5">
       {/* Step nav */}
-      <div className="flex items-center">
+      <div className="flex items-center overflow-x-auto scrollbar-none">
         {(['overview', 'rv', 'bens'] as const).map((s, i) => {
           const labels = [bt.step1, bt.step2, bt.step3]
           const isActive = step === s
@@ -986,7 +986,7 @@ function FrReport({ year }: { year: number }) {
   return (
     <div className="space-y-5">
       {/* Step nav */}
-      <div className="flex items-center">
+      <div className="flex items-center overflow-x-auto scrollbar-none">
         {(['overview', 'fx_choice', 'preview'] as const).map((s, i) => {
           const labels = [ft.step1, ft.step2, ft.step3]
           const isActive = step === s
