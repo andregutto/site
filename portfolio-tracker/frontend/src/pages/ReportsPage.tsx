@@ -105,7 +105,7 @@ export default function ReportsPage() {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="flex items-center justify-between gap-4 flex-wrap">
-        <h1 className="text-xl font-bold text-[var(--arvo-fg)]">Relatorios IR</h1>
+        <h1 className="text-xl font-bold text-[var(--arvo-fg)]">Relatórios IR</h1>
         <div className="flex items-center gap-3">
           <select
             value={year}
@@ -167,13 +167,18 @@ function BrReport({ year }: { year: number }) {
   return (
     <div className="space-y-5">
       {/* Step nav */}
-      <div className="flex gap-2 text-xs font-medium flex-wrap">
+      <div className="flex items-center">
         {(['overview', 'rv', 'bens'] as const).map((s, i) => {
           const labels = [bt.step1, bt.step2, bt.step3]
+          const isActive = step === s
           return (
-            <button key={s} onClick={() => setStep(s)}
-              className={`px-3 py-1.5 rounded-full border transition-colors ${step === s ? 'bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] border-[var(--arvo-fg)]' : 'border-[var(--arvo-border)] text-[var(--arvo-fg-muted)] hover:bg-[var(--arvo-surface-2)]'}`}
-            >{labels[i]}</button>
+            <div key={s} className={`flex items-center ${i < 2 ? 'flex-1' : ''}`}>
+              <button onClick={() => setStep(s)} className="flex items-center gap-2.5 shrink-0">
+                <span className="text-2xl leading-none tabular-nums transition-colors" style={{ fontFamily: 'var(--arvo-font-display)', color: isActive ? 'var(--arvo-fg)' : 'var(--arvo-fg-faint)' }}>0{i + 1}</span>
+                <span className={`text-xs uppercase tracking-wide transition-colors ${isActive ? 'text-[var(--arvo-fg)] font-semibold' : 'text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg-muted)]'}`}>{labels[i].replace(/^\d+\.\s*/, '')}</span>
+              </button>
+              {i < 2 && <div className="flex-1 h-px mx-3" style={{ background: 'var(--arvo-border)' }} />}
+            </div>
           )
         })}
       </div>
@@ -185,7 +190,7 @@ function BrReport({ year }: { year: number }) {
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             <Card label={bt.kpiBens}     value={String(brData.bens_direitos.length)}  valueClass="text-[var(--arvo-fg)]" />
             <Card label={bt.kpiIsentos}  value={fmtBRL(brData.total_isentos)}         valueClass="text-green-600 dark:text-green-300" />
-            <Card label={bt.kpiExclusiva} value={fmtBRL(brData.total_exclusiva)}      valueClass="text-purple-600 dark:text-purple-300" />
+            <Card label={bt.kpiExclusiva} value={fmtBRL(brData.total_exclusiva)}      valueClass="text-[var(--arvo-gold-text)]" />
             <Card label={bt.kpiDARF}     value={fmtBRL(brData.total_darf_rv)}         valueClass={brData.total_darf_rv > 0 ? 'text-red-600 dark:text-red-300' : 'text-[var(--arvo-fg-soft)]'} />
             <Card label={bt.kpiCarneLeao} value={fmtBRL(brData.total_carne_leao)}     valueClass={brData.total_carne_leao > 0 ? 'text-orange-600 dark:text-orange-300' : 'text-[var(--arvo-fg-soft)]'} />
             <Card label={bt.kpiIRRetido} value={fmtBRL(brData.ir_retido_total)}       valueClass="text-blue-600 dark:text-blue-300" />
@@ -211,10 +216,9 @@ function BrReport({ year }: { year: number }) {
           </Section>
 
           {/* Manual instructions */}
-          <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 text-sm text-blue-800 dark:bg-blue-950/40 dark:border-blue-900 dark:text-blue-200">
-            <p className="font-semibold mb-1">{bt.instrTitle}</p>
+          <InfoBox variant="action" title={bt.instrTitle}>
             <p>{bt.instrText}</p>
-          </div>
+          </InfoBox>
 
           {/* Summary totals */}
           {(brData.total_darf_rv > 0 || brData.total_carne_leao > 0 || totalRend > 0) && (
@@ -402,11 +406,11 @@ function BrReport({ year }: { year: number }) {
                 <div key={g.codigo} className="py-3 border-b border-[var(--arvo-border-soft)] last:border-0">
                   <div className="flex items-center justify-between gap-2 mb-2">
                     <div className="flex items-center gap-2">
-                      <span className="font-mono text-xs text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded dark:text-purple-300 dark:bg-purple-950/40">{g.codigo}</span>
+                      <span className="font-mono text-xs text-[var(--arvo-gold-text)] bg-[var(--arvo-gold-tint)] px-1.5 py-0.5 rounded">{g.codigo}</span>
                       <span className="text-sm font-medium text-[var(--arvo-fg)]">{g.descricao}</span>
                     </div>
                     <div className="text-right">
-                      <span className="font-semibold text-purple-700 dark:text-purple-300">{fmtBRL(g.total)}</span>
+                      <span className="font-semibold text-[var(--arvo-gold-text)]">{fmtBRL(g.total)}</span>
                       {g.ir_retido_total > 0 && <span className="text-xs text-[var(--arvo-fg-soft)] ml-2">IR retido: {fmtBRL(g.ir_retido_total)}</span>}
                     </div>
                   </div>
@@ -981,15 +985,18 @@ function FrReport({ year }: { year: number }) {
   return (
     <div className="space-y-5">
       {/* Step nav */}
-      <div className="flex gap-2 text-xs font-medium flex-wrap">
+      <div className="flex items-center">
         {(['overview', 'fx_choice', 'preview'] as const).map((s, i) => {
           const labels = [ft.step1, ft.step2, ft.step3]
+          const isActive = step === s
           return (
-            <button
-              key={s}
-              onClick={() => setStep(s)}
-              className={`px-3 py-1.5 rounded-full border transition-colors ${step === s ? 'bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] border-[var(--arvo-fg)]' : 'border-[var(--arvo-border)] text-[var(--arvo-fg-muted)] hover:bg-[var(--arvo-surface-2)]'}`}
-            >{labels[i]}</button>
+            <div key={s} className={`flex items-center ${i < 2 ? 'flex-1' : ''}`}>
+              <button onClick={() => setStep(s)} className="flex items-center gap-2.5 shrink-0">
+                <span className="text-2xl leading-none tabular-nums transition-colors" style={{ fontFamily: 'var(--arvo-font-display)', color: isActive ? 'var(--arvo-fg)' : 'var(--arvo-fg-faint)' }}>0{i + 1}</span>
+                <span className={`text-xs uppercase tracking-wide transition-colors ${isActive ? 'text-[var(--arvo-fg)] font-semibold' : 'text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg-muted)]'}`}>{labels[i].replace(/^\d+\.\s*/, '')}</span>
+              </button>
+              {i < 2 && <div className="flex-1 h-px mx-3" style={{ background: 'var(--arvo-border)' }} />}
+            </div>
           )
         })}
       </div>
@@ -1002,7 +1009,7 @@ function FrReport({ year }: { year: number }) {
             <Card label={ft.kpiRevenues} value={noEvents ? '—' : fmtEUR(comp.daily.total_eur)} valueClass="text-blue-700 dark:text-blue-300" />
             <Card label={ft.kpiDividends} value={noEvents ? '—' : fmtEUR(comp.daily.dividends_eur)} valueClass="text-blue-600 dark:text-blue-300" />
             <Card label={ft.kpiInterests} value={noEvents ? '—' : fmtEUR(comp.daily.interests_eur)} valueClass="text-green-700 dark:text-green-300" />
-            <Card label={ft.kpiCapGains} value={fmtEUR(taxData.total_gain_eur_daily)} valueClass={taxData.total_gain_eur_daily >= 0 ? 'text-violet-700 dark:text-violet-300' : 'text-red-600 dark:text-red-300'} />
+            <Card label={ft.kpiCapGains} value={fmtEUR(taxData.total_gain_eur_daily)} valueClass={taxData.total_gain_eur_daily >= 0 ? 'text-[var(--arvo-gold-text)]' : 'text-red-600 dark:text-red-300'} />
           </div>
 
           {/* ── Compléter votre déclaration ───────────────────────────────────── */}
@@ -1039,48 +1046,38 @@ function FrReport({ year }: { year: number }) {
                 <p className="text-xs font-semibold text-[var(--arvo-fg-muted)] mb-3 uppercase tracking-wide">{ft.manualSources}</p>
 
                 {/* JCP */}
-                <div className="flex gap-2 mb-4 p-3 bg-blue-50 rounded-xl border border-blue-100 dark:bg-blue-950/40 dark:border-blue-900">
-                  <span className="text-blue-400 shrink-0 mt-0.5 dark:text-blue-500">ℹ</span>
-                  <div className="text-xs text-blue-800 space-y-0.5 dark:text-blue-200">
-                    <p className="font-semibold">{ft.jcpTitle}</p>
-                    <p>{ft.jcpDesc}</p>
-                    <p className="text-blue-600 dark:text-blue-300">{ft.jcpNote}</p>
-                  </div>
-                </div>
+                <InfoBox variant="info" title={ft.jcpTitle} className="mb-4">
+                  <p>{ft.jcpDesc}</p>
+                  <p className="text-[var(--arvo-fg-soft)]">{ft.jcpNote}</p>
+                </InfoBox>
 
                 {/* Renda fixa */}
-                <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 space-y-3 dark:bg-amber-950/40 dark:border-amber-900">
-                  <div className="flex gap-2">
-                    <span className="text-amber-500 shrink-0 mt-0.5 font-bold dark:text-amber-400">!</span>
-                    <div className="text-xs text-amber-900 dark:text-amber-200">
-                      <p className="font-semibold mb-1">{ft.rfTitle}</p>
-                      <p className="mb-2">{ft.rfDesc}</p>
-                      <div className="grid grid-cols-2 gap-x-4 gap-y-1 bg-[var(--arvo-surface)] rounded-lg p-2 border border-amber-100 dark:border-amber-900">
-                        <div>
-                          <p className="text-amber-700 font-medium dark:text-amber-300">{ft.rfColInforme}</p>
-                          <p className="text-[var(--arvo-fg-muted)]">{ft.rfField1}</p>
-                          <p className="text-[var(--arvo-fg-muted)]">{ft.rfField2}</p>
-                        </div>
-                        <div>
-                          <p className="text-amber-700 font-medium dark:text-amber-300">{ft.rfColArvo}</p>
-                          <p className="font-semibold text-[var(--arvo-fg)]">{ft.rfArrow1}</p>
-                          <p className="font-semibold text-[var(--arvo-fg)]">{ft.rfArrow2}</p>
-                        </div>
-                      </div>
+                <InfoBox variant="action" title={ft.rfTitle} className="space-y-3">
+                  <p>{ft.rfDesc}</p>
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs bg-[var(--arvo-surface)] rounded-lg p-2 border border-[var(--arvo-border)]">
+                    <div>
+                      <p className="font-medium text-[var(--arvo-fg)]">{ft.rfColInforme}</p>
+                      <p className="text-[var(--arvo-fg-muted)]">{ft.rfField1}</p>
+                      <p className="text-[var(--arvo-fg-muted)]">{ft.rfField2}</p>
+                    </div>
+                    <div>
+                      <p className="font-medium text-[var(--arvo-fg)]">{ft.rfColArvo}</p>
+                      <p className="font-semibold text-[var(--arvo-fg)]">{ft.rfArrow1}</p>
+                      <p className="font-semibold text-[var(--arvo-fg)]">{ft.rfArrow2}</p>
                     </div>
                   </div>
 
                   {/* Quick-add toggle */}
                   <button
                     onClick={() => setShowAddIncome(v => !v)}
-                    className="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold bg-amber-100 hover:bg-amber-200 text-amber-900 rounded-lg transition-colors dark:bg-amber-900/40 dark:hover:bg-amber-900/60 dark:text-amber-200"
+                    className="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold bg-[var(--arvo-gold-tint)] hover:bg-[var(--arvo-gold)]/20 text-[var(--arvo-gold-text)] rounded-lg transition-colors"
                   >
                     <span>{ft.addIncomBtn}</span>
                     <span>{showAddIncome ? '▲' : '▼'}</span>
                   </button>
 
                   {showAddIncome && (
-                    <div className="bg-[var(--arvo-surface)] border border-amber-200 rounded-xl p-4 space-y-3 dark:border-amber-900">
+                    <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-xl p-4 space-y-3">
                       <p className="text-xs font-semibold text-[var(--arvo-fg)]">{ft.newIncomeTitle}</p>
 
                       <div className="grid sm:grid-cols-2 gap-3">
@@ -1089,7 +1086,7 @@ function FrReport({ year }: { year: number }) {
                           <select
                             value={incAssetId}
                             onChange={e => setIncAssetId(e.target.value)}
-                            className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-300 bg-[var(--arvo-surface)] dark:focus:ring-amber-700"
+                            className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--arvo-gold)]/40 bg-[var(--arvo-surface)]"
                           >
                             <option value="">{ft.selectAsset}</option>
                             {userAssets.filter(a => a.asset_type === 'fixed_income').length > 0 && (
@@ -1108,20 +1105,20 @@ function FrReport({ year }: { year: number }) {
                             )}
                           </select>
                           {userAssets.filter(a => a.asset_type === 'fixed_income').length === 0 && (
-                            <p className="text-xs text-amber-600 mt-1 dark:text-amber-300">{ft.noFixedIncome}</p>
+                            <p className="text-xs text-[var(--arvo-gold-text)] mt-1">{ft.noFixedIncome}</p>
                           )}
                         </div>
 
                         <div>
                           <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{ft.incDate}</label>
                           <input type="date" value={incDate} onChange={e => setIncDate(e.target.value)}
-                            className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-300 dark:focus:ring-amber-700" />
+                            className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--arvo-gold)]/40" />
                         </div>
 
                         <div>
                           <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{ft.incDesc}</label>
                           <select value={incDesc} onChange={e => setIncDesc(e.target.value)}
-                            className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-300 bg-[var(--arvo-surface)] dark:focus:ring-amber-700">
+                            className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--arvo-gold)]/40 bg-[var(--arvo-surface)]">
                             <option value="cdb">CDB</option>
                             <option value="lci">LCI</option>
                             <option value="lca">LCA</option>
@@ -1134,20 +1131,20 @@ function FrReport({ year }: { year: number }) {
 
                         <div>
                           <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">
-                            {ft.incGross} <span className="text-amber-600 font-semibold dark:text-amber-300">{ft.incGrossHint}</span>
+                            {ft.incGross} <span className="text-[var(--arvo-gold-text)] font-semibold">{ft.incGrossHint}</span>
                           </label>
                           <input type="text" inputMode="decimal" value={incGross} onChange={e => setIncGross(e.target.value)}
                             placeholder="ex: 1234,56"
-                            className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-300 dark:focus:ring-amber-700" />
+                            className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--arvo-gold)]/40" />
                         </div>
 
                         <div>
                           <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">
-                            {ft.incIR} <span className="text-amber-600 font-semibold dark:text-amber-300">{ft.incIRHint}</span>
+                            {ft.incIR} <span className="text-[var(--arvo-gold-text)] font-semibold">{ft.incIRHint}</span>
                           </label>
                           <input type="text" inputMode="decimal" value={incIR} onChange={e => setIncIR(e.target.value)}
                             placeholder="ex: 185,18"
-                            className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-300 dark:focus:ring-amber-700" />
+                            className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--arvo-gold)]/40" />
                           <p className="text-xs text-[var(--arvo-fg-soft)] mt-0.5">{ft.incIRNote}</p>
                         </div>
                       </div>
@@ -1166,16 +1163,12 @@ function FrReport({ year }: { year: number }) {
                       </div>
                     </div>
                   )}
-                </div>
+                </InfoBox>
 
                 {/* French broker note */}
-                <div className="flex gap-2 mt-3 p-3 bg-[var(--arvo-surface-2)] rounded-xl border border-[var(--arvo-border)]">
-                  <span className="text-[var(--arvo-fg-soft)] shrink-0 mt-0.5">ℹ</span>
-                  <div className="text-xs text-[var(--arvo-fg-muted)]">
-                    <p className="font-semibold mb-0.5">{ft.frenchBrokerTitle}</p>
-                    <p>{ft.frenchBrokerDesc}</p>
-                  </div>
-                </div>
+                <InfoBox variant="info" title={ft.frenchBrokerTitle} className="mt-3">
+                  <p>{ft.frenchBrokerDesc}</p>
+                </InfoBox>
               </div>
             </div>
           </Section>
@@ -1187,13 +1180,9 @@ function FrReport({ year }: { year: number }) {
             ) : (
               <div className="space-y-0">
                 {taxData.accounts.some(a => a.system_filled) && (
-                  <div className="flex gap-2 mb-3 p-3 bg-amber-50 border border-amber-200 rounded-xl dark:bg-amber-950/40 dark:border-amber-900">
-                    <span className="text-amber-500 shrink-0 dark:text-amber-400">⚠</span>
-                    <div className="text-xs text-amber-800 dark:text-amber-200">
-                      <p className="font-semibold mb-0.5">{ft.warn3916SystemFilled}</p>
-                      <p>{ft.warn3916Institutions}</p>
-                    </div>
-                  </div>
+                  <InfoBox variant="action" title={ft.warn3916SystemFilled} className="mb-3">
+                    <p>{ft.warn3916Institutions}</p>
+                  </InfoBox>
                 )}
                 <div className="divide-y divide-[var(--arvo-border-soft)]">
                   {taxData.accounts.map(a => (
@@ -1202,7 +1191,7 @@ function FrReport({ year }: { year: number }) {
                         <div className="flex items-center gap-2">
                           <p className="font-medium text-sm text-[var(--arvo-fg)]">{a.institution}</p>
                           {a.system_filled && (
-                            <span className="text-[10px] bg-amber-100 text-amber-700 rounded px-1.5 py-0.5 font-medium shrink-0 dark:bg-amber-900/40 dark:text-amber-300">verificar</span>
+                            <span className="text-[10px] bg-[var(--arvo-blue-tint)] text-[var(--arvo-blue)] rounded px-1.5 py-0.5 font-medium shrink-0">verificar</span>
                           )}
                         </div>
                         <p className="text-xs text-[var(--arvo-fg-soft)]">{a.address}</p>
@@ -1250,8 +1239,8 @@ function FrReport({ year }: { year: number }) {
                       <td className="py-2 text-[var(--arvo-fg)]">—</td>
                       <td className="py-2 text-[var(--arvo-fg-muted)] text-xs">—</td>
                       <td className="py-2 text-[var(--arvo-fg)]">{ft.descCapGain}</td>
-                      <td className="py-2 text-center"><span className="text-xs bg-violet-100 text-violet-700 rounded px-1.5 py-0.5 font-mono dark:bg-violet-900/40 dark:text-violet-300">3VG</span></td>
-                      <td className={`py-2 text-right font-semibold ${taxData.total_gain_eur_daily >= 0 ? 'text-violet-700 dark:text-violet-300' : 'text-red-600 dark:text-red-300'}`}>{fmtEUR(taxData.total_gain_eur_daily)}</td>
+                      <td className="py-2 text-center"><span className="text-xs bg-[var(--arvo-gold-tint)] text-[var(--arvo-gold-text)] rounded px-1.5 py-0.5 font-mono">3VG</span></td>
+                      <td className={`py-2 text-right font-semibold ${taxData.total_gain_eur_daily >= 0 ? 'text-[var(--arvo-gold-text)]' : 'text-red-600 dark:text-red-300'}`}>{fmtEUR(taxData.total_gain_eur_daily)}</td>
                       <td className="py-2 text-right text-[var(--arvo-fg-soft)] text-xs">{taxData.capital_gains.length}</td>
                     </tr>
                   )}
@@ -1266,13 +1255,9 @@ function FrReport({ year }: { year: number }) {
           )}
 
           {saidaFiscal && (
-            <div className="flex items-start gap-3 p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 dark:bg-amber-950/40 dark:border-amber-900 dark:text-amber-200">
-              <span className="shrink-0 font-bold text-amber-600 dark:text-amber-300">!</span>
-              <div>
-                <p className="font-semibold">{ft.saidaFiscalBannerTitle}</p>
-                <p className="text-amber-700 mt-0.5 dark:text-amber-300">{ft.saidaFiscalBannerDesc}</p>
-              </div>
-            </div>
+            <InfoBox variant="action" title={ft.saidaFiscalBannerTitle}>
+              <p>{ft.saidaFiscalBannerDesc}</p>
+            </InfoBox>
           )}
 
           <div className="flex justify-end">
@@ -1335,7 +1320,7 @@ function FrReport({ year }: { year: number }) {
                     <div className="flex justify-between"><span className="text-[var(--arvo-fg-muted)]">{ft.lblDividends}</span><span className="font-medium">{fmtEUR(comp.daily.dividends_eur)}</span></div>
                     <div className="flex justify-between"><span className="text-[var(--arvo-fg-muted)]">{ft.lblInterests}</span><span className="font-medium">{fmtEUR(comp.daily.interests_eur)}</span></div>
                     {taxData.capital_gains.length > 0 && (
-                      <div className="flex justify-between"><span className="text-[var(--arvo-fg-muted)]">{ft.lblCapGains}</span><span className={`font-medium ${taxData.total_gain_eur_daily >= 0 ? 'text-violet-700 dark:text-violet-300' : 'text-red-500 dark:text-red-400'}`}>{fmtEUR(taxData.total_gain_eur_daily)}</span></div>
+                      <div className="flex justify-between"><span className="text-[var(--arvo-fg-muted)]">{ft.lblCapGains}</span><span className={`font-medium ${taxData.total_gain_eur_daily >= 0 ? 'text-[var(--arvo-gold-text)]' : 'text-red-500 dark:text-red-400'}`}>{fmtEUR(taxData.total_gain_eur_daily)}</span></div>
                     )}
                     <div className="flex justify-between border-t border-[var(--arvo-border)] pt-1 mt-1"><span className="font-semibold">{ft.lblTotal}</span><span className="font-bold text-blue-700 dark:text-blue-300">{fmtEUR(comp.daily.total_eur)}</span></div>
                     <div className="flex justify-between"><span className="text-[var(--arvo-fg-muted)]">{ft.lblCredit}</span><span className="font-medium text-orange-600 dark:text-orange-300">{fmtEUR(comp.daily.credit_eur)}</span></div>
@@ -1359,7 +1344,7 @@ function FrReport({ year }: { year: number }) {
                       <div className="flex justify-between"><span className="text-[var(--arvo-fg-muted)]">{ft.lblDividends}</span><span className="font-medium">{fmtEUR(comp.year_end.dividends_eur)}</span></div>
                       <div className="flex justify-between"><span className="text-[var(--arvo-fg-muted)]">{ft.lblInterests}</span><span className="font-medium">{fmtEUR(comp.year_end.interests_eur)}</span></div>
                       {taxData.capital_gains.length > 0 && (
-                        <div className="flex justify-between"><span className="text-[var(--arvo-fg-muted)]">{ft.lblCapGains}</span><span className={`font-medium ${taxData.total_gain_eur_year_end >= 0 ? 'text-violet-700 dark:text-violet-300' : 'text-red-500 dark:text-red-400'}`}>{fmtEUR(taxData.total_gain_eur_year_end)}</span></div>
+                        <div className="flex justify-between"><span className="text-[var(--arvo-fg-muted)]">{ft.lblCapGains}</span><span className={`font-medium ${taxData.total_gain_eur_year_end >= 0 ? 'text-[var(--arvo-gold-text)]' : 'text-red-500 dark:text-red-400'}`}>{fmtEUR(taxData.total_gain_eur_year_end)}</span></div>
                       )}
                       <div className="flex justify-between border-t border-[var(--arvo-border)] pt-1 mt-1"><span className="font-semibold">{ft.lblTotal}</span><span className="font-bold text-blue-700 dark:text-blue-300">{fmtEUR(comp.year_end.total_eur)}</span></div>
                       <div className="flex justify-between"><span className="text-[var(--arvo-fg-muted)]">{ft.lblCredit}</span><span className="font-medium text-orange-600 dark:text-orange-300">{fmtEUR(comp.year_end.credit_eur)}</span></div>
@@ -1368,10 +1353,9 @@ function FrReport({ year }: { year: number }) {
                 </button>
               </div>
 
-              <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 text-xs text-blue-800 dark:bg-blue-950/40 dark:border-blue-900 dark:text-blue-200">
-                <span className="font-medium">{ft.fxDiff} : {fmtEUR(comp.advantage_eur)}</span>
-                {' '}— {comp.recommended === 'daily' ? ft.optionATitle : ft.optionBTitle} ({fmtEUR(comp.advantage_eur)} {ft.fxAdvantage}).
-              </div>
+              <InfoBox variant="info" title={ft.fxDiff}>
+                <p>{fmtEUR(comp.advantage_eur)} — {comp.recommended === 'daily' ? ft.optionATitle : ft.optionBTitle} ({fmtEUR(comp.advantage_eur)} {ft.fxAdvantage}).</p>
+              </InfoBox>
             </div>
           </Section>
 
@@ -1419,10 +1403,10 @@ function FrReport({ year }: { year: number }) {
                 const gainEur = fxMethod === 'daily' ? taxData.total_gain_eur_daily : taxData.total_gain_eur_year_end
                 const isGain  = gainEur >= 0
                 return (
-                  <div className={`${isGain ? 'bg-violet-50 border-violet-100 dark:bg-violet-950/40 dark:border-violet-900' : 'bg-red-50 border-red-100 dark:bg-red-950/40 dark:border-red-900'} border rounded-xl p-4`}>
-                    <p className={`text-xs font-mono mb-1 ${isGain ? 'text-violet-600 dark:text-violet-300' : 'text-red-500 dark:text-red-400'}`}>{isGain ? 'Case 3VG' : 'Case 3VM'}</p>
-                    <p className={`text-xl font-bold ${isGain ? 'text-violet-800 dark:text-violet-200' : 'text-red-700 dark:text-red-300'}`}>{fmtEUR(Math.abs(gainEur))}</p>
-                    <p className={`text-xs mt-1 ${isGain ? 'text-violet-500 dark:text-violet-400' : 'text-red-400 dark:text-red-500'}`}>{isGain ? ft.descCapGain : ft.descCapLoss}</p>
+                  <div className={`${isGain ? 'bg-[var(--arvo-gold-tint)] border-[var(--arvo-gold)]/20' : 'bg-red-50 border-red-100 dark:bg-red-950/40 dark:border-red-900'} border rounded-xl p-4`}>
+                    <p className={`text-xs font-mono mb-1 ${isGain ? 'text-[var(--arvo-gold-text)]' : 'text-red-500 dark:text-red-400'}`}>{isGain ? 'Case 3VG' : 'Case 3VM'}</p>
+                    <p className={`text-xl font-bold ${isGain ? 'text-[var(--arvo-gold-text)]' : 'text-red-700 dark:text-red-300'}`}>{fmtEUR(Math.abs(gainEur))}</p>
+                    <p className={`text-xs mt-1 ${isGain ? 'text-[var(--arvo-gold-text)]/70' : 'text-red-400 dark:text-red-500'}`}>{isGain ? ft.descCapGain : ft.descCapLoss}</p>
                   </div>
                 )
               })()}
@@ -1461,7 +1445,7 @@ function FrReport({ year }: { year: number }) {
                           <td className="py-1.5 text-right text-[var(--arvo-fg-muted)]">{fmtBRL(g.sale_value_brl)}</td>
                           <td className="py-1.5 text-right text-[var(--arvo-fg-muted)]">{fmtBRL(g.cost_basis_brl)}</td>
                           <td className={`py-1.5 text-right font-semibold ${g.gain_loss_brl >= 0 ? 'text-green-700 dark:text-green-300' : 'text-red-600 dark:text-red-300'}`}>{fmtBRL(g.gain_loss_brl)}</td>
-                          <td className={`py-1.5 text-right font-semibold ${gainEur >= 0 ? 'text-violet-700 dark:text-violet-300' : 'text-red-600 dark:text-red-300'}`}>
+                          <td className={`py-1.5 text-right font-semibold ${gainEur >= 0 ? 'text-[var(--arvo-gold-text)]' : 'text-red-600 dark:text-red-300'}`}>
                             {fmtEUR(gainEur)}
                             <span className="text-[var(--arvo-fg-faint)] font-normal ml-1">{fxR.toFixed(4)}</span>
                           </td>
@@ -1470,7 +1454,7 @@ function FrReport({ year }: { year: number }) {
                     })}
                     <tr className="border-t-2 border-[var(--arvo-border)] bg-[var(--arvo-surface-2)] font-semibold text-sm">
                       <td colSpan={7} className="py-2 text-right text-xs text-[var(--arvo-fg-muted)]">{ft.totalNetGain}</td>
-                      <td className={`py-2 text-right ${(fxMethod === 'daily' ? taxData.total_gain_eur_daily : taxData.total_gain_eur_year_end) >= 0 ? 'text-violet-700 dark:text-violet-300' : 'text-red-600 dark:text-red-300'}`}>
+                      <td className={`py-2 text-right ${(fxMethod === 'daily' ? taxData.total_gain_eur_daily : taxData.total_gain_eur_year_end) >= 0 ? 'text-[var(--arvo-gold-text)]' : 'text-red-600 dark:text-red-300'}`}>
                         {fmtEUR(fxMethod === 'daily' ? taxData.total_gain_eur_daily : taxData.total_gain_eur_year_end)}
                       </td>
                     </tr>
@@ -1595,6 +1579,20 @@ function Card({ label, value, valueClass }: { label: string; value: string; valu
     <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl p-4 shadow-sm">
       <p className="text-xs text-[var(--arvo-fg-soft)] mb-1">{label}</p>
       <p className={`text-lg font-bold ${valueClass ?? 'text-[var(--arvo-fg)]'}`}>{value}</p>
+    </div>
+  )
+}
+
+/* Unified instruction box: beige surface, gold hairline for info, blue for
+   action items. Replaces the old Bootstrap-style blue/amber/gray alerts. */
+function InfoBox({ variant, title, className = '', children }: { variant: 'info' | 'action'; title: string; className?: string; children: React.ReactNode }) {
+  return (
+    <div
+      className={`rounded-xl p-4 text-sm text-[var(--arvo-fg-muted)] space-y-1 ${className}`}
+      style={{ background: 'var(--arvo-surface-2)', borderLeft: `2px solid ${variant === 'action' ? 'var(--arvo-blue)' : 'var(--arvo-gold)'}` }}
+    >
+      <p className="text-xs font-semibold uppercase tracking-wide text-[var(--arvo-fg)]">{title}</p>
+      {children}
     </div>
   )
 }
