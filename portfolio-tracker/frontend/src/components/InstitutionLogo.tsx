@@ -21,17 +21,6 @@ const INSTITUTION_DOMAINS: Record<string, string> = {
   'WARREN':                       'warren.com.br',
 }
 
-const COLORS = [
-  '#0D0D0D','#10B981','#F59E0B','#EF4444','#8B5CF6',
-  '#EC4899','#06B6D4','#F97316','#6366F1','#14B8A6',
-]
-
-function nameToColor(name: string): string {
-  let hash = 0
-  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash)
-  return COLORS[Math.abs(hash) % COLORS.length]
-}
-
 function getDomain(name: string): string | null {
   if (INSTITUTION_DOMAINS[name]) return INSTITUTION_DOMAINS[name]
   // Try partial match
@@ -46,7 +35,6 @@ export default function InstitutionLogo({ name, size = 32 }: { name: string; siz
   const [imgError, setImgError] = useState(false)
   const domain = getDomain(name)
   const initials = name.replace(/\bS[./]A\.?|CCTVM|LTDA\.?|BANCO|BCO\b/gi, '').trim().slice(0, 2).toUpperCase()
-  const color = nameToColor(name)
 
   const style = { width: size, height: size, minWidth: size }
 
@@ -64,8 +52,8 @@ export default function InstitutionLogo({ name, size = 32 }: { name: string; siz
 
   return (
     <div
-      style={{ ...style, backgroundColor: color }}
-      className="rounded-lg flex items-center justify-center text-white font-bold shrink-0"
+      style={{ ...style, background: 'var(--arvo-black)', color: 'var(--arvo-gold)' }}
+      className="rounded-lg flex items-center justify-center font-semibold shrink-0"
       title={name}
     >
       <span style={{ fontSize: size * 0.35 }}>{initials}</span>

@@ -360,7 +360,7 @@ export default function InstitutionPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-3 shrink-0 ml-4">
-                  {group.total > 0 && <p className="font-bold text-[var(--arvo-fg)]">{fmt(group.total)}</p>}
+                  {group.total > 0 && <p className="font-bold text-[var(--arvo-fg)] tabular-nums">{fmt(group.total)}</p>}
                 </div>
               </button>
 
@@ -393,8 +393,8 @@ export default function InstitutionPage() {
                                   <p className="text-xs text-[var(--arvo-fg-soft)] truncate">{asset.name}</p>
                                 </div>
                                 <div className="text-right shrink-0">
-                                  <p className="text-sm font-semibold text-[var(--arvo-fg)]">{fmt(asset.value_brl)}</p>
-                                  <p className="text-xs text-[var(--arvo-fg-soft)]">
+                                  <p className="text-sm font-semibold text-[var(--arvo-fg)] tabular-nums">{fmt(asset.value_brl)}</p>
+                                  <p className="text-xs text-[var(--arvo-fg-soft)] tabular-nums">
                                     {portfolio.total_brl > 0 ? ((asset.value_brl / portfolio.total_brl) * 100).toFixed(1) : '0'}%
                                   </p>
                                 </div>
@@ -427,7 +427,7 @@ export default function InstitutionPage() {
                               </span>
                             )}
                           </div>
-                          <p className={`text-lg font-bold ${acc.balance < 0 ? 'text-red-600' : 'text-[var(--arvo-fg)]'}`}>
+                          <p className={`text-lg font-bold tabular-nums ${acc.balance < 0 ? 'text-red-600' : 'text-[var(--arvo-fg)]'}`}>
                             {fmtBalance(acc.balance, acc.currency)}
                           </p>
                         </div>
@@ -536,7 +536,7 @@ export default function InstitutionPage() {
                       <p className="text-sm font-medium text-[var(--arvo-fg)]">{asset.code}</p>
                       <p className="text-xs text-[var(--arvo-fg-soft)] truncate">{asset.name}</p>
                     </div>
-                    <p className="text-sm font-semibold text-[var(--arvo-fg)] shrink-0">{fmt(asset.value_brl)}</p>
+                    <p className="text-sm font-semibold text-[var(--arvo-fg)] shrink-0 tabular-nums">{fmt(asset.value_brl)}</p>
                   </button>
                 ))
               )}
