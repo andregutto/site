@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, type CSSProperties } from 'react'
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom'
 import { useAssetDetail, clearPerfCache } from '../hooks/usePortfolio'
 import { useDividends } from '../hooks/useDividends'
@@ -10,12 +10,30 @@ import InstitutionSelect from '../components/InstitutionSelect'
 import MigrateToFIModal from '../components/MigrateToFIModal'
 import ManualValueModal from '../components/ManualValueModal'
 import type { PortfolioAsset, ManualValue } from '../lib/types'
+import { StatDelta } from '../components/ui'
+import { ArvoTooltip, CHART_GRID_STROKE, CHART_AXIS_TICK, CHART_SERIES } from '../components/charts'
 import {
   LineChart, Line, XAxis, YAxis, Tooltip,
   ResponsiveContainer, CartesianGrid, ReferenceLine,
 } from 'recharts'
 
 const LOCALE_MAP: Record<string, string> = { pt: 'pt-BR', en: 'en-US', fr: 'fr-FR' }
+
+const kpiLabelStyle: CSSProperties = {
+  fontFamily: 'var(--arvo-font-body)',
+  fontSize: 11,
+  fontWeight: 600,
+  letterSpacing: '0.10em',
+  textTransform: 'uppercase',
+  color: 'var(--arvo-fg-soft)',
+  whiteSpace: 'nowrap',
+}
+
+const kpiValueStyle: CSSProperties = {
+  fontFamily: 'var(--arvo-font-body)',
+  letterSpacing: '0.04em',
+  color: 'var(--arvo-fg)',
+}
 
 function fmtDate(iso: string, intlLocale: string) {
   return new Date(iso + 'T12:00:00').toLocaleDateString(intlLocale, { day: '2-digit', month: 'short', year: '2-digit' })
@@ -62,28 +80,6 @@ function fiIndexerLabel(
   if (fi_type === 'pre'       && fi_rate   != null) return `${(fi_rate   * 100).toFixed(2)}% ${d.fiAa}`
   if (fi_type === 'ipca_plus' && fi_spread != null) return `${d.fiIpcaPlus} + ${(fi_spread * 100).toFixed(2)}% ${d.fiAa}`
   return null
-}
-
-interface SummaryCardProps {
-  label: string
-  value: string
-  sub?: string
-  positive?: boolean | null
-  neutral?: boolean
-}
-
-function SummaryCard({ label, value, sub, positive, neutral }: SummaryCardProps) {
-  return (
-    <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl p-4 shadow-sm">
-      <p className="text-xs text-[var(--arvo-fg-soft)] uppercase tracking-wide mb-1">{label}</p>
-      <p className={`text-xl font-bold ${
-        neutral ? 'text-[var(--arvo-fg)]' :
-        positive === true  ? 'text-green-600' :
-        positive === false ? 'text-red-600'   : 'text-[var(--arvo-fg)]'
-      }`}>{value}</p>
-      {sub && <p className="text-xs text-[var(--arvo-fg-soft)] mt-0.5">{sub}</p>}
-    </div>
-  )
 }
 
 export default function AssetDetailPage() {
@@ -160,7 +156,7 @@ export default function AssetDetailPage() {
       .then(setAvailableClasses)
       .catch(() => {})
     apiFetch<{ splits: import('../lib/types').SplitEvent[] }>(`/assets/${id}/split-check`)
-      .then(r => setSplitWarnings(r.splits))
+      .then(r => setSplitWarnings(r.splits ?? []))
       .catch(() => {})
   }, [id])
 
@@ -295,6 +291,9 @@ export default function AssetDetailPage() {
   }
 
 
+  const history = data.history ?? []
+  const contributions = data.contributions ?? []
+
   const weightPct = totalBrl > 0 ? (data.current_value_brl / totalBrl) * 100 : null
 
   const priceLabel = data.current_price != null
@@ -306,14 +305,14 @@ export default function AssetDetailPage() {
     : null
 
   // Daily chart data — use directly for short periods
-  const allDailyData = data.history
+  const allDailyData = history
     .filter(h => h.value_brl > 0)
     .map(h => ({ label: fmtDate(h.date, intlLocale), value: convert(h.value_brl), date: h.date, invested: h.invested_brl != null ? convert(h.invested_brl) : undefined }))
 
   // Monthly chart data — for longer periods
   const allMonthlyData = (() => {
     const byMonth = new Map<string, { value: number; invested?: number }>()
-    for (const h of data.history) {
+    for (const h of history) {
       if (h.value_brl > 0) byMonth.set(h.date.substring(0, 7), { value: convert(h.value_brl), invested: h.invested_brl != null ? convert(h.invested_brl) : undefined })
     }
     return Array.from(byMonth.entries()).map(([monthKey, { value, invested }]) => ({
@@ -360,7 +359,7 @@ export default function AssetDetailPage() {
   const isStale = canUpdateManualValue && (daysSinceUpdate === null || daysSinceUpdate > 30)
 
   const firstBuyValue = (() => {
-    const buys = [...data.contributions]
+    const buys = [...contributions]
       .filter(c => c.type === 'buy' && (c.value_brl ?? 0) > 0)
       .sort((a, b) => a.date.localeCompare(b.date))
     return buys.length > 0 ? (buys[0].value_brl ?? null) : null
@@ -375,12 +374,12 @@ export default function AssetDetailPage() {
   ]
 
   const periodStats = (() => {
-    if (detailPeriod === 'all' || data.history.length === 0) {
+    if (detailPeriod === 'all' || history.length === 0) {
       // All-time BRL return (gain_loss_pct) uses invested_brl at historical FX → includes real FX effect
       // Native return uses first price in history vs current price → pure price movement
       let nativeGainPct: number | null = null
       if (data.current_price && data.asset_type === 'ticker' && data.price_currency !== 'BRL') {
-        const firstPriced = data.history.find(h => h.price > 0)
+        const firstPriced = history.find(h => h.price > 0)
         if (firstPriced && firstPriced.price > 0) {
           nativeGainPct = Math.round((data.current_price / firstPriced.price - 1) * 10000) / 100
         }
@@ -399,9 +398,9 @@ export default function AssetDetailPage() {
         case 'ytd': return `${nowD.getFullYear()}-01-01`
       }
     })()
-    const prevEntries = data.history.filter(h => h.date < startDate)
+    const prevEntries = history.filter(h => h.date < startDate)
     const valueAtStart = prevEntries.length > 0 ? prevEntries[prevEntries.length-1].value_brl : 0
-    const contribsInPeriod = data.contributions
+    const contribsInPeriod = contributions
       .filter(c => c.date >= startDate && c.type === 'buy')
       .reduce((s, c) => s + (c.value_brl ?? 0), 0)
     const gainBrl = data.current_value_brl - valueAtStart - contribsInPeriod
@@ -505,6 +504,7 @@ export default function AssetDetailPage() {
       {/* Header */}
       <div className="flex items-start gap-2">
         <div className="flex-1 min-w-0">
+          <span className="arvo-eyebrow block mb-1">{t.nav.assets}</span>
           {/* Title row: back + favorite + code (code gets all remaining width) */}
           <div className="flex items-center gap-1.5">
             <button
@@ -528,7 +528,17 @@ export default function AssetDetailPage() {
                 </svg>
               </button>
             )}
-            <h1 className="text-xl font-bold text-[var(--arvo-fg)] flex-1 min-w-0">{data.code}</h1>
+            <h1
+              className="flex-1 min-w-0"
+              style={{
+                fontFamily: 'var(--arvo-font-display)',
+                fontWeight: 400,
+                fontSize: 'clamp(22px, 2.2vw, 26px)',
+                letterSpacing: 'var(--arvo-track-normal)',
+                lineHeight: 'var(--arvo-leading-tight)',
+                color: 'var(--arvo-fg)',
+              }}
+            >{data.code}</h1>
           </div>
 
           {/* Name (editable) */}
@@ -727,113 +737,72 @@ export default function AssetDetailPage() {
         ))}
       </div>
 
-      {/* Summary cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <SummaryCard label={d.currentValue} value={fmt(data.current_value_brl)} neutral />
-        <SummaryCard
-          label={d.invested}
-          value={data.invested_brl > 0 ? fmt(data.invested_brl) : '—'}
-          neutral
-        />
-        {/* P&L card — % prominent, absolute value secondary */}
-        <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl p-4 shadow-sm">
-          <p className="text-xs text-[var(--arvo-fg-soft)] uppercase tracking-wide mb-1">{periodStats.isAllTime ? d.gainLoss : d.periodGain}</p>
-          {periodStats.gainPct != null ? (
-            <>
-              <p className={`text-xl font-bold ${periodStats.gainBrl > 0 ? 'text-green-600' : periodStats.gainBrl < 0 ? 'text-red-600' : 'text-[var(--arvo-fg)]'}`}>
-                {periodStats.gainPct >= 0 ? '+' : ''}{periodStats.gainPct.toFixed(2)}%
-                {periodStats.isAllTime && data.price_currency !== 'BRL' && (
-                  <span className="text-[10px] font-normal text-[var(--arvo-fg-soft)] ml-1">BRL</span>
+      {/* KPIs em faixa */}
+      <div className="rounded-2xl p-5" style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)' }}>
+        <div className={`grid grid-cols-2 sm:grid-cols-4 ${data.total_income_brl > 0 ? 'lg:grid-cols-5' : ''} gap-4 sm:gap-6`}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <span style={kpiLabelStyle}>{d.currentValue}</span>
+            <span className="arvo-num text-base sm:text-lg" style={kpiValueStyle}>{fmt(data.current_value_brl)}</span>
+          </div>
+          <div className="sm:border-l sm:pl-6" style={{ display: 'flex', flexDirection: 'column', gap: 6, borderColor: 'var(--arvo-border)' }}>
+            <span style={kpiLabelStyle}>{d.invested}</span>
+            <span className="arvo-num text-base sm:text-lg" style={kpiValueStyle}>{data.invested_brl > 0 ? fmt(data.invested_brl) : '—'}</span>
+          </div>
+          {/* P&L — % prominent, absolute value secondary */}
+          <div className="sm:border-l sm:pl-6" style={{ display: 'flex', flexDirection: 'column', gap: 6, borderColor: 'var(--arvo-border)' }}>
+            <span style={kpiLabelStyle}>{periodStats.isAllTime ? d.gainLoss : d.periodGain}</span>
+            {periodStats.gainPct != null ? (
+              <>
+                <span className="inline-flex items-baseline gap-1">
+                  <StatDelta className="text-base sm:text-lg" value={periodStats.gainPct} formatted={`${Math.abs(periodStats.gainPct).toFixed(2)}%`} />
+                  {periodStats.isAllTime && data.price_currency !== 'BRL' && (
+                    <span className="text-[10px] font-normal" style={{ color: 'var(--arvo-fg-soft)' }}>BRL</span>
+                  )}
+                </span>
+                <span className={`arvo-num text-xs ${periodStats.gainBrl > 0 ? 'arvo-delta-pos' : periodStats.gainBrl < 0 ? 'arvo-delta-neg' : 'arvo-delta-neutral'}`}>
+                  {periodStats.gainBrl >= 0 ? '+' : ''}{fmt(periodStats.gainBrl)}
+                </span>
+                {/* For all-time: show native currency % (different because invested_brl used real historical FX) */}
+                {periodStats.nativeGainPct != null && periodStats.isAllTime && (
+                  <span className="text-xs" style={{ color: 'var(--arvo-fg-soft)' }}>
+                    {data.price_currency}: {periodStats.nativeGainPct >= 0 ? '+' : ''}{periodStats.nativeGainPct.toFixed(2)}%
+                  </span>
                 )}
-              </p>
-              <p className={`text-xs mt-0.5 ${periodStats.gainBrl > 0 ? 'text-green-600' : periodStats.gainBrl < 0 ? 'text-red-600' : 'text-[var(--arvo-fg-muted)]'}`}>
-                {periodStats.gainBrl >= 0 ? '+' : ''}{fmt(periodStats.gainBrl)}
-              </p>
-              {/* For all-time: show native currency % (different because invested_brl used real historical FX) */}
-              {periodStats.nativeGainPct != null && periodStats.isAllTime && (
-                <p className="text-xs text-[var(--arvo-fg-soft)] mt-0.5">
-                  {data.price_currency}: {periodStats.nativeGainPct >= 0 ? '+' : ''}{periodStats.nativeGainPct.toFixed(2)}%
-                </p>
-              )}
-            </>
-          ) : (
-            <p className="text-xl font-bold text-[var(--arvo-fg)]">—</p>
+              </>
+            ) : (
+              <span className="arvo-num text-base sm:text-lg" style={{ color: 'var(--arvo-fg-faint)' }}>—</span>
+            )}
+          </div>
+          {/* Quantity (tickers) or portfolio weight */}
+          <div className="sm:border-l sm:pl-6" style={{ display: 'flex', flexDirection: 'column', gap: 6, borderColor: 'var(--arvo-border)' }}>
+            {data.holdings != null ? (
+              <>
+                <span style={kpiLabelStyle}>{d.quantity}</span>
+                <span className="arvo-num text-base sm:text-lg" style={kpiValueStyle}>{fmtNum(data.holdings, 6, intlLocale)}</span>
+                {data.avg_cost_brl != null && (
+                  <span className="text-xs" style={{ color: 'var(--arvo-fg-soft)' }}>{d.avgCostSub} {fmt(data.avg_cost_brl)}</span>
+                )}
+              </>
+            ) : weightPct != null ? (
+              <>
+                <span style={kpiLabelStyle}>{d.weight}</span>
+                <span className="arvo-num text-base sm:text-lg" style={kpiValueStyle}>{weightPct.toFixed(1)}%</span>
+              </>
+            ) : (
+              <>
+                <span style={kpiLabelStyle}>{d.weight}</span>
+                <span className="arvo-num text-base sm:text-lg" style={{ color: 'var(--arvo-fg-faint)' }}>—</span>
+              </>
+            )}
+          </div>
+          {data.total_income_brl > 0 && (
+            <div className="col-span-2 sm:col-span-1 sm:border-l sm:pl-6" style={{ display: 'flex', flexDirection: 'column', gap: 6, borderColor: 'var(--arvo-border)' }}>
+              <span style={kpiLabelStyle}>{d.totalReturn}</span>
+              <StatDelta className="text-base sm:text-lg" value={data.total_income_brl} formatted={fmt(data.total_income_brl)} />
+            </div>
           )}
         </div>
-        {data.holdings != null ? (
-          <SummaryCard
-            label={d.quantity}
-            value={fmtNum(data.holdings, 6, intlLocale)}
-            sub={data.avg_cost_brl != null ? `${d.avgCostSub} ${fmt(data.avg_cost_brl)}` : undefined}
-            neutral
-          />
-        ) : weightPct != null ? (
-          <SummaryCard label={d.weight} value={`${weightPct.toFixed(1)}%`} neutral />
-        ) : (
-          <SummaryCard label={d.weight} value="—" neutral />
-        )}
-        {data.total_income_brl > 0 && (
-          <SummaryCard label={d.totalReturn} value={fmt(data.total_income_brl)} positive />
-        )}
       </div>
-
-      {/* Current position (tickers only) */}
-      {data.asset_type === 'ticker' && data.holdings != null && data.holdings > 0 && (
-        <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-4">
-          <h2 className="font-semibold text-indigo-900 text-sm mb-3">{d.currentPosition}</h2>
-          <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
-            {data.avg_cost_brl != null && (
-              <>
-                <div>
-                  <p className="text-xs text-indigo-500 uppercase tracking-wide mb-0.5">{d.avgCostPaid}</p>
-                  <p className="font-bold text-indigo-900 text-sm">
-                    BRL {fmtNum(data.avg_cost_brl, 2, intlLocale)}
-                  </p>
-                  {data.price_currency !== 'BRL' && data.current_price != null && data.current_value_brl > 0 && (
-                    <p className="text-xs text-indigo-400">
-                      {data.price_currency} {fmtNum(data.avg_cost_brl / (data.current_value_brl / (data.holdings * data.current_price)), 2, intlLocale)}
-                    </p>
-                  )}
-                </div>
-                <div className="w-px h-8 bg-indigo-200 hidden sm:block" />
-              </>
-            )}
-            {data.current_price != null && (
-              <>
-                <div>
-                  <p className="text-xs text-indigo-500 uppercase tracking-wide mb-0.5">{d.currentPrice}</p>
-                  <p className="font-bold text-indigo-900 text-sm">
-                    {data.price_currency} {fmtNum(data.current_price, 2, intlLocale)}
-                  </p>
-                  {currentPriceBrlDisplay != null && (
-                    <p className="text-xs text-indigo-400">BRL {fmtNum(currentPriceBrlDisplay, 2, intlLocale)}</p>
-                  )}
-                  <p className="text-xs text-indigo-400">{priceSourceLabel(data.price_source, d)}</p>
-                </div>
-                <div className="w-px h-8 bg-indigo-200 hidden sm:block" />
-              </>
-            )}
-            {data.gain_loss_pct != null && (
-              <>
-                <div>
-                  <p className="text-xs text-indigo-500 uppercase tracking-wide mb-0.5">{d.totalReturn}</p>
-                  <p className={`font-bold text-sm ${data.gain_loss_pct >= 0 ? 'text-green-700' : 'text-red-600'}`}>
-                    {data.gain_loss_pct >= 0 ? '+' : ''}{data.gain_loss_pct.toFixed(2)}%
-                  </p>
-                  <p className={`text-xs ${data.gain_loss_brl >= 0 ? 'text-green-600' : 'text-red-500'}`}>
-                    {data.gain_loss_brl >= 0 ? '+' : ''}{fmt(data.gain_loss_brl)}
-                  </p>
-                </div>
-                <div className="w-px h-8 bg-indigo-200 hidden sm:block" />
-              </>
-            )}
-            <div>
-              <p className="text-xs text-indigo-500 uppercase tracking-wide mb-0.5">{d.quantity}</p>
-              <p className="font-bold text-indigo-900 text-sm">{fmtNum(data.holdings, data.holdings < 10 ? 6 : 2, intlLocale)}</p>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Fixed income indexer */}
       {data.asset_type === 'fixed_income' && (
@@ -1006,14 +975,18 @@ export default function AssetDetailPage() {
           <div className="h-52">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+                <CartesianGrid stroke={CHART_GRID_STROKE} vertical={false} />
                 <XAxis
                   dataKey="label"
-                  tick={{ fontSize: 10, fill: '#9ca3af' }}
+                  tick={CHART_AXIS_TICK}
+                  tickLine={false}
+                  axisLine={false}
                   interval="preserveStartEnd"
                 />
                 <YAxis
-                  tick={{ fontSize: 10, fill: '#9ca3af' }}
+                  tick={CHART_AXIS_TICK}
+                  tickLine={false}
+                  axisLine={false}
                   tickFormatter={v => {
                     if (Math.abs(v) >= 1000) return `${(v / 1000).toFixed(0)}k`
                     return String(v)
@@ -1028,17 +1001,20 @@ export default function AssetDetailPage() {
                   })()}
                 />
                 <Tooltip
-                  formatter={(v, name) => [
-                    new Intl.NumberFormat(intlLocale, { style: 'currency', currency, maximumFractionDigits: 0 }).format(Number(v)),
-                    name === 'invested' ? d.investedRef : d.tooltipValue,
-                  ]}
-                  contentStyle={{ borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 12 }}
+                  content={
+                    <ArvoTooltip
+                      formatter={(v, name) => [
+                        new Intl.NumberFormat(intlLocale, { style: 'currency', currency, maximumFractionDigits: 0 }).format(v),
+                        name === 'invested' ? d.investedRef : d.tooltipValue,
+                      ]}
+                    />
+                  }
                 />
                 {chartData.some(pt => (pt as { invested?: number }).invested != null) ? (
                   <Line
                     type="stepAfter"
                     dataKey="invested"
-                    stroke="#f59e0b"
+                    stroke={CHART_SERIES.ocre}
                     strokeWidth={1.5}
                     strokeDasharray="4 2"
                     dot={false}
@@ -1048,15 +1024,15 @@ export default function AssetDetailPage() {
                 ) : data.invested_brl > 0 ? (
                   <ReferenceLine
                     y={convert(data.invested_brl)}
-                    stroke="#f59e0b"
+                    stroke={CHART_SERIES.ocre}
                     strokeDasharray="4 2"
-                    label={{ value: d.investedRef, fontSize: 10, fill: '#f59e0b' }}
+                    label={{ value: d.investedRef, fontSize: 10, fill: 'var(--arvo-ocre)' }}
                   />
                 ) : null}
                 <Line
                   type="monotone"
                   dataKey="value"
-                  stroke="var(--arvo-fg)"
+                  stroke={CHART_SERIES.portfolio}
                   strokeWidth={2}
                   dot={false}
                   activeDot={{ r: 4 }}
@@ -1073,7 +1049,7 @@ export default function AssetDetailPage() {
           assetName={data.name}
           assetCode={data.code}
           investedBrl={data.invested_brl}
-          hasContributions={data.contributions.length > 0}
+          hasContributions={contributions.length > 0}
           onClose={() => setShowMigrateModal(false)}
           onSaved={() => { setShowMigrateModal(false); refresh() }}
         />
@@ -1207,10 +1183,10 @@ export default function AssetDetailPage() {
           <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl overflow-hidden shadow-sm">
             <div className="px-5 py-4 border-b border-[var(--arvo-border)]">
               <h2 className="font-semibold text-[var(--arvo-fg)]">
-                {d.contribTitle}{data.contributions.length > 0 ? ` (${data.contributions.length})` : ''}
+                {d.contribTitle}{contributions.length > 0 ? ` (${contributions.length})` : ''}
               </h2>
             </div>
-            {data.contributions.length === 0 ? (
+            {contributions.length === 0 ? (
               <p className="text-center text-[var(--arvo-fg-soft)] py-8 text-sm">
                 {t.contributions.noContributions}
               </p>
@@ -1230,7 +1206,7 @@ export default function AssetDetailPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-[var(--arvo-border-soft)]">
-                      {data.contributions.map(c => {
+                      {contributions.map(c => {
                         const totalBrlVal = c.value_brl ?? (c.price_orig != null
                           ? c.price_orig * c.quantity * (c.fx_rate_brl ?? 1)
                           : null)
@@ -1290,7 +1266,7 @@ export default function AssetDetailPage() {
                 </div>
                 {/* mobile cards */}
                 <div className="sm:hidden divide-y divide-[var(--arvo-border-soft)]">
-                  {data.contributions.map(c => {
+                  {contributions.map(c => {
                     const totalBrlVal = c.value_brl ?? (c.price_orig != null
                       ? c.price_orig * c.quantity * (c.fx_rate_brl ?? 1)
                       : null)
