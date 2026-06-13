@@ -3,6 +3,7 @@ import { apiFetch } from '../../lib/api'
 import { useI18n } from '../../contexts/I18nContext'
 import { useAuth } from '../../contexts/AuthContext'
 import { useCurrency } from '../../contexts/CurrencyContext'
+import { Icon } from '../../components/icons'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -147,17 +148,15 @@ export default function SharedCategoriesPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 22, letterSpacing: '0.06em', color: 'var(--arvo-fg)' }}>{s.pageTitle}</h1>
-          <p className="text-xs mt-0.5" style={{ color: 'var(--arvo-fg-soft)' }}>{s.pageSubtitle}</p>
+          <h1 style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 18, letterSpacing: '0.06em', color: 'var(--arvo-fg)' }}>{s.pageTitle}</h1>
+          <p className="text-sm mt-0.5" style={{ color: 'var(--arvo-fg-muted)' }}>{s.pageSubtitle}</p>
         </div>
         <button
           onClick={() => setShowGroupModal('new')}
           className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs transition-all"
           style={{ background: 'var(--arvo-fg)', color: 'var(--arvo-pill-active-fg)', fontFamily: 'var(--arvo-font-body)', letterSpacing: '0.08em' }}
         >
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M8 1v14M1 8h14" />
-          </svg>
+          <Icon name="plus" size={14} />
           {s.newGroup}
         </button>
       </div>
@@ -453,7 +452,9 @@ function GroupPanel({ group, userId, s, onEditGroup, onInvite, onResendInvite, o
                         className="mt-1.5 text-xs flex items-center gap-1.5"
                         style={{ color: m.salary_authorized ? 'var(--arvo-green)' : 'var(--arvo-fg-soft)', opacity: toggingSalary ? 0.5 : 1 }}
                       >
-                        <span style={{ fontSize: 14 }}>{m.salary_authorized ? '✅' : '☐'}</span>
+                        {m.salary_authorized
+                          ? <Icon name="check" size={12} />
+                          : <span style={{ display: 'inline-block', width: 10, height: 10, border: '1.5px solid currentColor', borderRadius: 3 }} />}
                         {m.salary_authorized ? s.salaryAuthorized : s.authorizeSalary}
                       </button>
                     )}
@@ -549,9 +550,7 @@ function GroupPanel({ group, userId, s, onEditGroup, onInvite, onResendInvite, o
             className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-xs transition-all border border-dashed"
             style={{ borderColor: 'var(--arvo-border)', color: 'var(--arvo-fg-soft)', fontFamily: 'var(--arvo-font-body)' }}
           >
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M8 1v14M1 8h14" />
-            </svg>
+            <Icon name="plus" size={14} />
             {s.addCategory}
           </button>
           <button
@@ -559,9 +558,7 @@ function GroupPanel({ group, userId, s, onEditGroup, onInvite, onResendInvite, o
             className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-xs transition-all border border-dashed"
             style={{ borderColor: 'var(--arvo-border)', color: 'var(--arvo-fg-soft)', fontFamily: 'var(--arvo-font-body)' }}
           >
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M1.5 3h13M1.5 8h8.5M1.5 13h5.5" />
-            </svg>
+            <Icon name="rows" size={14} />
             {s.useExistingCategory ?? 'Usar existente'}
           </button>
         </div>
@@ -677,9 +674,7 @@ function CategoryDetailPanel({ loading, detail, s, onClose }: {
       <div className="flex items-center justify-between">
         <p className="text-sm font-medium" style={{ color: 'var(--arvo-fg)' }}>{s.thisMonth}</p>
         <button onClick={onClose} style={{ color: 'var(--arvo-fg-soft)' }}>
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
-            <path strokeLinecap="round" d="M3 3l10 10M13 3L3 13" />
-          </svg>
+          <Icon name="x" size={16} strokeWidth={2} />
         </button>
       </div>
       {loading && <div className="h-24 rounded-lg animate-pulse" style={{ background: 'var(--arvo-border)' }} />}
@@ -687,9 +682,7 @@ function CategoryDetailPanel({ loading, detail, s, onClose }: {
         <>
           {detail.alerts.map(a => (
             <div key={a.user_id} className="flex items-center gap-2 px-3 py-2 rounded-lg" style={{ background: 'rgba(214,59,47,0.08)', border: '1px solid rgba(214,59,47,0.15)' }}>
-              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4 shrink-0" style={{ color: 'var(--arvo-red)' }}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M8 2l6 11H2L8 2zM8 7v3M8 11.5v.5" />
-              </svg>
+              <Icon name="alert" size={16} className="shrink-0" style={{ color: 'var(--arvo-red)' }} />
               <p className="text-xs" style={{ color: 'var(--arvo-red)' }}>
                 <strong>{a.name}</strong> {s.overspentAlert} (+{fmt(a.overspent_by, detail.category.currency)})
               </p>
