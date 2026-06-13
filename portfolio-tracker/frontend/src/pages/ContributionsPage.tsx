@@ -944,19 +944,20 @@ export default function ContributionsPage() {
                   const label = btnType === 'income' ? t.contributions.incomeLabel
                     : isRfAsset ? (btnType === 'buy' ? t.contributions.contributionLabel : t.contributions.redemptionLabel)
                     : (btnType === 'buy' ? t.contributions.buyLabel : t.contributions.sellLabel)
-                  const activeColor = btnType === 'buy' ? 'bg-green-600 text-white border-green-600'
-                    : btnType === 'income' ? 'bg-purple-600 text-white border-purple-600'
-                    : 'bg-red-600 text-white border-red-600'
+                  const activeBg = btnType === 'buy' ? 'var(--arvo-green)' : btnType === 'income' ? 'var(--arvo-gold)' : 'var(--arvo-red)'
+                  const activeFg = btnType === 'income' ? 'var(--arvo-fg)' : '#fff'
+                  const isActive = !isSellDisabled && type === btnType
                   return (
                     <button
                       key={btnType}
                       type="button"
                       onClick={() => { if (!isSellDisabled) setType(btnType) }}
                       disabled={isSellDisabled}
+                      style={isActive ? { background: activeBg, color: activeFg, borderColor: activeBg } : undefined}
                       className={`flex-1 py-2 text-sm font-medium rounded-lg border transition-colors ${
                         isSellDisabled
                           ? 'border-[var(--arvo-border)] text-[var(--arvo-fg-faint)] cursor-not-allowed'
-                          : type === btnType ? activeColor : 'border-[var(--arvo-border)] text-[var(--arvo-fg-muted)] hover:bg-[var(--arvo-surface-2)]'
+                          : isActive ? '' : 'border-[var(--arvo-border)] text-[var(--arvo-fg-muted)] hover:bg-[var(--arvo-surface-2)]'
                       }`}
                     >{label}</button>
                   )
