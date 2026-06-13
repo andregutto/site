@@ -83,12 +83,9 @@ const ENV_TYPE_KEY: Record<string, string> = {
 
 const CHART_PALETTE = [
   '#1B4FD8', // azul arara
+  '#E8A020', // dourado (ocre tucano)
   '#A36A52', // terracota
-  '#E8A020', // tucano âmbar
-  '#7B4FCC', // índigo
-  '#0A7E6E', // verde teal
-  '#C86A28', // laranja escuro
-  '#5B8CD8', // azul claro
+  '#1F8A5B', // verde maritaca
 ]
 
 function resolveEnvName(name: string, type: string | undefined, nameKey: string | null | undefined, keys: Record<string, string>): string {
@@ -712,7 +709,7 @@ export default function FinancesOverviewPage() {
                   className="h-full rounded-full transition-all duration-500"
                   style={{
                     width: incomeEnvelopeBar.budget > 0 ? `${Math.min((incomeEnvelopeBar.actual / incomeEnvelopeBar.budget) * 100, 100)}%` : '0%',
-                    backgroundColor: incomeEnvelopeBar.actual === 0 ? '#e5e7eb' : incomeEnvelopeBar.color,
+                    backgroundColor: incomeEnvelopeBar.actual === 0 ? 'var(--arvo-track-bg)' : incomeEnvelopeBar.color,
                   }}
                 />
               </div>
@@ -761,7 +758,7 @@ export default function FinancesOverviewPage() {
                       )}
                     </div>
                     <div className="flex items-center gap-1.5 shrink-0">
-                      <span style={{ fontSize: 13, fontWeight: 600, color: env.over ? '#C0392B' : 'var(--arvo-fg)' }}>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: env.over ? 'var(--arvo-red)' : 'var(--arvo-fg)' }}>
                         {fmt(cx(env.actual), currency, true)}
                       </span>
                       {env.budget > 0 && (
@@ -770,7 +767,7 @@ export default function FinancesOverviewPage() {
                       {env.budget > 0 && env.actual > 0 && (() => {
                         const pct = Math.round((env.actual - env.budget) / env.budget * 100)
                         return (
-                          <span style={{ fontSize: 11, fontWeight: 600, color: pct > 0 ? '#C0392B' : 'var(--arvo-green)', minWidth: 30, textAlign: 'right' }}>
+                          <span style={{ fontSize: 11, fontWeight: 600, color: pct > 0 ? 'var(--arvo-red)' : 'var(--arvo-green)', minWidth: 30, textAlign: 'right' }}>
                             {pct > 0 ? `+${pct}%` : `${pct}%`}
                           </span>
                         )
@@ -782,7 +779,7 @@ export default function FinancesOverviewPage() {
                       className="h-full rounded-full transition-all duration-500"
                       style={{
                         width: env.budget > 0 ? `${Math.min((env.actual / env.budget) * 100, 100)}%` : '0%',
-                        backgroundColor: env.over ? '#ef4444' : env.actual === 0 ? '#e5e7eb' : env.color,
+                        backgroundColor: env.over ? 'var(--arvo-red)' : env.actual === 0 ? 'var(--arvo-track-bg)' : env.color,
                       }}
                     />
                   </div>
@@ -803,12 +800,12 @@ export default function FinancesOverviewPage() {
                           <div className="flex items-center justify-between gap-2 mb-1">
                             <span style={{ fontSize: 12, color: 'var(--arvo-fg-muted)' }} className="truncate">{resolveKey(cat.name, cat.name_key, nameKeys)}</span>
                             <div className="flex items-center gap-1 shrink-0">
-                              <span style={{ fontSize: 12, fontWeight: 600, color: over ? '#C0392B' : 'var(--arvo-fg-muted)' }}>{fmt(cx(cat.actual), currency, true)}</span>
+                              <span style={{ fontSize: 12, fontWeight: 600, color: over ? 'var(--arvo-red)' : 'var(--arvo-fg-muted)' }}>{fmt(cx(cat.actual), currency, true)}</span>
                               {catBudget > 0 && <span style={{ fontSize: 11, color: 'var(--arvo-fg-faint)' }}>/ {fmt(cx(catBudget), currency, true)}</span>}
                             </div>
                           </div>
                           <div className="h-1 bg-[var(--arvo-track-bg)] rounded-full overflow-hidden">
-                            <div className="h-full rounded-full" style={{ width: catBudget > 0 ? `${budgetPct}%` : `${Math.min(envPct, 100)}%`, backgroundColor: over ? '#ef4444' : cat.color }} />
+                            <div className="h-full rounded-full" style={{ width: catBudget > 0 ? `${budgetPct}%` : `${Math.min(envPct, 100)}%`, backgroundColor: over ? 'var(--arvo-red)' : cat.color }} />
                           </div>
                         </div>
                       </div>
@@ -934,9 +931,8 @@ export default function FinancesOverviewPage() {
                       ? 'text-white border-transparent'
                       : 'bg-[var(--arvo-surface)] text-[var(--arvo-fg-muted)] border-[var(--arvo-border)] hover:border-gray-400'
                   }`}
-                  style={selectedCatId === c.id ? { backgroundColor: c.color || CHART_PALETTE[i % CHART_PALETTE.length] } : {}}
+                  style={selectedCatId === c.id ? { backgroundColor: CHART_PALETTE[i % CHART_PALETTE.length] } : {}}
                 >
-                  <span>{c.icon}</span>
                   <span>{resolveKey(c.name, c.name_key, nameKeys)}</span>
                 </button>
               ))}
@@ -975,7 +971,7 @@ export default function FinancesOverviewPage() {
                       key={cat.id}
                       dataKey={cat.name}
                       name={resolveKey(cat.name, cat.name_key, nameKeys)}
-                      fill={cat.color || CHART_PALETTE[i % CHART_PALETTE.length]}
+                      fill={CHART_PALETTE[i % CHART_PALETTE.length]}
                       stackId={isStacked ? 'a' : undefined}
                       radius={!isStacked || i === filtered.length - 1 ? [3, 3, 0, 0] : [0, 0, 0, 0]}
                     />
