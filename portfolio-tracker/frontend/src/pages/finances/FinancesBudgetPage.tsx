@@ -4,6 +4,7 @@ import { apiFetch } from '../../lib/api'
 import { useI18n } from '../../contexts/I18nContext'
 import { useAuth } from '../../contexts/AuthContext'
 import { useCurrency } from '../../contexts/CurrencyContext'
+import { Banner } from '../../components/ui'
 
 interface Category {
   id: number
@@ -148,9 +149,9 @@ function EnvelopeBar({ env, expanded, onToggle, onEditCategory, onDeleteCategory
   const isInvestment = env.type === 'investment'
 
   const barColor = isOver
-    ? '#ef4444'
+    ? 'var(--arvo-red)'
     : isInvestment && allocated >= 100
-      ? '#10b981'
+      ? 'var(--arvo-green)'
       : env.color
 
   function saveDesc() {
@@ -167,9 +168,12 @@ function EnvelopeBar({ env, expanded, onToggle, onEditCategory, onDeleteCategory
   return (
     <div className="bg-[var(--arvo-surface)] rounded-2xl border border-[var(--arvo-border)] shadow-sm overflow-hidden">
       {/* Envelope header */}
-      <button
+      <div
+        role="button"
+        tabIndex={0}
         onClick={onToggle}
-        className="w-full px-5 py-4 flex items-center gap-3 hover:bg-[var(--arvo-surface-2)] transition-colors text-left"
+        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onToggle() } }}
+        className="w-full px-5 py-4 flex items-center gap-3 hover:bg-[var(--arvo-surface-2)] transition-colors text-left cursor-pointer"
       >
         <span className="text-2xl leading-none w-8 shrink-0">{env.icon}</span>
         <div className="flex-1 min-w-0">
@@ -196,8 +200,8 @@ function EnvelopeBar({ env, expanded, onToggle, onEditCategory, onDeleteCategory
                   title={t.finances.editEnvelopeTitle}
                 >{env.pct_target}% {t.finances.ofIncome}</button>
               )}
-              {isOver && <span className="text-xs bg-red-100 text-red-600 font-semibold px-1.5 py-0.5 rounded-full">{t.finances.overLimit}</span>}
-              {isInvestment && allocated >= 100 && !isOver && <span className="text-xs bg-green-100 text-green-600 font-semibold px-1.5 py-0.5 rounded-full">{t.finances.goalReached}</span>}
+              {isOver && <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-[var(--arvo-red)]/10 text-[var(--arvo-red)]">{t.finances.overLimit}</span>}
+              {isInvestment && allocated >= 100 && !isOver && <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-[var(--arvo-green)]/10 text-[var(--arvo-green)]">{t.finances.goalReached}</span>}
             </div>
             <div className="text-right shrink-0 ml-3">
               <span className="text-xs font-semibold text-[var(--arvo-fg)]">{fmt(totalCategoryBudget, currency)}</span>
@@ -218,7 +222,7 @@ function EnvelopeBar({ env, expanded, onToggle, onEditCategory, onDeleteCategory
         >
           <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
         </svg>
-      </button>
+      </div>
       {/* Description — editable inline */}
       <div className="px-5 pb-3 -mt-1 group flex items-start gap-1.5" onClick={e => e.stopPropagation()}>
         {editingDesc ? (
@@ -719,12 +723,12 @@ export default function FinancesBudgetPage() {
                     <span className="text-xl leading-none">{env.icon}</span>
                     <span className="text-sm font-medium text-[var(--arvo-fg)] truncate">{resolveEnvName(env.name, env.type, env.name_key, nameKeys)}</span>
                   </div>
-                  <div className="text-2xl font-bold" style={{ color: over ? '#ef4444' : met ? '#10b981' : env.color }}>
+                  <div className="text-2xl font-bold" style={{ color: over ? 'var(--arvo-red)' : 'var(--arvo-fg)' }}>
                     {pctReal.toFixed(1)}%
                   </div>
                   <div className="text-xs text-[var(--arvo-fg-soft)] mt-0.5">{t.finances.target}: {env.pct_target}%</div>
                   <div className="mt-2 h-1 bg-[var(--arvo-track-bg)] rounded-full overflow-hidden">
-                    <div className="h-full rounded-full" style={{ width: `${Math.min(pctReal / env.pct_target * 100, 100)}%`, backgroundColor: over ? '#ef4444' : met ? '#10b981' : env.color }} />
+                    <div className="h-full rounded-full" style={{ width: `${Math.min(pctReal / env.pct_target * 100, 100)}%`, backgroundColor: over ? 'var(--arvo-red)' : met ? 'var(--arvo-green)' : env.color }} />
                   </div>
                 </div>
               )
@@ -735,12 +739,11 @@ export default function FinancesBudgetPage() {
 
       {/* Unallocated banner */}
       {Math.abs(unallocated) > 0.5 && (
-        <div className={`rounded-xl px-4 py-3 text-sm flex items-center gap-2 ${unallocated > 0 ? 'bg-amber-50 text-amber-700 border border-amber-100' : 'bg-red-50 text-red-600 border border-red-100'}`}>
-          <span>{unallocated > 0 ? '⚠️' : '🚨'}</span>
+        <Banner variant={unallocated > 0 ? 'info' : 'alert'}>
           {unallocated > 0
             ? `${fmt(unallocated, data.income.currency)} ${t.finances.unallocatedBanner}`
             : `${t.finances.overspentBanner} ${fmt(Math.abs(unallocated), data.income.currency)}`}
-        </div>
+        </Banner>
       )}
 
       {/* Expense envelopes */}
@@ -771,7 +774,7 @@ export default function FinancesBudgetPage() {
           {totalActual > 0 && (
             <div className="flex items-center gap-1.5">
               <span className="text-xs text-[var(--arvo-fg-soft)]">{t.finances.totalConsumed}</span>
-              <span className={`text-sm font-semibold ${totalActual > totalBudget ? 'text-red-600' : 'text-[var(--arvo-fg)]'}`}>
+              <span className="text-sm font-semibold" style={{ color: totalActual > totalBudget ? 'var(--arvo-red)' : 'var(--arvo-fg)' }}>
                 {fmt(totalActual, data.income.currency)}
               </span>
             </div>
