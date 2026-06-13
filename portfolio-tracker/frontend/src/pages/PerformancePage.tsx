@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react'
+import { useState, useCallback, useEffect, useRef, type CSSProperties } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { PageLoader } from '../components/ArvoLoader'
 import { usePerformanceSummary, usePerformanceMonthly, usePerformanceBenchmarks, usePortfolioValue, usePerformanceInception, usePerformanceDaily } from '../hooks/usePortfolio'
@@ -6,6 +6,9 @@ import { useDividendSummary, useDividends } from '../hooks/useDividends'
 import { useCurrency } from '../contexts/CurrencyContext'
 import { useI18n } from '../contexts/I18nContext'
 import { apiFetch } from '../lib/api'
+import { PageTitle, Segmented, StatDelta } from '../components/ui'
+import { Icon } from '../components/icons'
+import { ArvoTooltip, CHART_AXIS_TICK, CHART_GRID_STROKE, CHART_SERIES } from '../components/charts'
 import {
   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend
 } from 'recharts'
@@ -44,20 +47,14 @@ function addMonths(ym: string, n: number): string {
 
 type PeriodMode = 'current_month' | 'last_30d' | 'last_12m' | 'ytd' | 'inception'
 
-function SummaryCard({ label, value, sub, positive }: {
-  label: string; value: string; sub?: string; positive?: boolean | null
-}) {
-  return (
-    <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl p-5 shadow-sm">
-      <p className="text-[var(--arvo-fg-soft)] text-xs uppercase tracking-wide">{label}</p>
-      <p className={`text-2xl font-bold mt-1 ${
-        positive === true ? 'text-green-600' :
-        positive === false ? 'text-red-600' :
-        'text-[var(--arvo-fg)]'
-      }`}>{value}</p>
-      {sub && <p className="text-xs text-[var(--arvo-fg-soft)] mt-1">{sub}</p>}
-    </div>
-  )
+const kpiLabelStyle: CSSProperties = {
+  fontFamily: 'var(--arvo-font-body)',
+  fontSize: 11,
+  fontWeight: 600,
+  letterSpacing: '0.10em',
+  textTransform: 'uppercase',
+  color: 'var(--arvo-fg-soft)',
+  whiteSpace: 'nowrap',
 }
 
 export default function PerformancePage() {
@@ -346,74 +343,80 @@ export default function PerformancePage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 style={{ fontFamily: "var(--arvo-font-body)", fontSize: 18, letterSpacing: '0.06em', color: 'var(--arvo-fg)' }}>Performance</h1>
-          <p className="text-sm mt-0.5" style={{ color: 'var(--arvo-fg-muted)' }}>{t.performance.subtitle}</p>
-        </div>
+      <PageTitle
+        eyebrow={t.dashboard.eyebrow}
+        title="Performance"
+        actions={
+          <>
+            <Segmented
+              ariaLabel={t.performance.subtitle}
+              value={mode}
+              onChange={setMode}
+              options={modeButtons.map(({ key, label, disabled }) => ({ value: key, label, disabled }))}
+            />
 
-        <div className="flex flex-wrap items-center gap-2">
-          {modeButtons.map(({ key, label, disabled }) => (
+            {mode === 'ytd' && (
+              <button
+                onClick={() => setDailyYtd(v => !v)}
+                className="px-3 py-1.5 transition-colors"
+                style={{
+                  fontFamily: 'var(--arvo-font-body)',
+                  fontSize: 11,
+                  letterSpacing: '0.04em',
+                  borderRadius: 'var(--arvo-radius-xs)',
+                  border: '1px solid var(--arvo-border)',
+                  background: dailyYtd ? 'var(--arvo-pill-active-bg)' : 'transparent',
+                  color: dailyYtd ? 'var(--arvo-pill-active-fg)' : 'var(--arvo-fg-muted)',
+                }}
+              >{t.performance.daily}</button>
+            )}
+
             <button
-              key={key}
-              onClick={() => !disabled && setMode(key)}
-              disabled={disabled}
-              className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
-                disabled
-                  ? 'bg-[var(--arvo-surface)] text-[var(--arvo-fg-faint)] border-[var(--arvo-border)] cursor-not-allowed'
-                  : mode === key
-                    ? 'bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] border-[var(--arvo-fg)]'
-                    : 'bg-[var(--arvo-surface)] text-[var(--arvo-fg-muted)] border-[var(--arvo-border)] hover:border-[var(--arvo-fg)] hover:text-[var(--arvo-fg)]'
-              }`}
-            >{label}</button>
-          ))}
-
-          {mode === 'ytd' && (
-            <button
-              onClick={() => setDailyYtd(v => !v)}
-              className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
-                dailyYtd
-                  ? 'bg-[#1B4FD8] text-white border-[#1B4FD8]'
-                  : 'bg-[var(--arvo-surface)] text-[var(--arvo-fg-muted)] border-[var(--arvo-border)] hover:border-[#1B4FD8] hover:text-[#1B4FD8]'
-              }`}
-            >{t.performance.daily}</button>
-          )}
-
-          <span className="text-[var(--arvo-fg-faint)] text-sm">|</span>
-
-          <button
-            onClick={handleRefresh}
-            disabled={isLoading}
-            title={t.performance.recalculateTitle}
-            className="px-3 py-1.5 text-xs font-medium rounded-lg border border-[var(--arvo-border)] text-[var(--arvo-fg-muted)] hover:border-[var(--arvo-fg)] hover:text-[var(--arvo-fg)] transition-colors disabled:opacity-40"
-          >
-            {isLoading ? t.performance.calculating : t.performance.recalculate}
-          </button>
-        </div>
-      </div>
+              onClick={handleRefresh}
+              disabled={isLoading}
+              aria-label={t.performance.recalculateTitle}
+              title={t.performance.recalculateTitle}
+              className="arvo-btn arvo-btn--ghost"
+              style={{ width: 32, height: 32, padding: 0 }}
+            >
+              <Icon name="refresh" size={14} className={isLoading ? 'animate-spin' : ''} />
+            </button>
+          </>
+        }
+      />
 
       {isLoading ? (
         <PageLoader />
       ) : (
         <>
           {summary && (
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              <SummaryCard
-                label={t.performance.periodStart}
-                value={summary.value_start > 0 ? fmt(summary.value_start) : '—'}
-              />
-              <SummaryCard label={t.performance.periodEnd} value={fmt(displayValueEnd)} />
-              <SummaryCard
-                label={t.performance.absoluteReturn}
-                value={`${displayReturnAbs >= 0 ? '+' : ''}${fmt(displayReturnAbs)}`}
-                positive={displayReturnAbs >= 0}
-              />
-              <SummaryCard
-                label={t.performance.returnPct}
-                value={displayReturnPct != null ? `${displayReturnPct >= 0 ? '+' : ''}${displayReturnPct.toFixed(2)}%` : '—'}
-                sub={t.performance.simpleDietz}
-                positive={displayReturnPct != null ? displayReturnPct >= 0 : null}
-              />
+            <div className="rounded-2xl p-5" style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)' }}>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <span style={kpiLabelStyle}>{t.performance.periodStart}</span>
+                  <span className="arvo-num text-base sm:text-lg" style={{ fontFamily: 'var(--arvo-font-body)', letterSpacing: '0.04em', color: 'var(--arvo-fg)' }}>
+                    {summary.value_start > 0 ? fmt(summary.value_start) : '—'}
+                  </span>
+                </div>
+                <div className="sm:border-l sm:pl-6" style={{ display: 'flex', flexDirection: 'column', gap: 6, borderColor: 'var(--arvo-border)' }}>
+                  <span style={kpiLabelStyle}>{t.performance.periodEnd}</span>
+                  <span className="arvo-num text-base sm:text-lg" style={{ fontFamily: 'var(--arvo-font-body)', letterSpacing: '0.04em', color: 'var(--arvo-fg)' }}>
+                    {fmt(displayValueEnd)}
+                  </span>
+                </div>
+                <div className="sm:border-l sm:pl-6" style={{ display: 'flex', flexDirection: 'column', gap: 6, borderColor: 'var(--arvo-border)' }}>
+                  <span style={kpiLabelStyle}>{t.performance.absoluteReturn}</span>
+                  <StatDelta className="text-base sm:text-lg" value={displayReturnAbs} formatted={fmt(Math.abs(displayReturnAbs))} />
+                </div>
+                <div className="sm:border-l sm:pl-6" style={{ display: 'flex', flexDirection: 'column', gap: 6, borderColor: 'var(--arvo-border)' }}>
+                  <span style={kpiLabelStyle}>{t.performance.returnPct}</span>
+                  {displayReturnPct != null
+                    ? <StatDelta className="text-base sm:text-lg" value={displayReturnPct} formatted={`${Math.abs(displayReturnPct).toFixed(2)}%`} />
+                    : <span className="arvo-num text-base sm:text-lg" style={{ color: 'var(--arvo-fg-faint)' }}>—</span>
+                  }
+                  <span className="text-xs" style={{ color: 'var(--arvo-fg-soft)' }}>{t.performance.simpleDietz}</span>
+                </div>
+              </div>
             </div>
           )}
 
@@ -421,7 +424,7 @@ export default function PerformancePage() {
             const chartDataActive = useDailyChart ? dailyChartData : chartData
             if (chartDataActive.length === 0) {
               return (
-                <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl p-12 text-center text-[var(--arvo-fg-soft)] shadow-sm">
+                <div className="rounded-2xl p-12 text-center text-[var(--arvo-fg-soft)]" style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)' }}>
                   <p className="text-base font-medium text-[var(--arvo-fg-muted)]">{t.performance.noData}</p>
                   <p className="text-sm mt-1">{t.performance.visitDashboard}</p>
                 </div>
@@ -429,49 +432,61 @@ export default function PerformancePage() {
             }
             const portfolioDot = useDailyChart ? { r: 2, fill: 'var(--arvo-fg)' } : { r: 3, fill: 'var(--arvo-fg)' }
             const portfolioActiveDot = useDailyChart ? { r: 4 } : { r: 5 }
+            const legendStyle = { fontSize: 11, fontFamily: 'var(--arvo-font-body)', color: 'var(--arvo-fg-soft)' }
             return (
-              <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl p-6 shadow-sm">
+              <div className="rounded-2xl p-6" style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)' }}>
                 <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
                   <h2 className="font-semibold text-[var(--arvo-fg)]">
                     {chartView === 'value' ? t.dashboard.patrimony : t.performance.accumulatedReturn} · {periodLabel}
                   </h2>
                   <div className="flex items-center gap-2 flex-wrap">
-                    <div className="flex rounded-lg border border-[var(--arvo-border)] overflow-hidden text-xs font-semibold">
-                      <button
-                        onClick={() => setChartView('return')}
-                        className={`px-2.5 py-1 transition-colors ${chartView === 'return' ? 'bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)]' : 'bg-[var(--arvo-surface)] text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg-muted)]'}`}
-                      >{t.performance.returnPct}</button>
-                      <button
-                        onClick={() => setChartView('value')}
-                        className={`px-2.5 py-1 transition-colors border-l border-[var(--arvo-border)] ${chartView === 'value' ? 'bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)]' : 'bg-[var(--arvo-surface)] text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg-muted)]'}`}
-                      >{t.dashboard.patrimony}</button>
-                    </div>
+                    <Segmented
+                      ariaLabel={t.performance.accumulatedReturn}
+                      value={chartView}
+                      onChange={setChartView}
+                      options={[
+                        { value: 'return' as const, label: t.performance.returnPct },
+                        { value: 'value'  as const, label: t.dashboard.patrimony },
+                      ]}
+                    />
                     {chartView === 'return' && (
-                      <div className="flex items-center gap-2">
-                        {([['CDI', showCDI, setShowCDI, '#16a34a'], ['IBOV', showIBOV, setShowIBOV, '#7c3aed'], ['S&P500', showSP500, setShowSP500, '#f59e0b']] as const).map(
-                          ([lbl, active, setter, color]) => (
-                            <button
-                              key={lbl}
-                              onClick={() => (setter as (v: boolean) => void)(!active)}
-                              className={`px-2.5 py-1 text-xs font-semibold rounded-md border transition-colors ${
-                                active ? 'text-white border-transparent' : 'bg-[var(--arvo-surface)] text-[var(--arvo-fg-soft)] border-[var(--arvo-border)] hover:border-[var(--arvo-fg-faint)]'
-                              }`}
-                              style={active ? { backgroundColor: color as string, borderColor: color as string } : {}}
-                            >{lbl}</button>
-                          )
-                        )}
+                      <div className="flex items-center gap-1.5">
+                        {([
+                          ['CDI', showCDI, setShowCDI, CHART_SERIES.cdi],
+                          ['IBOV', showIBOV, setShowIBOV, CHART_SERIES.ibov],
+                          ['S&P500', showSP500, setShowSP500, CHART_SERIES.sp500],
+                        ] as const).map(([lbl, active, setter, color]) => (
+                          <button
+                            key={lbl}
+                            onClick={() => (setter as (v: boolean) => void)(!active)}
+                            className="arvo-num inline-flex items-center gap-1.5 px-2.5 py-1 transition-colors"
+                            style={{
+                              fontFamily: 'var(--arvo-font-body)',
+                              fontSize: 11,
+                              letterSpacing: '0.04em',
+                              borderRadius: 'var(--arvo-radius-xs)',
+                              border: `1px solid ${active ? color : 'var(--arvo-border)'}`,
+                              color: active ? 'var(--arvo-fg)' : 'var(--arvo-fg-soft)',
+                            }}
+                          >
+                            <span style={{ width: 6, height: 6, borderRadius: '50%', background: color, opacity: active ? 1 : 0.35, flexShrink: 0 }} />
+                            {lbl}
+                          </button>
+                        ))}
                       </div>
                     )}
                   </div>
                 </div>
-                <div className="h-64">
+                <div style={{ height: 'clamp(300px, 24vw, 420px)' }}>
                   <ResponsiveContainer width="100%" height="100%">
                     {chartView === 'value' ? (
                       <LineChart data={valueChartData}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="var(--arvo-border)" />
-                        <XAxis dataKey="month" tick={{ fontSize: 11, fill: 'var(--arvo-fg-soft)' }} interval="preserveStartEnd" />
+                        <CartesianGrid stroke={CHART_GRID_STROKE} vertical={false} />
+                        <XAxis dataKey="month" tick={CHART_AXIS_TICK} tickLine={false} axisLine={false} interval="preserveStartEnd" />
                         <YAxis
-                          tick={{ fontSize: 11, fill: 'var(--arvo-fg-soft)' }}
+                          tick={CHART_AXIS_TICK}
+                          tickLine={false}
+                          axisLine={false}
                           tickFormatter={v => {
                             const n = typeof v === 'number' ? v : 0
                             return currency === 'BRL' ? `${(n / 1000).toFixed(0)}k` : (n >= 1000 ? `${(n / 1000).toFixed(0)}k` : n.toFixed(0))
@@ -479,34 +494,42 @@ export default function PerformancePage() {
                           domain={['auto', 'auto']}
                         />
                         <Tooltip
-                          formatter={(v, name) => [
-                            new Intl.NumberFormat(intlLocale, { style: 'currency', currency, maximumFractionDigits: 0 }).format(typeof v === 'number' ? v : 0),
-                            name,
-                          ]}
-                          contentStyle={{ borderRadius: 8, border: '1px solid var(--arvo-border)', fontSize: 12 }}
+                          content={
+                            <ArvoTooltip
+                              formatter={(v, name) => [
+                                new Intl.NumberFormat(intlLocale, { style: 'currency', currency, maximumFractionDigits: 0 }).format(v),
+                                name,
+                              ]}
+                            />
+                          }
                         />
-                        <Legend wrapperStyle={{ fontSize: 11 }} />
-                        <Line type="monotone" dataKey="value" name={t.dashboard.patrimony} stroke="var(--arvo-fg)" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
+                        <Legend wrapperStyle={legendStyle} />
+                        <Line type="monotone" dataKey="value" name={t.dashboard.patrimony} stroke={CHART_SERIES.portfolio} strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
                         <Line type="monotone" dataKey="contributions" name={t.performance.contributions} stroke="var(--arvo-fg-soft)" strokeWidth={1.5} dot={false} strokeDasharray="4 2" connectNulls />
-                        {activePlan && <Line type="monotone" dataKey="target" name={t.dashboard.targetLine} stroke="#1B4FD8" strokeWidth={1.5} dot={false} strokeDasharray="5 3" connectNulls />}
+                        {activePlan && <Line type="monotone" dataKey="target" name={t.dashboard.targetLine} stroke={CHART_SERIES.ibov} strokeWidth={1.5} dot={false} strokeDasharray="5 3" connectNulls />}
                       </LineChart>
                     ) : (
                       <LineChart data={chartDataActive}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="var(--arvo-border)" />
-                        <XAxis dataKey="month" tick={{ fontSize: 11, fill: 'var(--arvo-fg-soft)' }} interval="preserveStartEnd" />
+                        <CartesianGrid stroke={CHART_GRID_STROKE} vertical={false} />
+                        <XAxis dataKey="month" tick={CHART_AXIS_TICK} tickLine={false} axisLine={false} interval="preserveStartEnd" />
                         <YAxis
-                          tick={{ fontSize: 11, fill: 'var(--arvo-fg-soft)' }}
+                          tick={CHART_AXIS_TICK}
+                          tickLine={false}
+                          axisLine={false}
                           tickFormatter={v => `${Number(v) > 0 ? '+' : ''}${Number(v).toFixed(1)}%`}
                         />
                         <Tooltip
-                          formatter={(v) => [`${Number(v) >= 0 ? '+' : ''}${Number(v).toFixed(2)}%`]}
-                          contentStyle={{ borderRadius: 8, border: '1px solid var(--arvo-border)', fontSize: 12 }}
+                          content={
+                            <ArvoTooltip
+                              formatter={(v, name) => [`${v >= 0 ? '+' : ''}${v.toFixed(2)}%`, name]}
+                            />
+                          }
                         />
-                        <Legend wrapperStyle={{ fontSize: 11 }} />
-                        <Line type="monotone" dataKey="portfolio" name={t.performance.wallet} stroke="var(--arvo-fg)" strokeWidth={2} dot={portfolioDot} activeDot={portfolioActiveDot} />
-                        {showCDI   && <Line type="monotone" dataKey="cdi"   name="CDI"    stroke="#16a34a" strokeWidth={1.5} dot={false} strokeDasharray="4 2" connectNulls />}
-                        {showIBOV  && <Line type="monotone" dataKey="ibov"  name="IBOV"   stroke="#7c3aed" strokeWidth={1.5} dot={false} strokeDasharray="4 2" connectNulls />}
-                        {showSP500 && <Line type="monotone" dataKey="sp500" name="S&P500" stroke="#f59e0b" strokeWidth={1.5} dot={false} strokeDasharray="4 2" connectNulls />}
+                        <Legend wrapperStyle={legendStyle} />
+                        <Line type="monotone" dataKey="portfolio" name={t.performance.wallet} stroke={CHART_SERIES.portfolio} strokeWidth={2} dot={portfolioDot} activeDot={portfolioActiveDot} />
+                        {showCDI   && <Line type="monotone" dataKey="cdi"   name="CDI"    stroke={CHART_SERIES.cdi}   strokeWidth={1.5} dot={false} strokeDasharray="4 2" connectNulls />}
+                        {showIBOV  && <Line type="monotone" dataKey="ibov"  name="IBOV"   stroke={CHART_SERIES.ibov}  strokeWidth={1.5} dot={false} strokeDasharray="4 2" connectNulls />}
+                        {showSP500 && <Line type="monotone" dataKey="sp500" name="S&P500" stroke={CHART_SERIES.sp500} strokeWidth={1.5} dot={false} strokeDasharray="4 2" connectNulls />}
                       </LineChart>
                     )}
                   </ResponsiveContainer>
@@ -519,23 +542,27 @@ export default function PerformancePage() {
           {(useDailyChart ? dailyChartData.length > 0 : chartData.length > 0) && (
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
               {[
-                { label: t.performance.wallet, value: portfolioAccum, text: 'text-[var(--arvo-fg)]' },
-                { label: 'CDI',       value: cdiAccum,       text: 'text-green-600' },
-                { label: 'IBOV',      value: ibovAccum,      text: 'text-violet-700' },
-                { label: 'S&P500',    value: sp500Accum,     text: 'text-amber-600' },
-              ].map(({ label, value, text }) => (
-                <div key={label} className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl p-4 shadow-sm">
-                  <p className="text-[var(--arvo-fg-soft)] text-xs">{label}</p>
-                  <p className={`text-xl font-bold mt-1 ${value != null ? text : 'text-[var(--arvo-fg-faint)]'}`}>
-                    {value != null ? `${value >= 0 ? '+' : ''}${value.toFixed(2)}%` : '—'}
+                { label: t.performance.wallet, value: portfolioAccum, color: CHART_SERIES.portfolio },
+                { label: 'CDI',       value: cdiAccum,   color: CHART_SERIES.cdi },
+                { label: 'IBOV',      value: ibovAccum,  color: CHART_SERIES.ibov },
+                { label: 'S&P500',    value: sp500Accum, color: CHART_SERIES.sp500 },
+              ].map(({ label, value, color }) => (
+                <div key={label} className="rounded-2xl p-4 flex flex-col gap-1.5" style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)' }}>
+                  <p className="flex items-center gap-2 text-xs" style={{ color: 'var(--arvo-fg-soft)' }}>
+                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: color, flexShrink: 0 }} />
+                    {label}
                   </p>
+                  {value != null
+                    ? <StatDelta className="text-xl" value={value} formatted={`${Math.abs(value).toFixed(2)}%`} />
+                    : <span className="arvo-num text-xl" style={{ color: 'var(--arvo-fg-faint)' }}>—</span>
+                  }
                 </div>
               ))}
             </div>
           )}
 
           {monthly && (
-            <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl overflow-hidden shadow-sm">
+            <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)' }}>
               <div className="px-6 py-4 border-b border-[var(--arvo-border)]">
                 <h2 className="font-semibold text-[var(--arvo-fg)]">{t.performance.monthlyEvolution}</h2>
               </div>
@@ -546,7 +573,7 @@ export default function PerformancePage() {
                       <th className="px-4 py-3 text-left">{t.performance.month}</th>
                       <th className="px-4 py-3 text-right">{t.performance.wealth}</th>
                       <th className="px-4 py-3 text-right">{t.performance.contributions}</th>
-                      <th className="px-4 py-3 text-right text-green-700">{(t as unknown as Record<string,Record<string,string>>).dividends?.title ?? 'Dividendos'}</th>
+                      <th className="px-4 py-3 text-right">{(t as unknown as Record<string,Record<string,string>>).dividends?.title ?? 'Dividendos'}</th>
                       <th className="px-4 py-3 text-right">{t.performance.gainLoss}</th>
                       <th className="px-4 py-3 text-right">{t.performance.returnAbbr}</th>
                     </tr>
@@ -574,22 +601,22 @@ export default function PerformancePage() {
                                 {fmtMonth(m.month, intlLocale)}
                               </span>
                             </td>
-                            <td className="px-4 py-3 text-right text-[var(--arvo-fg)]">
+                            <td className="px-4 py-3 text-right arvo-num text-[var(--arvo-fg)]">
                               {m.total > 0 ? fmt(m.total) : '—'}
                             </td>
-                            <td className="px-4 py-3 text-right text-[var(--arvo-fg-muted)] text-xs">
+                            <td className="px-4 py-3 text-right arvo-num text-[var(--arvo-fg-muted)] text-xs">
                               {cf !== 0 ? `${cf > 0 ? '+' : ''}${fmt(cf)}` : '—'}
                             </td>
-                            <td className="px-4 py-3 text-right text-xs font-medium text-green-600">
+                            <td className="px-4 py-3 text-right arvo-num text-xs font-medium text-green-600">
                               {(() => { const v = divByMonth.get(m.month); return v ? `+${fmt(convert(v))}` : '—' })()}
                             </td>
-                            <td className={`px-4 py-3 text-right font-medium ${
+                            <td className={`px-4 py-3 text-right arvo-num font-medium ${
                               gain == null ? 'text-[var(--arvo-fg-soft)]' :
                               gain >= 0 ? 'text-green-600' : 'text-red-600'
                             }`}>
                               {gain != null ? `${gain >= 0 ? '+' : ''}${fmt(gain)}` : '—'}
                             </td>
-                            <td className={`px-4 py-3 text-right text-xs font-semibold ${
+                            <td className={`px-4 py-3 text-right arvo-num text-xs font-semibold ${
                               gainPct == null ? 'text-[var(--arvo-fg-faint)]' :
                               gainPct >= 0 ? 'text-green-600' : 'text-red-600'
                             }`}>
@@ -609,7 +636,7 @@ export default function PerformancePage() {
                                       <th className="py-1.5 text-right font-medium cursor-pointer hover:text-[var(--arvo-fg-muted)] select-none" onClick={e => { e.stopPropagation(); toggleDetailSort('contributions') }}>
                                         {t.performance.contributions} <DetailSortIcon col="contributions" />
                                       </th>
-                                      <th className="py-1.5 text-right font-medium text-green-700 select-none">
+                                      <th className="py-1.5 text-right font-medium select-none">
                                         {(t as unknown as Record<string,Record<string,string>>).dividends?.title ?? 'Div.'}
                                       </th>
                                       <th className="py-1.5 text-right font-medium cursor-pointer hover:text-[var(--arvo-fg-muted)] select-none" onClick={e => { e.stopPropagation(); toggleDetailSort('gain') }}>
@@ -654,22 +681,22 @@ export default function PerformancePage() {
                                                 <span className="text-[var(--arvo-fg-soft)] ml-1 truncate max-w-[120px] inline-block align-bottom">{d.name}</span>
                                               )}
                                             </td>
-                                            <td className="py-1.5 text-right text-[var(--arvo-fg)]">
+                                            <td className="py-1.5 text-right arvo-num text-[var(--arvo-fg)]">
                                               {fmt(d.value)}
                                             </td>
-                                            <td className="py-1.5 text-right text-[var(--arvo-fg-muted)]">
+                                            <td className="py-1.5 text-right arvo-num text-[var(--arvo-fg-muted)]">
                                               {d.contributions !== 0 ? `${d.contributions > 0 ? '+' : ''}${fmt(d.contributions)}` : '—'}
                                             </td>
-                                            <td className="py-1.5 text-right text-xs font-medium text-green-600">
+                                            <td className="py-1.5 text-right arvo-num text-xs font-medium text-green-600">
                                               {(() => {
                                                 const v = divByMonthAsset.get(m.month)?.get(d.asset_id)
                                                 return v ? `+${fmt(convert(v))}` : '—'
                                               })()}
                                             </td>
-                                            <td className={`py-1.5 text-right font-medium ${!hasGainData ? 'text-[var(--arvo-fg-faint)]' : d.gain >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                            <td className={`py-1.5 text-right arvo-num font-medium ${!hasGainData ? 'text-[var(--arvo-fg-faint)]' : d.gain >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                                               {!hasGainData ? '—' : `${d.gain >= 0 ? '+' : ''}${fmt(d.gain)}`}
                                             </td>
-                                            <td className={`py-1.5 text-right font-semibold ${gainPct == null ? 'text-[var(--arvo-fg-faint)]' : gainPct >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                            <td className={`py-1.5 text-right arvo-num font-semibold ${gainPct == null ? 'text-[var(--arvo-fg-faint)]' : gainPct >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                                               {gainPct != null ? `${gainPct >= 0 ? '+' : ''}${gainPct.toFixed(2)}%` : '—'}
                                             </td>
                                           </tr>
@@ -710,20 +737,20 @@ export default function PerformancePage() {
                             <span className="font-medium text-[var(--arvo-fg)] text-sm">{fmtMonth(m.month, intlLocale)}</span>
                           </div>
                           {cf !== 0 && (
-                            <div className="text-xs text-[var(--arvo-fg-soft)] mt-0.5">
+                            <div className="text-xs arvo-num text-[var(--arvo-fg-soft)] mt-0.5">
                               {t.performance.contributions}: {cf > 0 ? '+' : ''}{fmt(cf)}
                             </div>
                           )}
                         </div>
                         <div className="text-right shrink-0">
-                          <div className="text-sm font-medium text-[var(--arvo-fg)]">{m.total > 0 ? fmt(m.total) : '—'}</div>
+                          <div className="text-sm arvo-num font-medium text-[var(--arvo-fg)]">{m.total > 0 ? fmt(m.total) : '—'}</div>
                           <div className="flex items-center justify-end gap-2 mt-0.5">
                             {gain != null && (
-                              <span className={`text-xs font-medium ${gain >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                              <span className={`text-xs arvo-num font-medium ${gain >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                                 {gain >= 0 ? '+' : ''}{fmt(gain)}
                               </span>
                             )}
-                            <span className={`text-xs font-semibold ${gainPct == null ? 'text-[var(--arvo-fg-faint)]' : gainPct >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            <span className={`text-xs arvo-num font-semibold ${gainPct == null ? 'text-[var(--arvo-fg-faint)]' : gainPct >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                               {gainPct != null ? `${gainPct >= 0 ? '+' : ''}${gainPct.toFixed(2)}%` : '—'}
                             </span>
                           </div>
@@ -744,8 +771,8 @@ export default function PerformancePage() {
                                 >
                                   <span className="text-xs font-semibold text-[var(--arvo-fg)]">{d.code}</span>
                                   <div className="text-right">
-                                    <div className="text-xs text-[var(--arvo-fg)]">{fmt(d.value)}</div>
-                                    <div className={`text-[11px] font-semibold ${gp == null ? 'text-[var(--arvo-fg-faint)]' : gp >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                    <div className="text-xs arvo-num text-[var(--arvo-fg)]">{fmt(d.value)}</div>
+                                    <div className={`text-[11px] arvo-num font-semibold ${gp == null ? 'text-[var(--arvo-fg-faint)]' : gp >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                                       {gp != null ? `${gp >= 0 ? '+' : ''}${gp.toFixed(2)}%` : '—'}
                                     </div>
                                   </div>

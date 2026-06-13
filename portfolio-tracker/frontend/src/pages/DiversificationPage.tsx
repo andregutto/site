@@ -1,16 +1,41 @@
 import { useEffect, useMemo, useState } from 'react'
+import type { CSSProperties } from 'react'
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts'
 import { usePortfolioValue } from '../hooks/usePortfolio'
 import { useCurrency } from '../contexts/CurrencyContext'
 import { useI18n } from '../contexts/I18nContext'
 import { apiFetch } from '../lib/api'
-import PageHeaderTabs from '../components/PageHeaderTabs'
+import { PageTitle, Segmented } from '../components/ui'
+import { Icon } from '../components/icons'
 import type { PortfolioAsset } from '../lib/types'
 
 type Tab = 'geo' | 'sector' | 'risk'
 
-const SECTOR_PALETTE = ['#1B4FD8', '#E8A020', '#D63B2F', '#16A34A', '#9333EA', '#0891B2', '#EA580C', '#6B7280', '#0D9488', '#BE185D']
-const RISK_COLORS = ['#16A34A', '#65A30D', '#E8A020', '#EA580C', '#D63B2F']
+const SECTOR_PALETTE = [
+  'var(--arvo-blue)',
+  'var(--arvo-gold)',
+  'var(--arvo-terracotta)',
+  'var(--arvo-green)',
+  'var(--arvo-ocre)',
+  '#5A5248',
+  'var(--arvo-red)',
+  'var(--arvo-fg-soft)',
+]
+const RISK_COLORS = [
+  'var(--arvo-green)',
+  'color-mix(in srgb, var(--arvo-green) 50%, var(--arvo-ocre))',
+  'var(--arvo-ocre)',
+  'color-mix(in srgb, var(--arvo-ocre) 50%, var(--arvo-red))',
+  'var(--arvo-red)',
+]
+
+// Maps a severity token to its soft background tint (for badges/pills)
+function severityTint(color: string): string {
+  if (color === 'var(--arvo-green)') return 'var(--arvo-green-tint)'
+  if (color === 'var(--arvo-ocre)') return 'var(--arvo-ocre-tint)'
+  if (color === 'var(--arvo-red)') return 'var(--arvo-red-tint)'
+  return 'var(--arvo-gold-tint)'
+}
 
 function getCountryKey(asset: PortfolioAsset): string {
   const exch = (asset.exchange ?? '').toUpperCase()
@@ -52,31 +77,39 @@ function MetricCard({ label, value, sub, badge, badgeColor }: {
   label: string; value: string; sub?: string; badge?: string; badgeColor?: string
 }) {
   return (
-    <div style={{ background: 'var(--arvo-surface)', borderRadius: 12, border: '1px solid var(--arvo-border)', padding: '20px' }}>
-      <div style={{ fontSize: 11, fontWeight: 500, color: 'var(--arvo-fg-soft)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>{label}</div>
-      <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--arvo-fg)', lineHeight: 1 }}>{value}</div>
+    <div className="rounded-2xl p-5" style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)' }}>
+      <div style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, fontWeight: 600, letterSpacing: '0.10em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)', marginBottom: 8 }}>{label}</div>
+      <div className="arvo-num" style={{ fontSize: 26, fontWeight: 600, color: 'var(--arvo-fg)', lineHeight: 1 }}>{value}</div>
       {badge && (
-        <span style={{ display: 'inline-block', fontSize: 11, fontWeight: 600, color: badgeColor, background: (badgeColor ?? '#000') + '18', padding: '3px 8px', borderRadius: 20, marginTop: 8 }}>{badge}</span>
+        <span style={{ display: 'inline-block', fontSize: 11, fontWeight: 600, color: badgeColor, background: severityTint(badgeColor ?? ''), padding: '3px 10px', borderRadius: 'var(--arvo-radius-pill)', marginTop: 10 }}>{badge}</span>
       )}
-      {sub && <div style={{ fontSize: 12, color: 'var(--arvo-fg-soft)', marginTop: 6, lineHeight: 1.4 }}>{sub}</div>}
+      {sub && <div style={{ fontSize: 12, color: 'var(--arvo-fg-soft)', marginTop: 8, lineHeight: 1.4 }}>{sub}</div>}
     </div>
   )
 }
 
-// Lead card for each subnav: a large, color-coded conclusion (the tool's analysis),
-// followed by a short contextual sentence and a supporting stat.
-function ConclusionCard({ label, headline, headlineColor, description, stat, statLabel }: {
-  label: string; headline: string; headlineColor: string
-  description?: string; stat?: string; statLabel?: string
+// Lead card for each subnav: eyebrow + Tenor Sans verdict word with a severity dot,
+// a thin progress bar (HHI or risk score), a short contextual sentence and a supporting stat.
+function VerdictCard({ eyebrow, headline, severityColor, description, barValue, stat, statLabel }: {
+  eyebrow: string; headline: string; severityColor: string
+  description?: string; barValue?: number; stat?: string; statLabel?: string
 }) {
   return (
-    <div style={{ background: 'var(--arvo-surface)', borderRadius: 12, border: '1px solid var(--arvo-border)', padding: '24px' }}>
-      <div style={{ fontSize: 11, fontWeight: 500, color: 'var(--arvo-fg-soft)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>{label}</div>
-      <div style={{ fontSize: 30, fontWeight: 800, color: headlineColor, lineHeight: 1.15, marginBottom: description ? 8 : 0 }}>{headline}</div>
-      {description && <p style={{ fontSize: 13, color: 'var(--arvo-fg-muted)', margin: 0, lineHeight: 1.5 }}>{description}</p>}
+    <div className="rounded-2xl p-6" style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)' }}>
+      <span className="arvo-eyebrow block mb-3">{eyebrow}</span>
+      <div className="flex items-center gap-2.5">
+        <span style={{ width: 8, height: 8, borderRadius: '50%', background: severityColor, flexShrink: 0 }} />
+        <span style={{ fontFamily: 'var(--arvo-font-display)', fontWeight: 400, fontSize: 'clamp(20px, 2.4vw, 26px)', letterSpacing: 'var(--arvo-track-normal)', color: 'var(--arvo-fg)' }}>{headline}</span>
+      </div>
+      {description && <p className="mt-2 mb-0" style={{ fontSize: 13, color: 'var(--arvo-fg-muted)', lineHeight: 1.5 }}>{description}</p>}
+      {barValue != null && (
+        <div className="mt-4" style={{ height: 4, background: 'var(--arvo-border)', borderRadius: 'var(--arvo-radius-pill)', overflow: 'hidden' }}>
+          <div style={{ height: '100%', width: `${Math.round(barValue * 100)}%`, background: severityColor, borderRadius: 'var(--arvo-radius-pill)' }} />
+        </div>
+      )}
       {stat && (
-        <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--arvo-border)', display: 'flex', alignItems: 'baseline', gap: 8 }}>
-          <span style={{ fontSize: 20, fontWeight: 700, color: 'var(--arvo-fg)' }}>{stat}</span>
+        <div className="mt-4 pt-4 flex items-baseline gap-2" style={{ borderTop: '1px solid var(--arvo-border)' }}>
+          <span className="arvo-num" style={{ fontSize: 20, fontWeight: 600, color: 'var(--arvo-fg)' }}>{stat}</span>
           {statLabel && <span style={{ fontSize: 12, color: 'var(--arvo-fg-soft)' }}>{statLabel}</span>}
         </div>
       )}
@@ -87,21 +120,37 @@ function ConclusionCard({ label, headline, headlineColor, description, stat, sta
 function CollapsibleInfoCard({ title, children }: { title: string; children: React.ReactNode }) {
   const [expanded, setExpanded] = useState(false)
   return (
-    <div style={{ background: 'var(--arvo-blue-tint)', borderRadius: 10, border: '1px solid rgba(27,79,216,0.20)', padding: '14px 16px', fontSize: 12, lineHeight: 1.6 }}>
+    <div className="rounded-2xl" style={{ background: 'var(--arvo-surface-2)', borderLeft: '2px solid var(--arvo-gold)' }}>
       <button
+        type="button"
         onClick={() => setExpanded(v => !v)}
-        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 12, color: 'var(--arvo-blue)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}
+        className="w-full flex items-center gap-2.5 px-4 py-3 text-left"
+        style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 12, fontWeight: 600, color: 'var(--arvo-fg-muted)' }}
       >
-        <span style={{ fontSize: 14 }}>ℹ️</span>
-        {title} — {expanded ? '▲' : '▼'}
+        <Icon name="info" size={14} style={{ flexShrink: 0 }} />
+        <span className="flex-1">{title}</span>
+        <Icon name="plus" size={12} style={{ flexShrink: 0, transform: expanded ? 'rotate(45deg)' : 'none', transition: 'transform var(--arvo-dur-fast) var(--arvo-ease)' }} />
       </button>
       {expanded && (
-        <div style={{ marginTop: 10, color: 'var(--arvo-fg-muted)' }}>
+        <div className="px-4 pb-4" style={{ color: 'var(--arvo-fg-muted)', fontSize: 12, lineHeight: 1.6 }}>
           {children}
         </div>
       )}
     </div>
   )
+}
+
+// Black circle with gold code/icon, replacing flag emoji (consistent with InstitutionLogo redesign)
+function CountryBadge({ code }: { code: string }) {
+  const style: CSSProperties = {
+    width: 28, height: 28, minWidth: 28, borderRadius: '50%',
+    background: 'var(--arvo-black)', color: 'var(--arvo-gold)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    fontFamily: 'var(--arvo-font-body)', fontSize: 10, fontWeight: 600, letterSpacing: '0.02em',
+  }
+  if (code === 'CRYPTO') return <div style={style}><Icon name="globe" size={13} /></div>
+  if (code === 'OTHER') return <div style={style}><Icon name="file" size={13} /></div>
+  return <div style={style}>{code}</div>
 }
 
 export default function DiversificationPage() {
@@ -132,16 +181,16 @@ export default function DiversificationPage() {
 
   // Country labels from i18n (can't use COUNTRY_MAP at module scope — no i18n access there)
   const countryConfig = useMemo(() => ({
-    BR:     { flag: '🇧🇷', label: d.countryBR,     color: '#1B4FD8' },
-    US:     { flag: '🇺🇸', label: d.countryUS,     color: '#E8A020' },
-    EU:     { flag: '🇪🇺', label: d.countryEU,     color: '#16A34A' },
-    CRYPTO: { flag: '🌐',  label: d.countryCrypto, color: '#9333EA' },
-    OTHER:  { flag: '📋',  label: d.countryOther,  color: '#94A3B8' },
+    BR:     { label: d.countryBR,     color: 'var(--arvo-blue)' },
+    US:     { label: d.countryUS,     color: 'var(--arvo-ocre)' },
+    EU:     { label: d.countryEU,     color: 'var(--arvo-green)' },
+    CRYPTO: { label: d.countryCrypto, color: '#5A5248' },
+    OTHER:  { label: d.countryOther,  color: 'var(--arvo-fg-soft)' },
   }), [d])
 
   // Geo grouping
   const geoGroups = useMemo(() => {
-    const map = new Map<string, { key: string; flag: string; label: string; color: string; value: number }>()
+    const map = new Map<string, { key: string; label: string; color: string; value: number }>()
     for (const a of assets) {
       const key = getCountryKey(a)
       const info = countryConfig[key as keyof typeof countryConfig] ?? countryConfig.OTHER
@@ -218,17 +267,17 @@ export default function DiversificationPage() {
   // HHI badge uses normalized HHI to account for bucket count
   function hhiBadge(hhi: number, n: number): { text: string; color: string; norm: number } {
     const norm = normalizeHHI(hhi, n)
-    if (norm < 0.15) return { text: d.hhiLow,    color: '#16A34A', norm }
-    if (norm < 0.40) return { text: d.hhiMedium, color: '#E8A020', norm }
-    return { text: d.hhiHigh, color: '#D63B2F', norm }
+    if (norm < 0.15) return { text: d.hhiLow,    color: 'var(--arvo-green)', norm }
+    if (norm < 0.40) return { text: d.hhiMedium, color: 'var(--arvo-ocre)', norm }
+    return { text: d.hhiHigh, color: 'var(--arvo-red)', norm }
   }
 
   function riskBadge(score: number): { text: string; color: string } {
-    if (score < 1.5) return { text: d.riskScaleLow,      color: '#16A34A' }
-    if (score < 2.5) return { text: d.riskScaleMedium,   color: '#65A30D' }
-    if (score < 3.5) return { text: d.riskScaleHigh,     color: '#E8A020' }
-    if (score < 4.5) return { text: d.riskScaleVeryHigh, color: '#EA580C' }
-    return { text: d.riskScaleVeryHigh, color: '#D63B2F' }
+    if (score < 1.5) return { text: d.riskScaleLow,      color: 'var(--arvo-green)' }
+    if (score < 2.5) return { text: d.riskScaleMedium,   color: RISK_COLORS[1] }
+    if (score < 3.5) return { text: d.riskScaleHigh,     color: 'var(--arvo-ocre)' }
+    if (score < 4.5) return { text: d.riskScaleVeryHigh, color: RISK_COLORS[3] }
+    return { text: d.riskScaleVeryHigh, color: 'var(--arvo-red)' }
   }
 
   const TABS: { key: Tab; label: string }[] = [
@@ -258,34 +307,46 @@ export default function DiversificationPage() {
   )
 
   return (
-    <div style={{ maxWidth: 800, margin: '0 auto', padding: '24px 16px 64px', fontFamily: 'var(--arvo-font-body)' }}>
+    <div className="space-y-6">
 
-      <PageHeaderTabs title={d.title} subtitle={d.subtitle} tabs={TABS} activeTab={tab} onTabChange={setTab} />
+      <PageTitle
+        eyebrow={t.dashboard.eyebrow}
+        title={d.title}
+        actions={
+          <Segmented
+            ariaLabel={d.subtitle}
+            value={tab}
+            onChange={setTab}
+            options={TABS.map(({ key, label }) => ({ value: key, label }))}
+          />
+        }
+      />
 
       {/* ── GEO TAB ── */}
       {tab === 'geo' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div className="space-y-6">
           {riskMetrics && (() => {
-            const { text, color } = hhiBadge(riskMetrics.geoHHI, geoGroups.length)
+            const { text, color, norm } = hhiBadge(riskMetrics.geoHHI, geoGroups.length)
             const top = geoGroups[0]
             const description = top
               ? d.geoConclusionDesc.replace('{country}', top.label).replace('{pct}', fmtPct(top.pct))
               : undefined
             return (
-              <ConclusionCard
-                label={d.geoConcentrationLabel}
+              <VerdictCard
+                eyebrow={d.geoConcentrationLabel}
                 headline={text}
-                headlineColor={color}
+                severityColor={color}
                 description={description}
+                barValue={norm}
                 stat={riskMetrics.geoHHI.toFixed(3)}
                 statLabel={d.geoHhi}
               />
             )
           })()}
 
-          <div style={{ background: 'var(--arvo-surface)', borderRadius: 12, border: '1px solid var(--arvo-border)', padding: '24px' }}>
-            <h2 style={{ fontSize: 15, fontWeight: 600, margin: '0 0 20px', color: 'var(--arvo-fg)' }}>{d.geoTitle}</h2>
-            <div style={{ display: 'flex', gap: 24, alignItems: 'center', flexWrap: 'wrap' }}>
+          <div className="rounded-2xl p-6" style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)' }}>
+            <h2 className="font-semibold mb-5" style={{ color: 'var(--arvo-fg)' }}>{d.geoTitle}</h2>
+            <div className="flex gap-6 items-center flex-wrap">
               <div style={{ flex: '0 0 180px', height: 180 }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
@@ -298,18 +359,18 @@ export default function DiversificationPage() {
               </div>
               <div style={{ flex: 1, minWidth: 180 }}>
                 {geoGroups.map(g => (
-                  <div key={g.key} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-                    <span style={{ fontSize: 20, lineHeight: 1 }}>{g.flag}</span>
+                  <div key={g.key} className="flex items-center gap-3 mb-3">
+                    <CountryBadge code={g.key} />
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                      <div className="flex justify-between mb-1">
                         <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--arvo-fg)' }}>{g.label}</span>
-                        <span style={{ fontSize: 12, color: 'var(--arvo-fg-soft)' }}>{fmtPct(g.pct)}</span>
+                        <span className="arvo-num" style={{ fontSize: 12, color: 'var(--arvo-fg-soft)' }}>{fmtPct(g.pct)}</span>
                       </div>
-                      <div style={{ height: 4, background: 'var(--arvo-border)', borderRadius: 2 }}>
-                        <div style={{ height: '100%', width: `${g.pct * 100}%`, background: g.color, borderRadius: 2 }} />
+                      <div style={{ height: 4, background: 'var(--arvo-border)', borderRadius: 'var(--arvo-radius-pill)' }}>
+                        <div style={{ height: '100%', width: `${g.pct * 100}%`, background: g.color, borderRadius: 'var(--arvo-radius-pill)' }} />
                       </div>
                     </div>
-                    <span style={{ fontSize: 12, color: 'var(--arvo-fg-soft)', minWidth: 68, textAlign: 'right' }}>{fmtVal(g.value)}</span>
+                    <span className="arvo-num" style={{ fontSize: 12, color: 'var(--arvo-fg-soft)', minWidth: 68, textAlign: 'right' }}>{fmtVal(g.value)}</span>
                   </div>
                 ))}
               </div>
@@ -322,37 +383,38 @@ export default function DiversificationPage() {
 
       {/* ── SECTOR TAB ── */}
       {tab === 'sector' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div className="space-y-6">
           {riskMetrics && (() => {
-            const { text, color } = hhiBadge(riskMetrics.sectorHHI, sectorGroups.length)
+            const { text, color, norm } = hhiBadge(riskMetrics.sectorHHI, sectorGroups.length)
             const top = sectorGroups[0]
             const description = top
               ? d.sectorConclusionDesc.replace('{sector}', top.label).replace('{pct}', fmtPct(top.pct))
               : undefined
             return (
-              <ConclusionCard
-                label={d.sectorConcentrationLabel}
+              <VerdictCard
+                eyebrow={d.sectorConcentrationLabel}
                 headline={text}
-                headlineColor={color}
+                severityColor={color}
                 description={description}
+                barValue={norm}
                 stat={riskMetrics.sectorHHI.toFixed(3)}
                 statLabel={d.sectorHhi}
               />
             )
           })()}
 
-          <div style={{ background: 'var(--arvo-surface)', borderRadius: 12, border: '1px solid var(--arvo-border)', padding: '24px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20, gap: 8 }}>
-              <h2 style={{ fontSize: 15, fontWeight: 600, margin: 0, color: 'var(--arvo-fg)' }}>{d.sectorTitle}</h2>
-              {sectorLoading && <span style={{ fontSize: 11, color: 'var(--arvo-fg-soft)' }}>⏳</span>}
+          <div className="rounded-2xl p-6" style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)' }}>
+            <div className="flex justify-between items-start mb-5 gap-2">
+              <h2 className="font-semibold" style={{ color: 'var(--arvo-fg)' }}>{d.sectorTitle}</h2>
+              {sectorLoading && <Icon name="refresh" size={14} className="animate-spin" style={{ color: 'var(--arvo-fg-soft)' }} />}
               {hasBrapiSectors && !sectorLoading && (
-                <span style={{ fontSize: 10, color: '#16A34A', background: '#dcfce7', padding: '2px 8px', borderRadius: 10, whiteSpace: 'nowrap' }}>{d.sectorRealDataNote ?? 'BRAPI'}</span>
+                <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--arvo-green)', background: 'var(--arvo-green-tint)', padding: '2px 10px', borderRadius: 'var(--arvo-radius-pill)', whiteSpace: 'nowrap' }}>{d.sectorRealDataNote ?? 'BRAPI'}</span>
               )}
             </div>
             {!hasBrapiSectors && sectorData !== null && !sectorLoading && (
-              <p style={{ fontSize: 11, color: 'var(--arvo-fg-soft)', margin: '0 0 16px', fontStyle: 'italic' }}>{d.sectorFallbackNote}</p>
+              <p className="mb-4" style={{ fontSize: 11, color: 'var(--arvo-fg-soft)', fontStyle: 'italic' }}>{d.sectorFallbackNote}</p>
             )}
-            <div style={{ display: 'flex', gap: 24, alignItems: 'center', flexWrap: 'wrap' }}>
+            <div className="flex gap-6 items-center flex-wrap">
               <div style={{ flex: '0 0 180px', height: 180 }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
@@ -365,18 +427,18 @@ export default function DiversificationPage() {
               </div>
               <div style={{ flex: 1, minWidth: 180 }}>
                 {sectorGroups.map((g, i) => (
-                  <div key={g.key} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+                  <div key={g.key} className="flex items-center gap-3 mb-3">
                     <div style={{ width: 10, height: 10, borderRadius: 2, background: SECTOR_PALETTE[i % SECTOR_PALETTE.length], flexShrink: 0 }} />
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                      <div className="flex justify-between mb-1">
                         <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--arvo-fg)' }}>{g.label}</span>
-                        <span style={{ fontSize: 12, color: 'var(--arvo-fg-soft)' }}>{fmtPct(g.pct)}</span>
+                        <span className="arvo-num" style={{ fontSize: 12, color: 'var(--arvo-fg-soft)' }}>{fmtPct(g.pct)}</span>
                       </div>
-                      <div style={{ height: 4, background: 'var(--arvo-border)', borderRadius: 2 }}>
-                        <div style={{ height: '100%', width: `${g.pct * 100}%`, background: SECTOR_PALETTE[i % SECTOR_PALETTE.length], borderRadius: 2 }} />
+                      <div style={{ height: 4, background: 'var(--arvo-border)', borderRadius: 'var(--arvo-radius-pill)' }}>
+                        <div style={{ height: '100%', width: `${g.pct * 100}%`, background: SECTOR_PALETTE[i % SECTOR_PALETTE.length], borderRadius: 'var(--arvo-radius-pill)' }} />
                       </div>
                     </div>
-                    <span style={{ fontSize: 12, color: 'var(--arvo-fg-soft)', minWidth: 68, textAlign: 'right' }}>{fmtVal(g.value)}</span>
+                    <span className="arvo-num" style={{ fontSize: 12, color: 'var(--arvo-fg-soft)', minWidth: 68, textAlign: 'right' }}>{fmtVal(g.value)}</span>
                   </div>
                 ))}
               </div>
@@ -389,26 +451,27 @@ export default function DiversificationPage() {
 
       {/* ── RISK TAB ── */}
       {tab === 'risk' && riskMetrics && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div className="space-y-6">
 
           {/* Risk score KPI */}
           {(() => {
             const { text, color } = riskBadge(riskMetrics.weightedRisk)
             return (
-              <ConclusionCard
-                label={d.riskScore}
+              <VerdictCard
+                eyebrow={d.riskScore}
                 headline={text}
-                headlineColor={color}
+                severityColor={color}
                 description={d.riskScoreDesc}
+                barValue={(riskMetrics.weightedRisk - 1) / 4}
                 stat={`${riskMetrics.weightedRisk.toFixed(2)} / 5`}
               />
             )
           })()}
 
           {/* Risk by class chart */}
-          <div style={{ background: 'var(--arvo-surface)', borderRadius: 12, border: '1px solid var(--arvo-border)', padding: '24px' }}>
-            <h2 style={{ fontSize: 15, fontWeight: 600, margin: '0 0 4px', color: 'var(--arvo-fg)' }}>{d.riskByClassTitle ?? d.riskByClass}</h2>
-            <p style={{ fontSize: 11, color: 'var(--arvo-fg-soft)', margin: '0 0 20px' }}>{d.riskBarNote}</p>
+          <div className="rounded-2xl p-6" style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)' }}>
+            <h2 className="font-semibold mb-1" style={{ color: 'var(--arvo-fg)' }}>{d.riskByClassTitle ?? d.riskByClass}</h2>
+            <p className="mb-5" style={{ fontSize: 11, color: 'var(--arvo-fg-soft)' }}>{d.riskBarNote}</p>
             <ResponsiveContainer width="100%" height={Math.max(160, riskMetrics.byClass.length * 44)}>
               <BarChart data={riskMetrics.byClass} layout="vertical" margin={{ left: 12, right: 36, top: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="var(--arvo-border)" />
@@ -453,7 +516,7 @@ export default function DiversificationPage() {
           </CollapsibleInfoCard>
 
           {/* Asset & geo concentration */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12 }}>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             {(() => {
               const { text, color } = hhiBadge(riskMetrics.assetHHI, assets.length)
               return (
@@ -471,7 +534,7 @@ export default function DiversificationPage() {
               sub={d.effectiveNDesc}
             />
             {(() => {
-              const color = riskMetrics.top3 > 0.5 ? '#D63B2F' : riskMetrics.top3 > 0.35 ? '#E8A020' : '#16A34A'
+              const color = riskMetrics.top3 > 0.5 ? 'var(--arvo-red)' : riskMetrics.top3 > 0.35 ? 'var(--arvo-ocre)' : 'var(--arvo-green)'
               return (
                 <MetricCard
                   label={d.top3Conc}
@@ -482,7 +545,7 @@ export default function DiversificationPage() {
               )
             })()}
             {(() => {
-              const color = riskMetrics.top10 > 0.9 ? '#D63B2F' : riskMetrics.top10 > 0.7 ? '#E8A020' : '#16A34A'
+              const color = riskMetrics.top10 > 0.9 ? 'var(--arvo-red)' : riskMetrics.top10 > 0.7 ? 'var(--arvo-ocre)' : 'var(--arvo-green)'
               return (
                 <MetricCard
                   label={d.top10Conc}
@@ -495,9 +558,9 @@ export default function DiversificationPage() {
           </div>
 
           {/* HHI comparison panel */}
-          <div style={{ background: 'var(--arvo-surface)', borderRadius: 12, border: '1px solid var(--arvo-border)', padding: '20px' }}>
-            <h3 style={{ fontSize: 13, fontWeight: 600, margin: '0 0 16px', color: 'var(--arvo-fg)' }}>{d.hhi}</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+          <div className="rounded-2xl p-6" style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)' }}>
+            <h3 className="font-semibold mb-4" style={{ fontSize: 13, color: 'var(--arvo-fg)' }}>{d.hhi}</h3>
+            <div className="grid grid-cols-3 gap-4">
               {[
                 { label: d.assetHhi,  val: riskMetrics.assetHHI,  n: assets.length },
                 { label: d.geoHhi,    val: riskMetrics.geoHHI,    n: geoGroups.length },
@@ -505,10 +568,10 @@ export default function DiversificationPage() {
               ].map(m => {
                 const { text, color } = hhiBadge(m.val, m.n)
                 return (
-                  <div key={m.label} style={{ textAlign: 'center' }}>
+                  <div key={m.label} className="text-center">
                     <div style={{ fontSize: 11, color: 'var(--arvo-fg-soft)', marginBottom: 6 }}>{m.label}</div>
-                    <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--arvo-fg)' }}>{m.val.toFixed(3)}</div>
-                    <span style={{ fontSize: 11, fontWeight: 600, color, background: color + '18', padding: '2px 8px', borderRadius: 20, marginTop: 4, display: 'inline-block' }}>{text}</span>
+                    <div className="arvo-num" style={{ fontSize: 20, fontWeight: 600, color: 'var(--arvo-fg)' }}>{m.val.toFixed(3)}</div>
+                    <span style={{ fontSize: 11, fontWeight: 600, color, background: severityTint(color), padding: '2px 10px', borderRadius: 'var(--arvo-radius-pill)', marginTop: 4, display: 'inline-block' }}>{text}</span>
                   </div>
                 )
               })}

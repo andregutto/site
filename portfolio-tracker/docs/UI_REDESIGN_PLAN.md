@@ -113,6 +113,18 @@ max-width 400px). Inputs outlined radius 3 com foco dourado (já existe o foco).
   pill sobrepõe conteúdo de card. → integrar: tab bar fixa embaixo; sub-nav vira
   scroll horizontal de texto simples colado sob o header (padrão app de banco), não
   flutuante sobre o conteúdo.
+- **↳ Correção pós-Fase 2 (feedback de uso real)**: docar o sub-nav no topo resolveu
+  a sobreposição, mas tirou o controle mais usado por sessão da zona do polegar —
+  em telas altas o topo exige duas mãos, e o sub-nav é trocado o tempo todo (o
+  switcher de 3 seções principais, não). → reverter posição sem reintroduzir o bug:
+  sub-nav volta para baixo, mas como **segunda linha dentro da MESMA barra flutuante**
+  do tab bar principal (uma pill só, ~24px radius em vez de stadium puro, divisor
+  hairline entre as duas linhas) — mantém o estilo underline/scroll horizontal
+  (esse refinamento foi um ganho real, não é o que está sendo revertido) e o
+  critério "1 barra flutuante só" da Fase 2, agora no alcance do polegar. Remover o
+  bloco de sub-nav docado sob o header no mobile. Ajustar `.main-content
+  padding-bottom` (index.css) e `.chat-bubble-safe`/`.chat-dialog-safe` para a
+  nova altura da barra.
 - **Gamificação no chrome**: XP/nível saem do header → Perfil/Conquistas.
 
 ### 2.4 App — página por página (visto ao vivo)
@@ -440,6 +452,16 @@ global; estilo único de input. ✓ screenshots 1440/390 sem vazio morto.
 amarelos); sub-nav underline; mobile bottom integrado (§2.3); XP fora do header;
 notificações com ícones; hover/press 160ms. ✓ máx 1 banner; mobile com 1 barra
 flutuante só.
+
+**Fase 2.1 — Correção: sub-nav mobile de volta ao polegar (1-2h)** — ver §2.3
+"↳ Correção pós-Fase 2". Unificar sub-nav + tab bar principal numa única barra
+flutuante de duas linhas (linha 1 = sub-nav scroll horizontal com underline,
+linha 2 = 3 ícones de seção), divisor hairline entre linhas, radius ~24px.
+Remover o bloco de sub-nav docado sob o header no mobile (o desktop, centrado sob
+o header, fica como está). Ajustar `.main-content padding-bottom` e
+`.chat-bubble-safe`/`.chat-dialog-safe` em `index.css` para a nova altura. ✓ sub-nav
+no alcance do polegar; ainda 1 barra flutuante só; sem sobreposição de conteúdo;
+páginas sem sub-nav (Instituições, Perfil etc.) mostram só a linha de 3 ícones.
 
 **Fase 3 — Landing (2-3 dias)** — itens §2.1. ✓ 9 seções em 1440/390; um glow; zero
 hex fora de token; OG tags.
