@@ -469,12 +469,10 @@ hex fora de token; OG tags.
 **Fase 4 — Dashboard + kit de gráficos (1 dia)** — **[CONCLUÍDA]** §2.4-Dashboard + §3.5 + bento 2xl da §3.6; aplicar
 Segmented; ValueCards refinado. ✓ screenshot completo desktop+mobile.
 
-**Fase 5 — Páginas core Patrimônio (2 dias)** — **[EM ANDAMENTO]** Performance, Análise, Ativos,
+**Fase 5 — Páginas core Patrimônio (2 dias)** — **[CONCLUÍDA]** Performance, Análise, Ativos,
 Aportes, Renda Passiva, Balanceamento, Índices, IR, Instituições, Classes (+
 classIcons), AssetDetail (guards + redesign), ImportB3, Favorites, Archived —
-conforme §2.4. ✓ gate §6 por página.
-  - Concluído: Performance, Análise, Ativos, Aportes, Renda Passiva, Balanceamento, Índices.
-  - Pendente: IR, Instituições, Classes, AssetDetail, ImportB3/Favorites/Archived, Verificação final (§6).
+conforme §2.4. ✓ gate §6 por página. ✓ tsc/build limpos · screenshots 1366/1920.
 
 **Fase 6 — Finanças (2 dias)** — Visão Geral, Transações (despesas em preto!),
 Planejamento (bug button + redesign), Momentos (capas fotográficas), Liberdade
