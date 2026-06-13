@@ -101,11 +101,11 @@ textarea:focus-visible {
 }
 
 /* Main content bottom padding — clears the floating bottom nav + safe area on
-   mobile. The sub-nav is docked under the header (in normal flow), so this
-   only needs to clear the bottom tab bar. */
+   mobile. The nav can be a single icon row or a two-row bar (sub-nav +
+   divider + icon row), so this is sized for the taller two-row variant. */
 @media (max-width: 639px) {
   .main-content {
-    padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(8rem + env(safe-area-inset-bottom, 0px));
   }
 }
 
@@ -162,8 +162,8 @@ textarea:focus-visible {
 
 /* Chat widget safe-area positioning on mobile */
 @media (max-width: 639px) {
-  .chat-bubble-safe { bottom: calc(7rem + env(safe-area-inset-bottom, 0px)); }
-  .chat-dialog-safe { bottom: calc(11rem + env(safe-area-inset-bottom, 0px)); }
+  .chat-bubble-safe { bottom: calc(9.5rem + env(safe-area-inset-bottom, 0px)); }
+  .chat-dialog-safe { bottom: calc(13.5rem + env(safe-area-inset-bottom, 0px)); }
 }
 
 /* Scrollbar — thin gold tint */

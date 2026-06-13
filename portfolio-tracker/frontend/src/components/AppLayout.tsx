@@ -491,26 +491,6 @@ export default function AppLayout() {
           </div>
         )}
 
-        {/* ── Sub-nav bar — mobile: horizontal scroll, docked under header ── */}
-        {activeSubItems.length > 0 && (
-          <div className="sm:hidden" style={{ borderTop: '1px solid var(--arvo-border-soft)', background: 'var(--arvo-subnav-bg)' }}>
-            <div ref={subNavScrollRef} className="flex items-center gap-5 px-4 overflow-x-auto scrollbar-none">
-              {activeSubItems.map(({ to, label, end }) => (
-                <NavLink
-                  key={to} to={to} end={end}
-                  className="whitespace-nowrap shrink-0 transition-colors"
-                  style={({ isActive }) => ({
-                    fontFamily: "var(--arvo-font-body)", fontSize: 12.5, letterSpacing: '0.04em',
-                    padding: '9px 1px', borderBottom: isActive ? `2px solid ${sectionAccent}` : '2px solid transparent',
-                    color: isActive ? 'var(--arvo-fg)' : 'var(--arvo-fg-muted)', textDecoration: 'none',
-                    transition: 'color 160ms ease, border-color 160ms ease',
-                  })}
-                >{label}</NavLink>
-              ))}
-            </div>
-          </div>
-        )}
-
       </header>
 
       {/* Banner queue (D9) — max one visible: budget setup takes priority over the recurring reminder */}
@@ -545,7 +525,7 @@ export default function AppLayout() {
         <LoginFooter />
       </div>
 
-      {/* Mobile bottom nav — floating glass pill */}
+      {/* Mobile bottom nav — floating glass pill, merged with sub-nav (Fase 2.1) */}
       <nav
         className="sm:hidden fixed z-20"
         style={{
@@ -558,12 +538,31 @@ export default function AppLayout() {
           backdropFilter: 'blur(24px) saturate(200%)',
           WebkitBackdropFilter: 'blur(24px) saturate(200%)',
           border: '1px solid var(--arvo-glass-border)',
-          borderRadius: 999,
+          borderRadius: 24,
           boxShadow: '0 8px 32px rgba(0,0,0,0.12), 0 2px 6px rgba(0,0,0,0.06), inset 0 1px 0 var(--arvo-glass-highlight)',
-          padding: '5px',
+          overflow: 'hidden',
         }}
       >
-        <div className="flex">
+        {activeSubItems.length > 0 && (
+          <>
+            <div ref={subNavScrollRef} className="flex items-center gap-5 overflow-x-auto scrollbar-none" style={{ padding: '8px 14px 7px' }}>
+              {activeSubItems.map(({ to, label, end }) => (
+                <NavLink
+                  key={to} to={to} end={end}
+                  className="whitespace-nowrap shrink-0 transition-colors"
+                  style={({ isActive }) => ({
+                    fontFamily: "var(--arvo-font-body)", fontSize: 12.5, letterSpacing: '0.04em',
+                    padding: '2px 1px 7px', borderBottom: isActive ? `2px solid ${sectionAccent}` : '2px solid transparent',
+                    color: isActive ? 'var(--arvo-fg)' : 'var(--arvo-fg-muted)', textDecoration: 'none',
+                    transition: 'color 160ms ease, border-color 160ms ease',
+                  })}
+                >{label}</NavLink>
+              ))}
+            </div>
+            <div style={{ height: 1, margin: '0 14px', background: 'var(--arvo-border-soft)' }} />
+          </>
+        )}
+        <div className="flex" style={{ padding: '5px' }}>
           {[
             { to: '/dashboard', label: t.nav.investments, match: inInvestimentos, accent: '#1B4FD8', icon: (
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
