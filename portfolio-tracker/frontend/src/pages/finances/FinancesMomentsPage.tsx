@@ -4,6 +4,8 @@ import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
 import { useI18n } from '../../contexts/I18nContext'
 import { useCurrency } from '../../contexts/CurrencyContext'
+import { Icon } from '../../components/icons'
+import { MOMENT_ICON_KEYS, resolveMomentIcon } from '../../lib/momentIcons'
 
 interface Moment {
   id: number
@@ -38,8 +40,8 @@ interface MomentPickerRow {
   id: number; name: string; icon: string; color: string
 }
 
-const ICONS = ['✨', '✈️', '🎉', '🎂', '🏖️', '🏔️', '🎭', '🎵', '🍽️', '🏠', '💒', '🎓', '🛒', '⚽', '🎮', '🚗', '💊', '🎁']
-const COLORS = ['#7C3AED', '#2563EB', '#16A34A', '#DC2626', '#D97706', '#0891B2', '#DB2777', '#65A30D', '#9333EA', '#EA580C']
+// Azul arara, terracota, ocre, verde, dourado — paleta limitada aos tons da marca.
+const COLORS = ['#1B4FD8', '#A36A52', '#E8A020', '#1F8A5B', '#C8B89A']
 
 function _fmt(n: number, currency: string) {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n)
@@ -65,8 +67,8 @@ function MomentForm({ initial, onSave, onCancel, saving, userId }: FormProps) {
   const { t } = useI18n()
   const [name,         setName]         = useState(initial?.name ?? '')
   const [description,  setDescription]  = useState(initial?.description ?? '')
-  const [icon,         setIcon]         = useState(initial?.icon ?? '✨')
-  const [color,        setColor]        = useState(initial?.color ?? '#7C3AED')
+  const [icon,         setIcon]         = useState(initial?.icon ?? 'sparkle')
+  const [color,        setColor]        = useState(initial?.color ?? '#1B4FD8')
   const [startDate,    setStartDate]    = useState(initial?.start_date ?? '')
   const [endDate,      setEndDate]      = useState(initial?.end_date ?? '')
   const [budget,       setBudget]       = useState(initial?.budget != null ? String(initial.budget) : '')
@@ -243,12 +245,12 @@ function MomentForm({ initial, onSave, onCancel, saving, userId }: FormProps) {
         <div className="col-span-2">
           <label className={labelCls}>{t.finances.momentIcon}</label>
           <div className="flex flex-wrap gap-1.5">
-            {ICONS.map(ic => (
+            {MOMENT_ICON_KEYS.map(ic => (
               <button
                 key={ic} type="button"
                 onClick={() => setIcon(ic)}
-                className={`text-lg w-9 h-9 rounded-lg flex items-center justify-center border-2 transition-colors ${icon === ic ? 'border-[var(--arvo-fg)] bg-[var(--arvo-fg)]/10' : 'border-transparent bg-[var(--arvo-track-bg)]'}`}
-              >{ic}</button>
+                className={`w-9 h-9 rounded-lg flex items-center justify-center border-2 transition-colors ${icon === ic ? 'border-[var(--arvo-fg)] bg-[var(--arvo-fg)]/10 text-[var(--arvo-fg)]' : 'border-transparent bg-[var(--arvo-track-bg)] text-[var(--arvo-fg-muted)]'}`}
+              ><Icon name={ic} size={18} /></button>
             ))}
           </div>
         </div>
@@ -388,7 +390,11 @@ function ShareModal({ moment, onClose, onRevoke, onUpdate }: ShareModalProps) {
     <div className="fixed inset-0 z-50 bg-black/40 flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={onClose}>
       <div className="bg-[var(--arvo-surface)] w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl shadow-xl p-6 space-y-5" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between">
-          <h3 className="font-semibold text-[var(--arvo-fg)]">{t.finances.shareTitle} {moment.icon} {moment.name}</h3>
+          <h3 className="font-semibold text-[var(--arvo-fg)] flex items-center gap-1.5">
+            <span>{t.finances.shareTitle}</span>
+            <Icon name={resolveMomentIcon(moment.icon)} size={16} style={{ color: moment.color }} />
+            <span>{moment.name}</span>
+          </h3>
           <button onClick={onClose} className="text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg-muted)] transition-colors">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
@@ -497,7 +503,7 @@ function AssignModal({ momentId: _momentId, moments, transactionId, currentMomen
             <button key={m.id} disabled={saving}
               onClick={() => assign(m.id === currentMomentId ? null : m.id)}
               className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors ${m.id === currentMomentId ? 'bg-[var(--arvo-fg)]/10 text-[var(--arvo-fg)]' : 'hover:bg-[var(--arvo-surface-2)] text-[var(--arvo-fg)]'}`}>
-              <span className="text-base">{m.icon}</span>
+              <Icon name={resolveMomentIcon(m.icon)} size={16} style={{ color: m.color }} />
               <span>{m.name}</span>
               {m.id === currentMomentId && <span className="ml-auto text-xs">✓</span>}
             </button>
@@ -663,7 +669,7 @@ export default function FinancesMomentsPage() {
       {/* Empty state */}
       {moments.length === 0 && !showForm && (
         <div className="bg-[var(--arvo-surface)] rounded-2xl border border-[var(--arvo-border)] shadow-sm p-12 text-center">
-          <p className="text-4xl mb-4">✨</p>
+          <div className="flex justify-center mb-4 text-[var(--arvo-fg-soft)]"><Icon name="sparkle" size={40} /></div>
           <p className="text-[var(--arvo-fg)] font-medium mb-1">{t.finances.momentEmptyTitle}</p>
           <p className="text-sm text-[var(--arvo-fg-soft)] mb-5">{t.finances.momentEmptyBody}</p>
           <button
@@ -686,8 +692,8 @@ export default function FinancesMomentsPage() {
                   style={{ objectPosition: m.cover_image_position ?? '50% 50%' }} />
               </div>
             ) : (
-              <div className="h-16 flex items-center justify-center text-3xl" style={{ background: `linear-gradient(135deg, ${m.color}30 0%, ${m.color}60 100%)` }}>
-                {m.icon}
+              <div className="h-20 flex items-center justify-center" style={{ background: 'var(--arvo-surface-2)' }}>
+                <Icon name={resolveMomentIcon(m.icon)} size={36} style={{ color: m.color }} />
               </div>
             )}
             {/* Moment header */}
@@ -695,8 +701,8 @@ export default function FinancesMomentsPage() {
               className="flex items-center gap-3 px-5 py-4 cursor-pointer hover:bg-[var(--arvo-surface-2)] transition-colors"
               onClick={() => toggleExpand(m.id)}
             >
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0" style={{ backgroundColor: m.color + '20' }}>
-                {m.icon}
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: m.color + '20', color: m.color }}>
+                <Icon name={resolveMomentIcon(m.icon)} size={20} />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-[var(--arvo-fg)] text-sm truncate">{m.name}</p>
@@ -752,12 +758,12 @@ export default function FinancesMomentsPage() {
                   const currency = 'EUR'
                   return (
                     <>
-                      <div className="flex justify-between text-xs mb-1" style={{ color: over ? '#D63B2F' : 'var(--arvo-fg-muted)' }}>
+                      <div className="flex justify-between text-xs mb-1" style={{ color: over ? 'var(--arvo-red)' : 'var(--arvo-fg-muted)' }}>
                         <span>{fmt(spent, currency)}</span>
                         <span>{t.finances.momentBudgetOf} {fmt(m.budget!, currency)}{over ? ` · ${t.finances.momentBudgetOver}` : ''}</span>
                       </div>
                       <div className="h-1.5 bg-[var(--arvo-track-bg)] rounded-full overflow-hidden">
-                        <div className="h-full rounded-full transition-all" style={{ width: `${pct.toFixed(1)}%`, backgroundColor: over ? '#D63B2F' : m.color }} />
+                        <div className="h-full rounded-full transition-all" style={{ width: `${pct.toFixed(1)}%`, backgroundColor: over ? 'var(--arvo-red)' : m.color }} />
                       </div>
                     </>
                   )
@@ -793,12 +799,12 @@ export default function FinancesMomentsPage() {
                       const currency = detail.transactions[0]?.currency ?? 'EUR'
                       return (
                         <div>
-                          <div className="flex justify-between text-xs mb-1.5" style={{ color: over ? '#D63B2F' : 'var(--arvo-fg-muted)' }}>
+                          <div className="flex justify-between text-xs mb-1.5" style={{ color: over ? 'var(--arvo-red)' : 'var(--arvo-fg-muted)' }}>
                             <span className="font-medium">{t.finances.momentBudget}</span>
                             <span>{fmt(spent, currency)} {t.finances.momentBudgetOf} {fmt(m.budget!, currency)}{over ? ` · ${t.finances.momentBudgetOver}` : ` · ${pct.toFixed(0)}%`}</span>
                           </div>
                           <div className="h-2 bg-[var(--arvo-track-bg)] rounded-full overflow-hidden">
-                            <div className="h-full rounded-full transition-all" style={{ width: `${pct.toFixed(1)}%`, backgroundColor: over ? '#D63B2F' : m.color }} />
+                            <div className="h-full rounded-full transition-all" style={{ width: `${pct.toFixed(1)}%`, backgroundColor: over ? 'var(--arvo-red)' : m.color }} />
                           </div>
                         </div>
                       )
