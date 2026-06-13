@@ -605,7 +605,7 @@ export default function LandingPage() {
     const el = heroEndRef.current
     if (!el) return
     const observer = new IntersectionObserver(
-      ([entry]) => setScrolled(entry.boundingClientRect.top < 0),
+      ([entry]) => setScrolled(!entry.isIntersecting),
       { threshold: 0, rootMargin: '-64px 0px 0px 0px' }
     )
     observer.observe(el)
@@ -911,15 +911,15 @@ export default function LandingPage() {
             <p style={{ fontFamily: F_SANS, fontSize: 12, letterSpacing: '0.06em', color: 'rgba(255,255,255,0.52)', marginTop: 18 }}>
               {l.assurance}
             </p>
-
-            {/* Static phone mockup — mobile only, lightweight image (not DOM) */}
-            <div className="lg:hidden" style={{ marginTop: 36 }}>
-              <img src="/brand/imagery/hero-phone-mobile.svg" width={180} height={360} alt=""
-                style={{ display: 'block', margin: '0 auto' }} />
-            </div>
           </div>
         </div>
       </section>
+
+      {/* Static phone mockup — mobile only, own beige stage so it isn't lost in the hero's bottom gradient */}
+      <div className="lg:hidden" style={{ background: '#F1EDE5', padding: '40px 24px' }}>
+        <img src="/brand/imagery/hero-phone-mobile.svg" width={180} height={360} alt=""
+          style={{ display: 'block', margin: '0 auto' }} />
+      </div>
 
       {/* ── STATS BAR ── */}
       <div style={{ background: '#fff', borderBottom: `1px solid ${BORDER}` }}>
