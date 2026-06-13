@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from 'react'
 import { apiFetch } from '../lib/api'
 import { useI18n } from '../contexts/I18nContext'
 import { PageLoader } from '../components/ArvoLoader'
+import { Icon, type IconName } from '../components/icons'
+import { CLASS_ICON_KEYS, resolveClassIcon } from '../lib/classIcons'
 
 interface AssetClass { id: number; name: string; name_key?: string | null; color: string; icon: string | null }
 
@@ -12,31 +14,6 @@ interface AssetRow {
   asset_type: string
   currency: string
   asset_classes: { id: number; name: string; color: string } | null
-}
-
-const ICON_OPTIONS = [
-  '📊', '📈', '📉', '🏦', '🏢', '🏠', '🌍', '🌎', '🪙', '💰',
-  '💎', '🛢️', '🌾', '🥇', '🏭', '💵', '🚀', '⚡', '🛡️', '💼',
-  '🏪', '🏗️', '🎯', '🌊', '📋', '🔑', '⚙️', '🌱', '🏅', '🧩',
-]
-
-const CLASS_ICON_MAP: [RegExp, string][] = [
-  [/ações?\s*brasil|brazil|b3/i, '📊'],
-  [/exterior|eua|usa|intl|internacional|ações?\s*exterior/i, '🌍'],
-  [/fii|imobiliário|imobiliario/i, '🏢'],
-  [/cripto|crypto|bitcoin/i, '💎'],
-  [/renda\s*fixa|fixed|tesouro|cdb|lci|lca/i, '🏦'],
-  [/previdên|previdencia|pgbl|vgbl/i, '🛡️'],
-  [/imóveis|imoveis|real\s*estate/i, '🏠'],
-  [/commodit/i, '🛢️'],
-  [/etf/i, '📊'],
-  [/caixa|cash/i, '💰'],
-]
-function inferIcon(name: string): string | null {
-  for (const [re, icon] of CLASS_ICON_MAP) {
-    if (re.test(name)) return icon
-  }
-  return null
 }
 
 const COLOR_PALETTE = [
@@ -70,29 +47,47 @@ function ColorPicker({ value, onChange }: { value: string; onChange: (c: string)
   )
 }
 
-function IconPicker({ value, onChange }: { value: string | null; onChange: (i: string | null) => void }) {
+function IconPicker({ value, onChange, color }: { value: string | null; onChange: (i: string | null) => void; color: string }) {
+  const { t } = useI18n()
   return (
     <div className="mt-2">
       <div className="flex flex-wrap gap-1.5">
         <button
           type="button"
           onClick={() => onChange(null)}
-          className={`w-8 h-8 rounded-lg text-xs border transition-all hover:scale-110 ${
+          title={t.classes.noIcon}
+          className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs border transition-all hover:scale-110 ${
             value == null ? 'border-[var(--arvo-fg)] bg-[var(--arvo-fg)]/10 ring-1 ring-[var(--arvo-fg)]' : 'border-[var(--arvo-border)] bg-[var(--arvo-surface-2)]'
           }`}
-          title="—"
         >—</button>
-        {ICON_OPTIONS.map(icon => (
+        {CLASS_ICON_KEYS.map(key => (
           <button
-            key={icon}
+            key={key}
             type="button"
-            onClick={() => onChange(icon)}
-            className={`w-8 h-8 rounded-lg text-base transition-all hover:scale-110 ${
-              value === icon ? 'ring-2 ring-[var(--arvo-fg)] bg-[var(--arvo-fg)]/10 scale-110' : 'hover:bg-[var(--arvo-track-bg)]'
+            onClick={() => onChange(key)}
+            title={key}
+            className={`w-8 h-8 rounded-lg flex items-center justify-center border transition-all hover:scale-110 ${
+              value === key ? 'ring-2 ring-[var(--arvo-fg)] bg-[var(--arvo-fg)]/10 border-[var(--arvo-fg)] scale-110' : 'border-[var(--arvo-border)] hover:bg-[var(--arvo-surface-2)]'
             }`}
-          >{icon}</button>
+            style={{ color: value === key ? color : 'var(--arvo-fg-soft)' }}
+          >
+            <Icon name={key} size={16} />
+          </button>
         ))}
       </div>
+    </div>
+  )
+}
+
+function ClassIconBadge({ icon, color, size = 28 }: { icon: IconName | null; color: string; size?: number }) {
+  return (
+    <div
+      className="rounded-full flex items-center justify-center shrink-0"
+      style={{ width: size, height: size, background: `${color}1A`, color }}
+    >
+      {icon
+        ? <Icon name={icon} size={Math.round(size * 0.55)} />
+        : <span className="font-semibold leading-none" style={{ fontSize: size * 0.5 }}>◆</span>}
     </div>
   )
 }
@@ -258,7 +253,7 @@ export default function ClassesPage() {
               <ColorPicker value={newColor} onChange={setNewColor} />
               <div>
                 <p className="text-xs text-[var(--arvo-fg-muted)] mb-1">{t.classes.icon}</p>
-                <IconPicker value={newIcon} onChange={setNewIcon} />
+                <IconPicker value={newIcon} onChange={setNewIcon} color={newColor} />
               </div>
             </div>
           </div>
@@ -307,7 +302,7 @@ export default function ClassesPage() {
                           <ColorPicker value={editColor} onChange={setEditColor} />
                           <div>
                             <p className="text-xs text-[var(--arvo-fg-muted)] mb-1">{t.classes.icon}</p>
-                            <IconPicker value={editIcon} onChange={setEditIcon} />
+                            <IconPicker value={editIcon} onChange={setEditIcon} color={editColor} />
                           </div>
                         </div>
                       </div>
@@ -326,14 +321,7 @@ export default function ClassesPage() {
                     </div>
                   ) : (
                     <div className="flex items-center gap-3">
-                      {(cls.icon ?? inferIcon(cls.name)) ? (
-                        <span className="text-lg leading-none shrink-0">{cls.icon ?? inferIcon(cls.name)}</span>
-                      ) : (
-                        <span
-                          className="w-4 h-4 rounded-full shrink-0"
-                          style={{ backgroundColor: cls.color }}
-                        />
-                      )}
+                      <ClassIconBadge icon={resolveClassIcon(cls.icon, cls.name)} color={cls.color} />
                       <span className="font-medium text-[var(--arvo-fg)] flex-1">{resolveClassName(cls)}</span>
                       <span className="text-xs text-[var(--arvo-fg-soft)] mr-2">
                         {count} {count === 1 ? t.classes.assetSingular : t.classes.assetPlural}
