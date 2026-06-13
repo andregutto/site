@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { apiFetch } from '../lib/api'
 import { useI18n } from '../contexts/I18nContext'
 import { PageLoader } from '../components/ArvoLoader'
+import { PageTitle, EmptyState } from '../components/ui'
 
 type Contribution = {
   asset_id: number
@@ -93,13 +94,10 @@ export default function ArchivedPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-semibold text-[var(--arvo-fg)]">{t.archived.title}</h1>
-        <p className="text-sm text-[var(--arvo-fg-soft)] mt-0.5">{t.archived.subtitle}</p>
-      </div>
+      <PageTitle eyebrow={t.dashboard.eyebrow} title={t.archived.title} />
 
       {assets.length === 0 ? (
-        <div className="text-center py-16 text-[var(--arvo-fg-soft)] text-sm">{t.archived.empty}</div>
+        <EmptyState title={t.archived.empty} />
       ) : (
         <div className="space-y-3">
           {assets.map(a => {
@@ -145,7 +143,7 @@ export default function ArchivedPage() {
                     {a.totalReceived > 0 && (
                       <div className="text-right">
                         <div className="text-xs text-[var(--arvo-fg-soft)]">{t.archived.pnl}</div>
-                        <div className={`text-sm font-semibold ${pnlPositive ? 'text-emerald-600 dark:text-emerald-300' : 'text-red-500 dark:text-red-400'}`}>
+                        <div className={`text-sm font-semibold ${pnlPositive ? 'arvo-delta-pos' : 'arvo-delta-neg'}`}>
                           {pnlPositive ? '+' : ''}{fmt(a.pnl, a.currency)}
                         </div>
                       </div>
@@ -169,11 +167,10 @@ export default function ArchivedPage() {
                       {a.contributions.map((c, i) => (
                         <div key={i} className="flex items-center justify-between text-sm">
                           <div className="flex items-center gap-2">
-                            <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${
-                              c.type === 'buy'
-                                ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
-                                : 'bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-300'
-                            }`}>
+                            <span
+                              className="text-xs font-medium px-1.5 py-0.5 rounded"
+                              style={{ background: 'var(--arvo-surface-2)', color: 'var(--arvo-fg-muted)' }}
+                            >
                               {c.type === 'buy' ? '▲' : '▼'}
                             </span>
                             <span className="text-[var(--arvo-fg-muted)]">{fmtDate(c.date)}</span>
