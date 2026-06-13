@@ -285,34 +285,25 @@ export default function PerformancePage() {
   const sp500Accum = useDailyChart ? (lastDailyPoint?.sp500 ?? null) : (lastPoint?.sp500 ?? null)
 
   // Absolute portfolio value series (Patrimônio view), with optional Freedom Plan target
-  // line and a cumulative contributions ("Aportes") line — the gap between the two
-  // represents gains from valorização/juros compostos.
+  // line and a cumulative contributions ("Aportes") line — analogous to the asset-level
+  // `invested_brl`, this is the running total invested since portfolio inception, so the
+  // gap between the two lines represents total gains from valorização/juros compostos.
   const dailyValuePts = useDailyChart ? (dailyData?.daily ?? []).filter(pt => pt.total > 0) : []
-  const dailyValueBase = dailyValuePts.length > 0 ? dailyValuePts[0].total - (dailyValuePts[0].contributions ?? 0) : 0
-  let valueCfCumul = 0
   const valueChartData = useDailyChart
-    ? dailyValuePts.map(pt => {
-        valueCfCumul += (pt.contributions ?? 0)
-        return {
-          month: fmtDayLabel(pt.date, intlLocale),
-          value: convert(pt.total),
-          target: targetAtDate(pt.date),
-          contributions: convert(dailyValueBase + valueCfCumul),
-        }
-      })
+    ? dailyValuePts.map(pt => ({
+        month: fmtDayLabel(pt.date, intlLocale),
+        value: convert(pt.total),
+        target: targetAtDate(pt.date),
+        contributions: convert(pt.contributions_cumulative ?? 0),
+      }))
     : monthsWithData.map(m => {
         const [y, mo] = m.month.split('-').map(Number)
         const lastDay = new Date(y, mo, 0).getDate()
-        valueCfCumul += (m.contributions ?? 0)
         return {
           month: fmtMonth(m.month, intlLocale),
           value: convert(m.total),
           target: targetAtDate(`${m.month}-${String(lastDay).padStart(2, '0')}`),
-          // No periodStart offset here (unlike daily): "inception" mode starts at the
-          // first tracked contribution, so Aportes is purely the running sum of
-          // contributions from that point — periodStart includes pre-existing asset
-          // value with no associated contribution, which would distort this line.
-          contributions: convert(valueCfCumul),
+          contributions: convert(m.contributions_cumulative ?? 0),
         }
       })
 
@@ -505,7 +496,7 @@ export default function PerformancePage() {
                         />
                         <Legend wrapperStyle={legendStyle} />
                         <Line type="monotone" dataKey="value" name={t.dashboard.patrimony} stroke={CHART_SERIES.portfolio} strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
-                        <Line type="monotone" dataKey="contributions" name={t.performance.contributions} stroke="var(--arvo-fg-soft)" strokeWidth={1.5} dot={false} strokeDasharray="4 2" connectNulls />
+                        <Line type="stepAfter" dataKey="contributions" name={t.performance.contributions} stroke="var(--arvo-fg-soft)" strokeWidth={1.5} dot={false} strokeDasharray="4 2" connectNulls />
                         {activePlan && <Line type="monotone" dataKey="target" name={t.dashboard.targetLine} stroke={CHART_SERIES.ibov} strokeWidth={1.5} dot={false} strokeDasharray="5 3" connectNulls />}
                       </LineChart>
                     ) : (

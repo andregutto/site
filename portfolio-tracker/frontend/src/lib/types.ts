@@ -97,6 +97,7 @@ export interface MonthlyPerf {
   total: number
   prev_total: number
   contributions: number
+  contributions_cumulative: number
   detail?: MonthlyDetailItem[]
 }
 
@@ -124,6 +125,7 @@ export interface DailyPerf {
   date: string
   total: number
   contributions: number
+  contributions_cumulative: number
 }
 
 export interface PerformanceDaily {

@@ -18,6 +18,14 @@ const SERIES = MONTHS.map((month, i) => {
 })
 SERIES[SERIES.length - 1].total = 284500
 
+// ---- aportes mensais (com lacunas, para testar a linha cumulativa) ----
+function monthContrib(m: string): number {
+  const i = MONTHS.indexOf(m)
+  return i % 4 === 3 ? 0 : 3500
+}
+const CUMUL_CONTRIB_BY_MONTH: Record<string, number> = {}
+{ let c = 0; for (const m of MONTHS) { c += monthContrib(m); CUMUL_CONTRIB_BY_MONTH[m] = c } }
+
 const CLASSES = [
   { id: 1, name: 'Ações Brasil',   color: '#1B4FD8', icon: '📊' },
   { id: 2, name: 'FIIs',           color: '#A36A52', icon: '🏢' },
@@ -70,7 +78,8 @@ function monthlySeries(from: string, to: string) {
     month: s.month,
     total: s.total,
     prev_total: i > 0 ? arr[i - 1].total : (SERIES.find(x => x.month === addM(s.month, -1))?.total ?? s.total - 4500),
-    contributions: 3500,
+    contributions: monthContrib(s.month),
+    contributions_cumulative: CUMUL_CONTRIB_BY_MONTH[s.month],
   }))
 }
 
@@ -159,11 +168,15 @@ const FIXTURES: Array<[RegExp, (path: string) => unknown]> = [
   [/^\/performance\/monthly/, p => ({ monthly: monthlySeries(q(p, 'from') ?? '2025-07', q(p, 'to') ?? NOW_YM) })],
   [/^\/performance\/daily/, p => {
     const from = q(p, 'from') ?? '2026-05-12', to = q(p, 'to') ?? '2026-06-12'
-    const start = new Date(from), end = new Date(to), out: { date: string; total: number; contributions: number }[] = []
+    const start = new Date(from), end = new Date(to)
+    const out: { date: string; total: number; contributions: number; contributions_cumulative: number }[] = []
     const days = Math.max(1, Math.round((+end - +start) / 86400000))
+    let cumul = CUMUL_CONTRIB_BY_MONTH[addM(from.slice(0, 7), -1)] ?? 0
     for (let i = 0; i <= days; i++) {
       const d = new Date(+start + i * 86400000)
-      out.push({ date: d.toISOString().slice(0, 10), total: Math.round(279000 + i * (5500 / days) + Math.sin(i / 2.6) * 1400), contributions: i === 3 ? 3500 : 0 })
+      const contrib = i === 3 ? 3500 : 0
+      cumul += contrib
+      out.push({ date: d.toISOString().slice(0, 10), total: Math.round(279000 + i * (5500 / days) + Math.sin(i / 2.6) * 1400), contributions: contrib, contributions_cumulative: cumul })
     }
     return { daily: out }
   }],
@@ -286,7 +299,7 @@ const FIXTURES: Array<[RegExp, (path: string) => unknown]> = [
     { id: 1, name: 'Viagem Japão', description: 'Duas semanas em abril de 2027', icon: '✈️', color: '#2563EB', start_date: '2027-04-01', end_date: '2027-04-15', budget: 6000, cover_image_url: null, cover_image_position: null, share_token: null, share_expires_at: null, share_hide_descriptions: false, created_at: '2026-01-05' },
     { id: 2, name: 'Casamento', description: null, icon: '💒', color: '#DB2777', start_date: '2026-09-12', end_date: '2026-09-12', budget: 15000, cover_image_url: null, cover_image_position: null, share_token: 'abc', share_expires_at: null, share_hide_descriptions: false, created_at: '2025-11-20' },
   ])],
-  [/^\/finances\/freedom-plans/, () => ([{ id: 1, name: 'Independência 2041', is_active: true, initial_capital: 284500, monthly_contribution: 3500, monthly_return_rate: 0.8, monthly_income_rate: 0.4, target_amount: 4200000, currency: 'BRL', horizon_years: 15, notes: null, created_at: '2025-01-10', start_date: '2025-01-01' }])],
+  [/^\/finances\/freedom-plans/, () => ([{ id: 1, name: 'Independência 2041', is_active: true, initial_capital: 284500, monthly_contribution: 3500, monthly_return_rate: 0.008, monthly_income_rate: 0.4, target_amount: 4200000, currency: 'BRL', horizon_years: 15, notes: null, created_at: '2025-01-10', start_date: '2025-01-01' }])],
   [/^\/finances\/subscriptions\/dismissed/, () => ({ dismissed: [] })],
   [/^\/finances\/subscriptions/, () => ({ subscriptions: [
     { key: 's1', name: 'Netflix', frequency: 'monthly', median_amount: 13.49, currency: 'EUR', last_date: '2026-06-03', annual_cost: 161.88, monthly_equivalent: 13.49, occurrences: 9, category: { id: 15, name: 'Restaurantes', icon: '🍽️', color: '#E8A020' } },
