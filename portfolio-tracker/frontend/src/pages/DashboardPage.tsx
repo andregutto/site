@@ -199,18 +199,20 @@ export default function DashboardPage() {
         title="Dashboard"
         actions={
           <>
-            <Segmented
-              ariaLabel={t.archived.period}
-              value={periodMode}
-              onChange={setPeriodMode}
-              options={[
-                { value: 'current_month' as PeriodMode, label: t.performance.currentMonth },
-                { value: 'last_30d'      as PeriodMode, label: t.performance.last30d },
-                { value: 'last_12m'      as PeriodMode, label: t.performance.last12m },
-                { value: 'ytd'           as PeriodMode, label: 'YTD' },
-                { value: 'inception'     as PeriodMode, label: t.performance.inception, disabled: !inception },
-              ]}
-            />
+            <div className="w-full sm:w-auto">
+              <Segmented
+                ariaLabel={t.archived.period}
+                value={periodMode}
+                onChange={setPeriodMode}
+                options={[
+                  { value: 'current_month' as PeriodMode, label: t.performance.currentMonth },
+                  { value: 'last_30d'      as PeriodMode, label: t.performance.last30d },
+                  { value: 'last_12m'      as PeriodMode, label: t.performance.last12m },
+                  { value: 'ytd'           as PeriodMode, label: 'YTD' },
+                  { value: 'inception'     as PeriodMode, label: t.performance.inception, disabled: !inception },
+                ]}
+              />
+            </div>
             <button
               onClick={refresh}
               aria-label={t.dashboard.refresh}

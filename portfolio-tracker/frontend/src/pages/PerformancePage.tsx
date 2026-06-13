@@ -339,12 +339,14 @@ export default function PerformancePage() {
         title="Performance"
         actions={
           <>
-            <Segmented
-              ariaLabel={t.performance.subtitle}
-              value={mode}
-              onChange={setMode}
-              options={modeButtons.map(({ key, label, disabled }) => ({ value: key, label, disabled }))}
-            />
+            <div className="w-full sm:w-auto">
+              <Segmented
+                ariaLabel={t.performance.subtitle}
+                value={mode}
+                onChange={setMode}
+                options={modeButtons.map(({ key, label, disabled }) => ({ value: key, label, disabled }))}
+              />
+            </div>
 
             {mode === 'ytd' && (
               <button

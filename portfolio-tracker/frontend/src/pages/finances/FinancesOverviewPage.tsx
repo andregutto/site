@@ -282,12 +282,12 @@ export default function FinancesOverviewPage() {
 
   if (loading) return (
     <div className="space-y-5">
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
-        <div style={{ minWidth: 0, flex: 1, overflow: 'hidden' }}>
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+        <div className="min-w-0 sm:flex-1 overflow-hidden">
           <h1 style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 18, letterSpacing: '0.06em', color: 'var(--arvo-fg)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.finances.overviewTitle}</h1>
           <p className="text-sm mt-0.5" style={{ color: 'var(--arvo-fg-muted)' }}>{t.finances.overviewSubtitle}</p>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+        <div className="flex items-center sm:flex-shrink-0">
           <button onClick={prevMonth} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 32, height: 32, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--arvo-fg-faint)', borderRadius: 8 }}>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
           </button>
@@ -495,12 +495,12 @@ export default function FinancesOverviewPage() {
       )}
 
       {/* Header + month nav inline */}
-      <div className="lg:col-span-2" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
-        <div style={{ minWidth: 0, flex: 1, overflow: 'hidden' }}>
+      <div className="lg:col-span-2 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+        <div className="min-w-0 sm:flex-1 overflow-hidden">
           <h1 style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 18, letterSpacing: '0.06em', color: 'var(--arvo-fg)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.finances.overviewTitle}</h1>
           <p className="text-sm mt-0.5" style={{ color: 'var(--arvo-fg-muted)' }}>{t.finances.overviewSubtitle}</p>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+        <div className="flex items-center sm:flex-shrink-0">
           <button onClick={prevMonth} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 32, height: 32, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--arvo-fg-faint)', borderRadius: 8 }}>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
           </button>

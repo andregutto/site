@@ -11,7 +11,7 @@ interface PageTitleProps {
 
 export function PageTitle({ eyebrow, title, actions, className = '' }: PageTitleProps) {
   return (
-    <div className={`flex flex-wrap items-end justify-between gap-3 ${className}`}>
+    <div className={`flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 ${className}`}>
       <div>
         <span className="arvo-eyebrow block">{eyebrow}</span>
         <h1
@@ -28,7 +28,7 @@ export function PageTitle({ eyebrow, title, actions, className = '' }: PageTitle
           {title}
         </h1>
       </div>
-      {actions && <div className="flex items-center gap-2">{actions}</div>}
+      {actions && <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">{actions}</div>}
     </div>
   )
 }
