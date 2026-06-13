@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import ExcelJS from 'exceljs'
 import { apiFetch } from '../lib/api'
 import { useI18n } from '../contexts/I18nContext'
+import { InfoBox } from '../components/ui'
 
 // ─── Brazil Tax Interfaces ────────────────────────────────────────────────────
 
@@ -1579,20 +1580,6 @@ function Card({ label, value, valueClass }: { label: string; value: string; valu
     <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl p-4 shadow-sm">
       <p className="text-xs text-[var(--arvo-fg-soft)] mb-1">{label}</p>
       <p className={`text-lg font-bold ${valueClass ?? 'text-[var(--arvo-fg)]'}`}>{value}</p>
-    </div>
-  )
-}
-
-/* Unified instruction box: beige surface, gold hairline for info, blue for
-   action items. Replaces the old Bootstrap-style blue/amber/gray alerts. */
-function InfoBox({ variant, title, className = '', children }: { variant: 'info' | 'action'; title: string; className?: string; children: React.ReactNode }) {
-  return (
-    <div
-      className={`rounded-xl p-4 text-sm text-[var(--arvo-fg-muted)] space-y-1 ${className}`}
-      style={{ background: 'var(--arvo-surface-2)', borderLeft: `2px solid ${variant === 'action' ? 'var(--arvo-blue)' : 'var(--arvo-gold)'}` }}
-    >
-      <p className="text-xs font-semibold uppercase tracking-wide text-[var(--arvo-fg)]">{title}</p>
-      {children}
     </div>
   )
 }
