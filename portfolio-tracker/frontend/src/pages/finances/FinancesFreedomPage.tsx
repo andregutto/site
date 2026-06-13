@@ -1,11 +1,14 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, type CSSProperties } from 'react'
 import {
-  LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  ReferenceLine, Legend,
+  ComposedChart, Area, Line, XAxis, YAxis, Tooltip, ResponsiveContainer,
+  ReferenceLine, ReferenceDot, Legend,
 } from 'recharts'
 import { apiFetch } from '../../lib/api'
 import { useI18n } from '../../contexts/I18nContext'
 import { useCurrency } from '../../contexts/CurrencyContext'
+import { Banner } from '../../components/ui'
+import { Icon } from '../../components/icons'
+import { CHART_AXIS_TICK, CHART_AXIS_LINE, formatCompactCurrency } from '../../components/charts'
 
 interface FreedomPlan {
   id: number
@@ -46,6 +49,22 @@ function _fmt(n: number, currency: string, compact = false, locale = 'pt-BR') {
     notation: compact ? 'compact' : 'standard',
     minimumFractionDigits: 0, maximumFractionDigits: compact ? 1 : 0,
   }).format(n)
+}
+
+const kpiLabelStyle: CSSProperties = {
+  fontFamily: 'var(--arvo-font-body)',
+  fontSize: 11,
+  fontWeight: 600,
+  letterSpacing: '0.10em',
+  textTransform: 'uppercase',
+  color: 'var(--arvo-fg-soft)',
+  whiteSpace: 'nowrap',
+}
+
+const kpiValueStyle: CSSProperties = {
+  fontFamily: 'var(--arvo-font-body)',
+  letterSpacing: '0.04em',
+  color: 'var(--arvo-fg)',
 }
 
 function addMonths(dateStr: string, n: number): string {
@@ -1018,6 +1037,15 @@ export default function FinancesFreedomPage() {
     return convert(inBrl)
   }
 
+  // "Ano-alvo" — fixed horizon end year (the plan's committed target date)
+  const targetYear = activePlan
+    ? parseInt(addMonths(planStart, activePlan.horizon_years * 12).slice(0, 4), 10)
+    : null
+
+  // "FIRE" milestone — last point of the trajectory (horizon end), at the goal value
+  const fireMonth = chartData.length > 0 ? chartData[chartData.length - 1].month : null
+  const fireValue = activePlan ? Math.round(cxFreedom(activePlan.target_amount)) : null
+
   if (loading) {
     return (
       <div className="bg-[var(--arvo-surface)] rounded-2xl border border-[var(--arvo-border)] shadow-sm p-12 text-center text-[var(--arvo-fg-soft)] text-sm">
@@ -1036,21 +1064,29 @@ export default function FinancesFreedomPage() {
           <h1 style={{ fontFamily: "var(--arvo-font-body)", fontSize: 18, letterSpacing: '0.06em', color: 'var(--arvo-fg)' }}>{t.finances.freedomTitle}</h1>
           <p className="text-sm mt-0.5" style={{ color: 'var(--arvo-fg-muted)' }}>{t.finances.freedomSubtitle}</p>
         </div>
-        <div className="flex items-center gap-2">
-          {plans.length > 0 && (
-            <button
-              onClick={() => { setEditingPlan(activePlan); setShowForm(true) }}
-              className="px-3 py-1.5 border border-[var(--arvo-border)] text-sm text-[var(--arvo-fg-muted)] rounded-lg hover:bg-[var(--arvo-surface-2)] transition-colors"
-            >
-              {t.common.edit}
-            </button>
+        <div className="flex items-center gap-4">
+          {activePlan && targetYear && (
+            <div className="text-right">
+              <p className="text-[10px] uppercase" style={{ letterSpacing: '0.18em', color: 'var(--arvo-fg-soft)' }}>{t.finances.freedomGoal}</p>
+              <p style={{ fontFamily: "'Tenor Sans', serif", fontSize: 28, letterSpacing: '0.01em', color: 'var(--arvo-blue)', lineHeight: 1, margin: '2px 0 0' }}>{targetYear}</p>
+            </div>
           )}
-          <button
-            onClick={() => { setEditingPlan(null); setShowForm(true) }}
-            className="px-3 py-1.5 bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] text-sm rounded-lg hover:opacity-80 transition-opacity"
-          >
-            + {t.finances.freedomNewPlan}
-          </button>
+          <div className="flex items-center gap-2">
+            {plans.length > 0 && (
+              <button
+                onClick={() => { setEditingPlan(activePlan); setShowForm(true) }}
+                className="px-3 py-1.5 border border-[var(--arvo-border)] text-sm text-[var(--arvo-fg-muted)] rounded-lg hover:bg-[var(--arvo-surface-2)] transition-colors"
+              >
+                {t.common.edit}
+              </button>
+            )}
+            <button
+              onClick={() => { setEditingPlan(null); setShowForm(true) }}
+              className="px-3 py-1.5 bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] text-sm rounded-lg hover:opacity-80 transition-opacity"
+            >
+              + {t.finances.freedomNewPlan}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -1076,7 +1112,7 @@ export default function FinancesFreedomPage() {
       {!activePlan && !showForm ? (
         /* Empty state */
         <div className="bg-[var(--arvo-surface)] rounded-2xl border border-[var(--arvo-border)] shadow-sm p-12 text-center">
-          <p className="text-4xl mb-4">🎯</p>
+          <div className="flex justify-center mb-4 text-[var(--arvo-fg-soft)]"><Icon name="target" size={40} /></div>
           <p className="text-[var(--arvo-fg)] font-medium mb-1">{t.finances.freedomEmptyTitle}</p>
           <p className="text-sm text-[var(--arvo-fg-soft)] mb-5">{t.finances.freedomEmptyBody}</p>
           <button
@@ -1108,66 +1144,59 @@ export default function FinancesFreedomPage() {
         </div>
       ) : (
         <>
-          {/* Summary cards — row 1: current comparison */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="bg-[var(--arvo-surface)] rounded-xl border border-[var(--arvo-border)] shadow-sm p-4">
-              <p className="text-xs text-[var(--arvo-fg-muted)] mb-1">{t.finances.freedomToday}</p>
-              <p className="text-lg font-bold text-[var(--arvo-fg)]">{fmt(cxFreedom(currentValue), displayCurrency, true)}</p>
-              <p className="text-[10px] text-[var(--arvo-fg-soft)] mt-0.5">{t.finances.freedomActualNow}</p>
-            </div>
-            <div className={`rounded-xl border shadow-sm p-4 ${planStatusText?.ahead ? 'bg-emerald-50 border-emerald-100' : planStatusText ? 'bg-amber-50 border-amber-100' : 'bg-[var(--arvo-surface)] border-[var(--arvo-border)]'}`}>
-              <p className="text-xs text-[var(--arvo-fg-muted)] mb-1">{t.finances.freedomPlannedToday}</p>
-              <p className="text-lg font-bold text-[var(--arvo-fg)]">{fmt(cxFreedom(plannedAtCurrentMonth), displayCurrency, true)}</p>
-              <p className="text-[10px] text-[var(--arvo-fg-soft)] mt-0.5">{t.finances.freedomAccordingToPlan}</p>
+          {/* KPIs em faixa */}
+          <div className="rounded-2xl p-5" style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)' }}>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <span style={kpiLabelStyle}>{t.finances.freedomToday}</span>
+                <span className="arvo-num text-base sm:text-lg" style={kpiValueStyle}>{fmt(cxFreedom(currentValue), displayCurrency, true)}</span>
+                <span className="text-[10px]" style={{ color: 'var(--arvo-fg-soft)' }}>{t.finances.freedomActualNow}</span>
+              </div>
+              <div className="sm:border-l sm:pl-6" style={{ display: 'flex', flexDirection: 'column', gap: 6, borderColor: 'var(--arvo-border)' }}>
+                <span style={kpiLabelStyle}>{t.finances.freedomGoal}</span>
+                <span className="arvo-num text-base sm:text-lg" style={kpiValueStyle}>{fmt(cxFreedom(activePlan!.target_amount), displayCurrency, true)}</span>
+              </div>
+              <div className="sm:border-l sm:pl-6" style={{ display: 'flex', flexDirection: 'column', gap: 6, borderColor: 'var(--arvo-border)' }}>
+                <span style={kpiLabelStyle}>{t.finances.freedomPassive} {t.finances.freedomPerMonth}</span>
+                <span className="arvo-num arvo-delta-pos text-base sm:text-lg">{fmt(cxFreedom(passiveIncome), displayCurrency, true)}</span>
+                {passiveIncomeReal != null && passiveIncomeReal !== passiveIncome && (
+                  <span className="arvo-num arvo-delta-pos text-xs">≈ {fmt(cxFreedom(passiveIncomeReal), displayCurrency, true)} {t.finances.freedomRealToday}</span>
+                )}
+                <span className="text-[10px]" style={{ color: 'var(--arvo-fg-soft)' }}>{(activePlan!.monthly_income_rate * 100).toFixed(1)}% {t.finances.freedomIncomeNominalTag}</span>
+              </div>
+              <div className="sm:border-l sm:pl-6" style={{ display: 'flex', flexDirection: 'column', gap: 6, borderColor: 'var(--arvo-border)' }}>
+                <span style={kpiLabelStyle}>{t.finances.freedomTarget}</span>
+                {reachMonth ? (
+                  <span className="arvo-num text-base sm:text-lg" style={kpiValueStyle}>
+                    {new Date(reachMonth + '-01').toLocaleDateString(intlLocale, { month: 'short', year: 'numeric' })}
+                  </span>
+                ) : (
+                  <span className="arvo-num text-base sm:text-lg" style={{ color: 'var(--arvo-fg-faint)' }}>—</span>
+                )}
+                <span className="text-[10px]" style={{ color: 'var(--arvo-fg-soft)' }}>
+                  {reachYearsFromNow != null && `${t.finances.freedomIn} ${reachYearsFromNow} ${t.finances.freedomAgeAtTarget}`}
+                  {userBirthdate && reachMonth && ` · ${ageAtDate(userBirthdate, reachMonth + '-01')} ${t.finances.freedomAgeAtTarget}`}
+                </span>
+                <span className="text-[10px]" style={{ color: 'var(--arvo-fg-faint)' }}>{t.finances.freedomBasedOnCurrent}</span>
+              </div>
             </div>
           </div>
-          {/* Summary cards — row 2: goal metrics */}
-          <div className="grid grid-cols-3 gap-3">
-            <div className="bg-[var(--arvo-surface)] rounded-xl border border-[var(--arvo-border)] shadow-sm p-4">
-              <p className="text-xs text-[var(--arvo-fg-muted)] mb-1">{t.finances.freedomGoal}</p>
-              <p className="text-base font-bold text-[var(--arvo-fg)]">{fmt(cxFreedom(activePlan!.target_amount), displayCurrency, true)}</p>
-            </div>
-            <div className="bg-[var(--arvo-surface)] rounded-xl border border-[var(--arvo-border)] shadow-sm p-4">
-              <p className="text-xs text-[var(--arvo-fg-muted)] mb-1">{t.finances.freedomPassive} {t.finances.freedomPerMonth}</p>
-              <div className="flex items-baseline gap-2 flex-wrap">
-                <p className="text-base font-bold text-emerald-600">{fmt(cxFreedom(passiveIncome), displayCurrency, true)}</p>
-                {passiveIncomeReal != null && passiveIncomeReal !== passiveIncome && (
-                  <p className="text-sm font-semibold text-emerald-500">≈ {fmt(cxFreedom(passiveIncomeReal), displayCurrency, true)} {t.finances.freedomRealToday}</p>
-                )}
-              </div>
-              <p className="text-[10px] text-[var(--arvo-fg-soft)]">{(activePlan!.monthly_income_rate * 100).toFixed(1)}% {t.finances.freedomIncomeNominalTag}</p>
-            </div>
-            <div className="bg-[var(--arvo-surface)] rounded-xl border border-[var(--arvo-border)] shadow-sm p-4">
-              <p className="text-xs text-[var(--arvo-fg-muted)] mb-1">{t.finances.freedomTarget}</p>
-              {reachMonth ? (
-                <p className="text-base font-bold text-[var(--arvo-fg)]">
-                  {new Date(reachMonth + '-01').toLocaleDateString(intlLocale, { month: 'short', year: 'numeric' })}
-                </p>
-              ) : (
-                <p className="text-base font-bold text-[var(--arvo-fg-soft)]">—</p>
-              )}
-              <p className="text-[10px] text-[var(--arvo-fg-soft)]">
-                {reachYearsFromNow != null && `${t.finances.freedomIn} ${reachYearsFromNow} ${t.finances.freedomAgeAtTarget}`}
-                {userBirthdate && reachMonth && ` · ${ageAtDate(userBirthdate, reachMonth + '-01')} ${t.finances.freedomAgeAtTarget}`}
-              </p>
-              <p className="text-[10px] text-[var(--arvo-fg-faint)] mt-0.5">{t.finances.freedomBasedOnCurrent}</p>
-            </div>
+
+          {/* Previsto para hoje */}
+          <div className="rounded-xl p-4" style={{ background: 'var(--arvo-surface-2)', border: '1px solid var(--arvo-border)' }}>
+            <p className="text-xs" style={{ color: 'var(--arvo-fg-muted)' }}>{t.finances.freedomPlannedToday}</p>
+            <p className="arvo-num text-lg font-bold" style={{ color: 'var(--arvo-fg)' }}>{fmt(cxFreedom(plannedAtCurrentMonth), displayCurrency, true)}</p>
+            <p className="text-[10px]" style={{ color: 'var(--arvo-fg-soft)' }}>{t.finances.freedomAccordingToPlan}</p>
           </div>
 
           {/* Status banner */}
           {planStatusText && (
-            <div className={`rounded-xl px-4 py-3 text-sm flex items-center gap-2 ${
-              planStatusText.ahead
-                ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
-                : 'bg-amber-50 text-amber-700 border border-amber-100'
-            }`}>
-              <span>{planStatusText.ahead ? '✅' : '⚠️'}</span>
-              <span>
-                {planStatusText.ahead ? t.finances.freedomAhead : t.finances.freedomBehind}:&nbsp;
-                <strong>{fmt(cxFreedom(Math.abs(planStatusText.diff)), displayCurrency, true, intlLocale)}</strong>
-                &nbsp;({planStatusText.ahead ? '+' : ''}{planStatusText.pct}% {t.finances.freedomVsPlanned})
-              </span>
-            </div>
+            <Banner variant={planStatusText.ahead ? 'info' : 'alert'}>
+              <Icon name={planStatusText.ahead ? 'check' : 'alert'} size={12} className="inline-block mr-1.5 -mb-0.5" />
+              {planStatusText.ahead ? t.finances.freedomAhead : t.finances.freedomBehind}:&nbsp;
+              <strong className="arvo-num">{fmt(cxFreedom(Math.abs(planStatusText.diff)), displayCurrency, true, intlLocale)}</strong>
+              &nbsp;({planStatusText.ahead ? '+' : ''}{planStatusText.pct}% {t.finances.freedomVsPlanned})
+            </Banner>
           )}
 
           {/* Chart */}
@@ -1180,25 +1209,45 @@ export default function FinancesFreedomPage() {
             <div className="bg-[var(--arvo-surface)] rounded-2xl border border-[var(--arvo-border)] shadow-sm p-5">
               <h3 className="text-sm font-semibold text-[var(--arvo-fg)] mb-4">{t.finances.freedomChartTitle}</h3>
               <ResponsiveContainer width="100%" height={320}>
-                <LineChart data={displayChartData} margin={{ top: 5, right: 10, bottom: 5, left: 0 }}>
+                <ComposedChart data={displayChartData} margin={{ top: 5, right: 10, bottom: 5, left: 0 }}>
+                  <defs>
+                    <linearGradient id="freedomAreaGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="var(--arvo-blue)" stopOpacity={0.15} />
+                      <stop offset="100%" stopColor="var(--arvo-blue)" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
                   <XAxis
                     dataKey="month"
                     tickFormatter={m => fmtMonth(m, intlLocale)}
-                    tick={{ fontSize: 10 }}
+                    tick={CHART_AXIS_TICK}
+                    axisLine={CHART_AXIS_LINE}
+                    tickLine={false}
                     interval={Math.floor(displayChartData.length / 8)}
                   />
                   <YAxis
-                    tickFormatter={v => fmt(v, displayCurrency, true)}
-                    tick={{ fontSize: 10 }}
-                    width={80}
+                    domain={[0, (max: number) => Math.max(max, fireValue ?? 0)]}
+                    tickFormatter={v => hideValues ? '•••' : formatCompactCurrency(v, displayCurrency, intlLocale)}
+                    tick={CHART_AXIS_TICK}
+                    axisLine={CHART_AXIS_LINE}
+                    tickLine={false}
+                    width={70}
                   />
                   <Tooltip content={<ChartTooltip currency={displayCurrency} locale={intlLocale} />} />
                   <Legend wrapperStyle={{ fontSize: 11 }} />
                   <ReferenceLine
                     y={cxFreedom(activePlan!.target_amount)}
-                    stroke="#C8B89A"
+                    stroke="var(--arvo-gold)"
                     strokeDasharray="4 2"
-                    label={{ value: t.finances.freedomGoal, position: 'insideTopRight', fontSize: 10, fill: '#C8B89A' }}
+                    label={{ value: t.finances.freedomGoal, position: 'insideTopRight', fontSize: 10, fill: 'var(--arvo-gold-text)' }}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="planned"
+                    stroke="none"
+                    fill="url(#freedomAreaGradient)"
+                    connectNulls
+                    legendType="none"
+                    tooltipType="none"
                   />
                   <Line
                     type="monotone"
@@ -1214,12 +1263,23 @@ export default function FinancesFreedomPage() {
                     type="monotone"
                     dataKey="actual"
                     name={t.finances.freedomActual}
-                    stroke="#10B981"
+                    stroke="var(--arvo-green)"
                     strokeWidth={2.5}
                     dot={false}
                     connectNulls
                   />
-                </LineChart>
+                  {fireMonth && fireValue != null && (
+                    <ReferenceDot
+                      x={fireMonth}
+                      y={fireValue}
+                      r={5}
+                      fill="var(--arvo-gold)"
+                      stroke="var(--arvo-surface)"
+                      strokeWidth={2}
+                      label={{ value: 'FIRE', position: 'top', fontSize: 10, fill: 'var(--arvo-gold-text)' }}
+                    />
+                  )}
+                </ComposedChart>
               </ResponsiveContainer>
               <p className="text-[10px] text-[var(--arvo-fg-soft)] mt-2 text-right">
                 {t.finances.freedomApprox}
