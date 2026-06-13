@@ -1125,7 +1125,7 @@ export default function FinancesTransactionsPage() {
                         <p className="text-xs text-[var(--arvo-fg-soft)] mt-0.5">{fmtDate(row.date)}</p>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
-                        <span className={`text-sm font-medium whitespace-nowrap ${row.amount < 0 ? 'text-red-600' : 'text-green-600'}`}>{fmt(row.amount, row.currency)}</span>
+                        <span className={`text-sm font-medium whitespace-nowrap tabular-nums ${row.amount < 0 ? 'text-[var(--arvo-fg)]' : 'arvo-delta-pos'}`}>{fmt(row.amount, row.currency)}</span>
                         <button onClick={() => setCsvRows(prev => prev.filter((_, j) => j !== i))} className="text-[var(--arvo-fg-soft)] hover:text-red-400 transition-colors">
                           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5"><path d="M5.28 4.22a.75.75 0 0 0-1.06 1.06L6.94 8l-2.72 2.72a.75.75 0 1 0 1.06 1.06L8 9.06l2.72 2.72a.75.75 0 1 0 1.06-1.06L9.06 8l2.72-2.72a.75.75 0 0 0-1.06-1.06L8 6.94 5.28 4.22Z" /></svg>
                         </button>
@@ -1207,7 +1207,7 @@ export default function FinancesTransactionsPage() {
                         {row.description}
                         {sameDescCount > 1 && <span className="ml-1.5 text-[10px] text-[var(--arvo-fg-soft)]">×{sameDescCount}</span>}
                       </td>
-                      <td className={`px-4 py-2 text-right font-medium whitespace-nowrap ${row.amount < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                      <td className={`px-4 py-2 text-right font-medium whitespace-nowrap tabular-nums ${row.amount < 0 ? 'text-[var(--arvo-fg)]' : 'arvo-delta-pos'}`}>
                         {fmt(row.amount, row.currency)}
                       </td>
                       <td className="px-4 py-2">
@@ -1310,7 +1310,7 @@ export default function FinancesTransactionsPage() {
                     <p className="text-sm text-[var(--arvo-fg)] truncate">{r.description}</p>
                     <p className="text-xs text-[var(--arvo-fg-soft)]">{r.date} · {r.finance_categories?.name ?? '—'}</p>
                   </div>
-                  <span className={`text-sm font-semibold shrink-0 ${r.amount < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                  <span className={`text-sm font-semibold shrink-0 tabular-nums ${r.amount < 0 ? 'text-[var(--arvo-fg)]' : 'arvo-delta-pos'}`}>
                     {r.amount > 0 ? '+' : ''}{fmt(r.amount, r.currency)}
                   </span>
                 </button>
@@ -1325,11 +1325,11 @@ export default function FinancesTransactionsPage() {
         <div className="grid grid-cols-2 gap-3">
           <div className="bg-[var(--arvo-surface)] rounded-xl border border-[var(--arvo-border)] shadow-sm p-4">
             <p className="text-xs text-[var(--arvo-fg-muted)] mb-1">{t.finances.expenses}</p>
-            <p className="text-lg font-bold text-red-600">{fmt(expenses)}</p>
+            <p className="text-lg font-bold text-[var(--arvo-fg)] tabular-nums">{fmt(expenses)}</p>
           </div>
           <div className="bg-[var(--arvo-surface)] rounded-xl border border-[var(--arvo-border)] shadow-sm p-4">
             <p className="text-xs text-[var(--arvo-fg-muted)] mb-1">{t.finances.incomeLabel}</p>
-            <p className="text-lg font-bold text-green-600">{fmt(income)}</p>
+            <p className="text-lg font-bold arvo-delta-pos tabular-nums">{fmt(income)}</p>
           </div>
         </div>
       )}
@@ -1384,7 +1384,7 @@ export default function FinancesTransactionsPage() {
                                 <span className="text-xs font-semibold text-amber-700">↩</span>
                                 <span className="text-sm font-medium text-[var(--arvo-fg)]">{item.name}</span>
                                 <span className="text-xs text-[var(--arvo-fg-soft)]">{item.txs.length} transações</span>
-                                <span className={`ml-auto text-xs sm:text-sm font-semibold ${Math.abs(item.net) < 0.01 ? 'text-[var(--arvo-fg-soft)]' : item.net > 0 ? 'text-green-600' : 'text-red-500'}`}>
+                                <span className={`ml-auto text-xs sm:text-sm font-semibold tabular-nums ${Math.abs(item.net) < 0.01 ? 'text-[var(--arvo-fg-soft)]' : item.net > 0 ? 'arvo-delta-pos' : 'text-[var(--arvo-fg)]'}`}>
                                   {t.finances.reimbursementGroupNet}: {fmt(item.net, item.txs[0]?.currency)}
                                 </span>
                                 <button
@@ -1404,7 +1404,7 @@ export default function FinancesTransactionsPage() {
                               <td className="px-2 sm:px-3 py-2 text-[var(--arvo-fg-muted)] max-w-[120px] sm:max-w-xs text-xs">
                                 <span className="truncate block">{tx.description || '—'}</span>
                               </td>
-                              <td className={`px-2 sm:px-3 py-2 text-right text-xs font-medium whitespace-nowrap ${tx.amount < 0 ? 'text-red-500' : 'text-green-500'}`}>
+                              <td className={`px-2 sm:px-3 py-2 text-right text-xs font-medium whitespace-nowrap tabular-nums ${tx.amount < 0 ? 'text-[var(--arvo-fg)]' : 'arvo-delta-pos'}`}>
                                 {fmt(tx.amount, tx.currency)}
                               </td>
                               <td className="px-2 sm:px-3 py-2 hidden sm:table-cell">
@@ -1505,7 +1505,7 @@ export default function FinancesTransactionsPage() {
                             >{tx.notes}</span>
                           ) : null}
                         </td>
-                        <td className={`px-2 sm:px-3 py-2.5 sm:py-3 text-right font-medium whitespace-nowrap text-xs sm:text-sm ${tx.amount < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                        <td className={`px-2 sm:px-3 py-2.5 sm:py-3 text-right font-medium whitespace-nowrap text-xs sm:text-sm tabular-nums ${tx.amount < 0 ? 'text-[var(--arvo-fg)]' : 'arvo-delta-pos'}`}>
                           {fmt(tx.amount, tx.currency)}
                         </td>
                         <td className="px-2 sm:px-3 py-2.5 sm:py-3 hidden sm:table-cell">
@@ -1843,7 +1843,7 @@ export default function FinancesTransactionsPage() {
                               {displayName(g)}
                             </button>
                           )}
-                          <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${Math.abs(g.net) < 0.01 ? 'bg-[var(--arvo-track-bg)] text-[var(--arvo-fg-muted)]' : g.net > 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-600'}`}>
+                          <span className={`text-xs font-medium px-2 py-0.5 rounded-full tabular-nums ${Math.abs(g.net) < 0.01 ? 'bg-[var(--arvo-track-bg)] text-[var(--arvo-fg-muted)]' : g.net > 0 ? 'bg-[var(--arvo-green-tint)] arvo-delta-pos' : 'bg-[var(--arvo-border-soft)] text-[var(--arvo-fg)]'}`}>
                             {g.net >= 0 ? '+' : ''}{fmt(g.net, g.transactions[0]?.currency ?? 'EUR')}
                           </span>
                           <button
@@ -1859,7 +1859,7 @@ export default function FinancesTransactionsPage() {
                             <div key={tx.id} className="flex items-center gap-2 text-xs text-[var(--arvo-fg-muted)] pl-2">
                               <span className="text-[var(--arvo-fg-faint)]">·</span>
                               <span className="flex-1 truncate">{tx.description}</span>
-                              <span className={`font-medium ${tx.amount < 0 ? 'text-red-500' : 'text-emerald-600'}`}>{fmt(tx.amount, tx.currency)}</span>
+                              <span className={`font-medium tabular-nums ${tx.amount < 0 ? 'text-[var(--arvo-fg)]' : 'arvo-delta-pos'}`}>{fmt(tx.amount, tx.currency)}</span>
                               <button
                                 onClick={() => removeFromGroup(g.id, tx.id)}
                                 title={t.finances.removeFromGroup}
@@ -1909,7 +1909,7 @@ export default function FinancesTransactionsPage() {
                                       {displayName(g)}
                                     </button>
                                   )}
-                                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${Math.abs(g.net) < 0.01 ? 'bg-[var(--arvo-track-bg)] text-[var(--arvo-fg-muted)]' : g.net > 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-600'}`}>
+                                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full tabular-nums ${Math.abs(g.net) < 0.01 ? 'bg-[var(--arvo-track-bg)] text-[var(--arvo-fg-muted)]' : g.net > 0 ? 'bg-[var(--arvo-green-tint)] arvo-delta-pos' : 'bg-[var(--arvo-border-soft)] text-[var(--arvo-fg)]'}`}>
                                     {g.net >= 0 ? '+' : ''}{fmt(g.net, g.transactions[0]?.currency ?? 'EUR')}
                                   </span>
                                   <button onClick={() => deleteGroup(g.id)} title={t.finances.groupDelete} className="p-1 text-[var(--arvo-fg-soft)] hover:text-red-400 transition-colors">
@@ -1921,7 +1921,7 @@ export default function FinancesTransactionsPage() {
                                     <div key={tx.id} className="flex items-center gap-2 text-xs text-[var(--arvo-fg-muted)] pl-2">
                                       <span className="text-[var(--arvo-fg-faint)]">·</span>
                                       <span className="flex-1 truncate">{tx.description}</span>
-                                      <span className={`font-medium ${tx.amount < 0 ? 'text-red-500' : 'text-emerald-600'}`}>{fmt(tx.amount, tx.currency)}</span>
+                                      <span className={`font-medium tabular-nums ${tx.amount < 0 ? 'text-[var(--arvo-fg)]' : 'arvo-delta-pos'}`}>{fmt(tx.amount, tx.currency)}</span>
                                       <button onClick={() => removeFromGroup(g.id, tx.id)} title={t.finances.removeFromGroup} className="p-0.5 text-[var(--arvo-fg-soft)] hover:text-red-400 transition-colors">
                                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3"><path d="M5.28 4.22a.75.75 0 0 0-1.06 1.06L6.94 8l-2.72 2.72a.75.75 0 1 0 1.06 1.06L8 9.06l2.72 2.72a.75.75 0 1 0 1.06-1.06L9.06 8l2.72-2.72a.75.75 0 0 0-1.06-1.06L8 6.94 5.28 4.22Z"/></svg>
                                       </button>
@@ -2100,7 +2100,7 @@ export default function FinancesTransactionsPage() {
           <div className="fixed bottom-0 left-0 right-0 bg-[var(--arvo-surface)] rounded-t-2xl z-50 px-5 pt-4 pb-8 shadow-2xl">
             <div className="w-10 h-1 bg-[var(--arvo-track-bg)] rounded-full mx-auto mb-4" />
             <p className="text-sm font-semibold text-[var(--arvo-fg)] truncate mb-0.5">{editSheetTx.description}</p>
-            <p className="text-xs text-[var(--arvo-fg-soft)] mb-4">{fmtDate(editSheetTx.date)} · <span className={editSheetTx.amount < 0 ? 'text-red-500' : 'text-green-500'}>{fmt(editSheetTx.amount, editSheetTx.currency)}</span></p>
+            <p className="text-xs text-[var(--arvo-fg-soft)] mb-4">{fmtDate(editSheetTx.date)} · <span className={`tabular-nums ${editSheetTx.amount < 0 ? 'text-[var(--arvo-fg)]' : 'arvo-delta-pos'}`}>{fmt(editSheetTx.amount, editSheetTx.currency)}</span></p>
             <p className="text-xs text-[var(--arvo-fg-muted)] mb-2">{t.finances.category}</p>
             <select
               value={sheetSharedCatId != null ? `s:${sheetSharedCatId}` : (sheetCatId != null ? `c:${sheetCatId}` : '')}
