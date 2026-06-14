@@ -71,6 +71,9 @@ const PATHS = {
   share: <><circle cx="12.5" cy="3.5" r="2" /><circle cx="3.5" cy="8" r="2" /><circle cx="12.5" cy="12.5" r="2" /><path d="M5.3 7.1l5.4-2.7M5.3 8.9l5.4 2.7" /></>,
   bell: <path d="M8 2a4 4 0 014 4c0 3 .8 4.2 1.5 5H2.5C3.2 10.2 4 9 4 6a4 4 0 014-4zM6.5 13.5a1.5 1.5 0 003 0" />,
   lock: <><rect x="3" y="7" width="10" height="7.5" rx="1" /><path d="M5.5 7V4.5a2.5 2.5 0 015 0V7" /></>,
+
+  /* people */
+  users: <><circle cx="5.5" cy="5" r="2.5" /><path d="M1 14v-1c0-2.2 2-4 4.5-4s4.5 1.8 4.5 4v1" /><circle cx="11.5" cy="6" r="2" /><path d="M10 8.3c1.9.4 3 1.8 3 3.5V13" /></>,
 } satisfies Record<string, ReactNode>
 
 export type IconName = keyof typeof PATHS

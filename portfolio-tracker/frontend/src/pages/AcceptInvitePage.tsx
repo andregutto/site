@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { useI18n } from '../contexts/I18nContext'
 import { apiFetch } from '../lib/api'
 import ArvoLoader from '../components/ArvoLoader'
+import { Icon } from '../components/icons'
 
 interface InvitePreview {
   group_name: string
@@ -112,8 +113,8 @@ export default function AcceptInvitePage() {
             <div className="flex flex-col gap-5">
               {/* Inviter */}
               <div className="flex flex-col items-center gap-3 text-center">
-                <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'rgba(13,13,13,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24 }}>
-                  👥
+                <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'rgba(13,13,13,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Icon name="users" size={24} style={{ color: 'var(--arvo-fg-soft)' }} />
                 </div>
                 <div>
                   <p style={{ fontSize: 11, color: 'var(--arvo-fg-soft)', letterSpacing: '0.10em', textTransform: 'uppercase', fontFamily: 'var(--arvo-font-body)', marginBottom: 4 }}>
@@ -134,12 +135,13 @@ export default function AcceptInvitePage() {
               <button
                 onClick={handleAccept}
                 disabled={accepting}
-                style={{ width: '100%', padding: '13px 24px', background: 'var(--arvo-black)', color: 'var(--arvo-offwhite)', border: 'none', borderRadius: 8, fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', opacity: accepting ? 0.6 : 1 }}
+                className="arvo-btn arvo-btn--primary"
+                style={{ width: '100%' }}
               >
                 {accepting ? '...' : s.joinGroup}
               </button>
 
-              <button onClick={() => navigate('/')} style={{ background: 'none', border: 'none', fontSize: 12, color: 'var(--arvo-fg-soft)', cursor: 'pointer', textAlign: 'center' }}>
+              <button onClick={() => navigate('/')} className="arvo-btn arvo-btn--link" style={{ width: '100%' }}>
                 {s.cancel}
               </button>
             </div>
