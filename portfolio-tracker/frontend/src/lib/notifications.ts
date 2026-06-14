@@ -1,5 +1,6 @@
 import type { NotificationItem } from './types'
 import type { Locale } from '../contexts/I18nContext'
+import type { IconName } from '../components/icons'
 
 const CURRENCY_LOCALES: Record<Locale, string> = { pt: 'pt-BR', en: 'en-US', fr: 'fr-FR' }
 
@@ -10,18 +11,18 @@ export const SEVERITY_COLORS: Record<NotificationItem['severity'], string> = {
   success: 'var(--arvo-green)',
 }
 
-export const TYPE_ICONS: Record<string, string> = {
-  achievement: '🏆',
-  bank_connected: '🏦',
-  bank_connect_error: '⚠️',
-  split_warning: '✂️',
-  budget_alert: '💰',
-  shared_category_alert: '👥',
-  home_prompt: '🏠',
-  budget_reminder_setup: '⏰',
-  budget_reminder_due: '⏰',
-  subscription_detected: '🔄',
-  shared_group_invite: '✉️',
+export const TYPE_ICONS: Record<string, IconName> = {
+  achievement: 'trophy',
+  bank_connected: 'bank',
+  bank_connect_error: 'alert',
+  split_warning: 'scissors',
+  budget_alert: 'wallet',
+  shared_category_alert: 'users',
+  home_prompt: 'home',
+  budget_reminder_setup: 'clock',
+  budget_reminder_due: 'clock',
+  subscription_detected: 'repeat',
+  shared_group_invite: 'share',
 }
 
 export function formatTimestamp(iso: string, locale: Locale): string {

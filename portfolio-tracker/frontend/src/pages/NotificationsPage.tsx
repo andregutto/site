@@ -4,21 +4,22 @@ import { useI18n } from '../contexts/I18nContext'
 import { useNotificationsContext } from '../contexts/NotificationsContext'
 import { resolveNotificationText, SEVERITY_COLORS, TYPE_ICONS, formatTimestamp } from '../lib/notifications'
 import type { NotificationItem } from '../lib/types'
+import { Icon } from '../components/icons'
 
 function NotificationRow({ item, action }: { item: NotificationItem; action: React.ReactNode }) {
   const { t, locale } = useI18n()
   const { title, subtitle } = resolveNotificationText(item, t, locale)
   const color = SEVERITY_COLORS[item.severity] ?? SEVERITY_COLORS.info
-  const icon = TYPE_ICONS[item.type] ?? '🔔'
+  const icon = TYPE_ICONS[item.type] ?? 'bell'
   const timestamp = formatTimestamp(item.dismissed_at ?? item.occurred_at, locale)
 
   const content = (
     <>
       <div
-        className="w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0"
-        style={{ background: `${color}1A` }}
+        className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+        style={{ background: `${color}1A`, color }}
       >
-        {icon}
+        <Icon name={icon} size={18} />
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium truncate" style={{ color: 'var(--arvo-fg)' }}>{title}</p>
@@ -66,7 +67,7 @@ function RestoreButton({ onClick, label }: { onClick: () => void; label: string 
 function EmptyState({ text }: { text: string }) {
   return (
     <div className="bg-[var(--arvo-surface)] rounded-2xl border border-[var(--arvo-border)] shadow-sm p-10 text-center">
-      <div className="text-3xl mb-2">🔔</div>
+      <div className="flex justify-center mb-2 text-[var(--arvo-fg-soft)]"><Icon name="bell" size={28} /></div>
       <p className="text-sm" style={{ color: 'var(--arvo-fg-soft)' }}>{text}</p>
     </div>
   )
