@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, cloneElement } from 'react'
 import { NavLink, Outlet, Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useCurrency, type Currency } from '../contexts/CurrencyContext'
@@ -56,6 +56,7 @@ export default function AppLayout() {
   const [showUserMenu,   setShowUserMenu]   = useState(false)
   const [showNotifMenu,  setShowNotifMenu]  = useState(false)
   const subNavScrollRef = useRef<HTMLDivElement>(null)
+  const [navCollapsed,  setNavCollapsed]  = useState(false)
   const [chatVisible,    setChatVisible]    = useState(() => localStorage.getItem('arvo_chat_visible') !== 'false')
   const [openChatNow,    setOpenChatNow]    = useState(false)
 
@@ -92,6 +93,23 @@ export default function AppLayout() {
       behavior: 'smooth',
     })
   }, [location.pathname])
+
+  // Mobile bottom nav: shrink + hide sub-nav while the user scrolls down
+  // (focus on content), restore to full size as soon as they scroll back up.
+  // Near the top, always stay expanded regardless of direction.
+  useEffect(() => {
+    let lastY = window.scrollY
+    function handleScroll() {
+      const y = window.scrollY
+      const delta = y - lastY
+      if (y < 24) setNavCollapsed(false)
+      else if (delta > 4) setNavCollapsed(true)
+      else if (delta < -4) setNavCollapsed(false)
+      lastY = y
+    }
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
 
   useEffect(() => {
     if (!user?.id) return
@@ -542,7 +560,14 @@ export default function AppLayout() {
         }}
       >
         {activeSubItems.length > 0 && (
-          <>
+          <div
+            style={{
+              maxHeight: navCollapsed ? 0 : 48,
+              opacity: navCollapsed ? 0 : 1,
+              overflow: 'hidden',
+              transition: 'max-height 260ms ease, opacity 180ms ease',
+            }}
+          >
             <div ref={subNavScrollRef} className="flex items-center gap-5 overflow-x-auto scrollbar-none" style={{ padding: '8px 14px 7px' }}>
               {activeSubItems.map(({ to, label, end }) => (
                 <NavLink
@@ -558,7 +583,7 @@ export default function AppLayout() {
               ))}
             </div>
             <div style={{ height: 1, margin: '0 14px', background: 'var(--arvo-border-soft)' }} />
-          </>
+          </div>
         )}
         <div className="flex" style={{ padding: '5px' }}>
           {[
@@ -580,22 +605,33 @@ export default function AppLayout() {
           ].map(({ to, label, match, icon }) => (
             <NavLink
               key={to} to={to}
-              className="flex-1 flex flex-col items-center gap-1 shrink-0"
+              className="flex-1 flex flex-col items-center shrink-0"
               style={{
                 fontFamily: "var(--arvo-font-body)",
                 letterSpacing: '0.06em',
                 fontSize: 10,
-                padding: '6px 6px 7px',
+                gap: navCollapsed ? 0 : 4,
+                padding: navCollapsed ? '9px 6px' : '6px 6px 7px',
                 borderRadius: 999,
                 color: match ? 'var(--arvo-fg)' : 'var(--arvo-fg-soft)',
                 background: match ? 'var(--arvo-glass-active-bg)' : 'transparent',
                 boxShadow: match ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
-                transition: 'all 280ms cubic-bezier(0.22,0.61,0.36,1)',
+                transition: 'all 240ms cubic-bezier(0.22,0.61,0.36,1)',
                 textDecoration: 'none',
               }}
             >
-              {icon}
-              <span className="truncate w-full text-center px-1">{label}</span>
+              {cloneElement(icon, {
+                style: { width: navCollapsed ? 16 : 20, height: navCollapsed ? 16 : 20, transition: 'width 240ms ease, height 240ms ease' },
+              })}
+              <span
+                className="truncate w-full text-center px-1"
+                style={{
+                  maxHeight: navCollapsed ? 0 : 14,
+                  opacity: navCollapsed ? 0 : 1,
+                  overflow: 'hidden',
+                  transition: 'max-height 240ms ease, opacity 160ms ease',
+                }}
+              >{label}</span>
             </NavLink>
           ))}
         </div>
