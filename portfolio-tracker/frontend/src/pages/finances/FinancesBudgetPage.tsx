@@ -73,6 +73,13 @@ const ENV_TYPE_KEY: Record<string, string> = {
   income:     'envelopeIncome',
 }
 
+const ENV_TYPE_COLOR: Record<string, string> = {
+  essential:  'var(--arvo-blue)',
+  investment: 'var(--arvo-green)',
+  savings:    'var(--arvo-ocre)',
+  free:       'var(--arvo-gold)',
+}
+
 function resolveEnvName(name: string, type: string, nameKey: string | null | undefined, keys: Record<string, string>): string {
   const k = nameKey ?? ENV_TYPE_KEY[type] ?? null
   if (!k) return name
@@ -153,7 +160,7 @@ function EnvelopeBar({ env, expanded, onToggle, onEditCategory, onDeleteCategory
     ? 'var(--arvo-red)'
     : isInvestment && allocated >= 100
       ? 'var(--arvo-green)'
-      : env.color
+      : ENV_TYPE_COLOR[env.type] ?? 'var(--arvo-blue)'
 
   function saveDesc() {
     setEditingDesc(false)
@@ -729,7 +736,7 @@ export default function FinancesBudgetPage() {
                   </div>
                   <div className="text-xs text-[var(--arvo-fg-soft)] mt-0.5">{t.finances.target}: {env.pct_target}%</div>
                   <div className="mt-2 h-1 bg-[var(--arvo-track-bg)] rounded-full overflow-hidden">
-                    <div className="h-full rounded-full" style={{ width: `${Math.min(pctReal / env.pct_target * 100, 100)}%`, backgroundColor: over ? 'var(--arvo-red)' : met ? 'var(--arvo-green)' : env.color }} />
+                    <div className="h-full rounded-full" style={{ width: `${Math.min(pctReal / env.pct_target * 100, 100)}%`, backgroundColor: over ? 'var(--arvo-red)' : met ? 'var(--arvo-green)' : (ENV_TYPE_COLOR[env.type] ?? 'var(--arvo-blue)') }} />
                   </div>
                 </div>
               )
