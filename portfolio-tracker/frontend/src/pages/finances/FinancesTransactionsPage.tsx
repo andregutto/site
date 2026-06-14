@@ -5,6 +5,7 @@ import { apiFetch } from '../../lib/api'
 import { useAuth } from '../../contexts/AuthContext'
 import { useI18n } from '../../contexts/I18nContext'
 import { useCurrency } from '../../contexts/CurrencyContext'
+import { Icon } from '../../components/icons'
 
 interface Category { id: number; name: string; name_key?: string | null; icon: string; color: string }
 
@@ -1391,10 +1392,10 @@ export default function FinancesTransactionsPage() {
                             <td className="pl-4 pr-2 py-2.5 w-8" />
                             <td colSpan={6} className="px-3 py-2.5">
                               <div className="flex items-center gap-2.5">
-                                <svg className={`w-3 h-3 text-amber-500 transition-transform shrink-0 ${expanded ? 'rotate-90' : ''}`} fill="currentColor" viewBox="0 0 16 16">
+                                <svg className={`w-3 h-3 text-[var(--arvo-fg-soft)] transition-transform shrink-0 ${expanded ? 'rotate-90' : ''}`} fill="currentColor" viewBox="0 0 16 16">
                                   <path d="M6 3.5L10.5 8 6 12.5V3.5z"/>
                                 </svg>
-                                <span className="text-xs font-semibold text-amber-700">↩</span>
+                                <Icon name="repeat" size={12} style={{ color: 'var(--arvo-fg-soft)' }} />
                                 <span className="text-sm font-medium text-[var(--arvo-fg)]">{item.name}</span>
                                 <span className="text-xs text-[var(--arvo-fg-soft)]">{item.txs.length} transações</span>
                                 <span className={`ml-auto text-xs sm:text-sm font-semibold tabular-nums ${Math.abs(item.net) < 0.01 ? 'text-[var(--arvo-fg-soft)]' : item.net > 0 ? 'arvo-delta-pos' : 'text-[var(--arvo-fg)]'}`}>
@@ -1411,7 +1412,7 @@ export default function FinancesTransactionsPage() {
                             </td>
                           </tr>
                           {expanded && item.txs.map(tx => (
-                            <tr key={tx.id} className="bg-amber-50/20 hover:bg-amber-50/40 transition-colors">
+                            <tr key={tx.id} className="bg-[var(--arvo-track-bg)] hover:bg-[var(--arvo-surface-2)] transition-colors">
                               <td className="pl-3 pr-1 py-2 w-8" />
                               <td className="px-2 sm:px-3 py-2 text-[var(--arvo-fg-soft)] whitespace-nowrap text-xs">{fmtDate(tx.date)}</td>
                               <td className="px-2 sm:px-3 py-2 text-[var(--arvo-fg-muted)] max-w-[120px] sm:max-w-xs text-xs">
@@ -1471,7 +1472,7 @@ export default function FinancesTransactionsPage() {
                               <span className="text-[10px] bg-[var(--arvo-track-bg)] text-[var(--arvo-fg-muted)] rounded px-1.5 py-0.5 font-medium">{t.finances.excludedBadge}</span>
                             )}
                             {tx.reimbursement_group_id && (
-                              <span className="text-[10px] bg-amber-50 text-amber-600 rounded px-1.5 py-0.5 font-medium">
+                              <span className="text-[10px] bg-[var(--arvo-track-bg)] text-[var(--arvo-fg-muted)] rounded px-1.5 py-0.5 font-medium">
                                 {groups.find(g => g.id === tx.reimbursement_group_id)?.name ?? t.finances.reimbursementGroup}
                               </span>
                             )}
