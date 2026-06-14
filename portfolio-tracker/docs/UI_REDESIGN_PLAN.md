@@ -482,9 +482,9 @@ Overview/Budget/Freedom/Transações.
 **Fase 7 — Assinatura IA (½ dia)** — §3.7 no ChatWidget + seção f5 da landing.
 ✓ FAB + chat aberto + typing.
 
-**Fase 8 — Gamificação editorial (1 dia)** — selos de linha, níveis broto→árvore
-(sem 🚀), celebração fade+hairline, toasts discretos, onboarding/checklist sem
-emoji. ✓ earned/locked/celebração.
+**Fase 8 — Gamificação editorial (1 dia)** — **[CONCLUÍDA]** selos de linha, níveis
+broto→árvore (sem 🚀), celebração fade+hairline, toasts discretos,
+onboarding/checklist sem emoji. ✓ earned/locked/celebração.
 
 **Fase 8.5 — Dark polish (½ dia)** — tokens `--arvo-blue-on-dark`/`--arvo-red-on-dark`,
 banner/checkbox/hardcodes, screenshots dark (Dashboard, Transações, Conquistas,
