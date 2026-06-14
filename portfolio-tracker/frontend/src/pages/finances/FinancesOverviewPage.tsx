@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { PageLoader } from '../../components/ArvoLoader'
+import { Icon } from '../../components/icons'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid,
 } from 'recharts'
@@ -307,7 +308,7 @@ export default function FinancesOverviewPage() {
         <p className="text-sm mt-0.5" style={{ color: 'var(--arvo-fg-muted)' }}>{t.finances.overviewSubtitle}</p>
       </div>
       <div className="bg-[var(--arvo-surface)] rounded-2xl border border-[var(--arvo-border)] shadow-sm p-10 text-center">
-        <p className="text-3xl mb-3">💰</p>
+        <div className="flex justify-center mb-3 text-[var(--arvo-fg-soft)]"><Icon name="wallet" size={32} /></div>
         <p className="font-medium text-sm mb-1" style={{ color: 'var(--arvo-fg-muted)' }}>{t.finances.configureIncome}</p>
         <p className="text-xs mb-4" style={{ color: 'var(--arvo-fg-soft)' }}>{t.finances.configureHint}</p>
         <Link to="/finances/budget" className="inline-block text-sm px-5 py-2 rounded-xl hover:opacity-80 transition-opacity" style={{ background: 'var(--arvo-pill-active-bg)', color: 'var(--arvo-pill-active-fg)' }}>
@@ -527,11 +528,12 @@ export default function FinancesOverviewPage() {
                 </p>
                 <p style={{ fontFamily: "var(--arvo-font-body)", fontSize: 9, fontWeight: 600, letterSpacing: '0.10em', textTransform: 'uppercase', color: 'var(--arvo-gold-text)', marginTop: 8, marginBottom: 0 }}>{t.finances.overviewBalance}</p>
               </div>
-              <div style={{ flexShrink: 0, padding: '4px 12px', borderRadius: 999, fontSize: 11, fontFamily: "var(--arvo-font-body)", letterSpacing: '0.06em',
+              <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 4, padding: '4px 12px', borderRadius: 999, fontSize: 11, fontFamily: "var(--arvo-font-body)", letterSpacing: '0.06em',
                 background: totalExpenses === 0 ? 'var(--arvo-chip-bg)' : isWithinBudget ? 'rgba(31,138,91,0.10)' : 'rgba(214,59,47,0.10)',
                 color: totalExpenses === 0 ? 'var(--arvo-fg-faint)' : isWithinBudget ? 'var(--arvo-green)' : 'var(--arvo-red)',
                 border: `1px solid ${totalExpenses === 0 ? 'var(--arvo-border)' : isWithinBudget ? 'rgba(31,138,91,0.25)' : 'rgba(214,59,47,0.25)'}`,
               }}>
+                {totalExpenses !== 0 && <Icon name={isWithinBudget ? 'check' : 'alert'} size={11} />}
                 {totalExpenses === 0 ? '—' : isWithinBudget ? t.finances.overviewOnTrack : t.finances.overviewOverspent}
                 {overspentAmount > 0 && ` +${fmt(cx(overspentAmount), currency, true)}`}
               </div>
@@ -985,20 +987,20 @@ export default function FinancesOverviewPage() {
 
       {/* Empty state / next steps */}
       {!hasHistory && (
-        <div className="lg:col-span-2 bg-indigo-50 border border-indigo-100 rounded-2xl p-5 dark:bg-indigo-950/40 dark:border-indigo-900">
-          <h3 className="font-semibold text-indigo-900 text-sm mb-2 dark:text-indigo-200">{t.finances.overviewNextSteps}</h3>
-          <ul className="space-y-1.5">
-            <li className="flex items-center gap-2 text-xs text-indigo-700 dark:text-indigo-300">
-              <span>📋</span>
-              <Link to="/finances/transactions" className="hover:underline">{t.finances.noTransactionsHint}</Link>
+        <div className="lg:col-span-2 rounded-2xl p-5" style={{ background: 'var(--arvo-surface-2)', border: '1px solid var(--arvo-border)' }}>
+          <h3 className="text-sm font-semibold mb-2" style={{ color: 'var(--arvo-fg)' }}>{t.finances.overviewNextSteps}</h3>
+          <ul className="space-y-2">
+            <li className="flex items-center gap-2 text-xs">
+              <Icon name="rows" size={14} style={{ color: 'var(--arvo-fg-soft)' }} />
+              <Link to="/finances/transactions" className="hover:underline transition-colors" style={{ color: 'var(--arvo-fg-muted)' }}>{t.finances.noTransactionsHint}</Link>
             </li>
-            <li className="flex items-center gap-2 text-xs text-indigo-700 dark:text-indigo-300">
-              <span>📊</span>
-              <Link to="/finances/budget" className="hover:underline">{t.finances.overviewReviewBudget}</Link>
+            <li className="flex items-center gap-2 text-xs">
+              <Icon name="pie" size={14} style={{ color: 'var(--arvo-fg-soft)' }} />
+              <Link to="/finances/budget" className="hover:underline transition-colors" style={{ color: 'var(--arvo-fg-muted)' }}>{t.finances.overviewReviewBudget}</Link>
             </li>
-            <li className="flex items-center gap-2 text-xs text-indigo-700 dark:text-indigo-300">
-              <span>🎯</span>
-              <Link to="/freedom" className="hover:underline">{t.finances.overviewFreedomPlan}</Link>
+            <li className="flex items-center gap-2 text-xs">
+              <Icon name="target" size={14} style={{ color: 'var(--arvo-fg-soft)' }} />
+              <Link to="/freedom" className="hover:underline transition-colors" style={{ color: 'var(--arvo-fg-muted)' }}>{t.finances.overviewFreedomPlan}</Link>
             </li>
           </ul>
         </div>
