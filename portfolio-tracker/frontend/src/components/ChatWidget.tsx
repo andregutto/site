@@ -173,8 +173,8 @@ export default function ChatWidget({ visible = true, onDismiss, forceOpen, onFor
         .arvo-chat-glow {
           position: absolute; inset: -5px; border-radius: 50%;
           background: conic-gradient(from 0deg, #1B4FD8, #E8A020, #D63B2F, #1B4FD8);
-          animation: arvo-spin 2.8s linear infinite;
-          filter: blur(8px); opacity: 0.65; pointer-events: none;
+          animation: arvo-spin 7s linear infinite;
+          filter: blur(15px); opacity: 0.5; pointer-events: none;
         }
         .arvo-bird-p1 { animation: arvo-bird-color 3s ease-in-out infinite; animation-delay: 0s; }
         .arvo-bird-p2 { animation: arvo-bird-color 3s ease-in-out infinite; animation-delay: 0.25s; }
@@ -199,6 +199,16 @@ export default function ChatWidget({ visible = true, onDismiss, forceOpen, onFor
         }
         .arvo-chat-panel {
           animation: arvo-chat-border 6s ease-in-out infinite;
+        }
+        @keyframes arvo-dot-fade {
+          0%, 80%, 100% { opacity: 0.25; }
+          40% { opacity: 1; }
+        }
+        .arvo-dot-fade {
+          animation: arvo-dot-fade 1.4s ease-in-out infinite;
+        }
+        .arvo-chat-send:hover:not(:disabled) {
+          box-shadow: 0 0 0 1px rgba(232,160,32,0.35), 0 0 14px rgba(27,79,216,0.22), 0 0 14px rgba(214,59,47,0.16);
         }
       `}</style>
 
@@ -253,10 +263,12 @@ export default function ChatWidget({ visible = true, onDismiss, forceOpen, onFor
           {/* Header */}
           <div className="relative flex items-center gap-2.5 px-4 py-3 rounded-t-2xl" style={{ background: '#0D0D0D', borderBottom: '1px solid rgba(200,184,154,0.15)' }}>
             <div className="arvo-chat-header-grad rounded-t-2xl" />
-            <div className="relative z-10 w-7 h-7 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
-              <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23-.693L5 14.5m14.8.8l1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0112 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5" />
-              </svg>
+            <div className="relative z-10 w-7 h-7 rounded-full flex-shrink-0 p-[1.5px]" style={{ background: 'conic-gradient(from 0deg, #1B4FD8, #E8A020, #D63B2F, #1B4FD8)' }}>
+              <div className="w-full h-full rounded-full bg-white/20 flex items-center justify-center">
+                <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23-.693L5 14.5m14.8.8l1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0112 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5" />
+                </svg>
+              </div>
             </div>
             <div className="relative z-10 min-w-0">
               <p className="text-white text-sm font-semibold leading-none">{t.chat.title}</p>
@@ -316,10 +328,10 @@ export default function ChatWidget({ visible = true, onDismiss, forceOpen, onFor
                         : { background: 'var(--arvo-chip-bg)', color: 'var(--arvo-fg)', borderBottomLeftRadius: 4, fontFamily: "var(--arvo-font-body)" }}
                     >
                       {m.loading && !m.content ? (
-                        <span className="flex gap-1 items-center h-4">
-                          <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce [animation-delay:0ms]" />
-                          <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce [animation-delay:150ms]" />
-                          <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce [animation-delay:300ms]" />
+                        <span className="flex gap-1.5 items-center h-4">
+                          <span className="arvo-dot-fade" style={{ width: 6, height: 6, borderRadius: '50%', background: '#1B4FD8', animationDelay: '0ms' }} />
+                          <span className="arvo-dot-fade" style={{ width: 6, height: 6, borderRadius: '50%', background: '#E8A020', animationDelay: '160ms' }} />
+                          <span className="arvo-dot-fade" style={{ width: 6, height: 6, borderRadius: '50%', background: '#D63B2F', animationDelay: '320ms' }} />
                         </span>
                       ) : m.role === 'assistant' ? (
                         renderText(m.content)
@@ -354,7 +366,7 @@ export default function ChatWidget({ visible = true, onDismiss, forceOpen, onFor
               <button
                 onClick={() => sendMessage(input)}
                 disabled={loading || !input.trim()}
-                className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center disabled:opacity-40 transition-all"
+                className="arvo-chat-send flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center disabled:opacity-40 transition-all"
                 style={{ background: 'var(--arvo-pill-active-bg)', color: 'var(--arvo-pill-active-fg)' }}
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

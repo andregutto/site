@@ -664,8 +664,8 @@ export default function LandingPage() {
         .arvo-feat-glow {
           position: absolute; inset: -10px; border-radius: 50%;
           background: conic-gradient(from 0deg, #1B4FD8, #E8A020, #D63B2F, #1B4FD8);
-          animation: arvo-feat-spin 2.8s linear infinite;
-          filter: blur(12px); opacity: 0.60; pointer-events: none;
+          animation: arvo-feat-spin 7s linear infinite;
+          filter: blur(16px); opacity: 0.5; pointer-events: none;
         }
         .arvo-feat-p1 { animation: arvo-feat-bird 3s ease-in-out infinite; animation-delay: 0s; }
         .arvo-feat-p2 { animation: arvo-feat-bird 3s ease-in-out infinite; animation-delay: 0.25s; }
