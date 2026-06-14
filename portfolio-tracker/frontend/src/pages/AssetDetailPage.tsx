@@ -10,7 +10,7 @@ import InstitutionSelect from '../components/InstitutionSelect'
 import MigrateToFIModal from '../components/MigrateToFIModal'
 import ManualValueModal from '../components/ManualValueModal'
 import type { PortfolioAsset, ManualValue } from '../lib/types'
-import { StatDelta } from '../components/ui'
+import { StatDelta, Banner } from '../components/ui'
 import { ArvoTooltip, CHART_GRID_STROKE, CHART_AXIS_TICK, CHART_SERIES } from '../components/charts'
 import {
   LineChart, Line, XAxis, YAxis, Tooltip,
@@ -435,24 +435,25 @@ export default function AssetDetailPage() {
     <div className="space-y-6">
       {/* Split warning banner */}
       {splitWarnings.length > 0 && (
-        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-start gap-3">
-          <span className="text-amber-500 text-lg shrink-0">⚠</span>
-          <div className="flex-1 min-w-0">
-            <p className="font-semibold text-amber-900 text-sm">{d.splitWarningTitle}</p>
-            <p className="text-xs text-amber-700 mt-0.5">{(d.splitWarningBody as string).replace('{n}', String(splitWarnings.length))}</p>
-            <div className="flex flex-wrap gap-2 mt-2">
+        <Banner
+          variant="alert"
+          action={
+            <div className="flex flex-wrap gap-2 justify-end shrink-0">
               {splitWarnings.map(s => (
                 <button
                   key={s.date}
                   onClick={() => { setSplitModalData({ date: s.date, numerator: s.numerator, denominator: s.denominator }); setShowSplitModal(true) }}
-                  className="text-xs bg-amber-100 hover:bg-amber-200 border border-amber-300 text-amber-800 px-2 py-1 rounded-lg transition-colors"
+                  className="arvo-btn arvo-btn--link shrink-0"
                 >
                   {s.ratio} · {s.date} {d.splitRegisterBtn} →
                 </button>
               ))}
             </div>
-          </div>
-        </div>
+          }
+        >
+          <span className="font-semibold" style={{ color: 'var(--arvo-fg)' }}>{d.splitWarningTitle}</span>{' '}
+          {(d.splitWarningBody as string).replace('{n}', String(splitWarnings.length))}
+        </Banner>
       )}
 
       {/* Split modal */}
@@ -917,21 +918,22 @@ export default function AssetDetailPage() {
 
       {/* Stale value alert */}
       {isStale && (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex items-start gap-3">
-          <span className="text-amber-500 text-base mt-0.5">!</span>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-amber-800">
-              {daysSinceUpdate === null
-                ? d.staleNoValue
-                : d.staleDays.replace('{n}', String(daysSinceUpdate))}
-            </p>
-            <p className="text-xs text-amber-600 mt-0.5">{d.staleBody}</p>
-          </div>
-          <button
-            onClick={() => setShowManualModal(true)}
-            className="text-xs font-semibold text-amber-700 border border-amber-300 rounded-lg px-2.5 py-1 hover:bg-amber-100 transition-colors shrink-0"
-          >{d.updateBtn}</button>
-        </div>
+        <Banner
+          variant="alert"
+          action={
+            <button
+              onClick={() => setShowManualModal(true)}
+              className="arvo-btn arvo-btn--link shrink-0"
+            >{d.updateBtn}</button>
+          }
+        >
+          <span className="font-semibold" style={{ color: 'var(--arvo-fg)' }}>
+            {daysSinceUpdate === null
+              ? d.staleNoValue
+              : d.staleDays.replace('{n}', String(daysSinceUpdate))}
+          </span>{' '}
+          {d.staleBody}
+        </Banner>
       )}
 
       {/* Portfolio weight bar */}
