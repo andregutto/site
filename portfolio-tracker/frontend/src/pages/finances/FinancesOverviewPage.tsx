@@ -523,21 +523,21 @@ export default function FinancesOverviewPage() {
         <div className="lg:grid lg:grid-cols-2 lg:gap-8" style={{ position: 'relative', zIndex: 2 }}>
           {/* Left: balance + KPIs */}
           <div>
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
-              <div>
-                <p style={{ fontFamily: "var(--arvo-font-body)", fontSize: 42, letterSpacing: '0.02em', lineHeight: 1.05, margin: 0, color: receivedIncome > 0 && netBalance < 0 ? 'var(--arvo-red)' : 'var(--arvo-fg)' }}>
-                  {receivedIncome > 0 ? fmt(cx(netBalance), currency, true) : '—'}
-                </p>
-                <p style={{ fontFamily: "var(--arvo-font-body)", fontSize: 9, fontWeight: 600, letterSpacing: '0.10em', textTransform: 'uppercase', color: 'var(--arvo-gold-text)', marginTop: 8, marginBottom: 0 }}>{t.finances.overviewBalance}</p>
-              </div>
-              <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 4, padding: '4px 12px', borderRadius: 999, fontSize: 11, fontFamily: "var(--arvo-font-body)", letterSpacing: '0.06em',
-                background: totalExpenses === 0 ? 'var(--arvo-chip-bg)' : isWithinBudget ? 'rgba(31,138,91,0.10)' : 'rgba(214,59,47,0.10)',
-                color: totalExpenses === 0 ? 'var(--arvo-fg-faint)' : isWithinBudget ? 'var(--arvo-green)' : 'var(--arvo-red)',
-                border: `1px solid ${totalExpenses === 0 ? 'var(--arvo-border)' : isWithinBudget ? 'rgba(31,138,91,0.25)' : 'rgba(214,59,47,0.25)'}`,
-              }}>
-                {totalExpenses !== 0 && <Icon name={isWithinBudget ? 'check' : 'alert'} size={11} />}
-                {totalExpenses === 0 ? '—' : isWithinBudget ? t.finances.overviewOnTrack : t.finances.overviewOverspent}
-                {overspentAmount > 0 && ` +${fmt(cx(overspentAmount), currency, true)}`}
+            <div>
+              <p style={{ fontFamily: "var(--arvo-font-body)", fontSize: 42, letterSpacing: '0.02em', lineHeight: 1.05, margin: 0, color: receivedIncome > 0 && netBalance < 0 ? 'var(--arvo-red)' : 'var(--arvo-fg)' }}>
+                {receivedIncome > 0 ? fmt(cx(netBalance), currency, true) : '—'}
+              </p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
+                <p style={{ fontFamily: "var(--arvo-font-body)", fontSize: 9, fontWeight: 600, letterSpacing: '0.10em', textTransform: 'uppercase', color: 'var(--arvo-gold-text)', margin: 0 }}>{t.finances.overviewBalance}</p>
+                <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 4, padding: '2px 10px', borderRadius: 999, fontSize: 11, fontFamily: "var(--arvo-font-body)", letterSpacing: '0.06em',
+                  background: totalExpenses === 0 ? 'var(--arvo-chip-bg)' : isWithinBudget ? 'rgba(31,138,91,0.10)' : 'rgba(214,59,47,0.10)',
+                  color: totalExpenses === 0 ? 'var(--arvo-fg-faint)' : isWithinBudget ? 'var(--arvo-green)' : 'var(--arvo-red)',
+                  border: `1px solid ${totalExpenses === 0 ? 'var(--arvo-border)' : isWithinBudget ? 'rgba(31,138,91,0.25)' : 'rgba(214,59,47,0.25)'}`,
+                }}>
+                  {totalExpenses !== 0 && <Icon name={isWithinBudget ? 'check' : 'alert'} size={11} />}
+                  {totalExpenses === 0 ? '—' : isWithinBudget ? t.finances.overviewOnTrack : t.finances.overviewOverspent}
+                  {overspentAmount > 0 && ` +${fmt(cx(overspentAmount), currency, true)}`}
+                </div>
               </div>
             </div>
 

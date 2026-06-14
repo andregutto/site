@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { CSSProperties } from 'react'
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts'
+import { PageLoader } from '../components/ArvoLoader'
 import { usePortfolioValue } from '../hooks/usePortfolio'
 import { useCurrency } from '../contexts/CurrencyContext'
 import { useI18n } from '../contexts/I18nContext'
@@ -298,9 +299,7 @@ export default function DiversificationPage() {
     )
   }
 
-  if (loading) return (
-    <div style={{ padding: 32, textAlign: 'center', color: 'var(--arvo-fg-soft)', fontFamily: 'var(--arvo-font-body)' }}>...</div>
-  )
+  if (loading) return <PageLoader />
 
   if (!assets.length) return (
     <div style={{ padding: 48, textAlign: 'center', color: 'var(--arvo-fg-soft)', fontFamily: 'var(--arvo-font-body)' }}>{d.noData}</div>
@@ -346,7 +345,7 @@ export default function DiversificationPage() {
 
           <div className="rounded-2xl p-6" style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)' }}>
             <h2 className="font-semibold mb-5" style={{ color: 'var(--arvo-fg)' }}>{d.geoTitle}</h2>
-            <div className="flex gap-6 items-center flex-wrap">
+            <div className="flex gap-6 items-center justify-center flex-wrap">
               <div style={{ flex: '0 0 180px', height: 180 }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
@@ -414,7 +413,7 @@ export default function DiversificationPage() {
             {!hasBrapiSectors && sectorData !== null && !sectorLoading && (
               <p className="mb-4" style={{ fontSize: 11, color: 'var(--arvo-fg-soft)', fontStyle: 'italic' }}>{d.sectorFallbackNote}</p>
             )}
-            <div className="flex gap-6 items-center flex-wrap">
+            <div className="flex gap-6 items-center justify-center flex-wrap">
               <div style={{ flex: '0 0 180px', height: 180 }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
