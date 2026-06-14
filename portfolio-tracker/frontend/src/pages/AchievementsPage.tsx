@@ -6,6 +6,7 @@ import { useI18n } from '../contexts/I18nContext'
 import { useCurrency } from '../contexts/CurrencyContext'
 import Medal from '../components/Medal'
 import CelebrationModal from '../components/CelebrationModal'
+import { Icon } from '../components/icons'
 
 export default function AchievementsPage() {
   const { earned, earnedKeys, totalXp, loading, triggerCheck } = useAchievementContext()
@@ -92,7 +93,9 @@ export default function AchievementsPage() {
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 1, background: 'linear-gradient(to right, transparent, rgba(200,184,154,0.55), transparent)', pointerEvents: 'none' }} />
         <div className="flex items-center justify-between mb-3" style={{ position: 'relative', zIndex: 1 }}>
           <div className="flex items-center gap-2">
-            <span className="text-3xl">{level.emoji}</span>
+            <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0" style={{ background: 'var(--arvo-gold-tint)', color: 'var(--arvo-gold-text)' }}>
+              <Icon name={level.icon} size={20} />
+            </div>
             <div>
               <p className="text-xs uppercase tracking-widest" style={{ fontFamily: "var(--arvo-font-body)", color: 'var(--arvo-gold-text)' }}>{t.achievements.currentLevel}</p>
               <p style={{ fontFamily: "var(--arvo-font-body)", fontSize: 18, color: 'var(--arvo-fg)' }}>{(t.levels as Record<string,string>)[level.key] ?? level.name}</p>
@@ -116,7 +119,7 @@ export default function AchievementsPage() {
         <div className="flex justify-between mt-2 text-xs" style={{ color: 'var(--arvo-fg-muted)', fontFamily: "var(--arvo-font-body)", position: 'relative', zIndex: 1 }}>
           <span>{level.minXp} XP</span>
           {nextLevel
-            ? <span>{t.achievements.nextLevel}: {nextLevel.emoji} {(t.levels as Record<string,string>)[nextLevel.key] ?? nextLevel.name} · {nextLevel.minXp} {t.achievements.xp}</span>
+            ? <span className="inline-flex items-center gap-1">{t.achievements.nextLevel}: <Icon name={nextLevel.icon} size={12} /> {(t.levels as Record<string,string>)[nextLevel.key] ?? nextLevel.name} · {nextLevel.minXp} {t.achievements.xp}</span>
             : <span style={{ color: 'var(--arvo-gold)' }}>{t.achievements.maxLevel}</span>
           }
         </div>
@@ -139,7 +142,9 @@ export default function AchievementsPage() {
                 ? { border: '1px solid rgba(31,138,91,0.3)', background: 'rgba(31,138,91,0.07)', color: 'var(--arvo-green)', fontFamily: "var(--arvo-font-body)" }
                 : { border: '1px solid var(--arvo-border-soft)', background: 'transparent', color: 'var(--arvo-fg-soft)', fontFamily: "var(--arvo-font-body)" }}
             >
-              <div className="text-base">{l.emoji}</div>
+              <div className="flex justify-center">
+                <Icon name={l.icon} size={18} />
+              </div>
               <div className="truncate px-1 mt-0.5">{(t.levels as Record<string,string>)[l.key] ?? l.name}</div>
             </div>
           )
@@ -178,7 +183,10 @@ export default function AchievementsPage() {
                   )}
                 </div>
               ) : (
-                <span className="mt-2 text-xs" style={{ color: 'var(--arvo-fg-soft)', fontFamily: "var(--arvo-font-body)" }}>🔒 {def.xp} {t.achievements.xp}</span>
+                <span className="mt-2 text-xs flex items-center gap-1" style={{ color: 'var(--arvo-fg-soft)', fontFamily: "var(--arvo-font-body)" }}>
+                  <Icon name="lock" size={12} />
+                  {def.xp} {t.achievements.xp}
+                </span>
               )}
             </div>
           )

@@ -10,6 +10,7 @@ import { useTheme, type Theme } from '../contexts/ThemeContext'
 import { useAchievementContext } from '../contexts/AchievementContext'
 import { useI18n } from '../contexts/I18nContext'
 import { getLevel, getNextLevel, getLevelProgress, ACHIEVEMENT_DEFS } from '../lib/achievementDefs'
+import { Icon } from '../components/icons'
 import { supabase } from '../lib/supabase'
 import { useResetPriceHistory, useSyncStatus } from '../hooks/usePortfolio'
 import { useDividendSync } from '../hooks/useDividends'
@@ -585,7 +586,9 @@ export default function ProfilePage() {
 
             <div className="flex items-center justify-between mb-4 pl-3">
               <div className="flex items-center gap-3">
-                <span className="text-3xl">{level.emoji}</span>
+                <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0" style={{ background: 'var(--arvo-gold-tint)', color: 'var(--arvo-gold-text)' }}>
+                  <Icon name={level.icon} size={20} />
+                </div>
                 <div>
                   <p className="text-[10px] text-[var(--arvo-fg)] font-bold uppercase tracking-widest">{t.achievements.currentLevel}</p>
                   <p className="text-[var(--arvo-fg)] font-bold text-base leading-tight">{t.levels[level.key as keyof typeof t.levels]}</p>
@@ -607,8 +610,8 @@ export default function ProfilePage() {
                 />
               </div>
               {nextLevel && (
-                <p className="text-[var(--arvo-fg-soft)] text-xs mt-1.5">
-                  {t.achievements.nextLevel}: {nextLevel.emoji} {t.levels[nextLevel.key as keyof typeof t.levels]} · {nextLevel.minXp} {t.achievements.xp}
+                <p className="text-[var(--arvo-fg-soft)] text-xs mt-1.5 inline-flex items-center gap-1">
+                  {t.achievements.nextLevel}: <Icon name={nextLevel.icon} size={12} /> {t.levels[nextLevel.key as keyof typeof t.levels]} · {nextLevel.minXp} {t.achievements.xp}
                 </p>
               )}
             </div>

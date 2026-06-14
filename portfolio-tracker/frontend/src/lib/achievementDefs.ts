@@ -1,3 +1,5 @@
+import type { IconName } from '../components/icons'
+
 export interface AchievementDef {
   key: string
   name: string
@@ -46,12 +48,12 @@ export const ACHIEVEMENT_DEFS: AchievementDef[] = [
   { key: 'coruja',             name: 'Coruja',                description: 'Usar portfólio e finanças juntos',                  xp: 45, gradient: ['#1a1a2e','#6B21A8'], ringColor: '#D8B4FE' },
 ]
 
-export const LEVELS = [
-  { key: 'semente',    name: 'Semente',    emoji: '🌱', minXp: 0,    maxXp: 150  },
-  { key: 'crescimento',name: 'Crescimento',emoji: '🌿', minXp: 151,  maxXp: 450  },
-  { key: 'expansao',   name: 'Expansão',   emoji: '🌳', minXp: 451,  maxXp: 900  },
-  { key: 'solidez',    name: 'Solidez',    emoji: '🏔️', minXp: 901,  maxXp: 1600 },
-  { key: 'liberdade',  name: 'Liberdade',  emoji: '🚀', minXp: 1601, maxXp: Infinity },
+export const LEVELS: { key: string; name: string; icon: IconName; minXp: number; maxXp: number }[] = [
+  { key: 'semente',    name: 'Semente',    icon: 'seed',     minXp: 0,    maxXp: 150  },
+  { key: 'crescimento',name: 'Crescimento',icon: 'sprout',   minXp: 151,  maxXp: 450  },
+  { key: 'expansao',   name: 'Expansão',   icon: 'wheat',    minXp: 451,  maxXp: 900  },
+  { key: 'solidez',    name: 'Solidez',    icon: 'mountain', minXp: 901,  maxXp: 1600 },
+  { key: 'liberdade',  name: 'Liberdade',  icon: 'tree',     minXp: 1601, maxXp: Infinity },
 ]
 
 export function getLevel(xp: number) {
