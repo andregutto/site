@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useI18n } from '../contexts/I18nContext'
 import { apiFetch } from '../lib/api'
 import ArvoLoader from './ArvoLoader'
+import { Icon, type IconName } from './icons'
 
 const onboardingKey = (userId: string) => `onboarding_v1_done_${userId}`
 
@@ -42,24 +43,24 @@ const CLASSES_BY_LOCALE: Record<string, { name: string; color: string; nameKey: 
   ],
 }
 
-const ENVELOPES_BY_LOCALE: Record<string, { name: string; icon: string; color: string; pct: number }[]> = {
+const ENVELOPES_BY_LOCALE: Record<string, { name: string; icon: IconName; color: string; pct: number }[]> = {
   pt: [
-    { name: 'Gastos Essenciais', icon: '🏠', color: '#3b82f6', pct: 50 },
-    { name: 'Investimentos',     icon: '📈', color: '#10b981', pct: 30 },
-    { name: 'Reserva',           icon: '🏦', color: '#f59e0b', pct: 10 },
-    { name: 'Lazer',             icon: '🎉', color: '#a855f7', pct: 10 },
+    { name: 'Gastos Essenciais', icon: 'home',       color: '#3b82f6', pct: 50 },
+    { name: 'Investimentos',     icon: 'chart-line', color: '#10b981', pct: 30 },
+    { name: 'Reserva',           icon: 'bank',       color: '#f59e0b', pct: 10 },
+    { name: 'Lazer',             icon: 'party',      color: '#a855f7', pct: 10 },
   ],
   en: [
-    { name: 'Essential Expenses', icon: '🏠', color: '#3b82f6', pct: 50 },
-    { name: 'Investments',        icon: '📈', color: '#10b981', pct: 30 },
-    { name: 'Savings',            icon: '🏦', color: '#f59e0b', pct: 10 },
-    { name: 'Fun Money',          icon: '🎉', color: '#a855f7', pct: 10 },
+    { name: 'Essential Expenses', icon: 'home',       color: '#3b82f6', pct: 50 },
+    { name: 'Investments',        icon: 'chart-line', color: '#10b981', pct: 30 },
+    { name: 'Savings',            icon: 'bank',       color: '#f59e0b', pct: 10 },
+    { name: 'Fun Money',          icon: 'party',      color: '#a855f7', pct: 10 },
   ],
   fr: [
-    { name: 'Dépenses Essentielles', icon: '🏠', color: '#3b82f6', pct: 50 },
-    { name: 'Investissements',       icon: '📈', color: '#10b981', pct: 30 },
-    { name: 'Épargne',               icon: '🏦', color: '#f59e0b', pct: 10 },
-    { name: 'Loisirs',               icon: '🎉', color: '#a855f7', pct: 10 },
+    { name: 'Dépenses Essentielles', icon: 'home',       color: '#3b82f6', pct: 50 },
+    { name: 'Investissements',       icon: 'chart-line', color: '#10b981', pct: 30 },
+    { name: 'Épargne',               icon: 'bank',       color: '#f59e0b', pct: 10 },
+    { name: 'Loisirs',               icon: 'party',      color: '#a855f7', pct: 10 },
   ],
 }
 
@@ -151,13 +152,13 @@ export default function OnboardingOverlay({ onDone, userId }: Props) {
   // Step layout:
   // 0 Welcome → 1 Classes → 2 Income → 3 Account → 4 Asset Types (info) → 5 Envelopes → 6 Freedom → 7 Shared Categories → 8 Done
 
-  const ASSET_TYPES = [
-    { icon: '💰',  label: o.assetCash,   desc: o.assetCashDesc   },
-    { icon: '🇧🇷', label: o.assetB3,     desc: o.assetB3Desc     },
-    { icon: '🌎',  label: o.assetIntl,   desc: o.assetIntlDesc   },
-    { icon: '₿',   label: o.assetCrypto, desc: o.assetCryptoDesc },
-    { icon: '📄',  label: o.assetFi,     desc: o.assetFiDesc     },
-    { icon: '🏠',  label: o.assetImovel, desc: o.assetImovelDesc },
+  const ASSET_TYPES: { icon: IconName; label: string; desc: string }[] = [
+    { icon: 'wallet',     label: o.assetCash,   desc: o.assetCashDesc   },
+    { icon: 'chart-bars', label: o.assetB3,     desc: o.assetB3Desc     },
+    { icon: 'globe',      label: o.assetIntl,   desc: o.assetIntlDesc   },
+    { icon: 'coin',       label: o.assetCrypto, desc: o.assetCryptoDesc },
+    { icon: 'file',       label: o.assetFi,     desc: o.assetFiDesc     },
+    { icon: 'home',       label: o.assetImovel, desc: o.assetImovelDesc },
   ]
 
   return (
@@ -370,7 +371,7 @@ export default function OnboardingOverlay({ onDone, userId }: Props) {
                     key={a.label}
                     className="w-full flex items-center gap-3 bg-[var(--arvo-surface-2)] border border-[var(--arvo-border)] rounded-xl px-4 py-3"
                   >
-                    <span className="text-xl shrink-0">{a.icon}</span>
+                    <Icon name={a.icon} size={20} className="shrink-0" style={{ color: 'var(--arvo-fg-muted)' }} />
                     <div className="min-w-0">
                       <p className="text-sm font-semibold text-[var(--arvo-fg)]">{a.label}</p>
                       <p className="text-xs text-[var(--arvo-fg-soft)] truncate">{a.desc}</p>
@@ -397,7 +398,7 @@ export default function OnboardingOverlay({ onDone, userId }: Props) {
               <div className="space-y-2">
                 {defaultEnvelopes.map(env => (
                   <div key={env.name} className="flex items-center gap-3 bg-[var(--arvo-surface-2)] border border-[var(--arvo-border)] rounded-xl px-4 py-3">
-                    <span className="text-xl shrink-0">{env.icon}</span>
+                    <Icon name={env.icon} size={20} className="shrink-0" style={{ color: env.color }} />
                     <span className="flex-1 text-sm font-medium text-[var(--arvo-fg)]">{env.name}</span>
                     <div className="flex items-center gap-2 shrink-0">
                       <div className="w-16 h-1.5 bg-[var(--arvo-track-bg)] rounded-full overflow-hidden">
@@ -430,7 +431,7 @@ export default function OnboardingOverlay({ onDone, userId }: Props) {
               <div className="space-y-2">
                 {[o.freedomOnboardFeature1, o.freedomOnboardFeature2].map(f => (
                   <div key={f} className="flex items-start gap-3 bg-[var(--arvo-surface-2)] border border-[var(--arvo-border)] rounded-xl px-4 py-3">
-                    <span className="text-green-500 mt-0.5 shrink-0 dark:text-green-400">✓</span>
+                    <Icon name="check" size={16} className="shrink-0 mt-0.5" style={{ color: 'var(--arvo-green)' }} />
                     <span className="text-sm text-[var(--arvo-fg)]">{f}</span>
                   </div>
                 ))}
@@ -454,7 +455,7 @@ export default function OnboardingOverlay({ onDone, userId }: Props) {
               <div className="space-y-2">
                 {[o.sharedOnboardFeature1, o.sharedOnboardFeature2].map(f => (
                   <div key={f} className="flex items-start gap-3 bg-[var(--arvo-surface-2)] border border-[var(--arvo-border)] rounded-xl px-4 py-3">
-                    <span className="text-blue-500 mt-0.5 shrink-0 dark:text-blue-400">✓</span>
+                    <Icon name="check" size={16} className="shrink-0 mt-0.5" style={{ color: 'var(--arvo-blue)' }} />
                     <span className="text-sm text-[var(--arvo-fg)]">{f}</span>
                   </div>
                 ))}
@@ -471,8 +472,8 @@ export default function OnboardingOverlay({ onDone, userId }: Props) {
           {/* Step 8: Done */}
           {step === 8 && (
             <div className="space-y-5 text-center">
-              <div className="w-16 h-16 bg-emerald-50 border border-emerald-100 rounded-2xl flex items-center justify-center mx-auto dark:bg-emerald-950/40 dark:border-emerald-900">
-                <span className="text-3xl">✅</span>
+              <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto" style={{ background: 'rgba(31,138,91,0.12)', border: '1px solid rgba(31,138,91,0.25)' }}>
+                <Icon name="check" size={32} strokeWidth={2} style={{ color: 'var(--arvo-green)' }} />
               </div>
               <div>
                 <h2 className="text-xl font-bold text-[var(--arvo-fg)]">{o.doneTitle}</h2>
