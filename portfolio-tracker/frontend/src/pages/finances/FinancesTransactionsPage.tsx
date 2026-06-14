@@ -1398,7 +1398,7 @@ export default function FinancesTransactionsPage() {
                                 <Icon name="repeat" size={12} style={{ color: 'var(--arvo-fg-soft)' }} />
                                 <span className="text-sm font-medium text-[var(--arvo-fg)]">{item.name}</span>
                                 <span className="text-xs text-[var(--arvo-fg-soft)]">{item.txs.length} transações</span>
-                                <span className={`ml-auto text-xs sm:text-sm font-semibold tabular-nums ${Math.abs(item.net) < 0.01 ? 'text-[var(--arvo-fg-soft)]' : item.net > 0 ? 'arvo-delta-pos' : 'text-[var(--arvo-fg)]'}`}>
+                                <span className={`ml-auto text-xs sm:text-sm font-semibold tabular-nums ${Math.abs(item.net) < 0.01 ? 'text-[var(--arvo-fg-soft)]' : item.net > 0 ? 'arvo-delta-pos' : 'arvo-delta-neg'}`}>
                                   {t.finances.reimbursementGroupNet}: {fmt(item.net, item.txs[0]?.currency)}
                                 </span>
                                 <button
