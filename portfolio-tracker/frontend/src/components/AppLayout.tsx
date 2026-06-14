@@ -328,8 +328,7 @@ export default function AppLayout() {
                     {activeNotifications.length > 0 && (
                       <button
                         onClick={() => dismissAll()}
-                        className="text-[11px] font-medium transition-colors"
-                        style={{ color: 'var(--arvo-blue)' }}
+                        className="text-[11px] font-medium transition-colors arvo-accent-blue"
                       >
                         {t.notifications.dismissAll}
                       </button>
@@ -364,8 +363,7 @@ export default function AppLayout() {
                     <Link
                       to="/notifications"
                       onClick={() => setShowNotifMenu(false)}
-                      className="block text-center text-xs font-medium py-2 rounded-lg hover:bg-[var(--arvo-surface-2)] transition-colors"
-                      style={{ color: 'var(--arvo-blue)' }}
+                      className="block text-center text-xs font-medium py-2 rounded-lg hover:bg-[var(--arvo-surface-2)] transition-colors arvo-accent-blue"
                     >
                       {t.notifications.viewAll}
                     </Link>

@@ -1068,7 +1068,7 @@ export default function FinancesFreedomPage() {
           {activePlan && targetYear && (
             <div className="text-right">
               <p className="text-[10px] uppercase" style={{ letterSpacing: '0.18em', color: 'var(--arvo-fg-soft)' }}>{t.finances.freedomGoal}</p>
-              <p style={{ fontFamily: "'Tenor Sans', serif", fontSize: 28, letterSpacing: '0.01em', color: 'var(--arvo-blue)', lineHeight: 1, margin: '2px 0 0' }}>{targetYear}</p>
+              <p className="arvo-accent-blue" style={{ fontFamily: "'Tenor Sans', serif", fontSize: 28, letterSpacing: '0.01em', lineHeight: 1, margin: '2px 0 0' }}>{targetYear}</p>
             </div>
           )}
           <div className="flex items-center gap-2">

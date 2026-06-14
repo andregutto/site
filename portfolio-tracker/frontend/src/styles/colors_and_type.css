@@ -434,6 +434,11 @@
 .dark .arvo-delta-neg { color: var(--arvo-red-on-dark); }
 .arvo-delta-neutral { color: var(--arvo-fg-soft); }
 
+/* Azul Arara as link/data text directly on a surface — lighten on dark
+   surfaces so it stays legible (vibrates against #161513 otherwise). */
+.arvo-accent-blue { color: var(--arvo-blue); }
+.dark .arvo-accent-blue { color: var(--arvo-blue-on-dark); }
+
 /* Recharts tooltips render with inline styles (white bg, default text
    color) — override for dark mode so they match the surrounding card. */
 .dark .recharts-default-tooltip {

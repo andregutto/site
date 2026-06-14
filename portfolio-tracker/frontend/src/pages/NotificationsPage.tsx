@@ -57,7 +57,7 @@ function DismissButton({ onClick, title }: { onClick: () => void; title: string 
 
 function RestoreButton({ onClick, label }: { onClick: () => void; label: string }) {
   return (
-    <button onClick={onClick} className="text-xs font-medium shrink-0" style={{ color: 'var(--arvo-blue)' }}>
+    <button onClick={onClick} className="text-xs font-medium shrink-0 arvo-accent-blue">
       {label}
     </button>
   )
@@ -90,8 +90,7 @@ export default function NotificationsPage() {
           {active.length > 0 && (
             <button
               onClick={() => dismissAll()}
-              className="text-xs font-medium transition-colors"
-              style={{ color: 'var(--arvo-blue)' }}
+              className="text-xs font-medium transition-colors arvo-accent-blue"
             >
               {t.notifications.dismissAll}
             </button>
