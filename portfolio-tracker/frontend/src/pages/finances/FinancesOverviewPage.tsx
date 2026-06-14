@@ -5,6 +5,7 @@ import { Icon } from '../../components/icons'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid,
 } from 'recharts'
+import { breakdownColor } from '../../components/charts'
 import { apiFetch } from '../../lib/api'
 import { useI18n } from '../../contexts/I18nContext'
 import { useCurrency } from '../../contexts/CurrencyContext'
@@ -903,7 +904,7 @@ export default function FinancesOverviewPage() {
                   dataKey={env.name}
                   name={resolveEnvName(env.name, env.type, env.name_key, nameKeys)}
                   stackId="a"
-                  fill={ENV_TYPE_COLOR[env.type ?? ''] ?? env.color}
+                  fill={breakdownColor(i)}
                   radius={i === arr.length - 1 ? [3, 3, 0, 0] : [0, 0, 0, 0]}
                 />
               ))}
@@ -926,7 +927,7 @@ export default function FinancesOverviewPage() {
                     : 'bg-[var(--arvo-surface)] text-[var(--arvo-fg-muted)] border-[var(--arvo-border)] hover:border-[var(--arvo-fg)] hover:text-[var(--arvo-fg)]'
                 }`}
               >{t.finances.selectCategory}</button>
-              {catHistory.map(c => (
+              {catHistory.map((c, i) => (
                 <button
                   key={c.id}
                   onClick={() => setSelectedCatId(selectedCatId === c.id ? '' : c.id)}
@@ -935,7 +936,7 @@ export default function FinancesOverviewPage() {
                       ? 'text-white border-transparent'
                       : 'bg-[var(--arvo-surface)] text-[var(--arvo-fg-muted)] border-[var(--arvo-border)] hover:border-gray-400'
                   }`}
-                  style={selectedCatId === c.id ? { backgroundColor: c.color } : {}}
+                  style={selectedCatId === c.id ? { backgroundColor: breakdownColor(i) } : {}}
                 >
                   <span>{resolveKey(c.name, c.name_key, nameKeys)}</span>
                 </button>
@@ -975,7 +976,7 @@ export default function FinancesOverviewPage() {
                       key={cat.id}
                       dataKey={cat.name}
                       name={resolveKey(cat.name, cat.name_key, nameKeys)}
-                      fill={cat.color}
+                      fill={breakdownColor(catHistory.findIndex(c => c.id === cat.id))}
                       stackId={isStacked ? 'a' : undefined}
                       radius={!isStacked || i === filtered.length - 1 ? [3, 3, 0, 0] : [0, 0, 0, 0]}
                     />
