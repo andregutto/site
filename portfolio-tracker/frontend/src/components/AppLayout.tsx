@@ -513,7 +513,7 @@ export default function AppLayout() {
       {showBudgetSetup ? (
         <Banner
           onDismiss={dismissBudgetSetup}
-          action={<NavLink to="/profile" onClick={dismissBudgetSetup} className="arvo-btn arvo-btn--link shrink-0">{t.profile.budgetReminderSetupLink}</NavLink>}
+          action={<NavLink to="/profile?tab=preferences" onClick={dismissBudgetSetup} className="arvo-btn arvo-btn--link shrink-0">{t.profile.budgetReminderSetupLink}</NavLink>}
         >
           {t.profile.budgetReminderSetupBody}
         </Banner>

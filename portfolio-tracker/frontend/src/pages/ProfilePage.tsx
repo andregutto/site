@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { PageLoader } from '../components/ArvoLoader'
 import PageHeaderTabs from '../components/PageHeaderTabs'
 import * as XLSX from 'xlsx'
@@ -69,7 +69,11 @@ export default function ProfilePage() {
   const [saving,   setSaving]   = useState(false)
   const [saveOk,   setSaveOk]   = useState(false)
   const [error,    setError]    = useState<string | null>(null)
-  const [tab, setTab] = useState<'personal' | 'preferences' | 'advanced'>('personal')
+  const [searchParams] = useSearchParams()
+  const initialTab = searchParams.get('tab')
+  const [tab, setTab] = useState<'personal' | 'preferences' | 'advanced'>(
+    initialTab === 'preferences' || initialTab === 'advanced' ? initialTab : 'personal'
+  )
 
   const [firstName,  setFirstName]  = useState('')
   const [lastName,   setLastName]   = useState('')
