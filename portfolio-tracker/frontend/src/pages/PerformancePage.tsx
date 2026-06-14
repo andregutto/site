@@ -307,6 +307,19 @@ export default function PerformancePage() {
         }
       })
 
+  // Scale the value chart's Y axis to "value" and "contributions" only, so the
+  // long-horizon Freedom Plan "target" line (often several times larger) doesn't
+  // compress the Aportes line against the bottom axis. The target line is allowed
+  // to overflow/clip above this domain.
+  const valueChartYDomain = (() => {
+    const vals = valueChartData.flatMap(d => [d.value, d.contributions]).filter((v): v is number => typeof v === 'number')
+    if (vals.length === 0) return ['auto', 'auto'] as const
+    const max = Math.max(...vals, 0)
+    const min = Math.min(...vals, 0)
+    const pad = (max - min) * 0.1
+    return [Math.floor(min - pad), Math.ceil(max + pad)] as [number, number]
+  })()
+
   // "Fim do período" card: use live total when available so the BRL amount matches dashboard.
   const endsAtCurrentMonth = to === currentYM
   const liveTotal = livePortfolio?.total_brl ?? null
@@ -484,7 +497,8 @@ export default function PerformancePage() {
                             const n = typeof v === 'number' ? v : 0
                             return currency === 'BRL' ? `${(n / 1000).toFixed(0)}k` : (n >= 1000 ? `${(n / 1000).toFixed(0)}k` : n.toFixed(0))
                           }}
-                          domain={['auto', 'auto']}
+                          domain={valueChartYDomain}
+                          allowDataOverflow={!!activePlan}
                         />
                         <Tooltip
                           content={
