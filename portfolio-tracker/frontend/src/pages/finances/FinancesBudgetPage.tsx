@@ -5,6 +5,7 @@ import { useI18n } from '../../contexts/I18nContext'
 import { useAuth } from '../../contexts/AuthContext'
 import { useCurrency } from '../../contexts/CurrencyContext'
 import { Banner } from '../../components/ui'
+import { Icon } from '../../components/icons'
 
 interface Category {
   id: number
@@ -285,7 +286,7 @@ function EnvelopeBar({ env, expanded, onToggle, onEditCategory, onDeleteCategory
                     <div className="flex items-center gap-1 [@media(hover:none)]:opacity-100 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button
                         onClick={() => onShareCategory(cat)}
-                        className="p-2 text-[var(--arvo-fg-soft)] hover:text-indigo-500 transition-colors rounded"
+                        className="p-2 text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-blue)] transition-colors rounded"
                         title={t.finances.shareCategory}
                       >
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4">
@@ -303,7 +304,7 @@ function EnvelopeBar({ env, expanded, onToggle, onEditCategory, onDeleteCategory
                       </button>
                       <button
                         onClick={() => onDeleteCategory(cat.id)}
-                        className="p-2 text-[var(--arvo-fg-soft)] hover:text-red-500 transition-colors rounded"
+                        className="p-2 text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-red)] transition-colors rounded"
                         title={t.common.delete}
                       >
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4">
@@ -562,7 +563,7 @@ export default function FinancesBudgetPage() {
           group_id: sharingGroupId,
           name: shareModal.name,
           icon: shareModal.icon,
-          color: shareModal.color ?? '#6366f1',
+          color: shareModal.color ?? '#1B4FD8',
           total_goal: shareModal.budget_monthly ?? 0,
           currency: data?.income.currency ?? 'EUR',
         }),
@@ -617,7 +618,7 @@ export default function FinancesBudgetPage() {
                     <span className="font-semibold text-[var(--arvo-fg)] text-sm">{resolveEnvName(env.name, env.type, env.name_key, nameKeys)}</span>
                   </div>
                   <div className="text-right shrink-0 ml-3">
-                    <span className="text-sm font-semibold text-emerald-600">{fmt(envTotal, data.income.currency)}</span>
+                    <span className="text-sm font-semibold text-[var(--arvo-green)]">{fmt(envTotal, data.income.currency)}</span>
                     <span className="text-xs text-[var(--arvo-fg-soft)] ml-1">{t.finances.perMonth}</span>
                   </div>
                   <svg
@@ -648,7 +649,7 @@ export default function FinancesBudgetPage() {
                                   <path d="M13.488 2.513a1.75 1.75 0 0 0-2.475 0L6.75 6.774a2.75 2.75 0 0 0-.596.892l-.848 2.047a.75.75 0 0 0 .98.98l2.047-.848a2.75 2.75 0 0 0 .892-.596l4.261-4.263a1.75 1.75 0 0 0 0-2.474ZM4.75 14a.75.75 0 0 0 0-1.5H3.5a.5.5 0 0 1-.5-.5V4a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v1.25a.75.75 0 0 0 1.5 0V4a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h1.25Z" />
                                 </svg>
                               </button>
-                              <button onClick={() => deleteCategory(cat.id)} title={t.common.delete} className="p-2 text-[var(--arvo-fg-soft)] hover:text-red-500 transition-colors rounded-lg hover:bg-red-50">
+                              <button onClick={() => deleteCategory(cat.id)} title={t.common.delete} className="p-2 text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-red)] transition-colors rounded-lg hover:bg-[var(--arvo-red)]/10">
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4">
                                   <path fillRule="evenodd" d="M5 3.25V4H2.75a.75.75 0 0 0 0 1.5h.3l.815 8.15A1.5 1.5 0 0 0 5.357 15h5.285a1.5 1.5 0 0 0 1.493-1.35l.815-8.15h.3a.75.75 0 0 0 0-1.5H11v-.75A2.25 2.25 0 0 0 8.75 1h-1.5A2.25 2.25 0 0 0 5 3.25Zm2.25-.75a.75.75 0 0 0-.75.75V4h3v-.75a.75.75 0 0 0-.75-.75h-1.5ZM6.05 6a.75.75 0 0 1 .787.713l.275 5.5a.75.75 0 0 1-1.498.075l-.275-5.5A.75.75 0 0 1 6.05 6Zm3.9 0a.75.75 0 0 1 .712.787l-.275 5.5a.75.75 0 0 1-1.498-.075l.275-5.5a.75.75 0 0 1 .786-.712Z" clipRule="evenodd" />
                                 </svg>
@@ -806,7 +807,10 @@ export default function FinancesBudgetPage() {
                 <div className="px-5 py-3 border-b border-[var(--arvo-border-soft)] flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-semibold text-[var(--arvo-fg)]">{group.name}</span>
-                    <span className="text-xs bg-indigo-50 text-indigo-600 px-1.5 py-0.5 rounded-full font-medium">👥 {activeMembers.length}</span>
+                    <span className="text-xs bg-[var(--arvo-surface-2)] text-[var(--arvo-fg-muted)] px-1.5 py-0.5 rounded-full font-medium flex items-center gap-1">
+                      <Icon name="users" size={11} />
+                      {activeMembers.length}
+                    </span>
                   </div>
                   <span className="text-xs text-[var(--arvo-fg-soft)]">{activeMembers.map(m => m.display.name.split(' ')[0]).join(', ')}</span>
                 </div>
@@ -819,7 +823,7 @@ export default function FinancesBudgetPage() {
                         <div className="flex-1 min-w-0 space-y-1.5">
                           <div className="flex items-center gap-1.5">
                             <span className="text-sm text-[var(--arvo-fg)] truncate">{cat.name}</span>
-                            <span className="text-xs text-indigo-500 font-medium">👥</span>
+                            <Icon name="users" size={12} style={{ color: 'var(--arvo-fg-soft)' }} />
                           </div>
                           <span className="text-xs text-[var(--arvo-fg-soft)]">{myPct}% · {t.finances.myGoal}: {fmt(myGoal, cat.currency)}</span>
                           <div className="relative">
@@ -852,7 +856,7 @@ export default function FinancesBudgetPage() {
                                   >
                                     <span className="text-sm leading-none">{env.icon}</span>
                                     <span className="flex-1 truncate">{resolveEnvName(env.name, env.type, env.name_key, nameKeys)}</span>
-                                    {cat.local_envelope_id === env.id && <svg className="w-3.5 h-3.5 text-[#1B4FD8] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>}
+                                    {cat.local_envelope_id === env.id && <svg className="w-3.5 h-3.5 text-[var(--arvo-blue)] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>}
                                   </button>
                                 ))}
                               </div>
@@ -968,7 +972,10 @@ export default function FinancesBudgetPage() {
                   >
                     <div className="flex items-center justify-between">
                       <span>{g.name}</span>
-                      <span className="text-xs text-[var(--arvo-fg-soft)]">👥 {g.members.filter(m => m.status === 'active').length}</span>
+                      <span className="text-xs text-[var(--arvo-fg-soft)] flex items-center gap-1">
+                        <Icon name="users" size={11} />
+                        {g.members.filter(m => m.status === 'active').length}
+                      </span>
                     </div>
                   </button>
                 ))}
