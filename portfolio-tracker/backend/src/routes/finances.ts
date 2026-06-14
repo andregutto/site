@@ -2315,7 +2315,7 @@ router.get('/fee-scan', requireAuth, async (req, res: Response) => {
 
   const catMap = new Map<string, { id: string; name: string; icon: string; color: string; total: number; count: number }>()
   for (const tx of feeTxs) {
-    const cat = tx.finance_categories as { id: number; name: string; icon: string; color: string } | null
+    const cat = tx.finance_categories as unknown as { id: number; name: string; icon: string; color: string } | null
     const key = cat ? String(cat.id) : '_uncat'
     const existing = catMap.get(key)
     if (existing) { existing.total += Math.abs(tx.amount); existing.count++ }
