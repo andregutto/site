@@ -474,12 +474,12 @@ Aportes, Renda Passiva, Balanceamento, Índices, IR, Instituições, Classes (+
 classIcons), AssetDetail (guards + redesign), ImportB3, Favorites, Archived —
 conforme §2.4. ✓ gate §6 por página. ✓ tsc/build limpos · screenshots 1366/1920.
 
-**Fase 6 — Finanças (2 dias)** — Visão Geral, Transações (despesas em preto!),
+**Fase 6 — Finanças (2 dias)** — **[CONCLUÍDA]** Visão Geral, Transações (despesas em preto!),
 Planejamento (bug button + redesign), Momentos (capas fotográficas), Liberdade
 (tratamento assinatura), Insights, Compartilhado — conforme §2.4. ✓ screenshots
 Overview/Budget/Freedom/Transações.
 
-**Fase 7 — Assinatura IA (½ dia)** — §3.7 no ChatWidget + seção f5 da landing.
+**Fase 7 — Assinatura IA (½ dia)** — **[CONCLUÍDA]** §3.7 no ChatWidget + seção f5 da landing.
 ✓ FAB + chat aberto + typing.
 
 **Fase 8 — Gamificação editorial (1 dia)** — **[CONCLUÍDA]** selos de linha, níveis
@@ -490,11 +490,17 @@ onboarding/checklist sem emoji. ✓ earned/locked/celebração.
 `--arvo-red-on-dark`, banner/checkbox/hardcodes, screenshots dark (Dashboard,
 Transações, Conquistas, chat). ✓ nenhuma cor literal nova no diff das fases anteriores.
 
-**Fase 9 — Públicas + polimento (1 dia)** — PublicPortfolio/PublicMoment como
-cartão de visita com CTA "feito com arvo"; AcceptInvite; Privacy/Terms layout de
-leitura; skeletons bege; contraste (labels ≤10px ≥ `rgba(13,13,13,0.55)`);
-`aria-label` em botões só-ícone; varredura final de emoji/cores. ✓ grep emoji = só
-glifos; tab-through sem outline nativo.
+**Fase 9 — Públicas + polimento (1 dia)** — **[CONCLUÍDA]** PublicPortfolio/PublicMoment como
+cartão de visita com CTA "feito com arvo"; AcceptInvite (ícone `users` + botões
+`.arvo-btn`); Privacy/Terms layout de leitura; skeletons bege; contraste (labels
+≤10px ≥ `rgba(13,13,13,0.55)`); `aria-label` em botões só-ícone; varredura final de
+emoji/cores. ✓ grep emoji = só glifos; tab-through sem outline nativo; tsc/lint/build
+limpos; screenshots 1366/1920 (PublicPortfolio, PublicMoment, AcceptInvite).
+
+---
+
+**Status geral: todas as fases (0–9) concluídas.** Redesign Arvo finalizado conforme
+este plano.
 
 ---
 
