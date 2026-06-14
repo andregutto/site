@@ -58,7 +58,6 @@ const kpiLabelStyle: CSSProperties = {
   letterSpacing: '0.10em',
   textTransform: 'uppercase',
   color: 'var(--arvo-fg-soft)',
-  whiteSpace: 'nowrap',
 }
 
 const kpiValueStyle: CSSProperties = {
