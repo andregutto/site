@@ -486,9 +486,9 @@ Overview/Budget/Freedom/Transações.
 broto→árvore (sem 🚀), celebração fade+hairline, toasts discretos,
 onboarding/checklist sem emoji. ✓ earned/locked/celebração.
 
-**Fase 8.5 — Dark polish (½ dia)** — tokens `--arvo-blue-on-dark`/`--arvo-red-on-dark`,
-banner/checkbox/hardcodes, screenshots dark (Dashboard, Transações, Conquistas,
-chat). ✓ nenhuma cor literal nova no diff das fases anteriores.
+**Fase 8.5 — Dark polish (½ dia)** — **[CONCLUÍDA]** tokens `--arvo-blue-on-dark`/
+`--arvo-red-on-dark`, banner/checkbox/hardcodes, screenshots dark (Dashboard,
+Transações, Conquistas, chat). ✓ nenhuma cor literal nova no diff das fases anteriores.
 
 **Fase 9 — Públicas + polimento (1 dia)** — PublicPortfolio/PublicMoment como
 cartão de visita com CTA "feito com arvo"; AcceptInvite; Privacy/Terms layout de
