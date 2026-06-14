@@ -347,7 +347,7 @@ export default function PublicPortfolioPage() {
                 {data.monthly_dividends.map(m => (
                   <div key={m.month} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, minWidth: 0 }}>
                     <div style={{ width: '100%', background: '#1B4FD8', borderRadius: '2px 2px 0 0', height: `${(m.amount / maxDiv) * 52}px`, minHeight: m.amount > 0 ? 3 : 0 }} />
-                    <span style={{ fontSize: 9, color: '#9CA3AF', lineHeight: 1 }}>{shortMonth(m.month, locale)}</span>
+                    <span style={{ fontSize: 9, color: '#6B7280', lineHeight: 1 }}>{shortMonth(m.month, locale)}</span>
                   </div>
                 ))}
               </div>
