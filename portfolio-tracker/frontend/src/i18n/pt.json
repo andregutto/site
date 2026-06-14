@@ -1834,7 +1834,8 @@
     "noPassiveIncome": "Nenhum rendimento no período",
     "downloadPdf": "Baixar PDF",
     "invested": "Aportado",
-    "returnTotal": "retorno total"
+    "returnTotal": "retorno total",
+    "ctaCreateYours": "Crie o seu gratuitamente"
   },
   "fees": {
     "title": "Scanner de Taxas",

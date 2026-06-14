@@ -1834,7 +1834,8 @@
     "noPassiveIncome": "No income in the period",
     "downloadPdf": "Download PDF",
     "invested": "Invested",
-    "returnTotal": "total return"
+    "returnTotal": "total return",
+    "ctaCreateYours": "Create your own for free"
   },
   "fees": {
     "title": "Fee Scanner",

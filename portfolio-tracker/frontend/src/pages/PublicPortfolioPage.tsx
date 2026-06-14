@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
 import { useI18n } from '../contexts/I18nContext'
 import LanguageSelector from '../components/LanguageSelector'
@@ -363,9 +363,16 @@ export default function PublicPortfolioPage() {
             <img src="/brand/logo/arvo-symbol-black.svg" width={16} height={16} alt="" style={{ opacity: 0.35 }} />
             <span style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 13, letterSpacing: '0.25em', color: '#9CA3AF' }}>arvo</span>
           </div>
-          <p style={{ fontSize: 11, color: '#C4C4BF', margin: 0 }}>
+          <p style={{ fontSize: 11, color: '#9CA3AF', margin: '0 0 12px' }}>
             {s.generatedBy} Arvo Capital · {fmtDate(data.generated_at, dateLocale)}
           </p>
+          <Link
+            to="/"
+            className="arvo-pdf-hide"
+            style={{ fontSize: 12, fontWeight: 600, color: 'var(--arvo-black)', textDecoration: 'none', letterSpacing: '0.04em' }}
+          >
+            {s.ctaCreateYours} →
+          </Link>
         </div>
       </div>
 

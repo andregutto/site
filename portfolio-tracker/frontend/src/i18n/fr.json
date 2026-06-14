@@ -1834,7 +1834,8 @@
     "noPassiveIncome": "Aucun revenu sur la période",
     "downloadPdf": "Télécharger PDF",
     "invested": "Investi",
-    "returnTotal": "retour total"
+    "returnTotal": "retour total",
+    "ctaCreateYours": "Créez le vôtre gratuitement"
   },
   "fees": {
     "title": "Scanner de Frais",
