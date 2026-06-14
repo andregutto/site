@@ -82,12 +82,14 @@ const ENV_TYPE_KEY: Record<string, string> = {
   free:       'envelopeFree',
 }
 
-const CHART_PALETTE = [
-  '#1B4FD8', // azul arara
-  '#E8A020', // dourado (ocre tucano)
-  '#A36A52', // terracota
-  '#1F8A5B', // verde maritaca
-]
+// Same mapping used in Planejamento (FinancesBudgetPage) so envelope colors
+// stay consistent between the two pages.
+const ENV_TYPE_COLOR: Record<string, string> = {
+  essential:  'var(--arvo-blue)',
+  investment: 'var(--arvo-green)',
+  savings:    'var(--arvo-ocre)',
+  free:       'var(--arvo-gold)',
+}
 
 function resolveEnvName(name: string, type: string | undefined, nameKey: string | null | undefined, keys: Record<string, string>): string {
   const k = nameKey ?? (type ? ENV_TYPE_KEY[type] : null) ?? null
@@ -711,7 +713,7 @@ export default function FinancesOverviewPage() {
                   className="h-full rounded-full transition-all duration-500"
                   style={{
                     width: incomeEnvelopeBar.budget > 0 ? `${Math.min((incomeEnvelopeBar.actual / incomeEnvelopeBar.budget) * 100, 100)}%` : '0%',
-                    backgroundColor: incomeEnvelopeBar.actual === 0 ? 'var(--arvo-track-bg)' : incomeEnvelopeBar.color,
+                    backgroundColor: incomeEnvelopeBar.actual === 0 ? 'var(--arvo-track-bg)' : (ENV_TYPE_COLOR[incomeEnvelopeBar.type ?? ''] ?? incomeEnvelopeBar.color),
                   }}
                 />
               </div>
@@ -781,7 +783,7 @@ export default function FinancesOverviewPage() {
                       className="h-full rounded-full transition-all duration-500"
                       style={{
                         width: env.budget > 0 ? `${Math.min((env.actual / env.budget) * 100, 100)}%` : '0%',
-                        backgroundColor: env.over ? 'var(--arvo-red)' : env.actual === 0 ? 'var(--arvo-track-bg)' : env.color,
+                        backgroundColor: env.over ? 'var(--arvo-red)' : env.actual === 0 ? 'var(--arvo-track-bg)' : (ENV_TYPE_COLOR[env.type ?? ''] ?? env.color),
                       }}
                     />
                   </div>
@@ -901,7 +903,7 @@ export default function FinancesOverviewPage() {
                   dataKey={env.name}
                   name={resolveEnvName(env.name, env.type, env.name_key, nameKeys)}
                   stackId="a"
-                  fill={CHART_PALETTE[i % CHART_PALETTE.length]}
+                  fill={ENV_TYPE_COLOR[env.type ?? ''] ?? env.color}
                   radius={i === arr.length - 1 ? [3, 3, 0, 0] : [0, 0, 0, 0]}
                 />
               ))}
@@ -924,7 +926,7 @@ export default function FinancesOverviewPage() {
                     : 'bg-[var(--arvo-surface)] text-[var(--arvo-fg-muted)] border-[var(--arvo-border)] hover:border-[var(--arvo-fg)] hover:text-[var(--arvo-fg)]'
                 }`}
               >{t.finances.selectCategory}</button>
-              {catHistory.map((c, i) => (
+              {catHistory.map(c => (
                 <button
                   key={c.id}
                   onClick={() => setSelectedCatId(selectedCatId === c.id ? '' : c.id)}
@@ -933,7 +935,7 @@ export default function FinancesOverviewPage() {
                       ? 'text-white border-transparent'
                       : 'bg-[var(--arvo-surface)] text-[var(--arvo-fg-muted)] border-[var(--arvo-border)] hover:border-gray-400'
                   }`}
-                  style={selectedCatId === c.id ? { backgroundColor: CHART_PALETTE[i % CHART_PALETTE.length] } : {}}
+                  style={selectedCatId === c.id ? { backgroundColor: c.color } : {}}
                 >
                   <span>{resolveKey(c.name, c.name_key, nameKeys)}</span>
                 </button>
@@ -973,7 +975,7 @@ export default function FinancesOverviewPage() {
                       key={cat.id}
                       dataKey={cat.name}
                       name={resolveKey(cat.name, cat.name_key, nameKeys)}
-                      fill={CHART_PALETTE[i % CHART_PALETTE.length]}
+                      fill={cat.color}
                       stackId={isStacked ? 'a' : undefined}
                       radius={!isStacked || i === filtered.length - 1 ? [3, 3, 0, 0] : [0, 0, 0, 0]}
                     />
