@@ -1370,7 +1370,7 @@ export default function FinancesTransactionsPage() {
                         checked={allSelected}
                         ref={el => { if (el) el.indeterminate = someSelected }}
                         onChange={toggleSelectAll}
-                        className={`rounded border-[var(--arvo-border)] text-[var(--arvo-fg)] focus:ring-[var(--arvo-fg)]/20 cursor-pointer transition-opacity ${selected.size > 0 ? 'opacity-100' : 'opacity-100 sm:opacity-0 sm:group-hover:opacity-100'}`}
+                        className={`rounded border-[var(--arvo-border)] accent-[var(--arvo-fg)] focus:ring-[var(--arvo-fg)]/20 cursor-pointer transition-opacity ${selected.size > 0 ? 'opacity-100' : 'opacity-100 sm:opacity-0 sm:group-hover:opacity-100'}`}
                       />
                     </th>
                     <th className="px-2 sm:px-3 py-3 text-left whitespace-nowrap">{t.common.date}</th>
@@ -1447,7 +1447,7 @@ export default function FinancesTransactionsPage() {
                             type="checkbox"
                             checked={isSelected}
                             onChange={() => toggleSelect(tx.id)}
-                            className={`rounded border-[var(--arvo-border)] text-[var(--arvo-fg)] focus:ring-[var(--arvo-fg)]/20 cursor-pointer transition-opacity ${selected.size > 0 ? 'opacity-100' : 'opacity-100 sm:opacity-0 sm:group-hover:opacity-100'}`}
+                            className={`rounded border-[var(--arvo-border)] accent-[var(--arvo-fg)] focus:ring-[var(--arvo-fg)]/20 cursor-pointer transition-opacity ${selected.size > 0 ? 'opacity-100' : 'opacity-100 sm:opacity-0 sm:group-hover:opacity-100'}`}
                           />
                         </td>
                         <td className="px-2 sm:px-3 py-2.5 sm:py-3 text-[var(--arvo-fg-muted)] whitespace-nowrap text-xs sm:text-sm">{fmtDate(tx.date)}</td>

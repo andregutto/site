@@ -26,9 +26,13 @@ export default function ValueCards({ total_brl, generated_at, invested_brl, gain
     return `${val >= 0 ? '+' : ''}${val.toFixed(1)}%`
   }
 
-  function pctColor(val: number | null | undefined): string {
-    if (val == null) return 'var(--arvo-fg-faint)'
-    return val >= 0 ? 'var(--arvo-green)' : 'var(--arvo-red)'
+  function pctClass(val: number | null | undefined): string {
+    if (val == null) return ''
+    return val >= 0 ? 'arvo-delta-pos' : 'arvo-delta-neg'
+  }
+
+  function pctStyle(val: number | null | undefined): React.CSSProperties {
+    return val == null ? { color: 'var(--arvo-fg-faint)' } : {}
   }
 
   const periodVal = period_pct !== undefined ? period_pct : null
@@ -76,14 +80,14 @@ export default function ValueCards({ total_brl, generated_at, invested_brl, gain
           </div>
           <div className="2xl:border-l 2xl:pl-6" style={{ display: 'flex', flexDirection: 'column', gap: 6, borderColor: 'var(--arvo-border)' }}>
             <span style={labelStyle}>{t.dashboard.result}</span>
-            <span className="arvo-num text-base sm:text-lg" style={{ fontFamily: "var(--arvo-font-body)", letterSpacing: '0.04em', color: pctColor(gain_brl) }}>
+            <span className={`arvo-num text-base sm:text-lg ${pctClass(gain_brl)}`} style={{ fontFamily: "var(--arvo-font-body)", letterSpacing: '0.04em', ...pctStyle(gain_brl) }}>
               {gain_brl! >= 0 ? '+' : ''}{fmt(gain_brl!, 0)}
               {gain_pct != null && !hideValues && <span style={{ fontSize: 12, opacity: 0.75, marginLeft: 4 }}>({gain_brl! >= 0 ? '+' : ''}{gain_pct.toFixed(1)}%)</span>}
             </span>
           </div>
           <div className="2xl:border-l 2xl:pl-6" style={{ display: 'flex', flexDirection: 'column', gap: 6, borderColor: 'var(--arvo-border)' }}>
             <span style={labelStyle}>{t.dashboard.periodGainBrl} · {periodLbl}</span>
-            <span className="arvo-num text-base sm:text-lg" style={{ fontFamily: "var(--arvo-font-body)", letterSpacing: '0.04em', color: pctColor(period_abs) }}>
+            <span className={`arvo-num text-base sm:text-lg ${pctClass(period_abs)}`} style={{ fontFamily: "var(--arvo-font-body)", letterSpacing: '0.04em', ...pctStyle(period_abs) }}>
               {period_abs != null
                 ? `${period_abs >= 0 ? '+' : ''}${fmt(period_abs, 0)}`
                 : chartLoading ? '...' : '—'}
@@ -91,7 +95,7 @@ export default function ValueCards({ total_brl, generated_at, invested_brl, gain
           </div>
           <div className="2xl:border-l 2xl:pl-6" style={{ display: 'flex', flexDirection: 'column', gap: 6, borderColor: 'var(--arvo-border)' }}>
             <span style={labelStyle}>{periodLbl} %</span>
-            <span className="arvo-num text-base sm:text-lg" style={{ fontFamily: "var(--arvo-font-body)", letterSpacing: '0.04em', color: pctColor(periodVal) }}>{pctText(periodVal)}</span>
+            <span className={`arvo-num text-base sm:text-lg ${pctClass(periodVal)}`} style={{ fontFamily: "var(--arvo-font-body)", letterSpacing: '0.04em', ...pctStyle(periodVal) }}>{pctText(periodVal)}</span>
           </div>
         </div>
       )}

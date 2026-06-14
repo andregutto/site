@@ -306,7 +306,7 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
                       {returnsLoading ? (
                         <span className="text-xs" style={{ color: 'var(--arvo-fg-faint)' }}>...</span>
                       ) : groupRentab !== null ? (
-                        <span className="text-xs font-semibold arvo-num" style={{ color: groupRentab >= 0 ? 'var(--arvo-green)' : 'var(--arvo-red)' }}>
+                        <span className={`text-xs font-semibold arvo-num ${groupRentab >= 0 ? 'arvo-delta-pos' : 'arvo-delta-neg'}`}>
                           {groupRentab >= 0 ? '+' : ''}{groupRentab.toFixed(2)}%
                         </span>
                       ) : (
@@ -387,7 +387,7 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
                           {returnsLoading ? (
                             <span className="text-xs" style={{ color: 'var(--arvo-fg-faint)' }}>...</span>
                           ) : ret != null ? (
-                            <span className="text-xs font-semibold arvo-num" style={{ color: ret >= 0 ? 'var(--arvo-green)' : 'var(--arvo-red)' }}>
+                            <span className={`text-xs font-semibold arvo-num ${ret >= 0 ? 'arvo-delta-pos' : 'arvo-delta-neg'}`}>
                               {ret >= 0 ? '+' : ''}{ret.toFixed(2)}%
                             </span>
                           ) : asset.invested_brl != null && asset.invested_brl > 0 && asset.value_brl > 0 ? (
@@ -395,8 +395,7 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
                               const r = (asset.value_brl - asset.invested_brl) / asset.invested_brl * 100
                               return (
                                 <span
-                                  className="text-xs font-semibold arvo-num"
-                                  style={{ color: r >= 0 ? 'var(--arvo-green)' : 'var(--arvo-red)' }}
+                                  className={`text-xs font-semibold arvo-num ${r >= 0 ? 'arvo-delta-pos' : 'arvo-delta-neg'}`}
                                   title={t.common.totalReturnTip}
                                 >
                                   {r >= 0 ? '+' : ''}{r.toFixed(2)}%
@@ -467,7 +466,7 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
                 <ClassIcon name={group.name} color={group.color} />
                 <span className="flex-1 truncate text-sm" style={{ fontFamily: "var(--arvo-font-body)", fontWeight: 600, color: 'var(--arvo-fg)' }}>{resolveClassName(group.name, group.name_key)}</span>
                 {!returnsLoading && groupRentabM !== null && (
-                  <span className="text-xs font-semibold arvo-num" style={{ color: groupRentabM >= 0 ? 'var(--arvo-green)' : 'var(--arvo-red)' }}>
+                  <span className={`text-xs font-semibold arvo-num ${groupRentabM >= 0 ? 'arvo-delta-pos' : 'arvo-delta-neg'}`}>
                     {groupRentabM >= 0 ? '+' : ''}{groupRentabM.toFixed(2)}%
                   </span>
                 )}
@@ -510,7 +509,7 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
                                 {asset.needs_manual ? '—' : fmt(asset.value_brl)}
                               </div>
                               {!returnsLoading && displayRet != null && (
-                                <div className="text-xs font-semibold arvo-num" style={{ color: displayRet >= 0 ? 'var(--arvo-green)' : 'var(--arvo-red)' }}>
+                                <div className={`text-xs font-semibold arvo-num ${displayRet >= 0 ? 'arvo-delta-pos' : 'arvo-delta-neg'}`}>
                                   {displayRet >= 0 ? '+' : ''}{displayRet.toFixed(2)}%
                                 </div>
                               )}

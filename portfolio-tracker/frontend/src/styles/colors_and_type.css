@@ -63,6 +63,8 @@
   --arvo-ocre:        #E8A020;   /* Ocre Tucano — tertiary; Arvo Journal; criatividade, comunidade, luz */
   --arvo-green:       #1F8A5B;   /* Verde Maritaca — finance-positive; mata atlântica; crescimento paciente */
   --arvo-green-on-dark: #7BC9A4; /* lighter sibling for dark surfaces */
+  --arvo-blue-on-dark:  #7FA3F0; /* lighter sibling for dark surfaces */
+  --arvo-red-on-dark:   #E8867C; /* lighter sibling for dark surfaces */
 
   /* Softer companions (10–14% tints; never invent new ones) */
   --arvo-blue-tint:        rgba(27, 79, 216, 0.10);
@@ -429,6 +431,7 @@
 .arvo-delta-pos { color: var(--arvo-green); }
 .dark .arvo-delta-pos { color: var(--arvo-green-on-dark); }
 .arvo-delta-neg { color: var(--arvo-red); }
+.dark .arvo-delta-neg { color: var(--arvo-red-on-dark); }
 .arvo-delta-neutral { color: var(--arvo-fg-soft); }
 
 /* Recharts tooltips render with inline styles (white bg, default text
