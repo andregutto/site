@@ -497,9 +497,23 @@ cartão de visita com CTA "feito com arvo"; AcceptInvite (ícone `users` + botõ
 emoji/cores. ✓ grep emoji = só glifos; tab-through sem outline nativo; tsc/lint/build
 limpos; screenshots 1366/1920 (PublicPortfolio, PublicMoment, AcceptInvite).
 
+**Fase 10 — Ajustes pós-revisão do André (½ dia)** — **[CONCLUÍDA]** 5 gaps reportados após a
+Fase 9, mais um ajuste de cor adicional: Visão Geral (cores indigo residuais + emoji ✅/⚠️ →
+tokens da marca + ícones `check`/`alert`); Planejamento (indigo/red/emerald → `--arvo-blue`/
+`--arvo-red`/`--arvo-green`, emoji 👥 → `<Icon name="users">`); Notificações (`TYPE_ICONS` —
+11 emoji → ícones desenhados, fallback 🔔 → `bell`); Liberdade (overflow mobile do label
+"Renda passiva projetada / mês" — remoção de `whiteSpace: nowrap`); Transações (grupo de
+reembolso — `↩` → `<Icon name="repeat">`, chevron/linha expandida/badge âmbar → tokens
+`--arvo-fg-soft`/`--arvo-track-bg`/`--arvo-surface-2`/`--arvo-fg-muted`, saldo negativo do
+grupo → `arvo-delta-neg`). Picker de emoji de categorias (`EMOJI_OPTIONS`, Planejamento)
+mantido como customização intencional do usuário — conversão para ícones desenhados (D6)
+fica para uma fase futura, se decidido. ✓ tsc/build limpos; eslint sem regressões (baseline
+por arquivo verificado via git stash); screenshots 1366px (Visão Geral, Planejamento,
+Notificações, Transações) e 375px (Liberdade mobile).
+
 ---
 
-**Status geral: todas as fases (0–9) concluídas.** Redesign Arvo finalizado conforme
+**Status geral: todas as fases (0–10) concluídas.** Redesign Arvo finalizado conforme
 este plano.
 
 ---
