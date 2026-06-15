@@ -67,6 +67,7 @@ body {
   select,
   textarea {
     background-color: var(--arvo-surface);
+    color: var(--arvo-fg);
   }
 }
 
