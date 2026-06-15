@@ -898,7 +898,7 @@ export default function FinancesBudgetPage() {
                   <select
                     value={catEnvelopeId}
                     onChange={e => setCatEnvelopeId(Number(e.target.value))}
-                    className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20"
+                    className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm text-[var(--arvo-fg)] focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20"
                   >
                     {data.envelopes.map(env => (
                       <option key={env.id} value={env.id}>{env.icon} {resolveEnvName(env.name, env.type, env.name_key, nameKeys)}</option>
@@ -912,7 +912,7 @@ export default function FinancesBudgetPage() {
                   autoFocus
                   value={catName}
                   onChange={e => setCatName(e.target.value)}
-                  className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20"
+                  className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm text-[var(--arvo-fg)] focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20"
                   placeholder={t.finances.categoryNamePlaceholder}
                 />
               </div>
@@ -936,7 +936,7 @@ export default function FinancesBudgetPage() {
                     type="number"
                     value={catBudget}
                     onChange={e => setCatBudget(e.target.value)}
-                    className="flex-1 border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20"
+                    className="flex-1 border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm text-[var(--arvo-fg)] focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20"
                     placeholder="0"
                   />
                 </div>
