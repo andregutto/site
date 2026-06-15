@@ -23,14 +23,12 @@ const INSTITUTION_DOMAINS: Record<string, string> = {
   'BNP PARIBAS':                  'bnpparibas.com',
 }
 
-// Clearbit's free logo API costuma responder 200 com um placeholder genérico
-// para domínios .com.br que não tem cadastrados, então o onError nunca
-// dispara e o fallback não entra. Google Favicons busca o favicon real do
-// site e tem uptime alto, então vai primeiro; Clearbit fica como segunda
-// tentativa antes de cair nas iniciais.
+// Clearbit tem qualidade bem melhor (logo de marca em alta resolução), então
+// vai primeiro; Google Favicons (menor resolução) só entra como fallback
+// quando o Clearbit não tem o domínio cadastrado, antes de cair nas iniciais.
 const LOGO_SOURCES = [
-  (domain: string) => `https://www.google.com/s2/favicons?domain=${domain}&sz=128`,
   (domain: string) => `https://logo.clearbit.com/${domain}`,
+  (domain: string) => `https://www.google.com/s2/favicons?domain=${domain}&sz=128`,
 ]
 
 function getDomain(name: string): string | null {
