@@ -116,7 +116,7 @@ export default function InstitutionLogo({ name, size = 32 }: { name: string; siz
         src={LOGO_SOURCES[sourceIdx](domain)}
         alt={name}
         style={style}
-        className="rounded-lg object-contain shrink-0 bg-white border border-[var(--arvo-border)] p-1"
+        className="rounded-lg object-contain shrink-0 bg-white border border-[var(--arvo-border)]"
         onError={() => setSourceIdx(i => i + 1)}
       />
     )
