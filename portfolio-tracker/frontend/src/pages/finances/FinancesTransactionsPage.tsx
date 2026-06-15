@@ -1664,16 +1664,16 @@ export default function FinancesTransactionsPage() {
 
       {/* ── Floating multi-select action bar ── */}
       {selected.size > 0 && csvStep === 'idle' && (
-        <div className="fixed bottom-[160px] sm:bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center flex-wrap justify-center gap-2 sm:gap-3 bg-[var(--arvo-pill-active-bg)] text-[var(--arvo-pill-active-fg)] px-3 sm:px-4 py-2.5 sm:py-3 rounded-2xl shadow-2xl max-w-[calc(100%-32px)]">
-          <span className="text-sm font-medium shrink-0">{selected.size} sel.</span>
-          <div className="hidden sm:block w-px h-4 bg-[var(--arvo-pill-active-fg)]/20 shrink-0" />
+        <div className="fixed bottom-[160px] sm:bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center flex-nowrap justify-center gap-1.5 sm:gap-3 bg-[var(--arvo-surface)] text-[var(--arvo-fg)] border border-[var(--arvo-border)] px-2.5 sm:px-4 py-2 sm:py-3 rounded-2xl shadow-2xl max-w-[calc(100%-32px)]">
+          <span className="text-sm font-medium shrink-0">{selected.size}<span className="hidden sm:inline"> sel.</span></span>
+          <div className="hidden sm:block w-px h-4 bg-[var(--arvo-border)] shrink-0" />
 
           {/* Moment picker */}
           <div ref={momentDropdownRef} className="relative shrink-0">
             <button
               onClick={() => setShowMomentDropdown(v => !v)}
               disabled={assigning}
-              className="flex items-center gap-1 sm:gap-1.5 text-sm bg-[var(--arvo-pill-active-fg)]/10 hover:bg-[var(--arvo-pill-active-fg)]/20 transition-colors px-2.5 sm:px-3 py-1.5 rounded-xl disabled:opacity-50"
+              className="flex items-center gap-1 sm:gap-1.5 text-sm bg-[var(--arvo-fg)]/5 hover:bg-[var(--arvo-fg)]/10 transition-colors px-2.5 sm:px-3 py-1.5 rounded-xl disabled:opacity-50"
             >
               <span>✨</span>
               <span className="hidden sm:inline">{t.finances.assignMoment}</span>
@@ -1724,7 +1724,7 @@ export default function FinancesTransactionsPage() {
               <button
                 onClick={() => setShowAccountAssign(v => !v)}
                 disabled={assigningAccount}
-                className="flex items-center gap-1 sm:gap-1.5 text-sm bg-[var(--arvo-pill-active-fg)]/10 hover:bg-[var(--arvo-pill-active-fg)]/20 transition-colors px-2.5 sm:px-3 py-1.5 rounded-xl disabled:opacity-50"
+                className="flex items-center gap-1 sm:gap-1.5 text-sm bg-[var(--arvo-fg)]/5 hover:bg-[var(--arvo-fg)]/10 transition-colors px-2.5 sm:px-3 py-1.5 rounded-xl disabled:opacity-50"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4 shrink-0"><path d="M14 3a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V3ZM2 8a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8Z"/></svg>
                 <span className="hidden sm:inline">{assigningAccount ? t.finances.bulkAssigning : t.finances.bulkAccount}</span>
@@ -1764,7 +1764,7 @@ export default function FinancesTransactionsPage() {
             <button
               onClick={() => groups.filter(g => !g.name.startsWith('auto: ')).length > 0 ? setShowGroupPicker(v => !v) : setShowGroupModal(true)}
               disabled={addingToGroup}
-              className="flex items-center gap-1 sm:gap-1.5 text-sm bg-[var(--arvo-pill-active-fg)]/10 hover:bg-[var(--arvo-pill-active-fg)]/20 transition-colors px-2.5 sm:px-3 py-1.5 rounded-xl disabled:opacity-50"
+              className="flex items-center gap-1 sm:gap-1.5 text-sm bg-[var(--arvo-fg)]/5 hover:bg-[var(--arvo-fg)]/10 transition-colors px-2.5 sm:px-3 py-1.5 rounded-xl disabled:opacity-50"
             >
               <span>↩</span>
               <span className="hidden sm:inline">{t.finances.createReimbursementGroup}</span>
@@ -1775,7 +1775,7 @@ export default function FinancesTransactionsPage() {
               )}
             </button>
             {showGroupPicker && (
-              <div ref={groupPickerRef} className="absolute bottom-full mb-1 right-0 sm:left-0 min-w-[200px] max-h-56 overflow-y-auto bg-[var(--arvo-surface)] rounded-xl shadow-lg border border-[var(--arvo-border)] py-1 z-50">
+              <div ref={groupPickerRef} className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 sm:left-0 sm:translate-x-0 min-w-[200px] max-w-[calc(100vw-32px)] max-h-56 overflow-y-auto bg-[var(--arvo-surface)] rounded-xl shadow-lg border border-[var(--arvo-border)] py-1 z-50">
                 <p className="px-3 py-1.5 text-[11px] font-semibold text-[var(--arvo-fg-soft)] uppercase tracking-wide">{t.finances.addToGroupSelect}</p>
                 {groups.filter(g => !g.name.startsWith('auto: ')).map(g => (
                   <button
@@ -1799,10 +1799,10 @@ export default function FinancesTransactionsPage() {
             )}
           </div>
 
-          <div className="w-px h-4 bg-[var(--arvo-pill-active-fg)]/20 shrink-0" />
+          <div className="w-px h-4 bg-[var(--arvo-border)] shrink-0" />
           <button
             onClick={() => setSelected(new Set())}
-            className="text-sm text-[var(--arvo-pill-active-fg)]/60 hover:text-[var(--arvo-pill-active-fg)] transition-colors shrink-0"
+            className="text-sm text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg)] transition-colors shrink-0"
           >
             {t.common.cancel}
           </button>
