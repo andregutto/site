@@ -845,7 +845,7 @@ export default function FinancesOverviewPage() {
                       <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--arvo-fg)', flexShrink: 0, marginLeft: 8 }}>{fmt(cx(cat.actual), currency, true)}</span>
                     </div>
                     <div className="mt-1 h-1 bg-[var(--arvo-track-bg)] rounded-full overflow-hidden">
-                      <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: cat.color }} />
+                      <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: breakdownColor(i) }} />
                     </div>
                   </div>
                   <span style={{ fontSize: 12, color: 'var(--arvo-fg-soft)', width: 32, textAlign: 'right', flexShrink: 0 }}>{pct.toFixed(0)}%</span>
