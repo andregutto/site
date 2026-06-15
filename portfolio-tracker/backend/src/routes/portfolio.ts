@@ -10,15 +10,38 @@ import * as yahoo from '../services/yahooService.js'
 
 const router = Router()
 
-// GET /api/portfolio/value
-router.get('/value', requireAuth, async (req, res: Response, next) => {
-  try {
-  const { userId } = req as AuthRequest
+export interface ByClassValue {
+  name: string; name_key: string | null; color: string; value_brl: number; pct: number
+}
 
-  const cacheKey = `portfolio:value:${userId}`
-  const cached = cache.get<object>(cacheKey)
-  if (cached) { res.json(cached); return }
+export interface ByAssetValue {
+  id: number; code: string; name: string
+  value_brl: number; value_orig: number; currency: string
+  class_id: number | null; class_name: string; class_name_key: string | null; class_color: string; class_icon?: string | null
+  holdings: number | null; price: number | null; source: string
+  needs_manual: boolean
+  invested_brl: number | null
+  last_manual_date: string | null
+  fi_type?: string | null
+  fi_start_date?: string | null
+  fi_rate?: number | null
+  fi_spread?: number | null
+  fi_maturity?: string | null
+  exchange?: string | null
+}
 
+export interface PortfolioValueResult {
+  total_brl: number
+  total_usd?: number | null
+  total_eur?: number | null
+  by_class: ByClassValue[]
+  by_asset: ByAssetValue[]
+  generated_at?: string
+}
+
+// Fonte única de verdade do valor do portfólio: usada por GET /portfolio/value
+// e pelo snapshot do relatório compartilhado (buildPortfolioSnapshot).
+export async function computePortfolioValue(userId: string): Promise<PortfolioValueResult> {
   // 1. Busca todos ativos ativos do usuário com classe
   const { data: assets, error: assetsErr } = await supabaseAdmin
     .from('assets')
@@ -31,8 +54,8 @@ router.get('/value', requireAuth, async (req, res: Response, next) => {
     .eq('user_id', userId)
     .eq('active', true)
 
-  if (assetsErr) { res.status(500).json({ error: assetsErr.message }); return }
-  if (!assets?.length) { res.json({ total_brl: 0, by_class: [], by_asset: [] }); return }
+  if (assetsErr) throw new Error(assetsErr.message)
+  if (!assets?.length) return { total_brl: 0, by_class: [], by_asset: [] }
 
   const assetIds = assets.map((a) => a.id)
 
@@ -104,21 +127,7 @@ router.get('/value', requireAuth, async (req, res: Response, next) => {
   )
 
   // 4. Calcula valor em BRL por ativo — todos os ativos aparecem, mesmo sem valor
-  const byAsset: Array<{
-    id: number; code: string; name: string
-    value_brl: number; value_orig: number; currency: string
-    class_id: number | null; class_name: string; class_name_key: string | null; class_color: string; class_icon?: string | null
-    holdings: number | null; price: number | null; source: string
-    needs_manual: boolean
-    invested_brl: number | null
-    last_manual_date: string | null
-    fi_type?: string | null
-    fi_start_date?: string | null
-    fi_rate?: number | null
-    fi_spread?: number | null
-    fi_maturity?: string | null
-    exchange?: string | null
-  }> = []
+  const byAsset: ByAssetValue[] = []
 
   await Promise.allSettled(
     assets.map(async (a) => {
@@ -240,7 +249,7 @@ router.get('/value', requireAuth, async (req, res: Response, next) => {
     getFxRate('EUR').then((r) => 1 / r).catch(() => null),
   ])
 
-  const result = {
+  return {
     total_brl: Math.round(total_brl * 100) / 100,
     total_usd: fx_usd ? Math.round(total_brl * fx_usd * 100) / 100 : null,
     total_eur: fx_eur ? Math.round(total_brl * fx_eur * 100) / 100 : null,
@@ -248,8 +257,20 @@ router.get('/value', requireAuth, async (req, res: Response, next) => {
     by_asset: byAsset.sort((a, b) => b.value_brl - a.value_brl),
     generated_at: new Date().toISOString(),
   }
-  cache.set(cacheKey, result, TTL.PORTFOLIO_VALUE)
-  res.json(result)
+}
+
+// GET /api/portfolio/value
+router.get('/value', requireAuth, async (req, res: Response, next) => {
+  try {
+    const { userId } = req as AuthRequest
+
+    const cacheKey = `portfolio:value:${userId}`
+    const cached = cache.get<object>(cacheKey)
+    if (cached) { res.json(cached); return }
+
+    const result = await computePortfolioValue(userId)
+    cache.set(cacheKey, result, TTL.PORTFOLIO_VALUE)
+    res.json(result)
   } catch (err) { next(err) }
 })
 
