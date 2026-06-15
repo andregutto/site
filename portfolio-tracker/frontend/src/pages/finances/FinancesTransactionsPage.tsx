@@ -1425,7 +1425,7 @@ export default function FinancesTransactionsPage() {
                                 {tx.finance_categories && (
                                   <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full bg-[var(--arvo-track-bg)] text-[var(--arvo-fg-muted)]">
                                     <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: tx.finance_categories.color }} />
-                                    {tx.finance_categories.name}
+                                    {resolveKey(tx.finance_categories.name, tx.finance_categories.name_key, nameKeys)}
                                   </span>
                                 )}
                               </td>
@@ -1496,7 +1496,7 @@ export default function FinancesTransactionsPage() {
                               {tx.finance_categories ? (
                                 <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-[var(--arvo-track-bg)] text-[var(--arvo-fg-muted)]">
                                   <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: tx.finance_categories.color }} />
-                                  {tx.finance_categories.name}
+                                  {resolveKey(tx.finance_categories.name, tx.finance_categories.name_key, nameKeys)}
                                 </span>
                               ) : (
                                 <span className="text-[10px] text-[var(--arvo-fg-soft)]">+ {t.finances.category}</span>
@@ -1550,7 +1550,7 @@ export default function FinancesTransactionsPage() {
                               {tx.finance_categories ? (
                                 <span className="inline-flex items-center gap-1.5 text-xs px-2 py-0.5 rounded-full font-medium bg-[var(--arvo-track-bg)] text-[var(--arvo-fg-muted)]">
                                   <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: tx.finance_categories.color }} />
-                                  {tx.finance_categories.name}
+                                  {resolveKey(tx.finance_categories.name, tx.finance_categories.name_key, nameKeys)}
                                 </span>
                               ) : (
                                 <span className="text-xs text-[var(--arvo-fg-soft)] [@media(hover:hover)]:text-[var(--arvo-fg-faint)] group-hover/cat:text-[var(--arvo-fg-muted)] transition-colors">+ {t.finances.category}</span>
@@ -2167,12 +2167,12 @@ export default function FinancesTransactionsPage() {
               <option value="">{t.finances.noCategory}</option>
               {incomeCategories.length > 0 && (
                 <optgroup label={t.finances.incomeLabel}>
-                  {incomeCategories.map(c => <option key={c.id} value={`c:${c.id}`}>{c.icon} {c.name}</option>)}
+                  {incomeCategories.map(c => <option key={c.id} value={`c:${c.id}`}>{c.icon} {resolveKey(c.name, c.name_key, nameKeys)}</option>)}
                 </optgroup>
               )}
               {expenseCategories.length > 0 && (
                 <optgroup label={t.finances.expenses}>
-                  {expenseCategories.map(c => <option key={c.id} value={`c:${c.id}`}>{c.icon} {c.name}</option>)}
+                  {expenseCategories.map(c => <option key={c.id} value={`c:${c.id}`}>{c.icon} {resolveKey(c.name, c.name_key, nameKeys)}</option>)}
                 </optgroup>
               )}
               {sharedCats.length > 0 && (
