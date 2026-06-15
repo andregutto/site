@@ -707,6 +707,7 @@
     "overviewPerDay": "/day",
     "overviewNMonths": "months",
     "overviewRecurringIncluded": "expected recurring included",
+    "overviewDetailsLabel": "Calculation details",
     "overviewNearLimit": "approaching budget limit",
     "overviewTopCategories": "Top categories",
     "overviewHistory": "History",

@@ -133,6 +133,29 @@ function ChartTooltip({ active, payload, label, currency, locale = 'pt-BR' }: {
   )
 }
 
+function CollapsibleInfoCard({ title, children }: { title: string; children: React.ReactNode }) {
+  const [expanded, setExpanded] = useState(false)
+  return (
+    <div className="rounded-2xl" style={{ background: 'var(--arvo-surface-2)', borderLeft: '2px solid var(--arvo-gold)' }}>
+      <button
+        type="button"
+        onClick={() => setExpanded(v => !v)}
+        className="w-full flex items-center gap-2.5 px-4 py-3 text-left"
+        style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 12, fontWeight: 600, color: 'var(--arvo-fg-muted)' }}
+      >
+        <Icon name="info" size={14} style={{ flexShrink: 0 }} />
+        <span className="flex-1">{title}</span>
+        <Icon name="plus" size={12} style={{ flexShrink: 0, transform: expanded ? 'rotate(45deg)' : 'none', transition: 'transform var(--arvo-dur-fast) var(--arvo-ease)' }} />
+      </button>
+      {expanded && (
+        <div className="px-4 pb-4" style={{ color: 'var(--arvo-fg-muted)', fontSize: 12, lineHeight: 1.6 }}>
+          {children}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function FinancesOverviewPage() {
   const { t, locale } = useI18n()
   const navigate = useNavigate()
@@ -608,15 +631,8 @@ export default function FinancesOverviewPage() {
 
           {/* Right: month projection — desktop only */}
           <div className="hidden lg:flex lg:flex-col lg:justify-center" style={{ borderLeft: '1px solid var(--arvo-border-soft)', paddingLeft: 28 }}>
-            <p style={{ fontFamily: "var(--arvo-font-body)", fontSize: 10, fontWeight: 600, letterSpacing: '0.10em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)', marginBottom: 2 }}>
+            <p style={{ fontFamily: "var(--arvo-font-body)", fontSize: 10, fontWeight: 600, letterSpacing: '0.10em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)', marginBottom: 10 }}>
               {isCurrentMonth ? t.finances.overviewProjection : t.finances.overviewResult}
-            </p>
-            <p style={{ fontFamily: "var(--arvo-font-body)", fontSize: 12, color: 'var(--arvo-fg-faint)', fontStyle: 'italic', marginBottom: 4 }}>
-              {isCurrentMonth ? t.finances.overviewProjectionHint : t.finances.overviewResultHint}
-            </p>
-            <p style={{ fontFamily: "var(--arvo-font-body)", fontSize: 12, color: 'var(--arvo-fg-soft)', marginBottom: 14 }}>
-              {t.finances.overviewDayOf} {daysElapsed} {t.finances.overviewDayOfSep} {daysTotal}
-              {isCurrentMonth && daysRemaining > 0 && <span style={{ marginLeft: 6 }}>· {daysRemaining} {t.finances.overviewDaysLeft}</span>}
             </p>
 
             {displayValue != null ? (
@@ -638,22 +654,12 @@ export default function FinancesOverviewPage() {
                         background: displayOver ? 'var(--arvo-red)' : 'var(--arvo-green)',
                       }} />
                     </div>
-                    <span style={{ fontSize: 12, fontWeight: 600, color: displayOver ? 'var(--arvo-red)' : 'var(--arvo-green)', marginBottom: 10, display: 'block' }}>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: displayOver ? 'var(--arvo-red)' : 'var(--arvo-green)', display: 'block' }}>
                       {displayOver
                         ? `+${fmt(cx(displayValue - totalBudgeted), currency, true)} ${t.finances.overviewOverBudget}`
                         : `${fmt(cx(totalBudgeted - displayValue), currency, true)} ${t.finances.overviewUnderBudget}`}
                     </span>
                   </>
-                )}
-                {isCurrentMonth && histDailyAvg > 0 && (
-                  <p style={{ fontSize: 12, color: 'var(--arvo-fg-faint)', marginTop: 4 }}>
-                    {t.finances.overviewHistAvg} {fmt(cx(histDailyAvg), currency, true)}{t.finances.overviewPerDay} · {pastMonthsData.length} {t.finances.overviewNMonths}
-                  </p>
-                )}
-                {isCurrentMonth && missingRecurrents.length > 0 && (
-                  <p style={{ fontSize: 12, color: 'var(--arvo-fg-soft)', marginTop: 4 }}>
-                    {t.finances.overviewRecurringIncluded}: {missingRecurrents.map(r => `${r.icon} ${fmt(cx(r.amount), currency, true)}`).join(' · ')}
-                  </p>
                 )}
               </>
             ) : isCurrentMonth ? (
@@ -663,6 +669,29 @@ export default function FinancesOverviewPage() {
             ) : (
               <p style={{ fontSize: 22, fontFamily: "var(--arvo-font-body)", color: 'var(--arvo-fg-faint)' }}>—</p>
             )}
+
+            <div style={{ marginTop: 12 }}>
+              <CollapsibleInfoCard
+                title={
+                  isCurrentMonth && histDailyAvg > 0
+                    ? `${t.finances.overviewHistAvg} ${fmt(cx(histDailyAvg), currency, true)}${t.finances.overviewPerDay} · ${pastMonthsData.length} ${t.finances.overviewNMonths}`
+                    : t.finances.overviewDetailsLabel
+                }
+              >
+                <p style={{ fontStyle: 'italic', color: 'var(--arvo-fg-faint)', marginBottom: 4 }}>
+                  {isCurrentMonth ? t.finances.overviewProjectionHint : t.finances.overviewResultHint}
+                </p>
+                <p style={{ marginBottom: isCurrentMonth && missingRecurrents.length > 0 ? 4 : 0 }}>
+                  {t.finances.overviewDayOf} {daysElapsed} {t.finances.overviewDayOfSep} {daysTotal}
+                  {isCurrentMonth && daysRemaining > 0 && <span style={{ marginLeft: 6 }}>· {daysRemaining} {t.finances.overviewDaysLeft}</span>}
+                </p>
+                {isCurrentMonth && missingRecurrents.length > 0 && (
+                  <p style={{ margin: 0 }}>
+                    {t.finances.overviewRecurringIncluded}: {missingRecurrents.map(r => `${r.icon} ${fmt(cx(r.amount), currency, true)}`).join(' · ')}
+                  </p>
+                )}
+              </CollapsibleInfoCard>
+            </div>
           </div>
         </div>
       </div>

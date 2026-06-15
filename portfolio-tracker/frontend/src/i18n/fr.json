@@ -707,6 +707,7 @@
     "overviewPerDay": "/jour",
     "overviewNMonths": "mois",
     "overviewRecurringIncluded": "récurrents prévus inclus",
+    "overviewDetailsLabel": "Détails du calcul",
     "overviewNearLimit": "proche du plafond budgétaire",
     "overviewTopCategories": "Top catégories",
     "overviewHistory": "Historique",
