@@ -19,7 +19,16 @@ const INSTITUTION_DOMAINS: Record<string, string> = {
   'CLEAR':                        'clear.com.br',
   'MODAL':                        'modal.com.br',
   'WARREN':                       'warren.com.br',
+  'AVENUE':                       'avenue.us',
+  'BNP PARIBAS':                  'bnpparibas.com',
 }
+
+// Clearbit's free logo API ficou instável após a aquisição pela HubSpot;
+// Google Favicons serve de backup com uptime alto antes de cair nas iniciais.
+const LOGO_SOURCES = [
+  (domain: string) => `https://logo.clearbit.com/${domain}`,
+  (domain: string) => `https://www.google.com/s2/favicons?domain=${domain}&sz=128`,
+]
 
 function getDomain(name: string): string | null {
   if (INSTITUTION_DOMAINS[name]) return INSTITUTION_DOMAINS[name]
@@ -32,20 +41,21 @@ function getDomain(name: string): string | null {
 }
 
 export default function InstitutionLogo({ name, size = 32 }: { name: string; size?: number }) {
-  const [imgError, setImgError] = useState(false)
+  const [sourceIdx, setSourceIdx] = useState(0)
   const domain = getDomain(name)
   const initials = name.replace(/\bS[./]A\.?|CCTVM|LTDA\.?|BANCO|BCO\b/gi, '').trim().slice(0, 2).toUpperCase()
 
   const style = { width: size, height: size, minWidth: size }
 
-  if (domain && !imgError) {
+  if (domain && sourceIdx < LOGO_SOURCES.length) {
     return (
       <img
-        src={`https://logo.clearbit.com/${domain}`}
+        key={sourceIdx}
+        src={LOGO_SOURCES[sourceIdx](domain)}
         alt={name}
         style={style}
         className="rounded-lg object-contain shrink-0 bg-[var(--arvo-surface)] border border-[var(--arvo-border)]"
-        onError={() => setImgError(true)}
+        onError={() => setSourceIdx(i => i + 1)}
       />
     )
   }
