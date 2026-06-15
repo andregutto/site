@@ -967,6 +967,8 @@
     "syncAfterLink": "Compte synchronisé avec le portefeuille ✓",
     "reimbursementHowWorks": "Comment ça marche ?",
     "reimbursementGroupCount": "{n} groupe(s)",
+    "reimbursementShowOlder": "Afficher {n} groupe(s) plus ancien(s)",
+    "reimbursementHideOlder": "Masquer {n} groupe(s) plus ancien(s)",
     "reimbursementHelpBody": "Regroupez les transactions liées pour que seul le <strong>montant net</strong> entre dans les calculs — idéal pour les avances, remboursements de frais et cotisations.",
     "reimbursementHelpTitle": "Comment créer un groupe",
     "reimbursementHelpStep1": "Utilisez le bouton <strong>Détecter les remboursements</strong> pour la détection automatique",

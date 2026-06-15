@@ -967,6 +967,8 @@
     "syncAfterLink": "Conta sincronizada com o portfólio ✓",
     "reimbursementHowWorks": "Como funciona?",
     "reimbursementGroupCount": "{n} grupo(s)",
+    "reimbursementShowOlder": "Mostrar {n} grupo(s) mais antigo(s)",
+    "reimbursementHideOlder": "Ocultar {n} grupo(s) mais antigo(s)",
     "reimbursementHelpBody": "Agrupe transações relacionadas para que <strong>apenas o valor líquido</strong> entre nos cálculos — ideal para adiantamentos, reembolsos de trabalho e cotizações bancárias.",
     "reimbursementHelpTitle": "Como criar um grupo",
     "reimbursementHelpStep1": "Use o botão <strong>Detectar reembolsos</strong> para detecção automática",

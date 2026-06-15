@@ -137,6 +137,7 @@ export default function FinancesTransactionsPage() {
   const [editingGroupId, setEditingGroupId]         = useState<string | null>(null)
   const [editingGroupNameInput, setEditingGroupNameInput] = useState('')
   const [showAutoGroups, setShowAutoGroups]         = useState(false)
+  const [showOlderGroups, setShowOlderGroups]       = useState(false)
 
   // Reimbursement groups
   const [groups, setGroups]                 = useState<ReimbursementGroup[]>([])
@@ -1858,6 +1859,73 @@ export default function FinancesTransactionsPage() {
                 const manualGroups = groups.filter(g => !isAuto(g))
                 const autoGroups   = groups.filter(g =>  isAuto(g))
 
+                const latestDate = (g: ReimbursementGroup) =>
+                  g.transactions.reduce((max, tx) => tx.date > max ? tx.date : max, '')
+                const currentYM = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`
+                const thirtyDaysAgo = new Date(today)
+                thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+                const thirtyDaysAgoStr = thirtyDaysAgo.toISOString().split('T')[0]
+                const isRecent = (g: ReimbursementGroup) => {
+                  const d = latestDate(g)
+                  return !d || d >= thirtyDaysAgoStr || d.slice(0, 7) === currentYM
+                }
+                const recentManualGroups = manualGroups.filter(isRecent)
+                const olderManualGroups  = manualGroups.filter(g => !isRecent(g))
+
+                const renderGroup = (g: ReimbursementGroup, nested = false) => (
+                  <div key={g.id} className={nested ? 'py-3 first:pt-0' : 'px-5 py-3'}>
+                    <div className="flex items-center gap-2 mb-2">
+                      {editingGroupId === g.id ? (
+                        <input
+                          autoFocus
+                          value={editingGroupNameInput}
+                          onChange={e => setEditingGroupNameInput(e.target.value)}
+                          onBlur={() => renameGroup(g.id, editingGroupNameInput)}
+                          onKeyDown={e => {
+                            if (e.key === 'Enter') renameGroup(g.id, editingGroupNameInput)
+                            if (e.key === 'Escape') setEditingGroupId(null)
+                          }}
+                          className="flex-1 text-sm font-medium border-b border-[var(--arvo-fg)] bg-transparent outline-none"
+                        />
+                      ) : (
+                        <button
+                          onClick={() => { setEditingGroupId(g.id); setEditingGroupNameInput(g.name) }}
+                          className="flex-1 text-sm font-medium text-[var(--arvo-fg)] text-left hover:text-[var(--arvo-fg)] transition-colors"
+                          title={t.finances.groupRename}
+                        >
+                          {displayName(g)}
+                        </button>
+                      )}
+                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full tabular-nums ${Math.abs(g.net) < 0.01 ? 'bg-[var(--arvo-track-bg)] text-[var(--arvo-fg-muted)]' : g.net > 0 ? 'bg-[var(--arvo-green-tint)] arvo-delta-pos' : 'bg-[var(--arvo-border-soft)] text-[var(--arvo-fg)]'}`}>
+                        {g.net >= 0 ? '+' : ''}{fmt(g.net, g.transactions[0]?.currency ?? 'EUR')}
+                      </span>
+                      <button
+                        onClick={() => deleteGroup(g.id)}
+                        title={t.finances.groupDelete}
+                        className="p-1 text-[var(--arvo-fg-soft)] hover:text-red-400 transition-colors"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5"><path fillRule="evenodd" d="M5 3.25V4H2.75a.75.75 0 0 0 0 1.5h.3l.815 8.15A1.5 1.5 0 0 0 5.357 15h5.285a1.5 1.5 0 0 0 1.493-1.35l.815-8.15h.3a.75.75 0 0 0 0-1.5H11v-.75A2.25 2.25 0 0 0 8.75 1h-1.5A2.25 2.25 0 0 0 5 3.25Z" clipRule="evenodd"/></svg>
+                      </button>
+                    </div>
+                    <div className="space-y-1">
+                      {g.transactions.map(tx => (
+                        <div key={tx.id} className="flex items-center gap-2 text-xs text-[var(--arvo-fg-muted)] pl-2">
+                          <span className="text-[var(--arvo-fg-faint)]">·</span>
+                          <span className="flex-1 truncate">{tx.description}</span>
+                          <span className={`font-medium tabular-nums ${tx.amount < 0 ? 'text-[var(--arvo-fg)]' : 'arvo-delta-pos'}`}>{fmt(tx.amount, tx.currency)}</span>
+                          <button
+                            onClick={() => removeFromGroup(g.id, tx.id)}
+                            title={t.finances.removeFromGroup}
+                            className="p-0.5 text-[var(--arvo-fg-soft)] hover:text-red-400 transition-colors"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3"><path d="M5.28 4.22a.75.75 0 0 0-1.06 1.06L6.94 8l-2.72 2.72a.75.75 0 1 0 1.06 1.06L8 9.06l2.72 2.72a.75.75 0 1 0 1.06-1.06L9.06 8l2.72-2.72a.75.75 0 0 0-1.06-1.06L8 6.94 5.28 4.22Z"/></svg>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )
+
                 return (
                   <div className="divide-y divide-[var(--arvo-border-soft)]">
                     {manualGroups.length === 0 && autoGroups.length === 0 && (
@@ -1871,59 +1939,24 @@ export default function FinancesTransactionsPage() {
                       </div>
                     )}
 
-                    {manualGroups.map(g => (
-                      <div key={g.id} className="px-5 py-3">
-                        <div className="flex items-center gap-2 mb-2">
-                          {editingGroupId === g.id ? (
-                            <input
-                              autoFocus
-                              value={editingGroupNameInput}
-                              onChange={e => setEditingGroupNameInput(e.target.value)}
-                              onBlur={() => renameGroup(g.id, editingGroupNameInput)}
-                              onKeyDown={e => {
-                                if (e.key === 'Enter') renameGroup(g.id, editingGroupNameInput)
-                                if (e.key === 'Escape') setEditingGroupId(null)
-                              }}
-                              className="flex-1 text-sm font-medium border-b border-[var(--arvo-fg)] bg-transparent outline-none"
-                            />
-                          ) : (
-                            <button
-                              onClick={() => { setEditingGroupId(g.id); setEditingGroupNameInput(g.name) }}
-                              className="flex-1 text-sm font-medium text-[var(--arvo-fg)] text-left hover:text-[var(--arvo-fg)] transition-colors"
-                              title={t.finances.groupRename}
-                            >
-                              {displayName(g)}
-                            </button>
-                          )}
-                          <span className={`text-xs font-medium px-2 py-0.5 rounded-full tabular-nums ${Math.abs(g.net) < 0.01 ? 'bg-[var(--arvo-track-bg)] text-[var(--arvo-fg-muted)]' : g.net > 0 ? 'bg-[var(--arvo-green-tint)] arvo-delta-pos' : 'bg-[var(--arvo-border-soft)] text-[var(--arvo-fg)]'}`}>
-                            {g.net >= 0 ? '+' : ''}{fmt(g.net, g.transactions[0]?.currency ?? 'EUR')}
-                          </span>
-                          <button
-                            onClick={() => deleteGroup(g.id)}
-                            title={t.finances.groupDelete}
-                            className="p-1 text-[var(--arvo-fg-soft)] hover:text-red-400 transition-colors"
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5"><path fillRule="evenodd" d="M5 3.25V4H2.75a.75.75 0 0 0 0 1.5h.3l.815 8.15A1.5 1.5 0 0 0 5.357 15h5.285a1.5 1.5 0 0 0 1.493-1.35l.815-8.15h.3a.75.75 0 0 0 0-1.5H11v-.75A2.25 2.25 0 0 0 8.75 1h-1.5A2.25 2.25 0 0 0 5 3.25Z" clipRule="evenodd"/></svg>
-                          </button>
-                        </div>
-                        <div className="space-y-1">
-                          {g.transactions.map(tx => (
-                            <div key={tx.id} className="flex items-center gap-2 text-xs text-[var(--arvo-fg-muted)] pl-2">
-                              <span className="text-[var(--arvo-fg-faint)]">·</span>
-                              <span className="flex-1 truncate">{tx.description}</span>
-                              <span className={`font-medium tabular-nums ${tx.amount < 0 ? 'text-[var(--arvo-fg)]' : 'arvo-delta-pos'}`}>{fmt(tx.amount, tx.currency)}</span>
-                              <button
-                                onClick={() => removeFromGroup(g.id, tx.id)}
-                                title={t.finances.removeFromGroup}
-                                className="p-0.5 text-[var(--arvo-fg-soft)] hover:text-red-400 transition-colors"
-                              >
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3"><path d="M5.28 4.22a.75.75 0 0 0-1.06 1.06L6.94 8l-2.72 2.72a.75.75 0 1 0 1.06 1.06L8 9.06l2.72 2.72a.75.75 0 1 0 1.06-1.06L9.06 8l2.72-2.72a.75.75 0 0 0-1.06-1.06L8 6.94 5.28 4.22Z"/></svg>
-                              </button>
-                            </div>
-                          ))}
-                        </div>
+                    {recentManualGroups.map(g => renderGroup(g))}
+
+                    {olderManualGroups.length > 0 && (
+                      <div className="px-5 py-3">
+                        <button
+                          onClick={() => setShowOlderGroups(v => !v)}
+                          className="flex items-center gap-1.5 text-xs text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg-muted)] transition-colors"
+                        >
+                          <svg className={`w-3 h-3 transition-transform ${showOlderGroups ? 'rotate-90' : ''}`} fill="currentColor" viewBox="0 0 16 16"><path d="M6 3.5L10.5 8 6 12.5V3.5z"/></svg>
+                          {(showOlderGroups ? t.finances.reimbursementHideOlder : t.finances.reimbursementShowOlder).replace('{n}', String(olderManualGroups.length))}
+                        </button>
+                        {showOlderGroups && (
+                          <div className="mt-3 divide-y divide-[var(--arvo-border-soft)]">
+                            {olderManualGroups.map(g => renderGroup(g, true))}
+                          </div>
+                        )}
                       </div>
-                    ))}
+                    )}
 
                     {autoGroups.length > 0 && (
                       <div className="px-5 py-3">

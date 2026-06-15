@@ -967,6 +967,8 @@
     "syncAfterLink": "Account synced to portfolio ✓",
     "reimbursementHowWorks": "How does it work?",
     "reimbursementGroupCount": "{n} group(s)",
+    "reimbursementShowOlder": "Show {n} older group(s)",
+    "reimbursementHideOlder": "Hide {n} older group(s)",
     "reimbursementHelpBody": "Group related transactions so that only the <strong>net amount</strong> is included in calculations — ideal for advances, work reimbursements, and shared expenses.",
     "reimbursementHelpTitle": "How to create a group",
     "reimbursementHelpStep1": "Use the <strong>Detect refunds</strong> button for automatic detection",
