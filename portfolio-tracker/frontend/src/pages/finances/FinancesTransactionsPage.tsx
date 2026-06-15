@@ -1664,7 +1664,7 @@ export default function FinancesTransactionsPage() {
 
       {/* ── Floating multi-select action bar ── */}
       {selected.size > 0 && csvStep === 'idle' && (
-        <div className="fixed bottom-[160px] sm:bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 sm:gap-3 bg-[var(--arvo-pill-active-bg)] text-[var(--arvo-pill-active-fg)] px-3 sm:px-4 py-2.5 sm:py-3 rounded-2xl shadow-2xl max-w-[calc(100%-32px)]">
+        <div className="fixed bottom-[160px] sm:bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center flex-wrap justify-center gap-2 sm:gap-3 bg-[var(--arvo-pill-active-bg)] text-[var(--arvo-pill-active-fg)] px-3 sm:px-4 py-2.5 sm:py-3 rounded-2xl shadow-2xl max-w-[calc(100%-32px)]">
           <span className="text-sm font-medium shrink-0">{selected.size} sel.</span>
           <div className="hidden sm:block w-px h-4 bg-[var(--arvo-pill-active-fg)]/20 shrink-0" />
 
