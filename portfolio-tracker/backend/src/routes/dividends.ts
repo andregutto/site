@@ -56,11 +56,13 @@ router.get('/', requireAuth, async (req, res: Response) => {
   res.json(rows)
 })
 
-// GET /api/dividends/summary?from=YYYY-MM-DD&to=YYYY-MM-DD
-router.get('/summary', requireAuth, async (req, res: Response) => {
-  const { userId } = req as AuthRequest
-  const { from, to } = req.query as Record<string, string>
+export interface DividendsSummary {
+  total_brl: number
+  by_asset: Array<{ asset_id: number; code: string; name: string; total_brl: number; count: number }>
+  by_month: Array<{ month: string; total_brl: number }>
+}
 
+export async function computeDividendsSummary(userId: string, from?: string, to?: string): Promise<DividendsSummary> {
   const { data: assets } = await supabaseAdmin
     .from('assets')
     .select('id, code, name, currency')
@@ -68,7 +70,7 @@ router.get('/summary', requireAuth, async (req, res: Response) => {
     .eq('active', true)
 
   const assetIds = (assets ?? []).map(a => a.id as number)
-  if (!assetIds.length) { res.json({ total_brl: 0, by_asset: [], by_month: [] }); return }
+  if (!assetIds.length) return { total_brl: 0, by_asset: [], by_month: [] }
 
   let q = supabaseAdmin
     .from('dividends')
@@ -80,7 +82,7 @@ router.get('/summary', requireAuth, async (req, res: Response) => {
   if (to)   q = q.lte('ex_date', to)
 
   const { data, error } = await q
-  if (error) { res.status(500).json({ error: error.message }); return }
+  if (error) throw new Error(error.message)
 
   const rows = data ?? []
   const assetMap = Object.fromEntries((assets ?? []).map(a => [a.id, a]))
@@ -114,7 +116,20 @@ router.get('/summary', requireAuth, async (req, res: Response) => {
     .map(([month, total_brl]) => ({ month, total_brl: Math.round(total_brl * 100) / 100 }))
     .sort((a, b) => a.month.localeCompare(b.month))
 
-  res.json({ total_brl: Math.round(total_brl * 100) / 100, by_asset, by_month })
+  return { total_brl: Math.round(total_brl * 100) / 100, by_asset, by_month }
+}
+
+// GET /api/dividends/summary?from=YYYY-MM-DD&to=YYYY-MM-DD
+router.get('/summary', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const { from, to } = req.query as Record<string, string>
+
+  try {
+    const summary = await computeDividendsSummary(userId, from, to)
+    res.json(summary)
+  } catch (err) {
+    res.status(500).json({ error: (err as Error).message })
+  }
 })
 
 export default router

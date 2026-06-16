@@ -1,5 +1,9 @@
 import { Router, Response } from 'express'
 import { supabaseAdmin } from '../lib/supabase.js'
+import type {
+  PortfolioSnapshot, SnapshotAsset, SnapshotGroupValue, SnapshotClassValue,
+  SnapshotPerformance, SnapshotMonthlyPoint, SnapshotDividends,
+} from './portfolio.js'
 
 const router = Router()
 
@@ -64,7 +68,7 @@ router.get('/portfolio/:token', async (req, res: Response) => {
 
   const { data: share } = await supabaseAdmin
     .from('portfolio_shares')
-    .select('user_id, show_values, label, updated_at, snapshot')
+    .select('user_id, show_values, hide_holdings, label, updated_at, snapshot')
     .eq('token', token)
     .eq('is_active', true)
     .single()
@@ -77,44 +81,73 @@ router.get('/portfolio/:token', async (req, res: Response) => {
     owner_name = (user?.user_metadata?.first_name as string | null) ?? null
   } catch { /* ignore */ }
 
-  const snap = share.snapshot as {
-    total_brl: number; portfolio_value?: number; invested_value?: number
-    total_return_pct?: number | null; display_currency?: string
-    asset_count: number; generated_at: string
-    by_class: Array<{ name: string; key: string | null; color: string; value: number; pct: number }>
-    top_assets: Array<{ code: string; name: string; value_brl: number; pct: number; class_name: string; class_color: string; exchange: string | null }>
-    dividends_12m: number
-    monthly_dividends: Array<{ month: string; amount: number }>
-  } | null
-
+  const snap = share.snapshot as PortfolioSnapshot | null
   if (!snap) { res.status(503).json({ error: 'snapshot_pending' }); return }
 
   const showVal = share.show_values
-  const displayCurr = snap.display_currency ?? 'BRL'
-  const portfolioValue = snap.portfolio_value ?? snap.total_brl
+  const hideHoldings = share.hide_holdings
+
+  const mv = (v: number): number | null => showVal ? v : null
+
+  const maskPerformance = (p: SnapshotPerformance | null) => p && {
+    from: p.from, to: p.to,
+    value_start: mv(p.value_start), value_end: mv(p.value_end),
+    contributions: mv(p.contributions), return_abs: mv(p.return_abs),
+    return_pct: p.return_pct,
+  }
+
+  const maskMonthly = (m: SnapshotMonthlyPoint[]) => m.map(p => ({
+    month: p.month, total: mv(p.total), contributions_cumulative: mv(p.contributions_cumulative),
+  }))
+
+  const maskGroups = (g: SnapshotGroupValue[]) => g.map(x => ({ ...x, value: mv(x.value) }))
+
+  const maskClasses = (c: SnapshotClassValue[]) => c.map(x => ({ ...x, value: mv(x.value) }))
+
+  const maskAssets = (a: SnapshotAsset[]) => hideHoldings ? [] : a.map(x => ({ ...x, value: mv(x.value) }))
+
+  const maskDividends = (d: SnapshotDividends) => ({
+    total_12m: mv(d.total_12m),
+    by_month: d.by_month.map(m => ({ month: m.month, total: mv(m.total) })),
+    top_payers: hideHoldings ? [] : d.top_payers.map(p => ({ ...p, total: mv(p.total) })),
+    yield_pct: d.yield_pct,
+  })
 
   res.json({
     owner_name,
+    label: share.label,
     show_values: showVal,
+    hide_holdings: hideHoldings,
     updated_at: share.updated_at,
-    display_currency: displayCurr,
-    total_brl: showVal ? snap.total_brl : null,
-    portfolio_value: showVal ? portfolioValue : null,
-    invested_value: showVal ? (snap.invested_value ?? null) : null,
-    total_return_pct: snap.total_return_pct ?? null,
-    asset_count: snap.asset_count,
     generated_at: snap.generated_at,
-    by_class: snap.by_class.map(c => ({
-      name: c.name, key: c.key, color: c.color, pct: c.pct,
-      value: showVal ? c.value : null,
-    })),
-    top_assets: snap.top_assets.map(a => ({
-      code: a.code, name: a.name, pct: a.pct,
-      value_brl: showVal ? a.value_brl : null,
-      class_name: a.class_name, class_color: a.class_color, exchange: a.exchange,
-    })),
-    dividends_12m: showVal ? snap.dividends_12m : null,
-    monthly_dividends: snap.monthly_dividends,
+    display_currency: snap.display_currency,
+    period: snap.period,
+    period_from: snap.period_from,
+    period_to: snap.period_to,
+    inception: snap.inception,
+
+    total: mv(snap.total),
+    invested: mv(snap.invested),
+    asset_count: snap.asset_count,
+    class_count: snap.class_count,
+
+    performance: maskPerformance(snap.performance),
+    inception_performance: maskPerformance(snap.inception_performance),
+    monthly: maskMonthly(snap.monthly),
+    benchmarks: snap.benchmarks,
+
+    by_class: maskClasses(snap.by_class),
+    by_geography: maskGroups(snap.by_geography),
+    by_sector: maskGroups(snap.by_sector),
+    by_currency: maskGroups(snap.by_currency),
+
+    diversification: snap.diversification,
+
+    top_assets: maskAssets(snap.top_assets),
+    top_gainers: maskAssets(snap.top_gainers),
+    top_losers: maskAssets(snap.top_losers),
+
+    dividends: maskDividends(snap.dividends),
   })
 })
 

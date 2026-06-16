@@ -12,11 +12,11 @@ const yf = new YahooFinance({ suppressNotices: ['yahooSurvey', 'ripHistorical'] 
 
 const router = Router()
 
-function localDate(d: Date): string {
+export function localDate(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
-function localYM(d: Date): string {
+export function localYM(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
 }
 
@@ -70,7 +70,7 @@ function interpolateKnownPointsDaily(points: ValPoint[], targetDate: string): Va
   return { ref_date: targetDate, value, currency: before.currency }
 }
 
-type PrefetchedData = {
+export type PrefetchedData = {
   assets: Array<{
     id: number; code: string; name: string; asset_type: string; currency: string; active: boolean
     fi_principal: number | null; fi_start_date: string | null; fi_type: string | null
@@ -88,7 +88,7 @@ type PrefetchedData = {
 
 // Fetches all data needed for portfolio value computation in one round-trip (4 parallel DB queries).
 // priceFrom: optional earliest ref_date to load from price_history (reduces rows for short periods).
-async function fetchPrefetchedData(userId: string, priceFrom?: string): Promise<PrefetchedData> {
+export async function fetchPrefetchedData(userId: string, priceFrom?: string): Promise<PrefetchedData> {
   const { data: assets } = await supabaseAdmin
     .from('assets')
     .select('id, code, name, asset_type, currency, active, fi_principal, fi_start_date, fi_type, fi_rate, fi_spread, ticker_brapi, ticker_yahoo, coingecko_id')
@@ -144,7 +144,7 @@ async function fetchPrefetchedData(userId: string, priceFrom?: string): Promise<
 // getSelicRates/getIPCARates calls (same args, same cache keys) calculateCurrentValue
 // would make anyway — this only changes when the underlying HTTP fetch happens
 // (parallel, up front) instead of changing any rate or computed value.
-async function prefetchFIRates(data: PrefetchedData): Promise<void> {
+export async function prefetchFIRates(data: PrefetchedData): Promise<void> {
   const today = new Date()
   const fiAssets = data.assets.filter(a => a.asset_type === 'fixed_income' && a.active)
 
@@ -368,17 +368,21 @@ async function getPortfolioValueAtMonth(
   return computePortfolioValueAtMonth(data, year, month)
 }
 
-router.get('/summary', requireAuth, async (req, res: Response) => {
-  const { userId } = req as AuthRequest
-  const fromStr = (req.query.from as string) || '2025-01'
-  const toStr   = (req.query.to   as string) || localYM(new Date())
+export interface PerformanceSummary {
+  from: string; to: string
+  value_start: number; value_end: number
+  contributions: number
+  return_abs: number; return_pct: number | null
+}
 
+// Modified Dietz return for [fromStr, toStr] (both 'YYYY-MM'). Pass `prefetched`
+// (already through prefetchFIRates) to avoid re-fetching when called alongside
+// computeMonthlySeries for the same user/range.
+export async function computePerformanceSummary(
+  userId: string, fromStr: string, toStr: string, prefetched?: PrefetchedData
+): Promise<PerformanceSummary> {
   const [fromY, fromM] = fromStr.split('-').map(Number)
   const [toY,   toM  ] = toStr.split('-').map(Number)
-
-  if (fromY > toY || (fromY === toY && fromM > toM)) {
-    res.status(400).json({ error: '"from" deve ser anterior a "to"' }); return
-  }
 
   const prevM = fromM === 1 ? 12 : fromM - 1
   const prevY = fromM === 1 ? fromY - 1 : fromY
@@ -392,11 +396,11 @@ router.get('/summary', requireAuth, async (req, res: Response) => {
   const [clampedToY, clampedToM] = clampedToStr.split('-').map(Number)
 
   // Pre-fetch all data once — shared across both computePortfolioValueAtMonth calls
-  const prefetched = await fetchPrefetchedData(userId)
-  await prefetchFIRates(prefetched)
+  const data = prefetched ?? await fetchPrefetchedData(userId)
+  if (!prefetched) await prefetchFIRates(data)
 
   // Contributions: filter in memory instead of a separate DB query
-  const totalContribs = prefetched.contributions
+  const totalContribs = data.contributions
     .filter(c => c.date >= fromDateStr && c.date <= toDateStr)
     .reduce((s: number, c) => {
       if (c.type === 'income') return s
@@ -405,8 +409,8 @@ router.get('/summary', requireAuth, async (req, res: Response) => {
     }, 0)
 
   const [start, end] = await Promise.all([
-    computePortfolioValueAtMonth(prefetched, prevY,      prevM),
-    computePortfolioValueAtMonth(prefetched, clampedToY, clampedToM),
+    computePortfolioValueAtMonth(data, prevY,      prevM),
+    computePortfolioValueAtMonth(data, clampedToY, clampedToM),
   ])
 
   const v_ini = start.total
@@ -416,7 +420,7 @@ router.get('/summary', requireAuth, async (req, res: Response) => {
   const dietz_base = v_ini + 0.5 * totalContribs
   const return_pct = dietz_base > 0 ? (return_abs / dietz_base) * 100 : null
 
-  res.json({
+  return {
     from:          fromStr,
     to:            toStr,
     value_start:   v_ini,
@@ -424,23 +428,42 @@ router.get('/summary', requireAuth, async (req, res: Response) => {
     contributions: Math.round(totalContribs * 100) / 100,
     return_abs:    Math.round(return_abs * 100) / 100,
     return_pct:    return_pct !== null ? Math.round(return_pct * 100) / 100 : null,
-  })
+  }
+}
+
+router.get('/summary', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const fromStr = (req.query.from as string) || '2025-01'
+  const toStr   = (req.query.to   as string) || localYM(new Date())
+
+  const [fromY, fromM] = fromStr.split('-').map(Number)
+  const [toY,   toM  ] = toStr.split('-').map(Number)
+
+  if (fromY > toY || (fromY === toY && fromM > toM)) {
+    res.status(400).json({ error: '"from" deve ser anterior a "to"' }); return
+  }
+
+  const result = await computePerformanceSummary(userId, fromStr, toStr)
+  res.json(result)
 })
 
-router.get('/monthly', requireAuth, async (req, res: Response) => {
-  const { userId } = req as AuthRequest
+export interface MonthlyPoint {
+  month: string
+  total: number
+  prev_total: number
+  contributions: number
+  contributions_cumulative: number
+  detail: Array<{ asset_id: number; code: string; name: string; value: number; prev_value: number; contributions: number; gain: number }>
+}
+
+// Monthly portfolio value series for [fromStr, toStr] (both 'YYYY-MM'), with per-asset
+// detail and running contribution totals. Pass `prefetched` (already through
+// prefetchFIRates) to avoid re-fetching when called alongside computePerformanceSummary.
+export async function computeMonthlySeries(
+  userId: string, fromStr: string, toStr: string, prefetched?: PrefetchedData
+): Promise<{ monthly: MonthlyPoint[] }> {
   const now = new Date()
   const currentYM = localYM(now)
-
-  let fromStr: string, toStr: string
-  if (req.query.from && req.query.to) {
-    fromStr = req.query.from as string
-    toStr   = req.query.to   as string
-  } else {
-    const year = parseInt(req.query.year as string || String(now.getFullYear()))
-    fromStr = `${year}-01`
-    toStr   = `${year}-12`
-  }
 
   const [fromY, fromM] = fromStr.split('-').map(Number)
   const [toY,   toM  ] = toStr.split('-').map(Number)
@@ -462,12 +485,12 @@ router.get('/monthly', requireAuth, async (req, res: Response) => {
   const prevY = fromM === 1 ? fromY - 1 : fromY
 
   // Pre-fetch all data once — eliminates N+1 DB round-trips (was N×4 queries, now 4 total)
-  const prefetched = await fetchPrefetchedData(userId)
-  await prefetchFIRates(prefetched)
+  const data = prefetched ?? await fetchPrefetchedData(userId)
+  if (!prefetched) await prefetchFIRates(data)
 
   const assetInfo: Record<number, { code: string; name: string }> = {}
   const nativeFIIds = new Set<number>()
-  for (const a of prefetched.assets) {
+  for (const a of data.assets) {
     assetInfo[a.id] = { code: a.code, name: a.name }
     if (a.asset_type === 'fixed_income' && Number(a.fi_principal) > 0 && a.fi_start_date) {
       nativeFIIds.add(a.id)
@@ -476,17 +499,17 @@ router.get('/monthly', requireAuth, async (req, res: Response) => {
 
   // Compute all months using pre-fetched data — no additional DB queries
   const [prevMonthResult, valuesArr] = await Promise.all([
-    computePortfolioValueAtMonth(prefetched, prevY, prevM),
+    computePortfolioValueAtMonth(data, prevY, prevM),
     Promise.all(
       months.map(async ({ year: y, month: m, label }) => {
-        const { total, detail } = await computePortfolioValueAtMonth(prefetched, y, m)
+        const { total, detail } = await computePortfolioValueAtMonth(data, y, m)
         return { month: label, total, detail }
       })
     ),
   ])
 
   // Use pre-fetched contributions for per-month breakdown (no extra DB query)
-  const filteredContribs = prefetched.contributions.filter(c => c.date <= rangeToDate)
+  const filteredContribs = data.contributions.filter(c => c.date <= rangeToDate)
 
   const contribsByMonth: Record<string, number> = {}
   const contribsByAssetMonth: Record<string, Record<number, number>> = {}
@@ -546,7 +569,25 @@ router.get('/monthly', requireAuth, async (req, res: Response) => {
     }
   })
 
-  res.json({ monthly })
+  return { monthly }
+}
+
+router.get('/monthly', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const now = new Date()
+
+  let fromStr: string, toStr: string
+  if (req.query.from && req.query.to) {
+    fromStr = req.query.from as string
+    toStr   = req.query.to   as string
+  } else {
+    const year = parseInt(req.query.year as string || String(now.getFullYear()))
+    fromStr = `${year}-01`
+    toStr   = `${year}-12`
+  }
+
+  const result = await computeMonthlySeries(userId, fromStr, toStr)
+  res.json(result)
 })
 
 // ── Daily portfolio value ─────────────────────────────────────────────────────
@@ -765,19 +806,16 @@ router.get('/daily', requireAuth, async (req, res: Response) => {
   res.json({ daily })
 })
 
-router.get('/benchmarks', requireAuth, async (req, res: Response) => {
+export interface BenchmarksResult {
+  cdi_pct: number | null; ibov_pct: number | null; sp500_pct: number | null
+  monthly: Array<{ month: string; cdi_cum: number | null; ibov_cum: number | null; sp500_cum: number | null }>
+}
+
+// Cumulative CDI / IBOV / S&P 500 series for [fromStr, toStr] (both 'YYYY-MM'), plus
+// each benchmark's total return % over the range.
+export async function computeBenchmarks(fromStr: string, toStr: string): Promise<BenchmarksResult> {
   const today   = localDate(new Date())
   const todayYM = today.substring(0, 7)
-
-  let fromStr: string, toStr: string
-  if (req.query.from && req.query.to) {
-    fromStr = req.query.from as string
-    toStr   = req.query.to   as string
-  } else {
-    const year = parseInt(req.query.year as string || String(new Date().getFullYear()))
-    fromStr = `${year}-01`
-    toStr   = `${year}-12`
-  }
 
   const [fromY, fromM] = fromStr.split('-').map(Number)
   const [toY,   toM  ] = toStr.split('-').map(Number)
@@ -792,7 +830,7 @@ router.get('/benchmarks', requireAuth, async (req, res: Response) => {
     }
   }
   if (months.length === 0) {
-    res.json({ cdi_pct: null, ibov_pct: null, sp500_pct: null, monthly: [] }); return
+    return { cdi_pct: null, ibov_pct: null, sp500_pct: null, monthly: [] }
   }
 
   type Monthly = { month: string; cdi_cum: number | null; ibov_cum: number | null; sp500_cum: number | null }
@@ -888,11 +926,26 @@ router.get('/benchmarks', requireAuth, async (req, res: Response) => {
   if (lastEntry.ibov_cum  != null) ibovPct  = Math.round((lastEntry.ibov_cum  - 1) * 10000) / 100
   if (lastEntry.sp500_cum != null) sp500Pct = Math.round((lastEntry.sp500_cum - 1) * 10000) / 100
 
-  res.json({ cdi_pct: cdiPct, ibov_pct: ibovPct, sp500_pct: sp500Pct, monthly })
+  return { cdi_pct: cdiPct, ibov_pct: ibovPct, sp500_pct: sp500Pct, monthly }
+}
+
+router.get('/benchmarks', requireAuth, async (req, res: Response) => {
+  let fromStr: string, toStr: string
+  if (req.query.from && req.query.to) {
+    fromStr = req.query.from as string
+    toStr   = req.query.to   as string
+  } else {
+    const year = parseInt(req.query.year as string || String(new Date().getFullYear()))
+    fromStr = `${year}-01`
+    toStr   = `${year}-12`
+  }
+
+  const result = await computeBenchmarks(fromStr, toStr)
+  res.json(result)
 })
 
-router.get('/inception', requireAuth, async (req, res: Response) => {
-  const { userId } = req as AuthRequest
+// First contribution date ('YYYY-MM') across all of the user's assets, or null if none.
+export async function computeInception(userId: string): Promise<string | null> {
   const { data: userAssets } = await supabaseAdmin
     .from('assets').select('id').eq('user_id', userId).eq('active', true)
   const userAssetIds = (userAssets ?? []).map(a => a.id)
@@ -905,8 +958,13 @@ router.get('/inception', requireAuth, async (req, res: Response) => {
     .limit(1)
 
   const firstDate = (data as Array<{ date: string }> | null)?.[0]?.date
-  if (!firstDate) { res.json({ inception: null }); return }
-  res.json({ inception: firstDate.substring(0, 7) })
+  return firstDate ? firstDate.substring(0, 7) : null
+}
+
+router.get('/inception', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const inception = await computeInception(userId)
+  res.json({ inception })
 })
 
 router.get('/debug-manual', requireAuth, async (req, res: Response) => {
@@ -961,11 +1019,9 @@ router.get('/debug-manual', requireAuth, async (req, res: Response) => {
   })
 })
 
-router.get('/asset-returns', requireAuth, async (req, res: Response) => {
-  const { userId } = req as AuthRequest
-  const fromStr = (req.query.from as string) || localYM(new Date())
-  const toStr   = (req.query.to   as string) || localYM(new Date())
-
+// Per-asset return % over [fromStr, toStr] (both 'YYYY-MM'), for 'ticker' and 'manual'
+// assets. Keyed by asset id; null when a return can't be determined.
+export async function computeAssetReturns(userId: string, fromStr: string, toStr: string): Promise<Record<number, number | null>> {
   const [fromY, fromM] = fromStr.split('-').map(Number)
   const [toY,   toM  ] = toStr.split('-').map(Number)
 
@@ -983,7 +1039,7 @@ router.get('/asset-returns', requireAuth, async (req, res: Response) => {
     .eq('active', true)
     .in('asset_type', ['ticker', 'manual'])
 
-  if (!assets?.length) { res.json({}); return }
+  if (!assets?.length) return {}
 
   const tickerAssets = assets.filter(a => a.asset_type === 'ticker')
   const manualAssets = assets.filter(a => a.asset_type === 'manual')
@@ -1120,6 +1176,15 @@ router.get('/asset-returns', requireAuth, async (req, res: Response) => {
     }
   }
 
+  return returns
+}
+
+router.get('/asset-returns', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const fromStr = (req.query.from as string) || localYM(new Date())
+  const toStr   = (req.query.to   as string) || localYM(new Date())
+
+  const returns = await computeAssetReturns(userId, fromStr, toStr)
   res.json(returns)
 })
 

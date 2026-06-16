@@ -7,6 +7,12 @@ import { getSplitEvents } from '../services/yahooService.js'
 import { getFxRate } from '../lib/fx.js'
 import { cache, TTL } from '../lib/cache.js'
 import * as yahoo from '../services/yahooService.js'
+import {
+  computeInception, computePerformanceSummary, computeMonthlySeries, computeBenchmarks,
+  computeAssetReturns, fetchPrefetchedData, prefetchFIRates, localYM, localDate,
+} from './performance.js'
+import type { PerformanceSummary, MonthlyPoint } from './performance.js'
+import { computeDividendsSummary } from './dividends.js'
 
 const router = Router()
 
@@ -504,150 +510,321 @@ router.get('/sync-status', requireAuth, async (req, res: Response) => {
 
 // ─── Portfolio share-link ─────────────────────────────────────────────────────
 
-interface SnapshotAsset {
-  code: string; name: string; value_brl: number; pct: number
-  class_name: string; class_color: string; exchange: string | null
+export interface SnapshotAsset {
+  id: number; code: string; name: string
+  value: number; pct: number
+  class_name: string; class_name_key: string | null; class_color: string
+  exchange: string | null; currency: string
+  return_pct: number | null
 }
-interface PortfolioSnapshot {
-  total_brl: number; portfolio_value: number; invested_value: number
-  total_return_pct: number | null; display_currency: string
-  asset_count: number; generated_at: string
-  by_class: Array<{ name: string; key: string | null; color: string; value: number; pct: number }>
+
+export interface SnapshotGroupValue {
+  key: string; label: string; value: number; pct: number
+}
+
+export interface SnapshotClassValue {
+  key: string; name: string; name_key: string | null; color: string
+  value: number; pct: number; target_pct: number | null
+}
+
+export interface SnapshotPerformance {
+  from: string; to: string
+  value_start: number; value_end: number
+  contributions: number
+  return_abs: number; return_pct: number | null
+}
+
+export interface SnapshotBenchmarkPct {
+  portfolio_pct: number | null
+  cdi_pct: number | null; ibov_pct: number | null; sp500_pct: number | null
+}
+
+export interface SnapshotBenchmarks {
+  period: SnapshotBenchmarkPct
+  since_inception: SnapshotBenchmarkPct
+  monthly: Array<{ month: string; portfolio_cum: number | null; cdi_cum: number | null; ibov_cum: number | null; sp500_cum: number | null }>
+}
+
+export interface SnapshotMonthlyPoint {
+  month: string; total: number; contributions_cumulative: number
+}
+
+export interface SnapshotDiversification {
+  hhi_asset: number; hhi_asset_normalized: number
+  hhi_geography: number; hhi_geography_normalized: number
+  hhi_sector: number; hhi_sector_normalized: number
+  effective_n: number
+  top5_pct: number
+  n_positions: number
+}
+
+export interface SnapshotDividends {
+  total_12m: number
+  by_month: Array<{ month: string; total: number }>
+  top_payers: Array<{ asset_id: number; code: string; name: string; total: number }>
+  yield_pct: number | null
+}
+
+export interface PortfolioSnapshot {
+  generated_at: string
+  display_currency: string
+  period: 'inception' | '12m' | 'ytd'
+  period_from: string | null
+  period_to: string
+  inception: string | null
+
+  total: number
+  invested: number
+  asset_count: number
+  class_count: number
+
+  performance: SnapshotPerformance | null
+  inception_performance: SnapshotPerformance | null
+  monthly: SnapshotMonthlyPoint[]
+  benchmarks: SnapshotBenchmarks | null
+
+  by_class: SnapshotClassValue[]
+  by_geography: SnapshotGroupValue[]
+  by_sector: SnapshotGroupValue[]
+  by_currency: SnapshotGroupValue[]
+
+  diversification: SnapshotDiversification
+
   top_assets: SnapshotAsset[]
-  dividends_12m: number
-  monthly_dividends: Array<{ month: string; amount: number }>
+  top_gainers: SnapshotAsset[]
+  top_losers: SnapshotAsset[]
+
+  dividends: SnapshotDividends
 }
 
-async function buildPortfolioSnapshot(userId: string, displayCurrency = 'BRL'): Promise<PortfolioSnapshot> {
-  const [assetsRes, fxRes] = await Promise.all([
-    supabaseAdmin
-      .from('assets')
-      .select('id, code, name, currency, asset_type, exchange, fi_principal, asset_classes(id, name, color, name_key)')
-      .eq('user_id', userId)
-      .eq('active', true),
-    supabaseAdmin
-      .from('fx_rates')
-      .select('currency_from, rate')
-      .eq('currency_to', 'BRL')
-      .order('fetched_at', { ascending: false })
-      .limit(30),
-  ])
+function calcHHI(shares: number[]): number {
+  return shares.reduce((s, x) => s + x * x, 0)
+}
 
-  const assets = assetsRes.data ?? []
-  const assetIds = assets.map(a => a.id)
-  if (!assetIds.length) {
-    return { total_brl: 0, portfolio_value: 0, invested_value: 0, total_return_pct: null, display_currency: displayCurrency, asset_count: 0, generated_at: new Date().toISOString(), by_class: [], top_assets: [], dividends_12m: 0, monthly_dividends: [] }
-  }
+// Normalized HHI: 0 = perfectly equal, 1 = fully concentrated (mirrors DiversificationPage)
+function normalizeHHI(hhi: number, n: number): number {
+  if (n <= 1) return 0
+  const min = 1 / n
+  return (hhi - min) / (1 - min)
+}
 
-  const fxMap: Record<string, number> = { BRL: 1, USD: 5.70, EUR: 6.40, GBP: 7.20 }
-  for (const r of (fxRes.data ?? [])) if (!fxMap[r.currency_from]) fxMap[r.currency_from] = r.rate
+// Mirrors DiversificationPage's getCountryKey — exchange/source/currency based.
+function getCountryKey(asset: ByAssetValue): string {
+  const exch = (asset.exchange ?? '').toUpperCase()
+  if (asset.source === 'fixed_income') return 'BR'
+  if (['BVMF', 'B3', 'BOVESPA', 'SAO'].some(e => exch.startsWith(e))) return 'BR'
+  if (['NYSE', 'NASDAQ', 'AMEX', 'NYSEARCA', 'NYQ', 'NMS', 'PCX', 'NGM', 'BATS', 'CBOE'].includes(exch)) return 'US'
+  if (['XPAR', 'XETR', 'XLON', 'LSE', 'EURONEXT', 'XAMS', 'XBRU', 'XMIL', 'XMAD', 'AMS', 'FRA', 'EPA'].includes(exch)) return 'EU'
+  if (asset.source === 'coingecko') return 'CRYPTO'
+  if (asset.currency === 'BRL') return 'BR'
+  if (asset.currency === 'USD') return 'US'
+  if (asset.currency === 'EUR') return 'EU'
+  return 'OTHER'
+}
 
-  const [contribRes, priceRes, manualRes] = await Promise.all([
-    supabaseAdmin.from('contributions').select('asset_id, type, quantity, value_brl').in('asset_id', assetIds),
-    supabaseAdmin.from('price_history').select('asset_id, value, currency, date')
-      .in('asset_id', assetIds)
-      .gte('date', new Date(Date.now() - 90 * 86400000).toISOString().split('T')[0])
-      .order('date', { ascending: false }),
-    supabaseAdmin.from('manual_values').select('asset_id, value, currency, ref_date')
-      .in('asset_id', assetIds)
-      .order('ref_date', { ascending: false }),
-  ])
+function sectorKey(sector: string | null): string {
+  const s = sector ?? 'Outros'
+  return s.toLowerCase().replace(/\s+/g, '_').replace(/[^\w]/g, '')
+}
 
-  const holdingsMap: Record<number, number> = {}
-  const investedMap: Record<number, number> = {}
-  for (const c of (contribRes.data ?? [])) {
-    if (c.type === 'income') continue
-    holdingsMap[c.asset_id] = (holdingsMap[c.asset_id] ?? 0) + (c.type === 'buy' ? c.quantity : -c.quantity)
-    if (c.type === 'buy' && c.value_brl) investedMap[c.asset_id] = (investedMap[c.asset_id] ?? 0) + c.value_brl
-  }
+function periodFromFor(period: 'inception' | '12m' | 'ytd', inception: string | null, toStr: string): string | null {
+  if (period === 'inception') return inception
+  const [toY, toM] = toStr.split('-').map(Number)
+  if (period === 'ytd') return `${toY}-01`
+  let y = toY, m = toM - 11
+  if (m <= 0) { m += 12; y -= 1 }
+  return `${y}-${String(m).padStart(2, '0')}`
+}
 
-  const lastPriceMap: Record<number, { value: number; currency: string }> = {}
-  for (const p of (priceRes.data ?? [])) if (!lastPriceMap[p.asset_id]) lastPriceMap[p.asset_id] = { value: p.value, currency: p.currency }
-
-  const manualMap: Record<number, { value: number; currency: string }> = {}
-  for (const mv of (manualRes.data ?? [])) if (!manualMap[mv.asset_id]) manualMap[mv.asset_id] = { value: mv.value, currency: mv.currency }
-
-  const byAsset: Array<{ id: number; code: string; name: string; value_brl: number; class_name: string; class_name_key: string | null; class_color: string; exchange: string | null }> = []
-
-  for (const a of assets) {
-    const cls = a.asset_classes as unknown as { name: string; color: string; name_key: string | null } | null
-    let value_brl = 0
-
-    if (a.asset_type === 'manual') {
-      const mv = manualMap[a.id]
-      if (mv) value_brl = mv.value * (fxMap[mv.currency] ?? 1)
-    } else if (a.asset_type === 'fixed_income') {
-      const lp = lastPriceMap[a.id]
-      value_brl = lp ? lp.value * (fxMap[lp.currency] ?? 1) : (a.fi_principal ?? 0)
-    } else {
-      const h = holdingsMap[a.id] ?? 0
-      if (h <= 0) continue
-      const mv = manualMap[a.id]
-      if (mv) { value_brl = mv.value * (fxMap[mv.currency] ?? 1) }
-      else {
-        const lp = lastPriceMap[a.id]
-        value_brl = lp ? lp.value * h * (fxMap[lp.currency] ?? 1) : (investedMap[a.id] ?? 0)
-      }
-    }
-    if (value_brl <= 0) continue
-    byAsset.push({ id: a.id, code: a.code, name: a.name, value_brl: Math.round(value_brl * 100) / 100, class_name: cls?.name ?? '—', class_name_key: cls?.name_key ?? null, class_color: cls?.color ?? '#6B7280', exchange: (a.exchange as string | null) ?? null })
-  }
-
-  const total_brl = byAsset.reduce((s, a) => s + a.value_brl, 0)
-  const invested_brl_total = byAsset.reduce((s, a) => s + (investedMap[a.id] ?? 0), 0)
-  const total_return_pct = invested_brl_total > 0 ? (total_brl - invested_brl_total) / invested_brl_total : null
-  const brlToDisplay = displayCurrency !== 'BRL' ? 1 / (fxMap[displayCurrency] ?? 1) : 1
-  const cvt = (n: number) => Math.round(n * brlToDisplay * 100) / 100
-
-  const classMap: Record<string, { name: string; key: string | null; color: string; value: number }> = {}
+function aggregateByKey(
+  byAsset: ByAssetValue[], totalBrl: number,
+  keyFn: (a: ByAssetValue) => string, labelFn: (a: ByAssetValue) => string,
+  cvt: (n: number) => number,
+): SnapshotGroupValue[] {
+  const map = new Map<string, { label: string; value_brl: number }>()
   for (const a of byAsset) {
-    if (!classMap[a.class_name]) classMap[a.class_name] = { name: a.class_name, key: a.class_name_key, color: a.class_color, value: 0 }
-    classMap[a.class_name].value += a.value_brl
+    const key = keyFn(a)
+    const existing = map.get(key)
+    if (existing) existing.value_brl += a.value_brl
+    else map.set(key, { label: labelFn(a), value_brl: a.value_brl })
   }
-  const by_class = Object.values(classMap)
-    .map(c => ({ ...c, pct: total_brl > 0 ? c.value / total_brl : 0 }))
+  return [...map.entries()]
+    .map(([key, v]) => ({ key, label: v.label, value: cvt(v.value_brl), pct: totalBrl > 0 ? (v.value_brl / totalBrl) * 100 : 0 }))
     .sort((a, b) => b.value - a.value)
+}
 
-  const sorted = [...byAsset].sort((a, b) => b.value_brl - a.value_brl)
-  const top_assets: SnapshotAsset[] = sorted.slice(0, 12).map(a => ({
-    code: a.code, name: a.name, value_brl: cvt(a.value_brl),
-    pct: total_brl > 0 ? a.value_brl / total_brl : 0,
-    class_name: a.class_name, class_color: a.class_color, exchange: a.exchange,
+function toSnapshotPerformance(p: PerformanceSummary, cvt: (n: number) => number): SnapshotPerformance {
+  return {
+    from: p.from, to: p.to,
+    value_start: cvt(p.value_start), value_end: cvt(p.value_end),
+    contributions: cvt(p.contributions),
+    return_abs: cvt(p.return_abs), return_pct: p.return_pct,
+  }
+}
+
+// Chains monthly Modified-Dietz returns into a cumulative index (base = 1), so the
+// portfolio's trajectory can be plotted alongside computeBenchmarks' cdi/ibov/sp500_cum.
+function computePortfolioCum(monthly: MonthlyPoint[]): number[] {
+  let cum = 1
+  return monthly.map(m => {
+    const base = m.prev_total + 0.5 * m.contributions
+    const returnAbs = m.total - m.prev_total - m.contributions
+    const r = base > 0 ? returnAbs / base : 0
+    cum *= (1 + r)
+    return Math.round(cum * 10000) / 10000
+  })
+}
+
+// Reescreve o snapshot do relatório compartilhado a partir de computePortfolioValue
+// (fonte única de verdade) + séries de performance/benchmarks/dividendos já existentes.
+export async function buildPortfolioSnapshot(
+  userId: string, displayCurrency = 'BRL', period: 'inception' | '12m' | 'ytd' = 'inception'
+): Promise<PortfolioSnapshot> {
+  const toStr = localYM(new Date())
+
+  const [result, inception, sectorMap, classRowsRes] = await Promise.all([
+    computePortfolioValue(userId),
+    computeInception(userId),
+    getSectorMap(userId),
+    supabaseAdmin.from('asset_classes').select('name, target_pct').eq('user_id', userId),
+  ])
+
+  const targetMap = new Map(
+    ((classRowsRes.data ?? []) as Array<{ name: string; target_pct: number | null }>)
+      .map(c => [c.name, c.target_pct])
+  )
+
+  const fxToDisplay = displayCurrency === 'BRL' ? 1 : 1 / (await getFxRate(displayCurrency))
+  const cvt = (n: number) => Math.round(n * fxToDisplay * 100) / 100
+  const periodFrom = periodFromFor(period, inception, toStr)
+
+  // ─── Performance, evolution, benchmarks — degrade gracefully without inception ──
+  let performance: SnapshotPerformance | null = null
+  let inceptionPerformance: SnapshotPerformance | null = null
+  let monthly: SnapshotMonthlyPoint[] = []
+  let benchmarks: SnapshotBenchmarks | null = null
+  let assetReturns: Record<number, number | null> = {}
+
+  if (inception) {
+    const prefetched = await fetchPrefetchedData(userId)
+    await prefetchFIRates(prefetched)
+
+    const [inceptionPerfRaw, monthlySeries, benchmarksFull] = await Promise.all([
+      computePerformanceSummary(userId, inception, toStr, prefetched),
+      computeMonthlySeries(userId, inception, toStr, prefetched),
+      computeBenchmarks(inception, toStr),
+    ])
+
+    const samePeriod  = !periodFrom || periodFrom === inception
+    const periodPerfRaw = samePeriod ? inceptionPerfRaw : await computePerformanceSummary(userId, periodFrom!, toStr, prefetched)
+    const periodBench   = samePeriod ? benchmarksFull   : await computeBenchmarks(periodFrom!, toStr)
+
+    inceptionPerformance = toSnapshotPerformance(inceptionPerfRaw, cvt)
+    performance          = toSnapshotPerformance(periodPerfRaw, cvt)
+
+    monthly = monthlySeries.monthly.map(m => ({
+      month: m.month, total: cvt(m.total), contributions_cumulative: cvt(m.contributions_cumulative),
+    }))
+
+    const portfolioCum = computePortfolioCum(monthlySeries.monthly)
+    benchmarks = {
+      period: {
+        portfolio_pct: performance.return_pct,
+        cdi_pct: periodBench.cdi_pct, ibov_pct: periodBench.ibov_pct, sp500_pct: periodBench.sp500_pct,
+      },
+      since_inception: {
+        portfolio_pct: inceptionPerformance.return_pct,
+        cdi_pct: benchmarksFull.cdi_pct, ibov_pct: benchmarksFull.ibov_pct, sp500_pct: benchmarksFull.sp500_pct,
+      },
+      monthly: benchmarksFull.monthly.map((b, i) => ({ ...b, portfolio_cum: portfolioCum[i] ?? null })),
+    }
+
+    assetReturns = await computeAssetReturns(userId, periodFrom ?? toStr, toStr)
+  }
+
+  // ─── Alocação multidimensional (sobre TODO o by_asset) ─────────────────────
+  const by_class: SnapshotClassValue[] = result.by_class.map(c => ({
+    key: c.name_key ?? c.name, name: c.name, name_key: c.name_key, color: c.color,
+    value: cvt(c.value_brl), pct: c.pct, target_pct: targetMap.get(c.name) ?? null,
   }))
 
-  const since12m = new Date(); since12m.setFullYear(since12m.getFullYear() - 1)
-  const { data: dividends } = await supabaseAdmin
-    .from('dividend_events').select('pay_date, amount_brl')
-    .eq('user_id', userId).gte('pay_date', since12m.toISOString().split('T')[0])
+  const by_geography = aggregateByKey(result.by_asset, result.total_brl, getCountryKey, getCountryKey, cvt)
+  const by_sector = aggregateByKey(
+    result.by_asset, result.total_brl,
+    a => sectorKey(sectorMap[a.code] ?? null),
+    a => sectorMap[a.code] ?? 'Outros',
+    cvt,
+  )
+  const by_currency = aggregateByKey(result.by_asset, result.total_brl, a => a.currency, a => a.currency, cvt)
 
-  const dividends_12m = (dividends ?? []).reduce((s, d) => s + (d.amount_brl ?? 0), 0)
-  const monthDiv: Record<string, number> = {}
-  for (const d of (dividends ?? [])) {
-    const m = d.pay_date.slice(0, 7)
-    monthDiv[m] = (monthDiv[m] ?? 0) + (d.amount_brl ?? 0)
+  // ─── Concentração / diversificação (mesma fórmula de DiversificationPage) ──
+  const positiveAssets = result.by_asset.filter(a => a.value_brl > 0)
+  const assetShares = positiveAssets.map(a => result.total_brl > 0 ? a.value_brl / result.total_brl : 0)
+  const hhiAsset  = calcHHI(assetShares)
+  const hhiGeo    = calcHHI(by_geography.map(g => g.pct / 100))
+  const hhiSector = calcHHI(by_sector.map(g => g.pct / 100))
+
+  const sortedByValue = [...positiveAssets].sort((a, b) => b.value_brl - a.value_brl)
+  const top5Brl = sortedByValue.slice(0, 5).reduce((s, a) => s + a.value_brl, 0)
+
+  const diversification: SnapshotDiversification = {
+    hhi_asset: Math.round(hhiAsset * 10000) / 10000,
+    hhi_asset_normalized: Math.round(normalizeHHI(hhiAsset, positiveAssets.length) * 10000) / 10000,
+    hhi_geography: Math.round(hhiGeo * 10000) / 10000,
+    hhi_geography_normalized: Math.round(normalizeHHI(hhiGeo, by_geography.length) * 10000) / 10000,
+    hhi_sector: Math.round(hhiSector * 10000) / 10000,
+    hhi_sector_normalized: Math.round(normalizeHHI(hhiSector, by_sector.length) * 10000) / 10000,
+    effective_n: hhiAsset > 0 ? Math.round((1 / hhiAsset) * 100) / 100 : 0,
+    top5_pct: result.total_brl > 0 ? Math.round((top5Brl / result.total_brl) * 10000) / 100 : 0,
+    n_positions: positiveAssets.length,
   }
-  const monthly_dividends = Object.entries(monthDiv).sort(([a], [b]) => a.localeCompare(b))
-    .map(([month, amount]) => ({ month, amount: Math.round(amount * 100) / 100 }))
+
+  // ─── Holdings e destaques de desempenho ────────────────────────────────────
+  const snapshotAssets: SnapshotAsset[] = sortedByValue.map(a => ({
+    id: a.id, code: a.code, name: a.name,
+    value: cvt(a.value_brl), pct: result.total_brl > 0 ? (a.value_brl / result.total_brl) * 100 : 0,
+    class_name: a.class_name, class_name_key: a.class_name_key, class_color: a.class_color,
+    exchange: a.exchange ?? null, currency: a.currency,
+    return_pct: assetReturns[a.id] ?? null,
+  }))
+
+  const top_assets  = snapshotAssets.slice(0, 15)
+  const withReturns = snapshotAssets.filter(a => a.return_pct !== null)
+  const top_gainers = [...withReturns].sort((a, b) => (b.return_pct as number) - (a.return_pct as number)).slice(0, 5)
+  const top_losers  = [...withReturns].sort((a, b) => (a.return_pct as number) - (b.return_pct as number)).slice(0, 5)
+
+  // ─── Renda passiva (12 meses) ───────────────────────────────────────────────
+  const today = new Date()
+  const since12m = new Date(today)
+  since12m.setFullYear(since12m.getFullYear() - 1)
+  const divSummary = await computeDividendsSummary(userId, localDate(since12m), localDate(today))
+
+  const dividends: SnapshotDividends = {
+    total_12m: cvt(divSummary.total_brl),
+    by_month: divSummary.by_month.map(m => ({ month: m.month, total: cvt(m.total_brl) })),
+    top_payers: divSummary.by_asset.slice(0, 5).map(a => ({ asset_id: a.asset_id, code: a.code, name: a.name, total: cvt(a.total_brl) })),
+    yield_pct: result.total_brl > 0 ? Math.round((divSummary.total_brl / result.total_brl) * 10000) / 100 : null,
+  }
+
+  const investedBrlTotal = result.by_asset.reduce((s, a) => s + (a.invested_brl ?? 0), 0)
 
   return {
-    total_brl: Math.round(total_brl * 100) / 100,
-    portfolio_value: cvt(total_brl),
-    invested_value: cvt(invested_brl_total),
-    total_return_pct,
-    display_currency: displayCurrency,
-    asset_count: byAsset.length,
-    generated_at: new Date().toISOString(),
-    by_class: by_class.map(c => ({ ...c, value: cvt(c.value) })),
-    top_assets,
-    dividends_12m: cvt(dividends_12m),
-    monthly_dividends: monthly_dividends.map(d => ({ ...d, amount: cvt(d.amount) })),
+    generated_at: new Date().toISOString(), display_currency: displayCurrency,
+    period, period_from: periodFrom, period_to: toStr, inception,
+    total: cvt(result.total_brl), invested: cvt(investedBrlTotal),
+    asset_count: positiveAssets.length, class_count: result.by_class.length,
+    performance, inception_performance: inceptionPerformance, monthly, benchmarks,
+    by_class, by_geography, by_sector, by_currency,
+    diversification,
+    top_assets, top_gainers, top_losers,
+    dividends,
   }
 }
 
 router.get('/share-link', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const { data } = await supabaseAdmin
-    .from('portfolio_shares').select('token, show_values, label, updated_at, is_active')
+    .from('portfolio_shares').select('token, show_values, hide_holdings, label, updated_at, is_active')
     .eq('user_id', userId).eq('is_active', true).maybeSingle()
   if (!data) { res.json(null); return }
   res.json(data)
@@ -655,30 +832,36 @@ router.get('/share-link', requireAuth, async (req, res: Response) => {
 
 router.post('/share-link', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
-  const { show_values = false, label = null, display_currency = 'BRL' } = req.body ?? {}
-  const snapshot = await buildPortfolioSnapshot(userId, display_currency)
+  const {
+    show_values = false, hide_holdings = false, label = null,
+    display_currency = 'BRL', period = 'inception',
+  } = req.body ?? {}
+  const snapshot = await buildPortfolioSnapshot(userId, display_currency, period)
 
   const { data: existing } = await supabaseAdmin
     .from('portfolio_shares').select('id, token').eq('user_id', userId).maybeSingle()
 
   if (existing) {
     await supabaseAdmin.from('portfolio_shares')
-      .update({ show_values, label, is_active: true, updated_at: new Date().toISOString(), snapshot })
+      .update({ show_values, hide_holdings, label, is_active: true, updated_at: new Date().toISOString(), snapshot })
       .eq('id', existing.id)
-    res.json({ token: existing.token, show_values, label, updated_at: new Date().toISOString() })
+    res.json({ token: existing.token, show_values, hide_holdings, label, updated_at: new Date().toISOString() })
     return
   }
   const { data: share, error } = await supabaseAdmin
-    .from('portfolio_shares').insert({ user_id: userId, show_values, label, snapshot }).select('token').single()
+    .from('portfolio_shares').insert({ user_id: userId, show_values, hide_holdings, label, snapshot }).select('token').single()
   if (error || !share) { res.status(500).json({ error: error?.message ?? 'Failed' }); return }
-  res.json({ token: share.token, show_values, label, updated_at: new Date().toISOString() })
+  res.json({ token: share.token, show_values, hide_holdings, label, updated_at: new Date().toISOString() })
 })
 
 router.patch('/share-link', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
-  const { show_values } = req.body ?? {}
+  const { show_values, hide_holdings } = req.body ?? {}
+  const update: Record<string, boolean> = {}
+  if (show_values !== undefined) update.show_values = show_values
+  if (hide_holdings !== undefined) update.hide_holdings = hide_holdings
   await supabaseAdmin.from('portfolio_shares')
-    .update({ show_values })
+    .update(update)
     .eq('user_id', userId).eq('is_active', true)
   res.json({ ok: true })
 })
@@ -718,42 +901,48 @@ function mapSectorPt(sector: string | null, classNameKey?: string | null): strin
   return null
 }
 
+const SECTOR_DAY_TTL = 24 * 60 * 60 * 1000
+
+export async function getSectorMap(userId: string): Promise<Record<string, string | null>> {
+  const cacheKey = `portfolio:sectors:${userId}`
+  const cached = cache.get<Record<string, string | null>>(cacheKey)
+  if (cached) return cached
+
+  const { data: assets } = await supabaseAdmin
+    .from('assets')
+    .select('id, code, asset_type, ticker_brapi, ticker_yahoo, coingecko_id, asset_classes(name_key)')
+    .eq('user_id', userId)
+    .eq('active', true)
+
+  const sectors: Record<string, string | null> = {}
+
+  await Promise.allSettled(
+    (assets ?? []).map(async (a) => {
+      const classKey = (a.asset_classes as { name_key?: string } | null)?.name_key ?? null
+      if (a.asset_type === 'fixed_income') {
+        sectors[a.code] = 'Renda Fixa'; return
+      }
+      if (a.coingecko_id) {
+        sectors[a.code] = 'Cripto'; return
+      }
+      const yahooTicker = (a.ticker_yahoo as string | null) ?? (a.ticker_brapi ? `${a.ticker_brapi}.SA` : null)
+      if (yahooTicker) {
+        const raw = await yahoo.getAssetSector(yahooTicker)
+        sectors[a.code] = mapSectorPt(raw, classKey)
+      } else {
+        sectors[a.code] = mapSectorPt(null, classKey)
+      }
+    })
+  )
+
+  cache.set(cacheKey, sectors, SECTOR_DAY_TTL)
+  return sectors
+}
+
 router.get('/sector-data', requireAuth, async (req, res: Response) => {
   try {
     const { userId } = (req as AuthRequest)
-    const cacheKey = `portfolio:sectors:${userId}`
-    const cached = cache.get<Record<string, string | null>>(cacheKey)
-    if (cached) { res.json({ sectors: cached }); return }
-
-    const { data: assets } = await supabaseAdmin
-      .from('assets')
-      .select('id, code, asset_type, ticker_brapi, ticker_yahoo, coingecko_id, asset_classes(name_key)')
-      .eq('user_id', userId)
-      .eq('active', true)
-
-    const sectors: Record<string, string | null> = {}
-
-    await Promise.allSettled(
-      (assets ?? []).map(async (a) => {
-        const classKey = (a.asset_classes as { name_key?: string } | null)?.name_key ?? null
-        if (a.asset_type === 'fixed_income') {
-          sectors[a.code] = 'Renda Fixa'; return
-        }
-        if (a.coingecko_id) {
-          sectors[a.code] = 'Cripto'; return
-        }
-        const yahooTicker = (a.ticker_yahoo as string | null) ?? (a.ticker_brapi ? `${a.ticker_brapi}.SA` : null)
-        if (yahooTicker) {
-          const raw = await yahoo.getAssetSector(yahooTicker)
-          sectors[a.code] = mapSectorPt(raw, classKey)
-        } else {
-          sectors[a.code] = mapSectorPt(null, classKey)
-        }
-      })
-    )
-
-    const DAY = 24 * 60 * 60 * 1000
-    cache.set(cacheKey, sectors, DAY)
+    const sectors = await getSectorMap(userId)
     res.json({ sectors })
   } catch (err) {
     res.status(500).json({ error: String(err) })
