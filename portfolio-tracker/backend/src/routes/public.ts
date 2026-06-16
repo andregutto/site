@@ -81,37 +81,42 @@ router.get('/portfolio/:token', async (req, res: Response) => {
     owner_name = (user?.user_metadata?.first_name as string | null) ?? null
   } catch { /* ignore */ }
 
-  const snap = share.snapshot as PortfolioSnapshot | null
+  const snap = share.snapshot as (PortfolioSnapshot & Record<string, unknown>) | null
   if (!snap) { res.status(503).json({ error: 'snapshot_pending' }); return }
 
   const showVal = share.show_values
   const hideHoldings = share.hide_holdings
 
-  const mv = (v: number): number | null => showVal ? v : null
+  const mv = (v: number | null | undefined): number | null => (showVal && v != null) ? v : null
 
-  const maskPerformance = (p: SnapshotPerformance | null) => p && {
+  const maskPerformance = (p: SnapshotPerformance | null | undefined) => p && {
     from: p.from, to: p.to,
     value_start: mv(p.value_start), value_end: mv(p.value_end),
     contributions: mv(p.contributions), return_abs: mv(p.return_abs),
     return_pct: p.return_pct,
   }
 
-  const maskMonthly = (m: SnapshotMonthlyPoint[]) => m.map(p => ({
+  const maskMonthly = (m: SnapshotMonthlyPoint[] | null | undefined) => (m ?? []).map(p => ({
     month: p.month, total: mv(p.total), contributions_cumulative: mv(p.contributions_cumulative),
   }))
 
-  const maskGroups = (g: SnapshotGroupValue[]) => g.map(x => ({ ...x, value: mv(x.value) }))
+  const maskGroups = (g: SnapshotGroupValue[] | null | undefined) => (g ?? []).map(x => ({ ...x, value: mv(x.value) }))
 
-  const maskClasses = (c: SnapshotClassValue[]) => c.map(x => ({ ...x, value: mv(x.value) }))
+  const maskClasses = (c: SnapshotClassValue[] | null | undefined) => (c ?? []).map(x => ({ ...x, value: mv(x.value) }))
 
-  const maskAssets = (a: SnapshotAsset[]) => hideHoldings ? [] : a.map(x => ({ ...x, value: mv(x.value) }))
+  const maskAssets = (a: SnapshotAsset[] | null | undefined) => hideHoldings ? [] : (a ?? []).map(x => ({ ...x, value: mv(x.value) }))
 
-  const maskDividends = (d: SnapshotDividends) => ({
+  const maskDividends = (d: SnapshotDividends | null | undefined) => d ? ({
     total_12m: mv(d.total_12m),
-    by_month: d.by_month.map(m => ({ month: m.month, total: mv(m.total) })),
-    top_payers: hideHoldings ? [] : d.top_payers.map(p => ({ ...p, total: mv(p.total) })),
-    yield_pct: d.yield_pct,
-  })
+    by_month: (d.by_month ?? []).map(m => ({ month: m.month, total: mv(m.total) })),
+    top_payers: hideHoldings ? [] : (d.top_payers ?? []).map(p => ({ ...p, total: mv(p.total) })),
+    yield_pct: d.yield_pct ?? null,
+  }) : { total_12m: null, by_month: [], top_payers: [], yield_pct: null }
+
+  // Support old snapshot format (pre-Phase-2): fall back to legacy field names
+  const snapAny = snap as Record<string, unknown>
+  const totalVal = (snap.total ?? snapAny.portfolio_value ?? 0) as number
+  const investedVal = (snap.invested ?? snapAny.invested_value ?? 0) as number
 
   res.json({
     owner_name,
@@ -121,33 +126,33 @@ router.get('/portfolio/:token', async (req, res: Response) => {
     updated_at: share.updated_at,
     generated_at: snap.generated_at,
     display_currency: snap.display_currency,
-    period: snap.period,
-    period_from: snap.period_from,
-    period_to: snap.period_to,
-    inception: snap.inception,
+    period: snap.period ?? null,
+    period_from: snap.period_from ?? null,
+    period_to: snap.period_to ?? null,
+    inception: snap.inception ?? null,
 
-    total: mv(snap.total),
-    invested: mv(snap.invested),
-    asset_count: snap.asset_count,
-    class_count: snap.class_count,
+    total: mv(totalVal),
+    invested: mv(investedVal),
+    asset_count: snap.asset_count ?? 0,
+    class_count: snap.class_count ?? 0,
 
-    performance: maskPerformance(snap.performance),
-    inception_performance: maskPerformance(snap.inception_performance),
-    monthly: maskMonthly(snap.monthly),
-    benchmarks: snap.benchmarks,
+    performance: maskPerformance(snap.performance ?? null),
+    inception_performance: maskPerformance(snap.inception_performance ?? null),
+    monthly: maskMonthly(snap.monthly ?? null),
+    benchmarks: snap.benchmarks ?? [],
 
-    by_class: maskClasses(snap.by_class),
-    by_geography: maskGroups(snap.by_geography),
-    by_sector: maskGroups(snap.by_sector),
-    by_currency: maskGroups(snap.by_currency),
+    by_class: maskClasses(snap.by_class ?? null),
+    by_geography: maskGroups(snap.by_geography ?? null),
+    by_sector: maskGroups(snap.by_sector ?? null),
+    by_currency: maskGroups(snap.by_currency ?? null),
 
-    diversification: snap.diversification,
+    diversification: snap.diversification ?? null,
 
-    top_assets: maskAssets(snap.top_assets),
-    top_gainers: maskAssets(snap.top_gainers),
-    top_losers: maskAssets(snap.top_losers),
+    top_assets: maskAssets(snap.top_assets ?? null),
+    top_gainers: maskAssets(snap.top_gainers ?? null),
+    top_losers: maskAssets(snap.top_losers ?? null),
 
-    dividends: maskDividends(snap.dividends),
+    dividends: maskDividends(snap.dividends ?? null),
   })
 })
 
