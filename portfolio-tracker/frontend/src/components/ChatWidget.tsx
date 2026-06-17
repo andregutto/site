@@ -359,9 +359,9 @@ export default function ChatWidget({ visible = true, onDismiss, forceOpen, onFor
               <button
                 onClick={showHistory ? () => setShowHistory(false) : openHistory}
                 title={tc.history}
-                className={`w-7 h-7 rounded-full flex items-center justify-center transition-all ${showHistory ? 'bg-white/20 text-white' : 'text-white/50 hover:text-white/80 hover:bg-white/10'}`}
+                className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${showHistory ? 'bg-white/20 text-white' : 'text-white/70 hover:text-white hover:bg-white/10'}`}
               >
-                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="8" cy="8" r="6.5"/>
                   <path d="M8 4.5V8l2.5 2"/>
                 </svg>
