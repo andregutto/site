@@ -111,7 +111,9 @@ export default function DashboardPage() {
   }
 
   async function handleDeactivateShare() {
-    await apiFetch('/portfolio/share-link', { method: 'DELETE' })
+    try {
+      await apiFetch('/portfolio/share-link', { method: 'DELETE' })
+    } catch { /* ignore */ }
     setShareLink(null)
   }
 

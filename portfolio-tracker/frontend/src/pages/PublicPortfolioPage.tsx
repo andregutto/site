@@ -703,6 +703,7 @@ function AllocationSection({ data, t, s, currency, dateLocale, showVal, classNam
 
 function ConcentrationSection({ data, s, d }: { data: PublicData; s: T['sharePortfolio']; d: T['diversification'] }) {
   const div = data.diversification
+  if (!div) return null
   const assetBadge = hhiBadge(div.hhi_asset_normalized, d)
   const geoBadge = hhiBadge(div.hhi_geography_normalized, d)
   const sectorBadge = hhiBadge(div.hhi_sector_normalized, d)
