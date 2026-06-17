@@ -6,6 +6,7 @@ import { getSplitEvents } from '../_services/yahooService.js'
 import { getFxRate } from '../_lib/fx.js'
 import { cache, TTL } from '../_lib/cache.js'
 import * as yahoo from '../_services/yahooService.js'
+import { buildPortfolioSnapshot } from '../_services/snapshotService.js'
 
 const router = Router()
 
@@ -699,7 +700,7 @@ async function buildPortfolioSnapshot(userId: string, displayCurrency = 'BRL'): 
 router.get('/share-link', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const { data } = await supabaseAdmin
-    .from('portfolio_shares').select('token, show_values, label, updated_at, is_active')
+    .from('portfolio_shares').select('token, show_values, hide_holdings, label, updated_at, is_active')
     .eq('user_id', userId).eq('is_active', true).maybeSingle()
   if (!data) { res.json(null); return }
   res.json(data)
@@ -708,32 +709,33 @@ router.get('/share-link', requireAuth, async (req, res: Response) => {
 // POST /api/portfolio/share-link — create or update, always refresh snapshot
 router.post('/share-link', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
-  const { show_values = false, label = null, display_currency = 'BRL' } = req.body ?? {}
-  const snapshot = await buildPortfolioSnapshot(userId, display_currency)
+  const { show_values = false, hide_holdings = false, label = null, display_currency = 'BRL', period = 'inception' } = req.body ?? {}
+  const snapshot = await buildPortfolioSnapshot(userId, display_currency, period)
 
   const { data: existing } = await supabaseAdmin
     .from('portfolio_shares').select('id, token').eq('user_id', userId).maybeSingle()
 
   if (existing) {
     await supabaseAdmin.from('portfolio_shares')
-      .update({ show_values, label, is_active: true, updated_at: new Date().toISOString(), snapshot })
+      .update({ show_values, hide_holdings, label, is_active: true, updated_at: new Date().toISOString(), snapshot })
       .eq('id', existing.id)
-    res.json({ token: existing.token, show_values, label, updated_at: new Date().toISOString() })
+    res.json({ token: existing.token, show_values, hide_holdings, label, updated_at: new Date().toISOString() })
     return
   }
   const { data: share, error } = await supabaseAdmin
-    .from('portfolio_shares').insert({ user_id: userId, show_values, label, snapshot }).select('token').single()
+    .from('portfolio_shares').insert({ user_id: userId, show_values, hide_holdings, label, snapshot }).select('token').single()
   if (error || !share) { res.status(500).json({ error: error?.message ?? 'Failed' }); return }
-  res.json({ token: share.token, show_values, label, updated_at: new Date().toISOString() })
+  res.json({ token: share.token, show_values, hide_holdings, label, updated_at: new Date().toISOString() })
 })
 
-// PATCH /api/portfolio/share-link — update show_values without rebuilding snapshot
+// PATCH /api/portfolio/share-link — update show_values/hide_holdings without rebuilding snapshot
 router.patch('/share-link', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
-  const { show_values } = req.body ?? {}
-  await supabaseAdmin.from('portfolio_shares')
-    .update({ show_values })
-    .eq('user_id', userId).eq('is_active', true)
+  const { show_values, hide_holdings } = req.body ?? {}
+  const update: Record<string, boolean> = {}
+  if (show_values    !== undefined) update.show_values    = show_values
+  if (hide_holdings  !== undefined) update.hide_holdings  = hide_holdings
+  await supabaseAdmin.from('portfolio_shares').update(update).eq('user_id', userId).eq('is_active', true)
   res.json({ ok: true })
 })
 

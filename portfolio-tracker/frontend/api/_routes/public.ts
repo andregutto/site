@@ -1,5 +1,9 @@
 import { Router, Response } from 'express'
 import { supabaseAdmin } from '../_lib/supabase.js'
+import type {
+  PortfolioSnapshot, SnapshotAsset, SnapshotGroupValue, SnapshotClassValue,
+  SnapshotPerformance, SnapshotMonthlyPoint, SnapshotDividends,
+} from '../_services/snapshotService.js'
 
 const router = Router()
 
@@ -20,18 +24,18 @@ router.get('/moments/:token', async (req, res: Response) => {
 
   const { data: txns } = await supabaseAdmin
     .from('finance_transactions')
-    .select('id, date, description, amount, currency, finance_categories(id, name, icon, color)')
+    .select('id, date, description, amount, currency, finance_categories(id, name, name_key, icon, color)')
     .eq('moment_id', moment.id)
     .order('date', { ascending: false })
 
   const expenses = (txns ?? []).filter(t => t.amount < 0)
   const total    = expenses.reduce((s, t) => s + Math.abs(t.amount), 0)
 
-  const catMap: Record<string, { name: string; icon: string; color: string; total: number }> = {}
+  const catMap: Record<string, { name: string; name_key: string | null; icon: string; color: string; total: number }> = {}
   for (const tx of expenses) {
-    const cat = tx.finance_categories as unknown as { id: number; name: string; icon: string; color: string } | null
+    const cat = tx.finance_categories as unknown as { id: number; name: string; name_key: string | null; icon: string; color: string } | null
     const key = cat ? String(cat.id) : 'none'
-    if (!catMap[key]) catMap[key] = { name: cat?.name ?? null, icon: cat?.icon ?? '❓', color: cat?.color ?? '#9CA3AF', total: 0 }
+    if (!catMap[key]) catMap[key] = { name: cat?.name ?? 'Sem categoria', name_key: cat?.name_key ?? null, icon: cat?.icon ?? '❓', color: cat?.color ?? '#9CA3AF', total: 0 }
     catMap[key].total += Math.abs(tx.amount)
   }
 
@@ -40,8 +44,7 @@ router.get('/moments/:token', async (req, res: Response) => {
       name: moment.name, icon: moment.icon, color: moment.color,
       cover_image_url: moment.cover_image_url,
       start_date: moment.start_date, end_date: moment.end_date,
-      description: moment.description,
-      share_expires_at: moment.share_expires_at,
+      description: moment.description, share_expires_at: moment.share_expires_at,
     },
     summary: {
       total: Math.round(total * 100) / 100,
@@ -51,9 +54,7 @@ router.get('/moments/:token', async (req, res: Response) => {
     transactions: expenses.map(t => ({
       date: t.date,
       description: moment.share_hide_descriptions ? null : t.description,
-      amount: t.amount,
-      currency: t.currency,
-      category: t.finance_categories,
+      amount: t.amount, currency: t.currency, category: t.finance_categories,
     })),
   })
 })
@@ -64,59 +65,89 @@ router.get('/portfolio/:token', async (req, res: Response) => {
 
   const { data: share } = await supabaseAdmin
     .from('portfolio_shares')
-    .select('user_id, show_values, label, updated_at, snapshot')
+    .select('user_id, show_values, hide_holdings, label, updated_at, snapshot')
     .eq('token', token)
     .eq('is_active', true)
     .single()
 
   if (!share) { res.status(404).json({ error: 'not_found' }); return }
 
-  // Get owner first name
   let owner_name: string | null = null
   try {
     const { data: { user } } = await supabaseAdmin.auth.admin.getUserById(share.user_id)
     owner_name = (user?.user_metadata?.first_name as string | null) ?? null
   } catch { /* ignore */ }
 
-  const snap = share.snapshot as {
-    total_brl: number; portfolio_value?: number; invested_value?: number
-    total_return_pct?: number | null; display_currency?: string
-    asset_count: number; generated_at: string
-    by_class: Array<{ name: string; key: string | null; color: string; value: number; pct: number }>
-    top_assets: Array<{ code: string; name: string; value_brl: number; pct: number; class_name: string; class_color: string; exchange: string | null }>
-    dividends_12m: number
-    monthly_dividends: Array<{ month: string; amount: number }>
-  } | null
-
+  const snap = share.snapshot as (PortfolioSnapshot & Record<string, unknown>) | null
   if (!snap) { res.status(503).json({ error: 'snapshot_pending' }); return }
 
-  const showVal = share.show_values
+  const showVal     = share.show_values
+  const hideHoldings = share.hide_holdings
 
-  const displayCurr = snap.display_currency ?? 'BRL'
-  const portfolioValue = snap.portfolio_value ?? snap.total_brl
+  const mv = (v: number | null | undefined): number | null => (showVal && v != null) ? v : null
+
+  const maskPerformance = (p: SnapshotPerformance | null | undefined) => p && {
+    from: p.from, to: p.to,
+    value_start: mv(p.value_start), value_end: mv(p.value_end),
+    contributions: mv(p.contributions), return_abs: mv(p.return_abs),
+    return_pct: p.return_pct,
+  }
+
+  const maskMonthly = (m: SnapshotMonthlyPoint[] | null | undefined) => (m ?? []).map(p => ({
+    month: p.month, total: mv(p.total), contributions_cumulative: mv(p.contributions_cumulative),
+  }))
+
+  const maskGroups  = (g: SnapshotGroupValue[]  | null | undefined) => (g ?? []).map(x => ({ ...x, value: mv(x.value) }))
+  const maskClasses = (c: SnapshotClassValue[]  | null | undefined) => (c ?? []).map(x => ({ ...x, value: mv(x.value) }))
+  const maskAssets  = (a: SnapshotAsset[]       | null | undefined) => hideHoldings ? [] : (a ?? []).map(x => ({ ...x, value: mv(x.value) }))
+
+  const maskDividends = (d: SnapshotDividends | null | undefined) => d ? ({
+    total_12m: mv(d.total_12m),
+    by_month: (d.by_month ?? []).map(m => ({ month: m.month, total: mv(m.total) })),
+    top_payers: hideHoldings ? [] : (d.top_payers ?? []).map(p => ({ ...p, total: mv(p.total) })),
+    yield_pct: d.yield_pct ?? null,
+  }) : { total_12m: null, by_month: [], top_payers: [], yield_pct: null }
+
+  // Fallback for old-format snapshots (pre-Phase-2)
+  const snapAny = snap as Record<string, unknown>
+  const totalVal    = (snap.total    ?? snapAny.portfolio_value ?? 0) as number
+  const investedVal = (snap.invested ?? snapAny.invested_value  ?? 0) as number
 
   res.json({
     owner_name,
+    label: share.label,
     show_values: showVal,
+    hide_holdings: hideHoldings,
     updated_at: share.updated_at,
-    display_currency: displayCurr,
-    total_brl: showVal ? snap.total_brl : null,
-    portfolio_value: showVal ? portfolioValue : null,
-    invested_value: showVal ? (snap.invested_value ?? null) : null,
-    total_return_pct: snap.total_return_pct ?? null,
-    asset_count: snap.asset_count,
     generated_at: snap.generated_at,
-    by_class: snap.by_class.map(c => ({
-      name: c.name, key: c.key, color: c.color, pct: c.pct,
-      value: showVal ? c.value : null,
-    })),
-    top_assets: snap.top_assets.map(a => ({
-      code: a.code, name: a.name, pct: a.pct,
-      value_brl: showVal ? a.value_brl : null,
-      class_name: a.class_name, class_color: a.class_color, exchange: a.exchange,
-    })),
-    dividends_12m: showVal ? snap.dividends_12m : null,
-    monthly_dividends: snap.monthly_dividends,
+    display_currency: snap.display_currency,
+    period: snap.period ?? null,
+    period_from: snap.period_from ?? null,
+    period_to: snap.period_to ?? null,
+    inception: snap.inception ?? null,
+
+    total: mv(totalVal),
+    invested: mv(investedVal),
+    asset_count: snap.asset_count ?? 0,
+    class_count: snap.class_count ?? 0,
+
+    performance: maskPerformance(snap.performance ?? null),
+    inception_performance: maskPerformance(snap.inception_performance ?? null),
+    monthly: maskMonthly(snap.monthly ?? null),
+    benchmarks: snap.benchmarks ?? [],
+
+    by_class: maskClasses(snap.by_class ?? null),
+    by_geography: maskGroups(snap.by_geography ?? null),
+    by_sector: maskGroups(snap.by_sector ?? null),
+    by_currency: maskGroups(snap.by_currency ?? null),
+
+    diversification: snap.diversification ?? null,
+
+    top_assets: maskAssets(snap.top_assets ?? null),
+    top_gainers: maskAssets(snap.top_gainers ?? null),
+    top_losers: maskAssets(snap.top_losers ?? null),
+
+    dividends: maskDividends(snap.dividends ?? null),
   })
 })
 

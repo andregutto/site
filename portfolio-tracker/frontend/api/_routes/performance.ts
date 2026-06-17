@@ -12,20 +12,20 @@ const yf = new YahooFinance({ suppressNotices: ['yahooSurvey', 'ripHistorical'] 
 const router = Router()
 
 // Use local date components to avoid UTC offset shifting months
-function localDate(d: Date): string {
+export function localDate(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
-function localYM(d: Date): string {
+export function localYM(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
 }
 
-type ValPoint = { ref_date: string; value: number; currency: string }
+export type ValPoint = { ref_date: string; value: number; currency: string }
 
 // Compound-growth interpolation between two known value points.
 // Points must be sorted ascending by ref_date.
 // Carry-backward (before first point) and carry-forward (after last point) included.
-function interpolateKnownPoints(points: ValPoint[], targetDate: string): ValPoint | null {
+export function interpolateKnownPoints(points: ValPoint[], targetDate: string): ValPoint | null {
   if (!points.length) return null
   const last = points[points.length - 1]
   if (targetDate >= last.ref_date)  return { ...last }      // carry-forward
@@ -73,7 +73,7 @@ function interpolateKnownPointsDaily(points: ValPoint[], targetDate: string): Va
   return { ref_date: targetDate, value, currency: before.currency }
 }
 
-type PrefetchedData = {
+export type PrefetchedData = {
   assets: Array<{
     id: number; code: string; name: string; asset_type: string; currency: string; active: boolean
     fi_principal: number | null; fi_start_date: string | null; fi_type: string | null
@@ -91,7 +91,7 @@ type PrefetchedData = {
 
 // Fetches all data needed for portfolio value computation in one round-trip (4 parallel DB queries).
 // priceFrom: optional earliest ref_date to load from price_history (reduces rows for short periods).
-async function fetchPrefetchedData(userId: string, priceFrom?: string): Promise<PrefetchedData> {
+export async function fetchPrefetchedData(userId: string, priceFrom?: string): Promise<PrefetchedData> {
   const { data: assets } = await supabaseAdmin
     .from('assets')
     .select('id, code, name, asset_type, currency, active, fi_principal, fi_start_date, fi_type, fi_rate, fi_spread, ticker_brapi, ticker_yahoo, coingecko_id')
@@ -147,7 +147,7 @@ async function fetchPrefetchedData(userId: string, priceFrom?: string): Promise<
 // getSelicRates/getIPCARates calls (same args, same cache keys) calculateCurrentValue
 // would make anyway — this only changes when the underlying HTTP fetch happens
 // (parallel, up front) instead of changing any rate or computed value.
-async function prefetchFIRates(data: PrefetchedData): Promise<void> {
+export async function prefetchFIRates(data: PrefetchedData): Promise<void> {
   const today = new Date()
   const fiAssets = data.assets.filter(a => a.asset_type === 'fixed_income' && a.active)
 
@@ -167,7 +167,7 @@ async function prefetchFIRates(data: PrefetchedData): Promise<void> {
   }))
 }
 
-function estimateContribValue(c: {
+export function estimateContribValue(c: {
   value_brl: number | null; price_orig: number | null
   quantity: number | null; fx_rate_brl: number | null; currency: string | null
 }): number {
@@ -183,7 +183,7 @@ function estimateContribValue(c: {
 }
 
 // Computes portfolio total and per-asset values for a given month using pre-fetched data.
-async function computePortfolioValueAtMonth(
+export async function computePortfolioValueAtMonth(
   data: PrefetchedData,
   year: number,
   month: number
