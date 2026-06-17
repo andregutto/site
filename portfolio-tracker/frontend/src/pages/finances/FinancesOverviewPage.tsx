@@ -4,6 +4,7 @@ import { PageLoader } from '../../components/ArvoLoader'
 import { Icon } from '../../components/icons'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid,
+  ComposedChart, Line, ReferenceLine,
 } from 'recharts'
 import { breakdownColor } from '../../components/charts'
 import { apiFetch } from '../../lib/api'
@@ -41,6 +42,7 @@ interface MonthSummary {
   income: number
   expenses: number
   by_envelope: EnvelopeSummary[]
+  by_day?: { day: number; amount: number }[]
 }
 
 interface SpendingSummary {
@@ -490,6 +492,26 @@ export default function FinancesOverviewPage() {
   const displayPct  = displayValue != null && totalBudgeted > 0 ? Math.min(Math.round((displayValue / totalBudgeted) * 100), 100) : null
   const displayOver = displayValue != null && totalBudgeted > 0 && displayValue > totalBudgeted
 
+  // Build sparkline data: solid actual (days 1..daysElapsed) + dashed projection (days daysElapsed..daysTotal)
+  type SparkPoint = { day: number; actual: number | null; projected: number | null }
+  const sparkPoints: SparkPoint[] = []
+  if (isCurrentMonth && daysTotal > 0) {
+    const byDayMap = new Map((currentMonthData.by_day ?? []).map(d => [d.day, d.amount]))
+    let cumulative = 0
+    for (let day = 1; day <= daysTotal; day++) {
+      cumulative += byDayMap.get(day) ?? 0
+      const past = day <= daysElapsed
+      sparkPoints.push({
+        day,
+        actual:    past ? cumulative : null,
+        projected: day >= daysElapsed
+          ? totalExpenses + missingTotal + adjustedDailyAvg * Math.max(0, day - daysElapsed)
+          : null,
+      })
+    }
+  }
+  const showSparkline = isCurrentMonth && sparkPoints.length > 0
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
       {showHomePrompt && (
@@ -613,17 +635,32 @@ export default function FinancesOverviewPage() {
                     )}
                   </div>
                 </div>
-                {totalBudgeted > 0 && displayPct != null && (
-                  <>
-                    <div style={{ height: 3, background: 'var(--arvo-track-bg)', borderRadius: 2, overflow: 'hidden', marginBottom: 6 }}>
-                      <div style={{ height: '100%', borderRadius: 2, transition: 'width 0.5s ease', width: `${displayPct}%`, background: displayOver ? 'var(--arvo-red)' : 'var(--arvo-green)' }} />
-                    </div>
-                    <span style={{ fontSize: 11, fontWeight: 600, color: displayOver ? 'var(--arvo-red)' : 'var(--arvo-green)' }}>
-                      {displayOver
-                        ? `+${fmt(cx(displayValue - totalBudgeted), currency, true)} ${t.finances.overviewOverBudget}`
-                        : `${fmt(cx(totalBudgeted - displayValue), currency, true)} ${t.finances.overviewUnderBudget}`}
-                    </span>
-                  </>
+                {showSparkline && (
+                  <div style={{ marginBottom: 4 }}>
+                    <ResponsiveContainer width="100%" height={56}>
+                      <ComposedChart data={sparkPoints} margin={{ top: 4, right: 0, left: 0, bottom: 0 }}>
+                        <XAxis dataKey="day" hide />
+                        <YAxis hide domain={['auto', totalBudgeted > 0 ? Math.max(totalBudgeted * 1.05, (displayValue ?? 0) * 1.05) : 'auto']} />
+                        {totalBudgeted > 0 && (
+                          <ReferenceLine y={totalBudgeted} stroke={displayOver ? 'var(--arvo-red)' : 'var(--arvo-green)'} strokeDasharray="3 3" strokeWidth={1} />
+                        )}
+                        <Line type="monotone" dataKey="actual" stroke="var(--arvo-fg)" strokeWidth={1.5} dot={false} connectNulls={false} isAnimationActive={false} />
+                        <Line type="monotone" dataKey="projected" stroke="var(--arvo-fg-soft)" strokeWidth={1.5} strokeDasharray="5 4" dot={false} connectNulls={false} isAnimationActive={false} />
+                      </ComposedChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+                {totalBudgeted > 0 && displayPct != null && !showSparkline && (
+                  <div style={{ height: 3, background: 'var(--arvo-track-bg)', borderRadius: 2, overflow: 'hidden', marginBottom: 6 }}>
+                    <div style={{ height: '100%', borderRadius: 2, transition: 'width 0.5s ease', width: `${displayPct}%`, background: displayOver ? 'var(--arvo-red)' : 'var(--arvo-green)' }} />
+                  </div>
+                )}
+                {totalBudgeted > 0 && displayValue != null && (
+                  <span style={{ fontSize: 11, fontWeight: 600, color: displayOver ? 'var(--arvo-red)' : 'var(--arvo-green)' }}>
+                    {displayOver
+                      ? `+${fmt(cx(displayValue - totalBudgeted), currency, true)} ${t.finances.overviewOverBudget}`
+                      : `${fmt(cx(totalBudgeted - displayValue), currency, true)} ${t.finances.overviewUnderBudget}`}
+                  </span>
                 )}
               </div>
             )}
@@ -645,21 +682,32 @@ export default function FinancesOverviewPage() {
                     <span style={{ fontSize: 12, color: 'var(--arvo-fg-faint)' }}>/ {fmt(cx(totalBudgeted), currency, true)}</span>
                   )}
                 </div>
-                {totalBudgeted > 0 && displayPct != null && (
-                  <>
-                    <div style={{ height: 4, background: 'var(--arvo-track-bg)', borderRadius: 2, overflow: 'hidden', marginBottom: 8 }}>
-                      <div style={{
-                        height: '100%', borderRadius: 2, transition: 'width 0.5s ease',
-                        width: `${displayPct}%`,
-                        background: displayOver ? 'var(--arvo-red)' : 'var(--arvo-green)',
-                      }} />
-                    </div>
-                    <span style={{ fontSize: 12, fontWeight: 600, color: displayOver ? 'var(--arvo-red)' : 'var(--arvo-green)', display: 'block' }}>
-                      {displayOver
-                        ? `+${fmt(cx(displayValue - totalBudgeted), currency, true)} ${t.finances.overviewOverBudget}`
-                        : `${fmt(cx(totalBudgeted - displayValue), currency, true)} ${t.finances.overviewUnderBudget}`}
-                    </span>
-                  </>
+                {showSparkline && (
+                  <div style={{ marginBottom: 6, marginTop: 4 }}>
+                    <ResponsiveContainer width="100%" height={72}>
+                      <ComposedChart data={sparkPoints} margin={{ top: 4, right: 0, left: 0, bottom: 0 }}>
+                        <XAxis dataKey="day" hide />
+                        <YAxis hide domain={['auto', totalBudgeted > 0 ? Math.max(totalBudgeted * 1.05, (displayValue ?? 0) * 1.05) : 'auto']} />
+                        {totalBudgeted > 0 && (
+                          <ReferenceLine y={totalBudgeted} stroke={displayOver ? 'var(--arvo-red)' : 'var(--arvo-green)'} strokeDasharray="3 3" strokeWidth={1} />
+                        )}
+                        <Line type="monotone" dataKey="actual" stroke="var(--arvo-fg)" strokeWidth={1.5} dot={false} connectNulls={false} isAnimationActive={false} />
+                        <Line type="monotone" dataKey="projected" stroke="var(--arvo-fg-soft)" strokeWidth={1.5} strokeDasharray="5 4" dot={false} connectNulls={false} isAnimationActive={false} />
+                      </ComposedChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+                {totalBudgeted > 0 && displayPct != null && !showSparkline && (
+                  <div style={{ height: 4, background: 'var(--arvo-track-bg)', borderRadius: 2, overflow: 'hidden', marginBottom: 8 }}>
+                    <div style={{ height: '100%', borderRadius: 2, transition: 'width 0.5s ease', width: `${displayPct}%`, background: displayOver ? 'var(--arvo-red)' : 'var(--arvo-green)' }} />
+                  </div>
+                )}
+                {totalBudgeted > 0 && displayValue != null && (
+                  <span style={{ fontSize: 12, fontWeight: 600, color: displayOver ? 'var(--arvo-red)' : 'var(--arvo-green)', display: 'block' }}>
+                    {displayOver
+                      ? `+${fmt(cx(displayValue - totalBudgeted), currency, true)} ${t.finances.overviewOverBudget}`
+                      : `${fmt(cx(totalBudgeted - displayValue), currency, true)} ${t.finances.overviewUnderBudget}`}
+                  </span>
                 )}
               </>
             ) : isCurrentMonth ? (

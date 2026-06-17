@@ -620,11 +620,32 @@ router.get('/spending-summary', requireAuth, async (req, res: Response) => {
       byEnv.push({ envelope_id: -1, name: 'Não categorizado', name_key: 'categoryUncategorized', type: '', color: '#9CA3AF', icon: '❓', actual: Math.round(uncategorized * 100) / 100, budget: 0, categories: [] })
     }
 
+    // Daily expense breakdown for the current financial month only
+    let byDay: { day: number; amount: number }[] | undefined
+    if (i === 0) {
+      const { start: fmStart } = financialMonthRange(m, cycleDay)
+      const [fsy, fsm, fsd] = fmStart.split('-').map(Number)
+      const fmStartMs = new Date(fsy, fsm - 1, fsd).getTime()
+      const dayMap = new Map<number, number>()
+      for (const tx of txns) {
+        if (Number(tx.amount) >= 0 || tx.is_internal_transfer || tx.exclude_from_stats) continue
+        const [ty, tm, td] = (tx.date as string).split('-').map(Number)
+        const txMs = new Date(ty, tm - 1, td).getTime()
+        if (txMs < fmStartMs) continue
+        const dayN = Math.round((txMs - fmStartMs) / 86400000) + 1
+        dayMap.set(dayN, (dayMap.get(dayN) ?? 0) + Math.abs(Number(tx.amount)))
+      }
+      byDay = [...dayMap.entries()]
+        .sort((a, b) => a[0] - b[0])
+        .map(([day, amount]) => ({ day, amount: Math.round(amount * 100) / 100 }))
+    }
+
     resultMonths.push({
       month:       m,
       income:      Math.round(md.income * 100) / 100,
       expenses:    Math.round(md.expenses * 100) / 100,
       by_envelope: byEnv,
+      ...(i === 0 ? { by_day: byDay } : {}),
     })
   }
 
