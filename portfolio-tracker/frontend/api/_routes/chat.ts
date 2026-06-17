@@ -204,8 +204,8 @@ const TOOLS: Anthropic.Messages.Tool[] = [
       properties: {
         period: {
           type: 'string',
-          enum: ['this_month', 'last_30d', 'ytd', 'last_12m'],
-          description: 'Time window: this_month = from 1st of current month; last_30d = rolling 30 days; ytd = since Jan 1; last_12m = rolling 12 months.',
+          enum: ['last_7d', 'this_month', 'last_30d', 'ytd', 'last_12m'],
+          description: 'Time window: last_7d = last 7 days (use for "last few days" questions); this_month = from 1st of current month; last_30d = rolling 30 days; ytd = since Jan 1; last_12m = rolling 12 months.',
         },
       },
       required: ['period'],
@@ -492,7 +492,10 @@ async function executeTool(
         const today = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
 
         let fromDate: string
-        if (period === 'this_month') {
+        if (period === 'last_7d') {
+          const d = new Date(now); d.setDate(d.getDate() - 7)
+          fromDate = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+        } else if (period === 'this_month') {
           fromDate = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-01`
         } else if (period === 'last_30d') {
           const d = new Date(now); d.setDate(d.getDate() - 30)
@@ -568,6 +571,7 @@ async function executeTool(
         rows.sort((a, b) => a.changeBrl - b.changeBrl)
 
         const periodLabel: Record<string, string> = {
+          last_7d:    `last 7 days (from ${fromDate})`,
           this_month: `this month (from ${fromDate})`,
           last_30d:   `last 30 days (from ${fromDate})`,
           ytd:        `year to date (from ${fromDate})`,
