@@ -67,6 +67,7 @@ export default function DashboardPage() {
   const [shareHideHoldings, setShareHideHoldings] = useState(false)
   const [sharePeriod, setSharePeriod] = useState<'inception' | '12m' | 'ytd'>('inception')
   const [shareLoading, setShareLoading] = useState(false)
+  const [shareSuccess, setShareSuccess] = useState(false)
   const [shareCopied, setShareCopied] = useState(false)
 
   useEffect(() => {
@@ -102,11 +103,14 @@ export default function DashboardPage() {
 
   async function handleGenerateShare() {
     setShareLoading(true)
+    setShareSuccess(false)
     try {
       const r = await apiFetch<{ token: string; show_values: boolean; hide_holdings: boolean; updated_at: string }>('/portfolio/share-link', {
         method: 'POST', body: JSON.stringify({ show_values: shareShowValues, hide_holdings: shareHideHoldings, period: sharePeriod, display_currency: currency }),
       })
       setShareLink(r)
+      setShareSuccess(true)
+      setTimeout(() => setShareSuccess(false), 5000)
     } finally { setShareLoading(false) }
   }
 
@@ -503,13 +507,24 @@ export default function DashboardPage() {
             <button
               onClick={handleGenerateShare}
               disabled={shareLoading}
-              style={{ width: '100%', padding: '12px 16px', background: shareLoading ? 'rgba(13,13,13,0.5)' : '#0D0D0D', color: '#F4F3F1', border: 'none', borderRadius: 10, fontSize: 13, fontFamily: 'var(--arvo-font-body)', letterSpacing: '0.04em', cursor: shareLoading ? 'default' : 'pointer', marginBottom: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, transition: 'background 0.2s' }}
+              style={{ width: '100%', padding: '12px 16px', background: shareLoading ? 'rgba(13,13,13,0.5)' : '#0D0D0D', color: '#F4F3F1', border: 'none', borderRadius: 10, fontSize: 13, fontFamily: 'var(--arvo-font-body)', letterSpacing: '0.04em', cursor: shareLoading ? 'default' : 'pointer', marginBottom: shareLoading ? 6 : 14, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, transition: 'background 0.2s' }}
             >
-              <svg style={{ width: 13, height: 13 }} fill="none" viewBox="0 0 16 16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <svg style={{ width: 13, height: 13, animation: shareLoading ? 'arvo-spin 1s linear infinite' : 'none' }} fill="none" viewBox="0 0 16 16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M1 8A7 7 0 1 0 8 1M1 1v4h4"/>
               </svg>
               {shareLoading ? s.refreshing : shareLink ? s.refresh : s.generate}
             </button>
+            {shareLoading && (
+              <div style={{ height: 3, background: 'var(--arvo-border)', borderRadius: 2, overflow: 'hidden', marginBottom: 14 }}>
+                <div style={{ height: '100%', background: 'var(--arvo-gold)', borderRadius: 2, animation: 'arvo-progress 4s ease-out forwards' }} />
+              </div>
+            )}
+            {shareSuccess && !shareLoading && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(22,163,74,0.08)', border: '1px solid rgba(22,163,74,0.25)', borderRadius: 8, padding: '8px 12px', marginBottom: 14 }}>
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="#16A34A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 8l4 4 8-8"/></svg>
+                <span style={{ fontSize: 12, color: '#16A34A', fontFamily: 'var(--arvo-font-body)' }}>{s.dataUpdated}</span>
+              </div>
+            )}
 
             {/* Dados de {date} — always visible */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: shareLink ? 14 : 0, padding: '8px 12px', background: 'var(--arvo-surface-2)', borderRadius: 8, border: '1px solid var(--arvo-border)' }}>

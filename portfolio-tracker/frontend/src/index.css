@@ -171,3 +171,6 @@ textarea:focus-visible {
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(200,184,154,0.35); border-radius: 999px; }
+
+@keyframes arvo-spin { to { transform: rotate(360deg); } }
+@keyframes arvo-progress { from { width: 0% } to { width: 96% } }

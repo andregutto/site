@@ -1811,6 +1811,7 @@
     "generate": "Générer le lien",
     "refresh": "Actualiser les données",
     "refreshing": "Actualisation...",
+    "dataUpdated": "Données mises à jour avec succès.",
     "deactivate": "Désactiver le lien",
     "deactivated": "Lien désactivé.",
     "updatedAt": "Données du",

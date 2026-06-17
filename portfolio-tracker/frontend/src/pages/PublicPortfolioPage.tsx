@@ -455,7 +455,7 @@ function ExecutiveSummarySection({ data, s, currency, dateLocale }: { data: Publ
   const incPerf = data.inception_performance
   return (
     <ReportSection title={s.executiveSummary}>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 24 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
         <KpiBlock label={s.totalWealth} value={fmtCurr(data.total, currency, dateLocale)} deltaPct={perf?.return_pct ?? null} sub={perf ? s.thisPeriod : undefined} />
         <KpiBlock label={s.periodReturn} value={fmtSignedPct(perf?.return_pct ?? null)} />
         <KpiBlock label={s.sinceInception} value={fmtSignedPct(incPerf?.return_pct ?? null)} />
@@ -633,22 +633,22 @@ function AllocationSection({ data, t, s, currency, dateLocale, showVal, classNam
       <ReportSection title={s.allocation} className={className}>
         {data.by_class.length === 0 ? <EmptyNote text={t.common.noData} /> : (
           <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', alignItems: 'center' }}>
-            <div className="arvo-recharts-wrapper" style={{ flex: '0 0 170px', height: 170 }}>
+            <div className="arvo-recharts-wrapper" style={{ flex: '0 0 196px', height: 196 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie data={data.by_class} dataKey="pct" nameKey="name" cx="50%" cy="50%" innerRadius="60%" outerRadius="90%" paddingAngle={2} stroke="#fff" strokeWidth={2}>
+                  <Pie data={data.by_class} dataKey="pct" nameKey="name" cx="50%" cy="50%" innerRadius="58%" outerRadius="88%" paddingAngle={2} stroke="#fff" strokeWidth={2}>
                     {data.by_class.map((c, i) => <Cell key={i} fill={c.color} />)}
                     <Label
                       content={(props) => {
                         const vb = (props.viewBox as unknown as { cx?: number; cy?: number; x?: number; y?: number; width?: number; height?: number }) ?? {}
                         const cx = vb.cx ?? (vb.x ?? 0) + (vb.width ?? 0) / 2
                         const cy = vb.cy ?? (vb.y ?? 0) + (vb.height ?? 0) / 2
+                        const [line1, line2] = s.totalWealth.toUpperCase().split(' ')
                         return (
                           <g>
-                            <text x={cx} y={cy - 7} textAnchor="middle" fill="#9CA3AF" fontSize={9} fontFamily="var(--arvo-font-body)" letterSpacing="0.12em">
-                              {s.totalWealth.toUpperCase()}
-                            </text>
-                            <text x={cx} y={cy + 9} textAnchor="middle" fill="#0D0D0D" fontSize={13} fontFamily="var(--arvo-font-body)" fontWeight={600} className="arvo-num">
+                            <text x={cx} y={cy - 16} textAnchor="middle" fill="#9CA3AF" fontSize={8} fontFamily="var(--arvo-font-body)" letterSpacing="0.08em">{line1}</text>
+                            <text x={cx} y={cy - 5} textAnchor="middle" fill="#9CA3AF" fontSize={8} fontFamily="var(--arvo-font-body)" letterSpacing="0.08em">{line2}</text>
+                            <text x={cx} y={cy + 11} textAnchor="middle" fill="#0D0D0D" fontSize={13} fontFamily="var(--arvo-font-body)" fontWeight={600} className="arvo-num">
                               {fmtCurr(data.total, currency, dateLocale)}
                             </text>
                           </g>
@@ -661,7 +661,7 @@ function AllocationSection({ data, t, s, currency, dateLocale, showVal, classNam
                 </PieChart>
               </ResponsiveContainer>
             </div>
-            <div style={{ flex: 1, minWidth: 240 }}>
+            <div style={{ flex: 1, minWidth: 200 }}>
               {data.by_class.map(c => (
                 <AllocBarRow key={c.key} color={c.color} label={resolveClassName(c, t)} pct={c.pct} value={c.value}
                   target={hasTargets ? c.target_pct : null} currency={currency} dateLocale={dateLocale} showVal={showVal} s={s} />

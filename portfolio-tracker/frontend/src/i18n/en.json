@@ -1811,6 +1811,7 @@
     "generate": "Generate link",
     "refresh": "Refresh data",
     "refreshing": "Refreshing...",
+    "dataUpdated": "Data updated successfully.",
     "deactivate": "Deactivate link",
     "deactivated": "Link deactivated.",
     "updatedAt": "Data from",
