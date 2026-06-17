@@ -158,6 +158,28 @@ function CollapsibleInfoCard({ title, children }: { title: string; children: Rea
   )
 }
 
+function SparkTooltip({ active, payload, label, fmt, cx, currency, tf }: {
+  active?: boolean
+  payload?: Array<{ dataKey: string; value: number | null }>
+  label?: number
+  fmt: (v: number, cur: string, compact?: boolean) => string
+  cx: (v: number) => number
+  currency: string
+  tf: Record<string, string>
+}) {
+  if (!active || !payload?.length) return null
+  const actual    = payload.find(p => p.dataKey === 'actual'    && p.value != null)
+  const projected = payload.find(p => p.dataKey === 'projected' && p.value != null)
+  if (!actual && !projected) return null
+  return (
+    <div style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', borderRadius: 8, padding: '7px 10px', fontSize: 12, fontFamily: 'var(--arvo-font-body)', boxShadow: '0 2px 8px rgba(0,0,0,0.10)' }}>
+      <p style={{ color: 'var(--arvo-fg-soft)', marginBottom: 4, fontSize: 11 }}>Dia {label}</p>
+      {actual    && <p style={{ color: 'var(--arvo-fg)',      fontWeight: 600, margin: 0 }}>{tf.overviewChartActual}:    {fmt(cx(Number(actual.value)),    currency, true)}</p>}
+      {projected && <p style={{ color: 'var(--arvo-fg-soft)', margin: 0 }}>{tf.overviewChartProjected}: {fmt(cx(Number(projected.value)), currency, true)}</p>}
+    </div>
+  )
+}
+
 export default function FinancesOverviewPage() {
   const { t, locale } = useI18n()
   const navigate = useNavigate()
@@ -644,6 +666,7 @@ export default function FinancesOverviewPage() {
                         {totalBudgeted > 0 && (
                           <ReferenceLine y={totalBudgeted} stroke={displayOver ? 'var(--arvo-red)' : 'var(--arvo-green)'} strokeDasharray="3 3" strokeWidth={1} />
                         )}
+                        <Tooltip content={<SparkTooltip fmt={fmt} cx={cx} currency={currency} tf={t.finances} />} />
                         <Line type="monotone" dataKey="actual" stroke="var(--arvo-fg)" strokeWidth={1.5} dot={false} connectNulls={false} isAnimationActive={false} />
                         <Line type="monotone" dataKey="projected" stroke="var(--arvo-fg-soft)" strokeWidth={1.5} strokeDasharray="5 4" dot={false} connectNulls={false} isAnimationActive={false} />
                       </ComposedChart>

@@ -13,12 +13,18 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null)
 
-// Purge stale sb-*-auth-token keys from other URL configs (prevents HTTP 494).
-// Runs once at module load — safe because the Supabase client re-reads its own key after cleanup.
+// Purge stale sb-*-auth-token keys from other URL configs.
+// The canonical key is derived the same way @supabase/supabase-js does:
+//   sb-${hostname.split('.')[0]}-auth-token
+// In production (proxy URL = arvo.app/sb) → sb-arvo-auth-token
+// In dev (direct Supabase URL) → sb-bkgpivxpzuzedezxtknd-auth-token
 function purgeStaleAuthTokens() {
   try {
-    const PROJECT_REF = 'bkgpivxpzuzedezxtknd'
-    const canonical = `sb-${PROJECT_REF}-auth-token`
+    const effectiveUrl = import.meta.env.PROD
+      ? `${window.location.origin}/sb`
+      : (import.meta.env.VITE_SUPABASE_URL ?? '')
+    const hostname = new URL(effectiveUrl).hostname
+    const canonical = `sb-${hostname.split('.')[0]}-auth-token`
     const stale: string[] = []
     for (let i = 0; i < localStorage.length; i++) {
       const k = localStorage.key(i)

@@ -23,6 +23,10 @@ export default function RebalancePage() {
   const [saving, setSaving]         = useState(false)
   const [saveOk, setSaveOk]         = useState(false)
 
+  const getKey = (cls: { name: string; name_key?: string | null }) => cls.name_key ?? cls.name
+  const getTargetStr = (cls: { name: string; name_key?: string | null }) =>
+    targets[getKey(cls)] ?? targets[cls.name] ?? ''
+
   useEffect(() => {
     apiFetch<{ allocation_targets: Record<string, number> }>('/profile')
       .then(d => {
@@ -36,7 +40,7 @@ export default function RebalancePage() {
 
   const classes    = data?.by_class ?? []
   const totalBrl   = data?.total_brl ?? 0
-  const totalTarget = classes.reduce((s, c) => s + (parseFloat(targets[c.name] ?? '') || 0), 0)
+  const totalTarget = classes.reduce((s, c) => s + (parseFloat(getTargetStr(c)) || 0), 0)
 
   async function handleSave() {
     setSaving(true)
@@ -94,7 +98,7 @@ export default function RebalancePage() {
 
         <div className="divide-y divide-[var(--arvo-border-soft)]">
           {classes.map(cls => {
-            const target = parseFloat(targets[cls.name] ?? '') || null
+            const target = parseFloat(getTargetStr(cls)) || null
             const diff   = target != null ? cls.pct - target : null
             return (
               <div key={cls.name} className="px-5 py-4">
@@ -137,8 +141,8 @@ export default function RebalancePage() {
                       min="0"
                       max="100"
                       step="0.5"
-                      value={targets[cls.name] ?? ''}
-                      onChange={e => setTargets(prev => ({ ...prev, [cls.name]: e.target.value }))}
+                      value={getTargetStr(cls)}
+                      onChange={e => setTargets(prev => ({ ...prev, [getKey(cls)]: e.target.value }))}
                       placeholder="—"
                       className="w-16 border border-[var(--arvo-border)] rounded-[3px] px-2 py-1.5 text-sm text-center arvo-num bg-[var(--arvo-surface)] text-[var(--arvo-fg)] focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20"
                     />
@@ -153,7 +157,7 @@ export default function RebalancePage() {
 
       {/* Suggested actions */}
       {classes.some(c => {
-        const t = parseFloat(targets[c.name] ?? '') || null
+        const t = parseFloat(getTargetStr(c)) || null
         return t != null && Math.abs(c.pct - t) >= 1
       }) && (
         <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl overflow-hidden shadow-sm">
@@ -162,7 +166,7 @@ export default function RebalancePage() {
           </div>
           <div className="divide-y divide-[var(--arvo-border-soft)]">
             {classes.map(cls => {
-              const target = parseFloat(targets[cls.name] ?? '') || null
+              const target = parseFloat(getTargetStr(cls)) || null
               if (target == null) return null
               const diff = cls.pct - target
               if (Math.abs(diff) < 1) return null

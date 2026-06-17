@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useI18n } from '../contexts/I18nContext'
+import { apiFetch } from '../lib/api'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -9,8 +10,13 @@ interface Message {
   loading?: boolean
 }
 
+interface ChatSession {
+  id: string
+  title: string
+  updated_at: string
+}
+
 function renderText(text: string) {
-  // Minimal markdown: **bold**, bullet lists, line breaks
   const lines = text.split('\n')
   return lines.map((line, i) => {
     const isBullet = /^[-•]\s/.test(line)
@@ -25,6 +31,16 @@ function renderText(text: string) {
   })
 }
 
+function formatSessionDate(dateStr: string, today: string, yesterday: string): string {
+  const d = new Date(dateStr)
+  const now = new Date()
+  const diffMs = now.getTime() - d.getTime()
+  const diffDays = Math.floor(diffMs / 86400000)
+  if (diffDays === 0) return today
+  if (diffDays === 1) return yesterday
+  return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })
+}
+
 interface ChatWidgetProps {
   visible?: boolean
   onDismiss?: () => void
@@ -35,11 +51,18 @@ interface ChatWidgetProps {
 export default function ChatWidget({ visible = true, onDismiss, forceOpen, onForceOpenConsumed }: ChatWidgetProps) {
   const { t, locale } = useI18n()
   const location = useLocation()
-  const [open, setOpen]       = useState(false)
+  const [open, setOpen]         = useState(false)
   const [messages, setMessages] = useState<Message[]>([])
-  const [input, setInput]     = useState('')
-  const [loading, setLoading] = useState(false)
+  const [input, setInput]       = useState('')
+  const [loading, setLoading]   = useState(false)
   const [toolHint, setToolHint] = useState('')
+
+  // Session state
+  const [sessionId, setSessionId]         = useState<string | null>(null)
+  const [sessions, setSessions]           = useState<ChatSession[]>([])
+  const [showHistory, setShowHistory]     = useState(false)
+  const [sessionsLoading, setSessionsLoading] = useState(false)
+
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef  = useRef<HTMLTextAreaElement>(null)
 
@@ -69,6 +92,48 @@ export default function ChatWidget({ visible = true, onDismiss, forceOpen, onFor
     if (open) setTimeout(() => inputRef.current?.focus(), 100)
   }, [open])
 
+  const loadSessions = useCallback(async () => {
+    setSessionsLoading(true)
+    try {
+      const data = await apiFetch<ChatSession[]>('/chat/sessions')
+      setSessions(data)
+    } catch { /* ignore */ } finally {
+      setSessionsLoading(false)
+    }
+  }, [])
+
+  const openHistory = useCallback(() => {
+    setShowHistory(true)
+    loadSessions()
+  }, [loadSessions])
+
+  const loadSession = useCallback(async (s: ChatSession) => {
+    try {
+      const msgs = await apiFetch<{ role: 'user' | 'assistant'; content: string }[]>(
+        `/chat/sessions/${s.id}/messages`
+      )
+      setMessages(msgs.map(m => ({ role: m.role, content: m.content })))
+      setSessionId(s.id)
+      setShowHistory(false)
+    } catch { /* ignore */ }
+  }, [])
+
+  const deleteSession = useCallback(async (e: React.MouseEvent, s: ChatSession) => {
+    e.stopPropagation()
+    await apiFetch(`/chat/sessions/${s.id}`, { method: 'DELETE' })
+    setSessions(prev => prev.filter(x => x.id !== s.id))
+    if (sessionId === s.id) {
+      setSessionId(null)
+      setMessages([])
+    }
+  }, [sessionId])
+
+  const startNewChat = useCallback(() => {
+    setSessionId(null)
+    setMessages([])
+    setShowHistory(false)
+  }, [])
+
   const sendMessage = useCallback(async (text: string) => {
     const trimmed = text.trim()
     if (!trimmed || loading) return
@@ -79,6 +144,8 @@ export default function ChatWidget({ visible = true, onDismiss, forceOpen, onFor
     setInput('')
     setLoading(true)
     setToolHint('')
+
+    let currentSessionId = sessionId
 
     try {
       const { data: session } = await supabase.auth.getSession()
@@ -93,7 +160,11 @@ export default function ChatWidget({ visible = true, onDismiss, forceOpen, onFor
           'X-Locale': locale,
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({ messages: apiMessages, currentPath: location.pathname }),
+        body: JSON.stringify({
+          messages: apiMessages,
+          currentPath: location.pathname,
+          session_id: currentSessionId,
+        }),
       })
 
       if (!res.ok || !res.body) throw new Error(`HTTP ${res.status}`)
@@ -113,8 +184,13 @@ export default function ChatWidget({ visible = true, onDismiss, forceOpen, onFor
         for (const line of lines) {
           if (!line.startsWith('data: ')) continue
           try {
-            const event = JSON.parse(line.slice(6)) as { type: string; text?: string; tool?: string; message?: string }
-            if (event.type === 'delta' && event.text) {
+            const event = JSON.parse(line.slice(6)) as {
+              type: string; text?: string; tool?: string; message?: string; session_id?: string
+            }
+            if (event.type === 'session' && event.session_id) {
+              currentSessionId = event.session_id
+              setSessionId(event.session_id)
+            } else if (event.type === 'delta' && event.text) {
               assistantText += event.text
               setMessages(prev => {
                 const next = [...prev]
@@ -137,6 +213,15 @@ export default function ChatWidget({ visible = true, onDismiss, forceOpen, onFor
         next[next.length - 1] = { role: 'assistant', content: assistantText || t.chat.errorNoResponse, loading: false }
         return next
       })
+
+      // Update session list title in local state if this is a new session
+      if (currentSessionId && !sessionId) {
+        setSessions(prev => {
+          const exists = prev.some(s => s.id === currentSessionId)
+          if (exists) return prev
+          return [{ id: currentSessionId!, title: trimmed.slice(0, 80), updated_at: new Date().toISOString() }, ...prev]
+        })
+      }
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Erro de conexão.'
       setMessages(prev => {
@@ -148,7 +233,7 @@ export default function ChatWidget({ visible = true, onDismiss, forceOpen, onFor
       setLoading(false)
       setToolHint('')
     }
-  }, [messages, loading])
+  }, [messages, loading, sessionId, locale, location.pathname])
 
   const handleKey = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -215,9 +300,7 @@ export default function ChatWidget({ visible = true, onDismiss, forceOpen, onFor
       {/* Floating button — desktop only */}
       <div className="hidden sm:block fixed chat-bubble-safe right-5 sm:right-10 z-50 sm:bottom-10">
         <div style={{ position: 'relative', width: 48, height: 48 }}>
-          {/* Rotating conic glow */}
           <div className="arvo-chat-glow" />
-          {/* Main button — surface circle, adapts to theme */}
           <button
             onClick={() => setOpen(o => !o)}
             style={{
@@ -229,12 +312,10 @@ export default function ChatWidget({ visible = true, onDismiss, forceOpen, onFor
             aria-label={open ? (t.chat.dismiss ?? 'Fechar') : t.chat.open}
           >
             {open ? (
-              /* Close icon — two diagonal lines, rounded */
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M1.5 1.5L12.5 12.5M12.5 1.5L1.5 12.5" stroke="var(--arvo-fg)" strokeWidth="2" strokeLinecap="round"/>
               </svg>
             ) : (
-              /* Arvo bird with color cascade */
               <svg width="28" height="29" viewBox="0 0 174 180" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path className="arvo-bird-p1" d="M96.9642 82.5762C83.7642 28.1762 141.798 5.2429 172.464 0.576233C173.464 15.7429 159.764 53.3762 96.9642 82.5762Z"/>
                 <path className="arvo-bird-p2" d="M165.464 82.5762V53.5762L136.964 73.9631V111.674C144.263 106.015 151.778 100.102 155.964 96.5762C163.564 90.1762 165.464 84.5762 165.464 82.5762Z"/>
@@ -245,7 +326,6 @@ export default function ChatWidget({ visible = true, onDismiss, forceOpen, onFor
               </svg>
             )}
           </button>
-          {/* Dismiss badge — only when chat is closed */}
           {!open && onDismiss && (
             <button
               onClick={onDismiss}
@@ -274,18 +354,33 @@ export default function ChatWidget({ visible = true, onDismiss, forceOpen, onFor
               <p className="text-white text-sm font-semibold leading-none">{t.chat.title}</p>
               <p className="text-white/60 text-[11px] mt-0.5">{t.chat.poweredBy}</p>
             </div>
-            <div className="relative z-10 ml-auto flex items-center gap-2">
-              {messages.length > 0 && (
+            <div className="relative z-10 ml-auto flex items-center gap-1">
+              {/* History button */}
+              <button
+                onClick={showHistory ? () => setShowHistory(false) : openHistory}
+                title={tc.history}
+                className={`w-7 h-7 rounded-full flex items-center justify-center transition-all ${showHistory ? 'bg-white/20 text-white' : 'text-white/50 hover:text-white/80 hover:bg-white/10'}`}
+              >
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="8" cy="8" r="6.5"/>
+                  <path d="M8 4.5V8l2.5 2"/>
+                </svg>
+              </button>
+              {/* New chat button */}
+              {(messages.length > 0 || sessionId) && !showHistory && (
                 <button
-                  onClick={() => setMessages([])}
-                  className="text-white/50 hover:text-white/80 text-[11px] transition-colors"
+                  onClick={startNewChat}
+                  title={tc.newChat}
+                  className="w-7 h-7 rounded-full flex items-center justify-center text-white/50 hover:text-white/80 hover:bg-white/10 transition-all"
                 >
-                  {t.chat.clear}
+                  <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M8 3v10M3 8h10"/>
+                  </svg>
                 </button>
               )}
               <button
                 onClick={() => setOpen(false)}
-                className="w-6 h-6 rounded-full flex items-center justify-center text-white/50 hover:text-white/80 hover:bg-white/10 transition-all"
+                className="w-7 h-7 rounded-full flex items-center justify-center text-white/50 hover:text-white/80 hover:bg-white/10 transition-all"
                 aria-label={t.chat.dismiss ?? 'Fechar'}
               >
                 <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
@@ -295,87 +390,140 @@ export default function ChatWidget({ visible = true, onDismiss, forceOpen, onFor
             </div>
           </div>
 
-          {/* Messages */}
-          <div className="flex-1 overflow-y-auto px-3 py-3 space-y-3 text-sm">
-            {isEmpty ? (
-              <div className="flex flex-col h-full">
-                <p className="text-[13px] text-center mt-6 mb-4" style={{ color: 'var(--arvo-fg-soft)', fontFamily: "var(--arvo-font-body)" }}>
-                  {t.chat.greeting}
-                </p>
-                <div className="grid grid-cols-1 gap-1.5 mt-auto mb-2">
-                  {SUGGESTIONS.map(s => (
-                    <button
-                      key={s}
-                      onClick={() => sendMessage(s)}
-                      className="text-left text-[12px] rounded-lg px-3 py-2 transition-all leading-snug"
-                      style={{ background: 'var(--arvo-hover-bg)', color: 'var(--arvo-fg)', fontFamily: "var(--arvo-font-body)" }}
-                      onMouseEnter={e => { e.currentTarget.style.background = 'var(--arvo-chip-bg)' }}
-                      onMouseLeave={e => { e.currentTarget.style.background = 'var(--arvo-hover-bg)' }}
-                    >
-                      {s}
-                    </button>
-                  ))}
-                </div>
+          {showHistory ? (
+            /* ── Session history panel ── */
+            <div className="flex-1 overflow-y-auto">
+              <div className="px-3 py-2 border-b" style={{ borderColor: 'var(--arvo-border-soft)' }}>
+                <button
+                  onClick={startNewChat}
+                  className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all"
+                  style={{ background: 'var(--arvo-hover-bg)', color: 'var(--arvo-fg)' }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+                    <path d="M8 3v10M3 8h10"/>
+                  </svg>
+                  {tc.newChat}
+                </button>
               </div>
-            ) : (
-              <>
-                {messages.map((m, i) => (
-                  <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    <div
-                      className="max-w-[85%] rounded-2xl px-3 py-2 text-[13px] leading-relaxed whitespace-pre-wrap"
-                      style={m.role === 'user'
-                        ? { background: 'var(--arvo-pill-active-bg)', color: 'var(--arvo-pill-active-fg)', borderBottomRightRadius: 4, fontFamily: "var(--arvo-font-body)" }
-                        : { background: 'var(--arvo-chip-bg)', color: 'var(--arvo-fg)', borderBottomLeftRadius: 4, fontFamily: "var(--arvo-font-body)" }}
-                    >
-                      {m.loading && !m.content ? (
-                        <span className="flex gap-1.5 items-center h-4">
-                          <span className="arvo-dot-fade" style={{ width: 6, height: 6, borderRadius: '50%', background: '#1B4FD8', animationDelay: '0ms' }} />
-                          <span className="arvo-dot-fade" style={{ width: 6, height: 6, borderRadius: '50%', background: '#E8A020', animationDelay: '160ms' }} />
-                          <span className="arvo-dot-fade" style={{ width: 6, height: 6, borderRadius: '50%', background: '#D63B2F', animationDelay: '320ms' }} />
-                        </span>
-                      ) : m.role === 'assistant' ? (
-                        renderText(m.content)
-                      ) : (
-                        m.content
-                      )}
+              <div className="divide-y" style={{ borderColor: 'var(--arvo-border-soft)' }}>
+                {sessionsLoading ? (
+                  <p className="text-center py-6 text-[12px]" style={{ color: 'var(--arvo-fg-soft)' }}>…</p>
+                ) : sessions.length === 0 ? (
+                  <p className="text-center py-6 text-[12px]" style={{ color: 'var(--arvo-fg-soft)' }}>{tc.noSessions}</p>
+                ) : sessions.map(s => (
+                  <div
+                    key={s.id}
+                    onClick={() => loadSession(s)}
+                    className="flex items-center gap-2 px-3 py-2.5 cursor-pointer group transition-all"
+                    style={{ background: s.id === sessionId ? 'var(--arvo-hover-bg)' : 'transparent' }}
+                    onMouseEnter={e => { if (s.id !== sessionId) e.currentTarget.style.background = 'var(--arvo-hover-bg)' }}
+                    onMouseLeave={e => { if (s.id !== sessionId) e.currentTarget.style.background = 'transparent' }}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[12px] truncate" style={{ color: 'var(--arvo-fg)', fontFamily: 'var(--arvo-font-body)' }}>{s.title}</p>
+                      <p className="text-[10px] mt-0.5" style={{ color: 'var(--arvo-fg-soft)' }}>
+                        {formatSessionDate(s.updated_at, tc.today, tc.yesterday)}
+                      </p>
                     </div>
+                    <button
+                      onClick={e => deleteSession(e, s)}
+                      className="opacity-0 group-hover:opacity-100 w-6 h-6 rounded flex items-center justify-center transition-all flex-shrink-0"
+                      style={{ color: 'var(--arvo-fg-soft)' }}
+                      title={tc.deleteSession}
+                    >
+                      <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                        <path d="M1.5 3h9M4.5 3V1.5h3V3M5 5.5v4M7 5.5v4M2.5 3l.75 7.5h5.5L9.5 3"/>
+                      </svg>
+                    </button>
                   </div>
                 ))}
-                {toolHint && (
-                  <p className="text-[11px] text-gray-400 text-center animate-pulse">{toolHint}</p>
-                )}
-                <div ref={bottomRef} />
-              </>
-            )}
-          </div>
-
-          {/* Input */}
-          <div className="px-3 pb-3 pt-2" style={{ borderTop: '1px solid var(--arvo-border-soft)' }}>
-            <div className="flex items-end gap-2">
-              <textarea
-                ref={inputRef}
-                rows={1}
-                value={input}
-                onChange={e => setInput(e.target.value)}
-                onKeyDown={handleKey}
-                placeholder={t.chat.placeholder}
-                disabled={loading}
-                className="flex-1 resize-none rounded-xl px-3 py-2 text-[13px] focus:outline-none disabled:opacity-50 max-h-24 overflow-y-auto leading-relaxed bg-transparent"
-                style={{ minHeight: '36px', border: '1px solid var(--arvo-border-soft)', color: 'var(--arvo-fg)', fontFamily: "var(--arvo-font-body)" }}
-              />
-              <button
-                onClick={() => sendMessage(input)}
-                disabled={loading || !input.trim()}
-                className="arvo-chat-send flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center disabled:opacity-40 transition-all"
-                style={{ background: 'var(--arvo-pill-active-bg)', color: 'var(--arvo-pill-active-fg)' }}
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
-                </svg>
-              </button>
+              </div>
             </div>
-            <p className="text-[10px] text-center mt-1.5" style={{ color: 'var(--arvo-fg-faint)', fontFamily: "var(--arvo-font-body)" }}>{t.chat.enterHint}</p>
-          </div>
+          ) : (
+            <>
+              {/* ── Messages ── */}
+              <div className="flex-1 overflow-y-auto px-3 py-3 space-y-3 text-sm">
+                {isEmpty ? (
+                  <div className="flex flex-col h-full">
+                    <p className="text-[13px] text-center mt-6 mb-4" style={{ color: 'var(--arvo-fg-soft)', fontFamily: "var(--arvo-font-body)" }}>
+                      {t.chat.greeting}
+                    </p>
+                    <div className="grid grid-cols-1 gap-1.5 mt-auto mb-2">
+                      {SUGGESTIONS.map(s => (
+                        <button
+                          key={s}
+                          onClick={() => sendMessage(s)}
+                          className="text-left text-[12px] rounded-lg px-3 py-2 transition-all leading-snug"
+                          style={{ background: 'var(--arvo-hover-bg)', color: 'var(--arvo-fg)', fontFamily: "var(--arvo-font-body)" }}
+                          onMouseEnter={e => { e.currentTarget.style.background = 'var(--arvo-chip-bg)' }}
+                          onMouseLeave={e => { e.currentTarget.style.background = 'var(--arvo-hover-bg)' }}
+                        >
+                          {s}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    {messages.map((m, i) => (
+                      <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                        <div
+                          className="max-w-[85%] rounded-2xl px-3 py-2 text-[13px] leading-relaxed whitespace-pre-wrap"
+                          style={m.role === 'user'
+                            ? { background: 'var(--arvo-pill-active-bg)', color: 'var(--arvo-pill-active-fg)', borderBottomRightRadius: 4, fontFamily: "var(--arvo-font-body)" }
+                            : { background: 'var(--arvo-chip-bg)', color: 'var(--arvo-fg)', borderBottomLeftRadius: 4, fontFamily: "var(--arvo-font-body)" }}
+                        >
+                          {m.loading && !m.content ? (
+                            <span className="flex gap-1.5 items-center h-4">
+                              <span className="arvo-dot-fade" style={{ width: 6, height: 6, borderRadius: '50%', background: '#1B4FD8', animationDelay: '0ms' }} />
+                              <span className="arvo-dot-fade" style={{ width: 6, height: 6, borderRadius: '50%', background: '#E8A020', animationDelay: '160ms' }} />
+                              <span className="arvo-dot-fade" style={{ width: 6, height: 6, borderRadius: '50%', background: '#D63B2F', animationDelay: '320ms' }} />
+                            </span>
+                          ) : m.role === 'assistant' ? (
+                            renderText(m.content)
+                          ) : (
+                            m.content
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                    {toolHint && (
+                      <p className="text-[11px] text-gray-400 text-center animate-pulse">{toolHint}</p>
+                    )}
+                    <div ref={bottomRef} />
+                  </>
+                )}
+              </div>
+
+              {/* ── Input ── */}
+              <div className="px-3 pb-3 pt-2" style={{ borderTop: '1px solid var(--arvo-border-soft)' }}>
+                <div className="flex items-end gap-2">
+                  <textarea
+                    ref={inputRef}
+                    rows={1}
+                    value={input}
+                    onChange={e => setInput(e.target.value)}
+                    onKeyDown={handleKey}
+                    placeholder={t.chat.placeholder}
+                    disabled={loading}
+                    className="flex-1 resize-none rounded-xl px-3 py-2 text-[13px] focus:outline-none disabled:opacity-50 max-h-24 overflow-y-auto leading-relaxed bg-transparent"
+                    style={{ minHeight: '36px', border: '1px solid var(--arvo-border-soft)', color: 'var(--arvo-fg)', fontFamily: "var(--arvo-font-body)" }}
+                  />
+                  <button
+                    onClick={() => sendMessage(input)}
+                    disabled={loading || !input.trim()}
+                    className="arvo-chat-send flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center disabled:opacity-40 transition-all"
+                    style={{ background: 'var(--arvo-pill-active-bg)', color: 'var(--arvo-pill-active-fg)' }}
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
+                    </svg>
+                  </button>
+                </div>
+                <p className="text-[10px] text-center mt-1.5" style={{ color: 'var(--arvo-fg-faint)', fontFamily: "var(--arvo-font-body)" }}>{t.chat.enterHint}</p>
+              </div>
+            </>
+          )}
         </div>
       )}
     </>

@@ -69,6 +69,7 @@ export default function DashboardPage() {
   const [shareLoading, setShareLoading] = useState(false)
   const [shareSuccess, setShareSuccess] = useState(false)
   const [shareCopied, setShareCopied] = useState(false)
+  const [progressDone, setProgressDone] = useState(false)
 
   useEffect(() => {
     if (!showShareModal) return
@@ -111,7 +112,11 @@ export default function DashboardPage() {
       setShareLink(r)
       setShareSuccess(true)
       setTimeout(() => setShareSuccess(false), 5000)
-    } finally { setShareLoading(false) }
+    } finally {
+      setProgressDone(true)
+      setTimeout(() => setProgressDone(false), 700)
+      setShareLoading(false)
+    }
   }
 
   async function handleDeactivateShare() {
@@ -212,6 +217,9 @@ export default function DashboardPage() {
   const hasAllocation = data.by_class.length > 0
   const hasMovers = dashReturnsLoading || gainers.length > 0 || losers.length > 0
   const hasDividends = divLoading || (divSummary != null && divSummary.total_brl > 0)
+  const yieldPct = (data.total_brl > 0 && divSummary?.total_brl)
+    ? Math.round(divSummary.total_brl / data.total_brl * 10000) / 100
+    : null
 
   return (
     <>
@@ -400,6 +408,7 @@ export default function DashboardPage() {
                 intlLocale={intlLocale}
                 periodLabel={periodLabel}
                 td={td}
+                yieldPct={yieldPct}
               />
             </div>
           )}
@@ -434,6 +443,7 @@ export default function DashboardPage() {
             intlLocale={intlLocale}
             periodLabel={periodLabel}
             td={td}
+            yieldPct={yieldPct}
           />
         </div>
       )}
@@ -514,9 +524,14 @@ export default function DashboardPage() {
               </svg>
               {shareLoading ? s.refreshing : shareLink ? s.refresh : s.generate}
             </button>
-            {shareLoading && (
+            {(shareLoading || progressDone) && (
               <div style={{ height: 3, background: 'var(--arvo-border)', borderRadius: 2, overflow: 'hidden', marginBottom: 14 }}>
-                <div style={{ height: '100%', background: 'var(--arvo-gold)', borderRadius: 2, animation: 'arvo-progress 4s ease-out forwards' }} />
+                <div style={{
+                  height: '100%', background: 'var(--arvo-gold)', borderRadius: 2,
+                  ...(progressDone
+                    ? { width: '100%', transition: 'width 0.25s ease-in' }
+                    : { animation: 'arvo-progress 60s ease-out forwards' }),
+                }} />
               </div>
             )}
             {shareSuccess && !shareLoading && (

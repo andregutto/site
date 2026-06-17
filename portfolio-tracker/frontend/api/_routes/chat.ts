@@ -714,12 +714,77 @@ async function executeTool(
   }
 }
 
+// ─── Session CRUD ──────────────────────────────────────────────────────────────
+
+router.get('/sessions', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const { data } = await supabaseAdmin
+    .from('ai_chat_sessions')
+    .select('id, title, updated_at')
+    .eq('user_id', userId)
+    .order('updated_at', { ascending: false })
+    .limit(50)
+  res.json(data ?? [])
+})
+
+router.post('/sessions', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const { title } = req.body as { title?: string }
+  const { data } = await supabaseAdmin
+    .from('ai_chat_sessions')
+    .insert({ user_id: userId, title: (title ?? 'Nova conversa').slice(0, 80) })
+    .select('id, title, updated_at')
+    .single()
+  res.json(data)
+})
+
+router.patch('/sessions/:id', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const { title } = req.body as { title: string }
+  await supabaseAdmin
+    .from('ai_chat_sessions')
+    .update({ title: (title ?? '').slice(0, 80), updated_at: new Date().toISOString() })
+    .eq('id', req.params.id)
+    .eq('user_id', userId)
+  res.json({ ok: true })
+})
+
+router.delete('/sessions/:id', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  await supabaseAdmin
+    .from('ai_chat_sessions')
+    .delete()
+    .eq('id', req.params.id)
+    .eq('user_id', userId)
+  res.json({ ok: true })
+})
+
+router.get('/sessions/:id/messages', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const { data: session } = await supabaseAdmin
+    .from('ai_chat_sessions')
+    .select('id')
+    .eq('id', req.params.id)
+    .eq('user_id', userId)
+    .single()
+  if (!session) { res.status(404).json({ error: 'Session not found' }); return }
+  const { data: msgs } = await supabaseAdmin
+    .from('ai_chat_messages')
+    .select('role, content')
+    .eq('session_id', req.params.id)
+    .order('created_at', { ascending: true })
+  res.json(msgs ?? [])
+})
+
+// ─── Chat inference ─────────────────────────────────────────────────────────────
+
 // POST /api/chat
 router.post('/', requireAuth, async (req, res: Response) => {
   const { userId, userLocale } = req as AuthRequest
-  const { messages, currentPath } = req.body as {
+  const { messages, currentPath, session_id: incomingSessionId } = req.body as {
     messages: Anthropic.MessageParam[]
     currentPath?: string
+    session_id?: string | null
   }
 
   if (!messages?.length) { res.status(400).json({ error: 'messages required' }); return }
@@ -732,6 +797,23 @@ router.post('/', requireAuth, async (req, res: Response) => {
 
   const send = (data: object) => res.write(`data: ${JSON.stringify(data)}\n\n`)
 
+  // Resolve or create a session for persistence
+  let sessionId: string | null = incomingSessionId ?? null
+  const lastUserMsg = [...messages].reverse().find(m => m.role === 'user')
+  const userText = typeof lastUserMsg?.content === 'string' ? lastUserMsg.content : ''
+
+  if (!sessionId && userText) {
+    const title = userText.slice(0, 80)
+    const { data: newSession } = await supabaseAdmin
+      .from('ai_chat_sessions')
+      .insert({ user_id: userId, title })
+      .select('id')
+      .single()
+    sessionId = newSession?.id ?? null
+  }
+
+  if (sessionId) send({ type: 'session', session_id: sessionId })
+
   const today = new Date().toISOString().split('T')[0]
   const systemPrompt = buildSystemPrompt({
     locale: userLocale,
@@ -741,6 +823,7 @@ router.post('/', requireAuth, async (req, res: Response) => {
 
   const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
   const runMessages: Anthropic.MessageParam[] = [...messages]
+  let fullAssistantText = ''
 
   try {
     for (let iter = 0; iter < 6; iter++) {
@@ -754,6 +837,7 @@ router.post('/', requireAuth, async (req, res: Response) => {
 
       for await (const event of stream) {
         if (event.type === 'content_block_delta' && event.delta.type === 'text_delta' && event.delta.text) {
+          fullAssistantText += event.delta.text
           send({ type: 'delta', text: event.delta.text })
         }
         if (event.type === 'content_block_start' && (event.content_block as { type: string }).type === 'server_tool_use') {
@@ -778,6 +862,18 @@ router.post('/', requireAuth, async (req, res: Response) => {
       }
 
       break
+    }
+
+    // Persist the user message + assistant response
+    if (sessionId && userText && fullAssistantText) {
+      await supabaseAdmin.from('ai_chat_messages').insert([
+        { session_id: sessionId, role: 'user',      content: userText },
+        { session_id: sessionId, role: 'assistant', content: fullAssistantText },
+      ])
+      await supabaseAdmin
+        .from('ai_chat_sessions')
+        .update({ updated_at: new Date().toISOString() })
+        .eq('id', sessionId)
     }
   } catch (err) {
     send({ type: 'error', message: err instanceof Error ? err.message : 'Erro desconhecido' })

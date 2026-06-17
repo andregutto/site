@@ -13,9 +13,10 @@ interface Props {
   periodLabel: string
   td: Record<string, string>
   vertical?: boolean
+  yieldPct?: number | null
 }
 
-export default function DividendsCard({ divLoading, divSummary, syncing, convert, fmt, currency, intlLocale, periodLabel, td, vertical }: Props) {
+export default function DividendsCard({ divLoading, divSummary, syncing, convert, fmt, currency, intlLocale, periodLabel, td, vertical, yieldPct }: Props) {
   const chart = divSummary && divSummary.by_month.length > 1 && (
     <ResponsiveContainer width="100%" height="100%">
       <BarChart data={divSummary.by_month.map(m => ({ month: m.month, value: convert(m.total_brl) }))} margin={{ top: 4, right: 4, left: 4, bottom: 0 }}>
@@ -74,10 +75,18 @@ export default function DividendsCard({ divLoading, divSummary, syncing, convert
       ) : divSummary && divSummary.total_brl > 0 ? (
         vertical ? (
           <div className="flex flex-col gap-4 flex-1">
-            <div>
-              <p className="text-xs uppercase tracking-wide mb-0.5" style={{ color: 'var(--arvo-fg-soft)' }}>{td.totalReceived ?? 'Total recebido'}</p>
-              <p className="text-xl font-bold" style={{ color: 'var(--arvo-green)' }}>{fmt(convert(divSummary.total_brl))}</p>
-              <p className="text-xs mt-0.5" style={{ color: 'var(--arvo-fg-soft)' }}>{periodLabel}</p>
+            <div className="flex items-start gap-4">
+              <div className="flex-1">
+                <p className="text-xs uppercase tracking-wide mb-0.5" style={{ color: 'var(--arvo-fg-soft)' }}>{td.totalReceived ?? 'Total recebido'}</p>
+                <p className="text-xl font-bold" style={{ color: 'var(--arvo-green)' }}>{fmt(convert(divSummary.total_brl))}</p>
+                <p className="text-xs mt-0.5" style={{ color: 'var(--arvo-fg-soft)' }}>{periodLabel}</p>
+              </div>
+              {yieldPct != null && (
+                <div className="shrink-0 text-right">
+                  <p className="text-xs uppercase tracking-wide mb-0.5" style={{ color: 'var(--arvo-fg-soft)' }}>{td.yieldLabel ?? 'Yield'}</p>
+                  <p className="text-xl font-bold" style={{ color: 'var(--arvo-fg)' }}>{yieldPct.toFixed(1)}%</p>
+                </div>
+              )}
             </div>
             {topPayers}
             {chart && <div className="flex-1 min-h-[120px]">{chart}</div>}
@@ -89,6 +98,12 @@ export default function DividendsCard({ divLoading, divSummary, syncing, convert
               <p className="text-xl font-bold" style={{ color: 'var(--arvo-green)' }}>{fmt(convert(divSummary.total_brl))}</p>
               <p className="text-xs mt-0.5" style={{ color: 'var(--arvo-fg-soft)' }}>{periodLabel}</p>
             </div>
+            {yieldPct != null && (
+              <div className="shrink-0">
+                <p className="text-xs uppercase tracking-wide mb-0.5" style={{ color: 'var(--arvo-fg-soft)' }}>{td.yieldLabel ?? 'Yield'}</p>
+                <p className="text-xl font-bold" style={{ color: 'var(--arvo-fg)' }}>{yieldPct.toFixed(1)}%</p>
+              </div>
+            )}
             {topPayers}
             {chart && <div className="flex-1 min-w-[140px] h-20">{chart}</div>}
           </div>

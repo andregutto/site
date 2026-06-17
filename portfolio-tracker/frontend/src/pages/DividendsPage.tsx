@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useDividends, useDividendSummary, useDividendSync } from '../hooks/useDividends'
+import { usePortfolioValue } from '../hooks/usePortfolio'
 import { PageLoader } from '../components/ArvoLoader'
 import { useCurrency } from '../contexts/CurrencyContext'
 import { useI18n } from '../contexts/I18nContext'
@@ -155,6 +156,11 @@ export default function DividendsPage() {
     }
   }, [summary36m, currentYM, convert])
 
+  const { data: portfolioData } = usePortfolioValue()
+  const yieldPct = (portfolioData?.total_brl && summary?.total_brl)
+    ? Math.round(summary.total_brl / portfolioData.total_brl * 10000) / 100
+    : null
+
   const ytdTotal   = ytdSummary?.total_brl ?? 0
   const totalBrl   = summary?.total_brl ?? 0
   const isLoading  = tab === 'history' ? sLoading || rLoading : s36Loading
@@ -211,7 +217,7 @@ export default function DividendsPage() {
         tab === 'history' ? (
           <>
             {/* Summary cards */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl p-5 shadow-sm">
                 <p className="text-[var(--arvo-fg-soft)] text-xs uppercase tracking-wide">{d.totalReceived}</p>
                 <div className="flex items-baseline gap-2 mt-1">
@@ -222,6 +228,13 @@ export default function DividendsPage() {
                 </div>
                 <p className="text-xs text-[var(--arvo-fg-soft)] mt-1">{d.inPeriod}</p>
               </div>
+              {yieldPct != null && (
+                <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl p-5 shadow-sm">
+                  <p className="text-[var(--arvo-fg-soft)] text-xs uppercase tracking-wide">{d.yieldLabel ?? 'Yield s/ Patrimônio'}</p>
+                  <p className="text-2xl font-bold mt-1 arvo-num" style={{ color: 'var(--arvo-fg)' }}>{yieldPct.toFixed(1)}%</p>
+                  <p className="text-xs text-[var(--arvo-fg-soft)] mt-1">{d.inPeriod}</p>
+                </div>
+              )}
               <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl p-5 shadow-sm">
                 <p className="text-[var(--arvo-fg-soft)] text-xs uppercase tracking-wide">{d.count}</p>
                 <p className="text-2xl font-bold mt-1 arvo-num" style={{ color: 'var(--arvo-fg)' }}>{rows.length}</p>
