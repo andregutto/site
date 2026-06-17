@@ -259,15 +259,20 @@ async function executeTool(
 
         const ids = assets.map(a => a.id as number)
         const [{ data: contribs }, { data: manualVals }, { data: priceHist }] = await Promise.all([
-          supabaseAdmin.from('contributions').select('asset_id, type, value_brl').in('asset_id', ids),
+          supabaseAdmin.from('contributions').select('asset_id, type, quantity, value_brl, fx_rate_brl').in('asset_id', ids),
           supabaseAdmin.from('manual_values').select('asset_id, value').in('asset_id', ids).order('ref_date', { ascending: false }),
-          supabaseAdmin.from('price_history').select('asset_id, total_brl').in('asset_id', ids).order('date', { ascending: false }).limit(ids.length * 3),
+          supabaseAdmin.from('price_history').select('asset_id, price, ref_date, currency').in('asset_id', ids).order('ref_date', { ascending: false }).limit(ids.length * 3),
         ])
 
         const investedMap: Record<number, number> = {}
+        const holdingsMap: Record<number, number> = {}
+        const lastFxMap: Record<number, number> = {}
         for (const c of contribs ?? []) {
-          const delta = c.type === 'sell' ? -(c.value_brl ?? 0) : (c.value_brl ?? 0)
-          investedMap[c.asset_id] = (investedMap[c.asset_id] ?? 0) + delta
+          const brl = c.type === 'sell' ? -(c.value_brl ?? 0) : (c.value_brl ?? 0)
+          investedMap[c.asset_id] = (investedMap[c.asset_id] ?? 0) + brl
+          const qty = c.type === 'sell' ? -(c.quantity ?? 0) : (c.quantity ?? 0)
+          holdingsMap[c.asset_id] = (holdingsMap[c.asset_id] ?? 0) + qty
+          if (c.fx_rate_brl) lastFxMap[c.asset_id] = c.fx_rate_brl
         }
         const manualMap: Record<number, number> = {}
         const mSeen = new Set<number>()
@@ -277,7 +282,12 @@ async function executeTool(
         const priceMap: Record<number, number> = {}
         const pSeen = new Set<number>()
         for (const ph of priceHist ?? []) {
-          if (!pSeen.has(ph.asset_id)) { priceMap[ph.asset_id] = ph.total_brl; pSeen.add(ph.asset_id) }
+          if (!pSeen.has(ph.asset_id)) {
+            const holdings = holdingsMap[ph.asset_id] ?? 0
+            const fx = lastFxMap[ph.asset_id] ?? 1
+            priceMap[ph.asset_id] = ph.price * holdings * fx
+            pSeen.add(ph.asset_id)
+          }
         }
 
         const lines = assets.map(a => {
@@ -309,15 +319,20 @@ async function executeTool(
         const ids = assets.map(a => a.id as number)
 
         const [{ data: contribs }, { data: manualVals }, { data: priceHist }] = await Promise.all([
-          supabaseAdmin.from('contributions').select('asset_id, type, value_brl').in('asset_id', ids),
+          supabaseAdmin.from('contributions').select('asset_id, type, quantity, value_brl, fx_rate_brl').in('asset_id', ids),
           supabaseAdmin.from('manual_values').select('asset_id, value').in('asset_id', ids).order('ref_date', { ascending: false }),
-          supabaseAdmin.from('price_history').select('asset_id, total_brl').in('asset_id', ids).order('date', { ascending: false }).limit(ids.length * 3),
+          supabaseAdmin.from('price_history').select('asset_id, price, ref_date, currency').in('asset_id', ids).order('ref_date', { ascending: false }).limit(ids.length * 3),
         ])
 
         const investedMap: Record<number, number> = {}
+        const holdingsMap2: Record<number, number> = {}
+        const lastFxMap2: Record<number, number> = {}
         for (const c of contribs ?? []) {
-          const delta = c.type === 'sell' ? -(c.value_brl ?? 0) : (c.value_brl ?? 0)
-          investedMap[c.asset_id] = (investedMap[c.asset_id] ?? 0) + delta
+          const brl = c.type === 'sell' ? -(c.value_brl ?? 0) : (c.value_brl ?? 0)
+          investedMap[c.asset_id] = (investedMap[c.asset_id] ?? 0) + brl
+          const qty = c.type === 'sell' ? -(c.quantity ?? 0) : (c.quantity ?? 0)
+          holdingsMap2[c.asset_id] = (holdingsMap2[c.asset_id] ?? 0) + qty
+          if (c.fx_rate_brl) lastFxMap2[c.asset_id] = c.fx_rate_brl
         }
         const manualMap: Record<number, number> = {}
         const mSeen = new Set<number>()
@@ -327,7 +342,12 @@ async function executeTool(
         const priceMap: Record<number, number> = {}
         const pSeen = new Set<number>()
         for (const ph of priceHist ?? []) {
-          if (!pSeen.has(ph.asset_id)) { priceMap[ph.asset_id] = ph.total_brl; pSeen.add(ph.asset_id) }
+          if (!pSeen.has(ph.asset_id)) {
+            const holdings = holdingsMap2[ph.asset_id] ?? 0
+            const fx = lastFxMap2[ph.asset_id] ?? 1
+            priceMap[ph.asset_id] = ph.price * holdings * fx
+            pSeen.add(ph.asset_id)
+          }
         }
 
         const lines = assets.map(a => {
@@ -512,29 +532,51 @@ async function executeTool(
           .select('id, code, name, asset_type, asset_classes(name)')
           .eq('user_id', userId)
           .eq('active', true)
+          .eq('asset_type', 'ticker')
 
-        if (!assets?.length) return 'No assets found.'
+        if (!assets?.length) return 'No ticker assets found.'
         const ids = assets.map(a => a.id as number)
 
-        const { data: allHistory } = await supabaseAdmin
-          .from('price_history')
-          .select('asset_id, date, total_brl')
-          .in('asset_id', ids)
-          .order('date', { ascending: true })
+        const [{ data: endPrices }, { data: startPrices }, { data: allContribs }] = await Promise.all([
+          supabaseAdmin.from('price_history')
+            .select('asset_id, price, ref_date, currency')
+            .in('asset_id', ids).lte('ref_date', today)
+            .order('ref_date', { ascending: false }).limit(ids.length * 5),
+          supabaseAdmin.from('price_history')
+            .select('asset_id, price, ref_date, currency')
+            .in('asset_id', ids).lt('ref_date', fromDate)
+            .order('ref_date', { ascending: false }).limit(ids.length * 5),
+          supabaseAdmin.from('contributions')
+            .select('asset_id, date, type, quantity, value_brl, fx_rate_brl')
+            .in('asset_id', ids).order('date', { ascending: true }),
+        ])
 
-        if (!allHistory?.length) return 'No price history found. Run a portfolio sync first.'
+        if (!endPrices?.length) return 'No price history found. Run a portfolio sync first.'
 
-        const { data: contribsInPeriod } = await supabaseAdmin
-          .from('contributions')
-          .select('asset_id, type, value_brl, date')
-          .in('asset_id', ids)
-          .gte('date', fromDate)
-          .lte('date', today)
+        const endPriceMap: Record<number, { price: number }> = {}
+        for (const p of endPrices ?? []) {
+          if (!(p.asset_id in endPriceMap)) endPriceMap[p.asset_id] = { price: p.price }
+        }
+        const startPriceMap: Record<number, { price: number }> = {}
+        for (const p of startPrices ?? []) {
+          if (!(p.asset_id in startPriceMap)) startPriceMap[p.asset_id] = { price: p.price }
+        }
 
-        const contribMap: Record<number, number> = {}
-        for (const c of contribsInPeriod ?? []) {
-          const delta = c.type === 'sell' ? -(c.value_brl ?? 0) : (c.value_brl ?? 0)
-          contribMap[c.asset_id] = (contribMap[c.asset_id] ?? 0) + delta
+        const holdingsNow: Record<number, number> = {}
+        const holdingsAtStart: Record<number, number> = {}
+        const lastFxPerf: Record<number, number> = {}
+        const cashInPeriod: Record<number, number> = {}
+
+        for (const c of allContribs ?? []) {
+          const id = c.asset_id as number
+          const qty = (c.quantity ?? 0) * (c.type === 'sell' ? -1 : 1)
+          if (c.date < fromDate) holdingsAtStart[id] = (holdingsAtStart[id] ?? 0) + qty
+          holdingsNow[id] = (holdingsNow[id] ?? 0) + qty
+          if (c.fx_rate_brl) lastFxPerf[id] = c.fx_rate_brl
+          if (c.date >= fromDate && c.date <= today) {
+            const brl = (c.value_brl ?? 0) * (c.type === 'sell' ? -1 : 1)
+            cashInPeriod[id] = (cashInPeriod[id] ?? 0) + brl
+          }
         }
 
         type PerfRow = {
@@ -546,14 +588,16 @@ async function executeTool(
         const rows: PerfRow[] = []
         for (const asset of assets) {
           const id = asset.id as number
-          const hist = (allHistory ?? []).filter(h => h.asset_id === id)
-          if (hist.length === 0) continue
+          const ep = endPriceMap[id]
+          if (!ep) continue
 
-          const beforeStart = hist.filter(h => h.date < fromDate)
-          const valueStart = beforeStart.length > 0 ? beforeStart[beforeStart.length - 1].total_brl : 0
-          const valueEnd = hist[hist.length - 1].total_brl
-
-          const contributions = contribMap[id] ?? 0
+          const fx = lastFxPerf[id] ?? 1
+          const holdEnd = holdingsNow[id] ?? 0
+          const holdStart = holdingsAtStart[id] ?? holdEnd
+          const sp = startPriceMap[id]
+          const valueEnd   = ep.price * holdEnd   * fx
+          const valueStart = sp ? sp.price * holdStart * fx : 0
+          const contributions = cashInPeriod[id] ?? 0
           const changeBrl = valueEnd - valueStart - contributions
           const dietzBase = valueStart + 0.5 * contributions
           const changePct = dietzBase > 0 ? (changeBrl / dietzBase) * 100 : null
@@ -645,8 +689,8 @@ async function executeTool(
             .in('asset_id', ids).eq('type', 'sell').gte('date', fromDate).lte('date', toDate),
           supabaseAdmin.from('contributions').select('asset_id, date, quantity, value_brl')
             .in('asset_id', ids).eq('type', 'buy').lte('date', toDate),
-          supabaseAdmin.from('price_history').select('asset_id, date, total_brl')
-            .in('asset_id', ids).lte('date', toDate).order('date', { ascending: false }).limit(ids.length * 5),
+          supabaseAdmin.from('price_history').select('asset_id, ref_date, price, currency')
+            .in('asset_id', ids).lte('ref_date', toDate).order('ref_date', { ascending: false }).limit(ids.length * 5),
         ])
 
         const divByType: Record<string, number> = {}
@@ -679,7 +723,7 @@ async function executeTool(
           if (seenYE.has(ph.asset_id)) continue
           seenYE.add(ph.asset_id)
           const a = assetMap[ph.asset_id]
-          if (a) posLines.push(`  ${a.code} (${a.name}): R$${ph.total_brl.toFixed(0)} (date: ${ph.date})`)
+          if (a) posLines.push(`  ${a.code} (${a.name}): ${ph.price.toFixed(4)} ${ph.currency} (date: ${ph.ref_date})`)
         }
 
         return [
