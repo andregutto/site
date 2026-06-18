@@ -156,7 +156,7 @@ function LibraryPicker({ tripId, tripCity, tripCountry, onAdded }: {
         placeholder="Buscar…"
         value={search}
         onChange={e => setSearch(e.target.value)}
-        style={{ width: '100%', padding: '6px 10px', borderRadius: 3, border: '1px solid var(--arvo-border)', fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, background: '#fff', color: 'var(--arvo-fg)', outline: 'none', marginBottom: 8 }}
+        style={{ width: '100%', padding: '6px 10px', borderRadius: 3, border: '1px solid var(--arvo-border)', fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, background: 'var(--arvo-surface)', color: 'var(--arvo-fg)', outline: 'none', marginBottom: 8 }}
         autoFocus
       />
       {loading ? (
@@ -233,7 +233,7 @@ function PlaceRow({ place, tripId, canEdit, onUpdate, onDelete }: {
 
   return (
     <div style={{
-      background: '#fff', border: `1px solid ${place.is_highlight ? RED : 'var(--arvo-border)'}`,
+      background: 'var(--arvo-surface)', border: `1px solid ${place.is_highlight ? RED : 'var(--arvo-border)'}`,
       borderRadius: 10, padding: '10px 12px',
       boxShadow: place.is_highlight ? `0 0 0 1px ${RED}22` : 'none',
     }}>
@@ -340,7 +340,7 @@ export default function TripPlacesPanel({ tripId, tripCity, tripCountry, canEdit
   useEffect(() => { load() }, [load])
 
   return (
-    <div style={{ background: '#fff', border: '1px solid var(--arvo-border)', borderRadius: 14, padding: '20px 22px' }}>
+    <div style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', borderRadius: 14, padding: '20px 22px' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
         <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 10, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)' }}>
           Lugares

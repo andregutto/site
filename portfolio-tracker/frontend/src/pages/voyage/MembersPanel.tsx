@@ -106,13 +106,13 @@ export default function MembersPanel({ tripId, isOwner }: Props) {
 
   const fieldStyle: React.CSSProperties = {
     padding: '7px 10px', borderRadius: 3,
-    border: '1px solid var(--arvo-border)', background: '#fff',
+    border: '1px solid var(--arvo-border)', background: 'var(--arvo-surface)',
     fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg)',
     outline: 'none',
   }
 
   return (
-    <div style={{ background: '#fff', border: '1px solid var(--arvo-border)', borderRadius: 14, padding: '20px 22px' }}>
+    <div style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', borderRadius: 14, padding: '20px 22px' }}>
       <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 10, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)', marginBottom: 16 }}>
         Colaboradores
       </p>

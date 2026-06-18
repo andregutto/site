@@ -56,7 +56,7 @@ export default function TripFormModal({ trip, onClose, onSaved }: Props) {
 
   const fieldStyle: React.CSSProperties = {
     width: '100%', padding: '8px 12px', borderRadius: 3,
-    border: '1px solid var(--arvo-border)', background: '#fff',
+    border: '1px solid var(--arvo-border)', background: 'var(--arvo-surface)',
     fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg)',
     outline: 'none', transition: 'border-color 160ms ease',
   }
@@ -86,7 +86,7 @@ export default function TripFormModal({ trip, onClose, onSaved }: Props) {
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: '1px solid var(--arvo-border-soft)' }}>
           <div>
-            <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.30em', textTransform: 'uppercase', color: RED, marginBottom: 2 }}>◈ ARVO VOYAGE</p>
+            <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.30em', textTransform: 'uppercase', color: RED, marginBottom: 2 }}>ARVO VOYAGE</p>
             <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 15, letterSpacing: '0.06em', color: 'var(--arvo-fg)' }}>
               {trip ? tv.editTrip : tv.addTrip}
             </p>

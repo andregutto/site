@@ -211,7 +211,7 @@ export default function VoyageMapPage() {
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-5">
         {/* Sidebar */}
         <div className="lg:col-span-1">
-          <div style={{ background: '#fff', border: '1px solid var(--arvo-border)', borderRadius: 14, padding: '16px 18px' }}>
+          <div style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', borderRadius: 14, padding: '16px 18px' }}>
             <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 10, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)', marginBottom: 12 }}>
               Filtrar por dia
             </p>

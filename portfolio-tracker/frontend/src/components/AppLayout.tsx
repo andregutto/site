@@ -300,7 +300,9 @@ export default function AppLayout() {
             <span style={{ fontFamily: "var(--arvo-font-display)", fontSize: 16, letterSpacing: '0.30em', textIndent: '0.30em', color: 'var(--arvo-fg)', lineHeight: 1 }}>arvo</span>
           </Link>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, paddingLeft: 14, borderLeft: '1px solid var(--arvo-border)', height: 24 }}>
-            <span style={{ fontFamily: "var(--arvo-font-display)", fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)', lineHeight: 1 }}>Capital</span>
+            <span style={{ fontFamily: "var(--arvo-font-display)", fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: inVoyage ? '#D63B2F' : 'var(--arvo-fg-soft)', lineHeight: 1, transition: 'color 280ms' }}>
+              {inVoyage ? 'Voyage' : 'Capital'}
+            </span>
           </div>
 
           {/* Desktop — three section tabs (pill style) */}
@@ -309,7 +311,6 @@ export default function AppLayout() {
               { to: '/dashboard',    label: t.nav.investments,                         active: inInvestimentos },
               { to: '/finances',     label: t.nav.finances,                            active: inFinances },
               { to: '/voyage',       label: (t as any).nav?.voyage ?? 'Viagens',       active: inVoyage },
-              { to: '/institutions', label: t.nav.institutions,                        active: inInstitutions },
             ] as Array<{ to: string; label: string; active: boolean }>).map(({ to, label, active }) => (
               <NavLink
                 key={to} to={to}
@@ -475,6 +476,12 @@ export default function AppLayout() {
                       <path strokeLinecap="round" strokeLinejoin="round" d="M2 4.5h12v1.5H2zM3.5 6v7h9V6M6 9h4"/>
                     </svg>
                     {t.nav.archived}
+                  </Link>
+                  <Link to="/institutions" onClick={() => setShowUserMenu(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors" style={{ color: 'var(--arvo-fg-muted)' }} onMouseEnter={e => (e.currentTarget.style.background='var(--arvo-hover-bg)')} onMouseLeave={e => (e.currentTarget.style.background='')}>
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4 shrink-0">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M2 14V6l6-4.5L14 6v8H2zM6 14V9h4v5"/>
+                    </svg>
+                    {t.nav.institutions}
                   </Link>
                   <Link to="/profile" onClick={() => setShowUserMenu(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors" style={{ color: 'var(--arvo-fg-muted)' }} onMouseEnter={e => (e.currentTarget.style.background='var(--arvo-hover-bg)')} onMouseLeave={e => (e.currentTarget.style.background='')}>
                     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4 shrink-0">

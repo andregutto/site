@@ -78,7 +78,7 @@ function TakeoutImporter({ onImported }: { onImported: () => void }) {
   }
 
   return (
-    <div style={{ background: '#fff', border: '1px solid var(--arvo-border)', borderRadius: 14, padding: '20px 22px' }}>
+    <div style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', borderRadius: 14, padding: '20px 22px' }}>
       <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 10, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)', marginBottom: 4 }}>
         Importar Google Takeout
       </p>
@@ -154,7 +154,7 @@ function PlaceCard({ place, onDelete }: { place: Place; onDelete: (id: number) =
   }
 
   return (
-    <div style={{ background: '#fff', border: '1px solid var(--arvo-border)', borderRadius: 10, padding: '12px 14px', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+    <div style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', borderRadius: 10, padding: '12px 14px', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
       <span style={{ fontSize: 20, flexShrink: 0, marginTop: 1 }}>{categoryIcon(place.category)}</span>
       <div style={{ flex: 1, minWidth: 0 }}>
         <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg)', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -240,14 +240,11 @@ export default function VoyagePlacesPage() {
       {/* Header */}
       <div style={{ marginBottom: 24 }}>
         <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 10, letterSpacing: '0.30em', textTransform: 'uppercase', color: RED, marginBottom: 6 }}>
-          ◈ ARVO VOYAGE
+          ARVO VOYAGE
         </p>
-        <h1 style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 24, letterSpacing: '0.06em', color: 'var(--arvo-fg)', marginBottom: 4 }}>
+        <h1 style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 24, letterSpacing: '0.06em', color: 'var(--arvo-fg)' }}>
           Lugares
         </h1>
-        <p style={{ fontFamily: 'var(--arvo-font-serif)', fontStyle: 'italic', fontSize: 13, color: GOLD }}>
-          Sua biblioteca pessoal de lugares do Google Maps
-        </p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
@@ -257,7 +254,7 @@ export default function VoyagePlacesPage() {
 
           {/* Filters */}
           {places.length > 0 && (
-            <div style={{ background: '#fff', border: '1px solid var(--arvo-border)', borderRadius: 14, padding: '16px 18px' }}>
+            <div style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', borderRadius: 14, padding: '16px 18px' }}>
               <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 10, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)', marginBottom: 12 }}>
                 Filtros
               </p>
@@ -266,7 +263,7 @@ export default function VoyagePlacesPage() {
                 placeholder="Buscar por nome…"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                style={{ width: '100%', padding: '7px 10px', borderRadius: 3, border: '1px solid var(--arvo-border)', fontFamily: 'var(--arvo-font-body)', fontSize: 13, marginBottom: 8, background: '#fff', color: 'var(--arvo-fg)', outline: 'none' }}
+                style={{ width: '100%', padding: '7px 10px', borderRadius: 3, border: '1px solid var(--arvo-border)', fontFamily: 'var(--arvo-font-body)', fontSize: 13, marginBottom: 8, background: 'var(--arvo-surface)', color: 'var(--arvo-fg)', outline: 'none' }}
               />
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                 <button
@@ -299,7 +296,10 @@ export default function VoyagePlacesPage() {
             </div>
           ) : filtered.length === 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 280, gap: 12 }}>
-              <span style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 48, color: 'rgba(200,184,154,0.20)' }}>◈</span>
+              <svg width="40" height="40" viewBox="0 0 40 40" fill="none" stroke="rgba(200,184,154,0.35)" strokeWidth="1.5" style={{ marginBottom: 4 }}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M20 4C13.4 4 8 9.4 8 16c0 9 12 20 12 20s12-11 12-20c0-6.6-5.4-12-12-12z"/>
+                <circle cx="20" cy="16" r="4"/>
+              </svg>
               <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 15, letterSpacing: '0.06em', color: 'var(--arvo-fg-muted)' }}>
                 {places.length === 0 ? 'Nenhum lugar na biblioteca' : 'Nenhum resultado'}
               </p>

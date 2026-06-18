@@ -40,7 +40,7 @@ function TripCard({ trip, onClick, t }: { trip: Trip; onClick: () => void; t: an
     <button
       onClick={onClick}
       className="w-full text-left rounded-[14px] overflow-hidden transition-all duration-[280ms]"
-      style={{ background: '#fff', border: '1px solid var(--arvo-border)', cursor: 'pointer' }}
+      style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', cursor: 'pointer' }}
       onMouseEnter={e => (e.currentTarget.style.boxShadow = 'var(--arvo-shadow-md)')}
       onMouseLeave={e => (e.currentTarget.style.boxShadow = 'none')}
     >
@@ -55,7 +55,10 @@ function TripCard({ trip, onClick, t }: { trip: Trip; onClick: () => void; t: an
           />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #1a1a18 0%, #2a2820 100%)' }}>
-            <span style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 48, color: 'rgba(200,184,154,0.15)', letterSpacing: '0.1em' }}>◈</span>
+            <svg width="36" height="36" viewBox="0 0 36 36" fill="none" stroke="rgba(200,184,154,0.18)" strokeWidth="1.2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M2 26l8-16 10 8 8-13 8 7"/>
+              <path strokeLinecap="round" d="M2 32h32"/>
+            </svg>
           </div>
         )}
         {/* gradient protection */}
@@ -131,28 +134,34 @@ export default function VoyageTripsPage() {
       <div className="flex items-start justify-between mb-6 gap-4">
         <div>
           <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 10, letterSpacing: '0.30em', textTransform: 'uppercase', color: RED, marginBottom: 6 }}>
-            ◈ ARVO VOYAGE
+            ARVO VOYAGE
           </p>
           <h1 style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 28, letterSpacing: '0.08em', color: 'var(--arvo-fg)' }}>
             {tv.title ?? 'Viagens'}
           </h1>
-          <p style={{ fontFamily: 'var(--arvo-font-serif)', fontStyle: 'italic', fontSize: 14, color: GOLD, marginTop: 4 }}>
-            {tv.subtitle ?? 'Suas viagens e experiências'}
-          </p>
         </div>
-        <button
-          onClick={() => setShowForm(true)}
-          style={{
-            fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, letterSpacing: '0.08em',
-            padding: '8px 18px', borderRadius: 8,
-            background: RED, color: '#fff', border: 'none', cursor: 'pointer',
-            transition: 'all 160ms ease', flexShrink: 0,
-          }}
-          onMouseEnter={e => (e.currentTarget.style.opacity = '0.85')}
-          onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
-        >
-          {tv.addTrip ?? 'Adicionar viagem'}
-        </button>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8, flexShrink: 0 }}>
+          <button
+            onClick={() => setShowForm(true)}
+            style={{
+              fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, letterSpacing: '0.08em',
+              padding: '8px 18px', borderRadius: 8,
+              background: RED, color: '#fff', border: 'none', cursor: 'pointer',
+              transition: 'all 160ms ease',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.opacity = '0.85')}
+            onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+          >
+            {tv.addTrip ?? 'Adicionar viagem'}
+          </button>
+          <a
+            href="/finances/moments"
+            onClick={e => { e.preventDefault(); navigate('/finances/moments') }}
+            style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-muted)', textDecoration: 'none', letterSpacing: '0.02em' }}
+          >
+            ou a partir de um momento →
+          </a>
+        </div>
       </div>
 
       {/* Grid */}
@@ -163,12 +172,16 @@ export default function VoyageTripsPage() {
           ))}
         </div>
       ) : trips.length === 0 ? (
-        <div className="flex flex-col items-center justify-center" style={{ minHeight: 320 }}>
-          <span style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 64, color: 'rgba(200,184,154,0.15)', letterSpacing: '0.1em', marginBottom: 24 }}>◈</span>
-          <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 16, letterSpacing: '0.06em', color: 'var(--arvo-fg-muted)', marginBottom: 8 }}>
+        <div className="flex flex-col items-center justify-center" style={{ minHeight: 320, gap: 16 }}>
+          <svg width="56" height="56" viewBox="0 0 56 56" fill="none" stroke="rgba(200,184,154,0.30)" strokeWidth="1.5" style={{ marginBottom: 8 }}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4 38l12-24 16 12 12-20 12 10"/>
+            <path strokeLinecap="round" d="M4 50h48"/>
+            <circle cx="28" cy="16" r="4" strokeWidth="1.2"/>
+          </svg>
+          <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 22, letterSpacing: '0.06em', color: 'var(--arvo-fg-muted)', textAlign: 'center' }}>
             {tv.emptyTitle ?? 'Nenhuma viagem ainda'}
           </p>
-          <p style={{ fontFamily: 'var(--arvo-font-serif)', fontStyle: 'italic', fontSize: 13, color: GOLD }}>
+          <p style={{ fontFamily: 'var(--arvo-font-serif)', fontStyle: 'italic', fontSize: 16, color: GOLD, textAlign: 'center' }}>
             {tv.emptyBody ?? 'Que tal planejar a primeira?'}
           </p>
         </div>
