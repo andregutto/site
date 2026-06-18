@@ -107,7 +107,19 @@ export default function DashboardPage() {
     setShareSuccess(false)
     try {
       const r = await apiFetch<{ token: string; show_values: boolean; hide_holdings: boolean; updated_at: string }>('/portfolio/share-link', {
-        method: 'POST', body: JSON.stringify({ show_values: shareShowValues, hide_holdings: shareHideHoldings, period: sharePeriod, display_currency: currency }),
+        method: 'POST', body: JSON.stringify({
+          show_values: shareShowValues, hide_holdings: shareHideHoldings, period: sharePeriod, display_currency: currency,
+          portfolio_value: data ? {
+            total_brl: data.total_brl,
+            by_asset: data.by_asset.map(a => ({
+              id: a.id, code: a.code, name: a.name,
+              value_brl: a.value_brl, currency: a.currency,
+              class_name: a.class_name, class_name_key: a.class_name_key ?? null, class_color: a.class_color,
+              exchange: a.exchange ?? null, source: a.source, invested_brl: a.invested_brl ?? null,
+            })),
+            by_class: data.by_class,
+          } : undefined,
+        }),
       })
       setShareLink(r)
       setShareSuccess(true)

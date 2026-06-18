@@ -682,16 +682,20 @@ function computePortfolioCum(monthly: MonthlyPoint[]): number[] {
 }
 
 export async function buildPortfolioSnapshot(
-  userId: string, displayCurrency = 'BRL', period: 'inception' | '12m' | 'ytd' = 'inception'
+  userId: string, displayCurrency = 'BRL', period: 'inception' | '12m' | 'ytd' = 'inception',
+  precomputedValue?: { total_brl: number; by_asset: ByAssetValue[]; by_class: { name: string; name_key?: string | null; color: string; value_brl: number; pct?: number }[] }
 ): Promise<PortfolioSnapshot> {
   const toStr = localYM(new Date())
 
-  const [result, inception, sectorMap, classRowsRes] = await Promise.all([
-    computePortfolioValue(userId),
+  const [maybeResult, inception, sectorMap, classRowsRes] = await Promise.all([
+    precomputedValue ? Promise.resolve(null) : computePortfolioValue(userId),
     computeInception(userId),
     getSectorMap(userId),
     supabaseAdmin.from('asset_classes').select('name, target_pct').eq('user_id', userId),
   ])
+
+  // Use precomputed value if provided (avoids duplicate price fetching vs dashboard)
+  const result = (precomputedValue ?? maybeResult)!
 
   const targetMap = new Map(
     ((classRowsRes.data ?? []) as Array<{ name: string; target_pct: number | null }>)

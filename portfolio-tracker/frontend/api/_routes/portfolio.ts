@@ -568,8 +568,8 @@ router.get('/share-link', requireAuth, async (req, res: Response) => {
 // POST /api/portfolio/share-link — create or update, always refresh snapshot
 router.post('/share-link', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
-  const { show_values = false, hide_holdings = false, label = null, display_currency = 'BRL', period = 'inception' } = req.body ?? {}
-  const snapshot = await buildPortfolioSnapshot(userId, display_currency, period)
+  const { show_values = false, hide_holdings = false, label = null, display_currency = 'BRL', period = 'inception', portfolio_value } = req.body ?? {}
+  const snapshot = await buildPortfolioSnapshot(userId, display_currency, period, portfolio_value ?? undefined)
 
   const { data: existing } = await supabaseAdmin
     .from('portfolio_shares').select('id, token').eq('user_id', userId).maybeSingle()
