@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { apiFetch } from '../lib/api'
 
 const RED  = '#D63B2F'
 const GOLD = '#C8B89A'
 
-interface Context {
+interface TripContext {
   type: 'voyage_trip'
   trip_id: number
   trip_title: string
@@ -12,6 +13,16 @@ interface Context {
   member_id: number
   member_status: 'active' | 'pending'
 }
+
+interface FinanceContext {
+  type: 'shared_finance'
+  group_id: number
+  group_name: string
+  member_id: number
+  member_status: 'active' | 'pending'
+}
+
+type Context = TripContext | FinanceContext
 
 interface Contact {
   email: string
@@ -30,41 +41,45 @@ function initials(email: string): string {
 
 function RoleChip({ role }: { role: string }) {
   const label = role === 'editor' ? 'Editor' : 'Leitor'
-  const color = role === 'editor' ? '#1B4FD8' : 'var(--arvo-fg-muted)'
-  const bg    = role === 'editor' ? 'rgba(27,79,216,0.08)' : 'var(--arvo-hover-bg)'
+  const isEditor = role === 'editor'
   return (
     <span style={{
       fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.18em',
       textTransform: 'uppercase', padding: '2px 8px', borderRadius: 999,
-      background: bg, color, border: `1px solid ${role === 'editor' ? 'rgba(27,79,216,0.18)' : 'var(--arvo-border)'}`,
+      background: isEditor ? 'rgba(27,79,216,0.08)' : 'var(--arvo-hover-bg)',
+      color: isEditor ? '#1B4FD8' : 'var(--arvo-fg-muted)',
+      border: `1px solid ${isEditor ? 'rgba(27,79,216,0.18)' : 'var(--arvo-border)'}`,
     }}>
       {label}
     </span>
   )
 }
 
-function ContactCard({ contact, onRemoved }: { contact: Contact; onRemoved: (memberId: number) => void }) {
+function ContactCard({ contact, onRemoved }: { contact: Contact; onRemoved: (memberId: number, type: string) => void }) {
+  const navigate = useNavigate()
   const [removing, setRemoving] = useState<number | null>(null)
 
-  async function remove(ctx: Context) {
+  async function removeTrip(ctx: TripContext) {
     if (!confirm(`Remover acesso de ${contact.email} à viagem "${ctx.trip_title}"?`)) return
     setRemoving(ctx.member_id)
     try {
       await apiFetch(`/api/voyage/trips/${ctx.trip_id}/members/${ctx.member_id}`, { method: 'DELETE' })
-      onRemoved(ctx.member_id)
+      onRemoved(ctx.member_id, 'voyage_trip')
     } finally {
       setRemoving(null)
     }
   }
 
   const isActive = contact.status === 'active'
+  const tripContexts    = contact.contexts.filter((c): c is TripContext    => c.type === 'voyage_trip')
+  const financeContexts = contact.contexts.filter((c): c is FinanceContext => c.type === 'shared_finance')
 
   return (
     <div style={{
       background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)',
       borderRadius: 14, padding: '20px 22px',
     }}>
-      {/* Header do contato */}
+      {/* Cabeçalho */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16 }}>
         <div style={{
           width: 44, height: 44, borderRadius: '50%', flexShrink: 0,
@@ -89,63 +104,111 @@ function ContactCard({ contact, onRemoved }: { contact: Contact; onRemoved: (mem
         </div>
         <span style={{
           fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.20em',
-          textTransform: 'uppercase', padding: '3px 10px', borderRadius: 999,
+          textTransform: 'uppercase', padding: '3px 10px', borderRadius: 999, flexShrink: 0,
           background: isActive ? 'rgba(31,138,91,0.10)' : 'rgba(200,184,154,0.12)',
           color: isActive ? '#1F8A5B' : GOLD,
           border: `1px solid ${isActive ? 'rgba(31,138,91,0.20)' : 'rgba(200,184,154,0.25)'}`,
-          flexShrink: 0,
         }}>
           {isActive ? 'Ativo' : 'Pendente'}
         </span>
       </div>
 
-      {/* Contextos */}
-      <div style={{ borderTop: '1px solid var(--arvo-border-soft)', paddingTop: 14, display: 'flex', flexDirection: 'column', gap: 0 }}>
-        <p style={{
-          fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.22em',
-          textTransform: 'uppercase', color: 'var(--arvo-fg-muted)', marginBottom: 10,
-        }}>
-          Viagens compartilhadas
-        </p>
-        {contact.contexts.map(ctx => (
-          <div key={ctx.member_id} style={{
-            display: 'flex', alignItems: 'center', gap: 10,
-            padding: '8px 0', borderBottom: '1px solid var(--arvo-border-soft)',
+      {/* Viagens */}
+      {tripContexts.length > 0 && (
+        <div style={{ borderTop: '1px solid var(--arvo-border-soft)', paddingTop: 14, marginBottom: financeContexts.length > 0 ? 14 : 0 }}>
+          <p style={{
+            fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.22em',
+            textTransform: 'uppercase', color: 'var(--arvo-fg-muted)', marginBottom: 10,
           }}>
-            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="var(--arvo-fg-muted)" strokeWidth="1.5">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M1 11.5l3-7 4 3 3-5 4 3"/>
-              <path strokeLinecap="round" d="M1 14.5h14"/>
-            </svg>
-            <span style={{
-              fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg)',
-              flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+            Viagens
+          </p>
+          {tripContexts.map(ctx => (
+            <div key={ctx.member_id} style={{
+              display: 'flex', alignItems: 'center', gap: 10,
+              padding: '8px 0', borderBottom: '1px solid var(--arvo-border-soft)',
             }}>
-              {ctx.trip_title}
-            </span>
-            <RoleChip role={ctx.role} />
-            {ctx.member_status === 'pending' && (
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="var(--arvo-fg-muted)" strokeWidth="1.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M1 11.5l3-7 4 3 3-5 4 3"/>
+                <path strokeLinecap="round" d="M1 14.5h14"/>
+              </svg>
               <span style={{
-                fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.16em',
-                textTransform: 'uppercase', color: GOLD,
+                fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg)',
+                flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
               }}>
-                pendente
+                {ctx.trip_title}
               </span>
-            )}
-            <button
-              type="button"
-              onClick={() => remove(ctx)}
-              disabled={removing === ctx.member_id}
-              style={{
-                fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: RED,
-                background: 'none', border: 'none', cursor: 'pointer',
-                opacity: removing === ctx.member_id ? 0.4 : 1, padding: '2px 0', flexShrink: 0,
-              }}
-            >
-              {removing === ctx.member_id ? '…' : 'Remover'}
-            </button>
-          </div>
-        ))}
-      </div>
+              <RoleChip role={ctx.role} />
+              {ctx.member_status === 'pending' && (
+                <span style={{
+                  fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.16em',
+                  textTransform: 'uppercase', color: GOLD,
+                }}>
+                  pendente
+                </span>
+              )}
+              <button
+                type="button"
+                onClick={() => removeTrip(ctx)}
+                disabled={removing === ctx.member_id}
+                style={{
+                  fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: RED,
+                  background: 'none', border: 'none', cursor: 'pointer', flexShrink: 0,
+                  opacity: removing === ctx.member_id ? 0.4 : 1, padding: '2px 0',
+                }}
+              >
+                {removing === ctx.member_id ? '…' : 'Remover'}
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Finanças compartilhadas */}
+      {financeContexts.length > 0 && (
+        <div style={{ borderTop: '1px solid var(--arvo-border-soft)', paddingTop: 14 }}>
+          <p style={{
+            fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.22em',
+            textTransform: 'uppercase', color: 'var(--arvo-fg-muted)', marginBottom: 10,
+          }}>
+            Finanças
+          </p>
+          {financeContexts.map(ctx => (
+            <div key={ctx.member_id} style={{
+              display: 'flex', alignItems: 'center', gap: 10,
+              padding: '8px 0', borderBottom: '1px solid var(--arvo-border-soft)',
+            }}>
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="var(--arvo-fg-muted)" strokeWidth="1.5">
+                <circle cx="8" cy="8" r="6.5"/>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8 5v6M6 7h3a1 1 0 010 2H6"/>
+              </svg>
+              <span style={{
+                fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg)',
+                flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+              }}>
+                {ctx.group_name}
+              </span>
+              {ctx.member_status === 'pending' && (
+                <span style={{
+                  fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.16em',
+                  textTransform: 'uppercase', color: GOLD,
+                }}>
+                  pendente
+                </span>
+              )}
+              <button
+                type="button"
+                onClick={() => navigate('/finances/shared')}
+                style={{
+                  fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-muted)',
+                  background: 'none', border: 'none', cursor: 'pointer', flexShrink: 0, padding: '2px 0',
+                }}
+              >
+                Gerir →
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
@@ -217,7 +280,6 @@ export default function PeoplePage() {
         )}
       </div>
 
-      {/* Content */}
       {loading ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {[1, 2].map(i => (
@@ -235,7 +297,7 @@ export default function PeoplePage() {
           <svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="rgba(200,184,154,0.30)" strokeWidth="1.4">
             <circle cx="19" cy="17" r="7"/>
             <path strokeLinecap="round" d="M4 42c0-8.3 6.7-15 15-15"/>
-            <path strokeLinecap="round" d="M34 28a6 6 0 1 1 0-12 6 6 0 0 1 0 12z"/>
+            <circle cx="34" cy="19" r="5.5"/>
             <path strokeLinecap="round" d="M44 42c0-5.5-4.5-10-10-10"/>
           </svg>
           <p style={{
@@ -248,7 +310,7 @@ export default function PeoplePage() {
             fontFamily: 'var(--arvo-font-serif)', fontStyle: 'italic', fontSize: 14,
             color: GOLD, textAlign: 'center', maxWidth: 300, lineHeight: 1.6,
           }}>
-            Convide pessoas para suas viagens — elas aparecerão aqui.
+            Convide pessoas para suas viagens ou compartilhe categorias de finanças.
           </p>
         </div>
       ) : (
@@ -263,12 +325,10 @@ export default function PeoplePage() {
         </div>
       )}
 
-      {/* Future messaging notice */}
       {contacts.length > 0 && (
         <div style={{
           marginTop: 28, padding: '14px 18px', borderRadius: 10,
-          border: '1px solid var(--arvo-border-soft)',
-          background: 'var(--arvo-hover-bg)',
+          border: '1px solid var(--arvo-border-soft)', background: 'var(--arvo-hover-bg)',
           display: 'flex', alignItems: 'center', gap: 10,
         }}>
           <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="var(--arvo-fg-muted)" strokeWidth="1.5">

@@ -10,14 +10,13 @@ function uid(req: Parameters<typeof requireAuth>[0]): string {
 }
 
 // ── GET /api/people ────────────────────────────────────────────────────────────
-// Retorna todos os contatos do usuário, derivados dos contextos de compartilhamento.
-// V1: apenas outbound (pessoas convidadas para viagens do usuário).
-// Futuramente: finance shared, inbound (viagens de outros das quais é membro).
 router.get('/', async (req: any, res: any) => {
   const userId = uid(req)
 
   try {
-    // 1. Viagens que o usuário é dono
+    const contactMap = new Map<string, any>()
+
+    // ── 1. Viagens que o usuário é dono ────────────────────────────────────────
     const { data: ownedTrips, error: tripErr } = await supabaseAdmin
       .from('voyage_trips')
       .select('id, title')
@@ -31,39 +30,69 @@ router.get('/', async (req: any, res: any) => {
       (ownedTrips ?? []).map((t: any) => [t.id, t.title])
     )
 
-    // 2. Membros dessas viagens
-    let members: any[] = []
     if (tripIds.length > 0) {
-      const { data, error } = await supabaseAdmin
+      const { data: members, error: memErr } = await supabaseAdmin
         .from('voyage_members')
         .select('id, email, role, status, user_id, trip_id')
         .in('trip_id', tripIds)
         .order('email')
-      if (error) throw error
-      members = data ?? []
-    }
+      if (memErr) throw memErr
 
-    // 3. Agrupa por e-mail para montar contatos
-    const contactMap = new Map<string, any>()
-    for (const m of members) {
-      if (!contactMap.has(m.email)) {
-        contactMap.set(m.email, {
-          email: m.email,
-          user_id: m.user_id ?? null,
-          status: 'pending',
-          contexts: [],
+      for (const m of members ?? []) {
+        if (!m.email) continue
+        if (!contactMap.has(m.email)) {
+          contactMap.set(m.email, { email: m.email, user_id: m.user_id ?? null, status: 'pending', contexts: [] })
+        }
+        const c = contactMap.get(m.email)!
+        if (m.status === 'active') c.status = 'active'
+        c.contexts.push({
+          type: 'voyage_trip',
+          trip_id: m.trip_id,
+          trip_title: tripMap[m.trip_id] ?? '',
+          role: m.role,
+          member_id: m.id,
+          member_status: m.status,
         })
       }
-      const contact = contactMap.get(m.email)!
-      if (m.status === 'active') contact.status = 'active'
-      contact.contexts.push({
-        type: 'voyage_trip',
-        trip_id: m.trip_id,
-        trip_title: tripMap[m.trip_id] ?? '',
-        role: m.role,
-        member_id: m.id,
-        member_status: m.status,
-      })
+    }
+
+    // ── 2. Grupos de finanças compartilhadas criados pelo usuário ──────────────
+    const { data: ownedGroups, error: groupErr } = await supabaseAdmin
+      .from('shared_groups')
+      .select('id, name')
+      .eq('created_by', userId)
+
+    if (groupErr) throw groupErr
+
+    const groupIds = (ownedGroups ?? []).map((g: any) => g.id)
+    const groupMap: Record<number, string> = Object.fromEntries(
+      (ownedGroups ?? []).map((g: any) => [g.id, g.name])
+    )
+
+    if (groupIds.length > 0) {
+      const { data: gMembers, error: gmErr } = await supabaseAdmin
+        .from('shared_group_members')
+        .select('id, group_id, user_id, invite_email, status')
+        .in('group_id', groupIds)
+        .not('invite_email', 'is', null) // exclui o próprio criador (auto-join sem invite_email)
+      if (gmErr) throw gmErr
+
+      for (const m of gMembers ?? []) {
+        const email: string = m.invite_email
+        if (!email) continue
+        if (!contactMap.has(email)) {
+          contactMap.set(email, { email, user_id: m.user_id ?? null, status: 'pending', contexts: [] })
+        }
+        const c = contactMap.get(email)!
+        if (m.status === 'active') c.status = 'active'
+        c.contexts.push({
+          type: 'shared_finance',
+          group_id: m.group_id,
+          group_name: groupMap[m.group_id] ?? '',
+          member_id: m.id,
+          member_status: m.status,
+        })
+      }
     }
 
     res.json({ contacts: Array.from(contactMap.values()) })

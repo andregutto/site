@@ -642,9 +642,12 @@ export default function AppLayout() {
                 <circle cx="12" cy="9" r="2.5"/>
               </svg>
             )},
-            { to: '/institutions', label: t.nav.institutions, match: inInstitutions, accent: '#1F8A5B', icon: (
+            { to: '/people', label: 'Pessoas', match: location.pathname === '/people', accent: '#1F8A5B', icon: (
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.008v.008h-.008v-.008Zm0 3h.008v.008h-.008v-.008Zm0 3h.008v.008h-.008v-.008Z" />
+                <circle cx="9" cy="8" r="3.75"/>
+                <path strokeLinecap="round" d="M2 21c0-4.2 3.1-7.5 7-7.5"/>
+                <circle cx="18" cy="9" r="3"/>
+                <path strokeLinecap="round" d="M24 21c0-3.3-2.7-6-6-6"/>
               </svg>
             )},
           ].map(({ to, label, match, icon }) => (
