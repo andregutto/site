@@ -412,6 +412,137 @@ router.get('/moments-for-picker', requireAuth, async (req, res: Response) => {
   res.json({ moments: data ?? [] })
 })
 
+// ── GET /api/voyage/trips/:id/members  ───────────────────────────────────────
+router.get('/trips/:id/members', requireAuth, async (req, res: Response) => {
+  const userId = uid(req)
+  const tripId = Number(req.params.id)
+
+  const { data: trip } = await supabaseAdmin
+    .from('voyage_trips').select('user_id').eq('id', tripId).single()
+  if (!trip) { res.status(404).json({ error: 'Viagem não encontrada' }); return }
+
+  const isOwner = trip.user_id === userId
+  const { data: myMember } = !isOwner
+    ? await supabaseAdmin.from('voyage_trip_members')
+        .select('id').eq('trip_id', tripId).eq('user_id', userId).eq('status', 'active').single()
+    : { data: true }
+  if (!myMember) { res.status(403).json({ error: 'Sem acesso' }); return }
+
+  const { data: members } = await supabaseAdmin
+    .from('voyage_trip_members')
+    .select('id, user_id, invite_email, role, status, joined_at, created_at')
+    .eq('trip_id', tripId)
+    .order('created_at')
+
+  const enriched = await Promise.all((members ?? []).map(async m => {
+    if (!m.user_id) return { ...m, display: { name: m.invite_email, email: m.invite_email } }
+    const d = await userDisplay(m.user_id)
+    return { ...m, display: d }
+  }))
+
+  res.json({ members: enriched })
+})
+
+// ── POST /api/voyage/trips/:id/invite  (convidar por e-mail) ─────────────────
+router.post('/trips/:id/invite', requireAuth, async (req, res: Response) => {
+  const userId = uid(req)
+  const tripId = Number(req.params.id)
+  const { email, role = 'editor' } = req.body as { email: string; role?: string }
+
+  if (!email?.includes('@')) { res.status(400).json({ error: 'E-mail inválido' }); return }
+
+  const { data: trip } = await supabaseAdmin
+    .from('voyage_trips').select('user_id, title').eq('id', tripId).single()
+  if (!trip) { res.status(404).json({ error: 'Viagem não encontrada' }); return }
+
+  const isOwner = trip.user_id === userId
+  const { data: myMember } = !isOwner
+    ? await supabaseAdmin.from('voyage_trip_members')
+        .select('id, role').eq('trip_id', tripId).eq('user_id', userId).eq('status', 'active').single()
+    : { data: { role: 'owner' } }
+  if (!myMember || !['owner', 'editor'].includes((myMember as any).role)) {
+    res.status(403).json({ error: 'Sem permissão para convidar' }); return
+  }
+
+  const { data: authList } = await supabaseAdmin.auth.admin.listUsers()
+  const targetUser = authList?.users?.find(u => u.email === email)
+
+  if (targetUser) {
+    const { data: existing } = await supabaseAdmin
+      .from('voyage_trip_members')
+      .select('id, status').eq('trip_id', tripId).eq('user_id', targetUser.id).single()
+    if (existing?.status === 'active') {
+      res.status(409).json({ error: 'Já é membro desta viagem' }); return
+    }
+  }
+
+  await supabaseAdmin
+    .from('voyage_trip_members')
+    .delete()
+    .eq('trip_id', tripId).eq('invite_email', email).eq('status', 'pending')
+
+  const token = randomBytes(24).toString('hex')
+  const expires = new Date(Date.now() + 7 * 24 * 3600 * 1000).toISOString()
+
+  const { error } = await supabaseAdmin.from('voyage_trip_members').insert({
+    trip_id: tripId,
+    user_id: targetUser?.id ?? null,
+    invite_email: email,
+    invite_token: token,
+    invite_expires_at: expires,
+    role,
+    status: 'pending',
+  })
+  if (error) { res.status(500).json({ error: error.message }); return }
+
+  const baseUrl = process.env.FRONTEND_ORIGIN?.split(',')[0] ?? 'https://arvo.andregutto.com'
+  res.json({ token, invite_url: `${baseUrl}/voyage/invite/${token}` })
+})
+
+// ── PATCH /api/voyage/trips/:id/members/:memberId  (alterar role) ────────────
+router.patch('/trips/:id/members/:memberId', requireAuth, async (req, res: Response) => {
+  const userId = uid(req)
+  const tripId = Number(req.params.id)
+  const memberId = Number(req.params.memberId)
+  const { role } = req.body as { role: string }
+
+  const { data: trip } = await supabaseAdmin
+    .from('voyage_trips').select('user_id').eq('id', tripId).single()
+  if (!trip || trip.user_id !== userId) {
+    res.status(403).json({ error: 'Apenas o owner pode alterar roles' }); return
+  }
+
+  await supabaseAdmin
+    .from('voyage_trip_members')
+    .update({ role })
+    .eq('id', memberId).eq('trip_id', tripId)
+
+  res.json({ ok: true })
+})
+
+// ── DELETE /api/voyage/trips/:id/members/:memberId  (remover membro) ─────────
+router.delete('/trips/:id/members/:memberId', requireAuth, async (req, res: Response) => {
+  const userId = uid(req)
+  const tripId = Number(req.params.id)
+  const memberId = Number(req.params.memberId)
+
+  const { data: trip } = await supabaseAdmin
+    .from('voyage_trips').select('user_id').eq('id', tripId).single()
+  const { data: member } = await supabaseAdmin
+    .from('voyage_trip_members').select('user_id').eq('id', memberId).single()
+
+  const isOwner = trip?.user_id === userId
+  const isSelf = member?.user_id === userId
+  if (!isOwner && !isSelf) { res.status(403).json({ error: 'Sem permissão' }); return }
+
+  await supabaseAdmin
+    .from('voyage_trip_members')
+    .delete()
+    .eq('id', memberId).eq('trip_id', tripId)
+
+  res.json({ ok: true })
+})
+
 // ── GET /api/voyage/invite/:token  (preview público do convite) ───────────────
 router.get('/invite/:token', async (req, res: Response) => {
   const { token } = req.params

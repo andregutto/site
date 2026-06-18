@@ -1,9 +1,11 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { apiFetch } from '../../lib/api'
+import { useAuth } from '../../contexts/AuthContext'
 import { useI18n } from '../../contexts/I18nContext'
 import TripFormModal from './TripFormModal'
 import CostCard from './CostCard'
+import MembersPanel from './MembersPanel'
 import type { Trip, TripCost, TripMember } from './types'
 
 const RED = '#D63B2F'
@@ -36,6 +38,7 @@ interface TripDetail {
 export default function VoyageTripDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const { user } = useAuth()
   const { t } = useI18n()
   const tv = (t as any).voyage ?? {}
 
@@ -197,6 +200,12 @@ export default function VoyageTripDetailPage() {
               </p>
             </div>
           </div>
+
+          {/* Members panel */}
+          <MembersPanel
+            tripId={Number(id)}
+            isOwner={trip.user_id === user?.id}
+          />
         </div>
       </div>
 
