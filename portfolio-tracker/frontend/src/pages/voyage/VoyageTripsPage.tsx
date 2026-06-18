@@ -146,35 +146,19 @@ export default function VoyageTripsPage() {
             {tv.title ?? 'Viagens'}
           </h1>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8, flexShrink: 0 }}>
-          <button
-            onClick={() => setShowForm(true)}
-            style={{
-              fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, letterSpacing: '0.08em',
-              padding: '8px 18px', borderRadius: 8,
-              background: RED, color: '#fff', border: 'none', cursor: 'pointer',
-              transition: 'all 160ms ease',
-            }}
-            onMouseEnter={e => (e.currentTarget.style.opacity = '0.85')}
-            onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
-          >
-            {tv.addTrip ?? 'Adicionar viagem'}
-          </button>
-          <button
-            onClick={() => setShowMomentPicker(true)}
-            style={{
-              fontFamily: 'var(--arvo-font-body)', fontSize: 11, letterSpacing: '0.04em',
-              padding: '5px 12px', borderRadius: 6,
-              background: 'transparent', color: 'var(--arvo-fg-muted)',
-              border: '1px solid var(--arvo-border)', cursor: 'pointer',
-              transition: 'all 160ms ease',
-            }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--arvo-fg-muted)'; e.currentTarget.style.color = 'var(--arvo-fg)' }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--arvo-border)'; e.currentTarget.style.color = 'var(--arvo-fg-muted)' }}
-          >
-            A partir de um momento
-          </button>
-        </div>
+        <button
+          onClick={() => setShowForm(true)}
+          style={{
+            fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, letterSpacing: '0.08em',
+            padding: '8px 18px', borderRadius: 8,
+            background: RED, color: '#fff', border: 'none', cursor: 'pointer',
+            transition: 'all 160ms ease', flexShrink: 0,
+          }}
+          onMouseEnter={e => (e.currentTarget.style.opacity = '0.85')}
+          onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+        >
+          {tv.addTrip ?? 'Adicionar viagem'}
+        </button>
       </div>
 
       {/* Filter pills */}
@@ -248,6 +232,7 @@ export default function VoyageTripsPage() {
         <TripFormModal
           onClose={() => setShowForm(false)}
           onSaved={() => { setShowForm(false); load() }}
+          onFromMoment={() => { setShowForm(false); setShowMomentPicker(true) }}
         />
       )}
 

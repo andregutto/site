@@ -9,6 +9,7 @@ interface Props {
   trip?: Trip
   onClose: () => void
   onSaved: (trip: Trip) => void
+  onFromMoment?: () => void
 }
 
 export default function TripFormModal({ trip, onClose, onSaved }: Props) {
@@ -192,6 +193,16 @@ export default function TripFormModal({ trip, onClose, onSaved }: Props) {
               style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, letterSpacing: '0.06em', padding: '8px 20px', borderRadius: 6, background: RED, color: '#fff', border: 'none', cursor: saving ? 'default' : 'pointer', opacity: saving ? 0.7 : 1 }}
             >{saving ? 'Salvando…' : 'Salvar'}</button>
           </div>
+
+          {!trip && onFromMoment && (
+            <div style={{ textAlign: 'center', paddingTop: 2 }}>
+              <button type="button" onClick={onFromMoment}
+                style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-soft)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', textDecorationColor: 'var(--arvo-border)' }}
+              >
+                Ou criar a partir de um momento →
+              </button>
+            </div>
+          )}
         </form>
       </div>
     </div>
