@@ -64,7 +64,7 @@ import VoyageLayout from './pages/voyage/VoyageLayout'
 import VoyageTripsPage from './pages/voyage/VoyageTripsPage'
 import VoyageTripDetailPage from './pages/voyage/VoyageTripDetailPage'
 import VoyagePlacesPage from './pages/voyage/VoyagePlacesPage'
-import VoyageMapStubPage from './pages/voyage/VoyageMapStubPage'
+import VoyageMapPage from './pages/voyage/VoyageMapPage'
 import AcceptTripInvitePage from './pages/voyage/AcceptTripInvitePage'
 
 function EmailConfirmGate({ email }: { email: string }) {
@@ -165,7 +165,7 @@ function AppRoutes() {
           <Route index                element={<VoyageTripsPage />} />
           <Route path=":id"           element={<VoyageTripDetailPage />} />
           <Route path="places"        element={<VoyagePlacesPage />} />
-          <Route path="map"           element={<VoyageMapStubPage />} />
+          <Route path="map"           element={<VoyageMapPage />} />
         </Route>
         <Route path="/finances"       element={<FinancesLayout />}>
           <Route index                element={<FinancesOverviewPage />} />

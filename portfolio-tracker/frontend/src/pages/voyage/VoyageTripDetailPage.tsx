@@ -176,12 +176,21 @@ export default function VoyageTripDetailPage() {
 
         {/* Right col: Roteiro + Lugares */}
         <div className="lg:col-span-2 flex flex-col gap-5">
-          {/* Roteiro stub */}
+          {/* Roteiro stub + link mapa */}
           <div style={{ background: '#fff', border: '1px solid var(--arvo-border)', borderRadius: 14, padding: '20px 22px' }}>
-            <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 10, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)', marginBottom: 14 }}>
-              Roteiro
-            </p>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 0', gap: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+              <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 10, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)' }}>
+                Roteiro
+              </p>
+              <a
+                href={`/voyage/map?trip=${id}`}
+                onClick={e => { e.preventDefault(); navigate(`/voyage/map?trip=${id}`) }}
+                style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: RED, textDecoration: 'none', letterSpacing: '0.04em' }}
+              >
+                Ver mapa →
+              </a>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px 0', gap: 10 }}>
               <span style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 40, color: 'rgba(200,184,154,0.25)' }}>◈</span>
               <p style={{ fontFamily: 'var(--arvo-font-serif)', fontStyle: 'italic', fontSize: 13, color: GOLD, textAlign: 'center' }}>
                 Itinerário por dia — em breve
