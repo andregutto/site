@@ -67,6 +67,7 @@ import VoyagePlacesPage from './pages/voyage/VoyagePlacesPage'
 import VoyageMapPage from './pages/voyage/VoyageMapPage'
 import AcceptTripInvitePage from './pages/voyage/AcceptTripInvitePage'
 import PublicTripPage from './pages/voyage/PublicTripPage'
+import PeoplePage from './pages/PeoplePage'
 
 function EmailConfirmGate({ email }: { email: string }) {
   const { signOut } = useAuth()
@@ -161,6 +162,7 @@ function AppRoutes() {
         <Route path="/favorites"      element={<FavoritesPage />} />
         <Route path="/achievements"   element={<AchievementsPage />} />
         <Route path="/notifications"  element={<NotificationsPage />} />
+        <Route path="/people"         element={<PeoplePage />} />
         <Route path="/archived"       element={<ArchivedPage />} />
         <Route path="/diversification" element={<DiversificationPage />} />
         <Route path="/voyage"          element={<VoyageLayout />}>
