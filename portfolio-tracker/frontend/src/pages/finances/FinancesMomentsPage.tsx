@@ -604,6 +604,19 @@ export default function FinancesMomentsPage() {
   const [assignTarget,  setAssignTarget]  = useState<{ txId: number; currentMomentId: number | null } | null>(null)
   const [sharingMoment, setSharingMoment] = useState<Moment | null>(null)
   const [spentByMoment, setSpentByMoment] = useState<Record<number, number>>({})
+  const [selectedTripId, setSelectedTripId] = useState<number | null>(null)
+  const [tripOptions, setTripOptions]       = useState<{ id: number; title: string }[]>([])
+
+  useEffect(() => {
+    if (showForm && !editing) {
+      apiFetch<{ trips: { id: number; title: string }[] }>('/api/voyage/trips')
+        .then(d => setTripOptions(d.trips))
+        .catch(() => {})
+    } else {
+      setSelectedTripId(null)
+      setTripOptions([])
+    }
+  }, [showForm, editing])
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -649,10 +662,17 @@ export default function FinancesMomentsPage() {
       if (editing) {
         await apiFetch(`/finances/moments/${editing.id}`, { method: 'PATCH', body: JSON.stringify(data) })
       } else {
-        await apiFetch('/finances/moments', { method: 'POST', body: JSON.stringify(data) })
+        const created = await apiFetch<{ id: number }>('/finances/moments', { method: 'POST', body: JSON.stringify(data) })
+        if (selectedTripId && created?.id) {
+          await apiFetch(`/api/voyage/trips/${selectedTripId}/moments`, {
+            method: 'POST',
+            body: JSON.stringify({ moment_id: created.id }),
+          })
+        }
       }
       setShowForm(false)
       setEditing(null)
+      setSelectedTripId(null)
       await load()
     } finally {
       setSaving(false)
@@ -699,10 +719,35 @@ export default function FinancesMomentsPage() {
           <MomentForm
             initial={editing ?? undefined}
             onSave={saveMoment}
-            onCancel={() => { setShowForm(false); setEditing(null) }}
+            onCancel={() => { setShowForm(false); setEditing(null); setSelectedTripId(null) }}
             saving={saving}
             userId={user?.id ?? ''}
           />
+          {!editing && tripOptions.length > 0 && (
+            <div style={{ marginTop: 20, paddingTop: 18, borderTop: '1px solid var(--arvo-border-soft)' }}>
+              <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)', marginBottom: 10 }}>
+                Vincular a uma viagem (opcional)
+              </p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {tripOptions.map(trip => (
+                  <button
+                    key={trip.id}
+                    type="button"
+                    onClick={() => setSelectedTripId(selectedTripId === trip.id ? null : trip.id)}
+                    style={{
+                      padding: '5px 14px', borderRadius: 999, cursor: 'pointer', transition: 'all 160ms ease',
+                      fontFamily: 'var(--arvo-font-body)', fontSize: 12,
+                      border: `1px solid ${selectedTripId === trip.id ? '#D63B2F' : 'var(--arvo-border)'}`,
+                      background: selectedTripId === trip.id ? 'rgba(214,59,47,0.08)' : 'transparent',
+                      color: selectedTripId === trip.id ? '#D63B2F' : 'var(--arvo-fg-muted)',
+                    }}
+                  >
+                    {selectedTripId === trip.id && '✓ '}{trip.title}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 

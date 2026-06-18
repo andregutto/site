@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { apiFetch } from '../../lib/api'
 import { useI18n } from '../../contexts/I18nContext'
 import TripFormModal from './TripFormModal'
+import MomentPickerModal from './MomentPickerModal'
 import type { Trip } from './types'
 
 function fmtCost(n: number) {
@@ -114,7 +115,8 @@ export default function VoyageTripsPage() {
   const navigate = useNavigate()
   const [trips, setTrips] = useState<Trip[]>([])
   const [loading, setLoading] = useState(true)
-  const [showForm, setShowForm] = useState(false)
+  const [showForm, setShowForm]               = useState(false)
+  const [showMomentPicker, setShowMomentPicker] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -154,13 +156,20 @@ export default function VoyageTripsPage() {
           >
             {tv.addTrip ?? 'Adicionar viagem'}
           </button>
-          <a
-            href="/finances/moments"
-            onClick={e => { e.preventDefault(); navigate('/finances/moments') }}
-            style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-muted)', textDecoration: 'none', letterSpacing: '0.02em' }}
+          <button
+            onClick={() => setShowMomentPicker(true)}
+            style={{
+              fontFamily: 'var(--arvo-font-body)', fontSize: 11, letterSpacing: '0.04em',
+              padding: '5px 12px', borderRadius: 6,
+              background: 'transparent', color: 'var(--arvo-fg-muted)',
+              border: '1px solid var(--arvo-border)', cursor: 'pointer',
+              transition: 'all 160ms ease',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--arvo-fg-muted)'; e.currentTarget.style.color = 'var(--arvo-fg)' }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--arvo-border)'; e.currentTarget.style.color = 'var(--arvo-fg-muted)' }}
           >
-            ou a partir de um momento →
-          </a>
+            A partir de um momento
+          </button>
         </div>
       </div>
 
@@ -203,6 +212,10 @@ export default function VoyageTripsPage() {
           onClose={() => setShowForm(false)}
           onSaved={() => { setShowForm(false); load() }}
         />
+      )}
+
+      {showMomentPicker && (
+        <MomentPickerModal onClose={() => setShowMomentPicker(false)} />
       )}
     </div>
   )
