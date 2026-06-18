@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { apiFetch } from '../../lib/api'
 import { useI18n } from '../../contexts/I18nContext'
 import type { TripCost, MomentPicker } from './types'
+import Avatar from './_shared/Avatar'
 
 function fmtCurrency(n: number, currency: string) {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n)
@@ -214,9 +215,7 @@ export default function CostCard({ tripId, cost, onCostChanged }: Props) {
                 const barColors = ['#1B4FD8', '#D63B2F', '#E8A020', '#1F8A5B', '#C8B89A']
                 return (
                   <div key={u.user_id} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                    <div style={{ width: 24, height: 24, borderRadius: 999, background: barColors[i % barColors.length], display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <span style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 9, color: '#fff', letterSpacing: '0.1em' }}>{String(i + 1)}</span>
-                    </div>
+                    <Avatar name={u.display?.name} email={u.display?.email} size={24} />
                     <div style={{ flex: 1, height: 4, borderRadius: 999, background: 'var(--arvo-border)', overflow: 'hidden' }}>
                       <div style={{ height: '100%', width: `${pct}%`, background: barColors[i % barColors.length], borderRadius: 999 }} />
                     </div>

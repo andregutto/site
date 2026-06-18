@@ -73,6 +73,8 @@ async function buildCostSummary(tripId: number, requestingUserId: string) {
     .reduce((s, m) => s + (m.budget ?? 0), 0)
 
   const grandTotal = Object.values(byUser).reduce((s, u) => s + u.total, 0)
+  const byUserEntries = Object.values(byUser)
+  const displays = await Promise.all(byUserEntries.map(u => userDisplay(u.user_id)))
 
   return {
     total: Math.round(grandTotal * 100) / 100,
@@ -82,9 +84,10 @@ async function buildCostSummary(tripId: number, requestingUserId: string) {
       ...m,
       spent: Math.round((momentTotals[m.id] ?? 0) * 100) / 100,
     })),
-    by_user: Object.values(byUser).map(u => ({
+    by_user: byUserEntries.map((u, i) => ({
       ...u,
       total: Math.round(u.total * 100) / 100,
+      display: displays[i],
     })),
   }
 }

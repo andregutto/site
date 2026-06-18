@@ -36,6 +36,7 @@ export interface CostByUser {
   user_id: string
   total: number
   moment_ids: number[]
+  display?: { name: string; email: string; avatar_url?: string }
 }
 
 export interface TripCost {

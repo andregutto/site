@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
 import { apiFetch } from '../../lib/api'
+import Avatar from './_shared/Avatar'
+import { RoleChip, StatusChip } from './_shared/Chips'
 
 const RED = '#D63B2F'
 const RED_SOFT = 'rgba(214,59,47,0.10)'
@@ -17,33 +19,6 @@ interface Member {
 interface Props {
   tripId: number
   isOwner: boolean
-}
-
-const ROLE_LABEL: Record<string, string> = {
-  owner: 'Owner',
-  editor: 'Editor',
-  viewer: 'Leitor',
-}
-
-const STATUS_COLOR: Record<string, string> = {
-  active: '#1F8A5B',
-  pending: '#C8B89A',
-  left: 'rgba(155,155,155,0.7)',
-}
-
-function Avatar({ name, size = 28 }: { name: string; size?: number }) {
-  const initials = name.split(' ').map(p => p[0]).join('').slice(0, 2).toUpperCase()
-  return (
-    <div style={{
-      width: size, height: size, borderRadius: 999, flexShrink: 0,
-      background: 'var(--arvo-hover-bg)', border: '1px solid var(--arvo-border)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-    }}>
-      <span style={{ fontFamily: 'var(--arvo-font-display)', fontSize: size * 0.36, color: 'var(--arvo-fg-muted)', letterSpacing: '0.05em' }}>
-        {initials || '?'}
-      </span>
-    </div>
-  )
 }
 
 export default function MembersPanel({ tripId, isOwner }: Props) {
@@ -124,25 +99,14 @@ export default function MembersPanel({ tripId, isOwner }: Props) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
           {members.map(m => (
             <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <Avatar name={m.display.name ?? ''} />
+              <Avatar name={m.display.name} email={m.display.email} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {m.display.name}
                 </p>
-                {m.status === 'pending' && (
-                  <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 10.5, color: 'var(--arvo-fg-soft)', marginTop: 1 }}>
-                    Convite pendente
-                  </p>
-                )}
               </div>
-              <span style={{
-                fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.15em',
-                textTransform: 'uppercase', padding: '2px 8px', borderRadius: 999,
-                background: `${STATUS_COLOR[m.status]}18`,
-                color: STATUS_COLOR[m.status],
-              }}>
-                {ROLE_LABEL[m.role]}
-              </span>
+              {m.status !== 'active' && <StatusChip status={m.status} />}
+              <RoleChip role={m.role} />
               {isOwner && m.role !== 'owner' && (
                 <button
                   type="button"

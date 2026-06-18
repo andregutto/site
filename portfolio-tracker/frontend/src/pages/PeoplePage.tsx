@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { apiFetch } from '../lib/api'
+import Avatar from './voyage/_shared/Avatar'
+import { RoleChip, StatusChip } from './voyage/_shared/Chips'
 
 const RED  = '#D63B2F'
 const GOLD = '#C8B89A'
@@ -31,29 +33,6 @@ interface Contact {
   contexts: Context[]
 }
 
-function initials(email: string): string {
-  const local = email.split('@')[0]
-  const parts = local.split(/[._-]/)
-  return parts.length >= 2
-    ? (parts[0][0] + parts[1][0]).toUpperCase()
-    : local.slice(0, 2).toUpperCase()
-}
-
-function RoleChip({ role }: { role: string }) {
-  const label = role === 'editor' ? 'Editor' : 'Leitor'
-  const isEditor = role === 'editor'
-  return (
-    <span style={{
-      fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.18em',
-      textTransform: 'uppercase', padding: '2px 8px', borderRadius: 999,
-      background: isEditor ? 'rgba(27,79,216,0.08)' : 'var(--arvo-hover-bg)',
-      color: isEditor ? '#1B4FD8' : 'var(--arvo-fg-muted)',
-      border: `1px solid ${isEditor ? 'rgba(27,79,216,0.18)' : 'var(--arvo-border)'}`,
-    }}>
-      {label}
-    </span>
-  )
-}
 
 function ContactCard({ contact, onRemoved }: { contact: Contact; onRemoved: (memberId: number, type: string) => void }) {
   const navigate = useNavigate()
@@ -81,19 +60,7 @@ function ContactCard({ contact, onRemoved }: { contact: Contact; onRemoved: (mem
     }}>
       {/* Cabeçalho */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16 }}>
-        <div style={{
-          width: 44, height: 44, borderRadius: '50%', flexShrink: 0,
-          background: isActive ? 'rgba(214,59,47,0.10)' : 'var(--arvo-hover-bg)',
-          border: `1px solid ${isActive ? 'rgba(214,59,47,0.20)' : 'var(--arvo-border)'}`,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}>
-          <span style={{
-            fontFamily: 'var(--arvo-font-display)', fontSize: 14, letterSpacing: '0.06em',
-            color: isActive ? RED : 'var(--arvo-fg-muted)',
-          }}>
-            {initials(contact.email)}
-          </span>
-        </div>
+        <Avatar email={contact.email} size={44} tone={isActive ? 'active' : 'neutral'} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <p style={{
             fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: 'var(--arvo-fg)',
@@ -102,15 +69,7 @@ function ContactCard({ contact, onRemoved }: { contact: Contact; onRemoved: (mem
             {contact.email}
           </p>
         </div>
-        <span style={{
-          fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.20em',
-          textTransform: 'uppercase', padding: '3px 10px', borderRadius: 999, flexShrink: 0,
-          background: isActive ? 'rgba(31,138,91,0.10)' : 'rgba(200,184,154,0.12)',
-          color: isActive ? '#1F8A5B' : GOLD,
-          border: `1px solid ${isActive ? 'rgba(31,138,91,0.20)' : 'rgba(200,184,154,0.25)'}`,
-        }}>
-          {isActive ? 'Ativo' : 'Pendente'}
-        </span>
+        <StatusChip status={contact.status} />
       </div>
 
       {/* Viagens */}
