@@ -9,6 +9,7 @@ import MembersPanel from './MembersPanel'
 import TripPlacesPanel from './TripPlacesPanel'
 import ShareTripPanel from './ShareTripPanel'
 import TripItineraryPanel from './TripItineraryPanel'
+import TripMapCard from './TripMapCard'
 import type { Trip, TripCost, TripMember } from './types'
 
 const RED = '#D63B2F'
@@ -185,21 +186,17 @@ export default function VoyageTripDetailPage() {
           )}
         </div>
 
-        {/* Right col: Roteiro + Lugares */}
+        {/* Right col: Mapa + Roteiro + Lugares */}
         <div className="lg:col-span-2 flex flex-col gap-5">
+          {/* Mapa inline */}
+          <TripMapCard tripId={Number(id)} tripTitle={trip.title} />
+
           {/* Roteiro por dia */}
           <div style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', borderRadius: 16, boxShadow: 'var(--arvo-shadow-sm)', padding: '20px 22px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+            <div style={{ marginBottom: 14 }}>
               <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 10, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)' }}>
                 Roteiro
               </p>
-              <button
-                type="button"
-                onClick={() => navigate(`/voyage/map?trip=${id}`)}
-                style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: RED, background: 'none', border: 'none', cursor: 'pointer', letterSpacing: '0.04em' }}
-              >
-                Ver mapa →
-              </button>
             </div>
             <TripItineraryPanel
               tripId={Number(id)}

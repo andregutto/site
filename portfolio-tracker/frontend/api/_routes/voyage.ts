@@ -513,7 +513,7 @@ router.post('/places/import-takeout', requireAuth, async (req, res: Response) =>
       const address = loc.Address || props.address || null
       const name = (!isUrl && rawTitle)
         || (address ? address.split(',')[0].trim() : null)
-        || `📍 ${(lat as number).toFixed(4)}, ${(lng as number).toFixed(4)}`
+        || 'Local salvo'
 
       const googleMapsUrl = props['Google Maps URL'] || props['google_maps_url'] || null
       const city = cityFromAddress(address)
@@ -835,6 +835,52 @@ router.post('/invite/accept', requireAuth, async (req, res: Response) => {
   } catch { /* non-fatal */ }
 
   res.json({ trip_id: member.trip_id })
+})
+
+// ── GET /api/voyage/trips/:id/kml  (download KML autenticado) ────────────────
+router.get('/trips/:id/kml', requireAuth, async (req, res: Response) => {
+  const userId = uid(req)
+  const tripId = Number(req.params.id)
+
+  const { data: trip } = await supabaseAdmin
+    .from('voyage_trips').select('id, title, user_id').eq('id', tripId).single()
+  if (!trip) { res.status(404).send('Not found'); return }
+
+  if (trip.user_id !== userId) {
+    const { data: member } = await supabaseAdmin
+      .from('voyage_trip_members')
+      .select('id').eq('trip_id', tripId).eq('user_id', userId).eq('status', 'active').single()
+    if (!member) { res.status(403).send('Forbidden'); return }
+  }
+
+  const { data: places } = await supabaseAdmin
+    .from('voyage_trip_places')
+    .select('name, category, address, lat, lng, trip_note, google_maps_url, is_highlight')
+    .eq('trip_id', tripId)
+    .not('lat', 'is', null).not('lng', 'is', null)
+
+  const placemarks = (places ?? []).map(p => `
+  <Placemark>
+    <name>${escapeXml(p.name)}</name>
+    <description>${escapeXml([p.address, p.trip_note, p.google_maps_url].filter(Boolean).join('\n'))}</description>
+    ${p.is_highlight ? '<styleUrl>#highlight</styleUrl>' : ''}
+    <Point><coordinates>${p.lng},${p.lat},0</coordinates></Point>
+  </Placemark>`).join('')
+
+  const kml = `<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+<Document>
+  <name>${escapeXml(trip.title)}</name>
+  <Style id="highlight">
+    <IconStyle><color>ff2f3bd6</color><scale>1.2</scale></IconStyle>
+  </Style>
+  ${placemarks}
+</Document>
+</kml>`
+
+  res.setHeader('Content-Type', 'application/vnd.google-earth.kml+xml')
+  res.setHeader('Content-Disposition', `attachment; filename="${trip.title.replace(/[^a-z0-9]/gi, '_')}.kml"`)
+  res.send(kml)
 })
 
 // ══════════════════════════════════════════════════════════════════════════════

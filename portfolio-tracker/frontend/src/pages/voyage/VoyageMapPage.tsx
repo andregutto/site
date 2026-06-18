@@ -163,7 +163,7 @@ export default function VoyageMapPage() {
   const [selectedDay, setSelectedDay] = useState<number | null>(null)
 
   const load = useCallback(async () => {
-    if (!id) return
+    if (!id) { setLoading(false); return }
     setLoading(true)
     try {
       const [tripData, placesData] = await Promise.all([
