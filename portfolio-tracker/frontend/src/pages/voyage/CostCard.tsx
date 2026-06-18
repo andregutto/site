@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { apiFetch } from '../../lib/api'
 import { useI18n } from '../../contexts/I18nContext'
 import type { TripCost, MomentPicker } from './types'
@@ -171,9 +172,9 @@ export default function CostCard({ tripId, cost, onCostChanged }: Props) {
           {tv.costCard ?? 'Custo'}
         </p>
         {hasMoments && (
-          <a href="/finances/moments" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: RED, textDecoration: 'none', letterSpacing: '0.04em' }}>
+          <Link to="/finances/moments" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: RED, textDecoration: 'none', letterSpacing: '0.04em' }}>
             Ver momentos →
-          </a>
+          </Link>
         )}
       </div>
 

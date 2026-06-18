@@ -120,6 +120,7 @@ export default function VoyageTripsPage() {
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm]               = useState(false)
   const [showMomentPicker, setShowMomentPicker] = useState(false)
+  const [filter, setFilter] = useState<'all' | 'planning' | 'ongoing' | 'past'>('all')
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -176,6 +177,34 @@ export default function VoyageTripsPage() {
         </div>
       </div>
 
+      {/* Filter pills */}
+      {!loading && trips.length > 0 && (
+        <div className="flex gap-2 flex-wrap mb-5">
+          {([
+            { key: 'all',      label: 'Todas' },
+            { key: 'planning', label: tv.statusPlanning ?? 'Planejando' },
+            { key: 'ongoing',  label: tv.statusOngoing  ?? 'Em viagem' },
+            { key: 'past',     label: tv.statusPast     ?? 'Concluídas' },
+          ] as const).map(({ key, label }) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setFilter(key)}
+              style={{
+                fontFamily: 'var(--arvo-font-display)', fontSize: 9.5, letterSpacing: '0.18em',
+                textTransform: 'uppercase', padding: '4px 14px', borderRadius: 999,
+                background: filter === key ? 'var(--arvo-fg)' : 'transparent',
+                color: filter === key ? 'var(--arvo-surface)' : 'var(--arvo-fg-muted)',
+                border: `1px solid ${filter === key ? 'var(--arvo-fg)' : 'var(--arvo-border)'}`,
+                cursor: 'pointer', transition: 'all 160ms ease',
+              }}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Grid */}
       {loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -197,15 +226,23 @@ export default function VoyageTripsPage() {
             {tv.emptyBody ?? 'Que tal planejar a primeira?'}
           </p>
         </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {trips.map((trip, i) => (
-            <div key={trip.id} style={{ animation: 'fadeUp 320ms cubic-bezier(0.22,0.61,0.36,1) both', animationDelay: `${i * 40}ms` }}>
-              <TripCard trip={trip} t={t} onClick={() => navigate(`/voyage/${trip.id}`)} />
-            </div>
-          ))}
-        </div>
-      )}
+      ) : (() => {
+        const visible = filter === 'all' ? trips : trips.filter(t => t.status === filter)
+        if (visible.length === 0) return (
+          <p style={{ fontFamily: 'var(--arvo-font-serif)', fontStyle: 'italic', fontSize: 15, color: GOLD, textAlign: 'center', padding: '48px 0' }}>
+            Nenhuma viagem neste filtro
+          </p>
+        )
+        return (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {visible.map((trip, i) => (
+              <div key={trip.id} style={{ animation: 'fadeUp 320ms cubic-bezier(0.22,0.61,0.36,1) both', animationDelay: `${i * 40}ms` }}>
+                <TripCard trip={trip} t={t} onClick={() => navigate(`/voyage/${trip.id}`)} />
+              </div>
+            ))}
+          </div>
+        )
+      })()}
 
       {showForm && (
         <TripFormModal
