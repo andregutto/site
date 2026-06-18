@@ -154,7 +154,7 @@ export default function MembersPanel({ tripId, isOwner }: Props) {
                     textTransform: 'uppercase', transition: 'all 160ms',
                   }}
                 >
-                  {ROLE_LABEL[r]}
+                  {r === 'editor' ? 'Editor' : 'Leitor'}
                 </button>
               ))}
             </div>

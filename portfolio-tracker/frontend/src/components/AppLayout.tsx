@@ -166,7 +166,6 @@ export default function AppLayout() {
     location.pathname.startsWith('/diversification')
   const inFinances = location.pathname.startsWith('/finances')
   const inVoyage = location.pathname.startsWith('/voyage')
-  const inInstitutions = location.pathname.startsWith('/institutions')
 
   const sectionAccent = inInvestimentos ? '#1B4FD8' : inFinances ? '#A36A52' : inVoyage ? '#D63B2F' : '#1F8A5B'
 
