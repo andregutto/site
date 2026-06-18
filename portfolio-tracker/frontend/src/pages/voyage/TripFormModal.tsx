@@ -12,7 +12,7 @@ interface Props {
   onFromMoment?: () => void
 }
 
-export default function TripFormModal({ trip, onClose, onSaved }: Props) {
+export default function TripFormModal({ trip, onClose, onSaved, onFromMoment }: Props) {
   const { t } = useI18n()
   const tv = (t as any).voyage ?? {}
 
