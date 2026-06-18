@@ -72,10 +72,9 @@ function FitBounds({ places }: { places: TripPlace[] }) {
 
 interface Props {
   tripId: number
-  tripTitle: string
 }
 
-export default function TripMapCard({ tripId, tripTitle }: Props) {
+export default function TripMapCard({ tripId }: Props) {
   const navigate = useNavigate()
   const { resolvedTheme } = useTheme()
   const [places, setPlaces] = useState<TripPlace[]>([])

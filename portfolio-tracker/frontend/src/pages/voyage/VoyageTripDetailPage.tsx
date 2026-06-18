@@ -189,7 +189,7 @@ export default function VoyageTripDetailPage() {
         {/* Right col: Mapa + Roteiro + Lugares */}
         <div className="lg:col-span-2 flex flex-col gap-5">
           {/* Mapa inline */}
-          <TripMapCard tripId={Number(id)} tripTitle={trip.title} />
+          <TripMapCard tripId={Number(id)} />
 
           {/* Roteiro por dia */}
           <div style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', borderRadius: 16, boxShadow: 'var(--arvo-shadow-sm)', padding: '20px 22px' }}>

@@ -52,10 +52,11 @@ function categoryIcon(cat: string | null): string {
 }
 
 // ── Takeout Importer ──────────────────────────────────────────────────────────
-function TakeoutImporter({ onImported }: { onImported: () => void }) {
+function TakeoutImporter({ onImported, onDeleteAll }: { onImported: () => void; onDeleteAll: () => void }) {
   const [files, setFiles] = useState<File[]>([])
   const [importing, setImporting] = useState(false)
-  const [result, setResult] = useState<{ imported: number; total: number } | null>(null)
+  const [deleting, setDeleting] = useState(false)
+  const [result, setResult] = useState<{ imported: number; total: number; skipped: number } | null>(null)
   const [error, setError] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -72,11 +73,11 @@ function TakeoutImporter({ onImported }: { onImported: () => void }) {
         const list_name = f.name.replace(/\.json$/i, '')
         parsed.push({ list_name, geojson })
       }
-      const data = await apiFetch<{ imported: number; total_in_files: number }>(
+      const data = await apiFetch<{ imported: number; total_in_files: number; skipped: number }>(
         '/voyage/places/import-takeout',
         { method: 'POST', body: JSON.stringify({ files: parsed }) }
       )
-      setResult({ imported: data.imported, total: data.total_in_files })
+      setResult({ imported: data.imported, total: data.total_in_files, skipped: data.skipped ?? 0 })
       setFiles([])
       if (inputRef.current) inputRef.current.value = ''
       onImported()
@@ -87,13 +88,36 @@ function TakeoutImporter({ onImported }: { onImported: () => void }) {
     }
   }
 
+  async function handleDeleteAll() {
+    if (!confirm('Apagar TODOS os lugares da biblioteca? Esta ação não pode ser desfeita.')) return
+    setDeleting(true)
+    try {
+      await apiFetch('/voyage/places/all', { method: 'DELETE' })
+      onDeleteAll()
+    } catch (e: any) {
+      setError(e?.message ?? 'Erro ao apagar')
+    } finally {
+      setDeleting(false)
+    }
+  }
+
   return (
     <div style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', borderRadius: 16, boxShadow: 'var(--arvo-shadow-sm)', padding: '20px 22px' }}>
-      <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 10, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)', marginBottom: 4 }}>
-        Importar Google Takeout
-      </p>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+        <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 10, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)' }}>
+          Importar Google Takeout
+        </p>
+        <button
+          type="button"
+          onClick={handleDeleteAll}
+          disabled={deleting}
+          style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: RED, background: 'none', border: 'none', cursor: deleting ? 'default' : 'pointer', opacity: deleting ? 0.5 : 1, padding: 0 }}
+        >
+          {deleting ? 'Apagando…' : 'Apagar todos'}
+        </button>
+      </div>
       <p style={{ fontFamily: 'var(--arvo-font-serif)', fontStyle: 'italic', fontSize: 13, color: GOLD, marginBottom: 14, lineHeight: 1.5 }}>
-        Exporte seus lugares em <strong style={{ fontStyle: 'normal', color: 'var(--arvo-fg-soft)' }}>takeout.google.com</strong> → Google Maps → Listas salvas. Selecione os arquivos .json aqui.
+        Em <strong style={{ fontStyle: 'normal', color: 'var(--arvo-fg-soft)' }}>takeout.google.com</strong> exporte o Google Maps e selecione aqui os <strong style={{ fontStyle: 'normal', color: 'var(--arvo-fg-soft)' }}>.json de cada lista</strong> (Restaurantes, Quero ir, etc.). O nome do arquivo vira a categoria.
       </p>
 
       <input
@@ -118,7 +142,7 @@ function TakeoutImporter({ onImported }: { onImported: () => void }) {
         <span style={{ fontSize: 20 }}>📂</span>
         <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: files.length > 0 ? RED : 'var(--arvo-fg-soft)' }}>
           {files.length > 0
-            ? `${files.length} arquivo${files.length > 1 ? 's' : ''} selecionado${files.length > 1 ? 's' : ''}: ${files.map(f => f.name.replace('.json', '')).join(', ')}`
+            ? `${files.length} arquivo${files.length > 1 ? 's' : ''}: ${files.map(f => f.name.replace('.json', '')).join(', ')}`
             : 'Clique para selecionar os .json das listas'}
         </span>
       </label>
@@ -141,9 +165,16 @@ function TakeoutImporter({ onImported }: { onImported: () => void }) {
       )}
 
       {result && (
-        <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: '#1F8A5B', marginTop: 10 }}>
-          ✓ {result.imported} lugares importados de {result.total} encontrados
-        </p>
+        <div style={{ marginTop: 10 }}>
+          <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: '#1F8A5B' }}>
+            ✓ {result.imported} lugares importados
+          </p>
+          {result.skipped > 0 && (
+            <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)', marginTop: 3 }}>
+              {result.skipped} entradas puladas (pins sem nome — provavelmente marcadores manuais no mapa)
+            </p>
+          )}
+        </div>
       )}
       {error && (
         <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: RED, marginTop: 10 }}>{error}</p>
@@ -311,7 +342,7 @@ export default function VoyagePlacesPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Sidebar: import + filters */}
         <div className="flex flex-col gap-5">
-          <TakeoutImporter onImported={load} />
+          <TakeoutImporter onImported={load} onDeleteAll={load} />
 
           {/* Filters */}
           {places.length > 0 && (

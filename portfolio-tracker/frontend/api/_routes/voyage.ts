@@ -466,15 +466,30 @@ router.delete('/places/:id', requireAuth, async (req, res: Response) => {
 })
 
 // Extrai cidade do endereço do Takeout sem network calls.
-// Ex: "Rua X, 4000 Porto, Portugal" → "Porto"
-//     "123 Main St, New York, NY 10001, United States" → "New York"
 function cityFromAddress(address: string | null): string | null {
   if (!address) return null
   const parts = address.split(',').map(p => p.trim()).filter(Boolean)
   if (parts.length < 2) return null
-  // Pega o penúltimo segmento (antes do país), remove CEP/ZIP inicial
   const candidate = parts[parts.length - 2]
   return candidate.replace(/^\d[\d\s-]*\s*/, '').trim() || null
+}
+
+// Extrai nome do lugar a partir de uma URL do Google Maps.
+// Ex: https://www.google.com/maps/place/Curry+36/@52.5... → "Curry 36"
+function nameFromMapsUrl(url: string | null): string | null {
+  if (!url) return null
+  const placeMatch = url.match(/\/maps\/place\/([^/@?]+)/)
+  if (placeMatch) {
+    const candidate = decodeURIComponent(placeMatch[1].replace(/\+/g, ' ')).trim()
+    // Descartar se parecer coordenada ou for vazio
+    if (candidate && !/^[\d.,\-\s]+$/.test(candidate)) return candidate
+  }
+  const qMatch = url.match(/[?&]q=([^&]+)/)
+  if (qMatch) {
+    const candidate = decodeURIComponent(qMatch[1].replace(/\+/g, ' ')).trim()
+    if (candidate && !/^[\d.,\-\s]+$/.test(candidate)) return candidate
+  }
+  return null
 }
 
 // ── POST /api/voyage/places/import-takeout  (importar JSON do Takeout) ────────
@@ -491,6 +506,7 @@ router.post('/places/import-takeout', requireAuth, async (req, res: Response) =>
   }
 
   const toInsert: any[] = []
+  let skipped = 0
 
   for (const { list_name, geojson } of files) {
     const features: any[] = geojson?.features ?? []
@@ -504,18 +520,21 @@ router.post('/places/import-takeout', requireAuth, async (req, res: Response) =>
       const lng = geo.Longitude ?? coords?.[0] ?? null
 
       // Ignorar entradas sem coordenadas válidas
-      if (!lat || !lng || (lat === 0 && lng === 0)) continue
+      if (!lat || !lng || (lat === 0 && lng === 0)) { skipped++; continue }
 
-      // Nome: tenta vários campos; descarta se for URL
+      // Nome: tenta todos os campos disponíveis, incluindo a URL do Maps
       const rawTitle = props.Title || props.title || props.name || props.Name
         || loc['Business Name'] || loc.name || null
       const isUrl = rawTitle && /^https?:\/\//i.test(rawTitle)
+      const googleMapsUrl = props['Google Maps URL'] || props['google_maps_url'] || null
       const address = loc.Address || props.address || null
       const name = (!isUrl && rawTitle)
+        || nameFromMapsUrl(googleMapsUrl)
         || (address ? address.split(',')[0].trim() : null)
-        || 'Local salvo'
 
-      const googleMapsUrl = props['Google Maps URL'] || props['google_maps_url'] || null
+      // Pular entradas sem nome identificável — são pins sem dados
+      if (!name) { skipped++; continue }
+
       const city = cityFromAddress(address)
 
       toInsert.push({
@@ -533,7 +552,7 @@ router.post('/places/import-takeout', requireAuth, async (req, res: Response) =>
   }
 
   if (toInsert.length === 0) {
-    res.status(400).json({ error: 'Nenhum lugar com coordenadas válidas encontrado nos arquivos' }); return
+    res.status(400).json({ error: `Nenhum lugar com nome identificável encontrado. ${skipped} entradas puladas (sem nome, endereço ou URL).` }); return
   }
 
   // Upsert com google_maps_url quando disponível; insert direto quando não
@@ -555,7 +574,16 @@ router.post('/places/import-takeout', requireAuth, async (req, res: Response) =>
   const data  = [...(r1.data ?? []), ...(r2.data ?? [])]
 
   if (error) { res.status(500).json({ error: error.message }); return }
-  res.json({ imported: (data ?? []).length, total_in_files: toInsert.length })
+  res.json({ imported: (data ?? []).length, total_in_files: toInsert.length, skipped })
+})
+
+// ── DELETE /api/voyage/places/all  (apagar toda a biblioteca) ────────────────
+router.delete('/places/all', requireAuth, async (req, res: Response) => {
+  const userId = uid(req)
+  const { error } = await supabaseAdmin
+    .from('voyage_places').delete().eq('user_id', userId)
+  if (error) { res.status(500).json({ error: error.message }); return }
+  res.json({ ok: true })
 })
 
 // ── GET /api/voyage/trips/:id/places  ────────────────────────────────────────
