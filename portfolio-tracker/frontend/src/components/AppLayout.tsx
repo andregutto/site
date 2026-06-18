@@ -641,14 +641,6 @@ export default function AppLayout() {
                 <circle cx="12" cy="9" r="2.5"/>
               </svg>
             )},
-            { to: '/people', label: 'Pessoas', match: location.pathname === '/people', accent: '#1F8A5B', icon: (
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                <circle cx="9" cy="8" r="3.75"/>
-                <path strokeLinecap="round" d="M2 21c0-4.2 3.1-7.5 7-7.5"/>
-                <circle cx="18" cy="9" r="3"/>
-                <path strokeLinecap="round" d="M24 21c0-3.3-2.7-6-6-6"/>
-              </svg>
-            )},
           ].map(({ to, label, match, icon }) => (
             <NavLink
               key={to} to={to}
