@@ -12,6 +12,10 @@ interface ItineraryPlace {
   visited: boolean
   day_number: number | null
   is_highlight: boolean
+  arrive_time: string | null
+  depart_time: string | null
+  transport_mode: string | null
+  transport_note: string | null
 }
 
 interface Props {
@@ -94,48 +98,150 @@ function DayBadge({ day, canEdit, onChangeDay }: {
   )
 }
 
-function PlaceRow({ place, canEdit, onChangeDay }: {
+const TRANSPORT_ICONS: Record<string, string> = {
+  flight: '✈️', train: '🚆', bus: '🚌', car: '🚗',
+  boat: '⛴️', walk: '🚶', metro: '🚇', other: '🔀',
+}
+const TRANSPORT_LABELS: Record<string, string> = {
+  flight: 'Voo', train: 'Trem', bus: 'Ônibus', car: 'Carro',
+  boat: 'Barco', walk: 'A pé', metro: 'Metro', other: 'Outro',
+}
+
+function TimeField({ label, value, onChange }: {
+  label: string; value: string | null; onChange: (v: string | null) => void
+}) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+      <span style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 8, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)', flexShrink: 0 }}>{label}</span>
+      <input
+        type="time"
+        value={value ?? ''}
+        onChange={e => onChange(e.target.value || null)}
+        style={{
+          fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg)',
+          background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)',
+          borderRadius: 4, padding: '1px 4px', outline: 'none', width: 76,
+        }}
+      />
+    </div>
+  )
+}
+
+function PlaceRow({ place, canEdit, onChangeDay, onChangeTransport }: {
   place: ItineraryPlace
   canEdit: boolean
   onChangeDay: (day: number | null) => void
+  onChangeTransport: (fields: Partial<Pick<ItineraryPlace, 'arrive_time' | 'depart_time' | 'transport_mode' | 'transport_note'>>) => void
 }) {
+  const [showTransport, setShowTransport] = useState(
+    !!(place.arrive_time || place.depart_time || place.transport_mode || place.transport_note)
+  )
+
   return (
     <div style={{
-      display: 'flex', alignItems: 'center', gap: 10,
-      padding: '8px 10px', borderRadius: 8,
+      borderRadius: 8,
       background: place.is_highlight ? 'rgba(214,59,47,0.04)' : 'var(--arvo-hover-bg)',
       border: `1px solid ${place.is_highlight ? 'rgba(214,59,47,0.12)' : 'var(--arvo-border-soft)'}`,
+      overflow: 'hidden',
     }}>
-      <span style={{ fontSize: 16, flexShrink: 0 }}>{catIcon(place.category)}</span>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <p style={{
-            fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg)',
-            fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-          }}>
-            {place.name}
-          </p>
-          {place.visited && (
-            <span style={{ fontSize: 11, color: '#1F8A5B', flexShrink: 0 }}>✓</span>
+      {/* Main row */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px' }}>
+        <span style={{ fontSize: 16, flexShrink: 0 }}>{catIcon(place.category)}</span>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <p style={{
+              fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg)',
+              fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+            }}>
+              {place.name}
+            </p>
+            {place.visited && <span style={{ fontSize: 11, color: '#1F8A5B', flexShrink: 0 }}>✓</span>}
+            {place.is_highlight && (
+              <span style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 8, letterSpacing: '0.12em', textTransform: 'uppercase', color: RED, flexShrink: 0 }}>destaque</span>
+            )}
+          </div>
+          {/* Time badges (read-only summary when collapsed) */}
+          {!showTransport && (place.arrive_time || place.depart_time || place.transport_mode) && (
+            <div style={{ display: 'flex', gap: 6, marginTop: 2, flexWrap: 'wrap' }}>
+              {place.transport_mode && (
+                <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 10, color: 'var(--arvo-fg-soft)' }}>
+                  {TRANSPORT_ICONS[place.transport_mode]} {TRANSPORT_LABELS[place.transport_mode] ?? place.transport_mode}
+                </span>
+              )}
+              {place.arrive_time && (
+                <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 10, color: 'var(--arvo-fg-soft)' }}>chegada {place.arrive_time}</span>
+              )}
+              {place.depart_time && (
+                <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 10, color: 'var(--arvo-fg-soft)' }}>saída {place.depart_time}</span>
+              )}
+            </div>
           )}
-          {place.is_highlight && (
-            <span style={{
-              fontFamily: 'var(--arvo-font-display)', fontSize: 8, letterSpacing: '0.12em',
-              textTransform: 'uppercase', color: RED, flexShrink: 0,
-            }}>destaque</span>
+          {place.trip_note && (
+            <p style={{ fontFamily: 'var(--arvo-font-serif)', fontStyle: 'italic', fontSize: 11, color: GOLD, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {place.trip_note}
+            </p>
           )}
         </div>
-        {place.trip_note && (
-          <p style={{
-            fontFamily: 'var(--arvo-font-serif)', fontStyle: 'italic',
-            fontSize: 11, color: GOLD, marginTop: 2,
-            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-          }}>
-            {place.trip_note}
-          </p>
-        )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+          {canEdit && (
+            <button
+              type="button"
+              onClick={() => setShowTransport(v => !v)}
+              title="Horários e transporte"
+              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px', borderRadius: 4, color: showTransport ? RED : 'var(--arvo-fg-muted)', fontSize: 13 }}
+            >
+              🕐
+            </button>
+          )}
+          <DayBadge day={place.day_number} canEdit={canEdit} onChangeDay={onChangeDay} />
+        </div>
       </div>
-      <DayBadge day={place.day_number} canEdit={canEdit} onChangeDay={onChangeDay} />
+
+      {/* Transport/time editor */}
+      {showTransport && canEdit && (
+        <div style={{ padding: '8px 10px 10px', borderTop: '1px solid var(--arvo-border-soft)', display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {/* Transport mode */}
+          <div>
+            <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 8, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)', marginBottom: 5 }}>Transporte para chegar aqui</p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+              {Object.entries(TRANSPORT_LABELS).map(([k, label]) => (
+                <button
+                  key={k}
+                  type="button"
+                  onClick={() => onChangeTransport({ transport_mode: place.transport_mode === k ? null : k })}
+                  style={{
+                    fontFamily: 'var(--arvo-font-body)', fontSize: 11, padding: '3px 8px', borderRadius: 999, cursor: 'pointer',
+                    border: `1px solid ${place.transport_mode === k ? RED : 'var(--arvo-border)'}`,
+                    background: place.transport_mode === k ? 'rgba(214,59,47,0.08)' : 'transparent',
+                    color: place.transport_mode === k ? RED : 'var(--arvo-fg-muted)',
+                  }}
+                >
+                  {TRANSPORT_ICONS[k]} {label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Times */}
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+            <TimeField label="Chegada" value={place.arrive_time} onChange={v => onChangeTransport({ arrive_time: v })} />
+            <TimeField label="Saída" value={place.depart_time} onChange={v => onChangeTransport({ depart_time: v })} />
+          </div>
+
+          {/* Transport note */}
+          <input
+            type="text"
+            placeholder="Nota de transporte (voo, nº de reserva…)"
+            value={place.transport_note ?? ''}
+            onChange={e => onChangeTransport({ transport_note: e.target.value || null })}
+            style={{
+              fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg)',
+              background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)',
+              borderRadius: 4, padding: '4px 8px', outline: 'none', width: '100%',
+            }}
+          />
+        </div>
+      )}
     </div>
   )
 }
@@ -156,16 +262,23 @@ export default function TripItineraryPanel({ tripId, canEdit }: Props) {
 
   useEffect(() => { load() }, [load])
 
-  async function changeDay(placeId: number, day: number | null) {
-    setPlaces(ps => ps.map(p => p.id === placeId ? { ...p, day_number: day } : p))
+  async function patchPlace(placeId: number, fields: Record<string, unknown>) {
+    setPlaces(ps => ps.map(p => p.id === placeId ? { ...p, ...fields } : p))
     try {
       await apiFetch(`/voyage/trips/${tripId}/places/${placeId}`, {
-        method: 'PATCH',
-        body: JSON.stringify({ day_number: day }),
+        method: 'PATCH', body: JSON.stringify(fields),
       })
     } catch {
       load()
     }
+  }
+
+  function changeDay(placeId: number, day: number | null) {
+    patchPlace(placeId, { day_number: day })
+  }
+
+  function changeTransport(placeId: number, fields: Partial<Pick<ItineraryPlace, 'arrive_time' | 'depart_time' | 'transport_mode' | 'transport_note'>>) {
+    patchPlace(placeId, fields as Record<string, unknown>)
   }
 
   if (loading) return (
@@ -202,7 +315,7 @@ export default function TripItineraryPanel({ tripId, canEdit }: Props) {
           </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             {places.filter(p => p.day_number === d).map(p => (
-              <PlaceRow key={p.id} place={p} canEdit={canEdit} onChangeDay={day => changeDay(p.id, day)} />
+              <PlaceRow key={p.id} place={p} canEdit={canEdit} onChangeDay={day => changeDay(p.id, day)} onChangeTransport={f => changeTransport(p.id, f)} />
             ))}
           </div>
         </div>
@@ -217,7 +330,7 @@ export default function TripItineraryPanel({ tripId, canEdit }: Props) {
           </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             {undated.map(p => (
-              <PlaceRow key={p.id} place={p} canEdit={canEdit} onChangeDay={day => changeDay(p.id, day)} />
+              <PlaceRow key={p.id} place={p} canEdit={canEdit} onChangeDay={day => changeDay(p.id, day)} onChangeTransport={f => changeTransport(p.id, f)} />
             ))}
           </div>
         </div>

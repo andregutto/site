@@ -1,5 +1,15 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
+import L from 'leaflet'
+import 'leaflet/dist/leaflet.css'
 import { apiFetch } from '../../lib/api'
+
+delete (L.Icon.Default.prototype as any)._getIconUrl
+L.Icon.Default.mergeOptions({
+  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+})
 
 const RED = '#D63B2F'
 const RED_SOFT = 'rgba(214,59,47,0.10)'
@@ -126,7 +136,7 @@ function TakeoutImporter({ onImported }: { onImported: () => void }) {
             fontFamily: 'var(--arvo-font-body)', fontSize: 13, transition: 'all 160ms',
           }}
         >
-          {importing ? 'Importando e geocodificando…' : `Importar ${files.length} lista${files.length > 1 ? 's' : ''}`}
+          {importing ? 'Importando…' : `Importar ${files.length} lista${files.length > 1 ? 's' : ''}`}
         </button>
       )}
 
@@ -214,6 +224,7 @@ export default function VoyagePlacesPage() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch]   = useState('')
   const [cityFilter, setCityFilter] = useState('')
+  const [showMap, setShowMap] = useState(false)
 
   const cities = Array.from(new Set(places.map(p => p.city).filter(Boolean) as string[])).sort()
 
@@ -242,10 +253,60 @@ export default function VoyagePlacesPage() {
         <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 10, letterSpacing: '0.30em', textTransform: 'uppercase', color: RED, marginBottom: 6 }}>
           ARVO VOYAGE
         </p>
-        <h1 style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 24, letterSpacing: '0.06em', color: 'var(--arvo-fg)' }}>
-          Lugares
-        </h1>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <h1 style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 24, letterSpacing: '0.06em', color: 'var(--arvo-fg)' }}>
+            Lugares
+          </h1>
+          {places.some(p => p.lat && p.lng) && (
+            <button
+              type="button"
+              onClick={() => setShowMap(v => !v)}
+              style={{
+                fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, padding: '4px 12px', borderRadius: 6,
+                border: `1px solid ${showMap ? RED : 'var(--arvo-border)'}`,
+                background: showMap ? 'rgba(214,59,47,0.08)' : 'transparent',
+                color: showMap ? RED : 'var(--arvo-fg-muted)', cursor: 'pointer',
+              }}
+            >
+              {showMap ? 'Ver lista' : '🗺 Ver no mapa'}
+            </button>
+          )}
+        </div>
       </div>
+
+      {/* Map view */}
+      {showMap && (
+        <div style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid var(--arvo-border)', marginBottom: 24, height: 480 }}>
+          <MapContainer
+            center={[places.find(p => p.lat && p.lng)!.lat!, places.find(p => p.lat && p.lng)!.lng!]}
+            zoom={5}
+            style={{ height: '100%', width: '100%' }}
+            scrollWheelZoom
+          >
+            <TileLayer
+              attribution='&copy; <a href="https://carto.com/attributions">CARTO</a>'
+              url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+            />
+            {places.filter(p => p.lat && p.lng).map(p => (
+              <Marker key={p.id} position={[p.lat!, p.lng!]}>
+                <Popup>
+                  <div style={{ fontFamily: 'sans-serif', minWidth: 140 }}>
+                    <p style={{ fontWeight: 600, fontSize: 13, marginBottom: 2 }}>{p.name}</p>
+                    {p.city && <p style={{ fontSize: 11, color: '#888' }}>{p.city}</p>}
+                    {p.address && <p style={{ fontSize: 11, color: '#666' }}>{p.address}</p>}
+                    {p.google_maps_url && (
+                      <a href={p.google_maps_url} target="_blank" rel="noopener noreferrer"
+                        style={{ fontSize: 11, color: RED, textDecoration: 'none', display: 'block', marginTop: 4 }}>
+                        Abrir no Maps →
+                      </a>
+                    )}
+                  </div>
+                </Popup>
+              </Marker>
+            ))}
+          </MapContainer>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Sidebar: import + filters */}

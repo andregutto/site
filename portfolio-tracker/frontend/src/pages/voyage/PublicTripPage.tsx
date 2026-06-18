@@ -1,5 +1,15 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
+import L from 'leaflet'
+import 'leaflet/dist/leaflet.css'
+
+delete (L.Icon.Default.prototype as any)._getIconUrl
+L.Icon.Default.mergeOptions({
+  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+})
 
 const RED = '#D63B2F'
 const GOLD = '#C8B89A'
@@ -260,6 +270,39 @@ export default function PublicTripPage() {
                 </p>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Map */}
+        {withCoords.length > 0 && (
+          <div style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid var(--arvo-border)', marginBottom: 28, height: 340 }}>
+            <MapContainer
+              center={[withCoords[0].lat!, withCoords[0].lng!]}
+              zoom={12}
+              style={{ height: '100%', width: '100%' }}
+              scrollWheelZoom={false}
+            >
+              <TileLayer
+                attribution='&copy; <a href="https://carto.com/attributions">CARTO</a>'
+                url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+              />
+              {withCoords.map(p => (
+                <Marker key={p.id} position={[p.lat!, p.lng!]}>
+                  <Popup>
+                    <div style={{ fontFamily: 'sans-serif', minWidth: 140 }}>
+                      <p style={{ fontWeight: 600, fontSize: 13, marginBottom: 2 }}>{p.name}</p>
+                      {p.address && <p style={{ fontSize: 11, color: '#666' }}>{p.address}</p>}
+                      {p.google_maps_url && (
+                        <a href={p.google_maps_url} target="_blank" rel="noopener noreferrer"
+                          style={{ fontSize: 11, color: RED, textDecoration: 'none', display: 'block', marginTop: 4 }}>
+                          Abrir no Maps →
+                        </a>
+                      )}
+                    </div>
+                  </Popup>
+                </Marker>
+              ))}
+            </MapContainer>
           </div>
         )}
 

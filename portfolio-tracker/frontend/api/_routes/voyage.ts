@@ -498,12 +498,24 @@ router.post('/places/import-takeout', requireAuth, async (req, res: Response) =>
       const props = f.properties ?? {}
       const loc   = props.Location ?? {}
       const geo   = loc['Geo Coordinates'] ?? {}
-      const coords = f.geometry?.coordinates // [lng, lat]
+      const coords = f.geometry?.coordinates // GeoJSON: [lng, lat]
 
       const lat = geo.Latitude  ?? coords?.[1] ?? null
       const lng = geo.Longitude ?? coords?.[0] ?? null
-      const name = props.Title || loc['Business Name'] || 'Sem nome'
-      const address = loc.Address || null
+
+      // Ignorar entradas sem coordenadas válidas
+      if (!lat || !lng || (lat === 0 && lng === 0)) continue
+
+      // Nome: tenta vários campos; descarta se for URL
+      const rawTitle = props.Title || props.title || props.name || props.Name
+        || loc['Business Name'] || loc.name || null
+      const isUrl = rawTitle && /^https?:\/\//i.test(rawTitle)
+      const address = loc.Address || props.address || null
+      const name = (!isUrl && rawTitle)
+        || (address ? address.split(',')[0].trim() : null)
+        || `📍 ${(lat as number).toFixed(4)}, ${(lng as number).toFixed(4)}`
+
+      const googleMapsUrl = props['Google Maps URL'] || props['google_maps_url'] || null
       const city = cityFromAddress(address)
 
       toInsert.push({
@@ -514,21 +526,33 @@ router.post('/places/import-takeout', requireAuth, async (req, res: Response) =>
         lng,
         address,
         city,
-        google_maps_url: props['Google Maps URL'] || null,
+        google_maps_url: googleMapsUrl,
         source: 'takeout',
       })
     }
   }
 
   if (toInsert.length === 0) {
-    res.status(400).json({ error: 'Nenhum lugar encontrado nos arquivos' }); return
+    res.status(400).json({ error: 'Nenhum lugar com coordenadas válidas encontrado nos arquivos' }); return
   }
 
-  // Upsert por (user_id, google_maps_url) para não duplicar em re-imports
-  const { data, error } = await supabaseAdmin
-    .from('voyage_places')
-    .upsert(toInsert, { onConflict: 'user_id,google_maps_url', ignoreDuplicates: true })
-    .select()
+  // Upsert com google_maps_url quando disponível; insert direto quando não
+  const withUrl    = toInsert.filter(p => p.google_maps_url)
+  const withoutUrl = toInsert.filter(p => !p.google_maps_url)
+
+  const [r1, r2] = await Promise.all([
+    withUrl.length > 0
+      ? supabaseAdmin.from('voyage_places')
+          .upsert(withUrl, { onConflict: 'user_id,google_maps_url', ignoreDuplicates: true })
+          .select()
+      : Promise.resolve({ data: [] as any[], error: null }),
+    withoutUrl.length > 0
+      ? supabaseAdmin.from('voyage_places').insert(withoutUrl).select()
+      : Promise.resolve({ data: [] as any[], error: null }),
+  ])
+
+  const error = r1.error || r2.error
+  const data  = [...(r1.data ?? []), ...(r2.data ?? [])]
 
   if (error) { res.status(500).json({ error: error.message }); return }
   res.json({ imported: (data ?? []).length, total_in_files: toInsert.length })
@@ -589,15 +613,20 @@ router.post('/trips/:id/places', requireAuth, async (req, res: Response) => {
 router.patch('/trips/:id/places/:placeId', requireAuth, async (req, res: Response) => {
   const tripId = Number(req.params.id)
   const placeId = Number(req.params.placeId)
-  const { visited, trip_note, day_number, is_highlight, rating, sort_order } = req.body
+  const { visited, trip_note, day_number, is_highlight, rating, sort_order,
+          arrive_time, depart_time, transport_mode, transport_note } = req.body
 
   const update: Record<string, unknown> = {}
-  if (visited    !== undefined) update.visited     = visited
-  if (trip_note  !== undefined) update.trip_note   = trip_note
-  if (day_number !== undefined) update.day_number  = day_number
-  if (is_highlight !== undefined) update.is_highlight = is_highlight
-  if (rating     !== undefined) update.rating      = rating
-  if (sort_order !== undefined) update.sort_order  = sort_order
+  if (visited        !== undefined) update.visited        = visited
+  if (trip_note      !== undefined) update.trip_note      = trip_note
+  if (day_number     !== undefined) update.day_number     = day_number
+  if (is_highlight   !== undefined) update.is_highlight   = is_highlight
+  if (rating         !== undefined) update.rating         = rating
+  if (sort_order     !== undefined) update.sort_order     = sort_order
+  if (arrive_time    !== undefined) update.arrive_time    = arrive_time
+  if (depart_time    !== undefined) update.depart_time    = depart_time
+  if (transport_mode !== undefined) update.transport_mode = transport_mode
+  if (transport_note !== undefined) update.transport_note = transport_note
 
   const { data, error } = await supabaseAdmin
     .from('voyage_trip_places')
