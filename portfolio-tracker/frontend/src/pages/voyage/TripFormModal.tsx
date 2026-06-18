@@ -10,9 +10,10 @@ interface Props {
   onClose: () => void
   onSaved: (trip: Trip) => void
   onFromMoment?: () => void
+  onDeleted?: () => void
 }
 
-export default function TripFormModal({ trip, onClose, onSaved, onFromMoment }: Props) {
+export default function TripFormModal({ trip, onClose, onSaved, onFromMoment, onDeleted }: Props) {
   const { t } = useI18n()
   const tv = (t as any).voyage ?? {}
 
@@ -24,7 +25,21 @@ export default function TripFormModal({ trip, onClose, onSaved, onFromMoment }: 
   const [status, setStatus] = useState<TripStatus>(trip?.status ?? 'planning')
   const [summary, setSummary] = useState(trip?.summary ?? '')
   const [saving, setSaving] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const [error, setError] = useState('')
+
+  async function deleteTrip() {
+    if (!trip || !onDeleted) return
+    if (!confirm(`Excluir "${trip.title}" permanentemente? Esta ação não pode ser desfeita.`)) return
+    setDeleting(true)
+    try {
+      await apiFetch(`/voyage/trips/${trip.id}`, { method: 'DELETE' })
+      onDeleted()
+    } catch (e: any) {
+      setError(e?.message ?? 'Erro ao excluir')
+      setDeleting(false)
+    }
+  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault()
@@ -221,10 +236,18 @@ export default function TripFormModal({ trip, onClose, onSaved, onFromMoment }: 
           )}
 
           <div className="flex gap-3 justify-end pt-2">
+            {trip && onDeleted && (
+              <button
+                type="button"
+                onClick={deleteTrip}
+                disabled={deleting || saving}
+                style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, padding: '8px 16px', borderRadius: 6, background: 'transparent', border: `1px solid ${RED}`, color: RED, cursor: deleting ? 'default' : 'pointer', opacity: deleting ? 0.5 : 1, marginRight: 'auto' }}
+              >{deleting ? 'Excluindo…' : 'Excluir viagem'}</button>
+            )}
             <button type="button" onClick={onClose}
               style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, letterSpacing: '0.06em', padding: '8px 18px', borderRadius: 6, background: 'transparent', border: '1px solid var(--arvo-border)', color: 'var(--arvo-fg-muted)', cursor: 'pointer' }}
             >Cancelar</button>
-            <button type="submit" disabled={saving}
+            <button type="submit" disabled={saving || deleting}
               style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, letterSpacing: '0.06em', padding: '8px 20px', borderRadius: 6, background: RED, color: '#fff', border: 'none', cursor: saving ? 'default' : 'pointer', opacity: saving ? 0.7 : 1 }}
             >{saving ? 'Salvando…' : 'Salvar'}</button>
           </div>

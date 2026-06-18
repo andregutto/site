@@ -231,6 +231,7 @@ export default function VoyageTripDetailPage() {
             setShowEdit(false)
             setData(prev => prev ? { ...prev, trip: updatedTrip } : prev)
           }}
+          onDeleted={() => navigate('/voyage')}
         />
       )}
     </div>
