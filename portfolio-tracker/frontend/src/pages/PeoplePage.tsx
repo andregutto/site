@@ -7,8 +7,11 @@ import { RoleChip, StatusChip } from './voyage/_shared/Chips'
 const RED  = '#D63B2F'
 const GOLD = '#C8B89A'
 
+type Direction = 'owned_by_me' | 'shared_with_me'
+
 interface TripContext {
   type: 'voyage_trip'
+  direction: Direction
   trip_id: number
   trip_title: string
   role: string
@@ -18,6 +21,7 @@ interface TripContext {
 
 interface FinanceContext {
   type: 'shared_finance'
+  direction: Direction
   group_id: number
   group_name: string
   member_id: number
@@ -28,11 +32,26 @@ type Context = TripContext | FinanceContext
 
 interface Contact {
   email: string
+  name?: string
   user_id: string | null
   status: 'active' | 'pending'
   contexts: Context[]
 }
 
+// ── Etiqueta de direção ───────────────────────────────────────────────────────
+function DirectionTag({ direction }: { direction: Direction }) {
+  if (direction === 'shared_with_me') return (
+    <span style={{
+      fontFamily: 'var(--arvo-font-display)', fontSize: 8.5, letterSpacing: '0.14em',
+      textTransform: 'uppercase', color: 'var(--arvo-fg-soft)',
+      background: 'var(--arvo-hover-bg)', padding: '2px 6px', borderRadius: 4,
+      flexShrink: 0,
+    }}>
+      convidado
+    </span>
+  )
+  return null
+}
 
 function ContactCard({ contact, onRemoved }: { contact: Contact; onRemoved: (memberId: number, type: string) => void }) {
   const navigate = useNavigate()
@@ -52,6 +71,7 @@ function ContactCard({ contact, onRemoved }: { contact: Contact; onRemoved: (mem
   const isActive = contact.status === 'active'
   const tripContexts    = contact.contexts.filter((c): c is TripContext    => c.type === 'voyage_trip')
   const financeContexts = contact.contexts.filter((c): c is FinanceContext => c.type === 'shared_finance')
+  const displayName = contact.name || contact.email
 
   return (
     <div style={{
@@ -60,14 +80,22 @@ function ContactCard({ contact, onRemoved }: { contact: Contact; onRemoved: (mem
     }}>
       {/* Cabeçalho */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16 }}>
-        <Avatar email={contact.email} size={44} tone={isActive ? 'active' : 'neutral'} />
+        <Avatar name={contact.name} email={contact.email} size={44} tone={isActive ? 'active' : 'neutral'} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <p style={{
             fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: 'var(--arvo-fg)',
             fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
           }}>
-            {contact.email}
+            {displayName}
           </p>
+          {contact.name && (
+            <p style={{
+              fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-soft)',
+              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: 1,
+            }}>
+              {contact.email}
+            </p>
+          )}
         </div>
         <StatusChip status={contact.status} />
       </div>
@@ -96,6 +124,7 @@ function ContactCard({ contact, onRemoved }: { contact: Contact; onRemoved: (mem
               }}>
                 {ctx.trip_title}
               </span>
+              <DirectionTag direction={ctx.direction} />
               <RoleChip role={ctx.role} />
               {ctx.member_status === 'pending' && (
                 <span style={{
@@ -105,18 +134,31 @@ function ContactCard({ contact, onRemoved }: { contact: Contact; onRemoved: (mem
                   pendente
                 </span>
               )}
-              <button
-                type="button"
-                onClick={() => removeTrip(ctx)}
-                disabled={removing === ctx.member_id}
-                style={{
-                  fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: RED,
-                  background: 'none', border: 'none', cursor: 'pointer', flexShrink: 0,
-                  opacity: removing === ctx.member_id ? 0.4 : 1, padding: '2px 0',
-                }}
-              >
-                {removing === ctx.member_id ? '…' : 'Remover'}
-              </button>
+              {ctx.direction === 'owned_by_me' ? (
+                <button
+                  type="button"
+                  onClick={() => removeTrip(ctx)}
+                  disabled={removing === ctx.member_id}
+                  style={{
+                    fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: RED,
+                    background: 'none', border: 'none', cursor: 'pointer', flexShrink: 0,
+                    opacity: removing === ctx.member_id ? 0.4 : 1, padding: '2px 0',
+                  }}
+                >
+                  {removing === ctx.member_id ? '…' : 'Remover'}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => navigate(`/voyage/${ctx.trip_id}`)}
+                  style={{
+                    fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-muted)',
+                    background: 'none', border: 'none', cursor: 'pointer', flexShrink: 0, padding: '2px 0',
+                  }}
+                >
+                  Ver →
+                </button>
+              )}
             </div>
           ))}
         </div>
@@ -146,6 +188,7 @@ function ContactCard({ contact, onRemoved }: { contact: Contact; onRemoved: (mem
               }}>
                 {ctx.group_name}
               </span>
+              <DirectionTag direction={ctx.direction} />
               {ctx.member_status === 'pending' && (
                 <span style={{
                   fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.16em',
@@ -162,7 +205,7 @@ function ContactCard({ contact, onRemoved }: { contact: Contact; onRemoved: (mem
                   background: 'none', border: 'none', cursor: 'pointer', flexShrink: 0, padding: '2px 0',
                 }}
               >
-                Gerir →
+                {ctx.direction === 'owned_by_me' ? 'Gerir →' : 'Ver →'}
               </button>
             </div>
           ))}
@@ -179,7 +222,7 @@ export default function PeoplePage() {
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const data = await apiFetch<{ contacts: Contact[] }>('/api/people')
+      const data = await apiFetch<{ contacts: Contact[] }>('/people')
       setContacts(data.contacts)
     } finally {
       setLoading(false)
@@ -286,14 +329,10 @@ export default function PeoplePage() {
         <div style={{
           marginTop: 28, padding: '14px 18px', borderRadius: 10,
           border: '1px solid var(--arvo-border-soft)', background: 'var(--arvo-hover-bg)',
-          display: 'flex', alignItems: 'center', gap: 10,
+          fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)',
+          lineHeight: 1.6,
         }}>
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="var(--arvo-fg-muted)" strokeWidth="1.5">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M2 3h12a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H4l-3 2V4a1 1 0 0 1 1-1z"/>
-          </svg>
-          <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-muted)' }}>
-            Mensagens entre conexões — em breve.
-          </p>
+          Para convidar alguém, vá até a viagem ou grupo de finanças desejado.
         </div>
       )}
     </div>

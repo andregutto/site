@@ -349,6 +349,23 @@ router.post('/invite/accept', requireAuth, async (req, res: Response) => {
 
   if (updErr) { res.status(500).json({ error: updErr.message }); return }
 
+  // 4.2 — registrar conexão bidirecional
+  try {
+    const { data: group } = await supabaseAdmin
+      .from('shared_groups').select('created_by').eq('id', member.group_id).single()
+    if (group && group.created_by !== userId) {
+      const [myInfo, ownerInfo] = await Promise.all([
+        userDisplay(userId),
+        userDisplay(group.created_by),
+      ])
+      const now = new Date().toISOString()
+      await supabaseAdmin.from('arvo_connections').upsert([
+        { user_id: userId,         connected_user_id: group.created_by, connected_email: ownerInfo.email, connected_name: ownerInfo.name, status: 'active', source: 'finances', updated_at: now },
+        { user_id: group.created_by, connected_user_id: userId,         connected_email: myInfo.email,    connected_name: myInfo.name,    status: 'active', source: 'finances', updated_at: now },
+      ], { onConflict: 'user_id,connected_email' })
+    }
+  } catch { /* non-fatal */ }
+
   res.json({ ok: true, group_id: member.group_id, group_name: (member.shared_groups as { name: string }).name })
 })
 

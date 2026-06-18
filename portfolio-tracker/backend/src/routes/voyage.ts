@@ -787,6 +787,23 @@ router.post('/invite/accept', requireAuth, async (req, res: Response) => {
     .update({ user_id: userId, status: 'active', joined_at: new Date().toISOString(), invite_token: null })
     .eq('id', member.id)
 
+  // 4.2 — registrar conexão bidirecional
+  try {
+    const { data: trip } = await supabaseAdmin
+      .from('voyage_trips').select('user_id').eq('id', member.trip_id).single()
+    if (trip && trip.user_id !== userId) {
+      const [myInfo, ownerInfo] = await Promise.all([
+        userDisplay(userId),
+        userDisplay(trip.user_id),
+      ])
+      const now = new Date().toISOString()
+      await supabaseAdmin.from('arvo_connections').upsert([
+        { user_id: userId,      connected_user_id: trip.user_id, connected_email: ownerInfo.email, connected_name: ownerInfo.name, status: 'active', source: 'voyage', updated_at: now },
+        { user_id: trip.user_id, connected_user_id: userId,      connected_email: myInfo.email,    connected_name: myInfo.name,    status: 'active', source: 'voyage', updated_at: now },
+      ], { onConflict: 'user_id,connected_email' })
+    }
+  } catch { /* non-fatal */ }
+
   res.json({ trip_id: member.trip_id })
 })
 
