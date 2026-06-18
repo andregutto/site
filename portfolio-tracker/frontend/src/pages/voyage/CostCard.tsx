@@ -1,8 +1,11 @@
 import { useState } from 'react'
 import { apiFetch } from '../../lib/api'
-import { useCurrency } from '../../contexts/CurrencyContext'
 import { useI18n } from '../../contexts/I18nContext'
 import type { TripCost, MomentPicker } from './types'
+
+function fmtCurrency(n: number, currency: string) {
+  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n)
+}
 
 const RED = '#D63B2F'
 const RED_SOFT = 'rgba(214,59,47,0.10)'
@@ -155,7 +158,7 @@ function LinkMomentPanel({ tripId, onLinked }: { tripId: number; onLinked: (cost
 export default function CostCard({ tripId, cost, onCostChanged }: Props) {
   const { t } = useI18n()
   const tv = (t as any).voyage ?? {}
-  const { formatValue } = useCurrency()
+  const fmt = (n: number) => fmtCurrency(n, cost.currency || 'EUR')
   const hasMoments = cost.moments.length > 0
   const overBudget = cost.budget != null && cost.total > cost.budget
 
@@ -181,11 +184,11 @@ export default function CostCard({ tripId, cost, onCostChanged }: Props) {
               fontFamily: 'var(--arvo-font-body)', fontSize: 28, fontVariantNumeric: 'tabular-nums',
               color: overBudget ? RED : 'var(--arvo-fg)', letterSpacing: '-0.02em',
             }}>
-              {formatValue(cost.total)}
+              {fmt(cost.total)}
             </span>
             {cost.budget != null && (
               <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-soft)', marginLeft: 6 }}>
-                / {formatValue(cost.budget)}
+                / {fmt(cost.budget)}
               </span>
             )}
           </div>
@@ -196,7 +199,7 @@ export default function CostCard({ tripId, cost, onCostChanged }: Props) {
           {cost.budget != null && (
             <div className="flex justify-between" style={{ marginTop: 6 }}>
               <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)' }}>{tv.costSpent ?? 'Gasto'}</span>
-              <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)' }}>{tv.costBudget ?? 'Budget'}: {formatValue(cost.budget)}</span>
+              <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)' }}>{tv.costBudget ?? 'Budget'}: {fmt(cost.budget)}</span>
             </div>
           )}
 
@@ -218,7 +221,7 @@ export default function CostCard({ tripId, cost, onCostChanged }: Props) {
                       <div style={{ height: '100%', width: `${pct}%`, background: barColors[i % barColors.length], borderRadius: 999 }} />
                     </div>
                     <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg)', fontVariantNumeric: 'tabular-nums', minWidth: 64, textAlign: 'right' }}>
-                      {formatValue(u.total)}
+                      {fmt(u.total)}
                     </span>
                     <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)', minWidth: 32, textAlign: 'right' }}>{pct}%</span>
                   </div>
@@ -236,7 +239,7 @@ export default function CostCard({ tripId, cost, onCostChanged }: Props) {
                   <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg)' }}>{m.name}</span>
                 </div>
                 <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg-soft)', fontVariantNumeric: 'tabular-nums' }}>
-                  {formatValue(m.spent)}
+                  {fmt(m.spent)}
                 </span>
               </div>
             ))}

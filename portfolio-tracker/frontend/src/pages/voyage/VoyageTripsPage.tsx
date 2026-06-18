@@ -1,10 +1,13 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { apiFetch } from '../../lib/api'
-import { useCurrency } from '../../contexts/CurrencyContext'
 import { useI18n } from '../../contexts/I18nContext'
 import TripFormModal from './TripFormModal'
 import type { Trip } from './types'
+
+function fmtCost(n: number) {
+  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'EUR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n)
+}
 
 const RED = '#D63B2F'
 const RED_SOFT = 'rgba(214,59,47,0.12)'
@@ -29,7 +32,6 @@ function fmtDateRange(start: string | null, end: string | null) {
 }
 
 function TripCard({ trip, onClick, t }: { trip: Trip; onClick: () => void; t: any }) {
-  const { formatValue } = useCurrency()
   const badge = STATUS_BADGE[trip.status] ?? STATUS_BADGE.planning
   const dateStr = fmtDateRange(trip.start_date, trip.end_date)
   const hasCost = (trip.cost_total ?? 0) > 0 || (trip.cost_budget ?? 0) > 0
@@ -93,8 +95,8 @@ function TripCard({ trip, onClick, t }: { trip: Trip; onClick: () => void; t: an
               fontFamily: 'var(--arvo-font-body)', fontSize: 11,
               color: '#FF8A84', background: RED_SOFT, padding: '2px 8px', borderRadius: 999,
             }}>
-              {formatValue(trip.cost_total ?? 0)}
-              {(trip.cost_budget ?? 0) > 0 && ` / ${formatValue(trip.cost_budget!)}`}
+              {fmtCost(trip.cost_total ?? 0)}
+              {(trip.cost_budget ?? 0) > 0 && ` / ${fmtCost(trip.cost_budget!)}`}
             </span>
           )}
         </div>

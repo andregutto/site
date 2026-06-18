@@ -412,6 +412,208 @@ router.get('/moments-for-picker', requireAuth, async (req, res: Response) => {
   res.json({ moments: data ?? [] })
 })
 
+// ══════════════════════════════════════════════════════════════════════════════
+// V3 — Lugares (biblioteca pessoal + trip places)
+// ══════════════════════════════════════════════════════════════════════════════
+
+// ── GET /api/voyage/places  (biblioteca do user; ?city=Lisboa) ────────────────
+router.get('/places', requireAuth, async (req, res: Response) => {
+  const userId = uid(req)
+  const { city, q } = req.query as { city?: string; q?: string }
+
+  let query = supabaseAdmin
+    .from('voyage_places')
+    .select('*')
+    .eq('user_id', userId)
+    .order('name')
+
+  if (city) query = query.ilike('city', `%${city}%`)
+  if (q)    query = query.ilike('name', `%${q}%`)
+
+  const { data, error } = await query
+  if (error) { res.status(500).json({ error: error.message }); return }
+  res.json({ places: data ?? [] })
+})
+
+// ── POST /api/voyage/places  (adicionar lugar manualmente) ───────────────────
+router.post('/places', requireAuth, async (req, res: Response) => {
+  const userId = uid(req)
+  const body = req.body as {
+    name: string; category?: string; lat?: number; lng?: number
+    address?: string; city?: string; google_place_id?: string
+    google_maps_url?: string; notes?: string
+  }
+  if (!body.name?.trim()) { res.status(400).json({ error: 'Nome obrigatório' }); return }
+
+  const { data, error } = await supabaseAdmin
+    .from('voyage_places')
+    .insert({ ...body, user_id: userId, source: 'manual' })
+    .select().single()
+
+  if (error) { res.status(500).json({ error: error.message }); return }
+  res.status(201).json({ place: data })
+})
+
+// ── DELETE /api/voyage/places/:id  ───────────────────────────────────────────
+router.delete('/places/:id', requireAuth, async (req, res: Response) => {
+  const userId = uid(req)
+  await supabaseAdmin.from('voyage_places')
+    .delete().eq('id', Number(req.params.id)).eq('user_id', userId)
+  res.json({ ok: true })
+})
+
+// ── POST /api/voyage/places/import-takeout  (importar JSON do Takeout) ────────
+// Aceita um array de GeoJSON FeatureCollections (um por lista do Google Maps)
+// Body: { files: [{ list_name: string, geojson: object }] }
+router.post('/places/import-takeout', requireAuth, async (req, res: Response) => {
+  const userId = uid(req)
+  const { files } = req.body as {
+    files: Array<{ list_name: string; geojson: any }>
+  }
+
+  if (!Array.isArray(files) || files.length === 0) {
+    res.status(400).json({ error: 'Nenhum arquivo enviado' }); return
+  }
+
+  const toInsert: any[] = []
+
+  for (const { list_name, geojson } of files) {
+    const features: any[] = geojson?.features ?? []
+    for (const f of features) {
+      const props = f.properties ?? {}
+      const loc   = props.Location ?? {}
+      const geo   = loc['Geo Coordinates'] ?? {}
+      const coords = f.geometry?.coordinates // [lng, lat]
+
+      const lat = geo.Latitude  ?? coords?.[1] ?? null
+      const lng = geo.Longitude ?? coords?.[0] ?? null
+      const name = props.Title || loc['Business Name'] || 'Sem nome'
+
+      // Reverse geocoding via Nominatim para obter cidade
+      let city: string | null = null
+      if (lat && lng) {
+        try {
+          const r = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=pt`,
+            { headers: { 'User-Agent': 'Arvo/1.0 (arvo.andregutto.com)' } }
+          )
+          const nm = await r.json() as any
+          city = nm.address?.city || nm.address?.town || nm.address?.village || nm.address?.county || null
+        } catch { /* silencioso */ }
+      }
+
+      toInsert.push({
+        user_id: userId,
+        name,
+        category: list_name || null,
+        lat,
+        lng,
+        address: loc.Address || null,
+        city,
+        google_maps_url: props['Google Maps URL'] || null,
+        source: 'takeout',
+      })
+    }
+  }
+
+  if (toInsert.length === 0) {
+    res.status(400).json({ error: 'Nenhum lugar encontrado nos arquivos' }); return
+  }
+
+  // Upsert por (user_id, google_maps_url) para não duplicar em re-imports
+  const { data, error } = await supabaseAdmin
+    .from('voyage_places')
+    .upsert(toInsert, { onConflict: 'user_id,google_maps_url', ignoreDuplicates: true })
+    .select()
+
+  if (error) { res.status(500).json({ error: error.message }); return }
+  res.json({ imported: (data ?? []).length, total_in_files: toInsert.length })
+})
+
+// ── GET /api/voyage/trips/:id/places  ────────────────────────────────────────
+router.get('/trips/:id/places', requireAuth, async (req, res: Response) => {
+  const userId = uid(req)
+  const tripId = Number(req.params.id)
+
+  const { data: trip } = await supabaseAdmin
+    .from('voyage_trips').select('user_id').eq('id', tripId).single()
+  if (!trip) { res.status(404).json({ error: 'Viagem não encontrada' }); return }
+
+  const isMember = trip.user_id === userId ||
+    !!(await supabaseAdmin.from('voyage_trip_members')
+      .select('id').eq('trip_id', tripId).eq('user_id', userId).eq('status', 'active').single()).data
+
+  if (!isMember) { res.status(403).json({ error: 'Sem acesso' }); return }
+
+  const { data } = await supabaseAdmin
+    .from('voyage_trip_places')
+    .select('*')
+    .eq('trip_id', tripId)
+    .order('sort_order')
+
+  res.json({ places: data ?? [] })
+})
+
+// ── POST /api/voyage/trips/:id/places  (adicionar lugar à trip) ──────────────
+router.post('/trips/:id/places', requireAuth, async (req, res: Response) => {
+  const userId = uid(req)
+  const tripId = Number(req.params.id)
+  const body = req.body as {
+    library_place_id?: number; name: string; category?: string
+    lat?: number; lng?: number; address?: string
+    google_place_id?: string; google_maps_url?: string
+    day_number?: number; is_highlight?: boolean
+  }
+
+  if (!body.name?.trim()) { res.status(400).json({ error: 'Nome obrigatório' }); return }
+
+  const { data: existingPlaces } = await supabaseAdmin
+    .from('voyage_trip_places').select('sort_order').eq('trip_id', tripId)
+    .order('sort_order', { ascending: false }).limit(1)
+  const nextOrder = ((existingPlaces?.[0]?.sort_order ?? -1) + 1)
+
+  const { data, error } = await supabaseAdmin
+    .from('voyage_trip_places')
+    .insert({ ...body, trip_id: tripId, added_by: userId, sort_order: nextOrder })
+    .select().single()
+
+  if (error) { res.status(500).json({ error: error.message }); return }
+  res.status(201).json({ place: data })
+})
+
+// ── PATCH /api/voyage/trips/:id/places/:placeId  (marcar visitado, nota, etc) ─
+router.patch('/trips/:id/places/:placeId', requireAuth, async (req, res: Response) => {
+  const tripId = Number(req.params.id)
+  const placeId = Number(req.params.placeId)
+  const { visited, trip_note, day_number, is_highlight, rating, sort_order } = req.body
+
+  const update: Record<string, unknown> = {}
+  if (visited    !== undefined) update.visited     = visited
+  if (trip_note  !== undefined) update.trip_note   = trip_note
+  if (day_number !== undefined) update.day_number  = day_number
+  if (is_highlight !== undefined) update.is_highlight = is_highlight
+  if (rating     !== undefined) update.rating      = rating
+  if (sort_order !== undefined) update.sort_order  = sort_order
+
+  const { data, error } = await supabaseAdmin
+    .from('voyage_trip_places')
+    .update(update)
+    .eq('id', placeId).eq('trip_id', tripId)
+    .select().single()
+
+  if (error) { res.status(500).json({ error: error.message }); return }
+  res.json({ place: data })
+})
+
+// ── DELETE /api/voyage/trips/:id/places/:placeId  ────────────────────────────
+router.delete('/trips/:id/places/:placeId', requireAuth, async (req, res: Response) => {
+  const tripId = Number(req.params.id)
+  const placeId = Number(req.params.placeId)
+  await supabaseAdmin.from('voyage_trip_places')
+    .delete().eq('id', placeId).eq('trip_id', tripId)
+  res.json({ ok: true })
+})
+
 // ── GET /api/voyage/trips/:id/members  ───────────────────────────────────────
 router.get('/trips/:id/members', requireAuth, async (req, res: Response) => {
   const userId = uid(req)

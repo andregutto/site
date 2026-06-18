@@ -63,7 +63,7 @@ import FinancesInsightsPage from './pages/finances/FinancesInsightsPage'
 import VoyageLayout from './pages/voyage/VoyageLayout'
 import VoyageTripsPage from './pages/voyage/VoyageTripsPage'
 import VoyageTripDetailPage from './pages/voyage/VoyageTripDetailPage'
-import VoyagePlacesStubPage from './pages/voyage/VoyagePlacesStubPage'
+import VoyagePlacesPage from './pages/voyage/VoyagePlacesPage'
 import VoyageMapStubPage from './pages/voyage/VoyageMapStubPage'
 import AcceptTripInvitePage from './pages/voyage/AcceptTripInvitePage'
 
@@ -164,7 +164,7 @@ function AppRoutes() {
         <Route path="/voyage"          element={<VoyageLayout />}>
           <Route index                element={<VoyageTripsPage />} />
           <Route path=":id"           element={<VoyageTripDetailPage />} />
-          <Route path="places"        element={<VoyagePlacesStubPage />} />
+          <Route path="places"        element={<VoyagePlacesPage />} />
           <Route path="map"           element={<VoyageMapStubPage />} />
         </Route>
         <Route path="/finances"       element={<FinancesLayout />}>

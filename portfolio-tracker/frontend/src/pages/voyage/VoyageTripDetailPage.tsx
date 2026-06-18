@@ -6,6 +6,7 @@ import { useI18n } from '../../contexts/I18nContext'
 import TripFormModal from './TripFormModal'
 import CostCard from './CostCard'
 import MembersPanel from './MembersPanel'
+import TripPlacesPanel from './TripPlacesPanel'
 import type { Trip, TripCost, TripMember } from './types'
 
 const RED = '#D63B2F'
@@ -188,18 +189,13 @@ export default function VoyageTripDetailPage() {
             </div>
           </div>
 
-          {/* Lugares stub */}
-          <div style={{ background: '#fff', border: '1px solid var(--arvo-border)', borderRadius: 14, padding: '20px 22px' }}>
-            <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 10, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)', marginBottom: 14 }}>
-              Lugares
-            </p>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 0', gap: 10 }}>
-              <span style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 40, color: 'rgba(200,184,154,0.25)' }}>◈</span>
-              <p style={{ fontFamily: 'var(--arvo-font-serif)', fontStyle: 'italic', fontSize: 13, color: GOLD, textAlign: 'center' }}>
-                Importação de lugares e mapa — em breve
-              </p>
-            </div>
-          </div>
+          {/* Lugares */}
+          <TripPlacesPanel
+            tripId={Number(id)}
+            tripCity={trip.destination}
+            tripCountry={trip.country}
+            canEdit={trip.user_id === user?.id}
+          />
 
           {/* Members panel */}
           <MembersPanel
