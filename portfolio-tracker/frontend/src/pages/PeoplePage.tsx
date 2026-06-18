@@ -274,12 +274,10 @@ export default function PeoplePage() {
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {contacts.map(contact => (
-            <ContactCard
-              key={contact.email}
-              contact={contact}
-              onRemoved={handleRemoved}
-            />
+          {contacts.map((contact, i) => (
+            <div key={contact.email} style={{ animation: 'fadeUp 320ms cubic-bezier(0.22,0.61,0.36,1) both', animationDelay: `${i * 50}ms` }}>
+              <ContactCard contact={contact} onRemoved={handleRemoved} />
+            </div>
           ))}
         </div>
       )}

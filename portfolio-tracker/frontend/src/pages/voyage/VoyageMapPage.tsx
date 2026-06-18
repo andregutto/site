@@ -4,6 +4,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { apiFetch } from '../../lib/api'
+import { useTheme } from '../../contexts/ThemeContext'
 
 // Fix default Leaflet marker icons broken by bundlers
 delete (L.Icon.Default.prototype as any)._getIconUrl
@@ -155,6 +156,7 @@ export default function VoyageMapPage() {
   const [searchParams] = useSearchParams()
   const id = routeId ?? searchParams.get('trip') ?? undefined
   const navigate = useNavigate()
+  const { resolvedTheme } = useTheme()
   const [trip, setTrip] = useState<Trip | null>(null)
   const [places, setPlaces] = useState<TripPlace[]>([])
   const [loading, setLoading] = useState(true)
@@ -246,8 +248,12 @@ export default function VoyageMapPage() {
                 scrollWheelZoom
               >
                 <TileLayer
-                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  key={resolvedTheme}
+                  attribution='&copy; <a href="https://carto.com/attributions">CARTO</a> &copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
+                  url={resolvedTheme === 'dark'
+                    ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+                    : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
+                  }
                 />
                 <FitBounds places={visiblePlaces} />
                 {visiblePlaces.map(p => (

@@ -40,10 +40,13 @@ function TripCard({ trip, onClick, t }: { trip: Trip; onClick: () => void; t: an
   return (
     <button
       onClick={onClick}
-      className="w-full text-left rounded-[14px] overflow-hidden transition-all duration-[280ms]"
-      style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', cursor: 'pointer' }}
-      onMouseEnter={e => (e.currentTarget.style.boxShadow = 'var(--arvo-shadow-md)')}
-      onMouseLeave={e => (e.currentTarget.style.boxShadow = 'none')}
+      className="w-full text-left rounded-[14px] overflow-hidden"
+      style={{
+        background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', cursor: 'pointer',
+        transition: 'transform 280ms cubic-bezier(0.22,0.61,0.36,1), box-shadow 280ms cubic-bezier(0.22,0.61,0.36,1)',
+      }}
+      onMouseEnter={e => { e.currentTarget.style.boxShadow = 'var(--arvo-shadow-md)'; e.currentTarget.style.transform = 'translateY(-2px)' }}
+      onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.transform = 'translateY(0)' }}
     >
       {/* Cover */}
       <div className="relative" style={{ paddingBottom: '56.25%', background: '#1a1a18', overflow: 'hidden' }}>
@@ -196,13 +199,10 @@ export default function VoyageTripsPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {trips.map(trip => (
-            <TripCard
-              key={trip.id}
-              trip={trip}
-              t={t}
-              onClick={() => navigate(`/voyage/${trip.id}`)}
-            />
+          {trips.map((trip, i) => (
+            <div key={trip.id} style={{ animation: 'fadeUp 320ms cubic-bezier(0.22,0.61,0.36,1) both', animationDelay: `${i * 40}ms` }}>
+              <TripCard trip={trip} t={t} onClick={() => navigate(`/voyage/${trip.id}`)} />
+            </div>
           ))}
         </div>
       )}
