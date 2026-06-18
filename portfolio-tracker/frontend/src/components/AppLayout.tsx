@@ -165,9 +165,10 @@ export default function AppLayout() {
     location.pathname.startsWith('/portfolio') ||
     location.pathname.startsWith('/diversification')
   const inFinances = location.pathname.startsWith('/finances')
+  const inVoyage = location.pathname.startsWith('/voyage')
   const inInstitutions = location.pathname.startsWith('/institutions')
 
-  const sectionAccent = inInvestimentos ? '#1B4FD8' : inFinances ? '#A36A52' : '#1F8A5B'
+  const sectionAccent = inInvestimentos ? '#1B4FD8' : inFinances ? '#A36A52' : inVoyage ? '#D63B2F' : '#1F8A5B'
 
   const investimentosItems = [
     { to: '/dashboard', label: t.nav.dashboard, end: true, icon: (
@@ -260,7 +261,27 @@ export default function AppLayout() {
     )},
   ]
 
-  const activeSubItems = inInvestimentos ? investimentosItems : inFinances ? financesItems : []
+  const voyageItems = [
+    { to: '/voyage', label: (t as any).voyage?.navTrips ?? 'Viagens', end: true, icon: (
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M1 11.5l3-7 4 3 3-5 4 3"/>
+        <path strokeLinecap="round" d="M1 14.5h14"/>
+      </svg>
+    )},
+    { to: '/voyage/places', label: (t as any).voyage?.navPlaces ?? 'Lugares', end: false, icon: (
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M8 1.5C5.515 1.5 3.5 3.515 3.5 6c0 3.375 4.5 8.5 4.5 8.5S12.5 9.375 12.5 6c0-2.485-2.015-4.5-4.5-4.5Z"/>
+        <circle cx="8" cy="6" r="1.5"/>
+      </svg>
+    )},
+    { to: '/voyage/map', label: (t as any).voyage?.navMap ?? 'Mapa', end: false, icon: (
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M1 3l4.5 1.5L10.5 3 15 4.5v9L10.5 12 5.5 13.5 1 12V3ZM5.5 3v10.5M10.5 3V12"/>
+      </svg>
+    )},
+  ]
+
+  const activeSubItems = inInvestimentos ? investimentosItems : inFinances ? financesItems : inVoyage ? voyageItems : []
 
   return (
     <div className={`min-h-screen flex flex-col${resolvedTheme === 'dark' ? ' dark' : ''}`} style={{ background: 'var(--arvo-bg)' }}>
@@ -285,9 +306,10 @@ export default function AppLayout() {
           {/* Desktop — three section tabs (pill style) */}
           <nav className="hidden sm:flex flex-1 justify-center gap-1">
             {([
-              { to: '/dashboard',    label: t.nav.investments, active: inInvestimentos },
-              { to: '/finances',     label: t.nav.finances,    active: inFinances },
-              { to: '/institutions', label: t.nav.institutions, active: inInstitutions },
+              { to: '/dashboard',    label: t.nav.investments,                         active: inInvestimentos },
+              { to: '/finances',     label: t.nav.finances,                            active: inFinances },
+              { to: '/voyage',       label: (t as any).nav?.voyage ?? 'Viagens',       active: inVoyage },
+              { to: '/institutions', label: t.nav.institutions,                        active: inInstitutions },
             ] as Array<{ to: string; label: string; active: boolean }>).map(({ to, label, active }) => (
               <NavLink
                 key={to} to={to}
@@ -596,6 +618,12 @@ export default function AppLayout() {
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                 <circle cx="12" cy="12" r="9.75" />
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.75v10.5M15 9.3c-.6-1.05-1.65-1.65-3-1.65-1.8 0-3.15 1.05-3.15 2.55S10.2 12.3 12 12.6s3.3 1.05 3.3 2.55-1.35 2.55-3.3 2.55c-1.35 0-2.55-.6-3.15-1.65" />
+              </svg>
+            )},
+            { to: '/voyage', label: (t as any).nav?.voyage ?? 'Viagens', match: inVoyage, accent: '#D63B2F', icon: (
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 2C8.134 2 5 5.134 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.866-3.134-7-7-7Z"/>
+                <circle cx="12" cy="9" r="2.5"/>
               </svg>
             )},
             { to: '/institutions', label: t.nav.institutions, match: inInstitutions, accent: '#1F8A5B', icon: (

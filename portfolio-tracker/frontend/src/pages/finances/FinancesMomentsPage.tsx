@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { apiFetch } from '../../lib/api'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
@@ -530,10 +531,49 @@ function resolveKey(name: string, nameKey: string | null | undefined, keys: Reco
   return keys[nameKey] ?? name
 }
 
+function TransformToTripButton({ momentId, onTrip }: { momentId: number; onTrip: (tripId: number) => void }) {
+  const [loading, setLoading] = useState(false)
+  const [done, setDone] = useState(false)
+
+  async function handle() {
+    setLoading(true)
+    try {
+      const result = await apiFetch<{ trip: { id: number } }>(`/api/voyage/from-moment/${momentId}`, { method: 'POST' })
+      setDone(true)
+      onTrip(result.trip.id)
+    } catch {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div style={{ paddingTop: 8, borderTop: '1px solid var(--arvo-border-soft)' }}>
+      <button
+        type="button"
+        onClick={handle}
+        disabled={loading || done}
+        style={{
+          display: 'flex', alignItems: 'center', gap: 6,
+          fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, letterSpacing: '0.04em',
+          padding: '5px 12px', borderRadius: 6,
+          background: 'transparent', border: '1px solid #D63B2F', color: '#D63B2F',
+          cursor: loading || done ? 'default' : 'pointer',
+          opacity: loading || done ? 0.6 : 1,
+          transition: 'all 160ms ease',
+        }}
+      >
+        <span style={{ fontSize: 10 }}>◈</span>
+        {done ? 'Abrindo viagem…' : loading ? 'Criando…' : 'Transformar em viagem'}
+      </button>
+    </div>
+  )
+}
+
 export default function FinancesMomentsPage() {
   const { t } = useI18n()
   const { user } = useAuth()
   const { hideValues } = useCurrency()
+  const navigate = useNavigate()
   const fmt = (n: number, currency: string) => hideValues ? '•••' : _fmt(n, currency)
   const nameKeys: Record<string, string> = {
     categoryTransfer: t.finances.categoryTransfer, categorySalary: t.finances.categorySalary,
@@ -862,6 +902,9 @@ export default function FinancesMomentsPage() {
                         {t.finances.momentNoTransactions}
                       </p>
                     )}
+
+                    {/* Flow B: transform moment into a trip */}
+                    <TransformToTripButton momentId={m.id} onTrip={tripId => navigate(`/voyage/${tripId}`)} />
                   </>
                 )}
               </div>

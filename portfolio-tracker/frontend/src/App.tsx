@@ -60,6 +60,12 @@ import LandingPage from './pages/LandingPage'
 import AcceptInvitePage from './pages/AcceptInvitePage'
 import SharedCategoriesPage from './pages/finances/SharedCategoriesPage'
 import FinancesInsightsPage from './pages/finances/FinancesInsightsPage'
+import VoyageLayout from './pages/voyage/VoyageLayout'
+import VoyageTripsPage from './pages/voyage/VoyageTripsPage'
+import VoyageTripDetailPage from './pages/voyage/VoyageTripDetailPage'
+import VoyagePlacesStubPage from './pages/voyage/VoyagePlacesStubPage'
+import VoyageMapStubPage from './pages/voyage/VoyageMapStubPage'
+import AcceptTripInvitePage from './pages/voyage/AcceptTripInvitePage'
 
 function EmailConfirmGate({ email }: { email: string }) {
   const { signOut } = useAuth()
@@ -123,13 +129,14 @@ function AppRoutes() {
 
   return (
     <Routes>
-      <Route path="/login"   element={user ? <Navigate to={sessionStorage.getItem('pending_invite_token') ? `/invite/${sessionStorage.getItem('pending_invite_token')}` : (user.user_metadata?.default_section === 'finances' ? '/finances' : '/dashboard')} replace /> : <LoginPage />} />
-      <Route path="/"        element={user ? <Navigate to={user.user_metadata?.default_section === 'finances' ? '/finances' : '/dashboard'} replace /> : <LandingPage />} />
+      <Route path="/login"   element={user ? <Navigate to={sessionStorage.getItem('pending_invite_token') ? `/invite/${sessionStorage.getItem('pending_invite_token')}` : (user.user_metadata?.default_section === 'finances' ? '/finances' : user.user_metadata?.default_section === 'voyage' ? '/voyage' : '/dashboard')} replace /> : <LoginPage />} />
+      <Route path="/"        element={user ? <Navigate to={user.user_metadata?.default_section === 'finances' ? '/finances' : user.user_metadata?.default_section === 'voyage' ? '/voyage' : '/dashboard'} replace /> : <LandingPage />} />
       <Route path="/privacy"                element={<PrivacyPolicyPage />} />
       <Route path="/terms"                  element={<TermsOfUsePage />} />
       <Route path="/share/momento/:token"   element={<PublicMomentPage />} />
       <Route path="/share/portfolio/:token"  element={<PublicPortfolioPage />} />
       <Route path="/invite/:token"           element={<AcceptInvitePage />} />
+      <Route path="/voyage/invite/:token"    element={<AcceptTripInvitePage />} />
       <Route element={<ProtectedRoutes />}>
         <Route path="/dashboard"      element={<DashboardPage />} />
         <Route path="/assets"         element={<AssetsPage />} />
@@ -154,6 +161,12 @@ function AppRoutes() {
         <Route path="/notifications"  element={<NotificationsPage />} />
         <Route path="/archived"       element={<ArchivedPage />} />
         <Route path="/diversification" element={<DiversificationPage />} />
+        <Route path="/voyage"          element={<VoyageLayout />}>
+          <Route index                element={<VoyageTripsPage />} />
+          <Route path=":id"           element={<VoyageTripDetailPage />} />
+          <Route path="places"        element={<VoyagePlacesStubPage />} />
+          <Route path="map"           element={<VoyageMapStubPage />} />
+        </Route>
         <Route path="/finances"       element={<FinancesLayout />}>
           <Route index                element={<FinancesOverviewPage />} />
           <Route path="transactions"  element={<FinancesTransactionsPage />} />

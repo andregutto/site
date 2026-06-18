@@ -1,9 +1,10 @@
 import { Router, Response } from 'express'
-import { requireAuth, AuthRequest } from '../middleware/auth.js'
-import { supabaseAdmin } from '../lib/supabase.js'
+import { requireAuth, AuthRequest } from '../_middleware/auth.js'
+import { supabaseAdmin } from '../_lib/supabase.js'
 import { getActiveSubscriptions, getBudgetAlerts } from './finances.js'
 import { getSplitWarnings } from './portfolio.js'
 import { getPendingGroupInvites } from './shared.js'
+import { getPendingTripInvites } from './voyage.js'
 
 const router = Router()
 
@@ -23,13 +24,14 @@ const NON_DISMISSIBLE_HISTORY_TYPES = new Set(['bank_connected', 'bank_connect_e
 router.get('/', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
 
-  const [achievementsRes, subsResult, notifDismissalsRes, budgetAlerts, splitWarnings, pendingInvites] = await Promise.all([
+  const [achievementsRes, subsResult, notifDismissalsRes, budgetAlerts, splitWarnings, pendingInvites, pendingTripInvites] = await Promise.all([
     supabaseAdmin.from('achievements').select('achievement_key, earned_at').eq('user_id', userId).order('earned_at', { ascending: true }),
     getActiveSubscriptions(userId),
     supabaseAdmin.from('notification_dismissals').select('key, type, params, severity, link, occurred_at, dismissed_at').eq('user_id', userId),
     getBudgetAlerts(userId),
     getSplitWarnings(userId),
     getPendingGroupInvites(userId),
+    getPendingTripInvites(userId),
   ])
 
   const dismissedKeys = new Set((notifDismissalsRes.data ?? []).map(n => n.key))
@@ -112,6 +114,21 @@ router.get('/', requireAuth, async (req, res: Response) => {
       severity: 'info',
       params: { group_name: inv.group_name, inviter_name: inv.inviter_name },
       link: `/invite/${inv.token}`,
+      occurred_at: inv.occurred_at,
+      dismissed_at: null,
+      dismissible: true,
+    })
+  }
+
+  // Category 12: pending voyage trip invites -> active (unless dismissed)
+  for (const inv of pendingTripInvites) {
+    if (dismissedKeys.has(inv.key)) continue
+    active.push({
+      key: inv.key,
+      type: 'trip_invite',
+      severity: 'info',
+      params: { trip_title: inv.trip_title, inviter_name: inv.inviter_name },
+      link: `/voyage/invite/${inv.token}`,
       occurred_at: inv.occurred_at,
       dismissed_at: null,
       dismissible: true,
