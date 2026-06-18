@@ -88,7 +88,7 @@ function LibraryPicker({ tripId, tripCity, tripCountry, onAdded }: {
     setOpen(true)
     if (library.length > 0) return
     setLoading(true)
-    const data = await apiFetch<{ places: LibraryPlace[] }>('/api/voyage/places')
+    const data = await apiFetch<{ places: LibraryPlace[] }>('/voyage/places')
     // prioritise same city/country
     const sorted = [...(data.places)].sort((a, b) => {
       const aMatch = (tripCity && a.city?.toLowerCase().includes(tripCity.toLowerCase())) ||
@@ -104,7 +104,7 @@ function LibraryPicker({ tripId, tripCity, tripCountry, onAdded }: {
   async function addPlace(p: LibraryPlace) {
     setAdding(p.id)
     try {
-      const data = await apiFetch<{ place: TripPlace }>(`/api/voyage/trips/${tripId}/places`, {
+      const data = await apiFetch<{ place: TripPlace }>(`/voyage/trips/${tripId}/places`, {
         method: 'POST',
         body: JSON.stringify({
           library_place_id: p.id,
@@ -208,7 +208,7 @@ function PlaceRow({ place, tripId, canEdit, onUpdate, onDelete }: {
 
   async function toggleVisited() {
     const res = await apiFetch<{ place: TripPlace }>(
-      `/api/voyage/trips/${tripId}/places/${place.id}`,
+      `/voyage/trips/${tripId}/places/${place.id}`,
       { method: 'PATCH', body: JSON.stringify({ visited: !place.visited }) }
     )
     onUpdate(res.place)
@@ -217,7 +217,7 @@ function PlaceRow({ place, tripId, canEdit, onUpdate, onDelete }: {
   async function saveNote() {
     setSaving(true)
     const res = await apiFetch<{ place: TripPlace }>(
-      `/api/voyage/trips/${tripId}/places/${place.id}`,
+      `/voyage/trips/${tripId}/places/${place.id}`,
       { method: 'PATCH', body: JSON.stringify({ trip_note: note.trim() || null }) }
     )
     onUpdate(res.place)
@@ -227,7 +227,7 @@ function PlaceRow({ place, tripId, canEdit, onUpdate, onDelete }: {
 
   async function del() {
     if (!confirm(`Remover "${place.name}" da viagem?`)) return
-    await apiFetch(`/api/voyage/trips/${tripId}/places/${place.id}`, { method: 'DELETE' })
+    await apiFetch(`/voyage/trips/${tripId}/places/${place.id}`, { method: 'DELETE' })
     onDelete(place.id)
   }
 
@@ -330,7 +330,7 @@ export default function TripPlacesPanel({ tripId, tripCity, tripCountry, canEdit
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const data = await apiFetch<{ places: TripPlace[] }>(`/api/voyage/trips/${tripId}/places`)
+      const data = await apiFetch<{ places: TripPlace[] }>(`/voyage/trips/${tripId}/places`)
       setPlaces(data.places)
     } finally {
       setLoading(false)

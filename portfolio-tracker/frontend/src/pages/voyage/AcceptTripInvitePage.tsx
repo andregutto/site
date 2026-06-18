@@ -43,7 +43,7 @@ export default function AcceptTripInvitePage() {
     }
     setAccepting(true)
     try {
-      const result = await apiFetch<{ trip_id: number }>('/api/voyage/invite/accept', {
+      const result = await apiFetch<{ trip_id: number }>('/voyage/invite/accept', {
         method: 'POST',
         body: JSON.stringify({ token }),
       })

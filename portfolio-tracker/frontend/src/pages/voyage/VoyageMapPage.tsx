@@ -167,8 +167,8 @@ export default function VoyageMapPage() {
     setLoading(true)
     try {
       const [tripData, placesData] = await Promise.all([
-        apiFetch<{ trip: Trip }>(`/api/voyage/trips/${id}`),
-        apiFetch<{ places: TripPlace[] }>(`/api/voyage/trips/${id}/places`),
+        apiFetch<{ trip: Trip }>(`/voyage/trips/${id}`),
+        apiFetch<{ places: TripPlace[] }>(`/voyage/trips/${id}/places`),
       ])
       setTrip(tripData.trip)
       setPlaces(placesData.places)

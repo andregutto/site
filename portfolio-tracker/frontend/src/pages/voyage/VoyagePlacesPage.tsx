@@ -63,7 +63,7 @@ function TakeoutImporter({ onImported }: { onImported: () => void }) {
         parsed.push({ list_name, geojson })
       }
       const data = await apiFetch<{ imported: number; total_in_files: number }>(
-        '/api/voyage/places/import-takeout',
+        '/voyage/places/import-takeout',
         { method: 'POST', body: JSON.stringify({ files: parsed }) }
       )
       setResult({ imported: data.imported, total: data.total_in_files })
@@ -149,7 +149,7 @@ function PlaceCard({ place, onDelete }: { place: Place; onDelete: (id: number) =
   async function del() {
     if (!confirm(`Remover "${place.name}" da biblioteca?`)) return
     setDeleting(true)
-    await apiFetch(`/api/voyage/places/${place.id}`, { method: 'DELETE' })
+    await apiFetch(`/voyage/places/${place.id}`, { method: 'DELETE' })
     onDelete(place.id)
   }
 
@@ -220,7 +220,7 @@ export default function VoyagePlacesPage() {
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const data = await apiFetch<{ places: Place[] }>('/api/voyage/places')
+      const data = await apiFetch<{ places: Place[] }>('/voyage/places')
       setPlaces(data.places)
     } finally {
       setLoading(false)

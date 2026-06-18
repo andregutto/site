@@ -125,7 +125,7 @@ export default function VoyageTripsPage() {
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const data = await apiFetch<{ trips: Trip[] }>('/api/voyage/trips')
+      const data = await apiFetch<{ trips: Trip[] }>('/voyage/trips')
       setTrips(data.trips)
     } finally {
       setLoading(false)

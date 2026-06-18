@@ -43,9 +43,9 @@ export default function TripFormModal({ trip, onClose, onSaved }: Props) {
       }
       let result: { trip: Trip }
       if (trip) {
-        result = await apiFetch(`/api/voyage/trips/${trip.id}`, { method: 'PATCH', body: JSON.stringify(body) })
+        result = await apiFetch(`/voyage/trips/${trip.id}`, { method: 'PATCH', body: JSON.stringify(body) })
       } else {
-        result = await apiFetch('/api/voyage/trips', { method: 'POST', body: JSON.stringify(body) })
+        result = await apiFetch('/voyage/trips', { method: 'POST', body: JSON.stringify(body) })
       }
       onSaved(result.trip)
     } catch (e: any) {

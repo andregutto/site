@@ -31,7 +31,7 @@ export default function ShareTripPanel({ trip, onUpdate }: Props) {
   async function generate() {
     setLoading(true)
     try {
-      const data = await apiFetch<{ token: string }>(`/api/voyage/trips/${trip.id}/share`, {
+      const data = await apiFetch<{ token: string }>(`/voyage/trips/${trip.id}/share`, {
         method: 'POST',
         body: JSON.stringify({ hide_cost: hideCost, expires_in_days: expiryDays }),
       })
@@ -45,7 +45,7 @@ export default function ShareTripPanel({ trip, onUpdate }: Props) {
     if (!confirm('Revogar o link? Quem tiver o link não conseguirá mais acessar.')) return
     setRevoking(true)
     try {
-      await apiFetch(`/api/voyage/trips/${trip.id}/share`, { method: 'DELETE' })
+      await apiFetch(`/voyage/trips/${trip.id}/share`, { method: 'DELETE' })
       onUpdate({ share_token: null })
     } finally {
       setRevoking(false)
@@ -113,7 +113,7 @@ export default function ShareTripPanel({ trip, onUpdate }: Props) {
               onChange={async e => {
                 const v = e.target.checked
                 setHideCost(v)
-                await apiFetch(`/api/voyage/trips/${trip.id}/share`, {
+                await apiFetch(`/voyage/trips/${trip.id}/share`, {
                   method: 'POST',
                   body: JSON.stringify({ hide_cost: v, expires_in_days: expiryDays }),
                 })
@@ -139,7 +139,7 @@ export default function ShareTripPanel({ trip, onUpdate }: Props) {
                   type="button"
                   onClick={async () => {
                     setExpiryDays(opt.value)
-                    await apiFetch(`/api/voyage/trips/${trip.id}/share`, {
+                    await apiFetch(`/voyage/trips/${trip.id}/share`, {
                       method: 'POST',
                       body: JSON.stringify({ hide_cost: hideCost, expires_in_days: opt.value }),
                     })

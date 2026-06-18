@@ -147,7 +147,7 @@ export default function TripItineraryPanel({ tripId, canEdit }: Props) {
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const data = await apiFetch<{ places: ItineraryPlace[] }>(`/api/voyage/trips/${tripId}/places`)
+      const data = await apiFetch<{ places: ItineraryPlace[] }>(`/voyage/trips/${tripId}/places`)
       setPlaces(data.places)
     } finally {
       setLoading(false)
@@ -159,7 +159,7 @@ export default function TripItineraryPanel({ tripId, canEdit }: Props) {
   async function changeDay(placeId: number, day: number | null) {
     setPlaces(ps => ps.map(p => p.id === placeId ? { ...p, day_number: day } : p))
     try {
-      await apiFetch(`/api/voyage/trips/${tripId}/places/${placeId}`, {
+      await apiFetch(`/voyage/trips/${tripId}/places/${placeId}`, {
         method: 'PATCH',
         body: JSON.stringify({ day_number: day }),
       })

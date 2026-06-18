@@ -53,7 +53,7 @@ export default function VoyageTripDetailPage() {
     if (!id) return
     setLoading(true)
     try {
-      const result = await apiFetch<TripDetail>(`/api/voyage/trips/${id}`)
+      const result = await apiFetch<TripDetail>(`/voyage/trips/${id}`)
       setData(result)
     } finally {
       setLoading(false)

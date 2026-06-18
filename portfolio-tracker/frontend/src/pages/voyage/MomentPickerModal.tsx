@@ -40,7 +40,7 @@ export default function MomentPickerModal({ onClose }: Props) {
   const searchRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    apiFetch<{ moments: Moment[] }>('/api/voyage/moments-for-picker')
+    apiFetch<{ moments: Moment[] }>('/voyage/moments-for-picker')
       .then(d => setMoments(d.moments))
       .finally(() => setLoading(false))
     setTimeout(() => searchRef.current?.focus(), 80)

@@ -538,7 +538,7 @@ function TransformToTripButton({ momentId, onTrip }: { momentId: number; onTrip:
   async function handle() {
     setLoading(true)
     try {
-      const result = await apiFetch<{ trip: { id: number } }>(`/api/voyage/from-moment/${momentId}`, { method: 'POST' })
+      const result = await apiFetch<{ trip: { id: number } }>(`/voyage/from-moment/${momentId}`, { method: 'POST' })
       setDone(true)
       onTrip(result.trip.id)
     } catch {
@@ -609,7 +609,7 @@ export default function FinancesMomentsPage() {
 
   useEffect(() => {
     if (showForm && !editing) {
-      apiFetch<{ trips: { id: number; title: string }[] }>('/api/voyage/trips')
+      apiFetch<{ trips: { id: number; title: string }[] }>('/voyage/trips')
         .then(d => setTripOptions(d.trips))
         .catch(() => {})
     } else {
@@ -664,7 +664,7 @@ export default function FinancesMomentsPage() {
       } else {
         const created = await apiFetch<{ id: number }>('/finances/moments', { method: 'POST', body: JSON.stringify(data) })
         if (selectedTripId && created?.id) {
-          await apiFetch(`/api/voyage/trips/${selectedTripId}/moments`, {
+          await apiFetch(`/voyage/trips/${selectedTripId}/moments`, {
             method: 'POST',
             body: JSON.stringify({ moment_id: created.id }),
           })

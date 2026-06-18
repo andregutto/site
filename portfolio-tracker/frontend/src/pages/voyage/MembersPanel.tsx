@@ -34,7 +34,7 @@ export default function MembersPanel({ tripId, isOwner }: Props) {
   async function load() {
     setLoading(true)
     try {
-      const data = await apiFetch<{ members: Member[] }>(`/api/voyage/trips/${tripId}/members`)
+      const data = await apiFetch<{ members: Member[] }>(`/voyage/trips/${tripId}/members`)
       setMembers(data.members)
     } finally {
       setLoading(false)
@@ -49,7 +49,7 @@ export default function MembersPanel({ tripId, isOwner }: Props) {
     setInviting(true)
     setInviteResult(null)
     try {
-      const data = await apiFetch<{ invite_url: string }>(`/api/voyage/trips/${tripId}/invite`, {
+      const data = await apiFetch<{ invite_url: string }>(`/voyage/trips/${tripId}/invite`, {
         method: 'POST',
         body: JSON.stringify({ email: inviteEmail, role: inviteRole }),
       })
@@ -66,7 +66,7 @@ export default function MembersPanel({ tripId, isOwner }: Props) {
   async function removeMember(memberId: number) {
     setRemoving(memberId)
     try {
-      await apiFetch(`/api/voyage/trips/${tripId}/members/${memberId}`, { method: 'DELETE' })
+      await apiFetch(`/voyage/trips/${tripId}/members/${memberId}`, { method: 'DELETE' })
       setMembers(ms => ms.filter(m => m.id !== memberId))
     } finally {
       setRemoving(null)

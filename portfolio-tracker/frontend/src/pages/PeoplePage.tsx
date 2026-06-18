@@ -42,7 +42,7 @@ function ContactCard({ contact, onRemoved }: { contact: Contact; onRemoved: (mem
     if (!confirm(`Remover acesso de ${contact.email} à viagem "${ctx.trip_title}"?`)) return
     setRemoving(ctx.member_id)
     try {
-      await apiFetch(`/api/voyage/trips/${ctx.trip_id}/members/${ctx.member_id}`, { method: 'DELETE' })
+      await apiFetch(`/voyage/trips/${ctx.trip_id}/members/${ctx.member_id}`, { method: 'DELETE' })
       onRemoved(ctx.member_id, 'voyage_trip')
     } finally {
       setRemoving(null)

@@ -51,7 +51,7 @@ function LinkMomentPanel({ tripId, onLinked }: { tripId: number; onLinked: (cost
     setMode('link')
     if (moments.length === 0) {
       setLoadingMoments(true)
-      const data = await apiFetch<{ moments: MomentPicker[] }>('/api/voyage/moments-for-picker')
+      const data = await apiFetch<{ moments: MomentPicker[] }>('/voyage/moments-for-picker')
       setMoments(data.moments)
       setLoadingMoments(false)
     }
@@ -60,7 +60,7 @@ function LinkMomentPanel({ tripId, onLinked }: { tripId: number; onLinked: (cost
   async function linkMoment() {
     if (!selectedMoment) return
     setSaving(true)
-    const data = await apiFetch<{ cost: TripCost }>(`/api/voyage/trips/${tripId}/moments`, {
+    const data = await apiFetch<{ cost: TripCost }>(`/voyage/trips/${tripId}/moments`, {
       method: 'POST', body: JSON.stringify({ moment_id: selectedMoment }),
     })
     onLinked(data.cost)
@@ -70,7 +70,7 @@ function LinkMomentPanel({ tripId, onLinked }: { tripId: number; onLinked: (cost
 
   async function createMoment() {
     setSaving(true)
-    const data = await apiFetch<{ cost: TripCost }>(`/api/voyage/trips/${tripId}/create-moment`, {
+    const data = await apiFetch<{ cost: TripCost }>(`/voyage/trips/${tripId}/create-moment`, {
       method: 'POST', body: JSON.stringify({ name: newName.trim() || undefined, budget: newBudget ? Number(newBudget) : undefined }),
     })
     onLinked(data.cost)
