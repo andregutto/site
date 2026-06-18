@@ -77,7 +77,7 @@ function ContactCard({ contact, onRemoved }: { contact: Contact; onRemoved: (mem
   return (
     <div style={{
       background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)',
-      borderRadius: 14, padding: '20px 22px',
+      borderRadius: 16, boxShadow: 'var(--arvo-shadow-sm)', padding: '20px 22px',
     }}>
       {/* Cabeçalho */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16 }}>

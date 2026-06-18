@@ -211,7 +211,7 @@ export default function VoyageMapPage() {
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-5">
         {/* Sidebar */}
         <div className="lg:col-span-1">
-          <div style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', borderRadius: 14, padding: '16px 18px' }}>
+          <div style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', borderRadius: 16, boxShadow: 'var(--arvo-shadow-sm)', padding: '16px 18px' }}>
             <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 10, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)', marginBottom: 12 }}>
               Filtrar por dia
             </p>
@@ -227,10 +227,13 @@ export default function VoyageMapPage() {
 
         {/* Map */}
         <div className="lg:col-span-3">
-          <div style={{ borderRadius: 14, overflow: 'hidden', border: '1px solid var(--arvo-border)', height: 520 }}>
+          <div style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid var(--arvo-border)', boxShadow: 'var(--arvo-shadow-sm)', height: 520 }}>
             {visiblePlaces.length === 0 ? (
               <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'var(--arvo-hover-bg)', gap: 12 }}>
-                <span style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 48, color: 'rgba(200,184,154,0.25)' }}>◈</span>
+                <svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="rgba(200,184,154,0.30)" strokeWidth="1.3">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 32l10-18 12 9 10-15 12 8"/>
+                  <path strokeLinecap="round" d="M4 40h40"/>
+                </svg>
                 <p style={{ fontFamily: 'var(--arvo-font-serif)', fontStyle: 'italic', fontSize: 14, color: GOLD }}>
                   {places.length === 0 ? 'Adicione lugares à viagem primeiro' : 'Nenhum lugar com coordenadas neste filtro'}
                 </p>

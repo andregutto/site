@@ -108,7 +108,10 @@ export default function AcceptTripInvitePage() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, textAlign: 'center' }}>
                 <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'rgba(214,59,47,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <span style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 24, color: RED }}>◈</span>
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={RED} strokeWidth="1.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M2 17l6-11 8 6 6-10 6 5"/>
+                    <path strokeLinecap="round" d="M2 21h20"/>
+                  </svg>
                 </div>
                 <div>
                   <p style={{ fontSize: 11, color: 'var(--arvo-fg-soft)', letterSpacing: '0.10em', textTransform: 'uppercase', fontFamily: 'var(--arvo-font-body)', marginBottom: 4 }}>

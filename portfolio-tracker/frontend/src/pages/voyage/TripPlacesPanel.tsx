@@ -340,7 +340,7 @@ export default function TripPlacesPanel({ tripId, tripCity, tripCountry, canEdit
   useEffect(() => { load() }, [load])
 
   return (
-    <div style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', borderRadius: 14, padding: '20px 22px' }}>
+    <div style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', borderRadius: 16, boxShadow: 'var(--arvo-shadow-sm)', padding: '20px 22px' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
         <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 10, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)' }}>
           Lugares
@@ -358,7 +358,10 @@ export default function TripPlacesPanel({ tripId, tripCity, tripCountry, canEdit
         </div>
       ) : places.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '24px 0', marginBottom: 8 }}>
-          <span style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 32, color: 'rgba(200,184,154,0.25)' }}>◈</span>
+          <svg width="32" height="32" viewBox="0 0 32 32" fill="none" stroke="rgba(200,184,154,0.30)" strokeWidth="1.3" style={{ marginBottom: 2 }}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M16 3C11 3 7 7 7 12c0 7 9 16 9 16s9-9 9-16c0-5-4-9-9-9z"/>
+            <circle cx="16" cy="12" r="2.5"/>
+          </svg>
           <p style={{ fontFamily: 'var(--arvo-font-serif)', fontStyle: 'italic', fontSize: 13, color: GOLD, marginTop: 8 }}>
             Nenhum lugar adicionado ainda
           </p>

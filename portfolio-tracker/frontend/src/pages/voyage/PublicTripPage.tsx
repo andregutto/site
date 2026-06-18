@@ -91,7 +91,7 @@ function PlaceGroup({ day, places }: { day: number | null; places: PublicPlace[]
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {places.map(p => (
           <div key={p.id} style={{
-            background: '#fff', borderRadius: 10,
+            background: 'var(--arvo-surface)', borderRadius: 10,
             border: `1px solid ${p.is_highlight ? RED : 'var(--arvo-border)'}`,
             padding: '10px 14px', display: 'flex', alignItems: 'flex-start', gap: 10,
           }}>
@@ -156,7 +156,10 @@ export default function PublicTripPage() {
   if (loading) {
     return (
       <div style={{ minHeight: '100vh', background: 'var(--arvo-offwhite)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <span style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 32, color: 'rgba(200,184,154,0.3)', animation: 'pulse 1.5s ease infinite' }}>◈</span>
+        <svg width="32" height="32" viewBox="0 0 32 32" fill="none" stroke="rgba(200,184,154,0.35)" strokeWidth="1.2" style={{ animation: 'pulse 1.5s ease infinite' }}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M2 22l8-14 10 8 8-12 8 6"/>
+        <path strokeLinecap="round" d="M2 28h28"/>
+      </svg>
       </div>
     )
   }
@@ -164,7 +167,10 @@ export default function PublicTripPage() {
   if (error || !data) {
     return (
       <div style={{ minHeight: '100vh', background: 'var(--arvo-offwhite)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
-        <span style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 48, color: 'rgba(200,184,154,0.25)' }}>◈</span>
+        <svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="rgba(200,184,154,0.25)" strokeWidth="1.3">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M4 34l12-20 14 10 10-16 12 8"/>
+          <path strokeLinecap="round" d="M4 42h40"/>
+        </svg>
         <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 16, letterSpacing: '0.06em', color: 'var(--arvo-fg-muted)' }}>
           {error || 'Página não encontrada'}
         </p>
@@ -193,7 +199,10 @@ export default function PublicTripPage() {
           />
         ) : (
           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, #1a1a18 0%, #2a2820 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <span style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 80, color: 'rgba(200,184,154,0.12)' }}>◈</span>
+            <svg width="80" height="80" viewBox="0 0 56 56" fill="none" stroke="rgba(200,184,154,0.12)" strokeWidth="1.3">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 38l12-24 16 12 12-20 12 10"/>
+              <path strokeLinecap="round" d="M4 50h48"/>
+            </svg>
           </div>
         )}
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(13,13,13,0.80) 0%, rgba(13,13,13,0.10) 60%, transparent 100%)' }} />
@@ -236,7 +245,7 @@ export default function PublicTripPage() {
 
         {/* Cost */}
         {cost && (
-          <div style={{ background: '#fff', borderRadius: 14, border: '1px solid var(--arvo-border)', padding: '18px 22px', marginBottom: 28, display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+          <div style={{ background: 'var(--arvo-surface)', borderRadius: 16, border: '1px solid var(--arvo-border)', boxShadow: 'var(--arvo-shadow-sm)', padding: '18px 22px', marginBottom: 28, display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
             <div>
               <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)', marginBottom: 4 }}>Custo total</p>
               <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 26, fontVariantNumeric: 'tabular-nums', color: 'var(--arvo-fg)', letterSpacing: '-0.02em' }}>

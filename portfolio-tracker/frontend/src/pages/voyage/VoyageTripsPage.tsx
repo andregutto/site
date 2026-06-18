@@ -97,7 +97,7 @@ function TripCard({ trip, onClick, t }: { trip: Trip; onClick: () => void; t: an
           {hasCost && (
             <span style={{
               fontFamily: 'var(--arvo-font-body)', fontSize: 11,
-              color: '#FF8A84', background: RED_SOFT, padding: '2px 8px', borderRadius: 999,
+              color: RED, background: RED_SOFT, padding: '2px 8px', borderRadius: 999,
             }}>
               {fmtCost(trip.cost_total ?? 0)}
               {(trip.cost_budget ?? 0) > 0 && ` / ${fmtCost(trip.cost_budget!)}`}
