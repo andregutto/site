@@ -412,6 +412,208 @@ router.get('/moments-for-picker', requireAuth, async (req, res: Response) => {
   res.json({ moments: data ?? [] })
 })
 
+// ══════════════════════════════════════════════════════════════════════════════
+// V3 — Lugares (biblioteca pessoal + trip places)
+// ══════════════════════════════════════════════════════════════════════════════
+
+// ── GET /api/voyage/places  (biblioteca do user; ?city=Lisboa) ────────────────
+router.get('/places', requireAuth, async (req, res: Response) => {
+  const userId = uid(req)
+  const { city, q } = req.query as { city?: string; q?: string }
+
+  let query = supabaseAdmin
+    .from('voyage_places')
+    .select('*')
+    .eq('user_id', userId)
+    .order('name')
+
+  if (city) query = query.ilike('city', `%${city}%`)
+  if (q)    query = query.ilike('name', `%${q}%`)
+
+  const { data, error } = await query
+  if (error) { res.status(500).json({ error: error.message }); return }
+  res.json({ places: data ?? [] })
+})
+
+// ── POST /api/voyage/places  (adicionar lugar manualmente) ───────────────────
+router.post('/places', requireAuth, async (req, res: Response) => {
+  const userId = uid(req)
+  const body = req.body as {
+    name: string; category?: string; lat?: number; lng?: number
+    address?: string; city?: string; google_place_id?: string
+    google_maps_url?: string; notes?: string
+  }
+  if (!body.name?.trim()) { res.status(400).json({ error: 'Nome obrigatório' }); return }
+
+  const { data, error } = await supabaseAdmin
+    .from('voyage_places')
+    .insert({ ...body, user_id: userId, source: 'manual' })
+    .select().single()
+
+  if (error) { res.status(500).json({ error: error.message }); return }
+  res.status(201).json({ place: data })
+})
+
+// ── DELETE /api/voyage/places/:id  ───────────────────────────────────────────
+router.delete('/places/:id', requireAuth, async (req, res: Response) => {
+  const userId = uid(req)
+  await supabaseAdmin.from('voyage_places')
+    .delete().eq('id', Number(req.params.id)).eq('user_id', userId)
+  res.json({ ok: true })
+})
+
+// ── POST /api/voyage/places/import-takeout  (importar JSON do Takeout) ────────
+// Aceita um array de GeoJSON FeatureCollections (um por lista do Google Maps)
+// Body: { files: [{ list_name: string, geojson: object }] }
+router.post('/places/import-takeout', requireAuth, async (req, res: Response) => {
+  const userId = uid(req)
+  const { files } = req.body as {
+    files: Array<{ list_name: string; geojson: any }>
+  }
+
+  if (!Array.isArray(files) || files.length === 0) {
+    res.status(400).json({ error: 'Nenhum arquivo enviado' }); return
+  }
+
+  const toInsert: any[] = []
+
+  for (const { list_name, geojson } of files) {
+    const features: any[] = geojson?.features ?? []
+    for (const f of features) {
+      const props = f.properties ?? {}
+      const loc   = props.Location ?? {}
+      const geo   = loc['Geo Coordinates'] ?? {}
+      const coords = f.geometry?.coordinates // [lng, lat]
+
+      const lat = geo.Latitude  ?? coords?.[1] ?? null
+      const lng = geo.Longitude ?? coords?.[0] ?? null
+      const name = props.Title || loc['Business Name'] || 'Sem nome'
+
+      // Reverse geocoding via Nominatim para obter cidade
+      let city: string | null = null
+      if (lat && lng) {
+        try {
+          const r = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=pt`,
+            { headers: { 'User-Agent': 'Arvo/1.0 (arvo.andregutto.com)' } }
+          )
+          const nm = await r.json() as any
+          city = nm.address?.city || nm.address?.town || nm.address?.village || nm.address?.county || null
+        } catch { /* silencioso */ }
+      }
+
+      toInsert.push({
+        user_id: userId,
+        name,
+        category: list_name || null,
+        lat,
+        lng,
+        address: loc.Address || null,
+        city,
+        google_maps_url: props['Google Maps URL'] || null,
+        source: 'takeout',
+      })
+    }
+  }
+
+  if (toInsert.length === 0) {
+    res.status(400).json({ error: 'Nenhum lugar encontrado nos arquivos' }); return
+  }
+
+  // Upsert por (user_id, google_maps_url) para não duplicar em re-imports
+  const { data, error } = await supabaseAdmin
+    .from('voyage_places')
+    .upsert(toInsert, { onConflict: 'user_id,google_maps_url', ignoreDuplicates: true })
+    .select()
+
+  if (error) { res.status(500).json({ error: error.message }); return }
+  res.json({ imported: (data ?? []).length, total_in_files: toInsert.length })
+})
+
+// ── GET /api/voyage/trips/:id/places  ────────────────────────────────────────
+router.get('/trips/:id/places', requireAuth, async (req, res: Response) => {
+  const userId = uid(req)
+  const tripId = Number(req.params.id)
+
+  const { data: trip } = await supabaseAdmin
+    .from('voyage_trips').select('user_id').eq('id', tripId).single()
+  if (!trip) { res.status(404).json({ error: 'Viagem não encontrada' }); return }
+
+  const isMember = trip.user_id === userId ||
+    !!(await supabaseAdmin.from('voyage_trip_members')
+      .select('id').eq('trip_id', tripId).eq('user_id', userId).eq('status', 'active').single()).data
+
+  if (!isMember) { res.status(403).json({ error: 'Sem acesso' }); return }
+
+  const { data } = await supabaseAdmin
+    .from('voyage_trip_places')
+    .select('*')
+    .eq('trip_id', tripId)
+    .order('sort_order')
+
+  res.json({ places: data ?? [] })
+})
+
+// ── POST /api/voyage/trips/:id/places  (adicionar lugar à trip) ──────────────
+router.post('/trips/:id/places', requireAuth, async (req, res: Response) => {
+  const userId = uid(req)
+  const tripId = Number(req.params.id)
+  const body = req.body as {
+    library_place_id?: number; name: string; category?: string
+    lat?: number; lng?: number; address?: string
+    google_place_id?: string; google_maps_url?: string
+    day_number?: number; is_highlight?: boolean
+  }
+
+  if (!body.name?.trim()) { res.status(400).json({ error: 'Nome obrigatório' }); return }
+
+  const { data: existingPlaces } = await supabaseAdmin
+    .from('voyage_trip_places').select('sort_order').eq('trip_id', tripId)
+    .order('sort_order', { ascending: false }).limit(1)
+  const nextOrder = ((existingPlaces?.[0]?.sort_order ?? -1) + 1)
+
+  const { data, error } = await supabaseAdmin
+    .from('voyage_trip_places')
+    .insert({ ...body, trip_id: tripId, added_by: userId, sort_order: nextOrder })
+    .select().single()
+
+  if (error) { res.status(500).json({ error: error.message }); return }
+  res.status(201).json({ place: data })
+})
+
+// ── PATCH /api/voyage/trips/:id/places/:placeId  (marcar visitado, nota, etc) ─
+router.patch('/trips/:id/places/:placeId', requireAuth, async (req, res: Response) => {
+  const tripId = Number(req.params.id)
+  const placeId = Number(req.params.placeId)
+  const { visited, trip_note, day_number, is_highlight, rating, sort_order } = req.body
+
+  const update: Record<string, unknown> = {}
+  if (visited    !== undefined) update.visited     = visited
+  if (trip_note  !== undefined) update.trip_note   = trip_note
+  if (day_number !== undefined) update.day_number  = day_number
+  if (is_highlight !== undefined) update.is_highlight = is_highlight
+  if (rating     !== undefined) update.rating      = rating
+  if (sort_order !== undefined) update.sort_order  = sort_order
+
+  const { data, error } = await supabaseAdmin
+    .from('voyage_trip_places')
+    .update(update)
+    .eq('id', placeId).eq('trip_id', tripId)
+    .select().single()
+
+  if (error) { res.status(500).json({ error: error.message }); return }
+  res.json({ place: data })
+})
+
+// ── DELETE /api/voyage/trips/:id/places/:placeId  ────────────────────────────
+router.delete('/trips/:id/places/:placeId', requireAuth, async (req, res: Response) => {
+  const tripId = Number(req.params.id)
+  const placeId = Number(req.params.placeId)
+  await supabaseAdmin.from('voyage_trip_places')
+    .delete().eq('id', placeId).eq('trip_id', tripId)
+  res.json({ ok: true })
+})
+
 // ── GET /api/voyage/trips/:id/members  ───────────────────────────────────────
 router.get('/trips/:id/members', requireAuth, async (req, res: Response) => {
   const userId = uid(req)
@@ -584,5 +786,138 @@ router.post('/invite/accept', requireAuth, async (req, res: Response) => {
 
   res.json({ trip_id: member.trip_id })
 })
+
+// ══════════════════════════════════════════════════════════════════════════════
+// V5 — Compartilhamento público
+// ══════════════════════════════════════════════════════════════════════════════
+
+// ── POST /api/voyage/trips/:id/share  (gerar/atualizar token) ─────────────────
+router.post('/trips/:id/share', requireAuth, async (req, res: Response) => {
+  const userId = uid(req)
+  const tripId = Number(req.params.id)
+  const { hide_cost = false, expires_in_days = null } = req.body as {
+    hide_cost?: boolean; expires_in_days?: number | null
+  }
+
+  const { data: trip } = await supabaseAdmin
+    .from('voyage_trips').select('user_id, share_token').eq('id', tripId).single()
+  if (!trip || trip.user_id !== userId) { res.status(403).json({ error: 'Sem permissão' }); return }
+
+  const token = trip.share_token ?? randomBytes(16).toString('hex')
+  const expiresAt = expires_in_days
+    ? new Date(Date.now() + expires_in_days * 24 * 3600 * 1000).toISOString()
+    : null
+
+  await supabaseAdmin.from('voyage_trips').update({
+    share_token: token,
+    share_expires_at: expiresAt,
+    share_hide_cost: hide_cost,
+  }).eq('id', tripId)
+
+  const baseUrl = process.env.FRONTEND_ORIGIN?.split(',')[0] ?? 'https://arvo.andregutto.com'
+  res.json({ token, share_url: `${baseUrl}/trip/${token}` })
+})
+
+// ── DELETE /api/voyage/trips/:id/share  (revogar) ────────────────────────────
+router.delete('/trips/:id/share', requireAuth, async (req, res: Response) => {
+  const userId = uid(req)
+  const tripId = Number(req.params.id)
+  const { data: trip } = await supabaseAdmin
+    .from('voyage_trips').select('user_id').eq('id', tripId).single()
+  if (!trip || trip.user_id !== userId) { res.status(403).json({ error: 'Sem permissão' }); return }
+  await supabaseAdmin.from('voyage_trips').update({
+    share_token: null, share_expires_at: null,
+  }).eq('id', tripId)
+  res.json({ ok: true })
+})
+
+// ── GET /api/voyage/public/:token  (página pública — sem auth) ───────────────
+router.get('/public/:token', async (req, res: Response) => {
+  const { token } = req.params
+
+  const { data: trip } = await supabaseAdmin
+    .from('voyage_trips')
+    .select('id, title, destination, country, cover_image_url, cover_image_position, start_date, end_date, summary, status, share_hide_cost, share_expires_at, user_id')
+    .eq('share_token', token)
+    .single()
+
+  if (!trip) { res.status(404).json({ error: 'Página não encontrada' }); return }
+  if (trip.share_expires_at && new Date(trip.share_expires_at) < new Date()) {
+    res.status(410).json({ error: 'Link expirado' }); return
+  }
+
+  const [placesRes, costRes, ownerRes] = await Promise.all([
+    supabaseAdmin.from('voyage_trip_places')
+      .select('id, name, category, address, lat, lng, google_place_id, google_maps_url, day_number, sort_order, is_highlight, visited, trip_note')
+      .eq('trip_id', trip.id)
+      .order('sort_order'),
+    !trip.share_hide_cost ? buildCostSummary(trip.id, trip.user_id) : Promise.resolve(null),
+    supabaseAdmin.auth.admin.getUserById(trip.user_id),
+  ])
+
+  const ownerMeta = ownerRes.data?.user?.user_metadata ?? {}
+  const ownerName = [ownerMeta.first_name, ownerMeta.last_name].filter(Boolean).join(' ') || ownerRes.data?.user?.email || 'Arvo'
+
+  res.json({
+    trip: {
+      title: trip.title, destination: trip.destination, country: trip.country,
+      cover_image_url: trip.cover_image_url, cover_image_position: trip.cover_image_position,
+      start_date: trip.start_date, end_date: trip.end_date,
+      summary: trip.summary, status: trip.status,
+    },
+    owner_name: ownerName,
+    places: placesRes.data ?? [],
+    cost: costRes,
+  })
+})
+
+// ── GET /api/voyage/public/:token/kml  (download KML para Google Maps) ────────
+router.get('/public/:token/kml', async (req, res: Response) => {
+  const { token } = req.params
+
+  const { data: trip } = await supabaseAdmin
+    .from('voyage_trips')
+    .select('id, title, share_expires_at')
+    .eq('share_token', token).single()
+
+  if (!trip) { res.status(404).send('Not found'); return }
+  if (trip.share_expires_at && new Date(trip.share_expires_at) < new Date()) {
+    res.status(410).send('Expired'); return
+  }
+
+  const { data: places } = await supabaseAdmin
+    .from('voyage_trip_places')
+    .select('name, category, address, lat, lng, trip_note, google_maps_url, is_highlight')
+    .eq('trip_id', trip.id)
+    .not('lat', 'is', null).not('lng', 'is', null)
+
+  const placemarks = (places ?? []).map(p => `
+  <Placemark>
+    <name>${escapeXml(p.name)}</name>
+    <description>${escapeXml([p.address, p.trip_note, p.google_maps_url].filter(Boolean).join('\n'))}</description>
+    ${p.is_highlight ? '<styleUrl>#highlight</styleUrl>' : ''}
+    <Point><coordinates>${p.lng},${p.lat},0</coordinates></Point>
+  </Placemark>`).join('')
+
+  const kml = `<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+<Document>
+  <name>${escapeXml(trip.title)}</name>
+  <Style id="highlight">
+    <IconStyle><color>ff2f3bd6</color><scale>1.2</scale></IconStyle>
+  </Style>
+  ${placemarks}
+</Document>
+</kml>`
+
+  res.setHeader('Content-Type', 'application/vnd.google-earth.kml+xml')
+  res.setHeader('Content-Disposition', `attachment; filename="${trip.title.replace(/[^a-z0-9]/gi, '_')}.kml"`)
+  res.send(kml)
+})
+
+function escapeXml(str: string | null | undefined): string {
+  if (!str) return ''
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+}
 
 export default router

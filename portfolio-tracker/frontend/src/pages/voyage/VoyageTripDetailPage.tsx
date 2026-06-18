@@ -7,6 +7,7 @@ import TripFormModal from './TripFormModal'
 import CostCard from './CostCard'
 import MembersPanel from './MembersPanel'
 import TripPlacesPanel from './TripPlacesPanel'
+import ShareTripPanel from './ShareTripPanel'
 import type { Trip, TripCost, TripMember } from './types'
 
 const RED = '#D63B2F'
@@ -165,13 +166,19 @@ export default function VoyageTripDetailPage() {
 
       {/* Content grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        {/* Left col: Cost */}
-        <div className="lg:col-span-1">
+        {/* Left col: Cost + Share */}
+        <div className="lg:col-span-1 flex flex-col gap-5">
           <CostCard
             tripId={Number(id)}
             cost={cost}
             onCostChanged={updated => setData(prev => prev ? { ...prev, cost: updated } : prev)}
           />
+          {trip.user_id === user?.id && (
+            <ShareTripPanel
+              trip={trip}
+              onUpdate={fields => setData(prev => prev ? { ...prev, trip: { ...prev.trip, ...fields } } : prev)}
+            />
+          )}
         </div>
 
         {/* Right col: Roteiro + Lugares */}

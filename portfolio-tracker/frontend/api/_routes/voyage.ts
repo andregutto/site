@@ -787,4 +787,137 @@ router.post('/invite/accept', requireAuth, async (req, res: Response) => {
   res.json({ trip_id: member.trip_id })
 })
 
+// ══════════════════════════════════════════════════════════════════════════════
+// V5 — Compartilhamento público
+// ══════════════════════════════════════════════════════════════════════════════
+
+// ── POST /api/voyage/trips/:id/share  (gerar/atualizar token) ─────────────────
+router.post('/trips/:id/share', requireAuth, async (req, res: Response) => {
+  const userId = uid(req)
+  const tripId = Number(req.params.id)
+  const { hide_cost = false, expires_in_days = null } = req.body as {
+    hide_cost?: boolean; expires_in_days?: number | null
+  }
+
+  const { data: trip } = await supabaseAdmin
+    .from('voyage_trips').select('user_id, share_token').eq('id', tripId).single()
+  if (!trip || trip.user_id !== userId) { res.status(403).json({ error: 'Sem permissão' }); return }
+
+  const token = trip.share_token ?? randomBytes(16).toString('hex')
+  const expiresAt = expires_in_days
+    ? new Date(Date.now() + expires_in_days * 24 * 3600 * 1000).toISOString()
+    : null
+
+  await supabaseAdmin.from('voyage_trips').update({
+    share_token: token,
+    share_expires_at: expiresAt,
+    share_hide_cost: hide_cost,
+  }).eq('id', tripId)
+
+  const baseUrl = process.env.FRONTEND_ORIGIN?.split(',')[0] ?? 'https://arvo.andregutto.com'
+  res.json({ token, share_url: `${baseUrl}/trip/${token}` })
+})
+
+// ── DELETE /api/voyage/trips/:id/share  (revogar) ────────────────────────────
+router.delete('/trips/:id/share', requireAuth, async (req, res: Response) => {
+  const userId = uid(req)
+  const tripId = Number(req.params.id)
+  const { data: trip } = await supabaseAdmin
+    .from('voyage_trips').select('user_id').eq('id', tripId).single()
+  if (!trip || trip.user_id !== userId) { res.status(403).json({ error: 'Sem permissão' }); return }
+  await supabaseAdmin.from('voyage_trips').update({
+    share_token: null, share_expires_at: null,
+  }).eq('id', tripId)
+  res.json({ ok: true })
+})
+
+// ── GET /api/voyage/public/:token  (página pública — sem auth) ───────────────
+router.get('/public/:token', async (req, res: Response) => {
+  const { token } = req.params
+
+  const { data: trip } = await supabaseAdmin
+    .from('voyage_trips')
+    .select('id, title, destination, country, cover_image_url, cover_image_position, start_date, end_date, summary, status, share_hide_cost, share_expires_at, user_id')
+    .eq('share_token', token)
+    .single()
+
+  if (!trip) { res.status(404).json({ error: 'Página não encontrada' }); return }
+  if (trip.share_expires_at && new Date(trip.share_expires_at) < new Date()) {
+    res.status(410).json({ error: 'Link expirado' }); return
+  }
+
+  const [placesRes, costRes, ownerRes] = await Promise.all([
+    supabaseAdmin.from('voyage_trip_places')
+      .select('id, name, category, address, lat, lng, google_place_id, google_maps_url, day_number, sort_order, is_highlight, visited, trip_note')
+      .eq('trip_id', trip.id)
+      .order('sort_order'),
+    !trip.share_hide_cost ? buildCostSummary(trip.id, trip.user_id) : Promise.resolve(null),
+    supabaseAdmin.auth.admin.getUserById(trip.user_id),
+  ])
+
+  const ownerMeta = ownerRes.data?.user?.user_metadata ?? {}
+  const ownerName = [ownerMeta.first_name, ownerMeta.last_name].filter(Boolean).join(' ') || ownerRes.data?.user?.email || 'Arvo'
+
+  res.json({
+    trip: {
+      title: trip.title, destination: trip.destination, country: trip.country,
+      cover_image_url: trip.cover_image_url, cover_image_position: trip.cover_image_position,
+      start_date: trip.start_date, end_date: trip.end_date,
+      summary: trip.summary, status: trip.status,
+    },
+    owner_name: ownerName,
+    places: placesRes.data ?? [],
+    cost: costRes,
+  })
+})
+
+// ── GET /api/voyage/public/:token/kml  (download KML para Google Maps) ────────
+router.get('/public/:token/kml', async (req, res: Response) => {
+  const { token } = req.params
+
+  const { data: trip } = await supabaseAdmin
+    .from('voyage_trips')
+    .select('id, title, share_expires_at')
+    .eq('share_token', token).single()
+
+  if (!trip) { res.status(404).send('Not found'); return }
+  if (trip.share_expires_at && new Date(trip.share_expires_at) < new Date()) {
+    res.status(410).send('Expired'); return
+  }
+
+  const { data: places } = await supabaseAdmin
+    .from('voyage_trip_places')
+    .select('name, category, address, lat, lng, trip_note, google_maps_url, is_highlight')
+    .eq('trip_id', trip.id)
+    .not('lat', 'is', null).not('lng', 'is', null)
+
+  const placemarks = (places ?? []).map(p => `
+  <Placemark>
+    <name>${escapeXml(p.name)}</name>
+    <description>${escapeXml([p.address, p.trip_note, p.google_maps_url].filter(Boolean).join('\n'))}</description>
+    ${p.is_highlight ? '<styleUrl>#highlight</styleUrl>' : ''}
+    <Point><coordinates>${p.lng},${p.lat},0</coordinates></Point>
+  </Placemark>`).join('')
+
+  const kml = `<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+<Document>
+  <name>${escapeXml(trip.title)}</name>
+  <Style id="highlight">
+    <IconStyle><color>ff2f3bd6</color><scale>1.2</scale></IconStyle>
+  </Style>
+  ${placemarks}
+</Document>
+</kml>`
+
+  res.setHeader('Content-Type', 'application/vnd.google-earth.kml+xml')
+  res.setHeader('Content-Disposition', `attachment; filename="${trip.title.replace(/[^a-z0-9]/gi, '_')}.kml"`)
+  res.send(kml)
+})
+
+function escapeXml(str: string | null | undefined): string {
+  if (!str) return ''
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+}
+
 export default router
