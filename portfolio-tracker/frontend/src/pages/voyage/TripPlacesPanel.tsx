@@ -82,22 +82,17 @@ function LibraryPicker({ tripId, tripCity, tripCountry, onAdded }: {
   const [library, setLibrary] = useState<LibraryPlace[]>([])
   const [loading, setLoading] = useState(false)
   const [search, setSearch] = useState('')
+  const [showAll, setShowAll] = useState(false)
   const [adding, setAdding] = useState<number | null>(null)
+
+  const hasDestination = !!(tripCity || tripCountry)
 
   async function openPicker() {
     setOpen(true)
     if (library.length > 0) return
     setLoading(true)
     const data = await apiFetch<{ places: LibraryPlace[] }>('/voyage/places')
-    // prioritise same city/country
-    const sorted = [...(data.places)].sort((a, b) => {
-      const aMatch = (tripCity && a.city?.toLowerCase().includes(tripCity.toLowerCase())) ||
-                     (tripCountry && a.city?.toLowerCase().includes(tripCountry.toLowerCase()))
-      const bMatch = (tripCity && b.city?.toLowerCase().includes(tripCity.toLowerCase())) ||
-                     (tripCountry && b.city?.toLowerCase().includes(tripCountry.toLowerCase()))
-      return (bMatch ? 1 : 0) - (aMatch ? 1 : 0)
-    })
-    setLibrary(sorted)
+    setLibrary(data.places)
     setLoading(false)
   }
 
@@ -120,7 +115,19 @@ function LibraryPicker({ tripId, tripCity, tripCountry, onAdded }: {
     }
   }
 
-  const filtered = library.filter(p =>
+  // Filtra por destino da viagem se não estiver em modo "todos"
+  function matchesDestination(p: LibraryPlace): boolean {
+    if (!hasDestination) return true
+    const city = (p.city ?? '').toLowerCase()
+    return (
+      (!!tripCity && city.includes(tripCity.toLowerCase())) ||
+      (!!tripCountry && city.includes(tripCountry.toLowerCase()))
+    )
+  }
+
+  const destinationPlaces = library.filter(matchesDestination)
+  const visibleLibrary = (showAll || !hasDestination) ? library : destinationPlaces
+  const filtered = visibleLibrary.filter(p =>
     !search || p.name.toLowerCase().includes(search.toLowerCase()) ||
     (p.city ?? '').toLowerCase().includes(search.toLowerCase())
   )
@@ -146,9 +153,13 @@ function LibraryPicker({ tripId, tripCity, tripCountry, onAdded }: {
   return (
     <div style={{ marginTop: 12, padding: 14, borderRadius: 10, background: 'var(--arvo-hover-bg)', border: '1px solid var(--arvo-border-soft)' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-        <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.20em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)' }}>
-          Biblioteca de lugares
-        </p>
+        <div>
+          <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.20em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)' }}>
+            {!showAll && hasDestination && destinationPlaces.length > 0
+              ? `Lugares em ${tripCity ?? tripCountry}`
+              : 'Biblioteca de lugares'}
+          </p>
+        </div>
         <button type="button" onClick={() => setOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--arvo-fg-soft)', fontSize: 12 }}>✕</button>
       </div>
       <input
@@ -161,34 +172,55 @@ function LibraryPicker({ tripId, tripCity, tripCountry, onAdded }: {
       />
       {loading ? (
         <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)' }}>Carregando…</p>
-      ) : filtered.length === 0 ? (
+      ) : library.length === 0 ? (
         <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)' }}>
-          {library.length === 0 ? 'Biblioteca vazia — importe do Google Takeout primeiro' : 'Nenhum resultado'}
+          Biblioteca vazia — importe do Google Takeout primeiro
         </p>
-      ) : (
-        <div style={{ maxHeight: 220, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 4 }}>
-          {filtered.map(p => (
-            <button
-              key={p.id}
-              type="button"
-              onClick={() => addPlace(p)}
-              disabled={adding === p.id}
-              style={{
-                textAlign: 'left', padding: '7px 10px', borderRadius: 6, cursor: 'pointer',
-                border: '1px solid transparent', background: 'transparent',
-                fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg)',
-                display: 'flex', alignItems: 'center', gap: 8, opacity: adding === p.id ? 0.5 : 1,
-                transition: 'background 120ms',
-              }}
-              onMouseEnter={e => (e.currentTarget.style.background = '#fff')}
-              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-            >
-              <span style={{ fontSize: 16 }}>{catIcon(p.category)}</span>
-              <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</span>
-              {p.city && <span style={{ fontSize: 11, color: 'var(--arvo-fg-soft)', flexShrink: 0 }}>{p.city}</span>}
-            </button>
-          ))}
+      ) : filtered.length === 0 && !search ? (
+        <div>
+          <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)', marginBottom: 8 }}>
+            Nenhum lugar de {tripCity ?? tripCountry} na biblioteca.
+          </p>
+          <button type="button" onClick={() => setShowAll(true)}
+            style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: RED, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+            Ver todos os {library.length} lugares →
+          </button>
         </div>
+      ) : (
+        <>
+          <div style={{ maxHeight: 220, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 4 }}>
+            {filtered.map(p => (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => addPlace(p)}
+                disabled={adding === p.id}
+                style={{
+                  textAlign: 'left', padding: '7px 10px', borderRadius: 6, cursor: 'pointer',
+                  border: '1px solid transparent', background: 'transparent',
+                  fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg)',
+                  display: 'flex', alignItems: 'center', gap: 8, opacity: adding === p.id ? 0.5 : 1,
+                  transition: 'background 120ms',
+                }}
+                onMouseEnter={e => (e.currentTarget.style.background = 'var(--arvo-surface)')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+              >
+                <span style={{ fontSize: 16 }}>{catIcon(p.category)}</span>
+                <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</span>
+                {p.city && <span style={{ fontSize: 11, color: 'var(--arvo-fg-soft)', flexShrink: 0 }}>{p.city}</span>}
+              </button>
+            ))}
+          </div>
+          {/* Toggle all/destination */}
+          {hasDestination && !search && (
+            <button type="button" onClick={() => setShowAll(v => !v)}
+              style={{ marginTop: 8, fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+              {showAll
+                ? `Mostrar só ${tripCity ?? tripCountry} (${destinationPlaces.length})`
+                : `Ver todos os ${library.length} lugares da biblioteca`}
+            </button>
+          )}
+        </>
       )}
     </div>
   )
