@@ -37,6 +37,7 @@ export default function MomentPickerModal({ onClose }: Props) {
   const [loading, setLoading] = useState(true)
   const [search, setSearch]   = useState('')
   const [creating, setCreating] = useState<number | null>(null)
+  const [createError, setCreateError] = useState('')
   const searchRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -53,14 +54,16 @@ export default function MomentPickerModal({ onClose }: Props) {
   async function pick(moment: Moment) {
     if (creating) return
     setCreating(moment.id)
+    setCreateError('')
     try {
       const result = await apiFetch<{ trip: { id: number } }>(
-        `/api/voyage/from-moment/${moment.id}`,
+        `/voyage/from-moment/${moment.id}`,
         { method: 'POST' }
       )
       navigate(`/voyage/${result.trip.id}`)
-    } catch {
+    } catch (e: any) {
       setCreating(null)
+      setCreateError(e?.message ?? 'Erro ao criar viagem')
     }
   }
 
@@ -120,6 +123,15 @@ export default function MomentPickerModal({ onClose }: Props) {
             onBlur={e => (e.target.style.borderColor = 'var(--arvo-border)')}
           />
         </div>
+
+        {/* Error */}
+        {createError && (
+          <div className="px-6 pb-2 shrink-0">
+            <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: '#D63B2F', background: 'rgba(214,59,47,0.06)', padding: '8px 12px', borderRadius: 6, border: '1px solid rgba(214,59,47,0.16)' }}>
+              {createError}
+            </p>
+          </div>
+        )}
 
         {/* List */}
         <div className="overflow-y-auto px-6 pb-6" style={{ flex: 1 }}>

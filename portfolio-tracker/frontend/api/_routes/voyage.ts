@@ -465,6 +465,18 @@ router.delete('/places/:id', requireAuth, async (req, res: Response) => {
   res.json({ ok: true })
 })
 
+// Extrai cidade do endereço do Takeout sem network calls.
+// Ex: "Rua X, 4000 Porto, Portugal" → "Porto"
+//     "123 Main St, New York, NY 10001, United States" → "New York"
+function cityFromAddress(address: string | null): string | null {
+  if (!address) return null
+  const parts = address.split(',').map(p => p.trim()).filter(Boolean)
+  if (parts.length < 2) return null
+  // Pega o penúltimo segmento (antes do país), remove CEP/ZIP inicial
+  const candidate = parts[parts.length - 2]
+  return candidate.replace(/^\d[\d\s-]*\s*/, '').trim() || null
+}
+
 // ── POST /api/voyage/places/import-takeout  (importar JSON do Takeout) ────────
 // Aceita um array de GeoJSON FeatureCollections (um por lista do Google Maps)
 // Body: { files: [{ list_name: string, geojson: object }] }
@@ -491,19 +503,8 @@ router.post('/places/import-takeout', requireAuth, async (req, res: Response) =>
       const lat = geo.Latitude  ?? coords?.[1] ?? null
       const lng = geo.Longitude ?? coords?.[0] ?? null
       const name = props.Title || loc['Business Name'] || 'Sem nome'
-
-      // Reverse geocoding via Nominatim para obter cidade
-      let city: string | null = null
-      if (lat && lng) {
-        try {
-          const r = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=pt`,
-            { headers: { 'User-Agent': 'Arvo/1.0 (arvo.andregutto.com)' } }
-          )
-          const nm = await r.json() as any
-          city = nm.address?.city || nm.address?.town || nm.address?.village || nm.address?.county || null
-        } catch { /* silencioso */ }
-      }
+      const address = loc.Address || null
+      const city = cityFromAddress(address)
 
       toInsert.push({
         user_id: userId,
@@ -511,7 +512,7 @@ router.post('/places/import-takeout', requireAuth, async (req, res: Response) =>
         category: list_name || null,
         lat,
         lng,
-        address: loc.Address || null,
+        address,
         city,
         google_maps_url: props['Google Maps URL'] || null,
         source: 'takeout',

@@ -103,6 +103,41 @@ export default function TripFormModal({ trip, onClose, onSaved, onFromMoment }: 
         </div>
 
         <form onSubmit={submit} style={{ padding: '24px 24px 28px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {/* Criar a partir de um momento */}
+          {!trip && onFromMoment && (
+            <button
+              type="button"
+              onClick={onFromMoment}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                padding: '10px 16px', borderRadius: 8, cursor: 'pointer',
+                fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg)',
+                background: 'var(--arvo-hover-bg)',
+                border: '1px solid var(--arvo-border)',
+                transition: 'all 160ms ease', width: '100%',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--arvo-gold)'; e.currentTarget.style.background = 'var(--arvo-surface)' }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--arvo-border)'; e.currentTarget.style.background = 'var(--arvo-hover-bg)' }}
+            >
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <rect x="2" y="3" width="12" height="11" rx="2"/>
+                <path strokeLinecap="round" d="M5 1v4M11 1v4M2 7h12"/>
+              </svg>
+              Criar a partir de um momento
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <path strokeLinecap="round" d="M4 2l4 4-4 4"/>
+              </svg>
+            </button>
+          )}
+
+          {!trip && onFromMoment && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ flex: 1, height: 1, background: 'var(--arvo-border-soft)' }} />
+              <span style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.20em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)' }}>ou</span>
+              <div style={{ flex: 1, height: 1, background: 'var(--arvo-border-soft)' }} />
+            </div>
+          )}
+
           {/* Title */}
           <label>
             <span style={labelStyle}>{tv.titleLabel ?? 'Título'} *</span>
@@ -194,15 +229,6 @@ export default function TripFormModal({ trip, onClose, onSaved, onFromMoment }: 
             >{saving ? 'Salvando…' : 'Salvar'}</button>
           </div>
 
-          {!trip && onFromMoment && (
-            <div style={{ textAlign: 'center', paddingTop: 2 }}>
-              <button type="button" onClick={onFromMoment}
-                style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-soft)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', textDecorationColor: 'var(--arvo-border)' }}
-              >
-                Ou criar a partir de um momento →
-              </button>
-            </div>
-          )}
         </form>
       </div>
     </div>
