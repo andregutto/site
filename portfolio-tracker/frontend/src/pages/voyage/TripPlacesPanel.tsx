@@ -1,8 +1,13 @@
 import { useState, useEffect, useCallback } from 'react'
 import { apiFetch } from '../../lib/api'
+import PlaceExpensesPanel from './PlaceExpensesPanel'
 
 const RED = '#D63B2F'
 const GOLD = '#C8B89A'
+
+function fmtCurrency(n: number) {
+  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'EUR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n)
+}
 
 interface TripPlace {
   id: number
@@ -18,6 +23,8 @@ interface TripPlace {
   rating: number | null
   visited: boolean
   trip_note: string | null
+  expense_total?: number
+  expense_count?: number
 }
 
 interface LibraryPlace {
@@ -307,16 +314,19 @@ function LibraryPicker({ tripId, tripCity, tripCountry, onAdded }: {
 }
 
 // ── Place row ─────────────────────────────────────────────────────────────────
-function PlaceRow({ place, tripId, canEdit, onUpdate, onDelete }: {
+function PlaceRow({ place, tripId, canEdit, onUpdate, onDelete, onReload }: {
   place: TripPlace
   tripId: number
   canEdit: boolean
   onUpdate: (p: TripPlace) => void
   onDelete: (id: number) => void
+  onReload: () => void
 }) {
   const [editing, setEditing] = useState(false)
   const [note, setNote] = useState(place.trip_note ?? '')
   const [saving, setSaving] = useState(false)
+  const [showExpenses, setShowExpenses] = useState(false)
+  const hasExpenses = (place.expense_total ?? 0) > 0
 
   async function toggleVisited() {
     const res = await apiFetch<{ place: TripPlace }>(
@@ -380,6 +390,19 @@ function PlaceRow({ place, tripId, canEdit, onUpdate, onDelete }: {
               {place.trip_note}
             </p>
           )}
+          {hasExpenses && (
+            <button
+              type="button"
+              onClick={() => canEdit && setShowExpenses(true)}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 5, padding: 0, background: 'none', border: 'none', cursor: canEdit ? 'pointer' : 'default', fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-soft)' }}
+            >
+              <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <circle cx="6" cy="6" r="5" /><path strokeLinecap="round" d="M6 3.5v5M4.7 7.2c0 .7.6 1 1.3 1s1.3-.3 1.3-1-.6-.9-1.3-.9-1.3-.3-1.3-.9.6-1 1.3-1 1.3.3 1.3 1" />
+              </svg>
+              {fmtCurrency(place.expense_total ?? 0)}
+              <span style={{ color: 'var(--arvo-fg-muted)' }}>· {place.expense_count} {place.expense_count === 1 ? 'despesa' : 'despesas'}</span>
+            </button>
+          )}
           {editing && (
             <div style={{ marginTop: 6, display: 'flex', gap: 6 }}>
               <input
@@ -411,6 +434,13 @@ function PlaceRow({ place, tripId, canEdit, onUpdate, onDelete }: {
           )}
           {canEdit && (
             <>
+              <button type="button" onClick={() => setShowExpenses(true)}
+                style={{ padding: 4, background: 'none', border: 'none', cursor: 'pointer', color: hasExpenses ? 'var(--arvo-fg)' : 'var(--arvo-fg-soft)', borderRadius: 4 }}
+                title="Despesas">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <circle cx="6" cy="6" r="5" /><path strokeLinecap="round" d="M6 3.5v5M4.7 7.2c0 .7.6 1 1.3 1s1.3-.3 1.3-1-.6-.9-1.3-.9-1.3-.3-1.3-.9.6-1 1.3-1 1.3.3 1.3 1" />
+                </svg>
+              </button>
               <button type="button" onClick={() => setEditing(!editing)}
                 style={{ padding: 4, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--arvo-fg-soft)', borderRadius: 4 }}
                 title="Nota">
@@ -429,6 +459,16 @@ function PlaceRow({ place, tripId, canEdit, onUpdate, onDelete }: {
           )}
         </div>
       </div>
+
+      {showExpenses && (
+        <PlaceExpensesPanel
+          tripId={tripId}
+          placeId={place.id}
+          placeName={place.name}
+          onClose={() => setShowExpenses(false)}
+          onChanged={onReload}
+        />
+      )}
     </div>
   )
 }
@@ -487,6 +527,7 @@ export default function TripPlacesPanel({ tripId, tripCity, tripCountry, canEdit
               canEdit={canEdit}
               onUpdate={updated => setPlaces(ps => ps.map(x => x.id === updated.id ? updated : x))}
               onDelete={id => setPlaces(ps => ps.filter(x => x.id !== id))}
+              onReload={load}
             />
           ))}
         </div>

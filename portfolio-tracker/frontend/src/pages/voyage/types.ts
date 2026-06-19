@@ -15,6 +15,9 @@ export interface Trip {
   share_token: string | null
   share_expires_at: string | null
   share_hide_cost: boolean
+  show_place_expenses: boolean
+  dest_lat: number | null
+  dest_lng: number | null
   created_at: string
   // from list endpoint
   cost_total?: number
@@ -47,6 +50,12 @@ export interface CostByCategory {
   total: number
 }
 
+export interface CostByPlace {
+  trip_place_id: number
+  name: string
+  total: number
+}
+
 export interface TripCost {
   total: number
   budget: number | null
@@ -54,6 +63,17 @@ export interface TripCost {
   moments: TripMoment[]
   by_user: CostByUser[]
   by_category: CostByCategory[]
+  by_place: CostByPlace[]
+}
+
+export interface PlaceExpense {
+  id: number
+  transaction_id: number
+  date: string
+  amount: number
+  currency: string
+  description: string
+  category: { name: string; icon: string; color: string } | null
 }
 
 export interface TripMember {
@@ -83,6 +103,8 @@ export interface TripPlace {
   rating: number | null
   visited: boolean
   trip_note: string | null
+  expense_total?: number
+  expense_count?: number
 }
 
 export interface MomentPicker {

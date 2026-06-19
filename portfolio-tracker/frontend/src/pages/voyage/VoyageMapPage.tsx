@@ -28,6 +28,11 @@ interface TripPlace {
   is_highlight: boolean
   trip_note: string | null
   trip_id: number
+  expense_total?: number
+}
+
+function fmtEur(n: number) {
+  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'EUR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n)
 }
 
 interface Trip {
@@ -326,9 +331,12 @@ export default function VoyageMapPage() {
                         <p style={{ fontWeight: 600, fontSize: 13, marginBottom: 4 }}>{p.name}</p>
                         {p.address && <p style={{ fontSize: 11, color: '#666', marginBottom: 4 }}>{p.address}</p>}
                         {p.trip_note && <p style={{ fontSize: 11, fontStyle: 'italic', color: '#888', marginBottom: 4 }}>{p.trip_note}</p>}
+                        {(p.expense_total ?? 0) > 0 && (
+                          <p style={{ fontSize: 11, color: '#444', marginBottom: 4 }}>Gasto aqui: <strong>{fmtEur(p.expense_total!)}</strong></p>
+                        )}
                         {p.google_maps_url && (
                           <a href={p.google_maps_url} target="_blank" rel="noopener noreferrer"
-                            style={{ fontSize: 11, color: RED, textDecoration: 'none' }}>
+                            style={{ fontSize: 11, color: '#555', textDecoration: 'none' }}>
                             Abrir no Google Maps →
                           </a>
                         )}

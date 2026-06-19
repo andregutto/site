@@ -170,6 +170,8 @@ export default function CostCard({ tripId, cost, onCostChanged }: Props) {
   const overBudget = cost.budget != null && cost.total > cost.budget
   const [expanded, setExpanded] = useState(false)
   const hasCategories = (cost.by_category ?? []).length > 0
+  const hasPlaces = (cost.by_place ?? []).length > 0
+  const canExpand = hasCategories || hasPlaces
 
   return (
     <div style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', borderRadius: 16, boxShadow: 'var(--arvo-shadow-sm)', padding: '20px 22px' }}>
@@ -199,7 +201,7 @@ export default function CostCard({ tripId, cost, onCostChanged }: Props) {
                 </span>
               )}
             </div>
-            {hasCategories && (
+            {canExpand && (
               <button
                 type="button"
                 onClick={() => setExpanded(v => !v)}
@@ -239,6 +241,29 @@ export default function CostCard({ tripId, cost, onCostChanged }: Props) {
                     </div>
                     <div style={{ height: 3, borderRadius: 999, background: 'var(--arvo-border)', overflow: 'hidden' }}>
                       <div style={{ height: '100%', width: `${pct}%`, background: c.color, borderRadius: 999, transition: 'width 300ms ease' }} />
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+
+          {/* Place breakdown — expandable */}
+          {expanded && hasPlaces && (
+            <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid var(--arvo-border-soft)', display: 'flex', flexDirection: 'column', gap: 7 }}>
+              <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)', marginBottom: 4 }}>
+                Por lugar
+              </p>
+              {cost.by_place.map(p => {
+                const pct = cost.total > 0 ? (p.total / cost.total) * 100 : 0
+                return (
+                  <div key={p.trip_place_id}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
+                      <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</span>
+                      <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)', fontVariantNumeric: 'tabular-nums' }}>{fmt(p.total)}</span>
+                    </div>
+                    <div style={{ height: 3, borderRadius: 999, background: 'var(--arvo-border)', overflow: 'hidden' }}>
+                      <div style={{ height: '100%', width: `${pct}%`, background: 'var(--arvo-fg-soft)', borderRadius: 999, transition: 'width 300ms ease' }} />
                     </div>
                   </div>
                 )

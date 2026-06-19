@@ -25,6 +25,11 @@ interface TripPlace {
   google_maps_url: string | null
   is_highlight: boolean
   trip_note: string | null
+  expense_total?: number
+}
+
+function fmtEur(n: number) {
+  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'EUR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n)
 }
 
 const CATEGORY_ICONS: Record<string, string> = {
@@ -164,6 +169,9 @@ export default function TripMapCard({ tripId }: Props) {
                     <p style={{ fontWeight: 600, fontSize: 13, marginBottom: 4 }}>{p.name}</p>
                     {p.address && <p style={{ fontSize: 11, color: '#666', marginBottom: 4 }}>{p.address}</p>}
                     {p.trip_note && <p style={{ fontSize: 11, fontStyle: 'italic', color: '#888', marginBottom: 4 }}>{p.trip_note}</p>}
+                    {(p.expense_total ?? 0) > 0 && (
+                      <p style={{ fontSize: 11, color: '#444', marginBottom: 4 }}>Gasto aqui: <strong>{fmtEur(p.expense_total!)}</strong></p>
+                    )}
                     {p.google_maps_url && (
                       <a href={p.google_maps_url} target="_blank" rel="noopener noreferrer"
                         style={{ fontSize: 11, color: 'var(--arvo-fg-soft)', textDecoration: 'none' }}>

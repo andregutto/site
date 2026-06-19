@@ -22,6 +22,7 @@ export function ShareModal({ trip, onUpdate, onClose }: Props & { onClose: () =>
   const [revoking, setRevoking] = useState(false)
   const [copied, setCopied] = useState(false)
   const [hideCost, setHideCost] = useState(trip.share_hide_cost)
+  const [showPlaceExpenses, setShowPlaceExpenses] = useState(trip.show_place_expenses)
   const [expiryDays, setExpiryDays] = useState<number | null>(null)
 
   const shareUrl = trip.share_token
@@ -149,6 +150,28 @@ export function ShareModal({ trip, onUpdate, onClose }: Props & { onClose: () =>
                 <div>
                   <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg)' }}>Ocultar custos</p>
                   <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)' }}>Seguidores não verão os valores gastos</p>
+                </div>
+              </label>
+
+              {/* Show expenses per place */}
+              <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={showPlaceExpenses}
+                  onChange={async e => {
+                    const v = e.target.checked
+                    setShowPlaceExpenses(v)
+                    await apiFetch(`/voyage/trips/${trip.id}`, {
+                      method: 'PATCH',
+                      body: JSON.stringify({ show_place_expenses: v }),
+                    })
+                    onUpdate({ show_place_expenses: v })
+                  }}
+                  style={{ width: 14, height: 14, accentColor: '#0D0D0D' }}
+                />
+                <div>
+                  <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg)' }}>Mostrar gastos por lugar</p>
+                  <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)' }}>Exibe quanto você gastou em cada lugar no mapa</p>
                 </div>
               </label>
 

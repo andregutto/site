@@ -27,7 +27,7 @@ async function buildCostSummary(tripId: number, requestingUserId: string) {
     .eq('trip_id', tripId)
 
   if (!tripMoments || tripMoments.length === 0) {
-    return { total: 0, currency: 'EUR', moments: [], by_user: [], by_category: [] }
+    return { total: 0, budget: null, currency: 'EUR', moments: [], by_user: [], by_category: [], by_place: await buildByPlace(tripId) }
   }
 
   const momentIds = tripMoments.map(m => m.moment_id)
@@ -95,6 +95,7 @@ async function buildCostSummary(tripId: number, requestingUserId: string) {
     budget: budgetTotal > 0 ? Math.round(budgetTotal * 100) / 100 : null,
     currency,
     by_category,
+    by_place: await buildByPlace(tripId),
     moments: (moments ?? []).map(m => ({
       ...m,
       spent: Math.round((momentTotals[m.id] ?? 0) * 100) / 100,
@@ -105,6 +106,50 @@ async function buildCostSummary(tripId: number, requestingUserId: string) {
       display: displays[i],
     })),
   }
+}
+
+// ── Place-expense helpers ────────────────────────────────────────────────────
+// Soma das despesas vinculadas a cada lugar da viagem.
+// Modelo v1: apenas o dono da viagem cria vínculos, então não filtramos por user.
+async function placeExpenseTotals(placeIds: number[]): Promise<Record<number, { total: number; count: number }>> {
+  const out: Record<number, { total: number; count: number }> = {}
+  if (placeIds.length === 0) return out
+  const { data } = await supabaseAdmin
+    .from('voyage_place_expenses')
+    .select('trip_place_id, finance_transactions(amount)')
+    .in('trip_place_id', placeIds)
+  for (const row of (data ?? []) as any[]) {
+    const tx = row.finance_transactions
+    if (!tx) continue
+    const pid = row.trip_place_id as number
+    if (!out[pid]) out[pid] = { total: 0, count: 0 }
+    out[pid].total += Math.abs(Number(tx.amount))
+    out[pid].count += 1
+  }
+  for (const k of Object.keys(out)) out[Number(k)].total = Math.round(out[Number(k)].total * 100) / 100
+  return out
+}
+
+// Breakdown por lugar para o CostCard (ordenado desc, só lugares com gasto).
+async function buildByPlace(tripId: number): Promise<{ trip_place_id: number; name: string; total: number }[]> {
+  const { data: places } = await supabaseAdmin
+    .from('voyage_trip_places').select('id, name').eq('trip_id', tripId)
+  const placeIds = (places ?? []).map(p => p.id)
+  const totals = await placeExpenseTotals(placeIds)
+  return (places ?? [])
+    .map(p => ({ trip_place_id: p.id, name: p.name, total: totals[p.id]?.total ?? 0 }))
+    .filter(p => p.total > 0)
+    .sort((a, b) => b.total - a.total)
+}
+
+// Mescla expense_total/expense_count em uma lista de places (in-place, sem N+1).
+async function attachPlaceExpenses<T extends { id: number }>(places: T[]): Promise<(T & { expense_total: number; expense_count: number })[]> {
+  const totals = await placeExpenseTotals(places.map(p => p.id))
+  return places.map(p => ({
+    ...p,
+    expense_total: totals[p.id]?.total ?? 0,
+    expense_count: totals[p.id]?.count ?? 0,
+  }))
 }
 
 // ── Pending trip invites (exported for notifications.ts) ─────────────────────
@@ -265,7 +310,12 @@ router.get('/trips/:id', requireAuth, async (req, res: Response) => {
     supabaseAdmin.from('voyage_trip_members').select('id, user_id, invite_email, role, status, joined_at').eq('trip_id', tripId),
   ])
 
-  res.json({ trip, cost, places: placesRes.data ?? [], members: membersRes.data ?? [] })
+  // Agrega gasto por lugar (dono sempre; membros só se show_place_expenses)
+  const places = (isOwner || trip.show_place_expenses)
+    ? await attachPlaceExpenses(placesRes.data ?? [])
+    : (placesRes.data ?? [])
+
+  res.json({ trip, cost, places, members: membersRes.data ?? [] })
 })
 
 // ── PATCH /api/voyage/trips/:id ───────────────────────────────────────────────
@@ -274,7 +324,8 @@ router.patch('/trips/:id', requireAuth, async (req, res: Response) => {
   const tripId = Number(req.params.id)
 
   const allowed = ['title', 'destination', 'country', 'cover_image_url', 'cover_image_position',
-                   'start_date', 'end_date', 'summary', 'status']
+                   'start_date', 'end_date', 'summary', 'status', 'show_place_expenses',
+                   'dest_lat', 'dest_lng']
   const update: Record<string, unknown> = {}
   for (const k of allowed) if (k in req.body) update[k] = req.body[k] ?? null
 
@@ -680,11 +731,12 @@ router.get('/map/places', requireAuth, async (req, res: Response) => {
   const tripId = req.query.trip_id ? Number(req.query.trip_id) : null
 
   const [ownedRes, memberRes] = await Promise.all([
-    supabaseAdmin.from('voyage_trips').select('id, title, destination').eq('user_id', userId),
+    supabaseAdmin.from('voyage_trips').select('id, title, destination, show_place_expenses').eq('user_id', userId),
     supabaseAdmin.from('voyage_trip_members').select('trip_id').eq('user_id', userId).eq('status', 'active'),
   ])
 
   const ownedTrips = ownedRes.data ?? []
+  const ownedTripIds = new Set(ownedTrips.map(t => t.id))
   const memberTripIds = (memberRes.data ?? []).map(m => m.trip_id)
   const allTripIds = [...new Set([...ownedTrips.map(t => t.id), ...memberTripIds])]
 
@@ -700,12 +752,24 @@ router.get('/map/places', requireAuth, async (req, res: Response) => {
       .not('lat', 'is', null).not('lng', 'is', null),
     supabaseAdmin
       .from('voyage_trips')
-      .select('id, title, destination')
+      .select('id, title, destination, show_place_expenses')
       .in('id', allTripIds)
       .order('created_at', { ascending: false }),
   ])
 
-  res.json({ places: placesRes.data ?? [], trips: tripsRes.data ?? [] })
+  // Gasto por lugar: dono sempre; viagens de membro só se show_place_expenses
+  const showExpenseTrips = new Set(
+    (tripsRes.data ?? [])
+      .filter(t => ownedTripIds.has(t.id) || t.show_place_expenses)
+      .map(t => t.id)
+  )
+  const allPlaces = placesRes.data ?? []
+  const visiblePlaces = allPlaces.filter(p => showExpenseTrips.has(p.trip_id))
+  const withExpenses = await attachPlaceExpenses(visiblePlaces)
+  const expenseById = new Map(withExpenses.map(p => [p.id, p]))
+  const places = allPlaces.map(p => expenseById.get(p.id) ?? { ...p, expense_total: 0, expense_count: 0 })
+
+  res.json({ places, trips: tripsRes.data ?? [] })
 })
 
 // ── GET /api/voyage/trips/:id/places  ────────────────────────────────────────
@@ -714,10 +778,11 @@ router.get('/trips/:id/places', requireAuth, async (req, res: Response) => {
   const tripId = Number(req.params.id)
 
   const { data: trip } = await supabaseAdmin
-    .from('voyage_trips').select('user_id').eq('id', tripId).single()
+    .from('voyage_trips').select('user_id, show_place_expenses').eq('id', tripId).single()
   if (!trip) { res.status(404).json({ error: 'Viagem não encontrada' }); return }
 
-  const isMember = trip.user_id === userId ||
+  const isOwner = trip.user_id === userId
+  const isMember = isOwner ||
     !!(await supabaseAdmin.from('voyage_trip_members')
       .select('id').eq('trip_id', tripId).eq('user_id', userId).eq('status', 'active').single()).data
 
@@ -729,7 +794,11 @@ router.get('/trips/:id/places', requireAuth, async (req, res: Response) => {
     .eq('trip_id', tripId)
     .order('sort_order')
 
-  res.json({ places: data ?? [] })
+  const places = (isOwner || trip.show_place_expenses)
+    ? await attachPlaceExpenses(data ?? [])
+    : (data ?? [])
+
+  res.json({ places })
 })
 
 // ── POST /api/voyage/trips/:id/places  (adicionar lugar à trip) ──────────────
@@ -795,6 +864,161 @@ router.delete('/trips/:id/places/:placeId', requireAuth, async (req, res: Respon
   await supabaseAdmin.from('voyage_trip_places')
     .delete().eq('id', placeId).eq('trip_id', tripId)
   res.json({ ok: true })
+})
+
+// ── Despesas por lugar ───────────────────────────────────────────────────────
+// Modelo v1: apenas o dono da viagem gerencia os vínculos (fonte única de verdade).
+
+// Enriquece transações com a categoria (name/icon/color).
+async function enrichTxCategories(rows: any[]): Promise<any[]> {
+  const catIds = [...new Set(rows.map(r => r.category_id).filter(Boolean))] as number[]
+  const catMap = new Map<number, { name: string; icon: string; color: string }>()
+  if (catIds.length > 0) {
+    const { data: cats } = await supabaseAdmin
+      .from('finance_categories').select('id, name, icon, color').in('id', catIds)
+    for (const c of cats ?? []) catMap.set(c.id, { name: c.name, icon: c.icon, color: c.color })
+  }
+  return rows.map(r => ({
+    id: r.id, transaction_id: r.id, date: r.date, amount: r.amount,
+    currency: r.currency, description: r.description,
+    category: r.category_id ? catMap.get(r.category_id) ?? null : null,
+  }))
+}
+
+// GET — lista as despesas vinculadas a um lugar (dono apenas)
+router.get('/trips/:id/places/:placeId/expenses', requireAuth, async (req, res: Response) => {
+  const userId = uid(req)
+  const tripId = Number(req.params.id)
+  const placeId = Number(req.params.placeId)
+
+  const { data: trip } = await supabaseAdmin
+    .from('voyage_trips').select('user_id').eq('id', tripId).single()
+  if (!trip) { res.status(404).json({ error: 'Viagem não encontrada' }); return }
+  if (trip.user_id !== userId) { res.status(403).json({ error: 'Sem permissão' }); return }
+
+  const { data: links } = await supabaseAdmin
+    .from('voyage_place_expenses')
+    .select('transaction_id, finance_transactions(id, date, amount, currency, description, category_id)')
+    .eq('trip_place_id', placeId)
+
+  const txRows = (links ?? []).map((l: any) => l.finance_transactions).filter(Boolean)
+  const expenses = await enrichTxCategories(txRows)
+  expenses.sort((a, b) => (a.date < b.date ? 1 : -1))
+  const total = Math.round(expenses.reduce((s, e) => s + Math.abs(Number(e.amount)), 0) * 100) / 100
+
+  res.json({ expenses, total })
+})
+
+// POST — vincula uma ou mais transações a um lugar (dono apenas)
+router.post('/trips/:id/places/:placeId/expenses', requireAuth, async (req, res: Response) => {
+  const userId = uid(req)
+  const tripId = Number(req.params.id)
+  const placeId = Number(req.params.placeId)
+  const ids: number[] = Array.isArray(req.body?.transaction_ids) ? req.body.transaction_ids.map(Number) : []
+  if (ids.length === 0) { res.status(400).json({ error: 'transaction_ids obrigatório' }); return }
+
+  const { data: trip } = await supabaseAdmin
+    .from('voyage_trips').select('user_id').eq('id', tripId).single()
+  if (!trip) { res.status(404).json({ error: 'Viagem não encontrada' }); return }
+  if (trip.user_id !== userId) { res.status(403).json({ error: 'Sem permissão' }); return }
+
+  // Valida que o lugar pertence à viagem
+  const { data: place } = await supabaseAdmin
+    .from('voyage_trip_places').select('id').eq('id', placeId).eq('trip_id', tripId).maybeSingle()
+  if (!place) { res.status(404).json({ error: 'Lugar não encontrado' }); return }
+
+  // Valida que as transações pertencem ao usuário
+  const { data: txs } = await supabaseAdmin
+    .from('finance_transactions').select('id').eq('user_id', userId).in('id', ids)
+  const validIds = (txs ?? []).map(t => t.id)
+  if (validIds.length === 0) { res.status(400).json({ error: 'Nenhuma transação válida' }); return }
+
+  await supabaseAdmin.from('voyage_place_expenses')
+    .upsert(
+      validIds.map(tid => ({ trip_place_id: placeId, transaction_id: tid, user_id: userId })),
+      { onConflict: 'trip_place_id,transaction_id', ignoreDuplicates: true }
+    )
+
+  res.json({ ok: true, linked: validIds.length })
+})
+
+// DELETE — desvincula uma transação de um lugar (dono apenas)
+router.delete('/trips/:id/places/:placeId/expenses/:transactionId', requireAuth, async (req, res: Response) => {
+  const userId = uid(req)
+  const tripId = Number(req.params.id)
+  const placeId = Number(req.params.placeId)
+  const transactionId = Number(req.params.transactionId)
+
+  const { data: trip } = await supabaseAdmin
+    .from('voyage_trips').select('user_id').eq('id', tripId).single()
+  if (!trip) { res.status(404).json({ error: 'Viagem não encontrada' }); return }
+  if (trip.user_id !== userId) { res.status(403).json({ error: 'Sem permissão' }); return }
+
+  await supabaseAdmin.from('voyage_place_expenses')
+    .delete().eq('trip_place_id', placeId).eq('transaction_id', transactionId).eq('user_id', userId)
+  res.json({ ok: true })
+})
+
+// GET — candidatos a vincular: transações dos momentos da viagem (ou busca livre)
+router.get('/trips/:id/transactions/candidates', requireAuth, async (req, res: Response) => {
+  const userId = uid(req)
+  const tripId = Number(req.params.id)
+  const q = (req.query.q as string | undefined)?.trim()
+  const limit = Math.min(Number(req.query.limit) || 30, 100)
+
+  const { data: trip } = await supabaseAdmin
+    .from('voyage_trips').select('user_id, start_date, end_date').eq('id', tripId).single()
+  if (!trip) { res.status(404).json({ error: 'Viagem não encontrada' }); return }
+  if (trip.user_id !== userId) { res.status(403).json({ error: 'Sem permissão' }); return }
+
+  // Transações já vinculadas a qualquer lugar desta viagem (para excluir)
+  const { data: places } = await supabaseAdmin
+    .from('voyage_trip_places').select('id').eq('trip_id', tripId)
+  const placeIds = (places ?? []).map(p => p.id)
+  let linkedTxIds: number[] = []
+  if (placeIds.length > 0) {
+    const { data: linked } = await supabaseAdmin
+      .from('voyage_place_expenses').select('transaction_id').in('trip_place_id', placeIds)
+    linkedTxIds = (linked ?? []).map(l => l.transaction_id)
+  }
+
+  let rows: any[] = []
+  if (q) {
+    // Busca livre: transações do user no range de datas da viagem
+    let query = supabaseAdmin
+      .from('finance_transactions')
+      .select('id, date, amount, currency, description, category_id')
+      .eq('user_id', userId)
+      .lt('amount', 0)
+      .ilike('description', `%${q}%`)
+      .order('date', { ascending: false })
+      .limit(limit + linkedTxIds.length)
+    if (trip.start_date) query = query.gte('date', trip.start_date)
+    if (trip.end_date) query = query.lte('date', trip.end_date)
+    const { data } = await query
+    rows = data ?? []
+  } else {
+    // Default: transações dos momentos da viagem (do dono)
+    const { data: tripMoments } = await supabaseAdmin
+      .from('voyage_trip_moments').select('moment_id').eq('trip_id', tripId).eq('user_id', userId)
+    const momentIds = (tripMoments ?? []).map(m => m.moment_id)
+    if (momentIds.length > 0) {
+      const { data: txm } = await supabaseAdmin
+        .from('finance_transaction_moments')
+        .select('finance_transactions(id, date, amount, currency, description, category_id)')
+        .in('moment_id', momentIds)
+      rows = (txm ?? []).map((r: any) => r.finance_transactions)
+        .filter((t: any) => t && Number(t.amount) < 0)
+      // dedup + sort desc
+      const seen = new Set<number>()
+      rows = rows.filter(r => { if (seen.has(r.id)) return false; seen.add(r.id); return true })
+        .sort((a, b) => (a.date < b.date ? 1 : -1))
+    }
+  }
+
+  const linkedSet = new Set(linkedTxIds)
+  const candidates = await enrichTxCategories(rows.filter(r => !linkedSet.has(r.id)).slice(0, limit))
+  res.json({ candidates })
 })
 
 // ── GET /api/voyage/trips/:id/members  ───────────────────────────────────────
@@ -1083,7 +1307,7 @@ router.get('/public/:token', async (req, res: Response) => {
 
   const { data: trip } = await supabaseAdmin
     .from('voyage_trips')
-    .select('id, title, destination, country, cover_image_url, cover_image_position, start_date, end_date, summary, status, share_hide_cost, share_expires_at, user_id')
+    .select('id, title, destination, country, cover_image_url, cover_image_position, start_date, end_date, summary, status, share_hide_cost, show_place_expenses, share_expires_at, user_id')
     .eq('share_token', token)
     .single()
 
@@ -1101,6 +1325,11 @@ router.get('/public/:token', async (req, res: Response) => {
     supabaseAdmin.auth.admin.getUserById(trip.user_id),
   ])
 
+  // Gasto por lugar na página pública só quando o dono ativou
+  const publicPlaces = (trip.show_place_expenses && !trip.share_hide_cost)
+    ? await attachPlaceExpenses(placesRes.data ?? [])
+    : (placesRes.data ?? [])
+
   const ownerMeta = ownerRes.data?.user?.user_metadata ?? {}
   const ownerName = [ownerMeta.first_name, ownerMeta.last_name].filter(Boolean).join(' ') || ownerRes.data?.user?.email || 'Arvo'
 
@@ -1112,7 +1341,7 @@ router.get('/public/:token', async (req, res: Response) => {
       summary: trip.summary, status: trip.status,
     },
     owner_name: ownerName,
-    places: placesRes.data ?? [],
+    places: publicPlaces,
     cost: costRes,
   })
 })
