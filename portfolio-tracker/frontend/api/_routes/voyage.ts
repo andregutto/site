@@ -596,6 +596,36 @@ function parseMapsUrl(url: string): { name: string | null; lat: number | null; l
   return { name, lat, lng }
 }
 
+// Geocodifica um texto (nome/endereço) via Places API (New) Text Search.
+// Retorna coordenadas + nome/endereço limpos quando a URL não traz lat/lng.
+async function geocodePlace(query: string): Promise<{ lat: number; lng: number; name?: string; address?: string } | null> {
+  const apiKey = process.env.GOOGLE_MAPS_API_KEY || process.env.GOOGLE_PLACES_API_KEY
+  if (!apiKey || !query.trim()) return null
+  try {
+    const r = await fetch('https://places.googleapis.com/v1/places:searchText', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Goog-Api-Key': apiKey,
+        'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.location',
+      },
+      body: JSON.stringify({ textQuery: query, maxResultCount: 1 }),
+    })
+    if (!r.ok) return null
+    const data = await r.json() as any
+    const p = data.places?.[0]
+    if (!p?.location) return null
+    return {
+      lat: p.location.latitude,
+      lng: p.location.longitude,
+      name: p.displayName?.text,
+      address: p.formattedAddress,
+    }
+  } catch {
+    return null
+  }
+}
+
 // ── POST /api/voyage/places/from-url  (importar lugar por link do Google Maps) ─
 router.post('/places/from-url', requireAuth, async (req, res: Response) => {
   const userId = uid(req)
@@ -610,15 +640,27 @@ router.post('/places/from-url', requireAuth, async (req, res: Response) => {
     } catch { /* mantém original */ }
   }
 
-  const { name, lat, lng } = parseMapsUrl(resolvedUrl)
+  let { name, lat, lng } = parseMapsUrl(resolvedUrl)
+  let address: string | null = null
   if (!name) {
     res.status(400).json({ error: 'Não foi possível extrair o nome do lugar. Use a URL completa do Google Maps (google.com/maps/place/…).' })
     return
   }
 
+  // Sem coordenadas na URL (links de compartilhamento por ftid/?q=) → geocodifica
+  if (lat === null || lng === null) {
+    const geo = await geocodePlace(name)
+    if (geo) {
+      lat = geo.lat; lng = geo.lng
+      if (geo.name) name = geo.name
+      if (geo.address) address = geo.address
+    }
+  }
+
   const insertData: Record<string, unknown> = {
     user_id: userId, name, source: 'manual', google_maps_url: resolvedUrl,
     ...(lat !== null && { lat }), ...(lng !== null && { lng }),
+    ...(address && { address }),
   }
   const { data: place, error } = await supabaseAdmin
     .from('voyage_places')
