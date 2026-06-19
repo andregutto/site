@@ -2,6 +2,7 @@ import { Router, Response } from 'express'
 import { randomBytes } from 'crypto'
 import { requireAuth, AuthRequest } from '../_middleware/auth.js'
 import { supabaseAdmin } from '../_lib/supabase.js'
+import { cache } from '../_lib/cache.js'
 
 const router = Router()
 
@@ -243,7 +244,7 @@ router.get('/trips', requireAuth, async (req, res: Response) => {
 // ── POST /api/voyage/trips ────────────────────────────────────────────────────
 router.post('/trips', requireAuth, async (req, res: Response) => {
   const userId = uid(req)
-  const { title, destination, country, cover_image_url, cover_image_position, start_date, end_date, summary, status } = req.body
+  const { title, destination, country, cover_image_url, cover_image_position, start_date, end_date, summary, status, dest_lat, dest_lng } = req.body
 
   if (!title?.trim()) { res.status(400).json({ error: 'title required' }); return }
 
@@ -254,6 +255,8 @@ router.post('/trips', requireAuth, async (req, res: Response) => {
       title: title.trim(),
       destination: destination ?? null,
       country: country ?? null,
+      dest_lat: dest_lat ?? null,
+      dest_lng: dest_lng ?? null,
       cover_image_url: cover_image_url ?? null,
       cover_image_position: cover_image_position ?? '50% 50%',
       start_date: start_date ?? null,
@@ -1394,5 +1397,75 @@ function escapeXml(str: string | null | undefined): string {
   if (!str) return ''
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 }
+
+// ── Google Places (New) proxy — autocomplete de cidades para o destino ────────
+// Key server-side; sem key configurada, degrada para lista vazia (texto livre).
+const GEO_TTL = 10 * 60 * 1000
+
+// GET /voyage/geo/autocomplete?q=&session=
+router.get('/geo/autocomplete', requireAuth, async (req, res: Response) => {
+  const apiKey = process.env.GOOGLE_MAPS_API_KEY
+  const input = (req.query.q as string | undefined)?.trim()
+  const session = (req.query.session as string | undefined) ?? ''
+  if (!apiKey || !input || input.length < 2) { res.json({ suggestions: [] }); return }
+
+  try {
+    const suggestions = await cache.getOrFetch(`geo:ac:${input.toLowerCase()}`, GEO_TTL, async () => {
+      const r = await fetch('https://places.googleapis.com/v1/places:autocomplete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Goog-Api-Key': apiKey },
+        body: JSON.stringify({
+          input,
+          includedPrimaryTypes: ['(cities)'],
+          ...(session ? { sessionToken: session } : {}),
+        }),
+      })
+      if (!r.ok) return []
+      const data = await r.json() as any
+      return (data.suggestions ?? [])
+        .map((s: any) => s.placePrediction)
+        .filter(Boolean)
+        .map((p: any) => ({
+          place_id: p.placeId,
+          main_text: p.structuredFormat?.mainText?.text ?? p.text?.text ?? '',
+          secondary_text: p.structuredFormat?.secondaryText?.text ?? '',
+        }))
+    })
+    res.json({ suggestions })
+  } catch {
+    res.json({ suggestions: [] })
+  }
+})
+
+// GET /voyage/geo/details?place_id=&session=
+router.get('/geo/details', requireAuth, async (req, res: Response) => {
+  const apiKey = process.env.GOOGLE_MAPS_API_KEY
+  const placeId = (req.query.place_id as string | undefined)?.trim()
+  if (!apiKey || !placeId) { res.json({ place: null }); return }
+
+  try {
+    const place = await cache.getOrFetch(`geo:det:${placeId}`, GEO_TTL, async () => {
+      const r = await fetch(`https://places.googleapis.com/v1/places/${encodeURIComponent(placeId)}`, {
+        headers: {
+          'X-Goog-Api-Key': apiKey,
+          'X-Goog-FieldMask': 'displayName,addressComponents,location',
+        },
+      })
+      if (!r.ok) return null
+      const data = await r.json() as any
+      const country = (data.addressComponents ?? [])
+        .find((c: any) => (c.types ?? []).includes('country'))?.longText ?? null
+      return {
+        city: data.displayName?.text ?? null,
+        country,
+        lat: data.location?.latitude ?? null,
+        lng: data.location?.longitude ?? null,
+      }
+    })
+    res.json({ place })
+  } catch {
+    res.json({ place: null })
+  }
+})
 
 export default router

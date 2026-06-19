@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { apiFetch } from '../../lib/api'
 import { useI18n } from '../../contexts/I18nContext'
+import PlaceAutocompleteInput from './PlaceAutocompleteInput'
 import type { Trip, TripStatus } from './types'
 
 const RED = '#D63B2F'
@@ -20,6 +21,8 @@ export default function TripFormModal({ trip, onClose, onSaved, onFromMoment, on
   const [title, setTitle] = useState(trip?.title ?? '')
   const [destination, setDestination] = useState(trip?.destination ?? '')
   const [country, setCountry] = useState(trip?.country ?? '')
+  const [destLat, setDestLat] = useState<number | null>(trip?.dest_lat ?? null)
+  const [destLng, setDestLng] = useState<number | null>(trip?.dest_lng ?? null)
   const [startDate, setStartDate] = useState(trip?.start_date ?? '')
   const [endDate, setEndDate] = useState(trip?.end_date ?? '')
   const [status, setStatus] = useState<TripStatus>(trip?.status ?? 'planning')
@@ -51,6 +54,8 @@ export default function TripFormModal({ trip, onClose, onSaved, onFromMoment, on
         title: title.trim(),
         destination: destination.trim() || null,
         country: country.trim() || null,
+        dest_lat: destLat,
+        dest_lng: destLng,
         start_date: startDate || null,
         end_date: endDate || null,
         status,
@@ -166,9 +171,17 @@ export default function TripFormModal({ trip, onClose, onSaved, onFromMoment, on
           <div className="grid grid-cols-2 gap-3">
             <label>
               <span style={labelStyle}>{tv.destinationLabel ?? 'Destino'}</span>
-              <input style={fieldStyle} value={destination} onChange={e => setDestination(e.target.value)} placeholder="ex: Lisboa"
-                onFocus={e => (e.target.style.borderColor = 'var(--arvo-gold)')}
-                onBlur={e => (e.target.style.borderColor = 'var(--arvo-border)')}
+              <PlaceAutocompleteInput
+                value={destination}
+                onChange={v => { setDestination(v); setDestLat(null); setDestLng(null) }}
+                onSelect={d => {
+                  if (d.city) setDestination(d.city)
+                  if (d.country) setCountry(d.country)
+                  setDestLat(d.lat)
+                  setDestLng(d.lng)
+                }}
+                placeholder="ex: Lisboa"
+                style={fieldStyle}
               />
             </label>
             <label>
