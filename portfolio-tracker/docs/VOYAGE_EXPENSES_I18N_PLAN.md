@@ -224,9 +224,72 @@ Não passam por `t.voyage.*`, então não traduzem para en/fr.
 
 ---
 
-## Ordem sugerida
-1. Workstream B primeiro (estabelece chaves i18n e o hábito de usar `t`), OU
-2. Workstream A primeiro e B logo em seguida cobrindo também as strings novas de A.
+## Workstream C — Google Places autocomplete no campo Destino
 
-Recomendado: **A primeiro** (entrega a feature) e **B** cobrindo tudo de uma vez,
-incluindo as strings que A introduziu — evita retrabalho de extrair strings duas vezes.
+### Objetivo
+No `TripFormModal`, o campo **Destino** (e País) hoje é texto livre. Trocar por um input
+com autocomplete do Google Places para padronizar a cidade canônica — isso melhora o
+match do filtro por cidade no `LibraryPicker` (que já normaliza acentos) e permite
+centralizar o mapa na cidade.
+
+### Chave da API
+A chave do Google Maps está nos documentos do projeto **"studio quartier"** — buscar lá.
+- **Server-side only.** Adicionar como env var `GOOGLE_MAPS_API_KEY` (Vercel env + um
+  `frontend/.env` local, que NÃO é commitado). NUNCA expor a chave no bundle do front nem
+  commitá-la. Todas as chamadas ao Google passam pelo backend (proxy), seguindo o padrão
+  do app (tudo via `/api` + `supabaseAdmin`/env no servidor).
+
+### Backend — `frontend/api/_routes/voyage.ts`
+- `GET /voyage/geo/autocomplete?q=&session=` → proxy para Google Places Autocomplete.
+  Preferir **Places API (New)**: `POST https://places.googleapis.com/v1/places:autocomplete`
+  com `{ input, includedPrimaryTypes: ["(cities)"], sessionToken }`. Retornar
+  `[{ place_id, main_text, secondary_text }]`. Usar `session` token (gerado no front) para
+  billing eficiente.
+- `GET /voyage/geo/details?place_id=&session=` → Place Details (New):
+  `GET https://places.googleapis.com/v1/places/{place_id}` com FieldMask para
+  `displayName,addressComponents,location`. Retornar `{ city, country, lat, lng }`.
+- Cachear com `lib/cache.ts` por `q`/`place_id` (TTL curto, ~minutos) para reduzir custo.
+- Tratar ausência da key: se `GOOGLE_MAPS_API_KEY` não existir, retornar 200 com lista
+  vazia (degrada para texto livre, sem quebrar o form).
+
+### Frontend
+- Novo `PlaceAutocompleteInput.tsx`: input controlado + dropdown de sugestões, debounce
+  ~300ms, chama `/voyage/geo/autocomplete`. Ao selecionar uma sugestão, chama
+  `/voyage/geo/details` e devolve `{ city, country, lat, lng }` via callback. Gera um
+  session token (uuid) por sessão de digitação. Visual: mesmo `fieldStyle`/dropdown do
+  `LibraryPicker`. Acessível por teclado (setas + Enter), fecha no blur/Esc.
+- Em `TripFormModal`: usar no campo **Destino**. Ao selecionar, preenche `destination` com
+  a cidade e auto-preenche `country` (ambos continuam editáveis para o caso de digitação
+  manual). Se houver lat/lng e adotarmos `dest_lat/dest_lng`, salvar também.
+- Strings via `t.voyage.*` (Workstream B).
+
+### Migration (opcional, recomendada)
+`ALTER TABLE voyage_trips ADD COLUMN dest_lat DOUBLE PRECISION, ADD COLUMN dest_lng DOUBLE
+PRECISION;` — para o mapa centralizar na cidade mesmo sem lugares adicionados. Pode entrar
+na mesma migration 041 ou numa 042. Expor no PATCH/POST de trip e no `Trip` type.
+
+### Multi-cidade (Euro tour)
+O autocomplete do destino é de **cidade única** (canônica). Para viagens multi-cidade, o
+usuário deixa o destino como a cidade principal (ou vazio) e usa a **busca por cidade no
+LibraryPicker** (já normaliza acentos) para montar o roteiro. NÃO criar array de destinos
+nesta versão — fica como evolução futura se necessário.
+
+### Reuso futuro (não fazer agora)
+O mesmo `PlaceAutocompleteInput` pode, depois, alimentar a adição de lugares à biblioteca
+(digitar nome → autocomplete → details → salvar com lat/lng), complementando o import por
+URL/Takeout. Deixar arquitetado para isso, mas fora do escopo atual.
+
+### Verificação
+- Confirmar que a key NÃO aparece no bundle (`grep` no `dist/` após build).
+- Testar autocomplete digitando uma cidade, selecionar, ver destination+country preenchidos.
+- Sem key configurada: form continua funcionando como texto livre.
+
+---
+
+## Ordem sugerida
+1. **A** (despesas por lugar) — entrega a feature maior.
+2. **C** (autocomplete) — independente de A; pode ser feito em paralelo.
+3. **B** (i18n) por último, cobrindo TODAS as strings de uma vez, inclusive as novas que
+   A e C introduziram — evita extrair strings duas vezes.
+
+Commits/PRs separados por workstream.
