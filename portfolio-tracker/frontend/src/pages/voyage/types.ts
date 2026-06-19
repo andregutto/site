@@ -39,12 +39,21 @@ export interface CostByUser {
   display?: { name: string; email: string; avatar_url?: string }
 }
 
+export interface CostByCategory {
+  id: number
+  name: string
+  icon: string
+  color: string
+  total: number
+}
+
 export interface TripCost {
   total: number
   budget: number | null
   currency: string
   moments: TripMoment[]
   by_user: CostByUser[]
+  by_category: CostByCategory[]
 }
 
 export interface TripMember {

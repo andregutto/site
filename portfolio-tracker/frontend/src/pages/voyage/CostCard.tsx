@@ -10,7 +10,6 @@ function fmtCurrency(n: number, currency: string) {
 }
 
 const RED = '#D63B2F'
-const RED_SOFT = 'rgba(214,59,47,0.10)'
 const GREEN = '#1F8A5B'
 const GOLD = '#C8B89A'
 
@@ -26,12 +25,7 @@ function ProgressBar({ spent, budget }: { spent: number; budget: number | null }
   const over = spent > budget
   return (
     <div style={{ height: 4, borderRadius: 999, background: 'var(--arvo-border)', marginTop: 6, overflow: 'hidden' }}>
-      <div style={{
-        height: '100%', borderRadius: 999,
-        width: `${pct}%`,
-        background: over ? RED : GREEN,
-        transition: 'width 400ms ease',
-      }} />
+      <div style={{ height: '100%', borderRadius: 999, width: `${pct}%`, background: over ? RED : GREEN, transition: 'width 400ms ease' }} />
     </div>
   )
 }
@@ -98,12 +92,11 @@ function LinkMomentPanel({ tripId, onLinked, compact }: { tripId: number; onLink
       ) : (
         <div style={{ maxHeight: 180, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 10 }}>
           {moments.map(m => (
-            <button key={m.id} type="button"
-              onClick={() => setSelectedMoment(m.id)}
+            <button key={m.id} type="button" onClick={() => setSelectedMoment(m.id)}
               style={{
                 textAlign: 'left', padding: '7px 10px', borderRadius: 6, cursor: 'pointer',
-                border: selectedMoment === m.id ? `1px solid ${RED}` : '1px solid transparent',
-                background: selectedMoment === m.id ? RED_SOFT : 'transparent',
+                border: selectedMoment === m.id ? '1px solid var(--arvo-fg-muted)' : '1px solid transparent',
+                background: selectedMoment === m.id ? 'var(--arvo-hover-bg)' : 'transparent',
                 fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg)',
                 display: 'flex', alignItems: 'center', gap: 8,
               }}
@@ -117,7 +110,7 @@ function LinkMomentPanel({ tripId, onLinked, compact }: { tripId: number; onLink
       <div className="flex gap-2 justify-end">
         <button type="button" onClick={() => setMode('none')} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, padding: '5px 12px', borderRadius: 5, background: 'none', border: '1px solid var(--arvo-border)', color: 'var(--arvo-fg-muted)', cursor: 'pointer' }}>Cancelar</button>
         <button type="button" onClick={linkMoment} disabled={!selectedMoment || saving}
-          style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, padding: '5px 14px', borderRadius: 5, background: RED, color: '#fff', border: 'none', cursor: !selectedMoment || saving ? 'default' : 'pointer', opacity: !selectedMoment || saving ? 0.6 : 1 }}
+          style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, padding: '5px 14px', borderRadius: 5, background: 'var(--arvo-fg)', color: 'var(--arvo-bg)', border: 'none', cursor: !selectedMoment || saving ? 'default' : 'pointer', opacity: !selectedMoment || saving ? 0.5 : 1 }}
         >{saving ? 'Vinculando…' : tv.linkMoment ?? 'Vincular'}</button>
       </div>
     </div>
@@ -135,7 +128,7 @@ function LinkMomentPanel({ tripId, onLinked, compact }: { tripId: number; onLink
       <div className="flex gap-2 justify-end">
         <button type="button" onClick={() => setMode('none')} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, padding: '5px 12px', borderRadius: 5, background: 'none', border: '1px solid var(--arvo-border)', color: 'var(--arvo-fg-muted)', cursor: 'pointer' }}>Cancelar</button>
         <button type="button" onClick={createMoment} disabled={saving}
-          style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, padding: '5px 14px', borderRadius: 5, background: RED, color: '#fff', border: 'none', cursor: saving ? 'default' : 'pointer', opacity: saving ? 0.6 : 1 }}
+          style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, padding: '5px 14px', borderRadius: 5, background: 'var(--arvo-fg)', color: 'var(--arvo-bg)', border: 'none', cursor: saving ? 'default' : 'pointer', opacity: saving ? 0.5 : 1 }}
         >{saving ? 'Criando…' : tv.createMoment ?? 'Criar momento'}</button>
       </div>
     </div>
@@ -144,7 +137,7 @@ function LinkMomentPanel({ tripId, onLinked, compact }: { tripId: number; onLink
   if (compact) return (
     <div style={{ display: 'flex', gap: 10, marginTop: 12, paddingTop: 10, borderTop: '1px solid var(--arvo-border-soft)' }}>
       <button type="button" onClick={openLink}
-        style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: RED, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+        style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
       >+ Vincular outro momento</button>
       <span style={{ color: 'var(--arvo-border)' }}>·</span>
       <button type="button" onClick={() => setMode('create')}
@@ -156,13 +149,13 @@ function LinkMomentPanel({ tripId, onLinked, compact }: { tripId: number; onLink
   return (
     <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
       <button type="button" onClick={openLink}
-        style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, letterSpacing: '0.04em', padding: '6px 14px', borderRadius: 6, background: 'transparent', border: `1px solid ${RED}`, color: RED, cursor: 'pointer', transition: 'all 160ms ease' }}
-        onMouseEnter={e => { e.currentTarget.style.background = RED_SOFT }}
-        onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
+        style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, letterSpacing: '0.04em', padding: '6px 14px', borderRadius: 6, background: 'transparent', border: '1px solid var(--arvo-border)', color: 'var(--arvo-fg)', cursor: 'pointer', transition: 'all 160ms ease' }}
+        onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--arvo-fg-muted)' }}
+        onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--arvo-border)' }}
       >{tv.linkMoment ?? 'Vincular momento'}</button>
       <button type="button" onClick={() => setMode('create')}
-        style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, letterSpacing: '0.04em', padding: '6px 14px', borderRadius: 6, background: RED, color: '#fff', border: 'none', cursor: 'pointer', transition: 'all 160ms ease' }}
-        onMouseEnter={e => { e.currentTarget.style.opacity = '0.85' }}
+        style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, letterSpacing: '0.04em', padding: '6px 14px', borderRadius: 6, background: 'var(--arvo-fg)', color: 'var(--arvo-bg)', border: 'none', cursor: 'pointer', transition: 'all 160ms ease' }}
+        onMouseEnter={e => { e.currentTarget.style.opacity = '0.82' }}
         onMouseLeave={e => { e.currentTarget.style.opacity = '1' }}
       >{tv.createMoment ?? 'Criar momento'}</button>
     </div>
@@ -175,6 +168,8 @@ export default function CostCard({ tripId, cost, onCostChanged }: Props) {
   const fmt = (n: number) => fmtCurrency(n, cost.currency || 'EUR')
   const hasMoments = cost.moments.length > 0
   const overBudget = cost.budget != null && cost.total > cost.budget
+  const [expanded, setExpanded] = useState(false)
+  const hasCategories = (cost.by_category ?? []).length > 0
 
   return (
     <div style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', borderRadius: 16, boxShadow: 'var(--arvo-shadow-sm)', padding: '20px 22px' }}>
@@ -184,7 +179,7 @@ export default function CostCard({ tripId, cost, onCostChanged }: Props) {
           {tv.costCard ?? 'Custo'}
         </p>
         {hasMoments && (
-          <Link to="/finances/moments" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: RED, textDecoration: 'none', letterSpacing: '0.04em' }}>
+          <Link to="/finances/moments" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)', textDecoration: 'none', letterSpacing: '0.04em' }}>
             Ver momentos →
           </Link>
         )}
@@ -192,24 +187,34 @@ export default function CostCard({ tripId, cost, onCostChanged }: Props) {
 
       {hasMoments ? (
         <>
-          {/* Total */}
-          <div style={{ marginBottom: 8 }}>
-            <span style={{
-              fontFamily: 'var(--arvo-font-body)', fontSize: 28, fontVariantNumeric: 'tabular-nums',
-              color: overBudget ? RED : 'var(--arvo-fg)', letterSpacing: '-0.02em',
-            }}>
-              {fmt(cost.total)}
-            </span>
-            {cost.budget != null && (
-              <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-soft)', marginLeft: 6 }}>
-                / {fmt(cost.budget)}
+          {/* Total + expand toggle */}
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 8 }}>
+            <div>
+              <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 28, fontVariantNumeric: 'tabular-nums', color: overBudget ? RED : 'var(--arvo-fg)', letterSpacing: '-0.02em' }}>
+                {fmt(cost.total)}
               </span>
+              {cost.budget != null && (
+                <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-soft)', marginLeft: 6 }}>
+                  / {fmt(cost.budget)}
+                </span>
+              )}
+            </div>
+            {hasCategories && (
+              <button
+                type="button"
+                onClick={() => setExpanded(v => !v)}
+                style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)', padding: 0 }}
+              >
+                {expanded ? 'Recolher' : 'Detalhar'}
+                <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ transform: expanded ? 'rotate(180deg)' : 'none', transition: 'transform 160ms' }}>
+                  <path strokeLinecap="round" d="M2 3.5l3 3 3-3"/>
+                </svg>
+              </button>
             )}
           </div>
 
           <ProgressBar spent={cost.total} budget={cost.budget} />
 
-          {/* Spent / Budget labels */}
           {cost.budget != null && (
             <div className="flex justify-between" style={{ marginTop: 6 }}>
               <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)' }}>{tv.costSpent ?? 'Gasto'}</span>
@@ -217,7 +222,31 @@ export default function CostCard({ tripId, cost, onCostChanged }: Props) {
             </div>
           )}
 
-          {/* Per-user split (V2 preenchido; V1 mostra se só 1 user) */}
+          {/* Category breakdown — expandable */}
+          {expanded && hasCategories && (
+            <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid var(--arvo-border-soft)', display: 'flex', flexDirection: 'column', gap: 7 }}>
+              <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)', marginBottom: 4 }}>
+                Por categoria
+              </p>
+              {cost.by_category.map(c => {
+                const pct = cost.total > 0 ? (c.total / cost.total) * 100 : 0
+                return (
+                  <div key={c.id}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
+                      <span style={{ fontSize: 14, flexShrink: 0 }}>{c.icon}</span>
+                      <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg)', flex: 1 }}>{c.name}</span>
+                      <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)', fontVariantNumeric: 'tabular-nums' }}>{fmt(c.total)}</span>
+                    </div>
+                    <div style={{ height: 3, borderRadius: 999, background: 'var(--arvo-border)', overflow: 'hidden' }}>
+                      <div style={{ height: '100%', width: `${pct}%`, background: c.color, borderRadius: 999, transition: 'width 300ms ease' }} />
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+
+          {/* Per-user split */}
           {cost.by_user.length > 1 && (
             <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid var(--arvo-border-soft)' }}>
               <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)', marginBottom: 8 }}>
@@ -257,7 +286,6 @@ export default function CostCard({ tripId, cost, onCostChanged }: Props) {
             ))}
           </div>
 
-          {/* Add more link — compact when already linked */}
           <LinkMomentPanel tripId={tripId} onLinked={onCostChanged} compact />
         </>
       ) : (

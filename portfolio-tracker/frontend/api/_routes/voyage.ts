@@ -27,7 +27,7 @@ async function buildCostSummary(tripId: number, requestingUserId: string) {
     .eq('trip_id', tripId)
 
   if (!tripMoments || tripMoments.length === 0) {
-    return { total: 0, currency: 'EUR', moments: [], by_user: [] }
+    return { total: 0, currency: 'EUR', moments: [], by_user: [], by_category: [] }
   }
 
   const momentIds = tripMoments.map(m => m.moment_id)
@@ -41,11 +41,12 @@ async function buildCostSummary(tripId: number, requestingUserId: string) {
   // Busca transações de todos os momentos (via tabela junction)
   const { data: txRows } = await supabaseAdmin
     .from('finance_transaction_moments')
-    .select('moment_id, finance_transactions(amount, currency, is_internal_transfer, exclude_from_stats)')
+    .select('moment_id, finance_transactions(amount, currency, is_internal_transfer, exclude_from_stats, category_id)')
     .in('moment_id', momentIds)
 
-  // Agrega por momento
+  // Agrega por momento e por categoria
   const momentTotals: Record<number, number> = {}
+  const categoryTotals: Record<number, number> = {}
   const currency = 'EUR'
   for (const row of txRows ?? []) {
     const tx = (row as any).finance_transactions
@@ -54,7 +55,16 @@ async function buildCostSummary(tripId: number, requestingUserId: string) {
     if (tx.amount >= 0) continue // só despesas (negativos)
     const mid = (row as any).moment_id
     momentTotals[mid] = (momentTotals[mid] ?? 0) + Math.abs(tx.amount)
+    if (tx.category_id) {
+      categoryTotals[tx.category_id] = (categoryTotals[tx.category_id] ?? 0) + Math.abs(tx.amount)
+    }
   }
+
+  // Busca nomes/ícones das categorias encontradas
+  const catIds = Object.keys(categoryTotals).map(Number)
+  const { data: categories } = catIds.length > 0
+    ? await supabaseAdmin.from('finance_categories').select('id, name, icon, color').in('id', catIds)
+    : { data: [] as any[] }
 
   // Agrupa por usuário para o split
   const byUser: Record<string, { user_id: string; total: number; moment_ids: number[] }> = {}
@@ -76,10 +86,15 @@ async function buildCostSummary(tripId: number, requestingUserId: string) {
   const byUserEntries = Object.values(byUser)
   const displays = await Promise.all(byUserEntries.map(u => userDisplay(u.user_id)))
 
+  const by_category = (categories ?? [])
+    .map(c => ({ ...c, total: Math.round((categoryTotals[c.id] ?? 0) * 100) / 100 }))
+    .sort((a: any, b: any) => b.total - a.total)
+
   return {
     total: Math.round(grandTotal * 100) / 100,
     budget: budgetTotal > 0 ? Math.round(budgetTotal * 100) / 100 : null,
     currency,
+    by_category,
     moments: (moments ?? []).map(m => ({
       ...m,
       spent: Math.round((momentTotals[m.id] ?? 0) * 100) / 100,

@@ -14,7 +14,6 @@ L.Icon.Default.mergeOptions({
 })
 
 const RED = '#D63B2F'
-const GOLD = '#C8B89A'
 
 interface TripPlace {
   id: number
@@ -123,7 +122,7 @@ export default function TripMapCard({ tripId }: Props) {
           <button
             type="button"
             onClick={() => navigate(`/voyage/map?trip=${tripId}`)}
-            style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: RED, background: 'none', border: 'none', cursor: 'pointer', letterSpacing: '0.04em', padding: 0 }}
+            style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)', background: 'none', border: 'none', cursor: 'pointer', letterSpacing: '0.04em', padding: 0 }}
           >
             Ver mapa completo →
           </button>
@@ -138,7 +137,7 @@ export default function TripMapCard({ tripId }: Props) {
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 28l8-14 10 8 9-14 10 8"/>
               <path strokeLinecap="round" d="M3 34h34"/>
             </svg>
-            <p style={{ fontFamily: 'var(--arvo-font-serif)', fontStyle: 'italic', fontSize: 13, color: GOLD }}>
+            <p style={{ fontFamily: 'var(--arvo-font-serif)', fontStyle: 'italic', fontSize: 13, color: '#C8B89A' }}>
               Adicione lugares à viagem para ver o mapa
             </p>
           </div>
@@ -167,7 +166,7 @@ export default function TripMapCard({ tripId }: Props) {
                     {p.trip_note && <p style={{ fontSize: 11, fontStyle: 'italic', color: '#888', marginBottom: 4 }}>{p.trip_note}</p>}
                     {p.google_maps_url && (
                       <a href={p.google_maps_url} target="_blank" rel="noopener noreferrer"
-                        style={{ fontSize: 11, color: RED, textDecoration: 'none' }}>
+                        style={{ fontSize: 11, color: 'var(--arvo-fg-soft)', textDecoration: 'none' }}>
                         Abrir no Google Maps →
                       </a>
                     )}

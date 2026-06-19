@@ -7,7 +7,7 @@ import TripFormModal from './TripFormModal'
 import CostCard from './CostCard'
 import MembersPanel from './MembersPanel'
 import TripPlacesPanel from './TripPlacesPanel'
-import ShareTripPanel from './ShareTripPanel'
+import { ShareModal } from './ShareTripPanel'
 import TripItineraryPanel from './TripItineraryPanel'
 import TripMapCard from './TripMapCard'
 import type { Trip, TripCost, TripMember } from './types'
@@ -49,6 +49,7 @@ export default function VoyageTripDetailPage() {
   const [data, setData] = useState<TripDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [showEdit, setShowEdit] = useState(false)
+  const [showShare, setShowShare] = useState(false)
 
   const load = useCallback(async () => {
     if (!id) return
@@ -127,16 +128,34 @@ export default function VoyageTripDetailPage() {
             </span>
           </div>
 
-          {/* Edit button */}
-          <button
-            onClick={() => setShowEdit(true)}
-            style={{ position: 'absolute', top: 16, left: 16, display: 'flex', alignItems: 'center', gap: 5, background: 'rgba(13,13,13,0.55)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, padding: '5px 12px', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'rgba(255,255,255,0.80)', letterSpacing: '0.04em' }}
-          >
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <path strokeLinecap="round" d="M8.5 1.5l2 2L4 10H2v-2L8.5 1.5z" />
-            </svg>
-            Editar
-          </button>
+          {/* Top-left buttons: Edit + Share */}
+          <div style={{ position: 'absolute', top: 16, left: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <button
+              onClick={() => setShowEdit(true)}
+              style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'rgba(13,13,13,0.55)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, padding: '5px 12px', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'rgba(255,255,255,0.80)', letterSpacing: '0.04em' }}
+            >
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <path strokeLinecap="round" d="M8.5 1.5l2 2L4 10H2v-2L8.5 1.5z" />
+              </svg>
+              Editar
+            </button>
+            {trip.user_id === user?.id && (
+              <button
+                onClick={() => setShowShare(true)}
+                style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'rgba(13,13,13,0.55)', backdropFilter: 'blur(8px)', border: `1px solid ${trip.share_token ? 'rgba(31,138,91,0.50)' : 'rgba(255,255,255,0.12)'}`, borderRadius: 8, padding: '5px 12px', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'rgba(255,255,255,0.80)', letterSpacing: '0.04em' }}
+              >
+                <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <circle cx="11" cy="3" r="1.5"/>
+                  <circle cx="3" cy="7" r="1.5"/>
+                  <circle cx="11" cy="11" r="1.5"/>
+                  <path strokeLinecap="round" d="M4.5 6.2l5-2.5M4.5 7.8l5 2.5"/>
+                </svg>
+                {trip.share_token ? (
+                  <>Compartilhado<span style={{ width: 5, height: 5, borderRadius: 999, background: '#1F8A5B', display: 'inline-block', marginLeft: 4 }} /></>
+                ) : 'Compartilhar'}
+              </button>
+            )}
+          </div>
 
           {/* Title overlay */}
           <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '20px 24px 22px' }}>
@@ -169,24 +188,9 @@ export default function VoyageTripDetailPage() {
         </p>
       )}
 
-      {/* Content grid */}
+      {/* Content grid: 2/3 main + 1/3 sidebar */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        {/* Left col: Cost + Share */}
-        <div className="lg:col-span-1 flex flex-col gap-5">
-          <CostCard
-            tripId={Number(id)}
-            cost={cost}
-            onCostChanged={updated => setData(prev => prev ? { ...prev, cost: updated } : prev)}
-          />
-          {trip.user_id === user?.id && (
-            <ShareTripPanel
-              trip={trip}
-              onUpdate={fields => setData(prev => prev ? { ...prev, trip: { ...prev.trip, ...fields } } : prev)}
-            />
-          )}
-        </div>
-
-        {/* Right col: Mapa + Roteiro + Lugares */}
+        {/* Main col: Mapa + Roteiro + Lugares + Members */}
         <div className="lg:col-span-2 flex flex-col gap-5">
           {/* Mapa inline */}
           <TripMapCard tripId={Number(id)} />
@@ -218,7 +222,24 @@ export default function VoyageTripDetailPage() {
             isOwner={trip.user_id === user?.id}
           />
         </div>
+
+        {/* Sidebar: Custos */}
+        <div className="lg:col-span-1 flex flex-col gap-5">
+          <CostCard
+            tripId={Number(id)}
+            cost={cost}
+            onCostChanged={updated => setData(prev => prev ? { ...prev, cost: updated } : prev)}
+          />
+        </div>
       </div>
+
+      {showShare && trip.user_id === user?.id && (
+        <ShareModal
+          trip={trip}
+          onUpdate={fields => setData(prev => prev ? { ...prev, trip: { ...prev.trip, ...fields } } : prev)}
+          onClose={() => setShowShare(false)}
+        />
+      )}
 
       {showEdit && (
         <TripFormModal

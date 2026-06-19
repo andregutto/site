@@ -17,7 +17,7 @@ const EXPIRY_OPTIONS = [
   { label: 'Sem prazo', value: null },
 ]
 
-function ShareModal({ trip, onUpdate, onClose }: Props & { onClose: () => void }) {
+export function ShareModal({ trip, onUpdate, onClose }: Props & { onClose: () => void }) {
   const [loading, setLoading] = useState(false)
   const [revoking, setRevoking] = useState(false)
   const [copied, setCopied] = useState(false)
