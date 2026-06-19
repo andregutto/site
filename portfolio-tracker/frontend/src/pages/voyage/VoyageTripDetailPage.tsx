@@ -215,20 +215,19 @@ export default function VoyageTripDetailPage() {
             tripCountry={trip.country}
             canEdit={trip.user_id === user?.id}
           />
-
-          {/* Members panel */}
-          <MembersPanel
-            tripId={Number(id)}
-            isOwner={trip.user_id === user?.id}
-          />
         </div>
 
-        {/* Sidebar: Custos */}
+        {/* Sidebar: Custos + Colaboradores
+            (no mobile empilha após os Lugares — colaboradores vêm depois do custo) */}
         <div className="lg:col-span-1 flex flex-col gap-5">
           <CostCard
             tripId={Number(id)}
             cost={cost}
             onCostChanged={updated => setData(prev => prev ? { ...prev, cost: updated } : prev)}
+          />
+          <MembersPanel
+            tripId={Number(id)}
+            isOwner={trip.user_id === user?.id}
           />
         </div>
       </div>

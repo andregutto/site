@@ -572,8 +572,19 @@ function parseMapsUrl(url: string): { name: string | null; lat: number | null; l
       const candidate = decodeURIComponent(placeMatch[1].replace(/\+/g, ' ')).trim()
       if (candidate && !/^[\d.,\-\s]+$/.test(candidate)) name = candidate
     }
-    const coordMatch = url.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/)
-    if (coordMatch) { lat = parseFloat(coordMatch[1]); lng = parseFloat(coordMatch[2]) }
+    // !3d<lat>!4d<lng> é o pino real do lugar (mais preciso que @ que é o centro do viewport)
+    const pinMatch = url.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/)
+    if (pinMatch) {
+      lat = parseFloat(pinMatch[1]); lng = parseFloat(pinMatch[2])
+    } else {
+      const atMatch = url.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/)
+      if (atMatch) { lat = parseFloat(atMatch[1]); lng = parseFloat(atMatch[2]) }
+      else {
+        // ?q=lat,lng  ou  ?ll=lat,lng  ou  /search/lat,lng
+        const qll = url.match(/[?&](?:q|ll|center)=(-?\d+\.\d+),(-?\d+\.\d+)/)
+        if (qll) { lat = parseFloat(qll[1]); lng = parseFloat(qll[2]) }
+      }
+    }
     if (!name) {
       const qMatch = url.match(/[?&]q=([^&]+)/)
       if (qMatch) {

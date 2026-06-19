@@ -90,6 +90,8 @@ function StarRating({ value, onChange }: { value: number | null; onChange?: (v: 
 function LibraryPicker({ tripId, tripCity, tripCountry, onAdded }: {
   tripId: number; tripCity: string | null; tripCountry: string | null; onAdded: (p: TripPlace) => void
 }) {
+  const { t } = useI18n()
+  const tv = (t as any).voyage ?? {}
   const [open, setOpen] = useState(false)
   const [mode, setMode] = useState<'library' | 'url'>('library')
   const [library, setLibrary] = useState<LibraryPlace[]>([])
@@ -198,10 +200,10 @@ function LibraryPicker({ tripId, tripCity, tripCountry, onAdded }: {
         onMouseEnter={e => (e.currentTarget.style.background = 'var(--arvo-hover-bg)')}
         onMouseLeave={e => (e.currentTarget.style.background = 'none')}
       >
-        <svg width="11" height="11" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.5">
-          <path strokeLinecap="round" d="M8 1h4m0 0v4m0-4L5.5 7.5M5 2H2a1 1 0 00-1 1v8a1 1 0 001 1h8a1 1 0 001-1V8" />
+        <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M5.5 8.5a2.5 2.5 0 003.5 0l2-2a2.5 2.5 0 00-3.5-3.5l-.6.6M8.5 5.5a2.5 2.5 0 00-3.5 0l-2 2a2.5 2.5 0 003.5 3.5l.6-.6" />
         </svg>
-        Link do Maps
+        {tv.places?.mapsLink ?? '+ Colar link do Maps'}
       </button>
     </div>
   )

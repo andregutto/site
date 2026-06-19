@@ -2106,7 +2106,7 @@
       "title": "Places",
       "empty": "No places added yet",
       "addFromLibrary": "+ Add from library",
-      "mapsLink": "Maps link",
+      "mapsLink": "+ Paste Maps link",
       "search": "Search…",
       "noteePlaceholder": "Note about this place…",
       "libraryTab": "Library",
