@@ -507,6 +507,79 @@ function nameFromMapsUrl(url: string | null): string | null {
   return null
 }
 
+// Extrai nome e coordenadas de uma URL do Google Maps
+function parseMapsUrl(url: string): { name: string | null; lat: number | null; lng: number | null } {
+  let name: string | null = null
+  let lat: number | null = null
+  let lng: number | null = null
+  try {
+    const placeMatch = url.match(/\/maps\/place\/([^/@?]+)/)
+    if (placeMatch) {
+      const candidate = decodeURIComponent(placeMatch[1].replace(/\+/g, ' ')).trim()
+      if (candidate && !/^[\d.,\-\s]+$/.test(candidate)) name = candidate
+    }
+    const coordMatch = url.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/)
+    if (coordMatch) { lat = parseFloat(coordMatch[1]); lng = parseFloat(coordMatch[2]) }
+    if (!name) {
+      const qMatch = url.match(/[?&]q=([^&]+)/)
+      if (qMatch) {
+        const candidate = decodeURIComponent(qMatch[1].replace(/\+/g, ' ')).trim()
+        if (candidate && !/^[\d.,\-\s]+$/.test(candidate)) name = candidate
+      }
+    }
+  } catch {}
+  return { name, lat, lng }
+}
+
+// ── POST /api/voyage/places/from-url  (importar lugar por link do Google Maps) ─
+router.post('/places/from-url', requireAuth, async (req, res: Response) => {
+  const userId = uid(req)
+  const { url, trip_id } = req.body as { url: string; trip_id?: number }
+  if (!url?.trim()) { res.status(400).json({ error: 'URL obrigatória' }); return }
+
+  let resolvedUrl = url.trim()
+  if (/goo\.gl|maps\.app\.goo\.gl/.test(resolvedUrl)) {
+    try {
+      const r = await fetch(resolvedUrl, { redirect: 'follow' })
+      resolvedUrl = r.url
+    } catch { /* mantém original */ }
+  }
+
+  const { name, lat, lng } = parseMapsUrl(resolvedUrl)
+  if (!name) {
+    res.status(400).json({ error: 'Não foi possível extrair o nome do lugar. Use a URL completa do Google Maps (google.com/maps/place/…).' })
+    return
+  }
+
+  const insertData: Record<string, unknown> = {
+    user_id: userId, name, source: 'manual', google_maps_url: resolvedUrl,
+    ...(lat !== null && { lat }), ...(lng !== null && { lng }),
+  }
+  const { data: place, error } = await supabaseAdmin
+    .from('voyage_places')
+    .upsert(insertData, { onConflict: 'user_id,google_maps_url', ignoreDuplicates: false })
+    .select().single()
+
+  if (error || !place) { res.status(500).json({ error: error?.message ?? 'Erro ao salvar' }); return }
+
+  let trip_place = null
+  if (trip_id) {
+    const { count } = await supabaseAdmin
+      .from('voyage_trip_places').select('sort_order', { count: 'exact', head: true }).eq('trip_id', trip_id)
+    const { data: tp } = await supabaseAdmin
+      .from('voyage_trip_places')
+      .insert({
+        trip_id, library_place_id: place.id, name: place.name,
+        lat: place.lat, lng: place.lng, address: place.address,
+        google_maps_url: place.google_maps_url, sort_order: (count ?? 0) + 1, added_by: userId,
+      })
+      .select().single()
+    trip_place = tp
+  }
+
+  res.json({ place, trip_place })
+})
+
 // ── POST /api/voyage/places/import-takeout  (importar JSON do Takeout) ────────
 // Aceita um array de GeoJSON FeatureCollections (um por lista do Google Maps)
 // Body: { files: [{ list_name: string, geojson: object }] }

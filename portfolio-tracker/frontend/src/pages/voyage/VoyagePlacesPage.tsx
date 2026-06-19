@@ -12,7 +12,6 @@ L.Icon.Default.mergeOptions({
 })
 
 const RED = '#D63B2F'
-const RED_SOFT = 'rgba(214,59,47,0.10)'
 const GOLD = '#C8B89A'
 
 interface Place {
@@ -49,6 +48,61 @@ function categoryIcon(cat: string | null): string {
     if (key.includes(k)) return v
   }
   return '📌'
+}
+
+// ── URL Importer ──────────────────────────────────────────────────────────────
+function UrlImporter({ onImported }: { onImported: (place: Place) => void }) {
+  const [url, setUrl] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [last, setLast] = useState<string | null>(null)
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!url.trim()) return
+    setLoading(true)
+    setError(null)
+    setLast(null)
+    try {
+      const data = await apiFetch<{ place: Place }>('/voyage/places/from-url', {
+        method: 'POST',
+        body: JSON.stringify({ url: url.trim() }),
+      })
+      onImported(data.place)
+      setLast(data.place.name)
+      setUrl('')
+    } catch (err: any) {
+      setError(err.message ?? 'Erro ao importar')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', borderRadius: 16, boxShadow: 'var(--arvo-shadow-sm)', padding: '16px 18px' }}>
+      <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 10, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)', marginBottom: 10 }}>
+        Importar por link
+      </p>
+      <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <input
+          type="url"
+          placeholder="https://maps.google.com/maps/place/…"
+          value={url}
+          onChange={e => { setUrl(e.target.value); setError(null) }}
+          style={{ width: '100%', padding: '7px 10px', borderRadius: 4, border: `1px solid ${error ? RED : 'var(--arvo-border)'}`, fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, background: 'var(--arvo-surface)', color: 'var(--arvo-fg)', outline: 'none', boxSizing: 'border-box' }}
+        />
+        <button
+          type="submit"
+          disabled={loading || !url.trim()}
+          style={{ padding: '7px 0', borderRadius: 6, background: loading || !url.trim() ? 'var(--arvo-hover-bg)' : 'var(--arvo-fg)', color: loading || !url.trim() ? 'var(--arvo-fg-muted)' : 'var(--arvo-bg)', border: 'none', cursor: loading || !url.trim() ? 'default' : 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 12, transition: 'all 160ms' }}
+        >
+          {loading ? 'Importando…' : 'Adicionar à biblioteca'}
+        </button>
+        {error && <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: RED }}>{error}</p>}
+        {last && <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: '#1F8A5B' }}>✓ {last} adicionado</p>}
+      </form>
+    </div>
+  )
 }
 
 // ── Takeout Importer ──────────────────────────────────────────────────────────
@@ -133,14 +187,14 @@ function TakeoutImporter({ onImported, onDeleteAll }: { onImported: () => void; 
         htmlFor="takeout-input"
         style={{
           display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer',
-          border: `2px dashed ${files.length > 0 ? RED : 'var(--arvo-border)'}`,
+          border: `2px dashed ${files.length > 0 ? 'var(--arvo-fg)' : 'var(--arvo-border)'}`,
           borderRadius: 10, padding: '14px 18px', marginBottom: 12,
-          background: files.length > 0 ? RED_SOFT : 'transparent',
+          background: files.length > 0 ? 'var(--arvo-hover-bg)' : 'transparent',
           transition: 'all 200ms',
         }}
       >
         <span style={{ fontSize: 20 }}>📂</span>
-        <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: files.length > 0 ? RED : 'var(--arvo-fg-soft)' }}>
+        <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: files.length > 0 ? 'var(--arvo-fg)' : 'var(--arvo-fg-soft)' }}>
           {files.length > 0
             ? `${files.length} arquivo${files.length > 1 ? 's' : ''}: ${files.map(f => f.name.replace('.json', '')).join(', ')}`
             : 'Clique para selecionar os .json das listas'}
@@ -154,8 +208,8 @@ function TakeoutImporter({ onImported, onDeleteAll }: { onImported: () => void; 
           disabled={importing}
           style={{
             width: '100%', padding: '9px 0', borderRadius: 8,
-            background: importing ? 'var(--arvo-hover-bg)' : RED,
-            color: importing ? 'var(--arvo-fg-muted)' : '#fff',
+            background: importing ? 'var(--arvo-hover-bg)' : 'var(--arvo-fg)',
+            color: importing ? 'var(--arvo-fg-muted)' : 'var(--arvo-bg)',
             border: 'none', cursor: importing ? 'default' : 'pointer',
             fontFamily: 'var(--arvo-font-body)', fontSize: 13, transition: 'all 160ms',
           }}
@@ -294,9 +348,9 @@ export default function VoyagePlacesPage() {
               onClick={() => setShowMap(v => !v)}
               style={{
                 fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, padding: '4px 12px', borderRadius: 6,
-                border: `1px solid ${showMap ? RED : 'var(--arvo-border)'}`,
-                background: showMap ? 'rgba(214,59,47,0.08)' : 'transparent',
-                color: showMap ? RED : 'var(--arvo-fg-muted)', cursor: 'pointer',
+                border: `1px solid ${showMap ? 'var(--arvo-fg)' : 'var(--arvo-border)'}`,
+                background: showMap ? 'var(--arvo-hover-bg)' : 'transparent',
+                color: showMap ? 'var(--arvo-fg)' : 'var(--arvo-fg-muted)', cursor: 'pointer',
               }}
             >
               {showMap ? 'Ver lista' : '🗺 Ver no mapa'}
@@ -327,7 +381,7 @@ export default function VoyagePlacesPage() {
                     {p.address && <p style={{ fontSize: 11, color: '#666' }}>{p.address}</p>}
                     {p.google_maps_url && (
                       <a href={p.google_maps_url} target="_blank" rel="noopener noreferrer"
-                        style={{ fontSize: 11, color: RED, textDecoration: 'none', display: 'block', marginTop: 4 }}>
+                        style={{ fontSize: 11, color: 'var(--arvo-fg-soft)', textDecoration: 'none', display: 'block', marginTop: 4 }}>
                         Abrir no Maps →
                       </a>
                     )}
@@ -342,6 +396,7 @@ export default function VoyagePlacesPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Sidebar: import + filters */}
         <div className="flex flex-col gap-5">
+          <UrlImporter onImported={p => setPlaces(ps => [p, ...ps.filter(x => x.id !== p.id)])} />
           <TakeoutImporter onImported={load} onDeleteAll={load} />
 
           {/* Filters */}
@@ -361,7 +416,7 @@ export default function VoyagePlacesPage() {
                 <button
                   type="button"
                   onClick={() => setCityFilter('')}
-                  style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, padding: '3px 10px', borderRadius: 999, border: `1px solid ${!cityFilter ? RED : 'var(--arvo-border)'}`, background: !cityFilter ? RED_SOFT : 'transparent', color: !cityFilter ? RED : 'var(--arvo-fg-muted)', cursor: 'pointer' }}
+                  style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, padding: '3px 10px', borderRadius: 999, border: `1px solid ${!cityFilter ? 'var(--arvo-fg)' : 'var(--arvo-border)'}`, background: !cityFilter ? 'var(--arvo-hover-bg)' : 'transparent', color: !cityFilter ? 'var(--arvo-fg)' : 'var(--arvo-fg-muted)', cursor: 'pointer' }}
                 >
                   Todas
                 </button>
@@ -370,7 +425,7 @@ export default function VoyagePlacesPage() {
                     key={c}
                     type="button"
                     onClick={() => setCityFilter(c)}
-                    style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, padding: '3px 10px', borderRadius: 999, border: `1px solid ${cityFilter === c ? RED : 'var(--arvo-border)'}`, background: cityFilter === c ? RED_SOFT : 'transparent', color: cityFilter === c ? RED : 'var(--arvo-fg-muted)', cursor: 'pointer' }}
+                    style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, padding: '3px 10px', borderRadius: 999, border: `1px solid ${cityFilter === c ? 'var(--arvo-fg)' : 'var(--arvo-border)'}`, background: cityFilter === c ? 'var(--arvo-hover-bg)' : 'transparent', color: cityFilter === c ? 'var(--arvo-fg)' : 'var(--arvo-fg-muted)', cursor: 'pointer' }}
                   >
                     {c}
                   </button>

@@ -3,9 +3,6 @@ import { apiFetch } from '../../lib/api'
 import Avatar from './_shared/Avatar'
 import { RoleChip, StatusChip } from './_shared/Chips'
 
-const RED = '#D63B2F'
-const RED_SOFT = 'rgba(214,59,47,0.10)'
-
 interface Member {
   id: number
   user_id: string | null
@@ -139,33 +136,22 @@ export default function MembersPanel({ tripId, isOwner }: Props) {
               value={inviteEmail}
               onChange={e => setInviteEmail(e.target.value)}
             />
-            {/* Role toggle */}
-            <div style={{ display: 'flex', border: '1px solid var(--arvo-border)', borderRadius: 4, overflow: 'hidden' }}>
-              {(['editor', 'viewer'] as const).map(r => (
-                <button
-                  key={r}
-                  type="button"
-                  onClick={() => setInviteRole(r)}
-                  style={{
-                    padding: '6px 10px', background: inviteRole === r ? RED : 'transparent',
-                    color: inviteRole === r ? '#fff' : 'var(--arvo-fg-muted)',
-                    border: 'none', cursor: 'pointer',
-                    fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.12em',
-                    textTransform: 'uppercase', transition: 'all 160ms',
-                  }}
-                >
-                  {r === 'editor' ? 'Editor' : 'Leitor'}
-                </button>
-              ))}
-            </div>
+            <select
+              value={inviteRole}
+              onChange={e => setInviteRole(e.target.value as 'editor' | 'viewer')}
+              style={{ ...fieldStyle, padding: '7px 8px', flexShrink: 0 }}
+            >
+              <option value="editor">Editor</option>
+              <option value="viewer">Leitor</option>
+            </select>
           </div>
           <button
             type="submit"
             disabled={inviting || !inviteEmail.includes('@')}
             style={{
               width: '100%', padding: '7px 0', borderRadius: 6,
-              background: inviting || !inviteEmail.includes('@') ? 'var(--arvo-hover-bg)' : RED,
-              color: inviting || !inviteEmail.includes('@') ? 'var(--arvo-fg-muted)' : '#fff',
+              background: inviting || !inviteEmail.includes('@') ? 'var(--arvo-hover-bg)' : 'var(--arvo-fg)',
+              color: inviting || !inviteEmail.includes('@') ? 'var(--arvo-fg-muted)' : 'var(--arvo-bg)',
               border: 'none', cursor: inviting || !inviteEmail.includes('@') ? 'default' : 'pointer',
               fontFamily: 'var(--arvo-font-body)', fontSize: 12, transition: 'all 160ms',
             }}
@@ -175,8 +161,8 @@ export default function MembersPanel({ tripId, isOwner }: Props) {
 
           {/* Invite link result */}
           {inviteResult && (
-            <div style={{ marginTop: 10, padding: '10px 12px', borderRadius: 8, background: RED_SOFT, border: `1px solid ${RED}30` }}>
-              <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.15em', textTransform: 'uppercase', color: RED, marginBottom: 6 }}>
+            <div style={{ marginTop: 10, padding: '10px 12px', borderRadius: 8, background: 'var(--arvo-hover-bg)', border: '1px solid var(--arvo-border-soft)' }}>
+              <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#1F8A5B', marginBottom: 6 }}>
                 Link gerado
               </p>
               <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
@@ -188,7 +174,7 @@ export default function MembersPanel({ tripId, isOwner }: Props) {
                 <button
                   type="button"
                   onClick={() => copyLink(inviteResult.url)}
-                  style={{ padding: '6px 12px', borderRadius: 5, background: copied ? '#1F8A5B' : RED, color: '#fff', border: 'none', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 11, flexShrink: 0, transition: 'background 200ms' }}
+                  style={{ padding: '6px 12px', borderRadius: 5, background: copied ? '#1F8A5B' : 'var(--arvo-fg)', color: 'var(--arvo-bg)', border: 'none', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 11, flexShrink: 0, transition: 'background 200ms' }}
                 >
                   {copied ? '✓' : 'Copiar'}
                 </button>
