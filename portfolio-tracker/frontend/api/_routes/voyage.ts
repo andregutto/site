@@ -1418,7 +1418,7 @@ const GEO_TTL = 10 * 60 * 1000
 
 // GET /voyage/geo/autocomplete?q=&session=
 router.get('/geo/autocomplete', requireAuth, async (req, res: Response) => {
-  const apiKey = process.env.GOOGLE_MAPS_API_KEY
+  const apiKey = process.env.GOOGLE_MAPS_API_KEY || process.env.GOOGLE_PLACES_API_KEY
   const input = (req.query.q as string | undefined)?.trim()
   const session = (req.query.session as string | undefined) ?? ''
   if (!apiKey || !input || input.length < 2) { res.json({ suggestions: [] }); return }
@@ -1453,7 +1453,7 @@ router.get('/geo/autocomplete', requireAuth, async (req, res: Response) => {
 
 // GET /voyage/geo/details?place_id=&session=
 router.get('/geo/details', requireAuth, async (req, res: Response) => {
-  const apiKey = process.env.GOOGLE_MAPS_API_KEY
+  const apiKey = process.env.GOOGLE_MAPS_API_KEY || process.env.GOOGLE_PLACES_API_KEY
   const placeId = (req.query.place_id as string | undefined)?.trim()
   if (!apiKey || !placeId) { res.json({ place: null }); return }
 
