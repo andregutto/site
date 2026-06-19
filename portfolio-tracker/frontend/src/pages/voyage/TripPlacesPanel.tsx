@@ -87,7 +87,7 @@ function StarRating({ value, onChange }: { value: number | null; onChange?: (v: 
 }
 
 // ── Add from library picker ───────────────────────────────────────────────────
-function LibraryPicker({ tripId, tripCity, tripCountry, onAdded }: {
+export function LibraryPicker({ tripId, tripCity, tripCountry, onAdded }: {
   tripId: number; tripCity: string | null; tripCountry: string | null; onAdded: (p: TripPlace) => void
 }) {
   const { t } = useI18n()

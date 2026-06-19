@@ -6,7 +6,6 @@ import { useI18n } from '../../contexts/I18nContext'
 import TripFormModal from './TripFormModal'
 import CostCard from './CostCard'
 import MembersPanel from './MembersPanel'
-import TripPlacesPanel from './TripPlacesPanel'
 import { ShareModal } from './ShareTripPanel'
 import TripItineraryPanel from './TripItineraryPanel'
 import TripMapCard from './TripMapCard'
@@ -195,21 +194,8 @@ export default function VoyageTripDetailPage() {
           {/* Mapa inline */}
           <TripMapCard tripId={Number(id)} />
 
-          {/* Roteiro por dia */}
-          <div style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', borderRadius: 16, boxShadow: 'var(--arvo-shadow-sm)', padding: '20px 22px' }}>
-            <div style={{ marginBottom: 14 }}>
-              <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 10, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)' }}>
-                Roteiro
-              </p>
-            </div>
-            <TripItineraryPanel
-              tripId={Number(id)}
-              canEdit={trip.user_id === user?.id}
-            />
-          </div>
-
-          {/* Lugares */}
-          <TripPlacesPanel
+          {/* Roteiro unificado (lugares + itens livres por dia) */}
+          <TripItineraryPanel
             tripId={Number(id)}
             tripCity={trip.destination}
             tripCountry={trip.country}

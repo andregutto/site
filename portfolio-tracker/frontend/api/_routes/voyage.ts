@@ -824,6 +824,9 @@ router.post('/trips/:id/places', requireAuth, async (req, res: Response) => {
     lat?: number; lng?: number; address?: string
     google_place_id?: string; google_maps_url?: string
     day_number?: number; is_highlight?: boolean
+    kind?: 'place' | 'note' | 'transport'
+    transport_mode?: string; transport_note?: string
+    arrive_time?: string; depart_time?: string; trip_note?: string
   }
 
   if (!body.name?.trim()) { res.status(400).json({ error: 'Nome obrigatório' }); return }
