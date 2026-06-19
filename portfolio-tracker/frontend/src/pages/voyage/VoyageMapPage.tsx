@@ -5,6 +5,7 @@ import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { apiFetch } from '../../lib/api'
 import { useTheme } from '../../contexts/ThemeContext'
+import { dayColor, dayColorWash } from './_shared/dayColors'
 
 delete (L.Icon.Default.prototype as any)._getIconUrl
 L.Icon.Default.mergeOptions({
@@ -63,9 +64,12 @@ function catIcon(cat: string | null): string {
   return '📌'
 }
 
-function makeIcon(emoji: string, highlight: boolean) {
+function makeIcon(emoji: string, color: string, highlight: boolean) {
+  const ring = highlight ? '#C8B89A' : 'rgba(255,255,255,0.9)'
+  const ringWidth = highlight ? 3 : 2
+  const glow = highlight ? '0 0 0 3px rgba(200,184,154,0.35), 0 2px 8px rgba(0,0,0,0.3)' : '0 2px 6px rgba(0,0,0,0.25)'
   return L.divIcon({
-    html: `<div style="width:32px;height:32px;border-radius:50% 50% 50% 0;background:${highlight ? RED : '#fff'};border:2px solid ${highlight ? RED : 'rgba(13,13,13,0.3)'};display:flex;align-items:center;justify-content:center;font-size:15px;box-shadow:0 2px 6px rgba(0,0,0,0.25);transform:rotate(-45deg)"><span style="transform:rotate(45deg)">${emoji}</span></div>`,
+    html: `<div style="width:32px;height:32px;border-radius:50% 50% 50% 0;background:${color};border:${ringWidth}px solid ${ring};display:flex;align-items:center;justify-content:center;font-size:15px;box-shadow:${glow};transform:rotate(-45deg)"><span style="transform:rotate(45deg)">${emoji}</span></div>`,
     className: '',
     iconSize: [32, 32],
     iconAnchor: [16, 32],
@@ -249,14 +253,17 @@ export default function VoyageMapPage() {
                     onClick={() => setSelectedDay(d)}
                     style={{
                       textAlign: 'left', padding: '7px 10px', borderRadius: 6, cursor: 'pointer',
-                      border: `1px solid ${selectedDay === d ? RED : 'var(--arvo-border)'}`,
-                      background: selectedDay === d ? 'rgba(214,59,47,0.08)' : 'transparent',
-                      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                      border: `1px solid ${selectedDay === d ? dayColor(d) : 'var(--arvo-border)'}`,
+                      background: selectedDay === d ? dayColorWash(d, 10) : 'transparent',
+                      display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 6,
                     }}
                   >
-                    <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: selectedDay === d ? RED : 'var(--arvo-fg)' }}>
-                      <span style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.15em', textTransform: 'uppercase', marginRight: 6, color: 'var(--arvo-fg-muted)' }}>Dia</span>
-                      {d}
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                      <span style={{ width: 7, height: 7, borderRadius: 999, background: dayColor(d), flexShrink: 0 }} />
+                      <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: selectedDay === d ? dayColor(d) : 'var(--arvo-fg)' }}>
+                        <span style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.15em', textTransform: 'uppercase', marginRight: 6, color: 'var(--arvo-fg-muted)' }}>Dia</span>
+                        {d}
+                      </span>
                     </span>
                     <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)' }}>
                       {places.filter(p => p.day_number === d).length}
@@ -320,7 +327,7 @@ export default function VoyageMapPage() {
                   <Marker
                     key={p.id}
                     position={[p.lat!, p.lng!]}
-                    icon={makeIcon(catIcon(p.category), p.is_highlight)}
+                    icon={makeIcon(catIcon(p.category), dayColor(p.day_number), p.is_highlight)}
                   >
                     <Popup>
                       <div style={{ fontFamily: 'var(--arvo-font-body)', minWidth: 160 }}>
@@ -328,6 +335,9 @@ export default function VoyageMapPage() {
                           <p style={{ fontSize: 10, color: '#999', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
                             {trips.find(t => t.id === p.trip_id)?.title}
                           </p>
+                        )}
+                        {p.day_number != null && (
+                          <span style={{ display: 'inline-block', fontSize: 10, padding: '1px 7px', borderRadius: 999, background: dayColorWash(p.day_number, 16), color: dayColor(p.day_number), marginBottom: 4 }}>Dia {p.day_number}</span>
                         )}
                         <p style={{ fontWeight: 600, fontSize: 13, marginBottom: 4 }}>{p.name}</p>
                         {p.address && <p style={{ fontSize: 11, color: '#666', marginBottom: 4 }}>{p.address}</p>}

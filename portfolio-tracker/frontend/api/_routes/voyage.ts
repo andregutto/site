@@ -1399,8 +1399,9 @@ router.get('/public/:token', async (req, res: Response) => {
 
   const [placesRes, costRes, ownerRes] = await Promise.all([
     supabaseAdmin.from('voyage_trip_places')
-      .select('id, name, category, address, lat, lng, google_place_id, google_maps_url, day_number, sort_order, is_highlight, visited, trip_note')
+      .select('id, kind, name, category, address, lat, lng, google_place_id, google_maps_url, day_number, sort_order, is_highlight, visited, rating, trip_note, arrive_time, depart_time, transport_mode, transport_note')
       .eq('trip_id', trip.id)
+      .order('day_number', { ascending: true, nullsFirst: false })
       .order('sort_order'),
     !trip.share_hide_cost ? buildCostSummary(trip.id, trip.user_id) : Promise.resolve(null),
     supabaseAdmin.auth.admin.getUserById(trip.user_id),

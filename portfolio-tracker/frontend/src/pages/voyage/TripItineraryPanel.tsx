@@ -3,6 +3,7 @@ import { apiFetch } from '../../lib/api'
 import { useI18n } from '../../contexts/I18nContext'
 import { LibraryPicker } from './TripPlacesPanel'
 import PlaceExpensesPanel from './PlaceExpensesPanel'
+import { dayColor, dayColorWash } from './_shared/dayColors'
 
 const RED  = '#D63B2F'
 const GOLD = '#C8B89A'
@@ -26,6 +27,7 @@ interface PlanItem {
   trip_note: string | null
   visited: boolean
   day_number: number | null
+  sort_order: number
   is_highlight: boolean
   rating: number | null
   arrive_time: string | null
@@ -97,7 +99,7 @@ function DayBadge({ day, canEdit, onChangeDay }: {
       onBlur={commit}
       onKeyDown={e => { if (e.key === 'Enter') commit(); if (e.key === 'Escape') setEditing(false) }}
       autoFocus
-      style={{ width: 48, padding: '3px 4px', borderRadius: 4, border: `1px solid ${RED}`, background: 'var(--arvo-surface)', fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg)', outline: 'none', textAlign: 'center' }}
+      style={{ width: 48, padding: '3px 4px', borderRadius: 4, border: '1px solid var(--arvo-fg)', background: 'var(--arvo-surface)', fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg)', outline: 'none', textAlign: 'center' }}
     />
   )
 
@@ -109,9 +111,9 @@ function DayBadge({ day, canEdit, onChangeDay }: {
       style={{
         fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.12em',
         padding: '3px 9px', borderRadius: 999, flexShrink: 0,
-        background: day != null ? 'rgba(214,59,47,0.08)' : 'var(--arvo-hover-bg)',
-        color: day != null ? RED : 'var(--arvo-fg-soft)',
-        border: `1px solid ${day != null ? 'rgba(214,59,47,0.18)' : 'var(--arvo-border)'}`,
+        background: day != null ? dayColorWash(day, 8) : 'var(--arvo-hover-bg)',
+        color: day != null ? dayColor(day) : 'var(--arvo-fg-soft)',
+        border: `1px solid ${day != null ? dayColorWash(day, 22) : 'var(--arvo-border)'}`,
         cursor: canEdit ? 'pointer' : 'default',
       }}
     >
@@ -143,10 +145,30 @@ function StarRating({ value, onChange }: { value: number | null; onChange?: (v: 
   )
 }
 
-function ItemRow({ item, tripId, canEdit, onPatch, onDelete, onReload }: {
+function GripHandle({ onDragStart }: { onDragStart: () => void }) {
+  return (
+    <span
+      draggable
+      onDragStart={onDragStart}
+      title="Arrastar para reordenar"
+      style={{ cursor: 'grab', flexShrink: 0, marginTop: 4, color: 'var(--arvo-fg-muted)', touchAction: 'none' }}
+    >
+      <svg width="9" height="13" viewBox="0 0 9 13" fill="currentColor">
+        <circle cx="2" cy="2" r="1.2"/><circle cx="7" cy="2" r="1.2"/>
+        <circle cx="2" cy="6.5" r="1.2"/><circle cx="7" cy="6.5" r="1.2"/>
+        <circle cx="2" cy="11" r="1.2"/><circle cx="7" cy="11" r="1.2"/>
+      </svg>
+    </span>
+  )
+}
+
+function ItemRow({ item, tripId, canEdit, dragging, onDragStart, onDropOn, onPatch, onDelete, onReload }: {
   item: PlanItem
   tripId: number
   canEdit: boolean
+  dragging: boolean
+  onDragStart: () => void
+  onDropOn: () => void
   onPatch: (fields: Record<string, unknown>) => void
   onDelete: () => void
   onReload: () => void
@@ -167,13 +189,20 @@ function ItemRow({ item, tripId, canEdit, onPatch, onDelete, onReload }: {
   }
 
   return (
-    <div style={{
-      borderRadius: 8,
-      background: item.is_highlight ? 'rgba(214,59,47,0.04)' : 'var(--arvo-hover-bg)',
-      border: `1px solid ${item.is_highlight ? 'rgba(214,59,47,0.12)' : 'var(--arvo-border-soft)'}`,
-      overflow: 'hidden',
-    }}>
+    <div
+      onDragOver={e => { if (canEdit) e.preventDefault() }}
+      onDrop={() => canEdit && onDropOn()}
+      style={{
+        borderRadius: 8,
+        background: item.is_highlight ? 'rgba(214,59,47,0.04)' : 'var(--arvo-hover-bg)',
+        border: `1px solid ${item.is_highlight ? 'rgba(214,59,47,0.12)' : 'var(--arvo-border-soft)'}`,
+        overflow: 'hidden',
+        opacity: dragging ? 0.4 : 1,
+        transition: 'opacity 120ms',
+      }}
+    >
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '8px 10px' }}>
+        {canEdit && <GripHandle onDragStart={onDragStart} />}
         {/* Visited toggle (places only) */}
         {canEdit && isPlace && (
           <button
@@ -229,16 +258,43 @@ function ItemRow({ item, tripId, canEdit, onPatch, onDelete, onReload }: {
             </div>
           )}
         </div>
+
+        {/* Always-visible action icons */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+          {canEdit && (
+            <button type="button" onClick={() => setShowExpenses(true)} title="Despesas"
+              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 3, borderRadius: 4, color: hasExpenses ? 'var(--arvo-fg)' : 'var(--arvo-fg-muted)', display: 'flex' }}>
+              <svg width="13" height="13" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <circle cx="6" cy="6" r="5" /><path strokeLinecap="round" d="M6 3.5v5M4.7 7.2c0 .7.6 1 1.3 1s1.3-.3 1.3-1-.6-.9-1.3-.9-1.3-.3-1.3-.9.6-1 1.3-1 1.3.3 1.3 1" />
+              </svg>
+            </button>
+          )}
+          {canEdit && isPlace && (
+            <button type="button" onClick={() => onPatch({ is_highlight: !item.is_highlight })} title="Destaque"
+              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 3, borderRadius: 4, fontSize: 13, lineHeight: 1, color: RED, opacity: item.is_highlight ? 1 : 0.3 }}>★</button>
+          )}
+          {item.google_maps_url && (
+            <a href={item.google_maps_url} target="_blank" rel="noopener noreferrer" title="Abrir no Google Maps"
+              style={{ padding: 3, color: 'var(--arvo-fg-soft)', display: 'flex', alignItems: 'center' }}>
+              <svg width="12" height="12" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <path strokeLinecap="round" d="M5 2H2a1 1 0 00-1 1v8a1 1 0 001 1h8a1 1 0 001-1V8M8 1h4m0 0v4m0-4L5.5 7.5" />
+              </svg>
+            </a>
+          )}
           <DayBadge day={item.day_number} canEdit={canEdit} onChangeDay={d => onPatch({ day_number: d })} />
           {canEdit && (
-            <button type="button" onClick={() => setExpanded(v => !v)} title="Horários e transporte"
-              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 3, borderRadius: 4, color: expanded ? RED : 'var(--arvo-fg-muted)', fontSize: 13 }}>🕐</button>
+            <button type="button" onClick={() => setExpanded(v => !v)} title="Mais opções: horário, transporte, nota"
+              style={{ display: 'flex', alignItems: 'center', gap: 3, background: 'none', border: 'none', cursor: 'pointer', padding: '3px 4px', borderRadius: 4, color: 'var(--arvo-fg-muted)', fontFamily: 'var(--arvo-font-body)', fontSize: 10.5 }}>
+              Mais
+              <svg width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ transform: expanded ? 'rotate(180deg)' : 'none', transition: 'transform 160ms' }}>
+                <path strokeLinecap="round" d="M2 3.5l3 3 3-3"/>
+              </svg>
+            </button>
           )}
         </div>
       </div>
 
-      {/* Expanded editor */}
+      {/* Expanded panel: horário/transporte + nota + remover */}
       {expanded && canEdit && (
         <div style={{ padding: '8px 10px 10px', borderTop: '1px solid var(--arvo-border-soft)', display: 'flex', flexDirection: 'column', gap: 8 }}>
           <div>
@@ -248,7 +304,7 @@ function ItemRow({ item, tripId, canEdit, onPatch, onDelete, onReload }: {
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
               {Object.entries(TRANSPORT_LABELS).map(([k, label]) => (
                 <button key={k} type="button" onClick={() => onPatch({ transport_mode: item.transport_mode === k ? null : k })}
-                  style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, padding: '3px 8px', borderRadius: 999, cursor: 'pointer', border: `1px solid ${item.transport_mode === k ? RED : 'var(--arvo-border)'}`, background: item.transport_mode === k ? 'rgba(214,59,47,0.08)' : 'transparent', color: item.transport_mode === k ? RED : 'var(--arvo-fg-muted)' }}>
+                  style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, padding: '3px 8px', borderRadius: 999, cursor: 'pointer', border: `1px solid ${item.transport_mode === k ? 'var(--arvo-fg)' : 'var(--arvo-border)'}`, background: item.transport_mode === k ? 'var(--arvo-hover-bg)' : 'transparent', color: item.transport_mode === k ? 'var(--arvo-fg)' : 'var(--arvo-fg-muted)' }}>
                   {TRANSPORT_ICONS[k]} {label}
                 </button>
               ))}
@@ -263,16 +319,7 @@ function ItemRow({ item, tripId, canEdit, onPatch, onDelete, onReload }: {
 
           {/* Row actions */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 14, paddingTop: 4, flexWrap: 'wrap' }}>
-            {isPlace && (
-              <button type="button" onClick={() => setShowExpenses(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-soft)' }}>{tv.expenses?.title ?? 'Despesas'}</button>
-            )}
             <button type="button" onClick={() => { setNote(item.trip_note ?? ''); setEditingNote(true) }} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-soft)' }}>Nota</button>
-            {isPlace && (
-              <button type="button" onClick={() => onPatch({ is_highlight: !item.is_highlight })} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: item.is_highlight ? RED : 'var(--arvo-fg-soft)' }}>Destaque</button>
-            )}
-            {item.google_maps_url && (
-              <a href={item.google_maps_url} target="_blank" rel="noopener noreferrer" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-soft)', textDecoration: 'none' }}>Google Maps →</a>
-            )}
             <button type="button" onClick={del} style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-soft)' }}>Remover</button>
           </div>
         </div>
@@ -351,6 +398,7 @@ export default function TripItineraryPanel({ tripId, tripCity, tripCountry, canE
   const tv = (t as any).voyage ?? {}
   const [items, setItems] = useState<PlanItem[]>([])
   const [loading, setLoading] = useState(true)
+  const [dragId, setDragId] = useState<number | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -371,15 +419,52 @@ export default function TripItineraryPanel({ tripId, tripCity, tripCountry, canE
     } catch { load() }
   }
 
+  function persistOrder(updates: { id: number; sort_order: number }[]) {
+    setItems(prev => prev.map(p => {
+      const u = updates.find(x => x.id === p.id)
+      return u ? { ...p, sort_order: u.sort_order } : p
+    }))
+    Promise.all(updates.map(u =>
+      apiFetch(`/voyage/trips/${tripId}/places/${u.id}`, { method: 'PATCH', body: JSON.stringify({ sort_order: u.sort_order }) })
+    )).catch(() => load())
+  }
+
+  function handleDrop(targetId: number) {
+    const draggedId = dragId
+    setDragId(null)
+    if (draggedId == null || draggedId === targetId) return
+    const dragItem = items.find(i => i.id === draggedId)
+    const targetItem = items.find(i => i.id === targetId)
+    if (!dragItem || !targetItem || dragItem.day_number !== targetItem.day_number) return
+    const group = items.filter(i => i.day_number === dragItem.day_number).slice().sort((a, b) => a.sort_order - b.sort_order)
+    const without = group.filter(i => i.id !== draggedId)
+    const targetIdx = without.findIndex(i => i.id === targetId)
+    without.splice(targetIdx, 0, dragItem)
+    persistOrder(without.map((it, idx) => ({ id: it.id, sort_order: idx })))
+  }
+
+  function sortDayByTime(day: number | null) {
+    const group = items.filter(p => p.day_number === day).slice().sort((a, b) => a.sort_order - b.sort_order)
+    const timed = group.filter(p => p.arrive_time).sort((a, b) => (a.arrive_time! < b.arrive_time! ? -1 : 1))
+    const untimed = group.filter(p => !p.arrive_time)
+    persistOrder([...timed, ...untimed].map((p, idx) => ({ id: p.id, sort_order: idx })))
+  }
+
   const days = Array.from(new Set(items.map(p => p.day_number).filter((d): d is number => d != null))).sort((a, b) => a - b)
   const undated = items.filter(p => p.day_number == null)
 
   function renderRows(list: PlanItem[]) {
-    return list.map(it => (
-      <ItemRow key={it.id} item={it} tripId={tripId} canEdit={canEdit}
+    const sorted = list.slice().sort((a, b) => a.sort_order - b.sort_order)
+    return sorted.map(it => (
+      <ItemRow
+        key={it.id} item={it} tripId={tripId} canEdit={canEdit}
+        dragging={dragId === it.id}
+        onDragStart={() => setDragId(it.id)}
+        onDropOn={() => handleDrop(it.id)}
         onPatch={f => patchItem(it.id, f)}
         onDelete={() => setItems(ps => ps.filter(x => x.id !== it.id))}
-        onReload={load} />
+        onReload={load}
+      />
     ))
   }
 
@@ -406,7 +491,18 @@ export default function TripItineraryPanel({ tripId, tripCity, tripCountry, canE
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           {days.map(d => (
             <div key={d}>
-              <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)', marginBottom: 8 }}>Dia {d}</p>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                  <span style={{ width: 7, height: 7, borderRadius: 999, background: dayColor(d), flexShrink: 0 }} />
+                  <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: dayColor(d) }}>Dia {d}</p>
+                </span>
+                {canEdit && items.some(p => p.day_number === d && p.arrive_time) && (
+                  <button type="button" onClick={() => sortDayByTime(d)} title="Reordenar os itens deste dia pelo horário de chegada"
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'var(--arvo-font-body)', fontSize: 10.5, color: 'var(--arvo-fg-soft)' }}>
+                    Ordenar por horário
+                  </button>
+                )}
+              </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>{renderRows(items.filter(p => p.day_number === d))}</div>
             </div>
           ))}
@@ -426,6 +522,9 @@ export default function TripItineraryPanel({ tripId, tripCity, tripCountry, canE
             <LibraryPicker tripId={tripId} tripCity={tripCity} tripCountry={tripCountry} onAdded={() => load()} />
           </div>
           <FreeItemAdder tripId={tripId} onAdded={load} />
+          <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 10.5, color: 'var(--arvo-fg-soft)', textAlign: 'center' }}>
+            Arraste pelo ⠿ para reordenar dentro do mesmo dia
+          </p>
         </div>
       )}
     </div>
