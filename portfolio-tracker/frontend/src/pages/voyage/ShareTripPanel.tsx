@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { apiFetch } from '../../lib/api'
+import { useI18n } from '../../contexts/I18nContext'
 import type { Trip } from './types'
 
 const RED = '#D63B2F'
@@ -10,14 +11,16 @@ interface Props {
   onUpdate: (t: Partial<Trip>) => void
 }
 
-const EXPIRY_OPTIONS = [
-  { label: '7 dias', value: 7 },
-  { label: '30 dias', value: 30 },
-  { label: '90 dias', value: 90 },
-  { label: 'Sem prazo', value: null },
-]
-
 export function ShareModal({ trip, onUpdate, onClose }: Props & { onClose: () => void }) {
+  const { t } = useI18n()
+  const tv = (t as any).voyage ?? {}
+  const sv = tv.share ?? {}
+  const EXPIRY_OPTIONS = [
+    { label: sv.expiry7 ?? '7 dias', value: 7 as number | null },
+    { label: sv.expiry30 ?? '30 dias', value: 30 as number | null },
+    { label: sv.expiry90 ?? '90 dias', value: 90 as number | null },
+    { label: sv.expiryNone ?? 'Sem prazo', value: null as number | null },
+  ]
   const [loading, setLoading] = useState(false)
   const [revoking, setRevoking] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -43,7 +46,7 @@ export function ShareModal({ trip, onUpdate, onClose }: Props & { onClose: () =>
   }
 
   async function revoke() {
-    if (!confirm('Revogar o link? Quem tiver o link não conseguirá mais acessar.')) return
+    if (!confirm(tv.confirm?.revokeShare ?? 'Revogar o link? Quem tiver o link não conseguirá mais acessar.')) return
     setRevoking(true)
     try {
       await apiFetch(`/voyage/trips/${trip.id}/share`, { method: 'DELETE' })
@@ -82,7 +85,7 @@ export function ShareModal({ trip, onUpdate, onClose }: Props & { onClose: () =>
           <div>
             <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.30em', textTransform: 'uppercase', color: RED, marginBottom: 2 }}>ARVO VOYAGE</p>
             <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 15, letterSpacing: '0.06em', color: 'var(--arvo-fg)' }}>
-              Compartilhar viagem
+              {sv.title ?? 'Compartilhar viagem'}
             </p>
           </div>
           <button
@@ -103,7 +106,7 @@ export function ShareModal({ trip, onUpdate, onClose }: Props & { onClose: () =>
               {/* Link */}
               <div>
                 <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)', marginBottom: 8 }}>
-                  Link público
+                  {sv.publicLink ?? 'Link público'}
                 </p>
                 <div style={{ display: 'flex', gap: 6 }}>
                   <input
@@ -116,7 +119,7 @@ export function ShareModal({ trip, onUpdate, onClose }: Props & { onClose: () =>
                     onClick={copyLink}
                     style={{ padding: '6px 14px', borderRadius: 5, background: copied ? '#1F8A5B' : RED, color: '#fff', border: 'none', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 12, flexShrink: 0, transition: 'background 200ms' }}
                   >
-                    {copied ? '✓' : 'Copiar'}
+                    {copied ? '✓' : (tv.actions?.copy ?? 'Copiar')}
                   </button>
                   <a
                     href={shareUrl}
@@ -148,8 +151,8 @@ export function ShareModal({ trip, onUpdate, onClose }: Props & { onClose: () =>
                   style={{ width: 14, height: 14, accentColor: '#0D0D0D' }}
                 />
                 <div>
-                  <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg)' }}>Ocultar custos</p>
-                  <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)' }}>Seguidores não verão os valores gastos</p>
+                  <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg)' }}>{sv.hideCost ?? 'Ocultar custos'}</p>
+                  <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)' }}>{sv.hideCostDesc ?? 'Seguidores não verão os valores gastos'}</p>
                 </div>
               </label>
 
@@ -170,15 +173,15 @@ export function ShareModal({ trip, onUpdate, onClose }: Props & { onClose: () =>
                   style={{ width: 14, height: 14, accentColor: '#0D0D0D' }}
                 />
                 <div>
-                  <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg)' }}>Mostrar gastos por lugar</p>
-                  <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)' }}>Exibe quanto você gastou em cada lugar no mapa</p>
+                  <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg)' }}>{sv.showExpenses ?? 'Mostrar gastos por lugar'}</p>
+                  <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)' }}>{sv.showExpensesDesc ?? 'Exibe quanto você gastou em cada lugar no mapa'}</p>
                 </div>
               </label>
 
               {/* Expiry */}
               <div>
                 <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)', marginBottom: 8 }}>
-                  Validade do link
+                  {sv.validity ?? 'Validade do link'}
                 </p>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                   {EXPIRY_OPTIONS.map(opt => (
@@ -215,14 +218,14 @@ export function ShareModal({ trip, onUpdate, onClose }: Props & { onClose: () =>
                   disabled={revoking}
                   style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: RED, background: 'none', border: 'none', cursor: 'pointer', opacity: revoking ? 0.5 : 1, padding: 0 }}
                 >
-                  {revoking ? 'Revogando…' : 'Revogar link público'}
+                  {revoking ? (sv.revoking ?? 'Revogando…') : (sv.revoke ?? 'Revogar link público')}
                 </button>
               </div>
             </>
           ) : (
             <>
               <p style={{ fontFamily: 'var(--arvo-font-serif)', fontStyle: 'italic', fontSize: 13, color: 'var(--arvo-fg-soft)', lineHeight: 1.6 }}>
-                Gere um link para compartilhar o roteiro com seguidores — eles verão os lugares, notas e podem importar para o Google Maps.
+                {sv.intro ?? 'Gere um link para compartilhar o roteiro com seguidores — eles verão os lugares, notas e podem importar para o Google Maps.'}
               </p>
 
               <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
@@ -232,12 +235,12 @@ export function ShareModal({ trip, onUpdate, onClose }: Props & { onClose: () =>
                   onChange={e => setHideCost(e.target.checked)}
                   style={{ width: 14, height: 14, accentColor: '#0D0D0D' }}
                 />
-                <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg)' }}>Ocultar custos na página pública</p>
+                <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg)' }}>{sv.hideCostPublic ?? 'Ocultar custos na página pública'}</p>
               </label>
 
               <div>
                 <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)', marginBottom: 8 }}>
-                  Validade
+                  {sv.validityShort ?? 'Validade'}
                 </p>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                   {EXPIRY_OPTIONS.map(opt => (
@@ -266,64 +269,12 @@ export function ShareModal({ trip, onUpdate, onClose }: Props & { onClose: () =>
                 disabled={loading}
                 style={{ padding: '9px 0', borderRadius: 8, background: loading ? 'var(--arvo-hover-bg)' : RED, color: loading ? 'var(--arvo-fg-muted)' : '#fff', border: 'none', cursor: loading ? 'default' : 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 13, transition: 'all 160ms' }}
               >
-                {loading ? 'Gerando…' : 'Gerar link público'}
+                {loading ? (sv.generating ?? 'Gerando…') : (sv.generate ?? 'Gerar link público')}
               </button>
             </>
           )}
         </div>
       </div>
     </div>
-  )
-}
-
-export default function ShareTripPanel({ trip, onUpdate }: Props) {
-  const [open, setOpen] = useState(false)
-
-  const hasLink = !!trip.share_token
-
-  return (
-    <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-          width: '100%', padding: '10px 0', borderRadius: 10,
-          fontFamily: 'var(--arvo-font-body)', fontSize: 13, letterSpacing: '0.03em',
-          border: `1px solid ${hasLink ? 'var(--arvo-border)' : RED}`,
-          background: hasLink ? 'var(--arvo-surface)' : RED,
-          color: hasLink ? 'var(--arvo-fg)' : '#fff',
-          cursor: 'pointer', transition: 'all 160ms ease',
-          boxShadow: 'var(--arvo-shadow-sm)',
-        }}
-        onMouseEnter={e => {
-          if (!hasLink) e.currentTarget.style.opacity = '0.88'
-          else e.currentTarget.style.background = 'var(--arvo-hover-bg)'
-        }}
-        onMouseLeave={e => {
-          e.currentTarget.style.opacity = '1'
-          e.currentTarget.style.background = hasLink ? 'var(--arvo-surface)' : RED
-        }}
-      >
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
-          <circle cx="11" cy="3" r="1.5"/>
-          <circle cx="3" cy="7" r="1.5"/>
-          <circle cx="11" cy="11" r="1.5"/>
-          <path strokeLinecap="round" d="M4.5 6.2l5-2.5M4.5 7.8l5 2.5"/>
-        </svg>
-        {hasLink ? 'Link compartilhado' : 'Compartilhar viagem'}
-        {hasLink && (
-          <span style={{ width: 6, height: 6, borderRadius: 999, background: '#1F8A5B', flexShrink: 0 }} />
-        )}
-      </button>
-
-      {open && (
-        <ShareModal
-          trip={trip}
-          onUpdate={fields => { onUpdate(fields); }}
-          onClose={() => setOpen(false)}
-        />
-      )}
-    </>
   )
 }

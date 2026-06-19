@@ -3,6 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { apiFetch } from '../../lib/api'
+import { useI18n } from '../../contexts/I18nContext'
 
 delete (L.Icon.Default.prototype as any)._getIconUrl
 L.Icon.Default.mergeOptions({
@@ -52,6 +53,8 @@ function categoryIcon(cat: string | null): string {
 
 // ── URL Importer ──────────────────────────────────────────────────────────────
 function UrlImporter({ onImported }: { onImported: (place: Place) => void }) {
+  const { t } = useI18n()
+  const tv = (t as any).voyage ?? {}
   const [url, setUrl] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -71,8 +74,8 @@ function UrlImporter({ onImported }: { onImported: (place: Place) => void }) {
       onImported(data.place)
       setLast(data.place.name)
       setUrl('')
-    } catch (err: any) {
-      setError(err.message ?? 'Erro ao importar')
+    } catch {
+      setError(tv.errors?.import ?? 'Erro ao importar')
     } finally {
       setLoading(false)
     }
@@ -107,6 +110,8 @@ function UrlImporter({ onImported }: { onImported: (place: Place) => void }) {
 
 // ── Takeout Importer ──────────────────────────────────────────────────────────
 function TakeoutImporter({ onImported, onDeleteAll }: { onImported: () => void; onDeleteAll: () => void }) {
+  const { t } = useI18n()
+  const tv = (t as any).voyage ?? {}
   const [files, setFiles] = useState<File[]>([])
   const [importing, setImporting] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -135,21 +140,21 @@ function TakeoutImporter({ onImported, onDeleteAll }: { onImported: () => void; 
       setFiles([])
       if (inputRef.current) inputRef.current.value = ''
       onImported()
-    } catch (e: any) {
-      setError(e?.message ?? 'Erro ao importar')
+    } catch {
+      setError(tv.errors?.import ?? 'Erro ao importar')
     } finally {
       setImporting(false)
     }
   }
 
   async function handleDeleteAll() {
-    if (!confirm('Apagar TODOS os lugares da biblioteca? Esta ação não pode ser desfeita.')) return
+    if (!confirm(tv.confirm?.deleteAllPlaces ?? 'Apagar TODOS os lugares da biblioteca? Esta ação não pode ser desfeita.')) return
     setDeleting(true)
     try {
       await apiFetch('/voyage/places/all', { method: 'DELETE' })
       onDeleteAll()
-    } catch (e: any) {
-      setError(e?.message ?? 'Erro ao apagar')
+    } catch {
+      setError(tv.errors?.delete ?? 'Erro ao apagar')
     } finally {
       setDeleting(false)
     }
@@ -239,10 +244,12 @@ function TakeoutImporter({ onImported, onDeleteAll }: { onImported: () => void; 
 
 // ── Place Card ─────────────────────────────────────────────────────────────────
 function PlaceCard({ place, onDelete }: { place: Place; onDelete: (id: number) => void }) {
+  const { t } = useI18n()
+  const tv = (t as any).voyage ?? {}
   const [deleting, setDeleting] = useState(false)
 
   async function del() {
-    if (!confirm(`Remover "${place.name}" da biblioteca?`)) return
+    if (!confirm((tv.confirm?.removePlaceFromLibrary ?? 'Remover "{name}" da biblioteca?').replace('{name}', place.name))) return
     setDeleting(true)
     await apiFetch(`/voyage/places/${place.id}`, { method: 'DELETE' })
     onDelete(place.id)

@@ -182,7 +182,7 @@ export default function CostCard({ tripId, cost, onCostChanged }: Props) {
         </p>
         {hasMoments && (
           <Link to="/finances/moments" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)', textDecoration: 'none', letterSpacing: '0.04em' }}>
-            Ver momentos →
+            {tv.actions?.viewMoments ?? 'Ver momentos →'}
           </Link>
         )}
       </div>
@@ -207,7 +207,7 @@ export default function CostCard({ tripId, cost, onCostChanged }: Props) {
                 onClick={() => setExpanded(v => !v)}
                 style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)', padding: 0 }}
               >
-                {expanded ? 'Recolher' : 'Detalhar'}
+                {expanded ? (tv.actions?.collapse ?? 'Recolher') : (tv.actions?.detail ?? 'Detalhar')}
                 <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ transform: expanded ? 'rotate(180deg)' : 'none', transition: 'transform 160ms' }}>
                   <path strokeLinecap="round" d="M2 3.5l3 3 3-3"/>
                 </svg>
@@ -228,7 +228,7 @@ export default function CostCard({ tripId, cost, onCostChanged }: Props) {
           {expanded && hasCategories && (
             <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid var(--arvo-border-soft)', display: 'flex', flexDirection: 'column', gap: 7 }}>
               <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)', marginBottom: 4 }}>
-                Por categoria
+                {tv.expenses?.byCategory ?? 'Por categoria'}
               </p>
               {cost.by_category.map(c => {
                 const pct = cost.total > 0 ? (c.total / cost.total) * 100 : 0
@@ -252,7 +252,7 @@ export default function CostCard({ tripId, cost, onCostChanged }: Props) {
           {expanded && hasPlaces && (
             <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid var(--arvo-border-soft)', display: 'flex', flexDirection: 'column', gap: 7 }}>
               <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)', marginBottom: 4 }}>
-                Por lugar
+                {tv.expenses?.byPlace ?? 'Por lugar'}
               </p>
               {cost.by_place.map(p => {
                 const pct = cost.total > 0 ? (p.total / cost.total) * 100 : 0

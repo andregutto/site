@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { apiFetch } from '../../lib/api'
+import { useI18n } from '../../contexts/I18nContext'
 import PlaceExpensesPanel from './PlaceExpensesPanel'
 
 const RED = '#D63B2F'
@@ -322,6 +323,8 @@ function PlaceRow({ place, tripId, canEdit, onUpdate, onDelete, onReload }: {
   onDelete: (id: number) => void
   onReload: () => void
 }) {
+  const { t } = useI18n()
+  const tv = (t as any).voyage ?? {}
   const [editing, setEditing] = useState(false)
   const [note, setNote] = useState(place.trip_note ?? '')
   const [saving, setSaving] = useState(false)
@@ -348,7 +351,7 @@ function PlaceRow({ place, tripId, canEdit, onUpdate, onDelete, onReload }: {
   }
 
   async function del() {
-    if (!confirm(`Remover "${place.name}" da viagem?`)) return
+    if (!confirm((tv.confirm?.removePlaceFromTrip ?? 'Remover "{name}" da viagem?').replace('{name}', place.name))) return
     await apiFetch(`/voyage/trips/${tripId}/places/${place.id}`, { method: 'DELETE' })
     onDelete(place.id)
   }
@@ -400,7 +403,7 @@ function PlaceRow({ place, tripId, canEdit, onUpdate, onDelete, onReload }: {
                 <circle cx="6" cy="6" r="5" /><path strokeLinecap="round" d="M6 3.5v5M4.7 7.2c0 .7.6 1 1.3 1s1.3-.3 1.3-1-.6-.9-1.3-.9-1.3-.3-1.3-.9.6-1 1.3-1 1.3.3 1.3 1" />
               </svg>
               {fmtCurrency(place.expense_total ?? 0)}
-              <span style={{ color: 'var(--arvo-fg-muted)' }}>· {place.expense_count} {place.expense_count === 1 ? 'despesa' : 'despesas'}</span>
+              <span style={{ color: 'var(--arvo-fg-muted)' }}>· {place.expense_count} {place.expense_count === 1 ? (tv.expenses?.expenseOne ?? 'despesa') : (tv.expenses?.expenseMany ?? 'despesas')}</span>
             </button>
           )}
           {editing && (

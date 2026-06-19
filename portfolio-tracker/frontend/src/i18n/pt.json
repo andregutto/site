@@ -2034,6 +2034,90 @@
     "splitTotal": "Total da viagem",
     "splitByPerson": "Por pessoa",
     "homePromptText": "Abrir sempre em Viagens ao entrar no app?",
-    "homePromptConfirm": "Sim, definir como início"
+    "homePromptConfirm": "Sim, definir como início",
+    "loading": "Carregando…",
+    "confirm": {
+      "revokeShare": "Revogar o link? Quem tiver o link não conseguirá mais acessar.",
+      "deleteAllPlaces": "Apagar TODOS os lugares da biblioteca? Esta ação não pode ser desfeita.",
+      "removePlaceFromLibrary": "Remover \"{name}\" da biblioteca?",
+      "removePlaceFromTrip": "Remover \"{name}\" da viagem?",
+      "deleteTripPermanent": "Excluir \"{title}\" permanentemente? Esta ação não pode ser desfeita."
+    },
+    "errors": {
+      "generic": "Algo deu errado. Tente novamente.",
+      "import": "Erro ao importar",
+      "delete": "Erro ao apagar",
+      "save": "Erro ao salvar",
+      "deleteTrip": "Erro ao excluir",
+      "link": "Erro ao vincular",
+      "titleRequired": "Título obrigatório"
+    },
+    "actions": {
+      "copy": "Copiar",
+      "cancel": "Cancelar",
+      "save": "Salvar",
+      "saving": "Salvando…",
+      "detail": "Detalhar",
+      "collapse": "Recolher",
+      "viewMoments": "Ver momentos →",
+      "library": "Biblioteca →"
+    },
+    "share": {
+      "title": "Compartilhar viagem",
+      "publicLink": "Link público",
+      "hideCost": "Ocultar custos",
+      "hideCostDesc": "Seguidores não verão os valores gastos",
+      "showExpenses": "Mostrar gastos por lugar",
+      "showExpensesDesc": "Exibe quanto você gastou em cada lugar no mapa",
+      "validity": "Validade do link",
+      "validityShort": "Validade",
+      "generate": "Gerar link público",
+      "generating": "Gerando…",
+      "revoke": "Revogar link público",
+      "revoking": "Revogando…",
+      "linkShared": "Link compartilhado",
+      "shareTrip": "Compartilhar viagem",
+      "intro": "Gere um link para compartilhar o roteiro com seguidores — eles verão os lugares, notas e podem importar para o Google Maps.",
+      "hideCostPublic": "Ocultar custos na página pública",
+      "expiry7": "7 dias",
+      "expiry30": "30 dias",
+      "expiry90": "90 dias",
+      "expiryNone": "Sem prazo"
+    },
+    "expenses": {
+      "label": "DESPESAS",
+      "linked": "Vinculadas",
+      "none": "Nenhuma despesa vinculada ainda",
+      "add": "Adicionar despesa",
+      "searchTx": "Buscar transação…",
+      "noneFound": "Nenhuma transação encontrada",
+      "noneAvailable": "Nenhuma transação dos momentos da viagem disponível",
+      "linkSelectedOne": "Vincular {n} selecionada",
+      "linkSelectedMany": "Vincular {n} selecionadas",
+      "linking": "Vinculando…",
+      "spentHere": "Gasto aqui",
+      "byPlace": "Por lugar",
+      "byCategory": "Por categoria",
+      "expenseOne": "despesa",
+      "expenseMany": "despesas",
+      "title": "Despesas"
+    },
+    "places": {
+      "title": "Lugares",
+      "empty": "Nenhum lugar adicionado ainda",
+      "addFromLibrary": "+ Adicionar da biblioteca",
+      "mapsLink": "Link do Maps",
+      "search": "Buscar…",
+      "noteePlaceholder": "Nota sobre este lugar…",
+      "libraryTab": "Biblioteca",
+      "mapsTab": "Link Maps",
+      "urlIntro": "Cole o link do Google Maps — o lugar será salvo na biblioteca e adicionado à viagem.",
+      "addToTrip": "Adicionar à viagem",
+      "importing": "Importando…",
+      "libraryEmpty": "Biblioteca vazia — importe do Google Takeout ou cole um link do Maps."
+    },
+    "autocomplete": {
+      "destinationPlaceholder": "ex: Lisboa"
+    }
   }
 }

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { apiFetch } from '../../lib/api'
+import { useI18n } from '../../contexts/I18nContext'
 import type { PlaceExpense } from './types'
 
 const RED = '#D63B2F'
@@ -31,6 +32,9 @@ interface Props {
 }
 
 export default function PlaceExpensesPanel({ tripId, placeId, placeName, onClose, onChanged }: Props) {
+  const { t } = useI18n()
+  const tv = (t as any).voyage ?? {}
+  const ev = tv.expenses ?? {}
   const [expenses, setExpenses] = useState<PlaceExpense[]>([])
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
@@ -96,8 +100,8 @@ export default function PlaceExpensesPanel({ tripId, placeId, placeName, onClose
       setSelected(new Set())
       setDirty(true)
       await Promise.all([loadExpenses(), loadCandidates(search)])
-    } catch (err: any) {
-      setError(err?.message ?? 'Erro ao vincular')
+    } catch {
+      setError(tv.errors?.link ?? 'Erro ao vincular')
     } finally {
       setSaving(false)
     }
@@ -127,7 +131,7 @@ export default function PlaceExpensesPanel({ tripId, placeId, placeName, onClose
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: '1px solid var(--arvo-border-soft)' }}>
           <div style={{ minWidth: 0 }}>
-            <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.30em', textTransform: 'uppercase', color: RED, marginBottom: 2 }}>DESPESAS</p>
+            <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.30em', textTransform: 'uppercase', color: RED, marginBottom: 2 }}>{ev.label ?? 'DESPESAS'}</p>
             <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 15, letterSpacing: '0.06em', color: 'var(--arvo-fg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {placeName}
             </p>
@@ -147,7 +151,7 @@ export default function PlaceExpensesPanel({ tripId, placeId, placeName, onClose
           <div>
             <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 8 }}>
               <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)' }}>
-                Vinculadas
+                {ev.linked ?? 'Vinculadas'}
               </p>
               {total > 0 && (
                 <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: 'var(--arvo-fg)', fontVariantNumeric: 'tabular-nums' }}>
@@ -156,10 +160,10 @@ export default function PlaceExpensesPanel({ tripId, placeId, placeName, onClose
               )}
             </div>
             {loading ? (
-              <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)' }}>Carregando…</p>
+              <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)' }}>{tv.loading ?? 'Carregando…'}</p>
             ) : expenses.length === 0 ? (
               <p style={{ fontFamily: 'var(--arvo-font-serif)', fontStyle: 'italic', fontSize: 12.5, color: 'var(--arvo-fg-soft)' }}>
-                Nenhuma despesa vinculada ainda
+                {ev.none ?? 'Nenhuma despesa vinculada ainda'}
               </p>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -188,20 +192,20 @@ export default function PlaceExpensesPanel({ tripId, placeId, placeName, onClose
           {/* Candidate picker */}
           <div style={{ paddingTop: 4, borderTop: '1px solid var(--arvo-border-soft)' }}>
             <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)', margin: '12px 0 8px' }}>
-              Adicionar despesa
+              {ev.add ?? 'Adicionar despesa'}
             </p>
             <input
               type="text"
-              placeholder="Buscar transação…"
+              placeholder={ev.searchTx ?? 'Buscar transação…'}
               value={search}
               onChange={e => setSearch(e.target.value)}
               style={{ width: '100%', padding: '7px 10px', borderRadius: 4, border: '1px solid var(--arvo-border)', fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, background: 'var(--arvo-surface)', color: 'var(--arvo-fg)', outline: 'none', marginBottom: 8, boxSizing: 'border-box' }}
             />
             {loadingCandidates ? (
-              <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)' }}>Carregando…</p>
+              <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)' }}>{tv.loading ?? 'Carregando…'}</p>
             ) : candidates.length === 0 ? (
               <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)' }}>
-                {search ? 'Nenhuma transação encontrada' : 'Nenhuma transação dos momentos da viagem disponível'}
+                {search ? (ev.noneFound ?? 'Nenhuma transação encontrada') : (ev.noneAvailable ?? 'Nenhuma transação dos momentos da viagem disponível')}
               </p>
             ) : (
               <div style={{ maxHeight: 220, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -245,7 +249,11 @@ export default function PlaceExpensesPanel({ tripId, placeId, placeName, onClose
                 disabled={saving}
                 style={{ width: '100%', marginTop: 10, padding: '9px 0', borderRadius: 8, background: saving ? 'var(--arvo-hover-bg)' : 'var(--arvo-fg)', color: saving ? 'var(--arvo-fg-muted)' : 'var(--arvo-bg)', border: 'none', cursor: saving ? 'default' : 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 13 }}
               >
-                {saving ? 'Vinculando…' : `Vincular ${selected.size} selecionada${selected.size > 1 ? 's' : ''}`}
+                {saving
+                  ? (ev.linking ?? 'Vinculando…')
+                  : (selected.size > 1
+                      ? (ev.linkSelectedMany ?? 'Vincular {n} selecionadas').replace('{n}', String(selected.size))
+                      : (ev.linkSelectedOne ?? 'Vincular {n} selecionada').replace('{n}', String(selected.size)))}
               </button>
             )}
           </div>

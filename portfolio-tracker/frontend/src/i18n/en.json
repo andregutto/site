@@ -2034,6 +2034,90 @@
     "splitTotal": "Trip total",
     "splitByPerson": "Per person",
     "homePromptText": "Always open Trips when you log in?",
-    "homePromptConfirm": "Yes, set as start"
+    "homePromptConfirm": "Yes, set as start",
+    "loading": "Loading…",
+    "confirm": {
+      "revokeShare": "Revoke the link? Anyone with the link will lose access.",
+      "deleteAllPlaces": "Delete ALL places in the library? This cannot be undone.",
+      "removePlaceFromLibrary": "Remove \"{name}\" from the library?",
+      "removePlaceFromTrip": "Remove \"{name}\" from the trip?",
+      "deleteTripPermanent": "Delete \"{title}\" permanently? This cannot be undone."
+    },
+    "errors": {
+      "generic": "Something went wrong. Please try again.",
+      "import": "Import failed",
+      "delete": "Delete failed",
+      "save": "Save failed",
+      "deleteTrip": "Delete failed",
+      "link": "Failed to link",
+      "titleRequired": "Title required"
+    },
+    "actions": {
+      "copy": "Copy",
+      "cancel": "Cancel",
+      "save": "Save",
+      "saving": "Saving…",
+      "detail": "Details",
+      "collapse": "Collapse",
+      "viewMoments": "View moments →",
+      "library": "Library →"
+    },
+    "share": {
+      "title": "Share trip",
+      "publicLink": "Public link",
+      "hideCost": "Hide costs",
+      "hideCostDesc": "Followers won't see the amounts spent",
+      "showExpenses": "Show spend per place",
+      "showExpensesDesc": "Displays how much you spent at each place on the map",
+      "validity": "Link validity",
+      "validityShort": "Validity",
+      "generate": "Generate public link",
+      "generating": "Generating…",
+      "revoke": "Revoke public link",
+      "revoking": "Revoking…",
+      "linkShared": "Link shared",
+      "shareTrip": "Share trip",
+      "intro": "Generate a link to share the itinerary with followers — they'll see the places, notes and can import to Google Maps.",
+      "hideCostPublic": "Hide costs on the public page",
+      "expiry7": "7 days",
+      "expiry30": "30 days",
+      "expiry90": "90 days",
+      "expiryNone": "No expiry"
+    },
+    "expenses": {
+      "label": "EXPENSES",
+      "linked": "Linked",
+      "none": "No expenses linked yet",
+      "add": "Add expense",
+      "searchTx": "Search transaction…",
+      "noneFound": "No transaction found",
+      "noneAvailable": "No transaction from the trip's moments available",
+      "linkSelectedOne": "Link {n} selected",
+      "linkSelectedMany": "Link {n} selected",
+      "linking": "Linking…",
+      "spentHere": "Spent here",
+      "byPlace": "By place",
+      "byCategory": "By category",
+      "expenseOne": "expense",
+      "expenseMany": "expenses",
+      "title": "Expenses"
+    },
+    "places": {
+      "title": "Places",
+      "empty": "No places added yet",
+      "addFromLibrary": "+ Add from library",
+      "mapsLink": "Maps link",
+      "search": "Search…",
+      "noteePlaceholder": "Note about this place…",
+      "libraryTab": "Library",
+      "mapsTab": "Maps link",
+      "urlIntro": "Paste the Google Maps link — the place will be saved to the library and added to the trip.",
+      "addToTrip": "Add to trip",
+      "importing": "Importing…",
+      "libraryEmpty": "Empty library — import from Google Takeout or paste a Maps link."
+    },
+    "autocomplete": {
+      "destinationPlaceholder": "e.g. Lisbon"
+    }
   }
 }
