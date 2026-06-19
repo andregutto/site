@@ -596,9 +596,28 @@ function parseMapsUrl(url: string): { name: string | null; lat: number | null; l
   return { name, lat, lng }
 }
 
+// Mapeia o tipo de estabelecimento do Google para a categoria (pasta) do Voyage.
+// A string retornada casa com os ícones de categoria (emoji) usados no mapa/biblioteca.
+function googleTypeToCategory(primaryType: string | undefined, types: string[] = []): string | null {
+  const all = [primaryType, ...types].filter(Boolean) as string[]
+  const has = (...ks: string[]) => all.some(t => ks.includes(t))
+  if (has('bakery')) return 'Padarias'
+  if (has('cafe', 'coffee_shop')) return 'Cafés'
+  if (has('bar', 'night_club', 'pub', 'wine_bar')) return 'Bares'
+  if (has('restaurant', 'meal_takeaway', 'meal_delivery', 'food', 'fine_dining_restaurant')) return 'Restaurantes'
+  if (has('museum', 'art_gallery')) return 'Museus'
+  if (has('lodging', 'hotel', 'resort_hotel', 'bed_and_breakfast', 'guest_house', 'hostel')) return 'Hotéis'
+  if (has('park', 'national_park', 'state_park', 'garden', 'dog_park')) return 'Parques'
+  if (has('supermarket', 'grocery_store', 'grocery_or_supermarket', 'market')) return 'Mercados'
+  if (has('store', 'shopping_mall', 'clothing_store', 'department_store', 'shoe_store', 'book_store', 'jewelry_store')) return 'Compras'
+  if (has('beach', 'natural_feature')) return 'Praias'
+  if (has('tourist_attraction', 'landmark', 'historical_landmark', 'historical_place', 'point_of_interest')) return 'Pontos turísticos'
+  return null
+}
+
 // Geocodifica um texto (nome/endereço) via Places API (New) Text Search.
-// Retorna coordenadas + nome/endereço limpos quando a URL não traz lat/lng.
-async function geocodePlace(query: string): Promise<{ lat: number; lng: number; name?: string; address?: string } | null> {
+// Retorna coordenadas + nome/endereço + categoria (tipo do estabelecimento).
+async function geocodePlace(query: string): Promise<{ lat: number; lng: number; name?: string; address?: string; category?: string | null } | null> {
   const apiKey = process.env.GOOGLE_MAPS_API_KEY || process.env.GOOGLE_PLACES_API_KEY
   if (!apiKey || !query.trim()) return null
   try {
@@ -607,7 +626,7 @@ async function geocodePlace(query: string): Promise<{ lat: number; lng: number; 
       headers: {
         'Content-Type': 'application/json',
         'X-Goog-Api-Key': apiKey,
-        'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.location',
+        'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.location,places.primaryType,places.types',
       },
       body: JSON.stringify({ textQuery: query, maxResultCount: 1 }),
     })
@@ -620,6 +639,7 @@ async function geocodePlace(query: string): Promise<{ lat: number; lng: number; 
       lng: p.location.longitude,
       name: p.displayName?.text,
       address: p.formattedAddress,
+      category: googleTypeToCategory(p.primaryType, p.types),
     }
   } catch {
     return null
@@ -642,25 +662,27 @@ router.post('/places/from-url', requireAuth, async (req, res: Response) => {
 
   let { name, lat, lng } = parseMapsUrl(resolvedUrl)
   let address: string | null = null
+  let category: string | null = null
   if (!name) {
     res.status(400).json({ error: 'Não foi possível extrair o nome do lugar. Use a URL completa do Google Maps (google.com/maps/place/…).' })
     return
   }
 
-  // Sem coordenadas na URL (links de compartilhamento por ftid/?q=) → geocodifica
-  if (lat === null || lng === null) {
-    const geo = await geocodePlace(name)
-    if (geo) {
-      lat = geo.lat; lng = geo.lng
-      if (geo.name) name = geo.name
-      if (geo.address) address = geo.address
-    }
+  // Enriquece via Places API: coordenadas (quando a URL não traz), nome/endereço
+  // limpos e a categoria (tipo do estabelecimento → pasta + emoji no mapa).
+  const geo = await geocodePlace(name)
+  if (geo) {
+    if (geo.lat != null && geo.lng != null) { lat = geo.lat; lng = geo.lng }
+    if (geo.name) name = geo.name
+    if (geo.address) address = geo.address
+    if (geo.category) category = geo.category
   }
 
   const insertData: Record<string, unknown> = {
     user_id: userId, name, source: 'manual', google_maps_url: resolvedUrl,
     ...(lat !== null && { lat }), ...(lng !== null && { lng }),
     ...(address && { address }),
+    ...(category && { category }),
   }
   const { data: place, error } = await supabaseAdmin
     .from('voyage_places')
@@ -677,7 +699,7 @@ router.post('/places/from-url', requireAuth, async (req, res: Response) => {
       .from('voyage_trip_places')
       .insert({
         trip_id, library_place_id: place.id, name: place.name,
-        lat: place.lat, lng: place.lng, address: place.address,
+        category: place.category, lat: place.lat, lng: place.lng, address: place.address,
         google_maps_url: place.google_maps_url, sort_order: (count ?? 0) + 1, added_by: userId,
       })
       .select().single()

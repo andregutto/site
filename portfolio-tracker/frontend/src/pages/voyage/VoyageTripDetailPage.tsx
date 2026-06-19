@@ -101,7 +101,7 @@ export default function VoyageTripDetailPage() {
       {/* Hero */}
       <div style={{ position: 'relative', borderRadius: 18, overflow: 'hidden', marginBottom: 24 }}>
         {/* Cover */}
-        <div style={{ paddingBottom: '42%', background: '#1a1a18', position: 'relative', overflow: 'hidden' }}>
+        <div className="h-44 sm:h-52 lg:h-56" style={{ background: '#1a1a18', position: 'relative', overflow: 'hidden' }}>
           {trip.cover_image_url ? (
             <img
               src={trip.cover_image_url}

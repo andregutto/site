@@ -41,7 +41,8 @@ const CATEGORY_ICONS: Record<string, string> = {
   bares: '🍺', bar: '🍺',
   praias: '🏖️', praia: '🏖️',
   parques: '🌳', parque: '🌳',
-  compras: '🛍️', favoritos: '⭐',
+  compras: '🛍️', mercados: '🛒',
+  pontos: '📍', turísticos: '📍', favoritos: '⭐',
 }
 
 function catIcon(cat: string | null): string {
