@@ -586,6 +586,40 @@ router.delete('/places/all', requireAuth, async (req, res: Response) => {
   res.json({ ok: true })
 })
 
+// ── GET /api/voyage/map/places  (mapa geral — todas as viagens ou filtrada) ───
+router.get('/map/places', requireAuth, async (req, res: Response) => {
+  const userId = uid(req)
+  const tripId = req.query.trip_id ? Number(req.query.trip_id) : null
+
+  const [ownedRes, memberRes] = await Promise.all([
+    supabaseAdmin.from('voyage_trips').select('id, title, destination').eq('user_id', userId),
+    supabaseAdmin.from('voyage_trip_members').select('trip_id').eq('user_id', userId).eq('status', 'active'),
+  ])
+
+  const ownedTrips = ownedRes.data ?? []
+  const memberTripIds = (memberRes.data ?? []).map(m => m.trip_id)
+  const allTripIds = [...new Set([...ownedTrips.map(t => t.id), ...memberTripIds])]
+
+  if (allTripIds.length === 0) { res.json({ places: [], trips: [] }); return }
+
+  const targetIds = (tripId && allTripIds.includes(tripId)) ? [tripId] : allTripIds
+
+  const [placesRes, tripsRes] = await Promise.all([
+    supabaseAdmin
+      .from('voyage_trip_places')
+      .select('id, name, category, address, lat, lng, google_maps_url, day_number, is_highlight, trip_note, trip_id')
+      .in('trip_id', targetIds)
+      .not('lat', 'is', null).not('lng', 'is', null),
+    supabaseAdmin
+      .from('voyage_trips')
+      .select('id, title, destination')
+      .in('id', allTripIds)
+      .order('created_at', { ascending: false }),
+  ])
+
+  res.json({ places: placesRes.data ?? [], trips: tripsRes.data ?? [] })
+})
+
 // ── GET /api/voyage/trips/:id/places  ────────────────────────────────────────
 router.get('/trips/:id/places', requireAuth, async (req, res: Response) => {
   const userId = uid(req)
