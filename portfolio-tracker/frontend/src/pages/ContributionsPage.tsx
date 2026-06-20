@@ -106,6 +106,7 @@ export default function ContributionsPage() {
   const [newCurrency,     setNewCurrency]     = useState('BRL')
   const [newClassId,      setNewClassId]      = useState('')
   const [newCoingeckoId,  setNewCoingeckoId]  = useState('')
+  const [newResolvedSymbol, setNewResolvedSymbol] = useState('')
   // RF-specific new asset fields
   const [newFiType,        setNewFiType]        = useState('pos_cdi')
   const [newFiRate,        setNewFiRate]        = useState('')
@@ -162,7 +163,7 @@ export default function ContributionsPage() {
   useEffect(() => {
     const config = FORM_TYPES.find(t => t.value === newFormType)
     if (config) setNewCurrency(config.currency)
-    setNewName(''); setNewCode(''); setNewCoingeckoId(''); setNewNameLoading(false)
+    setNewName(''); setNewCode(''); setNewCoingeckoId(''); setNewResolvedSymbol(''); setNewNameLoading(false)
   }, [newFormType])
 
   // Auto-suggest name for fixed income based on type/rate/maturity
@@ -184,20 +185,23 @@ export default function ContributionsPage() {
     if (suggested) setNewName(suggested)
   }, [newFormType, newFiType, newFiRate, newFiMaturity, newFiInstitution])
 
-  // Auto-fetch ticker name
+  // Auto-fetch ticker name (and, for intl tickers, the resolved Yahoo symbol —
+  // European ETFs only quote under their exchange-suffixed symbol, e.g.
+  // "ESE" → "ESE.PA", so the bare code the user types isn't what gets stored)
   useEffect(() => {
     const config = FORM_TYPES.find(t => t.value === newFormType)
     const market = config?.market
     const code   = newCode.trim()
-    if (!market || !code) { setNewName(''); setNewCoingeckoId(''); setNewNameLoading(false); return }
-    setNewName(''); setNewNameLoading(true)
+    if (!market || !code) { setNewName(''); setNewCoingeckoId(''); setNewResolvedSymbol(''); setNewNameLoading(false); return }
+    setNewName(''); setNewResolvedSymbol(''); setNewNameLoading(true)
     const timer = setTimeout(async () => {
       try {
-        const result = await apiFetch<{ name: string | null; coingecko_id?: string | null }>(
+        const result = await apiFetch<{ name: string | null; symbol?: string | null; coingecko_id?: string | null }>(
           `/assets/lookup?code=${encodeURIComponent(code)}&market=${encodeURIComponent(market)}`
         )
         setNewName(result.name ?? '')
         if (result.coingecko_id) setNewCoingeckoId(result.coingecko_id)
+        if (result.symbol) setNewResolvedSymbol(result.symbol)
       } catch { setNewName('') } finally { setNewNameLoading(false) }
     }, 600)
     return () => { clearTimeout(timer); setNewNameLoading(false) }
@@ -397,7 +401,10 @@ export default function ContributionsPage() {
     try {
       const code         = newCode.trim().toUpperCase()
       const ticker_brapi = newFormType === 'ticker_b3'   ? code : undefined
-      const ticker_yahoo = newFormType === 'ticker_intl' ? code
+      // Prefer the resolved exchange-suffixed symbol (e.g. "ESE.PA") over the
+      // bare code the user typed — without the suffix, European ETF quotes
+      // never resolve on Yahoo Finance.
+      const ticker_yahoo = newFormType === 'ticker_intl' ? (newResolvedSymbol || code)
                          : newFormType === 'cripto'      ? `${code}-USD` : undefined
       const coingecko_id = newFormType === 'cripto' ? (newCoingeckoId || undefined) : undefined
 
@@ -743,6 +750,11 @@ export default function ContributionsPage() {
                         : newFormType === 'fixed_income' ? 'Preenchido ao escolher tipo e taxa' : newFormType === 'imovel' ? 'ex: Apartamento Paris 11e' : 'ex: Fundo X'}
                       className={`w-full border border-[var(--arvo-border)] rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20 ${isTickerForm ? 'bg-[var(--arvo-surface)] text-[var(--arvo-fg-muted)] cursor-default' : 'bg-[var(--arvo-surface)]'}`}
                     />
+                    {newFormType === 'ticker_intl' && newResolvedSymbol && newResolvedSymbol !== newCode.trim().toUpperCase() && (
+                      <p className="text-xs text-[var(--arvo-fg-soft)] mt-1">
+                        Cotação via Yahoo Finance: <strong>{newResolvedSymbol}</strong> — confira se é o ativo certo
+                      </p>
+                    )}
                   </div>
 
                   {/* Class */}

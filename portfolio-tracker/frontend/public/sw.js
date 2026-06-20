@@ -1,4 +1,4 @@
-const CACHE = 'arvo-v20'
+const CACHE = 'arvo-v21'
 const STATIC = ['/manifest.json', '/favicon.svg', '/offline.html']
 
 self.addEventListener('install', e => {

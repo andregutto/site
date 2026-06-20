@@ -22,8 +22,27 @@ router.get('/', requireAuth, async (req, res: Response) => {
   res.json(data ?? [])
 })
 
+interface YahooQuote { longname?: string; shortname?: string; symbol?: string; exchange?: string; quoteType?: string }
+
+async function searchYahoo(query: string): Promise<YahooQuote[]> {
+  const url = `https://query2.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(query)}&lang=en-US&quotesCount=5`
+  const r = await fetch(url, { signal: AbortSignal.timeout(4000), headers: { 'User-Agent': 'Mozilla/5.0' } })
+  if (!r.ok) return []
+  const d = await r.json() as { quotes?: YahooQuote[] }
+  return d.quotes ?? []
+}
+
+// Tickers européens não resolvem sem o sufixo da bolsa no Yahoo Finance (ex: o
+// ETF "ESE" da Euronext Paris só cota como "ESE.PA" — a busca pelo código puro
+// pode até achar um match EXATO, mas errado: "ESE" sozinho é uma ação
+// americana sem relação nenhuma (ESCO Technologies). Por isso buscamos o
+// código puro + código com cada sufixo em paralelo e priorizamos qualquer
+// resultado do tipo ETF sobre um match de ação — cobre as principais bolsas
+// onde ETFs UCITS listam, sem assumir de antemão qual é a bolsa certa.
+const EUROPEAN_EXCHANGE_SUFFIXES = ['.PA', '.AS', '.MI', '.DE', '.L', '.BR', '.LS', '.SW', '.MU', '.F']
+
 // GET /api/assets/lookup?code=AAPL&market=b3|intl|cripto
-// Returns { name, coingecko_id? } for auto-filling the new asset form
+// Returns { name, symbol?, coingecko_id? } for auto-filling the new asset form
 router.get('/lookup', requireAuth, async (req, res: Response) => {
   const { code, market } = req.query as { code?: string; market?: string }
   if (!code || !market) { res.json({ name: null }); return }
@@ -39,12 +58,23 @@ router.get('/lookup', requireAuth, async (req, res: Response) => {
       res.json({ name: d.results?.[0]?.longName || d.results?.[0]?.shortName || null })
 
     } else if (market === 'intl') {
-      const url = `https://query2.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(ticker)}&lang=en-US&quotesCount=5`
-      const r = await fetch(url, { signal: AbortSignal.timeout(5000), headers: { 'User-Agent': 'Mozilla/5.0' } })
-      if (!r.ok) { res.json({ name: null }); return }
-      const d = await r.json() as { quotes?: Array<{ longname?: string; shortname?: string; symbol?: string }> }
-      const match = d.quotes?.find(q => q.symbol?.toUpperCase() === ticker) ?? d.quotes?.[0]
-      res.json({ name: match?.longname || match?.shortname || null })
+      const candidateSymbols = [ticker, ...EUROPEAN_EXCHANGE_SUFFIXES.map(suf => `${ticker}${suf}`)]
+      const results = await Promise.allSettled(candidateSymbols.map(sym => searchYahoo(sym)))
+
+      const exactMatches: YahooQuote[] = []
+      for (let i = 0; i < candidateSymbols.length; i++) {
+        const settled = results[i]
+        if (settled.status !== 'fulfilled') continue
+        const exact = settled.value.find(q => q.symbol?.toUpperCase() === candidateSymbols[i])
+        if (exact) exactMatches.push(exact)
+      }
+
+      const match = exactMatches.find(q => q.quoteType === 'ETF')
+        ?? exactMatches.find(q => q.symbol?.toUpperCase() === ticker)
+        ?? exactMatches[0]
+        ?? (results[0].status === 'fulfilled' ? results[0].value[0] : undefined)
+
+      res.json({ name: match?.longname || match?.shortname || null, symbol: match?.symbol || null })
 
     } else if (market === 'cripto') {
       const url = `https://api.coingecko.com/api/v3/search?query=${encodeURIComponent(ticker)}`
