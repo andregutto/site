@@ -175,21 +175,12 @@ function NoteEditor({ value, onSave, placeholder }: { value: string | null; onSa
   )
 }
 
-function GripHandle({ onPointerDown }: { onPointerDown: (e: React.PointerEvent) => void }) {
-  return (
-    <span
-      onPointerDown={onPointerDown}
-      title="Arrastar para reordenar"
-      style={{ cursor: 'grab', flexShrink: 0, marginTop: 4, color: 'var(--arvo-fg-muted)', touchAction: 'none' }}
-    >
-      <svg width="9" height="13" viewBox="0 0 9 13" fill="currentColor">
-        <circle cx="2" cy="2" r="1.2"/><circle cx="7" cy="2" r="1.2"/>
-        <circle cx="2" cy="6.5" r="1.2"/><circle cx="7" cy="6.5" r="1.2"/>
-        <circle cx="2" cy="11" r="1.2"/><circle cx="7" cy="11" r="1.2"/>
-      </svg>
-    </span>
-  )
-}
+// Long-press (anywhere on the row) starts a reorder, same gesture used by
+// Things/Notion/Trello — easier to hit than a small grip icon and works
+// identically with mouse or touch. A quick tap is left alone so the row's own
+// buttons (visited, despesas, Mais…) keep working normally.
+const LONG_PRESS_MS = 380
+const MOVE_CANCEL_PX = 8
 
 function ItemRow({ item, tripId, canEdit, dragging, dropTarget, onStartDrag, onPatch, onDelete, onReload }: {
   item: PlanItem
@@ -197,7 +188,7 @@ function ItemRow({ item, tripId, canEdit, dragging, dropTarget, onStartDrag, onP
   canEdit: boolean
   dragging: boolean
   dropTarget: boolean
-  onStartDrag: (e: React.PointerEvent) => void
+  onStartDrag: () => void
   onPatch: (fields: Record<string, unknown>) => void
   onDelete: () => void
   onReload: () => void
@@ -212,6 +203,31 @@ function ItemRow({ item, tripId, canEdit, dragging, dropTarget, onStartDrag, onP
   const isNote = item.kind === 'note'
   const hasExpenses = (item.expense_total ?? 0) > 0
 
+  // Long-press anywhere on the row to start a reorder. A quick tap clears the
+  // timer before it fires, so the row's own buttons keep working normally.
+  const pressTimerRef = useRef<number | null>(null)
+  const pressStartRef = useRef<{ x: number; y: number } | null>(null)
+
+  function clearPress() {
+    if (pressTimerRef.current != null) { clearTimeout(pressTimerRef.current); pressTimerRef.current = null }
+    pressStartRef.current = null
+  }
+  function handlePointerDown(e: React.PointerEvent) {
+    if (!canEdit) return
+    pressStartRef.current = { x: e.clientX, y: e.clientY }
+    pressTimerRef.current = window.setTimeout(() => {
+      pressTimerRef.current = null
+      navigator.vibrate?.(10)
+      onStartDrag()
+    }, LONG_PRESS_MS)
+  }
+  function handlePointerMove(e: React.PointerEvent) {
+    if (!pressStartRef.current || pressTimerRef.current == null) return
+    const dx = e.clientX - pressStartRef.current.x
+    const dy = e.clientY - pressStartRef.current.y
+    if (Math.hypot(dx, dy) > MOVE_CANCEL_PX) clearPress()
+  }
+
   async function del() {
     if (!confirm((tv.confirm?.removePlaceFromTrip ?? 'Remover "{name}" da viagem?').replace('{name}', item.name))) return
     await apiFetch(`/voyage/trips/${tripId}/places/${item.id}`, { method: 'DELETE' })
@@ -221,17 +237,23 @@ function ItemRow({ item, tripId, canEdit, dragging, dropTarget, onStartDrag, onP
   return (
     <div
       data-row-id={item.id}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={clearPress}
+      onPointerCancel={clearPress}
       style={{
         borderRadius: 8,
         background: item.is_highlight ? 'rgba(214,59,47,0.04)' : 'var(--arvo-hover-bg)',
         border: dropTarget ? `1px dashed ${RED}` : `1px solid ${item.is_highlight ? 'rgba(214,59,47,0.12)' : 'var(--arvo-border-soft)'}`,
         overflow: 'hidden',
-        opacity: dragging ? 0.4 : 1,
-        transition: 'opacity 120ms, border-color 120ms',
+        opacity: dragging ? 0.88 : 1,
+        transform: dragging ? 'scale(1.02) rotate(0.6deg)' : 'scale(1)',
+        boxShadow: dragging ? 'var(--arvo-shadow-lg)' : 'none',
+        cursor: canEdit ? 'grab' : 'default',
+        transition: 'opacity 120ms, border-color 120ms, transform 120ms, box-shadow 120ms',
       }}
     >
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '8px 10px' }}>
-        {canEdit && <GripHandle onPointerDown={onStartDrag} />}
         {/* Visited toggle (places only) */}
         {canEdit && isPlace && (
           <button
@@ -596,7 +618,7 @@ export default function TripItineraryPanel({ tripId, tripCity, tripCountry, canE
         key={it.id} item={it} tripId={tripId} canEdit={canEdit}
         dragging={dragVisual.dragId === it.id}
         dropTarget={dragVisual.overId === it.id && dragVisual.dragId !== it.id}
-        onStartDrag={e => { e.preventDefault(); startDrag(it.id) }}
+        onStartDrag={() => startDrag(it.id)}
         onPatch={f => patchItem(it.id, f)}
         onDelete={() => setItems(ps => ps.filter(x => x.id !== it.id))}
         onReload={load}
@@ -659,7 +681,7 @@ export default function TripItineraryPanel({ tripId, tripCity, tripCountry, canE
           </div>
           <FreeItemAdder tripId={tripId} onAdded={load} />
           <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 10.5, color: 'var(--arvo-fg-soft)', textAlign: 'center' }}>
-            Arraste pelo ⠿ para reordenar dentro do mesmo dia
+            Toque e segure uma atividade para reordenar dentro do mesmo dia
           </p>
         </div>
       )}
