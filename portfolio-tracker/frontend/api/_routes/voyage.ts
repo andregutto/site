@@ -616,8 +616,8 @@ function googleTypeToCategory(primaryType: string | undefined, types: string[] =
 }
 
 // Geocodifica um texto (nome/endereço) via Places API (New) Text Search.
-// Retorna coordenadas + nome/endereço + categoria (tipo do estabelecimento).
-async function geocodePlace(query: string): Promise<{ lat: number; lng: number; name?: string; address?: string; category?: string | null } | null> {
+// Retorna coordenadas + nome/endereço + categoria + horário de funcionamento.
+async function geocodePlace(query: string): Promise<{ lat: number; lng: number; name?: string; address?: string; category?: string | null; opening_hours?: string[] | null } | null> {
   const apiKey = process.env.GOOGLE_MAPS_API_KEY || process.env.GOOGLE_PLACES_API_KEY
   if (!apiKey || !query.trim()) return null
   try {
@@ -626,7 +626,7 @@ async function geocodePlace(query: string): Promise<{ lat: number; lng: number; 
       headers: {
         'Content-Type': 'application/json',
         'X-Goog-Api-Key': apiKey,
-        'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.location,places.primaryType,places.types',
+        'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.location,places.primaryType,places.types,places.regularOpeningHours',
       },
       body: JSON.stringify({ textQuery: query, maxResultCount: 1 }),
     })
@@ -640,6 +640,7 @@ async function geocodePlace(query: string): Promise<{ lat: number; lng: number; 
       name: p.displayName?.text,
       address: p.formattedAddress,
       category: googleTypeToCategory(p.primaryType, p.types),
+      opening_hours: p.regularOpeningHours?.weekdayDescriptions ?? null,
     }
   } catch {
     return null
@@ -663,19 +664,21 @@ router.post('/places/from-url', requireAuth, async (req, res: Response) => {
   let { name, lat, lng } = parseMapsUrl(resolvedUrl)
   let address: string | null = null
   let category: string | null = null
+  let openingHours: string[] | null = null
   if (!name) {
     res.status(400).json({ error: 'Não foi possível extrair o nome do lugar. Use a URL completa do Google Maps (google.com/maps/place/…).' })
     return
   }
 
   // Enriquece via Places API: coordenadas (quando a URL não traz), nome/endereço
-  // limpos e a categoria (tipo do estabelecimento → pasta + emoji no mapa).
+  // limpos, categoria (tipo do estabelecimento → pasta + emoji no mapa) e horário.
   const geo = await geocodePlace(name)
   if (geo) {
     if (geo.lat != null && geo.lng != null) { lat = geo.lat; lng = geo.lng }
     if (geo.name) name = geo.name
     if (geo.address) address = geo.address
     if (geo.category) category = geo.category
+    if (geo.opening_hours) openingHours = geo.opening_hours
   }
 
   const insertData: Record<string, unknown> = {
@@ -683,6 +686,7 @@ router.post('/places/from-url', requireAuth, async (req, res: Response) => {
     ...(lat !== null && { lat }), ...(lng !== null && { lng }),
     ...(address && { address }),
     ...(category && { category }),
+    ...(openingHours && { opening_hours: openingHours }),
   }
   const { data: place, error } = await supabaseAdmin
     .from('voyage_places')
@@ -700,7 +704,8 @@ router.post('/places/from-url', requireAuth, async (req, res: Response) => {
       .insert({
         trip_id, library_place_id: place.id, name: place.name,
         category: place.category, lat: place.lat, lng: place.lng, address: place.address,
-        google_maps_url: place.google_maps_url, sort_order: (count ?? 0) + 1, added_by: userId,
+        google_maps_url: place.google_maps_url, opening_hours: place.opening_hours,
+        sort_order: (count ?? 0) + 1, added_by: userId,
       })
       .select().single()
     trip_place = tp
@@ -825,7 +830,7 @@ router.get('/map/places', requireAuth, async (req, res: Response) => {
   const [placesRes, tripsRes] = await Promise.all([
     supabaseAdmin
       .from('voyage_trip_places')
-      .select('id, name, category, address, lat, lng, google_maps_url, day_number, is_highlight, trip_note, trip_id')
+      .select('id, name, category, address, lat, lng, google_maps_url, opening_hours, day_number, is_highlight, trip_note, trip_id')
       .in('trip_id', targetIds)
       .not('lat', 'is', null).not('lng', 'is', null),
     supabaseAdmin
@@ -887,6 +892,7 @@ router.post('/trips/:id/places', requireAuth, async (req, res: Response) => {
     library_place_id?: number; name: string; category?: string
     lat?: number; lng?: number; address?: string
     google_place_id?: string; google_maps_url?: string
+    opening_hours?: string[] | null
     day_number?: number; is_highlight?: boolean
     kind?: 'place' | 'note' | 'transport'
     transport_mode?: string; transport_note?: string
@@ -1399,7 +1405,7 @@ router.get('/public/:token', async (req, res: Response) => {
 
   const [placesRes, costRes, ownerRes] = await Promise.all([
     supabaseAdmin.from('voyage_trip_places')
-      .select('id, kind, name, category, address, lat, lng, google_place_id, google_maps_url, day_number, sort_order, is_highlight, visited, rating, trip_note, arrive_time, depart_time, transport_mode, transport_note')
+      .select('id, kind, name, category, address, lat, lng, google_place_id, google_maps_url, opening_hours, day_number, sort_order, is_highlight, visited, rating, trip_note, arrive_time, depart_time, transport_mode, transport_note')
       .eq('trip_id', trip.id)
       .order('day_number', { ascending: true, nullsFirst: false })
       .order('sort_order'),

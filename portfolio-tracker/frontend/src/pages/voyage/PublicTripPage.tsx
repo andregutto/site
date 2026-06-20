@@ -5,6 +5,7 @@ import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { useTheme } from '../../contexts/ThemeContext'
 import { dayColor, dayColorWash } from './_shared/dayColors'
+import OpeningHoursBlock from './_shared/OpeningHours'
 
 delete (L.Icon.Default.prototype as any)._getIconUrl
 L.Icon.Default.mergeOptions({
@@ -36,6 +37,7 @@ interface PublicPlace {
   depart_time: string | null
   transport_mode: string | null
   transport_note: string | null
+  opening_hours: string[] | null
   expense_total?: number
 }
 
@@ -408,8 +410,13 @@ export default function PublicTripPage() {
                         {p.day_number != null && (
                           <span style={{ display: 'inline-block', fontSize: 10, padding: '1px 7px', borderRadius: 999, background: dayColorWash(p.day_number, 16), color: dayColor(p.day_number), marginBottom: 4 }}>Dia {p.day_number}</span>
                         )}
-                        <p style={{ fontWeight: 600, fontSize: 13, marginBottom: 4 }}>{p.name}</p>
+                        <p style={{ fontWeight: 600, fontSize: 13, marginBottom: 2 }}>{p.name}</p>
+                        {p.category && <p style={{ fontSize: 10.5, color: '#999', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{p.category}</p>}
                         {p.address && <p style={{ fontSize: 11, color: '#666', marginBottom: 4 }}>{p.address}</p>}
+                        <OpeningHoursBlock hours={p.opening_hours} />
+                        {(p.expense_total ?? 0) > 0 && (
+                          <p style={{ fontSize: 11, color: '#444', marginBottom: 4 }}>Gasto aqui: <strong>{fmtCurrency(p.expense_total!, 'EUR')}</strong></p>
+                        )}
                         {p.google_maps_url && (
                           <a href={p.google_maps_url} target="_blank" rel="noopener noreferrer"
                             style={{ fontSize: 11, color: '#555', textDecoration: 'none' }}>

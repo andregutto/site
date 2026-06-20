@@ -6,6 +6,7 @@ import 'leaflet/dist/leaflet.css'
 import { apiFetch } from '../../lib/api'
 import { useTheme } from '../../contexts/ThemeContext'
 import { dayColor, dayColorWash } from './_shared/dayColors'
+import OpeningHoursBlock from './_shared/OpeningHours'
 
 delete (L.Icon.Default.prototype as any)._getIconUrl
 L.Icon.Default.mergeOptions({
@@ -28,6 +29,7 @@ interface TripPlace {
   day_number: number | null
   is_highlight: boolean
   trip_note: string | null
+  opening_hours: string[] | null
   trip_id: number
   expense_total?: number
 }
@@ -339,8 +341,10 @@ export default function VoyageMapPage() {
                         {p.day_number != null && (
                           <span style={{ display: 'inline-block', fontSize: 10, padding: '1px 7px', borderRadius: 999, background: dayColorWash(p.day_number, 16), color: dayColor(p.day_number), marginBottom: 4 }}>Dia {p.day_number}</span>
                         )}
-                        <p style={{ fontWeight: 600, fontSize: 13, marginBottom: 4 }}>{p.name}</p>
+                        <p style={{ fontWeight: 600, fontSize: 13, marginBottom: 2 }}>{p.name}</p>
+                        {p.category && <p style={{ fontSize: 10.5, color: '#999', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{p.category}</p>}
                         {p.address && <p style={{ fontSize: 11, color: '#666', marginBottom: 4 }}>{p.address}</p>}
+                        <OpeningHoursBlock hours={p.opening_hours} />
                         {p.trip_note && <p style={{ fontSize: 11, fontStyle: 'italic', color: '#888', marginBottom: 4 }}>{p.trip_note}</p>}
                         {(p.expense_total ?? 0) > 0 && (
                           <p style={{ fontSize: 11, color: '#444', marginBottom: 4 }}>Gasto aqui: <strong>{fmtEur(p.expense_total!)}</strong></p>

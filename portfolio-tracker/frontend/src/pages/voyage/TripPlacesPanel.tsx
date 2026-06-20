@@ -24,6 +24,7 @@ interface TripPlace {
   rating: number | null
   visited: boolean
   trip_note: string | null
+  opening_hours: string[] | null
   expense_total?: number
   expense_count?: number
 }
@@ -34,7 +35,10 @@ interface LibraryPlace {
   category: string | null
   city: string | null
   address: string | null
+  lat: number | null
+  lng: number | null
   google_maps_url: string | null
+  opening_hours: string[] | null
 }
 
 interface Props {
@@ -124,7 +128,10 @@ export function LibraryPicker({ tripId, tripCity, tripCountry, onAdded }: {
           name: p.name,
           category: p.category,
           address: p.address,
+          lat: p.lat,
+          lng: p.lng,
           google_maps_url: p.google_maps_url,
+          opening_hours: p.opening_hours,
         }),
       })
       onAdded(data.place)

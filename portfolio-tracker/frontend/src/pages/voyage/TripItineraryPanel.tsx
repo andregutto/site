@@ -13,6 +13,22 @@ function fmtCurrency(n: number) {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'EUR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n)
 }
 
+// This app never sets overflow on <html>/<body> elsewhere, so it's safe to
+// just set/clear 'hidden' directly without saving a previous value.
+let pageScrollLockCount = 0
+function lockPageScroll() {
+  pageScrollLockCount++
+  document.documentElement.style.overflow = 'hidden'
+  document.body.style.overflow = 'hidden'
+}
+function unlockPageScroll() {
+  pageScrollLockCount = Math.max(0, pageScrollLockCount - 1)
+  if (pageScrollLockCount === 0) {
+    document.documentElement.style.overflow = ''
+    document.body.style.overflow = ''
+  }
+}
+
 type Kind = 'place' | 'note' | 'transport'
 
 interface PlanItem {
@@ -588,6 +604,7 @@ export default function TripItineraryPanel({ tripId, tripCity, tripCountry, canE
       dragIdRef.current = null
       overIdRef.current = null
       setDragVisual({ dragId: null, overId: null })
+      unlockPageScroll()
       if (draggedId != null && targetId != null && draggedId !== targetId) {
         doReorder(draggedId, targetId)
       }
@@ -599,6 +616,7 @@ export default function TripItineraryPanel({ tripId, tripCity, tripCountry, canE
       window.removeEventListener('pointermove', onMove)
       window.removeEventListener('pointerup', finishDrag)
       window.removeEventListener('pointercancel', finishDrag)
+      unlockPageScroll()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -607,6 +625,11 @@ export default function TripItineraryPanel({ tripId, tripCity, tripCountry, canE
     dragIdRef.current = id
     overIdRef.current = null
     setDragVisual({ dragId: id, overId: null })
+    // preventDefault() on pointermove alone isn't reliably honored by Safari/iOS
+    // for blocking scroll on Pointer Events, so lock the page outright while a
+    // drag is active — otherwise the page scrolls under the finger instead of
+    // the row following it.
+    lockPageScroll()
   }
 
   function sortDayByTime(day: number | null) {
