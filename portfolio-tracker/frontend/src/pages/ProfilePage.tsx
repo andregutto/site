@@ -8,7 +8,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { useCurrency, type Currency } from '../contexts/CurrencyContext'
 import { useTheme, type Theme } from '../contexts/ThemeContext'
 import { useAchievementContext } from '../contexts/AchievementContext'
-import { useI18n, type Locale } from '../contexts/I18nContext'
+import { useI18n } from '../contexts/I18nContext'
 import { getLevel, getNextLevel, getLevelProgress, ACHIEVEMENT_DEFS } from '../lib/achievementDefs'
 import { Icon } from '../components/icons'
 import { supabase } from '../lib/supabase'
@@ -46,7 +46,6 @@ const COUNTRY_OPTIONS = [
 
 const CURRENCIES: Currency[] = ['BRL', 'USD', 'EUR']
 const THEMES: Theme[] = ['auto', 'light', 'dark']
-const LANGUAGES: Locale[] = ['pt', 'en', 'fr']
 
 function initials(firstName: string, lastName: string, email: string) {
   if (firstName.trim()) {
@@ -62,7 +61,7 @@ export default function ProfilePage() {
   const { currency, setCurrency } = useCurrency()
   const { theme, setTheme } = useTheme()
   const { totalXp, earnedKeys, triggerCheck } = useAchievementContext()
-  const { t, locale, setLocale } = useI18n()
+  const { t } = useI18n()
   const level = getLevel(totalXp)
   const nextLevel = getNextLevel(totalXp)
   const levelProgress = getLevelProgress(totalXp)
@@ -823,27 +822,6 @@ export default function ProfilePage() {
                       }`}
                     >
                       {th === 'auto' ? t.profile.themeAuto : th === 'light' ? t.profile.themeLight : t.profile.themeDark}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Idioma */}
-              <div>
-                <label className="block text-sm font-medium text-[var(--arvo-fg)] mb-2">{t.profile.languageLabel}</label>
-                <div className="flex flex-wrap gap-2">
-                  {LANGUAGES.map(l => (
-                    <button
-                      key={l}
-                      type="button"
-                      onClick={() => setLocale(l)}
-                      className={`px-4 py-1.5 text-sm font-semibold rounded-lg border transition-colors ${
-                        locale === l
-                          ? 'bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] border-[var(--arvo-fg)]'
-                          : 'bg-[var(--arvo-surface)] text-[var(--arvo-fg-muted)] border-[var(--arvo-border)] hover:border-[var(--arvo-fg-faint)]'
-                      }`}
-                    >
-                      {l === 'pt' ? t.profile.languagePt : l === 'en' ? t.profile.languageEn : t.profile.languageFr}
                     </button>
                   ))}
                 </div>
