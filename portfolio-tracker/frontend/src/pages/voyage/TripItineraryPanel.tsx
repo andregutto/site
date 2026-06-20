@@ -251,6 +251,14 @@ function ItemRow({ item, tripId, canEdit, dragging, dropTarget, onStartDrag, onP
         boxShadow: dragging ? 'var(--arvo-shadow-lg)' : 'none',
         cursor: canEdit ? 'grab' : 'default',
         transition: 'opacity 120ms, border-color 120ms, transform 120ms, box-shadow 120ms',
+        // Holding still over text is also the OS gesture for text selection
+        // (iOS callout / Android select-text bubble) — without this, that
+        // native gesture wins the race against the long-press timer below.
+        ...(canEdit && {
+          userSelect: 'none' as const,
+          WebkitUserSelect: 'none' as const,
+          WebkitTouchCallout: 'none' as const,
+        }),
       }}
     >
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '8px 10px' }}>
