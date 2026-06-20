@@ -385,6 +385,9 @@ export default function ContributionsPage() {
       let ticker_yahoo: string | undefined
       let coingecko_id: string | undefined
       let catalog_id: number | null = null
+      // The exchange (e.g. "PAR", "NYQ") lets the backend infer the right
+      // country instead of defaulting every non-B3/non-crypto ticker to USA.
+      let exchange: string | undefined
 
       if (isTickerType && newCatalogCandidate) {
         // Find-or-create the shared catalog row for the security the user
@@ -411,6 +414,7 @@ export default function ContributionsPage() {
         ticker_yahoo = newCatalogCandidate.ticker_yahoo
           ?? (newFormType === 'cripto' ? `${newCatalogCandidate.symbol}-USD` : undefined)
         coingecko_id = newCatalogCandidate.coingecko_id ?? undefined
+        exchange     = newCatalogCandidate.exchange ?? undefined
       }
 
       const created = await apiFetch<{ id: number; code: string; name: string; asset_type: string; currency: string }>('/assets', {
@@ -421,7 +425,7 @@ export default function ContributionsPage() {
           asset_type:     config?.dbType ?? 'ticker',
           currency:       newCurrency,
           asset_class_id: newClassId ? Number(newClassId) : null,
-          ticker_brapi, ticker_yahoo, coingecko_id, catalog_id,
+          ticker_brapi, ticker_yahoo, coingecko_id, catalog_id, exchange,
         }),
       })
 

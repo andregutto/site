@@ -274,12 +274,48 @@ router.delete('/classes/:id', requireAuth, async (req, res: Response) => {
   res.json({ ok: true })
 })
 
-function inferCountry(opts: { ticker_brapi?: string | null; coingecko_id?: string | null; currency: string; country?: string | null }): string {
+// Mapeamento de código de bolsa (Yahoo Finance "exchange" field, ex: "PAR",
+// "NYQ") para país — usado como sinal primário ao inferir o país de um ativo
+// internacional. Sem isso, QUALQUER ticker não-B3/não-cripto caía em "USA" por
+// padrão, mesmo ETFs europeus (ex: ESE.PA, listado em Paris, virava "USA").
+const EXCHANGE_TO_COUNTRY: Record<string, string> = {
+  // EUA
+  NYQ: 'USA', NMS: 'USA', NGM: 'USA', NCM: 'USA', PCX: 'USA', BTS: 'USA', ASE: 'USA', PNK: 'USA',
+  // Europa (Euronext + bolsas locais)
+  PAR: 'França', AMS: 'Holanda', BRU: 'Bélgica', LIS: 'Portugal',
+  MIL: 'Itália', MTA: 'Itália',
+  GER: 'Alemanha', FRA: 'Alemanha', MUN: 'Alemanha', DUS: 'Alemanha', BER: 'Alemanha', STU: 'Alemanha', HAM: 'Alemanha', HAN: 'Alemanha',
+  LSE: 'Reino Unido', IOB: 'Reino Unido',
+  EBS: 'Suíça', VTX: 'Suíça',
+  STO: 'Suécia', CPH: 'Dinamarca', HEL: 'Finlândia', OSL: 'Noruega',
+  VIE: 'Áustria', MCE: 'Espanha', ISE: 'Irlanda',
+  // Brasil
+  SAO: 'Brasil',
+  // Outros
+  TOR: 'Canadá', ASX: 'Austrália', HKG: 'Hong Kong', SHH: 'China', SHZ: 'China',
+  TYO: 'Japão', JPX: 'Japão', KSC: 'Coreia do Sul', NSE: 'Índia', BSE: 'Índia',
+}
+
+// Fallback secundário por moeda quando a bolsa não é reconhecida — ainda
+// melhor que assumir "USA" sempre.
+const CURRENCY_TO_COUNTRY: Record<string, string> = {
+  USD: 'USA', EUR: 'Europa', GBP: 'Reino Unido', CHF: 'Suíça', JPY: 'Japão',
+  CAD: 'Canadá', AUD: 'Austrália', BRL: 'Brasil',
+}
+
+function inferCountry(opts: {
+  ticker_brapi?: string | null; coingecko_id?: string | null; currency: string
+  country?: string | null; exchange?: string | null
+}): string {
   if (opts.country) return opts.country
   if (opts.ticker_brapi) return 'Brasil'
   if (opts.coingecko_id) return 'Global'
+  if (opts.exchange) {
+    const byExchange = EXCHANGE_TO_COUNTRY[opts.exchange.toUpperCase()]
+    if (byExchange) return byExchange
+  }
   if (opts.currency === 'BRL') return 'Brasil'
-  return 'USA'
+  return CURRENCY_TO_COUNTRY[opts.currency] ?? 'USA'
 }
 
 router.post('/', requireAuth, async (req, res: Response) => {
@@ -304,7 +340,7 @@ router.post('/', requireAuth, async (req, res: Response) => {
       ticker_yahoo:   ticker_yahoo   ?? null,
       ticker_brapi:   ticker_brapi   ?? null,
       coingecko_id:   coingecko_id   ?? null,
-      country:        inferCountry({ ticker_brapi, coingecko_id, currency, country }),
+      country:        inferCountry({ ticker_brapi, coingecko_id, currency, country, exchange }),
       exchange:       exchange       ?? null,
       catalog_id:     catalog_id     ?? null,
       active:         true,
