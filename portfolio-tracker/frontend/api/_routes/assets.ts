@@ -92,6 +92,109 @@ router.get('/lookup', requireAuth, async (req, res: Response) => {
   }
 })
 
+interface CatalogCandidate {
+  symbol: string
+  name: string
+  exchange: string | null
+  quote_type: string | null
+  currency: string | null
+  ticker_brapi?: string | null
+  ticker_yahoo?: string | null
+  coingecko_id?: string | null
+}
+
+// GET /api/assets/catalog/search?kind=b3|intl|cripto&q=...
+// Returns a list of candidates for the asset picker (user chooses the exact
+// match instead of the backend auto-guessing one) — fixes the ambiguity that
+// bit the European ETF lookup (e.g. "ESE" exact-matching an unrelated US
+// stock): here the user sees both and picks the right one.
+router.get('/catalog/search', requireAuth, async (req, res: Response) => {
+  const { kind, q } = req.query as { kind?: string; q?: string }
+  const query = q?.trim()
+  if (!kind || !query || query.length < 2) { res.json({ candidates: [] }); return }
+
+  try {
+    if (kind === 'b3') {
+      const token = process.env.BRAPI_TOKEN
+      const url = `https://brapi.dev/api/quote/list?search=${encodeURIComponent(query)}${token ? `&token=${token}` : ''}`
+      const r = await fetch(url, { signal: AbortSignal.timeout(5000) })
+      if (!r.ok) { res.json({ candidates: [] }); return }
+      const d = await r.json() as { stocks?: Array<{ stock: string; name: string; type?: string }> }
+      const candidates: CatalogCandidate[] = (d.stocks ?? []).slice(0, 10).map(s => ({
+        symbol: s.stock, name: s.name, exchange: 'B3', quote_type: s.type ?? null, currency: 'BRL', ticker_brapi: s.stock,
+      }))
+      res.json({ candidates })
+
+    } else if (kind === 'intl') {
+      const ticker = query.toUpperCase()
+      const candidateQueries = [query, ...EUROPEAN_EXCHANGE_SUFFIXES.map(suf => `${ticker}${suf}`)]
+      const results = await Promise.allSettled(candidateQueries.map(cq => searchYahoo(cq)))
+      const bySymbol = new Map<string, YahooQuote>()
+      for (const r of results) {
+        if (r.status !== 'fulfilled') continue
+        for (const quote of r.value) {
+          if (!quote.symbol) continue
+          if (quote.quoteType && !['ETF', 'EQUITY', 'MUTUALFUND', 'CRYPTOCURRENCY'].includes(quote.quoteType)) continue
+          if (!bySymbol.has(quote.symbol)) bySymbol.set(quote.symbol, quote)
+        }
+      }
+      const candidates: CatalogCandidate[] = Array.from(bySymbol.values())
+        .sort((a, b) => (a.quoteType === 'ETF' ? -1 : 0) - (b.quoteType === 'ETF' ? -1 : 0))
+        .slice(0, 10)
+        .map(quo => ({
+          symbol: quo.symbol!, name: quo.longname || quo.shortname || quo.symbol!,
+          exchange: quo.exchange ?? null, quote_type: quo.quoteType ?? null, currency: null,
+          ticker_yahoo: quo.symbol!,
+        }))
+      res.json({ candidates })
+
+    } else if (kind === 'cripto') {
+      const url = `https://api.coingecko.com/api/v3/search?query=${encodeURIComponent(query)}`
+      const r = await fetch(url, { signal: AbortSignal.timeout(5000) })
+      if (!r.ok) { res.json({ candidates: [] }); return }
+      const d = await r.json() as { coins?: Array<{ id: string; name: string; symbol: string }> }
+      const candidates: CatalogCandidate[] = (d.coins ?? []).slice(0, 10).map(c => ({
+        symbol: c.symbol.toUpperCase(), name: c.name, exchange: null, quote_type: 'CRYPTOCURRENCY',
+        currency: 'USD', coingecko_id: c.id,
+      }))
+      res.json({ candidates })
+
+    } else {
+      res.json({ candidates: [] })
+    }
+  } catch {
+    res.json({ candidates: [] })
+  }
+})
+
+// POST /api/assets/catalog/resolve — find-or-create the canonical catalog row
+// for a candidate the user picked. Returns the catalog row (existing or new).
+router.post('/catalog/resolve', requireAuth, async (req, res: Response) => {
+  const body = req.body as {
+    kind?: 'b3' | 'intl' | 'cripto'; symbol?: string; name?: string
+    exchange?: string | null; quote_type?: string | null; currency?: string | null
+    ticker_brapi?: string | null; ticker_yahoo?: string | null; coingecko_id?: string | null
+  }
+  if (!body.kind || !body.symbol || !body.name) {
+    res.status(400).json({ error: 'kind, symbol e name são obrigatórios' }); return
+  }
+
+  const { data: existing } = await supabaseAdmin
+    .from('asset_catalog').select('*').eq('kind', body.kind).eq('symbol', body.symbol).maybeSingle()
+  if (existing) { res.json(existing); return }
+
+  const { data: created, error } = await supabaseAdmin
+    .from('asset_catalog')
+    .insert({
+      kind: body.kind, symbol: body.symbol, name: body.name,
+      exchange: body.exchange ?? null, quote_type: body.quote_type ?? null, currency: body.currency ?? null,
+      ticker_brapi: body.ticker_brapi ?? null, ticker_yahoo: body.ticker_yahoo ?? null, coingecko_id: body.coingecko_id ?? null,
+    })
+    .select('*').single()
+  if (error) { res.status(500).json({ error: error.message }); return }
+  res.status(201).json(created)
+})
+
 function isColumnMissing(error: { code?: string; message?: string }): boolean {
   return error.code === '42703' || Boolean(error.message?.includes('does not exist'))
 }
@@ -188,10 +291,10 @@ function inferCountry(opts: { ticker_brapi?: string | null; coingecko_id?: strin
 // POST /api/assets — create a new asset
 router.post('/', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
-  const { code, name, asset_type, currency, asset_class_id, ticker_yahoo, ticker_brapi, coingecko_id, country, exchange } = req.body as {
+  const { code, name, asset_type, currency, asset_class_id, ticker_yahoo, ticker_brapi, coingecko_id, country, exchange, catalog_id } = req.body as {
     code: string; name: string; asset_type: string; currency: string
     asset_class_id?: number | null; ticker_yahoo?: string; ticker_brapi?: string
-    coingecko_id?: string; country?: string; exchange?: string
+    coingecko_id?: string; country?: string; exchange?: string; catalog_id?: number | null
   }
   if (!code || !name || !asset_type || !currency) {
     res.status(400).json({ error: 'code, name, asset_type e currency são obrigatórios' }); return
@@ -210,6 +313,7 @@ router.post('/', requireAuth, async (req, res: Response) => {
       coingecko_id:   coingecko_id   ?? null,
       country:        inferCountry({ ticker_brapi, coingecko_id, currency, country }),
       exchange:       exchange       ?? null,
+      catalog_id:     catalog_id     ?? null,
       active:         true,
     })
     .select('id, code, name, asset_type, currency')

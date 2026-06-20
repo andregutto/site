@@ -8,6 +8,7 @@ import { useI18n } from '../contexts/I18nContext'
 import { apiFetch } from '../lib/api'
 import { parseLocaleNum, inputCls } from '../lib/numparse'
 import InstitutionSelect from '../components/InstitutionSelect'
+import AssetCatalogSearch, { type CatalogCandidate } from '../components/AssetCatalogSearch'
 
 function fmtDate(iso: string) {
   return new Date(iso + 'T12:00:00').toLocaleDateString('pt-BR')
@@ -102,11 +103,9 @@ export default function ContributionsPage() {
   const [newFormType,     setNewFormType]     = useState<FormTypeValue>('ticker_b3')
   const [newCode,         setNewCode]         = useState('')
   const [newName,         setNewName]         = useState('')
-  const [newNameLoading,  setNewNameLoading]  = useState(false)
   const [newCurrency,     setNewCurrency]     = useState('BRL')
   const [newClassId,      setNewClassId]      = useState('')
-  const [newCoingeckoId,  setNewCoingeckoId]  = useState('')
-  const [newResolvedSymbol, setNewResolvedSymbol] = useState('')
+  const [newCatalogCandidate, setNewCatalogCandidate] = useState<CatalogCandidate | null>(null)
   // RF-specific new asset fields
   const [newFiType,        setNewFiType]        = useState('pos_cdi')
   const [newFiRate,        setNewFiRate]        = useState('')
@@ -163,7 +162,7 @@ export default function ContributionsPage() {
   useEffect(() => {
     const config = FORM_TYPES.find(t => t.value === newFormType)
     if (config) setNewCurrency(config.currency)
-    setNewName(''); setNewCode(''); setNewCoingeckoId(''); setNewResolvedSymbol(''); setNewNameLoading(false)
+    setNewName(''); setNewCode(''); setNewCatalogCandidate(null)
   }, [newFormType])
 
   // Auto-suggest name for fixed income based on type/rate/maturity
@@ -185,27 +184,9 @@ export default function ContributionsPage() {
     if (suggested) setNewName(suggested)
   }, [newFormType, newFiType, newFiRate, newFiMaturity, newFiInstitution])
 
-  // Auto-fetch ticker name (and, for intl tickers, the resolved Yahoo symbol —
-  // European ETFs only quote under their exchange-suffixed symbol, e.g.
-  // "ESE" → "ESE.PA", so the bare code the user types isn't what gets stored)
-  useEffect(() => {
-    const config = FORM_TYPES.find(t => t.value === newFormType)
-    const market = config?.market
-    const code   = newCode.trim()
-    if (!market || !code) { setNewName(''); setNewCoingeckoId(''); setNewResolvedSymbol(''); setNewNameLoading(false); return }
-    setNewName(''); setNewResolvedSymbol(''); setNewNameLoading(true)
-    const timer = setTimeout(async () => {
-      try {
-        const result = await apiFetch<{ name: string | null; symbol?: string | null; coingecko_id?: string | null }>(
-          `/assets/lookup?code=${encodeURIComponent(code)}&market=${encodeURIComponent(market)}`
-        )
-        setNewName(result.name ?? '')
-        if (result.coingecko_id) setNewCoingeckoId(result.coingecko_id)
-        if (result.symbol) setNewResolvedSymbol(result.symbol)
-      } catch { setNewName('') } finally { setNewNameLoading(false) }
-    }, 600)
-    return () => { clearTimeout(timer); setNewNameLoading(false) }
-  }, [newCode, newFormType])
+  // Ticker assets (b3/intl/cripto) no longer auto-fetch a name from a typed
+  // code — the AssetCatalogSearch picker below sets name/candidate together
+  // the moment the user selects a result, so there's nothing to debounce here.
 
   // Auto-compute valueBrl for ticker assets
   useEffect(() => {
@@ -234,7 +215,7 @@ export default function ContributionsPage() {
 
   function resetNewAsset() {
     setNewCode(''); setNewName(''); setNewFormType('ticker_b3')
-    setNewCurrency('BRL'); setNewClassId(''); setNewCoingeckoId(''); setNewNameLoading(false)
+    setNewCurrency('BRL'); setNewClassId(''); setNewCatalogCandidate(null)
     setNewFiType('pos_cdi'); setNewFiRate(''); setNewFiPrincipal('')
     setNewFiStartDate(''); setNewFiMaturity(''); setNewFiInstitution('')
     setNewImvPurchaseDate(''); setNewImvPurchaseValue(''); setNewImvPurchaseBrl('')
@@ -379,7 +360,7 @@ export default function ContributionsPage() {
     const isManualNew = newFormType === 'manual'
 
     if (!newCode.trim()) { setNewAssetErr('Informe o codigo do ativo.'); return }
-    if (isTickerType && newNameLoading) { setNewAssetErr('Aguarde a busca do nome.'); return }
+    if (isTickerType && !newCatalogCandidate) { setNewAssetErr('Busque e selecione o ativo na lista.'); return }
     if (!newName.trim()) {
       setNewAssetErr(isTickerType ? 'Nome nao encontrado. Verifique o codigo.' : 'Informe o nome.')
       return
@@ -399,14 +380,38 @@ export default function ContributionsPage() {
 
     setSavingNewAsset(true); setNewAssetErr(null)
     try {
-      const code         = newCode.trim().toUpperCase()
-      const ticker_brapi = newFormType === 'ticker_b3'   ? code : undefined
-      // Prefer the resolved exchange-suffixed symbol (e.g. "ESE.PA") over the
-      // bare code the user typed — without the suffix, European ETF quotes
-      // never resolve on Yahoo Finance.
-      const ticker_yahoo = newFormType === 'ticker_intl' ? (newResolvedSymbol || code)
-                         : newFormType === 'cripto'      ? `${code}-USD` : undefined
-      const coingecko_id = newFormType === 'cripto' ? (newCoingeckoId || undefined) : undefined
+      const code = newCode.trim().toUpperCase()
+      let ticker_brapi: string | undefined
+      let ticker_yahoo: string | undefined
+      let coingecko_id: string | undefined
+      let catalog_id: number | null = null
+
+      if (isTickerType && newCatalogCandidate) {
+        // Find-or-create the shared catalog row for the security the user
+        // picked, so the same ETF/stock/coin always points at one canonical
+        // entity across every user — that's what makes cross-user composition
+        // ("X% of users hold ETF Y") possible later, instead of each user's
+        // free-typed entry being its own disconnected copy.
+        const resolved = await apiFetch<{ id: number }>('/assets/catalog/resolve', {
+          method: 'POST',
+          body: JSON.stringify({
+            kind: config?.market,
+            symbol: newCatalogCandidate.symbol,
+            name: newCatalogCandidate.name,
+            exchange: newCatalogCandidate.exchange,
+            quote_type: newCatalogCandidate.quote_type,
+            currency: newCatalogCandidate.currency,
+            ticker_brapi: newCatalogCandidate.ticker_brapi,
+            ticker_yahoo: newCatalogCandidate.ticker_yahoo,
+            coingecko_id: newCatalogCandidate.coingecko_id,
+          }),
+        })
+        catalog_id   = resolved.id
+        ticker_brapi = newCatalogCandidate.ticker_brapi ?? undefined
+        ticker_yahoo = newCatalogCandidate.ticker_yahoo
+          ?? (newFormType === 'cripto' ? `${newCatalogCandidate.symbol}-USD` : undefined)
+        coingecko_id = newCatalogCandidate.coingecko_id ?? undefined
+      }
 
       const created = await apiFetch<{ id: number; code: string; name: string; asset_type: string; currency: string }>('/assets', {
         method: 'POST',
@@ -416,7 +421,7 @@ export default function ContributionsPage() {
           asset_type:     config?.dbType ?? 'ticker',
           currency:       newCurrency,
           asset_class_id: newClassId ? Number(newClassId) : null,
-          ticker_brapi, ticker_yahoo, coingecko_id,
+          ticker_brapi, ticker_yahoo, coingecko_id, catalog_id,
         }),
       })
 
@@ -693,17 +698,36 @@ export default function ContributionsPage() {
                     <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">
                       {newFormType === 'fixed_income' ? t.contributions.uniqueAlias : t.common.code}
                     </label>
-                    <input
-                      type="text"
-                      value={newCode}
-                      onChange={e => setNewCode(newFormType === 'fixed_income' ? e.target.value : e.target.value.toUpperCase())}
-                      placeholder={
-                        newFormType === 'cripto'        ? 'ex: BTC' :
-                        newFormType === 'ticker_intl'   ? 'ex: AAPL' :
-                        newFormType === 'fixed_income'  ? 'ex: TD-IPCA-2035 ou CDB-NUBANK-102' :
-                        newFormType === 'imovel'        ? 'ex: APTO-PARIS' : 'ex: PETR4'}
-                      className={SMALL_INPUT}
-                    />
+                    {isTickerForm ? (
+                      <AssetCatalogSearch
+                        kind={FORM_TYPES.find(f => f.value === newFormType)!.market!}
+                        value={newCode}
+                        onQueryChange={q => {
+                          setNewCode(q.toUpperCase())
+                          setNewName(''); setNewCatalogCandidate(null)
+                        }}
+                        onSelect={c => {
+                          setNewCode(c.symbol)
+                          setNewName(c.name)
+                          setNewCatalogCandidate(c)
+                          if (c.currency) setNewCurrency(c.currency)
+                        }}
+                        placeholder={
+                          newFormType === 'cripto'      ? 'ex: bitcoin' :
+                          newFormType === 'ticker_intl' ? 'ex: AAPL ou nome do ETF' : 'ex: PETR4'}
+                        className={SMALL_INPUT}
+                      />
+                    ) : (
+                      <input
+                        type="text"
+                        value={newCode}
+                        onChange={e => setNewCode(newFormType === 'fixed_income' ? e.target.value : e.target.value.toUpperCase())}
+                        placeholder={
+                          newFormType === 'fixed_income'  ? 'ex: TD-IPCA-2035 ou CDB-NUBANK-102' :
+                          newFormType === 'imovel'        ? 'ex: APTO-PARIS' : 'ex: PETR4'}
+                        className={SMALL_INPUT}
+                      />
+                    )}
                   </div>
 
                   {/* Currency (hidden for B3 and RF) */}
@@ -733,7 +757,7 @@ export default function ContributionsPage() {
                       {newFormType === 'fixed_income' ? t.contributions.titleDesc : t.contributions.fullName}
                       {isTickerForm && (
                         <span className="ml-1 text-[var(--arvo-fg-soft)]">
-                          {newNameLoading ? t.contributions.fetchingName : newName ? t.contributions.nameAutoFilled : newCode ? t.contributions.nameNotFound : t.contributions.nameFillHint}
+                          {newName ? t.contributions.nameAutoFilled : newCode ? t.contributions.nameNotFound : t.contributions.nameFillHint}
                         </span>
                       )}
                       {newFormType === 'fixed_income' && newName && (
@@ -746,13 +770,14 @@ export default function ContributionsPage() {
                       readOnly={isTickerForm}
                       onChange={isTickerForm ? undefined : e => setNewName(e.target.value)}
                       placeholder={isTickerForm
-                        ? newNameLoading ? t.common.loading : newCode ? t.contributions.nameNotFound.replace('· ', '') : t.contributions.nameAutoFilled.replace('· ', '')
+                        ? newCode ? t.contributions.nameNotFound.replace('· ', '') : t.contributions.nameAutoFilled.replace('· ', '')
                         : newFormType === 'fixed_income' ? 'Preenchido ao escolher tipo e taxa' : newFormType === 'imovel' ? 'ex: Apartamento Paris 11e' : 'ex: Fundo X'}
                       className={`w-full border border-[var(--arvo-border)] rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20 ${isTickerForm ? 'bg-[var(--arvo-surface)] text-[var(--arvo-fg-muted)] cursor-default' : 'bg-[var(--arvo-surface)]'}`}
                     />
-                    {newFormType === 'ticker_intl' && newResolvedSymbol && newResolvedSymbol !== newCode.trim().toUpperCase() && (
+                    {isTickerForm && newCatalogCandidate && (
                       <p className="text-xs text-[var(--arvo-fg-soft)] mt-1">
-                        Cotação via Yahoo Finance: <strong>{newResolvedSymbol}</strong> — confira se é o ativo certo
+                        Selecionado: <strong>{newCatalogCandidate.symbol}</strong>
+                        {newCatalogCandidate.exchange ? ` · ${newCatalogCandidate.exchange}` : ''}
                       </p>
                     )}
                   </div>
@@ -925,7 +950,7 @@ export default function ContributionsPage() {
                   <button
                     type="button"
                     onClick={handleCreateAsset}
-                    disabled={savingNewAsset || newNameLoading}
+                    disabled={savingNewAsset}
                     className="px-3 py-1.5 bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] text-xs font-semibold rounded-lg disabled:opacity-50"
                   >{savingNewAsset ? t.contributions.creating : newFormType === 'fixed_income' ? t.contributions.createAndConfigure : newFormType === 'imovel' ? t.contributions.registerProperty : t.contributions.createAsset}</button>
                   <button
