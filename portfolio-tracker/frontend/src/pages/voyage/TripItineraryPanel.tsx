@@ -227,13 +227,16 @@ function ItemRow({ item, tripId, canEdit, dragging, onDragStart, onDropOn, onPat
           {item.address && (
             <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)', marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.address}</p>
           )}
-          {/* Transport/time summary */}
+          {/* Transport/time summary — joined into one flowing line to avoid each
+              piece wrapping onto its own row on narrow screens */}
           {(item.transport_mode || item.arrive_time || item.depart_time) && (
-            <div style={{ display: 'flex', gap: 8, marginTop: 2, flexWrap: 'wrap' }}>
-              {item.transport_mode && <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 10, color: 'var(--arvo-fg-soft)' }}>{TRANSPORT_ICONS[item.transport_mode]} {TRANSPORT_LABELS[item.transport_mode] ?? item.transport_mode}</span>}
-              {item.arrive_time && <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 10, color: 'var(--arvo-fg-soft)' }}>chegada {item.arrive_time}</span>}
-              {item.depart_time && <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 10, color: 'var(--arvo-fg-soft)' }}>saída {item.depart_time}</span>}
-            </div>
+            <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 10, color: 'var(--arvo-fg-soft)', marginTop: 2 }}>
+              {[
+                item.transport_mode && `${TRANSPORT_ICONS[item.transport_mode]} ${TRANSPORT_LABELS[item.transport_mode] ?? item.transport_mode}`,
+                item.arrive_time && `chegada ${item.arrive_time}`,
+                item.depart_time && `saída ${item.depart_time}`,
+              ].filter(Boolean).join(' · ')}
+            </p>
           )}
           {item.rating != null && isPlace && <StarRating value={item.rating} />}
           {item.trip_note && !editingNote && (
@@ -258,12 +261,16 @@ function ItemRow({ item, tripId, canEdit, dragging, onDragStart, onDropOn, onPat
             </div>
           )}
         </div>
+      </div>
 
-        {/* Always-visible action icons */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+      {/* Action row — separate from the title row so the name has room to
+          breathe on narrow screens instead of competing with 4-5 icons */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '0 10px 8px 10px' }}>
+        <DayBadge day={item.day_number} canEdit={canEdit} onChangeDay={d => onPatch({ day_number: d })} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 2, flexShrink: 0 }}>
           {canEdit && (
             <button type="button" onClick={() => setShowExpenses(true)} title="Despesas"
-              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 3, borderRadius: 4, color: hasExpenses ? 'var(--arvo-fg)' : 'var(--arvo-fg-muted)', display: 'flex' }}>
+              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 5, borderRadius: 4, color: hasExpenses ? 'var(--arvo-fg)' : 'var(--arvo-fg-muted)', display: 'flex' }}>
               <svg width="13" height="13" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
                 <circle cx="6" cy="6" r="5" /><path strokeLinecap="round" d="M6 3.5v5M4.7 7.2c0 .7.6 1 1.3 1s1.3-.3 1.3-1-.6-.9-1.3-.9-1.3-.3-1.3-.9.6-1 1.3-1 1.3.3 1.3 1" />
               </svg>
@@ -271,20 +278,19 @@ function ItemRow({ item, tripId, canEdit, dragging, onDragStart, onDropOn, onPat
           )}
           {canEdit && isPlace && (
             <button type="button" onClick={() => onPatch({ is_highlight: !item.is_highlight })} title="Destaque"
-              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 3, borderRadius: 4, fontSize: 13, lineHeight: 1, color: RED, opacity: item.is_highlight ? 1 : 0.3 }}>★</button>
+              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 5, borderRadius: 4, fontSize: 13, lineHeight: 1, color: RED, opacity: item.is_highlight ? 1 : 0.3 }}>★</button>
           )}
           {item.google_maps_url && (
             <a href={item.google_maps_url} target="_blank" rel="noopener noreferrer" title="Abrir no Google Maps"
-              style={{ padding: 3, color: 'var(--arvo-fg-soft)', display: 'flex', alignItems: 'center' }}>
+              style={{ padding: 5, color: 'var(--arvo-fg-soft)', display: 'flex', alignItems: 'center' }}>
               <svg width="12" height="12" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.5">
                 <path strokeLinecap="round" d="M5 2H2a1 1 0 00-1 1v8a1 1 0 001 1h8a1 1 0 001-1V8M8 1h4m0 0v4m0-4L5.5 7.5" />
               </svg>
             </a>
           )}
-          <DayBadge day={item.day_number} canEdit={canEdit} onChangeDay={d => onPatch({ day_number: d })} />
           {canEdit && (
             <button type="button" onClick={() => setExpanded(v => !v)} title="Mais opções: horário, transporte, nota"
-              style={{ display: 'flex', alignItems: 'center', gap: 3, background: 'none', border: 'none', cursor: 'pointer', padding: '3px 4px', borderRadius: 4, color: 'var(--arvo-fg-muted)', fontFamily: 'var(--arvo-font-body)', fontSize: 10.5 }}>
+              style={{ display: 'flex', alignItems: 'center', gap: 3, background: 'none', border: 'none', cursor: 'pointer', padding: '5px 4px', borderRadius: 4, color: 'var(--arvo-fg-muted)', fontFamily: 'var(--arvo-font-body)', fontSize: 10.5 }}>
               Mais
               <svg width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ transform: expanded ? 'rotate(180deg)' : 'none', transition: 'transform 160ms' }}>
                 <path strokeLinecap="round" d="M2 3.5l3 3 3-3"/>
