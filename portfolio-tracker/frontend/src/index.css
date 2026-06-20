@@ -8,16 +8,20 @@
    above this app's z-50 modal convention (ShareModal, TripFormModal, etc.).
    Compress Leaflet's scale well below 50 while preserving its internal
    ordering (tiles < overlays < shadows < markers < tooltips < popups <
-   controls), so any modal opened over an embedded map always renders on top. */
-.leaflet-tile-pane    { z-index: 2 !important; }
-.leaflet-pane         { z-index: 4 !important; }
-.leaflet-overlay-pane { z-index: 4 !important; }
-.leaflet-shadow-pane  { z-index: 5 !important; }
-.leaflet-marker-pane  { z-index: 6 !important; }
-.leaflet-tooltip-pane { z-index: 7 !important; }
-.leaflet-popup-pane   { z-index: 8 !important; }
-.leaflet-control      { z-index: 9 !important; }
-.leaflet-top, .leaflet-bottom { z-index: 10 !important; }
+   controls), so any modal opened over an embedded map always renders on top.
+   Scoped under .leaflet-container (not just the bare pane class) so this has
+   higher specificity than leaflet.css's own same-selector rules — the build's
+   CSS minifier was otherwise merging the two same-selector blocks and
+   dropping the !important override on some of them. */
+.leaflet-container .leaflet-tile-pane    { z-index: 2 !important; }
+.leaflet-container .leaflet-pane         { z-index: 4 !important; }
+.leaflet-container .leaflet-overlay-pane { z-index: 4 !important; }
+.leaflet-container .leaflet-shadow-pane  { z-index: 5 !important; }
+.leaflet-container .leaflet-marker-pane  { z-index: 6 !important; }
+.leaflet-container .leaflet-tooltip-pane { z-index: 7 !important; }
+.leaflet-container .leaflet-popup-pane   { z-index: 8 !important; }
+.leaflet-container .leaflet-control      { z-index: 9 !important; }
+.leaflet-container .leaflet-top, .leaflet-container .leaflet-bottom { z-index: 10 !important; }
 
 @theme {
   /* Base palette */
