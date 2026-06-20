@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { apiFetch } from '../../lib/api'
 import { useI18n } from '../../contexts/I18nContext'
 import { LibraryPicker } from './TripPlacesPanel'
@@ -67,7 +67,7 @@ const TRANSPORT_LABELS: Record<string, string> = {
   boat: 'Barco', walk: 'A pé', metro: 'Metro', other: 'Outro',
 }
 
-function itemIcon(item: PlanItem): string {
+function itemIcon(item: { kind: Kind; category: string | null; transport_mode: string | null }): string {
   if (item.kind === 'note') return '📝'
   if (item.kind === 'transport') return item.transport_mode ? (TRANSPORT_ICONS[item.transport_mode] ?? '🔀') : '🔀'
   const cat = item.category
@@ -145,11 +145,40 @@ function StarRating({ value, onChange }: { value: number | null; onChange?: (v: 
   )
 }
 
-function GripHandle({ onDragStart }: { onDragStart: () => void }) {
+// Single free-text note field with an explicit Save button + a brief "✓ Salvo"
+// confirmation — avoids the old auto-save-on-every-keystroke pattern, which gave
+// no feedback and could race if requests resolved out of order.
+function NoteEditor({ value, onSave, placeholder }: { value: string | null; onSave: (v: string | null) => void; placeholder?: string }) {
+  const [text, setText] = useState(value ?? '')
+  const [saved, setSaved] = useState(false)
+
+  function handleSave() {
+    onSave(text.trim() || null)
+    setSaved(true)
+    setTimeout(() => setSaved(false), 1500)
+  }
+
+  return (
+    <div style={{ display: 'flex', gap: 6 }}>
+      <input
+        value={text}
+        onChange={e => { setText(e.target.value); setSaved(false) }}
+        placeholder={placeholder ?? 'Nota…'}
+        onKeyDown={e => { if (e.key === 'Enter') handleSave() }}
+        style={{ flex: 1, padding: '6px 8px', borderRadius: 4, border: '1px solid var(--arvo-border)', fontFamily: 'var(--arvo-font-body)', fontSize: 12, outline: 'none', background: 'var(--arvo-surface)', color: 'var(--arvo-fg)' }}
+      />
+      <button type="button" onClick={handleSave}
+        style={{ padding: '6px 12px', borderRadius: 4, background: saved ? GREEN : 'var(--arvo-fg)', color: saved ? '#fff' : 'var(--arvo-bg)', border: 'none', cursor: 'pointer', fontSize: 11, minWidth: 58, flexShrink: 0, transition: 'background 160ms' }}>
+        {saved ? '✓ Salvo' : 'Salvar'}
+      </button>
+    </div>
+  )
+}
+
+function GripHandle({ onPointerDown }: { onPointerDown: (e: React.PointerEvent) => void }) {
   return (
     <span
-      draggable
-      onDragStart={onDragStart}
+      onPointerDown={onPointerDown}
       title="Arrastar para reordenar"
       style={{ cursor: 'grab', flexShrink: 0, marginTop: 4, color: 'var(--arvo-fg-muted)', touchAction: 'none' }}
     >
@@ -162,13 +191,13 @@ function GripHandle({ onDragStart }: { onDragStart: () => void }) {
   )
 }
 
-function ItemRow({ item, tripId, canEdit, dragging, onDragStart, onDropOn, onPatch, onDelete, onReload }: {
+function ItemRow({ item, tripId, canEdit, dragging, dropTarget, onStartDrag, onPatch, onDelete, onReload }: {
   item: PlanItem
   tripId: number
   canEdit: boolean
   dragging: boolean
-  onDragStart: () => void
-  onDropOn: () => void
+  dropTarget: boolean
+  onStartDrag: (e: React.PointerEvent) => void
   onPatch: (fields: Record<string, unknown>) => void
   onDelete: () => void
   onReload: () => void
@@ -177,9 +206,10 @@ function ItemRow({ item, tripId, canEdit, dragging, onDragStart, onDropOn, onPat
   const tv = (t as any).voyage ?? {}
   const [expanded, setExpanded] = useState(false)
   const [editingNote, setEditingNote] = useState(false)
-  const [note, setNote] = useState(item.trip_note ?? '')
   const [showExpenses, setShowExpenses] = useState(false)
   const isPlace = item.kind === 'place'
+  const isTransport = item.kind === 'transport'
+  const isNote = item.kind === 'note'
   const hasExpenses = (item.expense_total ?? 0) > 0
 
   async function del() {
@@ -190,19 +220,18 @@ function ItemRow({ item, tripId, canEdit, dragging, onDragStart, onDropOn, onPat
 
   return (
     <div
-      onDragOver={e => { if (canEdit) e.preventDefault() }}
-      onDrop={() => canEdit && onDropOn()}
+      data-row-id={item.id}
       style={{
         borderRadius: 8,
         background: item.is_highlight ? 'rgba(214,59,47,0.04)' : 'var(--arvo-hover-bg)',
-        border: `1px solid ${item.is_highlight ? 'rgba(214,59,47,0.12)' : 'var(--arvo-border-soft)'}`,
+        border: dropTarget ? `1px dashed ${RED}` : `1px solid ${item.is_highlight ? 'rgba(214,59,47,0.12)' : 'var(--arvo-border-soft)'}`,
         overflow: 'hidden',
         opacity: dragging ? 0.4 : 1,
-        transition: 'opacity 120ms',
+        transition: 'opacity 120ms, border-color 120ms',
       }}
     >
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '8px 10px' }}>
-        {canEdit && <GripHandle onDragStart={onDragStart} />}
+        {canEdit && <GripHandle onPointerDown={onStartDrag} />}
         {/* Visited toggle (places only) */}
         {canEdit && isPlace && (
           <button
@@ -227,12 +256,12 @@ function ItemRow({ item, tripId, canEdit, dragging, onDragStart, onDropOn, onPat
           {item.address && (
             <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)', marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.address}</p>
           )}
-          {/* Transport/time summary — joined into one flowing line to avoid each
-              piece wrapping onto its own row on narrow screens */}
-          {(item.transport_mode || item.arrive_time || item.depart_time) && (
+          {/* Time summary — for transport items the icon+title already say the
+              mode, so only the times are shown here to avoid repeating it */}
+          {(item.arrive_time || item.depart_time || (!isTransport && item.transport_mode)) && (
             <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 10, color: 'var(--arvo-fg-soft)', marginTop: 2 }}>
               {[
-                item.transport_mode && `${TRANSPORT_ICONS[item.transport_mode]} ${TRANSPORT_LABELS[item.transport_mode] ?? item.transport_mode}`,
+                !isTransport && item.transport_mode && `${TRANSPORT_ICONS[item.transport_mode]} ${TRANSPORT_LABELS[item.transport_mode] ?? item.transport_mode}`,
                 item.arrive_time && `chegada ${item.arrive_time}`,
                 item.depart_time && `saída ${item.depart_time}`,
               ].filter(Boolean).join(' · ')}
@@ -252,12 +281,11 @@ function ItemRow({ item, tripId, canEdit, dragging, onDragStart, onDropOn, onPat
               <span style={{ color: 'var(--arvo-fg-muted)' }}>· {item.expense_count} {item.expense_count === 1 ? (tv.expenses?.expenseOne ?? 'despesa') : (tv.expenses?.expenseMany ?? 'despesas')}</span>
             </button>
           )}
-          {editingNote && (
-            <div style={{ marginTop: 6, display: 'flex', gap: 6 }}>
-              <input autoFocus value={note} onChange={e => setNote(e.target.value)} placeholder={tv.places?.noteePlaceholder ?? 'Nota…'}
-                style={{ flex: 1, padding: '5px 8px', borderRadius: 4, border: '1px solid var(--arvo-border)', fontFamily: 'var(--arvo-font-body)', fontSize: 12, outline: 'none', background: 'var(--arvo-surface)', color: 'var(--arvo-fg)' }} />
-              <button type="button" onClick={() => { onPatch({ trip_note: note.trim() || null }); setEditingNote(false) }}
-                style={{ padding: '5px 10px', borderRadius: 4, background: 'var(--arvo-fg)', color: 'var(--arvo-bg)', border: 'none', cursor: 'pointer', fontSize: 11 }}>{tv.actions?.save ?? 'Salvar'}</button>
+          {/* Place kind: note is optional, toggled via the "Nota" action below */}
+          {isPlace && editingNote && (
+            <div style={{ marginTop: 6 }}>
+              <NoteEditor value={item.trip_note} placeholder={tv.places?.noteePlaceholder ?? 'Nota…'}
+                onSave={v => { onPatch({ trip_note: v }); setEditingNote(false) }} />
             </div>
           )}
         </div>
@@ -288,8 +316,8 @@ function ItemRow({ item, tripId, canEdit, dragging, onDragStart, onDropOn, onPat
               </svg>
             </a>
           )}
-          {canEdit && (
-            <button type="button" onClick={() => setExpanded(v => !v)} title="Mais opções: horário, transporte, nota"
+          {canEdit && (isPlace || isTransport || isNote) && (
+            <button type="button" onClick={() => setExpanded(v => !v)} title="Mais opções"
               style={{ display: 'flex', alignItems: 'center', gap: 3, background: 'none', border: 'none', cursor: 'pointer', padding: '5px 4px', borderRadius: 4, color: 'var(--arvo-fg-muted)', fontFamily: 'var(--arvo-font-body)', fontSize: 10.5 }}>
               Mais
               <svg width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ transform: expanded ? 'rotate(180deg)' : 'none', transition: 'transform 160ms' }}>
@@ -300,32 +328,56 @@ function ItemRow({ item, tripId, canEdit, dragging, onDragStart, onDropOn, onPat
         </div>
       </div>
 
-      {/* Expanded panel: horário/transporte + nota + remover */}
+      {/* Expanded panel — content depends on kind */}
       {expanded && canEdit && (
         <div style={{ padding: '8px 10px 10px', borderTop: '1px solid var(--arvo-border-soft)', display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <div>
-            <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 8, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)', marginBottom: 5 }}>
-              {item.kind === 'transport' ? 'Meio de transporte' : 'Transporte para chegar aqui'}
-            </p>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-              {Object.entries(TRANSPORT_LABELS).map(([k, label]) => (
-                <button key={k} type="button" onClick={() => onPatch({ transport_mode: item.transport_mode === k ? null : k })}
-                  style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, padding: '3px 8px', borderRadius: 999, cursor: 'pointer', border: `1px solid ${item.transport_mode === k ? 'var(--arvo-fg)' : 'var(--arvo-border)'}`, background: item.transport_mode === k ? 'var(--arvo-hover-bg)' : 'transparent', color: item.transport_mode === k ? 'var(--arvo-fg)' : 'var(--arvo-fg-muted)' }}>
-                  {TRANSPORT_ICONS[k]} {label}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-            <TimeField label="Chegada" value={item.arrive_time} onChange={v => onPatch({ arrive_time: v })} />
-            <TimeField label="Saída" value={item.depart_time} onChange={v => onPatch({ depart_time: v })} />
-          </div>
-          <input type="text" placeholder="Nota de transporte (voo, nº de reserva…)" value={item.transport_note ?? ''} onChange={e => onPatch({ transport_note: e.target.value || null })}
-            style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg)', background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', borderRadius: 4, padding: '4px 8px', outline: 'none', width: '100%' }} />
+          {(isPlace || isTransport) && (
+            <>
+              <div>
+                <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 8, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)', marginBottom: 5 }}>
+                  {isTransport ? 'Meio de transporte' : 'Transporte para chegar aqui'}
+                </p>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                  {Object.entries(TRANSPORT_LABELS).map(([k, label]) => (
+                    <button key={k} type="button" onClick={() => onPatch({ transport_mode: item.transport_mode === k ? null : k })}
+                      style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, padding: '3px 8px', borderRadius: 999, cursor: 'pointer', border: `1px solid ${item.transport_mode === k ? 'var(--arvo-fg)' : 'var(--arvo-border)'}`, background: item.transport_mode === k ? 'var(--arvo-hover-bg)' : 'transparent', color: item.transport_mode === k ? 'var(--arvo-fg)' : 'var(--arvo-fg-muted)' }}>
+                      {TRANSPORT_ICONS[k]} {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                <TimeField label="Chegada" value={item.arrive_time} onChange={v => onPatch({ arrive_time: v })} />
+                <TimeField label="Saída" value={item.depart_time} onChange={v => onPatch({ depart_time: v })} />
+              </div>
+            </>
+          )}
+
+          {isPlace && (
+            <>
+              <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 8, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)', marginTop: 2 }}>
+                Nota de transporte
+              </p>
+              <NoteEditor value={item.transport_note} placeholder="Voo, nº de reserva…"
+                onSave={v => onPatch({ transport_note: v })} />
+            </>
+          )}
+
+          {(isTransport || isNote) && (
+            <>
+              <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 8, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)', marginTop: isTransport ? 2 : 0 }}>
+                Nota
+              </p>
+              <NoteEditor value={item.trip_note} placeholder="Detalhes (opcional)…"
+                onSave={v => onPatch({ trip_note: v })} />
+            </>
+          )}
 
           {/* Row actions */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 14, paddingTop: 4, flexWrap: 'wrap' }}>
-            <button type="button" onClick={() => { setNote(item.trip_note ?? ''); setEditingNote(true) }} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-soft)' }}>Nota</button>
+            {isPlace && (
+              <button type="button" onClick={() => setEditingNote(v => !v)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-soft)' }}>Nota</button>
+            )}
             <button type="button" onClick={del} style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-soft)' }}>Remover</button>
           </div>
         </div>
@@ -344,7 +396,14 @@ function FreeItemAdder({ tripId, onAdded }: { tripId: number; onAdded: () => voi
   const [kind, setKind] = useState<'note' | 'transport'>('note')
   const [title, setTitle] = useState('')
   const [day, setDay] = useState('')
+  const [transportMode, setTransportMode] = useState<string | null>(null)
+  const [arriveTime, setArriveTime] = useState('')
+  const [departTime, setDepartTime] = useState('')
   const [saving, setSaving] = useState(false)
+
+  function reset() {
+    setTitle(''); setDay(''); setTransportMode(null); setArriveTime(''); setDepartTime(''); setOpen(false)
+  }
 
   async function save() {
     if (!title.trim()) return
@@ -355,9 +414,14 @@ function FreeItemAdder({ tripId, onAdded }: { tripId: number; onAdded: () => voi
         body: JSON.stringify({
           name: title.trim(), kind,
           day_number: day ? Number(day) : null,
+          ...(kind === 'transport' && {
+            transport_mode: transportMode,
+            arrive_time: arriveTime || null,
+            depart_time: departTime || null,
+          }),
         }),
       })
-      setTitle(''); setDay(''); setOpen(false)
+      reset()
       onAdded()
     } finally { setSaving(false) }
   }
@@ -389,8 +453,27 @@ function FreeItemAdder({ tripId, onAdded }: { tripId: number; onAdded: () => voi
         <input value={day} onChange={e => setDay(e.target.value)} type="number" min="1" inputMode="numeric" placeholder="Dia"
           style={{ width: 56, padding: '7px 8px', borderRadius: 4, border: '1px solid var(--arvo-border)', background: 'var(--arvo-surface)', color: 'var(--arvo-fg)', fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, outline: 'none', textAlign: 'center' }} />
       </div>
+
+      {/* Transport-specific: pick the icon + times right away */}
+      {kind === 'transport' && (
+        <>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+            {Object.entries(TRANSPORT_LABELS).map(([k, label]) => (
+              <button key={k} type="button" onClick={() => setTransportMode(transportMode === k ? null : k)}
+                style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, padding: '3px 8px', borderRadius: 999, cursor: 'pointer', border: `1px solid ${transportMode === k ? 'var(--arvo-fg)' : 'var(--arvo-border)'}`, background: transportMode === k ? 'var(--arvo-hover-bg)' : 'transparent', color: transportMode === k ? 'var(--arvo-fg)' : 'var(--arvo-fg-muted)' }}>
+                {TRANSPORT_ICONS[k]} {label}
+              </button>
+            ))}
+          </div>
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+            <TimeField label="Chegada" value={arriveTime || null} onChange={v => setArriveTime(v ?? '')} />
+            <TimeField label="Saída" value={departTime || null} onChange={v => setDepartTime(v ?? '')} />
+          </div>
+        </>
+      )}
+
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6 }}>
-        <button type="button" onClick={() => { setOpen(false); setTitle('') }}
+        <button type="button" onClick={reset}
           style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, padding: '5px 12px', borderRadius: 5, background: 'none', border: '1px solid var(--arvo-border)', color: 'var(--arvo-fg-muted)', cursor: 'pointer' }}>Cancelar</button>
         <button type="button" onClick={save} disabled={saving || !title.trim()}
           style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, padding: '5px 14px', borderRadius: 5, background: 'var(--arvo-fg)', color: 'var(--arvo-bg)', border: 'none', cursor: saving || !title.trim() ? 'default' : 'pointer', opacity: saving || !title.trim() ? 0.5 : 1 }}>Adicionar</button>
@@ -404,7 +487,14 @@ export default function TripItineraryPanel({ tripId, tripCity, tripCountry, canE
   const tv = (t as any).voyage ?? {}
   const [items, setItems] = useState<PlanItem[]>([])
   const [loading, setLoading] = useState(true)
-  const [dragId, setDragId] = useState<number | null>(null)
+
+  // Pointer-events-based drag (works with mouse AND touch, unlike native HTML5
+  // drag-and-drop which iOS/Android browsers don't support via touch).
+  const itemsRef = useRef<PlanItem[]>([])
+  itemsRef.current = items
+  const dragIdRef = useRef<number | null>(null)
+  const overIdRef = useRef<number | null>(null)
+  const [dragVisual, setDragVisual] = useState<{ dragId: number | null; overId: number | null }>({ dragId: null, overId: null })
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -435,18 +525,58 @@ export default function TripItineraryPanel({ tripId, tripCity, tripCountry, canE
     )).catch(() => load())
   }
 
-  function handleDrop(targetId: number) {
-    const draggedId = dragId
-    setDragId(null)
-    if (draggedId == null || draggedId === targetId) return
-    const dragItem = items.find(i => i.id === draggedId)
-    const targetItem = items.find(i => i.id === targetId)
+  function doReorder(draggedId: number, targetId: number) {
+    const list = itemsRef.current
+    const dragItem = list.find(i => i.id === draggedId)
+    const targetItem = list.find(i => i.id === targetId)
     if (!dragItem || !targetItem || dragItem.day_number !== targetItem.day_number) return
-    const group = items.filter(i => i.day_number === dragItem.day_number).slice().sort((a, b) => a.sort_order - b.sort_order)
+    const group = list.filter(i => i.day_number === dragItem.day_number).slice().sort((a, b) => a.sort_order - b.sort_order)
     const without = group.filter(i => i.id !== draggedId)
     const targetIdx = without.findIndex(i => i.id === targetId)
     without.splice(targetIdx, 0, dragItem)
     persistOrder(without.map((it, idx) => ({ id: it.id, sort_order: idx })))
+  }
+
+  useEffect(() => {
+    function rowIdAt(x: number, y: number): number | null {
+      const el = document.elementFromPoint(x, y) as HTMLElement | null
+      const rowEl = el?.closest('[data-row-id]') as HTMLElement | null
+      return rowEl ? Number(rowEl.dataset.rowId) : null
+    }
+    function onMove(e: PointerEvent) {
+      if (dragIdRef.current == null) return
+      if (e.cancelable) e.preventDefault()
+      const id = rowIdAt(e.clientX, e.clientY)
+      if (id !== overIdRef.current) {
+        overIdRef.current = id
+        setDragVisual(v => ({ ...v, overId: id }))
+      }
+    }
+    function finishDrag() {
+      const draggedId = dragIdRef.current
+      const targetId = overIdRef.current
+      dragIdRef.current = null
+      overIdRef.current = null
+      setDragVisual({ dragId: null, overId: null })
+      if (draggedId != null && targetId != null && draggedId !== targetId) {
+        doReorder(draggedId, targetId)
+      }
+    }
+    window.addEventListener('pointermove', onMove, { passive: false })
+    window.addEventListener('pointerup', finishDrag)
+    window.addEventListener('pointercancel', finishDrag)
+    return () => {
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', finishDrag)
+      window.removeEventListener('pointercancel', finishDrag)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  function startDrag(id: number) {
+    dragIdRef.current = id
+    overIdRef.current = null
+    setDragVisual({ dragId: id, overId: null })
   }
 
   function sortDayByTime(day: number | null) {
@@ -464,9 +594,9 @@ export default function TripItineraryPanel({ tripId, tripCity, tripCountry, canE
     return sorted.map(it => (
       <ItemRow
         key={it.id} item={it} tripId={tripId} canEdit={canEdit}
-        dragging={dragId === it.id}
-        onDragStart={() => setDragId(it.id)}
-        onDropOn={() => handleDrop(it.id)}
+        dragging={dragVisual.dragId === it.id}
+        dropTarget={dragVisual.overId === it.id && dragVisual.dragId !== it.id}
+        onStartDrag={e => { e.preventDefault(); startDrag(it.id) }}
         onPatch={f => patchItem(it.id, f)}
         onDelete={() => setItems(ps => ps.filter(x => x.id !== it.id))}
         onReload={load}
