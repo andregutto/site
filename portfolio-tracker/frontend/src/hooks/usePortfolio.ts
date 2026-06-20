@@ -34,16 +34,31 @@ export function clearPerfCache() {
   } catch {}
 }
 
+// Module-level (not per-component) so every page sharing this hook within the
+// TTL window gets the exact same snapshot, instead of each independently
+// hitting /portfolio/value and recomputing live prices + fixed-income accrual
+// (which ticks up continuously, not just on a price-cache TTL) at slightly
+// different instants — that's what made Dashboard vs Assets totals diverge by
+// a few BRL/EUR even though both compute the same sum from the same data.
+let portfolioValueCache: { data: PortfolioValue; ts: number } | null = null
+const PORTFOLIO_VALUE_TTL_MS = 90_000
+
 export function usePortfolioValue() {
-  const [data, setData]     = useState<PortfolioValue | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [data, setData]     = useState<PortfolioValue | null>(portfolioValueCache?.data ?? null)
+  const [loading, setLoading] = useState(!portfolioValueCache)
   const [error, setError]   = useState<string | null>(null)
 
-  const refresh = useCallback(async () => {
+  const doFetch = useCallback(async (force: boolean) => {
+    if (!force && portfolioValueCache && Date.now() - portfolioValueCache.ts < PORTFOLIO_VALUE_TTL_MS) {
+      setData(portfolioValueCache.data)
+      setLoading(false)
+      return
+    }
     setLoading(true)
     setError(null)
     try {
       const result = await apiFetch<PortfolioValue>('/portfolio/value')
+      portfolioValueCache = { data: result, ts: Date.now() }
       setData(result)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao carregar portfólio')
@@ -52,7 +67,8 @@ export function usePortfolioValue() {
     }
   }, [])
 
-  useEffect(() => { refresh() }, [refresh])
+  const refresh = useCallback(() => doFetch(true), [doFetch])
+  useEffect(() => { doFetch(false) }, [doFetch])
   return { data, loading, error, refresh }
 }
 
