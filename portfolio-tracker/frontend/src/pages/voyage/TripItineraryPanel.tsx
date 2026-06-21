@@ -50,6 +50,8 @@ interface PlanItem {
   depart_time: string | null
   transport_mode: string | null
   transport_note: string | null
+  checkin_day: number | null
+  checkout_day: number | null
   expense_total?: number
   expense_count?: number
 }
@@ -138,6 +140,29 @@ function DayBadge({ day, canEdit, onChangeDay }: {
   )
 }
 
+function DayNumberField({ label, value, onChange }: { label: string; value: number | null; onChange: (v: number | null) => void }) {
+  const [val, setVal] = useState(value?.toString() ?? '')
+  useEffect(() => { setVal(value?.toString() ?? '') }, [value])
+
+  function commit() {
+    const n = parseInt(val)
+    onChange(isNaN(n) || n < 1 ? null : n)
+  }
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+      <span style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 8, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)', flexShrink: 0 }}>{label}</span>
+      <input
+        type="number" min="1" max="60" inputMode="numeric" value={val}
+        onChange={e => setVal(e.target.value)}
+        onBlur={commit}
+        onKeyDown={e => { if (e.key === 'Enter') commit() }}
+        style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg)', background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', borderRadius: 4, padding: '2px 4px', outline: 'none', width: 48, textAlign: 'center' }}
+      />
+    </div>
+  )
+}
+
 function TimeField({ label, value, onChange }: { label: string; value: string | null; onChange: (v: string | null) => void }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -213,10 +238,12 @@ function ItemRow({ item, tripId, canEdit, dragging, dropTarget, onStartDrag, onP
   const tv = (t as any).voyage ?? {}
   const [expanded, setExpanded] = useState(false)
   const [editingNote, setEditingNote] = useState(false)
+  const [editingName, setEditingName] = useState(false)
   const [showExpenses, setShowExpenses] = useState(false)
   const isPlace = item.kind === 'place'
   const isTransport = item.kind === 'transport'
   const isNote = item.kind === 'note'
+  const isStay = isPlace && item.checkin_day != null && item.checkout_day != null
   const hasExpenses = (item.expense_total ?? 0) > 0
 
   // Long-press anywhere on the row to start a reorder. A quick tap clears the
@@ -323,14 +350,26 @@ function ItemRow({ item, tripId, canEdit, dragging, dropTarget, onStartDrag, onP
         )}
         <span style={{ fontSize: 16, flexShrink: 0, marginTop: 1 }}>{itemIcon(item)}</span>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: item.visited ? 'var(--arvo-fg-soft)' : 'var(--arvo-fg)', fontWeight: 500, textDecoration: item.visited ? 'line-through' : 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {item.name}
-            </p>
-            {item.is_highlight && (
-              <span style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 8, letterSpacing: '0.12em', textTransform: 'uppercase', color: RED, flexShrink: 0 }}>destaque</span>
-            )}
-          </div>
+          {editingName ? (
+            <div style={{ marginBottom: 4 }} onPointerDown={e => e.stopPropagation()}>
+              <NoteEditor value={item.name} placeholder="Nome do lugar…"
+                onSave={v => { if (v?.trim()) onPatch({ name: v.trim() }); setEditingName(false) }} />
+            </div>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: item.visited ? 'var(--arvo-fg-soft)' : 'var(--arvo-fg)', fontWeight: 500, textDecoration: item.visited ? 'line-through' : 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {item.name}
+              </p>
+              {item.is_highlight && (
+                <span style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 8, letterSpacing: '0.12em', textTransform: 'uppercase', color: RED, flexShrink: 0 }}>destaque</span>
+              )}
+              {isStay && (
+                <span style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 8, letterSpacing: '0.12em', textTransform: 'uppercase', color: GOLD, flexShrink: 0 }}>
+                  🛏 {item.checkout_day! - item.checkin_day!} noite{item.checkout_day! - item.checkin_day! === 1 ? '' : 's'}
+                </span>
+              )}
+            </div>
+          )}
           {item.address && (
             <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)', marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.address}</p>
           )}
@@ -372,7 +411,18 @@ function ItemRow({ item, tripId, canEdit, dragging, dropTarget, onStartDrag, onP
       {/* Action row — separate from the title row so the name has room to
           breathe on narrow screens instead of competing with 4-5 icons */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '0 10px 8px 10px' }}>
-        <DayBadge day={item.day_number} canEdit={canEdit} onChangeDay={d => onPatch({ day_number: d })} />
+        {isStay ? (
+          <span style={{
+            fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.12em',
+            padding: '3px 9px', borderRadius: 999, flexShrink: 0,
+            background: dayColorWash(item.checkin_day!, 8), color: dayColor(item.checkin_day!),
+            border: `1px solid ${dayColorWash(item.checkin_day!, 22)}`,
+          }}>
+            Dia {item.checkin_day} – {item.checkout_day}
+          </span>
+        ) : (
+          <DayBadge day={item.day_number} canEdit={canEdit} onChangeDay={d => onPatch({ day_number: d })} />
+        )}
         <div style={{ display: 'flex', alignItems: 'center', gap: 2, flexShrink: 0 }}>
           {canEdit && (
             <button type="button" onClick={() => setShowExpenses(true)} title="Despesas"
@@ -425,8 +475,20 @@ function ItemRow({ item, tripId, canEdit, dragging, dropTarget, onStartDrag, onP
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                <TimeField label="Chegada" value={item.arrive_time} onChange={v => onPatch({ arrive_time: v })} />
-                <TimeField label="Saída" value={item.depart_time} onChange={v => onPatch({ depart_time: v })} />
+                <TimeField label={isStay ? 'Check-in' : 'Chegada'} value={item.arrive_time} onChange={v => onPatch({ arrive_time: v })} />
+                <TimeField label={isStay ? 'Check-out' : 'Saída'} value={item.depart_time} onChange={v => onPatch({ depart_time: v })} />
+              </div>
+            </>
+          )}
+
+          {isPlace && (
+            <>
+              <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 8, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)', marginTop: 2 }}>
+                Hospedagem (opcional — preencha se ficar mais de um dia aqui)
+              </p>
+              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                <DayNumberField label="Check-in dia" value={item.checkin_day} onChange={d => onPatch({ checkin_day: d, day_number: d ?? item.day_number })} />
+                <DayNumberField label="Check-out dia" value={item.checkout_day} onChange={d => onPatch({ checkout_day: d })} />
               </div>
             </>
           )}
@@ -453,6 +515,9 @@ function ItemRow({ item, tripId, canEdit, dragging, dropTarget, onStartDrag, onP
 
           {/* Row actions */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 14, paddingTop: 4, flexWrap: 'wrap' }}>
+            {isPlace && (
+              <button type="button" onClick={() => setEditingName(v => !v)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-soft)' }}>Nome</button>
+            )}
             {isPlace && (
               <button type="button" onClick={() => setEditingNote(v => !v)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-soft)' }}>Nota</button>
             )}
@@ -674,8 +739,24 @@ export default function TripItineraryPanel({ tripId, tripCity, tripCountry, canE
     persistOrder([...timed, ...untimed].map((p, idx) => ({ id: p.id, sort_order: idx })))
   }
 
-  const days = Array.from(new Set(items.map(p => p.day_number).filter((d): d is number => d != null))).sort((a, b) => a - b)
+  // Days spanned by every stay (checkin..checkout, inclusive) must get their
+  // own section even when no other item is scheduled there, otherwise a
+  // multi-day stay would just vanish on the days between check-in and
+  // check-out instead of showing a "still here" line.
+  const stayDays = items.flatMap(p =>
+    p.checkin_day != null && p.checkout_day != null
+      ? Array.from({ length: p.checkout_day - p.checkin_day + 1 }, (_, i) => p.checkin_day! + i)
+      : []
+  )
+  const days = Array.from(new Set([
+    ...items.map(p => p.day_number).filter((d): d is number => d != null),
+    ...stayDays,
+  ])).sort((a, b) => a - b)
   const undated = items.filter(p => p.day_number == null)
+
+  function staysOnDay(d: number) {
+    return items.filter(p => p.checkin_day != null && p.checkout_day != null && p.checkin_day <= d && d <= p.checkout_day)
+  }
 
   function renderRows(list: PlanItem[]) {
     const sorted = list.slice().sort((a, b) => a.sort_order - b.sort_order)
@@ -727,6 +808,13 @@ export default function TripItineraryPanel({ tripId, tripCity, tripCountry, canE
                   </button>
                 )}
               </div>
+              {staysOnDay(d).filter(s => s.checkin_day !== d).map(s => (
+                <p key={s.id} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)', marginBottom: 6, opacity: 0.75 }}>
+                  🛏 {s.checkout_day === d
+                    ? `Check-out: ${s.name}${s.depart_time ? ` · ${s.depart_time}` : ''}`
+                    : `ainda em ${s.name}`}
+                </p>
+              ))}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>{renderRows(items.filter(p => p.day_number === d))}</div>
             </div>
           ))}

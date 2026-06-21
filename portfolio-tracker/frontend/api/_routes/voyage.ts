@@ -647,6 +647,23 @@ async function geocodePlace(query: string): Promise<{ lat: number; lng: number; 
   }
 }
 
+// Geocodificação reversa (lat/lng → endereço) — usada como fallback quando um
+// link do Google Maps não traz nome de estabelecimento (ex: pin solto numa
+// casa/endereço residencial, sem ficha de negócio). Sem isso a importação
+// rejeitava esses links; agora usa o endereço como nome provisório editável.
+async function reverseGeocode(lat: number, lng: number): Promise<string | null> {
+  const apiKey = process.env.GOOGLE_MAPS_API_KEY || process.env.GOOGLE_PLACES_API_KEY
+  if (!apiKey) return null
+  try {
+    const r = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${apiKey}`)
+    if (!r.ok) return null
+    const data = await r.json() as any
+    return data.results?.[0]?.formatted_address ?? null
+  } catch {
+    return null
+  }
+}
+
 // ── POST /api/voyage/places/from-url  (importar lugar por link do Google Maps) ─
 router.post('/places/from-url', requireAuth, async (req, res: Response) => {
   const userId = uid(req)
@@ -665,20 +682,35 @@ router.post('/places/from-url', requireAuth, async (req, res: Response) => {
   let address: string | null = null
   let category: string | null = null
   let openingHours: string[] | null = null
+  let isAddressFallback = false
   if (!name) {
-    res.status(400).json({ error: 'Não foi possível extrair o nome do lugar. Use a URL completa do Google Maps (google.com/maps/place/…).' })
-    return
+    // No business name in the URL (common for a pin dropped on a house/
+    // address with no listing) — fall back to the reverse-geocoded address
+    // as a provisional name instead of rejecting the import outright. The
+    // user can rename it afterward (PATCH .../places/:placeId now accepts name).
+    if (lat != null && lng != null) name = await reverseGeocode(lat, lng)
+    if (!name) {
+      res.status(400).json({ error: 'Não foi possível extrair o nome ou endereço do lugar. Use a URL completa do Google Maps (google.com/maps/place/…).' })
+      return
+    }
+    isAddressFallback = true
+    address = name
   }
 
   // Enriquece via Places API: coordenadas (quando a URL não traz), nome/endereço
   // limpos, categoria (tipo do estabelecimento → pasta + emoji no mapa) e horário.
-  const geo = await geocodePlace(name)
-  if (geo) {
-    if (geo.lat != null && geo.lng != null) { lat = geo.lat; lng = geo.lng }
-    if (geo.name) name = geo.name
-    if (geo.address) address = geo.address
-    if (geo.category) category = geo.category
-    if (geo.opening_hours) openingHours = geo.opening_hours
+  // Pulado no fallback de endereço: já temos as coordenadas exatas do pin da
+  // URL, e uma busca textual pelo endereço poderia trazer um ponto ligeiramente
+  // diferente (ou nenhum resultado, por não ser um nome de estabelecimento).
+  if (!isAddressFallback) {
+    const geo = await geocodePlace(name)
+    if (geo) {
+      if (geo.lat != null && geo.lng != null) { lat = geo.lat; lng = geo.lng }
+      if (geo.name) name = geo.name
+      if (geo.address) address = geo.address
+      if (geo.category) category = geo.category
+      if (geo.opening_hours) openingHours = geo.opening_hours
+    }
   }
 
   const insertData: Record<string, unknown> = {
@@ -897,6 +929,7 @@ router.post('/trips/:id/places', requireAuth, async (req, res: Response) => {
     kind?: 'place' | 'note' | 'transport'
     transport_mode?: string; transport_note?: string
     arrive_time?: string; depart_time?: string; trip_note?: string
+    checkin_day?: number; checkout_day?: number
   }
 
   if (!body.name?.trim()) { res.status(400).json({ error: 'Nome obrigatório' }); return }
@@ -920,7 +953,8 @@ router.patch('/trips/:id/places/:placeId', requireAuth, async (req, res: Respons
   const tripId = Number(req.params.id)
   const placeId = Number(req.params.placeId)
   const { visited, trip_note, day_number, is_highlight, rating, sort_order,
-          arrive_time, depart_time, transport_mode, transport_note } = req.body
+          arrive_time, depart_time, transport_mode, transport_note,
+          name, checkin_day, checkout_day } = req.body
 
   const update: Record<string, unknown> = {}
   if (visited        !== undefined) update.visited        = visited
@@ -933,6 +967,9 @@ router.patch('/trips/:id/places/:placeId', requireAuth, async (req, res: Respons
   if (depart_time    !== undefined) update.depart_time    = depart_time
   if (transport_mode !== undefined) update.transport_mode = transport_mode
   if (transport_note !== undefined) update.transport_note = transport_note
+  if (name           !== undefined) update.name           = name
+  if (checkin_day    !== undefined) update.checkin_day    = checkin_day
+  if (checkout_day   !== undefined) update.checkout_day   = checkout_day
 
   const { data, error } = await supabaseAdmin
     .from('voyage_trip_places')

@@ -566,6 +566,7 @@ router.post('/trips/:id/places', requireAuth, async (req, res: Response) => {
     lat?: number; lng?: number; address?: string
     google_place_id?: string; google_maps_url?: string
     day_number?: number; is_highlight?: boolean
+    checkin_day?: number; checkout_day?: number
   }
 
   if (!body.name?.trim()) { res.status(400).json({ error: 'Nome obrigatório' }); return }
@@ -588,7 +589,8 @@ router.post('/trips/:id/places', requireAuth, async (req, res: Response) => {
 router.patch('/trips/:id/places/:placeId', requireAuth, async (req, res: Response) => {
   const tripId = Number(req.params.id)
   const placeId = Number(req.params.placeId)
-  const { visited, trip_note, day_number, is_highlight, rating, sort_order } = req.body
+  const { visited, trip_note, day_number, is_highlight, rating, sort_order,
+          name, checkin_day, checkout_day } = req.body
 
   const update: Record<string, unknown> = {}
   if (visited    !== undefined) update.visited     = visited
@@ -597,6 +599,9 @@ router.patch('/trips/:id/places/:placeId', requireAuth, async (req, res: Respons
   if (is_highlight !== undefined) update.is_highlight = is_highlight
   if (rating     !== undefined) update.rating      = rating
   if (sort_order !== undefined) update.sort_order  = sort_order
+  if (name         !== undefined) update.name         = name
+  if (checkin_day  !== undefined) update.checkin_day  = checkin_day
+  if (checkout_day !== undefined) update.checkout_day = checkout_day
 
   const { data, error } = await supabaseAdmin
     .from('voyage_trip_places')

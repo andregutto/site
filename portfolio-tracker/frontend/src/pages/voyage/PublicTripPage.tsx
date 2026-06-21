@@ -38,6 +38,8 @@ interface PublicPlace {
   transport_mode: string | null
   transport_note: string | null
   opening_hours: string[] | null
+  checkin_day: number | null
+  checkout_day: number | null
   expense_total?: number
 }
 
@@ -175,14 +177,19 @@ function PlaceCard({ p }: { p: PublicPlace }) {
           {p.visited && (
             <span style={{ fontSize: 10, color: '#1F8A5B' }}>✓ visitado</span>
           )}
+          {p.checkin_day != null && p.checkout_day != null && (
+            <span style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.12em', textTransform: 'uppercase', color: GOLD }}>
+              🛏 {p.checkout_day - p.checkin_day} noite{p.checkout_day - p.checkin_day === 1 ? '' : 's'}
+            </span>
+          )}
         </div>
         {p.address && (
           <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)', marginTop: 2 }}>{p.address}</p>
         )}
         {(p.arrive_time || p.depart_time) && (
           <div style={{ display: 'flex', gap: 8, marginTop: 3, flexWrap: 'wrap' }}>
-            {p.arrive_time && <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 10.5, color: 'var(--arvo-fg-soft)' }}>chegada {p.arrive_time}</span>}
-            {p.depart_time && <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 10.5, color: 'var(--arvo-fg-soft)' }}>saída {p.depart_time}</span>}
+            {p.arrive_time && <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 10.5, color: 'var(--arvo-fg-soft)' }}>{p.checkin_day != null ? 'check-in' : 'chegada'} {p.arrive_time}</span>}
+            {p.depart_time && <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 10.5, color: 'var(--arvo-fg-soft)' }}>{p.checkin_day != null ? 'check-out' : 'saída'} {p.depart_time}</span>}
           </div>
         )}
         {p.rating != null && p.rating > 0 && <div style={{ marginTop: 3 }}><StarRow value={p.rating} /></div>}
@@ -229,7 +236,7 @@ function ConnectorRow({ p }: { p: PublicPlace }) {
   )
 }
 
-function PlaceGroup({ day, places }: { day: number | null; places: PublicPlace[] }) {
+function PlaceGroup({ day, places, staysPassingThrough = [] }: { day: number | null; places: PublicPlace[]; staysPassingThrough?: PublicPlace[] }) {
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 10, marginTop: 4 }}>
@@ -238,6 +245,13 @@ function PlaceGroup({ day, places }: { day: number | null; places: PublicPlace[]
           {day !== null ? `Dia ${day}` : 'Sem dia'}
         </p>
       </div>
+      {staysPassingThrough.map(s => (
+        <p key={s.id} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)', marginBottom: 6, opacity: 0.75 }}>
+          🛏 {s.checkout_day === day
+            ? `Check-out: ${s.name}${s.depart_time ? ` · ${s.depart_time}` : ''}`
+            : `ainda em ${s.name}`}
+        </p>
+      ))}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {places.map(p => (
           <div key={p.id}>
@@ -300,11 +314,25 @@ export default function PublicTripPage() {
 
   const { trip, owner_name, places, cost } = data
   const dateStr = fmtDateRange(trip.start_date, trip.end_date)
-  const days = Array.from(new Set(places.map(p => p.day_number).filter(d => d != null) as number[])).sort((a, b) => a - b)
+  // Stays (checkin/checkout day) need their own section on every day they
+  // cover, even days with no other item scheduled — mirrors TripItineraryPanel.
+  const stayDays = places.flatMap(p =>
+    p.checkin_day != null && p.checkout_day != null
+      ? Array.from({ length: p.checkout_day - p.checkin_day + 1 }, (_, i) => p.checkin_day! + i)
+      : []
+  )
+  const days = Array.from(new Set([
+    ...places.map(p => p.day_number).filter((d): d is number => d != null),
+    ...stayDays,
+  ])).sort((a, b) => a - b)
   const undated = places.filter(p => p.day_number == null)
   const withCoords = places.filter(p => p.lat && p.lng)
   const placeCount = places.filter(p => (p.kind ?? 'place') === 'place').length
   const dayCount = days.length > 0 ? days.length : tripDurationDays(trip.start_date, trip.end_date)
+
+  function staysOnDay(d: number) {
+    return places.filter(p => p.checkin_day != null && p.checkout_day != null && p.checkin_day <= d && d <= p.checkout_day)
+  }
 
   return (
     <div className={themeClass} style={{ minHeight: '100vh', background: 'var(--arvo-bg)' }}>
@@ -481,6 +509,7 @@ export default function PublicTripPage() {
                 key={d}
                 day={d}
                 places={places.filter(p => p.day_number === d)}
+                staysPassingThrough={staysOnDay(d).filter(s => s.checkin_day !== d)}
               />
             ))}
             {undated.length > 0 && (
