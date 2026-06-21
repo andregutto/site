@@ -389,6 +389,22 @@ export default function PublicTripPage() {
           <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, letterSpacing: '0.22em', color: 'rgba(200,184,154,0.7)' }}>arvo voyage</span>
         </div>
 
+        {/* Language selector — overrides the theme CSS vars the shared
+            component reads, since the hero is always a dark photo overlay
+            regardless of light/dark theme (its own text is hardcoded white,
+            not theme-driven). */}
+        <div
+          style={{
+            position: 'absolute', top: 16, right: 24,
+            ['--arvo-fg' as any]: '#fff',
+            ['--arvo-fg-soft' as any]: 'rgba(255,255,255,0.55)',
+            ['--arvo-fg-faint' as any]: 'rgba(255,255,255,0.3)',
+            ['--arvo-gold' as any]: '#C8B89A',
+          }}
+        >
+          <LanguageSelector />
+        </div>
+
         <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '28px 28px 32px' }}>
           <div style={{ maxWidth: 800, margin: '0 auto' }}>
             <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'rgba(255,255,255,0.55)', marginBottom: 8 }}>
