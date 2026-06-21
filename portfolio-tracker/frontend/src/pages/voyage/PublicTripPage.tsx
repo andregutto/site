@@ -79,6 +79,7 @@ const CATEGORY_ICONS: Record<string, string> = {
   parques: '🌳', parque: '🌳',
   compras: '🛍️', mercados: '🛒',
   pontos: '📍', turísticos: '📍', favoritos: '⭐',
+  aluguel: '🚗', carro: '🚗', carros: '🚗',
 }
 
 const TRANSPORT_ICONS: Record<string, string> = {
@@ -179,7 +180,7 @@ function PlaceCard({ p }: { p: PublicPlace }) {
           )}
           {p.checkin_day != null && p.checkout_day != null && (
             <span style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.12em', textTransform: 'uppercase', color: GOLD }}>
-              🛏 {p.checkout_day - p.checkin_day} noite{p.checkout_day - p.checkin_day === 1 ? '' : 's'}
+              {itemIcon(p)} {p.checkout_day - p.checkin_day + 1} dias
             </span>
           )}
         </div>
@@ -247,9 +248,9 @@ function PlaceGroup({ day, places, staysPassingThrough = [] }: { day: number | n
       </div>
       {staysPassingThrough.map(s => (
         <p key={s.id} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)', marginBottom: 6, opacity: 0.75 }}>
-          🛏 {s.checkout_day === day
+          {itemIcon(s)} {s.checkout_day === day
             ? `Check-out: ${s.name}${s.depart_time ? ` · ${s.depart_time}` : ''}`
-            : `ainda em ${s.name}`}
+            : `em andamento: ${s.name}`}
         </p>
       ))}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>

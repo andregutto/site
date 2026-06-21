@@ -78,6 +78,7 @@ const CATEGORY_ICONS: Record<string, string> = {
   parques: '🌳', parque: '🌳',
   compras: '🛍️', mercados: '🛒',
   favoritos: '⭐', favorito: '⭐',
+  aluguel: '🚗', carro: '🚗', carros: '🚗',
 }
 
 const TRANSPORT_ICONS: Record<string, string> = {
@@ -370,7 +371,7 @@ function ItemRow({ item, tripId, canEdit, dragging, dropTarget, onStartDrag, onP
               )}
               {isStay && (
                 <span style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 8, letterSpacing: '0.12em', textTransform: 'uppercase', color: GOLD, flexShrink: 0 }}>
-                  🛏 {item.checkout_day! - item.checkin_day!} noite{item.checkout_day! - item.checkin_day! === 1 ? '' : 's'}
+                  {itemIcon(item)} {item.checkout_day! - item.checkin_day! + 1} dias
                 </span>
               )}
             </div>
@@ -473,7 +474,7 @@ function ItemRow({ item, tripId, canEdit, dragging, dropTarget, onStartDrag, onP
             <div style={{ padding: 8, borderRadius: 8, background: 'rgba(232,160,32,0.06)', border: '1px solid rgba(232,160,32,0.18)', display: 'flex', flexDirection: 'column', gap: 8 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 8, letterSpacing: '0.15em', textTransform: 'uppercase', color: GOLD }}>
-                  🛏 Hospedagem
+                  {itemIcon(item)} Estadia
                 </p>
                 <button type="button" onClick={() => { onPatch({ checkin_day: null, checkout_day: null }); setShowStayFields(false) }}
                   style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'var(--arvo-font-body)', fontSize: 10.5, color: 'var(--arvo-fg-soft)' }}>
@@ -494,7 +495,7 @@ function ItemRow({ item, tripId, canEdit, dragging, dropTarget, onStartDrag, onP
           {isPlace && !isStay && !showStayFields && (
             <button type="button" onClick={() => setShowStayFields(true)}
               style={{ display: 'flex', alignItems: 'center', gap: 6, alignSelf: 'flex-start', fontFamily: 'var(--arvo-font-body)', fontSize: 11, padding: '4px 10px', borderRadius: 6, background: 'none', border: '1px solid var(--arvo-border)', color: 'var(--arvo-fg-soft)', cursor: 'pointer' }}>
-              🛏 Marcar como hospedagem (fico aqui vários dias)
+              {itemIcon(item)} Marcar como estadia de vários dias (hospedagem, carro alugado…)
             </button>
           )}
 
@@ -837,9 +838,9 @@ export default function TripItineraryPanel({ tripId, tripCity, tripCountry, canE
               </div>
               {staysOnDay(d).filter(s => s.checkin_day !== d).map(s => (
                 <p key={s.id} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)', marginBottom: 6, opacity: 0.75 }}>
-                  🛏 {s.checkout_day === d
+                  {itemIcon(s)} {s.checkout_day === d
                     ? `Check-out: ${s.name}${s.depart_time ? ` · ${s.depart_time}` : ''}`
-                    : `ainda em ${s.name}`}
+                    : `em andamento: ${s.name}`}
                 </p>
               ))}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>{renderRows(items.filter(p => p.day_number === d))}</div>

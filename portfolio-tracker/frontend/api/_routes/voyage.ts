@@ -607,6 +607,7 @@ function googleTypeToCategory(primaryType: string | undefined, types: string[] =
   if (has('restaurant', 'meal_takeaway', 'meal_delivery', 'food', 'fine_dining_restaurant')) return 'Restaurantes'
   if (has('museum', 'art_gallery')) return 'Museus'
   if (has('lodging', 'hotel', 'resort_hotel', 'bed_and_breakfast', 'guest_house', 'hostel')) return 'Hotéis'
+  if (has('car_rental')) return 'Aluguel de carro'
   if (has('park', 'national_park', 'state_park', 'garden', 'dog_park')) return 'Parques'
   if (has('supermarket', 'grocery_store', 'grocery_or_supermarket', 'market')) return 'Mercados'
   if (has('store', 'shopping_mall', 'clothing_store', 'department_store', 'shoe_store', 'book_store', 'jewelry_store')) return 'Compras'

@@ -55,6 +55,7 @@ const CATEGORY_ICONS: Record<string, string> = {
   parques: '🌳', parque: '🌳',
   compras: '🛍️', mercados: '🛒',
   pontos: '📍', turísticos: '📍', favoritos: '⭐',
+  aluguel: '🚗', carro: '🚗', carros: '🚗',
 }
 
 function catIcon(cat: string | null): string {
