@@ -102,6 +102,15 @@ function itemIcon(item: { kind: Kind; category: string | null; transport_mode: s
   return '📌'
 }
 
+// A multi-day stay you're not physically present at every day (a rented car,
+// as opposed to a hotel room) doesn't need a daily "still going" reminder —
+// only the pickup (check-in day) and return (check-out day) matter.
+function isLogisticalStay(category: string | null): boolean {
+  if (!category) return false
+  const key = category.toLowerCase()
+  return key.includes('carro') || key.includes('aluguel')
+}
+
 function DayBadge({ day, canEdit, onChangeDay }: {
   day: number | null; canEdit: boolean; onChangeDay: (day: number | null) => void
 }) {
@@ -686,6 +695,10 @@ export default function TripItineraryPanel({ tripId, tripCity, tripCountry, canE
     setItems(ps => ps.map(p => p.id === id ? { ...p, ...fields } : p))
     try {
       await apiFetch(`/voyage/trips/${tripId}/places/${id}`, { method: 'PATCH', body: JSON.stringify(fields) })
+      // day_number drives the marker color on the map card, which fetches
+      // places independently — without this, changing a place's day kept
+      // showing the old color until a full page reload.
+      onPlacesChanged?.()
     } catch { load() }
   }
 
@@ -836,13 +849,15 @@ export default function TripItineraryPanel({ tripId, tripCity, tripCountry, canE
                   </button>
                 )}
               </div>
-              {staysOnDay(d).filter(s => s.checkin_day !== d).map(s => (
-                <p key={s.id} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)', marginBottom: 6, opacity: 0.75 }}>
-                  {itemIcon(s)} {s.checkout_day === d
-                    ? `Check-out: ${s.name}${s.depart_time ? ` · ${s.depart_time}` : ''}`
-                    : `em andamento: ${s.name}`}
-                </p>
-              ))}
+              {staysOnDay(d)
+                .filter(s => s.checkin_day !== d && (s.checkout_day === d || !isLogisticalStay(s.category)))
+                .map(s => (
+                  <p key={s.id} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)', marginBottom: 6, opacity: 0.75 }}>
+                    {itemIcon(s)} {s.checkout_day === d
+                      ? (tv.places?.stayCheckout ?? 'Check-out: {name}').replace('{name}', s.name) + (s.depart_time ? ` · ${s.depart_time}` : '')
+                      : (tv.places?.stayInProgress ?? 'em andamento: {name}').replace('{name}', s.name)}
+                  </p>
+                ))}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>{renderRows(items.filter(p => p.day_number === d))}</div>
             </div>
           ))}

@@ -2114,7 +2114,9 @@
       "urlIntro": "Paste the Google Maps link — the place will be saved to the library and added to the trip.",
       "addToTrip": "Add to trip",
       "importing": "Importing…",
-      "libraryEmpty": "Empty library — import from Google Takeout or paste a Maps link."
+      "libraryEmpty": "Empty library — import from Google Takeout or paste a Maps link.",
+      "stayInProgress": "in progress: {name}",
+      "stayCheckout": "Check-out: {name}"
     },
     "autocomplete": {
       "destinationPlaceholder": "e.g. Lisbon"

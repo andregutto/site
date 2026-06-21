@@ -2114,7 +2114,9 @@
       "urlIntro": "Cole o link do Google Maps — o lugar será salvo na biblioteca e adicionado à viagem.",
       "addToTrip": "Adicionar à viagem",
       "importing": "Importando…",
-      "libraryEmpty": "Biblioteca vazia — importe do Google Takeout ou cole um link do Maps."
+      "libraryEmpty": "Biblioteca vazia — importe do Google Takeout ou cole um link do Maps.",
+      "stayInProgress": "em andamento: {name}",
+      "stayCheckout": "Check-out: {name}"
     },
     "autocomplete": {
       "destinationPlaceholder": "ex: Lisboa"

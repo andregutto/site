@@ -102,6 +102,15 @@ function itemIcon(p: PublicPlace): string {
   return catIcon(p.category)
 }
 
+// A multi-day stay you're not physically present at every day (a rented car,
+// as opposed to a hotel room) doesn't need a daily "still going" reminder —
+// only the pickup (check-in day) and return (check-out day) matter.
+function isLogisticalStay(category: string | null): boolean {
+  if (!category) return false
+  const key = category.toLowerCase()
+  return key.includes('carro') || key.includes('aluguel')
+}
+
 function makeIcon(emoji: string, color: string, highlight: boolean) {
   const ring = highlight ? '#C8B89A' : 'rgba(255,255,255,0.9)'
   const ringWidth = highlight ? 3 : 2
@@ -510,7 +519,7 @@ export default function PublicTripPage() {
                 key={d}
                 day={d}
                 places={places.filter(p => p.day_number === d)}
-                staysPassingThrough={staysOnDay(d).filter(s => s.checkin_day !== d)}
+                staysPassingThrough={staysOnDay(d).filter(s => s.checkin_day !== d && (s.checkout_day === d || !isLogisticalStay(s.category)))}
               />
             ))}
             {undated.length > 0 && (
