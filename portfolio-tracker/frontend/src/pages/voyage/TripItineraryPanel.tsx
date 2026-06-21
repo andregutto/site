@@ -221,16 +221,33 @@ function ItemRow({ item, tripId, canEdit, dragging, dropTarget, onStartDrag, onP
 
   // Long-press anywhere on the row to start a reorder. A quick tap clears the
   // timer before it fires, so the row's own buttons keep working normally.
+  //
+  // touch-action is 'none' on the row (below) so the browser never claims the
+  // touch as a native scroll mid-gesture — that's the only reliable way to
+  // hand long-press movement to JS instead of the page (touch-action set
+  // dynamically once dragging starts is too late: browsers decide gesture
+  // ownership from the first touch contact, not on a later re-render). The
+  // cost is that native scroll no longer happens for a touch that starts on a
+  // row, so if the move turns out to be a scroll (not a long-press), we drive
+  // the scroll ourselves via scrollBy for the rest of that touch.
   const pressTimerRef = useRef<number | null>(null)
   const pressStartRef = useRef<{ x: number; y: number } | null>(null)
+  const manualScrollRef = useRef(false)
+  const lastYRef = useRef(0)
 
   function clearPress() {
     if (pressTimerRef.current != null) { clearTimeout(pressTimerRef.current); pressTimerRef.current = null }
     pressStartRef.current = null
   }
+  function endTouch() {
+    clearPress()
+    manualScrollRef.current = false
+  }
   function handlePointerDown(e: React.PointerEvent) {
     if (!canEdit) return
     pressStartRef.current = { x: e.clientX, y: e.clientY }
+    lastYRef.current = e.clientY
+    manualScrollRef.current = false
     pressTimerRef.current = window.setTimeout(() => {
       pressTimerRef.current = null
       navigator.vibrate?.(10)
@@ -238,10 +255,19 @@ function ItemRow({ item, tripId, canEdit, dragging, dropTarget, onStartDrag, onP
     }, LONG_PRESS_MS)
   }
   function handlePointerMove(e: React.PointerEvent) {
+    if (manualScrollRef.current) {
+      window.scrollBy(0, lastYRef.current - e.clientY)
+      lastYRef.current = e.clientY
+      return
+    }
     if (!pressStartRef.current || pressTimerRef.current == null) return
     const dx = e.clientX - pressStartRef.current.x
     const dy = e.clientY - pressStartRef.current.y
-    if (Math.hypot(dx, dy) > MOVE_CANCEL_PX) clearPress()
+    if (Math.hypot(dx, dy) > MOVE_CANCEL_PX) {
+      clearPress()
+      manualScrollRef.current = true
+      lastYRef.current = e.clientY
+    }
   }
 
   async function del() {
@@ -255,8 +281,8 @@ function ItemRow({ item, tripId, canEdit, dragging, dropTarget, onStartDrag, onP
       data-row-id={item.id}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
-      onPointerUp={clearPress}
-      onPointerCancel={clearPress}
+      onPointerUp={endTouch}
+      onPointerCancel={endTouch}
       style={{
         borderRadius: 8,
         background: item.is_highlight ? 'rgba(214,59,47,0.04)' : 'var(--arvo-hover-bg)',
@@ -275,13 +301,12 @@ function ItemRow({ item, tripId, canEdit, dragging, dropTarget, onStartDrag, onP
           WebkitUserSelect: 'none' as const,
           WebkitTouchCallout: 'none' as const,
         }),
-        // Only disable the browser's native pan/scroll gesture once a drag is
-        // actually committed (long-press fired). Doing this unconditionally
-        // would block normal page scrolling for any touch that starts on a
-        // row. Doing it reactively inside pointermove is too late — by then
-        // the browser may have already claimed the touch as a scroll, which
-        // is exactly why preventDefault()+overflow-lock alone weren't enough.
-        touchAction: dragging ? 'none' as const : 'auto' as const,
+        // Must be 'none' from the start of the touch, not toggled on once
+        // dragging begins — browsers decide gesture ownership (scroll vs JS)
+        // at the first touch contact, so setting this reactively was always
+        // too late. The manual scrollBy in handlePointerMove compensates for
+        // native scroll being unavailable on these rows.
+        touchAction: canEdit ? 'none' as const : 'auto' as const,
       }}
     >
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '8px 10px' }}>

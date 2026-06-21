@@ -513,6 +513,10 @@ export async function computeMonthlySeries(
 
   const contribsByMonth: Record<string, number> = {}
   const contribsByAssetMonth: Record<string, Record<number, number>> = {}
+  // Running total of contributions since portfolio inception, through each month —
+  // mirrors the asset-level `invested_brl` so the "Aportes" chart line reflects total
+  // invested-to-date even when the selected period doesn't start at inception.
+  let cumulContribSeed = 0
   for (const c of filteredContribs) {
     if (c.type === 'income') continue
     const ym = c.date.substring(0, 7)
@@ -522,17 +526,15 @@ export async function computeMonthlySeries(
         ? Number(c.price_orig) * Number(c.quantity) * (Number(c.fx_rate_brl) || (c.currency && c.currency !== 'BRL' ? 5.7 : 1))
         : 0)
     const delta = c.type === 'buy' ? vBrl : -vBrl
+    if (ym < fromStr) { cumulContribSeed += delta; continue }
     contribsByMonth[ym] = (contribsByMonth[ym] ?? 0) + delta
     if (!contribsByAssetMonth[ym]) contribsByAssetMonth[ym] = {}
     const aid = c.asset_id as number
     contribsByAssetMonth[ym][aid] = (contribsByAssetMonth[ym][aid] ?? 0) + delta
   }
 
-  // Running total of contributions since portfolio inception, through each month —
-  // mirrors the asset-level `invested_brl` so the "Aportes" chart line reflects total
-  // invested-to-date even when the selected period doesn't start at inception.
   const sortedContribMonths = Object.keys(contribsByMonth).sort()
-  let cumulContrib = 0
+  let cumulContrib = cumulContribSeed
   let contribIdx = 0
 
   const monthly = valuesArr.map((v, i) => {

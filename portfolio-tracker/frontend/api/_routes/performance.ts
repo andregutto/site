@@ -503,6 +503,10 @@ router.get('/monthly', requireAuth, async (req, res: Response) => {
 
   const contribsByMonth: Record<string, number> = {}
   const contribsByAssetMonth: Record<string, Record<number, number>> = {}
+  // Running total since inception, through months BEFORE the selected range —
+  // mirrors the asset-level invested_brl so the "Aportes" chart line reflects
+  // total invested-to-date even when the period doesn't start at inception.
+  let cumulContrib = 0
   for (const c of filteredContribs) {
     if (c.type === 'income') continue  // income is portfolio return, not a cash flow
     const ym = c.date.substring(0, 7)
@@ -513,6 +517,7 @@ router.get('/monthly', requireAuth, async (req, res: Response) => {
         ? Number(c.price_orig) * Number(c.quantity) * (Number(c.fx_rate_brl) || (c.currency && c.currency !== 'BRL' ? 5.7 : 1))
         : 0)
     const delta = c.type === 'buy' ? vBrl : -vBrl
+    if (ym < fromStr) { cumulContrib += delta; continue }
     contribsByMonth[ym] = (contribsByMonth[ym] ?? 0) + delta
     if (!contribsByAssetMonth[ym]) contribsByAssetMonth[ym] = {}
     const aid = c.asset_id as number
@@ -540,11 +545,14 @@ router.get('/monthly', requireAuth, async (req, res: Response) => {
       return { asset_id: assetId, code: info.code, name: info.name, value, prev_value, contributions, gain }
     }).sort((a, b) => b.value - a.value)
 
+    cumulContrib += contribsByMonth[v.month] ?? 0
+
     return {
-      month:         v.month,
-      total:         v.total,
-      prev_total:    i > 0 ? valuesArr[i - 1].total : prevMonthResult.total,
-      contributions: contribsByMonth[v.month] ?? 0,
+      month:                    v.month,
+      total:                    v.total,
+      prev_total:               i > 0 ? valuesArr[i - 1].total : prevMonthResult.total,
+      contributions:            contribsByMonth[v.month] ?? 0,
+      contributions_cumulative: Math.round(cumulContrib * 100) / 100,
       detail,
     }
   })
@@ -735,21 +743,31 @@ router.get('/daily', requireAuth, async (req, res: Response) => {
   const values = await Promise.all(dates.map(d => computePortfolioValueAtDay(prefetched, d, pricesByAsset)))
 
   const contribsByDay: Record<string, number> = {}
+  // Running total since inception through days BEFORE the window — mirrors the
+  // asset-level invested_brl so the "Aportes" chart line reflects total
+  // invested-to-date even when the selected period doesn't start at inception.
+  let cumulContrib = 0
   for (const c of prefetched.contributions) {
-    if (c.date < fromStr || c.date > toStr || c.type === 'income') continue
+    if (c.type === 'income' || c.date > toStr) continue
     const vBrl = Number(c.value_brl) > 0
       ? Number(c.value_brl)
       : (Number(c.price_orig) > 0 && Number(c.quantity) > 0
           ? Number(c.price_orig) * Number(c.quantity) * (Number(c.fx_rate_brl) || (c.currency && c.currency !== 'BRL' ? 5.7 : 1))
           : 0)
-    contribsByDay[c.date] = (contribsByDay[c.date] ?? 0) + (c.type === 'buy' ? vBrl : -vBrl)
+    const delta = c.type === 'buy' ? vBrl : -vBrl
+    if (c.date < fromStr) { cumulContrib += delta; continue }
+    contribsByDay[c.date] = (contribsByDay[c.date] ?? 0) + delta
   }
 
-  const daily = dates.map((date, i) => ({
-    date,
-    total:         values[i].total,
-    contributions: Math.round((contribsByDay[date] ?? 0) * 100) / 100,
-  }))
+  const daily = dates.map((date, i) => {
+    cumulContrib += contribsByDay[date] ?? 0
+    return {
+      date,
+      total:                    values[i].total,
+      contributions:            Math.round((contribsByDay[date] ?? 0) * 100) / 100,
+      contributions_cumulative: Math.round(cumulContrib * 100) / 100,
+    }
+  })
 
   res.json({ daily })
 })
