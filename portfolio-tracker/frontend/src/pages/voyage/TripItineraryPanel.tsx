@@ -275,6 +275,13 @@ function ItemRow({ item, tripId, canEdit, dragging, dropTarget, onStartDrag, onP
           WebkitUserSelect: 'none' as const,
           WebkitTouchCallout: 'none' as const,
         }),
+        // Only disable the browser's native pan/scroll gesture once a drag is
+        // actually committed (long-press fired). Doing this unconditionally
+        // would block normal page scrolling for any touch that starts on a
+        // row. Doing it reactively inside pointermove is too late — by then
+        // the browser may have already claimed the touch as a scroll, which
+        // is exactly why preventDefault()+overflow-lock alone weren't enough.
+        touchAction: dragging ? 'none' as const : 'auto' as const,
       }}
     >
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '8px 10px' }}>
