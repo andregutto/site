@@ -480,8 +480,11 @@ function FreeItemAdder({ tripId, onAdded }: { tripId: number; onAdded: () => voi
   }
 
   if (!open) return (
+    // alignSelf: the parent is a column flex container, which stretches
+    // children to its full width by default — without this the button spans
+    // the whole row and looks like a text input instead of a pill button.
     <button type="button" onClick={() => setOpen(true)}
-      style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, letterSpacing: '0.04em', padding: '6px 14px', borderRadius: 6, background: 'none', border: '1px solid var(--arvo-border)', color: 'var(--arvo-fg-soft)', cursor: 'pointer' }}
+      style={{ display: 'flex', alignItems: 'center', gap: 6, alignSelf: 'flex-start', fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, letterSpacing: '0.04em', padding: '6px 14px', borderRadius: 6, background: 'none', border: '1px solid var(--arvo-border)', color: 'var(--arvo-fg-soft)', cursor: 'pointer' }}
       onMouseEnter={e => (e.currentTarget.style.background = 'var(--arvo-hover-bg)')}
       onMouseLeave={e => (e.currentTarget.style.background = 'none')}>
       + Item livre

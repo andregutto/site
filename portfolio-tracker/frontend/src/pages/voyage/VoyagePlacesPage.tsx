@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { apiFetch } from '../../lib/api'
 import { useI18n } from '../../contexts/I18nContext'
+import { useTheme } from '../../contexts/ThemeContext'
 
 delete (L.Icon.Default.prototype as any)._getIconUrl
 L.Icon.Default.mergeOptions({
@@ -11,6 +12,29 @@ L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 })
+
+// Same pin style as VoyageMapPage/TripMapCard (category emoji in a teardrop
+// marker) so a place looks the same wherever its map shows up. There's no
+// per-day color here since library places aren't tied to a trip day.
+function makePlaceIcon(emoji: string) {
+  return L.divIcon({
+    html: `<div style="width:32px;height:32px;border-radius:50% 50% 50% 0;background:${RED};border:2px solid rgba(255,255,255,0.9);display:flex;align-items:center;justify-content:center;font-size:15px;box-shadow:0 2px 6px rgba(0,0,0,0.25);transform:rotate(-45deg)"><span style="transform:rotate(45deg)">${emoji}</span></div>`,
+    className: '',
+    iconSize: [32, 32],
+    iconAnchor: [16, 32],
+    popupAnchor: [0, -34],
+  })
+}
+
+function FitBounds({ places }: { places: Place[] }) {
+  const map = useMap()
+  useEffect(() => {
+    if (!places.length) return
+    if (places.length === 1) { map.setView([places[0].lat!, places[0].lng!], 14); return }
+    map.fitBounds(L.latLngBounds(places.map(p => [p.lat!, p.lng!])), { padding: [40, 40] })
+  }, [places, map])
+  return null
+}
 
 const RED = '#D63B2F'
 const GOLD = '#C8B89A'
@@ -312,6 +336,7 @@ function PlaceCard({ place, onDelete }: { place: Place; onDelete: (id: number) =
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export default function VoyagePlacesPage() {
+  const { resolvedTheme } = useTheme()
   const [places, setPlaces]   = useState<Place[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch]   = useState('')
@@ -368,7 +393,7 @@ export default function VoyagePlacesPage() {
 
       {/* Map view */}
       {showMap && (
-        <div style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid var(--arvo-border)', marginBottom: 24, height: 480 }}>
+        <div style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid var(--arvo-border)', boxShadow: 'var(--arvo-shadow-sm)', marginBottom: 24, height: 480 }}>
           <MapContainer
             center={[places.find(p => p.lat && p.lng)!.lat!, places.find(p => p.lat && p.lng)!.lng!]}
             zoom={5}
@@ -376,20 +401,27 @@ export default function VoyagePlacesPage() {
             scrollWheelZoom
           >
             <TileLayer
+              key={resolvedTheme}
               attribution='&copy; <a href="https://carto.com/attributions">CARTO</a>'
-              url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+              url={resolvedTheme === 'dark'
+                ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+                : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
+              }
             />
+            <FitBounds places={places.filter(p => p.lat && p.lng)} />
             {places.filter(p => p.lat && p.lng).map(p => (
-              <Marker key={p.id} position={[p.lat!, p.lng!]}>
+              <Marker key={p.id} position={[p.lat!, p.lng!]} icon={makePlaceIcon(categoryIcon(p.category))}>
                 <Popup>
-                  <div style={{ fontFamily: 'sans-serif', minWidth: 140 }}>
+                  <div style={{ fontFamily: 'var(--arvo-font-body)', minWidth: 160 }}>
                     <p style={{ fontWeight: 600, fontSize: 13, marginBottom: 2 }}>{p.name}</p>
+                    {p.category && <p style={{ fontSize: 10.5, color: '#999', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{p.category}</p>}
                     {p.city && <p style={{ fontSize: 11, color: '#888' }}>{p.city}</p>}
-                    {p.address && <p style={{ fontSize: 11, color: '#666' }}>{p.address}</p>}
+                    {p.address && <p style={{ fontSize: 11, color: '#666', marginBottom: 4 }}>{p.address}</p>}
+                    {p.notes && <p style={{ fontSize: 11, fontStyle: 'italic', color: '#888', marginBottom: 4 }}>{p.notes}</p>}
                     {p.google_maps_url && (
                       <a href={p.google_maps_url} target="_blank" rel="noopener noreferrer"
-                        style={{ fontSize: 11, color: 'var(--arvo-fg-soft)', textDecoration: 'none', display: 'block', marginTop: 4 }}>
-                        Abrir no Maps →
+                        style={{ fontSize: 11, color: '#555', textDecoration: 'none' }}>
+                        Abrir no Google Maps →
                       </a>
                     )}
                   </div>
