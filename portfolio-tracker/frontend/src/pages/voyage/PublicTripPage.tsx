@@ -4,8 +4,14 @@ import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { useTheme } from '../../contexts/ThemeContext'
+import { useI18n } from '../../contexts/I18nContext'
+import LanguageSelector from '../../components/LanguageSelector'
 import { dayColor, dayColorWash } from './_shared/dayColors'
 import OpeningHoursBlock from './_shared/OpeningHours'
+
+function intlLocaleFor(locale: string) {
+  return locale === 'pt' ? 'pt-BR' : locale === 'fr' ? 'fr-FR' : 'en-US'
+}
 
 delete (L.Icon.Default.prototype as any)._getIconUrl
 L.Icon.Default.mergeOptions({
@@ -135,16 +141,16 @@ function FitBounds({ places }: { places: PublicPlace[] }) {
   return null
 }
 
-function fmtDate(d: string) {
-  return new Date(d + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: '2-digit' })
+function fmtDate(d: string, intlLocale: string) {
+  return new Date(d + 'T00:00:00').toLocaleDateString(intlLocale, { day: '2-digit', month: 'short', year: '2-digit' })
 }
 
-function fmtDateRange(start: string | null, end: string | null) {
+function fmtDateRange(start: string | null, end: string | null, intlLocale: string, tv: any) {
   if (!start && !end) return null
-  if (start && end && start === end) return fmtDate(start)
-  if (start && end) return `${fmtDate(start)} – ${fmtDate(end)}`
-  if (start) return `a partir de ${fmtDate(start)}`
-  return `até ${fmtDate(end!)}`
+  if (start && end && start === end) return fmtDate(start, intlLocale)
+  if (start && end) return `${fmtDate(start, intlLocale)} – ${fmtDate(end, intlLocale)}`
+  if (start) return (tv.public?.dateFrom ?? 'from {date}').replace('{date}', fmtDate(start, intlLocale))
+  return (tv.public?.dateUntil ?? 'until {date}').replace('{date}', fmtDate(end!, intlLocale))
 }
 
 function tripDurationDays(start: string | null, end: string | null): number | null {
@@ -153,8 +159,8 @@ function tripDurationDays(start: string | null, end: string | null): number | nu
   return Math.max(1, Math.round(ms / 86400000) + 1)
 }
 
-function fmtCurrency(n: number, currency: string) {
-  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n)
+function fmtCurrency(n: number, currency: string, intlLocale: string) {
+  return new Intl.NumberFormat(intlLocale, { style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n)
 }
 
 function StarRow({ value }: { value: number }) {
@@ -168,6 +174,10 @@ function StarRow({ value }: { value: number }) {
 }
 
 function PlaceCard({ p }: { p: PublicPlace }) {
+  const { t, locale } = useI18n()
+  const tv = (t as any).voyage ?? {}
+  const intlLocale = intlLocaleFor(locale)
+  const nights = p.checkin_day != null && p.checkout_day != null ? p.checkout_day - p.checkin_day + 1 : 0
   return (
     <div style={{
       background: 'var(--arvo-surface)', borderRadius: 10,
@@ -182,14 +192,14 @@ function PlaceCard({ p }: { p: PublicPlace }) {
             {p.name}
           </p>
           {p.is_highlight && (
-            <span style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.12em', textTransform: 'uppercase', color: RED }}>destaque</span>
+            <span style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.12em', textTransform: 'uppercase', color: RED }}>{tv.public?.highlight ?? 'highlight'}</span>
           )}
           {p.visited && (
-            <span style={{ fontSize: 10, color: '#1F8A5B' }}>✓ visitado</span>
+            <span style={{ fontSize: 10, color: '#1F8A5B' }}>✓ {tv.public?.visited ?? 'visited'}</span>
           )}
           {p.checkin_day != null && p.checkout_day != null && (
             <span style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.12em', textTransform: 'uppercase', color: GOLD }}>
-              {itemIcon(p)} {p.checkout_day - p.checkin_day + 1} dias
+              {itemIcon(p)} {nights === 1 ? (tv.public?.stayDayOne ?? '1 day') : (tv.public?.stayDaysMany ?? '{n} days').replace('{n}', String(nights))}
             </span>
           )}
         </div>
@@ -198,8 +208,8 @@ function PlaceCard({ p }: { p: PublicPlace }) {
         )}
         {(p.arrive_time || p.depart_time) && (
           <div style={{ display: 'flex', gap: 8, marginTop: 3, flexWrap: 'wrap' }}>
-            {p.arrive_time && <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 10.5, color: 'var(--arvo-fg-soft)' }}>{p.checkin_day != null ? 'check-in' : 'chegada'} {p.arrive_time}</span>}
-            {p.depart_time && <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 10.5, color: 'var(--arvo-fg-soft)' }}>{p.checkin_day != null ? 'check-out' : 'saída'} {p.depart_time}</span>}
+            {p.arrive_time && <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 10.5, color: 'var(--arvo-fg-soft)' }}>{p.checkin_day != null ? (tv.public?.checkIn ?? 'check-in') : (tv.public?.arrival ?? 'arrival')} {p.arrive_time}</span>}
+            {p.depart_time && <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 10.5, color: 'var(--arvo-fg-soft)' }}>{p.checkin_day != null ? (tv.public?.checkOut ?? 'check-out') : (tv.public?.departure ?? 'departure')} {p.depart_time}</span>}
           </div>
         )}
         {p.rating != null && p.rating > 0 && <div style={{ marginTop: 3 }}><StarRow value={p.rating} /></div>}
@@ -208,7 +218,7 @@ function PlaceCard({ p }: { p: PublicPlace }) {
         )}
         {(p.expense_total ?? 0) > 0 && (
           <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)', marginTop: 4 }}>
-            Gasto aqui: <strong style={{ color: 'var(--arvo-fg)' }}>{fmtCurrency(p.expense_total!, 'EUR')}</strong>
+            {tv.public?.expenseHere ?? 'Spent here:'} <strong style={{ color: 'var(--arvo-fg)' }}>{fmtCurrency(p.expense_total!, 'EUR', intlLocale)}</strong>
           </p>
         )}
       </div>
@@ -247,19 +257,21 @@ function ConnectorRow({ p }: { p: PublicPlace }) {
 }
 
 function PlaceGroup({ day, places, staysPassingThrough = [] }: { day: number | null; places: PublicPlace[]; staysPassingThrough?: PublicPlace[] }) {
+  const { t } = useI18n()
+  const tv = (t as any).voyage ?? {}
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 10, marginTop: 4 }}>
         {day !== null && <span style={{ width: 7, height: 7, borderRadius: 999, background: dayColor(day), flexShrink: 0 }} />}
         <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.22em', textTransform: 'uppercase', color: day !== null ? dayColor(day) : 'var(--arvo-fg-muted)' }}>
-          {day !== null ? `Dia ${day}` : 'Sem dia'}
+          {day !== null ? (tv.public?.dayLabel ?? 'Day {n}').replace('{n}', String(day)) : (tv.public?.noDayLabel ?? 'No day')}
         </p>
       </div>
       {staysPassingThrough.map(s => (
         <p key={s.id} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)', marginBottom: 6, opacity: 0.75 }}>
           {itemIcon(s)} {s.checkout_day === day
-            ? `Check-out: ${s.name}${s.depart_time ? ` · ${s.depart_time}` : ''}`
-            : `em andamento: ${s.name}`}
+            ? (tv.places?.stayCheckout ?? 'Check-out: {name}').replace('{name}', s.name) + (s.depart_time ? ` · ${s.depart_time}` : '')
+            : (tv.places?.stayInProgress ?? 'em andamento: {name}').replace('{name}', s.name)}
         </p>
       ))}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -276,9 +288,13 @@ function PlaceGroup({ day, places, staysPassingThrough = [] }: { day: number | n
 export default function PublicTripPage() {
   const { token } = useParams<{ token: string }>()
   const { resolvedTheme } = useTheme()
+  const { t, locale } = useI18n()
+  const tv = (t as any).voyage ?? {}
+  const intlLocale = intlLocaleFor(locale)
   const [data, setData] = useState<PageData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [selectedDay, setSelectedDay] = useState<number | null>(null)
 
   useEffect(() => {
     if (!token) return
@@ -288,8 +304,9 @@ export default function PublicTripPage() {
         if (d.error) setError(d.error)
         else setData(d)
       })
-      .catch(() => setError('Erro ao carregar página'))
+      .catch(() => setError(tv.public?.loadError ?? 'Error loading page'))
       .finally(() => setLoading(false))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token])
 
   const themeClass = resolvedTheme === 'dark' ? 'dark' : ''
@@ -313,17 +330,17 @@ export default function PublicTripPage() {
           <path strokeLinecap="round" d="M4 42h40"/>
         </svg>
         <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 16, letterSpacing: '0.06em', color: 'var(--arvo-fg-muted)' }}>
-          {error || 'Página não encontrada'}
+          {error || tv.public?.notFound || 'Page not found'}
         </p>
         <a href="/" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: RED, textDecoration: 'none' }}>
-          Conhecer o Arvo →
+          {tv.public?.discoverArvo ?? 'Discover Arvo →'}
         </a>
       </div>
     )
   }
 
   const { trip, owner_name, places, cost } = data
-  const dateStr = fmtDateRange(trip.start_date, trip.end_date)
+  const dateStr = fmtDateRange(trip.start_date, trip.end_date, intlLocale, tv)
   // Stays (checkin/checkout day) need their own section on every day they
   // cover, even days with no other item scheduled — mirrors TripItineraryPanel.
   const stayDays = places.flatMap(p =>
@@ -343,6 +360,8 @@ export default function PublicTripPage() {
   function staysOnDay(d: number) {
     return places.filter(p => p.checkin_day != null && p.checkout_day != null && p.checkin_day <= d && d <= p.checkout_day)
   }
+
+  const visibleCoords = selectedDay == null ? withCoords : withCoords.filter(p => p.day_number === selectedDay)
 
   return (
     <div className={themeClass} style={{ minHeight: '100vh', background: 'var(--arvo-bg)' }}>
@@ -373,7 +392,10 @@ export default function PublicTripPage() {
         <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '28px 28px 32px' }}>
           <div style={{ maxWidth: 800, margin: '0 auto' }}>
             <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'rgba(255,255,255,0.55)', marginBottom: 8 }}>
-              Roteiro de <strong style={{ fontWeight: 500, color: 'rgba(255,255,255,0.75)' }}>{owner_name}</strong>
+              {(() => {
+                const [pre, post] = (tv.public?.ownerItinerary ?? "{name}'s itinerary").split('{name}')
+                return <>{pre}<strong style={{ fontWeight: 500, color: 'rgba(255,255,255,0.75)' }}>{owner_name}</strong>{post}</>
+              })()}
             </p>
             <h1 style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 38, letterSpacing: '0.05em', color: '#fff', lineHeight: 1.12, marginBottom: 10 }}>
               {trip.title}
@@ -404,14 +426,14 @@ export default function PublicTripPage() {
           display: 'flex', alignItems: 'stretch', justifyContent: 'space-around',
         }}>
           {dayCount != null && (
-            <Stat label="Dias" value={String(dayCount)} />
+            <Stat label={tv.public?.statDays ?? 'Days'} value={String(dayCount)} />
           )}
           <Divider />
-          <Stat label={placeCount === 1 ? 'Lugar' : 'Lugares'} value={String(placeCount)} />
+          <Stat label={placeCount === 1 ? (tv.public?.statPlace ?? 'Place') : (tv.public?.statPlaces ?? 'Places')} value={String(placeCount)} />
           {cost && (
             <>
               <Divider />
-              <Stat label="Custo total" value={fmtCurrency(cost.total, cost.currency)} accent />
+              <Stat label={tv.public?.statCost ?? 'Total cost'} value={fmtCurrency(cost.total, cost.currency, intlLocale)} accent />
             </>
           )}
         </div>
@@ -426,54 +448,83 @@ export default function PublicTripPage() {
         {withCoords.length > 0 && (
           <div style={{ marginBottom: 16 }}>
             <div style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid var(--arvo-border)', boxShadow: 'var(--arvo-shadow-sm)', height: 380 }}>
-              <MapContainer
-                center={[withCoords[0].lat!, withCoords[0].lng!]}
-                zoom={12}
-                style={{ height: '100%', width: '100%' }}
-                scrollWheelZoom={false}
-              >
-                <TileLayer
-                  key={resolvedTheme}
-                  attribution='&copy; <a href="https://carto.com/attributions">CARTO</a>'
-                  url={resolvedTheme === 'dark'
-                    ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-                    : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
-                  }
-                />
-                <FitBounds places={withCoords} />
-                {withCoords.map(p => (
-                  <Marker key={p.id} position={[p.lat!, p.lng!]} icon={makeIcon(itemIcon(p), dayColor(p.day_number), p.is_highlight)}>
-                    <Popup>
-                      <div style={{ fontFamily: 'var(--arvo-font-body)', minWidth: 150 }}>
-                        {p.day_number != null && (
-                          <span style={{ display: 'inline-block', fontSize: 10, padding: '1px 7px', borderRadius: 999, background: dayColorWash(p.day_number, 16), color: dayColor(p.day_number), marginBottom: 4 }}>Dia {p.day_number}</span>
-                        )}
-                        <p style={{ fontWeight: 600, fontSize: 13, marginBottom: 2 }}>{p.name}</p>
-                        {p.category && <p style={{ fontSize: 10.5, color: '#999', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{p.category}</p>}
-                        {p.address && <p style={{ fontSize: 11, color: '#666', marginBottom: 4 }}>{p.address}</p>}
-                        <OpeningHoursBlock hours={p.opening_hours} />
-                        {(p.expense_total ?? 0) > 0 && (
-                          <p style={{ fontSize: 11, color: '#444', marginBottom: 4 }}>Gasto aqui: <strong>{fmtCurrency(p.expense_total!, 'EUR')}</strong></p>
-                        )}
-                        {p.google_maps_url && (
-                          <a href={p.google_maps_url} target="_blank" rel="noopener noreferrer"
-                            style={{ fontSize: 11, color: '#555', textDecoration: 'none' }}>
-                            Abrir no Maps →
-                          </a>
-                        )}
-                      </div>
-                    </Popup>
-                  </Marker>
-                ))}
-              </MapContainer>
+              {visibleCoords.length === 0 ? (
+                <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--arvo-hover-bg)' }} />
+              ) : (
+                <MapContainer
+                  center={[visibleCoords[0].lat!, visibleCoords[0].lng!]}
+                  zoom={12}
+                  style={{ height: '100%', width: '100%' }}
+                  scrollWheelZoom={false}
+                >
+                  <TileLayer
+                    key={resolvedTheme}
+                    attribution='&copy; <a href="https://carto.com/attributions">CARTO</a>'
+                    url={resolvedTheme === 'dark'
+                      ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+                      : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
+                    }
+                  />
+                  <FitBounds places={visibleCoords} />
+                  {visibleCoords.map(p => (
+                    <Marker key={p.id} position={[p.lat!, p.lng!]} icon={makeIcon(itemIcon(p), dayColor(p.day_number), p.is_highlight)}>
+                      <Popup>
+                        <div style={{ fontFamily: 'var(--arvo-font-body)', minWidth: 150 }}>
+                          {p.day_number != null && (
+                            <span style={{ display: 'inline-block', fontSize: 10, padding: '1px 7px', borderRadius: 999, background: dayColorWash(p.day_number, 16), color: dayColor(p.day_number), marginBottom: 4 }}>
+                              {(tv.public?.dayLabel ?? 'Day {n}').replace('{n}', String(p.day_number))}
+                            </span>
+                          )}
+                          <p style={{ fontWeight: 600, fontSize: 13, marginBottom: 2 }}>{p.name}</p>
+                          {p.category && <p style={{ fontSize: 10.5, color: '#999', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{p.category}</p>}
+                          {p.address && <p style={{ fontSize: 11, color: '#666', marginBottom: 4 }}>{p.address}</p>}
+                          <OpeningHoursBlock hours={p.opening_hours} />
+                          {(p.expense_total ?? 0) > 0 && (
+                            <p style={{ fontSize: 11, color: '#444', marginBottom: 4 }}>{tv.public?.expenseHere ?? 'Spent here:'} <strong>{fmtCurrency(p.expense_total!, 'EUR', intlLocale)}</strong></p>
+                          )}
+                          {p.google_maps_url && (
+                            <a href={p.google_maps_url} target="_blank" rel="noopener noreferrer"
+                              style={{ fontSize: 11, color: '#555', textDecoration: 'none' }}>
+                              {tv.public?.openInMaps ?? 'Open in Maps →'}
+                            </a>
+                          )}
+                        </div>
+                      </Popup>
+                    </Marker>
+                  ))}
+                </MapContainer>
+              )}
             </div>
             {days.length > 1 && (
-              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 10, justifyContent: 'center' }}>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 10, justifyContent: 'center' }}>
+                <button
+                  type="button" onClick={() => setSelectedDay(null)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer',
+                    fontFamily: 'var(--arvo-font-display)', fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase',
+                    padding: '3px 9px', borderRadius: 999,
+                    border: `1px solid ${selectedDay === null ? 'var(--arvo-fg)' : 'var(--arvo-border)'}`,
+                    background: selectedDay === null ? 'var(--arvo-hover-bg)' : 'transparent',
+                    color: selectedDay === null ? 'var(--arvo-fg)' : 'var(--arvo-fg-soft)',
+                  }}
+                >
+                  {tv.public?.mapFilterAll ?? 'All'}
+                </button>
                 {days.map(d => (
-                  <span key={d} style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)' }}>
+                  <button
+                    key={d} type="button" onClick={() => setSelectedDay(d)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer',
+                      fontFamily: 'var(--arvo-font-body)', fontSize: 11,
+                      padding: '3px 9px', borderRadius: 999,
+                      border: `1px solid ${selectedDay === d ? dayColor(d) : 'var(--arvo-border)'}`,
+                      background: selectedDay === d ? dayColorWash(d, 10) : 'transparent',
+                      color: selectedDay === d ? dayColor(d) : 'var(--arvo-fg-soft)',
+                    }}
+                  >
                     <span style={{ width: 7, height: 7, borderRadius: 999, background: dayColor(d) }} />
-                    Dia {d}
-                  </span>
+                    {(tv.public?.dayLabel ?? 'Day {n}').replace('{n}', String(d))}
+                  </button>
                 ))}
               </div>
             )}
@@ -491,7 +542,7 @@ export default function PublicTripPage() {
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
                 <path strokeLinecap="round" d="M7 1v8m0 0l-3-3m3 3l3-3M2 11h10" />
               </svg>
-              Baixar KML para Google Maps
+              {tv.public?.downloadKml ?? 'Download KML for Google Maps'}
             </a>
             <a
               href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent((trip.destination ?? '') + ' ' + (trip.country ?? ''))}`}
@@ -502,7 +553,7 @@ export default function PublicTripPage() {
               <svg width="14" height="14" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.5">
                 <path strokeLinecap="round" d="M5 2H2a1 1 0 00-1 1v8a1 1 0 001 1h8a1 1 0 001-1V8M8 1h4m0 0v4m0-4L5.5 7.5" />
               </svg>
-              Abrir destino no Maps
+              {tv.public?.openDestination ?? 'Open destination in Maps'}
             </a>
           </div>
         )}
@@ -510,7 +561,7 @@ export default function PublicTripPage() {
         {/* Places by day */}
         {places.length === 0 ? (
           <p style={{ fontFamily: 'var(--arvo-font-serif)', fontStyle: 'italic', fontSize: 14, color: GOLD, textAlign: 'center', padding: '40px 0' }}>
-            Nenhum lugar compartilhado ainda
+            {tv.public?.noPlaces ?? 'No places shared yet'}
           </p>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 26 }}>
@@ -538,22 +589,25 @@ export default function PublicTripPage() {
           border: '1px solid var(--arvo-border)', textAlign: 'center',
         }}>
           <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)', marginBottom: 8 }}>
-            Inspirou sua próxima viagem?
+            {tv.public?.ctaTitle ?? 'Inspired your next trip?'}
           </p>
           <p style={{ fontFamily: 'var(--arvo-font-serif)', fontStyle: 'italic', fontSize: 15, color: 'var(--arvo-fg-soft)', marginBottom: 14, lineHeight: 1.6 }}>
-            Monte seu próprio roteiro, organize lugares no mapa e acompanhe o custo da viagem — tudo num só lugar.
+            {tv.public?.ctaBody ?? "Build your own itinerary, organize places on the map and track your trip's cost — all in one place."}
           </p>
           <a href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 20px', borderRadius: 8, background: 'var(--arvo-fg)', color: 'var(--arvo-bg)', textDecoration: 'none', fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, letterSpacing: '0.04em' }}>
-            Criar meu roteiro no Arvo Voyage →
+            {tv.public?.ctaButton ?? 'Create my itinerary on Arvo Voyage →'}
           </a>
         </div>
 
         {/* Footer */}
-        <div style={{ marginTop: 32, paddingTop: 24, borderTop: '1px solid var(--arvo-border-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
-          <img src="/brand/logo/arvo-symbol-gold.svg" width="14" height="15" alt="" style={{ opacity: 0.6 }} />
-          <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)' }}>
-            Criado com <a href="/" style={{ color: GOLD, textDecoration: 'none' }}>Arvo Voyage</a>
-          </p>
+        <div style={{ marginTop: 32, paddingTop: 24, borderTop: '1px solid var(--arvo-border-soft)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <img src="/brand/logo/arvo-symbol-gold.svg" width="14" height="15" alt="" style={{ opacity: 0.6 }} />
+            <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)' }}>
+              {tv.public?.createdWith ?? 'Created with'} <a href="/" style={{ color: GOLD, textDecoration: 'none' }}>Arvo Voyage</a>
+            </p>
+          </div>
+          <LanguageSelector />
         </div>
       </div>
     </div>

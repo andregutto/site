@@ -2120,6 +2120,38 @@
     },
     "autocomplete": {
       "destinationPlaceholder": "e.g. Lisbon"
+    },
+    "public": {
+      "loadError": "Error loading page",
+      "notFound": "Page not found",
+      "discoverArvo": "Discover Arvo →",
+      "highlight": "highlight",
+      "visited": "visited",
+      "stayDayOne": "1 day",
+      "stayDaysMany": "{n} days",
+      "checkIn": "check-in",
+      "checkOut": "check-out",
+      "arrival": "arrival",
+      "departure": "departure",
+      "expenseHere": "Spent here:",
+      "dayLabel": "Day {n}",
+      "noDayLabel": "No day",
+      "ownerItinerary": "{name}'s itinerary",
+      "dateFrom": "from {date}",
+      "dateUntil": "until {date}",
+      "statDays": "Days",
+      "statPlace": "Place",
+      "statPlaces": "Places",
+      "statCost": "Total cost",
+      "noPlaces": "No places shared yet",
+      "downloadKml": "Download KML for Google Maps",
+      "openDestination": "Open destination in Maps",
+      "openInMaps": "Open in Maps →",
+      "mapFilterAll": "All",
+      "ctaTitle": "Inspired your next trip?",
+      "ctaBody": "Build your own itinerary, organize places on the map and track your trip's cost — all in one place.",
+      "ctaButton": "Create my itinerary on Arvo Voyage →",
+      "createdWith": "Created with"
     }
   }
 }
