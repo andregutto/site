@@ -82,13 +82,18 @@ function FitBounds({ places }: { places: TripPlace[] }) {
 
 interface Props {
   tripId: number
+  // Bumped by the parent page whenever a place is added/removed elsewhere
+  // (itinerary panel) — this card fetches its own places independently, so
+  // without this it kept showing a stale list until the page was reloaded.
+  refreshKey?: number
 }
 
-export default function TripMapCard({ tripId }: Props) {
+export default function TripMapCard({ tripId, refreshKey }: Props) {
   const navigate = useNavigate()
   const { resolvedTheme } = useTheme()
   const [places, setPlaces] = useState<TripPlace[]>([])
   const [loading, setLoading] = useState(true)
+  const [selectedDay, setSelectedDay] = useState<number | null>(null)
 
   const load = useCallback(async () => {
     try {
@@ -97,12 +102,13 @@ export default function TripMapCard({ tripId }: Props) {
     } finally {
       setLoading(false)
     }
-  }, [tripId])
+  }, [tripId, refreshKey])
 
   useEffect(() => { load() }, [load])
 
   const withCoords = places.filter(p => p.lat && p.lng)
   const days = Array.from(new Set(withCoords.map(p => p.day_number).filter((d): d is number => d != null))).sort((a, b) => a - b)
+  const visibleCoords = selectedDay == null ? withCoords : withCoords.filter(p => p.day_number === selectedDay)
 
   if (loading) {
     return (
@@ -141,14 +147,37 @@ export default function TripMapCard({ tripId }: Props) {
         </div>
       </div>
 
-      {/* Legenda de dias */}
+      {/* Filtro por dia */}
       {days.length > 1 && (
-        <div style={{ display: 'flex', gap: 8, padding: '0 18px 12px', flexWrap: 'wrap', overflowX: 'auto' }}>
+        <div style={{ display: 'flex', gap: 6, padding: '0 18px 12px', flexWrap: 'wrap', overflowX: 'auto' }}>
+          <button
+            type="button" onClick={() => setSelectedDay(null)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0, cursor: 'pointer',
+              fontFamily: 'var(--arvo-font-display)', fontSize: 9.5, letterSpacing: '0.08em', textTransform: 'uppercase',
+              padding: '3px 9px', borderRadius: 999,
+              border: `1px solid ${selectedDay === null ? 'var(--arvo-fg)' : 'var(--arvo-border)'}`,
+              background: selectedDay === null ? 'var(--arvo-hover-bg)' : 'transparent',
+              color: selectedDay === null ? 'var(--arvo-fg)' : 'var(--arvo-fg-soft)',
+            }}
+          >
+            Todos
+          </button>
           {days.map(d => (
-            <span key={d} style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: 'var(--arvo-font-body)', fontSize: 10.5, color: 'var(--arvo-fg-soft)', flexShrink: 0 }}>
+            <button
+              key={d} type="button" onClick={() => setSelectedDay(d)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0, cursor: 'pointer',
+                fontFamily: 'var(--arvo-font-body)', fontSize: 10.5,
+                padding: '3px 9px', borderRadius: 999,
+                border: `1px solid ${selectedDay === d ? dayColor(d) : 'var(--arvo-border)'}`,
+                background: selectedDay === d ? dayColorWash(d, 10) : 'transparent',
+                color: selectedDay === d ? dayColor(d) : 'var(--arvo-fg-soft)',
+              }}
+            >
               <span style={{ width: 7, height: 7, borderRadius: 999, background: dayColor(d), flexShrink: 0 }} />
               Dia {d}
-            </span>
+            </button>
           ))}
         </div>
       )}
@@ -165,9 +194,15 @@ export default function TripMapCard({ tripId }: Props) {
               Adicione lugares à viagem para ver o mapa
             </p>
           </div>
+        ) : visibleCoords.length === 0 ? (
+          <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--arvo-hover-bg)' }}>
+            <p style={{ fontFamily: 'var(--arvo-font-serif)', fontStyle: 'italic', fontSize: 13, color: '#C8B89A' }}>
+              Nenhum lugar com coordenadas no Dia {selectedDay}
+            </p>
+          </div>
         ) : (
           <MapContainer
-            center={[withCoords[0].lat!, withCoords[0].lng!]}
+            center={[visibleCoords[0].lat!, visibleCoords[0].lng!]}
             zoom={13}
             style={{ height: '100%', width: '100%' }}
             scrollWheelZoom={false}
@@ -180,8 +215,8 @@ export default function TripMapCard({ tripId }: Props) {
                 : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
               }
             />
-            <FitBounds places={withCoords} />
-            {withCoords.map(p => (
+            <FitBounds places={visibleCoords} />
+            {visibleCoords.map(p => (
               <Marker key={p.id} position={[p.lat!, p.lng!]} icon={makeIcon(catIcon(p.category), dayColor(p.day_number), p.is_highlight)}>
                 <Popup>
                   <div style={{ fontFamily: 'var(--arvo-font-body)', minWidth: 150 }}>

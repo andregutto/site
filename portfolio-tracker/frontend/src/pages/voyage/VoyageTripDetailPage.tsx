@@ -49,6 +49,12 @@ export default function VoyageTripDetailPage() {
   const [loading, setLoading] = useState(true)
   const [showEdit, setShowEdit] = useState(false)
   const [showShare, setShowShare] = useState(false)
+  // TripMapCard and TripItineraryPanel each fetch this trip's places
+  // independently — bumping this tells the map to refetch whenever the
+  // itinerary panel's list changes (add/delete/reload), since otherwise the
+  // map kept showing a stale list until a full page reload.
+  const [placesVersion, setPlacesVersion] = useState(0)
+  const bumpPlacesVersion = useCallback(() => setPlacesVersion(v => v + 1), [])
 
   const load = useCallback(async () => {
     if (!id) return
@@ -192,7 +198,7 @@ export default function VoyageTripDetailPage() {
         {/* Main col: Mapa + Roteiro + Lugares + Members */}
         <div className="lg:col-span-2 flex flex-col gap-5">
           {/* Mapa inline */}
-          <TripMapCard tripId={Number(id)} />
+          <TripMapCard tripId={Number(id)} refreshKey={placesVersion} />
 
           {/* Roteiro unificado (lugares + itens livres por dia) */}
           <TripItineraryPanel
@@ -200,6 +206,7 @@ export default function VoyageTripDetailPage() {
             tripCity={trip.destination}
             tripCountry={trip.country}
             canEdit={trip.user_id === user?.id}
+            onPlacesChanged={bumpPlacesVersion}
           />
         </div>
 

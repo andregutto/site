@@ -617,7 +617,7 @@ function googleTypeToCategory(primaryType: string | undefined, types: string[] =
 
 // Geocodifica um texto (nome/endereço) via Places API (New) Text Search.
 // Retorna coordenadas + nome/endereço + categoria + horário de funcionamento.
-async function geocodePlace(query: string): Promise<{ lat: number; lng: number; name?: string; address?: string; category?: string | null; opening_hours?: string[] | null } | null> {
+async function geocodePlace(query: string): Promise<{ lat: number; lng: number; name?: string; address?: string; category?: string | null; opening_hours?: string[] | null; place_id?: string | null } | null> {
   const apiKey = process.env.GOOGLE_MAPS_API_KEY || process.env.GOOGLE_PLACES_API_KEY
   if (!apiKey || !query.trim()) return null
   try {
@@ -626,7 +626,7 @@ async function geocodePlace(query: string): Promise<{ lat: number; lng: number; 
       headers: {
         'Content-Type': 'application/json',
         'X-Goog-Api-Key': apiKey,
-        'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.location,places.primaryType,places.types,places.regularOpeningHours',
+        'X-Goog-FieldMask': 'places.id,places.displayName,places.formattedAddress,places.location,places.primaryType,places.types,places.regularOpeningHours',
       },
       body: JSON.stringify({ textQuery: query, maxResultCount: 1 }),
     })
@@ -641,6 +641,7 @@ async function geocodePlace(query: string): Promise<{ lat: number; lng: number; 
       address: p.formattedAddress,
       category: googleTypeToCategory(p.primaryType, p.types),
       opening_hours: p.regularOpeningHours?.weekdayDescriptions ?? null,
+      place_id: p.id ?? null,
     }
   } catch {
     return null
@@ -683,6 +684,7 @@ router.post('/places/from-url', requireAuth, async (req, res: Response) => {
   let category: string | null = null
   let openingHours: string[] | null = null
   let isAddressFallback = false
+  let placeId: string | null = null
   if (!name) {
     // No business name in the URL (common for a pin dropped on a house/
     // address with no listing) — fall back to the reverse-geocoded address
@@ -710,6 +712,7 @@ router.post('/places/from-url', requireAuth, async (req, res: Response) => {
       if (geo.address) address = geo.address
       if (geo.category) category = geo.category
       if (geo.opening_hours) openingHours = geo.opening_hours
+      if (geo.place_id) placeId = geo.place_id
     }
   }
 
@@ -719,28 +722,58 @@ router.post('/places/from-url', requireAuth, async (req, res: Response) => {
     ...(address && { address }),
     ...(category && { category }),
     ...(openingHours && { opening_hours: openingHours }),
+    ...(placeId && { google_place_id: placeId }),
   }
-  const { data: place, error } = await supabaseAdmin
-    .from('voyage_places')
-    .upsert(insertData, { onConflict: 'user_id,google_maps_url', ignoreDuplicates: false })
-    .select().single()
 
-  if (error || !place) { res.status(500).json({ error: error?.message ?? 'Erro ao salvar' }); return }
+  // Dedupe primarily by google_place_id (stable regardless of which URL
+  // format the user pasted — full link, shortened goo.gl, different zoom/
+  // viewport params all resolve to the same place via the Places API), since
+  // the google_maps_url-based upsert below only catches an exact repeat of
+  // the same URL string, not "same real place, different link format".
+  let place: { id: number; name: string; category: string | null; lat: number | null; lng: number | null; address: string | null; google_maps_url: string | null; opening_hours: string[] | null } | null = null
+  if (placeId) {
+    const { data: existing } = await supabaseAdmin
+      .from('voyage_places').select('*')
+      .eq('user_id', userId).eq('google_place_id', placeId).maybeSingle()
+    if (existing) {
+      const { data: updated } = await supabaseAdmin
+        .from('voyage_places').update(insertData).eq('id', existing.id).select().single()
+      place = updated ?? existing
+    }
+  }
+  if (!place) {
+    const { data: upserted, error } = await supabaseAdmin
+      .from('voyage_places')
+      .upsert(insertData, { onConflict: 'user_id,google_maps_url', ignoreDuplicates: false })
+      .select().single()
+    if (error || !upserted) { res.status(500).json({ error: error?.message ?? 'Erro ao salvar' }); return }
+    place = upserted
+  }
+  if (!place) { res.status(500).json({ error: 'Erro ao salvar' }); return }
 
   let trip_place = null
   if (trip_id) {
-    const { count } = await supabaseAdmin
-      .from('voyage_trip_places').select('sort_order', { count: 'exact', head: true }).eq('trip_id', trip_id)
-    const { data: tp } = await supabaseAdmin
-      .from('voyage_trip_places')
-      .insert({
-        trip_id, library_place_id: place.id, name: place.name,
-        category: place.category, lat: place.lat, lng: place.lng, address: place.address,
-        google_maps_url: place.google_maps_url, opening_hours: place.opening_hours,
-        sort_order: (count ?? 0) + 1, added_by: userId,
-      })
-      .select().single()
-    trip_place = tp
+    // Same google link/place pasted twice for the same trip — return the
+    // existing itinerary entry instead of inserting a duplicate.
+    const { data: existingTripPlace } = await supabaseAdmin
+      .from('voyage_trip_places').select('*')
+      .eq('trip_id', trip_id).eq('library_place_id', place.id).maybeSingle()
+    if (existingTripPlace) {
+      trip_place = existingTripPlace
+    } else {
+      const { count } = await supabaseAdmin
+        .from('voyage_trip_places').select('sort_order', { count: 'exact', head: true }).eq('trip_id', trip_id)
+      const { data: tp } = await supabaseAdmin
+        .from('voyage_trip_places')
+        .insert({
+          trip_id, library_place_id: place.id, name: place.name,
+          category: place.category, lat: place.lat, lng: place.lng, address: place.address,
+          google_maps_url: place.google_maps_url, opening_hours: place.opening_hours,
+          sort_order: (count ?? 0) + 1, added_by: userId,
+        })
+        .select().single()
+      trip_place = tp
+    }
   }
 
   res.json({ place, trip_place })
@@ -933,6 +966,16 @@ router.post('/trips/:id/places', requireAuth, async (req, res: Response) => {
   }
 
   if (!body.name?.trim()) { res.status(400).json({ error: 'Nome obrigatório' }); return }
+
+  // Adding the same library place to a trip it's already in (e.g. clicking
+  // "Adicionar" twice, or picking it again after losing track) would create
+  // a duplicate itinerary entry — return the existing one instead.
+  if (body.library_place_id != null) {
+    const { data: existingTripPlace } = await supabaseAdmin
+      .from('voyage_trip_places').select('*')
+      .eq('trip_id', tripId).eq('library_place_id', body.library_place_id).maybeSingle()
+    if (existingTripPlace) { res.status(200).json({ place: existingTripPlace }); return }
+  }
 
   const { data: existingPlaces } = await supabaseAdmin
     .from('voyage_trip_places').select('sort_order').eq('trip_id', tripId)

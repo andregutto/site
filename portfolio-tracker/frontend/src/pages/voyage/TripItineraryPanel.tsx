@@ -61,6 +61,10 @@ interface Props {
   tripCity: string | null
   tripCountry: string | null
   canEdit: boolean
+  // Notifies the parent page whenever this panel's place list changes (add,
+  // delete, reload) so sibling components fetching the same trip's places
+  // independently (the map card) can refresh instead of going stale.
+  onPlacesChanged?: () => void
 }
 
 const CATEGORY_ICONS: Record<string, string> = {
@@ -240,6 +244,7 @@ function ItemRow({ item, tripId, canEdit, dragging, dropTarget, onStartDrag, onP
   const [editingNote, setEditingNote] = useState(false)
   const [editingName, setEditingName] = useState(false)
   const [showExpenses, setShowExpenses] = useState(false)
+  const [showStayFields, setShowStayFields] = useState(false)
   const isPlace = item.kind === 'place'
   const isTransport = item.kind === 'transport'
   const isNote = item.kind === 'note'
@@ -456,13 +461,47 @@ function ItemRow({ item, tripId, canEdit, dragging, dropTarget, onStartDrag, onP
         </div>
       </div>
 
-      {/* Expanded panel — content depends on kind */}
+      {/* Expanded panel — content depends on kind. For a place, hospedagem
+          fields only appear once explicitly turned on (or already a stay) —
+          showing check-in/check-out for every museum/restaurant was the main
+          source of confusion. Transport-to-get-here stays grouped with its
+          own note and times; it's hidden once a place becomes a stay, since
+          check-in/check-out already cover the day/time question. */}
       {expanded && canEdit && (
         <div style={{ padding: '8px 10px 10px', borderTop: '1px solid var(--arvo-border-soft)', display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {(isPlace || isTransport) && (
+          {isPlace && (isStay || showStayFields) && (
+            <div style={{ padding: 8, borderRadius: 8, background: 'rgba(232,160,32,0.06)', border: '1px solid rgba(232,160,32,0.18)', display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 8, letterSpacing: '0.15em', textTransform: 'uppercase', color: GOLD }}>
+                  🛏 Hospedagem
+                </p>
+                <button type="button" onClick={() => { onPatch({ checkin_day: null, checkout_day: null }); setShowStayFields(false) }}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'var(--arvo-font-body)', fontSize: 10.5, color: 'var(--arvo-fg-soft)' }}>
+                  Remover
+                </button>
+              </div>
+              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                <DayNumberField label="Check-in dia" value={item.checkin_day} onChange={d => onPatch({ checkin_day: d, day_number: d ?? item.day_number })} />
+                <DayNumberField label="Check-out dia" value={item.checkout_day} onChange={d => onPatch({ checkout_day: d })} />
+              </div>
+              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                <TimeField label="Check-in hora" value={item.arrive_time} onChange={v => onPatch({ arrive_time: v })} />
+                <TimeField label="Check-out hora" value={item.depart_time} onChange={v => onPatch({ depart_time: v })} />
+              </div>
+            </div>
+          )}
+
+          {isPlace && !isStay && !showStayFields && (
+            <button type="button" onClick={() => setShowStayFields(true)}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, alignSelf: 'flex-start', fontFamily: 'var(--arvo-font-body)', fontSize: 11, padding: '4px 10px', borderRadius: 6, background: 'none', border: '1px solid var(--arvo-border)', color: 'var(--arvo-fg-soft)', cursor: 'pointer' }}>
+              🛏 Marcar como hospedagem (fico aqui vários dias)
+            </button>
+          )}
+
+          {(isTransport || (isPlace && !isStay)) && (
             <>
               <div>
-                <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 8, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)', marginBottom: 5 }}>
+                <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 8, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)', marginBottom: 5, marginTop: isPlace ? 2 : 0 }}>
                   {isTransport ? 'Meio de transporte' : 'Transporte para chegar aqui'}
                 </p>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
@@ -475,31 +514,18 @@ function ItemRow({ item, tripId, canEdit, dragging, dropTarget, onStartDrag, onP
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                <TimeField label={isStay ? 'Check-in' : 'Chegada'} value={item.arrive_time} onChange={v => onPatch({ arrive_time: v })} />
-                <TimeField label={isStay ? 'Check-out' : 'Saída'} value={item.depart_time} onChange={v => onPatch({ depart_time: v })} />
+                <TimeField label="Chegada" value={item.arrive_time} onChange={v => onPatch({ arrive_time: v })} />
+                <TimeField label="Saída" value={item.depart_time} onChange={v => onPatch({ depart_time: v })} />
               </div>
-            </>
-          )}
-
-          {isPlace && (
-            <>
-              <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 8, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)', marginTop: 2 }}>
-                Hospedagem (opcional — preencha se ficar mais de um dia aqui)
-              </p>
-              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                <DayNumberField label="Check-in dia" value={item.checkin_day} onChange={d => onPatch({ checkin_day: d, day_number: d ?? item.day_number })} />
-                <DayNumberField label="Check-out dia" value={item.checkout_day} onChange={d => onPatch({ checkout_day: d })} />
-              </div>
-            </>
-          )}
-
-          {isPlace && (
-            <>
-              <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 8, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)', marginTop: 2 }}>
-                Nota de transporte
-              </p>
-              <NoteEditor value={item.transport_note} placeholder="Voo, nº de reserva…"
-                onSave={v => onPatch({ transport_note: v })} />
+              {isPlace && (
+                <>
+                  <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 8, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)', marginTop: 2 }}>
+                    Nota de transporte
+                  </p>
+                  <NoteEditor value={item.transport_note} placeholder="Voo, nº de reserva…"
+                    onSave={v => onPatch({ transport_note: v })} />
+                </>
+              )}
             </>
           )}
 
@@ -628,7 +654,7 @@ function FreeItemAdder({ tripId, onAdded }: { tripId: number; onAdded: () => voi
   )
 }
 
-export default function TripItineraryPanel({ tripId, tripCity, tripCountry, canEdit }: Props) {
+export default function TripItineraryPanel({ tripId, tripCity, tripCountry, canEdit, onPlacesChanged }: Props) {
   const { t } = useI18n()
   const tv = (t as any).voyage ?? {}
   const [items, setItems] = useState<PlanItem[]>([])
@@ -647,10 +673,11 @@ export default function TripItineraryPanel({ tripId, tripCity, tripCountry, canE
     try {
       const data = await apiFetch<{ places: PlanItem[] }>(`/voyage/trips/${tripId}/places`)
       setItems(data.places)
+      onPlacesChanged?.()
     } finally {
       setLoading(false)
     }
-  }, [tripId])
+  }, [tripId, onPlacesChanged])
 
   useEffect(() => { load() }, [load])
 
