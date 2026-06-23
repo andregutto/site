@@ -371,10 +371,77 @@ async function getPortfolioValueAtMonth(
   return computePortfolioValueAtMonth(data, year, month)
 }
 
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
+
+// Modified Dietz return for an exact date range [fromDateStr, toDateStr] (both 'YYYY-MM-DD').
+// Reuses computePortfolioValueAtDay (already daily-granular, defined below) instead of the
+// calendar-month-anchored computePortfolioValueAtMonth — needed for sub-month periods like
+// "last 7 days" / "last 30 days" where a rolling window must start on an exact date, not a
+// month boundary.
+async function computePerformanceSummaryDaily(userId: string, fromDateStr: string, toDateStr: string) {
+  const today = localDate(new Date())
+  const clampedToDateStr = toDateStr > today ? today : toDateStr
+
+  const startDate = new Date(fromDateStr + 'T12:00:00')
+  startDate.setDate(startDate.getDate() - 1)
+  const startDateStr = localDate(startDate)
+
+  const priceFromDate = new Date(startDateStr + 'T12:00:00')
+  priceFromDate.setDate(priceFromDate.getDate() - 90)
+  const priceFrom = localDate(priceFromDate)
+
+  const prefetched = await fetchPrefetchedData(userId, priceFrom)
+  await prefetchFIRates(prefetched)
+
+  const pricesByAsset: Record<number, Array<{ ref_date: string; price: number; currency: string }>> = {}
+  for (const p of prefetched.prices) {
+    (pricesByAsset[p.asset_id] ??= []).push(p)
+  }
+
+  const totalContribs = prefetched.contributions
+    .filter(c => c.date > startDateStr && c.date <= clampedToDateStr)
+    .reduce((s: number, c) => {
+      if (c.type === 'income') return s
+      const v = estimateContribValue(c)
+      return s + (c.type === 'buy' ? v : -v)
+    }, 0)
+
+  const [start, end] = await Promise.all([
+    computePortfolioValueAtDay(prefetched, startDateStr, pricesByAsset),
+    computePortfolioValueAtDay(prefetched, clampedToDateStr, pricesByAsset),
+  ])
+
+  const v_ini = start.total
+  const v_fim = end.total
+
+  const return_abs = v_fim - v_ini - totalContribs
+  const dietz_base = v_ini + 0.5 * totalContribs
+  const return_pct = dietz_base > 0 ? (return_abs / dietz_base) * 100 : null
+
+  return {
+    from:          fromDateStr,
+    to:            toDateStr,
+    value_start:   v_ini,
+    value_end:     v_fim,
+    contributions: Math.round(totalContribs * 100) / 100,
+    return_abs:    Math.round(return_abs * 100) / 100,
+    return_pct:    return_pct !== null ? Math.round(return_pct * 100) / 100 : null,
+  }
+}
+
 router.get('/summary', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const fromStr = (req.query.from as string) || '2025-01'
   const toStr   = (req.query.to   as string) || localYM(new Date())
+
+  if (DATE_RE.test(fromStr) && DATE_RE.test(toStr)) {
+    if (fromStr > toStr) {
+      res.status(400).json({ error: '"from" deve ser anterior a "to"' }); return
+    }
+    const result = await computePerformanceSummaryDaily(userId, fromStr, toStr)
+    res.json(result)
+    return
+  }
 
   const [fromY, fromM] = fromStr.split('-').map(Number)
   const [toY,   toM  ] = toStr.split('-').map(Number)
@@ -976,15 +1043,27 @@ router.get('/asset-returns', requireAuth, async (req, res: Response) => {
   const fromStr = (req.query.from as string) || localYM(new Date())
   const toStr   = (req.query.to   as string) || localYM(new Date())
 
-  const [fromY, fromM] = fromStr.split('-').map(Number)
-  const [toY,   toM  ] = toStr.split('-').map(Number)
+  const isDaily = DATE_RE.test(fromStr) && DATE_RE.test(toStr)
+  const todayStr = localDate(new Date())
 
-  const currentYM       = localYM(new Date())
-  const isCurrentPeriod = toStr >= currentYM
+  let fromDate: string
+  let toDate: string
+  let isCurrentPeriod: boolean
 
-  const fromDate  = `${fromY}-${String(fromM).padStart(2, '0')}-01`
-  const toLastDay = new Date(toY, toM, 0).getDate()
-  const toDate    = `${toY}-${String(toM).padStart(2, '0')}-${String(toLastDay).padStart(2, '0')}`
+  if (isDaily) {
+    fromDate = fromStr
+    toDate   = toStr
+    isCurrentPeriod = toStr >= todayStr
+  } else {
+    const [fromY, fromM] = fromStr.split('-').map(Number)
+    const [toY,   toM  ] = toStr.split('-').map(Number)
+    const currentYM = localYM(new Date())
+    isCurrentPeriod = toStr >= currentYM
+    fromDate = `${fromY}-${String(fromM).padStart(2, '0')}-01`
+    const toLastDay = new Date(toY, toM, 0).getDate()
+    toDate = `${toY}-${String(toM).padStart(2, '0')}-${String(toLastDay).padStart(2, '0')}`
+  }
+  const interpFn = isDaily ? interpolateKnownPointsDaily : interpolateKnownPoints
 
   const { data: assets } = await supabaseAdmin
     .from('assets')
@@ -1033,12 +1112,14 @@ router.get('/asset-returns', requireAuth, async (req, res: Response) => {
     }
 
     if (isCurrentPeriod) {
+      const isStale = isDaily
+        ? (entry: { ref_date: string } | undefined) => !entry || entry.ref_date < todayStr
+        : (entry: { ref_date: string } | undefined) => !entry || entry.ref_date.substring(0, 7) < todayStr.substring(0, 7)
       await Promise.all(tickerAssets.map(async (a) => {
-        const entry = endMap[a.id]
-        if (!entry || entry.ref_date.substring(0, 7) < currentYM) {
+        if (isStale(endMap[a.id])) {
           try {
             const result = await getCurrentPrice(a as Asset)
-            endMap[a.id] = { price: result.price, ref_date: currentYM + '-01' }
+            endMap[a.id] = { price: result.price, ref_date: todayStr }
           } catch { /* keep stale or absent */ }
         }
       }))
@@ -1114,8 +1195,8 @@ router.get('/asset-returns', requireAuth, async (req, res: Response) => {
       pts.sort((x, y) => x.ref_date.localeCompare(y.ref_date))
 
       const endDateForInterp = isCurrentPeriod ? localDate(new Date()) : toDate
-      const startPt = interpolateKnownPoints(pts, fromDate)
-      const endPt   = interpolateKnownPoints(pts, endDateForInterp)
+      const startPt = interpFn(pts, fromDate)
+      const endPt   = interpFn(pts, endDateForInterp)
 
       if (!startPt || !endPt || startPt.value <= 0) { returns[a.id] = null; continue }
 
