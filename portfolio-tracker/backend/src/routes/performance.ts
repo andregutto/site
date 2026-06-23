@@ -431,10 +431,241 @@ export async function computePerformanceSummary(
   }
 }
 
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
+
+// Daily-granularity counterpart of computePortfolioValueAtMonth — values the portfolio
+// at an exact calendar date instead of a month-end, using the actual daily rows in
+// price_history (no monthly collapsing). Needed for sub-month periods like "last 7 days".
+async function computePortfolioValueAtDate(
+  data: PrefetchedData,
+  dateStr: string
+): Promise<{ total: number; detail: Array<{ asset_id: number; value: number }> }> {
+  const isCurrentOrFuture = dateStr >= localDate(new Date())
+
+  const { assets, contributions: allContribs, prices, manualValues: allMVRaw } = data
+  if (!assets.length) return { total: 0, detail: [] }
+
+  const contributions = allContribs.filter(c => c.date <= dateStr)
+
+  const holdingsMap: Record<number, number> = {}
+  const costMap: Record<number, { totalCost: number; totalQty: number }> = {}
+
+  for (const c of contributions) {
+    const qty = Number(c.quantity) || 0
+    holdingsMap[c.asset_id] = (holdingsMap[c.asset_id] ?? 0) + (c.type === 'buy' ? qty : -qty)
+
+    if (c.type === 'buy' && qty > 0) {
+      const vBrl = Number(c.value_brl) > 0
+        ? Number(c.value_brl)
+        : (Number(c.price_orig) > 0 ? Number(c.price_orig) * qty * (Number(c.fx_rate_brl) || (c.currency && c.currency !== 'BRL' ? 5.7 : 1)) : 0)
+      if (vBrl > 0) {
+        if (!costMap[c.asset_id]) costMap[c.asset_id] = { totalCost: 0, totalQty: 0 }
+        costMap[c.asset_id].totalCost += vBrl
+        costMap[c.asset_id].totalQty  += qty
+      }
+    }
+  }
+
+  const fiAssetIds = assets.filter(a => a.asset_type === 'fixed_income').map(a => a.id)
+  const fiTranchesMap: Record<number, FITranche[]> = {}
+  for (const c of contributions) {
+    if (!fiAssetIds.includes(c.asset_id)) continue
+    if (c.type !== 'buy') continue
+    const vBrl = Number(c.value_brl)
+    if (vBrl <= 0) continue
+    if (!fiTranchesMap[c.asset_id]) fiTranchesMap[c.asset_id] = []
+    fiTranchesMap[c.asset_id].push({ principal: vBrl, start_date: c.date as string })
+  }
+
+  // Index price_history by asset, sorted by date — daily granularity, no month collapsing
+  const priceByAsset: Record<number, Array<{ price: number; currency: string; ref_date: string }>> = {}
+  for (const p of prices) {
+    (priceByAsset[p.asset_id] ??= []).push({ price: p.price, currency: p.currency, ref_date: p.ref_date })
+  }
+  for (const id in priceByAsset) priceByAsset[id].sort((a, b) => a.ref_date.localeCompare(b.ref_date))
+
+  function getPrice(assetId: number, targetDate: string) {
+    const list = priceByAsset[assetId]
+    if (!list || !list.length) return undefined
+    let result: { price: number; currency: string; ref_date: string } | undefined
+    for (const p of list) {
+      if (p.ref_date > targetDate) break
+      result = p
+    }
+    return result
+  }
+
+  const allMVByAsset: Record<number, ValPoint[]> = {}
+  for (const mv of allMVRaw) {
+    if (!allMVByAsset[mv.asset_id]) allMVByAsset[mv.asset_id] = []
+    allMVByAsset[mv.asset_id].push({ ref_date: mv.ref_date, value: mv.value, currency: mv.currency })
+  }
+
+  const firstBuyMap: Record<number, ValPoint> = {}
+  for (const c of contributions) {
+    if (c.type !== 'buy') continue
+    const vBrl = Number(c.value_brl) > 0 ? Number(c.value_brl) : 0
+    if (vBrl <= 0) continue
+    if (!firstBuyMap[c.asset_id]) {
+      firstBuyMap[c.asset_id] = { ref_date: c.date as string, value: vBrl, currency: 'BRL' }
+    }
+  }
+
+  const detail: Array<{ asset_id: number; value: number }> = []
+  let total = 0
+
+  for (const a of assets) {
+    let value = 0
+    const holdings = holdingsMap[a.id] ?? 0
+    const cost = costMap[a.id]
+    const costBasisValue = cost && cost.totalQty > 0 ? holdings * (cost.totalCost / cost.totalQty) : 0
+
+    try {
+      if (a.asset_type === 'manual') {
+        if (!a.active) continue
+        const anchor = firstBuyMap[a.id]
+        const mvPts = allMVByAsset[a.id] ?? []
+        if (anchor || mvPts.length > 0) {
+          const pts = anchor ? [anchor, ...mvPts] : [...mvPts]
+          pts.sort((x, y) => x.ref_date.localeCompare(y.ref_date))
+          const interp = interpolateKnownPointsDaily(pts, dateStr)
+          if (interp) {
+            const fx = interp.currency === 'BRL' ? 1 : await getFxRate(interp.currency)
+            value = interp.value * fx
+          }
+        }
+      } else if (a.asset_type === 'fixed_income') {
+        if (!a.active) continue
+        const fiStartDate = (a.fi_start_date as string | null)
+        const fiEarliestStart = fiStartDate ?? fiTranchesMap[a.id]?.[0]?.start_date ?? null
+        if (fiEarliestStart && fiEarliestStart > dateStr) continue
+
+        const ph = getPrice(a.id, dateStr)
+        const phIsExact = ph?.ref_date === dateStr
+
+        if (ph && (phIsExact || !isCurrentOrFuture)) {
+          value = ph.price
+          const fx = ph.currency === 'BRL' ? 1 : await getFxRate(ph.currency)
+          value = value * fx
+        } else {
+          const fiPrincipal = Number(a.fi_principal) || 0
+          if (fiPrincipal > 0 && !!fiStartDate) {
+            try {
+              const result = await getCurrentPrice({ ...a, fi_principal: fiPrincipal, ticker_brapi: null, ticker_yahoo: null, coingecko_id: null } as Asset, undefined, new Date(dateStr))
+              value = result.price
+            } catch { value = ph?.price ?? fiPrincipal }
+          } else {
+            const activeTranches = (fiTranchesMap[a.id] ?? []).filter(t => t.start_date <= dateStr)
+            const principalSum = activeTranches.reduce((s, t) => s + t.principal, 0)
+            try {
+              const result = await getCurrentPrice({ ...a, ticker_brapi: null, ticker_yahoo: null, coingecko_id: null } as Asset, activeTranches.length > 0 ? activeTranches : undefined, new Date(dateStr))
+              value = result.price
+            } catch { value = ph?.price ?? principalSum }
+          }
+        }
+      } else {
+        // Ticker / Variable income assets logic
+        if (!a.active) continue
+        if (holdings > 0) {
+          const ph = getPrice(a.id, dateStr)
+          if (isCurrentOrFuture) {
+            if (ph && ph.ref_date === dateStr) {
+              const fx = await getFxRate(ph.currency)
+              value = holdings * ph.price * fx
+            } else {
+              try {
+                const result = await getCurrentPrice(a as Asset)
+                const fx = result.currency === 'BRL' ? 1 : await getFxRate(result.currency)
+                value = holdings * result.price * fx
+              } catch {
+                if (ph) {
+                  const fx = await getFxRate(ph.currency)
+                  value = holdings * ph.price * fx
+                } else {
+                  value = costBasisValue
+                }
+              }
+            }
+          } else {
+            if (ph) {
+              const fx = await getFxRate(ph.currency)
+              value = holdings * ph.price * fx
+            } else {
+              value = costBasisValue
+            }
+          }
+        }
+      }
+    } catch { value = costBasisValue }
+
+    if (value > 0) {
+      detail.push({ asset_id: a.id, value: Math.round(value * 100) / 100 })
+      total += value
+    }
+  }
+
+  return { total: Math.round(total * 100) / 100, detail }
+}
+
+// Modified Dietz return for an exact date range [fromDateStr, toDateStr] (both 'YYYY-MM-DD').
+// Counterpart of computePerformanceSummary for sub-month periods like "last 7 days".
+export async function computePerformanceSummaryDaily(
+  userId: string, fromDateStr: string, toDateStr: string, prefetched?: PrefetchedData
+): Promise<PerformanceSummary> {
+  const todayStr = localDate(new Date())
+  const clampedToDateStr = toDateStr > todayStr ? todayStr : toDateStr
+
+  const startDate = new Date(fromDateStr + 'T12:00:00')
+  startDate.setDate(startDate.getDate() - 1)
+  const startDateStr = localDate(startDate)
+
+  const data = prefetched ?? await fetchPrefetchedData(userId)
+  if (!prefetched) await prefetchFIRates(data)
+
+  const totalContribs = data.contributions
+    .filter(c => c.date > startDateStr && c.date <= clampedToDateStr)
+    .reduce((s: number, c) => {
+      if (c.type === 'income') return s
+      const v = estimateContribValue(c)
+      return s + (c.type === 'buy' ? v : -v)
+    }, 0)
+
+  const [start, end] = await Promise.all([
+    computePortfolioValueAtDate(data, startDateStr),
+    computePortfolioValueAtDate(data, clampedToDateStr),
+  ])
+
+  const v_ini = start.total
+  const v_fim = end.total
+
+  const return_abs = v_fim - v_ini - totalContribs
+  const dietz_base = v_ini + 0.5 * totalContribs
+  const return_pct = dietz_base > 0 ? (return_abs / dietz_base) * 100 : null
+
+  return {
+    from:          fromDateStr,
+    to:            toDateStr,
+    value_start:   v_ini,
+    value_end:     v_fim,
+    contributions: Math.round(totalContribs * 100) / 100,
+    return_abs:    Math.round(return_abs * 100) / 100,
+    return_pct:    return_pct !== null ? Math.round(return_pct * 100) / 100 : null,
+  }
+}
+
 router.get('/summary', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const fromStr = (req.query.from as string) || '2025-01'
   const toStr   = (req.query.to   as string) || localYM(new Date())
+
+  if (DATE_RE.test(fromStr) && DATE_RE.test(toStr)) {
+    if (fromStr > toStr) {
+      res.status(400).json({ error: '"from" deve ser anterior a "to"' }); return
+    }
+    const result = await computePerformanceSummaryDaily(userId, fromStr, toStr)
+    res.json(result)
+    return
+  }
 
   const [fromY, fromM] = fromStr.split('-').map(Number)
   const [toY,   toM  ] = toStr.split('-').map(Number)
@@ -1024,15 +1255,27 @@ router.get('/debug-manual', requireAuth, async (req, res: Response) => {
 // Per-asset return % over [fromStr, toStr] (both 'YYYY-MM'), for 'ticker' and 'manual'
 // assets. Keyed by asset id; null when a return can't be determined.
 export async function computeAssetReturns(userId: string, fromStr: string, toStr: string): Promise<Record<number, number | null>> {
-  const [fromY, fromM] = fromStr.split('-').map(Number)
-  const [toY,   toM  ] = toStr.split('-').map(Number)
+  const isDaily = DATE_RE.test(fromStr) && DATE_RE.test(toStr)
+  const todayStr = localDate(new Date())
 
-  const currentYM       = localYM(new Date())
-  const isCurrentPeriod = toStr >= currentYM
+  let fromDate: string
+  let toDate: string
+  let isCurrentPeriod: boolean
 
-  const fromDate  = `${fromY}-${String(fromM).padStart(2, '0')}-01`
-  const toLastDay = new Date(toY, toM, 0).getDate()
-  const toDate    = `${toY}-${String(toM).padStart(2, '0')}-${String(toLastDay).padStart(2, '0')}`
+  if (isDaily) {
+    fromDate = fromStr
+    toDate   = toStr
+    isCurrentPeriod = toStr >= todayStr
+  } else {
+    const [fromY, fromM] = fromStr.split('-').map(Number)
+    const [toY,   toM  ] = toStr.split('-').map(Number)
+    const currentYM = localYM(new Date())
+    isCurrentPeriod = toStr >= currentYM
+    fromDate = `${fromY}-${String(fromM).padStart(2, '0')}-01`
+    const toLastDay = new Date(toY, toM, 0).getDate()
+    toDate = `${toY}-${String(toM).padStart(2, '0')}-${String(toLastDay).padStart(2, '0')}`
+  }
+  const interpFn = isDaily ? interpolateKnownPointsDaily : interpolateKnownPoints
 
   const { data: assets } = await supabaseAdmin
     .from('assets')
@@ -1081,12 +1324,14 @@ export async function computeAssetReturns(userId: string, fromStr: string, toStr
     }
 
     if (isCurrentPeriod) {
+      const isStale = isDaily
+        ? (entry: { ref_date: string } | undefined) => !entry || entry.ref_date < todayStr
+        : (entry: { ref_date: string } | undefined) => !entry || entry.ref_date.substring(0, 7) < todayStr.substring(0, 7)
       await Promise.all(tickerAssets.map(async (a) => {
-        const entry = endMap[a.id]
-        if (!entry || entry.ref_date.substring(0, 7) < currentYM) {
+        if (isStale(endMap[a.id])) {
           try {
             const result = await getCurrentPrice(a as Asset)
-            endMap[a.id] = { price: result.price, ref_date: currentYM + '-01' }
+            endMap[a.id] = { price: result.price, ref_date: todayStr }
           } catch { /* keep stale or absent */ }
         }
       }))
@@ -1162,8 +1407,8 @@ export async function computeAssetReturns(userId: string, fromStr: string, toStr
       pts.sort((x, y) => x.ref_date.localeCompare(y.ref_date))
 
       const endDateForInterp = isCurrentPeriod ? localDate(new Date()) : toDate
-      const startPt = interpolateKnownPoints(pts, fromDate)
-      const endPt   = interpolateKnownPoints(pts, endDateForInterp)
+      const startPt = interpFn(pts, fromDate)
+      const endPt   = interpFn(pts, endDateForInterp)
 
       if (!startPt || !endPt || startPt.value <= 0) { returns[a.id] = null; continue }
 

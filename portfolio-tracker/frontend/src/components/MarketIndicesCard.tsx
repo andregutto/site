@@ -13,7 +13,7 @@ interface IndexSnapshot {
   unit: string
 }
 
-type PeriodMode = 'current_month' | 'last_30d' | 'ytd' | 'last_12m' | 'inception'
+type PeriodMode = 'last_7d' | 'current_month' | 'last_30d' | 'ytd' | 'last_12m' | 'inception'
 
 const CARD_INDICES = ['IBOV', 'CDI', 'SP500', 'IPCA'] as const
 
@@ -57,7 +57,7 @@ export default function MarketIndicesCard({ periodMode, periodLabel }: Props) {
       case 'ytd': return idx.ytd_pct
       case 'last_12m': return idx.m12_pct
       case 'inception': return idx.m12_pct // best available proxy
-      default: return idx.m1_pct // current_month, last_30d
+      default: return idx.m1_pct // last_7d, current_month, last_30d
     }
   }
 
