@@ -1221,7 +1221,7 @@
     "contributions": "Contributions",
     "subtitle": "Portfolio returns and evolution",
     "currentMonth": "Current month",
-    "last7d": "Last 7d",
+    "last5d": "Last 5d",
     "last30d": "Last 30d",
     "customPeriod": "Custom period",
     "last12m": "Last 12m",

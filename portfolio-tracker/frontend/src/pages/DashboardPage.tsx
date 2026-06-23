@@ -15,7 +15,7 @@ import DividendsCard from '../components/DividendsCard'
 import { PageTitle, Segmented, Button, Banner } from '../components/ui'
 import { Icon } from '../components/icons'
 
-type PeriodMode = 'last_7d' | 'current_month' | 'last_30d' | 'last_12m' | 'ytd' | 'inception'
+type PeriodMode = 'last_5d' | 'current_month' | 'last_30d' | 'last_12m' | 'ytd' | 'inception'
 
 function localYM(d: Date) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
@@ -153,7 +153,7 @@ export default function DashboardPage() {
 
   const perfFrom = (() => {
     switch (periodMode) {
-      case 'last_7d':        { const d = new Date(); d.setDate(d.getDate() - 7); return localDateStr(d) }
+      case 'last_5d':        { const d = new Date(); d.setDate(d.getDate() - 5); return localDateStr(d) }
       case 'current_month': return currentYM
       case 'last_30d':      { const d = new Date(); d.setDate(d.getDate() - 30); return localDateStr(d) }
       case 'last_12m':      return addMonths(currentYM, -11)
@@ -161,11 +161,11 @@ export default function DashboardPage() {
       case 'inception':     return inception ?? `${currentYear}-01`
     }
   })()
-  const perfTo = (periodMode === 'last_7d' || periodMode === 'last_30d') ? localDateStr(now) : currentYM
+  const perfTo = (periodMode === 'last_5d' || periodMode === 'last_30d') ? localDateStr(now) : currentYM
 
   const periodLabel = (() => {
     switch (periodMode) {
-      case 'last_7d':        return t.performance.last7d
+      case 'last_5d':        return t.performance.last5d
       case 'current_month': return t.performance.currentMonth
       case 'last_30d':      return t.performance.last30d
       case 'last_12m':      return t.performance.last12m
@@ -182,7 +182,7 @@ export default function DashboardPage() {
 
   const divFrom = (() => {
     switch (periodMode) {
-      case 'last_7d':   { const d = new Date(); d.setDate(d.getDate() - 7); return d.toISOString().split('T')[0] }
+      case 'last_5d':   { const d = new Date(); d.setDate(d.getDate() - 5); return d.toISOString().split('T')[0] }
       case 'current_month': return `${currentYM}-01`
       case 'last_30d': { const d = new Date(); d.setDate(d.getDate() - 29); return d.toISOString().split('T')[0] }
       case 'last_12m': { const d = new Date(); d.setFullYear(d.getFullYear() - 1); return d.toISOString().split('T')[0] }
@@ -255,7 +255,7 @@ export default function DashboardPage() {
                 value={periodMode}
                 onChange={setPeriodMode}
                 options={[
-                  { value: 'last_7d'       as PeriodMode, label: t.performance.last7d },
+                  { value: 'last_5d'       as PeriodMode, label: t.performance.last5d },
                   { value: 'current_month' as PeriodMode, label: t.performance.currentMonth },
                   { value: 'last_30d'      as PeriodMode, label: t.performance.last30d },
                   { value: 'last_12m'      as PeriodMode, label: t.performance.last12m },
