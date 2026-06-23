@@ -10,6 +10,7 @@ interface IndexSnapshot {
   m1_pct: number | null
   ytd_pct: number | null
   m12_pct: number | null
+  period_pct: number | null
   unit: string
 }
 
@@ -32,17 +33,20 @@ function fmtPct(v: number | null) {
 interface Props {
   periodMode: PeriodMode
   periodLabel: string
+  windowFrom?: string | null
+  windowTo?: string | null
 }
 
-export default function MarketIndicesCard({ periodMode, periodLabel }: Props) {
+export default function MarketIndicesCard({ periodMode, periodLabel, windowFrom, windowTo }: Props) {
   const [data, setData] = useState<IndexSnapshot[] | null>(null)
   const [failed, setFailed] = useState(false)
   const { t } = useI18n()
   const navigate = useNavigate()
 
   useEffect(() => {
-    apiFetch<IndexSnapshot[]>('/indices').then(setData).catch(() => setFailed(true))
-  }, [])
+    const qs = windowFrom && windowTo ? `?from=${windowFrom}&to=${windowTo}` : ''
+    apiFetch<IndexSnapshot[]>(`/indices${qs}`).then(setData).catch(() => setFailed(true))
+  }, [windowFrom, windowTo])
 
   if (failed) return null
 
@@ -57,7 +61,10 @@ export default function MarketIndicesCard({ periodMode, periodLabel }: Props) {
       case 'ytd': return idx.ytd_pct
       case 'last_12m': return idx.m12_pct
       case 'inception': return idx.m12_pct // best available proxy
-      default: return idx.m1_pct // last_5d, current_month, last_30d
+      case 'last_5d':
+      case 'last_30d':
+      case 'current_month':
+        return idx.period_pct ?? idx.m1_pct
     }
   }
 

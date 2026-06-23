@@ -149,9 +149,51 @@ function prevMonthYM(): string {
   return localYM(d)
 }
 
+const WINDOW_RE = /^\d{4}-\d{2}-\d{2}$/
+
+// Exact-date % change for a yahoo-sourced index over [fromDateStr, toDateStr], using daily
+// closes (carry-backward to the nearest prior trading day). Needed for "last 5d"/"last 30d"
+// — the monthly m1_pct above can't tell those apart since both fall inside the same month.
+async function fetchYahooPctForRange(ticker: string, fromDateStr: string, toDateStr: string): Promise<number | null> {
+  try {
+    const bufferStart = new Date(fromDateStr + 'T12:00:00')
+    bufferStart.setDate(bufferStart.getDate() - 10)
+    const rows = await yf.historical(ticker, { period1: localDate(bufferStart), period2: toDateStr, interval: '1d' })
+    if (!rows.length) return null
+    const sorted = [...rows].sort((a, b) => a.date.getTime() - b.date.getTime())
+    const pick = (targetStr: string) => {
+      const target = new Date(targetStr + 'T12:00:00').getTime()
+      let best: typeof sorted[0] | undefined
+      for (const r of sorted) { if (r.date.getTime() <= target) best = r; else break }
+      return best ?? sorted[0]
+    }
+    const ps = pick(fromDateStr).close ?? pick(fromDateStr).adjClose
+    const pe = pick(toDateStr).close ?? pick(toDateStr).adjClose
+    if (!ps || !pe) return null
+    return Math.round((pe / ps - 1) * 10000) / 100
+  } catch { return null }
+}
+
+// Exact-date % change for CDI over (fromDateStr, toDateStr], compounding the daily rates
+// published by BCB in that window.
+async function fetchCdiPctForRange(fromDateStr: string, toDateStr: string): Promise<number | null> {
+  try {
+    const rates = await getRates(SERIES.CDI, new Date(fromDateStr), new Date(toDateStr))
+    const slice = rates.filter(r => localDate(r.date) > fromDateStr && localDate(r.date) <= toDateStr)
+    if (!slice.length) return null
+    let cum = 1
+    for (const r of slice) cum *= (1 + r.value / 100)
+    return Math.round((cum - 1) * 10000) / 100
+  } catch { return null }
+}
+
 // ── GET /api/indices ────────────────────────────────────────────────────────
-router.get('/', requireAuth, async (_req, res: Response) => {
-  const cacheKey = `indices:snapshot:${localYM(new Date())}`
+router.get('/', requireAuth, async (req, res: Response) => {
+  const fromQ = req.query.from as string | undefined
+  const toQ   = req.query.to   as string | undefined
+  const hasWindow = !!fromQ && !!toQ && WINDOW_RE.test(fromQ) && WINDOW_RE.test(toQ)
+
+  const cacheKey = `indices:snapshot:${localYM(new Date())}:${hasWindow ? `${fromQ}:${toQ}` : ''}`
   const cached = cache.get<object[]>(cacheKey)
   if (cached) { res.json(cached); return }
 
@@ -176,6 +218,7 @@ router.get('/', requireAuth, async (_req, res: Response) => {
       let ytd: number | null = null
       let m12: number | null = null
       let m1: number | null = null
+      let periodPct: number | null = null
 
       const ytdFrom = ytdFromYM()
       const m12From = m12FromYM()
@@ -192,6 +235,7 @@ router.get('/', requireAuth, async (_req, res: Response) => {
 
         m1 = monthly.find(m => m.month === prevM)?.pct_month ?? null
         void ytdBase  // suppress unused warning
+        if (hasWindow && def.ticker) periodPct = await fetchYahooPctForRange(def.ticker, fromQ!, toQ!)
       } else {
         // Rate-based: accumulate monthly rates
         ytd = accumulatedPct(monthly, ytdFrom, currentYM)
@@ -214,6 +258,7 @@ router.get('/', requireAuth, async (_req, res: Response) => {
               currentValue = Math.round((Math.pow(1 + d / 100, 252) - 1) * 10000) / 100
             }
           } catch {}
+          if (hasWindow) periodPct = await fetchCdiPctForRange(fromQ!, toQ!)
         }
       }
 
@@ -228,6 +273,7 @@ router.get('/', requireAuth, async (_req, res: Response) => {
         ytd_pct: ytd,
         m12_pct: m12,
         m1_pct: m1,
+        period_pct: periodPct,
       }
     })
   )

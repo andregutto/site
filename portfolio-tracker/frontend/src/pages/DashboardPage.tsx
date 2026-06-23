@@ -163,6 +163,18 @@ export default function DashboardPage() {
   })()
   const perfTo = (periodMode === 'last_5d' || periodMode === 'last_30d') ? localDateStr(now) : currentYM
 
+  // Exact-date window for the indices card — only meaningful for sub-month periods
+  // (current_month/last_5d/last_30d); ytd/12m/inception keep using the API's own ytd_pct/m12_pct.
+  const idxWindowFrom = (() => {
+    switch (periodMode) {
+      case 'last_5d':       { const d = new Date(); d.setDate(d.getDate() - 5); return localDateStr(d) }
+      case 'last_30d':      { const d = new Date(); d.setDate(d.getDate() - 30); return localDateStr(d) }
+      case 'current_month': return `${currentYM}-01`
+      default:              return null
+    }
+  })()
+  const idxWindowTo = idxWindowFrom ? localDateStr(now) : null
+
   const periodLabel = (() => {
     switch (periodMode) {
       case 'last_5d':        return t.performance.last5d
@@ -327,7 +339,7 @@ export default function DashboardPage() {
           })()}
         </div>
         <div className="lg:col-span-1">
-          <MarketIndicesCard periodMode={periodMode} periodLabel={periodLabel} />
+          <MarketIndicesCard periodMode={periodMode} periodLabel={periodLabel} windowFrom={idxWindowFrom} windowTo={idxWindowTo} />
         </div>
       </div>
 
