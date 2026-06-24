@@ -28,6 +28,7 @@ interface ProfileData {
   month_cycle_day:    number
   saida_fiscal_brasil: boolean
   tax_country: string
+  budget_reminder_freq: number
 }
 
 const COUNTRY_OPTIONS = [
@@ -113,10 +114,7 @@ export default function ProfilePage() {
 
   const [defaultSection, setDefaultSection] = useState<'investments' | 'finances'>('investments')
   const [monthCycleDay, setMonthCycleDay]   = useState(1)
-  const [budgetReminderFreq, setBudgetReminderFreq] = useState<number>(() => {
-    if (!user?.id) return 0
-    return parseInt(localStorage.getItem(`arvo_budget_reminder_freq_${user.id}`) ?? '0', 10)
-  })
+  const [budgetReminderFreq, setBudgetReminderFreq] = useState<number>(0)
 
   // Cropper state
   const CROP_BOX  = 280
@@ -160,6 +158,7 @@ export default function ProfilePage() {
         setDefaultSection(d.default_section === 'finances' ? 'finances' : 'investments')
         setMonthCycleDay(d.month_cycle_day ?? 1)
         setTaxCountry(d.tax_country || 'BR')
+        setBudgetReminderFreq(d.budget_reminder_freq ?? 0)
       })
       .catch(e => setError(e instanceof Error ? e.message : t.profile.errorLoad))
       .finally(() => setLoading(false))
@@ -412,7 +411,7 @@ export default function ProfilePage() {
   function handleBudgetReminderChange(freq: number) {
     setBudgetReminderFreq(freq)
     if (!user?.id) return
-    localStorage.setItem(`arvo_budget_reminder_freq_${user.id}`, String(freq))
+    apiFetch('/profile', { method: 'PATCH', body: JSON.stringify({ budget_reminder_freq: freq }) }).catch(() => {})
     if (freq > 0) {
       const today = new Date().toISOString().split('T')[0]
       localStorage.setItem(`arvo_budget_reminder_last_${user.id}`, today)

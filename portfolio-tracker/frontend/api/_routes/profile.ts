@@ -29,6 +29,7 @@ router.get('/', requireAuth, async (req, res: Response) => {
     default_section:      meta.default_section       ?? '',
     saida_fiscal_brasil:  meta.saida_fiscal_brasil   ?? false,
     month_cycle_day:      meta.month_cycle_day       ?? 1,
+    budget_reminder_freq: meta.budget_reminder_freq  ?? 0,
   })
 })
 
@@ -37,13 +38,14 @@ router.patch('/', requireAuth, async (req, res: Response) => {
   const {
     first_name, last_name, country, tax_country, birthdate, default_currency,
     portfolio_start_date, allocation_targets, institution_data, avatar_url, default_section,
-    month_cycle_day, saida_fiscal_brasil,
+    month_cycle_day, saida_fiscal_brasil, budget_reminder_freq,
   } = req.body as {
     first_name?: string; last_name?: string; country?: string
     tax_country?: string; birthdate?: string; default_currency?: string
     portfolio_start_date?: string; allocation_targets?: Record<string, number>
     institution_data?: Record<string, Record<string, string>>; avatar_url?: string
     default_section?: string; month_cycle_day?: number; saida_fiscal_brasil?: boolean
+    budget_reminder_freq?: number
   }
   const { data: { user: current } } = await supabaseAdmin.auth.admin.getUserById(userId)
   const meta = {
@@ -52,7 +54,7 @@ router.patch('/', requireAuth, async (req, res: Response) => {
       Object.entries({
         first_name, last_name, country, tax_country, birthdate, default_currency,
         portfolio_start_date, allocation_targets, institution_data, avatar_url, default_section,
-        month_cycle_day, saida_fiscal_brasil,
+        month_cycle_day, saida_fiscal_brasil, budget_reminder_freq,
       }).filter(([, v]) => v !== undefined)
     ),
   }

@@ -126,7 +126,7 @@ export default function AppLayout() {
   const [showBudgetSetup, setShowBudgetSetup] = useState(false)
   useEffect(() => {
     if (!user?.id) return
-    const freq = parseInt(localStorage.getItem(`arvo_budget_reminder_freq_${user.id}`) ?? '0', 10)
+    const freq = Number(user.user_metadata?.budget_reminder_freq ?? 0)
     if (freq === 0) {
       const dismissed = localStorage.getItem(`arvo_budget_reminder_setup_dismissed_${user.id}`)
       if (!dismissed) setShowBudgetSetup(true)
@@ -141,7 +141,7 @@ export default function AppLayout() {
     const diffMs = Date.now() - new Date(last).getTime()
     const diffMonths = diffMs / (1000 * 60 * 60 * 24 * 30.44)
     if (diffMonths >= freq) setShowBudgetBanner(true)
-  }, [user?.id])
+  }, [user?.id, user?.user_metadata?.budget_reminder_freq])
 
   function dismissBudgetBanner() {
     if (user?.id) {
