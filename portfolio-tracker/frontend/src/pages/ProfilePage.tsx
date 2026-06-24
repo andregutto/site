@@ -603,8 +603,8 @@ export default function ProfilePage() {
           {/* Row: Avatar + nível atual */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
           {/* Avatar + nome */}
-          <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl p-6 flex items-center gap-5 shadow-sm h-full">
-            <div className="relative shrink-0 group">
+          <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl p-6 flex items-center gap-4 shadow-sm h-full">
+            <button type="button" onClick={openAvatarModal} className="relative shrink-0">
               {avatarUrl ? (
                 <img
                   src={avatarUrl}
@@ -616,32 +616,48 @@ export default function ProfilePage() {
                   {avatarInitials}
                 </div>
               )}
-              <button
-                type="button"
-                onClick={openAvatarModal}
-                className="absolute inset-0 rounded-full bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center"
+              <span
+                className="absolute -bottom-0.5 -right-0.5 w-6 h-6 rounded-full flex items-center justify-center"
+                style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)' }}
+                title={avatarUrl ? t.profile.changePhoto : t.profile.addPhoto}
               >
-                <span className="text-white text-xs font-semibold opacity-0 group-hover:opacity-100 transition-opacity">{t.profile.changeOverlay}</span>
-              </button>
-            </div>
+                <svg viewBox="0 0 16 16" fill="none" stroke="var(--arvo-fg-muted)" strokeWidth="1.4" className="w-3.5 h-3.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M2 5.5h2.2L5 4h6l.8 1.5H14a1 1 0 011 1V13a1 1 0 01-1 1H2a1 1 0 01-1-1V6.5a1 1 0 011-1z"/>
+                  <circle cx="8" cy="9" r="2.3"/>
+                </svg>
+              </span>
+            </button>
             <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                <p className="font-semibold text-[var(--arvo-fg)] truncate">{displayName}</p>
-                {!editingUsername && (
-                  <>
-                    <span className="text-sm text-[var(--arvo-fg-muted)] shrink-0">
-                      {username ? `@${username}` : 'sem @'}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => { setUsernameInput(username); setEditingUsername(true) }}
-                      className="text-xs text-[var(--arvo-fg)] hover:underline shrink-0"
-                    >
-                      Editar
-                    </button>
-                  </>
-                )}
-              </div>
+              <p className="font-semibold text-[var(--arvo-fg)] truncate">{displayName}</p>
+
+              {!editingUsername && username && (
+                <p className="text-sm mt-0.5 flex items-center gap-1.5" style={{ color: 'var(--arvo-fg-muted)' }}>
+                  @{username}
+                  <button
+                    type="button"
+                    onClick={() => { setUsernameInput(username); setEditingUsername(true) }}
+                    title="Editar @"
+                    className="shrink-0"
+                    style={{ color: 'var(--arvo-fg-faint)' }}
+                  >
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" className="w-3 h-3">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M11.3 2.3a1 1 0 011.4 0l1 1a1 1 0 010 1.4L5 13.4l-3 .6.6-3z"/>
+                    </svg>
+                  </button>
+                </p>
+              )}
+
+              {!editingUsername && !username && (
+                <button
+                  type="button"
+                  onClick={() => { setUsernameInput(''); setEditingUsername(true) }}
+                  className="mt-1 text-xs rounded-full px-2.5 py-1 inline-flex items-center gap-1.5"
+                  style={{ border: '1px dashed var(--arvo-border-secondary, var(--arvo-border))', color: 'var(--arvo-fg-soft)', background: 'none' }}
+                >
+                  <span style={{ fontSize: 12 }}>@</span>Escolher um @usuário
+                </button>
+              )}
+
               {editingUsername && (
                 <div className="mt-1">
                   <div className="flex items-center gap-1.5">
@@ -684,14 +700,8 @@ export default function ProfilePage() {
                   {usernameError && <p className="text-xs text-red-600 mt-0.5">{usernameError}</p>}
                 </div>
               )}
-              <p className="text-sm text-[var(--arvo-fg-muted)] truncate">{emailForDisplay}</p>
-              <button
-                type="button"
-                onClick={openAvatarModal}
-                className="text-xs text-[var(--arvo-fg)] hover:underline mt-0.5"
-              >
-                {avatarUrl ? t.profile.changePhoto : t.profile.addPhoto}
-              </button>
+
+              <p className="text-xs mt-1 truncate" style={{ color: 'var(--arvo-fg-faint)' }}>{emailForDisplay}</p>
               {usernameSaved && <p className="text-xs text-green-600 mt-0.5">@ salvo!</p>}
             </div>
           </div>
