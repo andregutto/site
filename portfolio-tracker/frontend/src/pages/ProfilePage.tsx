@@ -17,6 +17,7 @@ import { useDividendSync } from '../hooks/useDividends'
 
 interface ProfileData {
   email:              string
+  username?:          string
   first_name:         string
   last_name:          string
   country:            string
@@ -82,6 +83,14 @@ export default function ProfilePage() {
   const [email,      setEmail]      = useState('')
   const [avatarUrl,  setAvatarUrl]  = useState('')
 
+  const [username,        setUsername]        = useState('')
+  const [usernameInput,   setUsernameInput]    = useState('')
+  const [usernameStatus,  setUsernameStatus]   = useState<'idle' | 'checking' | 'available' | 'taken' | 'invalid'>('idle')
+  const [usernameSaving,  setUsernameSaving]   = useState(false)
+  const [usernameSaved,   setUsernameSaved]    = useState(false)
+  const [usernameError,   setUsernameError]    = useState('')
+  const USERNAME_RE = /^[a-z0-9_]{3,20}$/
+
   const [newPassword,    setNewPassword]    = useState('')
   const [confirmPwd,     setConfirmPwd]     = useState('')
   const [savingPwd,      setSavingPwd]      = useState(false)
@@ -141,6 +150,8 @@ export default function ProfilePage() {
     apiFetch<ProfileData>('/profile')
       .then(d => {
         setEmail(d.email)
+        setUsername(d.username ?? '')
+        setUsernameInput(d.username ?? '')
         setFirstName(d.first_name)
         setLastName(d.last_name)
         setCountry(d.country)
@@ -153,6 +164,37 @@ export default function ProfilePage() {
       .catch(e => setError(e instanceof Error ? e.message : t.profile.errorLoad))
       .finally(() => setLoading(false))
   }, [])
+
+  useEffect(() => {
+    const value = usernameInput.trim().toLowerCase()
+    if (value === username) { setUsernameStatus('idle'); return }
+    if (!USERNAME_RE.test(value)) { setUsernameStatus('invalid'); return }
+    setUsernameStatus('checking')
+    const handle = setTimeout(() => {
+      apiFetch<{ available: boolean }>(`/profile/username/check?value=${encodeURIComponent(value)}`)
+        .then(r => setUsernameStatus(r.available ? 'available' : 'taken'))
+        .catch(() => setUsernameStatus('idle'))
+    }, 400)
+    return () => clearTimeout(handle)
+  }, [usernameInput, username])
+
+  async function handleSaveUsername() {
+    const value = usernameInput.trim().toLowerCase()
+    if (usernameStatus !== 'available') return
+    setUsernameSaving(true)
+    setUsernameError('')
+    setUsernameSaved(false)
+    try {
+      await apiFetch('/profile/username', { method: 'PATCH', body: JSON.stringify({ username: value }) })
+      setUsername(value)
+      setUsernameStatus('idle')
+      setUsernameSaved(true)
+    } catch (ex: unknown) {
+      setUsernameError((ex as Error).message ?? 'Erro ao salvar')
+    } finally {
+      setUsernameSaving(false)
+    }
+  }
 
   function openAvatarModal() {
     setPendingAvatarUrl(null)
@@ -640,6 +682,42 @@ export default function ProfilePage() {
                 readOnly
                 className="w-full border border-[var(--arvo-border)] rounded-[3px] px-3 py-2 text-sm bg-[var(--arvo-surface)] text-[var(--arvo-fg-muted)] cursor-not-allowed"
               />
+            </div>
+
+            <div>
+              <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">@ usuário</label>
+              <div className="flex items-center gap-2">
+                <div className="relative flex-1">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[var(--arvo-fg-muted)]">@</span>
+                  <input
+                    type="text"
+                    value={usernameInput}
+                    onChange={e => setUsernameInput(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
+                    placeholder="seu_usuario"
+                    maxLength={20}
+                    className="w-full border border-[var(--arvo-border)] rounded-[3px] pl-7 pr-3 py-2 text-sm bg-[var(--arvo-surface)] text-[var(--arvo-fg)] focus:outline-none focus:border-[var(--arvo-gold)] focus:ring-2 focus:ring-[var(--arvo-gold)]/25"
+                  />
+                </div>
+                {usernameInput.trim().toLowerCase() !== username && (
+                  <button
+                    type="button"
+                    onClick={handleSaveUsername}
+                    disabled={usernameStatus !== 'available' || usernameSaving}
+                    className="shrink-0 text-xs font-medium px-3 py-2 rounded-[3px] bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] disabled:opacity-40"
+                  >
+                    {usernameSaving ? '…' : 'Salvar'}
+                  </button>
+                )}
+              </div>
+              <p className="text-xs mt-1" style={{ color: usernameStatus === 'taken' || usernameStatus === 'invalid' ? '#D63B2F' : usernameStatus === 'available' ? '#1F8A5B' : 'var(--arvo-fg-soft)' }}>
+                {usernameStatus === 'checking' && 'Verificando…'}
+                {usernameStatus === 'available' && 'Disponível'}
+                {usernameStatus === 'taken' && 'Esse @ já está em uso'}
+                {usernameStatus === 'invalid' && 'Use 3-20 letras minúsculas, números ou _'}
+                {usernameStatus === 'idle' && !username && 'Defina um @ para que outras pessoas te encontrem mais fácil'}
+              </p>
+              {usernameError && <p className="text-xs text-red-600 mt-1">{usernameError}</p>}
+              {usernameSaved && <p className="text-xs text-green-600 mt-1">@ salvo!</p>}
             </div>
 
             <div className="grid grid-cols-2 gap-3">

@@ -49,6 +49,7 @@ interface Contact {
 
 interface Trip { id: number; title: string }
 interface Group { id: number; name: string }
+interface UserSuggestion { user_id: string; username: string; name?: string; avatar_url?: string }
 
 // ── Etiqueta de direção ───────────────────────────────────────────────────────
 function DirectionTag({ direction }: { direction: Direction }) {
@@ -354,6 +355,8 @@ export default function PeoplePage() {
   const [inviteEmail, setInviteEmail] = useState('')
   const [inviting, setInviting] = useState(false)
   const [inviteError, setInviteError] = useState('')
+  const [suggestions, setSuggestions] = useState<UserSuggestion[]>([])
+  const [showSuggestions, setShowSuggestions] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -371,20 +374,45 @@ export default function PeoplePage() {
     apiFetch<Group[]>('/shared/groups').then(setGroups).catch(() => {})
   }, [])
 
-  async function handleInvite(e: FormEvent) {
-    e.preventDefault()
-    if (!inviteEmail.includes('@')) return
+  const isEmailLike = /\S+@\S+\.\S+/.test(inviteEmail)
+
+  useEffect(() => {
+    const query = inviteEmail.trim().replace(/^@/, '')
+    if (isEmailLike || query.length < 2) { setSuggestions([]); return }
+    const handle = setTimeout(() => {
+      apiFetch<UserSuggestion[]>(`/people/search?q=${encodeURIComponent(query)}`)
+        .then(r => { setSuggestions(r); setShowSuggestions(true) })
+        .catch(() => setSuggestions([]))
+    }, 300)
+    return () => clearTimeout(handle)
+  }, [inviteEmail, isEmailLike])
+
+  async function sendInvite(payload: { email?: string; username?: string }) {
     setInviting(true)
     setInviteError('')
     try {
-      await apiFetch('/people/invite', { method: 'POST', body: JSON.stringify({ email: inviteEmail }) })
+      await apiFetch('/people/invite', { method: 'POST', body: JSON.stringify(payload) })
       setInviteEmail('')
+      setSuggestions([])
+      setShowSuggestions(false)
       load()
     } catch (ex: unknown) {
       setInviteError((ex as Error).message ?? 'Erro ao convidar')
     } finally {
       setInviting(false)
     }
+  }
+
+  function pickSuggestion(s: UserSuggestion) {
+    sendInvite({ username: s.username })
+  }
+
+  function handleInvite(e: FormEvent) {
+    e.preventDefault()
+    if (isEmailLike) { sendInvite({ email: inviteEmail.trim() }); return }
+    const username = inviteEmail.trim().replace(/^@/, '')
+    if (username.length < 3) return
+    sendInvite({ username })
   }
 
   function handleRemoved(memberId: number) {
@@ -439,10 +467,13 @@ export default function PeoplePage() {
       </div>
 
       {/* Convidar amigo */}
-      <form onSubmit={handleInvite} style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
+      <form onSubmit={handleInvite} style={{ display: 'flex', gap: 8, marginBottom: 8, position: 'relative' }}>
         <input
-          type="email" required placeholder="email@exemplo.com"
-          value={inviteEmail} onChange={e => setInviteEmail(e.target.value)}
+          type="text" required placeholder="email@exemplo.com ou @usuario"
+          value={inviteEmail}
+          onChange={e => setInviteEmail(e.target.value)}
+          onFocus={() => setShowSuggestions(true)}
+          onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
           style={{
             flex: 1, fontFamily: 'var(--arvo-font-body)', fontSize: 13, padding: '10px 14px',
             borderRadius: 10, border: '1px solid var(--arvo-border)',
@@ -452,8 +483,35 @@ export default function PeoplePage() {
         <button type="submit" disabled={inviting} className="arvo-btn arvo-btn--primary" style={{ flexShrink: 0 }}>
           {inviting ? '…' : '+ Convidar'}
         </button>
+
+        {showSuggestions && suggestions.length > 0 && (
+          <div style={{
+            position: 'absolute', top: '100%', left: 0, right: 90, marginTop: 4, zIndex: 10,
+            background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)',
+            borderRadius: 10, boxShadow: 'var(--arvo-shadow-sm)', overflow: 'hidden',
+          }}>
+            {suggestions.map(s => (
+              <button
+                type="button" key={s.user_id}
+                onClick={() => pickSuggestion(s)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left',
+                  padding: '8px 12px', background: 'none', border: 'none', cursor: 'pointer',
+                }}
+              >
+                <Avatar name={s.name} avatarUrl={s.avatar_url} size={28} />
+                <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg)' }}>
+                  {s.name || `@${s.username}`}
+                </span>
+                <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-soft)' }}>
+                  @{s.username}
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
       </form>
-      {inviteError && <p style={{ fontSize: 12, color: RED, marginTop: -16, marginBottom: 16 }}>{inviteError}</p>}
+      {inviteError && <p style={{ fontSize: 12, color: RED, marginBottom: 16 }}>{inviteError}</p>}
 
       {loading ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>

@@ -4,13 +4,18 @@ import { supabaseAdmin } from '../_lib/supabase.js'
 
 const router = Router()
 
+const USERNAME_RE = /^[a-z0-9_]{3,20}$/
+
 router.get('/', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const { data: { user }, error } = await supabaseAdmin.auth.admin.getUserById(userId)
   if (error || !user) { res.status(404).json({ error: 'Usuário não encontrado' }); return }
   const meta = user.user_metadata ?? {}
+  const { data: handle } = await supabaseAdmin
+    .from('user_handles').select('username').eq('user_id', userId).single()
   res.json({
     email:                user.email ?? '',
+    username:             handle?.username ?? '',
     first_name:           meta.first_name           ?? '',
     last_name:            meta.last_name             ?? '',
     country:              meta.country               ?? '',
@@ -54,6 +59,36 @@ router.patch('/', requireAuth, async (req, res: Response) => {
   const { error } = await supabaseAdmin.auth.admin.updateUserById(userId, { user_metadata: meta })
   if (error) { res.status(500).json({ error: error.message }); return }
   res.json({ ok: true })
+})
+
+// ── GET /api/profile/username/check?value=  (disponibilidade, sem reservar) ─────
+router.get('/username/check', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const value = String(req.query.value ?? '').toLowerCase()
+  if (!USERNAME_RE.test(value)) { res.json({ available: false, reason: 'invalid_format' }); return }
+
+  const { data } = await supabaseAdmin
+    .from('user_handles').select('user_id').eq('username', value).single()
+  const available = !data || data.user_id === userId
+  res.json({ available })
+})
+
+// ── PATCH /api/profile/username  (definir/alterar @username) ────────────────────
+router.patch('/username', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const username = String((req.body as { username?: string }).username ?? '').toLowerCase()
+  if (!USERNAME_RE.test(username)) {
+    res.status(400).json({ error: 'Use 3-20 letras minúsculas, números ou _' }); return
+  }
+
+  const { error } = await supabaseAdmin
+    .from('user_handles')
+    .upsert({ user_id: userId, username, updated_at: new Date().toISOString() }, { onConflict: 'user_id' })
+  if (error) {
+    if (error.code === '23505') { res.status(409).json({ error: 'Esse @ já está em uso' }); return }
+    res.status(500).json({ error: error.message }); return
+  }
+  res.json({ ok: true, username })
 })
 
 router.patch('/password', requireAuth, async (req, res: Response) => {

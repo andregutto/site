@@ -316,20 +316,35 @@ router.get('/', async (req: any, res: any) => {
 // ── POST /api/people/invite  (cadastrar amigo por e-mail) ───────────────────────
 router.post('/invite', async (req: any, res: any) => {
   const userId = uid(req)
-  const { email } = req.body as { email?: string }
-  if (!email?.includes('@')) { res.status(400).json({ error: 'E-mail inválido' }); return }
+  const { email: rawEmail, username: rawUsername } = req.body as { email?: string; username?: string }
+
+  let email = rawEmail?.trim()
+  let targetUserId: string | null = null
+
+  if (!email && rawUsername) {
+    const username = rawUsername.trim().toLowerCase().replace(/^@/, '')
+    const { data: handle } = await supabaseAdmin
+      .from('user_handles').select('user_id').eq('username', username).single()
+    if (!handle) { res.status(404).json({ error: 'Nenhum usuário com esse @' }); return }
+    targetUserId = handle.user_id
+    email = (await userDisplay(handle.user_id)).email
+  }
+
+  if (!email?.includes('@')) { res.status(400).json({ error: 'E-mail ou @ inválido' }); return }
   if (email.toLowerCase() === (await userDisplay(userId)).email?.toLowerCase()) {
     res.status(400).json({ error: 'Você não pode se adicionar como amigo' }); return
   }
 
-  const { data: authList } = await supabaseAdmin.auth.admin.listUsers()
-  const targetUser = authList?.users?.find(u => u.email?.toLowerCase() === email.toLowerCase())
+  if (!targetUserId) {
+    const { data: authList } = await supabaseAdmin.auth.admin.listUsers()
+    targetUserId = authList?.users?.find(u => u.email?.toLowerCase() === email!.toLowerCase())?.id ?? null
+  }
 
   const token = randomBytes(24).toString('hex')
   const { data, error } = await supabaseAdmin
     .from('user_friends')
     .upsert(
-      { owner_user_id: userId, invite_email: email, friend_user_id: targetUser?.id ?? null, invite_token: token, status: 'pending' },
+      { owner_user_id: userId, invite_email: email, friend_user_id: targetUserId, invite_token: token, status: 'pending' },
       { onConflict: 'owner_user_id,invite_email' }
     )
     .select('id')
@@ -337,6 +352,27 @@ router.post('/invite', async (req: any, res: any) => {
   if (error) { res.status(500).json({ error: error.message }); return }
 
   res.json({ id: data.id, token })
+})
+
+// ── GET /api/people/search?q=  (autocomplete por @username) ─────────────────────
+router.get('/search', async (req: any, res: any) => {
+  const userId = uid(req)
+  const q = String(req.query.q ?? '').trim().toLowerCase().replace(/^@/, '')
+  if (q.length < 2) { res.json([]); return }
+
+  const { data: handles } = await supabaseAdmin
+    .from('user_handles')
+    .select('user_id, username')
+    .like('username', `${q}%`)
+    .neq('user_id', userId)
+    .limit(8)
+  if (!handles?.length) { res.json([]); return }
+
+  const results = await Promise.all(handles.map(async (h: any) => {
+    const d = await userDisplay(h.user_id)
+    return { user_id: h.user_id, username: h.username, name: d.name, avatar_url: d.avatar_url }
+  }))
+  res.json(results)
 })
 
 // ── POST /api/people/invite/accept  (aceitar convite de amizade) ────────────────
