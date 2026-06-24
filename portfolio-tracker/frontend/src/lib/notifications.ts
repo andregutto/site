@@ -23,6 +23,9 @@ export const TYPE_ICONS: Record<string, IconName> = {
   budget_reminder_due: 'clock',
   subscription_detected: 'repeat',
   shared_group_invite: 'share',
+  trip_invite: 'share',
+  friend_invite: 'users',
+  friend_accepted: 'users',
 }
 
 export function formatTimestamp(iso: string, locale: Locale): string {
@@ -68,6 +71,21 @@ export function resolveNotificationText(item: NotificationItem, t: any, locale: 
       const inviter = String(item.params.inviter_name ?? '')
       const group = String(item.params.group_name ?? '')
       return { title: n.type_shared_group_invite.replace('{inviter}', inviter).replace('{group}', group) }
+    }
+    case 'trip_invite': {
+      const inviter = String(item.params.inviter_name ?? '')
+      const trip = String(item.params.trip_title ?? '')
+      return { title: n.type_trip_invite.replace('{inviter}', inviter).replace('{trip}', trip) }
+    }
+    case 'friend_invite': {
+      const inviter = String(item.params.inviter_name ?? '')
+      const username = item.params.inviter_username ? `@${item.params.inviter_username}` : ''
+      return { title: n.type_friend_invite.replace('{inviter}', inviter), subtitle: username || undefined }
+    }
+    case 'friend_accepted': {
+      const friend = String(item.params.friend_name ?? '')
+      const username = item.params.friend_username ? `@${item.params.friend_username}` : ''
+      return { title: n.type_friend_accepted.replace('{friend}', friend), subtitle: username || undefined }
     }
     case 'budget_alert': {
       const nameKey = item.params.name_key ? String(item.params.name_key) : null

@@ -573,7 +573,10 @@
     "type_subscription_detected": "Abonnement potentiel : {name} · {amount}/mois",
     "type_split_warning": "Possible split/regroupement pour {code} ({ratio})",
     "type_budget_alert": "{name} est à {pct}% du budget de ce mois",
-    "type_shared_group_invite": "{inviter} vous a invité au groupe « {group} »"
+    "type_shared_group_invite": "{inviter} vous a invité au groupe « {group} »",
+    "type_friend_invite": "{inviter} souhaite se connecter avec vous",
+    "type_friend_accepted": "{friend} a accepté votre invitation",
+    "type_trip_invite": "{inviter} vous a invité au voyage « {trip} »"
   },
   "finances": {
     "navOverview": "Vue d'ensemble",

@@ -573,7 +573,10 @@
     "type_subscription_detected": "Possível assinatura: {name} · {amount}/mês",
     "type_split_warning": "Possível desdobramento/grupamento em {code} ({ratio})",
     "type_budget_alert": "{name} está em {pct}% do orçamento do mês",
-    "type_shared_group_invite": "{inviter} convidou você para o grupo \"{group}\""
+    "type_shared_group_invite": "{inviter} convidou você para o grupo \"{group}\"",
+    "type_friend_invite": "{inviter} quer se conectar com você",
+    "type_friend_accepted": "{friend} aceitou seu convite",
+    "type_trip_invite": "{inviter} convidou você para a viagem \"{trip}\""
   },
   "finances": {
     "navOverview": "Visão Geral",

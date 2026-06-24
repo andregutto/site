@@ -10,17 +10,21 @@ function uid(req: Parameters<typeof requireAuth>[0]): string {
   return (req as AuthRequest).userId
 }
 
-async function userDisplay(userId: string): Promise<{ email: string; name?: string; avatar_url?: string }> {
-  const { data } = await supabaseAdmin.auth.admin.getUserById(userId)
+async function userDisplay(userId: string): Promise<{ email: string; name?: string; avatar_url?: string; username?: string }> {
+  const [{ data }, { data: handle }] = await Promise.all([
+    supabaseAdmin.auth.admin.getUserById(userId),
+    supabaseAdmin.from('user_handles').select('username').eq('user_id', userId).maybeSingle(),
+  ])
   const meta = data?.user?.user_metadata ?? {}
   const name = [meta.first_name, meta.last_name].filter(Boolean).join(' ') || undefined
-  return { email: data?.user?.email ?? userId, name, avatar_url: meta.avatar_url }
+  return { email: data?.user?.email ?? userId, name, avatar_url: meta.avatar_url, username: handle?.username }
 }
 
 interface PendingFriendInvite {
   key: string
   token: string
   inviter_name: string
+  inviter_username?: string
   occurred_at: string
 }
 
@@ -45,6 +49,7 @@ export async function getPendingFriendInvites(userId: string): Promise<PendingFr
       key: `friend_invite:${row.invite_token}`,
       token: row.invite_token as string,
       inviter_name: owner.name ?? owner.email,
+      inviter_username: owner.username,
       occurred_at: row.created_at,
     }
   }))
@@ -53,6 +58,7 @@ export async function getPendingFriendInvites(userId: string): Promise<PendingFr
 interface RecentFriendAcceptance {
   key: string
   friend_name: string
+  friend_username?: string
   occurred_at: string
 }
 
@@ -74,6 +80,7 @@ export async function getRecentFriendAcceptances(userId: string): Promise<Recent
     return {
       key: `friend_accepted:${row.id}`,
       friend_name: friend?.name ?? friend?.email ?? 'Alguém',
+      friend_username: friend?.username,
       occurred_at: row.joined_at,
     }
   }))

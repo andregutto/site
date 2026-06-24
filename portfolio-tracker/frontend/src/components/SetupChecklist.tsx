@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useI18n } from '../contexts/I18nContext'
 import { apiFetch } from '../lib/api'
 
-const SESSION_KEY = 'arvo_setup_checklist_hidden'
+const STORAGE_PREFIX = 'arvo_setup_checklist_hidden_'
 
 interface SetupState {
   hasAssets: boolean
@@ -15,6 +15,7 @@ interface SetupState {
 
 interface Props {
   firstName?: string
+  userId?: string
 }
 
 function useClickOutside(ref: React.RefObject<HTMLElement | null>, cb: () => void, active: boolean) {
@@ -32,38 +33,59 @@ const SIZE = 32
 const R = 13
 const CIRC = 2 * Math.PI * R
 
-export default function SetupChecklist({ firstName }: Props) {
+export default function SetupChecklist({ firstName, userId }: Props) {
   const { t } = useI18n()
   const s = (t as unknown as Record<string, Record<string, string>>).setup
   const navigate = useNavigate()
-  const [hidden, setHidden] = useState(() => !!sessionStorage.getItem(SESSION_KEY))
+  const storageKey = userId ? `${STORAGE_PREFIX}${userId}` : null
+  const [hidden, setHidden] = useState(() => !!(storageKey && localStorage.getItem(storageKey)))
   const [open, setOpen] = useState(false)
   const [state, setState] = useState<SetupState | null>(null)
   const wrapRef = useRef<HTMLDivElement>(null)
 
   useClickOutside(wrapRef, () => setOpen(false), open)
 
+  // Re-sync the dismissed flag when the signed-in user changes (account
+  // switch in the same browser) — each account has its own storage key, but
+  // the initial useState above only runs once per mount.
+  useEffect(() => {
+    setHidden(!!(storageKey && localStorage.getItem(storageKey)))
+  }, [storageKey])
+
   useEffect(() => {
     if (hidden) return
     Promise.all([
-      apiFetch<unknown[]>('/assets').catch(() => [] as unknown[]),
-      apiFetch<unknown[]>('/finances/accounts').catch(() => [] as unknown[]),
+      apiFetch<Array<{ id: number }>>('/assets').catch(() => [] as Array<{ id: number }>),
+      apiFetch<Array<{ linked_asset_id?: number | null }>>('/finances/accounts').catch(() => []),
       apiFetch<{ monthly_net?: number }>('/finances/income').catch(() => ({})),
       apiFetch<Array<{ is_active: boolean }>>('/finances/freedom-plans').catch(() => []),
-      apiFetch<Array<{ budget_monthly?: number }>>('/finances/categories').catch(() => []),
+      apiFetch<Array<{ budget_monthly?: number; name_key?: string }>>('/finances/categories').catch(() => []),
     ]).then(([assets, accounts, income, plans, categories]) => {
+      // Onboarding's "add bank account" step auto-creates a linked Caixa/cash
+      // asset so the balance shows in net worth — that's not the user
+      // importing real portfolio holdings, so it shouldn't count here.
+      const linkedAssetIds = new Set(
+        (accounts ?? []).map(a => a.linked_asset_id).filter((id): id is number => id != null)
+      )
+      const realAssets = (assets ?? []).filter(a => !linkedAssetIds.has(a.id))
+
+      // Onboarding's "monthly income" step auto-seeds a Salary category with
+      // budget_monthly = the salary so it shows in budget reports — that's
+      // not the user setting deliberate spending goals.
+      const planningCategories = (categories ?? []).filter(c => c.name_key !== 'categorySalary')
+
       setState({
-        hasAssets: Array.isArray(assets) && assets.length > 0,
+        hasAssets: realAssets.length > 0,
         hasAccount: Array.isArray(accounts) && accounts.length > 0,
         hasIncome: ((income as { monthly_net?: number }).monthly_net ?? 0) > 0,
         hasFreedomPlan: Array.isArray(plans) && plans.some((p: { is_active: boolean }) => p.is_active),
-        hasPlanning: Array.isArray(categories) && categories.some((c: { budget_monthly?: number }) => (c.budget_monthly ?? 0) > 0),
+        hasPlanning: planningCategories.some(c => (c.budget_monthly ?? 0) > 0),
       })
     })
   }, [hidden])
 
   function dismiss() {
-    sessionStorage.setItem(SESSION_KEY, '1')
+    if (storageKey) localStorage.setItem(storageKey, '1')
     setHidden(true)
     setOpen(false)
   }

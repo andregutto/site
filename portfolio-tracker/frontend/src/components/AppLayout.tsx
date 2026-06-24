@@ -31,6 +31,9 @@ const NOTIF_ICON: Record<string, IconName> = {
   budget_reminder_due: 'clock',
   subscription_detected: 'repeat',
   shared_group_invite: 'share',
+  trip_invite: 'share',
+  friend_invite: 'users',
+  friend_accepted: 'users',
 }
 
 function useClickOutside(ref: React.RefObject<HTMLElement | null>, cb: () => void, active: boolean) {
@@ -411,7 +414,7 @@ export default function AppLayout() {
                 </div>
               )}
             </div>
-            <SetupChecklist firstName={meta.first_name as string | undefined} />
+            <SetupChecklist firstName={meta.first_name as string | undefined} userId={user?.id} />
             <div ref={userMenuRef} className="relative">
               <button
                 onClick={() => setShowUserMenu(v => !v)}

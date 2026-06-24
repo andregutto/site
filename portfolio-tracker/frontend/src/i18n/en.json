@@ -573,7 +573,10 @@
     "type_subscription_detected": "Possible subscription: {name} · {amount}/month",
     "type_split_warning": "Possible split/reverse split for {code} ({ratio})",
     "type_budget_alert": "{name} is at {pct}% of this month's budget",
-    "type_shared_group_invite": "{inviter} invited you to the group \"{group}\""
+    "type_shared_group_invite": "{inviter} invited you to the group \"{group}\"",
+    "type_friend_invite": "{inviter} wants to connect with you",
+    "type_friend_accepted": "{friend} accepted your invite",
+    "type_trip_invite": "{inviter} invited you to the trip \"{trip}\""
   },
   "finances": {
     "navOverview": "Overview",
