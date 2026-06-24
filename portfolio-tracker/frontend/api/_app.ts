@@ -22,6 +22,7 @@ import chatRouter           from './_routes/chat.js'
 import dividendsRouter      from './_routes/dividends.js'
 import sharedRouter         from './_routes/shared.js'
 import voyageRouter         from './_routes/voyage.js'
+import peopleRouter         from './_routes/people.js'
 
 const app = express()
 
@@ -54,6 +55,7 @@ app.use('/api/chat',         chatRouter)
 app.use('/api/dividends',    dividendsRouter)
 app.use('/api/shared',      sharedRouter)
 app.use('/api/voyage',      voyageRouter)
+app.use('/api/people',      peopleRouter)
 
 // Health — acessível em /api/health via Vercel routing
 app.get(['/health', '/api/health'], (_req, res) => {
