@@ -207,6 +207,11 @@ export default function AppLayout() {
         <path strokeLinecap="round" strokeLinejoin="round" d="M8 1v14M1 8h14"/>
       </svg>
     )},
+    { to: '/institutions', label: t.nav.institutions, end: false, icon: (
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M2 14V6l6-4.5L14 6v8H2zM6 14V9h4v5"/>
+      </svg>
+    )},
     { to: '/dividends', label: t.nav.dividends, end: true, icon: (
       <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
         <circle cx="8" cy="8" r="6.5"/><path strokeLinecap="round" strokeLinejoin="round" d="M8 5v6M6 7h3a1 1 0 010 2H6"/>
@@ -225,11 +230,6 @@ export default function AppLayout() {
     { to: '/portfolio/reports', label: t.nav.ir, end: false, icon: (
       <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
         <path strokeLinecap="round" strokeLinejoin="round" d="M3 1.5h6.5L13 5v9.5H3zM9 1.5V5h4M5 8h6M5 11h4"/>
-      </svg>
-    )},
-    { to: '/institutions', label: t.nav.institutions, end: false, icon: (
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M2 14V6l6-4.5L14 6v8H2zM6 14V9h4v5"/>
       </svg>
     )},
   ]
@@ -459,9 +459,7 @@ export default function AppLayout() {
                     </div>
                   </Link>
 
-                  {/* Preferências */}
-                  <p className="text-[10px] uppercase tracking-wider px-4 pt-2.5 pb-1" style={{ color: 'var(--arvo-fg-faint)' }}>{t.profile.tabPreferences}</p>
-                  <div className="px-4 py-2 flex items-center justify-between">
+                  <div className="px-4 py-2 flex items-center justify-between" style={{ marginTop: 4 }}>
                     <span className="text-xs" style={{ color: 'var(--arvo-fg-soft)' }}>{t.common.language}</span>
                     <LanguageSelector />
                   </div>
@@ -479,8 +477,7 @@ export default function AppLayout() {
                     </div>
                   </div>
 
-                  {/* Navegar */}
-                  <p className="text-[10px] uppercase tracking-wider px-4 pt-2.5 pb-1" style={{ color: 'var(--arvo-fg-faint)', borderTop: '1px solid var(--arvo-border-soft)' }}>{t.nav.navigate}</p>
+                  <div style={{ borderTop: '1px solid var(--arvo-border-soft)', margin: '4px 0' }} />
                   <Link to="/achievements" onClick={() => setShowUserMenu(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors" style={{ color: 'var(--arvo-fg-muted)' }} onMouseEnter={e => (e.currentTarget.style.background='var(--arvo-hover-bg)')} onMouseLeave={e => (e.currentTarget.style.background='')}>
                     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4 shrink-0">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M8 1.5l1.8 3.6 4 .6-2.9 2.8.7 4L8 10.4l-3.6 1.9.7-4L2.2 5.7l4-.6L8 1.5z"/>
@@ -497,8 +494,7 @@ export default function AppLayout() {
                     Pessoas
                   </Link>
 
-                  {/* Conta */}
-                  <p className="text-[10px] uppercase tracking-wider px-4 pt-2.5 pb-1" style={{ color: 'var(--arvo-fg-faint)', borderTop: '1px solid var(--arvo-border-soft)' }}>{t.nav.account}</p>
+                  <div style={{ borderTop: '1px solid var(--arvo-border-soft)', margin: '4px 0' }} />
                   <Link to="/profile" onClick={() => setShowUserMenu(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors" style={{ color: 'var(--arvo-fg-muted)' }} onMouseEnter={e => (e.currentTarget.style.background='var(--arvo-hover-bg)')} onMouseLeave={e => (e.currentTarget.style.background='')}>
                     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4 shrink-0">
                       <circle cx="8" cy="5" r="2.5"/><path strokeLinecap="round" d="M2.5 14c0-3 2.5-5 5.5-5s5.5 2 5.5 5"/>
