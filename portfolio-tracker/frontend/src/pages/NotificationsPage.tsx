@@ -75,7 +75,7 @@ function EmptyState({ text }: { text: string }) {
 
 export default function NotificationsPage() {
   const { t } = useI18n()
-  const { active, history, dismiss, dismissAll, restore } = useNotificationsContext()
+  const { active, history, dismiss, dismissAll, restore, removeFromHistory, clearHistory } = useNotificationsContext()
 
   return (
     <div className="space-y-6">
@@ -113,7 +113,17 @@ export default function NotificationsPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-sm font-semibold" style={{ color: 'var(--arvo-fg)' }}>{t.notifications.historySection}</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold" style={{ color: 'var(--arvo-fg)' }}>{t.notifications.historySection}</h2>
+          {history.length > 0 && (
+            <button
+              onClick={() => { if (confirm(t.notifications.clearHistoryConfirm)) clearHistory() }}
+              className="text-xs font-medium transition-colors arvo-accent-blue"
+            >
+              {t.notifications.clearHistory}
+            </button>
+          )}
+        </div>
         {history.length === 0 ? (
           <EmptyState text={t.notifications.emptyHistory} />
         ) : (
@@ -122,7 +132,12 @@ export default function NotificationsPage() {
               <NotificationRow
                 key={item.key}
                 item={item}
-                action={item.dismissible ? <RestoreButton onClick={() => restore(item)} label={t.notifications.restore} /> : null}
+                action={item.dismissible ? (
+                  <div className="flex items-center gap-1 shrink-0">
+                    <RestoreButton onClick={() => restore(item)} label={t.notifications.restore} />
+                    <DismissButton onClick={() => removeFromHistory(item)} title={t.notifications.remove} />
+                  </div>
+                ) : null}
               />
             ))}
           </div>

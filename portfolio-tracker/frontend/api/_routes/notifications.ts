@@ -225,4 +225,15 @@ router.delete('/dismiss/:key', requireAuth, async (req, res: Response) => {
   res.json({ ok: true })
 })
 
+// DELETE /api/notifications/dismiss — limpa todo o histórico do usuário
+router.delete('/dismiss', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const { error } = await supabaseAdmin
+    .from('notification_dismissals')
+    .delete()
+    .eq('user_id', userId)
+  if (error) { res.status(500).json({ error: error.message }); return }
+  res.json({ ok: true })
+})
+
 export default router

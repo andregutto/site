@@ -400,7 +400,7 @@ router.post('/invite/accept', async (req: any, res: any) => {
 
     const { data: row } = await supabaseAdmin
       .from('user_friends')
-      .select('id, status')
+      .select('id, status, owner_user_id')
       .eq('invite_token', token)
       .maybeSingle()
     if (!row) { res.status(404).json({ error: 'Convite não encontrado' }); return }
@@ -411,6 +411,20 @@ router.post('/invite/accept', async (req: any, res: any) => {
       .update({ friend_user_id: userId, status: 'active', joined_at: new Date().toISOString(), invite_token: null })
       .eq('id', row.id)
     if (error) { res.status(500).json({ error: error.message }); return }
+
+    // Registra no histórico de notificações de quem aceitou — sem isso, o
+    // item simplesmente desaparecia (deixava de ser 'pending' e nunca
+    // tinha sido dismissed, então não aparecia em active nem em history).
+    const owner = await userDisplay(row.owner_user_id)
+    await supabaseAdmin.from('notification_dismissals').upsert({
+      user_id: userId,
+      key: `friend_invite:${token}`,
+      type: 'friend_invite_accepted',
+      params: { inviter_name: owner.name ?? owner.email, inviter_username: owner.username },
+      severity: 'success',
+      link: '/people',
+      occurred_at: new Date().toISOString(),
+    }, { onConflict: 'user_id,key' })
 
     res.json({ ok: true })
   } catch (e: any) {

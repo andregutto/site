@@ -235,6 +235,7 @@ export type NotificationType =
   | 'trip_invite'
   | 'friend_invite'
   | 'friend_accepted'
+  | 'friend_invite_accepted'
 
 export interface NotificationItem {
   key: string

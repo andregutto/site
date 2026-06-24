@@ -11,6 +11,8 @@ interface NotificationsContextValue {
   dismiss: (item: NotificationItem) => Promise<void>
   dismissAll: () => Promise<void>
   restore: (item: NotificationItem) => Promise<void>
+  removeFromHistory: (item: NotificationItem) => Promise<void>
+  clearHistory: () => Promise<void>
 }
 
 const NotificationsContext = createContext<NotificationsContextValue | null>(null)
@@ -77,8 +79,26 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
     }
   }, [refresh])
 
+  const removeFromHistory = useCallback(async (item: NotificationItem) => {
+    setHistory(prev => prev.filter(i => i.key !== item.key))
+    try {
+      await apiFetch(`/notifications/dismiss/${encodeURIComponent(item.key)}`, { method: 'DELETE' })
+    } catch {
+      await refresh()
+    }
+  }, [refresh])
+
+  const clearHistory = useCallback(async () => {
+    setHistory([])
+    try {
+      await apiFetch('/notifications/dismiss', { method: 'DELETE' })
+    } catch {
+      await refresh()
+    }
+  }, [refresh])
+
   return (
-    <NotificationsContext.Provider value={{ active, history, unreadCount: active.length, loading, refresh, dismiss, dismissAll, restore }}>
+    <NotificationsContext.Provider value={{ active, history, unreadCount: active.length, loading, refresh, dismiss, dismissAll, restore, removeFromHistory, clearHistory }}>
       {children}
     </NotificationsContext.Provider>
   )

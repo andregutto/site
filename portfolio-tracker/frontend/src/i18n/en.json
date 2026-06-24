@@ -566,6 +566,9 @@
     "dismiss": "Dismiss",
     "dismissAll": "Clear all",
     "restore": "Restore",
+    "remove": "Remove",
+    "clearHistory": "Clear history",
+    "clearHistoryConfirm": "Delete the entire notification history? This can't be undone.",
     "viewAll": "View all notifications",
     "type_achievement": "Achievement unlocked",
     "type_bank_connected": "Bank account connected successfully",
@@ -576,6 +579,7 @@
     "type_shared_group_invite": "{inviter} invited you to the group \"{group}\"",
     "type_friend_invite": "{inviter} wants to connect with you",
     "type_friend_accepted": "{friend} accepted your invite",
+    "type_friend_invite_accepted": "You connected with {inviter}",
     "type_trip_invite": "{inviter} invited you to the trip \"{trip}\""
   },
   "finances": {

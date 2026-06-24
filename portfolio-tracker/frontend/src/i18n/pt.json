@@ -566,6 +566,9 @@
     "dismiss": "Dispensar",
     "dismissAll": "Limpar tudo",
     "restore": "Restaurar",
+    "remove": "Remover",
+    "clearHistory": "Limpar histórico",
+    "clearHistoryConfirm": "Apagar todo o histórico de notificações? Essa ação não pode ser desfeita.",
     "viewAll": "Ver todas as notificações",
     "type_achievement": "Conquista desbloqueada",
     "type_bank_connected": "Conta bancária conectada com sucesso",
@@ -576,6 +579,7 @@
     "type_shared_group_invite": "{inviter} convidou você para o grupo \"{group}\"",
     "type_friend_invite": "{inviter} quer se conectar com você",
     "type_friend_accepted": "{friend} aceitou seu convite",
+    "type_friend_invite_accepted": "Você se conectou com {inviter}",
     "type_trip_invite": "{inviter} convidou você para a viagem \"{trip}\""
   },
   "finances": {
