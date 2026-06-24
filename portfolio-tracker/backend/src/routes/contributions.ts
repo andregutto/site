@@ -1,7 +1,7 @@
 // CRUD de aportes
 import { Router, Response } from 'express'
-import { requireAuth, AuthRequest } from 'shared-api/middleware/auth.js'
-import { supabaseAdmin } from 'shared-api/lib/supabase.js'
+import { requireAuth, AuthRequest } from '../../../shared-api/src/middleware/auth.js'
+import { supabaseAdmin } from '../../../shared-api/src/lib/supabase.js'
 
 const router = Router()
 

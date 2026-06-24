@@ -1,5 +1,5 @@
-import { supabaseAdmin } from 'shared-api/lib/supabase.js'
-import { getFxRate } from 'shared-api/lib/fx.js'
+import { supabaseAdmin } from '../../../shared-api/src/lib/supabase.js'
+import { getFxRate } from '../../../shared-api/src/lib/fx.js'
 import YahooFinance from 'yahoo-finance2'
 
 const yf = new YahooFinance({ suppressNotices: ['yahooSurvey', 'ripHistorical'] })

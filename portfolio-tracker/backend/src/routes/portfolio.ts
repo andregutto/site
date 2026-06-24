@@ -1,12 +1,12 @@
 // GET /api/portfolio/value — valor atual consolidado do portfólio
 import { Router, Response } from 'express'
-import { requireAuth, AuthRequest } from 'shared-api/middleware/auth.js'
-import { supabaseAdmin } from 'shared-api/lib/supabase.js'
-import { getCurrentPrice, getDailyHistory, getMonthlyHistory, Asset, FITranche } from 'shared-api/services/priceService.js'
-import { getSplitEvents } from 'shared-api/services/yahooService.js'
-import { getFxRate } from 'shared-api/lib/fx.js'
-import { cache, TTL } from 'shared-api/lib/cache.js'
-import * as yahoo from 'shared-api/services/yahooService.js'
+import { requireAuth, AuthRequest } from '../../../shared-api/src/middleware/auth.js'
+import { supabaseAdmin } from '../../../shared-api/src/lib/supabase.js'
+import { getCurrentPrice, getDailyHistory, getMonthlyHistory, Asset, FITranche } from '../../../shared-api/src/services/priceService.js'
+import { getSplitEvents } from '../../../shared-api/src/services/yahooService.js'
+import { getFxRate } from '../../../shared-api/src/lib/fx.js'
+import { cache, TTL } from '../../../shared-api/src/lib/cache.js'
+import * as yahoo from '../../../shared-api/src/services/yahooService.js'
 import {
   computeInception, computePerformanceSummary, computeMonthlySeries, computeBenchmarks,
   computeAssetReturns, fetchPrefetchedData, prefetchFIRates, localYM, localDate,

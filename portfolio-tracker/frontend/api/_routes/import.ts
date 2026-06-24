@@ -1,8 +1,8 @@
 import { Router, Response } from 'express'
 import * as XLSX from 'xlsx'
-import { requireAuth, AuthRequest } from 'shared-api/middleware/auth.js'
-import { supabaseAdmin } from 'shared-api/lib/supabase.js'
-import { getMonthlyHistory, Asset } from 'shared-api/services/priceService.js'
+import { requireAuth, AuthRequest } from '../../../shared-api/src/middleware/auth.js'
+import { supabaseAdmin } from '../../../shared-api/src/lib/supabase.js'
+import { getMonthlyHistory, Asset } from '../../../shared-api/src/services/priceService.js'
 
 const router = Router()
 

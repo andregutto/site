@@ -1,13 +1,13 @@
 import { Router, Response } from 'express'
-import { requireAuth, AuthRequest } from 'shared-api/middleware/auth.js'
-import { supabaseAdmin } from 'shared-api/lib/supabase.js'
-import { getCurrentPrice } from 'shared-api/services/priceService.js'
-import type { Asset, FITranche } from 'shared-api/services/priceService.js'
-import { getSplitEvents } from 'shared-api/services/yahooService.js'
-import { cache } from 'shared-api/lib/cache.js'
-import { calculateTrancheProfits } from 'shared-api/services/fixedIncomeService.js'
-import type { FixedIncomeAsset } from 'shared-api/services/fixedIncomeService.js'
-import { getFxRate } from 'shared-api/lib/fx.js'
+import { requireAuth, AuthRequest } from '../../../shared-api/src/middleware/auth.js'
+import { supabaseAdmin } from '../../../shared-api/src/lib/supabase.js'
+import { getCurrentPrice } from '../../../shared-api/src/services/priceService.js'
+import type { Asset, FITranche } from '../../../shared-api/src/services/priceService.js'
+import { getSplitEvents } from '../../../shared-api/src/services/yahooService.js'
+import { cache } from '../../../shared-api/src/lib/cache.js'
+import { calculateTrancheProfits } from '../../../shared-api/src/services/fixedIncomeService.js'
+import type { FixedIncomeAsset } from '../../../shared-api/src/services/fixedIncomeService.js'
+import { getFxRate } from '../../../shared-api/src/lib/fx.js'
 
 const router = Router()
 

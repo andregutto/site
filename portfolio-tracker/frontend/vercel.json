@@ -3,7 +3,7 @@
   "outputDirectory": "dist",
   "installCommand": "npm install",
   "functions": {
-    "api/[...path].ts": { "maxDuration": 60 }
+    "api/[...path].ts": { "maxDuration": 60, "includeFiles": "../shared-api/**" }
   },
   "routes": [
     { "src": "/api/(.*)", "dest": "/api/[...path]" },
