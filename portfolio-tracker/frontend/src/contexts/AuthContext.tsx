@@ -57,7 +57,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           for (let i = 0; i < localStorage.length; i++) {
             const k = localStorage.key(i)
             if (k && (
-              k.startsWith('perf7_') ||
+              k.startsWith('perf8_') ||
+              k.startsWith('perf7_') ||           // legacy — purge old format
               k.startsWith('perf6_') ||           // legacy — purge old format
               k.startsWith('perf_inception_v1') ||
               k.startsWith('div_summary_') ||      // dividends cache — user-specific

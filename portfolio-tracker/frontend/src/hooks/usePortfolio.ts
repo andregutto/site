@@ -40,16 +40,29 @@ export function clearPerfCache() {
 // (which ticks up continuously, not just on a price-cache TTL) at slightly
 // different instants — that's what made Dashboard vs Assets totals diverge by
 // a few BRL/EUR even though both compute the same sum from the same data.
-let portfolioValueCache: { data: PortfolioValue; ts: number } | null = null
+//
+// Tagged with the userId it was fetched for: without this, logging out and
+// logging in as a different user within the TTL window would render the
+// previous user's portfolio data (confirmed bug — module state outlives the
+// React tree, AuthContext's logout cleanup never touched it).
+let portfolioValueCache: { userId: string; data: PortfolioValue; ts: number } | null = null
 const PORTFOLIO_VALUE_TTL_MS = 90_000
 
+export function clearPortfolioValueCache() {
+  portfolioValueCache = null
+}
+
 export function usePortfolioValue() {
-  const [data, setData]     = useState<PortfolioValue | null>(portfolioValueCache?.data ?? null)
-  const [loading, setLoading] = useState(!portfolioValueCache)
+  const { user } = useAuth()
+  const userId = user?.id
+  const cacheValidForUser = portfolioValueCache && portfolioValueCache.userId === userId
+  const [data, setData]     = useState<PortfolioValue | null>(cacheValidForUser ? portfolioValueCache!.data : null)
+  const [loading, setLoading] = useState(!cacheValidForUser)
   const [error, setError]   = useState<string | null>(null)
 
   const doFetch = useCallback(async (force: boolean) => {
-    if (!force && portfolioValueCache && Date.now() - portfolioValueCache.ts < PORTFOLIO_VALUE_TTL_MS) {
+    if (!userId) return
+    if (!force && portfolioValueCache && portfolioValueCache.userId === userId && Date.now() - portfolioValueCache.ts < PORTFOLIO_VALUE_TTL_MS) {
       setData(portfolioValueCache.data)
       setLoading(false)
       return
@@ -58,17 +71,20 @@ export function usePortfolioValue() {
     setError(null)
     try {
       const result = await apiFetch<PortfolioValue>('/portfolio/value')
-      portfolioValueCache = { data: result, ts: Date.now() }
+      portfolioValueCache = { userId, data: result, ts: Date.now() }
       setData(result)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao carregar portfólio')
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [userId])
 
   const refresh = useCallback(() => doFetch(true), [doFetch])
-  useEffect(() => { doFetch(false) }, [doFetch])
+  useEffect(() => {
+    if (!cacheValidForUser) setData(null)
+    doFetch(false)
+  }, [doFetch, userId])
   return { data, loading, error, refresh }
 }
 
