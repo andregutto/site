@@ -374,7 +374,7 @@ export default function PeoplePage() {
 
   useEffect(() => { load() }, [load])
   useEffect(() => {
-    apiFetch<Trip[]>('/voyage/trips').then(setTrips).catch(() => {})
+    apiFetch<{ trips: Trip[] }>('/voyage/trips').then(r => setTrips(r.trips)).catch(() => {})
     apiFetch<Group[]>('/shared/groups').then(setGroups).catch(() => {})
   }, [])
 
