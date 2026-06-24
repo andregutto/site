@@ -2,6 +2,7 @@ import { Router, Response } from 'express'
 import { randomBytes } from 'crypto'
 import { requireAuth, AuthRequest } from '../middleware/auth.js'
 import { supabaseAdmin } from '../lib/supabase.js'
+import { revertSharedCategory } from './finances.js'
 
 const router = Router()
 // NOTE: GET /invite/:token is intentionally public (no requireAuth)
@@ -465,6 +466,26 @@ router.delete('/groups/:groupId/members/:memberId', requireAuth, async (req, res
     .from('shared_group_members')
     .update({ status: 'left', left_at: new Date().toISOString() })
     .eq('id', memberId)
+
+  // Se não restar mais ninguém além do criador, categorias promovidas a
+  // partir de uma categoria pessoal voltam a ser pessoais automaticamente —
+  // não faz sentido continuar "compartilhada" sem compartilhar com alguém.
+  const { data: remaining } = await supabaseAdmin
+    .from('shared_group_members')
+    .select('id')
+    .eq('group_id', groupId)
+    .eq('status', 'active')
+    .neq('user_id', group?.created_by ?? '')
+  if (!remaining?.length) {
+    const { data: promotedCats } = await supabaseAdmin
+      .from('shared_categories')
+      .select('id')
+      .eq('group_id', groupId)
+      .not('source_category_id', 'is', null)
+    for (const c of promotedCats ?? []) {
+      await revertSharedCategory(c.id)
+    }
+  }
 
   res.json({ ok: true })
 })

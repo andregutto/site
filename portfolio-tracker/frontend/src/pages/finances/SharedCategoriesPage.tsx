@@ -243,10 +243,13 @@ export default function SharedCategoriesPage() {
         <PickCategoryModal
           s={s}
           onClose={() => setShowPickCategory(null)}
-          onPick={(cat) => {
+          onPick={async (cat) => {
+            const groupId = showPickCategory
             setShowPickCategory(null)
-            setPrefilledCat({ name: cat.name, icon: cat.icon, color: cat.color })
-            setShowNewCat(activeGroupId!)
+            await apiFetch(`/finances/categories/${cat.id}/share`, {
+              method: 'POST', body: JSON.stringify({ group_id: groupId }),
+            })
+            load()
           }}
         />
       )}
@@ -887,7 +890,7 @@ function PickCategoryModal({ s, onClose, onPick }: {
           {s.useExistingCategory ?? 'Usar categoria existente'}
         </h2>
         <p className="text-xs" style={{ color: 'var(--arvo-fg-soft)' }}>
-          {s.pickCategoryHint ?? 'Escolha uma categoria do planejamento para usar como base. Você poderá ajustar nome, ícone e meta.'}
+          {s.pickCategoryHint ?? 'Escolha uma categoria do seu planejamento para compartilhar. As transações já lançadas nela migram junto, e ela some da sua lista pessoal enquanto estiver compartilhada — se remover todo mundo do grupo, ela volta a ser pessoal automaticamente.'}
         </p>
         {loading ? (
           <div className="h-20 animate-pulse rounded-lg" style={{ background: 'var(--arvo-border)' }} />

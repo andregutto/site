@@ -418,11 +418,69 @@ router.get('/categories', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const { data } = await supabaseAdmin
     .from('finance_categories')
-    .select('id, name, icon, color, budget_monthly, name_key')
+    .select('id, name, icon, color, budget_monthly, name_key, archived')
     .eq('user_id', userId)
+    .eq('archived', false)
     .order('name')
   res.json(data ?? [])
 })
+
+// POST /api/finances/categories/:id/share — converte uma categoria pessoal
+// existente numa categoria compartilhada de um grupo (mesma identidade,
+// transações migram, original fica arquivada para permitir reverter depois).
+router.post('/categories/:id/share', requireAuth, async (req, res: Response) => {
+  try {
+    const { userId } = req as AuthRequest
+    const categoryId = Number(req.params.id)
+    const { group_id } = req.body as { group_id?: number }
+    if (!group_id) { res.status(400).json({ error: 'group_id obrigatório' }); return }
+
+    const { data: category } = await supabaseAdmin
+      .from('finance_categories').select('*').eq('id', categoryId).eq('user_id', userId).single()
+    if (!category) { res.status(404).json({ error: 'Categoria não encontrada' }); return }
+
+    const { data: group } = await supabaseAdmin.from('shared_groups').select('id, created_by').eq('id', group_id).single()
+    if (!group) { res.status(404).json({ error: 'Grupo não encontrado' }); return }
+    const { data: membership } = await supabaseAdmin
+      .from('shared_group_members').select('id').eq('group_id', group_id).eq('user_id', userId).eq('status', 'active').maybeSingle()
+    if (group.created_by !== userId && !membership) { res.status(403).json({ error: 'Sem permissão neste grupo' }); return }
+
+    const { data: sharedCat, error } = await supabaseAdmin
+      .from('shared_categories')
+      .insert({
+        group_id, name: category.name, icon: category.icon, color: category.color,
+        total_goal: category.budget_monthly ?? 0, created_by: userId, source_category_id: categoryId,
+      })
+      .select('id').single()
+    if (error || !sharedCat) { res.status(500).json({ error: error?.message }); return }
+
+    await supabaseAdmin
+      .from('finance_transactions')
+      .update({ shared_category_id: sharedCat.id, category_id: null })
+      .eq('category_id', categoryId)
+    await supabaseAdmin.from('finance_categories').update({ archived: true }).eq('id', categoryId)
+
+    res.json({ ok: true, shared_category_id: sharedCat.id })
+  } catch (e: any) {
+    res.status(500).json({ error: e.message ?? 'Erro ao compartilhar categoria' })
+  }
+})
+
+// POST /api/finances/categories/:id/unarchive — reverte manualmente (usado
+// também pelo auto-revert ao remover o último outro membro do grupo).
+export async function revertSharedCategory(sharedCategoryId: number): Promise<boolean> {
+  const { data: sharedCat } = await supabaseAdmin
+    .from('shared_categories').select('id, source_category_id').eq('id', sharedCategoryId).single()
+  if (!sharedCat?.source_category_id) return false
+
+  await supabaseAdmin
+    .from('finance_transactions')
+    .update({ category_id: sharedCat.source_category_id, shared_category_id: null })
+    .eq('shared_category_id', sharedCategoryId)
+  await supabaseAdmin.from('finance_categories').update({ archived: false }).eq('id', sharedCat.source_category_id)
+  await supabaseAdmin.from('shared_categories').delete().eq('id', sharedCategoryId)
+  return true
+}
 
 // POST /api/finances/categories
 router.post('/categories', requireAuth, async (req, res: Response) => {
