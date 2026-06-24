@@ -6,7 +6,7 @@ import { getSplitEvents } from '../../../shared-api/src/services/yahooService.js
 import { getFxRate } from '../../../shared-api/src/lib/fx.js'
 import { cache, TTL } from '../../../shared-api/src/lib/cache.js'
 import * as yahoo from '../../../shared-api/src/services/yahooService.js'
-import { buildPortfolioSnapshot } from '../_services/snapshotService.js'
+import { buildPortfolioSnapshot } from '../../../shared-api/src/services/snapshotService.js'
 
 const router = Router()
 

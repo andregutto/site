@@ -1,8 +1,7 @@
-// Lista de instituições financeiras: bancos BR (BrasilAPI) + internacionais + custom
 import { Router, Response } from 'express'
-import { requireAuth } from '../../../shared-api/src/middleware/auth.js'
-import { supabaseAdmin } from '../../../shared-api/src/lib/supabase.js'
-import { cache } from '../../../shared-api/src/lib/cache.js'
+import { requireAuth } from '../middleware/auth.js'
+import { supabaseAdmin } from '../lib/supabase.js'
+import { cache } from '../lib/cache.js'
 
 const router = Router()
 
@@ -54,7 +53,6 @@ async function fetchBRBanks(): Promise<string[]> {
   }
 }
 
-// GET /api/institutions — lista unificada para autocomplete
 router.get('/', requireAuth, async (_req, res: Response) => {
   const [brBanks, customRaw] = await Promise.all([
     fetchBRBanks(),
@@ -64,7 +62,6 @@ router.get('/', requireAuth, async (_req, res: Response) => {
       .not('exchange', 'is', null),
   ])
 
-  // Custom: valores de exchange no banco que não estão nas listas padrão
   const defaultNames = new Set([
     ...brBanks.map(n => n.toLowerCase()),
     ...INTERNATIONAL.map(n => n.toLowerCase()),

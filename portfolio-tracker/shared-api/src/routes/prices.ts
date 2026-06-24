@@ -1,11 +1,10 @@
 import { Router, Response } from 'express'
-import { requireAuth, AuthRequest } from '../../../shared-api/src/middleware/auth.js'
-import { supabaseAdmin } from '../../../shared-api/src/lib/supabase.js'
-import { getCurrentPrice, getMonthlyHistory, Asset } from '../../../shared-api/src/services/priceService.js'
+import { requireAuth, AuthRequest } from '../middleware/auth.js'
+import { supabaseAdmin } from '../lib/supabase.js'
+import { getCurrentPrice, getMonthlyHistory, Asset } from '../services/priceService.js'
 
 const router = Router()
 
-// Carrega asset do Supabase verificando que pertence ao usuário
 async function loadAsset(assetId: number, userId: string): Promise<Asset | null> {
   const { data } = await supabaseAdmin
     .from('assets')
@@ -17,7 +16,6 @@ async function loadAsset(assetId: number, userId: string): Promise<Asset | null>
   return data as Asset | null
 }
 
-// GET /api/prices/:id/current
 router.get('/:id/current', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const asset = await loadAsset(Number(req.params.id), userId)
@@ -34,7 +32,6 @@ router.get('/:id/current', requireAuth, async (req, res: Response) => {
   }
 })
 
-// GET /api/prices/:id/history?months=24
 router.get('/:id/history', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const asset  = await loadAsset(Number(req.params.id), userId)
@@ -48,7 +45,6 @@ router.get('/:id/history', requireAuth, async (req, res: Response) => {
   try {
     const history = await getMonthlyHistory(asset, months)
 
-    // Persiste no price_history para uso futuro em performance
     if (history.length > 0) {
       const rows = history.map((p) => ({
         asset_id: asset.id,

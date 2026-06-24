@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express'
-import { cache, TTL } from '../../../shared-api/src/lib/cache.js'
+import { cache, TTL } from '../lib/cache.js'
 
 const router = Router()
 const AWESOME_BASE = 'https://economia.awesomeapi.com.br/json'
@@ -12,7 +12,6 @@ async function awesomeFetch<T>(url: string, ttlMs: number): Promise<T> {
   })
 }
 
-// GET /api/fx/current?pairs=USD-BRL,EUR-BRL
 router.get('/current', async (req: Request, res: Response) => {
   const pairs = (req.query.pairs as string) || 'USD-BRL,EUR-BRL'
   try {
@@ -31,7 +30,6 @@ router.get('/current', async (req: Request, res: Response) => {
   }
 })
 
-// GET /api/fx/historical?pair=USD-BRL&days=30
 router.get('/historical', async (req: Request, res: Response) => {
   const pair = (req.query.pair as string) || 'USD-BRL'
   const days = parseInt((req.query.days as string) || '30')
@@ -48,7 +46,6 @@ router.get('/historical', async (req: Request, res: Response) => {
   }
 })
 
-// GET /api/fx/range?pair=USD-BRL&start=20250101&end=20250430
 router.get('/range', async (req: Request, res: Response) => {
   const pair  = (req.query.pair  as string) || 'USD-BRL'
   const start = req.query.start as string

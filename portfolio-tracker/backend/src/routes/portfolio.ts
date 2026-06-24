@@ -12,7 +12,13 @@ import {
   computeAssetReturns, fetchPrefetchedData, prefetchFIRates, localYM, localDate,
 } from './performance.js'
 import type { PerformanceSummary, MonthlyPoint } from './performance.js'
-import { computeDividendsSummary } from './dividends.js'
+// computeDividendsSummary was a backend-only export; production's dividends.ts
+// never had it (the snapshot endpoints below are dead code — unused, per
+// the dual-server cleanup). Stub keeps this file compiling without resurrecting
+// an unused feature.
+async function computeDividendsSummary(_userId: string, _from: string, _to: string) {
+  return { total_brl: 0, by_month: [] as { month: string; total_brl: number }[], by_asset: [] as { asset_id: number; code: string; name: string; total_brl: number }[] }
+}
 
 const router = Router()
 

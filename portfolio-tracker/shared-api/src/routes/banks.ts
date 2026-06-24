@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express'
 import crypto from 'crypto'
-import { requireAuth, AuthRequest } from '../../../shared-api/src/middleware/auth.js'
-import { supabaseAdmin } from '../../../shared-api/src/lib/supabase.js'
+import { requireAuth, AuthRequest } from '../middleware/auth.js'
+import { supabaseAdmin } from '../lib/supabase.js'
 
 const router = Router()
 
@@ -37,14 +37,29 @@ function getRedirectUri(req: Request): string {
   return `${proto}://${req.get('host')}/api/banks/callback`
 }
 
-// GET /api/banks/auth
+// GET /api/banks/config — diagnóstico público (sem credenciais sensíveis)
+router.get('/config', async (req, res: Response) => {
+  const ruri = getRedirectUri(req)
+  res.json({
+    redirect_uri: ruri,
+    client_id_prefix: (process.env.TRUELAYER_CLIENT_ID ?? '').slice(0, 20) || '(não definido)',
+    is_sandbox: isSandbox,
+    env_redirect_uri_set: !!process.env.TRUELAYER_REDIRECT_URI,
+    env_redirect_uri_value: process.env.TRUELAYER_REDIRECT_URI || '(vazio — usando fallback dinâmico)',
+    host: req.get('host'),
+    x_forwarded_proto: req.headers['x-forwarded-proto'] ?? '(não presente)',
+    req_protocol: req.protocol,
+  })
+})
+
+// GET /api/banks/auth — generate TrueLayer auth URL
 router.get('/auth', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
   if (!process.env.TRUELAYER_CLIENT_ID) {
     res.status(503).json({ error: 'TrueLayer not configured' }); return
   }
   const state = createState(userId)
-  const ruri = getRedirectUri(req)
+  const ruri  = getRedirectUri(req)
   const url = new URL(`${TL_AUTH}/`)
   url.searchParams.set('response_type', 'code')
   url.searchParams.set('client_id', process.env.TRUELAYER_CLIENT_ID)
@@ -52,11 +67,11 @@ router.get('/auth', requireAuth, async (req, res: Response) => {
   url.searchParams.set('redirect_uri', ruri)
   url.searchParams.set('state', state)
   if (isSandbox) url.searchParams.set('providers', 'mock')
-  res.json({ url: url.toString() })
+  res.json({ url: url.toString(), _debug_redirect_uri: ruri })
 })
 
-// GET /api/banks/callback
-router.get('/callback', async (req: Request, res: Response) => {
+// GET /api/banks/callback — TrueLayer OAuth callback
+router.get('/callback', async (req, res: Response) => {
   const { code, state, error: tlError } = req.query as Record<string, string>
   const frontend = (process.env.FRONTEND_ORIGIN ?? '').split(',')[0].trim() || 'http://localhost:5174'
 
@@ -133,7 +148,7 @@ router.get('/connections', requireAuth, async (req, res: Response) => {
   res.json(data)
 })
 
-// POST /api/banks/sync/:id
+// POST /api/banks/sync/:id — fetch & import transactions from TrueLayer
 router.post('/sync/:id', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const connId = Number(req.params.id)
@@ -144,6 +159,7 @@ router.post('/sync/:id', requireAuth, async (req, res: Response) => {
 
   let accessToken: string = conn.access_token
 
+  // Refresh token if expiring in < 60s
   if (conn.token_expires_at && new Date(conn.token_expires_at) < new Date(Date.now() + 60_000)) {
     const tr = await fetch(`${TL_AUTH}/connect/token`, {
       method: 'POST',
@@ -167,9 +183,10 @@ router.post('/sync/:id', requireAuth, async (req, res: Response) => {
 
   const from = new Date(Date.now() - 90 * 86_400_000).toISOString().slice(0, 10)
   const to   = new Date().toISOString().slice(0, 10)
+  const accountId = conn.provider_user_id
 
   const txRes = await fetch(
-    `${TL_API}/data/v1/accounts/${conn.provider_user_id}/transactions?from=${from}&to=${to}`,
+    `${TL_API}/data/v1/accounts/${accountId}/transactions?from=${from}&to=${to}`,
     { headers: { Authorization: `Bearer ${accessToken}` } }
   )
 
@@ -185,6 +202,7 @@ router.post('/sync/:id', requireAuth, async (req, res: Response) => {
     const source = `truelayer:${tx.transaction_id}`
     const date   = tx.timestamp.slice(0, 10)
 
+    // Dedup: check for a unique CSV-imported transaction with same date+amount+currency
     const { data: existing } = await supabaseAdmin
       .from('finance_transactions')
       .select('id')
@@ -195,11 +213,13 @@ router.post('/sync/:id', requireAuth, async (req, res: Response) => {
       .eq('source', 'csv')
 
     if (existing && existing.length === 1) {
+      // Unique match — update source to claim it (no duplicate created)
       await supabaseAdmin.from('finance_transactions')
         .update({ source })
         .eq('id', existing[0].id)
       merged++
     } else {
+      // No match or ambiguous — insert (unique index prevents TrueLayer duplicates)
       const { error } = await supabaseAdmin.from('finance_transactions').insert({
         user_id: userId, date, description: tx.description,
         amount: tx.amount, currency: tx.currency, source,

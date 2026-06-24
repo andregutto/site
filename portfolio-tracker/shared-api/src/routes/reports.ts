@@ -1,7 +1,7 @@
 import { Router, Response } from 'express'
-import { requireAuth, AuthRequest } from '../../../shared-api/src/middleware/auth.js'
-import { supabaseAdmin } from '../../../shared-api/src/lib/supabase.js'
-import { cache } from '../../../shared-api/src/lib/cache.js'
+import { requireAuth, AuthRequest } from '../middleware/auth.js'
+import { supabaseAdmin } from '../lib/supabase.js'
+import { cache } from '../lib/cache.js'
 
 const router = Router()
 
@@ -402,7 +402,22 @@ router.get('/france/:year', requireAuth, async (req, res: Response) => {
   const assetIds = Object.keys(assetMap).map(Number)
 
   if (assetIds.length === 0) {
-    res.json({ year, events: [], sections_daily: [], sections_year_end: [], totals_daily: { dividends_eur: 0, interests_eur: 0, credit_eur: 0 }, totals_year_end: { dividends_eur: 0, interests_eur: 0, credit_eur: 0 }, accounts: [], fx_rates: { year_end_brl_eur: 0, year_end_usd_eur: 0 } })
+    res.json({
+      year, events: [], sections_daily: [], sections_year_end: [],
+      totals_daily: { dividends_eur: 0, interests_eur: 0, credit_eur: 0 },
+      totals_year_end: { dividends_eur: 0, interests_eur: 0, credit_eur: 0 },
+      comparison: {
+        daily: { dividends_eur: 0, interests_eur: 0, credit_eur: 0, total_eur: 0 },
+        year_end: { dividends_eur: 0, interests_eur: 0, credit_eur: 0, total_eur: 0 },
+        recommended: 'daily',
+        advantage_eur: 0,
+      },
+      accounts: [],
+      capital_gains: [],
+      total_gain_eur_daily: 0,
+      total_gain_eur_year_end: 0,
+      fx_rates: { year_end_brl_eur: 0, year_end_usd_eur: 0 },
+    })
     return
   }
 

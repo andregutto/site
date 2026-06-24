@@ -1,11 +1,9 @@
-// CRUD de aportes
 import { Router, Response } from 'express'
-import { requireAuth, AuthRequest } from '../../../shared-api/src/middleware/auth.js'
-import { supabaseAdmin } from '../../../shared-api/src/lib/supabase.js'
+import { requireAuth, AuthRequest } from '../middleware/auth.js'
+import { supabaseAdmin } from '../lib/supabase.js'
 
 const router = Router()
 
-// GET /api/contributions — todos os aportes do usuário
 router.get('/', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
 
@@ -23,14 +21,13 @@ router.get('/', requireAuth, async (req, res: Response) => {
   res.json(data ?? [])
 })
 
-// POST /api/contributions — registra novo aporte/resgate
 router.post('/', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const { asset_id, date, type, quantity, price_orig, currency, fx_rate_brl, value_brl, amount_orig, description, tax_withheld } = req.body as {
     asset_id:      number
     date:          string
-    type:          'buy' | 'sell'
-    quantity:      number
+    type:          'buy' | 'sell' | 'income'
+    quantity?:     number
     price_orig?:   number
     currency?:     string
     fx_rate_brl?:  number
@@ -40,11 +37,14 @@ router.post('/', requireAuth, async (req, res: Response) => {
     tax_withheld?: number
   }
 
-  if (!asset_id || !date || !type || !quantity) {
+  const qty = type === 'income' ? (quantity ?? 0) : quantity
+  if (!asset_id || !date || !type || (type !== 'income' && qty == null)) {
     res.status(400).json({ error: 'asset_id, date, type e quantity são obrigatórios' }); return
   }
+  if (!['buy', 'sell', 'income'].includes(type)) {
+    res.status(400).json({ error: 'type deve ser buy, sell ou income' }); return
+  }
 
-  // Valida ownership
   const { data: asset } = await supabaseAdmin
     .from('assets')
     .select('id, asset_type, currency')
@@ -56,7 +56,7 @@ router.post('/', requireAuth, async (req, res: Response) => {
   const { data, error } = await supabaseAdmin
     .from('contributions')
     .insert({
-      asset_id, date, type, quantity,
+      asset_id, date, type, quantity: qty,
       price_orig:   price_orig   ?? null,
       currency:     currency     ?? null,
       fx_rate_brl:  fx_rate_brl  ?? null,
@@ -74,7 +74,7 @@ router.post('/', requireAuth, async (req, res: Response) => {
     const contribCurrency = currency ?? asset.currency ?? 'BRL'
     const refDate = date.slice(0, 7) + '-01' // first of month
 
-    // Get the most recent manual_value (for base value)
+    // Get the most recent manual_values (for base + existing month)
     const { data: latestValues } = await supabaseAdmin
       .from('manual_values')
       .select('value, currency, ref_date')
@@ -105,11 +105,11 @@ router.post('/', requireAuth, async (req, res: Response) => {
   res.status(201).json({ id: data.id, ok: true })
 })
 
-// PATCH /api/contributions/:id — edita aporte
 router.patch('/:id', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const contribId = Number(req.params.id)
 
+  // Verify ownership via asset
   const { data: contrib } = await supabaseAdmin
     .from('contributions')
     .select('id, asset_id, assets!inner(user_id)')
@@ -135,13 +135,13 @@ router.patch('/:id', requireAuth, async (req, res: Response) => {
   }
 
   const updates: Record<string, unknown> = {}
-  if (date        !== undefined) updates.date        = date
-  if (type        !== undefined) updates.type        = type
-  if (quantity    !== undefined) updates.quantity    = quantity
-  if (price_orig  !== undefined) updates.price_orig  = price_orig
-  if (currency    !== undefined) updates.currency    = currency
-  if (fx_rate_brl !== undefined) updates.fx_rate_brl = fx_rate_brl
-  if (value_brl   !== undefined) updates.value_brl   = value_brl
+  if (date         !== undefined) updates.date         = date
+  if (type         !== undefined) updates.type         = type
+  if (quantity     !== undefined) updates.quantity     = quantity
+  if (price_orig   !== undefined) updates.price_orig   = price_orig
+  if (currency     !== undefined) updates.currency     = currency
+  if (fx_rate_brl  !== undefined) updates.fx_rate_brl  = fx_rate_brl
+  if (value_brl    !== undefined) updates.value_brl    = value_brl
   if (description  !== undefined) updates.description  = description
   if (tax_withheld !== undefined) updates.tax_withheld = tax_withheld
 
@@ -154,12 +154,10 @@ router.patch('/:id', requireAuth, async (req, res: Response) => {
   res.json({ ok: true })
 })
 
-// DELETE /api/contributions/:id — remove aporte
 router.delete('/:id', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const contribId = Number(req.params.id)
 
-  // Valida ownership via join
   const { data: contrib } = await supabaseAdmin
     .from('contributions')
     .select('id, assets!inner(user_id)')

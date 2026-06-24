@@ -1,17 +1,17 @@
 // Builds the rich Phase-2 portfolio snapshot for shared reports.
 // Mirrors backend/src/routes/portfolio.ts buildPortfolioSnapshot + performance helpers.
-import { supabaseAdmin } from '../../../shared-api/src/lib/supabase.js'
-import { getFxRate } from '../../../shared-api/src/lib/fx.js'
-import { cache, TTL } from '../../../shared-api/src/lib/cache.js'
-import { getCurrentPrice, Asset, FITranche } from '../../../shared-api/src/services/priceService.js'
-import { getAssetSector } from '../../../shared-api/src/services/yahooService.js'
-import { getRates, SERIES, getCDIRates, getSelicRates, getIPCARates } from '../../../shared-api/src/services/bcbService.js'
+import { supabaseAdmin } from '../lib/supabase.js'
+import { getFxRate } from '../lib/fx.js'
+import { cache, TTL } from '../lib/cache.js'
+import { getCurrentPrice, Asset, FITranche } from './priceService.js'
+import { getAssetSector } from './yahooService.js'
+import { getRates, SERIES, getCDIRates, getSelicRates, getIPCARates } from './bcbService.js'
 import YahooFinance from 'yahoo-finance2'
 import {
   localDate, localYM, ValPoint, interpolateKnownPoints,
   PrefetchedData, fetchPrefetchedData, prefetchFIRates,
   estimateContribValue, computePortfolioValueAtMonth,
-} from '../../../shared-api/src/routes/performance.js'
+} from '../routes/performance.js'
 
 const yf = new YahooFinance({ suppressNotices: ['yahooSurvey', 'ripHistorical'] })
 

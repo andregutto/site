@@ -1,9 +1,9 @@
 import { Router, Response } from 'express'
-import { supabaseAdmin } from '../../../shared-api/src/lib/supabase.js'
+import { supabaseAdmin } from '../lib/supabase.js'
 import type {
   PortfolioSnapshot, SnapshotAsset, SnapshotGroupValue, SnapshotClassValue,
   SnapshotPerformance, SnapshotMonthlyPoint, SnapshotDividends,
-} from '../_services/snapshotService.js'
+} from '../services/snapshotService.js'
 
 const router = Router()
 

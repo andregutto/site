@@ -1,7 +1,8 @@
 import { Router, Response } from 'express'
 import { randomBytes } from 'crypto'
-import { requireAuth, AuthRequest } from '../../../shared-api/src/middleware/auth.js'
-import { supabaseAdmin } from '../../../shared-api/src/lib/supabase.js'
+import { requireAuth, AuthRequest } from '../middleware/auth.js'
+import { supabaseAdmin } from '../lib/supabase.js'
+import { cache } from '../lib/cache.js'
 
 const router = Router()
 
@@ -27,7 +28,7 @@ async function buildCostSummary(tripId: number, requestingUserId: string) {
     .eq('trip_id', tripId)
 
   if (!tripMoments || tripMoments.length === 0) {
-    return { total: 0, currency: 'EUR', moments: [], by_user: [] }
+    return { total: 0, budget: null, currency: 'EUR', moments: [], by_user: [], by_category: [], by_place: await buildByPlace(tripId) }
   }
 
   const momentIds = tripMoments.map(m => m.moment_id)
@@ -41,11 +42,12 @@ async function buildCostSummary(tripId: number, requestingUserId: string) {
   // Busca transações de todos os momentos (via tabela junction)
   const { data: txRows } = await supabaseAdmin
     .from('finance_transaction_moments')
-    .select('moment_id, finance_transactions(amount, currency, is_internal_transfer, exclude_from_stats)')
+    .select('moment_id, finance_transactions(amount, currency, is_internal_transfer, exclude_from_stats, category_id)')
     .in('moment_id', momentIds)
 
-  // Agrega por momento
+  // Agrega por momento e por categoria
   const momentTotals: Record<number, number> = {}
+  const categoryTotals: Record<number, number> = {}
   const currency = 'EUR'
   for (const row of txRows ?? []) {
     const tx = (row as any).finance_transactions
@@ -54,7 +56,16 @@ async function buildCostSummary(tripId: number, requestingUserId: string) {
     if (tx.amount >= 0) continue // só despesas (negativos)
     const mid = (row as any).moment_id
     momentTotals[mid] = (momentTotals[mid] ?? 0) + Math.abs(tx.amount)
+    if (tx.category_id) {
+      categoryTotals[tx.category_id] = (categoryTotals[tx.category_id] ?? 0) + Math.abs(tx.amount)
+    }
   }
+
+  // Busca nomes/ícones das categorias encontradas
+  const catIds = Object.keys(categoryTotals).map(Number)
+  const { data: categories } = catIds.length > 0
+    ? await supabaseAdmin.from('finance_categories').select('id, name, icon, color').in('id', catIds)
+    : { data: [] as any[] }
 
   // Agrupa por usuário para o split
   const byUser: Record<string, { user_id: string; total: number; moment_ids: number[] }> = {}
@@ -76,10 +87,16 @@ async function buildCostSummary(tripId: number, requestingUserId: string) {
   const byUserEntries = Object.values(byUser)
   const displays = await Promise.all(byUserEntries.map(u => userDisplay(u.user_id)))
 
+  const by_category = (categories ?? [])
+    .map(c => ({ ...c, total: Math.round((categoryTotals[c.id] ?? 0) * 100) / 100 }))
+    .sort((a: any, b: any) => b.total - a.total)
+
   return {
     total: Math.round(grandTotal * 100) / 100,
     budget: budgetTotal > 0 ? Math.round(budgetTotal * 100) / 100 : null,
     currency,
+    by_category,
+    by_place: await buildByPlace(tripId),
     moments: (moments ?? []).map(m => ({
       ...m,
       spent: Math.round((momentTotals[m.id] ?? 0) * 100) / 100,
@@ -90,6 +107,50 @@ async function buildCostSummary(tripId: number, requestingUserId: string) {
       display: displays[i],
     })),
   }
+}
+
+// ── Place-expense helpers ────────────────────────────────────────────────────
+// Soma das despesas vinculadas a cada lugar da viagem.
+// Modelo v1: apenas o dono da viagem cria vínculos, então não filtramos por user.
+async function placeExpenseTotals(placeIds: number[]): Promise<Record<number, { total: number; count: number }>> {
+  const out: Record<number, { total: number; count: number }> = {}
+  if (placeIds.length === 0) return out
+  const { data } = await supabaseAdmin
+    .from('voyage_place_expenses')
+    .select('trip_place_id, finance_transactions(amount)')
+    .in('trip_place_id', placeIds)
+  for (const row of (data ?? []) as any[]) {
+    const tx = row.finance_transactions
+    if (!tx) continue
+    const pid = row.trip_place_id as number
+    if (!out[pid]) out[pid] = { total: 0, count: 0 }
+    out[pid].total += Math.abs(Number(tx.amount))
+    out[pid].count += 1
+  }
+  for (const k of Object.keys(out)) out[Number(k)].total = Math.round(out[Number(k)].total * 100) / 100
+  return out
+}
+
+// Breakdown por lugar para o CostCard (ordenado desc, só lugares com gasto).
+async function buildByPlace(tripId: number): Promise<{ trip_place_id: number; name: string; total: number }[]> {
+  const { data: places } = await supabaseAdmin
+    .from('voyage_trip_places').select('id, name').eq('trip_id', tripId)
+  const placeIds = (places ?? []).map(p => p.id)
+  const totals = await placeExpenseTotals(placeIds)
+  return (places ?? [])
+    .map(p => ({ trip_place_id: p.id, name: p.name, total: totals[p.id]?.total ?? 0 }))
+    .filter(p => p.total > 0)
+    .sort((a, b) => b.total - a.total)
+}
+
+// Mescla expense_total/expense_count em uma lista de places (in-place, sem N+1).
+async function attachPlaceExpenses<T extends { id: number }>(places: T[]): Promise<(T & { expense_total: number; expense_count: number })[]> {
+  const totals = await placeExpenseTotals(places.map(p => p.id))
+  return places.map(p => ({
+    ...p,
+    expense_total: totals[p.id]?.total ?? 0,
+    expense_count: totals[p.id]?.count ?? 0,
+  }))
 }
 
 // ── Pending trip invites (exported for notifications.ts) ─────────────────────
@@ -183,7 +244,7 @@ router.get('/trips', requireAuth, async (req, res: Response) => {
 // ── POST /api/voyage/trips ────────────────────────────────────────────────────
 router.post('/trips', requireAuth, async (req, res: Response) => {
   const userId = uid(req)
-  const { title, destination, country, cover_image_url, cover_image_position, start_date, end_date, summary, status } = req.body
+  const { title, destination, country, cover_image_url, cover_image_position, start_date, end_date, summary, status, dest_lat, dest_lng } = req.body
 
   if (!title?.trim()) { res.status(400).json({ error: 'title required' }); return }
 
@@ -194,6 +255,8 @@ router.post('/trips', requireAuth, async (req, res: Response) => {
       title: title.trim(),
       destination: destination ?? null,
       country: country ?? null,
+      dest_lat: dest_lat ?? null,
+      dest_lng: dest_lng ?? null,
       cover_image_url: cover_image_url ?? null,
       cover_image_position: cover_image_position ?? '50% 50%',
       start_date: start_date ?? null,
@@ -250,7 +313,12 @@ router.get('/trips/:id', requireAuth, async (req, res: Response) => {
     supabaseAdmin.from('voyage_trip_members').select('id, user_id, invite_email, role, status, joined_at').eq('trip_id', tripId),
   ])
 
-  res.json({ trip, cost, places: placesRes.data ?? [], members: membersRes.data ?? [] })
+  // Agrega gasto por lugar (dono sempre; membros só se show_place_expenses)
+  const places = (isOwner || trip.show_place_expenses)
+    ? await attachPlaceExpenses(placesRes.data ?? [])
+    : (placesRes.data ?? [])
+
+  res.json({ trip, cost, places, members: membersRes.data ?? [] })
 })
 
 // ── PATCH /api/voyage/trips/:id ───────────────────────────────────────────────
@@ -259,7 +327,8 @@ router.patch('/trips/:id', requireAuth, async (req, res: Response) => {
   const tripId = Number(req.params.id)
 
   const allowed = ['title', 'destination', 'country', 'cover_image_url', 'cover_image_position',
-                   'start_date', 'end_date', 'summary', 'status']
+                   'start_date', 'end_date', 'summary', 'status', 'show_place_expenses',
+                   'dest_lat', 'dest_lng']
   const update: Record<string, unknown> = {}
   for (const k of allowed) if (k in req.body) update[k] = req.body[k] ?? null
 
@@ -465,6 +534,252 @@ router.delete('/places/:id', requireAuth, async (req, res: Response) => {
   res.json({ ok: true })
 })
 
+// Extrai cidade do endereço do Takeout sem network calls.
+function cityFromAddress(address: string | null): string | null {
+  if (!address) return null
+  const parts = address.split(',').map(p => p.trim()).filter(Boolean)
+  if (parts.length < 2) return null
+  const candidate = parts[parts.length - 2]
+  return candidate.replace(/^\d[\d\s-]*\s*/, '').trim() || null
+}
+
+// Extrai nome do lugar a partir de uma URL do Google Maps.
+// Ex: https://www.google.com/maps/place/Curry+36/@52.5... → "Curry 36"
+function nameFromMapsUrl(url: string | null): string | null {
+  if (!url) return null
+  const placeMatch = url.match(/\/maps\/place\/([^/@?]+)/)
+  if (placeMatch) {
+    const candidate = decodeURIComponent(placeMatch[1].replace(/\+/g, ' ')).trim()
+    // Descartar se parecer coordenada ou for vazio
+    if (candidate && !/^[\d.,\-\s]+$/.test(candidate)) return candidate
+  }
+  const qMatch = url.match(/[?&]q=([^&]+)/)
+  if (qMatch) {
+    const candidate = decodeURIComponent(qMatch[1].replace(/\+/g, ' ')).trim()
+    if (candidate && !/^[\d.,\-\s]+$/.test(candidate)) return candidate
+  }
+  return null
+}
+
+// Extrai nome e coordenadas de uma URL do Google Maps
+function parseMapsUrl(url: string): { name: string | null; lat: number | null; lng: number | null } {
+  let name: string | null = null
+  let lat: number | null = null
+  let lng: number | null = null
+  try {
+    const placeMatch = url.match(/\/maps\/place\/([^/@?]+)/)
+    if (placeMatch) {
+      const candidate = decodeURIComponent(placeMatch[1].replace(/\+/g, ' ')).trim()
+      if (candidate && !/^[\d.,\-\s]+$/.test(candidate)) name = candidate
+    }
+    // !3d<lat>!4d<lng> é o pino real do lugar (mais preciso que @ que é o centro do viewport)
+    const pinMatch = url.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/)
+    if (pinMatch) {
+      lat = parseFloat(pinMatch[1]); lng = parseFloat(pinMatch[2])
+    } else {
+      const atMatch = url.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/)
+      if (atMatch) { lat = parseFloat(atMatch[1]); lng = parseFloat(atMatch[2]) }
+      else {
+        // ?q=lat,lng  ou  ?ll=lat,lng  ou  /search/lat,lng
+        const qll = url.match(/[?&](?:q|ll|center)=(-?\d+\.\d+),(-?\d+\.\d+)/)
+        if (qll) { lat = parseFloat(qll[1]); lng = parseFloat(qll[2]) }
+      }
+    }
+    if (!name) {
+      const qMatch = url.match(/[?&]q=([^&]+)/)
+      if (qMatch) {
+        const candidate = decodeURIComponent(qMatch[1].replace(/\+/g, ' ')).trim()
+        if (candidate && !/^[\d.,\-\s]+$/.test(candidate)) name = candidate
+      }
+    }
+  } catch {}
+  return { name, lat, lng }
+}
+
+// Mapeia o tipo de estabelecimento do Google para a categoria (pasta) do Voyage.
+// A string retornada casa com os ícones de categoria (emoji) usados no mapa/biblioteca.
+function googleTypeToCategory(primaryType: string | undefined, types: string[] = []): string | null {
+  const all = [primaryType, ...types].filter(Boolean) as string[]
+  const has = (...ks: string[]) => all.some(t => ks.includes(t))
+  if (has('bakery')) return 'Padarias'
+  if (has('cafe', 'coffee_shop')) return 'Cafés'
+  if (has('bar', 'night_club', 'pub', 'wine_bar')) return 'Bares'
+  if (has('restaurant', 'meal_takeaway', 'meal_delivery', 'food', 'fine_dining_restaurant')) return 'Restaurantes'
+  if (has('museum', 'art_gallery')) return 'Museus'
+  if (has('lodging', 'hotel', 'resort_hotel', 'bed_and_breakfast', 'guest_house', 'hostel')) return 'Hotéis'
+  if (has('car_rental')) return 'Aluguel de carro'
+  if (has('park', 'national_park', 'state_park', 'garden', 'dog_park')) return 'Parques'
+  if (has('supermarket', 'grocery_store', 'grocery_or_supermarket', 'market')) return 'Mercados'
+  if (has('store', 'shopping_mall', 'clothing_store', 'department_store', 'shoe_store', 'book_store', 'jewelry_store')) return 'Compras'
+  if (has('beach', 'natural_feature')) return 'Praias'
+  if (has('tourist_attraction', 'landmark', 'historical_landmark', 'historical_place', 'point_of_interest')) return 'Pontos turísticos'
+  return null
+}
+
+// Geocodifica um texto (nome/endereço) via Places API (New) Text Search.
+// Retorna coordenadas + nome/endereço + categoria + horário de funcionamento.
+async function geocodePlace(query: string): Promise<{ lat: number; lng: number; name?: string; address?: string; category?: string | null; opening_hours?: string[] | null; place_id?: string | null } | null> {
+  const apiKey = process.env.GOOGLE_MAPS_API_KEY || process.env.GOOGLE_PLACES_API_KEY
+  if (!apiKey || !query.trim()) return null
+  try {
+    const r = await fetch('https://places.googleapis.com/v1/places:searchText', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Goog-Api-Key': apiKey,
+        'X-Goog-FieldMask': 'places.id,places.displayName,places.formattedAddress,places.location,places.primaryType,places.types,places.regularOpeningHours',
+      },
+      body: JSON.stringify({ textQuery: query, maxResultCount: 1 }),
+    })
+    if (!r.ok) return null
+    const data = await r.json() as any
+    const p = data.places?.[0]
+    if (!p?.location) return null
+    return {
+      lat: p.location.latitude,
+      lng: p.location.longitude,
+      name: p.displayName?.text,
+      address: p.formattedAddress,
+      category: googleTypeToCategory(p.primaryType, p.types),
+      opening_hours: p.regularOpeningHours?.weekdayDescriptions ?? null,
+      place_id: p.id ?? null,
+    }
+  } catch {
+    return null
+  }
+}
+
+// Geocodificação reversa (lat/lng → endereço) — usada como fallback quando um
+// link do Google Maps não traz nome de estabelecimento (ex: pin solto numa
+// casa/endereço residencial, sem ficha de negócio). Sem isso a importação
+// rejeitava esses links; agora usa o endereço como nome provisório editável.
+async function reverseGeocode(lat: number, lng: number): Promise<string | null> {
+  const apiKey = process.env.GOOGLE_MAPS_API_KEY || process.env.GOOGLE_PLACES_API_KEY
+  if (!apiKey) return null
+  try {
+    const r = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${apiKey}`)
+    if (!r.ok) return null
+    const data = await r.json() as any
+    return data.results?.[0]?.formatted_address ?? null
+  } catch {
+    return null
+  }
+}
+
+// ── POST /api/voyage/places/from-url  (importar lugar por link do Google Maps) ─
+router.post('/places/from-url', requireAuth, async (req, res: Response) => {
+  const userId = uid(req)
+  const { url, trip_id } = req.body as { url: string; trip_id?: number }
+  if (!url?.trim()) { res.status(400).json({ error: 'URL obrigatória' }); return }
+
+  let resolvedUrl = url.trim()
+  if (/goo\.gl|maps\.app\.goo\.gl/.test(resolvedUrl)) {
+    try {
+      const r = await fetch(resolvedUrl, { redirect: 'follow' })
+      resolvedUrl = r.url
+    } catch { /* mantém original */ }
+  }
+
+  let { name, lat, lng } = parseMapsUrl(resolvedUrl)
+  let address: string | null = null
+  let category: string | null = null
+  let openingHours: string[] | null = null
+  let isAddressFallback = false
+  let placeId: string | null = null
+  if (!name) {
+    // No business name in the URL (common for a pin dropped on a house/
+    // address with no listing) — fall back to the reverse-geocoded address
+    // as a provisional name instead of rejecting the import outright. The
+    // user can rename it afterward (PATCH .../places/:placeId now accepts name).
+    if (lat != null && lng != null) name = await reverseGeocode(lat, lng)
+    if (!name) {
+      res.status(400).json({ error: 'Não foi possível extrair o nome ou endereço do lugar. Use a URL completa do Google Maps (google.com/maps/place/…).' })
+      return
+    }
+    isAddressFallback = true
+    address = name
+  }
+
+  // Enriquece via Places API: coordenadas (quando a URL não traz), nome/endereço
+  // limpos, categoria (tipo do estabelecimento → pasta + emoji no mapa) e horário.
+  // Pulado no fallback de endereço: já temos as coordenadas exatas do pin da
+  // URL, e uma busca textual pelo endereço poderia trazer um ponto ligeiramente
+  // diferente (ou nenhum resultado, por não ser um nome de estabelecimento).
+  if (!isAddressFallback) {
+    const geo = await geocodePlace(name)
+    if (geo) {
+      if (geo.lat != null && geo.lng != null) { lat = geo.lat; lng = geo.lng }
+      if (geo.name) name = geo.name
+      if (geo.address) address = geo.address
+      if (geo.category) category = geo.category
+      if (geo.opening_hours) openingHours = geo.opening_hours
+      if (geo.place_id) placeId = geo.place_id
+    }
+  }
+
+  const insertData: Record<string, unknown> = {
+    user_id: userId, name, source: 'manual', google_maps_url: resolvedUrl,
+    ...(lat !== null && { lat }), ...(lng !== null && { lng }),
+    ...(address && { address }),
+    ...(category && { category }),
+    ...(openingHours && { opening_hours: openingHours }),
+    ...(placeId && { google_place_id: placeId }),
+  }
+
+  // Dedupe primarily by google_place_id (stable regardless of which URL
+  // format the user pasted — full link, shortened goo.gl, different zoom/
+  // viewport params all resolve to the same place via the Places API), since
+  // the google_maps_url-based upsert below only catches an exact repeat of
+  // the same URL string, not "same real place, different link format".
+  let place: { id: number; name: string; category: string | null; lat: number | null; lng: number | null; address: string | null; google_maps_url: string | null; opening_hours: string[] | null } | null = null
+  if (placeId) {
+    const { data: existing } = await supabaseAdmin
+      .from('voyage_places').select('*')
+      .eq('user_id', userId).eq('google_place_id', placeId).maybeSingle()
+    if (existing) {
+      const { data: updated } = await supabaseAdmin
+        .from('voyage_places').update(insertData).eq('id', existing.id).select().single()
+      place = updated ?? existing
+    }
+  }
+  if (!place) {
+    const { data: upserted, error } = await supabaseAdmin
+      .from('voyage_places')
+      .upsert(insertData, { onConflict: 'user_id,google_maps_url', ignoreDuplicates: false })
+      .select().single()
+    if (error || !upserted) { res.status(500).json({ error: error?.message ?? 'Erro ao salvar' }); return }
+    place = upserted
+  }
+  if (!place) { res.status(500).json({ error: 'Erro ao salvar' }); return }
+
+  let trip_place = null
+  if (trip_id) {
+    // Same google link/place pasted twice for the same trip — return the
+    // existing itinerary entry instead of inserting a duplicate.
+    const { data: existingTripPlace } = await supabaseAdmin
+      .from('voyage_trip_places').select('*')
+      .eq('trip_id', trip_id).eq('library_place_id', place.id).maybeSingle()
+    if (existingTripPlace) {
+      trip_place = existingTripPlace
+    } else {
+      const { count } = await supabaseAdmin
+        .from('voyage_trip_places').select('sort_order', { count: 'exact', head: true }).eq('trip_id', trip_id)
+      const { data: tp } = await supabaseAdmin
+        .from('voyage_trip_places')
+        .insert({
+          trip_id, library_place_id: place.id, name: place.name,
+          category: place.category, lat: place.lat, lng: place.lng, address: place.address,
+          google_maps_url: place.google_maps_url, opening_hours: place.opening_hours,
+          sort_order: (count ?? 0) + 1, added_by: userId,
+        })
+        .select().single()
+      trip_place = tp
+    }
+  }
+
+  res.json({ place, trip_place })
+})
+
 // ── POST /api/voyage/places/import-takeout  (importar JSON do Takeout) ────────
 // Aceita um array de GeoJSON FeatureCollections (um por lista do Google Maps)
 // Body: { files: [{ list_name: string, geojson: object }] }
@@ -479,6 +794,7 @@ router.post('/places/import-takeout', requireAuth, async (req, res: Response) =>
   }
 
   const toInsert: any[] = []
+  let skipped = 0
 
   for (const { list_name, geojson } of files) {
     const features: any[] = geojson?.features ?? []
@@ -486,24 +802,28 @@ router.post('/places/import-takeout', requireAuth, async (req, res: Response) =>
       const props = f.properties ?? {}
       const loc   = props.Location ?? {}
       const geo   = loc['Geo Coordinates'] ?? {}
-      const coords = f.geometry?.coordinates // [lng, lat]
+      const coords = f.geometry?.coordinates // GeoJSON: [lng, lat]
 
       const lat = geo.Latitude  ?? coords?.[1] ?? null
       const lng = geo.Longitude ?? coords?.[0] ?? null
-      const name = props.Title || loc['Business Name'] || 'Sem nome'
 
-      // Reverse geocoding via Nominatim para obter cidade
-      let city: string | null = null
-      if (lat && lng) {
-        try {
-          const r = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=pt`,
-            { headers: { 'User-Agent': 'Arvo/1.0 (arvo.andregutto.com)' } }
-          )
-          const nm = await r.json() as any
-          city = nm.address?.city || nm.address?.town || nm.address?.village || nm.address?.county || null
-        } catch { /* silencioso */ }
-      }
+      // Ignorar entradas sem coordenadas válidas
+      if (!lat || !lng || (lat === 0 && lng === 0)) { skipped++; continue }
+
+      // Nome: tenta todos os campos disponíveis, incluindo a URL do Maps
+      const rawTitle = props.Title || props.title || props.name || props.Name
+        || loc['Business Name'] || loc.name || null
+      const isUrl = rawTitle && /^https?:\/\//i.test(rawTitle)
+      const googleMapsUrl = props['Google Maps URL'] || props['google_maps_url'] || null
+      const address = loc.Address || props.address || null
+      const name = (!isUrl && rawTitle)
+        || nameFromMapsUrl(googleMapsUrl)
+        || (address ? address.split(',')[0].trim() : null)
+
+      // Pular entradas sem nome identificável — são pins sem dados
+      if (!name) { skipped++; continue }
+
+      const city = cityFromAddress(address)
 
       toInsert.push({
         user_id: userId,
@@ -511,26 +831,94 @@ router.post('/places/import-takeout', requireAuth, async (req, res: Response) =>
         category: list_name || null,
         lat,
         lng,
-        address: loc.Address || null,
+        address,
         city,
-        google_maps_url: props['Google Maps URL'] || null,
+        google_maps_url: googleMapsUrl,
         source: 'takeout',
       })
     }
   }
 
   if (toInsert.length === 0) {
-    res.status(400).json({ error: 'Nenhum lugar encontrado nos arquivos' }); return
+    res.status(400).json({ error: `Nenhum lugar com nome identificável encontrado. ${skipped} entradas puladas (sem nome, endereço ou URL).` }); return
   }
 
-  // Upsert por (user_id, google_maps_url) para não duplicar em re-imports
-  const { data, error } = await supabaseAdmin
-    .from('voyage_places')
-    .upsert(toInsert, { onConflict: 'user_id,google_maps_url', ignoreDuplicates: true })
-    .select()
+  // Upsert com google_maps_url quando disponível; insert direto quando não
+  const withUrl    = toInsert.filter(p => p.google_maps_url)
+  const withoutUrl = toInsert.filter(p => !p.google_maps_url)
+
+  const [r1, r2] = await Promise.all([
+    withUrl.length > 0
+      ? supabaseAdmin.from('voyage_places')
+          .upsert(withUrl, { onConflict: 'user_id,google_maps_url', ignoreDuplicates: true })
+          .select()
+      : Promise.resolve({ data: [] as any[], error: null }),
+    withoutUrl.length > 0
+      ? supabaseAdmin.from('voyage_places').insert(withoutUrl).select()
+      : Promise.resolve({ data: [] as any[], error: null }),
+  ])
+
+  const error = r1.error || r2.error
+  const data  = [...(r1.data ?? []), ...(r2.data ?? [])]
 
   if (error) { res.status(500).json({ error: error.message }); return }
-  res.json({ imported: (data ?? []).length, total_in_files: toInsert.length })
+  res.json({ imported: (data ?? []).length, total_in_files: toInsert.length, skipped })
+})
+
+// ── DELETE /api/voyage/places/all  (apagar toda a biblioteca) ────────────────
+router.delete('/places/all', requireAuth, async (req, res: Response) => {
+  const userId = uid(req)
+  const { error } = await supabaseAdmin
+    .from('voyage_places').delete().eq('user_id', userId)
+  if (error) { res.status(500).json({ error: error.message }); return }
+  res.json({ ok: true })
+})
+
+// ── GET /api/voyage/map/places  (mapa geral — todas as viagens ou filtrada) ───
+router.get('/map/places', requireAuth, async (req, res: Response) => {
+  const userId = uid(req)
+  const tripId = req.query.trip_id ? Number(req.query.trip_id) : null
+
+  const [ownedRes, memberRes] = await Promise.all([
+    supabaseAdmin.from('voyage_trips').select('id, title, destination, show_place_expenses').eq('user_id', userId),
+    supabaseAdmin.from('voyage_trip_members').select('trip_id').eq('user_id', userId).eq('status', 'active'),
+  ])
+
+  const ownedTrips = ownedRes.data ?? []
+  const ownedTripIds = new Set(ownedTrips.map(t => t.id))
+  const memberTripIds = (memberRes.data ?? []).map(m => m.trip_id)
+  const allTripIds = [...new Set([...ownedTrips.map(t => t.id), ...memberTripIds])]
+
+  if (allTripIds.length === 0) { res.json({ places: [], trips: [] }); return }
+
+  const targetIds = (tripId && allTripIds.includes(tripId)) ? [tripId] : allTripIds
+
+  const [placesRes, tripsRes] = await Promise.all([
+    supabaseAdmin
+      .from('voyage_trip_places')
+      .select('id, name, category, address, lat, lng, google_maps_url, opening_hours, day_number, is_highlight, trip_note, trip_id')
+      .in('trip_id', targetIds)
+      .not('lat', 'is', null).not('lng', 'is', null),
+    supabaseAdmin
+      .from('voyage_trips')
+      .select('id, title, destination, show_place_expenses')
+      .in('id', allTripIds)
+      .order('created_at', { ascending: false }),
+  ])
+
+  // Gasto por lugar: dono sempre; viagens de membro só se show_place_expenses
+  const showExpenseTrips = new Set(
+    (tripsRes.data ?? [])
+      .filter(t => ownedTripIds.has(t.id) || t.show_place_expenses)
+      .map(t => t.id)
+  )
+  const allPlaces = placesRes.data ?? []
+  const visiblePlaces = allPlaces.filter(p => showExpenseTrips.has(p.trip_id))
+  const withExpenses = await attachPlaceExpenses(visiblePlaces)
+  const expenseById = new Map(withExpenses.map(p => [p.id, p]))
+  const places = allPlaces.map(p => expenseById.get(p.id) ?? { ...p, expense_total: 0, expense_count: 0 })
+
+  res.json({ places, trips: tripsRes.data ?? [] })
 })
 
 // ── GET /api/voyage/trips/:id/places  ────────────────────────────────────────
@@ -539,10 +927,11 @@ router.get('/trips/:id/places', requireAuth, async (req, res: Response) => {
   const tripId = Number(req.params.id)
 
   const { data: trip } = await supabaseAdmin
-    .from('voyage_trips').select('user_id').eq('id', tripId).single()
+    .from('voyage_trips').select('user_id, show_place_expenses').eq('id', tripId).single()
   if (!trip) { res.status(404).json({ error: 'Viagem não encontrada' }); return }
 
-  const isMember = trip.user_id === userId ||
+  const isOwner = trip.user_id === userId
+  const isMember = isOwner ||
     !!(await supabaseAdmin.from('voyage_trip_members')
       .select('id').eq('trip_id', tripId).eq('user_id', userId).eq('status', 'active').single()).data
 
@@ -554,7 +943,11 @@ router.get('/trips/:id/places', requireAuth, async (req, res: Response) => {
     .eq('trip_id', tripId)
     .order('sort_order')
 
-  res.json({ places: data ?? [] })
+  const places = (isOwner || trip.show_place_expenses)
+    ? await attachPlaceExpenses(data ?? [])
+    : (data ?? [])
+
+  res.json({ places })
 })
 
 // ── POST /api/voyage/trips/:id/places  (adicionar lugar à trip) ──────────────
@@ -565,11 +958,25 @@ router.post('/trips/:id/places', requireAuth, async (req, res: Response) => {
     library_place_id?: number; name: string; category?: string
     lat?: number; lng?: number; address?: string
     google_place_id?: string; google_maps_url?: string
+    opening_hours?: string[] | null
     day_number?: number; is_highlight?: boolean
+    kind?: 'place' | 'note' | 'transport'
+    transport_mode?: string; transport_note?: string
+    arrive_time?: string; depart_time?: string; trip_note?: string
     checkin_day?: number; checkout_day?: number
   }
 
   if (!body.name?.trim()) { res.status(400).json({ error: 'Nome obrigatório' }); return }
+
+  // Adding the same library place to a trip it's already in (e.g. clicking
+  // "Adicionar" twice, or picking it again after losing track) would create
+  // a duplicate itinerary entry — return the existing one instead.
+  if (body.library_place_id != null) {
+    const { data: existingTripPlace } = await supabaseAdmin
+      .from('voyage_trip_places').select('*')
+      .eq('trip_id', tripId).eq('library_place_id', body.library_place_id).maybeSingle()
+    if (existingTripPlace) { res.status(200).json({ place: existingTripPlace }); return }
+  }
 
   const { data: existingPlaces } = await supabaseAdmin
     .from('voyage_trip_places').select('sort_order').eq('trip_id', tripId)
@@ -590,18 +997,23 @@ router.patch('/trips/:id/places/:placeId', requireAuth, async (req, res: Respons
   const tripId = Number(req.params.id)
   const placeId = Number(req.params.placeId)
   const { visited, trip_note, day_number, is_highlight, rating, sort_order,
+          arrive_time, depart_time, transport_mode, transport_note,
           name, checkin_day, checkout_day } = req.body
 
   const update: Record<string, unknown> = {}
-  if (visited    !== undefined) update.visited     = visited
-  if (trip_note  !== undefined) update.trip_note   = trip_note
-  if (day_number !== undefined) update.day_number  = day_number
-  if (is_highlight !== undefined) update.is_highlight = is_highlight
-  if (rating     !== undefined) update.rating      = rating
-  if (sort_order !== undefined) update.sort_order  = sort_order
-  if (name         !== undefined) update.name         = name
-  if (checkin_day  !== undefined) update.checkin_day  = checkin_day
-  if (checkout_day !== undefined) update.checkout_day = checkout_day
+  if (visited        !== undefined) update.visited        = visited
+  if (trip_note      !== undefined) update.trip_note      = trip_note
+  if (day_number     !== undefined) update.day_number     = day_number
+  if (is_highlight   !== undefined) update.is_highlight   = is_highlight
+  if (rating         !== undefined) update.rating         = rating
+  if (sort_order     !== undefined) update.sort_order     = sort_order
+  if (arrive_time    !== undefined) update.arrive_time    = arrive_time
+  if (depart_time    !== undefined) update.depart_time    = depart_time
+  if (transport_mode !== undefined) update.transport_mode = transport_mode
+  if (transport_note !== undefined) update.transport_note = transport_note
+  if (name           !== undefined) update.name           = name
+  if (checkin_day    !== undefined) update.checkin_day    = checkin_day
+  if (checkout_day   !== undefined) update.checkout_day   = checkout_day
 
   const { data, error } = await supabaseAdmin
     .from('voyage_trip_places')
@@ -620,6 +1032,161 @@ router.delete('/trips/:id/places/:placeId', requireAuth, async (req, res: Respon
   await supabaseAdmin.from('voyage_trip_places')
     .delete().eq('id', placeId).eq('trip_id', tripId)
   res.json({ ok: true })
+})
+
+// ── Despesas por lugar ───────────────────────────────────────────────────────
+// Modelo v1: apenas o dono da viagem gerencia os vínculos (fonte única de verdade).
+
+// Enriquece transações com a categoria (name/icon/color).
+async function enrichTxCategories(rows: any[]): Promise<any[]> {
+  const catIds = [...new Set(rows.map(r => r.category_id).filter(Boolean))] as number[]
+  const catMap = new Map<number, { name: string; icon: string; color: string }>()
+  if (catIds.length > 0) {
+    const { data: cats } = await supabaseAdmin
+      .from('finance_categories').select('id, name, icon, color').in('id', catIds)
+    for (const c of cats ?? []) catMap.set(c.id, { name: c.name, icon: c.icon, color: c.color })
+  }
+  return rows.map(r => ({
+    id: r.id, transaction_id: r.id, date: r.date, amount: r.amount,
+    currency: r.currency, description: r.description,
+    category: r.category_id ? catMap.get(r.category_id) ?? null : null,
+  }))
+}
+
+// GET — lista as despesas vinculadas a um lugar (dono apenas)
+router.get('/trips/:id/places/:placeId/expenses', requireAuth, async (req, res: Response) => {
+  const userId = uid(req)
+  const tripId = Number(req.params.id)
+  const placeId = Number(req.params.placeId)
+
+  const { data: trip } = await supabaseAdmin
+    .from('voyage_trips').select('user_id').eq('id', tripId).single()
+  if (!trip) { res.status(404).json({ error: 'Viagem não encontrada' }); return }
+  if (trip.user_id !== userId) { res.status(403).json({ error: 'Sem permissão' }); return }
+
+  const { data: links } = await supabaseAdmin
+    .from('voyage_place_expenses')
+    .select('transaction_id, finance_transactions(id, date, amount, currency, description, category_id)')
+    .eq('trip_place_id', placeId)
+
+  const txRows = (links ?? []).map((l: any) => l.finance_transactions).filter(Boolean)
+  const expenses = await enrichTxCategories(txRows)
+  expenses.sort((a, b) => (a.date < b.date ? 1 : -1))
+  const total = Math.round(expenses.reduce((s, e) => s + Math.abs(Number(e.amount)), 0) * 100) / 100
+
+  res.json({ expenses, total })
+})
+
+// POST — vincula uma ou mais transações a um lugar (dono apenas)
+router.post('/trips/:id/places/:placeId/expenses', requireAuth, async (req, res: Response) => {
+  const userId = uid(req)
+  const tripId = Number(req.params.id)
+  const placeId = Number(req.params.placeId)
+  const ids: number[] = Array.isArray(req.body?.transaction_ids) ? req.body.transaction_ids.map(Number) : []
+  if (ids.length === 0) { res.status(400).json({ error: 'transaction_ids obrigatório' }); return }
+
+  const { data: trip } = await supabaseAdmin
+    .from('voyage_trips').select('user_id').eq('id', tripId).single()
+  if (!trip) { res.status(404).json({ error: 'Viagem não encontrada' }); return }
+  if (trip.user_id !== userId) { res.status(403).json({ error: 'Sem permissão' }); return }
+
+  // Valida que o lugar pertence à viagem
+  const { data: place } = await supabaseAdmin
+    .from('voyage_trip_places').select('id').eq('id', placeId).eq('trip_id', tripId).maybeSingle()
+  if (!place) { res.status(404).json({ error: 'Lugar não encontrado' }); return }
+
+  // Valida que as transações pertencem ao usuário
+  const { data: txs } = await supabaseAdmin
+    .from('finance_transactions').select('id').eq('user_id', userId).in('id', ids)
+  const validIds = (txs ?? []).map(t => t.id)
+  if (validIds.length === 0) { res.status(400).json({ error: 'Nenhuma transação válida' }); return }
+
+  await supabaseAdmin.from('voyage_place_expenses')
+    .upsert(
+      validIds.map(tid => ({ trip_place_id: placeId, transaction_id: tid, user_id: userId })),
+      { onConflict: 'trip_place_id,transaction_id', ignoreDuplicates: true }
+    )
+
+  res.json({ ok: true, linked: validIds.length })
+})
+
+// DELETE — desvincula uma transação de um lugar (dono apenas)
+router.delete('/trips/:id/places/:placeId/expenses/:transactionId', requireAuth, async (req, res: Response) => {
+  const userId = uid(req)
+  const tripId = Number(req.params.id)
+  const placeId = Number(req.params.placeId)
+  const transactionId = Number(req.params.transactionId)
+
+  const { data: trip } = await supabaseAdmin
+    .from('voyage_trips').select('user_id').eq('id', tripId).single()
+  if (!trip) { res.status(404).json({ error: 'Viagem não encontrada' }); return }
+  if (trip.user_id !== userId) { res.status(403).json({ error: 'Sem permissão' }); return }
+
+  await supabaseAdmin.from('voyage_place_expenses')
+    .delete().eq('trip_place_id', placeId).eq('transaction_id', transactionId).eq('user_id', userId)
+  res.json({ ok: true })
+})
+
+// GET — candidatos a vincular: transações dos momentos da viagem (ou busca livre)
+router.get('/trips/:id/transactions/candidates', requireAuth, async (req, res: Response) => {
+  const userId = uid(req)
+  const tripId = Number(req.params.id)
+  const q = (req.query.q as string | undefined)?.trim()
+  const limit = Math.min(Number(req.query.limit) || 30, 100)
+
+  const { data: trip } = await supabaseAdmin
+    .from('voyage_trips').select('user_id, start_date, end_date').eq('id', tripId).single()
+  if (!trip) { res.status(404).json({ error: 'Viagem não encontrada' }); return }
+  if (trip.user_id !== userId) { res.status(403).json({ error: 'Sem permissão' }); return }
+
+  // Transações já vinculadas a qualquer lugar desta viagem (para excluir)
+  const { data: places } = await supabaseAdmin
+    .from('voyage_trip_places').select('id').eq('trip_id', tripId)
+  const placeIds = (places ?? []).map(p => p.id)
+  let linkedTxIds: number[] = []
+  if (placeIds.length > 0) {
+    const { data: linked } = await supabaseAdmin
+      .from('voyage_place_expenses').select('transaction_id').in('trip_place_id', placeIds)
+    linkedTxIds = (linked ?? []).map(l => l.transaction_id)
+  }
+
+  let rows: any[] = []
+  if (q) {
+    // Busca livre: transações do user no range de datas da viagem
+    let query = supabaseAdmin
+      .from('finance_transactions')
+      .select('id, date, amount, currency, description, category_id')
+      .eq('user_id', userId)
+      .lt('amount', 0)
+      .ilike('description', `%${q}%`)
+      .order('date', { ascending: false })
+      .limit(limit + linkedTxIds.length)
+    if (trip.start_date) query = query.gte('date', trip.start_date)
+    if (trip.end_date) query = query.lte('date', trip.end_date)
+    const { data } = await query
+    rows = data ?? []
+  } else {
+    // Default: transações dos momentos da viagem (do dono)
+    const { data: tripMoments } = await supabaseAdmin
+      .from('voyage_trip_moments').select('moment_id').eq('trip_id', tripId).eq('user_id', userId)
+    const momentIds = (tripMoments ?? []).map(m => m.moment_id)
+    if (momentIds.length > 0) {
+      const { data: txm } = await supabaseAdmin
+        .from('finance_transaction_moments')
+        .select('finance_transactions(id, date, amount, currency, description, category_id)')
+        .in('moment_id', momentIds)
+      rows = (txm ?? []).map((r: any) => r.finance_transactions)
+        .filter((t: any) => t && Number(t.amount) < 0)
+      // dedup + sort desc
+      const seen = new Set<number>()
+      rows = rows.filter(r => { if (seen.has(r.id)) return false; seen.add(r.id); return true })
+        .sort((a, b) => (a.date < b.date ? 1 : -1))
+    }
+  }
+
+  const linkedSet = new Set(linkedTxIds)
+  const candidates = await enrichTxCategories(rows.filter(r => !linkedSet.has(r.id)).slice(0, limit))
+  res.json({ candidates })
 })
 
 // ── GET /api/voyage/trips/:id/members  ───────────────────────────────────────
@@ -812,6 +1379,52 @@ router.post('/invite/accept', requireAuth, async (req, res: Response) => {
   res.json({ trip_id: member.trip_id })
 })
 
+// ── GET /api/voyage/trips/:id/kml  (download KML autenticado) ────────────────
+router.get('/trips/:id/kml', requireAuth, async (req, res: Response) => {
+  const userId = uid(req)
+  const tripId = Number(req.params.id)
+
+  const { data: trip } = await supabaseAdmin
+    .from('voyage_trips').select('id, title, user_id').eq('id', tripId).single()
+  if (!trip) { res.status(404).send('Not found'); return }
+
+  if (trip.user_id !== userId) {
+    const { data: member } = await supabaseAdmin
+      .from('voyage_trip_members')
+      .select('id').eq('trip_id', tripId).eq('user_id', userId).eq('status', 'active').single()
+    if (!member) { res.status(403).send('Forbidden'); return }
+  }
+
+  const { data: places } = await supabaseAdmin
+    .from('voyage_trip_places')
+    .select('name, category, address, lat, lng, trip_note, google_maps_url, is_highlight')
+    .eq('trip_id', tripId)
+    .not('lat', 'is', null).not('lng', 'is', null)
+
+  const placemarks = (places ?? []).map(p => `
+  <Placemark>
+    <name>${escapeXml(p.name)}</name>
+    <description>${escapeXml([p.address, p.trip_note, p.google_maps_url].filter(Boolean).join('\n'))}</description>
+    ${p.is_highlight ? '<styleUrl>#highlight</styleUrl>' : ''}
+    <Point><coordinates>${p.lng},${p.lat},0</coordinates></Point>
+  </Placemark>`).join('')
+
+  const kml = `<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+<Document>
+  <name>${escapeXml(trip.title)}</name>
+  <Style id="highlight">
+    <IconStyle><color>ff2f3bd6</color><scale>1.2</scale></IconStyle>
+  </Style>
+  ${placemarks}
+</Document>
+</kml>`
+
+  res.setHeader('Content-Type', 'application/vnd.google-earth.kml+xml')
+  res.setHeader('Content-Disposition', `attachment; filename="${trip.title.replace(/[^a-z0-9]/gi, '_')}.kml"`)
+  res.send(kml)
+})
+
 // ══════════════════════════════════════════════════════════════════════════════
 // V5 — Compartilhamento público
 // ══════════════════════════════════════════════════════════════════════════════
@@ -862,7 +1475,7 @@ router.get('/public/:token', async (req, res: Response) => {
 
   const { data: trip } = await supabaseAdmin
     .from('voyage_trips')
-    .select('id, title, destination, country, cover_image_url, cover_image_position, start_date, end_date, summary, status, share_hide_cost, share_expires_at, user_id')
+    .select('id, title, destination, country, cover_image_url, cover_image_position, start_date, end_date, summary, status, share_hide_cost, show_place_expenses, share_expires_at, user_id')
     .eq('share_token', token)
     .single()
 
@@ -873,12 +1486,18 @@ router.get('/public/:token', async (req, res: Response) => {
 
   const [placesRes, costRes, ownerRes] = await Promise.all([
     supabaseAdmin.from('voyage_trip_places')
-      .select('id, name, category, address, lat, lng, google_place_id, google_maps_url, day_number, sort_order, is_highlight, visited, trip_note')
+      .select('id, kind, name, category, address, lat, lng, google_place_id, google_maps_url, opening_hours, day_number, sort_order, is_highlight, visited, rating, trip_note, arrive_time, depart_time, transport_mode, transport_note')
       .eq('trip_id', trip.id)
+      .order('day_number', { ascending: true, nullsFirst: false })
       .order('sort_order'),
     !trip.share_hide_cost ? buildCostSummary(trip.id, trip.user_id) : Promise.resolve(null),
     supabaseAdmin.auth.admin.getUserById(trip.user_id),
   ])
+
+  // Gasto por lugar na página pública só quando o dono ativou
+  const publicPlaces = (trip.show_place_expenses && !trip.share_hide_cost)
+    ? await attachPlaceExpenses(placesRes.data ?? [])
+    : (placesRes.data ?? [])
 
   const ownerMeta = ownerRes.data?.user?.user_metadata ?? {}
   const ownerName = [ownerMeta.first_name, ownerMeta.last_name].filter(Boolean).join(' ') || ownerRes.data?.user?.email || 'Arvo'
@@ -891,7 +1510,7 @@ router.get('/public/:token', async (req, res: Response) => {
       summary: trip.summary, status: trip.status,
     },
     owner_name: ownerName,
-    places: placesRes.data ?? [],
+    places: publicPlaces,
     cost: costRes,
   })
 })
@@ -944,5 +1563,75 @@ function escapeXml(str: string | null | undefined): string {
   if (!str) return ''
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 }
+
+// ── Google Places (New) proxy — autocomplete de cidades para o destino ────────
+// Key server-side; sem key configurada, degrada para lista vazia (texto livre).
+const GEO_TTL = 10 * 60 * 1000
+
+// GET /voyage/geo/autocomplete?q=&session=
+router.get('/geo/autocomplete', requireAuth, async (req, res: Response) => {
+  const apiKey = process.env.GOOGLE_MAPS_API_KEY || process.env.GOOGLE_PLACES_API_KEY
+  const input = (req.query.q as string | undefined)?.trim()
+  const session = (req.query.session as string | undefined) ?? ''
+  if (!apiKey || !input || input.length < 2) { res.json({ suggestions: [] }); return }
+
+  try {
+    const suggestions = await cache.getOrFetch(`geo:ac:${input.toLowerCase()}`, GEO_TTL, async () => {
+      const r = await fetch('https://places.googleapis.com/v1/places:autocomplete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Goog-Api-Key': apiKey },
+        body: JSON.stringify({
+          input,
+          includedPrimaryTypes: ['(cities)'],
+          ...(session ? { sessionToken: session } : {}),
+        }),
+      })
+      if (!r.ok) return []
+      const data = await r.json() as any
+      return (data.suggestions ?? [])
+        .map((s: any) => s.placePrediction)
+        .filter(Boolean)
+        .map((p: any) => ({
+          place_id: p.placeId,
+          main_text: p.structuredFormat?.mainText?.text ?? p.text?.text ?? '',
+          secondary_text: p.structuredFormat?.secondaryText?.text ?? '',
+        }))
+    })
+    res.json({ suggestions })
+  } catch {
+    res.json({ suggestions: [] })
+  }
+})
+
+// GET /voyage/geo/details?place_id=&session=
+router.get('/geo/details', requireAuth, async (req, res: Response) => {
+  const apiKey = process.env.GOOGLE_MAPS_API_KEY || process.env.GOOGLE_PLACES_API_KEY
+  const placeId = (req.query.place_id as string | undefined)?.trim()
+  if (!apiKey || !placeId) { res.json({ place: null }); return }
+
+  try {
+    const place = await cache.getOrFetch(`geo:det:${placeId}`, GEO_TTL, async () => {
+      const r = await fetch(`https://places.googleapis.com/v1/places/${encodeURIComponent(placeId)}`, {
+        headers: {
+          'X-Goog-Api-Key': apiKey,
+          'X-Goog-FieldMask': 'displayName,addressComponents,location',
+        },
+      })
+      if (!r.ok) return null
+      const data = await r.json() as any
+      const country = (data.addressComponents ?? [])
+        .find((c: any) => (c.types ?? []).includes('country'))?.longText ?? null
+      return {
+        city: data.displayName?.text ?? null,
+        country,
+        lat: data.location?.latitude ?? null,
+        lng: data.location?.longitude ?? null,
+      }
+    })
+    res.json({ place })
+  } catch {
+    res.json({ place: null })
+  }
+})
 
 export default router

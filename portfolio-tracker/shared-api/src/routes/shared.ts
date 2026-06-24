@@ -1,7 +1,7 @@
 import { Router, Response } from 'express'
 import { randomBytes } from 'crypto'
-import { requireAuth, AuthRequest } from '../../../shared-api/src/middleware/auth.js'
-import { supabaseAdmin } from '../../../shared-api/src/lib/supabase.js'
+import { requireAuth, AuthRequest } from '../middleware/auth.js'
+import { supabaseAdmin } from '../lib/supabase.js'
 import { revertSharedCategory } from './finances.js'
 
 const router = Router()

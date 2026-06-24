@@ -1,7 +1,7 @@
 import { Router, Response } from 'express'
 import Anthropic from '@anthropic-ai/sdk'
-import { requireAuth, AuthRequest } from '../../../shared-api/src/middleware/auth.js'
-import { supabaseAdmin } from '../../../shared-api/src/lib/supabase.js'
+import { requireAuth, AuthRequest } from '../middleware/auth.js'
+import { supabaseAdmin } from '../lib/supabase.js'
 
 const router = Router()
 
@@ -204,8 +204,8 @@ const TOOLS: Anthropic.Messages.Tool[] = [
       properties: {
         period: {
           type: 'string',
-          enum: ['this_month', 'last_30d', 'ytd', 'last_12m'],
-          description: 'Time window: this_month = from 1st of current month; last_30d = rolling 30 days; ytd = since Jan 1; last_12m = rolling 12 months.',
+          enum: ['last_7d', 'this_month', 'last_30d', 'ytd', 'last_12m'],
+          description: 'Time window: last_7d = last 7 days (use for "last few days" questions); this_month = from 1st of current month; last_30d = rolling 30 days; ytd = since Jan 1; last_12m = rolling 12 months.',
         },
       },
       required: ['period'],
@@ -217,8 +217,8 @@ const TOOLS: Anthropic.Messages.Tool[] = [
     input_schema: {
       type: 'object' as const,
       properties: {
-        from_date: { type: 'string', description: 'Start date YYYY-MM-DD (optional)' },
-        to_date:   { type: 'string', description: 'End date YYYY-MM-DD (optional)' },
+        from_date:  { type: 'string', description: 'Start date YYYY-MM-DD (optional)' },
+        to_date:    { type: 'string', description: 'End date YYYY-MM-DD (optional)' },
         asset_code: { type: 'string', description: 'Filter by asset code/ticker (optional, partial match)' },
       },
     },
@@ -259,15 +259,20 @@ async function executeTool(
 
         const ids = assets.map(a => a.id as number)
         const [{ data: contribs }, { data: manualVals }, { data: priceHist }] = await Promise.all([
-          supabaseAdmin.from('contributions').select('asset_id, type, value_brl').in('asset_id', ids),
+          supabaseAdmin.from('contributions').select('asset_id, type, quantity, value_brl, fx_rate_brl').in('asset_id', ids),
           supabaseAdmin.from('manual_values').select('asset_id, value').in('asset_id', ids).order('ref_date', { ascending: false }),
-          supabaseAdmin.from('price_history').select('asset_id, total_brl').in('asset_id', ids).order('date', { ascending: false }).limit(ids.length * 3),
+          supabaseAdmin.from('price_history').select('asset_id, price, ref_date, currency').in('asset_id', ids).order('ref_date', { ascending: false }).limit(ids.length * 3),
         ])
 
         const investedMap: Record<number, number> = {}
+        const holdingsMap: Record<number, number> = {}
+        const lastFxMap: Record<number, number> = {}
         for (const c of contribs ?? []) {
-          const delta = c.type === 'sell' ? -(c.value_brl ?? 0) : (c.value_brl ?? 0)
-          investedMap[c.asset_id] = (investedMap[c.asset_id] ?? 0) + delta
+          const brl = c.type === 'sell' ? -(c.value_brl ?? 0) : (c.value_brl ?? 0)
+          investedMap[c.asset_id] = (investedMap[c.asset_id] ?? 0) + brl
+          const qty = c.type === 'sell' ? -(c.quantity ?? 0) : (c.quantity ?? 0)
+          holdingsMap[c.asset_id] = (holdingsMap[c.asset_id] ?? 0) + qty
+          if (c.fx_rate_brl) lastFxMap[c.asset_id] = c.fx_rate_brl
         }
         const manualMap: Record<number, number> = {}
         const mSeen = new Set<number>()
@@ -277,7 +282,12 @@ async function executeTool(
         const priceMap: Record<number, number> = {}
         const pSeen = new Set<number>()
         for (const ph of priceHist ?? []) {
-          if (!pSeen.has(ph.asset_id)) { priceMap[ph.asset_id] = ph.total_brl; pSeen.add(ph.asset_id) }
+          if (!pSeen.has(ph.asset_id)) {
+            const holdings = holdingsMap[ph.asset_id] ?? 0
+            const fx = lastFxMap[ph.asset_id] ?? 1
+            priceMap[ph.asset_id] = ph.price * holdings * fx
+            pSeen.add(ph.asset_id)
+          }
         }
 
         const lines = assets.map(a => {
@@ -309,15 +319,20 @@ async function executeTool(
         const ids = assets.map(a => a.id as number)
 
         const [{ data: contribs }, { data: manualVals }, { data: priceHist }] = await Promise.all([
-          supabaseAdmin.from('contributions').select('asset_id, type, value_brl').in('asset_id', ids),
+          supabaseAdmin.from('contributions').select('asset_id, type, quantity, value_brl, fx_rate_brl').in('asset_id', ids),
           supabaseAdmin.from('manual_values').select('asset_id, value').in('asset_id', ids).order('ref_date', { ascending: false }),
-          supabaseAdmin.from('price_history').select('asset_id, total_brl').in('asset_id', ids).order('date', { ascending: false }).limit(ids.length * 3),
+          supabaseAdmin.from('price_history').select('asset_id, price, ref_date, currency').in('asset_id', ids).order('ref_date', { ascending: false }).limit(ids.length * 3),
         ])
 
         const investedMap: Record<number, number> = {}
+        const holdingsMap2: Record<number, number> = {}
+        const lastFxMap2: Record<number, number> = {}
         for (const c of contribs ?? []) {
-          const delta = c.type === 'sell' ? -(c.value_brl ?? 0) : (c.value_brl ?? 0)
-          investedMap[c.asset_id] = (investedMap[c.asset_id] ?? 0) + delta
+          const brl = c.type === 'sell' ? -(c.value_brl ?? 0) : (c.value_brl ?? 0)
+          investedMap[c.asset_id] = (investedMap[c.asset_id] ?? 0) + brl
+          const qty = c.type === 'sell' ? -(c.quantity ?? 0) : (c.quantity ?? 0)
+          holdingsMap2[c.asset_id] = (holdingsMap2[c.asset_id] ?? 0) + qty
+          if (c.fx_rate_brl) lastFxMap2[c.asset_id] = c.fx_rate_brl
         }
         const manualMap: Record<number, number> = {}
         const mSeen = new Set<number>()
@@ -327,7 +342,12 @@ async function executeTool(
         const priceMap: Record<number, number> = {}
         const pSeen = new Set<number>()
         for (const ph of priceHist ?? []) {
-          if (!pSeen.has(ph.asset_id)) { priceMap[ph.asset_id] = ph.total_brl; pSeen.add(ph.asset_id) }
+          if (!pSeen.has(ph.asset_id)) {
+            const holdings = holdingsMap2[ph.asset_id] ?? 0
+            const fx = lastFxMap2[ph.asset_id] ?? 1
+            priceMap[ph.asset_id] = ph.price * holdings * fx
+            pSeen.add(ph.asset_id)
+          }
         }
 
         const lines = assets.map(a => {
@@ -492,49 +512,71 @@ async function executeTool(
         const today = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
 
         let fromDate: string
-        if (period === 'this_month') {
+        if (period === 'last_7d') {
+          const d = new Date(now); d.setDate(d.getDate() - 7)
+          fromDate = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+        } else if (period === 'this_month') {
           fromDate = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-01`
         } else if (period === 'last_30d') {
           const d = new Date(now); d.setDate(d.getDate() - 30)
           fromDate = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
         } else if (period === 'ytd') {
           fromDate = `${now.getFullYear()}-01-01`
-        } else { // last_12m
+        } else {
           const d = new Date(now); d.setFullYear(d.getFullYear() - 1)
           fromDate = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
         }
 
-        // Get active assets
         const { data: assets } = await supabaseAdmin
           .from('assets')
           .select('id, code, name, asset_type, asset_classes(name)')
           .eq('user_id', userId)
           .eq('active', true)
+          .eq('asset_type', 'ticker')
 
-        if (!assets?.length) return 'No assets found.'
+        if (!assets?.length) return 'No ticker assets found.'
         const ids = assets.map(a => a.id as number)
 
-        // For each asset: find the latest price_history before fromDate (start) and the latest overall (end)
-        const { data: allHistory } = await supabaseAdmin
-          .from('price_history')
-          .select('asset_id, date, total_brl')
-          .in('asset_id', ids)
-          .order('date', { ascending: true })
+        const [{ data: endPrices }, { data: startPrices }, { data: allContribs }] = await Promise.all([
+          supabaseAdmin.from('price_history')
+            .select('asset_id, price, ref_date, currency')
+            .in('asset_id', ids).lte('ref_date', today)
+            .order('ref_date', { ascending: false }).limit(ids.length * 5),
+          supabaseAdmin.from('price_history')
+            .select('asset_id, price, ref_date, currency')
+            .in('asset_id', ids).lt('ref_date', fromDate)
+            .order('ref_date', { ascending: false }).limit(ids.length * 5),
+          supabaseAdmin.from('contributions')
+            .select('asset_id, date, type, quantity, value_brl, fx_rate_brl')
+            .in('asset_id', ids).order('date', { ascending: true }),
+        ])
 
-        if (!allHistory?.length) return 'No price history found. Run a portfolio sync first.'
+        if (!endPrices?.length) return 'No price history found. Run a portfolio sync first.'
 
-        // Contributions during period (for Simple Dietz)
-        const { data: contribsInPeriod } = await supabaseAdmin
-          .from('contributions')
-          .select('asset_id, type, value_brl, date')
-          .in('asset_id', ids)
-          .gte('date', fromDate)
-          .lte('date', today)
+        const endPriceMap: Record<number, { price: number }> = {}
+        for (const p of endPrices ?? []) {
+          if (!(p.asset_id in endPriceMap)) endPriceMap[p.asset_id] = { price: p.price }
+        }
+        const startPriceMap: Record<number, { price: number }> = {}
+        for (const p of startPrices ?? []) {
+          if (!(p.asset_id in startPriceMap)) startPriceMap[p.asset_id] = { price: p.price }
+        }
 
-        const contribMap: Record<number, number> = {}
-        for (const c of contribsInPeriod ?? []) {
-          const delta = c.type === 'sell' ? -(c.value_brl ?? 0) : (c.value_brl ?? 0)
-          contribMap[c.asset_id] = (contribMap[c.asset_id] ?? 0) + delta
+        const holdingsNow: Record<number, number> = {}
+        const holdingsAtStart: Record<number, number> = {}
+        const lastFxPerf: Record<number, number> = {}
+        const cashInPeriod: Record<number, number> = {}
+
+        for (const c of allContribs ?? []) {
+          const id = c.asset_id as number
+          const qty = (c.quantity ?? 0) * (c.type === 'sell' ? -1 : 1)
+          if (c.date < fromDate) holdingsAtStart[id] = (holdingsAtStart[id] ?? 0) + qty
+          holdingsNow[id] = (holdingsNow[id] ?? 0) + qty
+          if (c.fx_rate_brl) lastFxPerf[id] = c.fx_rate_brl
+          if (c.date >= fromDate && c.date <= today) {
+            const brl = (c.value_brl ?? 0) * (c.type === 'sell' ? -1 : 1)
+            cashInPeriod[id] = (cashInPeriod[id] ?? 0) + brl
+          }
         }
 
         type PerfRow = {
@@ -546,17 +588,16 @@ async function executeTool(
         const rows: PerfRow[] = []
         for (const asset of assets) {
           const id = asset.id as number
-          const hist = (allHistory ?? []).filter(h => h.asset_id === id)
-          if (hist.length === 0) continue
+          const ep = endPriceMap[id]
+          if (!ep) continue
 
-          // Latest entry before fromDate = value at period start
-          const beforeStart = hist.filter(h => h.date < fromDate)
-          const valueStart = beforeStart.length > 0 ? beforeStart[beforeStart.length - 1].total_brl : 0
-
-          // Latest entry overall = current value
-          const valueEnd = hist[hist.length - 1].total_brl
-
-          const contributions = contribMap[id] ?? 0
+          const fx = lastFxPerf[id] ?? 1
+          const holdEnd = holdingsNow[id] ?? 0
+          const holdStart = holdingsAtStart[id] ?? holdEnd
+          const sp = startPriceMap[id]
+          const valueEnd   = ep.price * holdEnd   * fx
+          const valueStart = sp ? sp.price * holdStart * fx : 0
+          const contributions = cashInPeriod[id] ?? 0
           const changeBrl = valueEnd - valueStart - contributions
           const dietzBase = valueStart + 0.5 * contributions
           const changePct = dietzBase > 0 ? (changeBrl / dietzBase) * 100 : null
@@ -565,16 +606,16 @@ async function executeTool(
             code: asset.code,
             name: asset.name,
             cls: (asset.asset_classes as unknown as { name: string } | null)?.name ?? 'No class',
-            valueStart, valueEnd, contributions, changeBrl,
-            changePct,
+            valueStart, valueEnd, contributions, changeBrl, changePct,
           })
         }
 
         if (rows.length === 0) return 'No price history available for this period. Run a portfolio sync first.'
 
-        rows.sort((a, b) => a.changeBrl - b.changeBrl) // worst first
+        rows.sort((a, b) => a.changeBrl - b.changeBrl)
 
         const periodLabel: Record<string, string> = {
+          last_7d:    `last 7 days (from ${fromDate})`,
           this_month: `this month (from ${fromDate})`,
           last_30d:   `last 30 days (from ${fromDate})`,
           ytd:        `year to date (from ${fromDate})`,
@@ -589,7 +630,7 @@ async function executeTool(
 
         const totalChange = rows.reduce((s, r) => s + r.changeBrl, 0)
         const losers  = rows.filter(r => r.changeBrl < 0)
-        const gainers = rows.filter(r => r.changeBrl > 0).reverse()
+        const gainers = rows.filter(r => r.changeBrl > 0)
 
         return [
           `Portfolio performance — ${periodLabel[period] ?? period}`,
@@ -648,11 +689,10 @@ async function executeTool(
             .in('asset_id', ids).eq('type', 'sell').gte('date', fromDate).lte('date', toDate),
           supabaseAdmin.from('contributions').select('asset_id, date, quantity, value_brl')
             .in('asset_id', ids).eq('type', 'buy').lte('date', toDate),
-          supabaseAdmin.from('price_history').select('asset_id, date, total_brl')
-            .in('asset_id', ids).lte('date', toDate).order('date', { ascending: false }).limit(ids.length * 5),
+          supabaseAdmin.from('price_history').select('asset_id, ref_date, price, currency')
+            .in('asset_id', ids).lte('ref_date', toDate).order('ref_date', { ascending: false }).limit(ids.length * 5),
         ])
 
-        // Dividends by type
         const divByType: Record<string, number> = {}
         let totalDivBrl = 0
         for (const d of divs ?? []) {
@@ -661,7 +701,6 @@ async function executeTool(
           totalDivBrl += d.amount_brl ?? 0
         }
 
-        // Capital gains: avg cost FIFO per asset
         const gainLines: string[] = []
         for (const id of ids) {
           const assetSells = (sells ?? []).filter(s => s.asset_id === id)
@@ -678,14 +717,13 @@ async function executeTool(
           gainLines.push(`  ${a?.code ?? id} (${a?.name ?? ''}): sold R$${totalSellVal.toFixed(0)} | avg cost basis R$${costBasis.toFixed(0)} | gain/loss: ${gain >= 0 ? '+' : ''}R$${gain.toFixed(0)}`)
         }
 
-        // Year-end positions (closest price_history entry to Dec 31)
         const seenYE = new Set<number>()
         const posLines: string[] = []
         for (const ph of yearEndHist ?? []) {
           if (seenYE.has(ph.asset_id)) continue
           seenYE.add(ph.asset_id)
           const a = assetMap[ph.asset_id]
-          if (a) posLines.push(`  ${a.code} (${a.name}): R$${ph.total_brl.toFixed(0)} (date: ${ph.date})`)
+          if (a) posLines.push(`  ${a.code} (${a.name}): ${ph.price.toFixed(4)} ${ph.currency} (date: ${ph.ref_date})`)
         }
 
         return [
@@ -724,12 +762,77 @@ async function executeTool(
   }
 }
 
+// ─── Session CRUD ──────────────────────────────────────────────────────────────
+
+router.get('/sessions', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const { data } = await supabaseAdmin
+    .from('ai_chat_sessions')
+    .select('id, title, updated_at')
+    .eq('user_id', userId)
+    .order('updated_at', { ascending: false })
+    .limit(50)
+  res.json(data ?? [])
+})
+
+router.post('/sessions', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const { title } = req.body as { title?: string }
+  const { data } = await supabaseAdmin
+    .from('ai_chat_sessions')
+    .insert({ user_id: userId, title: (title ?? 'Nova conversa').slice(0, 80) })
+    .select('id, title, updated_at')
+    .single()
+  res.json(data)
+})
+
+router.patch('/sessions/:id', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const { title } = req.body as { title: string }
+  await supabaseAdmin
+    .from('ai_chat_sessions')
+    .update({ title: (title ?? '').slice(0, 80), updated_at: new Date().toISOString() })
+    .eq('id', req.params.id)
+    .eq('user_id', userId)
+  res.json({ ok: true })
+})
+
+router.delete('/sessions/:id', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  await supabaseAdmin
+    .from('ai_chat_sessions')
+    .delete()
+    .eq('id', req.params.id)
+    .eq('user_id', userId)
+  res.json({ ok: true })
+})
+
+router.get('/sessions/:id/messages', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const { data: session } = await supabaseAdmin
+    .from('ai_chat_sessions')
+    .select('id')
+    .eq('id', req.params.id)
+    .eq('user_id', userId)
+    .single()
+  if (!session) { res.status(404).json({ error: 'Session not found' }); return }
+  const { data: msgs } = await supabaseAdmin
+    .from('ai_chat_messages')
+    .select('role, content')
+    .eq('session_id', req.params.id)
+    .order('created_at', { ascending: true })
+  res.json(msgs ?? [])
+})
+
+// ─── Chat inference ─────────────────────────────────────────────────────────────
+
 // POST /api/chat
 router.post('/', requireAuth, async (req, res: Response) => {
   const { userId, userLocale } = req as AuthRequest
-  const { messages, currentPath } = req.body as {
+  const { messages, currentPath, session_id: incomingSessionId } = req.body as {
     messages: Anthropic.MessageParam[]
     currentPath?: string
+    session_id?: string | null
   }
 
   if (!messages?.length) { res.status(400).json({ error: 'messages required' }); return }
@@ -742,6 +845,23 @@ router.post('/', requireAuth, async (req, res: Response) => {
 
   const send = (data: object) => res.write(`data: ${JSON.stringify(data)}\n\n`)
 
+  // Resolve or create a session for persistence
+  let sessionId: string | null = incomingSessionId ?? null
+  const lastUserMsg = [...messages].reverse().find(m => m.role === 'user')
+  const userText = typeof lastUserMsg?.content === 'string' ? lastUserMsg.content : ''
+
+  if (!sessionId && userText) {
+    const title = userText.slice(0, 80)
+    const { data: newSession } = await supabaseAdmin
+      .from('ai_chat_sessions')
+      .insert({ user_id: userId, title })
+      .select('id')
+      .single()
+    sessionId = newSession?.id ?? null
+  }
+
+  if (sessionId) send({ type: 'session', session_id: sessionId })
+
   const today = new Date().toISOString().split('T')[0]
   const systemPrompt = buildSystemPrompt({
     locale: userLocale,
@@ -751,6 +871,7 @@ router.post('/', requireAuth, async (req, res: Response) => {
 
   const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
   const runMessages: Anthropic.MessageParam[] = [...messages]
+  let fullAssistantText = ''
 
   try {
     for (let iter = 0; iter < 6; iter++) {
@@ -764,9 +885,9 @@ router.post('/', requireAuth, async (req, res: Response) => {
 
       for await (const event of stream) {
         if (event.type === 'content_block_delta' && event.delta.type === 'text_delta' && event.delta.text) {
+          fullAssistantText += event.delta.text
           send({ type: 'delta', text: event.delta.text })
         }
-        // Server-side tool hint (web_search handled by Anthropic automatically)
         if (event.type === 'content_block_start' && (event.content_block as { type: string }).type === 'server_tool_use') {
           send({ type: 'tool_call', tool: 'web_search' })
         }
@@ -789,6 +910,18 @@ router.post('/', requireAuth, async (req, res: Response) => {
       }
 
       break
+    }
+
+    // Persist the user message + assistant response
+    if (sessionId && userText && fullAssistantText) {
+      await supabaseAdmin.from('ai_chat_messages').insert([
+        { session_id: sessionId, role: 'user',      content: userText },
+        { session_id: sessionId, role: 'assistant', content: fullAssistantText },
+      ])
+      await supabaseAdmin
+        .from('ai_chat_sessions')
+        .update({ updated_at: new Date().toISOString() })
+        .eq('id', sessionId)
     }
   } catch (err) {
     send({ type: 'error', message: err instanceof Error ? err.message : 'Erro desconhecido' })

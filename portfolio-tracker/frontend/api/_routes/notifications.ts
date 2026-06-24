@@ -1,10 +1,10 @@
 import { Router, Response } from 'express'
 import { requireAuth, AuthRequest } from '../../../shared-api/src/middleware/auth.js'
 import { supabaseAdmin } from '../../../shared-api/src/lib/supabase.js'
-import { getActiveSubscriptions, getBudgetAlerts } from './finances.js'
+import { getActiveSubscriptions, getBudgetAlerts } from '../../../shared-api/src/routes/finances.js'
 import { getSplitWarnings } from './portfolio.js'
-import { getPendingGroupInvites } from './shared.js'
-import { getPendingTripInvites } from './voyage.js'
+import { getPendingGroupInvites } from '../../../shared-api/src/routes/shared.js'
+import { getPendingTripInvites } from '../../../shared-api/src/routes/voyage.js'
 import { getPendingFriendInvites, getRecentFriendAcceptances } from '../../../shared-api/src/routes/people.js'
 
 const router = Router()

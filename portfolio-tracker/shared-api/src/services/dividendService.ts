@@ -1,5 +1,5 @@
-import { supabaseAdmin } from '../../../shared-api/src/lib/supabase.js'
-import { getFxRate } from '../../../shared-api/src/lib/fx.js'
+import { supabaseAdmin } from '../lib/supabase.js'
+import { getFxRate } from '../lib/fx.js'
 import YahooFinance from 'yahoo-finance2'
 
 const yf = new YahooFinance({ suppressNotices: ['yahooSurvey', 'ripHistorical'] })
@@ -24,11 +24,8 @@ function mapBrapiLabel(label: string): string {
 }
 
 export interface RawDividend {
-  ex_date: string
-  pay_date: string | null
-  amount_per_share: number
-  dividend_type: string
-  source: string
+  ex_date: string; pay_date: string | null
+  amount_per_share: number; dividend_type: string; source: string
 }
 
 export async function fetchBrapiDividends(ticker: string): Promise<RawDividend[]> {
@@ -36,14 +33,9 @@ export async function fetchBrapiDividends(ticker: string): Promise<RawDividend[]
   const res = await fetch(url)
   if (!res.ok) throw new Error(`brapi dividends ${res.status}: ${ticker}`)
   const json = await res.json() as {
-    results?: Array<{
-      dividendsData?: {
-        cashDividends?: Array<{
-          lastDatePrior: string; paymentDate: string
-          rate: string | number; label: string
-        }>
-      }
-    }>
+    results?: Array<{ dividendsData?: { cashDividends?: Array<{
+      lastDatePrior: string; paymentDate: string; rate: string | number; label: string
+    }> } }>
   }
   const cashDivs = json.results?.[0]?.dividendsData?.cashDividends ?? []
   const out: RawDividend[] = []
@@ -52,13 +44,7 @@ export async function fetchBrapiDividends(ticker: string): Promise<RawDividend[]
     if (!ex_date) continue
     const rate = typeof d.rate === 'string' ? parseFloat(d.rate) : d.rate
     if (!rate || rate <= 0) continue
-    out.push({
-      ex_date,
-      pay_date: parseDate(d.paymentDate),
-      amount_per_share: rate,
-      dividend_type: mapBrapiLabel(d.label ?? ''),
-      source: 'brapi',
-    })
+    out.push({ ex_date, pay_date: parseDate(d.paymentDate), amount_per_share: rate, dividend_type: mapBrapiLabel(d.label ?? ''), source: 'brapi' })
   }
   return out
 }
@@ -81,8 +67,6 @@ export async function fetchStatusInvestDividends(ticker: string): Promise<RawDiv
     const dividend_type = et === 'JCP' || et.includes('JUROS') ? 'jcp' : et === 'RENDIMENTO' ? 'rendimento' : 'dividend'
     return [{ ex_date, pay_date: parseDate(m.pd), amount_per_share: m.v, dividend_type, source: 'statusinvest' as const }]
   })
-  // StatusInvest sometimes returns multiple entries per (ex_date, type) — e.g. split JCP payments.
-  // Summing them avoids the PostgreSQL duplicate-conflict error on batch upsert.
   const dedup = new Map<string, RawDividend>()
   for (const d of raw) {
     const key = `${d.ex_date}_${d.dividend_type}`
@@ -101,19 +85,10 @@ export async function fetchYahooDividends(ticker: string, from: string): Promise
   }) as Array<{ date: Date; dividends?: number }>
   return rows
     .filter(r => r.dividends != null && r.dividends > 0)
-    .map(r => ({
-      ex_date: r.date.toISOString().split('T')[0],
-      pay_date: null,
-      amount_per_share: r.dividends!,
-      dividend_type: 'dividend',
-      source: 'yahoo',
-    }))
+    .map(r => ({ ex_date: r.date.toISOString().split('T')[0], pay_date: null, amount_per_share: r.dividends!, dividend_type: 'dividend', source: 'yahoo' }))
 }
 
-function holdingsAt(
-  contribs: Array<{ type: string; quantity: number; date: string }>,
-  asOfDate: string,
-): number {
+function holdingsAt(contribs: Array<{ type: string; quantity: number; date: string }>, asOfDate: string): number {
   let h = 0
   for (const c of contribs) {
     if (c.date > asOfDate) continue
@@ -126,15 +101,12 @@ function holdingsAt(
 export async function syncDividendsForUser(userId: string, force = false) {
   // force=true also includes inactive assets to backfill historical dividends
   let q = supabaseAdmin
-    .from('assets')
-    .select('id, code, currency, ticker_brapi, ticker_yahoo')
-    .eq('user_id', userId)
-    .eq('asset_type', 'ticker')
+    .from('assets').select('id, code, currency, ticker_brapi, ticker_yahoo')
+    .eq('user_id', userId).eq('asset_type', 'ticker')
   if (!force) q = q.eq('active', true)
   const { data: assets } = await q
 
   if (!assets?.length) return { synced: 0, skipped: 0, errors: 0 }
-
   const assetIds = assets.map(a => a.id as number)
 
   if (force) {
@@ -146,23 +118,15 @@ export async function syncDividendsForUser(userId: string, force = false) {
   }
 
   const { data: latestRows } = await supabaseAdmin
-    .from('dividends')
-    .select('asset_id, ex_date')
-    .in('asset_id', assetIds)
-    .eq('user_id', userId)
-    .order('ex_date', { ascending: false })
+    .from('dividends').select('asset_id, ex_date')
+    .in('asset_id', assetIds).eq('user_id', userId).order('ex_date', { ascending: false })
 
   const latestMap: Record<number, string> = {}
-  for (const r of (latestRows ?? [])) {
-    if (!latestMap[r.asset_id]) latestMap[r.asset_id] = r.ex_date
-  }
+  for (const r of (latestRows ?? [])) { if (!latestMap[r.asset_id]) latestMap[r.asset_id] = r.ex_date }
 
   const { data: allContribs } = await supabaseAdmin
-    .from('contributions')
-    .select('asset_id, type, quantity, date')
-    .in('asset_id', assetIds)
-    .in('type', ['buy', 'sell'])
-    .order('date', { ascending: true })
+    .from('contributions').select('asset_id, type, quantity, date')
+    .in('asset_id', assetIds).in('type', ['buy', 'sell']).order('date', { ascending: true })
 
   const contribsByAsset: Record<number, Array<{ type: string; quantity: number; date: string }>> = {}
   for (const c of (allContribs ?? [])) {
@@ -171,12 +135,7 @@ export async function syncDividendsForUser(userId: string, force = false) {
   }
 
   const { data: earliest } = await supabaseAdmin
-    .from('contributions')
-    .select('date')
-    .in('asset_id', assetIds)
-    .order('date', { ascending: true })
-    .limit(1)
-    .single()
+    .from('contributions').select('date').in('asset_id', assetIds).order('date', { ascending: true }).limit(1).single()
 
   const defaultFrom = earliest?.date
     ? earliest.date.slice(0, 10)
@@ -186,31 +145,22 @@ export async function syncDividendsForUser(userId: string, force = false) {
 
   const upsertRows = async (asset: (typeof assets)[number], rawDivs: RawDividend[]) => {
     const contribs = contribsByAsset[asset.id] ?? []
-    const fxRate = asset.currency !== 'BRL'
-      ? await getFxRate(asset.currency).catch(() => 1)
-      : 1
+    const fxRate = asset.currency !== 'BRL' ? await getFxRate(asset.currency).catch(() => 1) : 1
     const rows = []
     for (const d of rawDivs) {
       const holdings = holdingsAt(contribs, d.ex_date)
       if (holdings <= 0) continue
       const amount_total = holdings * d.amount_per_share
       rows.push({
-        user_id: userId,
-        asset_id: asset.id,
-        ex_date: d.ex_date,
-        pay_date: d.pay_date,
-        amount_per_share: d.amount_per_share,
-        amount_total: Math.round(amount_total * 10000) / 10000,
+        user_id: userId, asset_id: asset.id, ex_date: d.ex_date, pay_date: d.pay_date,
+        amount_per_share: d.amount_per_share, amount_total: Math.round(amount_total * 10000) / 10000,
         currency: asset.ticker_brapi ? 'BRL' : (asset.currency || 'USD'),
         amount_brl: Math.round(amount_total * fxRate * 10000) / 10000,
-        dividend_type: d.dividend_type,
-        source: d.source,
+        dividend_type: d.dividend_type, source: d.source,
       })
     }
     if (!rows.length) { skipped++; return }
-    const { error } = await supabaseAdmin
-      .from('dividends')
-      .upsert(rows, { onConflict: 'asset_id,ex_date,dividend_type' })
+    const { error } = await supabaseAdmin.from('dividends').upsert(rows, { onConflict: 'asset_id,ex_date,dividend_type' })
     if (error) { console.warn(`[dividends] upsert ${asset.code}:`, error.message); errors++ }
     else synced += rows.length
   }
@@ -221,12 +171,8 @@ export async function syncDividendsForUser(userId: string, force = false) {
   await Promise.all(yahooAssets.map(async a => {
     try {
       const from = latestMap[a.id] ?? defaultFrom
-      const divs = await fetchYahooDividends(a.ticker_yahoo!, from)
-      await upsertRows(a, divs)
-    } catch (err) {
-      console.warn(`[dividends] yahoo ${a.code}:`, err)
-      errors++
-    }
+      await upsertRows(a, await fetchYahooDividends(a.ticker_yahoo!, from))
+    } catch (err) { console.warn(`[dividends] yahoo ${a.code}:`, err); errors++ }
   }))
 
   // For brapi assets (Brazilian stocks/FIIs):
@@ -259,9 +205,7 @@ export async function syncDividendsForUser(userId: string, force = false) {
         const allDivs = await fetchBrapiDividends(a.ticker_brapi!)
         await upsertRows(a, allDivs)
         didSync = true
-      } catch (err) {
-        console.warn(`[dividends] brapi ${a.code}:`, err)
-      }
+      } catch (err) { console.warn(`[dividends] brapi ${a.code}:`, err) }
     }
 
     // Last resort: Yahoo .SA (all types become 'dividend')

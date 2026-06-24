@@ -1,16 +1,15 @@
 import { Router, Response } from 'express'
-import { requireAuth, AuthRequest } from '../../../shared-api/src/middleware/auth.js'
-import { supabaseAdmin } from '../../../shared-api/src/lib/supabase.js'
-import { getCurrentPrice } from '../../../shared-api/src/services/priceService.js'
-import type { Asset, FITranche } from '../../../shared-api/src/services/priceService.js'
-import { getSplitEvents } from '../../../shared-api/src/services/yahooService.js'
-import { cache } from '../../../shared-api/src/lib/cache.js'
-import { calculateTrancheProfits } from '../../../shared-api/src/services/fixedIncomeService.js'
-import type { FixedIncomeAsset } from '../../../shared-api/src/services/fixedIncomeService.js'
-import { getFxRate } from '../../../shared-api/src/lib/fx.js'
+import { requireAuth, AuthRequest } from '../middleware/auth.js'
+import { supabaseAdmin } from '../lib/supabase.js'
+import { getCurrentPrice, Asset, FITranche } from '../services/priceService.js'
+import { getSplitEvents } from '../services/yahooService.js'
+import { cache } from '../lib/cache.js'
+import { calculateTrancheProfits, FixedIncomeAsset } from '../services/fixedIncomeService.js'
+import { getFxRate } from '../lib/fx.js'
 
 const router = Router()
 
+// GET /api/assets — simple list of all active assets (no pricing)
 router.get('/', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const { data, error } = await supabaseAdmin
@@ -42,6 +41,8 @@ async function searchYahoo(query: string): Promise<YahooQuote[]> {
 // onde ETFs UCITS listam, sem assumir de antemão qual é a bolsa certa.
 const EUROPEAN_EXCHANGE_SUFFIXES = ['.PA', '.AS', '.MI', '.DE', '.L', '.BR', '.LS', '.SW', '.MU', '.F']
 
+// GET /api/assets/lookup?code=AAPL&market=b3|intl|cripto
+// Returns { name, symbol?, coingecko_id? } for auto-filling the new asset form
 router.get('/lookup', requireAuth, async (req, res: Response) => {
   const { code, market } = req.query as { code?: string; market?: string }
   if (!code || !market) { res.json({ name: null }); return }
@@ -198,6 +199,7 @@ function isColumnMissing(error: { code?: string; message?: string }): boolean {
   return error.code === '42703' || Boolean(error.message?.includes('does not exist'))
 }
 
+// GET /api/assets/classes — list asset classes for the user
 router.get('/classes', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
   let { data, error } = await supabaseAdmin
@@ -214,6 +216,7 @@ router.get('/classes', requireAuth, async (req, res: Response) => {
   res.json(data ?? [])
 })
 
+// POST /api/assets/classes — create a class
 router.post('/classes', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const { name, color, icon, name_key } = req.body as { name: string; color?: string; icon?: string; name_key?: string }
@@ -233,6 +236,7 @@ router.post('/classes', requireAuth, async (req, res: Response) => {
   res.status(201).json(r.data)
 })
 
+// PATCH /api/assets/classes/:id — rename, recolor, or update icon
 router.patch('/classes/:id', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const classId = Number(req.params.id)
@@ -244,6 +248,7 @@ router.patch('/classes/:id', requireAuth, async (req, res: Response) => {
   if (!Object.keys(updates).length) { res.status(400).json({ error: 'Nada para atualizar' }); return }
   let { error } = await supabaseAdmin.from('asset_classes').update(updates).eq('id', classId).eq('user_id', userId)
   if (error && isColumnMissing(error)) {
+    // icon column not yet migrated — retry without it
     const { icon: _i, ...rest } = updates
     error = Object.keys(rest).length
       ? (await supabaseAdmin.from('asset_classes').update(rest).eq('id', classId).eq('user_id', userId)).error
@@ -253,6 +258,7 @@ router.patch('/classes/:id', requireAuth, async (req, res: Response) => {
   res.json({ ok: true })
 })
 
+// DELETE /api/assets/classes/:id
 router.delete('/classes/:id', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const classId = Number(req.params.id)
@@ -318,6 +324,7 @@ function inferCountry(opts: {
   return CURRENCY_TO_COUNTRY[opts.currency] ?? 'USA'
 }
 
+// POST /api/assets — create a new asset
 router.post('/', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const { code, name, asset_type, currency, asset_class_id, ticker_yahoo, ticker_brapi, coingecko_id, country, exchange, catalog_id } = req.body as {
@@ -361,6 +368,7 @@ async function getOwnedAsset(assetId: number, userId: string) {
   return data
 }
 
+// POST /api/assets/:id/migrate-to-fi — converte ativo manual em renda fixa
 router.post('/:id/migrate-to-fi', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const assetId = Number(req.params.id)
@@ -424,6 +432,7 @@ router.post('/:id/migrate-to-fi', requireAuth, async (req, res: Response) => {
   res.json({ ok: true })
 })
 
+// POST /api/assets/:id/fi-deposit — aporte adicional em renda fixa
 router.post('/:id/fi-deposit', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const assetId = Number(req.params.id)
@@ -531,6 +540,7 @@ router.patch('/:id', requireAuth, async (req, res: Response) => {
   res.json({ ok: true })
 })
 
+// GET /api/assets/:id/split-check — returns Yahoo-detected splits not yet registered
 router.get('/:id/split-check', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const assetId = Number(req.params.id)
@@ -554,6 +564,7 @@ router.get('/:id/split-check', requireAuth, async (req, res: Response) => {
   res.json({ splits: unaccounted })
 })
 
+// POST /api/assets/:id/split — register a split or reverse-split
 router.post('/:id/split', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const assetId = Number(req.params.id)
@@ -586,6 +597,7 @@ router.post('/:id/split', requireAuth, async (req, res: Response) => {
   res.json({ ok: true, delta, type, quantity, label })
 })
 
+// POST /api/assets/:id/archive — marks asset as inactive (soft delete)
 router.post('/:id/archive', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const assetId = Number(req.params.id)
@@ -598,6 +610,7 @@ router.post('/:id/archive', requireAuth, async (req, res: Response) => {
   res.json({ ok: true })
 })
 
+// POST /api/assets/:id/unarchive — restores archived asset
 router.post('/:id/unarchive', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const assetId = Number(req.params.id)
@@ -610,6 +623,7 @@ router.post('/:id/unarchive', requireAuth, async (req, res: Response) => {
   res.json({ ok: true })
 })
 
+// DELETE /api/assets/:id — permanently delete an archived asset and all its history
 router.delete('/:id', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const assetId = Number(req.params.id)
@@ -625,6 +639,7 @@ router.delete('/:id', requireAuth, async (req, res: Response) => {
   res.json({ ok: true })
 })
 
+// GET /api/assets/archived — list inactive assets with aggregated contribution history
 router.get('/archived', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const { data: archivedAssets, error } = await supabaseAdmin
@@ -688,8 +703,6 @@ router.get('/:id/detail', requireAuth, async (req, res: Response) => {
   const contribs = rawContribs ?? []
 
   const assetCurrency = asset.currency || 'BRL'
-  // Fetch live FX upfront so invested_brl and chart values use the same rate.
-  // The ticker block may refine this to priceCurrency, but for cost-basis assets they match.
   let fxApprox = assetCurrency === 'BRL' ? 1 : await getFxRate(assetCurrency).catch(() => 5.70)
 
   let totalQty = 0
@@ -717,6 +730,8 @@ router.get('/:id/detail', requireAuth, async (req, res: Response) => {
     : (asset.asset_type === 'fixed_income' && asset.fi_principal ? asset.fi_principal : 0)
   const avgCostBrl  = holdings > 0 && totalCostBrl > 0 ? totalCostBrl / holdings : null
 
+  // rfBuyTranches: buy-only, for per-tranche profit display
+  // rfTranches: buy + sell (negative principal), for calculateCurrentValue
   const rfBuyTranches: FITranche[] = []
   const rfTranches: FITranche[] = []
   if (asset.asset_type === 'fixed_income') {
@@ -737,7 +752,7 @@ router.get('/:id/detail', requireAuth, async (req, res: Response) => {
 
   let currentValueBrl = 0
   let currentPrice: number | null = null
-  let priceCurrency = asset.currency || 'BRL'
+  let priceCurrency = assetCurrency
   let priceSource   = ''
 
   try {
@@ -754,6 +769,7 @@ router.get('/:id/detail', requireAuth, async (req, res: Response) => {
         priceSource     = 'manual'
       }
     } else if (asset.asset_type === 'ticker') {
+      // Manual value overrides live price (same priority as portfolio dashboard)
       const { data: mvLatest } = await supabaseAdmin
         .from('manual_values')
         .select('value, currency')
@@ -767,6 +783,7 @@ router.get('/:id/detail', requireAuth, async (req, res: Response) => {
         priceCurrency   = mvLatest.currency
         priceSource     = 'manual'
       } else {
+        // Brapi-only with no price_history → stale data risk, use cost_basis
         const isBrapiOnly = !!asset.ticker_brapi && !asset.ticker_yahoo && !asset.coingecko_id
         let brapiOnlyUnsynced = false
         if (isBrapiOnly) {
@@ -821,10 +838,11 @@ router.get('/:id/detail', requireAuth, async (req, res: Response) => {
   const gainLossBrl = currentValueBrl - investedBrl
   const gainLossPct = investedBrl > 0 ? (gainLossBrl / investedBrl) * 100 : null
 
+  // Per-contribution profit for RF assets (fetches BCB rates once, applies per tranche)
   const profitByContribId = new Map<number, number>()
   if (asset.asset_type === 'fixed_income' && rfBuyTranches.length > 0) {
     try {
-      // Run in parallel — calculateTrancheProfits uses BCB data already cached by calculateCurrentValue
+      // Run in parallel — calculateTrancheProfits reuses BCB data already cached by calculateCurrentValue
       const [trancheResults] = await Promise.all([
         calculateTrancheProfits(asset as unknown as FixedIncomeAsset, rfBuyTranches),
       ])
@@ -838,8 +856,43 @@ router.get('/:id/detail', requireAuth, async (req, res: Response) => {
   type HistoryPoint = { date: string; price: number; value_brl: number; invested_brl?: number }
   let history: HistoryPoint[] = []
 
+  // Shared interpolation helper used by both ticker (no price_history) and manual branches
   type InterpPt = { ref_date: string; value: number; currency: string }
+  function buildMonthlyInterp(pts: InterpPt[]): void {
+    if (pts.length === 0) return
+    const mi = (s: string) => { const [y, m] = s.substring(0, 7).split('-').map(Number); return y * 12 + m }
+    const interpAt = (dateStr: string): InterpPt => {
+      const last = pts[pts.length - 1]
+      if (dateStr >= last.ref_date) return { ...last }
+      if (dateStr <  pts[0].ref_date) return { ...pts[0] }
+      let before = pts[0], after = pts[1]
+      for (let i = 0; i < pts.length - 1; i++) {
+        if (pts[i].ref_date <= dateStr && pts[i + 1].ref_date > dateStr) {
+          before = pts[i]; after = pts[i + 1]; break
+        }
+      }
+      const mB = mi(before.ref_date), mA = mi(after.ref_date), mT = mi(dateStr)
+      const span = mA - mB, elapsed = mT - mB
+      if (span <= 0 || elapsed <= 0) return { ...before }
+      const v = (before.value > 0 && after.value > 0)
+        ? before.value * Math.pow(after.value / before.value, elapsed / span)
+        : before.value + (after.value - before.value) * (elapsed / span)
+      return { ref_date: dateStr, value: v, currency: before.currency }
+    }
+    const todayYM = new Date().toISOString().substring(0, 7)
+    let [curY, curM] = pts[0].ref_date.substring(0, 7).split('-').map(Number)
+    const [endY, endM] = todayYM.split('-').map(Number)
+    while (curY < endY || (curY === endY && curM <= endM)) {
+      const lastDay = new Date(curY, curM, 0).getDate()
+      const ds = `${curY}-${String(curM).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
+      const { value: v, currency: cur } = interpAt(ds)
+      const fx = cur === 'BRL' ? 1 : getFxRate(cur).then(r => r).catch(() => 5.70) as unknown as number
+      history.push({ date: ds, price: v, value_brl: Math.round(v * (cur === 'BRL' ? 1 : 5.70) * 100) / 100 })
+      if (curM === 12) { curY++; curM = 1 } else { curM++ }
+    }
+  }
 
+  // Proper async version used by both branches
   async function buildMonthlyInterpAsync(pts: InterpPt[]): Promise<void> {
     if (pts.length === 0) return
     const mi = (s: string) => { const [y, m] = s.substring(0, 7).split('-').map(Number); return y * 12 + m }
@@ -885,6 +938,7 @@ router.get('/:id/detail', requireAuth, async (req, res: Response) => {
       pts.unshift({ ref_date: firstBuyContrib.date, value: firstBuyVal, currency: 'BRL' })
     }
   }
+  void buildMonthlyInterp  // suppress unused warning
 
   if (asset.asset_type === 'ticker') {
     const today = new Date().toISOString().split('T')[0]
@@ -915,7 +969,6 @@ router.get('/:id/detail', requireAuth, async (req, res: Response) => {
     const mv = mvRes.data
     fxApprox = priceCurrency === 'BRL' ? 1 : await getFxRate(priceCurrency).catch(() => 5.70)
 
-    // Cumulative invested BRL at a given date — same fxApprox as chart so they cross at purchase dates
     const investedAtDate = (dateStr: string): number => {
       let cumCost = 0, cumQty = 0
       for (const c of contribs) {
@@ -947,6 +1000,7 @@ router.get('/:id/detail', requireAuth, async (req, res: Response) => {
         })
       history = [...phPoints, ...mvPoints].sort((a, b) => a.date.localeCompare(b.date))
     } else if (mv && mv.length > 0) {
+      // No price_history — treat like manual: interpolate monthly from buy to today
       const pts: InterpPt[] = mv.map(m => ({ ref_date: m.ref_date, value: m.value, currency: m.currency }))
       prependBuyAnchor(pts)
       pts.sort((a, b) => a.ref_date.localeCompare(b.ref_date))
@@ -962,6 +1016,7 @@ router.get('/:id/detail', requireAuth, async (req, res: Response) => {
     type Pt = { ref_date: string; value: number; currency: string }
     const pts: Pt[] = (mv ?? []).map(m => ({ ref_date: m.ref_date, value: m.value, currency: m.currency }))
 
+    // Prepend first buy as anchor — handles null value_brl via price_orig*qty fallback
     const firstBuyContrib = contribs.find(c => c.type === 'buy' &&
       (Number(c.value_brl) > 0 || Number(c.price_orig) > 0))
     if (firstBuyContrib) {
