@@ -4,6 +4,9 @@ const BASE = 'https://brapi.dev/api'
 const TOKEN = process.env.BRAPI_TOKEN ? `?token=${process.env.BRAPI_TOKEN}` : ''
 const SEP   = TOKEN ? '&' : '?'
 
+// Circuit breaker: se brapi retornar MISSING_TOKEN, desativa por 30 min para evitar N chamadas falhas
+let brapiDisabledUntil = 0
+
 interface BrapiResult {
   symbol: string
   regularMarketPrice: number
@@ -12,10 +15,16 @@ interface BrapiResult {
 }
 
 async function fetchBrapi(path: string): Promise<unknown> {
+  if (Date.now() < brapiDisabledUntil) throw new Error('brapi unavailable (token missing)')
   const res = await fetch(`${BASE}${path}`)
   if (!res.ok) throw new Error(`brapi ${res.status}: ${path}`)
-  const json = await res.json() as { results?: BrapiResult[]; error?: string }
-  if (json.error) throw new Error(`brapi error: ${json.error}`)
+  const json = await res.json() as { results?: BrapiResult[]; error?: string; code?: string }
+  if (json.error) {
+    if (json.code === 'MISSING_TOKEN') {
+      brapiDisabledUntil = Date.now() + 30 * 60 * 1000
+    }
+    throw new Error(`brapi error: ${json.error}`)
+  }
   return json
 }
 
