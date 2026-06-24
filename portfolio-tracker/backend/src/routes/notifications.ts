@@ -5,6 +5,7 @@ import { getActiveSubscriptions, getBudgetAlerts } from './finances.js'
 import { getSplitWarnings } from './portfolio.js'
 import { getPendingGroupInvites } from './shared.js'
 import { getPendingTripInvites } from './voyage.js'
+import { getPendingFriendInvites, getRecentFriendAcceptances } from './people.js'
 
 const router = Router()
 
@@ -24,7 +25,7 @@ const NON_DISMISSIBLE_HISTORY_TYPES = new Set(['bank_connected', 'bank_connect_e
 router.get('/', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
 
-  const [achievementsRes, subsResult, notifDismissalsRes, budgetAlerts, splitWarnings, pendingInvites, pendingTripInvites] = await Promise.all([
+  const [achievementsRes, subsResult, notifDismissalsRes, budgetAlerts, splitWarnings, pendingInvites, pendingTripInvites, pendingFriendInvites, recentFriendAcceptances] = await Promise.all([
     supabaseAdmin.from('achievements').select('achievement_key, earned_at').eq('user_id', userId).order('earned_at', { ascending: true }),
     getActiveSubscriptions(userId),
     supabaseAdmin.from('notification_dismissals').select('key, type, params, severity, link, occurred_at, dismissed_at').eq('user_id', userId),
@@ -32,6 +33,8 @@ router.get('/', requireAuth, async (req, res: Response) => {
     getSplitWarnings(userId),
     getPendingGroupInvites(userId),
     getPendingTripInvites(userId),
+    getPendingFriendInvites(userId),
+    getRecentFriendAcceptances(userId),
   ])
 
   const dismissedKeys = new Set((notifDismissalsRes.data ?? []).map(n => n.key))
@@ -130,6 +133,36 @@ router.get('/', requireAuth, async (req, res: Response) => {
       params: { trip_title: inv.trip_title, inviter_name: inv.inviter_name },
       link: `/voyage/invite/${inv.token}`,
       occurred_at: inv.occurred_at,
+      dismissed_at: null,
+      dismissible: true,
+    })
+  }
+
+  // Category 13: pending friend invites addressed to me -> active (unless dismissed)
+  for (const inv of pendingFriendInvites) {
+    if (dismissedKeys.has(inv.key)) continue
+    active.push({
+      key: inv.key,
+      type: 'friend_invite',
+      severity: 'info',
+      params: { inviter_name: inv.inviter_name, token: inv.token },
+      link: '/people',
+      occurred_at: inv.occurred_at,
+      dismissed_at: null,
+      dismissible: true,
+    })
+  }
+
+  // Category 14: friend invites I sent that were just accepted -> active (unless dismissed)
+  for (const acc of recentFriendAcceptances) {
+    if (dismissedKeys.has(acc.key)) continue
+    active.push({
+      key: acc.key,
+      type: 'friend_accepted',
+      severity: 'success',
+      params: { friend_name: acc.friend_name },
+      link: '/people',
+      occurred_at: acc.occurred_at,
       dismissed_at: null,
       dismissible: true,
     })

@@ -159,6 +159,16 @@ router.delete('/', requireAuth, async (req, res: Response) => {
     .eq('user_id', userId)
     .eq('status', 'active')
 
+  // Clean up friend connections — FK cascade only covers owner_user_id/friend_user_id
+  // columns; pending invites addressed to this user's email (not yet linked to a
+  // user_id) would otherwise be inherited by any future signup reusing that email.
+  const { data: deletedUserData } = await supabaseAdmin.auth.admin.getUserById(userId)
+  const deletedEmail = deletedUserData?.user?.email
+  await supabaseAdmin
+    .from('user_friends')
+    .delete()
+    .or(`owner_user_id.eq.${userId},friend_user_id.eq.${userId}${deletedEmail ? `,invite_email.eq.${deletedEmail}` : ''}`)
+
   const { error } = await supabaseAdmin.auth.admin.deleteUser(userId)
   if (error) { res.status(500).json({ error: error.message }); return }
   res.json({ ok: true })

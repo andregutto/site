@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { apiFetch } from '../lib/api'
 import Avatar from './voyage/_shared/Avatar'
@@ -28,7 +28,15 @@ interface FinanceContext {
   member_status: 'active' | 'pending'
 }
 
-type Context = TripContext | FinanceContext
+interface FriendContext {
+  type: 'friend'
+  direction: Direction
+  friend_id: number
+  friend_status: 'active' | 'pending'
+  accept_token?: string
+}
+
+type Context = TripContext | FinanceContext | FriendContext
 
 interface Contact {
   email: string
@@ -38,6 +46,9 @@ interface Contact {
   status: 'active' | 'pending'
   contexts: Context[]
 }
+
+interface Trip { id: number; title: string }
+interface Group { id: number; name: string }
 
 // ── Etiqueta de direção ───────────────────────────────────────────────────────
 function DirectionTag({ direction }: { direction: Direction }) {
@@ -54,9 +65,22 @@ function DirectionTag({ direction }: { direction: Direction }) {
   return null
 }
 
-function ContactCard({ contact, onRemoved }: { contact: Contact; onRemoved: (memberId: number, type: string) => void }) {
+function ContactCard({
+  contact, trips, groups, onRemoved, onFriendChanged,
+}: {
+  contact: Contact
+  trips: Trip[]
+  groups: Group[]
+  onRemoved: (memberId: number, type: string) => void
+  onFriendChanged: () => void
+}) {
   const navigate = useNavigate()
   const [removing, setRemoving] = useState<number | null>(null)
+  const [accepting, setAccepting] = useState(false)
+  const [shareMode, setShareMode] = useState<'trip' | 'group' | null>(null)
+  const [shareTarget, setShareTarget] = useState<number | ''>('')
+  const [sharing, setSharing] = useState(false)
+  const [shareError, setShareError] = useState('')
 
   async function removeTrip(ctx: TripContext) {
     if (!confirm(`Remover acesso de ${contact.email} à viagem "${ctx.trip_title}"?`)) return
@@ -69,9 +93,46 @@ function ContactCard({ contact, onRemoved }: { contact: Contact; onRemoved: (mem
     }
   }
 
+  async function acceptFriend(ctx: FriendContext) {
+    if (!ctx.accept_token) return
+    setAccepting(true)
+    try {
+      await apiFetch('/people/invite/accept', { method: 'POST', body: JSON.stringify({ token: ctx.accept_token }) })
+      onFriendChanged()
+    } finally {
+      setAccepting(false)
+    }
+  }
+
+  async function unfriend(ctx: FriendContext) {
+    if (!confirm(`Remover ${contact.email} de pessoas?`)) return
+    await apiFetch(`/people/friends/${ctx.friend_id}`, { method: 'DELETE' })
+    onFriendChanged()
+  }
+
+  async function confirmShare() {
+    if (!shareMode || shareTarget === '') return
+    setSharing(true)
+    setShareError('')
+    try {
+      const path = shareMode === 'trip'
+        ? `/voyage/trips/${shareTarget}/invite`
+        : `/shared/groups/${shareTarget}/invite`
+      await apiFetch(path, { method: 'POST', body: JSON.stringify({ email: contact.email }) })
+      setShareMode(null)
+      setShareTarget('')
+      onFriendChanged()
+    } catch (ex: unknown) {
+      setShareError((ex as Error).message ?? 'Erro ao compartilhar')
+    } finally {
+      setSharing(false)
+    }
+  }
+
   const isActive = contact.status === 'active'
   const tripContexts    = contact.contexts.filter((c): c is TripContext    => c.type === 'voyage_trip')
   const financeContexts = contact.contexts.filter((c): c is FinanceContext => c.type === 'shared_finance')
+  const friendContexts  = contact.contexts.filter((c): c is FriendContext  => c.type === 'friend')
   const displayName = contact.name || contact.email
 
   return (
@@ -212,13 +273,87 @@ function ContactCard({ contact, onRemoved }: { contact: Contact; onRemoved: (mem
           ))}
         </div>
       )}
+
+      {/* Amizade direta */}
+      {friendContexts.length > 0 && (
+        <div style={{ borderTop: '1px solid var(--arvo-border-soft)', paddingTop: 14, marginBottom: 14 }}>
+          {friendContexts.map(ctx => (
+            <div key={ctx.friend_id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '4px 0' }}>
+              {ctx.friend_status === 'pending' && ctx.direction === 'shared_with_me' ? (
+                <>
+                  <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg-soft)', flex: 1 }}>
+                    Convidou você para se conectar
+                  </span>
+                  <button
+                    type="button" onClick={() => acceptFriend(ctx)} disabled={accepting}
+                    className="arvo-btn arvo-btn--primary" style={{ fontSize: 11, padding: '4px 12px' }}
+                  >
+                    {accepting ? '…' : 'Aceitar'}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg-soft)', flex: 1 }}>
+                    {ctx.friend_status === 'pending' ? 'Convite enviado, aguardando' : 'Conectado'}
+                  </span>
+                  <button
+                    type="button" onClick={() => unfriend(ctx)}
+                    style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: RED, background: 'none', border: 'none', cursor: 'pointer' }}
+                  >
+                    Remover
+                  </button>
+                </>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Compartilhar viagem/categoria com esta pessoa */}
+      <div style={{ borderTop: '1px solid var(--arvo-border-soft)', paddingTop: 14, display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {shareMode ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <select
+              value={shareTarget}
+              onChange={e => setShareTarget(e.target.value ? Number(e.target.value) : '')}
+              style={{ flex: 1, fontSize: 12.5, padding: '6px 8px', borderRadius: 8, border: '1px solid var(--arvo-border)', background: 'var(--arvo-surface)', color: 'var(--arvo-fg)' }}
+            >
+              <option value="">{shareMode === 'trip' ? 'Selecione a viagem' : 'Selecione a categoria'}</option>
+              {(shareMode === 'trip' ? trips : groups).map(item => (
+                <option key={item.id} value={item.id}>{'title' in item ? item.title : item.name}</option>
+              ))}
+            </select>
+            <button type="button" onClick={confirmShare} disabled={sharing || shareTarget === ''} className="arvo-btn arvo-btn--primary" style={{ fontSize: 11, padding: '5px 12px' }}>
+              {sharing ? '…' : 'Convidar'}
+            </button>
+            <button type="button" onClick={() => { setShareMode(null); setShareError('') }} style={{ fontSize: 11, color: 'var(--arvo-fg-soft)', background: 'none', border: 'none', cursor: 'pointer' }}>
+              Cancelar
+            </button>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', gap: 16 }}>
+            <button type="button" onClick={() => setShareMode('trip')} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-muted)', background: 'none', border: 'none', cursor: 'pointer' }}>
+              + Compartilhar viagem
+            </button>
+            <button type="button" onClick={() => setShareMode('group')} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-muted)', background: 'none', border: 'none', cursor: 'pointer' }}>
+              + Compartilhar categoria
+            </button>
+          </div>
+        )}
+        {shareError && <p style={{ fontSize: 11, color: RED }}>{shareError}</p>}
+      </div>
     </div>
   )
 }
 
 export default function PeoplePage() {
   const [contacts, setContacts] = useState<Contact[]>([])
+  const [trips, setTrips]   = useState<Trip[]>([])
+  const [groups, setGroups] = useState<Group[]>([])
   const [loading, setLoading]   = useState(true)
+  const [inviteEmail, setInviteEmail] = useState('')
+  const [inviting, setInviting] = useState(false)
+  const [inviteError, setInviteError] = useState('')
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -231,11 +366,31 @@ export default function PeoplePage() {
   }, [])
 
   useEffect(() => { load() }, [load])
+  useEffect(() => {
+    apiFetch<Trip[]>('/voyage/trips').then(setTrips).catch(() => {})
+    apiFetch<Group[]>('/shared/groups').then(setGroups).catch(() => {})
+  }, [])
+
+  async function handleInvite(e: FormEvent) {
+    e.preventDefault()
+    if (!inviteEmail.includes('@')) return
+    setInviting(true)
+    setInviteError('')
+    try {
+      await apiFetch('/people/invite', { method: 'POST', body: JSON.stringify({ email: inviteEmail }) })
+      setInviteEmail('')
+      load()
+    } catch (ex: unknown) {
+      setInviteError((ex as Error).message ?? 'Erro ao convidar')
+    } finally {
+      setInviting(false)
+    }
+  }
 
   function handleRemoved(memberId: number) {
     setContacts(prev =>
       prev
-        .map(c => ({ ...c, contexts: c.contexts.filter(ctx => ctx.member_id !== memberId) }))
+        .map(c => ({ ...c, contexts: c.contexts.filter(ctx => !('member_id' in ctx) || ctx.member_id !== memberId) }))
         .filter(c => c.contexts.length > 0)
     )
   }
@@ -283,6 +438,23 @@ export default function PeoplePage() {
         )}
       </div>
 
+      {/* Convidar amigo */}
+      <form onSubmit={handleInvite} style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
+        <input
+          type="email" required placeholder="email@exemplo.com"
+          value={inviteEmail} onChange={e => setInviteEmail(e.target.value)}
+          style={{
+            flex: 1, fontFamily: 'var(--arvo-font-body)', fontSize: 13, padding: '10px 14px',
+            borderRadius: 10, border: '1px solid var(--arvo-border)',
+            background: 'var(--arvo-surface)', color: 'var(--arvo-fg)',
+          }}
+        />
+        <button type="submit" disabled={inviting} className="arvo-btn arvo-btn--primary" style={{ flexShrink: 0 }}>
+          {inviting ? '…' : '+ Convidar'}
+        </button>
+      </form>
+      {inviteError && <p style={{ fontSize: 12, color: RED, marginTop: -16, marginBottom: 16 }}>{inviteError}</p>}
+
       {loading ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {[1, 2].map(i => (
@@ -313,27 +485,16 @@ export default function PeoplePage() {
             fontFamily: 'var(--arvo-font-serif)', fontStyle: 'italic', fontSize: 14,
             color: GOLD, textAlign: 'center', maxWidth: 300, lineHeight: 1.6,
           }}>
-            Convide pessoas para suas viagens ou compartilhe categorias de finanças.
+            Convide alguém pelo e-mail acima para começar.
           </p>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {contacts.map((contact, i) => (
             <div key={contact.email} style={{ animation: 'fadeUp 320ms cubic-bezier(0.22,0.61,0.36,1) both', animationDelay: `${i * 50}ms` }}>
-              <ContactCard contact={contact} onRemoved={handleRemoved} />
+              <ContactCard contact={contact} trips={trips} groups={groups} onRemoved={handleRemoved} onFriendChanged={load} />
             </div>
           ))}
-        </div>
-      )}
-
-      {contacts.length > 0 && (
-        <div style={{
-          marginTop: 28, padding: '14px 18px', borderRadius: 10,
-          border: '1px solid var(--arvo-border-soft)', background: 'var(--arvo-hover-bg)',
-          fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)',
-          lineHeight: 1.6,
-        }}>
-          Para convidar alguém, vá até a viagem ou grupo de finanças desejado.
         </div>
       )}
     </div>

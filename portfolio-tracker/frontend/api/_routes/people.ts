@@ -1,4 +1,5 @@
 import { Router } from 'express'
+import { randomBytes } from 'crypto'
 import { requireAuth, AuthRequest } from '../_middleware/auth.js'
 import { supabaseAdmin } from '../_lib/supabase.js'
 
@@ -14,6 +15,68 @@ async function userDisplay(userId: string): Promise<{ email: string; name?: stri
   const meta = data?.user?.user_metadata ?? {}
   const name = [meta.first_name, meta.last_name].filter(Boolean).join(' ') || undefined
   return { email: data?.user?.email ?? userId, name, avatar_url: meta.avatar_url }
+}
+
+interface PendingFriendInvite {
+  key: string
+  token: string
+  inviter_name: string
+  occurred_at: string
+}
+
+// Convites de amizade pendentes endereçados ao e-mail do usuário logado —
+// usado pelo feed de notificações (mirrors getPendingTripInvites/getPendingGroupInvites).
+export async function getPendingFriendInvites(userId: string): Promise<PendingFriendInvite[]> {
+  const { data: userData } = await supabaseAdmin.auth.admin.getUserById(userId)
+  const email = userData?.user?.email
+  if (!email) return []
+
+  const { data } = await supabaseAdmin
+    .from('user_friends')
+    .select('id, invite_token, owner_user_id, created_at')
+    .eq('status', 'pending')
+    .eq('invite_email', email)
+    .not('invite_token', 'is', null)
+  if (!data?.length) return []
+
+  return Promise.all(data.map(async (row: any) => {
+    const owner = await userDisplay(row.owner_user_id)
+    return {
+      key: `friend_invite:${row.invite_token}`,
+      token: row.invite_token as string,
+      inviter_name: owner.name ?? owner.email,
+      occurred_at: row.created_at,
+    }
+  }))
+}
+
+interface RecentFriendAcceptance {
+  key: string
+  friend_name: string
+  occurred_at: string
+}
+
+// Conexões de amizade que acabaram de virar 'active' — usado para notificar
+// quem enviou o convite original.
+export async function getRecentFriendAcceptances(userId: string): Promise<RecentFriendAcceptance[]> {
+  const since = new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString()
+  const { data } = await supabaseAdmin
+    .from('user_friends')
+    .select('id, friend_user_id, joined_at')
+    .eq('owner_user_id', userId)
+    .eq('status', 'active')
+    .not('joined_at', 'is', null)
+    .gte('joined_at', since)
+  if (!data?.length) return []
+
+  return Promise.all(data.map(async (row: any) => {
+    const friend = row.friend_user_id ? await userDisplay(row.friend_user_id) : null
+    return {
+      key: `friend_accepted:${row.id}`,
+      friend_name: friend?.name ?? friend?.email ?? 'Alguém',
+      occurred_at: row.joined_at,
+    }
+  }))
 }
 
 // ── GET /api/people ────────────────────────────────────────────────────────────
@@ -178,7 +241,57 @@ router.get('/', async (req: any, res: any) => {
       }
     }
 
-    // ── 5. Enriquecer com avatar_url (e nome, se faltar) para contatos com user_id ──
+    // ── 5. Amigos cadastrados diretamente (sem viagem/categoria compartilhada) ──
+    const me = await userDisplay(userId)
+
+    const { data: myOwnedFriends } = await supabaseAdmin
+      .from('user_friends')
+      .select('id, invite_email, friend_user_id, status, invite_token')
+      .eq('owner_user_id', userId)
+    for (const f of myOwnedFriends ?? []) {
+      const email: string = f.invite_email
+      if (!contactMap.has(email)) {
+        contactMap.set(email, { email, user_id: f.friend_user_id ?? null, status: f.status, contexts: [] })
+      }
+      const c = contactMap.get(email)!
+      if (f.status === 'active') c.status = 'active'
+      c.contexts.push({ type: 'friend', direction: 'owned_by_me', friend_id: f.id, friend_status: f.status })
+    }
+
+    const { data: friendsOfMine } = await supabaseAdmin
+      .from('user_friends')
+      .select('id, owner_user_id, status')
+      .eq('friend_user_id', userId)
+      .eq('status', 'active')
+    for (const f of friendsOfMine ?? []) {
+      const owner = await userDisplay(f.owner_user_id)
+      if (!contactMap.has(owner.email)) {
+        contactMap.set(owner.email, { email: owner.email, name: owner.name, user_id: f.owner_user_id, status: 'active', contexts: [] })
+      }
+      const c = contactMap.get(owner.email)!
+      c.contexts.push({ type: 'friend', direction: 'shared_with_me', friend_id: f.id, friend_status: 'active' })
+    }
+
+    // Convites de amizade pendentes endereçados a mim (ainda sem friend_user_id resolvido)
+    const { data: pendingForMe } = await supabaseAdmin
+      .from('user_friends')
+      .select('id, owner_user_id, invite_token, status')
+      .eq('invite_email', me.email)
+      .eq('status', 'pending')
+      .neq('owner_user_id', userId)
+    for (const f of pendingForMe ?? []) {
+      const owner = await userDisplay(f.owner_user_id)
+      if (!contactMap.has(owner.email)) {
+        contactMap.set(owner.email, { email: owner.email, name: owner.name, user_id: f.owner_user_id, status: 'pending', contexts: [] })
+      }
+      const c = contactMap.get(owner.email)!
+      c.contexts.push({
+        type: 'friend', direction: 'shared_with_me', friend_id: f.id,
+        friend_status: 'pending', accept_token: f.invite_token,
+      })
+    }
+
+    // ── 6. Enriquecer com avatar_url (e nome, se faltar) para contatos com user_id ──
     const contacts = Array.from(contactMap.values())
     const idsNeedingDisplay = [...new Set(contacts.filter(c => c.user_id).map(c => c.user_id as string))]
     if (idsNeedingDisplay.length > 0) {
@@ -198,6 +311,74 @@ router.get('/', async (req: any, res: any) => {
   } catch (e: any) {
     res.status(500).json({ error: e.message })
   }
+})
+
+// ── POST /api/people/invite  (cadastrar amigo por e-mail) ───────────────────────
+router.post('/invite', async (req: any, res: any) => {
+  const userId = uid(req)
+  const { email } = req.body as { email?: string }
+  if (!email?.includes('@')) { res.status(400).json({ error: 'E-mail inválido' }); return }
+  if (email.toLowerCase() === (await userDisplay(userId)).email?.toLowerCase()) {
+    res.status(400).json({ error: 'Você não pode se adicionar como amigo' }); return
+  }
+
+  const { data: authList } = await supabaseAdmin.auth.admin.listUsers()
+  const targetUser = authList?.users?.find(u => u.email?.toLowerCase() === email.toLowerCase())
+
+  const token = randomBytes(24).toString('hex')
+  const { data, error } = await supabaseAdmin
+    .from('user_friends')
+    .upsert(
+      { owner_user_id: userId, invite_email: email, friend_user_id: targetUser?.id ?? null, invite_token: token, status: 'pending' },
+      { onConflict: 'owner_user_id,invite_email' }
+    )
+    .select('id')
+    .single()
+  if (error) { res.status(500).json({ error: error.message }); return }
+
+  res.json({ id: data.id, token })
+})
+
+// ── POST /api/people/invite/accept  (aceitar convite de amizade) ────────────────
+router.post('/invite/accept', async (req: any, res: any) => {
+  const userId = uid(req)
+  const { token } = req.body as { token?: string }
+  if (!token) { res.status(400).json({ error: 'Token obrigatório' }); return }
+
+  const { data: row } = await supabaseAdmin
+    .from('user_friends')
+    .select('id, status')
+    .eq('invite_token', token)
+    .single()
+  if (!row) { res.status(404).json({ error: 'Convite não encontrado' }); return }
+  if (row.status !== 'pending') { res.status(409).json({ error: 'Convite já utilizado' }); return }
+
+  const { error } = await supabaseAdmin
+    .from('user_friends')
+    .update({ friend_user_id: userId, status: 'active', joined_at: new Date().toISOString(), invite_token: null })
+    .eq('id', row.id)
+  if (error) { res.status(500).json({ error: error.message }); return }
+
+  res.json({ ok: true })
+})
+
+// ── DELETE /api/people/friends/:id  (desfazer conexão de amizade) ───────────────
+router.delete('/friends/:id', async (req: any, res: any) => {
+  const userId = uid(req)
+  const id = Number(req.params.id)
+
+  const { data: row } = await supabaseAdmin
+    .from('user_friends')
+    .select('owner_user_id, friend_user_id')
+    .eq('id', id)
+    .single()
+  if (!row) { res.status(404).json({ error: 'Não encontrado' }); return }
+  if (row.owner_user_id !== userId && row.friend_user_id !== userId) {
+    res.status(403).json({ error: 'Sem permissão' }); return
+  }
+
+  await supabaseAdmin.from('user_friends').delete().eq('id', id)
+  res.json({ ok: true })
 })
 
 export default router
