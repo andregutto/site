@@ -4,6 +4,9 @@
     "module": "esnext",
     "moduleResolution": "bundler",
     "skipLibCheck": true,
-    "noEmit": true
+    "noEmit": true,
+    "paths": {
+      "shared-api/*": ["../../shared-api/src/*"]
+    }
   }
 }

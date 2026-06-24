@@ -27,8 +27,8 @@ router.get('/', requireAuth, async (req, res: Response) => {
     institution_data:     meta.institution_data      ?? {},
     avatar_url:           meta.avatar_url            ?? '',
     default_section:      meta.default_section       ?? '',
-    month_cycle_day:      meta.month_cycle_day       ?? 1,
     saida_fiscal_brasil:  meta.saida_fiscal_brasil   ?? false,
+    month_cycle_day:      meta.month_cycle_day       ?? 1,
     budget_reminder_freq: meta.budget_reminder_freq  ?? 0,
   })
 })
@@ -43,9 +43,9 @@ router.patch('/', requireAuth, async (req, res: Response) => {
     first_name?: string; last_name?: string; country?: string
     tax_country?: string; birthdate?: string; default_currency?: string
     portfolio_start_date?: string; allocation_targets?: Record<string, number>
-    institution_data?: Record<string, Record<string, string>>
-    avatar_url?: string; default_section?: string; month_cycle_day?: number
-    saida_fiscal_brasil?: boolean; budget_reminder_freq?: number
+    institution_data?: Record<string, Record<string, string>>; avatar_url?: string
+    default_section?: string; month_cycle_day?: number; saida_fiscal_brasil?: boolean
+    budget_reminder_freq?: number
   }
   const { data: { user: current } } = await supabaseAdmin.auth.admin.getUserById(userId)
   const meta = {
@@ -146,29 +146,27 @@ router.get('/export', requireAuth, async (req, res: Response) => {
   ])
 
   res.json({
-    exported_at:           new Date().toISOString(),
-    assets:                assets           ?? [],
-    contributions:         contributions    ?? [],
-    dividends:             dividends        ?? [],
-    manual_values:         manualValues     ?? [],
-    finance_transactions:  transactions     ?? [],
-    finance_accounts:      accounts         ?? [],
-    finance_income:        income           ?? [],
-    finance_envelopes:     envelopes        ?? [],
-    finance_categories:    categories       ?? [],
-    finance_freedom_plans: freedomPlans     ?? [],
-    finance_moments:       moments          ?? [],
-    shared_groups:         sharedGroups     ?? [],
-    shared_categories:     sharedCategories ?? [],
+    exported_at:          new Date().toISOString(),
+    assets:               assets          ?? [],
+    contributions:        contributions   ?? [],
+    dividends:            dividends       ?? [],
+    manual_values:        manualValues    ?? [],
+    finance_transactions: transactions    ?? [],
+    finance_accounts:     accounts        ?? [],
+    finance_income:       income          ?? [],
+    finance_envelopes:    envelopes       ?? [],
+    finance_categories:   categories      ?? [],
+    finance_freedom_plans: freedomPlans   ?? [],
+    finance_moments:      moments         ?? [],
+    shared_groups:        sharedGroups    ?? [],
+    shared_categories:    sharedCategories ?? [],
   })
 })
 
 router.delete('/', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
 
-  // Before deleting: handle shared groups this user created
-  // If other active members exist, transfer ownership to the oldest active member
-  // If no other members exist, the group will be deleted by cascade
+  // Transfer ownership of owned groups to another active member before deleting
   const { data: ownedGroups } = await supabaseAdmin
     .from('shared_groups')
     .select('id')
@@ -192,11 +190,10 @@ router.delete('/', requireAuth, async (req, res: Response) => {
           .update({ created_by: newOwner })
           .eq('id', group.id)
       }
-      // If no other active member, group will be cascade-deleted when user is deleted
     }
   }
 
-  // Mark user's own group memberships as left
+  // Mark user's memberships as left
   await supabaseAdmin
     .from('shared_group_members')
     .update({ status: 'left', left_at: new Date().toISOString() })

@@ -1,0 +1,32 @@
+{
+  "name": "shared-api",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./middleware/auth.js": "./src/middleware/auth.ts",
+    "./lib/supabase.js": "./src/lib/supabase.ts",
+    "./lib/cache.js": "./src/lib/cache.ts",
+    "./lib/fx.js": "./src/lib/fx.ts",
+    "./services/bcbService.js": "./src/services/bcbService.ts",
+    "./services/brapiService.js": "./src/services/brapiService.ts",
+    "./services/coingeckoService.js": "./src/services/coingeckoService.ts",
+    "./services/fixedIncomeService.js": "./src/services/fixedIncomeService.ts",
+    "./services/priceService.js": "./src/services/priceService.ts",
+    "./services/yahooService.js": "./src/services/yahooService.ts",
+    "./routes/people.js": "./src/routes/people.ts",
+    "./routes/performance.js": "./src/routes/performance.ts",
+    "./routes/indices.js": "./src/routes/indices.ts",
+    "./routes/profile.js": "./src/routes/profile.ts"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.105.4",
+    "express": "^4.19.2",
+    "yahoo-finance2": "^3.14.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.14.0",
+    "typescript": "^5.5.3"
+  }
+}

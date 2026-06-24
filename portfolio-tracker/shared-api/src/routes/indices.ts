@@ -1,7 +1,7 @@
 import { Router, Response } from 'express'
-import { requireAuth } from '../_middleware/auth.js'
-import { getRates, SERIES } from '../_services/bcbService.js'
-import { cache, TTL } from '../_lib/cache.js'
+import { requireAuth } from '../middleware/auth.js'
+import { getRates, SERIES } from '../services/bcbService.js'
+import { cache, TTL } from '../lib/cache.js'
 import YahooFinance from 'yahoo-finance2'
 
 const yf = new YahooFinance({ suppressNotices: ['yahooSurvey', 'ripHistorical'] })

@@ -1,5 +1,5 @@
 import { Router, Response } from 'express'
-import { supabaseAdmin } from '../lib/supabase.js'
+import { supabaseAdmin } from 'shared-api/lib/supabase.js'
 import type {
   PortfolioSnapshot, SnapshotAsset, SnapshotGroupValue, SnapshotClassValue,
   SnapshotPerformance, SnapshotMonthlyPoint, SnapshotDividends,

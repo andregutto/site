@@ -3,14 +3,10 @@
     "target": "ES2022",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "outDir": "dist",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "baseUrl": ".",
-    "paths": {
-      "shared-api/*": ["../shared-api/src/*"]
-    }
+    "noEmit": true
   },
   "include": ["src"]
 }

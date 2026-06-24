@@ -1,4 +1,3 @@
-// brapi.dev — cotações B3 (ações, FIIs, ETFs brasileiros)
 import { cache, TTL } from '../lib/cache.js'
 
 const BASE = 'https://brapi.dev/api'
@@ -21,7 +20,7 @@ async function fetchBrapi(path: string): Promise<unknown> {
   if (!res.ok) throw new Error(`brapi ${res.status}: ${path}`)
   const json = await res.json() as { results?: BrapiResult[]; error?: string; code?: string }
   if (json.error) {
-    if ((json as { code?: string }).code === 'MISSING_TOKEN') {
+    if (json.code === 'MISSING_TOKEN') {
       brapiDisabledUntil = Date.now() + 30 * 60 * 1000
     }
     throw new Error(`brapi error: ${json.error}`)
@@ -49,14 +48,16 @@ export async function getMonthlyHistory(ticker: string, months = 24): Promise<Pr
     `brapi:history:${ticker}:${months}`,
     TTL.PRICE_HISTORICAL,
     async () => {
-      const range = months <= 12 ? '1y' : '2y'
       const json = await fetchBrapi(
-        `/quote/${ticker}${TOKEN}${SEP}range=${range}&interval=1mo&fundamental=false`
+        `/quote/${ticker}${TOKEN}${SEP}range=max&interval=1mo&fundamental=false`
       ) as { results: BrapiResult[] }
 
       const hist = json.results?.[0]?.historicalDataPrice ?? []
       return hist.map((p) => ({
-        date:  new Date(p.date * 1000).toISOString().split('T')[0],
+        // brapi timestamps are end-of-day in Brazil (UTC-3); using toISOString would
+        // shift late-night BRT timestamps into the next UTC day, causing an off-by-one
+        // month error. toLocaleDateString with São Paulo timezone gives the correct date.
+        date:  new Date(p.date * 1000).toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' }),
         price: p.close,
       })).reverse()
     }

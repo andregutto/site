@@ -1,11 +1,11 @@
 import { Router, Response } from 'express'
-import { requireAuth, AuthRequest } from '../_middleware/auth.js'
-import { supabaseAdmin } from '../_lib/supabase.js'
-import { getCurrentPrice, Asset, FITranche } from '../_services/priceService.js'
-import { getSplitEvents } from '../_services/yahooService.js'
-import { cache } from '../_lib/cache.js'
-import { calculateTrancheProfits, FixedIncomeAsset } from '../_services/fixedIncomeService.js'
-import { getFxRate } from '../_lib/fx.js'
+import { requireAuth, AuthRequest } from 'shared-api/middleware/auth.js'
+import { supabaseAdmin } from 'shared-api/lib/supabase.js'
+import { getCurrentPrice, Asset, FITranche } from 'shared-api/services/priceService.js'
+import { getSplitEvents } from 'shared-api/services/yahooService.js'
+import { cache } from 'shared-api/lib/cache.js'
+import { calculateTrancheProfits, FixedIncomeAsset } from 'shared-api/services/fixedIncomeService.js'
+import { getFxRate } from 'shared-api/lib/fx.js'
 
 const router = Router()
 

@@ -1,11 +1,11 @@
 import { Router, Response } from 'express'
-import { requireAuth, AuthRequest } from '../_middleware/auth.js'
-import { supabaseAdmin } from '../_lib/supabase.js'
+import { requireAuth, AuthRequest } from 'shared-api/middleware/auth.js'
+import { supabaseAdmin } from 'shared-api/lib/supabase.js'
 import { getActiveSubscriptions, getBudgetAlerts } from './finances.js'
 import { getSplitWarnings } from './portfolio.js'
 import { getPendingGroupInvites } from './shared.js'
 import { getPendingTripInvites } from './voyage.js'
-import { getPendingFriendInvites, getRecentFriendAcceptances } from './people.js'
+import { getPendingFriendInvites, getRecentFriendAcceptances } from 'shared-api/routes/people.js'
 
 const router = Router()
 

@@ -1,8 +1,8 @@
 import { Router, Response } from 'express'
 import crypto from 'crypto'
 import Anthropic from '@anthropic-ai/sdk'
-import { requireAuth, AuthRequest } from '../_middleware/auth.js'
-import { supabaseAdmin } from '../_lib/supabase.js'
+import { requireAuth, AuthRequest } from 'shared-api/middleware/auth.js'
+import { supabaseAdmin } from 'shared-api/lib/supabase.js'
 
 const router = Router()
 

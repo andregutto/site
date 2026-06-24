@@ -1,6 +1,6 @@
 import { Router, Response } from 'express'
-import { requireAuth, AuthRequest } from '../middleware/auth.js'
-import { supabaseAdmin } from '../lib/supabase.js'
+import { requireAuth, AuthRequest } from 'shared-api/middleware/auth.js'
+import { supabaseAdmin } from 'shared-api/lib/supabase.js'
 import { syncDividendsForUser } from '../services/dividendService.js'
 
 const router = Router()

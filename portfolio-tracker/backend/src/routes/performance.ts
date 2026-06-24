@@ -1,11 +1,11 @@
 import { Router, Response } from 'express'
-import { requireAuth, AuthRequest } from '../middleware/auth.js'
-import { supabaseAdmin } from '../lib/supabase.js'
-import { getFxRate } from '../lib/fx.js'
-import { getRates, SERIES, getCDIRates, getSelicRates, getIPCARates } from '../services/bcbService.js'
-import { getCurrentPrice } from '../services/priceService.js'
-import type { Asset, FITranche } from '../services/priceService.js'
-import { cache, TTL } from '../lib/cache.js'
+import { requireAuth, AuthRequest } from 'shared-api/middleware/auth.js'
+import { supabaseAdmin } from 'shared-api/lib/supabase.js'
+import { getFxRate } from 'shared-api/lib/fx.js'
+import { getRates, SERIES, getCDIRates, getSelicRates, getIPCARates } from 'shared-api/services/bcbService.js'
+import { getCurrentPrice } from 'shared-api/services/priceService.js'
+import type { Asset, FITranche } from 'shared-api/services/priceService.js'
+import { cache, TTL } from 'shared-api/lib/cache.js'
 import YahooFinance from 'yahoo-finance2'
 
 const yf = new YahooFinance({ suppressNotices: ['yahooSurvey', 'ripHistorical'] })
