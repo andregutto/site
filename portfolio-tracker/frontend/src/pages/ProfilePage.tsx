@@ -1184,7 +1184,7 @@ export default function ProfilePage() {
                 <button
                   type="button"
                   onClick={() => modalFileRef.current?.click()}
-                  className="w-full py-2 text-sm font-semibold border border-[var(--arvo-border)] rounded-xl hover:bg-[var(--arvo-surface-2)] transition-colors"
+                  className="w-full py-2 text-sm font-semibold border border-[var(--arvo-border)] rounded-xl text-[var(--arvo-fg)] hover:bg-[var(--arvo-surface-2)] transition-colors"
                 >
                   {t.profile.photoModalChoose}
                 </button>
