@@ -64,32 +64,40 @@ router.patch('/', requireAuth, async (req, res: Response) => {
 
 // ── GET /api/profile/username/check?value=  (disponibilidade, sem reservar) ─────
 router.get('/username/check', requireAuth, async (req, res: Response) => {
-  const { userId } = req as AuthRequest
-  const value = String(req.query.value ?? '').toLowerCase()
-  if (!USERNAME_RE.test(value)) { res.json({ available: false, reason: 'invalid_format' }); return }
+  try {
+    const { userId } = req as AuthRequest
+    const value = String(req.query.value ?? '').toLowerCase()
+    if (!USERNAME_RE.test(value)) { res.json({ available: false, reason: 'invalid_format' }); return }
 
-  const { data } = await supabaseAdmin
-    .from('user_handles').select('user_id').eq('username', value).single()
-  const available = !data || data.user_id === userId
-  res.json({ available })
+    const { data } = await supabaseAdmin
+      .from('user_handles').select('user_id').eq('username', value).maybeSingle()
+    const available = !data || data.user_id === userId
+    res.json({ available })
+  } catch (e: any) {
+    res.status(500).json({ error: e.message ?? 'Erro ao checar @' })
+  }
 })
 
 // ── PATCH /api/profile/username  (definir/alterar @username) ────────────────────
 router.patch('/username', requireAuth, async (req, res: Response) => {
-  const { userId } = req as AuthRequest
-  const username = String((req.body as { username?: string }).username ?? '').toLowerCase()
-  if (!USERNAME_RE.test(username)) {
-    res.status(400).json({ error: 'Use 3-20 letras minúsculas, números ou _' }); return
-  }
+  try {
+    const { userId } = req as AuthRequest
+    const username = String((req.body as { username?: string }).username ?? '').toLowerCase()
+    if (!USERNAME_RE.test(username)) {
+      res.status(400).json({ error: 'Use 3-20 letras minúsculas, números ou _' }); return
+    }
 
-  const { error } = await supabaseAdmin
-    .from('user_handles')
-    .upsert({ user_id: userId, username, updated_at: new Date().toISOString() }, { onConflict: 'user_id' })
-  if (error) {
-    if (error.code === '23505') { res.status(409).json({ error: 'Esse @ já está em uso' }); return }
-    res.status(500).json({ error: error.message }); return
+    const { error } = await supabaseAdmin
+      .from('user_handles')
+      .upsert({ user_id: userId, username, updated_at: new Date().toISOString() }, { onConflict: 'user_id' })
+    if (error) {
+      if (error.code === '23505') { res.status(409).json({ error: 'Esse @ já está em uso' }); return }
+      res.status(500).json({ error: error.message }); return
+    }
+    res.json({ ok: true, username })
+  } catch (e: any) {
+    res.status(500).json({ error: e.message ?? 'Erro ao salvar @' })
   }
-  res.json({ ok: true, username })
 })
 
 router.patch('/password', requireAuth, async (req, res: Response) => {

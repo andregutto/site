@@ -315,106 +315,123 @@ router.get('/', async (req: any, res: any) => {
 
 // ── POST /api/people/invite  (cadastrar amigo por e-mail) ───────────────────────
 router.post('/invite', async (req: any, res: any) => {
-  const userId = uid(req)
-  const { email: rawEmail, username: rawUsername } = req.body as { email?: string; username?: string }
+  try {
+    const userId = uid(req)
+    const { email: rawEmail, username: rawUsername } = req.body as { email?: string; username?: string }
 
-  let email = rawEmail?.trim()
-  let targetUserId: string | null = null
+    let email = rawEmail?.trim()
+    let targetUserId: string | null = null
 
-  if (!email && rawUsername) {
-    const username = rawUsername.trim().toLowerCase().replace(/^@/, '')
-    const { data: handle } = await supabaseAdmin
-      .from('user_handles').select('user_id').eq('username', username).single()
-    if (!handle) { res.status(404).json({ error: 'Nenhum usuário com esse @' }); return }
-    targetUserId = handle.user_id
-    email = (await userDisplay(handle.user_id)).email
+    if (!email && rawUsername) {
+      const username = rawUsername.trim().toLowerCase().replace(/^@/, '')
+      const { data: handle } = await supabaseAdmin
+        .from('user_handles').select('user_id').eq('username', username).maybeSingle()
+      if (!handle) { res.status(404).json({ error: 'Nenhum usuário com esse @' }); return }
+      targetUserId = handle.user_id
+      email = (await userDisplay(handle.user_id)).email
+    }
+
+    if (!email?.includes('@')) { res.status(400).json({ error: 'E-mail ou @ inválido' }); return }
+    if (email.toLowerCase() === (await userDisplay(userId)).email?.toLowerCase()) {
+      res.status(400).json({ error: 'Você não pode se adicionar como amigo' }); return
+    }
+
+    if (!targetUserId) {
+      const { data: authList } = await supabaseAdmin.auth.admin.listUsers()
+      targetUserId = authList?.users?.find(u => u.email?.toLowerCase() === email!.toLowerCase())?.id ?? null
+    }
+
+    const token = randomBytes(24).toString('hex')
+    const { data, error } = await supabaseAdmin
+      .from('user_friends')
+      .upsert(
+        { owner_user_id: userId, invite_email: email, friend_user_id: targetUserId, invite_token: token, status: 'pending' },
+        { onConflict: 'owner_user_id,invite_email' }
+      )
+      .select('id')
+      .single()
+    if (error) { res.status(500).json({ error: error.message }); return }
+
+    res.json({ id: data.id, token })
+  } catch (e: any) {
+    res.status(500).json({ error: e.message ?? 'Erro ao convidar' })
   }
-
-  if (!email?.includes('@')) { res.status(400).json({ error: 'E-mail ou @ inválido' }); return }
-  if (email.toLowerCase() === (await userDisplay(userId)).email?.toLowerCase()) {
-    res.status(400).json({ error: 'Você não pode se adicionar como amigo' }); return
-  }
-
-  if (!targetUserId) {
-    const { data: authList } = await supabaseAdmin.auth.admin.listUsers()
-    targetUserId = authList?.users?.find(u => u.email?.toLowerCase() === email!.toLowerCase())?.id ?? null
-  }
-
-  const token = randomBytes(24).toString('hex')
-  const { data, error } = await supabaseAdmin
-    .from('user_friends')
-    .upsert(
-      { owner_user_id: userId, invite_email: email, friend_user_id: targetUserId, invite_token: token, status: 'pending' },
-      { onConflict: 'owner_user_id,invite_email' }
-    )
-    .select('id')
-    .single()
-  if (error) { res.status(500).json({ error: error.message }); return }
-
-  res.json({ id: data.id, token })
 })
 
 // ── GET /api/people/search?q=  (autocomplete por @username) ─────────────────────
 router.get('/search', async (req: any, res: any) => {
-  const userId = uid(req)
-  const q = String(req.query.q ?? '').trim().toLowerCase().replace(/^@/, '')
-  if (q.length < 2) { res.json([]); return }
+  try {
+    const userId = uid(req)
+    const q = String(req.query.q ?? '').trim().toLowerCase().replace(/^@/, '')
+    if (q.length < 2) { res.json([]); return }
 
-  const { data: handles } = await supabaseAdmin
-    .from('user_handles')
-    .select('user_id, username')
-    .like('username', `${q}%`)
-    .neq('user_id', userId)
-    .limit(8)
-  if (!handles?.length) { res.json([]); return }
+    const { data: handles, error } = await supabaseAdmin
+      .from('user_handles')
+      .select('user_id, username')
+      .like('username', `${q}%`)
+      .neq('user_id', userId)
+      .limit(8)
+    if (error) { res.status(500).json({ error: error.message }); return }
+    if (!handles?.length) { res.json([]); return }
 
-  const results = await Promise.all(handles.map(async (h: any) => {
-    const d = await userDisplay(h.user_id)
-    return { user_id: h.user_id, username: h.username, name: d.name, avatar_url: d.avatar_url }
-  }))
-  res.json(results)
+    const results = await Promise.all(handles.map(async (h: any) => {
+      const d = await userDisplay(h.user_id)
+      return { user_id: h.user_id, username: h.username, name: d.name, avatar_url: d.avatar_url }
+    }))
+    res.json(results)
+  } catch (e: any) {
+    res.status(500).json({ error: e.message ?? 'Erro na busca' })
+  }
 })
 
 // ── POST /api/people/invite/accept  (aceitar convite de amizade) ────────────────
 router.post('/invite/accept', async (req: any, res: any) => {
-  const userId = uid(req)
-  const { token } = req.body as { token?: string }
-  if (!token) { res.status(400).json({ error: 'Token obrigatório' }); return }
+  try {
+    const userId = uid(req)
+    const { token } = req.body as { token?: string }
+    if (!token) { res.status(400).json({ error: 'Token obrigatório' }); return }
 
-  const { data: row } = await supabaseAdmin
-    .from('user_friends')
-    .select('id, status')
-    .eq('invite_token', token)
-    .single()
-  if (!row) { res.status(404).json({ error: 'Convite não encontrado' }); return }
-  if (row.status !== 'pending') { res.status(409).json({ error: 'Convite já utilizado' }); return }
+    const { data: row } = await supabaseAdmin
+      .from('user_friends')
+      .select('id, status')
+      .eq('invite_token', token)
+      .maybeSingle()
+    if (!row) { res.status(404).json({ error: 'Convite não encontrado' }); return }
+    if (row.status !== 'pending') { res.status(409).json({ error: 'Convite já utilizado' }); return }
 
-  const { error } = await supabaseAdmin
-    .from('user_friends')
-    .update({ friend_user_id: userId, status: 'active', joined_at: new Date().toISOString(), invite_token: null })
-    .eq('id', row.id)
-  if (error) { res.status(500).json({ error: error.message }); return }
+    const { error } = await supabaseAdmin
+      .from('user_friends')
+      .update({ friend_user_id: userId, status: 'active', joined_at: new Date().toISOString(), invite_token: null })
+      .eq('id', row.id)
+    if (error) { res.status(500).json({ error: error.message }); return }
 
-  res.json({ ok: true })
+    res.json({ ok: true })
+  } catch (e: any) {
+    res.status(500).json({ error: e.message ?? 'Erro ao aceitar convite' })
+  }
 })
 
 // ── DELETE /api/people/friends/:id  (desfazer conexão de amizade) ───────────────
 router.delete('/friends/:id', async (req: any, res: any) => {
-  const userId = uid(req)
-  const id = Number(req.params.id)
+  try {
+    const userId = uid(req)
+    const id = Number(req.params.id)
 
-  const { data: row } = await supabaseAdmin
-    .from('user_friends')
-    .select('owner_user_id, friend_user_id')
-    .eq('id', id)
-    .single()
-  if (!row) { res.status(404).json({ error: 'Não encontrado' }); return }
-  if (row.owner_user_id !== userId && row.friend_user_id !== userId) {
-    res.status(403).json({ error: 'Sem permissão' }); return
+    const { data: row } = await supabaseAdmin
+      .from('user_friends')
+      .select('owner_user_id, friend_user_id')
+      .eq('id', id)
+      .maybeSingle()
+    if (!row) { res.status(404).json({ error: 'Não encontrado' }); return }
+    if (row.owner_user_id !== userId && row.friend_user_id !== userId) {
+      res.status(403).json({ error: 'Sem permissão' }); return
+    }
+
+    await supabaseAdmin.from('user_friends').delete().eq('id', id)
+    res.json({ ok: true })
+  } catch (e: any) {
+    res.status(500).json({ error: e.message ?? 'Erro ao remover' })
   }
-
-  await supabaseAdmin.from('user_friends').delete().eq('id', id)
-  res.json({ ok: true })
 })
 
 export default router

@@ -357,12 +357,16 @@ export default function PeoplePage() {
   const [inviteError, setInviteError] = useState('')
   const [suggestions, setSuggestions] = useState<UserSuggestion[]>([])
   const [showSuggestions, setShowSuggestions] = useState(false)
+  const [loadError, setLoadError] = useState('')
 
   const load = useCallback(async () => {
     setLoading(true)
+    setLoadError('')
     try {
       const data = await apiFetch<{ contacts: Contact[] }>('/people')
       setContacts(data.contacts)
+    } catch (ex: unknown) {
+      setLoadError((ex as Error).message ?? 'Erro ao carregar pessoas')
     } finally {
       setLoading(false)
     }
@@ -513,7 +517,19 @@ export default function PeoplePage() {
       </form>
       {inviteError && <p style={{ fontSize: 12, color: RED, marginBottom: 16 }}>{inviteError}</p>}
 
-      {loading ? (
+      {loadError ? (
+        <div style={{
+          padding: '16px 18px', borderRadius: 10, border: '1px solid rgba(214,59,47,0.25)',
+          background: 'rgba(214,59,47,0.06)', display: 'flex', flexDirection: 'column', gap: 10,
+        }}>
+          <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: RED }}>
+            Não foi possível carregar suas pessoas: {loadError}
+          </p>
+          <button type="button" onClick={() => load()} className="arvo-btn arvo-btn--primary" style={{ alignSelf: 'flex-start', fontSize: 12 }}>
+            Tentar de novo
+          </button>
+        </div>
+      ) : loading ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {[1, 2].map(i => (
             <div key={i} style={{
