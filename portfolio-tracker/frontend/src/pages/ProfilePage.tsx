@@ -90,6 +90,7 @@ export default function ProfilePage() {
   const [usernameSaving,  setUsernameSaving]   = useState(false)
   const [usernameSaved,   setUsernameSaved]    = useState(false)
   const [usernameError,   setUsernameError]    = useState('')
+  const [editingUsername, setEditingUsername]  = useState(false)
   const USERNAME_RE = /^[a-z0-9_]{3,20}$/
 
   const [newPassword,    setNewPassword]    = useState('')
@@ -188,6 +189,7 @@ export default function ProfilePage() {
       setUsername(value)
       setUsernameStatus('idle')
       setUsernameSaved(true)
+      setEditingUsername(false)
     } catch (ex: unknown) {
       setUsernameError((ex as Error).message ?? 'Erro ao salvar')
     } finally {
@@ -623,7 +625,65 @@ export default function ProfilePage() {
               </button>
             </div>
             <div className="min-w-0 flex-1">
-              <p className="font-semibold text-[var(--arvo-fg)] truncate">{displayName}</p>
+              <div className="flex items-center gap-2">
+                <p className="font-semibold text-[var(--arvo-fg)] truncate">{displayName}</p>
+                {!editingUsername && (
+                  <>
+                    <span className="text-sm text-[var(--arvo-fg-muted)] shrink-0">
+                      {username ? `@${username}` : 'sem @'}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => { setUsernameInput(username); setEditingUsername(true) }}
+                      className="text-xs text-[var(--arvo-fg)] hover:underline shrink-0"
+                    >
+                      Editar
+                    </button>
+                  </>
+                )}
+              </div>
+              {editingUsername && (
+                <div className="mt-1">
+                  <div className="flex items-center gap-1.5">
+                    <div className="relative">
+                      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-[var(--arvo-fg-muted)]">@</span>
+                      <input
+                        type="text"
+                        autoFocus
+                        value={usernameInput}
+                        onChange={e => setUsernameInput(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
+                        placeholder="seu_usuario"
+                        maxLength={20}
+                        className="border border-[var(--arvo-border)] rounded-[3px] pl-5 pr-2 py-1 text-xs w-32 bg-[var(--arvo-surface)] text-[var(--arvo-fg)] focus:outline-none focus:border-[var(--arvo-gold)]"
+                      />
+                    </div>
+                    {usernameInput.trim().toLowerCase() !== username && (
+                      <button
+                        type="button"
+                        onClick={handleSaveUsername}
+                        disabled={usernameStatus !== 'available' || usernameSaving}
+                        className="shrink-0 text-xs font-medium px-2 py-1 rounded-[3px] bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] disabled:opacity-40"
+                      >
+                        {usernameSaving ? '…' : 'Salvar'}
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => { setEditingUsername(false); setUsernameInput(username); setUsernameStatus('idle') }}
+                      className="text-xs text-[var(--arvo-fg-soft)] hover:underline shrink-0"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                  <p className="text-xs mt-0.5" style={{ color: usernameStatus === 'taken' || usernameStatus === 'invalid' ? '#D63B2F' : usernameStatus === 'available' ? '#1F8A5B' : 'var(--arvo-fg-soft)' }}>
+                    {usernameStatus === 'checking' && 'Verificando…'}
+                    {usernameStatus === 'available' && 'Disponível'}
+                    {usernameStatus === 'taken' && 'Esse @ já está em uso'}
+                    {usernameStatus === 'invalid' && 'Use 3-20 letras minúsculas, números ou _'}
+                  </p>
+                  {usernameError && <p className="text-xs text-red-600 mt-0.5">{usernameError}</p>}
+                </div>
+              )}
               <p className="text-sm text-[var(--arvo-fg-muted)] truncate">{emailForDisplay}</p>
               <button
                 type="button"
@@ -632,6 +692,7 @@ export default function ProfilePage() {
               >
                 {avatarUrl ? t.profile.changePhoto : t.profile.addPhoto}
               </button>
+              {usernameSaved && <p className="text-xs text-green-600 mt-0.5">@ salvo!</p>}
             </div>
           </div>
 
@@ -697,41 +758,6 @@ export default function ProfilePage() {
               />
             </div>
 
-            <div>
-              <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">@ usuário</label>
-              <div className="flex items-center gap-2">
-                <div className="relative flex-1">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[var(--arvo-fg-muted)]">@</span>
-                  <input
-                    type="text"
-                    value={usernameInput}
-                    onChange={e => setUsernameInput(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
-                    placeholder="seu_usuario"
-                    maxLength={20}
-                    className="w-full border border-[var(--arvo-border)] rounded-[3px] pl-7 pr-3 py-2 text-sm bg-[var(--arvo-surface)] text-[var(--arvo-fg)] focus:outline-none focus:border-[var(--arvo-gold)] focus:ring-2 focus:ring-[var(--arvo-gold)]/25"
-                  />
-                </div>
-                {usernameInput.trim().toLowerCase() !== username && (
-                  <button
-                    type="button"
-                    onClick={handleSaveUsername}
-                    disabled={usernameStatus !== 'available' || usernameSaving}
-                    className="shrink-0 text-xs font-medium px-3 py-2 rounded-[3px] bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] disabled:opacity-40"
-                  >
-                    {usernameSaving ? '…' : 'Salvar'}
-                  </button>
-                )}
-              </div>
-              <p className="text-xs mt-1" style={{ color: usernameStatus === 'taken' || usernameStatus === 'invalid' ? '#D63B2F' : usernameStatus === 'available' ? '#1F8A5B' : 'var(--arvo-fg-soft)' }}>
-                {usernameStatus === 'checking' && 'Verificando…'}
-                {usernameStatus === 'available' && 'Disponível'}
-                {usernameStatus === 'taken' && 'Esse @ já está em uso'}
-                {usernameStatus === 'invalid' && 'Use 3-20 letras minúsculas, números ou _'}
-                {usernameStatus === 'idle' && !username && 'Defina um @ para que outras pessoas te encontrem mais fácil'}
-              </p>
-              {usernameError && <p className="text-xs text-red-600 mt-1">{usernameError}</p>}
-              {usernameSaved && <p className="text-xs text-green-600 mt-1">@ salvo!</p>}
-            </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
