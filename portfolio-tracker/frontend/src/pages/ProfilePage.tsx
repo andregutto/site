@@ -302,7 +302,13 @@ export default function ProfilePage() {
     }
   }
 
-  function cropFromCanvas(): Promise<string> {
+  // Returns a Blob (not a data URI) — avatars are uploaded to Supabase Storage,
+  // never embedded as base64 in user_metadata. Supabase puts user_metadata
+  // straight into the JWT, so a ~25KB base64 photo there bloats the access
+  // token enough to blow past header-size limits — every authenticated
+  // request then fails with a raw HTTP 494, for every endpoint, until the
+  // token is reissued. Storing a short public URL instead avoids this.
+  function cropToBlob(): Promise<Blob> {
     return new Promise((resolve, reject) => {
       if (!pendingAvatarUrl) { reject(new Error('no image')); return }
       const img = new Image()
@@ -313,7 +319,7 @@ export default function ProfilePage() {
         const canvas = document.createElement('canvas')
         canvas.width = 200; canvas.height = 200
         canvas.getContext('2d')!.drawImage(img, srcX, srcY, srcSz, srcSz, 0, 0, 200, 200)
-        resolve(canvas.toDataURL('image/jpeg', 0.85))
+        canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('crop failed')), 'image/jpeg', 0.85)
       }
       img.onerror = reject
       img.src = pendingAvatarUrl
@@ -339,11 +345,18 @@ export default function ProfilePage() {
   }
 
   async function handleAvatarSave() {
-    if (!pendingAvatarUrl) { setShowAvatarModal(false); return }
+    if (!pendingAvatarUrl || !user) { setShowAvatarModal(false); return }
     setSavingPhoto(true)
     setPhotoError(null)
     try {
-      const avatar_url = await cropFromCanvas()
+      const blob = await cropToBlob()
+      const path = `${user.id}/avatar.jpg`
+      const { error: upErr } = await supabase.storage
+        .from('avatars')
+        .upload(path, blob, { upsert: true, contentType: 'image/jpeg' })
+      if (upErr) throw upErr
+      const { data } = supabase.storage.from('avatars').getPublicUrl(path)
+      const avatar_url = `${data.publicUrl}?v=${Date.now()}`
       await apiFetch('/profile', { method: 'PATCH', body: JSON.stringify({ avatar_url }) })
       setAvatarUrl(avatar_url)
       setShowAvatarModal(false)
@@ -358,6 +371,7 @@ export default function ProfilePage() {
   async function handleAvatarRemove() {
     setSavingPhoto(true)
     try {
+      if (user) await supabase.storage.from('avatars').remove([`${user.id}/avatar.jpg`])
       await apiFetch('/profile', { method: 'PATCH', body: JSON.stringify({ avatar_url: '' }) })
       setAvatarUrl('')
       setShowAvatarModal(false)
