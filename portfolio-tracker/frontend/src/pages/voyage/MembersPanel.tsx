@@ -96,7 +96,7 @@ export default function MembersPanel({ tripId, isOwner }: Props) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
           {members.map(m => (
             <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <Avatar name={m.display.name} email={m.display.email} />
+              <Avatar name={m.display.name} email={m.display.email} avatarUrl={m.display.avatar_url} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {m.display.name}

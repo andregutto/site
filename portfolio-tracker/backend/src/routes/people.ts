@@ -9,11 +9,11 @@ function uid(req: Parameters<typeof requireAuth>[0]): string {
   return (req as AuthRequest).userId
 }
 
-async function userDisplay(userId: string): Promise<{ email: string; name?: string }> {
+async function userDisplay(userId: string): Promise<{ email: string; name?: string; avatar_url?: string }> {
   const { data } = await supabaseAdmin.auth.admin.getUserById(userId)
   const meta = data?.user?.user_metadata ?? {}
   const name = [meta.first_name, meta.last_name].filter(Boolean).join(' ') || undefined
-  return { email: data?.user?.email ?? userId, name }
+  return { email: data?.user?.email ?? userId, name, avatar_url: meta.avatar_url }
 }
 
 // ── GET /api/people ────────────────────────────────────────────────────────────
@@ -178,7 +178,23 @@ router.get('/', async (req: any, res: any) => {
       }
     }
 
-    res.json({ contacts: Array.from(contactMap.values()) })
+    // ── 5. Enriquecer com avatar_url (e nome, se faltar) para contatos com user_id ──
+    const contacts = Array.from(contactMap.values())
+    const idsNeedingDisplay = [...new Set(contacts.filter(c => c.user_id).map(c => c.user_id as string))]
+    if (idsNeedingDisplay.length > 0) {
+      const displays = await Promise.all(idsNeedingDisplay.map(id => userDisplay(id).then(d => ({ id, ...d }))))
+      const displayMap: Record<string, { name?: string; avatar_url?: string }> = Object.fromEntries(
+        displays.map(d => [d.id, { name: d.name, avatar_url: d.avatar_url }])
+      )
+      for (const c of contacts) {
+        if (c.user_id && displayMap[c.user_id]) {
+          c.avatar_url = displayMap[c.user_id].avatar_url
+          if (!c.name) c.name = displayMap[c.user_id].name
+        }
+      }
+    }
+
+    res.json({ contacts })
   } catch (e: any) {
     res.status(500).json({ error: e.message })
   }

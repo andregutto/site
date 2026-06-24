@@ -33,6 +33,7 @@ type Context = TripContext | FinanceContext
 interface Contact {
   email: string
   name?: string
+  avatar_url?: string
   user_id: string | null
   status: 'active' | 'pending'
   contexts: Context[]
@@ -80,7 +81,7 @@ function ContactCard({ contact, onRemoved }: { contact: Contact; onRemoved: (mem
     }}>
       {/* Cabeçalho */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16 }}>
-        <Avatar name={contact.name} email={contact.email} size={44} tone={isActive ? 'active' : 'neutral'} />
+        <Avatar name={contact.name} email={contact.email} avatarUrl={contact.avatar_url} size={44} tone={isActive ? 'active' : 'neutral'} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <p style={{
             fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: 'var(--arvo-fg)',

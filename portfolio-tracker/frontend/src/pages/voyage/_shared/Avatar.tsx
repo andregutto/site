@@ -19,13 +19,26 @@ function initials(name?: string, email?: string): string {
 interface AvatarProps {
   name?: string
   email?: string
+  avatarUrl?: string
   size?: number
   tone?: 'neutral' | 'active'
 }
 
-export default function Avatar({ name, email, size = 28, tone = 'neutral' }: AvatarProps) {
+export default function Avatar({ name, email, avatarUrl, size = 28, tone = 'neutral' }: AvatarProps) {
   const letters = initials(name, email)
   const active = tone === 'active'
+
+  if (avatarUrl) {
+    return (
+      <img
+        src={avatarUrl}
+        alt={name || email || ''}
+        style={{ width: size, height: size, borderRadius: 999, flexShrink: 0, objectFit: 'cover' }}
+        onError={(e) => { e.currentTarget.style.display = 'none' }}
+      />
+    )
+  }
+
   return (
     <div style={{
       width: size, height: size, borderRadius: 999, flexShrink: 0,
