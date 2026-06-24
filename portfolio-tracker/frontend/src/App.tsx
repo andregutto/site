@@ -36,8 +36,6 @@ import ReportsPage from './pages/ReportsPage'
 import ImportB3Page from './pages/ImportB3Page'
 import IndicesPage from './pages/IndicesPage'
 import IndexDetailPage from './pages/IndexDetailPage'
-import FavoritesPage from './pages/FavoritesPage'
-import ArchivedPage from './pages/ArchivedPage'
 import DiversificationPage from './pages/DiversificationPage'
 import PortfolioLayout from './pages/portfolio/PortfolioLayout'
 import FinancesLayout from './pages/finances/FinancesLayout'
@@ -159,11 +157,11 @@ function AppRoutes() {
           <Route path="indices/:code" element={<IndexDetailPage />} />
         </Route>
         <Route path="/dividends"      element={<DividendsPage />} />
-        <Route path="/favorites"      element={<FavoritesPage />} />
+        <Route path="/favorites"      element={<Navigate to="/assets?view=favorites" replace />} />
         <Route path="/achievements"   element={<AchievementsPage />} />
         <Route path="/notifications"  element={<NotificationsPage />} />
         <Route path="/people"         element={<PeoplePage />} />
-        <Route path="/archived"       element={<ArchivedPage />} />
+        <Route path="/archived"       element={<Navigate to="/assets?view=archived" replace />} />
         <Route path="/diversification" element={<DiversificationPage />} />
         <Route path="/voyage"          element={<VoyageLayout />}>
           <Route index                element={<VoyageTripsPage />} />
