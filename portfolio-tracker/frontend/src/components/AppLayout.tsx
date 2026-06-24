@@ -162,12 +162,19 @@ export default function AppLayout() {
   const avatarUrl = meta.avatar_url as string | undefined
   const avatarInitials = headerLabel.slice(0, 2).toUpperCase()
 
+  const [username, setUsername] = useState<string>('')
+  useEffect(() => {
+    if (!user?.id) { setUsername(''); return }
+    apiFetch<{ username?: string }>('/profile').then(d => setUsername(d.username ?? '')).catch(() => {})
+  }, [user?.id])
+
   const inInvestimentos = location.pathname === '/dashboard' || location.pathname === '/' ||
     location.pathname.startsWith('/assets') ||
     location.pathname.startsWith('/performance') ||
     location.pathname.startsWith('/dividends') ||
     location.pathname.startsWith('/portfolio') ||
-    location.pathname.startsWith('/diversification')
+    location.pathname.startsWith('/diversification') ||
+    location.pathname.startsWith('/institutions')
   const inFinances = location.pathname.startsWith('/finances')
   const inVoyage = location.pathname.startsWith('/voyage')
 
@@ -218,6 +225,11 @@ export default function AppLayout() {
     { to: '/portfolio/reports', label: t.nav.ir, end: false, icon: (
       <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
         <path strokeLinecap="round" strokeLinejoin="round" d="M3 1.5h6.5L13 5v9.5H3zM9 1.5V5h4M5 8h6M5 11h4"/>
+      </svg>
+    )},
+    { to: '/institutions', label: t.nav.institutions, end: false, icon: (
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M2 14V6l6-4.5L14 6v8H2zM6 14V9h4v5"/>
       </svg>
     )},
   ]
@@ -433,12 +445,27 @@ export default function AppLayout() {
                 </svg>
               </button>
               {showUserMenu && (
-                <div className="absolute right-0 top-full mt-2 w-56 rounded-xl shadow-lg py-1 z-50 max-h-[85vh] overflow-y-auto" style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border-soft)' }}>
-                  <div className="px-4 py-2.5 flex items-center justify-between" style={{ borderBottom: '1px solid var(--arvo-border-soft)' }}>
+                <div className="absolute right-0 top-full mt-2 w-60 rounded-xl shadow-lg z-50 max-h-[85vh] overflow-y-auto" style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border-soft)' }}>
+                  {/* Identity block */}
+                  <Link to="/profile" onClick={() => setShowUserMenu(false)} className="flex items-center gap-2.5 px-4 py-3" style={{ borderBottom: '1px solid var(--arvo-border-soft)' }} onMouseEnter={e => (e.currentTarget.style.background='var(--arvo-hover-bg)')} onMouseLeave={e => (e.currentTarget.style.background='')}>
+                    {avatarUrl ? (
+                      <img src={avatarUrl} alt="" className="w-9 h-9 rounded-full object-cover shrink-0" />
+                    ) : (
+                      <div className="w-9 h-9 rounded-full shrink-0 flex items-center justify-center text-xs font-bold" style={{ background: 'var(--arvo-fg)', color: 'var(--arvo-pill-active-fg)' }}>{avatarInitials}</div>
+                    )}
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold truncate" style={{ color: 'var(--arvo-fg)' }}>{headerLabel}</p>
+                      <p className="text-xs truncate" style={{ color: 'var(--arvo-fg-soft)' }}>{username ? `@${username}` : user?.email}</p>
+                    </div>
+                  </Link>
+
+                  {/* Preferências */}
+                  <p className="text-[10px] uppercase tracking-wider px-4 pt-2.5 pb-1" style={{ color: 'var(--arvo-fg-faint)' }}>{t.profile.tabPreferences}</p>
+                  <div className="px-4 py-2 flex items-center justify-between">
                     <span className="text-xs" style={{ color: 'var(--arvo-fg-soft)' }}>{t.common.language}</span>
                     <LanguageSelector />
                   </div>
-                  <div className="px-4 py-2.5 flex items-center justify-between" style={{ borderBottom: '1px solid var(--arvo-border-soft)' }}>
+                  <div className="px-4 py-2 flex items-center justify-between">
                     <span className="text-xs" style={{ color: 'var(--arvo-fg-soft)' }}>{t.currency?.label ?? 'Moeda'}</span>
                     <div className="flex items-center rounded-full p-0.5 gap-0.5" style={{ background: 'var(--arvo-chip-bg)' }}>
                       {CURRENCIES.map(c => (
@@ -451,34 +478,14 @@ export default function AppLayout() {
                       ))}
                     </div>
                   </div>
+
+                  {/* Navegar */}
+                  <p className="text-[10px] uppercase tracking-wider px-4 pt-2.5 pb-1" style={{ color: 'var(--arvo-fg-faint)', borderTop: '1px solid var(--arvo-border-soft)' }}>{t.nav.navigate}</p>
                   <Link to="/achievements" onClick={() => setShowUserMenu(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors" style={{ color: 'var(--arvo-fg-muted)' }} onMouseEnter={e => (e.currentTarget.style.background='var(--arvo-hover-bg)')} onMouseLeave={e => (e.currentTarget.style.background='')}>
                     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4 shrink-0">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M8 1.5l1.8 3.6 4 .6-2.9 2.8.7 4L8 10.4l-3.6 1.9.7-4L2.2 5.7l4-.6L8 1.5z"/>
                     </svg>
                     {t.nav.achievements}
-                  </Link>
-                  <Link to="/notifications" onClick={() => setShowUserMenu(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors" style={{ color: 'var(--arvo-fg-muted)' }} onMouseEnter={e => (e.currentTarget.style.background='var(--arvo-hover-bg)')} onMouseLeave={e => (e.currentTarget.style.background='')}>
-                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4 shrink-0">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M8 1.5A3 3 0 005 4.5v.75c0 1.42-.55 2.79-1.53 3.82l-.4.43A.75.75 0 003.6 10.8h8.8a.75.75 0 00.53-1.3l-.4-.43A5.25 5.25 0 0111 5.25V4.5A3 3 0 008 1.5zM6.5 12a1.5 1.5 0 003 0h-3z"/>
-                    </svg>
-                    {t.nav.notifications}
-                    {unreadCount > 0 && (
-                      <span className="ml-auto text-[10px] font-semibold rounded-full px-1.5 py-0.5" style={{ background: 'var(--arvo-red)', color: 'white', fontFamily: 'var(--arvo-font-body)', lineHeight: 1 }}>
-                        {unreadCount > 9 ? '9+' : unreadCount}
-                      </span>
-                    )}
-                  </Link>
-                  <Link to="/favorites" onClick={() => setShowUserMenu(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors" style={{ color: 'var(--arvo-fg-muted)' }} onMouseEnter={e => (e.currentTarget.style.background='var(--arvo-hover-bg)')} onMouseLeave={e => (e.currentTarget.style.background='')}>
-                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4 shrink-0">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M8 2.5c1.5-2 5.5-1.5 5.5 2.5 0 3-5.5 7.5-5.5 7.5S2.5 8 2.5 5C2.5 1 6.5.5 8 2.5z"/>
-                    </svg>
-                    {t.nav.favorites}
-                  </Link>
-                  <Link to="/archived" onClick={() => setShowUserMenu(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors" style={{ color: 'var(--arvo-fg-muted)' }} onMouseEnter={e => (e.currentTarget.style.background='var(--arvo-hover-bg)')} onMouseLeave={e => (e.currentTarget.style.background='')}>
-                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4 shrink-0">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M2 4.5h12v1.5H2zM3.5 6v7h9V6M6 9h4"/>
-                    </svg>
-                    {t.nav.archived}
                   </Link>
                   <Link to="/people" onClick={() => setShowUserMenu(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors" style={{ color: 'var(--arvo-fg-muted)' }} onMouseEnter={e => (e.currentTarget.style.background='var(--arvo-hover-bg)')} onMouseLeave={e => (e.currentTarget.style.background='')}>
                     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4 shrink-0">
@@ -489,12 +496,9 @@ export default function AppLayout() {
                     </svg>
                     Pessoas
                   </Link>
-                  <Link to="/institutions" onClick={() => setShowUserMenu(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors" style={{ color: 'var(--arvo-fg-muted)' }} onMouseEnter={e => (e.currentTarget.style.background='var(--arvo-hover-bg)')} onMouseLeave={e => (e.currentTarget.style.background='')}>
-                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4 shrink-0">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M2 14V6l6-4.5L14 6v8H2zM6 14V9h4v5"/>
-                    </svg>
-                    {t.nav.institutions}
-                  </Link>
+
+                  {/* Conta */}
+                  <p className="text-[10px] uppercase tracking-wider px-4 pt-2.5 pb-1" style={{ color: 'var(--arvo-fg-faint)', borderTop: '1px solid var(--arvo-border-soft)' }}>{t.nav.account}</p>
                   <Link to="/profile" onClick={() => setShowUserMenu(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors" style={{ color: 'var(--arvo-fg-muted)' }} onMouseEnter={e => (e.currentTarget.style.background='var(--arvo-hover-bg)')} onMouseLeave={e => (e.currentTarget.style.background='')}>
                     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4 shrink-0">
                       <circle cx="8" cy="5" r="2.5"/><path strokeLinecap="round" d="M2.5 14c0-3 2.5-5 5.5-5s5.5 2 5.5 5"/>
@@ -516,7 +520,8 @@ export default function AppLayout() {
                     <span className="flex-1 text-left">{t.chat.open}</span>
                     <span style={{ fontSize: 9, padding: '2px 7px', borderRadius: 999, background: 'linear-gradient(105deg, #1B4FD8, #E8A020)', color: 'white', letterSpacing: '0.07em', fontFamily: "var(--arvo-font-body)" }}>IA</span>
                   </button>
-                  <button onClick={() => signOut()} className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors" style={{ color: 'var(--arvo-red)' }} onMouseEnter={e => (e.currentTarget.style.background='rgba(214,59,47,0.06)')} onMouseLeave={e => (e.currentTarget.style.background='')}>
+
+                  <button onClick={() => signOut()} className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors" style={{ color: 'var(--arvo-red)', borderTop: '1px solid var(--arvo-border-soft)' }} onMouseEnter={e => (e.currentTarget.style.background='rgba(214,59,47,0.06)')} onMouseLeave={e => (e.currentTarget.style.background='')}>
                     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4 shrink-0">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 11.5L14 8l-3.5-3.5M14 8H6M6 2.5H3A1.5 1.5 0 0 0 1.5 4v8A1.5 1.5 0 0 0 3 13.5h3"/>
                     </svg>
