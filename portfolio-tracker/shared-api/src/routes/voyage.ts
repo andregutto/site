@@ -1553,7 +1553,7 @@ router.get('/public/:token', async (req, res: Response) => {
 
   const [placesRes, costRes, ownerRes] = await Promise.all([
     supabaseAdmin.from('voyage_trip_places')
-      .select('id, kind, name, category, address, lat, lng, google_place_id, google_maps_url, opening_hours, day_number, sort_order, is_highlight, visited, rating, trip_note, arrive_time, depart_time, transport_mode, transport_note')
+      .select('id, kind, name, category, address, lat, lng, google_place_id, google_maps_url, opening_hours, day_number, sort_order, is_highlight, visited, rating, trip_note, arrive_time, depart_time, transport_mode, transport_note, checkin_day, checkout_day')
       .eq('trip_id', trip.id)
       .order('day_number', { ascending: true, nullsFirst: false })
       .order('sort_order'),

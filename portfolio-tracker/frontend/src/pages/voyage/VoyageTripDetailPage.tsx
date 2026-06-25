@@ -206,7 +206,7 @@ export default function VoyageTripDetailPage() {
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
                 <path strokeLinecap="round" d="M8.5 1.5l2 2L4 10H2v-2L8.5 1.5z" />
               </svg>
-              Editar
+              {tv.editTripBtn ?? 'Editar'}
             </button>
             {trip.user_id === user?.id && (
               <button
@@ -220,14 +220,17 @@ export default function VoyageTripDetailPage() {
                   <path strokeLinecap="round" d="M4.5 6.2l5-2.5M4.5 7.8l5 2.5"/>
                 </svg>
                 {trip.share_token ? (
-                  <>Compartilhado<span style={{ width: 5, height: 5, borderRadius: 999, background: '#1F8A5B', display: 'inline-block', marginLeft: 4 }} /></>
-                ) : 'Compartilhar'}
+                  <>{tv.sharedTripBtn ?? 'Compartilhado'}<span style={{ width: 5, height: 5, borderRadius: 999, background: '#1F8A5B', display: 'inline-block', marginLeft: 4 }} /></>
+                ) : (tv.shareTripBtn ?? 'Compartilhar')}
               </button>
             )}
           </div>
 
-          {/* Title overlay */}
-          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '20px 24px 22px' }}>
+          {/* Title overlay — pointerEvents:none porque a div cobre a faixa
+              inferior inteira (right:0) e, mesmo vazia visualmente do lado
+              direito, estava interceptando o clique no botão de
+              colaboradores que fica por cima dela no canto inferior direito. */}
+          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '20px 24px 22px', pointerEvents: 'none' }}>
             <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.28em', textTransform: 'uppercase', color: 'rgba(200,184,154,0.7)', marginBottom: 6 }}>
               ARVO VOYAGE
             </p>

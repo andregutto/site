@@ -100,7 +100,7 @@ function LinkMomentPanel({ tripId, onLinked, compact }: { tripId: number; onLink
     <div style={{ display: 'flex', gap: 10, marginTop: 12, paddingTop: 10, borderTop: '1px solid var(--arvo-border-soft)' }}>
       <button type="button" onClick={openLink}
         style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-      >+ Vincular outro momento</button>
+      >{tv.linkAnotherMoment ?? '+ Vincular outro momento'}</button>
     </div>
   )
 

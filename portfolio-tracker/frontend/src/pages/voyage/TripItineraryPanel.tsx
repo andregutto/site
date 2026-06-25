@@ -292,6 +292,14 @@ function ItemRow({ item, tripId, canEdit, dragging, dropTarget, onStartDrag, onP
     pressStartRef.current = { x: e.clientX, y: e.clientY }
     lastYRef.current = e.clientY
     manualScrollRef.current = false
+    // Mouse has no scroll-vs-drag ambiguity (that's a touch-only problem —
+    // a finger moving could mean "scroll the page" or "drag the row").
+    // Requiring a long-press before allowing movement made sense for touch,
+    // but for mouse it meant any normal click-and-drag got cancelled by
+    // handlePointerMove below before the 380ms timer ever fired, so drag
+    // never started on desktop. Mouse instead starts on first move past
+    // the threshold, like any native drag.
+    if (e.pointerType === 'mouse') return
     pressTimerRef.current = window.setTimeout(() => {
       pressTimerRef.current = null
       navigator.vibrate?.(10)
@@ -304,14 +312,19 @@ function ItemRow({ item, tripId, canEdit, dragging, dropTarget, onStartDrag, onP
       lastYRef.current = e.clientY
       return
     }
-    if (!pressStartRef.current || pressTimerRef.current == null) return
+    if (!pressStartRef.current) return
     const dx = e.clientX - pressStartRef.current.x
     const dy = e.clientY - pressStartRef.current.y
-    if (Math.hypot(dx, dy) > MOVE_CANCEL_PX) {
-      clearPress()
-      manualScrollRef.current = true
-      lastYRef.current = e.clientY
+    if (Math.hypot(dx, dy) <= MOVE_CANCEL_PX) return
+    if (e.pointerType === 'mouse') {
+      pressStartRef.current = null
+      onStartDrag()
+      return
     }
+    if (pressTimerRef.current == null) return
+    clearPress()
+    manualScrollRef.current = true
+    lastYRef.current = e.clientY
   }
 
   async function del() {
@@ -396,8 +409,8 @@ function ItemRow({ item, tripId, canEdit, dragging, dropTarget, onStartDrag, onP
             <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 10, color: 'var(--arvo-fg-soft)', marginTop: 2 }}>
               {[
                 !isTransport && item.transport_mode && `${TRANSPORT_ICONS[item.transport_mode]} ${TRANSPORT_LABELS[item.transport_mode] ?? item.transport_mode}`,
-                item.arrive_time && `chegada ${item.arrive_time}`,
-                item.depart_time && `saída ${item.depart_time}`,
+                item.arrive_time && `${(tv.arrival ?? 'chegada').toLowerCase()} ${item.arrive_time}`,
+                item.depart_time && `${(tv.departure ?? 'saída').toLowerCase()} ${item.depart_time}`,
               ].filter(Boolean).join(' · ')}
             </p>
           )}
@@ -435,14 +448,14 @@ function ItemRow({ item, tripId, canEdit, dragging, dropTarget, onStartDrag, onP
             background: dayColorWash(item.checkin_day!, 8), color: dayColor(item.checkin_day!),
             border: `1px solid ${dayColorWash(item.checkin_day!, 22)}`,
           }}>
-            Dia {item.checkin_day} – {item.checkout_day}
+            {(tv.dayRange ?? 'Dia {from} – {to}').replace('{from}', String(item.checkin_day)).replace('{to}', String(item.checkout_day))}
           </span>
         ) : (
           <DayBadge day={item.day_number} canEdit={canEdit} onChangeDay={d => onPatch({ day_number: d })} />
         )}
         <div style={{ display: 'flex', alignItems: 'center', gap: 2, flexShrink: 0 }}>
           {canEdit && (
-            <button type="button" onClick={() => setShowExpenses(true)} title="Despesas"
+            <button type="button" onClick={() => setShowExpenses(true)} title={tv.expensesTitle ?? 'Despesas'}
               style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 5, borderRadius: 4, color: hasExpenses ? 'var(--arvo-fg)' : 'var(--arvo-fg-muted)', display: 'flex' }}>
               <svg width="13" height="13" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
                 <circle cx="6" cy="6" r="5" /><path strokeLinecap="round" d="M6 3.5v5M4.7 7.2c0 .7.6 1 1.3 1s1.3-.3 1.3-1-.6-.9-1.3-.9-1.3-.3-1.3-.9.6-1 1.3-1 1.3.3 1.3 1" />
@@ -450,11 +463,11 @@ function ItemRow({ item, tripId, canEdit, dragging, dropTarget, onStartDrag, onP
             </button>
           )}
           {canEdit && isPlace && (
-            <button type="button" onClick={() => onPatch({ is_highlight: !item.is_highlight })} title="Destaque"
+            <button type="button" onClick={() => onPatch({ is_highlight: !item.is_highlight })} title={tv.highlightTitle ?? 'Destaque'}
               style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 5, borderRadius: 4, fontSize: 13, lineHeight: 1, color: RED, opacity: item.is_highlight ? 1 : 0.3 }}>★</button>
           )}
           {item.google_maps_url && (
-            <a href={item.google_maps_url} target="_blank" rel="noopener noreferrer" title="Abrir no Google Maps"
+            <a href={item.google_maps_url} target="_blank" rel="noopener noreferrer" title={tv.openInMapsTitle ?? 'Abrir no Google Maps'}
               style={{ padding: 5, color: 'var(--arvo-fg-soft)', display: 'flex', alignItems: 'center' }}>
               <svg width="12" height="12" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.5">
                 <path strokeLinecap="round" d="M5 2H2a1 1 0 00-1 1v8a1 1 0 001 1h8a1 1 0 001-1V8M8 1h4m0 0v4m0-4L5.5 7.5" />
@@ -462,9 +475,9 @@ function ItemRow({ item, tripId, canEdit, dragging, dropTarget, onStartDrag, onP
             </a>
           )}
           {canEdit && (isPlace || isTransport || isNote) && (
-            <button type="button" onClick={() => setExpanded(v => !v)} title="Mais opções"
+            <button type="button" onClick={() => setExpanded(v => !v)} title={tv.moreOptions ?? 'Mais opções'}
               style={{ display: 'flex', alignItems: 'center', gap: 3, background: 'none', border: 'none', cursor: 'pointer', padding: '5px 4px', borderRadius: 4, color: 'var(--arvo-fg-muted)', fontFamily: 'var(--arvo-font-body)', fontSize: 10.5 }}>
-              Mais
+              {tv.more ?? 'Mais'}
               <svg width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ transform: expanded ? 'rotate(180deg)' : 'none', transition: 'transform 160ms' }}>
                 <path strokeLinecap="round" d="M2 3.5l3 3 3-3"/>
               </svg>
@@ -485,20 +498,20 @@ function ItemRow({ item, tripId, canEdit, dragging, dropTarget, onStartDrag, onP
             <div style={{ padding: 8, borderRadius: 8, background: 'rgba(232,160,32,0.06)', border: '1px solid rgba(232,160,32,0.18)', display: 'flex', flexDirection: 'column', gap: 8 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 8, letterSpacing: '0.15em', textTransform: 'uppercase', color: GOLD }}>
-                  {itemIcon(item)} Estadia
+                  {itemIcon(item)} {tv.stay ?? 'Estadia'}
                 </p>
                 <button type="button" onClick={() => { onPatch({ checkin_day: null, checkout_day: null }); setShowStayFields(false) }}
                   style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'var(--arvo-font-body)', fontSize: 10.5, color: 'var(--arvo-fg-soft)' }}>
-                  Remover
+                  {tv.remove ?? 'Remover'}
                 </button>
               </div>
               <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                <DayNumberField label="Check-in dia" value={item.checkin_day} onChange={d => onPatch({ checkin_day: d, day_number: d ?? item.day_number })} />
-                <DayNumberField label="Check-out dia" value={item.checkout_day} onChange={d => onPatch({ checkout_day: d })} />
+                <DayNumberField label={tv.checkinDay ?? 'Check-in dia'} value={item.checkin_day} onChange={d => onPatch({ checkin_day: d, day_number: d ?? item.day_number })} />
+                <DayNumberField label={tv.checkoutDay ?? 'Check-out dia'} value={item.checkout_day} onChange={d => onPatch({ checkout_day: d })} />
               </div>
               <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                <TimeField label="Check-in hora" value={item.arrive_time} onChange={v => onPatch({ arrive_time: v })} />
-                <TimeField label="Check-out hora" value={item.depart_time} onChange={v => onPatch({ depart_time: v })} />
+                <TimeField label={tv.checkinTime ?? 'Check-in hora'} value={item.arrive_time} onChange={v => onPatch({ arrive_time: v })} />
+                <TimeField label={tv.checkoutTime ?? 'Check-out hora'} value={item.depart_time} onChange={v => onPatch({ depart_time: v })} />
               </div>
             </div>
           )}
@@ -506,7 +519,7 @@ function ItemRow({ item, tripId, canEdit, dragging, dropTarget, onStartDrag, onP
           {isPlace && !isStay && !showStayFields && (
             <button type="button" onClick={() => setShowStayFields(true)}
               style={{ display: 'flex', alignItems: 'center', gap: 6, alignSelf: 'flex-start', fontFamily: 'var(--arvo-font-body)', fontSize: 11, padding: '4px 10px', borderRadius: 6, background: 'none', border: '1px solid var(--arvo-border)', color: 'var(--arvo-fg-soft)', cursor: 'pointer' }}>
-              {itemIcon(item)} Marcar como estadia de vários dias (hospedagem, carro alugado…)
+              {itemIcon(item)} {tv.markAsStay ?? 'Marcar como estadia de vários dias (hospedagem, carro alugado…)'}
             </button>
           )}
 
@@ -514,7 +527,7 @@ function ItemRow({ item, tripId, canEdit, dragging, dropTarget, onStartDrag, onP
             <>
               <div>
                 <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 8, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)', marginBottom: 5, marginTop: isPlace ? 2 : 0 }}>
-                  {isTransport ? 'Meio de transporte' : 'Transporte para chegar aqui'}
+                  {isTransport ? (tv.transportMode ?? 'Meio de transporte') : (tv.transportToArrive ?? 'Transporte para chegar aqui')}
                 </p>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                   {Object.entries(TRANSPORT_LABELS).map(([k, label]) => (
@@ -526,15 +539,15 @@ function ItemRow({ item, tripId, canEdit, dragging, dropTarget, onStartDrag, onP
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                <TimeField label="Chegada" value={item.arrive_time} onChange={v => onPatch({ arrive_time: v })} />
-                <TimeField label="Saída" value={item.depart_time} onChange={v => onPatch({ depart_time: v })} />
+                <TimeField label={tv.arrival ?? 'Chegada'} value={item.arrive_time} onChange={v => onPatch({ arrive_time: v })} />
+                <TimeField label={tv.departure ?? 'Saída'} value={item.depart_time} onChange={v => onPatch({ depart_time: v })} />
               </div>
               {isPlace && (
                 <>
                   <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 8, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)', marginTop: 2 }}>
-                    Nota de transporte
+                    {tv.transportNote ?? 'Nota de transporte'}
                   </p>
-                  <NoteEditor value={item.transport_note} placeholder="Voo, nº de reserva…"
+                  <NoteEditor value={item.transport_note} placeholder={tv.transportNotePlaceholder ?? 'Voo, nº de reserva…'}
                     onSave={v => onPatch({ transport_note: v })} />
                 </>
               )}
@@ -544,9 +557,9 @@ function ItemRow({ item, tripId, canEdit, dragging, dropTarget, onStartDrag, onP
           {(isTransport || isNote) && (
             <>
               <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 8, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)', marginTop: isTransport ? 2 : 0 }}>
-                Nota
+                {tv.note ?? 'Nota'}
               </p>
-              <NoteEditor value={item.trip_note} placeholder="Detalhes (opcional)…"
+              <NoteEditor value={item.trip_note} placeholder={tv.notePlaceholder ?? 'Detalhes (opcional)…'}
                 onSave={v => onPatch({ trip_note: v })} />
             </>
           )}

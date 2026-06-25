@@ -106,6 +106,14 @@ export function LibraryPicker({ tripId, tripCity, tripCountry, onAdded }: {
   const [urlInput, setUrlInput] = useState('')
   const [urlLoading, setUrlLoading] = useState(false)
   const [urlError, setUrlError] = useState<string | null>(null)
+  // Quando o link do Maps não tem um nome de estabelecimento (só um
+  // endereço, ex: "6 Rue de Vaugon"), o backend usa o endereço como nome
+  // pra não deixar o lugar sem nome — mas isso fica estranho pra hospedagens
+  // (Airbnb, casa de alguém etc). Em vez de salvar isso silenciosamente,
+  // perguntamos um nome antes de fechar o picker.
+  const [pendingRename, setPendingRename] = useState<TripPlace | null>(null)
+  const [renameValue, setRenameValue] = useState('')
+  const [renaming, setRenaming] = useState(false)
 
   const hasDestination = !!(tripCity || tripCountry)
 
@@ -151,8 +159,13 @@ export function LibraryPicker({ tripId, tripCity, tripCountry, onAdded }: {
         { method: 'POST', body: JSON.stringify({ url: urlInput.trim(), trip_id: tripId }) }
       )
       if (data.trip_place) {
-        onAdded(data.trip_place)
-        setOpen(false)
+        if (data.place.address && data.place.address === data.place.name) {
+          setPendingRename(data.trip_place)
+          setRenameValue('')
+        } else {
+          onAdded(data.trip_place)
+          setOpen(false)
+        }
       } else {
         setLibrary(prev => [...prev.filter(p => p.id !== data.place.id), data.place])
         setMode('library')
@@ -188,6 +201,55 @@ export function LibraryPicker({ tripId, tripCity, tripCountry, onAdded }: {
     padding: '5px 11px', borderRadius: 6, border: 'none', cursor: 'pointer',
     transition: 'opacity 160ms',
   }
+
+  async function confirmRename() {
+    if (!pendingRename) return
+    setRenaming(true)
+    try {
+      const name = renameValue.trim()
+      if (name) {
+        await apiFetch(`/voyage/trips/${tripId}/places/${pendingRename.id}`, {
+          method: 'PATCH', body: JSON.stringify({ name }),
+        })
+        onAdded({ ...pendingRename, name })
+      } else {
+        onAdded(pendingRename)
+      }
+      setPendingRename(null)
+      setOpen(false)
+    } finally {
+      setRenaming(false)
+    }
+  }
+
+  if (pendingRename) return (
+    <div style={{ marginTop: 12, padding: 14, borderRadius: 10, background: 'var(--arvo-hover-bg)', border: '1px solid var(--arvo-border-soft)' }}>
+      <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 10, letterSpacing: '0.20em', textTransform: 'uppercase', color: GOLD, marginBottom: 6 }}>
+        Esse lugar não tem nome no Google Maps
+      </p>
+      <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)', marginBottom: 10 }}>
+        Só veio o endereço ({pendingRename.address ?? pendingRename.name}). Como você quer chamar esse lugar? (ex: Airbnb, casa da Maria…)
+      </p>
+      <div style={{ display: 'flex', gap: 6 }}>
+        <input
+          autoFocus
+          value={renameValue}
+          onChange={e => setRenameValue(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter') confirmRename() }}
+          placeholder="Nome do lugar…"
+          style={{ flex: 1, padding: '7px 10px', borderRadius: 4, border: '1px solid var(--arvo-border)', fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, background: 'var(--arvo-surface)', color: 'var(--arvo-fg)', outline: 'none' }}
+        />
+        <button type="button" onClick={confirmRename} disabled={renaming}
+          style={{ padding: '7px 14px', borderRadius: 6, background: 'var(--arvo-fg)', color: 'var(--arvo-bg)', border: 'none', cursor: renaming ? 'default' : 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 12 }}>
+          {renaming ? '…' : 'Salvar'}
+        </button>
+      </div>
+      <button type="button" onClick={() => { onAdded(pendingRename); setPendingRename(null); setOpen(false) }}
+        style={{ marginTop: 8, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)', padding: 0 }}>
+        Manter o endereço como nome
+      </button>
+    </div>
+  )
 
   if (!open) return (
     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>

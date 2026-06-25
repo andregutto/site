@@ -104,6 +104,34 @@ function catIcon(cat: string | null): string {
   return '📌'
 }
 
+// As categorias vêm de texto livre (digitado pelo usuário ou nome de lista
+// do Google Takeout, quase sempre em PT) — não dá pra traduzir texto livre
+// automaticamente, mas as categorias mais comuns batem com essas palavras-
+// chave, então pelo menos essas aparecem no idioma do visitante. O resto
+// (nomes de lugares, categorias incomuns) continua como foi cadastrado.
+const CATEGORY_LABEL_KEYS: Record<string, string> = {
+  restaurantes: 'restaurants', restaurante: 'restaurants',
+  padarias: 'bakeries', padaria: 'bakeries',
+  cafés: 'cafes', café: 'cafes', cafes: 'cafes',
+  museus: 'museums', museu: 'museums',
+  hotéis: 'hotels', hotel: 'hotels', hoteis: 'hotels',
+  bares: 'bars', bar: 'bars',
+  praias: 'beaches', praia: 'beaches',
+  parques: 'parks', parque: 'parks',
+  compras: 'shopping', mercados: 'markets',
+  pontos: 'touristSpots', turísticos: 'touristSpots', favoritos: 'favorites',
+  aluguel: 'carRental', carro: 'carRental', carros: 'carRental',
+}
+
+function categoryLabel(cat: string | null, tv: any): string | null {
+  if (!cat) return null
+  const key = cat.toLowerCase()
+  for (const [k, labelKey] of Object.entries(CATEGORY_LABEL_KEYS)) {
+    if (key.includes(k)) return tv.public?.category?.[labelKey] ?? cat
+  }
+  return cat
+}
+
 function itemIcon(p: PublicPlace): string {
   if (p.kind === 'note') return '📝'
   if (p.kind === 'transport') return p.transport_mode ? (TRANSPORT_ICONS[p.transport_mode] ?? '🔀') : '🔀'
@@ -494,7 +522,7 @@ export default function PublicTripPage() {
                             </span>
                           )}
                           <p style={{ fontWeight: 600, fontSize: 13, marginBottom: 2 }}>{p.name}</p>
-                          {p.category && <p style={{ fontSize: 10.5, color: '#999', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{p.category}</p>}
+                          {p.category && <p style={{ fontSize: 10.5, color: '#999', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{categoryLabel(p.category, tv)}</p>}
                           {p.address && <p style={{ fontSize: 11, color: '#666', marginBottom: 4 }}>{p.address}</p>}
                           <OpeningHoursBlock hours={p.opening_hours} />
                           {(p.expense_total ?? 0) > 0 && (
