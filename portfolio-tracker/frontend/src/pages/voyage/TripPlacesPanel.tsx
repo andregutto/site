@@ -183,9 +183,9 @@ export function LibraryPicker({ tripId, tripCity, tripCountry, onAdded }: {
   )
 
   const btnBase: React.CSSProperties = {
-    display: 'flex', alignItems: 'center', gap: 6,
-    fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, letterSpacing: '0.04em',
-    padding: '6px 14px', borderRadius: 6, border: 'none', cursor: 'pointer',
+    display: 'flex', alignItems: 'center', gap: 5,
+    fontFamily: 'var(--arvo-font-body)', fontSize: 11, letterSpacing: '0.02em',
+    padding: '5px 11px', borderRadius: 6, border: 'none', cursor: 'pointer',
     transition: 'opacity 160ms',
   }
 

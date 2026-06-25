@@ -34,9 +34,9 @@ function CollaboratorsHero({ tripId, onOpen }: { tripId: number; onOpen: () => v
       type="button"
       onClick={onOpen}
       style={{
-        position: 'absolute', top: 16, left: 16, display: 'flex', alignItems: 'center', gap: 8,
+        display: 'flex', alignItems: 'center', gap: 8,
         background: 'rgba(13,13,13,0.55)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.12)',
-        borderRadius: 999, padding: shown.length > 0 ? '4px 12px 4px 4px' : '5px 12px', cursor: 'pointer',
+        borderRadius: 999, padding: shown.length > 0 ? '4px 10px 4px 4px' : '5px 12px', cursor: 'pointer',
       }}
       title="Colaboradores"
     >
@@ -56,10 +56,10 @@ function CollaboratorsHero({ tripId, onOpen }: { tripId: number; onOpen: () => v
               <circle cx="5" cy="4.5" r="2.5"/>
               <path strokeLinecap="round" d="M1 12c0-2.2 1.8-4 4-4s4 1.8 4 4M9.5 4.8a2 2 0 110 4M13 12c0-1.7-1.2-3.1-2.8-3.6"/>
             </svg>
-            Convidar colaborador
+            Convidar
           </>
         ) : (
-          <>Colaboradores<span style={{ fontSize: 13, lineHeight: 1 }}>+</span></>
+          <span style={{ fontSize: 13, lineHeight: 1 }}>+</span>
         )}
       </span>
     </button>
@@ -189,13 +189,13 @@ export default function VoyageTripDetailPage() {
             </span>
           </div>
 
-          {/* Collaborators — avatar stack + invite trigger */}
-          <div style={{ position: 'absolute', top: 16, left: 16 }}>
+          {/* Collaborators — avatar stack + invite trigger, canto inferior direito (livre, sem disputar espaço com o título) */}
+          <div style={{ position: 'absolute', bottom: 16, right: 16 }}>
             <CollaboratorsHero tripId={Number(id)} onOpen={() => setShowMembers(true)} />
           </div>
 
-          {/* Top-left buttons (below collaborators): Edit + Share */}
-          <div style={{ position: 'absolute', top: 54, left: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+          {/* Top-left buttons: Edit + Share */}
+          <div style={{ position: 'absolute', top: 16, left: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
             <button
               onClick={() => setShowEdit(true)}
               style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'rgba(13,13,13,0.55)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, padding: '5px 12px', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'rgba(255,255,255,0.80)', letterSpacing: '0.04em' }}
