@@ -142,7 +142,10 @@ export default function VoyageTripDetailPage() {
     )
   }
 
-  const { trip, cost } = data
+  const { trip, cost, members } = data
+  const isOwner = trip.user_id === user?.id
+  const myMembership = members.find(m => m.user_id === user?.id && m.status === 'active')
+  const canEdit = isOwner || myMembership?.role === 'editor'
   const statusColor = STATUS_COLOR[trip.status] ?? GOLD
   const dateStr = fmtDateRange(trip.start_date, trip.end_date)
   const statusLabel = trip.status === 'planning' ? tv.statusPlanning : trip.status === 'ongoing' ? tv.statusOngoing : tv.statusPast
@@ -273,7 +276,7 @@ export default function VoyageTripDetailPage() {
         tripId={Number(id)}
         tripCity={trip.destination}
         tripCountry={trip.country}
-        canEdit={trip.user_id === user?.id}
+        canEdit={canEdit}
         onPlacesChanged={bumpPlacesVersion}
       />
 

@@ -33,12 +33,10 @@ function ProgressBar({ spent, budget }: { spent: number; budget: number | null }
 function LinkMomentPanel({ tripId, onLinked, compact }: { tripId: number; onLinked: (cost: TripCost) => void; compact?: boolean }) {
   const { t } = useI18n()
   const tv = (t as any).voyage ?? {}
-  const [mode, setMode] = useState<'none' | 'link' | 'create'>('none')
+  const [mode, setMode] = useState<'none' | 'link'>('none')
   const [moments, setMoments] = useState<MomentPicker[]>([])
   const [loadingMoments, setLoadingMoments] = useState(false)
   const [selectedMoment, setSelectedMoment] = useState<number | null>(null)
-  const [newName, setNewName] = useState('')
-  const [newBudget, setNewBudget] = useState('')
   const [saving, setSaving] = useState(false)
 
   async function openLink() {
@@ -60,24 +58,6 @@ function LinkMomentPanel({ tripId, onLinked, compact }: { tripId: number; onLink
     onLinked(data.cost)
     setSaving(false)
     setMode('none')
-  }
-
-  async function createMoment() {
-    setSaving(true)
-    const data = await apiFetch<{ cost: TripCost }>(`/voyage/trips/${tripId}/create-moment`, {
-      method: 'POST', body: JSON.stringify({ name: newName.trim() || undefined, budget: newBudget ? Number(newBudget) : undefined }),
-    })
-    onLinked(data.cost)
-    setSaving(false)
-    setMode('none')
-    setNewName('')
-    setNewBudget('')
-  }
-
-  const fieldStyle: React.CSSProperties = {
-    width: '100%', padding: '7px 10px', borderRadius: 3,
-    border: '1px solid var(--arvo-border)', background: 'var(--arvo-surface)',
-    fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg)',
   }
 
   if (mode === 'link') return (
@@ -116,33 +96,11 @@ function LinkMomentPanel({ tripId, onLinked, compact }: { tripId: number; onLink
     </div>
   )
 
-  if (mode === 'create') return (
-    <div style={{ marginTop: 12, padding: 14, borderRadius: 8, background: 'var(--arvo-hover-bg)', border: '1px solid var(--arvo-border-soft)' }}>
-      <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)', marginBottom: 10 }}>
-        Novo momento
-      </p>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 10 }}>
-        <input style={fieldStyle} placeholder={tv.momentName ?? 'Nome do momento'} value={newName} onChange={e => setNewName(e.target.value)} />
-        <input style={fieldStyle} type="number" min="0" step="0.01" placeholder={tv.momentBudget ?? 'Budget (opcional)'} value={newBudget} onChange={e => setNewBudget(e.target.value)} />
-      </div>
-      <div className="flex gap-2 justify-end">
-        <button type="button" onClick={() => setMode('none')} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, padding: '5px 12px', borderRadius: 5, background: 'none', border: '1px solid var(--arvo-border)', color: 'var(--arvo-fg-muted)', cursor: 'pointer' }}>Cancelar</button>
-        <button type="button" onClick={createMoment} disabled={saving}
-          style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, padding: '5px 14px', borderRadius: 5, background: 'var(--arvo-fg)', color: 'var(--arvo-bg)', border: 'none', cursor: saving ? 'default' : 'pointer', opacity: saving ? 0.5 : 1 }}
-        >{saving ? 'Criando…' : tv.createMoment ?? 'Criar momento'}</button>
-      </div>
-    </div>
-  )
-
   if (compact) return (
     <div style={{ display: 'flex', gap: 10, marginTop: 12, paddingTop: 10, borderTop: '1px solid var(--arvo-border-soft)' }}>
       <button type="button" onClick={openLink}
         style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
       >+ Vincular outro momento</button>
-      <span style={{ color: 'var(--arvo-border)' }}>·</span>
-      <button type="button" onClick={() => setMode('create')}
-        style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-      >Criar novo</button>
     </div>
   )
 
@@ -153,11 +111,6 @@ function LinkMomentPanel({ tripId, onLinked, compact }: { tripId: number; onLink
         onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--arvo-fg-muted)' }}
         onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--arvo-border)' }}
       >{tv.linkMoment ?? 'Vincular momento'}</button>
-      <button type="button" onClick={() => setMode('create')}
-        style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, letterSpacing: '0.04em', padding: '6px 14px', borderRadius: 6, background: 'var(--arvo-fg)', color: 'var(--arvo-bg)', border: 'none', cursor: 'pointer', transition: 'all 160ms ease' }}
-        onMouseEnter={e => { e.currentTarget.style.opacity = '0.82' }}
-        onMouseLeave={e => { e.currentTarget.style.opacity = '1' }}
-      >{tv.createMoment ?? 'Criar momento'}</button>
     </div>
   )
 }

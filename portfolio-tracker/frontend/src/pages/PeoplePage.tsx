@@ -41,6 +41,7 @@ type Context = TripContext | FinanceContext | FriendContext
 interface Contact {
   email: string
   name?: string
+  username?: string
   avatar_url?: string
   user_id: string | null
   status: 'active' | 'pending'
@@ -76,6 +77,7 @@ function ContactCard({
   onFriendChanged: () => void
 }) {
   const navigate = useNavigate()
+  const [expanded, setExpanded] = useState(false)
   const [removing, setRemoving] = useState<number | null>(null)
   const [accepting, setAccepting] = useState(false)
   const [shareMode, setShareMode] = useState<'trip' | 'group' | null>(null)
@@ -141,28 +143,39 @@ function ContactCard({
       background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)',
       borderRadius: 16, boxShadow: 'var(--arvo-shadow-sm)', padding: '20px 22px',
     }}>
-      {/* Cabeçalho */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16 }}>
+      {/* Cabeçalho — sempre visível; o resto só aparece expandido (senão a
+          lista fica enorme com várias pessoas) */}
+      <button
+        type="button"
+        onClick={() => setExpanded(v => !v)}
+        style={{ display: 'flex', alignItems: 'center', gap: 14, width: '100%', background: 'none', border: 'none', cursor: 'pointer', padding: 0, marginBottom: expanded ? 16 : 0, textAlign: 'left' }}
+      >
         <Avatar name={contact.name} email={contact.email} avatarUrl={contact.avatar_url} size={44} tone={isActive ? 'active' : 'neutral'} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <p style={{
             fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: 'var(--arvo-fg)',
             fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+            display: 'flex', alignItems: 'baseline', gap: 6,
           }}>
-            {displayName}
+            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{displayName}</span>
+            {contact.username && (
+              <span style={{ fontSize: 11.5, fontWeight: 400, color: 'var(--arvo-fg-soft)', flexShrink: 0 }}>@{contact.username}</span>
+            )}
           </p>
-          {contact.name && (
-            <p style={{
-              fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-soft)',
-              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: 1,
-            }}>
-              {contact.email}
-            </p>
-          )}
+          <p style={{
+            fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-soft)',
+            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: 1,
+          }}>
+            {contact.email}
+          </p>
         </div>
         <StatusChip status={contact.status} />
-      </div>
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="var(--arvo-fg-soft)" strokeWidth="1.5" style={{ flexShrink: 0, transform: expanded ? 'rotate(180deg)' : 'none', transition: 'transform 160ms' }}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M2.5 4.5L6 8l3.5-3.5" />
+        </svg>
+      </button>
 
+      {!expanded ? null : (<>
       {/* Viagens */}
       {tripContexts.length > 0 && (
         <div style={{ borderTop: '1px solid var(--arvo-border-soft)', paddingTop: 14, marginBottom: financeContexts.length > 0 ? 14 : 0 }}>
@@ -343,6 +356,7 @@ function ContactCard({
         )}
         {shareError && <p style={{ fontSize: 11, color: RED }}>{shareError}</p>}
       </div>
+      </>)}
     </div>
   )
 }

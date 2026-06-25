@@ -303,12 +303,13 @@ router.get('/', async (req: any, res: any) => {
     const idsNeedingDisplay = [...new Set(contacts.filter(c => c.user_id).map(c => c.user_id as string))]
     if (idsNeedingDisplay.length > 0) {
       const displays = await Promise.all(idsNeedingDisplay.map(id => userDisplay(id).then(d => ({ id, ...d }))))
-      const displayMap: Record<string, { name?: string; avatar_url?: string }> = Object.fromEntries(
-        displays.map(d => [d.id, { name: d.name, avatar_url: d.avatar_url }])
+      const displayMap: Record<string, { name?: string; avatar_url?: string; username?: string }> = Object.fromEntries(
+        displays.map(d => [d.id, { name: d.name, avatar_url: d.avatar_url, username: d.username }])
       )
       for (const c of contacts) {
         if (c.user_id && displayMap[c.user_id]) {
           c.avatar_url = displayMap[c.user_id].avatar_url
+          c.username = displayMap[c.user_id].username
           if (!c.name) c.name = displayMap[c.user_id].name
         }
       }

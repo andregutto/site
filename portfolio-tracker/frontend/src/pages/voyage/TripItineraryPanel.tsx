@@ -114,6 +114,8 @@ function isLogisticalStay(category: string | null): boolean {
 function DayBadge({ day, canEdit, onChangeDay }: {
   day: number | null; canEdit: boolean; onChangeDay: (day: number | null) => void
 }) {
+  const { t } = useI18n()
+  const tv = (t as any).voyage ?? {}
   const [editing, setEditing] = useState(false)
   const [val, setVal] = useState(day?.toString() ?? '')
 
@@ -149,7 +151,7 @@ function DayBadge({ day, canEdit, onChangeDay }: {
         cursor: canEdit ? 'pointer' : 'default',
       }}
     >
-      {day != null ? `Dia ${day}` : 'Sem dia'}
+      {day != null ? (tv.day ?? 'Dia {n}').replace('{n}', String(day)) : (tv.noDay ?? 'Sem dia')}
     </button>
   )
 }
@@ -818,19 +820,19 @@ export default function TripItineraryPanel({ tripId, tripCity, tripCountry, canE
     <div style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', borderRadius: 16, boxShadow: 'var(--arvo-shadow-sm)', padding: '20px 22px' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
         <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 10, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)' }}>
-          Roteiro
+          {tv.itineraryTitle ?? 'Roteiro'}
         </p>
         <a href="/voyage/places" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)', textDecoration: 'none', letterSpacing: '0.04em' }}>
           {tv.actions?.library ?? 'Biblioteca →'}
         </a>
       </div>
 
-      {/* Adders — ficam no topo pra não exigir rolar até o fim de roteiros longos */}
+      {/* Adders — ficam no topo pra não exigir rolar até o fim de roteiros longos, e
+          na mesma linha (LibraryPicker já é flex-wrap, FreeItemAdder entra como mais
+          um item dessa linha em vez de ficar empilhado embaixo). */}
       {canEdit && (
-        <div style={{ marginBottom: 16, paddingBottom: 14, borderBottom: '1px solid var(--arvo-border-soft)', display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <LibraryPicker tripId={tripId} tripCity={tripCity} tripCountry={tripCountry} onAdded={() => load()} />
-          </div>
+        <div style={{ marginBottom: 16, paddingBottom: 14, borderBottom: '1px solid var(--arvo-border-soft)', display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+          <LibraryPicker tripId={tripId} tripCity={tripCity} tripCountry={tripCountry} onAdded={() => load()} />
           <FreeItemAdder tripId={tripId} onAdded={load} />
         </div>
       )}
@@ -850,12 +852,12 @@ export default function TripItineraryPanel({ tripId, tripCity, tripCountry, canE
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
                   <span style={{ width: 7, height: 7, borderRadius: 999, background: dayColor(d), flexShrink: 0 }} />
-                  <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: dayColor(d) }}>Dia {d}</p>
+                  <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: dayColor(d) }}>{(tv.day ?? 'Dia {n}').replace('{n}', String(d))}</p>
                 </span>
                 {canEdit && items.some(p => p.day_number === d && p.arrive_time) && (
                   <button type="button" onClick={() => sortDayByTime(d)} title="Reordenar os itens deste dia pelo horário de chegada"
                     style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'var(--arvo-font-body)', fontSize: 10.5, color: 'var(--arvo-fg-soft)' }}>
-                    Ordenar por horário
+                    {tv.sortByTime ?? 'Ordenar por horário'}
                   </button>
                 )}
               </div>
@@ -873,7 +875,7 @@ export default function TripItineraryPanel({ tripId, tripCity, tripCountry, canE
           ))}
           {undated.length > 0 && (
             <div>
-              <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)', marginBottom: 8 }}>Sem dia</p>
+              <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)', marginBottom: 8 }}>{tv.noDay ?? 'Sem dia'}</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>{renderRows(undated)}</div>
             </div>
           )}
@@ -882,7 +884,7 @@ export default function TripItineraryPanel({ tripId, tripCity, tripCountry, canE
 
       {canEdit && items.length > 0 && (
         <p style={{ marginTop: 16, paddingTop: 14, borderTop: '1px solid var(--arvo-border-soft)', fontFamily: 'var(--arvo-font-body)', fontSize: 10.5, color: 'var(--arvo-fg-soft)', textAlign: 'center' }}>
-          Toque e segure uma atividade para reordenar dentro do mesmo dia
+          {tv.dragHint ?? 'Toque e segure uma atividade para reordenar dentro do mesmo dia'}
         </p>
       )}
     </div>
