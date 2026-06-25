@@ -4,6 +4,7 @@ import { useI18n } from '../../contexts/I18nContext'
 import { LibraryPicker } from './TripPlacesPanel'
 import PlaceExpensesPanel from './PlaceExpensesPanel'
 import { dayColor, dayColorWash } from './_shared/dayColors'
+import type { TripDestination } from './types'
 
 const RED  = '#D63B2F'
 const GOLD = '#C8B89A'
@@ -52,6 +53,7 @@ interface PlanItem {
   transport_note: string | null
   checkin_day: number | null
   checkout_day: number | null
+  destination_id: number | null
   expense_total?: number
   expense_count?: number
 }
@@ -60,11 +62,28 @@ interface Props {
   tripId: number
   tripCity: string | null
   tripCountry: string | null
+  destinations: TripDestination[]
   canEdit: boolean
   // Notifies the parent page whenever this panel's place list changes (add,
   // delete, reload) so sibling components fetching the same trip's places
   // independently (the map card) can refresh instead of going stale.
   onPlacesChanged?: () => void
+}
+
+// Destino "padrão" de um dia: o(s) cujo intervalo day_start–day_end cobre
+// esse número de dia. Pode haver mais de um num dia de transição.
+function destinationsForDay(day: number | null, destinations: TripDestination[]): TripDestination[] {
+  if (day == null) return []
+  return destinations.filter(d => d.day_start != null && d.day_end != null && d.day_start <= day && day <= d.day_end)
+}
+
+// Destino efetivo de um item: explícito (escolhido manualmente) ou, se não
+// definido, o único destino que cobre o dia do item (se houver mais de um
+// candidato, fica ambíguo de propósito — quem decide é o usuário).
+function effectiveDestination(item: { destination_id: number | null; day_number: number | null }, destinations: TripDestination[]): TripDestination | null {
+  if (item.destination_id != null) return destinations.find(d => d.id === item.destination_id) ?? null
+  const candidates = destinationsForDay(item.day_number, destinations)
+  return candidates.length === 1 ? candidates[0] : null
 }
 
 const CATEGORY_ICONS: Record<string, string> = {
@@ -239,12 +258,14 @@ function NoteEditor({ value, onSave, placeholder }: { value: string | null; onSa
 const LONG_PRESS_MS = 380
 const MOVE_CANCEL_PX = 8
 
-function ItemRow({ item, tripId, canEdit, dragging, dropTarget, onStartDrag, onPatch, onDelete, onReload }: {
+function ItemRow({ item, tripId, canEdit, dragging, dropTarget, destinations, autoOpenStay, onStartDrag, onPatch, onDelete, onReload }: {
   item: PlanItem
   tripId: number
   canEdit: boolean
   dragging: boolean
   dropTarget: boolean
+  destinations: TripDestination[]
+  autoOpenStay?: boolean
   onStartDrag: () => void
   onPatch: (fields: Record<string, unknown>) => void
   onDelete: () => void
@@ -252,11 +273,11 @@ function ItemRow({ item, tripId, canEdit, dragging, dropTarget, onStartDrag, onP
 }) {
   const { t } = useI18n()
   const tv = (t as any).voyage ?? {}
-  const [expanded, setExpanded] = useState(false)
+  const [expanded, setExpanded] = useState(!!autoOpenStay)
   const [editingNote, setEditingNote] = useState(false)
   const [editingName, setEditingName] = useState(false)
   const [showExpenses, setShowExpenses] = useState(false)
-  const [showStayFields, setShowStayFields] = useState(false)
+  const [showStayFields, setShowStayFields] = useState(!!autoOpenStay)
   const isPlace = item.kind === 'place'
   const isTransport = item.kind === 'transport'
   const isNote = item.kind === 'note'
@@ -494,6 +515,17 @@ function ItemRow({ item, tripId, canEdit, dragging, dropTarget, onStartDrag, onP
           check-in/check-out already cover the day/time question. */}
       {expanded && canEdit && (
         <div style={{ padding: '8px 10px 10px', borderTop: '1px solid var(--arvo-border-soft)', display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {destinations.length > 1 && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, alignItems: 'center' }}>
+              <span style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 8, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)' }}>Destino</span>
+              {destinations.map(d => (
+                <button key={d.id} type="button" onClick={() => onPatch({ destination_id: item.destination_id === d.id ? null : d.id })}
+                  style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 10.5, padding: '2px 8px', borderRadius: 999, cursor: 'pointer', border: `1px solid ${item.destination_id === d.id ? 'var(--arvo-fg)' : 'var(--arvo-border)'}`, background: item.destination_id === d.id ? 'var(--arvo-hover-bg)' : 'transparent', color: item.destination_id === d.id ? 'var(--arvo-fg)' : 'var(--arvo-fg-muted)' }}>
+                  {d.city ?? d.country ?? '—'}
+                </button>
+              ))}
+            </div>
+          )}
           {isPlace && (isStay || showStayFields) && (
             <div style={{ padding: 8, borderRadius: 8, background: 'rgba(232,160,32,0.06)', border: '1px solid rgba(232,160,32,0.18)', display: 'flex', flexDirection: 'column', gap: 8 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -585,9 +617,12 @@ function ItemRow({ item, tripId, canEdit, dragging, dropTarget, onStartDrag, onP
 }
 
 // ── Free-item adder ───────────────────────────────────────────────────────────
-function FreeItemAdder({ tripId, onAdded }: { tripId: number; onAdded: () => void }) {
-  const [open, setOpen] = useState(false)
-  const [kind, setKind] = useState<'note' | 'transport'>('note')
+function FreeItemAdder({ tripId, onAdded, forceOpen, initialKind, onClose }: {
+  tripId: number; onAdded: () => void
+  forceOpen?: boolean; initialKind?: 'note' | 'transport'; onClose?: () => void
+}) {
+  const [open, setOpen] = useState(forceOpen ?? false)
+  const [kind, setKind] = useState<'note' | 'transport'>(initialKind ?? 'note')
   const [title, setTitle] = useState('')
   const [day, setDay] = useState('')
   const [transportMode, setTransportMode] = useState<string | null>(null)
@@ -597,6 +632,7 @@ function FreeItemAdder({ tripId, onAdded }: { tripId: number; onAdded: () => voi
 
   function reset() {
     setTitle(''); setDay(''); setTransportMode(null); setArriveTime(''); setDepartTime(''); setOpen(false)
+    onClose?.()
   }
 
   async function save() {
@@ -679,10 +715,13 @@ function FreeItemAdder({ tripId, onAdded }: { tripId: number; onAdded: () => voi
   )
 }
 
-export default function TripItineraryPanel({ tripId, tripCity, tripCountry, canEdit, onPlacesChanged }: Props) {
+export default function TripItineraryPanel({ tripId, tripCity, tripCountry, destinations, canEdit, onPlacesChanged }: Props) {
   const { t } = useI18n()
   const tv = (t as any).voyage ?? {}
   const [items, setItems] = useState<PlanItem[]>([])
+  const [activeTool, setActiveTool] = useState<'place' | 'stay' | 'transport' | 'note' | null>(null)
+  const [showToolMenu, setShowToolMenu] = useState(false)
+  const [pendingStayItemId, setPendingStayItemId] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
 
   // Pointer-events-based drag (works with mouse AND touch, unlike native HTML5
@@ -814,11 +853,27 @@ export default function TripItineraryPanel({ tripId, tripCity, tripCountry, canE
     return items.filter(p => p.checkin_day != null && p.checkout_day != null && p.checkin_day <= d && d <= p.checkout_day)
   }
 
+  // Destinos distintos entre os itens de um dia, na ordem em que aparecem
+  // (sort_order) — num dia de transição (ex: manhã em Paris, noite em
+  // Amsterdã) isso vira ["Paris", "Amsterdã"] e o cabeçalho mostra a seta.
+  function dayDestinationNames(d: number): string[] {
+    if (destinations.length === 0) return []
+    const dayItems = items.filter(p => p.day_number === d).sort((a, b) => a.sort_order - b.sort_order)
+    const names: string[] = []
+    for (const it of dayItems) {
+      const dest = effectiveDestination(it, destinations)
+      const name = dest?.city ?? dest?.country
+      if (name && names[names.length - 1] !== name) names.push(name)
+    }
+    return [...new Set(names)]
+  }
+
   function renderRows(list: PlanItem[]) {
     const sorted = list.slice().sort((a, b) => a.sort_order - b.sort_order)
     return sorted.map(it => (
       <ItemRow
-        key={it.id} item={it} tripId={tripId} canEdit={canEdit}
+        key={it.id} item={it} tripId={tripId} canEdit={canEdit} destinations={destinations}
+        autoOpenStay={it.id === pendingStayItemId}
         dragging={dragVisual.dragId === it.id}
         dropTarget={dragVisual.overId === it.id && dragVisual.dragId !== it.id}
         onStartDrag={() => startDrag(it.id)}
@@ -840,13 +895,61 @@ export default function TripItineraryPanel({ tripId, tripCity, tripCountry, canE
         </a>
       </div>
 
-      {/* Adders — ficam no topo pra não exigir rolar até o fim de roteiros longos, e
-          na mesma linha (LibraryPicker já é flex-wrap, FreeItemAdder entra como mais
-          um item dessa linha em vez de ficar empilhado embaixo). */}
+      {/* Um único "+ Adicionar" no topo (em vez de 3 botões separados) que
+          abre 4 intenções claras; Lugar/Estadia reaproveitam o mesmo
+          LibraryPicker (biblioteca ou colar link), só muda se pergunta o
+          período de estadia em seguida. */}
       {canEdit && (
-        <div style={{ marginBottom: 16, paddingBottom: 14, borderBottom: '1px solid var(--arvo-border-soft)', display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'flex-start' }}>
-          <LibraryPicker tripId={tripId} tripCity={tripCity} tripCountry={tripCountry} onAdded={() => load()} />
-          <FreeItemAdder tripId={tripId} onAdded={load} />
+        <div style={{ marginBottom: 16, paddingBottom: 14, borderBottom: '1px solid var(--arvo-border-soft)' }}>
+          {activeTool === null && !showToolMenu && (
+            <button type="button" onClick={() => setShowToolMenu(true)}
+              style={{ display: 'flex', alignItems: 'center', gap: 5, alignSelf: 'flex-start', fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, letterSpacing: '0.02em', padding: '6px 14px', borderRadius: 6, background: 'var(--arvo-fg)', color: 'var(--arvo-bg)', border: 'none', cursor: 'pointer' }}>
+              + Adicionar
+            </button>
+          )}
+
+          {activeTool === null && showToolMenu && (
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+              <button type="button" onClick={() => { setActiveTool('place'); setShowToolMenu(false) }}
+                style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, padding: '5px 11px', borderRadius: 6, border: '1px solid var(--arvo-border)', background: 'none', color: 'var(--arvo-fg)', cursor: 'pointer' }}>
+                📍 Lugar
+              </button>
+              <button type="button" onClick={() => { setActiveTool('stay'); setShowToolMenu(false) }}
+                style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, padding: '5px 11px', borderRadius: 6, border: '1px solid var(--arvo-border)', background: 'none', color: 'var(--arvo-fg)', cursor: 'pointer' }}>
+                🏨 Estadia ou aluguel
+              </button>
+              <button type="button" onClick={() => { setActiveTool('transport'); setShowToolMenu(false) }}
+                style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, padding: '5px 11px', borderRadius: 6, border: '1px solid var(--arvo-border)', background: 'none', color: 'var(--arvo-fg)', cursor: 'pointer' }}>
+                🚆 Transporte
+              </button>
+              <button type="button" onClick={() => { setActiveTool('note'); setShowToolMenu(false) }}
+                style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, padding: '5px 11px', borderRadius: 6, border: '1px solid var(--arvo-border)', background: 'none', color: 'var(--arvo-fg)', cursor: 'pointer' }}>
+                📝 Anotação
+              </button>
+              <button type="button" onClick={() => setShowToolMenu(false)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--arvo-fg-soft)', fontSize: 12, padding: 4 }}>✕</button>
+            </div>
+          )}
+
+          {(activeTool === 'place' || activeTool === 'stay') && (
+            <LibraryPicker
+              tripId={tripId} tripCity={tripCity} tripCountry={tripCountry} destinations={destinations}
+              forceOpen forceMode="library"
+              onClose={() => setActiveTool(null)}
+              onAdded={p => {
+                if (activeTool === 'stay') setPendingStayItemId(p.id)
+                load()
+              }}
+            />
+          )}
+
+          {(activeTool === 'transport' || activeTool === 'note') && (
+            <FreeItemAdder
+              tripId={tripId} forceOpen initialKind={activeTool}
+              onClose={() => setActiveTool(null)}
+              onAdded={load}
+            />
+          )}
         </div>
       )}
 
@@ -865,7 +968,12 @@ export default function TripItineraryPanel({ tripId, tripCity, tripCountry, canE
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
                   <span style={{ width: 7, height: 7, borderRadius: 999, background: dayColor(d), flexShrink: 0 }} />
-                  <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: dayColor(d) }}>{(tv.day ?? 'Dia {n}').replace('{n}', String(d))}</p>
+                  <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: dayColor(d) }}>
+                    {(tv.day ?? 'Dia {n}').replace('{n}', String(d))}
+                    {dayDestinationNames(d).length > 0 && (
+                      <span style={{ color: 'var(--arvo-fg-soft)', letterSpacing: '0.04em', textTransform: 'none' }}> — {dayDestinationNames(d).join(' → ')}</span>
+                    )}
+                  </p>
                 </span>
                 {canEdit && items.some(p => p.day_number === d && p.arrive_time) && (
                   <button type="button" onClick={() => sortDayByTime(d)} title="Reordenar os itens deste dia pelo horário de chegada"

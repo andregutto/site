@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { apiFetch } from '../../lib/api'
 import { useI18n } from '../../contexts/I18nContext'
 import PlaceExpensesPanel from './PlaceExpensesPanel'
+import type { TripDestination } from './types'
 
 const RED = '#D63B2F'
 const GOLD = '#C8B89A'
@@ -91,13 +92,14 @@ function StarRating({ value, onChange }: { value: number | null; onChange?: (v: 
 }
 
 // ── Add from library picker ───────────────────────────────────────────────────
-export function LibraryPicker({ tripId, tripCity, tripCountry, onAdded }: {
-  tripId: number; tripCity: string | null; tripCountry: string | null; onAdded: (p: TripPlace) => void
+export function LibraryPicker({ tripId, tripCity, tripCountry, destinations = [], onAdded, forceOpen, forceMode, onClose }: {
+  tripId: number; tripCity: string | null; tripCountry: string | null; destinations?: TripDestination[]; onAdded: (p: TripPlace) => void
+  forceOpen?: boolean; forceMode?: 'library' | 'url'; onClose?: () => void
 }) {
   const { t } = useI18n()
   const tv = (t as any).voyage ?? {}
-  const [open, setOpen] = useState(false)
-  const [mode, setMode] = useState<'library' | 'url'>('library')
+  const [open, setOpen] = useState(forceOpen ?? false)
+  const [mode, setMode] = useState<'library' | 'url'>(forceMode ?? 'library')
   const [library, setLibrary] = useState<LibraryPlace[]>([])
   const [loading, setLoading] = useState(false)
   const [search, setSearch] = useState('')
@@ -114,8 +116,21 @@ export function LibraryPicker({ tripId, tripCity, tripCountry, onAdded }: {
   const [pendingRename, setPendingRename] = useState<TripPlace | null>(null)
   const [renameValue, setRenameValue] = useState('')
   const [renaming, setRenaming] = useState(false)
+  // Viagem multi-destino (Eurotrip): em vez de filtrar sempre pelo destino
+  // único da viagem, deixa o usuário escolher qual destino ele tá montando
+  // agora — senão lugares de outras cidades ficam "escondidos" sem o
+  // usuário entender por quê. null = nenhum filtro de destino selecionado.
+  const [destFilterId, setDestFilterId] = useState<number | null>(null)
+  const destFilter = destinations.find(d => d.id === destFilterId) ?? null
 
-  const hasDestination = !!(tripCity || tripCountry)
+  const filterCity = destinations.length > 0 ? destFilter?.city ?? null : tripCity
+  const filterCountry = destinations.length > 0 ? destFilter?.country ?? null : tripCountry
+  const hasDestination = !!(filterCity || filterCountry)
+
+  useEffect(() => {
+    if (forceOpen && forceMode !== 'url') openPicker()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   async function openPicker() {
     setOpen(true)
@@ -140,6 +155,7 @@ export function LibraryPicker({ tripId, tripCity, tripCountry, onAdded }: {
           lng: p.lng,
           google_maps_url: p.google_maps_url,
           opening_hours: p.opening_hours,
+          destination_id: destFilterId,
         }),
       })
       onAdded(data.place)
@@ -156,7 +172,7 @@ export function LibraryPicker({ tripId, tripCity, tripCountry, onAdded }: {
     try {
       const data = await apiFetch<{ place: LibraryPlace; trip_place: TripPlace | null }>(
         '/voyage/places/from-url',
-        { method: 'POST', body: JSON.stringify({ url: urlInput.trim(), trip_id: tripId }) }
+        { method: 'POST', body: JSON.stringify({ url: urlInput.trim(), trip_id: tripId, destination_id: destFilterId }) }
       )
       if (data.trip_place) {
         if (data.place.address && data.place.address === data.place.name) {
@@ -165,6 +181,7 @@ export function LibraryPicker({ tripId, tripCity, tripCountry, onAdded }: {
         } else {
           onAdded(data.trip_place)
           setOpen(false)
+          onClose?.()
         }
       } else {
         setLibrary(prev => [...prev.filter(p => p.id !== data.place.id), data.place])
@@ -183,8 +200,8 @@ export function LibraryPicker({ tripId, tripCity, tripCountry, onAdded }: {
     const city = normalize(p.city ?? '')
     const addr = normalize(p.address ?? '')
     return (
-      (!!tripCity && (city.includes(normalize(tripCity)) || addr.includes(normalize(tripCity)))) ||
-      (!!tripCountry && (city.includes(normalize(tripCountry)) || addr.includes(normalize(tripCountry))))
+      (!!filterCity && (city.includes(normalize(filterCity)) || addr.includes(normalize(filterCity)))) ||
+      (!!filterCountry && (city.includes(normalize(filterCountry)) || addr.includes(normalize(filterCountry))))
     )
   }
 
@@ -217,6 +234,7 @@ export function LibraryPicker({ tripId, tripCity, tripCountry, onAdded }: {
       }
       setPendingRename(null)
       setOpen(false)
+      onClose?.()
     } finally {
       setRenaming(false)
     }
@@ -244,7 +262,7 @@ export function LibraryPicker({ tripId, tripCity, tripCountry, onAdded }: {
           {renaming ? '…' : 'Salvar'}
         </button>
       </div>
-      <button type="button" onClick={() => { onAdded(pendingRename); setPendingRename(null); setOpen(false) }}
+      <button type="button" onClick={() => { onAdded(pendingRename); setPendingRename(null); setOpen(false); onClose?.() }}
         style={{ marginTop: 8, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)', padding: 0 }}>
         Manter o endereço como nome
       </button>
@@ -284,14 +302,14 @@ export function LibraryPicker({ tripId, tripCity, tripCountry, onAdded }: {
         <div style={{ display: 'flex', gap: 12 }}>
           <button type="button" onClick={() => setMode('library')}
             style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.20em', textTransform: 'uppercase', color: mode === 'library' ? 'var(--arvo-fg)' : 'var(--arvo-fg-muted)', borderBottom: mode === 'library' ? '1px solid var(--arvo-fg)' : '1px solid transparent', paddingBottom: 2 }}>
-            {!showAll && hasDestination && destinationPlaces.length > 0 ? `${tripCity ?? tripCountry}` : 'Biblioteca'}
+            {!showAll && hasDestination && destinationPlaces.length > 0 ? `${filterCity ?? filterCountry}` : 'Biblioteca'}
           </button>
           <button type="button" onClick={() => setMode('url')}
             style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.20em', textTransform: 'uppercase', color: mode === 'url' ? 'var(--arvo-fg)' : 'var(--arvo-fg-muted)', borderBottom: mode === 'url' ? '1px solid var(--arvo-fg)' : '1px solid transparent', paddingBottom: 2 }}>
             Link Maps
           </button>
         </div>
-        <button type="button" onClick={() => setOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--arvo-fg-soft)', fontSize: 12 }}>✕</button>
+        <button type="button" onClick={() => { setOpen(false); onClose?.() }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--arvo-fg-soft)', fontSize: 12 }}>✕</button>
       </div>
 
       {mode === 'url' ? (
@@ -320,6 +338,20 @@ export function LibraryPicker({ tripId, tripCity, tripCountry, onAdded }: {
         </form>
       ) : (
         <>
+          {destinations.length > 1 && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 8 }}>
+              <button type="button" onClick={() => setDestFilterId(null)}
+                style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 10.5, padding: '3px 9px', borderRadius: 999, border: `1px solid ${destFilterId === null ? 'var(--arvo-fg)' : 'var(--arvo-border)'}`, background: destFilterId === null ? 'var(--arvo-hover-bg)' : 'transparent', color: destFilterId === null ? 'var(--arvo-fg)' : 'var(--arvo-fg-muted)', cursor: 'pointer' }}>
+                Todos os destinos
+              </button>
+              {destinations.map(d => (
+                <button key={d.id} type="button" onClick={() => setDestFilterId(d.id)}
+                  style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 10.5, padding: '3px 9px', borderRadius: 999, border: `1px solid ${destFilterId === d.id ? 'var(--arvo-fg)' : 'var(--arvo-border)'}`, background: destFilterId === d.id ? 'var(--arvo-hover-bg)' : 'transparent', color: destFilterId === d.id ? 'var(--arvo-fg)' : 'var(--arvo-fg-muted)', cursor: 'pointer' }}>
+                  {d.city ?? d.country}
+                </button>
+              ))}
+            </div>
+          )}
           <input
             type="text"
             placeholder="Buscar…"
@@ -337,7 +369,7 @@ export function LibraryPicker({ tripId, tripCity, tripCountry, onAdded }: {
           ) : filtered.length === 0 && !search ? (
             <div>
               <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)', marginBottom: 8 }}>
-                Nenhum lugar de {tripCity ?? tripCountry} na biblioteca.
+                Nenhum lugar de {filterCity ?? filterCountry} na biblioteca.
               </p>
               <button type="button" onClick={() => setShowAll(true)}
                 style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>

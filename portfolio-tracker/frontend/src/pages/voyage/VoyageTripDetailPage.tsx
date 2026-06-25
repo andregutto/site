@@ -3,14 +3,14 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { apiFetch } from '../../lib/api'
 import { useAuth } from '../../contexts/AuthContext'
 import { useI18n } from '../../contexts/I18nContext'
-import TripFormModal from './TripFormModal'
+import TripEditPanel from './TripEditPanel'
 import CostCard from './CostCard'
 import MembersPanel from './MembersPanel'
 import { ShareModal } from './ShareTripPanel'
 import TripItineraryPanel from './TripItineraryPanel'
 import TripMapCard from './TripMapCard'
 import Avatar from './_shared/Avatar'
-import type { Trip, TripCost, TripMember } from './types'
+import type { Trip, TripCost, TripMember, TripDestination } from './types'
 
 interface HeroMember {
   id: number
@@ -91,6 +91,14 @@ interface TripDetail {
   trip: Trip
   cost: TripCost
   members: TripMember[]
+  destinations: TripDestination[]
+}
+
+function destinationsLabel(destinations: TripDestination[]): string | null {
+  const names = destinations.map(d => d.city).filter(Boolean) as string[]
+  if (names.length === 0) return null
+  if (names.length <= 3) return names.join(' · ')
+  return `${names.slice(0, 2).join(' · ')} +${names.length - 2}`
 }
 
 export default function VoyageTripDetailPage() {
@@ -102,7 +110,7 @@ export default function VoyageTripDetailPage() {
 
   const [data, setData] = useState<TripDetail | null>(null)
   const [loading, setLoading] = useState(true)
-  const [showEdit, setShowEdit] = useState(false)
+  const [showEditPanel, setShowEditPanel] = useState(false)
   const [showShare, setShowShare] = useState(false)
   const [showMembers, setShowMembers] = useState(false)
   // TripMapCard and TripItineraryPanel each fetch this trip's places
@@ -142,7 +150,7 @@ export default function VoyageTripDetailPage() {
     )
   }
 
-  const { trip, cost, members } = data
+  const { trip, cost, members, destinations } = data
   const isOwner = trip.user_id === user?.id
   const myMembership = members.find(m => m.user_id === user?.id && m.status === 'active')
   const canEdit = isOwner || myMembership?.role === 'editor'
@@ -199,15 +207,17 @@ export default function VoyageTripDetailPage() {
 
           {/* Top-left buttons: Edit + Share */}
           <div style={{ position: 'absolute', top: 16, left: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <button
-              onClick={() => setShowEdit(true)}
-              style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'rgba(13,13,13,0.55)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, padding: '5px 12px', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'rgba(255,255,255,0.80)', letterSpacing: '0.04em' }}
-            >
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <path strokeLinecap="round" d="M8.5 1.5l2 2L4 10H2v-2L8.5 1.5z" />
-              </svg>
-              {tv.editTripBtn ?? 'Editar'}
-            </button>
+            {isOwner && (
+              <button
+                onClick={() => setShowEditPanel(v => !v)}
+                style={{ display: 'flex', alignItems: 'center', gap: 5, background: showEditPanel ? 'rgba(200,184,154,0.30)' : 'rgba(13,13,13,0.55)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, padding: '5px 12px', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'rgba(255,255,255,0.80)', letterSpacing: '0.04em' }}
+              >
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <path strokeLinecap="round" d="M8.5 1.5l2 2L4 10H2v-2L8.5 1.5z" />
+                </svg>
+                {tv.editTripBtn ?? 'Editar'}
+              </button>
+            )}
             {trip.user_id === user?.id && (
               <button
                 onClick={() => setShowShare(true)}
@@ -238,9 +248,9 @@ export default function VoyageTripDetailPage() {
               {trip.title}
             </h1>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-              {trip.destination && (
+              {(destinationsLabel(destinations) ?? (trip.destination ? `${trip.destination}${trip.country ? `, ${trip.country}` : ''}` : null)) && (
                 <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'rgba(255,255,255,0.65)' }}>
-                  {trip.destination}{trip.country ? `, ${trip.country}` : ''}
+                  {destinationsLabel(destinations) ?? `${trip.destination}${trip.country ? `, ${trip.country}` : ''}`}
                 </span>
               )}
               {dateStr && (
@@ -252,6 +262,17 @@ export default function VoyageTripDetailPage() {
           </div>
         </div>
       </div>
+
+      {showEditPanel && isOwner && (
+        <TripEditPanel
+          trip={trip}
+          destinations={destinations}
+          onSaved={updatedTrip => setData(prev => prev ? { ...prev, trip: updatedTrip } : prev)}
+          onDestinationsChanged={updated => setData(prev => prev ? { ...prev, destinations: updated } : prev)}
+          onDeleted={() => navigate('/voyage')}
+          onClose={() => setShowEditPanel(false)}
+        />
+      )}
 
       {/* Summary */}
       {trip.summary && (
@@ -279,6 +300,7 @@ export default function VoyageTripDetailPage() {
         tripId={Number(id)}
         tripCity={trip.destination}
         tripCountry={trip.country}
+        destinations={destinations}
         canEdit={canEdit}
         onPlacesChanged={bumpPlacesVersion}
       />
@@ -318,18 +340,6 @@ export default function VoyageTripDetailPage() {
           trip={trip}
           onUpdate={fields => setData(prev => prev ? { ...prev, trip: { ...prev.trip, ...fields } } : prev)}
           onClose={() => setShowShare(false)}
-        />
-      )}
-
-      {showEdit && (
-        <TripFormModal
-          trip={trip}
-          onClose={() => setShowEdit(false)}
-          onSaved={updatedTrip => {
-            setShowEdit(false)
-            setData(prev => prev ? { ...prev, trip: updatedTrip } : prev)
-          }}
-          onDeleted={() => navigate('/voyage')}
         />
       )}
     </div>

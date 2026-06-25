@@ -1,5 +1,15 @@
 export type TripStatus = 'planning' | 'ongoing' | 'past'
 
+export interface TripDestination {
+  id: number
+  trip_id: number
+  city: string | null
+  country: string | null
+  day_start: number | null
+  day_end: number | null
+  sort_order: number
+}
+
 export interface Trip {
   id: number
   user_id: string
@@ -104,6 +114,7 @@ export interface TripPlace {
   rating: number | null
   visited: boolean
   trip_note: string | null
+  destination_id: number | null
   expense_total?: number
   expense_count?: number
 }

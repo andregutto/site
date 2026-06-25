@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { apiFetch } from '../../lib/api'
 import { useI18n } from '../../contexts/I18nContext'
-import PlaceAutocompleteInput from './PlaceAutocompleteInput'
-import type { Trip, TripStatus } from './types'
+import DestinationsEditor from './DestinationsEditor'
+import type { Trip, TripStatus, TripDestination } from './types'
 
 const RED = '#D63B2F'
 
@@ -19,15 +19,20 @@ export default function TripFormModal({ trip, onClose, onSaved, onFromMoment, on
   const tv = (t as any).voyage ?? {}
 
   const [title, setTitle] = useState(trip?.title ?? '')
-  const [destination, setDestination] = useState(trip?.destination ?? '')
-  const [country, setCountry] = useState(trip?.country ?? '')
-  const [destLat, setDestLat] = useState<number | null>(trip?.dest_lat ?? null)
-  const [destLng, setDestLng] = useState<number | null>(trip?.dest_lng ?? null)
+  // Destino único legado — não há mais campo de UI pra editar isso aqui
+  // (substituído pelo DestinationsEditor); mantido só pra não quebrar o
+  // body enviado quando trip existir (esse modal só é usado pra criação
+  // hoje, mas a prop trip? continua suportada no tipo).
+  const destination = trip?.destination ?? ''
+  const country = trip?.country ?? ''
+  const destLat = trip?.dest_lat ?? null
+  const destLng = trip?.dest_lng ?? null
   const [startDate, setStartDate] = useState(trip?.start_date ?? '')
   const [endDate, setEndDate] = useState(trip?.end_date ?? '')
   const [status, setStatus] = useState<TripStatus>(trip?.status ?? 'planning')
   const [summary, setSummary] = useState(trip?.summary ?? '')
   const [photoAlbumUrl, setPhotoAlbumUrl] = useState(trip?.photo_album_url ?? '')
+  const [destinations, setDestinations] = useState<TripDestination[]>([])
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [error, setError] = useState('')
@@ -63,6 +68,9 @@ export default function TripFormModal({ trip, onClose, onSaved, onFromMoment, on
         status,
         summary: summary.trim() || null,
         photo_album_url: photoAlbumUrl.trim() || null,
+        ...(!trip && destinations.length > 0 && {
+          destinations: destinations.map(d => ({ city: d.city, country: d.country, day_start: d.day_start, day_end: d.day_end })),
+        }),
       }
       let result: { trip: Trip }
       if (trip) {
@@ -170,31 +178,13 @@ export default function TripFormModal({ trip, onClose, onSaved, onFromMoment, on
             />
           </label>
 
-          {/* Destination + Country */}
-          <div className="grid grid-cols-2 gap-3">
-            <label>
-              <span style={labelStyle}>{tv.destinationLabel ?? 'Destino'}</span>
-              <PlaceAutocompleteInput
-                value={destination}
-                onChange={v => { setDestination(v); setDestLat(null); setDestLng(null) }}
-                onSelect={d => {
-                  if (d.city) setDestination(d.city)
-                  if (d.country) setCountry(d.country)
-                  setDestLat(d.lat)
-                  setDestLng(d.lng)
-                }}
-                placeholder={tv.autocomplete?.destinationPlaceholder ?? 'ex: Lisboa'}
-                style={fieldStyle}
-              />
-            </label>
-            <label>
-              <span style={labelStyle}>{tv.countryLabel ?? 'País'}</span>
-              <input style={fieldStyle} value={country} onChange={e => setCountry(e.target.value)} placeholder="ex: Portugal"
-                onFocus={e => (e.target.style.borderColor = 'var(--arvo-gold)')}
-                onBlur={e => (e.target.style.borderColor = 'var(--arvo-border)')}
-              />
-            </label>
-          </div>
+          {/* Destination(s) — viagens com múltiplos destinos (Eurotrip) ganham
+              um destino por trecho, com o intervalo de dias de cada um.
+              Single-destination continua funcionando com só 1 chip. */}
+          <label>
+            <span style={labelStyle}>Destinos</span>
+            <DestinationsEditor destinations={destinations} onChange={setDestinations} />
+          </label>
 
           {/* Dates */}
           <div className="grid grid-cols-2 gap-3">

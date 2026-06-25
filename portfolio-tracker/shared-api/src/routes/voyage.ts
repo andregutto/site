@@ -153,6 +153,84 @@ async function attachPlaceExpenses<T extends { id: number }>(places: T[]): Promi
   }))
 }
 
+// ── Destinations (multi-destino / Eurotrip) ──────────────────────────────────
+interface TripDestination {
+  id: number
+  trip_id: number
+  city: string | null
+  country: string | null
+  day_start: number | null
+  day_end: number | null
+  sort_order: number
+}
+
+async function getDestinations(tripId: number): Promise<TripDestination[]> {
+  const { data } = await supabaseAdmin
+    .from('voyage_trip_destinations').select('*').eq('trip_id', tripId).order('sort_order')
+  return data ?? []
+}
+
+// ── GET /api/voyage/trips/:id/destinations ───────────────────────────────────
+router.get('/trips/:id/destinations', requireAuth, async (req, res: Response) => {
+  res.json({ destinations: await getDestinations(Number(req.params.id)) })
+})
+
+// ── POST /api/voyage/trips/:id/destinations ──────────────────────────────────
+router.post('/trips/:id/destinations', requireAuth, async (req, res: Response) => {
+  const userId = uid(req)
+  const tripId = Number(req.params.id)
+  const { city, country, day_start, day_end } = req.body as { city?: string; country?: string; day_start?: number; day_end?: number }
+
+  const { data: trip } = await supabaseAdmin.from('voyage_trips').select('user_id').eq('id', tripId).single()
+  if (!trip || trip.user_id !== userId) { res.status(403).json({ error: 'Apenas o owner pode editar destinos' }); return }
+
+  const { count } = await supabaseAdmin.from('voyage_trip_destinations').select('id', { count: 'exact', head: true }).eq('trip_id', tripId)
+
+  const { data, error } = await supabaseAdmin.from('voyage_trip_destinations').insert({
+    trip_id: tripId, city: city?.trim() || null, country: country?.trim() || null,
+    day_start: day_start ?? null, day_end: day_end ?? null, sort_order: count ?? 0,
+  }).select('*').single()
+  if (error) { res.status(500).json({ error: error.message }); return }
+  res.status(201).json({ destination: data })
+})
+
+// ── PATCH /api/voyage/trips/:id/destinations/:destId ─────────────────────────
+router.patch('/trips/:id/destinations/:destId', requireAuth, async (req, res: Response) => {
+  const userId = uid(req)
+  const tripId = Number(req.params.id)
+  const destId = Number(req.params.destId)
+  const { city, country, day_start, day_end } = req.body as { city?: string | null; country?: string | null; day_start?: number | null; day_end?: number | null }
+
+  const { data: trip } = await supabaseAdmin.from('voyage_trips').select('user_id').eq('id', tripId).single()
+  if (!trip || trip.user_id !== userId) { res.status(403).json({ error: 'Apenas o owner pode editar destinos' }); return }
+
+  const update: Record<string, unknown> = {}
+  if (city !== undefined) update.city = city?.trim() || null
+  if (country !== undefined) update.country = country?.trim() || null
+  if (day_start !== undefined) update.day_start = day_start
+  if (day_end !== undefined) update.day_end = day_end
+
+  const { data, error } = await supabaseAdmin.from('voyage_trip_destinations')
+    .update(update).eq('id', destId).eq('trip_id', tripId).select('*').single()
+  if (error) { res.status(500).json({ error: error.message }); return }
+  res.json({ destination: data })
+})
+
+// ── DELETE /api/voyage/trips/:id/destinations/:destId ────────────────────────
+router.delete('/trips/:id/destinations/:destId', requireAuth, async (req, res: Response) => {
+  const userId = uid(req)
+  const tripId = Number(req.params.id)
+  const destId = Number(req.params.destId)
+
+  const { data: trip } = await supabaseAdmin.from('voyage_trips').select('user_id').eq('id', tripId).single()
+  if (!trip || trip.user_id !== userId) { res.status(403).json({ error: 'Apenas o owner pode editar destinos' }); return }
+
+  // Itens que apontavam pra esse destino voltam a inferir pelo dia (não ficam órfãos)
+  await supabaseAdmin.from('voyage_trip_places').update({ destination_id: null }).eq('destination_id', destId)
+  await supabaseAdmin.from('voyage_trip_destinations').delete().eq('id', destId).eq('trip_id', tripId)
+  res.json({ ok: true })
+})
+
 // ── Pending trip invites (exported for notifications.ts) ─────────────────────
 export interface PendingTripInvite {
   key: string
@@ -279,17 +357,25 @@ router.get('/trips', requireAuth, async (req, res: Response) => {
 // ── POST /api/voyage/trips ────────────────────────────────────────────────────
 router.post('/trips', requireAuth, async (req, res: Response) => {
   const userId = uid(req)
-  const { title, destination, country, cover_image_url, cover_image_position, start_date, end_date, summary, status, dest_lat, dest_lng } = req.body
+  const { title, destination, country, cover_image_url, cover_image_position, start_date, end_date, summary, status, dest_lat, dest_lng, destinations } = req.body as {
+    title: string; destination?: string; country?: string; cover_image_url?: string; cover_image_position?: string
+    start_date?: string; end_date?: string; summary?: string; status?: string; dest_lat?: number; dest_lng?: number
+    destinations?: { city?: string; country?: string; day_start?: number; day_end?: number }[]
+  }
 
   if (!title?.trim()) { res.status(400).json({ error: 'title required' }); return }
+
+  // Compat: campo único destination/country mostrado em listas/cards reflete
+  // o primeiro destino quando a viagem já nasce com vários (Eurotrip).
+  const firstDest = destinations?.[0]
 
   const { data: trip, error } = await supabaseAdmin
     .from('voyage_trips')
     .insert({
       user_id: userId,
       title: title.trim(),
-      destination: destination ?? null,
-      country: country ?? null,
+      destination: firstDest?.city ?? destination ?? null,
+      country: firstDest?.country ?? country ?? null,
       dest_lat: dest_lat ?? null,
       dest_lng: dest_lng ?? null,
       cover_image_url: cover_image_url ?? null,
@@ -312,6 +398,15 @@ router.post('/trips', requireAuth, async (req, res: Response) => {
     status: 'active',
     joined_at: new Date().toISOString(),
   })
+
+  if (destinations && destinations.length > 0) {
+    await supabaseAdmin.from('voyage_trip_destinations').insert(
+      destinations.map((d, i) => ({
+        trip_id: trip.id, city: d.city?.trim() || null, country: d.country?.trim() || null,
+        day_start: d.day_start ?? null, day_end: d.day_end ?? null, sort_order: i,
+      }))
+    )
+  }
 
   res.status(201).json({ trip })
 })
@@ -342,10 +437,11 @@ router.get('/trips/:id', requireAuth, async (req, res: Response) => {
     if (!member) { res.status(403).json({ error: 'Forbidden' }); return }
   }
 
-  const [cost, placesRes, membersRes] = await Promise.all([
+  const [cost, placesRes, membersRes, destinations] = await Promise.all([
     buildCostSummary(tripId, userId),
     supabaseAdmin.from('voyage_trip_places').select('*').eq('trip_id', tripId).order('day_number', { ascending: true, nullsFirst: false }).order('sort_order'),
     supabaseAdmin.from('voyage_trip_members').select('id, user_id, invite_email, role, status, joined_at').eq('trip_id', tripId),
+    getDestinations(tripId),
   ])
 
   // Agrega gasto por lugar (dono sempre; membros só se show_place_expenses)
@@ -353,7 +449,7 @@ router.get('/trips/:id', requireAuth, async (req, res: Response) => {
     ? await attachPlaceExpenses(placesRes.data ?? [])
     : (placesRes.data ?? [])
 
-  res.json({ trip, cost, places, members: membersRes.data ?? [] })
+  res.json({ trip, cost, places, members: membersRes.data ?? [], destinations })
 })
 
 // ── PATCH /api/voyage/trips/:id ───────────────────────────────────────────────
@@ -704,7 +800,7 @@ async function reverseGeocode(lat: number, lng: number): Promise<string | null> 
 // ── POST /api/voyage/places/from-url  (importar lugar por link do Google Maps) ─
 router.post('/places/from-url', requireAuth, async (req, res: Response) => {
   const userId = uid(req)
-  const { url, trip_id } = req.body as { url: string; trip_id?: number }
+  const { url, trip_id, destination_id } = req.body as { url: string; trip_id?: number; destination_id?: number | null }
   if (!url?.trim()) { res.status(400).json({ error: 'URL obrigatória' }); return }
 
   let resolvedUrl = url.trim()
@@ -805,7 +901,7 @@ router.post('/places/from-url', requireAuth, async (req, res: Response) => {
           trip_id, library_place_id: place.id, name: place.name,
           category: place.category, lat: place.lat, lng: place.lng, address: place.address,
           google_maps_url: place.google_maps_url, opening_hours: place.opening_hours,
-          sort_order: (count ?? 0) + 1, added_by: userId,
+          sort_order: (count ?? 0) + 1, added_by: userId, destination_id: destination_id ?? null,
         })
         .select().single()
       trip_place = tp
@@ -1033,7 +1129,7 @@ router.patch('/trips/:id/places/:placeId', requireAuth, async (req, res: Respons
   const placeId = Number(req.params.placeId)
   const { visited, trip_note, day_number, is_highlight, rating, sort_order,
           arrive_time, depart_time, transport_mode, transport_note,
-          name, checkin_day, checkout_day } = req.body
+          name, checkin_day, checkout_day, destination_id } = req.body
 
   const update: Record<string, unknown> = {}
   if (visited        !== undefined) update.visited        = visited
@@ -1049,6 +1145,7 @@ router.patch('/trips/:id/places/:placeId', requireAuth, async (req, res: Respons
   if (name           !== undefined) update.name           = name
   if (checkin_day    !== undefined) update.checkin_day    = checkin_day
   if (checkout_day   !== undefined) update.checkout_day   = checkout_day
+  if (destination_id !== undefined) update.destination_id = destination_id
 
   const { data, error } = await supabaseAdmin
     .from('voyage_trip_places')
@@ -1551,14 +1648,15 @@ router.get('/public/:token', async (req, res: Response) => {
     res.status(410).json({ error: 'Link expirado' }); return
   }
 
-  const [placesRes, costRes, ownerRes] = await Promise.all([
+  const [placesRes, costRes, ownerRes, destinations] = await Promise.all([
     supabaseAdmin.from('voyage_trip_places')
-      .select('id, kind, name, category, address, lat, lng, google_place_id, google_maps_url, opening_hours, day_number, sort_order, is_highlight, visited, rating, trip_note, arrive_time, depart_time, transport_mode, transport_note, checkin_day, checkout_day')
+      .select('id, kind, name, category, address, lat, lng, google_place_id, google_maps_url, opening_hours, day_number, sort_order, is_highlight, visited, rating, trip_note, arrive_time, depart_time, transport_mode, transport_note, checkin_day, checkout_day, destination_id')
       .eq('trip_id', trip.id)
       .order('day_number', { ascending: true, nullsFirst: false })
       .order('sort_order'),
     !trip.share_hide_cost ? buildCostSummary(trip.id, trip.user_id) : Promise.resolve(null),
     supabaseAdmin.auth.admin.getUserById(trip.user_id),
+    getDestinations(trip.id),
   ])
 
   // Gasto por lugar na página pública só quando o dono ativou
@@ -1579,6 +1677,7 @@ router.get('/public/:token', async (req, res: Response) => {
     owner_name: ownerName,
     places: publicPlaces,
     cost: costRes,
+    destinations,
   })
 })
 
