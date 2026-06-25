@@ -754,8 +754,8 @@ export async function buildPortfolioSnapshot(
   }
 
   const by_class: SnapshotClassValue[] = result.by_class.map(c => ({
-    key: c.name_key ?? c.name, name: c.name, name_key: c.name_key, color: c.color,
-    value: cvt(c.value_brl), pct: c.pct, target_pct: targetMap.get(c.name) ?? null,
+    key: c.name_key ?? c.name, name: c.name, name_key: c.name_key ?? null, color: c.color,
+    value: cvt(c.value_brl), pct: c.pct ?? 0, target_pct: targetMap.get(c.name) ?? null,
   }))
 
   const by_geography = aggregateByKey(result.by_asset, result.total_brl, getCountryKey, getCountryKey, cvt)

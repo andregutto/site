@@ -1032,10 +1032,9 @@ router.patch('/transactions/bulk-category', requireAuth, async (req, res: Respon
   if (!description) { res.status(400).json({ error: 'description required' }); return }
   const { error, count } = await supabaseAdmin
     .from('finance_transactions')
-    .update({ category_id: category_id ?? null })
+    .update({ category_id: category_id ?? null }, { count: 'exact' })
     .eq('user_id', userId)
     .eq('description', description)
-    .select('id', { count: 'exact', head: true })
   if (error) { res.status(500).json({ error: error.message }); return }
   res.json({ ok: true, updated: count ?? 0 })
 })
@@ -1387,7 +1386,11 @@ router.post('/transactions/csv-parse', requireAuth, async (req, res: Response) =
       user_id: userId, name: csvNames.transfer, icon: '↔️', color: '#6B7280',
       keyword_rules: [], envelope_id: incomeEnv?.id ?? null,
     }).select('id, name, icon, color').single()
-    if (newCat) { transferCat = newCat; categories = [...categories, newCat] }
+    if (newCat) {
+      const newCatWithRules = { ...newCat, keyword_rules: [] as string[] }
+      transferCat = newCatWithRules
+      categories = [...categories, newCatWithRules]
+    }
   }
 
   function matchCategory(description: string): { id: number; name: string; icon: string; color: string } | null {
@@ -2434,7 +2437,7 @@ router.get('/fee-scan', requireAuth, async (req, res: Response) => {
 
   const catMap = new Map<string, { id: string; name: string; icon: string; color: string; total: number; count: number }>()
   for (const tx of feeTxs) {
-    const cat = tx.finance_categories as { id: number; name: string; icon: string; color: string } | null
+    const cat = tx.finance_categories as unknown as { id: number; name: string; icon: string; color: string } | null
     const key = cat ? String(cat.id) : '_uncat'
     const existing = catMap.get(key)
     if (existing) { existing.total += Math.abs(tx.amount); existing.count++ }

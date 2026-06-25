@@ -494,7 +494,7 @@ router.get('/france/:year', requireAuth, async (req, res: Response) => {
   const skippedAssets: string[] = []
 
   for (const d of (divRows ?? [])) {
-    const asset = assetMap[d.asset_id]
+    const asset = assetMap[d.asset_id as number]
     if (!asset) continue
     const currency     = (d.currency ?? asset.currency ?? 'BRL') as string
     const amountOrig   = (d.amount_total != null ? d.amount_total : d.amount_brl) as number
