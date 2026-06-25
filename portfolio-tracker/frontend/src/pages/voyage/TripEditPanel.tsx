@@ -1,5 +1,7 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { apiFetch } from '../../lib/api'
+import { supabase } from '../../lib/supabase'
+import { useAuth } from '../../contexts/AuthContext'
 import { useI18n } from '../../contexts/I18nContext'
 import DestinationsEditor from './DestinationsEditor'
 import type { Trip, TripStatus, TripDestination } from './types'
@@ -16,15 +18,18 @@ interface Props {
 }
 
 // Painel inline (não-modal) anexado ao hero — substitui o antigo modal de
-// edição. Some os campos ficam aqui em vez de cada um clicável
-// separadamente no hero porque título/capa/resumo/datas/destinos formam um
-// conjunto coerente que o owner edita junto, na prática.
+// edição. Título/capa/resumo/datas/destinos formam um conjunto coerente que
+// o owner edita junto, na prática, então ficam todos aqui em vez de cada um
+// clicável separadamente no hero.
 export default function TripEditPanel({ trip, destinations, onSaved, onDestinationsChanged, onDeleted, onClose }: Props) {
   const { t } = useI18n()
   const tv = (t as any).voyage ?? {}
+  const { user } = useAuth()
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [title, setTitle] = useState(trip.title)
   const [coverUrl, setCoverUrl] = useState(trip.cover_image_url ?? '')
+  const [uploadingCover, setUploadingCover] = useState(false)
   const [startDate, setStartDate] = useState(trip.start_date ?? '')
   const [endDate, setEndDate] = useState(trip.end_date ?? '')
   const [status, setStatus] = useState<TripStatus>(trip.status)
@@ -33,6 +38,28 @@ export default function TripEditPanel({ trip, destinations, onSaved, onDestinati
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [error, setError] = useState('')
+
+  async function handleCoverFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file || !user) return
+    setUploadingCover(true)
+    setError('')
+    try {
+      const ext = file.type === 'image/png' ? 'png' : file.type === 'image/webp' ? 'webp' : 'jpg'
+      const path = `${user.id}/${trip.id}.${ext}`
+      const { error: upErr } = await supabase.storage
+        .from('trip-covers')
+        .upload(path, file, { upsert: true, contentType: file.type })
+      if (upErr) throw upErr
+      const { data } = supabase.storage.from('trip-covers').getPublicUrl(path)
+      setCoverUrl(`${data.publicUrl}?v=${Date.now()}`)
+    } catch {
+      setError(tv.errors?.uploadCover ?? 'Erro ao enviar a foto')
+    } finally {
+      setUploadingCover(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
 
   async function deleteTrip() {
     const msg = (tv.confirm?.deleteTripPermanent ?? 'Excluir "{title}" permanentemente? Esta ação não pode ser desfeita.').replace('{title}', trip.title)
@@ -83,6 +110,9 @@ export default function TripEditPanel({ trip, destinations, onSaved, onDestinati
     fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.18em',
     textTransform: 'uppercase', color: 'var(--arvo-fg-muted)',
   }
+  const sectionStyle: React.CSSProperties = {
+    padding: 12, borderRadius: 10, background: 'var(--arvo-hover-bg)', border: '1px solid var(--arvo-border-soft)',
+  }
 
   const statuses: TripStatus[] = ['planning', 'ongoing', 'past']
   const statusLabels: Record<TripStatus, string> = {
@@ -113,25 +143,53 @@ export default function TripEditPanel({ trip, destinations, onSaved, onDestinati
         <input style={fieldStyle} value={title} onChange={e => setTitle(e.target.value)} placeholder="ex: Eurotrip verão 2026" />
       </label>
 
-      <label>
-        <span style={labelStyle}>Destinos</span>
-        <DestinationsEditor tripId={trip.id} destinations={destinations} onChange={onDestinationsChanged} />
-      </label>
+      {/* Datas da viagem — bloco próprio, separado dos destinos, porque os
+          dias de cada destino (abaixo) são relativos a essa data de início. */}
+      <div style={sectionStyle}>
+        <p style={{ ...labelStyle, marginBottom: 8 }}>{tv.tripDatesLabel ?? 'Datas da viagem'}</p>
+        <div className="grid grid-cols-2 gap-3">
+          <label>
+            <span style={{ ...labelStyle, fontSize: 8 }}>{tv.startLabel ?? 'Início'}</span>
+            <input type="date" style={fieldStyle} value={startDate} onChange={e => setStartDate(e.target.value)} />
+          </label>
+          <label>
+            <span style={{ ...labelStyle, fontSize: 8 }}>{tv.endLabel ?? 'Fim'}</span>
+            <input type="date" style={fieldStyle} value={endDate} onChange={e => setEndDate(e.target.value)} />
+          </label>
+        </div>
+      </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <label>
-          <span style={labelStyle}>Início</span>
-          <input type="date" style={fieldStyle} value={startDate} onChange={e => setStartDate(e.target.value)} />
-        </label>
-        <label>
-          <span style={labelStyle}>Fim</span>
-          <input type="date" style={fieldStyle} value={endDate} onChange={e => setEndDate(e.target.value)} />
-        </label>
+      {/* Destinos — bloco separado das datas da viagem; cada destino usa
+          dia 1, 2, 3... relativo ao início acima, não uma data própria. */}
+      <div style={sectionStyle}>
+        <p style={{ ...labelStyle, marginBottom: 8 }}>
+          {tv.destinationsLabel ?? 'Destinos'}
+          <span style={{ textTransform: 'none', letterSpacing: 0, fontFamily: 'var(--arvo-font-body)', color: 'var(--arvo-fg-soft)' }}>
+            {' '}— {tv.destinationsHint ?? 'dia 1, 2, 3… relativo ao início da viagem'}
+          </span>
+        </p>
+        <DestinationsEditor tripId={trip.id} destinations={destinations} onChange={onDestinationsChanged} />
       </div>
 
       <label>
         <span style={labelStyle}>{tv.coverLabel ?? 'Foto de capa'}</span>
-        <input style={fieldStyle} value={coverUrl} onChange={e => setCoverUrl(e.target.value)} placeholder="https://…" />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {coverUrl && (
+            <div style={{ width: 56, height: 56, borderRadius: 8, overflow: 'hidden', flexShrink: 0, border: '1px solid var(--arvo-border)' }}>
+              <img src={coverUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            </div>
+          )}
+          <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={handleCoverFile} style={{ display: 'none' }} id="cover-file-input" />
+          <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploadingCover}
+            style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, padding: '7px 14px', borderRadius: 6, background: 'none', border: '1px solid var(--arvo-border)', color: 'var(--arvo-fg)', cursor: uploadingCover ? 'default' : 'pointer' }}>
+            {uploadingCover ? (tv.uploading ?? 'Enviando…') : coverUrl ? (tv.changePhoto ?? 'Trocar foto') : (tv.choosePhoto ?? 'Escolher foto')}
+          </button>
+          {coverUrl && (
+            <button type="button" onClick={() => setCoverUrl('')} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)', background: 'none', border: 'none', cursor: 'pointer' }}>
+              {tv.remove ?? 'Remover'}
+            </button>
+          )}
+        </div>
       </label>
 
       <label>
@@ -169,7 +227,7 @@ export default function TripEditPanel({ trip, destinations, onSaved, onDestinati
         <button type="button" onClick={deleteTrip} disabled={deleting || saving}
           style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, padding: '7px 14px', borderRadius: 6, background: 'transparent', border: `1px solid ${RED}`, color: RED, cursor: deleting ? 'default' : 'pointer', opacity: deleting ? 0.5 : 1, marginRight: 'auto' }}
         >{deleting ? (tv.deleting ?? 'Excluindo…') : (tv.deleteTrip ?? 'Excluir viagem')}</button>
-        <button type="submit" disabled={saving || deleting}
+        <button type="submit" disabled={saving || deleting || uploadingCover}
           style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, letterSpacing: '0.04em', padding: '7px 18px', borderRadius: 6, background: RED, color: '#fff', border: 'none', cursor: saving ? 'default' : 'pointer', opacity: saving ? 0.7 : 1 }}
         >{saving ? (tv.actions?.saving ?? 'Salvando…') : (tv.actions?.save ?? 'Salvar')}</button>
       </div>

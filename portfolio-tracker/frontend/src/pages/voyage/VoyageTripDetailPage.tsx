@@ -95,10 +95,16 @@ interface TripDetail {
 }
 
 function destinationsLabel(destinations: TripDestination[]): string | null {
-  const names = destinations.map(d => d.city).filter(Boolean) as string[]
-  if (names.length === 0) return null
-  if (names.length <= 3) return names.join(' · ')
-  return `${names.slice(0, 2).join(' · ')} +${names.length - 2}`
+  const withCity = destinations.filter(d => d.city)
+  if (withCity.length === 0) return null
+  // Com 1 destino só, o intervalo de dias é redundante (é a viagem toda) —
+  // só mostra "dia X–Y" quando há mais de um, pra ajudar a diferenciar.
+  const label = (d: TripDestination) => {
+    if (withCity.length === 1 || d.day_start == null) return d.city as string
+    return `${d.city} (${d.day_start}${d.day_end != null && d.day_end !== d.day_start ? `–${d.day_end}` : ''})`
+  }
+  if (withCity.length <= 3) return withCity.map(label).join(' · ')
+  return `${withCity.slice(0, 2).map(label).join(' · ')} +${withCity.length - 2}`
 }
 
 export default function VoyageTripDetailPage() {
@@ -174,7 +180,7 @@ export default function VoyageTripDetailPage() {
       {/* Hero */}
       <div style={{ position: 'relative', borderRadius: 18, overflow: 'hidden', marginBottom: 24 }}>
         {/* Cover */}
-        <div className="h-44 sm:h-52 lg:h-56" style={{ background: '#1a1a18', position: 'relative', overflow: 'hidden' }}>
+        <div className="h-64 sm:h-60 lg:h-64" style={{ background: '#1a1a18', position: 'relative', overflow: 'hidden' }}>
           {trip.cover_image_url ? (
             <img
               src={trip.cover_image_url}
@@ -192,10 +198,11 @@ export default function VoyageTripDetailPage() {
           {/* Gradient */}
           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(13,13,13,0.75) 0%, rgba(13,13,13,0.10) 55%, transparent 100%)' }} />
 
-          {/* Status badge */}
-          <div style={{ position: 'absolute', top: 16, right: 16, display: 'flex', alignItems: 'center', gap: 4, background: 'rgba(13,13,13,0.65)', backdropFilter: 'blur(8px)', padding: '4px 12px', borderRadius: 999, border: `1px solid ${statusColor}30` }}>
-            {trip.status === 'ongoing' && <span style={{ width: 5, height: 5, borderRadius: 999, background: RED, display: 'inline-block' }} />}
-            <span style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: statusColor }}>
+          {/* Status badge — mesmo formato (padding, raio, fundo) dos botões
+              Editar/Compartilhar, só com a cor do status no lugar do ícone+texto branco */}
+          <div style={{ position: 'absolute', top: 16, right: 16, display: 'flex', alignItems: 'center', gap: 5, background: 'rgba(13,13,13,0.55)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, padding: '5px 12px' }}>
+            {trip.status === 'ongoing' && <span style={{ width: 5, height: 5, borderRadius: 999, background: RED, display: 'inline-block', flexShrink: 0 }} />}
+            <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, letterSpacing: '0.04em', color: statusColor }}>
               {statusLabel}
             </span>
           </div>
@@ -247,14 +254,14 @@ export default function VoyageTripDetailPage() {
             <h1 style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 28, letterSpacing: '0.06em', color: '#fff', marginBottom: 4, lineHeight: 1.2 }}>
               {trip.title}
             </h1>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            <div className="flex flex-col sm:flex-row sm:items-center" style={{ gap: 6 }}>
               {(destinationsLabel(destinations) ?? (trip.destination ? `${trip.destination}${trip.country ? `, ${trip.country}` : ''}` : null)) && (
                 <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'rgba(255,255,255,0.65)' }}>
                   {destinationsLabel(destinations) ?? `${trip.destination}${trip.country ? `, ${trip.country}` : ''}`}
                 </span>
               )}
               {dateStr && (
-                <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'rgba(255,255,255,0.50)', background: 'rgba(255,255,255,0.10)', padding: '2px 10px', borderRadius: 999 }}>
+                <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'rgba(255,255,255,0.50)', background: 'rgba(255,255,255,0.10)', padding: '2px 10px', borderRadius: 999, alignSelf: 'flex-start' }}>
                   {dateStr}
                 </span>
               )}
