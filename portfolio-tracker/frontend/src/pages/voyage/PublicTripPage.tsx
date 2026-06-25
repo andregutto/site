@@ -6,6 +6,7 @@ import 'leaflet/dist/leaflet.css'
 import { useTheme } from '../../contexts/ThemeContext'
 import { useI18n } from '../../contexts/I18nContext'
 import LanguageSelector from '../../components/LanguageSelector'
+import ArvoLoader from '../../components/ArvoLoader'
 import { dayColor, dayColorWash } from './_shared/dayColors'
 import OpeningHoursBlock from './_shared/OpeningHours'
 
@@ -59,6 +60,7 @@ interface PublicTrip {
   end_date: string | null
   summary: string | null
   status: string
+  photo_album_url: string | null
 }
 
 interface PublicCost {
@@ -295,6 +297,7 @@ export default function PublicTripPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [selectedDay, setSelectedDay] = useState<number | null>(null)
+  const [showKmlHelp, setShowKmlHelp] = useState(false)
 
   useEffect(() => {
     if (!token) return
@@ -314,10 +317,7 @@ export default function PublicTripPage() {
   if (loading) {
     return (
       <div className={themeClass} style={{ minHeight: '100vh', background: 'var(--arvo-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <svg width="32" height="32" viewBox="0 0 32 32" fill="none" stroke="rgba(200,184,154,0.35)" strokeWidth="1.2" style={{ animation: 'pulse 1.5s ease infinite' }}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M2 22l8-14 10 8 8-12 8 6"/>
-        <path strokeLinecap="round" d="M2 28h28"/>
-      </svg>
+        <ArvoLoader size={48} style={{ color: 'var(--arvo-gold)' }} />
       </div>
     )
   }
@@ -366,7 +366,7 @@ export default function PublicTripPage() {
   return (
     <div className={themeClass} style={{ minHeight: '100vh', background: 'var(--arvo-bg)' }}>
       {/* Hero */}
-      <div style={{ position: 'relative', height: 420, background: '#1a1a18', overflow: 'hidden' }}>
+      <div style={{ position: 'relative', height: 300, background: '#1a1a18', overflow: 'hidden' }}>
         {trip.cover_image_url ? (
           <img
             src={trip.cover_image_url}
@@ -382,11 +382,13 @@ export default function PublicTripPage() {
           </div>
         )}
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(13,13,13,0.85) 0%, rgba(13,13,13,0.15) 60%, transparent 100%)' }} />
+        {/* Top scrim — sem isso o logo/seletor de idioma sumiam em fotos claras no topo */}
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 80, background: 'linear-gradient(to bottom, rgba(13,13,13,0.55) 0%, transparent 100%)' }} />
 
         {/* Arvo badge */}
-        <div style={{ position: 'absolute', top: 20, left: 24, display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ position: 'absolute', top: 18, left: 24, display: 'flex', alignItems: 'center', gap: 8 }}>
           <img src="/brand/logo/arvo-symbol-gold.svg" width="16" height="17" alt="" />
-          <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, letterSpacing: '0.22em', color: 'rgba(200,184,154,0.7)' }}>arvo voyage</span>
+          <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, letterSpacing: '0.22em', color: 'rgba(200,184,154,0.85)' }}>arvo voyage</span>
         </div>
 
         {/* Language selector — overrides the theme CSS vars the shared
@@ -395,7 +397,7 @@ export default function PublicTripPage() {
             not theme-driven). */}
         <div
           style={{
-            position: 'absolute', top: 16, right: 24,
+            position: 'absolute', top: 14, right: 24,
             ['--arvo-fg' as any]: '#fff',
             ['--arvo-fg-soft' as any]: 'rgba(255,255,255,0.55)',
             ['--arvo-fg-faint' as any]: 'rgba(255,255,255,0.3)',
@@ -548,29 +550,75 @@ export default function PublicTripPage() {
         )}
 
         {/* Download + import actions */}
-        {withCoords.length > 0 && (
-          <div style={{ display: 'flex', gap: 10, marginBottom: 32, marginTop: 16, flexWrap: 'wrap', justifyContent: 'center' }}>
-            <a
-              href={`/api/voyage/public/${token}/kml`}
-              download
-              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 18px', borderRadius: 8, background: 'var(--arvo-fg)', color: 'var(--arvo-bg)', textDecoration: 'none', fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, letterSpacing: '0.04em' }}
-            >
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <path strokeLinecap="round" d="M7 1v8m0 0l-3-3m3 3l3-3M2 11h10" />
-              </svg>
-              {tv.public?.downloadKml ?? 'Download KML for Google Maps'}
-            </a>
-            <a
-              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent((trip.destination ?? '') + ' ' + (trip.country ?? ''))}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 18px', borderRadius: 8, background: 'transparent', border: '1px solid var(--arvo-border)', color: 'var(--arvo-fg-soft)', textDecoration: 'none', fontFamily: 'var(--arvo-font-body)', fontSize: 12.5 }}
-            >
-              <svg width="14" height="14" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <path strokeLinecap="round" d="M5 2H2a1 1 0 00-1 1v8a1 1 0 001 1h8a1 1 0 001-1V8M8 1h4m0 0v4m0-4L5.5 7.5" />
-              </svg>
-              {tv.public?.openDestination ?? 'Open destination in Maps'}
-            </a>
+        {(withCoords.length > 0 || trip.photo_album_url) && (
+          <div style={{ marginBottom: 32, marginTop: 16 }}>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
+              {withCoords.length > 0 && (
+                <>
+                  <a
+                    href={`/api/voyage/public/${token}/kml`}
+                    download
+                    style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '7px 14px', borderRadius: 7, background: 'var(--arvo-fg)', color: 'var(--arvo-bg)', textDecoration: 'none', fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, letterSpacing: '0.02em' }}
+                  >
+                    <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
+                      <path strokeLinecap="round" d="M7 1v8m0 0l-3-3m3 3l3-3M2 11h10" />
+                    </svg>
+                    {tv.public?.downloadKml ?? 'Download KML for Google Maps'}
+                  </a>
+                  <a
+                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent((trip.destination ?? '') + ' ' + (trip.country ?? ''))}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '7px 14px', borderRadius: 7, background: 'transparent', border: '1px solid var(--arvo-border)', color: 'var(--arvo-fg-muted)', textDecoration: 'none', fontFamily: 'var(--arvo-font-body)', fontSize: 11.5 }}
+                  >
+                    <svg width="12" height="12" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.5">
+                      <path strokeLinecap="round" d="M5 2H2a1 1 0 00-1 1v8a1 1 0 001 1h8a1 1 0 001-1V8M8 1h4m0 0v4m0-4L5.5 7.5" />
+                    </svg>
+                    {tv.public?.openDestination ?? 'Open destination in Maps'}
+                  </a>
+                </>
+              )}
+              {trip.photo_album_url && (
+                <a
+                  href={trip.photo_album_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '7px 14px', borderRadius: 7, background: 'transparent', border: '1px solid var(--arvo-border)', color: 'var(--arvo-fg-muted)', textDecoration: 'none', fontFamily: 'var(--arvo-font-body)', fontSize: 11.5 }}
+                >
+                  <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <rect x="1.5" y="2.5" width="11" height="9" rx="1.5"/>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M1.5 9l3.2-3.4a1 1 0 011.5 0L9 8.5m0 0l1-1.1a1 1 0 011.5 0l1 1.1"/>
+                  </svg>
+                  {tv.public?.photoAlbum ?? 'Ver mais fotos →'}
+                </a>
+              )}
+            </div>
+
+            {/* Ajuda expansível: como importar o KML no Google Maps */}
+            {withCoords.length > 0 && (
+              <div style={{ textAlign: 'center', marginTop: 10 }}>
+                <button
+                  type="button"
+                  onClick={() => setShowKmlHelp(v => !v)}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)', textDecoration: 'underline', padding: 4 }}
+                >
+                  {showKmlHelp ? (tv.public?.kmlHelpHide ?? 'Ocultar instruções') : (tv.public?.kmlHelpShow ?? 'Como usar o KML no Google Maps?')}
+                </button>
+                {showKmlHelp && (
+                  <ol style={{
+                    textAlign: 'left', maxWidth: 420, margin: '10px auto 0', padding: '14px 18px 14px 34px',
+                    borderRadius: 12, background: 'var(--arvo-hover-bg)', border: '1px solid var(--arvo-border-soft)',
+                    fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-muted)', lineHeight: 1.7,
+                  }}>
+                    <li>{tv.public?.kmlStep1 ?? 'Baixe o arquivo KML pelo botão acima.'}</li>
+                    <li>{tv.public?.kmlStep2 ?? 'Abra google.com/maps no computador e entre na sua conta Google.'}</li>
+                    <li>{tv.public?.kmlStep3 ?? 'Vá em Seus lugares → Mapas → Criar um mapa.'}</li>
+                    <li>{tv.public?.kmlStep4 ?? 'Clique em Importar e selecione o arquivo KML baixado.'}</li>
+                    <li>{tv.public?.kmlStep5 ?? 'Os lugares aparecem no seu mapa e ficam salvos para abrir no app do celular.'}</li>
+                  </ol>
+                )}
+              </div>
+            )}
           </div>
         )}
 

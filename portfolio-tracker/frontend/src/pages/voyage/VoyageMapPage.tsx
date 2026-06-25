@@ -5,6 +5,7 @@ import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { apiFetch } from '../../lib/api'
 import { useTheme } from '../../contexts/ThemeContext'
+import { useI18n } from '../../contexts/I18nContext'
 import { dayColor, dayColorWash } from './_shared/dayColors'
 import OpeningHoursBlock from './_shared/OpeningHours'
 
@@ -95,6 +96,8 @@ export default function VoyageMapPage() {
   const selectedTripId = searchParams.get('trip') ? Number(searchParams.get('trip')) : null
   const navigate = useNavigate()
   const { resolvedTheme } = useTheme()
+  const { t } = useI18n()
+  const tv = (t as any).voyage ?? {}
 
   const [trips, setTrips] = useState<Trip[]>([])
   const [places, setPlaces] = useState<TripPlace[]>([])
@@ -353,7 +356,7 @@ export default function VoyageMapPage() {
                         {p.google_maps_url && (
                           <a href={p.google_maps_url} target="_blank" rel="noopener noreferrer"
                             style={{ fontSize: 11, color: '#555', textDecoration: 'none' }}>
-                            Abrir no Google Maps →
+                            {tv.public?.openInMaps ?? 'Abrir no Google Maps →'}
                           </a>
                         )}
                       </div>

@@ -233,6 +233,7 @@ export type NotificationType =
   | 'subscription_detected'
   | 'shared_group_invite'
   | 'trip_invite'
+  | 'trip_added'
   | 'friend_invite'
   | 'friend_accepted'
   | 'friend_invite_accepted'

@@ -5,6 +5,7 @@ import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { apiFetch } from '../../lib/api'
 import { useTheme } from '../../contexts/ThemeContext'
+import { useI18n } from '../../contexts/I18nContext'
 import { dayColor, dayColorWash } from './_shared/dayColors'
 import OpeningHoursBlock from './_shared/OpeningHours'
 
@@ -92,6 +93,8 @@ interface Props {
 export default function TripMapCard({ tripId, refreshKey }: Props) {
   const navigate = useNavigate()
   const { resolvedTheme } = useTheme()
+  const { t } = useI18n()
+  const tv = (t as any).voyage ?? {}
   const [places, setPlaces] = useState<TripPlace[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedDay, setSelectedDay] = useState<number | null>(null)
@@ -235,7 +238,7 @@ export default function TripMapCard({ tripId, refreshKey }: Props) {
                     {p.google_maps_url && (
                       <a href={p.google_maps_url} target="_blank" rel="noopener noreferrer"
                         style={{ fontSize: 11, color: 'var(--arvo-fg-soft)', textDecoration: 'none' }}>
-                        Abrir no Google Maps →
+                        {tv.public?.openInMaps ?? 'Abrir no Google Maps →'}
                       </a>
                     )}
                   </div>

@@ -27,6 +27,7 @@ export default function TripFormModal({ trip, onClose, onSaved, onFromMoment, on
   const [endDate, setEndDate] = useState(trip?.end_date ?? '')
   const [status, setStatus] = useState<TripStatus>(trip?.status ?? 'planning')
   const [summary, setSummary] = useState(trip?.summary ?? '')
+  const [photoAlbumUrl, setPhotoAlbumUrl] = useState(trip?.photo_album_url ?? '')
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [error, setError] = useState('')
@@ -61,6 +62,7 @@ export default function TripFormModal({ trip, onClose, onSaved, onFromMoment, on
         end_date: endDate || null,
         status,
         summary: summary.trim() || null,
+        photo_album_url: photoAlbumUrl.trim() || null,
       }
       let result: { trip: Trip }
       if (trip) {
@@ -240,6 +242,18 @@ export default function TripFormModal({ trip, onClose, onSaved, onFromMoment, on
               style={{ ...fieldStyle, resize: 'vertical', minHeight: 72 }}
               value={summary} onChange={e => setSummary(e.target.value)}
               placeholder="Uma frase sobre a viagem..."
+              onFocus={e => (e.target.style.borderColor = 'var(--arvo-gold)')}
+              onBlur={e => (e.target.style.borderColor = 'var(--arvo-border)')}
+            />
+          </label>
+
+          <label>
+            <span style={labelStyle}>{tv.photoAlbumLabel ?? 'Álbum de fotos (opcional)'}</span>
+            <input
+              type="url"
+              style={fieldStyle}
+              value={photoAlbumUrl} onChange={e => setPhotoAlbumUrl(e.target.value)}
+              placeholder={tv.photoAlbumPlaceholder ?? 'Link de álbum compartilhado (Google Photos, etc.)'}
               onFocus={e => (e.target.style.borderColor = 'var(--arvo-gold)')}
               onBlur={e => (e.target.style.borderColor = 'var(--arvo-border)')}
             />

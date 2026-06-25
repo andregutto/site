@@ -9,7 +9,62 @@ import MembersPanel from './MembersPanel'
 import { ShareModal } from './ShareTripPanel'
 import TripItineraryPanel from './TripItineraryPanel'
 import TripMapCard from './TripMapCard'
+import Avatar from './_shared/Avatar'
 import type { Trip, TripCost, TripMember } from './types'
+
+interface HeroMember {
+  id: number
+  status: 'pending' | 'active' | 'left'
+  display: { name: string; email: string; avatar_url?: string }
+}
+
+function CollaboratorsHero({ tripId, onOpen }: { tripId: number; onOpen: () => void }) {
+  const [members, setMembers] = useState<HeroMember[]>([])
+
+  useEffect(() => {
+    apiFetch<{ members: HeroMember[] }>(`/voyage/trips/${tripId}/members`)
+      .then(d => setMembers(d.members.filter(m => m.status === 'active')))
+      .catch(() => {})
+  }, [tripId])
+
+  const shown = members.slice(0, 4)
+
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      style={{
+        position: 'absolute', top: 16, left: 16, display: 'flex', alignItems: 'center', gap: 8,
+        background: 'rgba(13,13,13,0.55)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.12)',
+        borderRadius: 999, padding: shown.length > 0 ? '4px 12px 4px 4px' : '5px 12px', cursor: 'pointer',
+      }}
+      title="Colaboradores"
+    >
+      {shown.length > 0 && (
+        <div className="flex -space-x-2">
+          {shown.map(m => (
+            <div key={m.id} style={{ border: '2px solid rgba(13,13,13,0.55)', borderRadius: '50%' }}>
+              <Avatar name={m.display.name} email={m.display.email} avatarUrl={m.display.avatar_url} size={22} />
+            </div>
+          ))}
+        </div>
+      )}
+      <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'rgba(255,255,255,0.80)', letterSpacing: '0.04em' }}>
+        {shown.length === 0 ? (
+          <>
+            <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <circle cx="5" cy="4.5" r="2.5"/>
+              <path strokeLinecap="round" d="M1 12c0-2.2 1.8-4 4-4s4 1.8 4 4M9.5 4.8a2 2 0 110 4M13 12c0-1.7-1.2-3.1-2.8-3.6"/>
+            </svg>
+            Convidar
+          </>
+        ) : (
+          <span style={{ fontSize: 14, lineHeight: 1 }}>+</span>
+        )}
+      </span>
+    </button>
+  )
+}
 
 const RED = '#D63B2F'
 const GOLD = '#C8B89A'
@@ -49,6 +104,7 @@ export default function VoyageTripDetailPage() {
   const [loading, setLoading] = useState(true)
   const [showEdit, setShowEdit] = useState(false)
   const [showShare, setShowShare] = useState(false)
+  const [showMembers, setShowMembers] = useState(false)
   // TripMapCard and TripItineraryPanel each fetch this trip's places
   // independently — bumping this tells the map to refetch whenever the
   // itinerary panel's list changes (add/delete/reload), since otherwise the
@@ -133,8 +189,13 @@ export default function VoyageTripDetailPage() {
             </span>
           </div>
 
-          {/* Top-left buttons: Edit + Share */}
-          <div style={{ position: 'absolute', top: 16, left: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+          {/* Collaborators — avatar stack + invite trigger */}
+          <div style={{ position: 'absolute', top: 16, left: 16 }}>
+            <CollaboratorsHero tripId={Number(id)} onOpen={() => setShowMembers(true)} />
+          </div>
+
+          {/* Top-left buttons (below collaborators): Edit + Share */}
+          <div style={{ position: 'absolute', top: 54, left: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
             <button
               onClick={() => setShowEdit(true)}
               style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'rgba(13,13,13,0.55)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, padding: '5px 12px', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'rgba(255,255,255,0.80)', letterSpacing: '0.04em' }}
@@ -193,37 +254,58 @@ export default function VoyageTripDetailPage() {
         </p>
       )}
 
-      {/* Content grid: 2/3 main + 1/3 sidebar */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        {/* Main col: Mapa + Roteiro + Lugares + Members */}
-        <div className="lg:col-span-2 flex flex-col gap-5">
-          {/* Mapa inline */}
+      {/* Linha superior: Mapa dividindo coluna com Custo (no mobile empilha) */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-5">
+        <div className="lg:col-span-2">
           <TripMapCard tripId={Number(id)} refreshKey={placesVersion} />
-
-          {/* Roteiro unificado (lugares + itens livres por dia) */}
-          <TripItineraryPanel
-            tripId={Number(id)}
-            tripCity={trip.destination}
-            tripCountry={trip.country}
-            canEdit={trip.user_id === user?.id}
-            onPlacesChanged={bumpPlacesVersion}
-          />
         </div>
-
-        {/* Sidebar: Custos + Colaboradores
-            (no mobile empilha após os Lugares — colaboradores vêm depois do custo) */}
-        <div className="lg:col-span-1 flex flex-col gap-5">
+        <div className="lg:col-span-1">
           <CostCard
             tripId={Number(id)}
             cost={cost}
             onCostChanged={updated => setData(prev => prev ? { ...prev, cost: updated } : prev)}
           />
-          <MembersPanel
-            tripId={Number(id)}
-            isOwner={trip.user_id === user?.id}
-          />
         </div>
       </div>
+
+      {/* Roteiro unificado — largura total, fica longo então não divide coluna */}
+      <TripItineraryPanel
+        tripId={Number(id)}
+        tripCity={trip.destination}
+        tripCountry={trip.country}
+        canEdit={trip.user_id === user?.id}
+        onPlacesChanged={bumpPlacesVersion}
+      />
+
+      {showMembers && (
+        <div
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
+          style={{ background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)' }}
+          onClick={e => { if (e.target === e.currentTarget) setShowMembers(false) }}
+        >
+          <div
+            className="w-full sm:max-w-md max-h-[90vh] overflow-y-auto rounded-t-[18px] sm:rounded-[18px]"
+            style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border-soft)', boxShadow: 'var(--arvo-shadow-lg)' }}
+          >
+            <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: '1px solid var(--arvo-border-soft)' }}>
+              <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 13, letterSpacing: '0.10em', color: 'var(--arvo-fg)' }}>
+                Colaboradores
+              </p>
+              <button
+                type="button" onClick={() => setShowMembers(false)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--arvo-fg-soft)', padding: 4 }}
+              >
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <path strokeLinecap="round" d="M3 3l10 10M13 3L3 13" />
+                </svg>
+              </button>
+            </div>
+            <div style={{ padding: 20 }}>
+              <MembersPanel tripId={Number(id)} isOwner={trip.user_id === user?.id} />
+            </div>
+          </div>
+        </div>
+      )}
 
       {showShare && trip.user_id === user?.id && (
         <ShareModal

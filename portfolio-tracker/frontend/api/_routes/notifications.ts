@@ -4,7 +4,7 @@ import { supabaseAdmin } from '../../../shared-api/src/lib/supabase.js'
 import { getActiveSubscriptions, getBudgetAlerts } from '../../../shared-api/src/routes/finances.js'
 import { getSplitWarnings } from './portfolio.js'
 import { getPendingGroupInvites } from '../../../shared-api/src/routes/shared.js'
-import { getPendingTripInvites } from '../../../shared-api/src/routes/voyage.js'
+import { getPendingTripInvites, getRecentTripAdditions } from '../../../shared-api/src/routes/voyage.js'
 import { getPendingFriendInvites, getRecentFriendAcceptances } from '../../../shared-api/src/routes/people.js'
 
 const router = Router()
@@ -25,7 +25,7 @@ const NON_DISMISSIBLE_HISTORY_TYPES = new Set(['bank_connected', 'bank_connect_e
 router.get('/', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
 
-  const [achievementsRes, subsResult, notifDismissalsRes, budgetAlerts, splitWarnings, pendingInvites, pendingTripInvites, pendingFriendInvites, recentFriendAcceptances] = await Promise.all([
+  const [achievementsRes, subsResult, notifDismissalsRes, budgetAlerts, splitWarnings, pendingInvites, pendingTripInvites, pendingFriendInvites, recentFriendAcceptances, recentTripAdditions] = await Promise.all([
     supabaseAdmin.from('achievements').select('achievement_key, earned_at').eq('user_id', userId).order('earned_at', { ascending: true }),
     getActiveSubscriptions(userId),
     supabaseAdmin.from('notification_dismissals').select('key, type, params, severity, link, occurred_at, dismissed_at').eq('user_id', userId),
@@ -35,6 +35,7 @@ router.get('/', requireAuth, async (req, res: Response) => {
     getPendingTripInvites(userId),
     getPendingFriendInvites(userId),
     getRecentFriendAcceptances(userId),
+    getRecentTripAdditions(userId),
   ])
 
   const dismissedKeys = new Set((notifDismissalsRes.data ?? []).map(n => n.key))
@@ -163,6 +164,21 @@ router.get('/', requireAuth, async (req, res: Response) => {
       params: { friend_name: acc.friend_name, friend_username: acc.friend_username },
       link: '/people',
       occurred_at: acc.occurred_at,
+      dismissed_at: null,
+      dismissible: true,
+    })
+  }
+
+  // Category 15: added directly to a trip (via @username or known e-mail) -> active (unless dismissed)
+  for (const add of recentTripAdditions) {
+    if (dismissedKeys.has(add.key)) continue
+    active.push({
+      key: add.key,
+      type: 'trip_added',
+      severity: 'success',
+      params: { trip_title: add.trip_title, inviter_name: add.inviter_name },
+      link: `/voyage/${add.trip_id}`,
+      occurred_at: add.occurred_at,
       dismissed_at: null,
       dismissible: true,
     })

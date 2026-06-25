@@ -24,6 +24,7 @@ export const TYPE_ICONS: Record<string, IconName> = {
   subscription_detected: 'repeat',
   shared_group_invite: 'share',
   trip_invite: 'share',
+  trip_added: 'share',
   friend_invite: 'users',
   friend_accepted: 'users',
   friend_invite_accepted: 'users',
@@ -77,6 +78,11 @@ export function resolveNotificationText(item: NotificationItem, t: any, locale: 
       const inviter = String(item.params.inviter_name ?? '')
       const trip = String(item.params.trip_title ?? '')
       return { title: n.type_trip_invite.replace('{inviter}', inviter).replace('{trip}', trip) }
+    }
+    case 'trip_added': {
+      const inviter = String(item.params.inviter_name ?? '')
+      const trip = String(item.params.trip_title ?? '')
+      return { title: n.type_trip_added.replace('{inviter}', inviter).replace('{trip}', trip) }
     }
     case 'friend_invite': {
       const inviter = String(item.params.inviter_name ?? '')

@@ -5,6 +5,7 @@ import 'leaflet/dist/leaflet.css'
 import { apiFetch } from '../../lib/api'
 import { useI18n } from '../../contexts/I18nContext'
 import { useTheme } from '../../contexts/ThemeContext'
+import OpeningHoursBlock from './_shared/OpeningHours'
 
 delete (L.Icon.Default.prototype as any)._getIconUrl
 L.Icon.Default.mergeOptions({
@@ -50,6 +51,7 @@ interface Place {
   google_maps_url: string | null
   notes: string | null
   source: string
+  opening_hours: string[] | null
 }
 
 const CATEGORY_ICONS: Record<string, string> = {
@@ -338,13 +340,17 @@ function PlaceCard({ place, onDelete }: { place: Place; onDelete: (id: number) =
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export default function VoyagePlacesPage() {
   const { resolvedTheme } = useTheme()
+  const { t } = useI18n()
+  const tv = (t as any).voyage ?? {}
   const [places, setPlaces]   = useState<Place[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch]   = useState('')
   const [cityFilter, setCityFilter] = useState('')
+  const [categoryFilter, setCategoryFilter] = useState('')
   const [showMap, setShowMap] = useState(false)
 
   const cities = Array.from(new Set(places.map(p => p.city).filter(Boolean) as string[])).sort()
+  const categories = Array.from(new Set(places.map(p => p.category).filter(Boolean) as string[])).sort()
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -361,7 +367,8 @@ export default function VoyagePlacesPage() {
   const filtered = places.filter(p => {
     const matchQ = !search || p.name.toLowerCase().includes(search.toLowerCase())
     const matchCity = !cityFilter || p.city === cityFilter
-    return matchQ && matchCity
+    const matchCategory = !categoryFilter || p.category === categoryFilter
+    return matchQ && matchCity && matchCategory
   })
 
   return (
@@ -386,7 +393,7 @@ export default function VoyagePlacesPage() {
                 color: showMap ? 'var(--arvo-fg)' : 'var(--arvo-fg-muted)', cursor: 'pointer',
               }}
             >
-              {showMap ? 'Ver lista' : '🗺 Ver no mapa'}
+              {showMap ? '🗺 Ocultar mapa' : '🗺 Ver no mapa'}
             </button>
           )}
         </div>
@@ -418,11 +425,12 @@ export default function VoyagePlacesPage() {
                     {p.category && <p style={{ fontSize: 10.5, color: '#999', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{p.category}</p>}
                     {p.city && <p style={{ fontSize: 11, color: '#888' }}>{p.city}</p>}
                     {p.address && <p style={{ fontSize: 11, color: '#666', marginBottom: 4 }}>{p.address}</p>}
+                    <OpeningHoursBlock hours={p.opening_hours} />
                     {p.notes && <p style={{ fontSize: 11, fontStyle: 'italic', color: '#888', marginBottom: 4 }}>{p.notes}</p>}
                     {p.google_maps_url && (
                       <a href={p.google_maps_url} target="_blank" rel="noopener noreferrer"
                         style={{ fontSize: 11, color: '#555', textDecoration: 'none' }}>
-                        Abrir no Google Maps →
+                        {tv.public?.openInMaps ?? 'Abrir no Google Maps →'}
                       </a>
                     )}
                   </div>
@@ -434,11 +442,8 @@ export default function VoyagePlacesPage() {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        {/* Sidebar: import + filters */}
+        {/* Sidebar: filters + import */}
         <div className="flex flex-col gap-5">
-          <UrlImporter onImported={p => setPlaces(ps => [p, ...ps.filter(x => x.id !== p.id)])} />
-          <TakeoutImporter onImported={load} onDeleteAll={load} />
-
           {/* Filters */}
           {places.length > 0 && (
             <div style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', borderRadius: 16, boxShadow: 'var(--arvo-shadow-sm)', padding: '16px 18px' }}>
@@ -450,29 +455,60 @@ export default function VoyagePlacesPage() {
                 placeholder="Buscar por nome…"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                style={{ width: '100%', padding: '7px 10px', borderRadius: 3, border: '1px solid var(--arvo-border)', fontFamily: 'var(--arvo-font-body)', fontSize: 13, marginBottom: 8, background: 'var(--arvo-surface)', color: 'var(--arvo-fg)', outline: 'none' }}
+                style={{ width: '100%', padding: '7px 10px', borderRadius: 3, border: '1px solid var(--arvo-border)', fontFamily: 'var(--arvo-font-body)', fontSize: 13, marginBottom: 10, background: 'var(--arvo-surface)', color: 'var(--arvo-fg)', outline: 'none' }}
               />
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                <button
-                  type="button"
-                  onClick={() => setCityFilter('')}
-                  style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, padding: '3px 10px', borderRadius: 999, border: `1px solid ${!cityFilter ? 'var(--arvo-fg)' : 'var(--arvo-border)'}`, background: !cityFilter ? 'var(--arvo-hover-bg)' : 'transparent', color: !cityFilter ? 'var(--arvo-fg)' : 'var(--arvo-fg-muted)', cursor: 'pointer' }}
-                >
-                  Todas
-                </button>
-                {cities.map(c => (
-                  <button
-                    key={c}
-                    type="button"
-                    onClick={() => setCityFilter(c)}
-                    style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, padding: '3px 10px', borderRadius: 999, border: `1px solid ${cityFilter === c ? 'var(--arvo-fg)' : 'var(--arvo-border)'}`, background: cityFilter === c ? 'var(--arvo-hover-bg)' : 'transparent', color: cityFilter === c ? 'var(--arvo-fg)' : 'var(--arvo-fg-muted)', cursor: 'pointer' }}
-                  >
-                    {c}
-                  </button>
-                ))}
-              </div>
+              {cities.length > 0 && (
+                <>
+                  <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 10.5, color: 'var(--arvo-fg-soft)', marginBottom: 6 }}>Cidade</p>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
+                    <button
+                      type="button"
+                      onClick={() => setCityFilter('')}
+                      style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, padding: '3px 10px', borderRadius: 999, border: `1px solid ${!cityFilter ? 'var(--arvo-fg)' : 'var(--arvo-border)'}`, background: !cityFilter ? 'var(--arvo-hover-bg)' : 'transparent', color: !cityFilter ? 'var(--arvo-fg)' : 'var(--arvo-fg-muted)', cursor: 'pointer' }}
+                    >
+                      Todas
+                    </button>
+                    {cities.map(c => (
+                      <button
+                        key={c}
+                        type="button"
+                        onClick={() => setCityFilter(c)}
+                        style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, padding: '3px 10px', borderRadius: 999, border: `1px solid ${cityFilter === c ? 'var(--arvo-fg)' : 'var(--arvo-border)'}`, background: cityFilter === c ? 'var(--arvo-hover-bg)' : 'transparent', color: cityFilter === c ? 'var(--arvo-fg)' : 'var(--arvo-fg-muted)', cursor: 'pointer' }}
+                      >
+                        {c}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+              {categories.length > 0 && (
+                <>
+                  <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 10.5, color: 'var(--arvo-fg-soft)', marginBottom: 6 }}>Categoria</p>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                    <button
+                      type="button"
+                      onClick={() => setCategoryFilter('')}
+                      style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, padding: '3px 10px', borderRadius: 999, border: `1px solid ${!categoryFilter ? 'var(--arvo-fg)' : 'var(--arvo-border)'}`, background: !categoryFilter ? 'var(--arvo-hover-bg)' : 'transparent', color: !categoryFilter ? 'var(--arvo-fg)' : 'var(--arvo-fg-muted)', cursor: 'pointer' }}
+                    >
+                      Todas
+                    </button>
+                    {categories.map(c => (
+                      <button
+                        key={c}
+                        type="button"
+                        onClick={() => setCategoryFilter(c)}
+                        style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, padding: '3px 10px', borderRadius: 999, border: `1px solid ${categoryFilter === c ? 'var(--arvo-fg)' : 'var(--arvo-border)'}`, background: categoryFilter === c ? 'var(--arvo-hover-bg)' : 'transparent', color: categoryFilter === c ? 'var(--arvo-fg)' : 'var(--arvo-fg-muted)', cursor: 'pointer' }}
+                      >
+                        {categoryIcon(c)} {c}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
           )}
+          <UrlImporter onImported={p => setPlaces(ps => [p, ...ps.filter(x => x.id !== p.id)])} />
+          <TakeoutImporter onImported={load} onDeleteAll={load} />
         </div>
 
         {/* Place list */}
@@ -501,6 +537,7 @@ export default function VoyagePlacesPage() {
               <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)', marginBottom: 4 }}>
                 {filtered.length} lugar{filtered.length !== 1 ? 'es' : ''}
                 {cityFilter ? ` em ${cityFilter}` : ''}
+                {categoryFilter ? ` · ${categoryFilter}` : ''}
                 {search ? ` · "${search}"` : ''}
               </p>
               {filtered.map(p => (

@@ -582,7 +582,8 @@
     "type_friend_invite": "{inviter} quer se conectar com você",
     "type_friend_accepted": "{friend} aceitou seu convite",
     "type_friend_invite_accepted": "Você se conectou com {inviter}",
-    "type_trip_invite": "{inviter} convidou você para a viagem \"{trip}\""
+    "type_trip_invite": "{inviter} convidou você para a viagem \"{trip}\"",
+    "type_trip_added": "{inviter} adicionou você à viagem \"{trip}\""
   },
   "finances": {
     "navOverview": "Visão Geral",
@@ -2155,6 +2156,14 @@
       "statCost": "Custo total",
       "noPlaces": "Nenhum lugar compartilhado ainda",
       "downloadKml": "Baixar KML para Google Maps",
+      "kmlHelpShow": "Como usar o KML no Google Maps?",
+      "kmlHelpHide": "Ocultar instruções",
+      "kmlStep1": "Baixe o arquivo KML pelo botão acima.",
+      "kmlStep2": "Abra google.com/maps no computador e entre na sua conta Google.",
+      "kmlStep3": "Vá em Seus lugares → Mapas → Criar um mapa.",
+      "kmlStep4": "Clique em Importar e selecione o arquivo KML baixado.",
+      "kmlStep5": "Os lugares aparecem no seu mapa e ficam salvos para abrir no app do celular.",
+      "photoAlbum": "Ver mais fotos →",
       "openDestination": "Abrir destino no Maps",
       "openInMaps": "Abrir no Maps →",
       "mapFilterAll": "Todos",

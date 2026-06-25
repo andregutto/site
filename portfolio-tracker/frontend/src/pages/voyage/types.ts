@@ -18,6 +18,7 @@ export interface Trip {
   show_place_expenses: boolean
   dest_lat: number | null
   dest_lng: number | null
+  photo_album_url: string | null
   created_at: string
   // from list endpoint
   cost_total?: number

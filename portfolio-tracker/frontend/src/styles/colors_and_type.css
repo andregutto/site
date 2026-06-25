@@ -100,8 +100,8 @@
   /* ── FOREGROUND on DARK (black) ────────────────────────────────────── */
   --arvo-fg-on-dark:        rgba(242, 237, 228, 0.92);
   --arvo-fg-on-dark-muted:  rgba(242, 237, 228, 0.65);
-  --arvo-fg-on-dark-soft:   rgba(242, 237, 228, 0.45);
-  --arvo-fg-on-dark-faint:  rgba(200, 184, 154, 0.30);
+  --arvo-fg-on-dark-soft:   rgba(242, 237, 228, 0.62);  /* was 0.45 — too low-contrast for metadata/subtitles on black */
+  --arvo-fg-on-dark-faint:  rgba(200, 184, 154, 0.40);  /* was 0.30 — hairlines only, but bumped since several places use it for text */
 
   /* ── BORDERS ────────────────────────────────────────────────────────── */
   --arvo-border:       rgba(13, 13, 13, 0.10);

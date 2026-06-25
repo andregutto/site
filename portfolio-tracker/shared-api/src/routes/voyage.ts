@@ -162,6 +162,41 @@ export interface PendingTripInvite {
   occurred_at: string
 }
 
+export interface RecentTripAddition {
+  key: string
+  trip_id: number
+  trip_title: string
+  inviter_name: string
+  occurred_at: string
+}
+
+// Membros adicionados direto (via @username ou e-mail já cadastrado) não passam
+// por token/link — sem isso eles nunca saberiam que foram incluídos na viagem.
+export async function getRecentTripAdditions(userId: string): Promise<RecentTripAddition[]> {
+  const since = new Date(Date.now() - 14 * 24 * 3600 * 1000).toISOString()
+  const { data } = await supabaseAdmin
+    .from('voyage_trip_members')
+    .select('id, joined_at, voyage_trips(id, title, user_id)')
+    .eq('user_id', userId).eq('status', 'active')
+    .is('invite_token', null)
+    .gte('joined_at', since)
+
+  const result: RecentTripAddition[] = []
+  for (const row of (data ?? []) as any[]) {
+    const trip = row.voyage_trips
+    if (!trip || trip.user_id === userId) continue
+    const inviter = await userDisplay(trip.user_id)
+    result.push({
+      key: `trip_added:${row.id}`,
+      trip_id: trip.id,
+      trip_title: trip.title,
+      inviter_name: inviter.name,
+      occurred_at: row.joined_at,
+    })
+  }
+  return result
+}
+
 export async function getPendingTripInvites(userId: string): Promise<PendingTripInvite[]> {
   const { data: userData } = await supabaseAdmin.auth.admin.getUserById(userId)
   const email = userData?.user?.email
@@ -328,7 +363,7 @@ router.patch('/trips/:id', requireAuth, async (req, res: Response) => {
 
   const allowed = ['title', 'destination', 'country', 'cover_image_url', 'cover_image_position',
                    'start_date', 'end_date', 'summary', 'status', 'show_place_expenses',
-                   'dest_lat', 'dest_lng']
+                   'dest_lat', 'dest_lng', 'photo_album_url']
   const update: Record<string, unknown> = {}
   for (const k of allowed) if (k in req.body) update[k] = req.body[k] ?? null
 
@@ -1220,13 +1255,15 @@ router.get('/trips/:id/members', requireAuth, async (req, res: Response) => {
   res.json({ members: enriched })
 })
 
-// ── POST /api/voyage/trips/:id/invite  (convidar por e-mail) ─────────────────
+// ── POST /api/voyage/trips/:id/invite  (convidar por e-mail ou @username) ────
 router.post('/trips/:id/invite', requireAuth, async (req, res: Response) => {
   const userId = uid(req)
   const tripId = Number(req.params.id)
-  const { email, role = 'editor' } = req.body as { email: string; role?: string }
+  const { email, username, role = 'editor' } = req.body as { email?: string; username?: string; role?: string }
 
-  if (!email?.includes('@')) { res.status(400).json({ error: 'E-mail inválido' }); return }
+  if (!email?.includes('@') && !username?.trim()) {
+    res.status(400).json({ error: 'Informe um e-mail ou @usuário' }); return
+  }
 
   const { data: trip } = await supabaseAdmin
     .from('voyage_trips').select('user_id, title').eq('id', tripId).single()
@@ -1241,13 +1278,27 @@ router.post('/trips/:id/invite', requireAuth, async (req, res: Response) => {
     res.status(403).json({ error: 'Sem permissão para convidar' }); return
   }
 
-  const { data: authList } = await supabaseAdmin.auth.admin.listUsers()
-  const targetUser = authList?.users?.find(u => u.email === email)
+  let targetUserId: string | null = null
+  let targetEmail: string | null = email?.trim() || null
 
-  if (targetUser) {
+  if (username) {
+    const handle = username.trim().toLowerCase().replace(/^@/, '')
+    const { data: handleRow } = await supabaseAdmin
+      .from('user_handles').select('user_id').eq('username', handle).maybeSingle()
+    if (!handleRow) { res.status(404).json({ error: 'Nenhum usuário com esse @' }); return }
+    targetUserId = handleRow.user_id
+    const { data: u } = await supabaseAdmin.auth.admin.getUserById(handleRow.user_id)
+    targetEmail = u?.user?.email ?? null
+  } else if (targetEmail) {
+    const { data: authList } = await supabaseAdmin.auth.admin.listUsers()
+    const targetUser = authList?.users?.find(u => u.email === targetEmail)
+    targetUserId = targetUser?.id ?? null
+  }
+
+  if (targetUserId) {
     const { data: existing } = await supabaseAdmin
       .from('voyage_trip_members')
-      .select('id, status').eq('trip_id', tripId).eq('user_id', targetUser.id).single()
+      .select('id, status').eq('trip_id', tripId).eq('user_id', targetUserId).single()
     if (existing?.status === 'active') {
       res.status(409).json({ error: 'Já é membro desta viagem' }); return
     }
@@ -1256,15 +1307,31 @@ router.post('/trips/:id/invite', requireAuth, async (req, res: Response) => {
   await supabaseAdmin
     .from('voyage_trip_members')
     .delete()
-    .eq('trip_id', tripId).eq('invite_email', email).eq('status', 'pending')
+    .eq('trip_id', tripId).eq('invite_email', targetEmail).eq('status', 'pending')
+
+  // Usuário já tem conta na plataforma (achado por @ ou e-mail cadastrado):
+  // entra direto como membro ativo, sem token/link — ele vê na notificação.
+  if (targetUserId) {
+    const { error } = await supabaseAdmin.from('voyage_trip_members').insert({
+      trip_id: tripId,
+      user_id: targetUserId,
+      invite_email: targetEmail,
+      role,
+      status: 'active',
+      joined_at: new Date().toISOString(),
+    })
+    if (error) { res.status(500).json({ error: error.message }); return }
+    res.json({ direct: true })
+    return
+  }
 
   const token = randomBytes(24).toString('hex')
   const expires = new Date(Date.now() + 7 * 24 * 3600 * 1000).toISOString()
 
   const { error } = await supabaseAdmin.from('voyage_trip_members').insert({
     trip_id: tripId,
-    user_id: targetUser?.id ?? null,
-    invite_email: email,
+    user_id: null,
+    invite_email: targetEmail,
     invite_token: token,
     invite_expires_at: expires,
     role,
@@ -1273,7 +1340,7 @@ router.post('/trips/:id/invite', requireAuth, async (req, res: Response) => {
   if (error) { res.status(500).json({ error: error.message }); return }
 
   const baseUrl = process.env.FRONTEND_ORIGIN?.split(',')[0] ?? 'https://arvo.andregutto.com'
-  res.json({ token, invite_url: `${baseUrl}/voyage/invite/${token}` })
+  res.json({ direct: false, token, invite_url: `${baseUrl}/voyage/invite/${token}` })
 })
 
 // ── PATCH /api/voyage/trips/:id/members/:memberId  (alterar role) ────────────
@@ -1475,7 +1542,7 @@ router.get('/public/:token', async (req, res: Response) => {
 
   const { data: trip } = await supabaseAdmin
     .from('voyage_trips')
-    .select('id, title, destination, country, cover_image_url, cover_image_position, start_date, end_date, summary, status, share_hide_cost, show_place_expenses, share_expires_at, user_id')
+    .select('id, title, destination, country, cover_image_url, cover_image_position, start_date, end_date, summary, status, share_hide_cost, show_place_expenses, share_expires_at, user_id, photo_album_url')
     .eq('share_token', token)
     .single()
 
@@ -1507,7 +1574,7 @@ router.get('/public/:token', async (req, res: Response) => {
       title: trip.title, destination: trip.destination, country: trip.country,
       cover_image_url: trip.cover_image_url, cover_image_position: trip.cover_image_position,
       start_date: trip.start_date, end_date: trip.end_date,
-      summary: trip.summary, status: trip.status,
+      summary: trip.summary, status: trip.status, photo_album_url: trip.photo_album_url,
     },
     owner_name: ownerName,
     places: publicPlaces,
