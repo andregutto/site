@@ -296,7 +296,10 @@ export function LibraryPicker({ tripId, tripCity, tripCountry, destinations = []
   )
 
   return (
-    <div style={{ marginTop: 12, padding: 14, borderRadius: 10, background: 'var(--arvo-hover-bg)', border: '1px solid var(--arvo-border-soft)' }}>
+    // minHeight evita o card "pulando" de tamanho ao trocar de aba — o
+    // formulário de link é bem mais curto que a lista da biblioteca, e sem
+    // isso o card encolhia/crescia de repente a cada clique na aba.
+    <div style={{ marginTop: 12, padding: 14, borderRadius: 10, background: 'var(--arvo-hover-bg)', border: '1px solid var(--arvo-border-soft)', minHeight: 280, display: 'flex', flexDirection: 'column' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
         {/* Mode tabs */}
         <div style={{ display: 'flex', gap: 12 }}>
