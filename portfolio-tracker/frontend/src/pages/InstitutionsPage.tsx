@@ -357,12 +357,15 @@ export default function InstitutionsPage() {
     }
   }
 
-  // Lista de instituições únicas usadas nos ativos
-  const usedInstitutions = [...new Set(
-    (portfolio?.by_asset ?? [])
-      .map(a => a.exchange?.trim())
-      .filter((e): e is string => !!e)
-  )].sort()
+  // Lista de instituições únicas usadas nos ativos — agrupa ignorando
+  // maiúsculas/minúsculas para não duplicar "Interactive Brokers" e
+  // "INTERACTIVE BROKERS" como instituições diferentes.
+  const usedInstByKey = new Map<string, string>()
+  for (const raw of (portfolio?.by_asset ?? []).map(a => a.exchange?.trim()).filter((e): e is string => !!e)) {
+    const key = raw.toLowerCase()
+    if (!usedInstByKey.has(key)) usedInstByKey.set(key, raw)
+  }
+  const usedInstitutions = [...usedInstByKey.values()].sort()
 
   // Instituições com dados salvos mas não mais em uso
   const savedOnly = Object.keys(institutionData).filter(k => !usedInstitutions.includes(k)).sort()

@@ -253,10 +253,16 @@ export default function InstitutionPage() {
 
   type AssetItem = (typeof portfolio.by_asset)[number]
 
+  // Agrupa por instituição ignorando maiúsculas/minúsculas — "Interactive
+  // Brokers" e "INTERACTIVE BROKERS" são a mesma instituição, e sem isso
+  // pequenas diferenças de grafia (ex: vindas de uma importação antiga vs.
+  // o autocomplete) criavam dois cards duplicados para o mesmo lugar.
   const groupMap = new Map<string, AssetItem[]>()
+  const groupDisplayName = new Map<string, string>()
   for (const asset of portfolio.by_asset) {
-    const key = asset.exchange?.trim() || NO_INST
-    if (!groupMap.has(key)) groupMap.set(key, [])
+    const raw = asset.exchange?.trim() || NO_INST
+    const key = raw === NO_INST ? NO_INST : raw.toLowerCase()
+    if (!groupMap.has(key)) { groupMap.set(key, []); groupDisplayName.set(key, raw) }
     groupMap.get(key)!.push(asset)
   }
 
@@ -276,12 +282,15 @@ export default function InstitutionPage() {
     total: number
   }
 
-  const groups: Group[] = [...groupMap.entries()].map(([name, assets]) => ({
-    name,
-    assets: [...assets].sort((a, b) => b.value_brl - a.value_brl),
-    accounts: name === NO_INST ? [] : (accountsByInst.get(name.toLowerCase()) ?? []),
-    total: assets.reduce((s, a) => s + a.value_brl, 0),
-  }))
+  const groups: Group[] = [...groupMap.entries()].map(([key, assets]) => {
+    const name = groupDisplayName.get(key)!
+    return {
+      name,
+      assets: [...assets].sort((a, b) => b.value_brl - a.value_brl),
+      accounts: name === NO_INST ? [] : (accountsByInst.get(key) ?? []),
+      total: assets.reduce((s, a) => s + a.value_brl, 0),
+    }
+  })
 
   const coveredInsts = new Set([...groupMap.keys()].map(k => k.toLowerCase()))
   for (const acc of accounts) {

@@ -46,19 +46,26 @@ export default function InstitutionSelect({ value, onChange, placeholder = 'Banc
     return () => document.removeEventListener('pointerdown', onOutside)
   }, [query, value, onChange])
 
-  // Fecha ao rolar a página
+  // Reposiciona continuamente enquanto está aberto, em vez de fechar ao
+  // rolar/redimensionar — no mobile, focar o input dispara um scroll-into-view
+  // do navegador e a abertura do teclado (que no iOS Safari não dispara
+  // 'resize' do jeito esperado) DEPOIS do focus/onChange já terem medido a
+  // posição, deixando o dropdown "preso" longe do campo. Um loop de rAF
+  // garante que ele sempre acompanha o input de fato.
   useEffect(() => {
     if (!open) return
-    function onScroll() { setOpen(false) }
-    window.addEventListener('scroll', onScroll, { passive: true, capture: true })
-    return () => window.removeEventListener('scroll', onScroll, { capture: true })
+    let raf = 0
+    const tick = () => { computePos(); raf = requestAnimationFrame(tick) }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
 
   function computePos() {
-    if (inputRef.current) {
-      const r = inputRef.current.getBoundingClientRect()
-      setDropPos({ top: r.bottom + 4, left: r.left, width: r.width })
-    }
+    if (!inputRef.current) return
+    const r = inputRef.current.getBoundingClientRect()
+    const next = { top: r.bottom + 4, left: r.left, width: r.width }
+    setDropPos(prev => (prev.top === next.top && prev.left === next.left && prev.width === next.width) ? prev : next)
   }
 
   const q = query.toLowerCase().trim()

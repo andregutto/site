@@ -89,15 +89,39 @@ const LOGO_SOURCES = [
   (domain: string) => `https://www.google.com/s2/favicons?domain=${domain}&sz=128`,
 ]
 
+// Tokeniza em palavras (mantendo letras acentuadas, já que \b do regex do JS
+// não lida bem com elas — "ITAÚ" quebraria o limite de palavra logo após o Ú).
+function tokens(s: string): string[] {
+  return s.toUpperCase().split(/[^A-ZÀ-ÖØ-Þ0-9]+/).filter(Boolean)
+}
+
+// Verifica se a sequência `needle` aparece contígua dentro de `haystack`.
+function containsSeq(haystack: string[], needle: string[]): boolean {
+  if (needle.length === 0 || needle.length > haystack.length) return false
+  for (let i = 0; i <= haystack.length - needle.length; i++) {
+    if (needle.every((t, j) => haystack[i + j] === t)) return true
+  }
+  return false
+}
+
 function getDomain(name: string): string | null {
-  if (INSTITUTION_DOMAINS[name]) return INSTITUTION_DOMAINS[name]
-  // Full-string containment in either direction: handles "ITAÚ UNIBANCO S.A."
-  // (contains key "ITAÚ") and "BTG Pactual" (contained in key "BANCO BTG
-  // PACTUAL S.A."). Matching only the first word would let any "Banco X"
-  // collide with the first "BANCO ..." key found.
   const upper = name.toUpperCase()
+  // Correspondência exata sem diferenciar maiúsculas primeiro — "Interactive
+  // Brokers" e "INTERACTIVE BROKERS" precisam resolver pro mesmo lugar,
+  // senão só a grafia exata cai aqui e a outra vai pro loop de palavras
+  // abaixo, que pode achar uma instituição errada.
+  if (INSTITUTION_DOMAINS[upper]) return INSTITUTION_DOMAINS[upper]
+
+  // Comparação por palavra inteira (não por substring crua) em ambas as
+  // direções: cobre "ITAÚ UNIBANCO S.A." (contém a palavra "ITAÚ") e "BTG
+  // Pactual" (contido como frase em "BANCO BTG PACTUAL S.A."). Substring
+  // crua deixava chaves curtas como "INTER" (Banco Inter) coincidirem
+  // dentro de nomes não relacionados como "INTERACTIVE BROKERS" ou um
+  // "INTERA" digitado pela metade.
+  const nameTokens = tokens(upper)
   for (const [key, domain] of Object.entries(INSTITUTION_DOMAINS)) {
-    if (upper.includes(key) || key.includes(upper)) return domain
+    const keyTokens = tokens(key)
+    if (containsSeq(nameTokens, keyTokens) || containsSeq(keyTokens, nameTokens)) return domain
   }
   return null
 }
