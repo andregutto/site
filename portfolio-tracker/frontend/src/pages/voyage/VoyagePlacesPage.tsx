@@ -370,6 +370,7 @@ export default function VoyagePlacesPage() {
     const matchCategory = !categoryFilter || p.category === categoryFilter
     return matchQ && matchCity && matchCategory
   })
+  const filteredWithCoords = filtered.filter((p): p is Place & { lat: number; lng: number } => p.lat != null && p.lng != null)
 
   return (
     <div className="max-w-4xl mx-auto px-4 2xl:px-8 py-6">
@@ -399,11 +400,18 @@ export default function VoyagePlacesPage() {
         </div>
       </div>
 
-      {/* Map view */}
+      {/* Map view — reflete os mesmos filtros (busca/cidade/categoria) da lista */}
       {showMap && (
         <div style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid var(--arvo-border)', boxShadow: 'var(--arvo-shadow-sm)', marginBottom: 24, height: 480 }}>
+          {filteredWithCoords.length === 0 ? (
+            <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--arvo-hover-bg)' }}>
+              <p style={{ fontFamily: 'var(--arvo-font-serif)', fontStyle: 'italic', fontSize: 13, color: GOLD }}>
+                Nenhum lugar com coordenadas para esse filtro
+              </p>
+            </div>
+          ) : (
           <MapContainer
-            center={[places.find(p => p.lat && p.lng)!.lat!, places.find(p => p.lat && p.lng)!.lng!]}
+            center={[filteredWithCoords[0].lat!, filteredWithCoords[0].lng!]}
             zoom={5}
             style={{ height: '100%', width: '100%' }}
             scrollWheelZoom
@@ -416,8 +424,8 @@ export default function VoyagePlacesPage() {
                 : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
               }
             />
-            <FitBounds places={places.filter(p => p.lat && p.lng)} />
-            {places.filter(p => p.lat && p.lng).map(p => (
+            <FitBounds places={filteredWithCoords} />
+            {filteredWithCoords.map(p => (
               <Marker key={p.id} position={[p.lat!, p.lng!]} icon={makePlaceIcon(categoryIcon(p.category))}>
                 <Popup>
                   <div style={{ fontFamily: 'var(--arvo-font-body)', minWidth: 160 }}>
@@ -438,6 +446,7 @@ export default function VoyagePlacesPage() {
               </Marker>
             ))}
           </MapContainer>
+          )}
         </div>
       )}
 

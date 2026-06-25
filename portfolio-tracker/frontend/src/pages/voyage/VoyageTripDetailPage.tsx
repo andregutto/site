@@ -56,10 +56,10 @@ function CollaboratorsHero({ tripId, onOpen }: { tripId: number; onOpen: () => v
               <circle cx="5" cy="4.5" r="2.5"/>
               <path strokeLinecap="round" d="M1 12c0-2.2 1.8-4 4-4s4 1.8 4 4M9.5 4.8a2 2 0 110 4M13 12c0-1.7-1.2-3.1-2.8-3.6"/>
             </svg>
-            Convidar
+            Convidar colaborador
           </>
         ) : (
-          <span style={{ fontSize: 14, lineHeight: 1 }}>+</span>
+          <>Colaboradores<span style={{ fontSize: 13, lineHeight: 1 }}>+</span></>
         )}
       </span>
     </button>

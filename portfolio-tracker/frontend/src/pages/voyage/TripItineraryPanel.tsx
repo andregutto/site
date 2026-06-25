@@ -825,6 +825,16 @@ export default function TripItineraryPanel({ tripId, tripCity, tripCountry, canE
         </a>
       </div>
 
+      {/* Adders — ficam no topo pra não exigir rolar até o fim de roteiros longos */}
+      {canEdit && (
+        <div style={{ marginBottom: 16, paddingBottom: 14, borderBottom: '1px solid var(--arvo-border-soft)', display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <LibraryPicker tripId={tripId} tripCity={tripCity} tripCountry={tripCountry} onAdded={() => load()} />
+          </div>
+          <FreeItemAdder tripId={tripId} onAdded={load} />
+        </div>
+      )}
+
       {loading ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {[1, 2, 3].map(i => <div key={i} style={{ height: 42, borderRadius: 8, background: 'var(--arvo-hover-bg)', animation: 'pulse 1.5s ease infinite', animationDelay: `${i * 80}ms` }} />)}
@@ -870,17 +880,10 @@ export default function TripItineraryPanel({ tripId, tripCity, tripCountry, canE
         </div>
       )}
 
-      {/* Adders */}
-      {canEdit && (
-        <div style={{ marginTop: 16, paddingTop: 14, borderTop: '1px solid var(--arvo-border-soft)', display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <LibraryPicker tripId={tripId} tripCity={tripCity} tripCountry={tripCountry} onAdded={() => load()} />
-          </div>
-          <FreeItemAdder tripId={tripId} onAdded={load} />
-          <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 10.5, color: 'var(--arvo-fg-soft)', textAlign: 'center' }}>
-            Toque e segure uma atividade para reordenar dentro do mesmo dia
-          </p>
-        </div>
+      {canEdit && items.length > 0 && (
+        <p style={{ marginTop: 16, paddingTop: 14, borderTop: '1px solid var(--arvo-border-soft)', fontFamily: 'var(--arvo-font-body)', fontSize: 10.5, color: 'var(--arvo-fg-soft)', textAlign: 'center' }}>
+          Toque e segure uma atividade para reordenar dentro do mesmo dia
+        </p>
       )}
     </div>
   )
