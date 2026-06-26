@@ -734,7 +734,7 @@ export default function PublicTripPage() {
               </div>
 
               {withCoords.length > 0 && (
-                <div className="order-1 lg:order-2 h-[360px] lg:sticky lg:top-4 lg:h-[calc(100vh-150px)] lg:max-h-[760px]">
+                <div className="order-1 lg:order-2 h-[440px] lg:sticky lg:top-4 lg:h-[calc(100vh-150px)] lg:max-h-[760px]">
                   <div style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid var(--arvo-border)', boxShadow: 'var(--arvo-shadow-sm)', height: '100%', isolation: 'isolate' }}>
                     {visibleCoords.length === 0 ? (
                       <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--arvo-hover-bg)' }} />
@@ -768,7 +768,7 @@ export default function PublicTripPage() {
                             ref={m => { if (m) markerRefs.current[p.id] = m }}
                             eventHandlers={{ click: () => setSelectedPlaceId(p.id) }}
                           >
-                            <Popup closeButton={false}>
+                            <Popup closeButton={false} maxHeight={220} autoPanPadding={[16, 16]}>
                               <div style={{ fontFamily: 'var(--arvo-font-body)', minWidth: 150, position: 'relative' }}>
                                 <button
                                   type="button"

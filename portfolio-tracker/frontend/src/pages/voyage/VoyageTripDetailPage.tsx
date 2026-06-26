@@ -472,7 +472,7 @@ export default function VoyageTripDetailPage() {
             onSelectPlace={setSelectedPlaceId}
           />
         </div>
-        <div className="order-1 lg:order-2 h-[360px] lg:sticky lg:top-4 lg:h-[calc(100vh-150px)] lg:max-h-[760px]">
+        <div className="order-1 lg:order-2 h-[440px] lg:sticky lg:top-4 lg:h-[calc(100vh-150px)] lg:max-h-[760px]">
           <TripMapCard
             tripId={Number(id)}
             refreshKey={placesVersion}

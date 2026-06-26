@@ -323,7 +323,11 @@ export default function TripMapCard({ tripId, refreshKey, selectedDay: selectedD
                 ref={m => { if (m) markerRefs.current[p.id] = m }}
                 eventHandlers={{ click: () => setSelectedPlaceId(p.id) }}
               >
-                <Popup closeButton={false}>
+                {/* maxHeight + autoPanPadding: sem isso, num mapa baixo (mobile)
+                    o balão podia ser mais alto que o próprio mapa — nenhum
+                    zoom resolve isso, é espaço vertical disponível. Agora o
+                    conteúdo rola por dentro em vez de ficar cortado. */}
+                <Popup closeButton={false} maxHeight={220} autoPanPadding={[16, 16]}>
                   <div style={{ fontFamily: 'var(--arvo-font-body)', minWidth: 150, position: 'relative' }}>
                     {/* Botão de fechar próprio — em vez do × nativo do Leaflet,
                         que só fechava o popup sem desmarcar a seleção na
