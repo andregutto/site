@@ -79,6 +79,32 @@ function fmtDate(d: string) {
   return new Date(d + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: '2-digit' })
 }
 
+function fmtEur(n: number) {
+  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'EUR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n)
+}
+
+function HeroStat({ label, value, accent, chevron }: { label: string; value: string; accent?: boolean; chevron?: 'up' | 'down' }) {
+  return (
+    <div style={{ textAlign: 'center', padding: '0 14px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontFamily: 'var(--arvo-font-body)', fontSize: 21, fontVariantNumeric: 'tabular-nums', color: accent ? RED : 'var(--arvo-fg)', letterSpacing: '-0.02em', lineHeight: 1.1 }}>
+        {value}
+        {chevron && (
+          <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" style={{ transform: chevron === 'up' ? 'rotate(180deg)' : 'none' }}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M2.5 4.5l3.5 3.5 3.5-3.5" />
+          </svg>
+        )}
+      </span>
+      <span style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 8.5, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)', marginTop: 4 }}>
+        {label}
+      </span>
+    </div>
+  )
+}
+
+function StatDivider() {
+  return <div style={{ width: 1, background: 'var(--arvo-border-soft)' }} />
+}
+
 function fmtDateRange(start: string | null, end: string | null) {
   if (!start && !end) return null
   if (start && end && start === end) return fmtDate(start)
@@ -92,6 +118,7 @@ interface TripDetail {
   cost: TripCost
   members: TripMember[]
   destinations: TripDestination[]
+  places?: { id: number; day_number: number | null }[]
 }
 
 function destinationsLabel(destinations: TripDestination[]): string | null {
@@ -144,6 +171,7 @@ export default function VoyageTripDetailPage() {
   // lugar da lista destaca/centraliza o marker correspondente no mapa.
   const [sharedSelectedDay, setSharedSelectedDay] = useState<number | 'none' | null>(null)
   const [selectedPlaceId, setSelectedPlaceId] = useState<number | null>(null)
+  const [showCostDetail, setShowCostDetail] = useState(false)
 
   const load = useCallback(async () => {
     if (!id) return
@@ -231,7 +259,7 @@ export default function VoyageTripDetailPage() {
       {/* Hero */}
       <div style={{ position: 'relative', borderRadius: 18, overflow: 'hidden', marginBottom: 24 }}>
         {/* Cover */}
-        <div className="h-64 sm:h-60 lg:h-64" style={{ background: '#1a1a18', position: 'relative', overflow: 'hidden' }}>
+        <div className="h-52 sm:h-48 lg:h-44" style={{ background: '#1a1a18', position: 'relative', overflow: 'hidden' }}>
           {trip.cover_image_url ? (
             <img
               src={trip.cover_image_url}
@@ -375,13 +403,61 @@ export default function VoyageTripDetailPage() {
         </a>
       )}
 
-      {/* Roteiro (esquerda) + mapa (direita), dividindo a mesma linha no
-          desktop — o filtro de dia do mapa também filtra a lista, e clicar
-          num lugar da lista centraliza/destaca o marker no mapa. No mobile
-          empilha (mapa primeiro, dá contexto antes da lista). O mapa fica
-          sticky pra continuar visível enquanto o roteiro rola. */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_440px] gap-5 mb-5">
-        <div className="order-2 lg:order-1">
+      {/* Faixa de stats (Dias · Lugares · Custo) — mesma linguagem da página
+          pública, logo abaixo do hero. Clicar expande o detalhamento de
+          custo completo (categorias, lugares, por colaborador). */}
+      {(() => {
+        const placeCount = data.places?.length ?? 0
+        const dayNums = (data.places ?? []).map(p => p.day_number).filter((d): d is number => d != null)
+        const dayCount = dayNums.length > 0 ? Math.max(...dayNums) : (() => {
+          if (!trip.start_date || !trip.end_date) return null
+          const ms = new Date(trip.end_date).getTime() - new Date(trip.start_date).getTime()
+          return ms >= 0 ? Math.round(ms / 86400000) + 1 : null
+        })()
+        const hasCost = (cost?.total ?? 0) > 0 || (cost?.budget ?? 0) > 0
+        return (
+          <div style={{ marginBottom: 20 }}>
+            <button
+              type="button"
+              onClick={() => hasCost && setShowCostDetail(v => !v)}
+              style={{
+                width: '100%', display: 'flex', alignItems: 'stretch', justifyContent: 'space-around',
+                background: 'var(--arvo-surface)', borderRadius: 14, border: '1px solid var(--arvo-border)',
+                boxShadow: 'var(--arvo-shadow-sm)', padding: '14px 8px',
+                cursor: hasCost ? 'pointer' : 'default',
+              }}
+            >
+              {dayCount != null && <HeroStat label={tv.public?.statDays ?? 'Dias'} value={String(dayCount)} />}
+              {dayCount != null && <StatDivider />}
+              <HeroStat label={placeCount === 1 ? (tv.public?.statPlace ?? 'Lugar') : (tv.public?.statPlaces ?? 'Lugares')} value={String(placeCount)} />
+              {hasCost && <StatDivider />}
+              {hasCost && (
+                <HeroStat
+                  label={tv.public?.statCost ?? 'Custo total'}
+                  value={fmtEur(cost.total)}
+                  accent
+                  chevron={showCostDetail ? 'up' : 'down'}
+                />
+              )}
+            </button>
+            {showCostDetail && hasCost && (
+              <div style={{ marginTop: 12 }}>
+                <CostCard
+                  tripId={Number(id)}
+                  cost={cost}
+                  onCostChanged={updated => setData(prev => prev ? { ...prev, cost: updated } : prev)}
+                />
+              </div>
+            )}
+          </div>
+        )
+      })()}
+
+      {/* Roteiro (esquerda 40%) + mapa (direita 60%) na mesma linha no desktop;
+          ambos com altura limitada ao viewport (o roteiro rola por dentro, o
+          mapa nunca passa da tela). No mobile empilha, mapa primeiro. */}
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-5 mb-5 lg:items-start">
+        <div className="order-2 lg:order-1 lg:sticky lg:top-4 lg:h-[calc(100vh-150px)] lg:max-h-[760px] lg:overflow-y-auto">
           <TripItineraryPanel
             tripId={Number(id)}
             tripCity={trip.destination}
@@ -395,29 +471,17 @@ export default function VoyageTripDetailPage() {
             onSelectPlace={setSelectedPlaceId}
           />
         </div>
-        <div className="order-1 lg:order-2 h-[380px] lg:h-[640px]">
-          <div className="lg:sticky h-full" style={{ top: 16 }}>
-            <TripMapCard
-              tripId={Number(id)}
-              refreshKey={placesVersion}
-              selectedDay={sharedSelectedDay}
-              onSelectedDayChange={setSharedSelectedDay}
-              selectedPlaceId={selectedPlaceId}
-              onSelectPlace={setSelectedPlaceId}
-            />
-          </div>
+        <div className="order-1 lg:order-2 h-[360px] lg:sticky lg:top-4 lg:h-[calc(100vh-150px)] lg:max-h-[760px]">
+          <TripMapCard
+            tripId={Number(id)}
+            refreshKey={placesVersion}
+            selectedDay={sharedSelectedDay}
+            onSelectedDayChange={setSharedSelectedDay}
+            selectedPlaceId={selectedPlaceId}
+            onSelectPlace={setSelectedPlaceId}
+          />
         </div>
       </div>
-
-      {/* Custo — faixa fina abaixo do roteiro/mapa em vez de disputar a
-          primeira linha com o hero; é informação de apoio, não o destaque
-          principal da página (diferente dos índices de mercado no dashboard,
-          que são o que a maioria olha primeiro). */}
-      <CostCard
-        tripId={Number(id)}
-        cost={cost}
-        onCostChanged={updated => setData(prev => prev ? { ...prev, cost: updated } : prev)}
-      />
 
       {showMembers && (
         <div

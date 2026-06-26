@@ -402,10 +402,23 @@ router.get('/trips', requireAuth, async (req, res: Response) => {
 
   // Custo rápido (totais apenas, batched — ~3 queries no total, não N×6)
   const totals = await buildCostTotals(trips.map(t => t.id), userId)
+
+  // Destinos de todas as viagens de uma vez (pro card da lista mostrar os
+  // destinos atuais, não só o destino legado single).
+  const { data: allDests } = trips.length > 0
+    ? await supabaseAdmin.from('voyage_trip_destinations')
+        .select('id, trip_id, city, country, day_start, day_end, sort_order')
+        .in('trip_id', trips.map(t => t.id))
+        .order('sort_order')
+    : { data: [] as any[] }
+  const destsByTrip: Record<number, any[]> = {}
+  for (const d of allDests ?? []) (destsByTrip[d.trip_id] ??= []).push(d)
+
   const withCost = trips.map(t => ({
     ...t,
     cost_total: totals[t.id]?.total ?? 0,
     cost_budget: totals[t.id]?.budget ?? null,
+    destinations: destsByTrip[t.id] ?? [],
   }))
 
   res.json({ trips: withCost })

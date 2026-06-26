@@ -128,17 +128,33 @@ export function LibraryPicker({ tripId, tripCity, tripCountry, destinations = []
   const hasDestination = !!(filterCity || filterCountry)
 
   useEffect(() => {
-    if (forceOpen && forceMode !== 'url') openPicker()
+    // Mesmo abrindo direto no modo "Link Maps" (forceMode='url'), pré-carrega
+    // a biblioteca — senão, ao trocar pra aba Biblioteca, ela aparecia vazia
+    // ("Bibliothèque vide") porque nunca tinha sido buscada.
+    if (forceOpen) { setOpen(true); fetchLibrary() }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // Garante a biblioteca carregada sempre que a aba Biblioteca estiver ativa.
+  useEffect(() => {
+    if (open && mode === 'library') fetchLibrary()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, mode])
+
+  async function fetchLibrary() {
+    if (library.length > 0 || loading) return
+    setLoading(true)
+    try {
+      const data = await apiFetch<{ places: LibraryPlace[] }>('/voyage/places')
+      setLibrary(data.places)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   async function openPicker() {
     setOpen(true)
-    if (library.length > 0) return
-    setLoading(true)
-    const data = await apiFetch<{ places: LibraryPlace[] }>('/voyage/places')
-    setLibrary(data.places)
-    setLoading(false)
+    fetchLibrary()
   }
 
   async function addPlace(p: LibraryPlace) {

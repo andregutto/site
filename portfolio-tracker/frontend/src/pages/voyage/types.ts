@@ -33,6 +33,7 @@ export interface Trip {
   // from list endpoint
   cost_total?: number
   cost_budget?: number | null
+  destinations?: TripDestination[]
 }
 
 export interface TripMoment {

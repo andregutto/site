@@ -85,11 +85,15 @@ function TripCard({ trip, onClick, t }: { trip: Trip; onClick: () => void; t: an
         <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 16, letterSpacing: '0.06em', color: 'var(--arvo-fg)', marginBottom: 4 }}>
           {trip.title}
         </p>
-        {trip.destination && (
-          <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg-muted)', marginBottom: 8 }}>
-            {trip.destination}
-          </p>
-        )}
+        {(() => {
+          const dests = (trip.destinations ?? []).map(d => d.city ?? d.country).filter(Boolean) as string[]
+          const label = dests.length > 0 ? dests.join(' · ') : trip.destination
+          return label ? (
+            <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg-muted)', marginBottom: 8, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {label}
+            </p>
+          ) : null
+        })()}
         <div className="flex items-center gap-2 flex-wrap">
           {dateStr && (
             <span style={{

@@ -167,13 +167,8 @@ function isLogisticalStay(category: string | null): boolean {
   return key.includes('carro') || key.includes('aluguel')
 }
 
-function DayBadge({ day, canEdit, onChangeDay, compact }: {
+function DayBadge({ day, canEdit, onChangeDay }: {
   day: number | null; canEdit: boolean; onChangeDay: (day: number | null) => void
-  // O cabeçalho da seção já diz "Dia N" — repetir o número em cada card é
-  // ruído. compact=true (item já dentro do grupo certo) mostra só um ícone
-  // de editar; o texto completo só aparece quando o dia está ambíguo
-  // (grupo "Sem dia") ou quando não está compact.
-  compact?: boolean
 }) {
   const { t } = useI18n()
   const tv = (t as any).voyage ?? {}
@@ -196,20 +191,6 @@ function DayBadge({ day, canEdit, onChangeDay, compact }: {
       autoFocus
       style={{ width: 48, padding: '3px 4px', borderRadius: 4, border: '1px solid var(--arvo-fg)', background: 'var(--arvo-surface)', fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg)', outline: 'none', textAlign: 'center' }}
     />
-  )
-
-  if (compact && day != null) return (
-    <button
-      type="button"
-      onClick={() => { if (canEdit) { setVal(day?.toString() ?? ''); setEditing(true) } }}
-      title={canEdit ? (tv.changeDayTitle ?? 'Mudar o dia') : undefined}
-      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 22, height: 22, borderRadius: 999, flexShrink: 0, background: 'none', border: 'none', cursor: canEdit ? 'pointer' : 'default', color: 'var(--arvo-fg-faint)' }}
-    >
-      <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.4">
-        <rect x="1.5" y="2" width="9" height="8.5" rx="1.2" />
-        <path strokeLinecap="round" d="M1.5 4.3h9M4 1v1.6M8 1v1.6" />
-      </svg>
-    </button>
   )
 
   return (
@@ -336,11 +317,20 @@ function ItemRow({ item, tripId, canEdit, dragging, dropTarget, destinations, au
   const [editingName, setEditingName] = useState(false)
   const [showExpenses, setShowExpenses] = useState(false)
   const [showStayFields, setShowStayFields] = useState(!!autoOpenStay)
+  // O seletor de "transporte para chegar aqui" (8 botões) era mostrado pra
+  // todo lugar no painel Mais, poluindo demais. Agora fica atrás de um toggle
+  // e só abre automaticamente se o lugar já tem um transporte definido.
+  const [showTransportFields, setShowTransportFields] = useState(false)
   const isPlace = item.kind === 'place'
   const isTransport = item.kind === 'transport'
   const isNote = item.kind === 'note'
   const isStay = isPlace && item.checkin_day != null && item.checkout_day != null
   const hasExpenses = (item.expense_total ?? 0) > 0
+  // Mostra o seletor de destino só quando é genuinamente ambíguo: o dia do
+  // item é coberto por mais de um destino (ou já tem um destino explícito
+  // pra poder trocar/limpar). Caso contrário o lugar já carrega a cidade.
+  const dayDestCount = destinationsForDay(item.day_number, destinations).length
+  const showDestinationPicker = destinations.length > 1 && (dayDestCount > 1 || item.destination_id != null)
 
   // Long-press anywhere on the row to start a reorder. A quick tap clears the
   // timer before it fires, so the row's own buttons keep working normally.
@@ -521,21 +511,23 @@ function ItemRow({ item, tripId, canEdit, dragging, dropTarget, destinations, au
       </div>
 
       {/* Action row — separate from the title row so the name has room to
-          breathe on narrow screens instead of competing with 4-5 icons */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '0 10px 8px 10px' }}>
-        {isStay ? (
-          <span style={{
-            fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.12em',
-            padding: '3px 9px', borderRadius: 999, flexShrink: 0,
-            background: dayColorWash(item.checkin_day!, 8), color: dayColor(item.checkin_day!),
-            border: `1px solid ${dayColorWash(item.checkin_day!, 22)}`,
-          }}>
-            {(tv.dayRange ?? 'Dia {from} – {to}').replace('{from}', String(item.checkin_day)).replace('{to}', String(item.checkout_day))}
-          </span>
-        ) : (
-          <DayBadge day={item.day_number} canEdit={canEdit} onChangeDay={d => onPatch({ day_number: d })} compact />
-        )}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 2, flexShrink: 0 }}>
+          breathe on narrow screens instead of competing with 4-5 icons.
+          O dia (pill clicável pra editar) fica junto das demais ações à
+          direita em vez de isolado à esquerda. */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 6, padding: '0 10px 8px 10px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+          {isStay ? (
+            <span style={{
+              fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.12em',
+              padding: '3px 9px', borderRadius: 999, flexShrink: 0,
+              background: dayColorWash(item.checkin_day!, 8), color: dayColor(item.checkin_day!),
+              border: `1px solid ${dayColorWash(item.checkin_day!, 22)}`,
+            }}>
+              {(tv.dayRange ?? 'Dia {from} – {to}').replace('{from}', String(item.checkin_day)).replace('{to}', String(item.checkout_day))}
+            </span>
+          ) : (
+            <DayBadge day={item.day_number} canEdit={canEdit} onChangeDay={d => onPatch({ day_number: d })} />
+          )}
           {/* Quando já há despesa vinculada, o link com o valor (abaixo do
               nome) já cobre essa ação — aqui fica só o ícone, consistente
               com os outros botões da linha. Sem despesa ainda, é a única
@@ -585,9 +577,9 @@ function ItemRow({ item, tripId, canEdit, dragging, dropTarget, destinations, au
           check-in/check-out already cover the day/time question. */}
       {expanded && canEdit && (
         <div style={{ padding: '8px 10px 10px', borderTop: '1px solid var(--arvo-border-soft)', display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {destinations.length > 1 && (
+          {showDestinationPicker && (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, alignItems: 'center' }}>
-              <span style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 8, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)' }}>Destino</span>
+              <span style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 8, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)' }}>{tv.destinationLabel ?? 'Destino'}</span>
               {destinations.map(d => (
                 <button key={d.id} type="button" onClick={() => onPatch({ destination_id: item.destination_id === d.id ? null : d.id })}
                   style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 10.5, padding: '2px 8px', borderRadius: 999, cursor: 'pointer', border: `1px solid ${item.destination_id === d.id ? 'var(--arvo-fg)' : 'var(--arvo-border)'}`, background: item.destination_id === d.id ? 'var(--arvo-hover-bg)' : 'transparent', color: item.destination_id === d.id ? 'var(--arvo-fg)' : 'var(--arvo-fg-muted)' }}>
@@ -625,11 +617,12 @@ function ItemRow({ item, tripId, canEdit, dragging, dropTarget, destinations, au
             </button>
           )}
 
-          {(isTransport || (isPlace && !isStay)) && (
+          {/* Item de transporte: o seletor de modo é o conteúdo principal, fica sempre visível */}
+          {isTransport && (
             <>
               <div>
-                <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 8, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)', marginBottom: 5, marginTop: isPlace ? 2 : 0 }}>
-                  {isTransport ? (tv.transportMode ?? 'Meio de transporte') : (tv.transportToArrive ?? 'Transporte para chegar aqui')}
+                <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 8, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)', marginBottom: 5 }}>
+                  {tv.transportMode ?? 'Meio de transporte'}
                 </p>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                   {Object.entries(TRANSPORT_LABELS).map(([k, label]) => (
@@ -644,14 +637,38 @@ function ItemRow({ item, tripId, canEdit, dragging, dropTarget, destinations, au
                 <TimeField label={tv.arrival ?? 'Chegada'} value={item.arrive_time} onChange={v => onPatch({ arrive_time: v })} />
                 <TimeField label={tv.departure ?? 'Saída'} value={item.depart_time} onChange={v => onPatch({ depart_time: v })} />
               </div>
-              {isPlace && (
-                <>
+            </>
+          )}
+
+          {/* Lugar normal: horário sempre; o "transporte para chegar aqui"
+              (seletor + nota) fica atrás de um toggle pra não poluir. */}
+          {isPlace && !isStay && (
+            <>
+              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                <TimeField label={tv.arrival ?? 'Chegada'} value={item.arrive_time} onChange={v => onPatch({ arrive_time: v })} />
+                <TimeField label={tv.departure ?? 'Saída'} value={item.depart_time} onChange={v => onPatch({ depart_time: v })} />
+              </div>
+              {(showTransportFields || item.transport_mode || item.transport_note) ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 8, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)', marginTop: 2 }}>
-                    {tv.transportNote ?? 'Nota de transporte'}
+                    {tv.transportToArrive ?? 'Transporte para chegar aqui'}
                   </p>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                    {Object.entries(TRANSPORT_LABELS).map(([k, label]) => (
+                      <button key={k} type="button" onClick={() => onPatch({ transport_mode: item.transport_mode === k ? null : k })}
+                        style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, padding: '3px 8px', borderRadius: 999, cursor: 'pointer', border: `1px solid ${item.transport_mode === k ? 'var(--arvo-fg)' : 'var(--arvo-border)'}`, background: item.transport_mode === k ? 'var(--arvo-hover-bg)' : 'transparent', color: item.transport_mode === k ? 'var(--arvo-fg)' : 'var(--arvo-fg-muted)' }}>
+                        {TRANSPORT_ICONS[k]} {label}
+                      </button>
+                    ))}
+                  </div>
                   <NoteEditor value={item.transport_note} placeholder={tv.transportNotePlaceholder ?? 'Voo, nº de reserva…'}
                     onSave={v => onPatch({ transport_note: v })} />
-                </>
+                </div>
+              ) : (
+                <button type="button" onClick={() => setShowTransportFields(true)}
+                  style={{ alignSelf: 'flex-start', fontFamily: 'var(--arvo-font-body)', fontSize: 11, padding: '4px 10px', borderRadius: 6, background: 'none', border: '1px solid var(--arvo-border)', color: 'var(--arvo-fg-soft)', cursor: 'pointer' }}>
+                  + {tv.transportToArrive ?? 'Transporte para chegar aqui'}
+                </button>
               )}
             </>
           )}
