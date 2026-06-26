@@ -259,12 +259,12 @@ export function LibraryPicker({ tripId, tripCity, tripCountry, destinations = []
         />
         <button type="button" onClick={confirmRename} disabled={renaming}
           style={{ padding: '7px 14px', borderRadius: 6, background: 'var(--arvo-fg)', color: 'var(--arvo-bg)', border: 'none', cursor: renaming ? 'default' : 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 12 }}>
-          {renaming ? '…' : 'Salvar'}
+          {renaming ? '…' : (tv.actions?.save ?? 'Salvar')}
         </button>
       </div>
       <button type="button" onClick={() => { onAdded(pendingRename); setPendingRename(null); setOpen(false); onClose?.() }}
         style={{ marginTop: 8, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)', padding: 0 }}>
-        Manter o endereço como nome
+        {tv.places?.keepAddressAsName ?? 'Manter o endereço como nome'}
       </button>
     </div>
   )
@@ -278,7 +278,7 @@ export function LibraryPicker({ tripId, tripCity, tripCountry, destinations = []
         onMouseEnter={e => (e.currentTarget.style.opacity = '0.85')}
         onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
       >
-        + Adicionar da biblioteca
+        {tv.places?.addFromLibrary ?? '+ Adicionar da biblioteca'}
       </button>
       <button
         type="button"
@@ -305,11 +305,11 @@ export function LibraryPicker({ tripId, tripCity, tripCountry, destinations = []
         <div style={{ display: 'flex', gap: 12 }}>
           <button type="button" onClick={() => setMode('library')}
             style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.20em', textTransform: 'uppercase', color: mode === 'library' ? 'var(--arvo-fg)' : 'var(--arvo-fg-muted)', borderBottom: mode === 'library' ? '1px solid var(--arvo-fg)' : '1px solid transparent', paddingBottom: 2 }}>
-            {!showAll && hasDestination && destinationPlaces.length > 0 ? `${filterCity ?? filterCountry}` : 'Biblioteca'}
+            {!showAll && hasDestination && destinationPlaces.length > 0 ? `${filterCity ?? filterCountry}` : (tv.places?.libraryTab ?? 'Biblioteca')}
           </button>
           <button type="button" onClick={() => setMode('url')}
             style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.20em', textTransform: 'uppercase', color: mode === 'url' ? 'var(--arvo-fg)' : 'var(--arvo-fg-muted)', borderBottom: mode === 'url' ? '1px solid var(--arvo-fg)' : '1px solid transparent', paddingBottom: 2 }}>
-            Link Maps
+            {tv.places?.mapsTab ?? 'Link Maps'}
           </button>
         </div>
         <button type="button" onClick={() => { setOpen(false); onClose?.() }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--arvo-fg-soft)', fontSize: 12 }}>✕</button>
@@ -318,7 +318,7 @@ export function LibraryPicker({ tripId, tripCity, tripCountry, destinations = []
       {mode === 'url' ? (
         <form onSubmit={importFromUrl} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-soft)', lineHeight: 1.5 }}>
-            Cole o link do Google Maps — o lugar será salvo na biblioteca e adicionado à viagem.
+            {tv.places?.urlIntro ?? 'Cole o link do Google Maps — o lugar será salvo na biblioteca e adicionado à viagem.'}
           </p>
           <input
             autoFocus
@@ -336,7 +336,7 @@ export function LibraryPicker({ tripId, tripCity, tripCountry, destinations = []
             disabled={urlLoading || !urlInput.trim()}
             style={{ padding: '7px 0', borderRadius: 6, background: urlLoading || !urlInput.trim() ? 'var(--arvo-hover-bg)' : 'var(--arvo-fg)', color: urlLoading || !urlInput.trim() ? 'var(--arvo-fg-muted)' : 'var(--arvo-bg)', border: 'none', cursor: urlLoading || !urlInput.trim() ? 'default' : 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, transition: 'all 160ms' }}
           >
-            {urlLoading ? 'Importando…' : 'Adicionar à viagem'}
+            {urlLoading ? (tv.places?.importing ?? 'Importando…') : (tv.places?.addToTrip ?? 'Adicionar à viagem')}
           </button>
         </form>
       ) : (
@@ -345,7 +345,7 @@ export function LibraryPicker({ tripId, tripCity, tripCountry, destinations = []
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 8 }}>
               <button type="button" onClick={() => setDestFilterId(null)}
                 style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 10.5, padding: '3px 9px', borderRadius: 999, border: `1px solid ${destFilterId === null ? 'var(--arvo-fg)' : 'var(--arvo-border)'}`, background: destFilterId === null ? 'var(--arvo-hover-bg)' : 'transparent', color: destFilterId === null ? 'var(--arvo-fg)' : 'var(--arvo-fg-muted)', cursor: 'pointer' }}>
-                Todos os destinos
+                {tv.places?.allDestinations ?? 'Todos os destinos'}
               </button>
               {destinations.map(d => (
                 <button key={d.id} type="button" onClick={() => setDestFilterId(d.id)}
@@ -357,26 +357,26 @@ export function LibraryPicker({ tripId, tripCity, tripCountry, destinations = []
           )}
           <input
             type="text"
-            placeholder="Buscar…"
+            placeholder={tv.places?.search ?? 'Buscar…'}
             value={search}
             onChange={e => setSearch(e.target.value)}
             style={{ width: '100%', padding: '6px 10px', borderRadius: 3, border: '1px solid var(--arvo-border)', fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, background: 'var(--arvo-surface)', color: 'var(--arvo-fg)', outline: 'none', marginBottom: 8, boxSizing: 'border-box' }}
             autoFocus
           />
           {loading ? (
-            <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)' }}>Carregando…</p>
+            <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)' }}>{tv.places?.loading ?? 'Carregando…'}</p>
           ) : library.length === 0 ? (
             <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)' }}>
-              Biblioteca vazia — importe do Google Takeout ou cole um link do Maps.
+              {tv.places?.libraryEmpty ?? 'Biblioteca vazia — importe do Google Takeout ou cole um link do Maps.'}
             </p>
           ) : filtered.length === 0 && !search ? (
             <div>
               <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)', marginBottom: 8 }}>
-                Nenhum lugar de {filterCity ?? filterCountry} na biblioteca.
+                {(tv.places?.noPlacesInDestination ?? 'Nenhum lugar de {dest} na biblioteca.').replace('{dest}', String(filterCity ?? filterCountry))}
               </p>
               <button type="button" onClick={() => setShowAll(true)}
                 style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
-                Ver todos os {library.length} lugares →
+                {(tv.places?.viewAllPlaces ?? 'Ver todos os {n} lugares →').replace('{n}', String(library.length))}
               </button>
             </div>
           ) : (
@@ -584,6 +584,8 @@ function PlaceRow({ place, tripId, canEdit, onUpdate, onDelete, onReload }: {
 
 // ── Main panel ────────────────────────────────────────────────────────────────
 export default function TripPlacesPanel({ tripId, tripCity, tripCountry, canEdit }: Props) {
+  const { t } = useI18n()
+  const tv = (t as any).voyage ?? {}
   const [places, setPlaces] = useState<TripPlace[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -603,11 +605,11 @@ export default function TripPlacesPanel({ tripId, tripCity, tripCountry, canEdit
     <div style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', borderRadius: 16, boxShadow: 'var(--arvo-shadow-sm)', padding: '20px 22px' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
         <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 10, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)' }}>
-          Lugares
+          {tv.places?.title ?? 'Lugares'}
         </p>
         {places.length > 0 && (
           <a href="/voyage/places" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)', textDecoration: 'none', letterSpacing: '0.04em' }}>
-            Biblioteca →
+            {tv.actions?.library ?? 'Biblioteca →'}
           </a>
         )}
       </div>

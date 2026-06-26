@@ -2058,6 +2058,9 @@
     "notePlaceholder": "Details (optional)…",
     "arrival": "Arrival",
     "departure": "Departure",
+    "notePlaceholderFree": "E.g.: Bring passport",
+    "transportPlaceholderFree": "E.g.: Train Lisbon → Porto",
+    "dayPlaceholder": "Day",
     "openInMapsTitle": "Open in Google Maps",
     "highlightTitle": "Highlight",
     "expensesTitle": "Expenses",
@@ -2119,7 +2122,18 @@
       "detail": "Details",
       "collapse": "Collapse",
       "viewMoments": "View moments →",
-      "library": "Library →"
+      "library": "Library →",
+      "add": "+ Add",
+      "addPlace": "📍 Place",
+      "addStay": "🏨 Stay or rental",
+      "addTransport": "🚆 Transport",
+      "addNote": "📝 Note",
+      "addGeneric": "Add",
+      "libraryTab": "Library",
+      "linkTab": "Maps link",
+      "search": "Search…",
+      "emptyLibrary": "Empty library — import from Google Takeout or paste a Maps link.",
+      "places": "Places"
     },
     "share": {
       "title": "Share trip",
@@ -2175,7 +2189,12 @@
       "importing": "Importing…",
       "libraryEmpty": "Empty library — import from Google Takeout or paste a Maps link.",
       "stayInProgress": "in progress: {name}",
-      "stayCheckout": "Check-out: {name}"
+      "stayCheckout": "Check-out: {name}",
+      "keepAddressAsName": "Keep address as name",
+      "allDestinations": "All destinations",
+      "noPlacesInDestination": "No places from {dest} in the library.",
+      "viewAllPlaces": "View all {n} places →",
+      "loading": "Loading…"
     },
     "autocomplete": {
       "destinationPlaceholder": "e.g. Lisbon"

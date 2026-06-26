@@ -621,6 +621,8 @@ function FreeItemAdder({ tripId, onAdded, forceOpen, initialKind, onClose }: {
   tripId: number; onAdded: () => void
   forceOpen?: boolean; initialKind?: 'note' | 'transport'; onClose?: () => void
 }) {
+  const { t } = useI18n()
+  const tv = (t as any).voyage ?? {}
   const [open, setOpen] = useState(forceOpen ?? false)
   const [kind, setKind] = useState<'note' | 'transport'>(initialKind ?? 'note')
   const [title, setTitle] = useState('')
@@ -664,7 +666,7 @@ function FreeItemAdder({ tripId, onAdded, forceOpen, initialKind, onClose }: {
       style={{ display: 'flex', alignItems: 'center', gap: 5, alignSelf: 'flex-start', fontFamily: 'var(--arvo-font-body)', fontSize: 11, letterSpacing: '0.02em', padding: '5px 11px', borderRadius: 6, background: 'none', border: '1px solid var(--arvo-border)', color: 'var(--arvo-fg-soft)', cursor: 'pointer' }}
       onMouseEnter={e => (e.currentTarget.style.background = 'var(--arvo-hover-bg)')}
       onMouseLeave={e => (e.currentTarget.style.background = 'none')}>
-      + Item livre
+      {tv.actions?.addGeneric ? `+ ${tv.actions.addGeneric}` : '+ Item livre'}
     </button>
   )
 
@@ -674,16 +676,16 @@ function FreeItemAdder({ tripId, onAdded, forceOpen, initialKind, onClose }: {
         {(['note', 'transport'] as const).map(k => (
           <button key={k} type="button" onClick={() => setKind(k)}
             style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, padding: '4px 12px', borderRadius: 999, cursor: 'pointer', border: `1px solid ${kind === k ? 'var(--arvo-fg)' : 'var(--arvo-border)'}`, background: kind === k ? 'var(--arvo-hover-bg)' : 'transparent', color: kind === k ? 'var(--arvo-fg)' : 'var(--arvo-fg-muted)' }}>
-            {k === 'note' ? '📝 Anotação' : '🚆 Transporte'}
+            {k === 'note' ? (tv.actions?.addNote ?? '📝 Anotação') : (tv.actions?.addTransport ?? '🚆 Transporte')}
           </button>
         ))}
       </div>
       <div style={{ display: 'flex', gap: 6 }}>
         <input autoFocus value={title} onChange={e => setTitle(e.target.value)}
-          placeholder={kind === 'note' ? 'Ex: Levar passaporte' : 'Ex: Trem Lisboa → Porto'}
+          placeholder={kind === 'note' ? (tv.notePlaceholderFree ?? 'Ex: Levar passaporte') : (tv.transportPlaceholderFree ?? 'Ex: Trem Lisboa → Porto')}
           onKeyDown={e => { if (e.key === 'Enter') save() }}
           style={{ flex: 1, padding: '7px 10px', borderRadius: 4, border: '1px solid var(--arvo-border)', background: 'var(--arvo-surface)', color: 'var(--arvo-fg)', fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, outline: 'none' }} />
-        <input value={day} onChange={e => setDay(e.target.value)} type="number" min="1" inputMode="numeric" placeholder="Dia"
+        <input value={day} onChange={e => setDay(e.target.value)} type="number" min="1" inputMode="numeric" placeholder={tv.dayPlaceholder ?? 'Dia'}
           style={{ width: 56, padding: '7px 8px', borderRadius: 4, border: '1px solid var(--arvo-border)', background: 'var(--arvo-surface)', color: 'var(--arvo-fg)', fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, outline: 'none', textAlign: 'center' }} />
       </div>
 
@@ -699,17 +701,17 @@ function FreeItemAdder({ tripId, onAdded, forceOpen, initialKind, onClose }: {
             ))}
           </div>
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-            <TimeField label="Chegada" value={arriveTime || null} onChange={v => setArriveTime(v ?? '')} />
-            <TimeField label="Saída" value={departTime || null} onChange={v => setDepartTime(v ?? '')} />
+            <TimeField label={tv.arrival ?? 'Chegada'} value={arriveTime || null} onChange={v => setArriveTime(v ?? '')} />
+            <TimeField label={tv.departure ?? 'Saída'} value={departTime || null} onChange={v => setDepartTime(v ?? '')} />
           </div>
         </>
       )}
 
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6 }}>
         <button type="button" onClick={reset}
-          style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, padding: '5px 12px', borderRadius: 5, background: 'none', border: '1px solid var(--arvo-border)', color: 'var(--arvo-fg-muted)', cursor: 'pointer' }}>Cancelar</button>
+          style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, padding: '5px 12px', borderRadius: 5, background: 'none', border: '1px solid var(--arvo-border)', color: 'var(--arvo-fg-muted)', cursor: 'pointer' }}>{tv.actions?.cancel ?? 'Cancelar'}</button>
         <button type="button" onClick={save} disabled={saving || !title.trim()}
-          style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, padding: '5px 14px', borderRadius: 5, background: 'var(--arvo-fg)', color: 'var(--arvo-bg)', border: 'none', cursor: saving || !title.trim() ? 'default' : 'pointer', opacity: saving || !title.trim() ? 0.5 : 1 }}>Adicionar</button>
+          style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, padding: '5px 14px', borderRadius: 5, background: 'var(--arvo-fg)', color: 'var(--arvo-bg)', border: 'none', cursor: saving || !title.trim() ? 'default' : 'pointer', opacity: saving || !title.trim() ? 0.5 : 1 }}>{tv.actions?.addGeneric ?? 'Adicionar'}</button>
       </div>
     </div>
   )
@@ -904,7 +906,7 @@ export default function TripItineraryPanel({ tripId, tripCity, tripCountry, dest
           {activeTool === null && !showToolMenu && (
             <button type="button" onClick={() => setShowToolMenu(true)}
               style={{ display: 'flex', alignItems: 'center', gap: 5, alignSelf: 'flex-start', fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, letterSpacing: '0.02em', padding: '6px 14px', borderRadius: 6, background: 'var(--arvo-fg)', color: 'var(--arvo-bg)', border: 'none', cursor: 'pointer' }}>
-              + Adicionar
+              {tv.actions?.add ?? '+ Adicionar'}
             </button>
           )}
 
@@ -912,19 +914,19 @@ export default function TripItineraryPanel({ tripId, tripCity, tripCountry, dest
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
               <button type="button" onClick={() => { setActiveTool('place'); setShowToolMenu(false) }}
                 style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, padding: '5px 11px', borderRadius: 6, border: '1px solid var(--arvo-border)', background: 'none', color: 'var(--arvo-fg)', cursor: 'pointer' }}>
-                📍 Lugar
+                {tv.actions?.addPlace ?? '📍 Lugar'}
               </button>
               <button type="button" onClick={() => { setActiveTool('stay'); setShowToolMenu(false) }}
                 style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, padding: '5px 11px', borderRadius: 6, border: '1px solid var(--arvo-border)', background: 'none', color: 'var(--arvo-fg)', cursor: 'pointer' }}>
-                🏨 Estadia ou aluguel
+                {tv.actions?.addStay ?? '🏨 Estadia ou aluguel'}
               </button>
               <button type="button" onClick={() => { setActiveTool('transport'); setShowToolMenu(false) }}
                 style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, padding: '5px 11px', borderRadius: 6, border: '1px solid var(--arvo-border)', background: 'none', color: 'var(--arvo-fg)', cursor: 'pointer' }}>
-                🚆 Transporte
+                {tv.actions?.addTransport ?? '🚆 Transporte'}
               </button>
               <button type="button" onClick={() => { setActiveTool('note'); setShowToolMenu(false) }}
                 style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, padding: '5px 11px', borderRadius: 6, border: '1px solid var(--arvo-border)', background: 'none', color: 'var(--arvo-fg)', cursor: 'pointer' }}>
-                📝 Anotação
+                {tv.actions?.addNote ?? '📝 Anotação'}
               </button>
               <button type="button" onClick={() => setShowToolMenu(false)}
                 style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--arvo-fg-soft)', fontSize: 12, padding: 4 }}>✕</button>

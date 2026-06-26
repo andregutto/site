@@ -2058,6 +2058,9 @@
     "notePlaceholder": "Detalhes (opcional)…",
     "arrival": "Chegada",
     "departure": "Saída",
+    "notePlaceholderFree": "Ex: Levar passaporte",
+    "transportPlaceholderFree": "Ex: Trem Lisboa → Porto",
+    "dayPlaceholder": "Dia",
     "openInMapsTitle": "Abrir no Google Maps",
     "highlightTitle": "Destaque",
     "expensesTitle": "Despesas",
@@ -2119,7 +2122,18 @@
       "detail": "Detalhar",
       "collapse": "Recolher",
       "viewMoments": "Ver momentos →",
-      "library": "Biblioteca →"
+      "library": "Biblioteca →",
+      "add": "+ Adicionar",
+      "addPlace": "📍 Lugar",
+      "addStay": "🏨 Estadia ou aluguel",
+      "addTransport": "🚆 Transporte",
+      "addNote": "📝 Anotação",
+      "addGeneric": "Adicionar",
+      "libraryTab": "Biblioteca",
+      "linkTab": "Link Maps",
+      "search": "Buscar…",
+      "emptyLibrary": "Biblioteca vazia — importe do Google Takeout ou cole um link do Maps.",
+      "places": "Lugares"
     },
     "share": {
       "title": "Compartilhar viagem",
@@ -2175,7 +2189,12 @@
       "importing": "Importando…",
       "libraryEmpty": "Biblioteca vazia — importe do Google Takeout ou cole um link do Maps.",
       "stayInProgress": "em andamento: {name}",
-      "stayCheckout": "Check-out: {name}"
+      "stayCheckout": "Check-out: {name}",
+      "keepAddressAsName": "Manter o endereço como nome",
+      "allDestinations": "Todos os destinos",
+      "noPlacesInDestination": "Nenhum lugar de {dest} na biblioteca.",
+      "viewAllPlaces": "Ver todos os {n} lugares →",
+      "loading": "Carregando…"
     },
     "autocomplete": {
       "destinationPlaceholder": "ex: Lisboa"
