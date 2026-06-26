@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { apiFetch } from '../lib/api'
+import { useI18n } from '../contexts/I18nContext'
 import Avatar from './voyage/_shared/Avatar'
 import { RoleChip, StatusChip } from './voyage/_shared/Chips'
 
@@ -362,6 +363,7 @@ function ContactCard({
 }
 
 export default function PeoplePage() {
+  const { t } = useI18n()
   const [contacts, setContacts] = useState<Contact[]>([])
   const [trips, setTrips]   = useState<Trip[]>([])
   const [groups, setGroups] = useState<Group[]>([])
@@ -458,7 +460,7 @@ export default function PeoplePage() {
           fontFamily: 'var(--arvo-font-display)', fontSize: 28, letterSpacing: '0.08em',
           color: 'var(--arvo-fg)', marginBottom: 10,
         }}>
-          Pessoas
+          {t.nav.people}
         </h1>
         {!loading && contacts.length > 0 && (
           <div style={{ display: 'flex', gap: 8 }}>

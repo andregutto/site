@@ -491,7 +491,7 @@ export default function AppLayout() {
                       <circle cx="12" cy="6" r="2"/>
                       <path strokeLinecap="round" d="M16 14c0-2.2-1.8-4-4-4"/>
                     </svg>
-                    Pessoas
+                    {t.nav.people}
                   </Link>
 
                   <div style={{ borderTop: '1px solid var(--arvo-border-soft)', margin: '4px 0' }} />
