@@ -367,7 +367,10 @@ function ItemRow({ item, tripId, canEdit, dragging, dropTarget, destinations, au
         border: dropTarget ? `1px dashed ${RED}` : `1px solid ${item.is_highlight ? 'rgba(214,59,47,0.12)' : 'var(--arvo-border-soft)'}`,
         overflow: 'hidden',
         opacity: dragging ? 0.88 : 1,
-        transform: dragging ? 'scale(1.02) rotate(0.6deg)' : 'scale(1)',
+        // 'none' (not 'scale(1)') when idle — any transform other than none
+        // creates a new containing block, which trapped the PlaceExpensesPanel
+        // modal's position:fixed overlay inside this row instead of the viewport.
+        transform: dragging ? 'scale(1.02) rotate(0.6deg)' : 'none',
         boxShadow: dragging ? 'var(--arvo-shadow-lg)' : 'none',
         cursor: canEdit ? 'grab' : 'default',
         transition: 'opacity 120ms, border-color 120ms, transform 120ms, box-shadow 120ms',
