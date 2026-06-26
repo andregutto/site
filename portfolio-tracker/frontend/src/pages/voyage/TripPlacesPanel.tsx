@@ -359,12 +359,12 @@ export function LibraryPicker({ tripId, tripCity, tripCountry, destinations = []
         <>
           {destinations.length > 1 && (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 8 }}>
-              <button type="button" onClick={() => setDestFilterId(null)}
+              <button type="button" onClick={() => { setDestFilterId(null); setShowAll(false) }}
                 style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 10.5, padding: '3px 9px', borderRadius: 999, border: `1px solid ${destFilterId === null ? 'var(--arvo-fg)' : 'var(--arvo-border)'}`, background: destFilterId === null ? 'var(--arvo-hover-bg)' : 'transparent', color: destFilterId === null ? 'var(--arvo-fg)' : 'var(--arvo-fg-muted)', cursor: 'pointer' }}>
                 {tv.places?.allDestinations ?? 'Todos os destinos'}
               </button>
               {destinations.map(d => (
-                <button key={d.id} type="button" onClick={() => setDestFilterId(d.id)}
+                <button key={d.id} type="button" onClick={() => { setDestFilterId(d.id); setShowAll(false) }}
                   style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 10.5, padding: '3px 9px', borderRadius: 999, border: `1px solid ${destFilterId === d.id ? 'var(--arvo-fg)' : 'var(--arvo-border)'}`, background: destFilterId === d.id ? 'var(--arvo-hover-bg)' : 'transparent', color: destFilterId === d.id ? 'var(--arvo-fg)' : 'var(--arvo-fg-muted)', cursor: 'pointer' }}>
                   {d.city ?? d.country}
                 </button>

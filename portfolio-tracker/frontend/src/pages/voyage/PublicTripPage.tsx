@@ -163,12 +163,17 @@ function makeIcon(emoji: string, color: string, highlight: boolean) {
 
 function FitBounds({ places }: { places: PublicPlace[] }) {
   const map = useMap()
+  // `places` (visibleCoords) is recreated every render even when its content
+  // is the same (it's a .filter() result) — without a stable key, selecting
+  // a place re-triggered fitBounds and undid the flyTo zoom-in.
+  const key = places.map(p => p.id).join(',')
   useEffect(() => {
     const pts = places.filter(p => p.lat && p.lng)
     if (!pts.length) return
     if (pts.length === 1) { map.setView([pts[0].lat!, pts[0].lng!], 13); return }
     map.fitBounds(L.latLngBounds(pts.map(p => [p.lat!, p.lng!])), { padding: [36, 36] })
-  }, [places, map])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key, map])
   return null
 }
 
@@ -211,6 +216,16 @@ function fmtDateRange(start: string | null, end: string | null, intlLocale: stri
   if (start && end) return `${fmtDate(start, intlLocale)} – ${fmtDate(end, intlLocale)}`
   if (start) return (tv.public?.dateFrom ?? 'from {date}').replace('{date}', fmtDate(start, intlLocale))
   return (tv.public?.dateUntil ?? 'until {date}').replace('{date}', fmtDate(end!, intlLocale))
+}
+
+// Lista de destinos, condensando em "+N" só quando passa do limite — o
+// hero tem espaço horizontal de sobra pra mostrar mais que 2 antes de
+// condensar (limite maior no desktop, menor no mobile via maxMobile/maxDesktop).
+function destinationsLabel(destinations: { city: string | null; country: string | null }[], max: number): string | null {
+  const names = destinations.map(d => d.city ?? d.country).filter(Boolean) as string[]
+  if (names.length === 0) return null
+  if (names.length <= max) return names.join(' · ')
+  return `${names.slice(0, max).join(' · ')} +${names.length - max}`
 }
 
 function tripDurationDays(start: string | null, end: string | null): number | null {
@@ -365,6 +380,10 @@ export default function PublicTripPage() {
   const [showKmlHelp, setShowKmlHelp] = useState(false)
   const [showMapsMenu, setShowMapsMenu] = useState(false)
   const markerRefs = useRef<Record<number, L.Marker>>({})
+  // Zoom por scroll só ativa após um clique — sem isso, o mapa sticky e
+  // grande "engasgava" o scroll da página sempre que o cursor passava por
+  // cima (a roda zoomava o mapa em vez de rolar a página).
+  const [mapActive, setMapActive] = useState(false)
 
   useEffect(() => {
     if (!token) return
@@ -491,12 +510,22 @@ export default function PublicTripPage() {
             <h1 style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 38, letterSpacing: '0.05em', color: '#fff', lineHeight: 1.12, marginBottom: 10 }}>
               {trip.title}
             </h1>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
-              {trip.destination && (
-                <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'rgba(255,255,255,0.68)' }}>
-                  {trip.destination}{trip.country ? `, ${trip.country}` : ''}
-                </span>
-              )}
+            <div className="flex flex-col" style={{ gap: 6 }}>
+              {(() => {
+                const dests = data!.destinations ?? []
+                const fallback = trip.destination ? `${trip.destination}${trip.country ? `, ${trip.country}` : ''}` : null
+                const mobileLabel = dests.length > 0 ? destinationsLabel(dests, 2) : fallback
+                const desktopLabel = dests.length > 0 ? destinationsLabel(dests, 4) : fallback
+                if (!mobileLabel) return null
+                return (
+                  <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'rgba(255,255,255,0.68)' }}>
+                    <span className="sm:hidden">{mobileLabel}</span>
+                    <span className="hidden sm:inline">{desktopLabel}</span>
+                  </span>
+                )
+              })()}
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center', marginTop: 6 }}>
               {dateStr && (
                 <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'rgba(255,255,255,0.50)', background: 'rgba(255,255,255,0.10)', padding: '2px 10px', borderRadius: 999 }}>
                   {dateStr}
@@ -710,7 +739,18 @@ export default function PublicTripPage() {
                     {visibleCoords.length === 0 ? (
                       <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--arvo-hover-bg)' }} />
                     ) : (
-                      <MapContainer center={[visibleCoords[0].lat!, visibleCoords[0].lng!]} zoom={12} style={{ height: '100%', width: '100%' }} scrollWheelZoom={true}>
+                      <div
+                        style={{ position: 'relative', height: '100%', width: '100%' }}
+                        onMouseEnter={() => setMapActive(true)}
+                        onMouseLeave={() => setMapActive(false)}
+                        onClick={() => setMapActive(true)}
+                      >
+                        {!mapActive && (
+                          <div style={{ position: 'absolute', bottom: 8, left: 8, zIndex: 10, background: 'rgba(13,13,13,0.65)', color: '#fff', fontFamily: 'var(--arvo-font-body)', fontSize: 10.5, padding: '3px 9px', borderRadius: 999, pointerEvents: 'none' }}>
+                            {tv.mapScrollHint ?? 'Clique para usar o zoom com scroll'}
+                          </div>
+                        )}
+                      <MapContainer center={[visibleCoords[0].lat!, visibleCoords[0].lng!]} zoom={12} style={{ height: '100%', width: '100%' }} scrollWheelZoom={mapActive}>
                         <ResizeInvalidate />
                         <FlyToSelected placeId={selectedPlaceId} places={visibleCoords} markerRefs={markerRefs} />
                         <TileLayer
@@ -752,6 +792,7 @@ export default function PublicTripPage() {
                           </Marker>
                         ))}
                       </MapContainer>
+                      </div>
                     )}
                   </div>
                 </div>

@@ -730,9 +730,18 @@ router.post('/places', requireAuth, async (req, res: Response) => {
 // ── DELETE /api/voyage/places/:id  ───────────────────────────────────────────
 router.delete('/places/:id', requireAuth, async (req, res: Response) => {
   const userId = uid(req)
+  const placeId = Number(req.params.id)
+
+  // Itens de roteiro que referenciam esse lugar da biblioteca não são
+  // apagados (library_place_id é ON DELETE SET NULL) — o item continua na
+  // viagem com os dados já copiados, só perde o vínculo. Conta antes de
+  // apagar pra avisar o usuário, que esperava ser perguntado sobre isso.
+  const { count } = await supabaseAdmin
+    .from('voyage_trip_places').select('id', { count: 'exact', head: true }).eq('library_place_id', placeId)
+
   await supabaseAdmin.from('voyage_places')
-    .delete().eq('id', Number(req.params.id)).eq('user_id', userId)
-  res.json({ ok: true })
+    .delete().eq('id', placeId).eq('user_id', userId)
+  res.json({ ok: true, usedInTrips: count ?? 0 })
 })
 
 // Extrai cidade do endereço do Takeout sem network calls.
@@ -1274,6 +1283,13 @@ router.patch('/trips/:id/places/:placeId', requireAuth, async (req, res: Respons
     .select().single()
 
   if (error) { res.status(500).json({ error: error.message }); return }
+
+  // Renomear sincroniza com a biblioteca — o usuário esperava que o nome
+  // não ficasse "preso" só nesta viagem, já que o lugar vem de lá.
+  if (name !== undefined && data?.library_place_id) {
+    await supabaseAdmin.from('voyage_places').update({ name }).eq('id', data.library_place_id)
+  }
+
   res.json({ place: data })
 })
 

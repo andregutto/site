@@ -2043,6 +2043,7 @@
     "mapEmpty": "Add places to the trip to see the map",
     "mapEmptyDay": "No places with coordinates on Day {n}",
     "mapEmptyNoDay": "No undated places with coordinates",
+    "mapScrollHint": "Click to enable scroll zoom",
     "spentHere": "Spent here:",
     "sortByTime": "Sort by time",
     "dragHint": "Press and hold an activity to reorder within the same day",
@@ -2109,6 +2110,7 @@
       "revokeShare": "Revoke the link? Anyone with the link will lose access.",
       "deleteAllPlaces": "Delete ALL places in the library? This cannot be undone.",
       "removePlaceFromLibrary": "Remove \"{name}\" from the library?",
+      "removedFromLibraryStillInTrips": "Removed from the library. Still in {n} trip(s) already planned — not removed from those itineraries.",
       "removePlaceFromTrip": "Remove \"{name}\" from the trip?",
       "deleteTripPermanent": "Delete \"{title}\" permanently? This cannot be undone."
     },

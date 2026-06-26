@@ -86,12 +86,18 @@ function ResizeInvalidate() {
 
 function FitBounds({ places }: { places: TripPlace[] }) {
   const map = useMap()
+  // `places` (visibleCoords) is a brand-new array every render even when its
+  // contents didn't change (it's a .filter() result), which kept re-running
+  // fitBounds and undoing the flyTo zoom from selecting a place in the list.
+  // Depending on a stable ids-key instead of the array reference fixes that.
+  const key = places.map(p => p.id).join(',')
   useEffect(() => {
     const pts = places.filter(p => p.lat && p.lng)
     if (!pts.length) return
     if (pts.length === 1) { map.setView([pts[0].lat!, pts[0].lng!], 14); return }
     map.fitBounds(L.latLngBounds(pts.map(p => [p.lat!, p.lng!])), { padding: [32, 32] })
-  }, [places, map])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key, map])
   return null
 }
 
@@ -146,6 +152,11 @@ export default function TripMapCard({ tripId, refreshKey, selectedDay: selectedD
   const selectedPlaceId = selectedPlaceIdProp !== undefined ? selectedPlaceIdProp : selectedPlaceIdLocal
   const setSelectedPlaceId = onSelectPlace ?? setSelectedPlaceIdLocal
   const markerRefs = useRef<Record<number, L.Marker>>({})
+  // Zoom por roda do mouse só ativa depois de um clique no mapa — com o mapa
+  // sticky e grande na tela, deixar sempre ativo fazia o scroll da página
+  // "engasgar" sempre que o cursor passava por cima (a roda zoomava o mapa
+  // em vez de rolar a página, de forma inconsistente).
+  const [mapActive, setMapActive] = useState(false)
 
   const load = useCallback(async () => {
     try {
@@ -274,11 +285,22 @@ export default function TripMapCard({ tripId, refreshKey, selectedDay: selectedD
             </p>
           </div>
         ) : (
+          <div
+            style={{ position: 'relative', height: '100%', width: '100%' }}
+            onMouseEnter={() => setMapActive(true)}
+            onMouseLeave={() => setMapActive(false)}
+            onClick={() => setMapActive(true)}
+          >
+            {!mapActive && (
+              <div style={{ position: 'absolute', bottom: 8, left: 8, zIndex: 10, background: 'rgba(13,13,13,0.65)', color: '#fff', fontFamily: 'var(--arvo-font-body)', fontSize: 10.5, padding: '3px 9px', borderRadius: 999, pointerEvents: 'none' }}>
+                {tv.mapScrollHint ?? 'Clique para usar o zoom com scroll'}
+              </div>
+            )}
           <MapContainer
             center={[visibleCoords[0].lat!, visibleCoords[0].lng!]}
             zoom={13}
             style={{ height: '100%', width: '100%' }}
-            scrollWheelZoom={true}
+            scrollWheelZoom={mapActive}
           >
             <ResizeInvalidate />
             <FlyToSelected placeId={selectedPlaceId} places={visibleCoords} markerRefs={markerRefs} />
@@ -322,6 +344,7 @@ export default function TripMapCard({ tripId, refreshKey, selectedDay: selectedD
               </Marker>
             ))}
           </MapContainer>
+          </div>
         )}
       </div>
     </div>

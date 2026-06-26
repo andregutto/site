@@ -2043,6 +2043,7 @@
     "mapEmpty": "Ajoutez des lieux au voyage pour voir la carte",
     "mapEmptyDay": "Aucun lieu avec coordonnées au Jour {n}",
     "mapEmptyNoDay": "Aucun lieu sans jour avec coordonnées",
+    "mapScrollHint": "Cliquez pour activer le zoom au scroll",
     "spentHere": "Dépensé ici :",
     "sortByTime": "Trier par heure",
     "dragHint": "Appuyez et maintenez une activité pour la réorganiser dans le même jour",
@@ -2109,6 +2110,7 @@
       "revokeShare": "Révoquer le lien ? Toute personne disposant du lien perdra l'accès.",
       "deleteAllPlaces": "Supprimer TOUS les lieux de la bibliothèque ? Cette action est irréversible.",
       "removePlaceFromLibrary": "Retirer « {name} » de la bibliothèque ?",
+      "removedFromLibraryStillInTrips": "Retiré de la bibliothèque. Reste dans {n} voyage(s) déjà planifié(s) — pas retiré de ces itinéraires.",
       "removePlaceFromTrip": "Retirer « {name} » du voyage ?",
       "deleteTripPermanent": "Supprimer « {title} » définitivement ? Cette action est irréversible."
     },

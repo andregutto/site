@@ -278,7 +278,13 @@ function PlaceCard({ place, onDelete }: { place: Place; onDelete: (id: number) =
   async function del() {
     if (!confirm((tv.confirm?.removePlaceFromLibrary ?? 'Remover "{name}" da biblioteca?').replace('{name}', place.name))) return
     setDeleting(true)
-    await apiFetch(`/voyage/places/${place.id}`, { method: 'DELETE' })
+    const data = await apiFetch<{ ok: true; usedInTrips: number }>(`/voyage/places/${place.id}`, { method: 'DELETE' })
+    // Remover da biblioteca não tira o lugar de viagens que já o usam (o
+    // item do roteiro já tem os dados copiados) — avisa quando é o caso,
+    // já que isso pode confundir quem espera que apague de tudo.
+    if (data.usedInTrips > 0) {
+      alert((tv.confirm?.removedFromLibraryStillInTrips ?? 'Removido da biblioteca. Continua em {n} viagem(ns) já montada(s) — não foi removido do roteiro.').replace('{n}', String(data.usedInTrips)))
+    }
     onDelete(place.id)
   }
 

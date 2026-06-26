@@ -508,9 +508,10 @@ function ItemRow({ item, tripId, canEdit, dragging, dropTarget, destinations, au
             </div>
           )}
         </div>
-        {/* Lápis discreto no canto superior direito — renomeia o lugar só
-            nesta viagem (não toca na biblioteca). Renomear é seguro: o KML
-            usa as coordenadas pro pin, o nome é só rótulo. */}
+        {/* Lápis discreto no canto superior direito — renomeia o lugar aqui
+            e sincroniza com a biblioteca (mesmo lugar, mesmo nome em todo
+            lugar). Renomear é seguro: o KML usa as coordenadas pro pin, o
+            nome é só rótulo. */}
         {canEdit && isPlace && (
           <button type="button" title={tv.editName ?? 'Editar nome'}
             onClick={e => { e.stopPropagation(); setEditingName(true) }}
