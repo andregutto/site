@@ -119,6 +119,19 @@ export default function VoyageTripDetailPage() {
   const [showEditPanel, setShowEditPanel] = useState(false)
   const [showShare, setShowShare] = useState(false)
   const [showMembers, setShowMembers] = useState(false)
+  const [showStatusMenu, setShowStatusMenu] = useState(false)
+  const [savingStatus, setSavingStatus] = useState(false)
+
+  async function changeStatus(s: 'planning' | 'ongoing' | 'past') {
+    setShowStatusMenu(false)
+    setData(prev => prev ? { ...prev, trip: { ...prev.trip, status: s } } : prev)
+    setSavingStatus(true)
+    try {
+      await apiFetch(`/voyage/trips/${id}`, { method: 'PATCH', body: JSON.stringify({ status: s }) })
+    } finally {
+      setSavingStatus(false)
+    }
+  }
   // TripMapCard and TripItineraryPanel each fetch this trip's places
   // independently — bumping this tells the map to refetch whenever the
   // itinerary panel's list changes (add/delete/reload), since otherwise the
@@ -198,13 +211,52 @@ export default function VoyageTripDetailPage() {
           {/* Gradient */}
           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(13,13,13,0.75) 0%, rgba(13,13,13,0.10) 55%, transparent 100%)' }} />
 
-          {/* Status badge — mesmo formato (padding, raio, fundo) dos botões
-              Editar/Compartilhar, só com a cor do status no lugar do ícone+texto branco */}
-          <div style={{ position: 'absolute', top: 16, right: 16, display: 'flex', alignItems: 'center', gap: 5, background: 'rgba(13,13,13,0.55)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, padding: '5px 12px' }}>
-            {trip.status === 'ongoing' && <span style={{ width: 5, height: 5, borderRadius: 999, background: RED, display: 'inline-block', flexShrink: 0 }} />}
-            <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, letterSpacing: '0.04em', color: statusColor }}>
-              {statusLabel}
-            </span>
+          {/* Status — pill clicável (não botão de ação): mostra o estado atual
+              e, para quem pode editar, abre um popover para trocar direto aqui
+              no hero, sem entrar na edição da viagem. */}
+          <div style={{ position: 'absolute', top: 16, right: 16 }}>
+            <button
+              type="button"
+              onClick={() => canEdit && setShowStatusMenu(v => !v)}
+              disabled={!canEdit}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 6,
+                background: 'rgba(13,13,13,0.45)', backdropFilter: 'blur(8px)',
+                border: '1px solid rgba(255,255,255,0.10)', borderRadius: 999, padding: '4px 12px',
+                cursor: canEdit ? 'pointer' : 'default', opacity: savingStatus ? 0.6 : 1,
+              }}
+            >
+              <span style={{ width: 6, height: 6, borderRadius: 999, background: statusColor, display: 'inline-block', flexShrink: 0 }} />
+              <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, letterSpacing: '0.04em', color: 'rgba(255,255,255,0.85)' }}>
+                {statusLabel}
+              </span>
+              {canEdit && (
+                <svg width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="1.5" style={{ marginLeft: 1 }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.5 4l2.5 2.5L7.5 4" />
+                </svg>
+              )}
+            </button>
+            {showStatusMenu && canEdit && (
+              <>
+                <div onClick={() => setShowStatusMenu(false)} style={{ position: 'fixed', inset: 0, zIndex: 40 }} />
+                <div style={{ position: 'absolute', top: 'calc(100% + 6px)', right: 0, zIndex: 50, background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', borderRadius: 10, boxShadow: 'var(--arvo-shadow-lg)', overflow: 'hidden', minWidth: 150 }}>
+                  {(['planning', 'ongoing', 'past'] as const).map(s => {
+                    const label = s === 'planning' ? tv.statusPlanning : s === 'ongoing' ? tv.statusOngoing : tv.statusPast
+                    const active = trip.status === s
+                    return (
+                      <button
+                        key={s} type="button" onClick={() => changeStatus(s)}
+                        style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', textAlign: 'left', padding: '8px 12px', background: active ? 'var(--arvo-hover-bg)' : 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg)' }}
+                      >
+                        <span style={{ width: 6, height: 6, borderRadius: 999, background: STATUS_COLOR[s] ?? GOLD, display: 'inline-block' }} />
+                        {label}
+                        {active && <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" style={{ marginLeft: 'auto' }}><path strokeLinecap="round" strokeLinejoin="round" d="M2.5 6.5l2.5 2.5 4.5-5.5" /></svg>}
+                      </button>
+                    )
+                  })}
+                </div>
+              </>
+            )}
           </div>
 
           {/* Collaborators — avatar stack + invite trigger, canto inferior direito (livre, sem disputar espaço com o título) */}
@@ -286,6 +338,34 @@ export default function VoyageTripDetailPage() {
         <p style={{ fontFamily: 'var(--arvo-font-serif)', fontStyle: 'italic', fontSize: 14, color: GOLD, marginBottom: 24, lineHeight: 1.6 }}>
           {trip.summary}
         </p>
+      )}
+
+      {/* Álbum de fotos — card dedicado (visível a todos que veem a viagem,
+          colaboradores incluídos) e também replicado na página pública. */}
+      {trip.photo_album_url && (
+        <a
+          href={trip.photo_album_url} target="_blank" rel="noopener noreferrer"
+          style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', marginBottom: 20, borderRadius: 12, border: '1px solid var(--arvo-border-soft)', background: 'var(--arvo-hover-bg)', textDecoration: 'none' }}
+        >
+          <span style={{ width: 36, height: 36, borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(200,184,154,0.14)', flexShrink: 0 }}>
+            <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke={GOLD} strokeWidth="1.5">
+              <rect x="2.5" y="3.5" width="15" height="13" rx="2" />
+              <circle cx="7" cy="8" r="1.5" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 14l4-3.5 3.5 3 3-2.5 3.5 3" />
+            </svg>
+          </span>
+          <span style={{ flex: 1 }}>
+            <span style={{ display: 'block', fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg)' }}>
+              {tv.photoAlbumTitle ?? 'Álbum de fotos compartilhado'}
+            </span>
+            <span style={{ display: 'block', fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-soft)' }}>
+              {tv.photoAlbumSubtitle ?? 'Abrir em uma nova aba'}
+            </span>
+          </span>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="var(--arvo-fg-soft)" strokeWidth="1.5">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 3h7v7M13 3L6.5 9.5M11 9.5V13H3V5h3.5" />
+          </svg>
+        </a>
       )}
 
       {/* Linha superior: Mapa dividindo coluna com Custo (no mobile empilha) */}

@@ -408,7 +408,7 @@ function ItemRow({ item, tripId, canEdit, dragging, dropTarget, destinations, au
             </div>
           ) : (
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: item.visited ? 'var(--arvo-fg-soft)' : 'var(--arvo-fg)', fontWeight: 500, textDecoration: item.visited ? 'line-through' : 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14.5, color: item.visited ? 'var(--arvo-fg-soft)' : 'var(--arvo-fg)', fontWeight: 500, textDecoration: item.visited ? 'line-through' : 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {item.name}
               </p>
               {item.is_highlight && (
@@ -422,12 +422,12 @@ function ItemRow({ item, tripId, canEdit, dragging, dropTarget, destinations, au
             </div>
           )}
           {item.address && (
-            <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)', marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.address}</p>
+            <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)', marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.address}</p>
           )}
           {/* Time summary — for transport items the icon+title already say the
               mode, so only the times are shown here to avoid repeating it */}
           {(item.arrive_time || item.depart_time || (!isTransport && item.transport_mode)) && (
-            <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 10, color: 'var(--arvo-fg-soft)', marginTop: 2 }}>
+            <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-soft)', marginTop: 2 }}>
               {[
                 !isTransport && item.transport_mode && `${TRANSPORT_ICONS[item.transport_mode]} ${TRANSPORT_LABELS[item.transport_mode] ?? item.transport_mode}`,
                 item.arrive_time && `${(tv.arrival ?? 'chegada').toLowerCase()} ${item.arrive_time}`,
@@ -437,7 +437,7 @@ function ItemRow({ item, tripId, canEdit, dragging, dropTarget, destinations, au
           )}
           {item.rating != null && isPlace && <StarRating value={item.rating} />}
           {item.trip_note && !editingNote && (
-            <p style={{ fontFamily: 'var(--arvo-font-serif)', fontStyle: 'italic', fontSize: 11, color: GOLD, marginTop: 2 }}>{item.trip_note}</p>
+            <p style={{ fontFamily: 'var(--arvo-font-serif)', fontStyle: 'italic', fontSize: 12.5, color: GOLD, marginTop: 2 }}>{item.trip_note}</p>
           )}
           {hasExpenses && (
             <button type="button" onClick={() => canEdit && setShowExpenses(true)}
@@ -985,7 +985,7 @@ export default function TripItineraryPanel({ tripId, tripCity, tripCountry, dest
               {staysOnDay(d)
                 .filter(s => s.checkin_day !== d && (s.checkout_day === d || !isLogisticalStay(s.category)))
                 .map(s => (
-                  <p key={s.id} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)', marginBottom: 6, opacity: 0.75 }}>
+                  <p key={s.id} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)', marginBottom: 6 }}>
                     {itemIcon(s)} {s.checkout_day === d
                       ? (tv.places?.stayCheckout ?? 'Check-out: {name}').replace('{name}', s.name) + (s.depart_time ? ` · ${s.depart_time}` : '')
                       : (tv.places?.stayInProgress ?? 'em andamento: {name}').replace('{name}', s.name)}

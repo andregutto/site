@@ -4,7 +4,7 @@ import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
 import { useI18n } from '../../contexts/I18nContext'
 import DestinationsEditor from './DestinationsEditor'
-import type { Trip, TripStatus, TripDestination } from './types'
+import type { Trip, TripDestination } from './types'
 
 const RED = '#D63B2F'
 
@@ -32,7 +32,6 @@ export default function TripEditPanel({ trip, destinations, onSaved, onDestinati
   const [uploadingCover, setUploadingCover] = useState(false)
   const [startDate, setStartDate] = useState(trip.start_date ?? '')
   const [endDate, setEndDate] = useState(trip.end_date ?? '')
-  const [status, setStatus] = useState<TripStatus>(trip.status)
   const [summary, setSummary] = useState(trip.summary ?? '')
   const [photoAlbumUrl, setPhotoAlbumUrl] = useState(trip.photo_album_url ?? '')
   const [saving, setSaving] = useState(false)
@@ -85,7 +84,7 @@ export default function TripEditPanel({ trip, destinations, onSaved, onDestinati
         cover_image_url: coverUrl.trim() || null,
         start_date: startDate || null,
         end_date: endDate || null,
-        status,
+        status: trip.status,
         summary: summary.trim() || null,
         photo_album_url: photoAlbumUrl.trim() || null,
       }
@@ -114,12 +113,6 @@ export default function TripEditPanel({ trip, destinations, onSaved, onDestinati
     padding: 12, borderRadius: 10, background: 'var(--arvo-hover-bg)', border: '1px solid var(--arvo-border-soft)',
   }
 
-  const statuses: TripStatus[] = ['planning', 'ongoing', 'past']
-  const statusLabels: Record<TripStatus, string> = {
-    planning: tv.statusPlanning ?? 'Planejamento',
-    ongoing:  tv.statusOngoing  ?? 'Em viagem',
-    past:     tv.statusPast     ?? 'Concluída',
-  }
 
   return (
     <form onSubmit={submit} style={{
@@ -189,25 +182,6 @@ export default function TripEditPanel({ trip, destinations, onSaved, onDestinati
               {tv.remove ?? 'Remover'}
             </button>
           )}
-        </div>
-      </label>
-
-      <label>
-        <span style={labelStyle}>{tv.statusLabel ?? 'Status'}</span>
-        <div className="flex gap-2">
-          {statuses.map(s => (
-            <button
-              key={s} type="button" onClick={() => setStatus(s)}
-              style={{
-                flex: 1, padding: '6px 0', borderRadius: 3, cursor: 'pointer',
-                fontFamily: 'var(--arvo-font-display)', fontSize: 10, letterSpacing: '0.12em',
-                textTransform: 'uppercase',
-                border: status === s ? `1px solid ${RED}` : '1px solid var(--arvo-border)',
-                background: status === s ? 'rgba(214,59,47,0.08)' : 'transparent',
-                color: status === s ? RED : 'var(--arvo-fg-muted)',
-              }}
-            >{statusLabels[s]}</button>
-          ))}
         </div>
       </label>
 

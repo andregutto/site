@@ -71,6 +71,19 @@ function makeIcon(emoji: string, color: string, highlight: boolean) {
   })
 }
 
+// Mantém o Leaflet ciente de mudanças na altura do container (ex.: quando o
+// card de custo ao lado expande e a linha do grid estica este mapa junto).
+function ResizeInvalidate() {
+  const map = useMap()
+  useEffect(() => {
+    const c = map.getContainer()
+    const ro = new ResizeObserver(() => map.invalidateSize())
+    ro.observe(c)
+    return () => ro.disconnect()
+  }, [map])
+  return null
+}
+
 function FitBounds({ places }: { places: TripPlace[] }) {
   const map = useMap()
   useEffect(() => {
@@ -121,7 +134,7 @@ export default function TripMapCard({ tripId, refreshKey }: Props) {
   }
 
   return (
-    <div style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', borderRadius: 16, boxShadow: 'var(--arvo-shadow-sm)', overflow: 'hidden' }}>
+    <div style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', borderRadius: 16, boxShadow: 'var(--arvo-shadow-sm)', overflow: 'hidden', height: '100%', display: 'flex', flexDirection: 'column' }}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px 12px' }}>
         <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 10, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)' }}>
@@ -186,8 +199,9 @@ export default function TripMapCard({ tripId, refreshKey }: Props) {
         </div>
       )}
 
-      {/* Map */}
-      <div style={{ height: 300, borderTop: '1px solid var(--arvo-border-soft)' }}>
+      {/* Map — flex:1 para que, no desktop ao lado do custo, o mapa estique
+          junto quando o card de custo expande (limites inferiores alinhados). */}
+      <div style={{ flex: 1, minHeight: 300, borderTop: '1px solid var(--arvo-border-soft)' }}>
         {withCoords.length === 0 ? (
           <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'var(--arvo-hover-bg)', gap: 10 }}>
             <svg width="40" height="40" viewBox="0 0 40 40" fill="none" stroke={`rgba(200,184,154,0.25)`} strokeWidth="1.2">
@@ -209,8 +223,9 @@ export default function TripMapCard({ tripId, refreshKey }: Props) {
             center={[visibleCoords[0].lat!, visibleCoords[0].lng!]}
             zoom={13}
             style={{ height: '100%', width: '100%' }}
-            scrollWheelZoom={false}
+            scrollWheelZoom={true}
           >
+            <ResizeInvalidate />
             <TileLayer
               key={resolvedTheme}
               attribution='&copy; <a href="https://carto.com/attributions">CARTO</a>'

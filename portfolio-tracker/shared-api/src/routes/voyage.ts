@@ -109,6 +109,61 @@ async function buildCostSummary(tripId: number, requestingUserId: string) {
   }
 }
 
+// Totais leves para a LISTA de viagens — sem breakdown/by_place/userDisplay.
+// Faz ~3 queries no total (não N×6), agregando todas as viagens de uma vez.
+async function buildCostTotals(
+  tripIds: number[],
+  requestingUserId: string,
+): Promise<Record<number, { total: number; budget: number | null }>> {
+  const out: Record<number, { total: number; budget: number | null }> = {}
+  for (const id of tripIds) out[id] = { total: 0, budget: null }
+  if (tripIds.length === 0) return out
+
+  // 1) Todos os vínculos momento↔viagem de uma vez
+  const { data: tripMoments } = await supabaseAdmin
+    .from('voyage_trip_moments')
+    .select('trip_id, moment_id, user_id')
+    .in('trip_id', tripIds)
+
+  const links = tripMoments ?? []
+  const momentIds = [...new Set(links.map(m => m.moment_id))]
+  if (momentIds.length === 0) return out
+
+  // 2) Transações de todos os momentos de uma vez
+  const { data: txRows } = await supabaseAdmin
+    .from('finance_transaction_moments')
+    .select('moment_id, finance_transactions(amount, is_internal_transfer, exclude_from_stats)')
+    .in('moment_id', momentIds)
+
+  const momentTotals: Record<number, number> = {}
+  for (const row of (txRows ?? []) as any[]) {
+    const tx = row.finance_transactions
+    if (!tx || tx.is_internal_transfer || tx.exclude_from_stats) continue
+    if (tx.amount >= 0) continue
+    momentTotals[row.moment_id] = (momentTotals[row.moment_id] ?? 0) + Math.abs(tx.amount)
+  }
+
+  // 3) Budgets dos momentos do usuário requisitante de uma vez
+  const myMomentIds = [...new Set(links.filter(l => l.user_id === requestingUserId).map(l => l.moment_id))]
+  const { data: budgetRows } = myMomentIds.length > 0
+    ? await supabaseAdmin.from('finance_moments').select('id, budget').in('id', myMomentIds)
+    : { data: [] as any[] }
+  const budgetByMoment: Record<number, number> = {}
+  for (const b of (budgetRows ?? []) as any[]) budgetByMoment[b.id] = b.budget ?? 0
+
+  for (const l of links) {
+    out[l.trip_id].total += momentTotals[l.moment_id] ?? 0
+    if (l.user_id === requestingUserId) {
+      out[l.trip_id].budget = (out[l.trip_id].budget ?? 0) + (budgetByMoment[l.moment_id] ?? 0)
+    }
+  }
+  for (const id of tripIds) {
+    out[id].total = Math.round(out[id].total * 100) / 100
+    out[id].budget = out[id].budget && out[id].budget! > 0 ? Math.round(out[id].budget! * 100) / 100 : null
+  }
+  return out
+}
+
 // ── Place-expense helpers ────────────────────────────────────────────────────
 // Soma das despesas vinculadas a cada lugar da viagem.
 // Modelo v1: apenas o dono da viagem cria vínculos, então não filtramos por user.
@@ -345,10 +400,12 @@ router.get('/trips', requireAuth, async (req, res: Response) => {
   const trips = all.filter(t => { if (seen.has(t.id)) return false; seen.add(t.id); return true })
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
 
-  // Custo rápido (totais apenas, sem breakdown)
-  const withCost = await Promise.all(trips.map(async t => {
-    const cost = await buildCostSummary(t.id, userId)
-    return { ...t, cost_total: cost.total, cost_budget: cost.budget }
+  // Custo rápido (totais apenas, batched — ~3 queries no total, não N×6)
+  const totals = await buildCostTotals(trips.map(t => t.id), userId)
+  const withCost = trips.map(t => ({
+    ...t,
+    cost_total: totals[t.id]?.total ?? 0,
+    cost_budget: totals[t.id]?.budget ?? null,
   }))
 
   res.json({ trips: withCost })

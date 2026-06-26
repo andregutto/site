@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { apiFetch } from '../../lib/api'
 import type { TripDestination } from './types'
+import PlaceAutocompleteInput from './PlaceAutocompleteInput'
 
 const GOLD = '#C8B89A'
 
@@ -110,14 +111,15 @@ export default function DestinationsEditor({ tripId, destinations, onChange, dar
 
       {adding && (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8, alignItems: 'center' }}>
-          <input
-            autoFocus value={city} onChange={e => setCity(e.target.value)} placeholder="Cidade"
-            style={{ width: 110, padding: '5px 8px', borderRadius: 4, border: `1px solid ${border}`, background: dark ? 'rgba(255,255,255,0.08)' : 'var(--arvo-surface)', color: fg, fontFamily: 'var(--arvo-font-body)', fontSize: 12, outline: 'none' }}
-          />
-          <input
-            value={country} onChange={e => setCountry(e.target.value)} placeholder="País"
-            style={{ width: 90, padding: '5px 8px', borderRadius: 4, border: `1px solid ${border}`, background: dark ? 'rgba(255,255,255,0.08)' : 'var(--arvo-surface)', color: fg, fontFamily: 'var(--arvo-font-body)', fontSize: 12, outline: 'none' }}
-          />
+          <div style={{ width: 200 }}>
+            <PlaceAutocompleteInput
+              value={city}
+              onChange={v => { setCity(v); setCountry('') }}
+              onSelect={d => { if (d.city) setCity(d.city); setCountry(d.country ?? '') }}
+              placeholder="Cidade ou destino"
+              style={{ width: '100%', padding: '5px 8px', borderRadius: 4, border: `1px solid ${border}`, background: dark ? 'rgba(255,255,255,0.08)' : 'var(--arvo-surface)', color: fg, fontFamily: 'var(--arvo-font-body)', fontSize: 12, outline: 'none', boxSizing: 'border-box' }}
+            />
+          </div>
           <input
             value={dayStart} onChange={e => setDayStart(e.target.value)} type="number" min="1" placeholder="Dia ini." inputMode="numeric"
             style={{ width: 64, padding: '5px 8px', borderRadius: 4, border: `1px solid ${border}`, background: dark ? 'rgba(255,255,255,0.08)' : 'var(--arvo-surface)', color: fg, fontFamily: 'var(--arvo-font-body)', fontSize: 12, outline: 'none', textAlign: 'center' }}
