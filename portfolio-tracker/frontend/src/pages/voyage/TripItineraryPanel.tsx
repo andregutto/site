@@ -491,10 +491,8 @@ function ItemRow({ item, tripId, canEdit, dragging, dropTarget, destinations, au
           )}
           {canEdit && hasExpenses && (
             <button type="button" onClick={() => setShowExpenses(true)} title={tv.expensesTitle ?? 'Despesas'}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 5, borderRadius: 4, color: 'var(--arvo-fg)', display: 'flex' }}>
-              <svg width="13" height="13" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <circle cx="6" cy="6" r="5" /><path strokeLinecap="round" d="M6 3.5v5M4.7 7.2c0 .7.6 1 1.3 1s1.3-.3 1.3-1-.6-.9-1.3-.9-1.3-.3-1.3-.9.6-1 1.3-1 1.3.3 1.3 1" />
-              </svg>
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer', width: 24, height: 24, borderRadius: 999, color: 'var(--arvo-fg)', fontFamily: 'var(--arvo-font-body)', fontSize: 14, fontWeight: 600, lineHeight: 1 }}>
+              $
             </button>
           )}
           {canEdit && isPlace && (
