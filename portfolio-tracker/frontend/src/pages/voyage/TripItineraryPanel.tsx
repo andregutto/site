@@ -465,18 +465,6 @@ function ItemRow({ item, tripId, canEdit, dragging, dropTarget, destinations, au
               <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14.5, color: item.visited ? 'var(--arvo-fg-soft)' : 'var(--arvo-fg)', fontWeight: 500, textDecoration: item.visited ? 'line-through' : 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {item.name}
               </p>
-              {/* Lápis discreto pra renomear qualquer lugar — o nome é só um
-                  rótulo (o KML usa as coordenadas pro pin), então renomear
-                  nunca quebra a exportação pro Google Maps. */}
-              {canEdit && isPlace && (
-                <button type="button" title={tv.editName ?? 'Editar nome'}
-                  onClick={e => { e.stopPropagation(); setEditingName(true) }}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, display: 'flex', color: 'var(--arvo-fg-faint)', flexShrink: 0 }}>
-                  <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.4">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M8.5 1.5l2 2L4 10H2v-2L8.5 1.5z" />
-                  </svg>
-                </button>
-              )}
               {item.is_highlight && (
                 <span style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 8, letterSpacing: '0.12em', textTransform: 'uppercase', color: RED, flexShrink: 0 }}>destaque</span>
               )}
@@ -520,6 +508,18 @@ function ItemRow({ item, tripId, canEdit, dragging, dropTarget, destinations, au
             </div>
           )}
         </div>
+        {/* Lápis discreto no canto superior direito — renomeia o lugar só
+            nesta viagem (não toca na biblioteca). Renomear é seguro: o KML
+            usa as coordenadas pro pin, o nome é só rótulo. */}
+        {canEdit && isPlace && (
+          <button type="button" title={tv.editName ?? 'Editar nome'}
+            onClick={e => { e.stopPropagation(); setEditingName(true) }}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, marginTop: 1, display: 'flex', color: 'var(--arvo-fg-faint)', flexShrink: 0 }}>
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.4">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8.5 1.5l2 2L4 10H2v-2L8.5 1.5z" />
+            </svg>
+          </button>
+        )}
       </div>
 
       {/* Action row — separate from the title row so the name has room to
@@ -978,7 +978,7 @@ export default function TripItineraryPanel({ tripId, tripCity, tripCountry, trip
         dragging={dragVisual.dragId === it.id}
         dropTarget={dragVisual.overId === it.id && dragVisual.dragId !== it.id}
         selected={selectedPlaceId === it.id}
-        onSelect={onSelectPlace ? () => onSelectPlace(it.id) : undefined}
+        onSelect={onSelectPlace ? () => onSelectPlace(selectedPlaceId === it.id ? null : it.id) : undefined}
         onStartDrag={() => startDrag(it.id)}
         onPatch={f => patchItem(it.id, f)}
         onDelete={() => setItems(ps => ps.filter(x => x.id !== it.id))}

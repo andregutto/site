@@ -320,7 +320,7 @@ function ConnectorRow({ p }: { p: PublicPlace }) {
   )
 }
 
-function PlaceGroup({ day, places, staysPassingThrough = [], selectedPlaceId, onSelectPlace }: { day: number | null; places: PublicPlace[]; staysPassingThrough?: PublicPlace[]; selectedPlaceId?: number | null; onSelectPlace?: (id: number) => void }) {
+function PlaceGroup({ day, places, staysPassingThrough = [], selectedPlaceId, onSelectPlace }: { day: number | null; places: PublicPlace[]; staysPassingThrough?: PublicPlace[]; selectedPlaceId?: number | null; onSelectPlace?: (id: number | null) => void }) {
   const { t } = useI18n()
   const tv = (t as any).voyage ?? {}
   return (
@@ -343,7 +343,7 @@ function PlaceGroup({ day, places, staysPassingThrough = [], selectedPlaceId, on
           <div key={p.id}>
             {(p.kind === 'note' || p.kind === 'transport')
               ? <ConnectorRow p={p} />
-              : <PlaceCard p={p} selected={selectedPlaceId === p.id} onSelect={onSelectPlace ? () => onSelectPlace(p.id) : undefined} />}
+              : <PlaceCard p={p} selected={selectedPlaceId === p.id} onSelect={onSelectPlace ? () => onSelectPlace(selectedPlaceId === p.id ? null : p.id) : undefined} />}
           </div>
         ))}
       </div>
