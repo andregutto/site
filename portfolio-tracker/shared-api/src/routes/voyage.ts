@@ -787,26 +787,49 @@ function parseMapsUrl(url: string): { name: string | null; lat: number | null; l
 // Mapeia o tipo de estabelecimento do Google para a categoria (pasta) do Voyage.
 // A string retornada casa com os ícones de categoria (emoji) usados no mapa/biblioteca.
 function googleTypeToCategory(primaryType: string | undefined, types: string[] = []): string | null {
+  // Um supermercado pode ter "bakery" entre os types secundários (padaria
+  // interna) — sem priorizar o primaryType, isso fazia mercados grandes
+  // caírem em "Padarias". Resolve pelo primaryType primeiro; só cai pra
+  // varredura da lista completa (ordem de prioridade) se ele não bater
+  // com nenhuma categoria conhecida.
+  const order: [string, string[]][] = [
+    ['Mercados', ['supermarket', 'grocery_store', 'grocery_or_supermarket', 'market']],
+    ['Padarias', ['bakery']],
+    ['Cafés', ['cafe', 'coffee_shop']],
+    ['Bares', ['bar', 'night_club', 'pub', 'wine_bar']],
+    ['Restaurantes', ['restaurant', 'meal_takeaway', 'meal_delivery', 'food', 'fine_dining_restaurant']],
+    ['Museus', ['museum', 'art_gallery']],
+    ['Hotéis', ['lodging', 'hotel', 'resort_hotel', 'bed_and_breakfast', 'guest_house', 'hostel']],
+    ['Aluguel de carro', ['car_rental']],
+    ['Parques', ['park', 'national_park', 'state_park', 'garden', 'dog_park']],
+    ['Compras', ['store', 'shopping_mall', 'clothing_store', 'department_store', 'shoe_store', 'book_store', 'jewelry_store']],
+    ['Praias', ['beach', 'natural_feature']],
+    ['Pontos turísticos', ['tourist_attraction', 'landmark', 'historical_landmark', 'historical_place', 'point_of_interest']],
+  ]
+  if (primaryType) {
+    const byPrimary = order.find(([, ks]) => ks.includes(primaryType))
+    if (byPrimary) return byPrimary[0]
+  }
   const all = [primaryType, ...types].filter(Boolean) as string[]
   const has = (...ks: string[]) => all.some(t => ks.includes(t))
-  if (has('bakery')) return 'Padarias'
-  if (has('cafe', 'coffee_shop')) return 'Cafés'
-  if (has('bar', 'night_club', 'pub', 'wine_bar')) return 'Bares'
-  if (has('restaurant', 'meal_takeaway', 'meal_delivery', 'food', 'fine_dining_restaurant')) return 'Restaurantes'
-  if (has('museum', 'art_gallery')) return 'Museus'
-  if (has('lodging', 'hotel', 'resort_hotel', 'bed_and_breakfast', 'guest_house', 'hostel')) return 'Hotéis'
-  if (has('car_rental')) return 'Aluguel de carro'
-  if (has('park', 'national_park', 'state_park', 'garden', 'dog_park')) return 'Parques'
-  if (has('supermarket', 'grocery_store', 'grocery_or_supermarket', 'market')) return 'Mercados'
-  if (has('store', 'shopping_mall', 'clothing_store', 'department_store', 'shoe_store', 'book_store', 'jewelry_store')) return 'Compras'
-  if (has('beach', 'natural_feature')) return 'Praias'
-  if (has('tourist_attraction', 'landmark', 'historical_landmark', 'historical_place', 'point_of_interest')) return 'Pontos turísticos'
+  for (const [category, ks] of order) if (has(...ks)) return category
   return null
+}
+
+function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371
+  const dLat = (lat2 - lat1) * Math.PI / 180
+  const dLng = (lng2 - lng1) * Math.PI / 180
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) ** 2
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
 }
 
 // Geocodifica um texto (nome/endereço) via Places API (New) Text Search.
 // Retorna coordenadas + nome/endereço + categoria + horário de funcionamento.
-async function geocodePlace(query: string): Promise<{ lat: number; lng: number; name?: string; address?: string; category?: string | null; opening_hours?: string[] | null; place_id?: string | null } | null> {
+async function geocodePlace(
+  query: string,
+  bias?: { lat: number; lng: number },
+): Promise<{ lat: number; lng: number; name?: string; address?: string; category?: string | null; opening_hours?: string[] | null; place_id?: string | null } | null> {
   const apiKey = process.env.GOOGLE_MAPS_API_KEY || process.env.GOOGLE_PLACES_API_KEY
   if (!apiKey || !query.trim()) return null
   try {
@@ -817,7 +840,18 @@ async function geocodePlace(query: string): Promise<{ lat: number; lng: number; 
         'X-Goog-Api-Key': apiKey,
         'X-Goog-FieldMask': 'places.id,places.displayName,places.formattedAddress,places.location,places.primaryType,places.types,places.regularOpeningHours',
       },
-      body: JSON.stringify({ textQuery: query, maxResultCount: 1 }),
+      body: JSON.stringify({
+        textQuery: query,
+        maxResultCount: 1,
+        // Sem isso, uma rede com várias unidades (ex: "E.Leclerc") pode
+        // casar com a unidade errada em qualquer lugar do mundo — já vimos
+        // isso resolver pra uma loja na Reunião quando o pin original (vindo
+        // da própria URL do Maps) estava na Europa continental. O bias não
+        // restringe, só prioriza resultados perto do pin original.
+        ...(bias && {
+          locationBias: { circle: { center: { latitude: bias.lat, longitude: bias.lng }, radius: 2000 } },
+        }),
+      }),
     })
     if (!r.ok) return null
     const data = await r.json() as any
@@ -894,8 +928,18 @@ router.post('/places/from-url', requireAuth, async (req, res: Response) => {
   // URL, e uma busca textual pelo endereço poderia trazer um ponto ligeiramente
   // diferente (ou nenhum resultado, por não ser um nome de estabelecimento).
   if (!isAddressFallback) {
-    const geo = await geocodePlace(name)
-    if (geo) {
+    // Passa o pin original (já extraído da própria URL) como bias — sem
+    // isso, nomes de rede (ex: "E.Leclerc") podiam casar com uma unidade
+    // do outro lado do mundo. Só sobrescreve lat/lng com o resultado da
+    // busca se ele cair perto do pin original; senão mantém o da URL.
+    const geo = await geocodePlace(name, lat != null && lng != null ? { lat, lng } : undefined)
+    // Se o resultado da busca cair longe do pin original, é provavelmente
+    // outra unidade da mesma rede (ou outro lugar homônimo) — descartamos
+    // o enriquecimento inteiro (nome/endereço/categoria/horário) em vez de
+    // confiar parcialmente nele, e mantemos só o que veio da própria URL.
+    const farFromOriginal = !!geo && lat != null && lng != null && geo.lat != null && geo.lng != null
+      && haversineKm(lat, lng, geo.lat, geo.lng) > 5
+    if (geo && !farFromOriginal) {
       if (geo.lat != null && geo.lng != null) { lat = geo.lat; lng = geo.lng }
       if (geo.name) name = geo.name
       if (geo.address) address = geo.address
