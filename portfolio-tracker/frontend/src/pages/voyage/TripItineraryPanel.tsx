@@ -478,9 +478,23 @@ function ItemRow({ item, tripId, canEdit, dragging, dropTarget, destinations, au
           <DayBadge day={item.day_number} canEdit={canEdit} onChangeDay={d => onPatch({ day_number: d })} />
         )}
         <div style={{ display: 'flex', alignItems: 'center', gap: 2, flexShrink: 0 }}>
-          {canEdit && (
+          {/* Quando já há despesa vinculada, o link com o valor (abaixo do
+              nome) já cobre essa ação — aqui fica só o ícone, consistente
+              com os outros botões da linha. Sem despesa ainda, é a única
+              entrada para essa ação, então ganha um rótulo de texto pra
+              não ficar um ícone solto e ambíguo. */}
+          {canEdit && !hasExpenses && (
+            <button type="button" onClick={() => setShowExpenses(true)}
+              style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: '1px solid var(--arvo-border)', cursor: 'pointer', padding: '4px 9px', borderRadius: 999, color: 'var(--arvo-fg-soft)', fontFamily: 'var(--arvo-font-body)', fontSize: 10.5 }}>
+              <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <circle cx="6" cy="6" r="5" /><path strokeLinecap="round" d="M6 3.5v5M4.7 7.2c0 .7.6 1 1.3 1s1.3-.3 1.3-1-.6-.9-1.3-.9-1.3-.3-1.3-.9.6-1 1.3-1 1.3.3 1.3 1" />
+              </svg>
+              {tv.linkExpenseShort ?? 'Vincular gasto'}
+            </button>
+          )}
+          {canEdit && hasExpenses && (
             <button type="button" onClick={() => setShowExpenses(true)} title={tv.expensesTitle ?? 'Despesas'}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 5, borderRadius: 4, color: hasExpenses ? 'var(--arvo-fg)' : 'var(--arvo-fg-muted)', display: 'flex' }}>
+              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 5, borderRadius: 4, color: 'var(--arvo-fg)', display: 'flex' }}>
               <svg width="13" height="13" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
                 <circle cx="6" cy="6" r="5" /><path strokeLinecap="round" d="M6 3.5v5M4.7 7.2c0 .7.6 1 1.3 1s1.3-.3 1.3-1-.6-.9-1.3-.9-1.3-.3-1.3-.9.6-1 1.3-1 1.3.3 1.3 1" />
               </svg>
@@ -921,7 +935,7 @@ export default function TripItineraryPanel({ tripId, tripCity, tripCountry, dest
               </button>
               <button type="button" onClick={() => { setActiveTool('stay'); setShowToolMenu(false) }}
                 style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, padding: '5px 11px', borderRadius: 6, border: '1px solid var(--arvo-border)', background: 'none', color: 'var(--arvo-fg)', cursor: 'pointer' }}>
-                {tv.actions?.addStay ?? '🏨 Estadia ou aluguel'}
+                {tv.actions?.addStay ?? '🏨🚗 Estadia / Carro'}
               </button>
               <button type="button" onClick={() => { setActiveTool('transport'); setShowToolMenu(false) }}
                 style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, padding: '5px 11px', borderRadius: 6, border: '1px solid var(--arvo-border)', background: 'none', color: 'var(--arvo-fg)', cursor: 'pointer' }}>
@@ -939,7 +953,7 @@ export default function TripItineraryPanel({ tripId, tripCity, tripCountry, dest
           {(activeTool === 'place' || activeTool === 'stay') && (
             <LibraryPicker
               tripId={tripId} tripCity={tripCity} tripCountry={tripCountry} destinations={destinations}
-              forceOpen forceMode="library"
+              forceOpen forceMode="url"
               onClose={() => setActiveTool(null)}
               onAdded={p => {
                 if (activeTool === 'stay') setPendingStayItemId(p.id)
