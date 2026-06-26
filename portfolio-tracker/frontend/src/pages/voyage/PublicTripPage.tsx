@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import L from 'leaflet'
@@ -172,6 +172,35 @@ function FitBounds({ places }: { places: PublicPlace[] }) {
   return null
 }
 
+// Voa até o marker do lugar selecionado na lista e abre o popup dele.
+function FlyToSelected({ placeId, places, markerRefs }: {
+  placeId: number | null
+  places: PublicPlace[]
+  markerRefs: React.MutableRefObject<Record<number, L.Marker>>
+}) {
+  const map = useMap()
+  useEffect(() => {
+    if (placeId == null) return
+    const p = places.find(pl => pl.id === placeId)
+    if (!p || p.lat == null || p.lng == null) return
+    map.flyTo([p.lat, p.lng], Math.max(map.getZoom(), 15), { duration: 0.6 })
+    const marker = markerRefs.current[placeId]
+    if (marker) setTimeout(() => marker.openPopup(), 350)
+  }, [placeId, places, map, markerRefs])
+  return null
+}
+
+function ResizeInvalidate() {
+  const map = useMap()
+  useEffect(() => {
+    const c = map.getContainer()
+    const ro = new ResizeObserver(() => map.invalidateSize())
+    ro.observe(c)
+    return () => ro.disconnect()
+  }, [map])
+  return null
+}
+
 function fmtDate(d: string, intlLocale: string) {
   return new Date(d + 'T00:00:00').toLocaleDateString(intlLocale, { day: '2-digit', month: 'short', year: '2-digit' })
 }
@@ -204,18 +233,22 @@ function StarRow({ value }: { value: number }) {
   )
 }
 
-function PlaceCard({ p }: { p: PublicPlace }) {
+function PlaceCard({ p, selected, onSelect }: { p: PublicPlace; selected?: boolean; onSelect?: () => void }) {
   const { t, locale } = useI18n()
   const tv = (t as any).voyage ?? {}
   const intlLocale = intlLocaleFor(locale)
   const nights = p.checkin_day != null && p.checkout_day != null ? p.checkout_day - p.checkin_day + 1 : 0
   return (
-    <div style={{
-      background: 'var(--arvo-surface)', borderRadius: 10,
-      border: `1px solid ${p.is_highlight ? RED : 'var(--arvo-border)'}`,
-      boxShadow: p.is_highlight ? `0 0 0 1px ${RED}22` : 'none',
-      padding: '10px 14px', display: 'flex', alignItems: 'flex-start', gap: 10,
-    }}>
+    <div
+      onClick={() => { if (onSelect && p.lat != null && p.lng != null) onSelect() }}
+      style={{
+        background: selected ? 'rgba(200,184,154,0.10)' : 'var(--arvo-surface)', borderRadius: 10,
+        border: `1px solid ${selected ? GOLD : p.is_highlight ? RED : 'var(--arvo-border)'}`,
+        boxShadow: p.is_highlight && !selected ? `0 0 0 1px ${RED}22` : 'none',
+        padding: '10px 14px', display: 'flex', alignItems: 'flex-start', gap: 10,
+        cursor: onSelect && p.lat != null && p.lng != null ? 'pointer' : 'default',
+        transition: 'border-color 120ms, background 120ms',
+      }}>
       <span style={{ fontSize: 18, flexShrink: 0, marginTop: 1 }}>{itemIcon(p)}</span>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
@@ -287,7 +320,7 @@ function ConnectorRow({ p }: { p: PublicPlace }) {
   )
 }
 
-function PlaceGroup({ day, places, staysPassingThrough = [] }: { day: number | null; places: PublicPlace[]; staysPassingThrough?: PublicPlace[] }) {
+function PlaceGroup({ day, places, staysPassingThrough = [], selectedPlaceId, onSelectPlace }: { day: number | null; places: PublicPlace[]; staysPassingThrough?: PublicPlace[]; selectedPlaceId?: number | null; onSelectPlace?: (id: number) => void }) {
   const { t } = useI18n()
   const tv = (t as any).voyage ?? {}
   return (
@@ -308,7 +341,9 @@ function PlaceGroup({ day, places, staysPassingThrough = [] }: { day: number | n
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {places.map(p => (
           <div key={p.id}>
-            {(p.kind === 'note' || p.kind === 'transport') ? <ConnectorRow p={p} /> : <PlaceCard p={p} />}
+            {(p.kind === 'note' || p.kind === 'transport')
+              ? <ConnectorRow p={p} />
+              : <PlaceCard p={p} selected={selectedPlaceId === p.id} onSelect={onSelectPlace ? () => onSelectPlace(p.id) : undefined} />}
           </div>
         ))}
       </div>
@@ -325,9 +360,11 @@ export default function PublicTripPage() {
   const [data, setData] = useState<PageData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [selectedDay, setSelectedDay] = useState<number | null>(null)
+  const [selectedDay, setSelectedDay] = useState<number | 'none' | null>(null)
+  const [selectedPlaceId, setSelectedPlaceId] = useState<number | null>(null)
   const [showKmlHelp, setShowKmlHelp] = useState(false)
   const [showMapsMenu, setShowMapsMenu] = useState(false)
+  const markerRefs = useRef<Record<number, L.Marker>>({})
 
   useEffect(() => {
     if (!token) return
@@ -382,8 +419,9 @@ export default function PublicTripPage() {
     ...places.map(p => p.day_number).filter((d): d is number => d != null),
     ...stayDays,
   ])).sort((a, b) => a - b)
-  const undated = places.filter(p => p.day_number == null)
+  const undatedAll = places.filter(p => p.day_number == null)
   const withCoords = places.filter(p => p.lat && p.lng)
+  const hasUndated = places.some(p => p.day_number == null)
   const placeCount = places.filter(p => (p.kind ?? 'place') === 'place').length
   const dayCount = days.length > 0 ? days.length : tripDurationDays(trip.start_date, trip.end_date)
 
@@ -391,7 +429,12 @@ export default function PublicTripPage() {
     return places.filter(p => p.checkin_day != null && p.checkout_day != null && p.checkin_day <= d && d <= p.checkout_day)
   }
 
-  const visibleCoords = selectedDay == null ? withCoords : withCoords.filter(p => p.day_number === selectedDay)
+  // Filtro de dia compartilhado entre mapa e lista (igual à página privada).
+  const visibleDays = selectedDay == null ? days : selectedDay === 'none' ? [] : days.filter(d => d === selectedDay)
+  const undated = selectedDay == null || selectedDay === 'none' ? undatedAll : []
+  const visibleCoords = selectedDay == null ? withCoords
+    : selectedDay === 'none' ? withCoords.filter(p => p.day_number == null)
+    : withCoords.filter(p => p.day_number === selectedDay)
 
   return (
     <div className={themeClass} style={{ minHeight: '100vh', background: 'var(--arvo-bg)' }}>
@@ -465,10 +508,10 @@ export default function PublicTripPage() {
       </div>
 
       {/* Content */}
-      <div style={{ maxWidth: 800, margin: '0 auto', padding: '0 20px 60px' }}>
+      <div style={{ maxWidth: 1140, margin: '0 auto', padding: '0 20px 60px' }}>
         {/* Stats strip — overlaps hero bottom edge for a premium "report" feel */}
         <div style={{
-          marginTop: -28, marginBottom: 28, position: 'relative', zIndex: 2,
+          marginTop: -28, marginBottom: 28, position: 'relative', zIndex: 2, maxWidth: 760, marginLeft: 'auto', marginRight: 'auto',
           background: 'var(--arvo-surface)', borderRadius: 16, border: '1px solid var(--arvo-border)',
           boxShadow: 'var(--arvo-shadow-lg)', padding: '18px 8px',
           display: 'flex', alignItems: 'stretch', justifyContent: 'space-around',
@@ -487,97 +530,9 @@ export default function PublicTripPage() {
         </div>
 
         {trip.summary && (
-          <p style={{ fontFamily: 'var(--arvo-font-serif)', fontStyle: 'italic', fontSize: 15, color: GOLD, lineHeight: 1.7, marginBottom: 28, textAlign: 'center' }}>
+          <p style={{ fontFamily: 'var(--arvo-font-serif)', fontStyle: 'italic', fontSize: 15, color: GOLD, lineHeight: 1.7, marginBottom: 28, textAlign: 'center', maxWidth: 760, marginLeft: 'auto', marginRight: 'auto' }}>
             “{trip.summary}”
           </p>
-        )}
-
-        {/* Map */}
-        {withCoords.length > 0 && (
-          <div style={{ marginBottom: 16 }}>
-            {/* Filtro de dias — acima do mapa, separado dos botões de ação */}
-            {days.length > 1 && (
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 10, justifyContent: 'center' }}>
-                <button
-                  type="button" onClick={() => setSelectedDay(null)}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer',
-                    fontFamily: 'var(--arvo-font-display)', fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase',
-                    padding: '3px 9px', borderRadius: 999,
-                    border: `1px solid ${selectedDay === null ? 'var(--arvo-fg)' : 'var(--arvo-border)'}`,
-                    background: selectedDay === null ? 'var(--arvo-hover-bg)' : 'transparent',
-                    color: selectedDay === null ? 'var(--arvo-fg)' : 'var(--arvo-fg-soft)',
-                  }}
-                >
-                  {tv.public?.mapFilterAll ?? 'All'}
-                </button>
-                {days.map(d => (
-                  <button
-                    key={d} type="button" onClick={() => setSelectedDay(d)}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer',
-                      fontFamily: 'var(--arvo-font-body)', fontSize: 11,
-                      padding: '3px 9px', borderRadius: 999,
-                      border: `1px solid ${selectedDay === d ? dayColor(d) : 'var(--arvo-border)'}`,
-                      background: selectedDay === d ? dayColorWash(d, 10) : 'transparent',
-                      color: selectedDay === d ? dayColor(d) : 'var(--arvo-fg-soft)',
-                    }}
-                  >
-                    <span style={{ width: 7, height: 7, borderRadius: 999, background: dayColor(d) }} />
-                    {(tv.public?.dayLabel ?? 'Day {n}').replace('{n}', String(d))}
-                  </button>
-                ))}
-              </div>
-            )}
-            <div style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid var(--arvo-border)', boxShadow: 'var(--arvo-shadow-sm)', height: 380 }}>
-              {visibleCoords.length === 0 ? (
-                <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--arvo-hover-bg)' }} />
-              ) : (
-                <MapContainer
-                  center={[visibleCoords[0].lat!, visibleCoords[0].lng!]}
-                  zoom={12}
-                  style={{ height: '100%', width: '100%' }}
-                  scrollWheelZoom={true}
-                >
-                  <TileLayer
-                    key={resolvedTheme}
-                    attribution='&copy; <a href="https://carto.com/attributions">CARTO</a>'
-                    url={resolvedTheme === 'dark'
-                      ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-                      : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
-                    }
-                  />
-                  <FitBounds places={visibleCoords} />
-                  {visibleCoords.map(p => (
-                    <Marker key={p.id} position={[p.lat!, p.lng!]} icon={makeIcon(itemIcon(p), dayColor(p.day_number), p.is_highlight)}>
-                      <Popup>
-                        <div style={{ fontFamily: 'var(--arvo-font-body)', minWidth: 150 }}>
-                          {p.day_number != null && (
-                            <span style={{ display: 'inline-block', fontSize: 10, padding: '1px 7px', borderRadius: 999, background: dayColorWash(p.day_number, 16), color: dayColor(p.day_number), marginBottom: 4 }}>
-                              {(tv.public?.dayLabel ?? 'Day {n}').replace('{n}', String(p.day_number))}
-                            </span>
-                          )}
-                          <p style={{ fontWeight: 600, fontSize: 13, marginBottom: 2 }}>{p.name}</p>
-                          {p.category && <p style={{ fontSize: 10.5, color: '#999', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{categoryLabel(p.category, tv)}</p>}
-                          {p.address && <p style={{ fontSize: 11, color: '#666', marginBottom: 4 }}>{p.address}</p>}
-                          <OpeningHoursBlock hours={p.opening_hours} />
-                          {(p.expense_total ?? 0) > 0 && (
-                            <p style={{ fontSize: 11, color: '#444', marginBottom: 4 }}>{tv.public?.expenseHere ?? 'Spent here:'} <strong>{fmtCurrency(p.expense_total!, 'EUR', intlLocale)}</strong></p>
-                          )}
-                          {p.google_maps_url && (
-                            <a href={p.google_maps_url} target="_blank" rel="noopener noreferrer"
-                              style={{ fontSize: 11, color: '#555', textDecoration: 'none' }}>
-                              {tv.public?.openInMaps ?? 'Open in Maps →'}
-                            </a>
-                          )}
-                        </div>
-                      </Popup>
-                    </Marker>
-                  ))}
-                </MapContainer>
-              )}
-            </div>
-          </div>
         )}
 
         {/* Álbum de fotos — card dedicado, mesmo conteúdo da página interna */}
@@ -701,28 +656,108 @@ export default function PublicTripPage() {
           )
         })()}
 
-        {/* Places by day */}
+        {/* Roteiro (lista, esquerda 40%) + mapa (direita 60%, sticky) — mesma
+            estrutura map-forward da página privada. Filtro de dia compartilhado
+            e clique no item destaca o lugar no mapa. */}
         {places.length === 0 ? (
           <p style={{ fontFamily: 'var(--arvo-font-serif)', fontStyle: 'italic', fontSize: 14, color: GOLD, textAlign: 'center', padding: '40px 0' }}>
             {tv.public?.noPlaces ?? 'No places shared yet'}
           </p>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 26 }}>
-            {days.map(d => (
-              <PlaceGroup
-                key={d}
-                day={d}
-                places={places.filter(p => p.day_number === d)}
-                staysPassingThrough={staysOnDay(d).filter(s => s.checkin_day !== d && (s.checkout_day === d || !isLogisticalStay(s.category)))}
-              />
-            ))}
-            {undated.length > 0 && (
-              <PlaceGroup
-                day={null}
-                places={undated}
-              />
+          <>
+            {(days.length > 1 || hasUndated) && (
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16, justifyContent: 'center' }}>
+                <button type="button" onClick={() => setSelectedDay(null)}
+                  style={{ cursor: 'pointer', fontFamily: 'var(--arvo-font-display)', fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '3px 9px', borderRadius: 999, border: `1px solid ${selectedDay === null ? 'var(--arvo-fg)' : 'var(--arvo-border)'}`, background: selectedDay === null ? 'var(--arvo-hover-bg)' : 'transparent', color: selectedDay === null ? 'var(--arvo-fg)' : 'var(--arvo-fg-soft)' }}>
+                  {tv.public?.mapFilterAll ?? 'All'}
+                </button>
+                {days.map(d => (
+                  <button key={d} type="button" onClick={() => setSelectedDay(d)}
+                    style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 11, padding: '3px 9px', borderRadius: 999, border: `1px solid ${selectedDay === d ? dayColor(d) : 'var(--arvo-border)'}`, background: selectedDay === d ? dayColorWash(d, 10) : 'transparent', color: selectedDay === d ? dayColor(d) : 'var(--arvo-fg-soft)' }}>
+                    <span style={{ width: 7, height: 7, borderRadius: 999, background: dayColor(d) }} />
+                    {(tv.public?.dayLabel ?? 'Day {n}').replace('{n}', String(d))}
+                  </button>
+                ))}
+                {hasUndated && (
+                  <button type="button" onClick={() => setSelectedDay('none')}
+                    style={{ cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 11, padding: '3px 9px', borderRadius: 999, border: `1px solid ${selectedDay === 'none' ? 'var(--arvo-fg)' : 'var(--arvo-border)'}`, background: selectedDay === 'none' ? 'var(--arvo-hover-bg)' : 'transparent', color: selectedDay === 'none' ? 'var(--arvo-fg)' : 'var(--arvo-fg-soft)' }}>
+                    {tv.public?.noDayLabel ?? 'No day'}
+                  </button>
+                )}
+              </div>
             )}
-          </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-5 lg:items-start">
+              <div className="order-2 lg:order-1" style={{ display: 'flex', flexDirection: 'column', gap: 26 }}>
+                {visibleDays.map(d => (
+                  <PlaceGroup
+                    key={d}
+                    day={d}
+                    places={places.filter(p => p.day_number === d)}
+                    staysPassingThrough={staysOnDay(d).filter(s => s.checkin_day !== d && (s.checkout_day === d || !isLogisticalStay(s.category)))}
+                    selectedPlaceId={selectedPlaceId}
+                    onSelectPlace={setSelectedPlaceId}
+                  />
+                ))}
+                {undated.length > 0 && (
+                  <PlaceGroup day={null} places={undated} selectedPlaceId={selectedPlaceId} onSelectPlace={setSelectedPlaceId} />
+                )}
+              </div>
+
+              {withCoords.length > 0 && (
+                <div className="order-1 lg:order-2 h-[360px] lg:sticky lg:top-4 lg:h-[calc(100vh-150px)] lg:max-h-[760px]">
+                  <div style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid var(--arvo-border)', boxShadow: 'var(--arvo-shadow-sm)', height: '100%' }}>
+                    {visibleCoords.length === 0 ? (
+                      <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--arvo-hover-bg)' }} />
+                    ) : (
+                      <MapContainer center={[visibleCoords[0].lat!, visibleCoords[0].lng!]} zoom={12} style={{ height: '100%', width: '100%' }} scrollWheelZoom={true}>
+                        <ResizeInvalidate />
+                        <FlyToSelected placeId={selectedPlaceId} places={visibleCoords} markerRefs={markerRefs} />
+                        <TileLayer
+                          key={resolvedTheme}
+                          attribution='&copy; <a href="https://carto.com/attributions">CARTO</a>'
+                          url={resolvedTheme === 'dark'
+                            ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+                            : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'}
+                        />
+                        <FitBounds places={visibleCoords} />
+                        {visibleCoords.map(p => (
+                          <Marker
+                            key={p.id} position={[p.lat!, p.lng!]}
+                            icon={makeIcon(itemIcon(p), dayColor(p.day_number), p.is_highlight || p.id === selectedPlaceId)}
+                            ref={m => { if (m) markerRefs.current[p.id] = m }}
+                            eventHandlers={{ click: () => setSelectedPlaceId(p.id) }}
+                          >
+                            <Popup>
+                              <div style={{ fontFamily: 'var(--arvo-font-body)', minWidth: 150 }}>
+                                {p.day_number != null && (
+                                  <span style={{ display: 'inline-block', fontSize: 10, padding: '1px 7px', borderRadius: 999, background: dayColorWash(p.day_number, 16), color: dayColor(p.day_number), marginBottom: 4 }}>
+                                    {(tv.public?.dayLabel ?? 'Day {n}').replace('{n}', String(p.day_number))}
+                                  </span>
+                                )}
+                                <p style={{ fontWeight: 600, fontSize: 13, marginBottom: 2 }}>{p.name}</p>
+                                {p.category && <p style={{ fontSize: 10.5, color: '#999', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{categoryLabel(p.category, tv)}</p>}
+                                {p.address && <p style={{ fontSize: 11, color: '#666', marginBottom: 4 }}>{p.address}</p>}
+                                <OpeningHoursBlock hours={p.opening_hours} />
+                                {(p.expense_total ?? 0) > 0 && (
+                                  <p style={{ fontSize: 11, color: '#444', marginBottom: 4 }}>{tv.public?.expenseHere ?? 'Spent here:'} <strong>{fmtCurrency(p.expense_total!, 'EUR', intlLocale)}</strong></p>
+                                )}
+                                {p.google_maps_url && (
+                                  <a href={p.google_maps_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: '#555', textDecoration: 'none' }}>
+                                    {tv.public?.openInMaps ?? 'Open in Maps →'}
+                                  </a>
+                                )}
+                              </div>
+                            </Popup>
+                          </Marker>
+                        ))}
+                      </MapContainer>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </>
         )}
 
         {/* CTA — convite para criar o próprio roteiro */}
