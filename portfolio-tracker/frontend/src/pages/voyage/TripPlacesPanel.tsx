@@ -72,8 +72,12 @@ function catIcon(cat: string | null): string {
   return '📌'
 }
 
+// Além de minúsculas/sem acento, troca hífen/pontuação por espaço — nomes
+// oficiais de cidade costumam usar hífen ("Saint-Nazaire") enquanto o
+// endereço formatado do Google às vezes vem sem ("Saint Nazaire"), o que
+// fazia o .includes() nunca bater e o filtro de destino não achar nada.
 function normalize(s: string) {
-  return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+  return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, ' ').trim()
 }
 
 function StarRating({ value, onChange }: { value: number | null; onChange?: (v: number) => void }) {

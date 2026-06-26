@@ -735,7 +735,7 @@ export default function PublicTripPage() {
 
               {withCoords.length > 0 && (
                 <div className="order-1 lg:order-2 h-[360px] lg:sticky lg:top-4 lg:h-[calc(100vh-150px)] lg:max-h-[760px]">
-                  <div style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid var(--arvo-border)', boxShadow: 'var(--arvo-shadow-sm)', height: '100%' }}>
+                  <div style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid var(--arvo-border)', boxShadow: 'var(--arvo-shadow-sm)', height: '100%', isolation: 'isolate' }}>
                     {visibleCoords.length === 0 ? (
                       <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--arvo-hover-bg)' }} />
                     ) : (
@@ -768,8 +768,13 @@ export default function PublicTripPage() {
                             ref={m => { if (m) markerRefs.current[p.id] = m }}
                             eventHandlers={{ click: () => setSelectedPlaceId(p.id) }}
                           >
-                            <Popup>
-                              <div style={{ fontFamily: 'var(--arvo-font-body)', minWidth: 150 }}>
+                            <Popup closeButton={false}>
+                              <div style={{ fontFamily: 'var(--arvo-font-body)', minWidth: 150, position: 'relative' }}>
+                                <button
+                                  type="button"
+                                  onClick={() => { setSelectedPlaceId(null); markerRefs.current[p.id]?.closePopup() }}
+                                  style={{ position: 'absolute', top: -2, right: -2, background: 'none', border: 'none', cursor: 'pointer', color: '#999', padding: 4, lineHeight: 1, fontSize: 13 }}
+                                >✕</button>
                                 {p.day_number != null && (
                                   <span style={{ display: 'inline-block', fontSize: 10, padding: '1px 7px', borderRadius: 999, background: dayColorWash(p.day_number, 16), color: dayColor(p.day_number), marginBottom: 4 }}>
                                     {(tv.public?.dayLabel ?? 'Day {n}').replace('{n}', String(p.day_number))}

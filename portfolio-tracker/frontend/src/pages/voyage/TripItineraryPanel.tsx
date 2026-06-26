@@ -493,13 +493,6 @@ function ItemRow({ item, tripId, canEdit, dragging, dropTarget, destinations, au
           {item.trip_note && !editingNote && (
             <p style={{ fontFamily: 'var(--arvo-font-serif)', fontStyle: 'italic', fontSize: 12.5, color: GOLD, marginTop: 2 }}>{item.trip_note}</p>
           )}
-          {hasExpenses && (
-            <button type="button" onClick={() => canEdit && setShowExpenses(true)}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 6, padding: '4px 10px', borderRadius: 999, background: 'rgba(31,138,91,0.10)', border: '1px solid rgba(31,138,91,0.25)', cursor: canEdit ? 'pointer' : 'default', fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: '#1F8A5B', fontWeight: 500 }}>
-              {fmtCurrency(item.expense_total ?? 0)}
-              <span style={{ color: '#1F8A5B', opacity: 0.75 }}>· {item.expense_count} {item.expense_count === 1 ? (tv.expenses?.expenseOne ?? 'despesa') : (tv.expenses?.expenseMany ?? 'despesas')}</span>
-            </button>
-          )}
           {/* Place kind: note is optional, toggled via the "Nota" action below */}
           {isPlace && editingNote && (
             <div style={{ marginTop: 6 }}>
@@ -540,6 +533,15 @@ function ItemRow({ item, tripId, canEdit, dragging, dropTarget, destinations, au
             </span>
           ) : (
             <DayBadge day={item.day_number} canEdit={canEdit} onChangeDay={d => onPatch({ day_number: d })} />
+          )}
+          {/* Pill de gasto — mesmo tamanho/formato do pill de dia, em vez do
+              botão grande de antes (variava de tamanho com a contagem de
+              despesas, ficando enorme em alguns lugares). */}
+          {hasExpenses && (
+            <button type="button" onClick={() => canEdit && setShowExpenses(true)}
+              style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.06em', padding: '3px 9px', borderRadius: 999, flexShrink: 0, background: 'rgba(31,138,91,0.10)', border: '1px solid rgba(31,138,91,0.25)', cursor: canEdit ? 'pointer' : 'default', color: '#1F8A5B' }}>
+              {fmtCurrency(item.expense_total ?? 0)}
+            </button>
           )}
           {/* Quando já há despesa vinculada, o link com o valor (abaixo do
               nome) já cobre essa ação — aqui fica só o ícone, consistente
@@ -989,7 +991,7 @@ export default function TripItineraryPanel({ tripId, tripCity, tripCountry, trip
   }
 
   return (
-    <div style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', borderRadius: 16, boxShadow: 'var(--arvo-shadow-sm)', padding: '20px 22px' }}>
+    <div style={{ padding: 0 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: activeTool === null && !showToolMenu ? 14 : 10 }}>
         <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 10, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)' }}>
           {tv.itineraryTitle ?? 'Roteiro'}

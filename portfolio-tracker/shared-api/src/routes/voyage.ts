@@ -857,7 +857,7 @@ function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): nu
 async function geocodePlace(
   query: string,
   bias?: { lat: number; lng: number },
-): Promise<{ lat: number; lng: number; name?: string; address?: string; category?: string | null; opening_hours?: string[] | null; place_id?: string | null } | null> {
+): Promise<{ lat: number; lng: number; name?: string; address?: string; city?: string | null; category?: string | null; opening_hours?: string[] | null; place_id?: string | null } | null> {
   const apiKey = process.env.GOOGLE_MAPS_API_KEY || process.env.GOOGLE_PLACES_API_KEY
   if (!apiKey || !query.trim()) return null
   try {
@@ -866,7 +866,7 @@ async function geocodePlace(
       headers: {
         'Content-Type': 'application/json',
         'X-Goog-Api-Key': apiKey,
-        'X-Goog-FieldMask': 'places.id,places.displayName,places.formattedAddress,places.location,places.primaryType,places.types,places.regularOpeningHours',
+        'X-Goog-FieldMask': 'places.id,places.displayName,places.formattedAddress,places.addressComponents,places.location,places.primaryType,places.types,places.regularOpeningHours',
       },
       body: JSON.stringify({
         textQuery: query,
@@ -885,11 +885,20 @@ async function geocodePlace(
     const data = await r.json() as any
     const p = data.places?.[0]
     if (!p?.location) return null
+    // Sem isso, lugares importados por link nunca tinham "city" preenchido
+    // (só o endereço completo), o que quebrava o filtro de destino na
+    // biblioteca pra qualquer viagem com mais de um destino.
+    const comps = p.addressComponents ?? []
+    const city = comps.find((c: any) => (c.types ?? []).includes('locality'))?.longText
+      ?? comps.find((c: any) => (c.types ?? []).includes('postal_town'))?.longText
+      ?? comps.find((c: any) => (c.types ?? []).includes('administrative_area_level_2'))?.longText
+      ?? null
     return {
       lat: p.location.latitude,
       lng: p.location.longitude,
       name: p.displayName?.text,
       address: p.formattedAddress,
+      city,
       category: googleTypeToCategory(p.primaryType, p.types),
       opening_hours: p.regularOpeningHours?.weekdayDescriptions ?? null,
       place_id: p.id ?? null,
@@ -932,6 +941,7 @@ router.post('/places/from-url', requireAuth, async (req, res: Response) => {
 
   let { name, lat, lng } = parseMapsUrl(resolvedUrl)
   let address: string | null = null
+  let city: string | null = null
   let category: string | null = null
   let openingHours: string[] | null = null
   let isAddressFallback = false
@@ -971,6 +981,7 @@ router.post('/places/from-url', requireAuth, async (req, res: Response) => {
       if (geo.lat != null && geo.lng != null) { lat = geo.lat; lng = geo.lng }
       if (geo.name) name = geo.name
       if (geo.address) address = geo.address
+      if (geo.city) city = geo.city
       if (geo.category) category = geo.category
       if (geo.opening_hours) openingHours = geo.opening_hours
       if (geo.place_id) placeId = geo.place_id
@@ -981,6 +992,7 @@ router.post('/places/from-url', requireAuth, async (req, res: Response) => {
     user_id: userId, name, source: 'manual', google_maps_url: resolvedUrl,
     ...(lat !== null && { lat }), ...(lng !== null && { lng }),
     ...(address && { address }),
+    ...(city && { city }),
     ...(category && { category }),
     ...(openingHours && { opening_hours: openingHours }),
     ...(placeId && { google_place_id: placeId }),

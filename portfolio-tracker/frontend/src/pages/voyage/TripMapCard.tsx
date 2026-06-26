@@ -183,9 +183,13 @@ export default function TripMapCard({ tripId, refreshKey, selectedDay: selectedD
   }
 
   return (
-    <div style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', borderRadius: 16, boxShadow: 'var(--arvo-shadow-sm)', overflow: 'hidden', height: '100%', display: 'flex', flexDirection: 'column' }}>
+    // Sem card/fundo próprio — mesmo visual limpo da página pública: o mapa
+    // só tem a própria borda, sem header com título dentro de uma caixa.
+    // `isolation: isolate` contém o z-index alto dos panes do Leaflet (que
+    // sem isso vazava por cima do header fixo do app no mobile).
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', isolation: 'isolate' }}>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px 12px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
         <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 10, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)' }}>
           {tv.mapCardTitle ?? 'Mapa da viagem'}
         </p>
@@ -215,7 +219,7 @@ export default function TripMapCard({ tripId, refreshKey, selectedDay: selectedD
 
       {/* Filtro por dia */}
       {(days.length > 1 || hasUndated) && (
-        <div style={{ display: 'flex', gap: 6, padding: '0 18px 12px', flexWrap: 'wrap', overflowX: 'auto' }}>
+        <div style={{ display: 'flex', gap: 6, marginBottom: 10, flexWrap: 'wrap', overflowX: 'auto' }}>
           <button
             type="button" onClick={() => setSelectedDay(null)}
             style={{
@@ -263,9 +267,8 @@ export default function TripMapCard({ tripId, refreshKey, selectedDay: selectedD
         </div>
       )}
 
-      {/* Map — flex:1 para que, no desktop ao lado do custo, o mapa estique
-          junto quando o card de custo expande (limites inferiores alinhados). */}
-      <div style={{ flex: 1, minHeight: 300, borderTop: '1px solid var(--arvo-border-soft)' }}>
+      {/* Map — borda própria (igual à pública), flex:1 ocupa o resto da altura. */}
+      <div style={{ flex: 1, minHeight: 300, borderRadius: 16, overflow: 'hidden', border: '1px solid var(--arvo-border)', boxShadow: 'var(--arvo-shadow-sm)' }}>
         {withCoords.length === 0 ? (
           <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'var(--arvo-hover-bg)', gap: 10 }}>
             <svg width="40" height="40" viewBox="0 0 40 40" fill="none" stroke={`rgba(200,184,154,0.25)`} strokeWidth="1.2">
@@ -320,8 +323,16 @@ export default function TripMapCard({ tripId, refreshKey, selectedDay: selectedD
                 ref={m => { if (m) markerRefs.current[p.id] = m }}
                 eventHandlers={{ click: () => setSelectedPlaceId(p.id) }}
               >
-                <Popup>
-                  <div style={{ fontFamily: 'var(--arvo-font-body)', minWidth: 150 }}>
+                <Popup closeButton={false}>
+                  <div style={{ fontFamily: 'var(--arvo-font-body)', minWidth: 150, position: 'relative' }}>
+                    {/* Botão de fechar próprio — em vez do × nativo do Leaflet,
+                        que só fechava o popup sem desmarcar a seleção na
+                        lista (o destaque do lugar ficava "preso"). */}
+                    <button
+                      type="button"
+                      onClick={() => { setSelectedPlaceId(null); markerRefs.current[p.id]?.closePopup() }}
+                      style={{ position: 'absolute', top: -2, right: -2, background: 'none', border: 'none', cursor: 'pointer', color: '#999', padding: 4, lineHeight: 1, fontSize: 13 }}
+                    >✕</button>
                     {p.day_number != null && (
                       <span style={{ display: 'inline-block', fontSize: 10, padding: '1px 7px', borderRadius: 999, background: dayColorWash(p.day_number, 16), color: dayColor(p.day_number), marginBottom: 4 }}>{(tv.day ?? 'Dia {n}').replace('{n}', String(p.day_number))}</span>
                     )}

@@ -453,11 +453,12 @@ export default function VoyageTripDetailPage() {
         )
       })()}
 
-      {/* Roteiro (esquerda 40%) + mapa (direita 60%) na mesma linha no desktop;
-          ambos com altura limitada ao viewport (o roteiro rola por dentro, o
-          mapa nunca passa da tela). No mobile empilha, mapa primeiro. */}
+      {/* Roteiro (esquerda 40%) + mapa (direita 60%) na mesma linha no desktop —
+          mesma estrutura da página pública: lista em fluxo normal (rola com a
+          página, sem scroll próprio) e mapa sticky com altura fixa. No mobile
+          empilha, mapa primeiro. */}
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-5 mb-5 lg:items-start">
-        <div className="order-2 lg:order-1 lg:sticky lg:top-4 lg:h-[calc(100vh-150px)] lg:max-h-[760px] lg:overflow-y-auto">
+        <div className="order-2 lg:order-1">
           <TripItineraryPanel
             tripId={Number(id)}
             tripCity={trip.destination}
