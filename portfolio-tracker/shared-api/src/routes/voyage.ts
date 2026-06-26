@@ -797,12 +797,18 @@ function googleTypeToCategory(primaryType: string | undefined, types: string[] =
     ['Padarias', ['bakery']],
     ['Cafés', ['cafe', 'coffee_shop']],
     ['Bares', ['bar', 'night_club', 'pub', 'wine_bar']],
-    ['Restaurantes', ['restaurant', 'meal_takeaway', 'meal_delivery', 'food', 'fine_dining_restaurant']],
+    // 'food' não entra aqui — é um tipo guarda-chuva do Google que aparece
+    // em qualquer lugar que venda algo comestível (lojas de variedades,
+    // postos de gasolina etc.), não é exclusivo de restaurante. Causava
+    // lojas como "Action" (discount_store) caindo em Restaurantes.
+    ['Restaurantes', ['restaurant', 'meal_takeaway', 'meal_delivery', 'fine_dining_restaurant']],
     ['Museus', ['museum', 'art_gallery']],
     ['Hotéis', ['lodging', 'hotel', 'resort_hotel', 'bed_and_breakfast', 'guest_house', 'hostel']],
     ['Aluguel de carro', ['car_rental']],
     ['Parques', ['park', 'national_park', 'state_park', 'garden', 'dog_park']],
-    ['Compras', ['store', 'shopping_mall', 'clothing_store', 'department_store', 'shoe_store', 'book_store', 'jewelry_store']],
+    ['Compras', ['store', 'shopping_mall', 'clothing_store', 'department_store', 'shoe_store', 'book_store',
+      'jewelry_store', 'discount_store', 'warehouse_store', 'general_store', 'variety_store', 'gift_shop',
+      'pet_store', 'home_goods_store', 'electronics_store', 'furniture_store', 'hardware_store', 'convenience_store']],
     ['Praias', ['beach', 'natural_feature']],
     ['Pontos turísticos', ['tourist_attraction', 'landmark', 'historical_landmark', 'historical_place', 'point_of_interest']],
   ]
