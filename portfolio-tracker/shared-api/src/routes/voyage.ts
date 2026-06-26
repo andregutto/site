@@ -1361,10 +1361,18 @@ router.delete('/trips/:id/places/:placeId/expenses/:transactionId', requireAuth,
 })
 
 // GET — candidatos a vincular: transações dos momentos da viagem (ou busca livre)
+// Normaliza pra comparação fuzzy: minúsculas, sem acento, só tokens com 3+
+// letras (evita "de", "da", "do" inflando o score de qualquer transação).
+function nameTokens(s: string): string[] {
+  return s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+    .split(/[^a-z0-9]+/).filter(t => t.length >= 3)
+}
+
 router.get('/trips/:id/transactions/candidates', requireAuth, async (req, res: Response) => {
   const userId = uid(req)
   const tripId = Number(req.params.id)
   const q = (req.query.q as string | undefined)?.trim()
+  const placeName = (req.query.place_name as string | undefined)?.trim()
   const limit = Math.min(Number(req.query.limit) || 30, 100)
 
   const { data: trip } = await supabaseAdmin
@@ -1410,10 +1418,26 @@ router.get('/trips/:id/transactions/candidates', requireAuth, async (req, res: R
         .in('moment_id', momentIds)
       rows = (txm ?? []).map((r: any) => r.finance_transactions)
         .filter((t: any) => t && Number(t.amount) < 0)
-      // dedup + sort desc
+      // dedup
       const seen = new Set<number>()
       rows = rows.filter(r => { if (seen.has(r.id)) return false; seen.add(r.id); return true })
-        .sort((a, b) => (a.date < b.date ? 1 : -1))
+
+      // Sugestão por nome do lugar: não exige match exato, só algum token
+      // (3+ letras) do nome aparecendo na descrição da transação — sobe pro
+      // topo, mas sem nenhum match a lista cai pro fallback (mais recentes).
+      const placeTokens = placeName ? nameTokens(placeName) : []
+      if (placeTokens.length > 0) {
+        const score = (desc: string) => {
+          const d = desc.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+          return placeTokens.filter(tok => d.includes(tok)).length
+        }
+        rows = rows
+          .map(r => ({ r, s: score(r.description ?? '') }))
+          .sort((a, b) => b.s - a.s || (a.r.date < b.r.date ? 1 : -1))
+          .map(x => x.r)
+      } else {
+        rows = rows.sort((a, b) => (a.date < b.date ? 1 : -1))
+      }
     }
   }
 

@@ -61,7 +61,13 @@ export default function PlaceExpensesPanel({ tripId, placeId, placeName, onClose
   const loadCandidates = useCallback(async (q: string) => {
     setLoadingCandidates(true)
     try {
-      const qs = q.trim() ? `?q=${encodeURIComponent(q.trim())}` : ''
+      const params = new URLSearchParams()
+      if (q.trim()) params.set('q', q.trim())
+      // Sem busca digitada, manda o nome do lugar pro backend ranquear as
+      // transações dos momentos da viagem por semelhança (não precisa ser
+      // o nome exato) — assim já chega com sugestões em vez de só "mais recentes".
+      else if (placeName) params.set('place_name', placeName)
+      const qs = params.toString() ? `?${params.toString()}` : ''
       const data = await apiFetch<{ candidates: Candidate[] }>(
         `/voyage/trips/${tripId}/transactions/candidates${qs}`
       )
@@ -69,7 +75,7 @@ export default function PlaceExpensesPanel({ tripId, placeId, placeName, onClose
     } finally {
       setLoadingCandidates(false)
     }
-  }, [tripId])
+  }, [tripId, placeName])
 
   useEffect(() => { loadExpenses() }, [loadExpenses])
   useEffect(() => { loadCandidates('') }, [loadCandidates])
