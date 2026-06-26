@@ -2197,6 +2197,8 @@
       "addToTrip": "Add to trip",
       "importing": "Importing…",
       "libraryEmpty": "Empty library — import from Google Takeout or paste a Maps link.",
+      "noSearchResults": "No results for this search.",
+      "showOnly": "Show only",
       "stayInProgress": "in progress: {name}",
       "stayCheckout": "Check-out: {name}",
       "keepAddressAsName": "Keep address as name",

@@ -2197,6 +2197,8 @@
       "addToTrip": "Adicionar à viagem",
       "importing": "Importando…",
       "libraryEmpty": "Biblioteca vazia — importe do Google Takeout ou cole um link do Maps.",
+      "noSearchResults": "Nenhum resultado para a busca.",
+      "showOnly": "Mostrar só",
       "stayInProgress": "em andamento: {name}",
       "stayCheckout": "Check-out: {name}",
       "keepAddressAsName": "Manter o endereço como nome",

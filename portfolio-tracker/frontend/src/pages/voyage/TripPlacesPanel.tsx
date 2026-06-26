@@ -72,14 +72,6 @@ function catIcon(cat: string | null): string {
   return '📌'
 }
 
-// Além de minúsculas/sem acento, troca hífen/pontuação por espaço — nomes
-// oficiais de cidade costumam usar hífen ("Saint-Nazaire") enquanto o
-// endereço formatado do Google às vezes vem sem ("Saint Nazaire"), o que
-// fazia o .includes() nunca bater e o filtro de destino não achar nada.
-function normalize(s: string) {
-  return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, ' ').trim()
-}
-
 function StarRating({ value, onChange }: { value: number | null; onChange?: (v: number) => void }) {
   return (
     <div style={{ display: 'flex', gap: 2 }}>
@@ -126,6 +118,7 @@ export function LibraryPicker({ tripId, tripCity, tripCountry, destinations = []
   // usuário entender por quê. null = nenhum filtro de destino selecionado.
   const [destFilterId, setDestFilterId] = useState<number | null>(null)
   const destFilter = destinations.find(d => d.id === destFilterId) ?? null
+  const [totalCount, setTotalCount] = useState<number | null>(null)
 
   const filterCity = destinations.length > 0 ? destFilter?.city ?? null : tripCity
   const filterCountry = destinations.length > 0 ? destFilter?.country ?? null : tripCountry
@@ -135,22 +128,29 @@ export function LibraryPicker({ tripId, tripCity, tripCountry, destinations = []
     // Mesmo abrindo direto no modo "Link Maps" (forceMode='url'), pré-carrega
     // a biblioteca — senão, ao trocar pra aba Biblioteca, ela aparecia vazia
     // ("Bibliothèque vide") porque nunca tinha sido buscada.
-    if (forceOpen) { setOpen(true); fetchLibrary() }
+    if (forceOpen) { setOpen(true); fetchLibrary(null) }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Garante a biblioteca carregada sempre que a aba Biblioteca estiver ativa.
+  // O filtro por destino vai pro backend (?city=) em vez de filtrar no
+  // client — refaz a busca sempre que o destino selecionado (ou "Ver
+  // todos") muda. Mais simples de confiar do que reaplicar lógica de texto
+  // no front a cada render, e usa o mesmo ilike já suportado pela API.
   useEffect(() => {
-    if (open && mode === 'library') fetchLibrary()
+    if (!open || mode !== 'library') return
+    fetchLibrary(showAll ? null : filterCity)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, mode])
+  }, [open, mode, destFilterId, showAll])
 
-  async function fetchLibrary() {
-    if (library.length > 0 || loading) return
+  async function fetchLibrary(city: string | null) {
     setLoading(true)
     try {
-      const data = await apiFetch<{ places: LibraryPlace[] }>('/voyage/places')
+      const qs = city ? `?city=${encodeURIComponent(city)}` : ''
+      const data = await apiFetch<{ places: LibraryPlace[] }>(`/voyage/places${qs}`)
       setLibrary(data.places)
+      // Guarda o total (sem filtro) pra mostrar nos textos "Ver todos os N" —
+      // `library` agora só guarda o conjunto já filtrado pelo servidor.
+      if (!city) setTotalCount(data.places.length)
     } finally {
       setLoading(false)
     }
@@ -158,7 +158,7 @@ export function LibraryPicker({ tripId, tripCity, tripCountry, destinations = []
 
   async function openPicker() {
     setOpen(true)
-    fetchLibrary()
+    fetchLibrary(showAll ? null : filterCity)
   }
 
   async function addPlace(p: LibraryPlace) {
@@ -215,19 +215,9 @@ export function LibraryPicker({ tripId, tripCity, tripCountry, destinations = []
     }
   }
 
-  function matchesDestination(p: LibraryPlace): boolean {
-    if (!hasDestination) return true
-    const city = normalize(p.city ?? '')
-    const addr = normalize(p.address ?? '')
-    return (
-      (!!filterCity && (city.includes(normalize(filterCity)) || addr.includes(normalize(filterCity)))) ||
-      (!!filterCountry && (city.includes(normalize(filterCountry)) || addr.includes(normalize(filterCountry))))
-    )
-  }
-
-  const destinationPlaces = library.filter(matchesDestination)
-  const visibleLibrary = (showAll || !hasDestination) ? library : destinationPlaces
-  const filtered = visibleLibrary.filter(p =>
+  // `library` já chega filtrada do servidor (?city=) quando há destino
+  // selecionado — só falta aplicar a busca por texto em cima.
+  const filtered = library.filter(p =>
     !search || p.name.toLowerCase().includes(search.toLowerCase()) ||
     (p.city ?? '').toLowerCase().includes(search.toLowerCase())
   )
@@ -325,7 +315,7 @@ export function LibraryPicker({ tripId, tripCity, tripCountry, destinations = []
         <div style={{ display: 'flex', gap: 12 }}>
           <button type="button" onClick={() => setMode('library')}
             style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.20em', textTransform: 'uppercase', color: mode === 'library' ? 'var(--arvo-fg)' : 'var(--arvo-fg-muted)', borderBottom: mode === 'library' ? '1px solid var(--arvo-fg)' : '1px solid transparent', paddingBottom: 2 }}>
-            {!showAll && hasDestination && destinationPlaces.length > 0 ? `${filterCity ?? filterCountry}` : (tv.places?.libraryTab ?? 'Biblioteca')}
+            {!showAll && hasDestination && library.length > 0 ? `${filterCity ?? filterCountry}` : (tv.places?.libraryTab ?? 'Biblioteca')}
           </button>
           <button type="button" onClick={() => setMode('url')}
             style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.20em', textTransform: 'uppercase', color: mode === 'url' ? 'var(--arvo-fg)' : 'var(--arvo-fg-muted)', borderBottom: mode === 'url' ? '1px solid var(--arvo-fg)' : '1px solid transparent', paddingBottom: 2 }}>
@@ -385,20 +375,26 @@ export function LibraryPicker({ tripId, tripCity, tripCountry, destinations = []
           />
           {loading ? (
             <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)' }}>{tv.places?.loading ?? 'Carregando…'}</p>
-          ) : library.length === 0 ? (
-            <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)' }}>
-              {tv.places?.libraryEmpty ?? 'Biblioteca vazia — importe do Google Takeout ou cole um link do Maps.'}
-            </p>
-          ) : filtered.length === 0 && !search ? (
+          ) : library.length === 0 && hasDestination && totalCount !== 0 ? (
+            // Biblioteca tem lugares, só não nesse destino — oferece ver tudo
+            // em vez de parecer que a biblioteca inteira está vazia.
             <div>
               <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)', marginBottom: 8 }}>
                 {(tv.places?.noPlacesInDestination ?? 'Nenhum lugar de {dest} na biblioteca.').replace('{dest}', String(filterCity ?? filterCountry))}
               </p>
               <button type="button" onClick={() => setShowAll(true)}
                 style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
-                {(tv.places?.viewAllPlaces ?? 'Ver todos os {n} lugares →').replace('{n}', String(library.length))}
+                {(tv.places?.viewAllPlaces ?? 'Ver todos os {n} lugares →').replace('{n}', String(totalCount ?? library.length))}
               </button>
             </div>
+          ) : library.length === 0 ? (
+            <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)' }}>
+              {tv.places?.libraryEmpty ?? 'Biblioteca vazia — importe do Google Takeout ou cole um link do Maps.'}
+            </p>
+          ) : filtered.length === 0 && search ? (
+            <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)' }}>
+              {tv.places?.noSearchResults ?? 'Nenhum resultado para a busca.'}
+            </p>
           ) : (
             <>
               <div style={{ maxHeight: 220, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -428,8 +424,8 @@ export function LibraryPicker({ tripId, tripCity, tripCountry, destinations = []
                 <button type="button" onClick={() => setShowAll(v => !v)}
                   style={{ marginTop: 8, fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
                   {showAll
-                    ? `Mostrar só ${tripCity ?? tripCountry} (${destinationPlaces.length})`
-                    : `Ver todos os ${library.length} lugares da biblioteca`}
+                    ? `${tv.places?.showOnly ?? 'Mostrar só'} ${filterCity ?? filterCountry}`
+                    : (tv.places?.viewAllPlaces ?? 'Ver todos os {n} lugares →').replace('{n}', String(totalCount ?? library.length))}
                 </button>
               )}
             </>
