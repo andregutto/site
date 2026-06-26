@@ -444,12 +444,12 @@ function ItemRow({ item, tripId, canEdit, dragging, dropTarget, destinations, au
           )}
           {hasExpenses && (
             <button type="button" onClick={() => canEdit && setShowExpenses(true)}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 4, padding: 0, background: 'none', border: 'none', cursor: canEdit ? 'pointer' : 'default', fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-soft)' }}>
-              <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 6, padding: '4px 10px', borderRadius: 999, background: 'rgba(31,138,91,0.10)', border: '1px solid rgba(31,138,91,0.25)', cursor: canEdit ? 'pointer' : 'default', fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: '#1F8A5B', fontWeight: 500 }}>
+              <svg width="14" height="14" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
                 <circle cx="6" cy="6" r="5" /><path strokeLinecap="round" d="M6 3.5v5M4.7 7.2c0 .7.6 1 1.3 1s1.3-.3 1.3-1-.6-.9-1.3-.9-1.3-.3-1.3-.9.6-1 1.3-1 1.3.3 1.3 1" />
               </svg>
               {fmtCurrency(item.expense_total ?? 0)}
-              <span style={{ color: 'var(--arvo-fg-muted)' }}>· {item.expense_count} {item.expense_count === 1 ? (tv.expenses?.expenseOne ?? 'despesa') : (tv.expenses?.expenseMany ?? 'despesas')}</span>
+              <span style={{ color: '#1F8A5B', opacity: 0.75 }}>· {item.expense_count} {item.expense_count === 1 ? (tv.expenses?.expenseOne ?? 'despesa') : (tv.expenses?.expenseMany ?? 'despesas')}</span>
             </button>
           )}
           {/* Place kind: note is optional, toggled via the "Nota" action below */}
