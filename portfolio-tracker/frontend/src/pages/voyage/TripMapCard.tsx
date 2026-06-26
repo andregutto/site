@@ -114,9 +114,14 @@ function FlyToSelected({ placeId, places, markerRefs }: {
     if (placeId == null) return
     const p = places.find(pl => pl.id === placeId)
     if (!p || p.lat == null || p.lng == null) return
-    map.flyTo([p.lat, p.lng], Math.max(map.getZoom(), 15), { duration: 0.6 })
     const marker = markerRefs.current[placeId]
-    if (marker) setTimeout(() => marker.openPopup(), 350)
+    // Abrir o popup só depois que o flyTo termina de fato — abri-lo num
+    // timeout fixo mais curto que a animação fazia o autoPan do Leaflet
+    // calcular o ajuste com base numa posição de mapa ainda em trânsito,
+    // cortando o balão (nenhum zoom resolvia porque a causa nunca foi o
+    // zoom, era esse cálculo feito no momento errado).
+    map.flyTo([p.lat, p.lng], Math.max(map.getZoom(), 15), { duration: 0.6 })
+    map.once('moveend', () => marker?.openPopup())
   }, [placeId, places, map, markerRefs])
   return null
 }

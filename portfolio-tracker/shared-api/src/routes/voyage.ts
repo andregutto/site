@@ -988,11 +988,16 @@ router.post('/places/from-url', requireAuth, async (req, res: Response) => {
     }
   }
 
+  // Fallback final pra city: se o geocode não trouxe (ou foi descartado por
+  // cair longe do pin original), extrai do próprio endereço — sem isso o
+  // filtro de destino na biblioteca ficava sem dado pra usar nesses casos.
+  const finalCity = city ?? cityFromAddress(address)
+
   const insertData: Record<string, unknown> = {
     user_id: userId, name, source: 'manual', google_maps_url: resolvedUrl,
     ...(lat !== null && { lat }), ...(lng !== null && { lng }),
     ...(address && { address }),
-    ...(city && { city }),
+    ...(finalCity && { city: finalCity }),
     ...(category && { category }),
     ...(openingHours && { opening_hours: openingHours }),
     ...(placeId && { google_place_id: placeId }),

@@ -188,9 +188,12 @@ function FlyToSelected({ placeId, places, markerRefs }: {
     if (placeId == null) return
     const p = places.find(pl => pl.id === placeId)
     if (!p || p.lat == null || p.lng == null) return
-    map.flyTo([p.lat, p.lng], Math.max(map.getZoom(), 15), { duration: 0.6 })
     const marker = markerRefs.current[placeId]
-    if (marker) setTimeout(() => marker.openPopup(), 350)
+    // Esperar o flyTo terminar de fato antes de abrir o popup — um timeout
+    // mais curto que a animação fazia o autoPan calcular com base numa
+    // posição de mapa em trânsito, cortando o balão.
+    map.flyTo([p.lat, p.lng], Math.max(map.getZoom(), 15), { duration: 0.6 })
+    map.once('moveend', () => marker?.openPopup())
   }, [placeId, places, map, markerRefs])
   return null
 }
