@@ -14,6 +14,18 @@ function fmtCurrency(n: number) {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'EUR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n)
 }
 
+// Data inferida do dia N a partir da data de início da viagem (dia 1 =
+// start_date). Puramente informativo ao lado do "Dia N" — não substitui o
+// número relativo, que é o que o resto do app usa pra tudo (destinos, etc).
+function inferredDateForDay(day: number, tripStartDate: string | null | undefined): string | null {
+  if (!tripStartDate) return null
+  const start = new Date(tripStartDate + 'T00:00:00')
+  if (isNaN(start.getTime())) return null
+  const d = new Date(start)
+  d.setDate(d.getDate() + (day - 1))
+  return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
+}
+
 // This app never sets overflow on <html>/<body> elsewhere, so it's safe to
 // just set/clear 'hidden' directly without saving a previous value.
 let pageScrollLockCount = 0
@@ -62,12 +74,18 @@ interface Props {
   tripId: number
   tripCity: string | null
   tripCountry: string | null
+  tripStartDate?: string | null
   destinations: TripDestination[]
   canEdit: boolean
   // Notifies the parent page whenever this panel's place list changes (add,
   // delete, reload) so sibling components fetching the same trip's places
   // independently (the map card) can refresh instead of going stale.
   onPlacesChanged?: () => void
+  // Filtro de dia e seleção de lugar compartilhados com o mapa, quando o
+  // pai controla esse estado (layout desktop com mapa+roteiro lado a lado).
+  selectedDay?: number | 'none' | null
+  selectedPlaceId?: number | null
+  onSelectPlace?: (id: number | null) => void
 }
 
 // Destino "padrão" de um dia: o(s) cujo intervalo day_start–day_end cobre
@@ -77,13 +95,32 @@ function destinationsForDay(day: number | null, destinations: TripDestination[])
   return destinations.filter(d => d.day_start != null && d.day_end != null && d.day_start <= day && day <= d.day_end)
 }
 
+// Destino "melhor palpite" pro dia, usado como fallback quando nenhum
+// destino tem day_start/day_end cobrindo esse dia exatamente — comum
+// quando só o primeiro destino foi editado com dias, ou numa viagem de
+// destino único sem range definido. Sem isso, dias fora do range coberto
+// não mostravam nenhum destino no cabeçalho/roteiro.
+function bestGuessDestination(day: number | null, destinations: TripDestination[]): TripDestination | null {
+  if (destinations.length === 0) return null
+  if (destinations.length === 1) return destinations[0]
+  if (day == null) return null
+  const exact = destinationsForDay(day, destinations)
+  if (exact.length === 1) return exact[0]
+  if (exact.length > 1) return exact[0] // ambíguo — fica com o primeiro por sort_order
+  // Sem cobertura exata: o destino mais recente cujo day_start já passou
+  // (assume ordem cronológica de sort_order/day_start), ou o primeiro
+  // destino com day_start definido se o dia for anterior a todos.
+  const withStart = destinations.filter(d => d.day_start != null).sort((a, b) => (a.day_start! - b.day_start!))
+  if (withStart.length === 0) return null
+  const before = withStart.filter(d => d.day_start! <= day)
+  return before.length > 0 ? before[before.length - 1] : withStart[0]
+}
+
 // Destino efetivo de um item: explícito (escolhido manualmente) ou, se não
-// definido, o único destino que cobre o dia do item (se houver mais de um
-// candidato, fica ambíguo de propósito — quem decide é o usuário).
+// definido, o melhor palpite pro dia do item.
 function effectiveDestination(item: { destination_id: number | null; day_number: number | null }, destinations: TripDestination[]): TripDestination | null {
   if (item.destination_id != null) return destinations.find(d => d.id === item.destination_id) ?? null
-  const candidates = destinationsForDay(item.day_number, destinations)
-  return candidates.length === 1 ? candidates[0] : null
+  return bestGuessDestination(item.day_number, destinations)
 }
 
 const CATEGORY_ICONS: Record<string, string> = {
@@ -130,8 +167,13 @@ function isLogisticalStay(category: string | null): boolean {
   return key.includes('carro') || key.includes('aluguel')
 }
 
-function DayBadge({ day, canEdit, onChangeDay }: {
+function DayBadge({ day, canEdit, onChangeDay, compact }: {
   day: number | null; canEdit: boolean; onChangeDay: (day: number | null) => void
+  // O cabeçalho da seção já diz "Dia N" — repetir o número em cada card é
+  // ruído. compact=true (item já dentro do grupo certo) mostra só um ícone
+  // de editar; o texto completo só aparece quando o dia está ambíguo
+  // (grupo "Sem dia") ou quando não está compact.
+  compact?: boolean
 }) {
   const { t } = useI18n()
   const tv = (t as any).voyage ?? {}
@@ -154,6 +196,20 @@ function DayBadge({ day, canEdit, onChangeDay }: {
       autoFocus
       style={{ width: 48, padding: '3px 4px', borderRadius: 4, border: '1px solid var(--arvo-fg)', background: 'var(--arvo-surface)', fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg)', outline: 'none', textAlign: 'center' }}
     />
+  )
+
+  if (compact && day != null) return (
+    <button
+      type="button"
+      onClick={() => { if (canEdit) { setVal(day?.toString() ?? ''); setEditing(true) } }}
+      title={canEdit ? (tv.changeDayTitle ?? 'Mudar o dia') : undefined}
+      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 22, height: 22, borderRadius: 999, flexShrink: 0, background: 'none', border: 'none', cursor: canEdit ? 'pointer' : 'default', color: 'var(--arvo-fg-faint)' }}
+    >
+      <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.4">
+        <rect x="1.5" y="2" width="9" height="8.5" rx="1.2" />
+        <path strokeLinecap="round" d="M1.5 4.3h9M4 1v1.6M8 1v1.6" />
+      </svg>
+    </button>
   )
 
   return (
@@ -258,7 +314,7 @@ function NoteEditor({ value, onSave, placeholder }: { value: string | null; onSa
 const LONG_PRESS_MS = 380
 const MOVE_CANCEL_PX = 8
 
-function ItemRow({ item, tripId, canEdit, dragging, dropTarget, destinations, autoOpenStay, onStartDrag, onPatch, onDelete, onReload }: {
+function ItemRow({ item, tripId, canEdit, dragging, dropTarget, destinations, autoOpenStay, selected, onSelect, onStartDrag, onPatch, onDelete, onReload }: {
   item: PlanItem
   tripId: number
   canEdit: boolean
@@ -266,6 +322,8 @@ function ItemRow({ item, tripId, canEdit, dragging, dropTarget, destinations, au
   dropTarget: boolean
   destinations: TripDestination[]
   autoOpenStay?: boolean
+  selected?: boolean
+  onSelect?: () => void
   onStartDrag: () => void
   onPatch: (fields: Record<string, unknown>) => void
   onDelete: () => void
@@ -363,8 +421,8 @@ function ItemRow({ item, tripId, canEdit, dragging, dropTarget, destinations, au
       onPointerCancel={endTouch}
       style={{
         borderRadius: 8,
-        background: item.is_highlight ? 'rgba(214,59,47,0.04)' : 'var(--arvo-hover-bg)',
-        border: dropTarget ? `1px dashed ${RED}` : `1px solid ${item.is_highlight ? 'rgba(214,59,47,0.12)' : 'var(--arvo-border-soft)'}`,
+        background: selected ? 'rgba(200,184,154,0.10)' : item.is_highlight ? 'rgba(214,59,47,0.04)' : 'var(--arvo-hover-bg)',
+        border: dropTarget ? `1px dashed ${RED}` : selected ? `1px solid ${GOLD}` : `1px solid ${item.is_highlight ? 'rgba(214,59,47,0.12)' : 'var(--arvo-border-soft)'}`,
         overflow: 'hidden',
         opacity: dragging ? 0.88 : 1,
         // 'none' (not 'scale(1)') when idle — any transform other than none
@@ -403,7 +461,10 @@ function ItemRow({ item, tripId, canEdit, dragging, dropTarget, destinations, au
           </button>
         )}
         <span style={{ fontSize: 16, flexShrink: 0, marginTop: 1 }}>{itemIcon(item)}</span>
-        <div style={{ flex: 1, minWidth: 0 }}>
+        <div
+          style={{ flex: 1, minWidth: 0, cursor: onSelect && item.lat != null && item.lng != null ? 'pointer' : undefined }}
+          onClick={() => { if (onSelect && item.lat != null && item.lng != null) onSelect() }}
+        >
           {editingName ? (
             <div style={{ marginBottom: 4 }} onPointerDown={e => e.stopPropagation()}>
               <NoteEditor value={item.name} placeholder="Nome do lugar…"
@@ -472,7 +533,7 @@ function ItemRow({ item, tripId, canEdit, dragging, dropTarget, destinations, au
             {(tv.dayRange ?? 'Dia {from} – {to}').replace('{from}', String(item.checkin_day)).replace('{to}', String(item.checkout_day))}
           </span>
         ) : (
-          <DayBadge day={item.day_number} canEdit={canEdit} onChangeDay={d => onPatch({ day_number: d })} />
+          <DayBadge day={item.day_number} canEdit={canEdit} onChangeDay={d => onPatch({ day_number: d })} compact />
         )}
         <div style={{ display: 'flex', alignItems: 'center', gap: 2, flexShrink: 0 }}>
           {/* Quando já há despesa vinculada, o link com o valor (abaixo do
@@ -726,7 +787,7 @@ function FreeItemAdder({ tripId, onAdded, forceOpen, initialKind, onClose }: {
   )
 }
 
-export default function TripItineraryPanel({ tripId, tripCity, tripCountry, destinations, canEdit, onPlacesChanged }: Props) {
+export default function TripItineraryPanel({ tripId, tripCity, tripCountry, tripStartDate, destinations, canEdit, onPlacesChanged, selectedDay, selectedPlaceId, onSelectPlace }: Props) {
   const { t } = useI18n()
   const tv = (t as any).voyage ?? {}
   const [items, setItems] = useState<PlanItem[]>([])
@@ -854,11 +915,14 @@ export default function TripItineraryPanel({ tripId, tripCity, tripCountry, dest
       ? Array.from({ length: p.checkout_day - p.checkin_day + 1 }, (_, i) => p.checkin_day! + i)
       : []
   )
-  const days = Array.from(new Set([
+  const allDays = Array.from(new Set([
     ...items.map(p => p.day_number).filter((d): d is number => d != null),
     ...stayDays,
   ])).sort((a, b) => a - b)
-  const undated = items.filter(p => p.day_number == null)
+  // Filtro de dia compartilhado com o mapa (quando controlado pelo pai) —
+  // ao escolher um dia no mapa, o roteiro mostra só esse dia também.
+  const days = selectedDay == null ? allDays : selectedDay === 'none' ? [] : allDays.filter(d => d === selectedDay)
+  const undated = selectedDay == null || selectedDay === 'none' ? items.filter(p => p.day_number == null) : []
 
   function staysOnDay(d: number) {
     return items.filter(p => p.checkin_day != null && p.checkout_day != null && p.checkin_day <= d && d <= p.checkout_day)
@@ -887,6 +951,8 @@ export default function TripItineraryPanel({ tripId, tripCity, tripCountry, dest
         autoOpenStay={it.id === pendingStayItemId}
         dragging={dragVisual.dragId === it.id}
         dropTarget={dragVisual.overId === it.id && dragVisual.dragId !== it.id}
+        selected={selectedPlaceId === it.id}
+        onSelect={onSelectPlace ? () => onSelectPlace(it.id) : undefined}
         onStartDrag={() => startDrag(it.id)}
         onPatch={f => patchItem(it.id, f)}
         onDelete={() => setItems(ps => ps.filter(x => x.id !== it.id))}
@@ -897,28 +963,25 @@ export default function TripItineraryPanel({ tripId, tripCity, tripCountry, dest
 
   return (
     <div style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', borderRadius: 16, boxShadow: 'var(--arvo-shadow-sm)', padding: '20px 22px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: activeTool === null && !showToolMenu ? 14 : 10 }}>
         <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 10, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)' }}>
           {tv.itineraryTitle ?? 'Roteiro'}
         </p>
-        <a href="/voyage/places" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)', textDecoration: 'none', letterSpacing: '0.04em' }}>
-          {tv.actions?.library ?? 'Biblioteca →'}
-        </a>
+        {/* "+ Adicionar" fino ao lado do título — antes era uma linha cheia
+            abaixo (botão grande + link "Biblioteca →" redundante com ele),
+            ocupando altura à toa. */}
+        {canEdit && activeTool === null && !showToolMenu && (
+          <button type="button" onClick={() => setShowToolMenu(true)}
+            style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: 'var(--arvo-font-body)', fontSize: 11, letterSpacing: '0.02em', padding: '4px 10px', borderRadius: 999, background: 'none', border: '1px solid var(--arvo-border)', color: 'var(--arvo-fg-muted)', cursor: 'pointer' }}>
+            {tv.actions?.add ?? '+ Adicionar'}
+          </button>
+        )}
       </div>
 
-      {/* Um único "+ Adicionar" no topo (em vez de 3 botões separados) que
-          abre 4 intenções claras; Lugar/Estadia reaproveitam o mesmo
-          LibraryPicker (biblioteca ou colar link), só muda se pergunta o
-          período de estadia em seguida. */}
-      {canEdit && (
+      {/* Quando o menu de intenções (Lugar/Estadia/Transporte/Anotação) ou um
+          dos formulários está aberto, aparece aqui embaixo do título. */}
+      {canEdit && (showToolMenu || activeTool !== null) && (
         <div style={{ marginBottom: 16, paddingBottom: 14, borderBottom: '1px solid var(--arvo-border-soft)' }}>
-          {activeTool === null && !showToolMenu && (
-            <button type="button" onClick={() => setShowToolMenu(true)}
-              style={{ display: 'flex', alignItems: 'center', gap: 5, alignSelf: 'flex-start', fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, letterSpacing: '0.02em', padding: '6px 14px', borderRadius: 6, background: 'var(--arvo-fg)', color: 'var(--arvo-bg)', border: 'none', cursor: 'pointer' }}>
-              {tv.actions?.add ?? '+ Adicionar'}
-            </button>
-          )}
-
           {activeTool === null && showToolMenu && (
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
               <button type="button" onClick={() => { setActiveTool('place'); setShowToolMenu(false) }}
@@ -981,6 +1044,9 @@ export default function TripItineraryPanel({ tripId, tripCity, tripCountry, dest
                   <span style={{ width: 7, height: 7, borderRadius: 999, background: dayColor(d), flexShrink: 0 }} />
                   <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 12, letterSpacing: '0.18em', textTransform: 'uppercase', color: dayColor(d) }}>
                     {(tv.day ?? 'Dia {n}').replace('{n}', String(d))}
+                    {inferredDateForDay(d, tripStartDate) && (
+                      <span style={{ color: 'var(--arvo-fg-muted)', letterSpacing: '0.02em', textTransform: 'none', fontSize: 10.5 }}> · {inferredDateForDay(d, tripStartDate)}</span>
+                    )}
                     {dayDestinationNames(d).length > 0 && (
                       <span style={{ color: 'var(--arvo-fg-soft)', letterSpacing: '0.02em', textTransform: 'none' }}> — {dayDestinationNames(d).join(' → ')}</span>
                     )}

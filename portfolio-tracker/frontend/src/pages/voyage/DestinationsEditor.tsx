@@ -23,6 +23,12 @@ export default function DestinationsEditor({ tripId, destinations, onChange, dar
   const [dayStart, setDayStart] = useState('')
   const [dayEnd, setDayEnd] = useState('')
   const [saving, setSaving] = useState(false)
+  // Editar os dias de um destino já existente — clicar no pill abre os
+  // mesmos dois campos de dia inline, sem precisar remover e recriar.
+  const [editingId, setEditingId] = useState<number | null>(null)
+  const [editDayStart, setEditDayStart] = useState('')
+  const [editDayEnd, setEditDayEnd] = useState('')
+  const [savingEdit, setSavingEdit] = useState(false)
 
   const fg = dark ? '#fff' : 'var(--arvo-fg)'
   const fgSoft = dark ? 'rgba(255,255,255,0.6)' : 'var(--arvo-fg-soft)'
@@ -57,6 +63,33 @@ export default function DestinationsEditor({ tripId, destinations, onChange, dar
     }
   }
 
+  function startEdit(d: TripDestination) {
+    setEditingId(d.id)
+    setEditDayStart(d.day_start?.toString() ?? '')
+    setEditDayEnd(d.day_end?.toString() ?? '')
+  }
+
+  async function saveEdit(d: TripDestination) {
+    setSavingEdit(true)
+    const payload = {
+      day_start: editDayStart ? Number(editDayStart) : null,
+      day_end: editDayEnd ? Number(editDayEnd) : null,
+    }
+    try {
+      if (tripId && d.id > 0) {
+        const data = await apiFetch<{ destination: TripDestination }>(`/voyage/trips/${tripId}/destinations/${d.id}`, {
+          method: 'PATCH', body: JSON.stringify(payload),
+        })
+        onChange(destinations.map(x => x.id === d.id ? data.destination : x))
+      } else {
+        onChange(destinations.map(x => x.id === d.id ? { ...x, ...payload } : x))
+      }
+      setEditingId(null)
+    } finally {
+      setSavingEdit(false)
+    }
+  }
+
   async function removeDestination(d: TripDestination) {
     if (tripId && d.id > 0) {
       await apiFetch(`/voyage/trips/${tripId}/destinations/${d.id}`, { method: 'DELETE' })
@@ -73,7 +106,38 @@ export default function DestinationsEditor({ tripId, destinations, onChange, dar
   return (
     <div>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
-        {destinations.map(d => (
+        {destinations.map(d => editingId === d.id ? (
+          <span
+            key={d.id}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6, padding: '4px 8px',
+              borderRadius: 999, border: `1px solid ${border}`,
+              background: dark ? 'rgba(255,255,255,0.08)' : 'var(--arvo-hover-bg)',
+            }}
+          >
+            <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: fg }}>
+              {[d.city, d.country].filter(Boolean).join(', ') || '—'}
+            </span>
+            <input
+              autoFocus value={editDayStart} onChange={e => setEditDayStart(e.target.value)} type="number" min="1" placeholder="ini." inputMode="numeric"
+              style={{ width: 44, padding: '3px 4px', borderRadius: 4, border: `1px solid ${border}`, background: dark ? 'rgba(255,255,255,0.08)' : 'var(--arvo-surface)', color: fg, fontFamily: 'var(--arvo-font-body)', fontSize: 11, outline: 'none', textAlign: 'center' }}
+            />
+            <input
+              value={editDayEnd} onChange={e => setEditDayEnd(e.target.value)} type="number" min="1" placeholder="fim" inputMode="numeric"
+              style={{ width: 44, padding: '3px 4px', borderRadius: 4, border: `1px solid ${border}`, background: dark ? 'rgba(255,255,255,0.08)' : 'var(--arvo-surface)', color: fg, fontFamily: 'var(--arvo-font-body)', fontSize: 11, outline: 'none', textAlign: 'center' }}
+            />
+            <button type="button" onClick={() => saveEdit(d)} disabled={savingEdit}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: dark ? GOLD : 'var(--arvo-fg)', padding: 2, display: 'flex', fontSize: 11 }}>
+              {savingEdit ? '…' : '✓'}
+            </button>
+            <button type="button" onClick={() => setEditingId(null)}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: fgSoft, padding: 2, display: 'flex' }}>
+              <svg width="9" height="9" viewBox="0 0 9 9" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <path strokeLinecap="round" d="M1.5 1.5l6 6M7.5 1.5l-6 6" />
+              </svg>
+            </button>
+          </span>
+        ) : (
           <span
             key={d.id}
             style={{
@@ -83,8 +147,11 @@ export default function DestinationsEditor({ tripId, destinations, onChange, dar
               fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: fg,
             }}
           >
-            {[d.city, d.country].filter(Boolean).join(', ') || '—'}
-            {dayRangeLabel(d) && <span style={{ color: fgSoft, fontSize: 10.5 }}>· {dayRangeLabel(d)}</span>}
+            <button type="button" onClick={() => startEdit(d)} title="Editar dias"
+              style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', padding: 0, font: 'inherit', color: 'inherit' }}>
+              {[d.city, d.country].filter(Boolean).join(', ') || '—'}
+              {dayRangeLabel(d) && <span style={{ color: fgSoft, fontSize: 10.5 }}>· {dayRangeLabel(d)}</span>}
+            </button>
             <button
               type="button" onClick={() => removeDestination(d)}
               style={{ background: 'none', border: 'none', cursor: 'pointer', color: fgSoft, padding: 2, display: 'flex' }}

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import L from 'leaflet'
@@ -95,22 +95,57 @@ function FitBounds({ places }: { places: TripPlace[] }) {
   return null
 }
 
+// Quando o usuário clica num lugar na lista do roteiro (fora do mapa), voa
+// até o marker e abre o popup dele — sem isso a seleção na lista não tinha
+// nenhum efeito visível no mapa.
+function FlyToSelected({ placeId, places, markerRefs }: {
+  placeId: number | null
+  places: TripPlace[]
+  markerRefs: React.MutableRefObject<Record<number, L.Marker>>
+}) {
+  const map = useMap()
+  useEffect(() => {
+    if (placeId == null) return
+    const p = places.find(pl => pl.id === placeId)
+    if (!p || p.lat == null || p.lng == null) return
+    map.flyTo([p.lat, p.lng], Math.max(map.getZoom(), 15), { duration: 0.6 })
+    const marker = markerRefs.current[placeId]
+    if (marker) setTimeout(() => marker.openPopup(), 350)
+  }, [placeId, places, map, markerRefs])
+  return null
+}
+
 interface Props {
   tripId: number
   // Bumped by the parent page whenever a place is added/removed elsewhere
   // (itinerary panel) — this card fetches its own places independently, so
   // without this it kept showing a stale list until the page was reloaded.
   refreshKey?: number
+  // Filtro de dia e seleção de lugar compartilhados com o roteiro (quando o
+  // pai controla esse estado, ex.: VoyageTripDetailPage no layout split
+  // mapa+roteiro). Sem esses props, o componente usa estado próprio
+  // (comportamento standalone, como antes).
+  selectedDay?: number | 'none' | null
+  onSelectedDayChange?: (d: number | 'none' | null) => void
+  selectedPlaceId?: number | null
+  onSelectPlace?: (id: number | null) => void
 }
 
-export default function TripMapCard({ tripId, refreshKey }: Props) {
+export default function TripMapCard({ tripId, refreshKey, selectedDay: selectedDayProp, onSelectedDayChange, selectedPlaceId: selectedPlaceIdProp, onSelectPlace }: Props) {
   const navigate = useNavigate()
   const { resolvedTheme } = useTheme()
   const { t } = useI18n()
   const tv = (t as any).voyage ?? {}
   const [places, setPlaces] = useState<TripPlace[]>([])
   const [loading, setLoading] = useState(true)
-  const [selectedDay, setSelectedDay] = useState<number | null>(null)
+  // null = Todos; 'none' = Sem dia (places sem day_number); number = dia específico
+  const [selectedDayLocal, setSelectedDayLocal] = useState<number | 'none' | null>(null)
+  const selectedDay = selectedDayProp !== undefined ? selectedDayProp : selectedDayLocal
+  const setSelectedDay = onSelectedDayChange ?? setSelectedDayLocal
+  const [selectedPlaceIdLocal, setSelectedPlaceIdLocal] = useState<number | null>(null)
+  const selectedPlaceId = selectedPlaceIdProp !== undefined ? selectedPlaceIdProp : selectedPlaceIdLocal
+  const setSelectedPlaceId = onSelectPlace ?? setSelectedPlaceIdLocal
+  const markerRefs = useRef<Record<number, L.Marker>>({})
 
   const load = useCallback(async () => {
     try {
@@ -125,7 +160,10 @@ export default function TripMapCard({ tripId, refreshKey }: Props) {
 
   const withCoords = places.filter(p => p.lat && p.lng)
   const days = Array.from(new Set(withCoords.map(p => p.day_number).filter((d): d is number => d != null))).sort((a, b) => a - b)
-  const visibleCoords = selectedDay == null ? withCoords : withCoords.filter(p => p.day_number === selectedDay)
+  const hasUndated = withCoords.some(p => p.day_number == null)
+  const visibleCoords = selectedDay == null ? withCoords
+    : selectedDay === 'none' ? withCoords.filter(p => p.day_number == null)
+    : withCoords.filter(p => p.day_number === selectedDay)
 
   if (loading) {
     return (
@@ -165,7 +203,7 @@ export default function TripMapCard({ tripId, refreshKey }: Props) {
       </div>
 
       {/* Filtro por dia */}
-      {days.length > 1 && (
+      {(days.length > 1 || hasUndated) && (
         <div style={{ display: 'flex', gap: 6, padding: '0 18px 12px', flexWrap: 'wrap', overflowX: 'auto' }}>
           <button
             type="button" onClick={() => setSelectedDay(null)}
@@ -196,6 +234,21 @@ export default function TripMapCard({ tripId, refreshKey }: Props) {
               {(tv.day ?? 'Dia {n}').replace('{n}', String(d))}
             </button>
           ))}
+          {hasUndated && (
+            <button
+              type="button" onClick={() => setSelectedDay('none')}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0, cursor: 'pointer',
+                fontFamily: 'var(--arvo-font-body)', fontSize: 10.5,
+                padding: '3px 9px', borderRadius: 999,
+                border: `1px solid ${selectedDay === 'none' ? 'var(--arvo-fg)' : 'var(--arvo-border)'}`,
+                background: selectedDay === 'none' ? 'var(--arvo-hover-bg)' : 'transparent',
+                color: selectedDay === 'none' ? 'var(--arvo-fg)' : 'var(--arvo-fg-soft)',
+              }}
+            >
+              {tv.noDay ?? 'Sem dia'}
+            </button>
+          )}
         </div>
       )}
 
@@ -215,7 +268,9 @@ export default function TripMapCard({ tripId, refreshKey }: Props) {
         ) : visibleCoords.length === 0 ? (
           <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--arvo-hover-bg)' }}>
             <p style={{ fontFamily: 'var(--arvo-font-serif)', fontStyle: 'italic', fontSize: 13, color: '#C8B89A' }}>
-              {(tv.mapEmptyDay ?? 'Nenhum lugar com coordenadas no Dia {n}').replace('{n}', String(selectedDay))}
+              {selectedDay === 'none'
+                ? (tv.mapEmptyNoDay ?? 'Nenhum lugar sem dia com coordenadas')
+                : (tv.mapEmptyDay ?? 'Nenhum lugar com coordenadas no Dia {n}').replace('{n}', String(selectedDay))}
             </p>
           </div>
         ) : (
@@ -226,6 +281,7 @@ export default function TripMapCard({ tripId, refreshKey }: Props) {
             scrollWheelZoom={true}
           >
             <ResizeInvalidate />
+            <FlyToSelected placeId={selectedPlaceId} places={visibleCoords} markerRefs={markerRefs} />
             <TileLayer
               key={resolvedTheme}
               attribution='&copy; <a href="https://carto.com/attributions">CARTO</a>'
@@ -236,7 +292,12 @@ export default function TripMapCard({ tripId, refreshKey }: Props) {
             />
             <FitBounds places={visibleCoords} />
             {visibleCoords.map(p => (
-              <Marker key={p.id} position={[p.lat!, p.lng!]} icon={makeIcon(catIcon(p.category), dayColor(p.day_number), p.is_highlight)}>
+              <Marker
+                key={p.id} position={[p.lat!, p.lng!]}
+                icon={makeIcon(catIcon(p.category), dayColor(p.day_number), p.is_highlight || p.id === selectedPlaceId)}
+                ref={m => { if (m) markerRefs.current[p.id] = m }}
+                eventHandlers={{ click: () => setSelectedPlaceId(p.id) }}
+              >
                 <Popup>
                   <div style={{ fontFamily: 'var(--arvo-font-body)', minWidth: 150 }}>
                     {p.day_number != null && (

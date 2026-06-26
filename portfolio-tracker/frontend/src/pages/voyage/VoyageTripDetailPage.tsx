@@ -139,6 +139,12 @@ export default function VoyageTripDetailPage() {
   const [placesVersion, setPlacesVersion] = useState(0)
   const bumpPlacesVersion = useCallback(() => setPlacesVersion(v => v + 1), [])
 
+  // Estado compartilhado entre mapa e roteiro (layout desktop lado a lado):
+  // o filtro de dia escolhido no mapa também filtra a lista, e clicar num
+  // lugar da lista destaca/centraliza o marker correspondente no mapa.
+  const [sharedSelectedDay, setSharedSelectedDay] = useState<number | 'none' | null>(null)
+  const [selectedPlaceId, setSelectedPlaceId] = useState<number | null>(null)
+
   const load = useCallback(async () => {
     if (!id) return
     setLoading(true)
@@ -154,7 +160,7 @@ export default function VoyageTripDetailPage() {
 
   if (loading) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-6">
+      <div className="py-6">
         <div style={{ height: 360, borderRadius: 18, background: 'var(--arvo-hover-bg)', animation: 'pulse 1.5s ease infinite', marginBottom: 20 }} />
         <div style={{ height: 160, borderRadius: 14, background: 'var(--arvo-hover-bg)', animation: 'pulse 1.5s ease infinite' }} />
       </div>
@@ -163,7 +169,7 @@ export default function VoyageTripDetailPage() {
 
   if (!data) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-12 text-center">
+      <div className="py-12 text-center">
         <p style={{ fontFamily: 'var(--arvo-font-body)', color: 'var(--arvo-fg-soft)' }}>Viagem não encontrada.</p>
       </div>
     )
@@ -178,17 +184,49 @@ export default function VoyageTripDetailPage() {
   const statusLabel = trip.status === 'planning' ? tv.statusPlanning : trip.status === 'ongoing' ? tv.statusOngoing : tv.statusPast
 
   return (
-    <div className="max-w-4xl mx-auto px-4 2xl:px-8 py-6">
-      {/* Back */}
-      <button
-        onClick={() => navigate('/voyage')}
-        style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 20, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)', padding: 0 }}
-      >
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
-          <path strokeLinecap="round" d="M9 2L4 7l5 5" />
-        </svg>
-        {tv.title ?? 'Viagens'}
-      </button>
+    <div className="py-6">
+      {/* Back + Editar/Compartilhar — fora do hero (igual ao padrão de outras
+          páginas de detalhe), pra a foto de capa ficar livre de botões por cima. */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, gap: 12 }}>
+        <button
+          onClick={() => navigate('/voyage')}
+          style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)', padding: 0, flexShrink: 0 }}
+        >
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <path strokeLinecap="round" d="M9 2L4 7l5 5" />
+          </svg>
+          {tv.title ?? 'Viagens'}
+        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          {isOwner && (
+            <button
+              onClick={() => setShowEditPanel(v => !v)}
+              style={{ display: 'flex', alignItems: 'center', gap: 5, background: showEditPanel ? 'var(--arvo-hover-bg)' : 'none', border: '1px solid var(--arvo-border)', borderRadius: 7, padding: '5px 11px', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-muted)' }}
+            >
+              <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <path strokeLinecap="round" d="M8.5 1.5l2 2L4 10H2v-2L8.5 1.5z" />
+              </svg>
+              {tv.editTripBtn ?? 'Editar'}
+            </button>
+          )}
+          {trip.user_id === user?.id && (
+            <button
+              onClick={() => setShowShare(true)}
+              style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'none', border: `1px solid ${trip.share_token ? 'rgba(31,138,91,0.45)' : 'var(--arvo-border)'}`, borderRadius: 7, padding: '5px 11px', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-muted)' }}
+            >
+              <svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <circle cx="11" cy="3" r="1.5"/>
+                <circle cx="3" cy="7" r="1.5"/>
+                <circle cx="11" cy="11" r="1.5"/>
+                <path strokeLinecap="round" d="M4.5 6.2l5-2.5M4.5 7.8l5 2.5"/>
+              </svg>
+              {trip.share_token ? (
+                <>{tv.sharedTripBtn ?? 'Compartilhado'}<span style={{ width: 5, height: 5, borderRadius: 999, background: '#1F8A5B', display: 'inline-block', marginLeft: 4 }} /></>
+              ) : (tv.shareTripBtn ?? 'Compartilhar')}
+            </button>
+          )}
+        </div>
+      </div>
 
       {/* Hero */}
       <div style={{ position: 'relative', borderRadius: 18, overflow: 'hidden', marginBottom: 24 }}>
@@ -264,37 +302,6 @@ export default function VoyageTripDetailPage() {
             <CollaboratorsHero tripId={Number(id)} onOpen={() => setShowMembers(true)} />
           </div>
 
-          {/* Top-left buttons: Edit + Share */}
-          <div style={{ position: 'absolute', top: 16, left: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-            {isOwner && (
-              <button
-                onClick={() => setShowEditPanel(v => !v)}
-                style={{ display: 'flex', alignItems: 'center', gap: 5, background: showEditPanel ? 'rgba(200,184,154,0.30)' : 'rgba(13,13,13,0.55)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, padding: '5px 12px', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'rgba(255,255,255,0.80)', letterSpacing: '0.04em' }}
-              >
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
-                  <path strokeLinecap="round" d="M8.5 1.5l2 2L4 10H2v-2L8.5 1.5z" />
-                </svg>
-                {tv.editTripBtn ?? 'Editar'}
-              </button>
-            )}
-            {trip.user_id === user?.id && (
-              <button
-                onClick={() => setShowShare(true)}
-                style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'rgba(13,13,13,0.55)', backdropFilter: 'blur(8px)', border: `1px solid ${trip.share_token ? 'rgba(31,138,91,0.50)' : 'rgba(255,255,255,0.12)'}`, borderRadius: 8, padding: '5px 12px', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'rgba(255,255,255,0.80)', letterSpacing: '0.04em' }}
-              >
-                <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
-                  <circle cx="11" cy="3" r="1.5"/>
-                  <circle cx="3" cy="7" r="1.5"/>
-                  <circle cx="11" cy="11" r="1.5"/>
-                  <path strokeLinecap="round" d="M4.5 6.2l5-2.5M4.5 7.8l5 2.5"/>
-                </svg>
-                {trip.share_token ? (
-                  <>{tv.sharedTripBtn ?? 'Compartilhado'}<span style={{ width: 5, height: 5, borderRadius: 999, background: '#1F8A5B', display: 'inline-block', marginLeft: 4 }} /></>
-                ) : (tv.shareTripBtn ?? 'Compartilhar')}
-              </button>
-            )}
-          </div>
-
           {/* Title overlay — pointerEvents:none porque a div cobre a faixa
               inferior inteira (right:0) e, mesmo vazia visualmente do lado
               direito, estava interceptando o clique no botão de
@@ -306,7 +313,7 @@ export default function VoyageTripDetailPage() {
             <h1 style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 28, letterSpacing: '0.06em', color: '#fff', marginBottom: 4, lineHeight: 1.2 }}>
               {trip.title}
             </h1>
-            <div className="flex flex-col sm:flex-row sm:items-center" style={{ gap: 6 }}>
+            <div className="flex flex-col" style={{ gap: 6 }}>
               {(destinationsLabel(destinations) ?? (trip.destination ? `${trip.destination}${trip.country ? `, ${trip.country}` : ''}` : null)) && (
                 <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'rgba(255,255,255,0.65)' }}>
                   {destinationsLabel(destinations) ?? `${trip.destination}${trip.country ? `, ${trip.country}` : ''}`}
@@ -368,28 +375,48 @@ export default function VoyageTripDetailPage() {
         </a>
       )}
 
-      {/* Linha superior: Mapa dividindo coluna com Custo (no mobile empilha) */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-5">
-        <div className="lg:col-span-2">
-          <TripMapCard tripId={Number(id)} refreshKey={placesVersion} />
-        </div>
-        <div className="lg:col-span-1">
-          <CostCard
+      {/* Roteiro (esquerda) + mapa (direita), dividindo a mesma linha no
+          desktop — o filtro de dia do mapa também filtra a lista, e clicar
+          num lugar da lista centraliza/destaca o marker no mapa. No mobile
+          empilha (mapa primeiro, dá contexto antes da lista). O mapa fica
+          sticky pra continuar visível enquanto o roteiro rola. */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_440px] gap-5 mb-5">
+        <div className="order-2 lg:order-1">
+          <TripItineraryPanel
             tripId={Number(id)}
-            cost={cost}
-            onCostChanged={updated => setData(prev => prev ? { ...prev, cost: updated } : prev)}
+            tripCity={trip.destination}
+            tripCountry={trip.country}
+            tripStartDate={trip.start_date}
+            destinations={destinations}
+            canEdit={canEdit}
+            onPlacesChanged={bumpPlacesVersion}
+            selectedDay={sharedSelectedDay}
+            selectedPlaceId={selectedPlaceId}
+            onSelectPlace={setSelectedPlaceId}
           />
+        </div>
+        <div className="order-1 lg:order-2 h-[380px] lg:h-[640px]">
+          <div className="lg:sticky h-full" style={{ top: 16 }}>
+            <TripMapCard
+              tripId={Number(id)}
+              refreshKey={placesVersion}
+              selectedDay={sharedSelectedDay}
+              onSelectedDayChange={setSharedSelectedDay}
+              selectedPlaceId={selectedPlaceId}
+              onSelectPlace={setSelectedPlaceId}
+            />
+          </div>
         </div>
       </div>
 
-      {/* Roteiro unificado — largura total, fica longo então não divide coluna */}
-      <TripItineraryPanel
+      {/* Custo — faixa fina abaixo do roteiro/mapa em vez de disputar a
+          primeira linha com o hero; é informação de apoio, não o destaque
+          principal da página (diferente dos índices de mercado no dashboard,
+          que são o que a maioria olha primeiro). */}
+      <CostCard
         tripId={Number(id)}
-        tripCity={trip.destination}
-        tripCountry={trip.country}
-        destinations={destinations}
-        canEdit={canEdit}
-        onPlacesChanged={bumpPlacesVersion}
+        cost={cost}
+        onCostChanged={updated => setData(prev => prev ? { ...prev, cost: updated } : prev)}
       />
 
       {showMembers && (

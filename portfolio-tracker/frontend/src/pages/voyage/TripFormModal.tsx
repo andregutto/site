@@ -154,7 +154,7 @@ export default function TripFormModal({ trip, onClose, onSaved, onFromMoment, on
                 <rect x="2" y="3" width="12" height="11" rx="2"/>
                 <path strokeLinecap="round" d="M5 1v4M11 1v4M2 7h12"/>
               </svg>
-              Criar a partir de um momento
+              {tv.fromMoment ?? 'Criar a partir de um momento'}
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
                 <path strokeLinecap="round" d="M4 2l4 4-4 4"/>
               </svg>
@@ -164,7 +164,7 @@ export default function TripFormModal({ trip, onClose, onSaved, onFromMoment, on
           {!trip && onFromMoment && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <div style={{ flex: 1, height: 1, background: 'var(--arvo-border-soft)' }} />
-              <span style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.20em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)' }}>ou</span>
+              <span style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.20em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)' }}>{tv.or ?? 'ou'}</span>
               <div style={{ flex: 1, height: 1, background: 'var(--arvo-border-soft)' }} />
             </div>
           )}
@@ -172,7 +172,7 @@ export default function TripFormModal({ trip, onClose, onSaved, onFromMoment, on
           {/* Title */}
           <label>
             <span style={labelStyle}>{tv.titleLabel ?? 'Título'} *</span>
-            <input style={fieldStyle} value={title} onChange={e => setTitle(e.target.value)} placeholder="ex: Lisboa verão 2026"
+            <input style={fieldStyle} value={title} onChange={e => setTitle(e.target.value)} placeholder={tv.titlePlaceholder ?? 'ex: Lisboa verão 2026'}
               onFocus={e => (e.target.style.borderColor = 'var(--arvo-gold)')}
               onBlur={e => (e.target.style.borderColor = 'var(--arvo-border)')}
             />
@@ -182,21 +182,21 @@ export default function TripFormModal({ trip, onClose, onSaved, onFromMoment, on
               um destino por trecho, com o intervalo de dias de cada um.
               Single-destination continua funcionando com só 1 chip. */}
           <label>
-            <span style={labelStyle}>Destinos</span>
+            <span style={labelStyle}>{tv.destinationsLabel ?? 'Destinos'}</span>
             <DestinationsEditor destinations={destinations} onChange={setDestinations} />
           </label>
 
           {/* Dates */}
           <div className="grid grid-cols-2 gap-3">
             <label>
-              <span style={labelStyle}>Início</span>
+              <span style={labelStyle}>{tv.startLabel ?? 'Início'}</span>
               <input type="date" style={fieldStyle} value={startDate} onChange={e => setStartDate(e.target.value)}
                 onFocus={e => (e.target.style.borderColor = 'var(--arvo-gold)')}
                 onBlur={e => (e.target.style.borderColor = 'var(--arvo-border)')}
               />
             </label>
             <label>
-              <span style={labelStyle}>Fim</span>
+              <span style={labelStyle}>{tv.endLabel ?? 'Fim'}</span>
               <input type="date" style={fieldStyle} value={endDate} onChange={e => setEndDate(e.target.value)}
                 onFocus={e => (e.target.style.borderColor = 'var(--arvo-gold)')}
                 onBlur={e => (e.target.style.borderColor = 'var(--arvo-border)')}
@@ -231,7 +231,7 @@ export default function TripFormModal({ trip, onClose, onSaved, onFromMoment, on
             <textarea
               style={{ ...fieldStyle, resize: 'vertical', minHeight: 72 }}
               value={summary} onChange={e => setSummary(e.target.value)}
-              placeholder="Uma frase sobre a viagem..."
+              placeholder={tv.summaryPlaceholder ?? 'Uma frase sobre a viagem...'}
               onFocus={e => (e.target.style.borderColor = 'var(--arvo-gold)')}
               onBlur={e => (e.target.style.borderColor = 'var(--arvo-border)')}
             />
