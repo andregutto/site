@@ -294,7 +294,7 @@ function PlaceGroup({ day, places, staysPassingThrough = [] }: { day: number | n
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 10, marginTop: 4 }}>
         {day !== null && <span style={{ width: 7, height: 7, borderRadius: 999, background: dayColor(day), flexShrink: 0 }} />}
-        <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.22em', textTransform: 'uppercase', color: day !== null ? dayColor(day) : 'var(--arvo-fg-muted)' }}>
+        <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 12, letterSpacing: '0.16em', textTransform: 'uppercase', color: day !== null ? dayColor(day) : 'var(--arvo-fg-muted)' }}>
           {day !== null ? (tv.public?.dayLabel ?? 'Day {n}').replace('{n}', String(day)) : (tv.public?.noDayLabel ?? 'No day')}
         </p>
       </div>

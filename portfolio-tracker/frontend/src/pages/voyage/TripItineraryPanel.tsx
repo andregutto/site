@@ -484,12 +484,9 @@ function ItemRow({ item, tripId, canEdit, dragging, dropTarget, destinations, au
               entrada para essa ação, então ganha um rótulo de texto pra
               não ficar um ícone solto e ambíguo. */}
           {canEdit && !hasExpenses && (
-            <button type="button" onClick={() => setShowExpenses(true)}
-              style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: '1px solid var(--arvo-border)', cursor: 'pointer', padding: '4px 9px', borderRadius: 999, color: 'var(--arvo-fg-soft)', fontFamily: 'var(--arvo-font-body)', fontSize: 10.5 }}>
-              <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <circle cx="6" cy="6" r="5" /><path strokeLinecap="round" d="M6 3.5v5M4.7 7.2c0 .7.6 1 1.3 1s1.3-.3 1.3-1-.6-.9-1.3-.9-1.3-.3-1.3-.9.6-1 1.3-1 1.3.3 1.3 1" />
-              </svg>
-              {tv.linkExpenseShort ?? 'Vincular gasto'}
+            <button type="button" onClick={() => setShowExpenses(true)} title={tv.linkExpenseShort ?? 'Vincular gasto'}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: '1px solid var(--arvo-border)', cursor: 'pointer', width: 24, height: 24, borderRadius: 999, color: 'var(--arvo-fg-soft)', fontFamily: 'var(--arvo-font-body)', fontSize: 14, fontWeight: 600, lineHeight: 1 }}>
+              $
             </button>
           )}
           {canEdit && hasExpenses && (
@@ -502,7 +499,7 @@ function ItemRow({ item, tripId, canEdit, dragging, dropTarget, destinations, au
           )}
           {canEdit && isPlace && (
             <button type="button" onClick={() => onPatch({ is_highlight: !item.is_highlight })} title={tv.highlightTitle ?? 'Destaque'}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 5, borderRadius: 4, fontSize: 13, lineHeight: 1, color: RED, opacity: item.is_highlight ? 1 : 0.3 }}>★</button>
+              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 5, borderRadius: 4, fontSize: 13, lineHeight: 1, color: item.is_highlight ? RED : 'var(--arvo-fg-soft)' }}>★</button>
           )}
           {item.google_maps_url && (
             <a href={item.google_maps_url} target="_blank" rel="noopener noreferrer" title={tv.openInMapsTitle ?? 'Abrir no Google Maps'}
@@ -987,10 +984,10 @@ export default function TripItineraryPanel({ tripId, tripCity, tripCountry, dest
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
                   <span style={{ width: 7, height: 7, borderRadius: 999, background: dayColor(d), flexShrink: 0 }} />
-                  <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: dayColor(d) }}>
+                  <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 12, letterSpacing: '0.18em', textTransform: 'uppercase', color: dayColor(d) }}>
                     {(tv.day ?? 'Dia {n}').replace('{n}', String(d))}
                     {dayDestinationNames(d).length > 0 && (
-                      <span style={{ color: 'var(--arvo-fg-soft)', letterSpacing: '0.04em', textTransform: 'none' }}> — {dayDestinationNames(d).join(' → ')}</span>
+                      <span style={{ color: 'var(--arvo-fg-soft)', letterSpacing: '0.02em', textTransform: 'none' }}> — {dayDestinationNames(d).join(' → ')}</span>
                     )}
                   </p>
                 </span>
@@ -1015,7 +1012,7 @@ export default function TripItineraryPanel({ tripId, tripCity, tripCountry, dest
           ))}
           {undated.length > 0 && (
             <div>
-              <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)', marginBottom: 8 }}>{tv.noDay ?? 'Sem dia'}</p>
+              <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 12, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)', marginBottom: 8 }}>{tv.noDay ?? 'Sem dia'}</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>{renderRows(undated)}</div>
             </div>
           )}
