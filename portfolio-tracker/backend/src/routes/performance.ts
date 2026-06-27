@@ -80,7 +80,7 @@ export type PrefetchedData = {
   contributions: Array<{
     asset_id: number; type: string; quantity: number | null
     value_brl: number | null; price_orig: number | null; fx_rate_brl: number | null
-    currency: string | null; date: string
+    currency: string | null; date: string; description: string | null
   }>
   prices: Array<{ asset_id: number; price: number; currency: string; ref_date: string }>
   manualValues: Array<{ asset_id: number; value: number; currency: string; ref_date: string }>
@@ -101,7 +101,7 @@ export async function fetchPrefetchedData(userId: string, priceFrom?: string): P
   // Fetch contributions and manual_values in parallel (row counts stay manageable)
   const [{ data: contributions }, { data: manualValues }] = await Promise.all([
     supabaseAdmin.from('contributions')
-      .select('asset_id, type, quantity, value_brl, price_orig, fx_rate_brl, currency, date')
+      .select('asset_id, type, quantity, value_brl, price_orig, fx_rate_brl, currency, date, description')
       .in('asset_id', assetIds)
       .order('date', { ascending: true }),
     supabaseAdmin.from('manual_values')
@@ -177,6 +177,55 @@ function estimateContribValue(c: {
     return price * qty * fx
   }
   return 0
+}
+
+const SPLIT_DESCRIPTION_RE = /Desdobro|Bonifica|Grupamento/i
+
+// Stock-split / bonificação contributions are recorded as a one-time quantity delta on the
+// event date (see assets.ts POST /:id/split and import.ts B3 "Desdobro"/"Bonificação em Ativos"
+// handling). Yahoo's historical price series is split-adjusted retroactively (no price jump on
+// the event date), so multiplying *nominal* historical holdings (pre-event quantity) by that
+// already-adjusted price produces an artificial value jump on the event date. To keep value
+// continuous, holdings before the event must be scaled up by the same factor the price series
+// was implicitly scaled down by — i.e. project the post-event share count backward in time.
+export type SplitFactorEvent = { date: string; factor: number }
+
+export function computeSplitFactorEvents(
+  contributions: PrefetchedData['contributions'],
+  assetId: number
+): SplitFactorEvent[] {
+  const assetContribs = contributions
+    .filter(c => c.asset_id === assetId)
+    .sort((a, b) => a.date.localeCompare(b.date))
+
+  const events: SplitFactorEvent[] = []
+  let holdings = 0
+  for (const c of assetContribs) {
+    const qty = Number(c.quantity) || 0
+    const delta = c.type === 'buy' ? qty : -qty
+    const isSplitRow = (Number(c.price_orig) || 0) === 0 && (Number(c.value_brl) || 0) === 0
+      && !!c.description && SPLIT_DESCRIPTION_RE.test(c.description)
+
+    if (isSplitRow && holdings > 0) {
+      const holdingsAfter = holdings + delta
+      if (holdingsAfter > 0) {
+        events.push({ date: c.date, factor: holdingsAfter / holdings })
+      }
+    }
+    holdings += delta
+  }
+  return events
+}
+
+// Adjustment factor to apply to nominal holdings computed as-of `dateStr`, so the result is
+// consistent with a split-adjusted price series. Equals the product of all split factors for
+// events that occur strictly after dateStr (future splits get "baked back" into past holdings).
+export function getSplitAdjustmentFactor(events: SplitFactorEvent[], dateStr: string): number {
+  let factor = 1
+  for (const e of events) {
+    if (e.date > dateStr) factor *= e.factor
+  }
+  return factor
 }
 
 // Computes portfolio total and per-asset values for a given month using pre-fetched data.
@@ -318,20 +367,22 @@ async function computePortfolioValueAtMonth(
         // Ticker / Variable income assets logic
         if (!a.active) continue
         if (holdings > 0) {
+          const splitEvents = computeSplitFactorEvents(allContribs, a.id)
+          const adjHoldings = holdings * getSplitAdjustmentFactor(splitEvents, dateStr)
           const ph = getPrice(a.id, ym)
           if (isCurrentOrFuture) {
             if (ph && ph.ref_date.substring(0, 7) === ym) {
               const fx = await getFxRate(ph.currency)
-              value = holdings * ph.price * fx
+              value = adjHoldings * ph.price * fx
             } else {
               try {
                 const result = await getCurrentPrice(a as Asset)
                 const fx = result.currency === 'BRL' ? 1 : await getFxRate(result.currency)
-                value = holdings * result.price * fx
+                value = adjHoldings * result.price * fx
               } catch {
                 if (ph) {
                   const fx = await getFxRate(ph.currency)
-                  value = holdings * ph.price * fx
+                  value = adjHoldings * ph.price * fx
                 } else {
                   value = costBasisValue
                 }
@@ -340,7 +391,7 @@ async function computePortfolioValueAtMonth(
           } else {
             if (ph) {
               const fx = await getFxRate(ph.currency)
-              value = holdings * ph.price * fx
+              value = adjHoldings * ph.price * fx
             } else {
               value = costBasisValue
             }
@@ -567,20 +618,22 @@ async function computePortfolioValueAtDate(
         // Ticker / Variable income assets logic
         if (!a.active) continue
         if (holdings > 0) {
+          const splitEvents = computeSplitFactorEvents(allContribs, a.id)
+          const adjHoldings = holdings * getSplitAdjustmentFactor(splitEvents, dateStr)
           const ph = getPrice(a.id, dateStr)
           if (isCurrentOrFuture) {
             if (ph && ph.ref_date === dateStr) {
               const fx = await getFxRate(ph.currency)
-              value = holdings * ph.price * fx
+              value = adjHoldings * ph.price * fx
             } else {
               try {
                 const result = await getCurrentPrice(a as Asset)
                 const fx = result.currency === 'BRL' ? 1 : await getFxRate(result.currency)
-                value = holdings * result.price * fx
+                value = adjHoldings * result.price * fx
               } catch {
                 if (ph) {
                   const fx = await getFxRate(ph.currency)
-                  value = holdings * ph.price * fx
+                  value = adjHoldings * ph.price * fx
                 } else {
                   value = costBasisValue
                 }
@@ -589,7 +642,7 @@ async function computePortfolioValueAtDate(
           } else {
             if (ph) {
               const fx = await getFxRate(ph.currency)
-              value = holdings * ph.price * fx
+              value = adjHoldings * ph.price * fx
             } else {
               value = costBasisValue
             }
@@ -825,7 +878,7 @@ router.get('/monthly', requireAuth, async (req, res: Response) => {
 
 // ── Daily portfolio value ─────────────────────────────────────────────────────
 
-async function computePortfolioValueAtDay(
+export async function computePortfolioValueAtDay(
   data: PrefetchedData,
   dateStr: string,
   pricesByAsset: Record<number, Array<{ ref_date: string; price: number; currency: string }>>
@@ -945,18 +998,20 @@ async function computePortfolioValueAtDay(
         }
       } else {
         if (holdings > 0) {
+          const splitEvents = computeSplitFactorEvents(allContribs, a.id)
+          const adjHoldings = holdings * getSplitAdjustmentFactor(splitEvents, dateStr)
           const ph = getPriceAtDay(a.id)
           if (isToday) {
             try {
               const result = await getCurrentPrice(a as Asset)
               const fx = result.currency === 'BRL' ? 1 : await getFxRate(result.currency)
-              value = holdings * result.price * fx
+              value = adjHoldings * result.price * fx
             } catch {
-              if (ph) { const fx = await getFxRate(ph.currency); value = holdings * ph.price * fx }
+              if (ph) { const fx = await getFxRate(ph.currency); value = adjHoldings * ph.price * fx }
               else     { value = costBasisValue }
             }
           } else {
-            if (ph) { const fx = await getFxRate(ph.currency); value = holdings * ph.price * fx }
+            if (ph) { const fx = await getFxRate(ph.currency); value = adjHoldings * ph.price * fx }
             else     { value = costBasisValue }
           }
         }
