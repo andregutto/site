@@ -345,12 +345,12 @@ function PlaceGroup({ day, places, staysPassingThrough = [], selectedPlaceId, on
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 10, marginTop: 4 }}>
         {day !== null && <span style={{ width: 7, height: 7, borderRadius: 999, background: dayColor(day), flexShrink: 0 }} />}
-        <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 12, letterSpacing: '0.16em', textTransform: 'uppercase', color: day !== null ? dayColor(day) : 'var(--arvo-fg-muted)' }}>
+        <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 14, letterSpacing: '0.16em', textTransform: 'uppercase', color: day !== null ? dayColor(day) : 'var(--arvo-fg-muted)' }}>
           {day !== null ? (tv.public?.dayLabel ?? 'Day {n}').replace('{n}', String(day)) : (tv.public?.noDayLabel ?? 'No day')}
         </p>
       </div>
       {staysPassingThrough.map(s => (
-        <p key={s.id} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)', marginBottom: 6 }}>
+        <p key={s.id} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-muted)', marginBottom: 6 }}>
           {itemIcon(s)} {s.checkout_day === day
             ? (tv.places?.stayCheckout ?? 'Check-out: {name}').replace('{name}', s.name) + (s.depart_time ? ` · ${s.depart_time}` : '')
             : (tv.places?.stayInProgress ?? 'em andamento: {name}').replace('{name}', s.name)}

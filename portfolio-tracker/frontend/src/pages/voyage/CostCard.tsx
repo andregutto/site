@@ -12,7 +12,11 @@ function fmtCurrency(n: number, currency: string) {
 const RED = '#D63B2F'
 const GREEN = '#1F8A5B'
 const GOLD = '#C8B89A'
-const USER_COLORS = ['#1B4FD8', '#D63B2F', '#E8A020', '#1F8A5B', '#C8B89A']
+// Paleta Arvo (terracota, gold, azul, ocre, verde, terracota-escuro…) — usada
+// na composição de custo no lugar das cores neon das categorias financeiras,
+// pra manter a identidade da marca.
+const ARVO_PALETTE = ['#A36A52', '#C8B89A', '#1B4FD8', '#E8A020', '#1F8A5B', '#8C6A28', '#D63B2F']
+const USER_COLORS = ['#1B4FD8', '#A36A52', '#E8A020', '#1F8A5B', '#C8B89A']
 
 interface Props {
   tripId: number
@@ -157,19 +161,19 @@ export default function CostCard({ tripId, cost, onCostChanged }: Props) {
 
           {/* Barra de composição: uma só barra segmentada por cor de categoria. */}
           <div style={{ display: 'flex', height: 8, borderRadius: 999, overflow: 'hidden', margin: '10px 0 14px', background: 'var(--arvo-border)' }}>
-            {categories.map(c => {
+            {categories.map((c, i) => {
               const pct = cost.total > 0 ? (c.total / cost.total) * 100 : 0
               if (pct <= 0) return null
-              return <div key={c.id} title={`${c.name} · ${fmt(c.total)}`} style={{ width: `${pct}%`, background: c.color, transition: 'width 400ms ease' }} />
+              return <div key={c.id} title={`${c.name} · ${fmt(c.total)}`} style={{ width: `${pct}%`, background: ARVO_PALETTE[i % ARVO_PALETTE.length], transition: 'width 400ms ease' }} />
             })}
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
-            {categories.map(c => {
+            {categories.map((c, i) => {
               const pct = cost.total > 0 ? Math.round((c.total / cost.total) * 100) : 0
               return (
                 <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-                  <span style={{ width: 8, height: 8, borderRadius: 999, background: c.color, flexShrink: 0 }} />
+                  <span style={{ width: 8, height: 8, borderRadius: 999, background: ARVO_PALETTE[i % ARVO_PALETTE.length], flexShrink: 0 }} />
                   <span style={{ fontSize: 14, flexShrink: 0 }}>{c.icon}</span>
                   <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</span>
                   <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)', fontVariantNumeric: 'tabular-nums', minWidth: 32, textAlign: 'right' }}>{pct}%</span>

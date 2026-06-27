@@ -1071,13 +1071,13 @@ export default function TripItineraryPanel({ tripId, tripCity, tripCountry, trip
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
                   <span style={{ width: 7, height: 7, borderRadius: 999, background: dayColor(d), flexShrink: 0 }} />
-                  <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 12, letterSpacing: '0.18em', textTransform: 'uppercase', color: dayColor(d) }}>
+                  <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 14, letterSpacing: '0.18em', textTransform: 'uppercase', color: dayColor(d) }}>
                     {(tv.day ?? 'Dia {n}').replace('{n}', String(d))}
                     {inferredDateForDay(d, tripStartDate) && (
-                      <span style={{ color: 'var(--arvo-fg-muted)', letterSpacing: '0.02em', textTransform: 'none', fontSize: 10.5 }}> · {inferredDateForDay(d, tripStartDate)}</span>
+                      <span style={{ color: 'var(--arvo-fg-muted)', letterSpacing: '0.02em', textTransform: 'none', fontSize: 12 }}> · {inferredDateForDay(d, tripStartDate)}</span>
                     )}
                     {dayDestinationNames(d).length > 0 && (
-                      <span style={{ color: 'var(--arvo-fg-soft)', letterSpacing: '0.02em', textTransform: 'none' }}> — {dayDestinationNames(d).join(' → ')}</span>
+                      <span style={{ color: 'var(--arvo-fg-soft)', letterSpacing: '0.02em', textTransform: 'none', fontSize: 13 }}> — {dayDestinationNames(d).join(' → ')}</span>
                     )}
                   </p>
                 </span>
@@ -1091,7 +1091,7 @@ export default function TripItineraryPanel({ tripId, tripCity, tripCountry, trip
               {staysOnDay(d)
                 .filter(s => s.checkin_day !== d && (s.checkout_day === d || !isLogisticalStay(s.category)))
                 .map(s => (
-                  <p key={s.id} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)', marginBottom: 6 }}>
+                  <p key={s.id} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-muted)', marginBottom: 6 }}>
                     {itemIcon(s)} {s.checkout_day === d
                       ? (tv.places?.stayCheckout ?? 'Check-out: {name}').replace('{name}', s.name) + (s.depart_time ? ` · ${s.depart_time}` : '')
                       : (tv.places?.stayInProgress ?? 'em andamento: {name}').replace('{name}', s.name)}
