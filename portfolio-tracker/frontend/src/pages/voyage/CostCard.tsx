@@ -12,22 +12,12 @@ function fmtCurrency(n: number, currency: string) {
 const RED = '#D63B2F'
 const GREEN = '#1F8A5B'
 const GOLD = '#C8B89A'
+const USER_COLORS = ['#1B4FD8', '#D63B2F', '#E8A020', '#1F8A5B', '#C8B89A']
 
 interface Props {
   tripId: number
   cost: TripCost
   onCostChanged: (cost: TripCost) => void
-}
-
-function ProgressBar({ spent, budget }: { spent: number; budget: number | null }) {
-  if (!budget || budget <= 0) return null
-  const pct = Math.min((spent / budget) * 100, 100)
-  const over = spent > budget
-  return (
-    <div style={{ height: 4, borderRadius: 999, background: 'var(--arvo-border)', marginTop: 6, overflow: 'hidden' }}>
-      <div style={{ height: '100%', borderRadius: 999, width: `${pct}%`, background: over ? RED : GREEN, transition: 'width 400ms ease' }} />
-    </div>
-  )
 }
 
 function LinkMomentPanel({ tripId, onLinked, compact }: { tripId: number; onLinked: (cost: TripCost) => void; compact?: boolean }) {
@@ -61,9 +51,9 @@ function LinkMomentPanel({ tripId, onLinked, compact }: { tripId: number; onLink
   }
 
   if (mode === 'link') return (
-    <div style={{ marginTop: 12, padding: 14, borderRadius: 8, background: 'var(--arvo-hover-bg)', border: '1px solid var(--arvo-border-soft)' }}>
+    <div style={{ marginTop: 12, padding: 14, borderRadius: 10, background: 'var(--arvo-hover-bg)', border: '1px solid var(--arvo-border-soft)' }}>
       <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)', marginBottom: 8 }}>
-        Selecionar momento
+        {tv.selectMoment ?? 'Selecionar momento'}
       </p>
       {loadingMoments ? (
         <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)' }}>Carregando…</p>
@@ -96,22 +86,19 @@ function LinkMomentPanel({ tripId, onLinked, compact }: { tripId: number; onLink
     </div>
   )
 
-  if (compact) return (
-    <div style={{ display: 'flex', gap: 10, marginTop: 12, paddingTop: 10, borderTop: '1px solid var(--arvo-border-soft)' }}>
-      <button type="button" onClick={openLink}
-        style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-      >{tv.linkAnotherMoment ?? '+ Vincular outro momento'}</button>
-    </div>
-  )
-
   return (
-    <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-      <button type="button" onClick={openLink}
-        style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, letterSpacing: '0.04em', padding: '6px 14px', borderRadius: 6, background: 'transparent', border: '1px solid var(--arvo-border)', color: 'var(--arvo-fg)', cursor: 'pointer', transition: 'all 160ms ease' }}
-        onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--arvo-fg-muted)' }}
-        onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--arvo-border)' }}
-      >{tv.linkMoment ?? 'Vincular momento'}</button>
-    </div>
+    <button type="button" onClick={openLink}
+      style={{ fontFamily: 'var(--arvo-font-body)', fontSize: compact ? 11 : 11.5, letterSpacing: '0.04em', padding: compact ? 0 : '6px 14px', borderRadius: 6, background: 'transparent', border: compact ? 'none' : '1px solid var(--arvo-border)', color: compact ? 'var(--arvo-fg-soft)' : 'var(--arvo-fg)', cursor: 'pointer', transition: 'all 160ms ease' }}
+    >{compact ? (tv.linkAnotherMoment ?? '+ Vincular outro momento') : (tv.linkMoment ?? 'Vincular momento')}</button>
+  )
+}
+
+/** Rótulo de seção discreto reutilizável. */
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)', margin: 0 }}>
+      {children}
+    </p>
   )
 }
 
@@ -121,93 +108,118 @@ export default function CostCard({ tripId, cost, onCostChanged }: Props) {
   const fmt = (n: number) => fmtCurrency(n, cost.currency || 'EUR')
   const hasMoments = cost.moments.length > 0
   const overBudget = cost.budget != null && cost.total > cost.budget
-  const [expanded, setExpanded] = useState(false)
-  const hasCategories = (cost.by_category ?? []).length > 0
-  const hasPlaces = (cost.by_place ?? []).length > 0
-  const canExpand = hasCategories || hasPlaces
+  const [showByPlace, setShowByPlace] = useState(false)
+
+  const categories = cost.by_category ?? []
+  const places = cost.by_place ?? []
+  const users = cost.by_user ?? []
+  const hasCategories = categories.length > 0
+  const hasPlaces = places.length > 0
+  const hasSplit = users.length > 1
+
+  // Estado vazio: nenhum momento vinculado ainda.
+  if (!hasMoments) {
+    return (
+      <div style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', borderRadius: 16, boxShadow: 'var(--arvo-shadow-sm)', padding: '20px 22px' }}>
+        <p style={{ fontFamily: 'var(--arvo-font-serif)', fontStyle: 'italic', fontSize: 13, color: GOLD, marginTop: 0, marginBottom: 12 }}>
+          {tv.costNone ?? 'Nenhum momento vinculado'}
+        </p>
+        <LinkMomentPanel tripId={tripId} onLinked={onCostChanged} />
+      </div>
+    )
+  }
 
   return (
-    <div style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', borderRadius: 16, boxShadow: 'var(--arvo-shadow-sm)', padding: '20px 22px', height: '100%' }}>
-      {/* Header */}
-      <div className="flex items-center justify-between" style={{ marginBottom: hasMoments ? 16 : 0 }}>
-        <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 10, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)' }}>
-          {tv.costCard ?? 'Custo'}
-        </p>
-        {hasMoments && (
-          <Link to="/finances/moments" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)', textDecoration: 'none', letterSpacing: '0.04em' }}>
-            {tv.actions?.viewMoments ?? 'Ver momentos →'}
-          </Link>
-        )}
-      </div>
+    <div style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', borderRadius: 16, boxShadow: 'var(--arvo-shadow-sm)', padding: '18px 22px 16px' }}>
+      {/* Linha de contexto de budget — sem repetir o total grande (já está na faixa acima). */}
+      {cost.budget != null && (
+        <div style={{ marginBottom: hasCategories ? 18 : 0 }}>
+          <div className="flex items-baseline justify-between" style={{ marginBottom: 6 }}>
+            <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)' }}>
+              {fmt(cost.total)} {tv.costOf ?? 'de'} {fmt(cost.budget)}
+            </span>
+            <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, fontVariantNumeric: 'tabular-nums', color: overBudget ? RED : GREEN }}>
+              {overBudget
+                ? `+${fmt(cost.total - cost.budget)} ${tv.costOver ?? 'acima'}`
+                : `${fmt(cost.budget - cost.total)} ${tv.costLeft ?? 'restantes'}`}
+            </span>
+          </div>
+          <div style={{ height: 5, borderRadius: 999, background: 'var(--arvo-border)', overflow: 'hidden' }}>
+            <div style={{ height: '100%', borderRadius: 999, width: `${Math.min((cost.total / cost.budget) * 100, 100)}%`, background: overBudget ? RED : GREEN, transition: 'width 400ms ease' }} />
+          </div>
+        </div>
+      )}
 
-      {hasMoments ? (
-        <>
-          {/* Total + expand toggle */}
-          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 8 }}>
-            <div>
-              <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 28, fontVariantNumeric: 'tabular-nums', color: overBudget ? RED : 'var(--arvo-fg)', letterSpacing: '-0.02em' }}>
-                {fmt(cost.total)}
-              </span>
-              {cost.budget != null && (
-                <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-soft)', marginLeft: 6 }}>
-                  / {fmt(cost.budget)}
-                </span>
-              )}
-            </div>
-            {canExpand && (
-              <button
-                type="button"
-                onClick={() => setExpanded(v => !v)}
-                style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)', padding: 0 }}
-              >
-                {expanded ? (tv.actions?.collapse ?? 'Recolher') : (tv.actions?.detail ?? 'Detalhar')}
-                <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ transform: expanded ? 'rotate(180deg)' : 'none', transition: 'transform 160ms' }}>
-                  <path strokeLinecap="round" d="M2 3.5l3 3 3-3"/>
-                </svg>
-              </button>
-            )}
+      {/* POR CATEGORIA — destaque principal, já aberto. */}
+      {hasCategories && (
+        <div>
+          <SectionLabel>{tv.expenses?.byCategory ?? 'Por categoria'}</SectionLabel>
+
+          {/* Barra de composição: uma só barra segmentada por cor de categoria. */}
+          <div style={{ display: 'flex', height: 8, borderRadius: 999, overflow: 'hidden', margin: '10px 0 14px', background: 'var(--arvo-border)' }}>
+            {categories.map(c => {
+              const pct = cost.total > 0 ? (c.total / cost.total) * 100 : 0
+              if (pct <= 0) return null
+              return <div key={c.id} title={`${c.name} · ${fmt(c.total)}`} style={{ width: `${pct}%`, background: c.color, transition: 'width 400ms ease' }} />
+            })}
           </div>
 
-          <ProgressBar spent={cost.total} budget={cost.budget} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+            {categories.map(c => {
+              const pct = cost.total > 0 ? Math.round((c.total / cost.total) * 100) : 0
+              return (
+                <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+                  <span style={{ width: 8, height: 8, borderRadius: 999, background: c.color, flexShrink: 0 }} />
+                  <span style={{ fontSize: 14, flexShrink: 0 }}>{c.icon}</span>
+                  <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</span>
+                  <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)', fontVariantNumeric: 'tabular-nums', minWidth: 32, textAlign: 'right' }}>{pct}%</span>
+                  <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg)', fontVariantNumeric: 'tabular-nums', minWidth: 60, textAlign: 'right' }}>{fmt(c.total)}</span>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
-          {cost.budget != null && (
-            <div className="flex justify-between" style={{ marginTop: 6 }}>
-              <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)' }}>{tv.costSpent ?? 'Gasto'}</span>
-              <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)' }}>{tv.costBudget ?? 'Budget'}: {fmt(cost.budget)}</span>
-            </div>
-          )}
-
-          {/* Category breakdown — expandable */}
-          {expanded && hasCategories && (
-            <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid var(--arvo-border-soft)', display: 'flex', flexDirection: 'column', gap: 7 }}>
-              <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)', marginBottom: 4 }}>
-                {tv.expenses?.byCategory ?? 'Por categoria'}
-              </p>
-              {cost.by_category.map(c => {
-                const pct = cost.total > 0 ? (c.total / cost.total) * 100 : 0
-                return (
-                  <div key={c.id}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
-                      <span style={{ fontSize: 14, flexShrink: 0 }}>{c.icon}</span>
-                      <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg)', flex: 1 }}>{c.name}</span>
-                      <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)', fontVariantNumeric: 'tabular-nums' }}>{fmt(c.total)}</span>
-                    </div>
-                    <div style={{ height: 3, borderRadius: 999, background: 'var(--arvo-border)', overflow: 'hidden' }}>
-                      <div style={{ height: '100%', width: `${pct}%`, background: c.color, borderRadius: 999, transition: 'width 300ms ease' }} />
-                    </div>
+      {/* POR PESSOA — já aberto quando há divisão. */}
+      {hasSplit && (
+        <div style={{ marginTop: 16, paddingTop: 14, borderTop: '1px solid var(--arvo-border-soft)' }}>
+          <SectionLabel>{tv.splitByPerson ?? 'Por pessoa'}</SectionLabel>
+          <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {users.map((u, i) => {
+              const pct = cost.total > 0 ? Math.round((u.total / cost.total) * 100) : 0
+              return (
+                <div key={u.user_id} style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+                  <Avatar name={u.display?.name} email={u.display?.email} size={24} />
+                  <div style={{ flex: 1, height: 4, borderRadius: 999, background: 'var(--arvo-border)', overflow: 'hidden' }}>
+                    <div style={{ height: '100%', width: `${pct}%`, background: USER_COLORS[i % USER_COLORS.length], borderRadius: 999 }} />
                   </div>
-                )
-              })}
-            </div>
-          )}
+                  <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg)', fontVariantNumeric: 'tabular-nums', minWidth: 60, textAlign: 'right' }}>{fmt(u.total)}</span>
+                  <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)', minWidth: 32, textAlign: 'right' }}>{pct}%</span>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
-          {/* Place breakdown — expandable */}
-          {expanded && hasPlaces && (
-            <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid var(--arvo-border-soft)', display: 'flex', flexDirection: 'column', gap: 7 }}>
-              <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)', marginBottom: 4 }}>
-                {tv.expenses?.byPlace ?? 'Por lugar'}
-              </p>
-              {cost.by_place.map(p => {
+      {/* POR LUGAR — secundário, recolhido por padrão. */}
+      {hasPlaces && (
+        <div style={{ marginTop: 16, paddingTop: 14, borderTop: '1px solid var(--arvo-border-soft)' }}>
+          <button type="button" onClick={() => setShowByPlace(v => !v)}
+            style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
+          >
+            <SectionLabel>{tv.expenses?.byPlace ?? 'Por lugar'}</SectionLabel>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)' }}>
+              {showByPlace ? (tv.actions?.collapse ?? 'Recolher') : `${places.length} ${tv.placesWord ?? 'lugares'}`}
+              <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ transform: showByPlace ? 'rotate(180deg)' : 'none', transition: 'transform 160ms' }}>
+                <path strokeLinecap="round" d="M2 3.5l3 3 3-3" />
+              </svg>
+            </span>
+          </button>
+          {showByPlace && (
+            <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 7 }}>
+              {places.map(p => {
                 const pct = cost.total > 0 ? (p.total / cost.total) * 100 : 0
                 return (
                   <div key={p.trip_place_id}>
@@ -223,57 +235,34 @@ export default function CostCard({ tripId, cost, onCostChanged }: Props) {
               })}
             </div>
           )}
-
-          {/* Per-user split */}
-          {cost.by_user.length > 1 && (
-            <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid var(--arvo-border-soft)' }}>
-              <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)', marginBottom: 8 }}>
-                {tv.splitByPerson ?? 'Por pessoa'}
-              </p>
-              {cost.by_user.map((u, i) => {
-                const pct = cost.total > 0 ? Math.round((u.total / cost.total) * 100) : 0
-                const barColors = ['#1B4FD8', '#D63B2F', '#E8A020', '#1F8A5B', '#C8B89A']
-                return (
-                  <div key={u.user_id} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                    <Avatar name={u.display?.name} email={u.display?.email} size={24} />
-                    <div style={{ flex: 1, height: 4, borderRadius: 999, background: 'var(--arvo-border)', overflow: 'hidden' }}>
-                      <div style={{ height: '100%', width: `${pct}%`, background: barColors[i % barColors.length], borderRadius: 999 }} />
-                    </div>
-                    <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg)', fontVariantNumeric: 'tabular-nums', minWidth: 64, textAlign: 'right' }}>
-                      {fmt(u.total)}
-                    </span>
-                    <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)', minWidth: 32, textAlign: 'right' }}>{pct}%</span>
-                  </div>
-                )
-              })}
-            </div>
-          )}
-
-          {/* Linked moments list */}
-          <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid var(--arvo-border-soft)', display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {cost.moments.map(m => (
-              <div key={m.id} className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span style={{ fontSize: 15 }}>{m.icon}</span>
-                  <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg)' }}>{m.name}</span>
-                </div>
-                <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg-soft)', fontVariantNumeric: 'tabular-nums' }}>
-                  {fmt(m.spent)}
-                </span>
-              </div>
-            ))}
-          </div>
-
-          <LinkMomentPanel tripId={tripId} onLinked={onCostChanged} compact />
-        </>
-      ) : (
-        <>
-          <p style={{ fontFamily: 'var(--arvo-font-serif)', fontStyle: 'italic', fontSize: 13, color: GOLD, marginTop: 4, marginBottom: 0 }}>
-            {tv.costNone ?? 'Nenhum momento vinculado'}
-          </p>
-          <LinkMomentPanel tripId={tripId} onLinked={onCostChanged} />
-        </>
+        </div>
       )}
+
+      {/* MOMENTOS VINCULADOS — rodapé discreto. */}
+      <div style={{ marginTop: 16, paddingTop: 14, borderTop: '1px solid var(--arvo-border-soft)' }}>
+        <div className="flex items-center justify-between" style={{ marginBottom: 10 }}>
+          <SectionLabel>{tv.linkedMoments ?? 'Momentos'}</SectionLabel>
+          <Link to="/finances/moments" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)', textDecoration: 'none', letterSpacing: '0.04em' }}>
+            {tv.actions?.viewMoments ?? 'Ver momentos →'}
+          </Link>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+          {cost.moments.map(m => (
+            <div key={m.id} className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span style={{ fontSize: 13 }}>{m.icon}</span>
+                <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)' }}>{m.name}</span>
+              </div>
+              <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)', fontVariantNumeric: 'tabular-nums' }}>
+                {fmt(m.spent)}
+              </span>
+            </div>
+          ))}
+        </div>
+        <div style={{ marginTop: 10 }}>
+          <LinkMomentPanel tripId={tripId} onLinked={onCostChanged} compact />
+        </div>
+      </div>
     </div>
   )
 }
