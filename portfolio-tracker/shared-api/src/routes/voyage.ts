@@ -20,7 +20,7 @@ async function userDisplay(userId: string): Promise<{ name: string; email: strin
 // ── Cost helper ────────────────────────────────────────────────────────────────
 // Agrega custo de todos os momentos vinculados à viagem.
 // Retorna total + breakdown por usuário (split-ready para V2).
-async function buildCostSummary(tripId: number, requestingUserId: string) {
+export async function buildCostSummary(tripId: number, requestingUserId: string) {
   // Busca os momentos vinculados (service_role — valida membership via código)
   const { data: tripMoments } = await supabaseAdmin
     .from('voyage_trip_moments')
@@ -844,7 +844,7 @@ function googleTypeToCategory(primaryType: string | undefined, types: string[] =
   return null
 }
 
-function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
+export function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
   const R = 6371
   const dLat = (lat2 - lat1) * Math.PI / 180
   const dLng = (lng2 - lng1) * Math.PI / 180

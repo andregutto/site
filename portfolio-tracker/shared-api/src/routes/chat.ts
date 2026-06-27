@@ -2,12 +2,13 @@ import { Router, Response } from 'express'
 import Anthropic from '@anthropic-ai/sdk'
 import { requireAuth, AuthRequest } from '../middleware/auth.js'
 import { supabaseAdmin } from '../lib/supabase.js'
+import { haversineKm, buildCostSummary } from './voyage.js'
 
 const router = Router()
 
 function buildSystemPrompt(opts: { locale: string; currentPath: string; today: string }): string {
   const lang = opts.locale === 'fr' ? 'French' : opts.locale === 'en' ? 'English' : 'Brazilian Portuguese'
-  return `You are a helpful assistant built into a personal finance and investment portfolio tracker app. Your role is strictly limited to two things: (1) helping users navigate and use the app, and (2) answering questions about the user's own data using the available tools.
+  return `You are a helpful assistant built into a personal finance and investment portfolio tracker app, which also includes a trip-planning module called Voyage. Your role is strictly limited to two things: (1) helping users navigate and use the app, and (2) answering questions about the user's own data using the available tools.
 
 ## Session context
 - Today's date: ${opts.today}
@@ -25,6 +26,23 @@ function buildSystemPrompt(opts: { locale: string; currentPath: string; today: s
 NEVER invent, guess, or assume the user's financial data. For any question about portfolio, transactions, accounts, or spending, you MUST call the appropriate tool first. If a tool returns empty results, say so honestly — do not make up numbers.
 
 When the user mentions an asset by partial name or code (e.g. "minha Petrobras", "PETR", "conta Nubank", "meu bitcoin"), call search_asset with the partial name before answering. When user asks about a merchant or company spending (e.g. "quanto gastei no Carrefour", "todas as cobranças da Prixtel"), call get_merchant_spending; if it returns nothing, call list_merchants to find the actual name used in the statement.
+
+For ANY question about the user's trips (Voyage module — itinerary, places, destinations, distances between places, route order), you MUST call the Voyage tools below first. Never invent trip names, place names, distances, or day numbers.
+
+## Voyage (trip planner) module
+
+Voyage lets users plan trips with day-by-day itineraries: each trip has one or more destinations (cities, with a day range), and a list of places (POIs, restaurants, hotels, etc.) each with optional GPS coordinates and an assigned day number.
+
+- **Viagens** (/voyage) — list of trips, each with cover, destinations, dates, status, and total cost
+- A trip page (/voyage/:id) has: hero (title, destinations, dates, status), a day-by-day itinerary (places grouped by day_number, each with category/address/notes), and a map
+- Trip costs come from linked "momentos" (the same Finanças concept) — use get_trip_cost for a trip-specific cost breakdown
+
+Voyage tools:
+- **list_trips** — overview of all the user's trips (owned or as active member): title, destinations, dates, status, place count. ALWAYS call this first if the user refers to "minha viagem"/"my trip" without naming one, or asks "quais viagens eu tenho".
+- **get_trip_itinerary** — full day-by-day itinerary for one trip: every place with its day, category, address, and lat/lng if geocoded. Use this whenever the user asks about the order of places, what's planned for a specific day, or wants the place list for a trip. If you don't know the trip_id, call list_trips first and match by title/destination.
+- **calculate_route_distance** — given a list of place names (or "all places in trip X in itinerary order"), computes the geographic (great-circle) distance in km between consecutive places and the total route distance. Use this for ANY distance/route/"how far"/"quantos km" question about places in a trip. This is straight-line distance, not driving distance — if the user asks for driving/walking time, say this tool gives straight-line distance as an estimate and real road distance may be longer.
+
+When the user asks something like "qual a distância entre os lugares do dia 3" or "quantos km vou rodar nessa viagem", call get_trip_itinerary first (if you don't already have the place list with coordinates), then call calculate_route_distance with the relevant place_ids in the order they should be visited.
 
 ## Hard boundaries — never cross these
 
@@ -233,7 +251,64 @@ const TOOLS: Anthropic.Messages.Tool[] = [
       },
     },
   },
+  {
+    name: 'list_trips',
+    description: 'List the user\'s Voyage trips (owned or as an active member): title, destinations with day ranges, dates, status, and place count. ALWAYS call this first when the user mentions a trip without giving its exact id, or asks which trips they have.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        search: { type: 'string', description: 'Optional filter by title or destination city (case-insensitive, partial match)' },
+      },
+    },
+  },
+  {
+    name: 'get_trip_itinerary',
+    description: 'Get the full day-by-day itinerary for one trip: every place with id, name, category, address, day_number, and lat/lng coordinates (when geocoded). Use this for any question about what is planned, the order of places, a specific day, or before computing distances/routes.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        trip_id: { type: 'number', description: 'The trip id (get it from list_trips first if unknown)' },
+        day_number: { type: 'number', description: 'Optional: restrict to a single day' },
+      },
+      required: ['trip_id'],
+    },
+  },
+  {
+    name: 'calculate_route_distance',
+    description: 'Compute great-circle (straight-line) distance in km between a sequence of places, using their stored coordinates. Returns leg-by-leg distances and the total. Use for any "how far", "quantos km", or route-length question about places in a trip. NOTE: this is straight-line distance, not driving distance — road distance is typically longer; say so if relevant.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        place_ids: {
+          type: 'array',
+          items: { type: 'number' },
+          description: 'Ordered list of trip_place ids (from get_trip_itinerary) — distance is computed leg by leg in this order',
+        },
+      },
+      required: ['place_ids'],
+    },
+  },
+  {
+    name: 'get_trip_cost',
+    description: 'Get the cost breakdown for one trip: total spent, budget, currency, breakdown by category, by place, and by person (when shared). Use for any question about how much a trip cost or its budget.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        trip_id: { type: 'number', description: 'The trip id (get it from list_trips first if unknown)' },
+      },
+      required: ['trip_id'],
+    },
+  },
 ]
+
+async function hasVoyageTripAccess(tripId: number, userId: string): Promise<boolean> {
+  const { data: trip } = await supabaseAdmin.from('voyage_trips').select('user_id').eq('id', tripId).single()
+  if (!trip) return false
+  if (trip.user_id === userId) return true
+  const { data: member } = await supabaseAdmin
+    .from('voyage_trip_members').select('id').eq('trip_id', tripId).eq('user_id', userId).eq('status', 'active').maybeSingle()
+  return !!member
+}
 
 async function executeTool(
   name: string,
@@ -752,6 +827,151 @@ async function executeTool(
           `${a.name}${a.institution_name ? ` (${a.institution_name})` : ''} | ${a.currency} | balance: ${a.current_balance ?? 0}`
         )
         return `Accounts (${accounts.length}):\n${lines.join('\n')}`
+      }
+
+      case 'list_trips': {
+        const inp = input as { search?: string }
+        const [{ data: ownedTrips }, { data: memberRows }] = await Promise.all([
+          supabaseAdmin.from('voyage_trips').select('*').eq('user_id', userId),
+          supabaseAdmin.from('voyage_trip_members').select('trip_id').eq('user_id', userId).eq('status', 'active'),
+        ])
+        const memberTripIds = (memberRows ?? []).map(m => m.trip_id)
+        let memberTrips: any[] = []
+        if (memberTripIds.length > 0) {
+          const { data } = await supabaseAdmin.from('voyage_trips').select('*').in('id', memberTripIds).not('user_id', 'eq', userId)
+          memberTrips = data ?? []
+        }
+        const seen = new Set<number>()
+        let trips = [...(ownedTrips ?? []), ...memberTrips].filter(t => { if (seen.has(t.id)) return false; seen.add(t.id); return true })
+
+        if (inp.search?.trim()) {
+          const q = inp.search.trim().toLowerCase()
+          trips = trips.filter(t => t.title?.toLowerCase().includes(q) || t.destination?.toLowerCase().includes(q))
+        }
+        if (!trips.length) return 'No trips found.'
+
+        const tripIds = trips.map(t => t.id)
+        const [{ data: dests }, { data: places }] = await Promise.all([
+          supabaseAdmin.from('voyage_trip_destinations').select('trip_id, city, country, day_start, day_end').in('trip_id', tripIds).order('sort_order'),
+          supabaseAdmin.from('voyage_trip_places').select('trip_id').in('trip_id', tripIds),
+        ])
+        const destsByTrip: Record<number, any[]> = {}
+        for (const d of dests ?? []) (destsByTrip[d.trip_id] ??= []).push(d)
+        const placeCountByTrip: Record<number, number> = {}
+        for (const p of places ?? []) placeCountByTrip[p.trip_id] = (placeCountByTrip[p.trip_id] ?? 0) + 1
+
+        const lines = trips.map(t => {
+          const ds = destsByTrip[t.id] ?? []
+          const destStr = ds.length
+            ? ds.map(d => `${d.city ?? '?'}${d.day_start != null ? ` (day ${d.day_start}-${d.day_end ?? d.day_start})` : ''}`).join(' → ')
+            : (t.destination ?? 'no destination set')
+          return `trip_id ${t.id}: "${t.title}" | ${destStr} | ${t.start_date ?? '?'} to ${t.end_date ?? '?'} | status: ${t.status} | ${placeCountByTrip[t.id] ?? 0} places`
+        })
+        return `Trips (${trips.length}):\n${lines.join('\n')}`
+      }
+
+      case 'get_trip_itinerary': {
+        const inp = input as { trip_id: number; day_number?: number }
+        const tripId = Number(inp.trip_id)
+        if (!tripId) return 'trip_id is required.'
+
+        const access = await hasVoyageTripAccess(tripId, userId)
+        if (!access) return `Trip ${tripId} not found or you don't have access to it.`
+
+        let q = supabaseAdmin
+          .from('voyage_trip_places').select('id, name, category, address, lat, lng, day_number, sort_order, destination_id, trip_note, is_highlight, visited')
+          .eq('trip_id', tripId)
+          .order('day_number', { ascending: true, nullsFirst: false })
+          .order('sort_order')
+        if (inp.day_number != null) q = q.eq('day_number', inp.day_number)
+        const { data: places } = await q
+        if (!places?.length) return `Trip ${tripId} has no places${inp.day_number != null ? ` on day ${inp.day_number}` : ''}.`
+
+        const { data: dests } = await supabaseAdmin
+          .from('voyage_trip_destinations').select('id, city, country, day_start, day_end').eq('trip_id', tripId).order('sort_order')
+        const destMap: Record<number, any> = {}
+        for (const d of dests ?? []) destMap[d.id] = d
+
+        const lines = places.map(p => {
+          const dest = p.destination_id != null ? destMap[p.destination_id] : null
+          return [
+            `place_id ${p.id}: ${p.name}`,
+            `  day: ${p.day_number ?? 'unscheduled'}${dest ? ` | destination: ${dest.city}` : ''} | category: ${p.category ?? 'n/a'}`,
+            p.address ? `  address: ${p.address}` : '',
+            p.lat != null && p.lng != null ? `  coordinates: ${p.lat}, ${p.lng}` : '  coordinates: not geocoded',
+            p.trip_note ? `  note: ${p.trip_note}` : '',
+            p.is_highlight ? '  ⭐ highlight' : '',
+          ].filter(Boolean).join('\n')
+        })
+        return `Itinerary for trip ${tripId} (${places.length} places):\n\n${lines.join('\n\n')}`
+      }
+
+      case 'calculate_route_distance': {
+        const inp = input as { place_ids: number[] }
+        const ids = (inp.place_ids ?? []).map(Number).filter(n => !Number.isNaN(n))
+        if (ids.length < 2) return 'Need at least 2 place_ids to calculate a route.'
+
+        const { data: places } = await supabaseAdmin
+          .from('voyage_trip_places').select('id, name, lat, lng, trip_id').in('id', ids)
+        if (!places?.length) return 'No matching places found for the given place_ids.'
+
+        const tripIds = [...new Set(places.map(p => p.trip_id))]
+        for (const tId of tripIds) {
+          if (!(await hasVoyageTripAccess(tId, userId))) return `You don't have access to trip ${tId}.`
+        }
+
+        const byId: Record<number, any> = {}
+        for (const p of places) byId[p.id] = p
+
+        const legs: string[] = []
+        let total = 0
+        let missing = 0
+        for (let i = 0; i < ids.length - 1; i++) {
+          const a = byId[ids[i]]
+          const b = byId[ids[i + 1]]
+          if (!a || !b) { legs.push(`(unknown place in sequence)`); continue }
+          if (a.lat == null || a.lng == null || b.lat == null || b.lng == null) {
+            legs.push(`${a.name} → ${b.name}: not geocoded, cannot compute`)
+            missing++
+            continue
+          }
+          const km = haversineKm(a.lat, a.lng, b.lat, b.lng)
+          total += km
+          legs.push(`${a.name} → ${b.name}: ${km.toFixed(1)} km`)
+        }
+        return [
+          `Route (${ids.length} stops, straight-line distance):`,
+          ...legs,
+          `Total: ${total.toFixed(1)} km${missing > 0 ? ` (${missing} leg(s) skipped — missing coordinates)` : ''}`,
+          'Note: this is straight-line distance, not driving distance — actual road distance will be longer.',
+        ].join('\n')
+      }
+
+      case 'get_trip_cost': {
+        const inp = input as { trip_id: number }
+        const tripId = Number(inp.trip_id)
+        if (!tripId) return 'trip_id is required.'
+        if (!(await hasVoyageTripAccess(tripId, userId))) return `Trip ${tripId} not found or you don't have access to it.`
+
+        const cost = await buildCostSummary(tripId, userId)
+        if (!cost.moments.length) return `Trip ${tripId}: no moments linked yet, no cost data available.`
+
+        const lines = [
+          `Trip ${tripId} cost: ${cost.total.toFixed(2)} ${cost.currency}${cost.budget != null ? ` / budget ${cost.budget.toFixed(2)} ${cost.currency}` : ''}`,
+        ]
+        if (cost.by_category?.length) {
+          lines.push('By category:')
+          for (const c of cost.by_category) lines.push(`  ${c.name}: ${c.total.toFixed(2)} ${cost.currency}`)
+        }
+        if (cost.by_place?.length) {
+          lines.push('By place:')
+          for (const p of cost.by_place) lines.push(`  ${p.name}: ${p.total.toFixed(2)} ${cost.currency}`)
+        }
+        if (cost.by_user?.length > 1) {
+          lines.push('By person:')
+          for (const u of cost.by_user) lines.push(`  ${u.display?.name ?? u.user_id}: ${u.total.toFixed(2)} ${cost.currency}`)
+        }
+        return lines.join('\n')
       }
 
       default:
