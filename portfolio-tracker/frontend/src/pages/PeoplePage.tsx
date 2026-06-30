@@ -421,43 +421,59 @@ function ContactCard({
         </div>
       )}
 
-      {/* Amizade direta */}
-      {friendContexts.length > 0 && (
-        <div style={{ borderTop: '1px solid var(--arvo-border-soft)', paddingTop: 14, marginBottom: 14 }}>
-          {friendContexts.map(ctx => (
-            <div key={`${ctx.friend_id}-${ctx.direction}`} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '4px 0' }}>
-              {ctx.friend_status === 'pending' && ctx.direction === 'shared_with_me' ? (
-                <>
-                  <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg-soft)', flex: 1 }}>
-                    {t.people.invitedYouConnect}
-                  </span>
-                  <button
-                    type="button" onClick={() => acceptFriend(ctx)} disabled={accepting}
-                    className="arvo-btn arvo-btn--primary" style={{ fontSize: 11, padding: '4px 12px' }}
-                  >
-                    {accepting ? '…' : t.people.accept}
-                  </button>
-                </>
-              ) : (
-                <>
-                  <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg-soft)', flex: 1 }}>
-                    {ctx.friend_status === 'pending' ? t.people.inviteSentWaiting : t.people.connected}
-                  </span>
-                  <button
-                    type="button" onClick={() => unfriend(ctx)}
-                    style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: RED, background: 'none', border: 'none', cursor: 'pointer' }}
-                  >
-                    {t.people.remove}
-                  </button>
-                </>
-              )}
-            </div>
-          ))}
-          {isActive && contact.user_id && (() => {
-            const mine = friendContexts.find(c => c.direction === 'owned_by_me')
-            const auto = mine?.auto_accept_invites ?? false
-            return (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0 0' }}>
+      {/* Amizade direta — colapsada num único estado: uma conexão mútua gera
+          duas linhas em user_friends (uma por direção), então deduplicamos
+          pra mostrar só um status, não "Conectado / Remover" repetido. */}
+      {friendContexts.length > 0 && (() => {
+        const incomingPending = friendContexts.find(c => c.friend_status === 'pending' && c.direction === 'shared_with_me' && c.accept_token)
+        const mine = friendContexts.find(c => c.direction === 'owned_by_me')
+        const outgoingPending = friendContexts.find(c => c.friend_status === 'pending' && c.direction === 'owned_by_me')
+        const removable = mine ?? friendContexts[0]
+        const auto = mine?.auto_accept_invites ?? false
+
+        return (
+          <div style={{ borderTop: '1px solid var(--arvo-border-soft)', paddingTop: 14, marginBottom: 14 }}>
+            {incomingPending ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg-soft)', flex: 1 }}>
+                  {t.people.invitedYouConnect}
+                </span>
+                <button
+                  type="button" onClick={() => acceptFriend(incomingPending)} disabled={accepting}
+                  className="arvo-btn arvo-btn--primary" style={{ fontSize: 11, padding: '4px 12px' }}
+                >
+                  {accepting ? '…' : t.people.accept}
+                </button>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg-soft)' }}>
+                  {outgoingPending ? (
+                    <>
+                      <span style={{ width: 6, height: 6, borderRadius: 999, background: GOLD, flexShrink: 0 }} />
+                      {t.people.inviteSentWaiting}
+                    </>
+                  ) : (
+                    <>
+                      <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="#1F8A5B" strokeWidth="1.6">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 8.5l3.5 3.5L13 5" />
+                      </svg>
+                      {t.people.connected}
+                    </>
+                  )}
+                </span>
+                <button
+                  type="button" onClick={() => unfriend(removable)}
+                  style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 0' }}
+                  onMouseEnter={e => (e.currentTarget.style.color = RED)}
+                  onMouseLeave={e => (e.currentTarget.style.color = 'var(--arvo-fg-soft)')}
+                >
+                  {t.people.remove}
+                </button>
+              </div>
+            )}
+            {isActive && contact.user_id && !incomingPending && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 14, padding: '12px', borderRadius: 10, background: 'var(--arvo-hover-bg)' }}>
                 <Toggle
                   checked={auto} disabled={togglingAutoAccept}
                   onChange={() => toggleAutoAccept(mine ?? { type: 'friend', direction: 'owned_by_me', friend_id: 0, friend_status: 'active', auto_accept_invites: false })}
@@ -466,10 +482,10 @@ function ContactCard({
                   {t.people.autoAcceptLabel}
                 </span>
               </div>
-            )
-          })()}
-        </div>
-      )}
+            )}
+          </div>
+        )
+      })()}
 
       {/* Compartilhar viagem/categoria com esta pessoa */}
       <div style={{ borderTop: '1px solid var(--arvo-border-soft)', paddingTop: 14, display: 'flex', flexDirection: 'column', gap: 8 }}>
