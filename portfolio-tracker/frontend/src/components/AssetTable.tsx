@@ -341,8 +341,8 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
                                 const days = Math.floor((Date.now() - new Date(asset.last_manual_date).getTime()) / 86_400_000)
                                 if (days < 30) return null
                                 return (
-                                  <span className="text-[10px] text-amber-500 font-medium" title={`Último valor registrado há ${days} dias`}>
-                                    ⚠ desatualizado ({days}d)
+                                  <span className="text-[10px] text-amber-500 font-medium" title={t.assetDetail.staleDays.replace('{n}', String(days))}>
+                                    {t.assetDetail.staleBadge.replace('{n}', String(days))}
                                   </span>
                                 )
                               })()}

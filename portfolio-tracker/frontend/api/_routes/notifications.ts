@@ -2,7 +2,7 @@ import { Router, Response } from 'express'
 import { requireAuth, AuthRequest } from '../../../shared-api/src/middleware/auth.js'
 import { supabaseAdmin } from '../../../shared-api/src/lib/supabase.js'
 import { getActiveSubscriptions, getBudgetAlerts } from '../../../shared-api/src/routes/finances.js'
-import { getSplitWarnings } from './portfolio.js'
+import { getSplitWarnings, getStaleManualAssets } from './portfolio.js'
 import { getPendingGroupInvites } from '../../../shared-api/src/routes/shared.js'
 import { getPendingTripInvites, getRecentTripAdditions } from '../../../shared-api/src/routes/voyage.js'
 import { getPendingFriendInvites, getRecentFriendAcceptances } from '../../../shared-api/src/routes/people.js'
@@ -25,12 +25,13 @@ const NON_DISMISSIBLE_HISTORY_TYPES = new Set(['bank_connected', 'bank_connect_e
 router.get('/', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
 
-  const [achievementsRes, subsResult, notifDismissalsRes, budgetAlerts, splitWarnings, pendingInvites, pendingTripInvites, pendingFriendInvites, recentFriendAcceptances, recentTripAdditions] = await Promise.all([
+  const [achievementsRes, subsResult, notifDismissalsRes, budgetAlerts, splitWarnings, staleManualAssets, pendingInvites, pendingTripInvites, pendingFriendInvites, recentFriendAcceptances, recentTripAdditions] = await Promise.all([
     supabaseAdmin.from('achievements').select('achievement_key, earned_at').eq('user_id', userId).order('earned_at', { ascending: true }),
     getActiveSubscriptions(userId),
     supabaseAdmin.from('notification_dismissals').select('key, type, params, severity, link, occurred_at, dismissed_at').eq('user_id', userId),
     getBudgetAlerts(userId),
     getSplitWarnings(userId),
+    getStaleManualAssets(userId),
     getPendingGroupInvites(userId),
     getPendingTripInvites(userId),
     getPendingFriendInvites(userId),
@@ -104,6 +105,22 @@ router.get('/', requireAuth, async (req, res: Response) => {
       params: { code: w.code, ratio: w.splits.map(s => s.ratio).join(', ') },
       link: `/assets/${w.asset_id}`,
       occurred_at: w.splits[w.splits.length - 1]?.date ?? new Date().toISOString(),
+      dismissed_at: null,
+      dismissible: true,
+    })
+  }
+
+  // Category 16: manual assets stale 30+ days -> active (unless dismissed for this staleness period)
+  for (const s of staleManualAssets) {
+    const key = `stale_manual_asset:${s.asset_id}:${s.last_manual_date}`
+    if (dismissedKeys.has(key)) continue
+    active.push({
+      key,
+      type: 'stale_manual_asset',
+      severity: 'warning',
+      params: { code: s.code, days: s.days },
+      link: `/assets/${s.asset_id}`,
+      occurred_at: s.last_manual_date,
       dismissed_at: null,
       dismissible: true,
     })

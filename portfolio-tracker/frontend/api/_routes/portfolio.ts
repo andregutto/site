@@ -293,6 +293,53 @@ export async function getSplitWarnings(userId: string): Promise<SplitWarning[]> 
   return warnings
 }
 
+// All manual assets whose last registered value is 30+ days old (cached 6h —
+// shorter than split-check since this changes daily, not just on corporate actions).
+export interface StaleManualAsset {
+  asset_id: number
+  code: string
+  days: number
+  last_manual_date: string
+}
+
+export async function getStaleManualAssets(userId: string): Promise<StaleManualAsset[]> {
+  const cacheKey = `portfolio:stale-manual:${userId}`
+  const cached = cache.get<StaleManualAsset[]>(cacheKey)
+  if (cached) return cached
+
+  const { data: assets } = await supabaseAdmin
+    .from('assets')
+    .select('id, code')
+    .eq('user_id', userId)
+    .eq('active', true)
+    .eq('asset_type', 'manual')
+
+  if (!assets?.length) return []
+
+  const { data: manualValues } = await supabaseAdmin
+    .from('manual_values')
+    .select('asset_id, ref_date')
+    .in('asset_id', assets.map(a => a.id))
+    .order('ref_date', { ascending: false })
+
+  const lastDateByAsset: Record<number, string> = {}
+  for (const mv of (manualValues ?? [])) {
+    if (!lastDateByAsset[mv.asset_id]) lastDateByAsset[mv.asset_id] = mv.ref_date
+  }
+
+  const stale: StaleManualAsset[] = []
+  const now = Date.now()
+  for (const asset of assets) {
+    const lastDate = lastDateByAsset[asset.id]
+    if (!lastDate) continue
+    const days = Math.floor((now - new Date(lastDate).getTime()) / 86_400_000)
+    if (days >= 30) stale.push({ asset_id: asset.id, code: asset.code as string, days, last_manual_date: lastDate })
+  }
+
+  cache.set(cacheKey, stale, 6 * 60 * 60 * 1000)
+  return stale
+}
+
 // GET /api/portfolio/split-check
 router.get('/split-check', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest

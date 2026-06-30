@@ -16,6 +16,7 @@ export const TYPE_ICONS: Record<string, IconName> = {
   bank_connected: 'bank',
   bank_connect_error: 'alert',
   split_warning: 'scissors',
+  stale_manual_asset: 'clock',
   budget_alert: 'wallet',
   shared_category_alert: 'users',
   home_prompt: 'home',
@@ -68,6 +69,11 @@ export function resolveNotificationText(item: NotificationItem, t: any, locale: 
       const code = String(item.params.code ?? '')
       const ratio = String(item.params.ratio ?? '')
       return { title: n.type_split_warning.replace('{code}', code).replace('{ratio}', ratio) }
+    }
+    case 'stale_manual_asset': {
+      const code = String(item.params.code ?? '')
+      const days = String(item.params.days ?? '')
+      return { title: n.type_stale_manual_asset.replace('{code}', code).replace('{n}', days) }
     }
     case 'shared_group_invite': {
       const inviter = String(item.params.inviter_name ?? '')

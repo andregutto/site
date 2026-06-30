@@ -584,7 +584,8 @@
     "type_friend_accepted": "{friend} accepted your invite",
     "type_friend_invite_accepted": "You connected with {inviter}",
     "type_trip_invite": "{inviter} invited you to the trip \"{trip}\"",
-    "type_trip_added": "{inviter} added you to the trip \"{trip}\""
+    "type_trip_added": "{inviter} added you to the trip \"{trip}\"",
+    "type_stale_manual_asset": "Update {code}'s value — stale for {n} days"
   },
   "finances": {
     "navOverview": "Overview",
@@ -1430,7 +1431,8 @@
     "splitSubmit": "Register",
     "splitSuccess": "Event registered successfully",
     "periodGain": "Period gain/loss",
-    "periodAll": "Since inception"
+    "periodAll": "Since inception",
+    "staleBadge": "⚠ stale ({n}d)"
   },
   "dividends": {
     "title": "Dividends",
