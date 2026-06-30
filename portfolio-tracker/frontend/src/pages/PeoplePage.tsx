@@ -65,8 +65,34 @@ interface Group { id: number; name: string }
 interface MomentOption { id: number; name: string }
 interface UserSuggestion { user_id: string; username: string; name?: string; avatar_url?: string }
 
+// Toggle estilo iOS — usado no lugar de <input type="checkbox"> (que destoa
+// do resto do app, sempre estilizado com pills/switches próprios).
+function Toggle({ checked, disabled, onChange }: { checked: boolean; disabled?: boolean; onChange: () => void }) {
+  return (
+    <button
+      type="button" role="switch" aria-checked={checked}
+      onClick={onChange} disabled={disabled}
+      style={{
+        position: 'relative', width: 36, height: 21, borderRadius: 999, flexShrink: 0,
+        border: 'none', cursor: disabled ? 'default' : 'pointer', padding: 0,
+        background: checked ? RED : 'var(--arvo-border)',
+        opacity: disabled ? 0.5 : 1,
+        transition: 'background 180ms ease',
+      }}
+    >
+      <span style={{
+        position: 'absolute', top: 2, left: checked ? 17 : 2,
+        width: 17, height: 17, borderRadius: '50%', background: '#fff',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.25)',
+        transition: 'left 180ms cubic-bezier(0.4, 0, 0.2, 1)',
+      }} />
+    </button>
+  )
+}
+
 // ── Etiqueta de direção ───────────────────────────────────────────────────────
 function DirectionTag({ direction }: { direction: Direction }) {
+  const { t } = useI18n()
   if (direction === 'shared_with_me') return (
     <span style={{
       fontFamily: 'var(--arvo-font-display)', fontSize: 8.5, letterSpacing: '0.14em',
@@ -74,7 +100,7 @@ function DirectionTag({ direction }: { direction: Direction }) {
       background: 'var(--arvo-hover-bg)', padding: '2px 6px', borderRadius: 4,
       flexShrink: 0,
     }}>
-      convidado
+      {t.people.invited}
     </span>
   )
   return null
@@ -91,6 +117,7 @@ function ContactCard({
   onFriendChanged: () => void
 }) {
   const navigate = useNavigate()
+  const { t } = useI18n()
   const [expanded, setExpanded] = useState(false)
   const [removing, setRemoving] = useState<number | null>(null)
   const [accepting, setAccepting] = useState(false)
@@ -101,7 +128,7 @@ function ContactCard({
   const [shareError, setShareError] = useState('')
 
   async function removeTrip(ctx: TripContext) {
-    if (!confirm(`Remover acesso de ${contact.email} à viagem "${ctx.trip_title}"?`)) return
+    if (!confirm(t.people.removeTripConfirm.replace('{email}', contact.email).replace('{title}', ctx.trip_title))) return
     setRemoving(ctx.member_id)
     try {
       await apiFetch(`/voyage/trips/${ctx.trip_id}/members/${ctx.member_id}`, { method: 'DELETE' })
@@ -112,7 +139,7 @@ function ContactCard({
   }
 
   async function removeMoment(ctx: MomentContext) {
-    if (!confirm(`Remover acesso de ${contact.email} ao momento "${ctx.moment_name}"? As transações dele(a) neste momento serão apagadas.`)) return
+    if (!confirm(t.people.removeMomentConfirm.replace('{email}', contact.email).replace('{name}', ctx.moment_name))) return
     setRemoving(ctx.member_id)
     try {
       await apiFetch(`/finances/moments/${ctx.moment_id}/members/${ctx.member_id}`, { method: 'DELETE' })
@@ -134,7 +161,7 @@ function ContactCard({
   }
 
   async function unfriend(ctx: FriendContext) {
-    if (!confirm(`Remover ${contact.email} de pessoas? Isso revoga todo compartilhamento (viagens, momentos e categorias) entre vocês.`)) return
+    if (!confirm(t.people.removeFriendConfirm.replace('{email}', contact.email))) return
     await apiFetch(`/people/friends/${ctx.friend_id}`, { method: 'DELETE' })
     onFriendChanged()
   }
@@ -168,7 +195,7 @@ function ContactCard({
       setShareTarget('')
       onFriendChanged()
     } catch (ex: unknown) {
-      setShareError((ex as Error).message ?? 'Erro ao compartilhar')
+      setShareError((ex as Error).message ?? t.people.shareErrorDefault)
     } finally {
       setSharing(false)
     }
@@ -226,7 +253,7 @@ function ContactCard({
             fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.22em',
             textTransform: 'uppercase', color: 'var(--arvo-fg-muted)', marginBottom: 10,
           }}>
-            Viagens
+            {t.people.sectionTrips}
           </p>
           {tripContexts.map(ctx => (
             <div key={ctx.member_id} style={{
@@ -250,7 +277,7 @@ function ContactCard({
                   fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.16em',
                   textTransform: 'uppercase', color: GOLD,
                 }}>
-                  pendente
+                  {t.people.pending}
                 </span>
               )}
               {ctx.direction === 'owned_by_me' ? (
@@ -264,7 +291,7 @@ function ContactCard({
                     opacity: removing === ctx.member_id ? 0.4 : 1, padding: '2px 0',
                   }}
                 >
-                  {removing === ctx.member_id ? '…' : 'Remover'}
+                  {removing === ctx.member_id ? '…' : t.people.remove}
                 </button>
               ) : (
                 <button
@@ -275,7 +302,7 @@ function ContactCard({
                     background: 'none', border: 'none', cursor: 'pointer', flexShrink: 0, padding: '2px 0',
                   }}
                 >
-                  Ver →
+                  {t.people.view}
                 </button>
               )}
             </div>
@@ -290,7 +317,7 @@ function ContactCard({
             fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.22em',
             textTransform: 'uppercase', color: 'var(--arvo-fg-muted)', marginBottom: 10,
           }}>
-            Finanças
+            {t.people.sectionFinances}
           </p>
           {financeContexts.map(ctx => (
             <div key={ctx.member_id} style={{
@@ -313,7 +340,7 @@ function ContactCard({
                   fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.16em',
                   textTransform: 'uppercase', color: GOLD,
                 }}>
-                  pendente
+                  {t.people.pending}
                 </span>
               )}
               <button
@@ -324,7 +351,7 @@ function ContactCard({
                   background: 'none', border: 'none', cursor: 'pointer', flexShrink: 0, padding: '2px 0',
                 }}
               >
-                {ctx.direction === 'owned_by_me' ? 'Gerir →' : 'Ver →'}
+                {ctx.direction === 'owned_by_me' ? t.people.manage : t.people.view}
               </button>
             </div>
           ))}
@@ -338,7 +365,7 @@ function ContactCard({
             fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.22em',
             textTransform: 'uppercase', color: 'var(--arvo-fg-muted)', marginBottom: 10,
           }}>
-            Momentos compartilhados
+            {t.people.sectionMoments}
           </p>
           {momentContexts.map(ctx => (
             <div key={ctx.member_id} style={{
@@ -361,7 +388,7 @@ function ContactCard({
                   fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.16em',
                   textTransform: 'uppercase', color: GOLD,
                 }}>
-                  pendente
+                  {t.people.pending}
                 </span>
               )}
               {ctx.direction === 'owned_by_me' ? (
@@ -375,7 +402,7 @@ function ContactCard({
                     opacity: removing === ctx.member_id ? 0.4 : 1, padding: '2px 0',
                   }}
                 >
-                  {removing === ctx.member_id ? '…' : 'Remover'}
+                  {removing === ctx.member_id ? '…' : t.people.remove}
                 </button>
               ) : (
                 <button
@@ -386,7 +413,7 @@ function ContactCard({
                     background: 'none', border: 'none', cursor: 'pointer', flexShrink: 0, padding: '2px 0',
                   }}
                 >
-                  Ver →
+                  {t.people.view}
                 </button>
               )}
             </div>
@@ -402,25 +429,25 @@ function ContactCard({
               {ctx.friend_status === 'pending' && ctx.direction === 'shared_with_me' ? (
                 <>
                   <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg-soft)', flex: 1 }}>
-                    Convidou você para se conectar
+                    {t.people.invitedYouConnect}
                   </span>
                   <button
                     type="button" onClick={() => acceptFriend(ctx)} disabled={accepting}
                     className="arvo-btn arvo-btn--primary" style={{ fontSize: 11, padding: '4px 12px' }}
                   >
-                    {accepting ? '…' : 'Aceitar'}
+                    {accepting ? '…' : t.people.accept}
                   </button>
                 </>
               ) : (
                 <>
                   <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg-soft)', flex: 1 }}>
-                    {ctx.friend_status === 'pending' ? 'Convite enviado, aguardando' : 'Conectado'}
+                    {ctx.friend_status === 'pending' ? t.people.inviteSentWaiting : t.people.connected}
                   </span>
                   <button
                     type="button" onClick={() => unfriend(ctx)}
                     style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: RED, background: 'none', border: 'none', cursor: 'pointer' }}
                   >
-                    Remover
+                    {t.people.remove}
                   </button>
                 </>
               )}
@@ -430,16 +457,15 @@ function ContactCard({
             const mine = friendContexts.find(c => c.direction === 'owned_by_me')
             const auto = mine?.auto_accept_invites ?? false
             return (
-              <label style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 0 0', cursor: 'pointer' }}>
-                <input
-                  type="checkbox" checked={auto} disabled={togglingAutoAccept}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0 0' }}>
+                <Toggle
+                  checked={auto} disabled={togglingAutoAccept}
                   onChange={() => toggleAutoAccept(mine ?? { type: 'friend', direction: 'owned_by_me', friend_id: 0, friend_status: 'active', auto_accept_invites: false })}
-                  style={{ accentColor: 'var(--arvo-fg)' }}
                 />
-                <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-soft)' }}>
-                  Aceitar convites automaticamente desta pessoa (viagens, momentos, categorias)
+                <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-soft)', lineHeight: 1.4 }}>
+                  {t.people.autoAcceptLabel}
                 </span>
-              </label>
+              </div>
             )
           })()}
         </div>
@@ -454,28 +480,28 @@ function ContactCard({
               onChange={e => setShareTarget(e.target.value ? Number(e.target.value) : '')}
               style={{ flex: 1, fontSize: 12.5, padding: '6px 8px', borderRadius: 8, border: '1px solid var(--arvo-border)', background: 'var(--arvo-surface)', color: 'var(--arvo-fg)' }}
             >
-              <option value="">{shareMode === 'trip' ? 'Selecione a viagem' : shareMode === 'moment' ? 'Selecione o momento' : 'Selecione a categoria'}</option>
+              <option value="">{shareMode === 'trip' ? t.people.selectTrip : shareMode === 'moment' ? t.people.selectMoment : t.people.selectCategory}</option>
               {(shareMode === 'trip' ? trips : shareMode === 'moment' ? moments : groups).map(item => (
                 <option key={item.id} value={item.id}>{'title' in item ? item.title : item.name}</option>
               ))}
             </select>
             <button type="button" onClick={confirmShare} disabled={sharing || shareTarget === ''} className="arvo-btn arvo-btn--primary" style={{ fontSize: 11, padding: '5px 12px' }}>
-              {sharing ? '…' : 'Convidar'}
+              {sharing ? '…' : t.people.inviteCta}
             </button>
             <button type="button" onClick={() => { setShareMode(null); setShareError('') }} style={{ fontSize: 11, color: 'var(--arvo-fg-soft)', background: 'none', border: 'none', cursor: 'pointer' }}>
-              Cancelar
+              {t.people.cancel}
             </button>
           </div>
         ) : (
           <div style={{ display: 'flex', gap: 16 }}>
             <button type="button" onClick={() => setShareMode('trip')} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-muted)', background: 'none', border: 'none', cursor: 'pointer' }}>
-              + Compartilhar viagem
+              {t.people.shareTrip}
             </button>
             <button type="button" onClick={() => setShareMode('group')} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-muted)', background: 'none', border: 'none', cursor: 'pointer' }}>
-              + Compartilhar categoria
+              {t.people.shareCategory}
             </button>
             <button type="button" onClick={() => setShareMode('moment')} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-muted)', background: 'none', border: 'none', cursor: 'pointer' }}>
-              + Compartilhar momento
+              {t.people.shareMoment}
             </button>
           </div>
         )}
@@ -507,7 +533,7 @@ export default function PeoplePage() {
       const data = await apiFetch<{ contacts: Contact[] }>('/people')
       setContacts(data.contacts)
     } catch (ex: unknown) {
-      setLoadError((ex as Error).message ?? 'Erro ao carregar pessoas')
+      setLoadError((ex as Error).message ?? t.people.loadErrorDefault)
     } finally {
       setLoading(false)
     }
@@ -543,7 +569,7 @@ export default function PeoplePage() {
       setShowSuggestions(false)
       load()
     } catch (ex: unknown) {
-      setInviteError((ex as Error).message ?? 'Erro ao convidar')
+      setInviteError((ex as Error).message ?? t.people.inviteErrorDefault)
     } finally {
       setInviting(false)
     }
@@ -596,7 +622,7 @@ export default function PeoplePage() {
                 background: 'rgba(31,138,91,0.08)', padding: '2px 10px', borderRadius: 999,
                 border: '1px solid rgba(31,138,91,0.16)',
               }}>
-                {activeCount} ativ{activeCount === 1 ? 'o' : 'os'}
+                {(activeCount === 1 ? t.people.nActiveOne : t.people.nActiveMany).replace('{n}', String(activeCount))}
               </span>
             )}
             {pendingCount > 0 && (
@@ -605,7 +631,7 @@ export default function PeoplePage() {
                 background: 'rgba(200,184,154,0.10)', padding: '2px 10px', borderRadius: 999,
                 border: '1px solid rgba(200,184,154,0.20)',
               }}>
-                {pendingCount} pendente{pendingCount !== 1 ? 's' : ''}
+                {(pendingCount === 1 ? t.people.nPendingOne : t.people.nPendingMany).replace('{n}', String(pendingCount))}
               </span>
             )}
           </div>
@@ -615,7 +641,7 @@ export default function PeoplePage() {
       {/* Convidar amigo */}
       <form onSubmit={handleInvite} style={{ display: 'flex', gap: 8, marginBottom: 8, position: 'relative' }}>
         <input
-          type="text" required placeholder="email@exemplo.com ou @usuario"
+          type="text" required placeholder={t.people.inviteFormPlaceholder}
           value={inviteEmail}
           onChange={e => setInviteEmail(e.target.value)}
           onFocus={() => setShowSuggestions(true)}
@@ -627,7 +653,7 @@ export default function PeoplePage() {
           }}
         />
         <button type="submit" disabled={inviting} className="arvo-btn arvo-btn--primary" style={{ flexShrink: 0 }}>
-          {inviting ? '…' : '+ Convidar'}
+          {inviting ? '…' : t.people.inviteFormButton}
         </button>
 
         {showSuggestions && suggestions.length > 0 && (
@@ -665,10 +691,10 @@ export default function PeoplePage() {
           background: 'rgba(214,59,47,0.06)', display: 'flex', flexDirection: 'column', gap: 10,
         }}>
           <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: RED }}>
-            Não foi possível carregar suas pessoas: {loadError}
+            {t.people.loadErrorPrefix} {loadError}
           </p>
           <button type="button" onClick={() => load()} className="arvo-btn arvo-btn--primary" style={{ alignSelf: 'flex-start', fontSize: 12 }}>
-            Tentar de novo
+            {t.people.retry}
           </button>
         </div>
       ) : loading ? (
@@ -695,13 +721,13 @@ export default function PeoplePage() {
             fontFamily: 'var(--arvo-font-display)', fontSize: 20, letterSpacing: '0.06em',
             color: 'var(--arvo-fg-muted)', textAlign: 'center',
           }}>
-            Nenhuma conexão ainda
+            {t.people.emptyTitle}
           </p>
           <p style={{
             fontFamily: 'var(--arvo-font-serif)', fontStyle: 'italic', fontSize: 14,
             color: GOLD, textAlign: 'center', maxWidth: 300, lineHeight: 1.6,
           }}>
-            Convide alguém pelo e-mail acima para começar.
+            {t.people.emptyBody}
           </p>
         </div>
       ) : (
