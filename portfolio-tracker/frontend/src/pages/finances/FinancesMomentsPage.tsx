@@ -9,6 +9,7 @@ import { Icon } from '../../components/icons'
 import { MOMENT_ICON_KEYS, resolveMomentIcon } from '../../lib/momentIcons'
 import Avatar from '../voyage/_shared/Avatar'
 import { RoleChip, StatusChip } from '../voyage/_shared/Chips'
+import PendingInvitesBanner from '../../components/PendingInvitesBanner'
 
 const RED = '#D63B2F'
 const USER_COLORS = ['#1B4FD8', '#A36A52', '#E8A020', '#1F8A5B', '#C8B89A']
@@ -1001,6 +1002,8 @@ export default function FinancesMomentsPage() {
           + {t.finances.newMoment}
         </button>
       </div>
+
+      <PendingInvitesBanner types={['moment_invite']} />
 
       {/* Create/edit form */}
       {showForm && (

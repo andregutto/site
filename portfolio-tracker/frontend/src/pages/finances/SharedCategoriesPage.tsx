@@ -5,6 +5,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { useCurrency } from '../../contexts/CurrencyContext'
 import { Icon } from '../../components/icons'
 import VoyageAvatar from '../voyage/_shared/Avatar'
+import PendingInvitesBanner from '../../components/PendingInvitesBanner'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -161,6 +162,8 @@ export default function SharedCategoriesPage() {
           {s.newGroup}
         </button>
       </div>
+
+      <PendingInvitesBanner types={['shared_group_invite']} />
 
       {groups.length === 0 ? (
         <EmptyState s={s} onNew={() => setShowGroupModal('new')} />

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { apiFetch } from '../../lib/api'
 import { useI18n } from '../../contexts/I18nContext'
 import TripFormModal from './TripFormModal'
+import PendingInvitesBanner from '../../components/PendingInvitesBanner'
 import MomentPickerModal from './MomentPickerModal'
 import type { Trip } from './types'
 
@@ -164,6 +165,8 @@ export default function VoyageTripsPage() {
           {tv.addTrip ?? 'Adicionar viagem'}
         </button>
       </div>
+
+      <PendingInvitesBanner types={['trip_invite']} />
 
       {/* Filter pills */}
       {!loading && trips.length > 0 && (
