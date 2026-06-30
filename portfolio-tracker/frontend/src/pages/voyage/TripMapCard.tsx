@@ -8,6 +8,9 @@ import { useTheme } from '../../contexts/ThemeContext'
 import { useI18n } from '../../contexts/I18nContext'
 import { dayColor, dayColorWash } from './_shared/dayColors'
 import OpeningHoursBlock from './_shared/OpeningHours'
+import CurrentLocationMarker from './_shared/CurrentLocationMarker'
+import { useCurrentLocation } from './_shared/useCurrentLocation'
+import { openDirections } from './_shared/googleMapsRoute'
 
 delete (L.Icon.Default.prototype as any)._getIconUrl
 L.Icon.Default.mergeOptions({
@@ -162,6 +165,7 @@ export default function TripMapCard({ tripId, refreshKey, selectedDay: selectedD
   // "engasgar" sempre que o cursor passava por cima (a roda zoomava o mapa
   // em vez de rolar a página, de forma inconsistente).
   const [mapActive, setMapActive] = useState(false)
+  const currentLocation = useCurrentLocation()
 
   const load = useCallback(async () => {
     try {
@@ -222,9 +226,28 @@ export default function TripMapCard({ tripId, refreshKey, selectedDay: selectedD
         </div>
       </div>
 
-      {/* Filtro por dia */}
+      {/* Filtro por dia + roteiro no Google Maps */}
       {(days.length > 1 || hasUndated) && (
-        <div style={{ display: 'flex', gap: 6, marginBottom: 10, flexWrap: 'wrap', overflowX: 'auto' }}>
+        <div style={{ display: 'flex', gap: 6, marginBottom: 10, flexWrap: 'wrap', alignItems: 'center', overflowX: 'auto' }}>
+          {selectedDay !== null && selectedDay !== 'none' && visibleCoords.length > 1 && (
+            <button
+              type="button"
+              onClick={() => openDirections(visibleCoords.map(p => ({ lat: p.lat!, lng: p.lng! })), currentLocation)}
+              title={tv.openDayRoute ?? 'Abrir roteiro deste dia no Google Maps'}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0, cursor: 'pointer',
+                fontFamily: 'var(--arvo-font-body)', fontSize: 10.5,
+                padding: '3px 9px', borderRadius: 999, marginRight: 2,
+                border: `1px solid ${dayColor(selectedDay)}`,
+                background: dayColorWash(selectedDay, 10), color: dayColor(selectedDay),
+              }}
+            >
+              <svg width="11" height="11" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <path strokeLinecap="round" d="M5 2H2a1 1 0 00-1 1v8a1 1 0 001 1h8a1 1 0 001-1V8M8 1h4m0 0v4m0-4L5.5 7.5" />
+              </svg>
+              {tv.openDayRouteShort ?? 'Roteiro no Maps'}
+            </button>
+          )}
           <button
             type="button" onClick={() => setSelectedDay(null)}
             style={{
@@ -321,6 +344,7 @@ export default function TripMapCard({ tripId, refreshKey, selectedDay: selectedD
               }
             />
             <FitBounds places={visibleCoords} />
+            <CurrentLocationMarker />
             {visibleCoords.map(p => (
               <Marker
                 key={p.id} position={[p.lat!, p.lng!]}

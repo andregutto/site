@@ -9,6 +9,9 @@ import LanguageSelector from '../../components/LanguageSelector'
 import ArvoLoader from '../../components/ArvoLoader'
 import { dayColor, dayColorWash } from './_shared/dayColors'
 import OpeningHoursBlock from './_shared/OpeningHours'
+import CurrentLocationMarker from './_shared/CurrentLocationMarker'
+import { useCurrentLocation } from './_shared/useCurrentLocation'
+import { openDirections } from './_shared/googleMapsRoute'
 
 function intlLocaleFor(locale: string) {
   return locale === 'pt' ? 'pt-BR' : locale === 'fr' ? 'fr-FR' : 'en-US'
@@ -338,16 +341,32 @@ function ConnectorRow({ p }: { p: PublicPlace }) {
   )
 }
 
-function PlaceGroup({ day, places, staysPassingThrough = [], selectedPlaceId, onSelectPlace }: { day: number | null; places: PublicPlace[]; staysPassingThrough?: PublicPlace[]; selectedPlaceId?: number | null; onSelectPlace?: (id: number | null) => void }) {
+function PlaceGroup({ day, places, staysPassingThrough = [], selectedPlaceId, onSelectPlace, currentLocation }: { day: number | null; places: PublicPlace[]; staysPassingThrough?: PublicPlace[]; selectedPlaceId?: number | null; onSelectPlace?: (id: number | null) => void; currentLocation?: { lat: number; lng: number } | null }) {
   const { t } = useI18n()
   const tv = (t as any).voyage ?? {}
+  const routeStops = places.filter(p => p.kind !== 'transport' && p.kind !== 'note' && p.lat != null && p.lng != null)
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 10, marginTop: 4 }}>
-        {day !== null && <span style={{ width: 7, height: 7, borderRadius: 999, background: dayColor(day), flexShrink: 0 }} />}
-        <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 14, letterSpacing: '0.16em', textTransform: 'uppercase', color: day !== null ? dayColor(day) : 'var(--arvo-fg-muted)' }}>
-          {day !== null ? (tv.public?.dayLabel ?? 'Day {n}').replace('{n}', String(day)) : (tv.public?.noDayLabel ?? 'No day')}
-        </p>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 7, marginBottom: 10, marginTop: 4 }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+          {day !== null && <span style={{ width: 7, height: 7, borderRadius: 999, background: dayColor(day), flexShrink: 0 }} />}
+          <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 14, letterSpacing: '0.16em', textTransform: 'uppercase', color: day !== null ? dayColor(day) : 'var(--arvo-fg-muted)' }}>
+            {day !== null ? (tv.public?.dayLabel ?? 'Day {n}').replace('{n}', String(day)) : (tv.public?.noDayLabel ?? 'No day')}
+          </p>
+        </span>
+        {routeStops.length > 1 && (
+          <button
+            type="button"
+            onClick={() => openDirections(routeStops.map(p => ({ lat: p.lat!, lng: p.lng! })), currentLocation)}
+            title={tv.public?.openDayRoute ?? 'Open this day\'s route in Google Maps'}
+            style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0, cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 10.5, padding: '3px 9px', borderRadius: 999, border: `1px solid ${day !== null ? dayColor(day) : 'var(--arvo-border)'}`, background: day !== null ? dayColorWash(day, 10) : 'transparent', color: day !== null ? dayColor(day) : 'var(--arvo-fg-soft)' }}
+          >
+            <svg width="10" height="10" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path strokeLinecap="round" d="M5 2H2a1 1 0 00-1 1v8a1 1 0 001 1h8a1 1 0 001-1V8M8 1h4m0 0v4m0-4L5.5 7.5" />
+            </svg>
+            {tv.public?.openDayRouteShort ?? 'Route in Maps'}
+          </button>
+        )}
       </div>
       {staysPassingThrough.map(s => (
         <p key={s.id} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-muted)', marginBottom: 6 }}>
@@ -387,6 +406,7 @@ export default function PublicTripPage() {
   // grande "engasgava" o scroll da página sempre que o cursor passava por
   // cima (a roda zoomava o mapa em vez de rolar a página).
   const [mapActive, setMapActive] = useState(false)
+  const currentLocation = useCurrentLocation()
 
   useEffect(() => {
     if (!token) return
@@ -729,10 +749,11 @@ export default function PublicTripPage() {
                     staysPassingThrough={staysOnDay(d).filter(s => s.checkin_day !== d && (s.checkout_day === d || !isLogisticalStay(s.category)))}
                     selectedPlaceId={selectedPlaceId}
                     onSelectPlace={setSelectedPlaceId}
+                    currentLocation={currentLocation}
                   />
                 ))}
                 {undated.length > 0 && (
-                  <PlaceGroup day={null} places={undated} selectedPlaceId={selectedPlaceId} onSelectPlace={setSelectedPlaceId} />
+                  <PlaceGroup day={null} places={undated} selectedPlaceId={selectedPlaceId} onSelectPlace={setSelectedPlaceId} currentLocation={currentLocation} />
                 )}
               </div>
 
@@ -764,6 +785,7 @@ export default function PublicTripPage() {
                             : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'}
                         />
                         <FitBounds places={visibleCoords} />
+                        <CurrentLocationMarker />
                         {visibleCoords.map(p => (
                           <Marker
                             key={p.id} position={[p.lat!, p.lng!]}

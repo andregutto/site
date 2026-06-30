@@ -4,6 +4,8 @@ import { useI18n } from '../../contexts/I18nContext'
 import { LibraryPicker } from './TripPlacesPanel'
 import PlaceExpensesPanel from './PlaceExpensesPanel'
 import { dayColor, dayColorWash } from './_shared/dayColors'
+import { useCurrentLocation } from './_shared/useCurrentLocation'
+import { openDirections } from './_shared/googleMapsRoute'
 import type { TripDestination } from './types'
 
 const RED  = '#D63B2F'
@@ -295,7 +297,7 @@ function NoteEditor({ value, onSave, placeholder }: { value: string | null; onSa
 const LONG_PRESS_MS = 380
 const MOVE_CANCEL_PX = 8
 
-function ItemRow({ item, tripId, canEdit, dragging, dropTarget, destinations, autoOpenStay, selected, onSelect, onStartDrag, onPatch, onDelete, onReload }: {
+function ItemRow({ item, tripId, canEdit, dragging, dropTarget, destinations, autoOpenStay, selected, onSelect, onStartDrag, onPatch, onDelete, onReload, routeMode, routeSelected, onToggleRoute }: {
   item: PlanItem
   tripId: number
   canEdit: boolean
@@ -309,6 +311,9 @@ function ItemRow({ item, tripId, canEdit, dragging, dropTarget, destinations, au
   onPatch: (fields: Record<string, unknown>) => void
   onDelete: () => void
   onReload: () => void
+  routeMode?: boolean
+  routeSelected?: boolean
+  onToggleRoute?: () => void
 }) {
   const { t } = useI18n()
   const tv = (t as any).voyage ?? {}
@@ -439,6 +444,17 @@ function ItemRow({ item, tripId, canEdit, dragging, dropTarget, destinations, au
       }}
     >
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '8px 10px' }}>
+        {/* Route-selection checkbox — only while "select for route" mode is on */}
+        {routeMode && isPlace && item.lat != null && item.lng != null && (
+          <button
+            type="button"
+            onClick={onToggleRoute}
+            title="Incluir no roteiro do Google Maps"
+            style={{ marginTop: 2, flexShrink: 0, width: 18, height: 18, borderRadius: 4, border: `1.5px solid ${routeSelected ? RED : 'var(--arvo-border)'}`, background: routeSelected ? RED : 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          >
+            {routeSelected && <span style={{ fontSize: 10, color: '#fff' }}>✓</span>}
+          </button>
+        )}
         {/* Visited toggle (places only) */}
         {canEdit && isPlace && (
           <button
@@ -824,6 +840,17 @@ export default function TripItineraryPanel({ tripId, tripCity, tripCountry, trip
   const [showToolMenu, setShowToolMenu] = useState(false)
   const [pendingStayItemId, setPendingStayItemId] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
+  // Modo "selecionar lugares para roteiro": junta lugares de qualquer dia
+  // (na ordem em que foram marcados) pra abrir uma rota custom no Google
+  // Maps — complementa o botão "roteiro do dia" para quando o usuário quer
+  // misturar dias ou só uma parte deles.
+  const [routeMode, setRouteMode] = useState(false)
+  const [routeSelection, setRouteSelection] = useState<number[]>([])
+  const currentLocation = useCurrentLocation(routeMode)
+
+  function toggleRouteSelection(id: number) {
+    setRouteSelection(sel => sel.includes(id) ? sel.filter(x => x !== id) : [...sel, id])
+  }
 
   // Pointer-events-based drag (works with mouse AND touch, unlike native HTML5
   // drag-and-drop which iOS/Android browsers don't support via touch).
@@ -986,8 +1013,18 @@ export default function TripItineraryPanel({ tripId, tripCity, tripCountry, trip
         onPatch={f => patchItem(it.id, f)}
         onDelete={() => setItems(ps => ps.filter(x => x.id !== it.id))}
         onReload={load}
+        routeMode={routeMode}
+        routeSelected={routeSelection.includes(it.id)}
+        onToggleRoute={() => toggleRouteSelection(it.id)}
       />
     ))
+  }
+
+  function openDayRoute(d: number) {
+    const dayPlaces = items
+      .filter(p => p.day_number === d && p.kind === 'place' && p.lat != null && p.lng != null)
+      .slice().sort((a, b) => a.sort_order - b.sort_order)
+    openDirections(dayPlaces.map(p => ({ lat: p.lat!, lng: p.lng! })), currentLocation)
   }
 
   return (
@@ -999,11 +1036,20 @@ export default function TripItineraryPanel({ tripId, tripCity, tripCountry, trip
         {/* "+ Adicionar" fino ao lado do título — antes era uma linha cheia
             abaixo (botão grande + link "Biblioteca →" redundante com ele),
             ocupando altura à toa. */}
-        {canEdit && activeTool === null && !showToolMenu && (
-          <button type="button" onClick={() => setShowToolMenu(true)}
-            style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: 'var(--arvo-font-body)', fontSize: 11, letterSpacing: '0.02em', padding: '4px 10px', borderRadius: 999, background: 'none', border: '1px solid var(--arvo-border)', color: 'var(--arvo-fg-muted)', cursor: 'pointer' }}>
-            {tv.actions?.add ?? '+ Adicionar'}
-          </button>
+        {activeTool === null && !showToolMenu && (
+          <div style={{ display: 'flex', gap: 6 }}>
+            <button type="button" onClick={() => { setRouteMode(v => !v); if (routeMode) setRouteSelection([]) }}
+              title="Selecionar lugares para montar um roteiro no Google Maps"
+              style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: 'var(--arvo-font-body)', fontSize: 11, letterSpacing: '0.02em', padding: '4px 10px', borderRadius: 999, background: routeMode ? 'rgba(214,59,47,0.10)' : 'none', border: `1px solid ${routeMode ? RED : 'var(--arvo-border)'}`, color: routeMode ? RED : 'var(--arvo-fg-muted)', cursor: 'pointer' }}>
+              {routeMode ? 'Cancelar seleção' : 'Selecionar lugares'}
+            </button>
+            {canEdit && (
+              <button type="button" onClick={() => setShowToolMenu(true)}
+                style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: 'var(--arvo-font-body)', fontSize: 11, letterSpacing: '0.02em', padding: '4px 10px', borderRadius: 999, background: 'none', border: '1px solid var(--arvo-border)', color: 'var(--arvo-fg-muted)', cursor: 'pointer' }}>
+                {tv.actions?.add ?? '+ Adicionar'}
+              </button>
+            )}
+          </div>
         )}
       </div>
 
@@ -1081,12 +1127,23 @@ export default function TripItineraryPanel({ tripId, tripCity, tripCountry, trip
                     )}
                   </p>
                 </span>
-                {canEdit && items.some(p => p.day_number === d && p.arrive_time) && (
-                  <button type="button" onClick={() => sortDayByTime(d)} title="Reordenar os itens deste dia pelo horário de chegada"
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'var(--arvo-font-body)', fontSize: 10.5, color: 'var(--arvo-fg-soft)' }}>
-                    {tv.sortByTime ?? 'Ordenar por horário'}
-                  </button>
-                )}
+                <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  {items.filter(p => p.day_number === d && p.kind === 'place' && p.lat != null && p.lng != null).length > 1 && (
+                    <button type="button" onClick={() => openDayRoute(d)} title="Abrir roteiro deste dia no Google Maps"
+                      style={{ display: 'flex', alignItems: 'center', gap: 3, background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'var(--arvo-font-body)', fontSize: 10.5, color: 'var(--arvo-fg-soft)' }}>
+                      <svg width="10" height="10" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.5">
+                        <path strokeLinecap="round" d="M5 2H2a1 1 0 00-1 1v8a1 1 0 001 1h8a1 1 0 001-1V8M8 1h4m0 0v4m0-4L5.5 7.5" />
+                      </svg>
+                      Roteiro no Maps
+                    </button>
+                  )}
+                  {canEdit && items.some(p => p.day_number === d && p.arrive_time) && (
+                    <button type="button" onClick={() => sortDayByTime(d)} title="Reordenar os itens deste dia pelo horário de chegada"
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'var(--arvo-font-body)', fontSize: 10.5, color: 'var(--arvo-fg-soft)' }}>
+                      {tv.sortByTime ?? 'Ordenar por horário'}
+                    </button>
+                  )}
+                </span>
               </div>
               {staysOnDay(d)
                 .filter(s => s.checkin_day !== d && (s.checkout_day === d || !isLogisticalStay(s.category)))
@@ -1109,10 +1166,47 @@ export default function TripItineraryPanel({ tripId, tripCity, tripCountry, trip
         </div>
       )}
 
-      {canEdit && items.length > 0 && (
+      {canEdit && items.length > 0 && !routeMode && (
         <p style={{ marginTop: 16, paddingTop: 14, borderTop: '1px solid var(--arvo-border-soft)', fontFamily: 'var(--arvo-font-body)', fontSize: 10.5, color: 'var(--arvo-fg-soft)', textAlign: 'center' }}>
           {tv.dragHint ?? 'Toque e segure uma atividade para reordenar dentro do mesmo dia'}
         </p>
+      )}
+
+      {/* Barra flutuante do modo de seleção — some quando não há nada marcado. */}
+      {routeMode && (
+        <div style={{
+          position: 'sticky', bottom: 12, marginTop: 16, zIndex: 5,
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10,
+          padding: '8px 14px', borderRadius: 999, background: 'var(--arvo-surface)',
+          border: `1px solid ${RED}`, boxShadow: 'var(--arvo-shadow-lg)',
+        }}>
+          <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg)' }}>
+            {routeSelection.length === 0
+              ? 'Marque lugares na lista para montar a rota'
+              : `${routeSelection.length} lugar${routeSelection.length > 1 ? 'es' : ''} selecionado${routeSelection.length > 1 ? 's' : ''}`}
+          </span>
+          <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+            {routeSelection.length > 0 && (
+              <button type="button" onClick={() => setRouteSelection([])}
+                style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-soft)', background: 'none', border: 'none', cursor: 'pointer' }}>
+                Limpar
+              </button>
+            )}
+            <button
+              type="button"
+              disabled={routeSelection.length === 0}
+              onClick={() => {
+                const stops = routeSelection
+                  .map(id => items.find(p => p.id === id))
+                  .filter((p): p is PlanItem => !!p && p.lat != null && p.lng != null)
+                  .map(p => ({ lat: p.lat!, lng: p.lng! }))
+                openDirections(stops, currentLocation)
+              }}
+              style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, padding: '5px 12px', borderRadius: 999, background: routeSelection.length > 0 ? RED : 'var(--arvo-border)', color: '#fff', border: 'none', cursor: routeSelection.length > 0 ? 'pointer' : 'default' }}>
+              Abrir no Google Maps
+            </button>
+          </div>
+        </div>
       )}
     </div>
   )

@@ -29,6 +29,16 @@ interface FinanceContext {
   member_status: 'active' | 'pending'
 }
 
+interface MomentContext {
+  type: 'finance_moment'
+  direction: Direction
+  moment_id: number
+  moment_name: string
+  role: string
+  member_id: number
+  member_status: 'active' | 'pending'
+}
+
 interface FriendContext {
   type: 'friend'
   direction: Direction
@@ -37,7 +47,7 @@ interface FriendContext {
   accept_token?: string
 }
 
-type Context = TripContext | FinanceContext | FriendContext
+type Context = TripContext | FinanceContext | MomentContext | FriendContext
 
 interface Contact {
   email: string
@@ -97,6 +107,17 @@ function ContactCard({
     }
   }
 
+  async function removeMoment(ctx: MomentContext) {
+    if (!confirm(`Remover acesso de ${contact.email} ao momento "${ctx.moment_name}"? As transações dele(a) neste momento serão apagadas.`)) return
+    setRemoving(ctx.member_id)
+    try {
+      await apiFetch(`/finances/moments/${ctx.moment_id}/members/${ctx.member_id}`, { method: 'DELETE' })
+      onRemoved(ctx.member_id, 'finance_moment')
+    } finally {
+      setRemoving(null)
+    }
+  }
+
   async function acceptFriend(ctx: FriendContext) {
     if (!ctx.accept_token) return
     setAccepting(true)
@@ -136,6 +157,7 @@ function ContactCard({
   const isActive = contact.status === 'active'
   const tripContexts    = contact.contexts.filter((c): c is TripContext    => c.type === 'voyage_trip')
   const financeContexts = contact.contexts.filter((c): c is FinanceContext => c.type === 'shared_finance')
+  const momentContexts  = contact.contexts.filter((c): c is MomentContext  => c.type === 'finance_moment')
   const friendContexts  = contact.contexts.filter((c): c is FriendContext  => c.type === 'friend')
   const displayName = contact.name || contact.email
 
@@ -284,6 +306,69 @@ function ContactCard({
               >
                 {ctx.direction === 'owned_by_me' ? 'Gerir →' : 'Ver →'}
               </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Momentos compartilhados */}
+      {momentContexts.length > 0 && (
+        <div style={{ borderTop: '1px solid var(--arvo-border-soft)', paddingTop: 14, marginBottom: 14 }}>
+          <p style={{
+            fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.22em',
+            textTransform: 'uppercase', color: 'var(--arvo-fg-muted)', marginBottom: 10,
+          }}>
+            Momentos compartilhados
+          </p>
+          {momentContexts.map(ctx => (
+            <div key={ctx.member_id} style={{
+              display: 'flex', alignItems: 'center', gap: 10,
+              padding: '8px 0', borderBottom: '1px solid var(--arvo-border-soft)',
+            }}>
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="var(--arvo-fg-muted)" strokeWidth="1.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8 1.5l1.8 4.2 4.6.4-3.5 3 1 4.5L8 11.3l-3.9 2.3 1-4.5-3.5-3 4.6-.4z"/>
+              </svg>
+              <span style={{
+                fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg)',
+                flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+              }}>
+                {ctx.moment_name}
+              </span>
+              <DirectionTag direction={ctx.direction} />
+              <RoleChip role={ctx.role} />
+              {ctx.member_status === 'pending' && (
+                <span style={{
+                  fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.16em',
+                  textTransform: 'uppercase', color: GOLD,
+                }}>
+                  pendente
+                </span>
+              )}
+              {ctx.direction === 'owned_by_me' ? (
+                <button
+                  type="button"
+                  onClick={() => removeMoment(ctx)}
+                  disabled={removing === ctx.member_id}
+                  style={{
+                    fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: RED,
+                    background: 'none', border: 'none', cursor: 'pointer', flexShrink: 0,
+                    opacity: removing === ctx.member_id ? 0.4 : 1, padding: '2px 0',
+                  }}
+                >
+                  {removing === ctx.member_id ? '…' : 'Remover'}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => navigate('/finances/moments')}
+                  style={{
+                    fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-muted)',
+                    background: 'none', border: 'none', cursor: 'pointer', flexShrink: 0, padding: '2px 0',
+                  }}
+                >
+                  Ver →
+                </button>
+              )}
             </div>
           ))}
         </div>

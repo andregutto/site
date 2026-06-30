@@ -248,6 +248,83 @@ router.get('/', async (req: any, res: any) => {
       }
     }
 
+    // ── 4.5 Momentos financeiros que o usuário CRIOU (outbound) ────────────────
+    const { data: ownedMoments, error: momentErr } = await supabaseAdmin
+      .from('finance_moments')
+      .select('id, name')
+      .eq('user_id', userId)
+    if (momentErr) throw momentErr
+
+    const ownedMomentIds = (ownedMoments ?? []).map((m: any) => m.id)
+    const ownedMomentMap: Record<number, string> = Object.fromEntries(
+      (ownedMoments ?? []).map((m: any) => [m.id, m.name])
+    )
+
+    if (ownedMomentIds.length > 0) {
+      const { data: mMembers, error: mmErr } = await supabaseAdmin
+        .from('finance_moment_members')
+        .select('id, moment_id, invite_email, role, status, user_id')
+        .in('moment_id', ownedMomentIds)
+        .order('invite_email')
+      if (mmErr) throw mmErr
+
+      for (const m of mMembers ?? []) {
+        const email: string = m.invite_email
+        if (!email) continue
+        if (!contactMap.has(email)) {
+          contactMap.set(email, { email, user_id: m.user_id ?? null, status: 'pending', contexts: [] })
+        }
+        const c = contactMap.get(email)!
+        if (m.status === 'active') c.status = 'active'
+        c.contexts.push({
+          type: 'finance_moment', direction: 'owned_by_me',
+          moment_id: m.moment_id, moment_name: ownedMomentMap[m.moment_id] ?? '',
+          role: m.role, member_id: m.id, member_status: m.status,
+        })
+      }
+    }
+
+    // ── 4.6 Momentos financeiros onde o usuário é MEMBRO (inbound) ─────────────
+    const { data: myMomentMemberships } = await supabaseAdmin
+      .from('finance_moment_members')
+      .select('id, moment_id, role, status')
+      .eq('user_id', userId)
+
+    if ((myMomentMemberships ?? []).length > 0) {
+      const inboundMomentIds = (myMomentMemberships!).map((m: any) => m.moment_id)
+      const { data: inboundMoments } = await supabaseAdmin
+        .from('finance_moments')
+        .select('id, name, user_id')
+        .in('id', inboundMomentIds)
+        .neq('user_id', userId)
+
+      const inboundMomentMap: Record<number, { name: string; owner_id: string }> = Object.fromEntries(
+        (inboundMoments ?? []).map((m: any) => [m.id, { name: m.name, owner_id: m.user_id }])
+      )
+      const momentOwnerIds = [...new Set((inboundMoments ?? []).map((m: any) => m.user_id as string))]
+      const momentOwnerDisplays = await Promise.all(momentOwnerIds.map(id => userDisplay(id).then(d => ({ id, ...d }))))
+      const momentOwnerMap: Record<string, { email: string; name?: string }> = Object.fromEntries(
+        momentOwnerDisplays.map(o => [o.id, { email: o.email, name: o.name }])
+      )
+
+      for (const m of myMomentMemberships ?? []) {
+        const momentInfo = inboundMomentMap[m.moment_id]
+        if (!momentInfo) continue
+        const owner = momentOwnerMap[momentInfo.owner_id]
+        if (!owner) continue
+        const email = owner.email
+        if (!contactMap.has(email)) {
+          contactMap.set(email, { email, name: owner.name, user_id: momentInfo.owner_id, status: 'active', contexts: [] })
+        }
+        const c = contactMap.get(email)!
+        c.contexts.push({
+          type: 'finance_moment', direction: 'shared_with_me',
+          moment_id: m.moment_id, moment_name: momentInfo.name,
+          role: m.role, member_id: m.id, member_status: m.status,
+        })
+      }
+    }
+
     // ── 5. Amigos cadastrados diretamente (sem viagem/categoria compartilhada) ──
     const me = await userDisplay(userId)
 

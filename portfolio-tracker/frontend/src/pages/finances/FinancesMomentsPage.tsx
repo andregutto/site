@@ -7,9 +7,15 @@ import { useI18n } from '../../contexts/I18nContext'
 import { useCurrency } from '../../contexts/CurrencyContext'
 import { Icon } from '../../components/icons'
 import { MOMENT_ICON_KEYS, resolveMomentIcon } from '../../lib/momentIcons'
+import Avatar from '../voyage/_shared/Avatar'
+import { RoleChip, StatusChip } from '../voyage/_shared/Chips'
+
+const RED = '#D63B2F'
+const USER_COLORS = ['#1B4FD8', '#A36A52', '#E8A020', '#1F8A5B', '#C8B89A']
 
 interface Moment {
   id: number
+  user_id: string
   name: string
   description: string | null
   icon: string
@@ -31,10 +37,26 @@ interface ShareInfo {
   share_hide_descriptions: boolean
 }
 
+interface ByUser {
+  user_id: string
+  total: number
+  display?: { name?: string; email?: string; avatar_url?: string }
+}
+
 interface MomentDetail {
   moment: Moment
   transactions: { id: number; date: string; description: string; amount: number; currency: string; notes: string | null; finance_categories: { name: string; name_key: string | null; icon: string; color: string } | null }[]
-  summary: { total: number; by_category: { name: string; name_key: string | null; icon: string; color: string; total: number }[] }
+  summary: { total: number; by_category: { name: string; name_key: string | null; icon: string; color: string; total: number }[]; by_user: ByUser[] }
+}
+
+interface MomentMember {
+  id: number
+  user_id: string | null
+  invite_email: string | null
+  role: 'owner' | 'editor' | 'viewer'
+  status: 'pending' | 'active' | 'left'
+  joined_at: string | null
+  display?: { name?: string; email?: string; avatar_url?: string }
 }
 
 interface MomentPickerRow {
@@ -54,7 +76,7 @@ function fmtDate(d: string) {
 
 // ── Form ──────────────────────────────────────────────────────────────────────
 
-type MomentFormData = Omit<Moment, 'id' | 'created_at' | 'share_token' | 'share_expires_at' | 'share_hide_descriptions'>
+type MomentFormData = Omit<Moment, 'id' | 'user_id' | 'created_at' | 'share_token' | 'share_expires_at' | 'share_hide_descriptions'>
 
 interface FormProps {
   initial?: Partial<Moment>
@@ -524,6 +546,143 @@ function AssignModal({ momentId: _momentId, moments, transactionId, currentMomen
   )
 }
 
+// ── Collaborators panel (convidar/gerir colaboradores de um momento) ─────────
+
+function MembersPanel({ momentId, ownerId }: { momentId: number; ownerId: string }) {
+  const { user } = useAuth()
+  const [members, setMembers]     = useState<MomentMember[]>([])
+  const [loading, setLoading]     = useState(true)
+  const [inviteValue, setInviteValue] = useState('')
+  const [inviting, setInviting]   = useState(false)
+  const [error, setError]         = useState('')
+  const [removing, setRemoving]   = useState<number | null>(null)
+
+  const isOwner = user?.id === ownerId
+
+  const load = useCallback(async () => {
+    setLoading(true)
+    try {
+      const d = await apiFetch<{ members: MomentMember[] }>(`/finances/moments/${momentId}/members`)
+      setMembers(d.members)
+    } catch {
+      setMembers([])
+    } finally {
+      setLoading(false)
+    }
+  }, [momentId])
+
+  useEffect(() => { load() }, [load])
+
+  async function invite(e: React.FormEvent) {
+    e.preventDefault()
+    const value = inviteValue.trim()
+    if (!value) return
+    setInviting(true)
+    setError('')
+    try {
+      const isEmail = /\S+@\S+\.\S+/.test(value)
+      await apiFetch(`/finances/moments/${momentId}/invite`, {
+        method: 'POST',
+        body: JSON.stringify(isEmail ? { email: value } : { username: value.replace(/^@/, '') }),
+      })
+      setInviteValue('')
+      await load()
+    } catch (ex: unknown) {
+      setError((ex as Error).message ?? 'Erro ao convidar')
+    } finally {
+      setInviting(false)
+    }
+  }
+
+  async function revoke(m: MomentMember) {
+    if (!confirm(`Remover acesso de ${m.display?.name ?? m.display?.email ?? m.invite_email}? As transações dele(a) neste momento serão apagadas.`)) return
+    setRemoving(m.id)
+    try {
+      await apiFetch(`/finances/moments/${momentId}/members/${m.id}`, { method: 'DELETE' })
+      await load()
+    } finally {
+      setRemoving(null)
+    }
+  }
+
+  const activeMembers = members.filter(m => m.status !== 'left')
+
+  return (
+    <div style={{ paddingTop: 12, borderTop: '1px solid var(--arvo-border-soft)' }}>
+      <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)', marginBottom: 10 }}>
+        Colaboradores
+      </p>
+
+      {loading ? (
+        <p className="text-xs text-[var(--arvo-fg-soft)]">Carregando…</p>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 10 }}>
+          {activeMembers.map(m => (
+            <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Avatar name={m.display?.name} email={m.display?.email} avatarUrl={m.display?.avatar_url} size={24} tone={m.status === 'active' ? 'active' : 'neutral'} />
+              <span style={{ flex: 1, fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {m.display?.name || m.display?.email || m.invite_email}
+              </span>
+              <RoleChip role={m.role} />
+              <StatusChip status={m.status} />
+              {isOwner && m.role !== 'owner' && (
+                <button
+                  type="button" onClick={() => revoke(m)} disabled={removing === m.id}
+                  style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: RED, background: 'none', border: 'none', cursor: 'pointer', opacity: removing === m.id ? 0.4 : 1 }}
+                >
+                  {removing === m.id ? '…' : 'Remover'}
+                </button>
+              )}
+            </div>
+          ))}
+          {activeMembers.length === 0 && (
+            <p className="text-xs text-[var(--arvo-fg-soft)]">Nenhum colaborador ainda.</p>
+          )}
+        </div>
+      )}
+
+      {isOwner && (
+        <form onSubmit={invite} style={{ display: 'flex', gap: 6 }}>
+          <input
+            type="text" placeholder="email@exemplo.com ou @usuario"
+            value={inviteValue} onChange={e => setInviteValue(e.target.value)}
+            className="flex-1 border border-[var(--arvo-border)] rounded-lg px-3 py-1.5 text-xs bg-[var(--arvo-surface)] text-[var(--arvo-fg)] focus:outline-none focus:border-[var(--arvo-gold)]"
+          />
+          <button type="submit" disabled={inviting || !inviteValue.trim()}
+            className="px-3 py-1.5 bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] text-xs rounded-lg hover:opacity-80 transition-opacity disabled:opacity-40">
+            {inviting ? '…' : 'Convidar'}
+          </button>
+        </form>
+      )}
+      {error && <p style={{ fontSize: 11, color: RED, marginTop: 6 }}>{error}</p>}
+    </div>
+  )
+}
+
+function ByUserBreakdown({ byUser, total, currency, fmt }: { byUser: ByUser[]; total: number; currency: string; fmt: (n: number, c: string) => string }) {
+  if (byUser.length < 2) return null
+  return (
+    <div className="space-y-1.5">
+      <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)', marginBottom: 4 }}>
+        Quem pagou o quê
+      </p>
+      {byUser.map((u, i) => {
+        const pct = total > 0 ? Math.round((u.total / total) * 100) : 0
+        return (
+          <div key={u.user_id} className="flex items-center gap-2">
+            <Avatar name={u.display?.name} email={u.display?.email} avatarUrl={u.display?.avatar_url} size={22} />
+            <div className="flex-1 h-1.5 bg-[var(--arvo-track-bg)] rounded-full overflow-hidden">
+              <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: USER_COLORS[i % USER_COLORS.length] }} />
+            </div>
+            <span className="text-xs text-[var(--arvo-fg)] w-16 text-right">{fmt(u.total, currency)}</span>
+            <span className="text-[11px] text-[var(--arvo-fg-soft)] w-8 text-right">{pct}%</span>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 function resolveKey(name: string, nameKey: string | null | undefined, keys: Record<string, string>): string {
@@ -895,6 +1054,14 @@ export default function FinancesMomentsPage() {
                       )
                     })()}
 
+                    {/* Por pessoa (quem pagou o quê) — só aparece com colaboração ativa */}
+                    <ByUserBreakdown
+                      byUser={detail.summary.by_user}
+                      total={detail.summary.total}
+                      currency={detail.transactions[0]?.currency ?? 'EUR'}
+                      fmt={fmt}
+                    />
+
                     {/* Category breakdown */}
                     {detail.summary.by_category.length > 0 && (
                       <div className="space-y-1.5">
@@ -947,6 +1114,9 @@ export default function FinancesMomentsPage() {
                         {t.finances.momentNoTransactions}
                       </p>
                     )}
+
+                    {/* Colaboradores do momento */}
+                    <MembersPanel momentId={m.id} ownerId={detail.moment.user_id} />
 
                     {/* Flow B: transform moment into a trip */}
                     <TransformToTripButton momentId={m.id} onTrip={tripId => navigate(`/voyage/${tripId}`)} />

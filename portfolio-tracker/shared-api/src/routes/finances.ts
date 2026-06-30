@@ -6,6 +6,15 @@ import { supabaseAdmin } from '../lib/supabase.js'
 
 const router = Router()
 
+// ── Moment collaboration: user display helper (mirrors voyage.ts userDisplay) ──
+async function userDisplay(userId: string): Promise<{ name: string; email: string; avatar_url?: string }> {
+  const { data } = await supabaseAdmin.auth.admin.getUserById(userId)
+  const meta = data?.user?.user_metadata ?? {}
+  const name = [meta.first_name, meta.last_name].filter(Boolean).join(' ') || data?.user?.email || userId
+  return { name, email: data?.user?.email ?? '', avatar_url: meta.avatar_url }
+}
+
+
 // ── Financial month helpers ───────────────────────────────────────────────────
 
 function financialMonthKey(dateStr: string, cycleDay: number): string {
@@ -1071,6 +1080,10 @@ router.patch('/transactions/bulk-assign-account', requireAuth, async (req, res: 
 })
 
 // PATCH /api/finances/transactions/:id
+// Ownership: todo update é restrito por .eq('user_id', userId) abaixo — mesmo
+// quando a transação pertence a um "momento" compartilhado (finance_moment_members),
+// colaboradores só conseguem editar suas PRÓPRIAS transações, nunca as de outro
+// membro do mesmo momento. Isso é reforçado no nível da rota Express (não só RLS).
 router.patch('/transactions/:id', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const { id } = req.params
@@ -1116,6 +1129,8 @@ router.patch('/transactions/:id', requireAuth, async (req, res: Response) => {
 })
 
 // DELETE /api/finances/transactions/:id
+// Ownership: mesma regra do PATCH acima — .eq('user_id', userId) garante que
+// colaboradores de um momento compartilhado só apagam suas próprias transações.
 router.delete('/transactions/:id', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const { id } = req.params
@@ -2036,10 +2051,20 @@ router.delete('/freedom-plans/:id', requireAuth, async (req, res: Response) => {
 
 router.get('/moments', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
-  const { data, error } = await supabaseAdmin
-    .from('finance_moments').select('*').eq('user_id', userId).order('created_at', { ascending: false })
-  if (error) { res.status(500).json({ error: error.message }); return }
-  res.json(data)
+  const [ownedRes, memberRes] = await Promise.all([
+    supabaseAdmin.from('finance_moments').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
+    supabaseAdmin.from('finance_moment_members').select('moment_id').eq('user_id', userId).eq('status', 'active'),
+  ])
+  if (ownedRes.error) { res.status(500).json({ error: ownedRes.error.message }); return }
+  const sharedIds = (memberRes.data ?? []).map(m => m.moment_id)
+  let shared: any[] = []
+  if (sharedIds.length > 0) {
+    const { data, error } = await supabaseAdmin
+      .from('finance_moments').select('*').in('id', sharedIds).neq('user_id', userId).order('created_at', { ascending: false })
+    if (error) { res.status(500).json({ error: error.message }); return }
+    shared = data ?? []
+  }
+  res.json([...(ownedRes.data ?? []), ...shared])
 })
 
 router.get('/moments-for-picker', requireAuth, async (req, res: Response) => {
@@ -2053,24 +2078,62 @@ router.get('/moments-for-picker', requireAuth, async (req, res: Response) => {
 router.get('/moments/:id', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const momentId = Number(req.params.id)
-  const [momentRes, txRes] = await Promise.all([
-    supabaseAdmin.from('finance_moments').select('*').eq('id', momentId).eq('user_id', userId).single(),
-    supabaseAdmin.from('finance_transactions')
-      .select('id, date, description, amount, currency, notes, finance_categories(id, name, name_key, icon, color)')
-      .eq('moment_id', momentId).eq('user_id', userId).order('date', { ascending: false }),
-  ])
+
+  const momentRes = await supabaseAdmin.from('finance_moments').select('*').eq('id', momentId).single()
   if (momentRes.error || !momentRes.data) { res.status(404).json({ error: 'Not found' }); return }
-  const transactions = txRes.data ?? []
-  const total = transactions.reduce((sum, tx) => sum + (tx.amount < 0 ? Math.abs(tx.amount) : 0), 0)
+  const moment = momentRes.data
+
+  const isOwner = moment.user_id === userId
+  let isActiveMember = isOwner
+  if (!isOwner) {
+    const { data: myMember } = await supabaseAdmin
+      .from('finance_moment_members')
+      .select('id').eq('moment_id', momentId).eq('user_id', userId).eq('status', 'active').maybeSingle()
+    isActiveMember = !!myMember
+  }
+  if (!isActiveMember) { res.status(404).json({ error: 'Not found' }); return }
+
+  // Transações de TODOS os colaboradores ativos do momento (via junction table),
+  // não só do usuário requisitante — necessário para o split "quem pagou o quê".
+  const { data: ftmRows } = await supabaseAdmin
+    .from('finance_transaction_moments')
+    .select('transaction_id, finance_transactions(id, date, description, amount, currency, notes, user_id, finance_categories(id, name, name_key, icon, color))')
+    .eq('moment_id', momentId)
+
+  const transactions = (ftmRows ?? [])
+    .map((r: any) => r.finance_transactions)
+    .filter(Boolean)
+    .sort((a: any, b: any) => (a.date < b.date ? 1 : -1))
+
+  const total = transactions.reduce((sum: number, tx: any) => sum + (tx.amount < 0 ? Math.abs(tx.amount) : 0), 0)
   const catMap: Record<string, { name: string; name_key: string | null; icon: string; color: string; total: number }> = {}
+  const byUserTotals: Record<string, number> = {}
   for (const tx of transactions) {
     if (tx.amount >= 0) continue
     const cat = tx.finance_categories as unknown as { id: number; name: string; name_key: string | null; icon: string; color: string } | null
     const key = cat ? String(cat.id) : 'none'
     if (!catMap[key]) catMap[key] = { name: cat?.name ?? 'Sem categoria', name_key: cat?.name_key ?? null, icon: cat?.icon ?? '❓', color: cat?.color ?? '#9CA3AF', total: 0 }
     catMap[key].total += Math.abs(tx.amount)
+    byUserTotals[tx.user_id] = (byUserTotals[tx.user_id] ?? 0) + Math.abs(tx.amount)
   }
-  res.json({ moment: momentRes.data, transactions, summary: { total: Math.round(total * 100) / 100, by_category: Object.values(catMap).sort((a, b) => b.total - a.total) } })
+
+  const byUserEntries = Object.entries(byUserTotals)
+  const displays = await Promise.all(byUserEntries.map(([uid]) => userDisplay(uid)))
+  const by_user = byUserEntries.map(([uid, t], i) => ({
+    user_id: uid,
+    total: Math.round(t * 100) / 100,
+    display: displays[i],
+  })).sort((a, b) => b.total - a.total)
+
+  res.json({
+    moment,
+    transactions,
+    summary: {
+      total: Math.round(total * 100) / 100,
+      by_category: Object.values(catMap).sort((a, b) => b.total - a.total),
+      by_user,
+    },
+  })
 })
 
 router.post('/moments', requireAuth, async (req, res: Response) => {
@@ -2082,6 +2145,190 @@ router.post('/moments', requireAuth, async (req, res: Response) => {
     .select().single()
   if (error) { res.status(500).json({ error: error.message }); return }
   res.json(data)
+})
+
+// ── GET /finances/moments/:id/members ─────────────────────────────────────────
+router.get('/moments/:id/members', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const momentId = Number(req.params.id)
+
+  const { data: moment } = await supabaseAdmin
+    .from('finance_moments').select('user_id').eq('id', momentId).single()
+  if (!moment) { res.status(404).json({ error: 'Momento não encontrado' }); return }
+
+  const isOwner = moment.user_id === userId
+  const { data: myMember } = !isOwner
+    ? await supabaseAdmin.from('finance_moment_members')
+        .select('id').eq('moment_id', momentId).eq('user_id', userId).eq('status', 'active').maybeSingle()
+    : { data: true as any }
+  if (!myMember) { res.status(403).json({ error: 'Sem acesso' }); return }
+
+  const { data: members } = await supabaseAdmin
+    .from('finance_moment_members')
+    .select('id, user_id, invite_email, role, status, joined_at, created_at')
+    .eq('moment_id', momentId)
+    .order('created_at')
+
+  const enriched = await Promise.all((members ?? []).map(async m => {
+    if (!m.user_id) return { ...m, display: { name: m.invite_email, email: m.invite_email } }
+    const d = await userDisplay(m.user_id)
+    return { ...m, display: d }
+  }))
+
+  res.json({ members: enriched })
+})
+
+// ── POST /finances/moments/:id/invite  (convidar por e-mail ou @username) ────
+router.post('/moments/:id/invite', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const momentId = Number(req.params.id)
+  const { email, username, role = 'editor' } = req.body as { email?: string; username?: string; role?: string }
+
+  if (!email?.includes('@') && !username?.trim()) {
+    res.status(400).json({ error: 'Informe um e-mail ou @usuário' }); return
+  }
+
+  const { data: moment } = await supabaseAdmin
+    .from('finance_moments').select('user_id, name').eq('id', momentId).single()
+  if (!moment) { res.status(404).json({ error: 'Momento não encontrado' }); return }
+
+  const isOwner = moment.user_id === userId
+  const { data: myMember } = !isOwner
+    ? await supabaseAdmin.from('finance_moment_members')
+        .select('id, role').eq('moment_id', momentId).eq('user_id', userId).eq('status', 'active').maybeSingle()
+    : { data: { role: 'owner' } as any }
+  if (!myMember || !['owner', 'editor'].includes((myMember as any).role)) {
+    res.status(403).json({ error: 'Sem permissão para convidar' }); return
+  }
+
+  let targetUserId: string | null = null
+  let targetEmail: string | null = email?.trim() || null
+
+  if (username) {
+    const handle = username.trim().toLowerCase().replace(/^@/, '')
+    const { data: handleRow } = await supabaseAdmin
+      .from('user_handles').select('user_id').eq('username', handle).maybeSingle()
+    if (!handleRow) { res.status(404).json({ error: 'Nenhum usuário com esse @' }); return }
+    targetUserId = handleRow.user_id
+    const { data: u } = await supabaseAdmin.auth.admin.getUserById(handleRow.user_id)
+    targetEmail = u?.user?.email ?? null
+  } else if (targetEmail) {
+    const { data: authList } = await supabaseAdmin.auth.admin.listUsers()
+    const targetUser = authList?.users?.find(u => u.email === targetEmail)
+    targetUserId = targetUser?.id ?? null
+  }
+
+  if (targetUserId) {
+    const { data: existing } = await supabaseAdmin
+      .from('finance_moment_members')
+      .select('id, status').eq('moment_id', momentId).eq('user_id', targetUserId).maybeSingle()
+    if (existing?.status === 'active') {
+      res.status(409).json({ error: 'Já é colaborador deste momento' }); return
+    }
+  }
+
+  await supabaseAdmin
+    .from('finance_moment_members')
+    .delete()
+    .eq('moment_id', momentId).eq('invite_email', targetEmail).eq('status', 'pending')
+
+  // Usuário já cadastrado na plataforma: entra direto como membro ativo.
+  if (targetUserId) {
+    const { error } = await supabaseAdmin.from('finance_moment_members').insert({
+      moment_id: momentId,
+      user_id: targetUserId,
+      invite_email: targetEmail,
+      role,
+      status: 'active',
+      joined_at: new Date().toISOString(),
+    })
+    if (error) { res.status(500).json({ error: error.message }); return }
+    res.json({ direct: true })
+    return
+  }
+
+  const token = crypto.randomBytes(24).toString('hex')
+  const expires = new Date(Date.now() + 7 * 24 * 3600 * 1000).toISOString()
+
+  const { error } = await supabaseAdmin.from('finance_moment_members').insert({
+    moment_id: momentId,
+    user_id: null,
+    invite_email: targetEmail,
+    invite_token: token,
+    invite_expires_at: expires,
+    role,
+    status: 'pending',
+  })
+  if (error) { res.status(500).json({ error: error.message }); return }
+
+  const baseUrl = process.env.FRONTEND_ORIGIN?.split(',')[0] ?? 'https://arvo.andregutto.com'
+  res.json({ direct: false, token, invite_url: `${baseUrl}/finances/moments/invite/${token}` })
+})
+
+// ── POST /finances/moments/invite/accept  (aceitar convite de momento) ───────
+router.post('/moments/invite/accept', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const { token } = req.body as { token: string }
+
+  const { data: member } = await supabaseAdmin
+    .from('finance_moment_members')
+    .select('id, moment_id, status')
+    .eq('invite_token', token)
+    .single()
+
+  if (!member) { res.status(404).json({ error: 'Convite não encontrado' }); return }
+  if (member.status !== 'pending') { res.status(409).json({ error: 'Convite já utilizado' }); return }
+
+  await supabaseAdmin
+    .from('finance_moment_members')
+    .update({ user_id: userId, status: 'active', joined_at: new Date().toISOString(), invite_token: null })
+    .eq('id', member.id)
+
+  res.json({ moment_id: member.moment_id })
+})
+
+// ── DELETE /finances/moments/:id/members/:memberId  (revogar acesso) ─────────
+// O momento continua existindo para ambos; só as transações do usuário
+// revogado dentro deste momento são removidas. O registro do membro vira
+// status='left' (não é apagado, mirror voyage_trip_members).
+router.delete('/moments/:id/members/:memberId', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const momentId = Number(req.params.id)
+  const memberId = Number(req.params.memberId)
+
+  const { data: moment } = await supabaseAdmin
+    .from('finance_moments').select('user_id').eq('id', momentId).single()
+  const { data: member } = await supabaseAdmin
+    .from('finance_moment_members').select('user_id').eq('id', memberId).single()
+
+  const isOwner = moment?.user_id === userId
+  const isSelf = member?.user_id === userId
+  if (!isOwner && !isSelf) { res.status(403).json({ error: 'Sem permissão' }); return }
+
+  await supabaseAdmin
+    .from('finance_moment_members')
+    .update({ status: 'left' })
+    .eq('id', memberId).eq('moment_id', momentId)
+
+  // Remove apenas as transações do usuário revogado dentro deste momento.
+  if (member?.user_id) {
+    const { data: revokedTxIds } = await supabaseAdmin
+      .from('finance_transaction_moments')
+      .select('transaction_id')
+      .eq('moment_id', momentId)
+      .eq('user_id', member.user_id)
+    const ids = (revokedTxIds ?? []).map(r => r.transaction_id)
+    if (ids.length > 0) {
+      await supabaseAdmin
+        .from('finance_transactions')
+        .delete()
+        .in('id', ids)
+        .eq('user_id', member.user_id)
+        .eq('moment_id', momentId)
+    }
+  }
+
+  res.json({ ok: true })
 })
 
 // POST /finances/moments/:id/share — generate share token

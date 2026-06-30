@@ -8,6 +8,7 @@ import { useTheme } from '../../contexts/ThemeContext'
 import { useI18n } from '../../contexts/I18nContext'
 import { dayColor, dayColorWash } from './_shared/dayColors'
 import OpeningHoursBlock from './_shared/OpeningHours'
+import CurrentLocationMarker from './_shared/CurrentLocationMarker'
 
 delete (L.Icon.Default.prototype as any)._getIconUrl
 L.Icon.Default.mergeOptions({
@@ -329,6 +330,7 @@ export default function VoyageMapPage() {
                   }
                 />
                 <FitBounds places={visiblePlaces} />
+                <CurrentLocationMarker />
                 {visiblePlaces.map(p => (
                   <Marker
                     key={p.id}
