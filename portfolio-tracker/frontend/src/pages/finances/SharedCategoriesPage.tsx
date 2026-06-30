@@ -4,7 +4,7 @@ import { useI18n } from '../../contexts/I18nContext'
 import { useAuth } from '../../contexts/AuthContext'
 import { useCurrency } from '../../contexts/CurrencyContext'
 import { Icon } from '../../components/icons'
-import Avatar from '../voyage/_shared/Avatar'
+import VoyageAvatar from '../voyage/_shared/Avatar'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -890,7 +890,7 @@ function InviteModal({ s, result, copied, onInvite, onCopy, onClose }: {
                       cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg)',
                     }}
                   >
-                    <Avatar name={f.name} email={f.email} avatarUrl={f.avatar_url} size={20} />
+                    <VoyageAvatar name={f.name} email={f.email} avatarUrl={f.avatar_url} size={20} />
                     {f.name || f.email}
                     <span style={{ color: 'var(--arvo-fg-soft)' }}>+</span>
                   </button>
@@ -925,7 +925,7 @@ function InviteModal({ s, result, copied, onInvite, onCopy, onClose }: {
                         padding: '8px 12px', background: 'none', border: 'none', cursor: 'pointer',
                       }}
                     >
-                      <Avatar name={sg.name} avatarUrl={sg.avatar_url} size={26} />
+                      <VoyageAvatar name={sg.name} avatarUrl={sg.avatar_url} size={26} />
                       <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg)' }}>
                         {sg.name || `@${sg.username}`}
                       </span>

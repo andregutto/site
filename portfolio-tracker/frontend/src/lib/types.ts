@@ -225,6 +225,7 @@ export type NotificationType =
   | 'bank_connected'
   | 'bank_connect_error'
   | 'split_warning'
+  | 'stale_manual_asset'
   | 'budget_alert'
   | 'shared_category_alert'
   | 'home_prompt'
