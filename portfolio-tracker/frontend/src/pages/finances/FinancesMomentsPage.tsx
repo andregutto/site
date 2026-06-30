@@ -548,6 +548,9 @@ function AssignModal({ momentId: _momentId, moments, transactionId, currentMomen
 
 // ── Collaborators panel (convidar/gerir colaboradores de um momento) ─────────
 
+interface MomentInviteFriend { email: string; name?: string; avatar_url?: string; user_id: string | null }
+interface MomentInviteSuggestion { user_id: string; username: string; name?: string; avatar_url?: string }
+
 function MembersPanel({ momentId, ownerId }: { momentId: number; ownerId: string }) {
   const { t } = useI18n()
   const { user } = useAuth()
@@ -557,6 +560,9 @@ function MembersPanel({ momentId, ownerId }: { momentId: number; ownerId: string
   const [inviting, setInviting]   = useState(false)
   const [error, setError]         = useState('')
   const [removing, setRemoving]   = useState<number | null>(null)
+  const [friends, setFriends]     = useState<MomentInviteFriend[]>([])
+  const [suggestions, setSuggestions] = useState<MomentInviteSuggestion[]>([])
+  const [showSuggestions, setShowSuggestions] = useState(false)
 
   const isOwner = user?.id === ownerId
 
@@ -574,25 +580,54 @@ function MembersPanel({ momentId, ownerId }: { momentId: number; ownerId: string
 
   useEffect(() => { load() }, [load])
 
-  async function invite(e: React.FormEvent) {
-    e.preventDefault()
-    const value = inviteValue.trim()
-    if (!value) return
+  // Atalho de "convidar amigos" — reaproveita a lista unificada de /people,
+  // filtrando só conexões já confirmadas (mesmo padrão da Voyage).
+  useEffect(() => {
+    if (!isOwner) return
+    apiFetch<{ contacts: { email: string; name?: string; avatar_url?: string; user_id: string | null; contexts: { type: string; friend_status?: string }[] }[] }>('/people')
+      .then(data => {
+        const list = data.contacts
+          .filter(c => c.contexts.some(ctx => ctx.type === 'friend' && (ctx as any).friend_status === 'active'))
+          .map(c => ({ email: c.email, name: c.name, avatar_url: c.avatar_url, user_id: c.user_id }))
+        setFriends(list)
+      })
+      .catch(() => {})
+  }, [isOwner])
+
+  const isEmailLike = /\S+@\S+\.\S+/.test(inviteValue)
+
+  useEffect(() => {
+    const q = inviteValue.trim().replace(/^@/, '')
+    if (isEmailLike || q.length < 2) { setSuggestions([]); return }
+    const handle = setTimeout(() => {
+      apiFetch<MomentInviteSuggestion[]>(`/people/search?q=${encodeURIComponent(q)}`)
+        .then(r => { setSuggestions(r); setShowSuggestions(true) })
+        .catch(() => setSuggestions([]))
+    }, 300)
+    return () => clearTimeout(handle)
+  }, [inviteValue, isEmailLike])
+
+  async function sendInvite(payload: { email?: string; username?: string }) {
     setInviting(true)
     setError('')
     try {
-      const isEmail = /\S+@\S+\.\S+/.test(value)
-      await apiFetch(`/finances/moments/${momentId}/invite`, {
-        method: 'POST',
-        body: JSON.stringify(isEmail ? { email: value } : { username: value.replace(/^@/, '') }),
-      })
+      await apiFetch(`/finances/moments/${momentId}/invite`, { method: 'POST', body: JSON.stringify(payload) })
       setInviteValue('')
+      setSuggestions([])
+      setShowSuggestions(false)
       await load()
     } catch (ex: unknown) {
       setError((ex as Error).message ?? t.finances.momentInviteError)
     } finally {
       setInviting(false)
     }
+  }
+
+  async function invite(e: React.FormEvent) {
+    e.preventDefault()
+    const value = inviteValue.trim()
+    if (!value) return
+    await sendInvite(isEmailLike ? { email: value } : { username: value.replace(/^@/, '') })
   }
 
   async function revoke(m: MomentMember) {
@@ -640,17 +675,67 @@ function MembersPanel({ momentId, ownerId }: { momentId: number; ownerId: string
       )}
 
       {isOwner && (
-        <form onSubmit={invite} style={{ display: 'flex', gap: 6, borderTop: '1px solid var(--arvo-border-soft)', paddingTop: 12 }}>
-          <input
-            type="text" placeholder={t.finances.momentInvitePlaceholder}
-            value={inviteValue} onChange={e => setInviteValue(e.target.value)}
-            className="flex-1 border border-[var(--arvo-border)] rounded-lg px-3 py-1.5 text-xs bg-[var(--arvo-surface)] text-[var(--arvo-fg)] focus:outline-none focus:border-[var(--arvo-gold)]"
-          />
-          <button type="submit" disabled={inviting || !inviteValue.trim()}
-            className="px-3 py-1.5 bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] text-xs rounded-lg hover:opacity-80 transition-opacity disabled:opacity-40">
-            {inviting ? '…' : t.finances.momentInvite}
-          </button>
-        </form>
+        <div style={{ borderTop: '1px solid var(--arvo-border-soft)', paddingTop: 12 }}>
+          {friends.length > 0 && (
+            <div className="flex flex-wrap gap-2" style={{ marginBottom: 8 }}>
+              {friends.filter(f => !members.some(m => m.user_id === f.user_id || m.invite_email === f.email)).map(f => (
+                <button
+                  key={f.email} type="button" onClick={() => sendInvite({ email: f.email })} disabled={inviting}
+                  title={`Convidar ${f.name || f.email}`}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 6, padding: '4px 10px 4px 4px',
+                    borderRadius: 999, border: '1px solid var(--arvo-border)', background: 'var(--arvo-hover-bg)',
+                    cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg)',
+                  }}
+                >
+                  <Avatar name={f.name} email={f.email} avatarUrl={f.avatar_url} size={20} />
+                  {f.name || f.email}
+                  <span style={{ color: 'var(--arvo-fg-soft)' }}>+</span>
+                </button>
+              ))}
+            </div>
+          )}
+          <form onSubmit={invite} style={{ display: 'flex', gap: 6, position: 'relative' }}>
+            <input
+              type="text" placeholder={t.finances.momentInvitePlaceholder}
+              value={inviteValue} onChange={e => setInviteValue(e.target.value)}
+              onFocus={() => setShowSuggestions(true)}
+              onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+              className="flex-1 border border-[var(--arvo-border)] rounded-lg px-3 py-1.5 text-xs bg-[var(--arvo-surface)] text-[var(--arvo-fg)] focus:outline-none focus:border-[var(--arvo-gold)]"
+            />
+            <button type="submit" disabled={inviting || !inviteValue.trim()}
+              className="px-3 py-1.5 bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] text-xs rounded-lg hover:opacity-80 transition-opacity disabled:opacity-40">
+              {inviting ? '…' : t.finances.momentInvite}
+            </button>
+
+            {showSuggestions && suggestions.length > 0 && (
+              <div style={{
+                position: 'absolute', top: '100%', left: 0, right: 0, marginTop: -4, zIndex: 30,
+                background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)',
+                borderRadius: 10, boxShadow: 'var(--arvo-shadow-md)', overflow: 'hidden',
+              }}>
+                {suggestions.map(sg => (
+                  <button
+                    type="button" key={sg.user_id}
+                    onClick={() => sendInvite({ username: sg.username })}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left',
+                      padding: '8px 12px', background: 'none', border: 'none', cursor: 'pointer',
+                    }}
+                  >
+                    <Avatar name={sg.name} avatarUrl={sg.avatar_url} size={26} />
+                    <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg)' }}>
+                      {sg.name || `@${sg.username}`}
+                    </span>
+                    <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)' }}>
+                      @{sg.username}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </form>
+        </div>
       )}
       {error && <p style={{ fontSize: 11, color: RED, marginTop: 6 }}>{error}</p>}
     </div>

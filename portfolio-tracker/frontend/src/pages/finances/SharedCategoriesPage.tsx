@@ -4,6 +4,7 @@ import { useI18n } from '../../contexts/I18nContext'
 import { useAuth } from '../../contexts/AuthContext'
 import { useCurrency } from '../../contexts/CurrencyContext'
 import { Icon } from '../../components/icons'
+import Avatar from '../voyage/_shared/Avatar'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -228,8 +229,8 @@ export default function SharedCategoriesPage() {
           s={s}
           result={inviteResult}
           copied={copied}
-          onInvite={async (email) => {
-            const data = await apiFetch<{ invite_url: string }>(`/shared/groups/${showInvite}/invite`, { method: 'POST', body: JSON.stringify({ email }) })
+          onInvite={async (payload) => {
+            const data = await apiFetch<{ invite_url: string }>(`/shared/groups/${showInvite}/invite`, { method: 'POST', body: JSON.stringify(payload) })
             setInviteResult(data.invite_url)
             load()
           }}
@@ -807,21 +808,64 @@ function GroupModal({ s, initial, onClose, onSaved }: {
   )
 }
 
+interface InviteFriend { email: string; name?: string; avatar_url?: string; user_id: string | null }
+interface InviteUserSuggestion { user_id: string; username: string; name?: string; avatar_url?: string }
+
 function InviteModal({ s, result, copied, onInvite, onCopy, onClose }: {
   s: Record<string, string>; result: string | null; copied: boolean
-  onInvite: (email: string) => Promise<void>; onCopy: () => void; onClose: () => void
+  onInvite: (payload: { email?: string; username?: string }) => Promise<void>; onCopy: () => void; onClose: () => void
 }) {
-  const [email, setEmail] = useState('')
+  const [query, setQuery] = useState('')
   const [saving, setSaving] = useState(false)
   const [err, setErr] = useState('')
+  const [friends, setFriends] = useState<InviteFriend[]>([])
+  const [suggestions, setSuggestions] = useState<InviteUserSuggestion[]>([])
+  const [showSuggestions, setShowSuggestions] = useState(false)
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    if (!email.includes('@')) { setErr('E-mail inválido'); return }
+  // Atalho de "convidar amigos": reaproveita a lista unificada de /people,
+  // filtrando só conexões já confirmadas — mesmo padrão da Voyage.
+  useEffect(() => {
+    apiFetch<{ contacts: { email: string; name?: string; avatar_url?: string; user_id: string | null; contexts: { type: string; friend_status?: string }[] }[] }>('/people')
+      .then(data => {
+        const list = data.contacts
+          .filter(c => c.contexts.some(ctx => ctx.type === 'friend' && (ctx as any).friend_status === 'active'))
+          .map(c => ({ email: c.email, name: c.name, avatar_url: c.avatar_url, user_id: c.user_id }))
+        setFriends(list)
+      })
+      .catch(() => {})
+  }, [])
+
+  const isEmailLike = /\S+@\S+\.\S+/.test(query)
+
+  useEffect(() => {
+    const q = query.trim().replace(/^@/, '')
+    if (isEmailLike || q.length < 2) { setSuggestions([]); return }
+    const handle = setTimeout(() => {
+      apiFetch<InviteUserSuggestion[]>(`/people/search?q=${encodeURIComponent(q)}`)
+        .then(r => { setSuggestions(r); setShowSuggestions(true) })
+        .catch(() => setSuggestions([]))
+    }, 300)
+    return () => clearTimeout(handle)
+  }, [query, isEmailLike])
+
+  async function send(payload: { email?: string; username?: string }) {
     setSaving(true); setErr('')
-    try { await onInvite(email) }
+    try {
+      await onInvite(payload)
+      setQuery('')
+      setSuggestions([])
+      setShowSuggestions(false)
+    }
     catch (ex: unknown) { setErr((ex as Error).message ?? 'Erro') }
     finally { setSaving(false) }
+  }
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    if (isEmailLike) { send({ email: query.trim() }); return }
+    const username = query.trim().replace(/^@/, '')
+    if (username.length < 3) { setErr('E-mail ou @ inválido'); return }
+    send({ username })
   }
 
   return (
@@ -831,16 +875,67 @@ function InviteModal({ s, result, copied, onInvite, onCopy, onClose }: {
         {!result ? (
           <>
             <p className="text-xs" style={{ color: 'var(--arvo-fg-soft)', lineHeight: 1.5 }}>
-              {s.inviteHint ?? 'Informe o e-mail do convidado. Nenhuma mensagem é enviada automaticamente — você receberá um link para compartilhar.'}
+              {s.inviteHint ?? 'Informe o e-mail ou @usuário do convidado. Se já tiver conta no Arvo, entra direto; senão você recebe um link para compartilhar.'}
             </p>
-            <div className="flex flex-col gap-1">
+
+            {friends.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {friends.map(f => (
+                  <button
+                    key={f.email} type="button" onClick={() => send({ email: f.email })} disabled={saving}
+                    title={`Convidar ${f.name || f.email}`}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 6, padding: '4px 10px 4px 4px',
+                      borderRadius: 999, border: '1px solid var(--arvo-border)', background: 'var(--arvo-hover-bg)',
+                      cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg)',
+                    }}
+                  >
+                    <Avatar name={f.name} email={f.email} avatarUrl={f.avatar_url} size={20} />
+                    {f.name || f.email}
+                    <span style={{ color: 'var(--arvo-fg-soft)' }}>+</span>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            <div className="flex flex-col gap-1" style={{ position: 'relative' }}>
               <label className="text-[11px] uppercase tracking-widest" style={{ color: 'var(--arvo-fg-soft)', fontFamily: 'var(--arvo-font-body)' }}>{s.inviteEmail}</label>
               <input
-                type="email" value={email} onChange={e => setEmail(e.target.value)} autoFocus
+                type="text" value={query} onChange={e => setQuery(e.target.value)} autoFocus
+                placeholder="email@exemplo.com ou @usuario"
+                onFocus={() => setShowSuggestions(true)}
+                onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
                 className="w-full px-3 py-2.5 rounded-lg text-sm"
                 style={{ border: `1px solid ${err ? 'var(--arvo-red)' : 'var(--arvo-border)'}`, background: 'var(--arvo-surface)', color: 'var(--arvo-fg)', outline: 'none' }}
               />
               {err && <p className="text-xs" style={{ color: 'var(--arvo-red)' }}>{err}</p>}
+
+              {showSuggestions && suggestions.length > 0 && (
+                <div style={{
+                  position: 'absolute', top: '100%', left: 0, right: 0, marginTop: -4, zIndex: 30,
+                  background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)',
+                  borderRadius: 10, boxShadow: 'var(--arvo-shadow-md)', overflow: 'hidden',
+                }}>
+                  {suggestions.map(sg => (
+                    <button
+                      type="button" key={sg.user_id}
+                      onClick={() => send({ username: sg.username })}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left',
+                        padding: '8px 12px', background: 'none', border: 'none', cursor: 'pointer',
+                      }}
+                    >
+                      <Avatar name={sg.name} avatarUrl={sg.avatar_url} size={26} />
+                      <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg)' }}>
+                        {sg.name || `@${sg.username}`}
+                      </span>
+                      <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)' }}>
+                        @{sg.username}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
             <div className="flex gap-2 justify-end">
               <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg text-xs" style={{ background: 'var(--arvo-chip-bg)', color: 'var(--arvo-fg)' }}>{s.cancel ?? 'Cancelar'}</button>

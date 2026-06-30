@@ -230,13 +230,15 @@ router.delete('/groups/:id', requireAuth, async (req, res: Response) => {
 
 // ─── Invites ─────────────────────────────────────────────────────────────────
 
-// POST /api/shared/groups/:id/invite
+// POST /api/shared/groups/:id/invite  (convidar por e-mail ou @username)
 router.post('/groups/:id/invite', requireAuth, async (req, res: Response) => {
   const userId = uid(req)
   const groupId = Number(req.params.id)
-  const { email } = req.body as { email: string }
+  const { email: rawEmail, username } = req.body as { email?: string; username?: string }
 
-  if (!email?.includes('@')) { res.status(400).json({ error: 'E-mail inválido' }); return }
+  if (!rawEmail?.includes('@') && !username?.trim()) {
+    res.status(400).json({ error: 'Informe um e-mail ou @usuário' }); return
+  }
 
   // Must be active member of this group
   const { data: myMember } = await supabaseAdmin
@@ -249,9 +251,25 @@ router.post('/groups/:id/invite', requireAuth, async (req, res: Response) => {
 
   if (!myMember) { res.status(403).json({ error: 'Sem acesso a este grupo' }); return }
 
-  // Check if already a member (by email lookup)
+  // Resolve @username to a user_id + e-mail, or use the e-mail as given
+  let email = rawEmail?.trim() ?? null
+  let resolvedUserId: string | null = null
+  if (username) {
+    const handle = username.trim().toLowerCase().replace(/^@/, '')
+    const { data: handleRow } = await supabaseAdmin
+      .from('user_handles').select('user_id').eq('username', handle).maybeSingle()
+    if (!handleRow) { res.status(404).json({ error: 'Nenhum usuário com esse @' }); return }
+    resolvedUserId = handleRow.user_id
+    const { data: u } = await supabaseAdmin.auth.admin.getUserById(handleRow.user_id)
+    email = u?.user?.email ?? null
+  }
+  if (!email?.includes('@')) { res.status(400).json({ error: 'E-mail inválido' }); return }
+
+  // Check if already a member (by email lookup, or by the resolved @username user_id)
   const { data: existingUser } = await supabaseAdmin.auth.admin.listUsers()
-  const targetUser = existingUser?.users?.find(u => u.email === email)
+  const targetUser = resolvedUserId
+    ? { id: resolvedUserId }
+    : existingUser?.users?.find(u => u.email === email)
 
   // Check if already in group
   if (targetUser) {

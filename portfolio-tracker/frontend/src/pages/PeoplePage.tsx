@@ -61,6 +61,7 @@ interface Contact {
 
 interface Trip { id: number; title: string }
 interface Group { id: number; name: string }
+interface MomentOption { id: number; name: string }
 interface UserSuggestion { user_id: string; username: string; name?: string; avatar_url?: string }
 
 // ── Etiqueta de direção ───────────────────────────────────────────────────────
@@ -79,11 +80,12 @@ function DirectionTag({ direction }: { direction: Direction }) {
 }
 
 function ContactCard({
-  contact, trips, groups, onRemoved, onFriendChanged,
+  contact, trips, groups, moments, onRemoved, onFriendChanged,
 }: {
   contact: Contact
   trips: Trip[]
   groups: Group[]
+  moments: MomentOption[]
   onRemoved: (memberId: number, type: string) => void
   onFriendChanged: () => void
 }) {
@@ -91,7 +93,7 @@ function ContactCard({
   const [expanded, setExpanded] = useState(false)
   const [removing, setRemoving] = useState<number | null>(null)
   const [accepting, setAccepting] = useState(false)
-  const [shareMode, setShareMode] = useState<'trip' | 'group' | null>(null)
+  const [shareMode, setShareMode] = useState<'trip' | 'group' | 'moment' | null>(null)
   const [shareTarget, setShareTarget] = useState<number | ''>('')
   const [sharing, setSharing] = useState(false)
   const [shareError, setShareError] = useState('')
@@ -142,6 +144,8 @@ function ContactCard({
     try {
       const path = shareMode === 'trip'
         ? `/voyage/trips/${shareTarget}/invite`
+        : shareMode === 'moment'
+        ? `/finances/moments/${shareTarget}/invite`
         : `/shared/groups/${shareTarget}/invite`
       await apiFetch(path, { method: 'POST', body: JSON.stringify({ email: contact.email }) })
       setShareMode(null)
@@ -418,8 +422,8 @@ function ContactCard({
               onChange={e => setShareTarget(e.target.value ? Number(e.target.value) : '')}
               style={{ flex: 1, fontSize: 12.5, padding: '6px 8px', borderRadius: 8, border: '1px solid var(--arvo-border)', background: 'var(--arvo-surface)', color: 'var(--arvo-fg)' }}
             >
-              <option value="">{shareMode === 'trip' ? 'Selecione a viagem' : 'Selecione a categoria'}</option>
-              {(shareMode === 'trip' ? trips : groups).map(item => (
+              <option value="">{shareMode === 'trip' ? 'Selecione a viagem' : shareMode === 'moment' ? 'Selecione o momento' : 'Selecione a categoria'}</option>
+              {(shareMode === 'trip' ? trips : shareMode === 'moment' ? moments : groups).map(item => (
                 <option key={item.id} value={item.id}>{'title' in item ? item.title : item.name}</option>
               ))}
             </select>
@@ -438,6 +442,9 @@ function ContactCard({
             <button type="button" onClick={() => setShareMode('group')} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-muted)', background: 'none', border: 'none', cursor: 'pointer' }}>
               + Compartilhar categoria
             </button>
+            <button type="button" onClick={() => setShareMode('moment')} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-muted)', background: 'none', border: 'none', cursor: 'pointer' }}>
+              + Compartilhar momento
+            </button>
           </div>
         )}
         {shareError && <p style={{ fontSize: 11, color: RED }}>{shareError}</p>}
@@ -452,6 +459,7 @@ export default function PeoplePage() {
   const [contacts, setContacts] = useState<Contact[]>([])
   const [trips, setTrips]   = useState<Trip[]>([])
   const [groups, setGroups] = useState<Group[]>([])
+  const [moments, setMoments] = useState<MomentOption[]>([])
   const [loading, setLoading]   = useState(true)
   const [inviteEmail, setInviteEmail] = useState('')
   const [inviting, setInviting] = useState(false)
@@ -477,6 +485,7 @@ export default function PeoplePage() {
   useEffect(() => {
     apiFetch<{ trips: Trip[] }>('/voyage/trips').then(r => setTrips(r.trips)).catch(() => {})
     apiFetch<Group[]>('/shared/groups').then(setGroups).catch(() => {})
+    apiFetch<MomentOption[]>('/finances/moments-for-picker').then(setMoments).catch(() => {})
   }, [])
 
   const isEmailLike = /\S+@\S+\.\S+/.test(inviteEmail)
@@ -667,7 +676,7 @@ export default function PeoplePage() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {contacts.map((contact, i) => (
             <div key={contact.email} style={{ animation: 'fadeUp 320ms cubic-bezier(0.22,0.61,0.36,1) both', animationDelay: `${i * 50}ms` }}>
-              <ContactCard contact={contact} trips={trips} groups={groups} onRemoved={handleRemoved} onFriendChanged={load} />
+              <ContactCard contact={contact} trips={trips} groups={groups} moments={moments} onRemoved={handleRemoved} onFriendChanged={load} />
             </div>
           ))}
         </div>
