@@ -3,6 +3,7 @@ import crypto from 'crypto'
 import Anthropic from '@anthropic-ai/sdk'
 import { requireAuth, AuthRequest } from '../middleware/auth.js'
 import { supabaseAdmin } from '../lib/supabase.js'
+import { canAutoAccept } from './people.js'
 
 const router = Router()
 
@@ -12,6 +13,84 @@ async function userDisplay(userId: string): Promise<{ name: string; email: strin
   const meta = data?.user?.user_metadata ?? {}
   const name = [meta.first_name, meta.last_name].filter(Boolean).join(' ') || data?.user?.email || userId
   return { name, email: data?.user?.email ?? '', avatar_url: meta.avatar_url }
+}
+
+// ── Pending moment invites (exported for notifications.ts) ───────────────────
+export interface PendingMomentInvite {
+  key: string
+  moment_name: string
+  inviter_name: string
+  token: string
+  occurred_at: string
+}
+
+export interface RecentMomentAddition {
+  key: string
+  moment_id: number
+  moment_name: string
+  inviter_name: string
+  occurred_at: string
+}
+
+export async function getPendingMomentInvites(userId: string): Promise<PendingMomentInvite[]> {
+  const { data: userData } = await supabaseAdmin.auth.admin.getUserById(userId)
+  const email = userData?.user?.email
+  const select = 'invite_token, created_at, finance_moments(name, user_id)'
+
+  const [byUser, byEmail] = await Promise.all([
+    supabaseAdmin.from('finance_moment_members').select(select)
+      .eq('status', 'pending').eq('user_id', userId)
+      .not('invite_token', 'is', null),
+    email
+      ? supabaseAdmin.from('finance_moment_members').select(select)
+          .eq('status', 'pending').eq('invite_email', email)
+          .not('invite_token', 'is', null)
+      : Promise.resolve({ data: [] as unknown[] }),
+  ])
+
+  const seen = new Set<string>()
+  const result: PendingMomentInvite[] = []
+  for (const row of [...(byUser.data ?? []), ...(byEmail.data ?? [])] as any[]) {
+    const moment = row.finance_moments
+    if (!moment || seen.has(row.invite_token)) continue
+    seen.add(row.invite_token)
+    const inviter = await userDisplay(moment.user_id)
+    result.push({
+      key: `moment_invite:${row.invite_token}`,
+      moment_name: moment.name,
+      inviter_name: inviter.name,
+      token: row.invite_token,
+      occurred_at: row.created_at,
+    })
+  }
+  return result
+}
+
+// Membros adicionados direto (auto-aceite) não passam por token/link — sem
+// isso eles nunca saberiam que foram incluídos no momento.
+export async function getRecentMomentAdditions(userId: string): Promise<RecentMomentAddition[]> {
+  const since = new Date(Date.now() - 14 * 24 * 3600 * 1000).toISOString()
+  const { data } = await supabaseAdmin
+    .from('finance_moment_members')
+    .select('id, joined_at, finance_moments(id, name, user_id)')
+    .eq('user_id', userId).eq('status', 'active')
+    .is('invite_token', null)
+    .gte('joined_at', since)
+
+  const result: RecentMomentAddition[] = []
+  for (const row of (data ?? []) as any[]) {
+    const moment = row.finance_moments
+    if (!moment || moment.user_id === userId) continue
+    const inviter = await userDisplay(moment.user_id)
+    result.push({
+      key: `moment_added:${row.id}`,
+      moment_id: moment.id,
+      moment_name: moment.name,
+      inviter_name: inviter.name,
+      occurred_at: row.joined_at,
+    })
+  }
+  return result
 }
 
 
@@ -2232,8 +2311,11 @@ router.post('/moments/:id/invite', requireAuth, async (req, res: Response) => {
     .delete()
     .eq('moment_id', momentId).eq('invite_email', targetEmail).eq('status', 'pending')
 
-  // Usuário já cadastrado na plataforma: entra direto como membro ativo.
-  if (targetUserId) {
+  // Usuário já cadastrado na plataforma E optou por aceitar convites
+  // automaticamente de quem está convidando: entra direto como membro ativo.
+  // Caso contrário, mesmo sendo amigo, sempre passa pelo fluxo de aceite
+  // explícito — ninguém entra num momento compartilhado sem consentir.
+  if (targetUserId && await canAutoAccept(targetUserId, userId)) {
     const { error } = await supabaseAdmin.from('finance_moment_members').insert({
       moment_id: momentId,
       user_id: targetUserId,
@@ -2252,7 +2334,7 @@ router.post('/moments/:id/invite', requireAuth, async (req, res: Response) => {
 
   const { error } = await supabaseAdmin.from('finance_moment_members').insert({
     moment_id: momentId,
-    user_id: null,
+    user_id: targetUserId,
     invite_email: targetEmail,
     invite_token: token,
     invite_expires_at: expires,
@@ -2263,6 +2345,24 @@ router.post('/moments/:id/invite', requireAuth, async (req, res: Response) => {
 
   const baseUrl = process.env.FRONTEND_ORIGIN?.split(',')[0] ?? 'https://arvo.andregutto.com'
   res.json({ direct: false, token, invite_url: `${baseUrl}/finances/moments/invite/${token}` })
+})
+
+// ── GET /finances/moments/invite/:token  (preview público do convite) ────────
+router.get('/moments/invite/:token', async (req, res: Response) => {
+  const { token } = req.params
+  const { data: member } = await supabaseAdmin
+    .from('finance_moment_members')
+    .select('id, status, invite_email, finance_moments(name, user_id)')
+    .eq('invite_token', token)
+    .single()
+
+  if (!member) { res.status(404).json({ error: 'Convite não encontrado ou expirado' }); return }
+  if (member.status !== 'pending') { res.status(410).json({ error: 'Convite já utilizado' }); return }
+
+  const moment = member.finance_moments as any
+  const inviter = await userDisplay(moment?.user_id)
+
+  res.json({ moment_name: moment?.name ?? '—', inviter_name: inviter.name, status: member.status })
 })
 
 // ── POST /finances/moments/invite/accept  (aceitar convite de momento) ───────

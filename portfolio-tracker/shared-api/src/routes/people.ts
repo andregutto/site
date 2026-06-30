@@ -20,6 +20,23 @@ async function userDisplay(userId: string): Promise<{ email: string; name?: stri
   return { email: data?.user?.email ?? userId, name, avatar_url: meta.avatar_url, username: handle?.username }
 }
 
+// Checks whether `inviteeUserId` has opted in to auto-accepting invites sent
+// by `inviterUserId` (a per-friend preference set on the invitee's own
+// user_friends row — see migration 054_friend_auto_accept.sql). Used by the
+// voyage/finance-moments/shared-categories invite endpoints to decide
+// whether a found user is activated immediately or goes through the normal
+// pending+accept flow.
+export async function canAutoAccept(inviteeUserId: string, inviterUserId: string): Promise<boolean> {
+  const { data } = await supabaseAdmin
+    .from('user_friends')
+    .select('auto_accept_invites')
+    .eq('owner_user_id', inviteeUserId)
+    .eq('friend_user_id', inviterUserId)
+    .eq('status', 'active')
+    .maybeSingle()
+  return !!data?.auto_accept_invites
+}
+
 interface PendingFriendInvite {
   key: string
   token: string
@@ -330,7 +347,7 @@ router.get('/', async (req: any, res: any) => {
 
     const { data: myOwnedFriends } = await supabaseAdmin
       .from('user_friends')
-      .select('id, invite_email, friend_user_id, status, invite_token')
+      .select('id, invite_email, friend_user_id, status, invite_token, auto_accept_invites')
       .eq('owner_user_id', userId)
     for (const f of myOwnedFriends ?? []) {
       const email: string = f.invite_email
@@ -339,7 +356,7 @@ router.get('/', async (req: any, res: any) => {
       }
       const c = contactMap.get(email)!
       if (f.status === 'active') c.status = 'active'
-      c.contexts.push({ type: 'friend', direction: 'owned_by_me', friend_id: f.id, friend_status: f.status })
+      c.contexts.push({ type: 'friend', direction: 'owned_by_me', friend_id: f.id, friend_status: f.status, auto_accept_invites: f.auto_accept_invites })
     }
 
     const { data: friendsOfMine } = await supabaseAdmin
@@ -510,6 +527,37 @@ router.post('/invite/accept', async (req: any, res: any) => {
   }
 })
 
+// ── PATCH /api/people/friends/auto-accept  (aceitar convites automaticamente de alguém) ──
+// Upsert porque o convidado pode nunca ter criado sua própria linha em
+// user_friends ainda (ex.: a amizade só existe do ponto de vista do outro,
+// que o convidou) — o toggle precisa funcionar mesmo assim.
+router.patch('/friends/auto-accept', async (req: any, res: any) => {
+  try {
+    const userId = uid(req)
+    const { friend_user_id, auto_accept_invites } = req.body as { friend_user_id?: string; auto_accept_invites?: boolean }
+    if (!friend_user_id) { res.status(400).json({ error: 'friend_user_id obrigatório' }); return }
+
+    const friend = await userDisplay(friend_user_id)
+    const { error } = await supabaseAdmin
+      .from('user_friends')
+      .upsert(
+        {
+          owner_user_id: userId,
+          friend_user_id,
+          invite_email: friend.email,
+          status: 'active',
+          joined_at: new Date().toISOString(),
+          auto_accept_invites: !!auto_accept_invites,
+        },
+        { onConflict: 'owner_user_id,invite_email' }
+      )
+    if (error) { res.status(500).json({ error: error.message }); return }
+    res.json({ ok: true })
+  } catch (e: any) {
+    res.status(500).json({ error: e.message ?? 'Erro ao atualizar' })
+  }
+})
+
 // ── DELETE /api/people/friends/:id  (desfazer conexão de amizade) ───────────────
 router.delete('/friends/:id', async (req: any, res: any) => {
   try {
@@ -526,11 +574,58 @@ router.delete('/friends/:id', async (req: any, res: any) => {
       res.status(403).json({ error: 'Sem permissão' }); return
     }
 
+    const otherUserId = row.owner_user_id === userId ? row.friend_user_id : row.owner_user_id
     await supabaseAdmin.from('user_friends').delete().eq('id', id)
+
+    // Desfazer a amizade revoga todo compartilhamento entre os dois — em
+    // ambas as direções (cada um pode ter convidado o outro pra coisas
+    // diferentes). Sem isso a pessoa removida continuaria vendo/editando
+    // viagens, momentos e categorias do outro mesmo depois de "desconectados".
+    if (otherUserId) await revokeAllSharingBetween(userId, otherUserId)
+
     res.json({ ok: true })
   } catch (e: any) {
     res.status(500).json({ error: e.message ?? 'Erro ao remover' })
   }
 })
+
+// Revoga, nas duas direções, todo compartilhamento entre userA e userB:
+// viagens, momentos financeiros e categorias compartilhadas onde um convidou
+// o outro. Chamado ao desfazer uma conexão de amizade.
+async function revokeAllSharingBetween(userA: string, userB: string) {
+  for (const [ownerId, memberId] of [[userA, userB], [userB, userA]] as const) {
+    // Viagens: hard delete da linha de membro (mesma semântica do botão "Remover" da Voyage)
+    const { data: ownedTrips } = await supabaseAdmin.from('voyage_trips').select('id').eq('user_id', ownerId)
+    const tripIds = (ownedTrips ?? []).map(t => t.id)
+    if (tripIds.length > 0) {
+      await supabaseAdmin.from('voyage_trip_members').delete().in('trip_id', tripIds).eq('user_id', memberId)
+    }
+
+    // Categorias compartilhadas: hard delete (mesma semântica do "Remover" existente)
+    const { data: ownedGroups } = await supabaseAdmin.from('shared_groups').select('id').eq('created_by', ownerId)
+    const groupIds = (ownedGroups ?? []).map(g => g.id)
+    if (groupIds.length > 0) {
+      await supabaseAdmin.from('shared_group_members').delete().in('group_id', groupIds).eq('user_id', memberId)
+    }
+
+    // Momentos financeiros: status='left' + apaga só as transações do membro
+    // removido naquele momento (mesma semântica do endpoint de revoke).
+    const { data: ownedMoments } = await supabaseAdmin.from('finance_moments').select('id').eq('user_id', ownerId)
+    const momentIds = (ownedMoments ?? []).map(m => m.id)
+    if (momentIds.length > 0) {
+      await supabaseAdmin.from('finance_moment_members')
+        .update({ status: 'left' })
+        .in('moment_id', momentIds).eq('user_id', memberId)
+      const { data: txLinks } = await supabaseAdmin
+        .from('finance_transaction_moments')
+        .select('transaction_id, moment_id')
+        .in('moment_id', momentIds).eq('user_id', memberId)
+      const txIds = (txLinks ?? []).map(t => t.transaction_id)
+      if (txIds.length > 0) {
+        await supabaseAdmin.from('finance_transactions').delete().in('id', txIds).eq('user_id', memberId)
+      }
+    }
+  }
+}
 
 export default router

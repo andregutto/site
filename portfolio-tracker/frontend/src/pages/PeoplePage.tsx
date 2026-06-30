@@ -45,6 +45,7 @@ interface FriendContext {
   friend_id: number
   friend_status: 'active' | 'pending'
   accept_token?: string
+  auto_accept_invites?: boolean
 }
 
 type Context = TripContext | FinanceContext | MomentContext | FriendContext
@@ -93,6 +94,7 @@ function ContactCard({
   const [expanded, setExpanded] = useState(false)
   const [removing, setRemoving] = useState<number | null>(null)
   const [accepting, setAccepting] = useState(false)
+  const [togglingAutoAccept, setTogglingAutoAccept] = useState(false)
   const [shareMode, setShareMode] = useState<'trip' | 'group' | 'moment' | null>(null)
   const [shareTarget, setShareTarget] = useState<number | ''>('')
   const [sharing, setSharing] = useState(false)
@@ -132,9 +134,23 @@ function ContactCard({
   }
 
   async function unfriend(ctx: FriendContext) {
-    if (!confirm(`Remover ${contact.email} de pessoas?`)) return
+    if (!confirm(`Remover ${contact.email} de pessoas? Isso revoga todo compartilhamento (viagens, momentos e categorias) entre vocês.`)) return
     await apiFetch(`/people/friends/${ctx.friend_id}`, { method: 'DELETE' })
     onFriendChanged()
+  }
+
+  async function toggleAutoAccept(ctx: FriendContext) {
+    if (!contact.user_id) return
+    setTogglingAutoAccept(true)
+    try {
+      await apiFetch('/people/friends/auto-accept', {
+        method: 'PATCH',
+        body: JSON.stringify({ friend_user_id: contact.user_id, auto_accept_invites: !ctx.auto_accept_invites }),
+      })
+      onFriendChanged()
+    } finally {
+      setTogglingAutoAccept(false)
+    }
   }
 
   async function confirmShare() {
@@ -382,7 +398,7 @@ function ContactCard({
       {friendContexts.length > 0 && (
         <div style={{ borderTop: '1px solid var(--arvo-border-soft)', paddingTop: 14, marginBottom: 14 }}>
           {friendContexts.map(ctx => (
-            <div key={ctx.friend_id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '4px 0' }}>
+            <div key={`${ctx.friend_id}-${ctx.direction}`} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '4px 0' }}>
               {ctx.friend_status === 'pending' && ctx.direction === 'shared_with_me' ? (
                 <>
                   <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg-soft)', flex: 1 }}>
@@ -410,6 +426,22 @@ function ContactCard({
               )}
             </div>
           ))}
+          {isActive && contact.user_id && (() => {
+            const mine = friendContexts.find(c => c.direction === 'owned_by_me')
+            const auto = mine?.auto_accept_invites ?? false
+            return (
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 0 0', cursor: 'pointer' }}>
+                <input
+                  type="checkbox" checked={auto} disabled={togglingAutoAccept}
+                  onChange={() => toggleAutoAccept(mine ?? { type: 'friend', direction: 'owned_by_me', friend_id: 0, friend_status: 'active', auto_accept_invites: false })}
+                  style={{ accentColor: 'var(--arvo-fg)' }}
+                />
+                <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-soft)' }}>
+                  Aceitar convites automaticamente desta pessoa (viagens, momentos, categorias)
+                </span>
+              </label>
+            )
+          })()}
         </div>
       )}
 

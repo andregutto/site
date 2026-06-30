@@ -64,6 +64,7 @@ import VoyageTripDetailPage from './pages/voyage/VoyageTripDetailPage'
 import VoyagePlacesPage from './pages/voyage/VoyagePlacesPage'
 import VoyageMapPage from './pages/voyage/VoyageMapPage'
 import AcceptTripInvitePage from './pages/voyage/AcceptTripInvitePage'
+import AcceptMomentInvitePage from './pages/finances/AcceptMomentInvitePage'
 import PublicTripPage from './pages/voyage/PublicTripPage'
 import PeoplePage from './pages/PeoplePage'
 
@@ -137,6 +138,7 @@ function AppRoutes() {
       <Route path="/share/portfolio/:token"  element={<PublicPortfolioPage />} />
       <Route path="/invite/:token"           element={<AcceptInvitePage />} />
       <Route path="/voyage/invite/:token"    element={<AcceptTripInvitePage />} />
+      <Route path="/finances/moments/invite/:token" element={<AcceptMomentInvitePage />} />
       <Route path="/trip/:token"             element={<PublicTripPage />} />
       <Route element={<ProtectedRoutes />}>
         <Route path="/dashboard"      element={<DashboardPage />} />

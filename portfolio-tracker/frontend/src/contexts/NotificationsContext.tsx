@@ -13,6 +13,14 @@ interface NotificationsContextValue {
   restore: (item: NotificationItem) => Promise<void>
   removeFromHistory: (item: NotificationItem) => Promise<void>
   clearHistory: () => Promise<void>
+  acceptInvite: (item: NotificationItem) => Promise<void>
+}
+
+const ACCEPT_ENDPOINT: Partial<Record<string, string>> = {
+  trip_invite: '/voyage/invite/accept',
+  moment_invite: '/finances/moments/invite/accept',
+  shared_group_invite: '/shared/invite/accept',
+  friend_invite: '/people/invite/accept',
 }
 
 const NotificationsContext = createContext<NotificationsContextValue | null>(null)
@@ -97,8 +105,20 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
     }
   }, [refresh])
 
+  // Aceita um convite (viagem/momento/categoria/amizade) direto na notificação,
+  // sem precisar navegar até a página de aceite — mesma rota usada pelas
+  // páginas públicas de convite, só que chamada inline.
+  const acceptInvite = useCallback(async (item: NotificationItem) => {
+    const endpoint = ACCEPT_ENDPOINT[item.type]
+    if (!endpoint) return
+    const token = item.params.token
+    await apiFetch(endpoint, { method: 'POST', body: JSON.stringify({ token }) })
+    setActive(prev => prev.filter(i => i.key !== item.key))
+    await refresh()
+  }, [refresh])
+
   return (
-    <NotificationsContext.Provider value={{ active, history, unreadCount: active.length, loading, refresh, dismiss, dismissAll, restore, removeFromHistory, clearHistory }}>
+    <NotificationsContext.Provider value={{ active, history, unreadCount: active.length, loading, refresh, dismiss, dismissAll, restore, removeFromHistory, clearHistory, acceptInvite }}>
       {children}
     </NotificationsContext.Provider>
   )

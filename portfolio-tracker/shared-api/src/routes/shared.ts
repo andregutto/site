@@ -3,6 +3,7 @@ import { randomBytes } from 'crypto'
 import { requireAuth, AuthRequest } from '../middleware/auth.js'
 import { supabaseAdmin } from '../lib/supabase.js'
 import { revertSharedCategory } from './finances.js'
+import { canAutoAccept } from './people.js'
 
 const router = Router()
 // NOTE: GET /invite/:token is intentionally public (no requireAuth)
@@ -289,6 +290,24 @@ router.post('/groups/:id/invite', requireAuth, async (req, res: Response) => {
     .eq('group_id', groupId)
     .eq('invite_email', email)
     .eq('status', 'pending')
+
+  // Usuário já cadastrado E optou por aceitar convites automaticamente de
+  // quem está convidando: entra direto como membro ativo. Caso contrário,
+  // mesmo sendo amigo, sempre passa pelo aceite explícito — mesmo
+  // comportamento de Voyage/Momentos.
+  if (targetUser && await canAutoAccept(targetUser.id, userId)) {
+    const { error } = await supabaseAdmin.from('shared_group_members').insert({
+      group_id: groupId,
+      user_id: targetUser.id,
+      invite_email: email,
+      status: 'active',
+      share_pct: 50,
+      joined_at: new Date().toISOString(),
+    })
+    if (error) { res.status(500).json({ error: error.message }); return }
+    res.json({ direct: true })
+    return
+  }
 
   const token = randomBytes(24).toString('hex')
   const expires = new Date(Date.now() + 7 * 24 * 3600 * 1000).toISOString()

@@ -26,6 +26,8 @@ export const TYPE_ICONS: Record<string, IconName> = {
   shared_group_invite: 'share',
   trip_invite: 'share',
   trip_added: 'share',
+  moment_invite: 'share',
+  moment_added: 'share',
   friend_invite: 'users',
   friend_accepted: 'users',
   friend_invite_accepted: 'users',
@@ -74,6 +76,16 @@ export function resolveNotificationText(item: NotificationItem, t: any, locale: 
       const code = String(item.params.code ?? '')
       const days = String(item.params.days ?? '')
       return { title: n.type_stale_manual_asset.replace('{code}', code).replace('{n}', days) }
+    }
+    case 'moment_invite': {
+      const inviter = String(item.params.inviter_name ?? '')
+      const moment = String(item.params.moment_name ?? '')
+      return { title: n.type_moment_invite.replace('{inviter}', inviter).replace('{moment}', moment) }
+    }
+    case 'moment_added': {
+      const inviter = String(item.params.inviter_name ?? '')
+      const moment = String(item.params.moment_title ?? '')
+      return { title: n.type_moment_added.replace('{inviter}', inviter).replace('{moment}', moment) }
     }
     case 'shared_group_invite': {
       const inviter = String(item.params.inviter_name ?? '')

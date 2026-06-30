@@ -3,6 +3,7 @@ import { randomBytes } from 'crypto'
 import { requireAuth, AuthRequest } from '../middleware/auth.js'
 import { supabaseAdmin } from '../lib/supabase.js'
 import { cache } from '../lib/cache.js'
+import { canAutoAccept } from './people.js'
 
 const router = Router()
 
@@ -1583,9 +1584,12 @@ router.post('/trips/:id/invite', requireAuth, async (req, res: Response) => {
     .delete()
     .eq('trip_id', tripId).eq('invite_email', targetEmail).eq('status', 'pending')
 
-  // Usuário já tem conta na plataforma (achado por @ ou e-mail cadastrado):
-  // entra direto como membro ativo, sem token/link — ele vê na notificação.
-  if (targetUserId) {
+  // Usuário já tem conta na plataforma E optou por aceitar convites
+  // automaticamente de quem está convidando agora: entra direto como membro
+  // ativo, sem precisar clicar em nada. Caso contrário (mesmo sendo amigo),
+  // sempre passa pelo fluxo normal de convite com aceite explícito — ninguém
+  // é adicionado a uma viagem sem consentir, mesmo que o @ seja conhecido.
+  if (targetUserId && await canAutoAccept(targetUserId, userId)) {
     const { error } = await supabaseAdmin.from('voyage_trip_members').insert({
       trip_id: tripId,
       user_id: targetUserId,
@@ -1604,7 +1608,7 @@ router.post('/trips/:id/invite', requireAuth, async (req, res: Response) => {
 
   const { error } = await supabaseAdmin.from('voyage_trip_members').insert({
     trip_id: tripId,
-    user_id: null,
+    user_id: targetUserId,
     invite_email: targetEmail,
     invite_token: token,
     invite_expires_at: expires,

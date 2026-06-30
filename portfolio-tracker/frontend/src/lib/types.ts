@@ -235,6 +235,8 @@ export type NotificationType =
   | 'shared_group_invite'
   | 'trip_invite'
   | 'trip_added'
+  | 'moment_invite'
+  | 'moment_added'
   | 'friend_invite'
   | 'friend_accepted'
   | 'friend_invite_accepted'

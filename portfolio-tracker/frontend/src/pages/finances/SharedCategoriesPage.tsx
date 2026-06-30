@@ -230,9 +230,10 @@ export default function SharedCategoriesPage() {
           result={inviteResult}
           copied={copied}
           onInvite={async (payload) => {
-            const data = await apiFetch<{ invite_url: string }>(`/shared/groups/${showInvite}/invite`, { method: 'POST', body: JSON.stringify(payload) })
-            setInviteResult(data.invite_url)
+            const data = await apiFetch<{ direct?: boolean; invite_url?: string }>(`/shared/groups/${showInvite}/invite`, { method: 'POST', body: JSON.stringify(payload) })
+            if (!data.direct) setInviteResult(data.invite_url ?? null)
             load()
+            return { direct: !!data.direct }
           }}
           onCopy={() => {
             if (inviteResult) { navigator.clipboard.writeText(inviteResult); setCopied(true); setTimeout(() => setCopied(false), 2000) }
@@ -813,7 +814,7 @@ interface InviteUserSuggestion { user_id: string; username: string; name?: strin
 
 function InviteModal({ s, result, copied, onInvite, onCopy, onClose }: {
   s: Record<string, string>; result: string | null; copied: boolean
-  onInvite: (payload: { email?: string; username?: string }) => Promise<void>; onCopy: () => void; onClose: () => void
+  onInvite: (payload: { email?: string; username?: string }) => Promise<{ direct: boolean }>; onCopy: () => void; onClose: () => void
 }) {
   const [query, setQuery] = useState('')
   const [saving, setSaving] = useState(false)
@@ -821,6 +822,7 @@ function InviteModal({ s, result, copied, onInvite, onCopy, onClose }: {
   const [friends, setFriends] = useState<InviteFriend[]>([])
   const [suggestions, setSuggestions] = useState<InviteUserSuggestion[]>([])
   const [showSuggestions, setShowSuggestions] = useState(false)
+  const [directOk, setDirectOk] = useState(false)
 
   // Atalho de "convidar amigos": reaproveita a lista unificada de /people,
   // filtrando só conexões já confirmadas — mesmo padrão da Voyage.
@@ -849,9 +851,10 @@ function InviteModal({ s, result, copied, onInvite, onCopy, onClose }: {
   }, [query, isEmailLike])
 
   async function send(payload: { email?: string; username?: string }) {
-    setSaving(true); setErr('')
+    setSaving(true); setErr(''); setDirectOk(false)
     try {
-      await onInvite(payload)
+      const { direct } = await onInvite(payload)
+      if (direct) setDirectOk(true)
       setQuery('')
       setSuggestions([])
       setShowSuggestions(false)
@@ -875,8 +878,13 @@ function InviteModal({ s, result, copied, onInvite, onCopy, onClose }: {
         {!result ? (
           <>
             <p className="text-xs" style={{ color: 'var(--arvo-fg-soft)', lineHeight: 1.5 }}>
-              {s.inviteHint ?? 'Informe o e-mail ou @usuário do convidado. Se já tiver conta no Arvo, entra direto; senão você recebe um link para compartilhar.'}
+              {s.inviteHint ?? 'Informe o e-mail ou @usuário do convidado. Ele(a) recebe um convite e precisa aceitar — a menos que tenha ativado "aceitar automaticamente" pra você.'}
             </p>
+            {directOk && (
+              <p className="text-xs" style={{ color: '#1F8A5B' }}>
+                {s.inviteDirectOk ?? '✓ Adicionado direto — já é membro ativo do grupo.'}
+              </p>
+            )}
 
             {friends.length > 0 && (
               <div className="flex flex-wrap gap-2">

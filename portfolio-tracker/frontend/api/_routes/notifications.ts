@@ -1,7 +1,7 @@
 import { Router, Response } from 'express'
 import { requireAuth, AuthRequest } from '../../../shared-api/src/middleware/auth.js'
 import { supabaseAdmin } from '../../../shared-api/src/lib/supabase.js'
-import { getActiveSubscriptions, getBudgetAlerts } from '../../../shared-api/src/routes/finances.js'
+import { getActiveSubscriptions, getBudgetAlerts, getPendingMomentInvites, getRecentMomentAdditions } from '../../../shared-api/src/routes/finances.js'
 import { getSplitWarnings, getStaleManualAssets } from './portfolio.js'
 import { getPendingGroupInvites } from '../../../shared-api/src/routes/shared.js'
 import { getPendingTripInvites, getRecentTripAdditions } from '../../../shared-api/src/routes/voyage.js'
@@ -25,7 +25,7 @@ const NON_DISMISSIBLE_HISTORY_TYPES = new Set(['bank_connected', 'bank_connect_e
 router.get('/', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
 
-  const [achievementsRes, subsResult, notifDismissalsRes, budgetAlerts, splitWarnings, staleManualAssets, pendingInvites, pendingTripInvites, pendingFriendInvites, recentFriendAcceptances, recentTripAdditions] = await Promise.all([
+  const [achievementsRes, subsResult, notifDismissalsRes, budgetAlerts, splitWarnings, staleManualAssets, pendingInvites, pendingTripInvites, pendingFriendInvites, recentFriendAcceptances, recentTripAdditions, pendingMomentInvites, recentMomentAdditions] = await Promise.all([
     supabaseAdmin.from('achievements').select('achievement_key, earned_at').eq('user_id', userId).order('earned_at', { ascending: true }),
     getActiveSubscriptions(userId),
     supabaseAdmin.from('notification_dismissals').select('key, type, params, severity, link, occurred_at, dismissed_at').eq('user_id', userId),
@@ -37,6 +37,8 @@ router.get('/', requireAuth, async (req, res: Response) => {
     getPendingFriendInvites(userId),
     getRecentFriendAcceptances(userId),
     getRecentTripAdditions(userId),
+    getPendingMomentInvites(userId),
+    getRecentMomentAdditions(userId),
   ])
 
   const dismissedKeys = new Set((notifDismissalsRes.data ?? []).map(n => n.key))
@@ -133,7 +135,7 @@ router.get('/', requireAuth, async (req, res: Response) => {
       key: inv.key,
       type: 'shared_group_invite',
       severity: 'info',
-      params: { group_name: inv.group_name, inviter_name: inv.inviter_name },
+      params: { group_name: inv.group_name, inviter_name: inv.inviter_name, token: inv.token },
       link: `/invite/${inv.token}`,
       occurred_at: inv.occurred_at,
       dismissed_at: null,
@@ -148,7 +150,7 @@ router.get('/', requireAuth, async (req, res: Response) => {
       key: inv.key,
       type: 'trip_invite',
       severity: 'info',
-      params: { trip_title: inv.trip_title, inviter_name: inv.inviter_name },
+      params: { trip_title: inv.trip_title, inviter_name: inv.inviter_name, token: inv.token },
       link: `/voyage/invite/${inv.token}`,
       occurred_at: inv.occurred_at,
       dismissed_at: null,
@@ -195,6 +197,36 @@ router.get('/', requireAuth, async (req, res: Response) => {
       severity: 'success',
       params: { trip_title: add.trip_title, inviter_name: add.inviter_name },
       link: `/voyage/${add.trip_id}`,
+      occurred_at: add.occurred_at,
+      dismissed_at: null,
+      dismissible: true,
+    })
+  }
+
+  // Category 17: pending finance moment invites -> active (unless dismissed)
+  for (const inv of pendingMomentInvites) {
+    if (dismissedKeys.has(inv.key)) continue
+    active.push({
+      key: inv.key,
+      type: 'moment_invite',
+      severity: 'info',
+      params: { moment_name: inv.moment_name, inviter_name: inv.inviter_name, token: inv.token },
+      link: `/finances/moments/invite/${inv.token}`,
+      occurred_at: inv.occurred_at,
+      dismissed_at: null,
+      dismissible: true,
+    })
+  }
+
+  // Category 18: added directly to a moment (auto-accept) -> active (unless dismissed)
+  for (const add of recentMomentAdditions) {
+    if (dismissedKeys.has(add.key)) continue
+    active.push({
+      key: add.key,
+      type: 'moment_added',
+      severity: 'success',
+      params: { moment_title: add.moment_name, inviter_name: add.inviter_name },
+      link: '/finances/moments',
       occurred_at: add.occurred_at,
       dismissed_at: null,
       dismissible: true,

@@ -585,7 +585,11 @@
     "type_friend_invite_accepted": "Você se conectou com {inviter}",
     "type_trip_invite": "{inviter} convidou você para a viagem \"{trip}\"",
     "type_trip_added": "{inviter} adicionou você à viagem \"{trip}\"",
-    "type_stale_manual_asset": "Atualize o valor de {code} — desatualizado há {n} dias"
+    "type_stale_manual_asset": "Atualize o valor de {code} — desatualizado há {n} dias",
+    "accept": "Aceitar",
+    "accepting": "Aceitando…",
+    "type_moment_invite": "{inviter} convidou você para o momento \"{moment}\"",
+    "type_moment_added": "{inviter} te adicionou ao momento \"{moment}\""
   },
   "finances": {
     "navOverview": "Visão Geral",

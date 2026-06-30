@@ -585,7 +585,11 @@
     "type_friend_invite_accepted": "You connected with {inviter}",
     "type_trip_invite": "{inviter} invited you to the trip \"{trip}\"",
     "type_trip_added": "{inviter} added you to the trip \"{trip}\"",
-    "type_stale_manual_asset": "Update {code}'s value — stale for {n} days"
+    "type_stale_manual_asset": "Update {code}'s value — stale for {n} days",
+    "accept": "Accept",
+    "accepting": "Accepting…",
+    "type_moment_invite": "{inviter} invited you to the moment \"{moment}\"",
+    "type_moment_added": "{inviter} added you to the moment \"{moment}\""
   },
   "finances": {
     "navOverview": "Overview",

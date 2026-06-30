@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type React from 'react'
 import { Link } from 'react-router-dom'
 import { useI18n } from '../contexts/I18nContext'
@@ -6,12 +7,24 @@ import { resolveNotificationText, SEVERITY_COLORS, TYPE_ICONS, formatTimestamp }
 import type { NotificationItem } from '../lib/types'
 import { Icon } from '../components/icons'
 
+const ACCEPTABLE_TYPES = new Set(['trip_invite', 'moment_invite', 'shared_group_invite', 'friend_invite'])
+
 function NotificationRow({ item, action }: { item: NotificationItem; action: React.ReactNode }) {
   const { t, locale } = useI18n()
+  const { acceptInvite } = useNotificationsContext()
+  const [accepting, setAccepting] = useState(false)
   const { title, subtitle } = resolveNotificationText(item, t, locale)
   const color = SEVERITY_COLORS[item.severity] ?? SEVERITY_COLORS.info
   const icon = TYPE_ICONS[item.type] ?? 'bell'
   const timestamp = formatTimestamp(item.dismissed_at ?? item.occurred_at, locale)
+  const canAccept = ACCEPTABLE_TYPES.has(item.type) && !!item.params.token
+
+  async function handleAccept(e: React.MouseEvent) {
+    e.preventDefault()
+    e.stopPropagation()
+    setAccepting(true)
+    try { await acceptInvite(item) } finally { setAccepting(false) }
+  }
 
   const content = (
     <>
@@ -36,6 +49,16 @@ function NotificationRow({ item, action }: { item: NotificationItem; action: Rea
         <Link to={item.link} className="flex-1 min-w-0 flex items-center gap-4">{content}</Link>
       ) : (
         <div className="flex-1 min-w-0 flex items-center gap-4">{content}</div>
+      )}
+      {canAccept && (
+        <button
+          onClick={handleAccept}
+          disabled={accepting}
+          className="text-xs font-medium shrink-0 px-3 py-1.5 rounded-lg disabled:opacity-50"
+          style={{ background: 'var(--arvo-fg)', color: 'var(--arvo-pill-active-fg)' }}
+        >
+          {accepting ? t.notifications.accepting : t.notifications.accept}
+        </button>
       )}
       {action}
     </div>
