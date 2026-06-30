@@ -2362,6 +2362,11 @@
     "shareErrorDefault": "Erreur lors du partage",
     "shareMoment": "+ Partager un moment",
     "shareTrip": "+ Partager un voyage",
-    "view": "Voir →"
+    "view": "Voir →",
+    "removeAccessTitle": "Supprimer l'accès",
+    "connectedTooltip": "Vous êtes connectés — les invitations entre vous peuvent être acceptées automatiquement",
+    "removePersonButton": "Supprimer cette personne",
+    "removeCategoryConfirm": "Supprimer l'accès de {email} à la catégorie « {name} » ?",
+    "shareButton": "+ Partager"
   }
 }

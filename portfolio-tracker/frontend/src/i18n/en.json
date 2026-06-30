@@ -2362,6 +2362,11 @@
     "shareErrorDefault": "Error sharing",
     "shareMoment": "+ Share moment",
     "shareTrip": "+ Share trip",
-    "view": "View →"
+    "view": "View →",
+    "removeAccessTitle": "Remove access",
+    "connectedTooltip": "You're connected — invites between you can be auto-accepted",
+    "removePersonButton": "Remove this person",
+    "removeCategoryConfirm": "Remove {email}'s access to the category \"{name}\"?",
+    "shareButton": "+ Share"
   }
 }
