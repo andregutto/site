@@ -9,6 +9,7 @@ import { useI18n } from '../../contexts/I18nContext'
 import { dayColor, dayColorWash } from './_shared/dayColors'
 import OpeningHoursBlock from './_shared/OpeningHours'
 import CurrentLocationMarker from './_shared/CurrentLocationMarker'
+import { categoryLabel } from './_shared/categoryLabel'
 
 delete (L.Icon.Default.prototype as any)._getIconUrl
 L.Icon.Default.mergeOptions({
@@ -167,10 +168,10 @@ export default function VoyageMapPage() {
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
             <path strokeLinecap="round" d="M9 2L4 7l5 5" />
           </svg>
-          {selectedTrip?.title ?? 'Viagens'}
+          {selectedTrip?.title ?? tv.navTrips ?? 'Viagens'}
         </button>
         <span style={{ color: 'var(--arvo-border)', fontSize: 14 }}>›</span>
-        <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 11, letterSpacing: '0.20em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)' }}>Mapa</p>
+        <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 11, letterSpacing: '0.20em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)' }}>{tv.mapBreadcrumb ?? 'Mapa'}</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-5">
@@ -180,7 +181,7 @@ export default function VoyageMapPage() {
           {/* Trip selector */}
           <div style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', borderRadius: 16, boxShadow: 'var(--arvo-shadow-sm)', padding: '16px 18px' }}>
             <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 10, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)', marginBottom: 10 }}>
-              Viagem
+              {tv.mapTripLabel ?? 'Viagem'}
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
               {/* All trips */}
@@ -196,7 +197,7 @@ export default function VoyageMapPage() {
                   display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                 }}
               >
-                <span>Todas</span>
+                <span>{tv.allTrips ?? 'Todas'}</span>
                 <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, letterSpacing: 0, textTransform: 'none', color: selectedTripId === null ? RED : 'var(--arvo-fg-soft)' }}>
                   {totalWithCoords}
                 </span>
@@ -227,7 +228,7 @@ export default function VoyageMapPage() {
 
               {trips.length === 0 && (
                 <p style={{ fontFamily: 'var(--arvo-font-serif)', fontStyle: 'italic', fontSize: 13, color: GOLD }}>
-                  Nenhuma viagem ainda
+                  {tv.mapNoTripsYet ?? 'Nenhuma viagem ainda'}
                 </p>
               )}
             </div>
@@ -237,7 +238,7 @@ export default function VoyageMapPage() {
           {selectedTripId && days.length > 0 && (
             <div style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', borderRadius: 16, boxShadow: 'var(--arvo-shadow-sm)', padding: '16px 18px' }}>
               <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 10, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)', marginBottom: 10 }}>
-                Dia
+                {tv.dayLabel ?? 'Dia'}
               </p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                 <button
@@ -251,7 +252,7 @@ export default function VoyageMapPage() {
                     textTransform: 'uppercase', color: selectedDay === null ? RED : 'var(--arvo-fg-muted)',
                   }}
                 >
-                  Todos ({places.length})
+                  {(tv.mapAllPlaces ?? 'Todos ({n})').replace('{n}', String(places.length))}
                 </button>
                 {days.map(d => (
                   <button
@@ -268,7 +269,7 @@ export default function VoyageMapPage() {
                     <span style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
                       <span style={{ width: 7, height: 7, borderRadius: 999, background: dayColor(d), flexShrink: 0 }} />
                       <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: selectedDay === d ? dayColor(d) : 'var(--arvo-fg)' }}>
-                        <span style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.15em', textTransform: 'uppercase', marginRight: 6, color: 'var(--arvo-fg-muted)' }}>Dia</span>
+                        <span style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.15em', textTransform: 'uppercase', marginRight: 6, color: 'var(--arvo-fg-muted)' }}>{tv.dayLabel ?? 'Dia'}</span>
                         {d}
                       </span>
                     </span>
@@ -288,7 +289,7 @@ export default function VoyageMapPage() {
                       display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                     }}
                   >
-                    <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: selectedDay === -1 ? RED : 'var(--arvo-fg-muted)' }}>Sem dia</span>
+                    <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: selectedDay === -1 ? RED : 'var(--arvo-fg-muted)' }}>{tv.noDay ?? 'Sem dia'}</span>
                     <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)' }}>{undated.length}</span>
                   </button>
                 )}
@@ -308,10 +309,10 @@ export default function VoyageMapPage() {
                 </svg>
                 <p style={{ fontFamily: 'var(--arvo-font-serif)', fontStyle: 'italic', fontSize: 14, color: GOLD }}>
                   {trips.length === 0
-                    ? 'Nenhuma viagem criada ainda'
+                    ? (tv.mapNoCreatedTrips ?? 'Nenhuma viagem criada ainda')
                     : selectedTripId
-                    ? 'Nenhum lugar com coordenadas nesta viagem'
-                    : 'Adicione lugares às suas viagens para ver o mapa'}
+                    ? (tv.mapNoCoordsInTrip ?? 'Nenhum lugar com coordenadas nesta viagem')
+                    : (tv.mapAddPlacesHint ?? 'Adicione lugares às suas viagens para ver o mapa')}
                 </p>
               </div>
             ) : (
@@ -345,15 +346,15 @@ export default function VoyageMapPage() {
                           </p>
                         )}
                         {p.day_number != null && (
-                          <span style={{ display: 'inline-block', fontSize: 10, padding: '1px 7px', borderRadius: 999, background: dayColorWash(p.day_number, 16), color: dayColor(p.day_number), marginBottom: 4 }}>Dia {p.day_number}</span>
+                          <span style={{ display: 'inline-block', fontSize: 10, padding: '1px 7px', borderRadius: 999, background: dayColorWash(p.day_number, 16), color: dayColor(p.day_number), marginBottom: 4 }}>{(tv.day ?? 'Dia {n}').replace('{n}', String(p.day_number))}</span>
                         )}
                         <p style={{ fontWeight: 600, fontSize: 13, marginBottom: 2 }}>{p.name}</p>
-                        {p.category && <p style={{ fontSize: 10.5, color: '#999', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{p.category}</p>}
+                        {p.category && <p style={{ fontSize: 10.5, color: '#999', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{categoryLabel(p.category, tv)}</p>}
                         {p.address && <p style={{ fontSize: 11, color: '#666', marginBottom: 4 }}>{p.address}</p>}
                         <OpeningHoursBlock hours={p.opening_hours} />
                         {p.trip_note && <p style={{ fontSize: 11, fontStyle: 'italic', color: '#888', marginBottom: 4 }}>{p.trip_note}</p>}
                         {(p.expense_total ?? 0) > 0 && (
-                          <p style={{ fontSize: 11, color: '#444', marginBottom: 4 }}>Gasto aqui: <strong>{fmtEur(p.expense_total!)}</strong></p>
+                          <p style={{ fontSize: 11, color: '#444', marginBottom: 4 }}>{tv.spentHere ?? 'Gasto aqui:'} <strong>{fmtEur(p.expense_total!)}</strong></p>
                         )}
                         {p.google_maps_url && (
                           <a href={p.google_maps_url} target="_blank" rel="noopener noreferrer"
