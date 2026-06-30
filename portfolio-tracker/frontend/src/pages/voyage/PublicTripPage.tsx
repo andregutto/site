@@ -358,13 +358,13 @@ function PlaceGroup({ day, places, staysPassingThrough = [], selectedPlaceId, on
           <button
             type="button"
             onClick={() => openDirections(routeStops.map(p => ({ lat: p.lat!, lng: p.lng! })), currentLocation)}
-            title={tv.public?.openDayRoute ?? 'Open this day\'s route in Google Maps'}
+            title={tv.dayRouteTitle ?? 'Open this day\'s route in Google Maps'}
             style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0, cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 10.5, padding: '3px 9px', borderRadius: 999, border: `1px solid ${day !== null ? dayColor(day) : 'var(--arvo-border)'}`, background: day !== null ? dayColorWash(day, 10) : 'transparent', color: day !== null ? dayColor(day) : 'var(--arvo-fg-soft)' }}
           >
             <svg width="10" height="10" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.5">
               <path strokeLinecap="round" d="M5 2H2a1 1 0 00-1 1v8a1 1 0 001 1h8a1 1 0 001-1V8M8 1h4m0 0v4m0-4L5.5 7.5" />
             </svg>
-            {tv.public?.openDayRouteShort ?? 'Route in Maps'}
+            {tv.dayRouteShort ?? 'Route in Maps'}
           </button>
         )}
       </div>

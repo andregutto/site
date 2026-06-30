@@ -549,6 +549,7 @@ function AssignModal({ momentId: _momentId, moments, transactionId, currentMomen
 // ── Collaborators panel (convidar/gerir colaboradores de um momento) ─────────
 
 function MembersPanel({ momentId, ownerId }: { momentId: number; ownerId: string }) {
+  const { t } = useI18n()
   const { user } = useAuth()
   const [members, setMembers]     = useState<MomentMember[]>([])
   const [loading, setLoading]     = useState(true)
@@ -588,14 +589,15 @@ function MembersPanel({ momentId, ownerId }: { momentId: number; ownerId: string
       setInviteValue('')
       await load()
     } catch (ex: unknown) {
-      setError((ex as Error).message ?? 'Erro ao convidar')
+      setError((ex as Error).message ?? t.finances.momentInviteError)
     } finally {
       setInviting(false)
     }
   }
 
   async function revoke(m: MomentMember) {
-    if (!confirm(`Remover acesso de ${m.display?.name ?? m.display?.email ?? m.invite_email}? As transações dele(a) neste momento serão apagadas.`)) return
+    const name = m.display?.name ?? m.display?.email ?? m.invite_email ?? ''
+    if (!confirm(t.finances.momentRevokeConfirm.replace('{name}', name))) return
     setRemoving(m.id)
     try {
       await apiFetch(`/finances/moments/${momentId}/members/${m.id}`, { method: 'DELETE' })
@@ -608,13 +610,9 @@ function MembersPanel({ momentId, ownerId }: { momentId: number; ownerId: string
   const activeMembers = members.filter(m => m.status !== 'left')
 
   return (
-    <div style={{ paddingTop: 12, borderTop: '1px solid var(--arvo-border-soft)' }}>
-      <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)', marginBottom: 10 }}>
-        Colaboradores
-      </p>
-
+    <div>
       {loading ? (
-        <p className="text-xs text-[var(--arvo-fg-soft)]">Carregando…</p>
+        <p className="text-xs text-[var(--arvo-fg-soft)]">{t.common.loading}</p>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 10 }}>
           {activeMembers.map(m => (
@@ -630,27 +628,27 @@ function MembersPanel({ momentId, ownerId }: { momentId: number; ownerId: string
                   type="button" onClick={() => revoke(m)} disabled={removing === m.id}
                   style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: RED, background: 'none', border: 'none', cursor: 'pointer', opacity: removing === m.id ? 0.4 : 1 }}
                 >
-                  {removing === m.id ? '…' : 'Remover'}
+                  {removing === m.id ? '…' : t.finances.momentRevoke}
                 </button>
               )}
             </div>
           ))}
           {activeMembers.length === 0 && (
-            <p className="text-xs text-[var(--arvo-fg-soft)]">Nenhum colaborador ainda.</p>
+            <p className="text-xs text-[var(--arvo-fg-soft)]">{t.finances.momentNoCollaborators}</p>
           )}
         </div>
       )}
 
       {isOwner && (
-        <form onSubmit={invite} style={{ display: 'flex', gap: 6 }}>
+        <form onSubmit={invite} style={{ display: 'flex', gap: 6, borderTop: '1px solid var(--arvo-border-soft)', paddingTop: 12 }}>
           <input
-            type="text" placeholder="email@exemplo.com ou @usuario"
+            type="text" placeholder={t.finances.momentInvitePlaceholder}
             value={inviteValue} onChange={e => setInviteValue(e.target.value)}
             className="flex-1 border border-[var(--arvo-border)] rounded-lg px-3 py-1.5 text-xs bg-[var(--arvo-surface)] text-[var(--arvo-fg)] focus:outline-none focus:border-[var(--arvo-gold)]"
           />
           <button type="submit" disabled={inviting || !inviteValue.trim()}
             className="px-3 py-1.5 bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] text-xs rounded-lg hover:opacity-80 transition-opacity disabled:opacity-40">
-            {inviting ? '…' : 'Convidar'}
+            {inviting ? '…' : t.finances.momentInvite}
           </button>
         </form>
       )}
@@ -659,12 +657,66 @@ function MembersPanel({ momentId, ownerId }: { momentId: number; ownerId: string
   )
 }
 
+// ── Collaborators hero — avatar stack + "+" no canto do card de capa,
+// espelha o CollaboratorsHero da Voyage (mesmo padrão visual e de interação).
+interface HeroMember { id: number; status: 'pending' | 'active' | 'left'; display?: { name?: string; email?: string; avatar_url?: string } }
+
+function MomentCollaboratorsHero({ momentId, onOpen }: { momentId: number; onOpen: () => void }) {
+  const { t } = useI18n()
+  const [members, setMembers] = useState<HeroMember[]>([])
+
+  useEffect(() => {
+    apiFetch<{ members: HeroMember[] }>(`/finances/moments/${momentId}/members`)
+      .then(d => setMembers(d.members.filter(m => m.status === 'active')))
+      .catch(() => {})
+  }, [momentId])
+
+  const shown = members.slice(0, 4)
+
+  return (
+    <button
+      type="button"
+      onClick={e => { e.stopPropagation(); onOpen() }}
+      style={{
+        display: 'flex', alignItems: 'center', gap: 8,
+        background: 'rgba(13,13,13,0.55)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.12)',
+        borderRadius: 999, padding: shown.length > 0 ? '4px 10px 4px 4px' : '5px 12px', cursor: 'pointer',
+      }}
+      title={t.finances.momentCollaboratorsHint}
+    >
+      {shown.length > 0 && (
+        <div className="flex -space-x-2">
+          {shown.map(m => (
+            <div key={m.id} style={{ border: '2px solid rgba(13,13,13,0.55)', borderRadius: '50%' }}>
+              <Avatar name={m.display?.name} email={m.display?.email} avatarUrl={m.display?.avatar_url} size={22} />
+            </div>
+          ))}
+        </div>
+      )}
+      <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'rgba(255,255,255,0.80)', letterSpacing: '0.04em' }}>
+        {shown.length === 0 ? (
+          <>
+            <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <circle cx="5" cy="4.5" r="2.5"/>
+              <path strokeLinecap="round" d="M1 12c0-2.2 1.8-4 4-4s4 1.8 4 4M9.5 4.8a2 2 0 110 4M13 12c0-1.7-1.2-3.1-2.8-3.6"/>
+            </svg>
+            {t.finances.momentInvite}
+          </>
+        ) : (
+          <span style={{ fontSize: 13, lineHeight: 1 }}>+</span>
+        )}
+      </span>
+    </button>
+  )
+}
+
 function ByUserBreakdown({ byUser, total, currency, fmt }: { byUser: ByUser[]; total: number; currency: string; fmt: (n: number, c: string) => string }) {
+  const { t } = useI18n()
   if (byUser.length < 2) return null
   return (
     <div className="space-y-1.5">
       <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)', marginBottom: 4 }}>
-        Quem pagou o quê
+        {t.finances.momentByUserTitle}
       </p>
       {byUser.map((u, i) => {
         const pct = total > 0 ? Math.round((u.total / total) * 100) : 0
@@ -690,11 +742,15 @@ function resolveKey(name: string, nameKey: string | null | undefined, keys: Reco
   return keys[nameKey] ?? name
 }
 
+// Botão de ícone no header do card (ao lado de compartilhar/editar/excluir) —
+// movido pra lá pra ficar visível sem precisar expandir o momento.
 function TransformToTripButton({ momentId, onTrip }: { momentId: number; onTrip: (tripId: number) => void }) {
+  const { t } = useI18n()
   const [loading, setLoading] = useState(false)
   const [done, setDone] = useState(false)
 
-  async function handle() {
+  async function handle(e: React.MouseEvent) {
+    e.stopPropagation()
     setLoading(true)
     try {
       const result = await apiFetch<{ trip: { id: number } }>(`/voyage/from-moment/${momentId}`, { method: 'POST' })
@@ -706,25 +762,16 @@ function TransformToTripButton({ momentId, onTrip }: { momentId: number; onTrip:
   }
 
   return (
-    <div style={{ paddingTop: 8, borderTop: '1px solid var(--arvo-border-soft)' }}>
-      <button
-        type="button"
-        onClick={handle}
-        disabled={loading || done}
-        style={{
-          display: 'flex', alignItems: 'center', gap: 6,
-          fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, letterSpacing: '0.04em',
-          padding: '5px 12px', borderRadius: 6,
-          background: 'transparent', border: '1px solid #D63B2F', color: '#D63B2F',
-          cursor: loading || done ? 'default' : 'pointer',
-          opacity: loading || done ? 0.6 : 1,
-          transition: 'all 160ms ease',
-        }}
-      >
-        <span style={{ fontSize: 10 }}>◈</span>
-        {done ? 'Abrindo viagem…' : loading ? 'Criando…' : 'Transformar em viagem'}
-      </button>
-    </div>
+    <button
+      type="button"
+      onClick={handle}
+      disabled={loading || done}
+      title={done ? t.finances.momentTransformOpening : loading ? t.finances.momentTransformCreating : t.finances.momentTransformToTrip}
+      className="p-1.5 transition-colors rounded-lg hover:bg-[var(--arvo-track-bg)] disabled:opacity-50"
+      style={{ color: '#D63B2F' }}
+    >
+      <span style={{ fontSize: 13, lineHeight: 1, display: 'inline-block' }}>◈</span>
+    </button>
   )
 }
 
@@ -762,6 +809,7 @@ export default function FinancesMomentsPage() {
   const [pickerMoments, setPickerMoments] = useState<MomentPickerRow[]>([])
   const [assignTarget,  setAssignTarget]  = useState<{ txId: number; currentMomentId: number | null } | null>(null)
   const [sharingMoment, setSharingMoment] = useState<Moment | null>(null)
+  const [membersMoment, setMembersMoment] = useState<Moment | null>(null)
   const [spentByMoment, setSpentByMoment] = useState<Record<number, number>>({})
   const [selectedTripId, setSelectedTripId] = useState<number | null>(null)
   const [tripOptions, setTripOptions]       = useState<{ id: number; title: string }[]>([])
@@ -929,15 +977,21 @@ export default function FinancesMomentsPage() {
       <div className="space-y-3">
         {moments.map(m => (
           <div key={m.id} className="bg-[var(--arvo-surface)] rounded-2xl border border-[var(--arvo-border)] shadow-sm overflow-hidden">
-            {/* Cover photo or color gradient */}
+            {/* Cover photo or color gradient — hero, com avatares de colaboradores no canto inferior direito (espelha a Voyage) */}
             {m.cover_image_url ? (
-              <div className="h-28 overflow-hidden">
+              <div className="h-28 overflow-hidden relative">
                 <img src={m.cover_image_url} alt={m.name} className="w-full h-full object-cover"
                   style={{ objectPosition: m.cover_image_position ?? '50% 50%' }} />
+                <div style={{ position: 'absolute', bottom: 8, right: 8 }}>
+                  <MomentCollaboratorsHero momentId={m.id} onOpen={() => setMembersMoment(m)} />
+                </div>
               </div>
             ) : (
-              <div className="h-20 flex items-center justify-center" style={{ background: 'var(--arvo-surface-2)' }}>
+              <div className="h-20 flex items-center justify-center relative" style={{ background: 'var(--arvo-surface-2)' }}>
                 <Icon name={resolveMomentIcon(m.icon)} size={36} style={{ color: m.color }} />
+                <div style={{ position: 'absolute', bottom: 6, right: 6 }}>
+                  <MomentCollaboratorsHero momentId={m.id} onOpen={() => setMembersMoment(m)} />
+                </div>
               </div>
             )}
             {/* Moment header */}
@@ -961,6 +1015,7 @@ export default function FinancesMomentsPage() {
                 )}
               </div>
               <div className="flex items-center gap-2 shrink-0">
+                <TransformToTripButton momentId={m.id} onTrip={tripId => navigate(`/voyage/${tripId}`)} />
                 <button
                   onClick={e => { e.stopPropagation(); setSharingMoment(m) }}
                   className={`p-1.5 transition-colors rounded-lg hover:bg-[var(--arvo-track-bg)] ${m.share_token ? 'text-[var(--arvo-fg)]' : 'text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg)]'}`}
@@ -1115,11 +1170,6 @@ export default function FinancesMomentsPage() {
                       </p>
                     )}
 
-                    {/* Colaboradores do momento */}
-                    <MembersPanel momentId={m.id} ownerId={detail.moment.user_id} />
-
-                    {/* Flow B: transform moment into a trip */}
-                    <TransformToTripButton momentId={m.id} onTrip={tripId => navigate(`/voyage/${tripId}`)} />
                   </>
                 )}
               </div>
@@ -1141,6 +1191,37 @@ export default function FinancesMomentsPage() {
             setSharingMoment(prev => prev ? { ...prev, ...info } : null)
           }}
         />
+      )}
+
+      {/* Members modal — bottom sheet, mesmo padrão da Voyage */}
+      {membersMoment && (
+        <div
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
+          style={{ background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)' }}
+          onClick={e => { if (e.target === e.currentTarget) setMembersMoment(null) }}
+        >
+          <div
+            className="w-full sm:max-w-md max-h-[90vh] overflow-y-auto rounded-t-[18px] sm:rounded-[18px]"
+            style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border-soft)', boxShadow: 'var(--arvo-shadow-lg)' }}
+          >
+            <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: '1px solid var(--arvo-border-soft)' }}>
+              <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 13, letterSpacing: '0.10em', color: 'var(--arvo-fg)' }}>
+                {t.finances.momentCollaboratorsTitle}
+              </p>
+              <button
+                type="button" onClick={() => setMembersMoment(null)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--arvo-fg-soft)', padding: 4 }}
+              >
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <path strokeLinecap="round" d="M3 3l10 10M13 3L3 13" />
+                </svg>
+              </button>
+            </div>
+            <div style={{ padding: 20 }}>
+              <MembersPanel momentId={membersMoment.id} ownerId={membersMoment.user_id} />
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Assign modal */}

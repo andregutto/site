@@ -449,7 +449,7 @@ function ItemRow({ item, tripId, canEdit, dragging, dropTarget, destinations, au
           <button
             type="button"
             onClick={onToggleRoute}
-            title="Incluir no roteiro do Google Maps"
+            title={tv.routeCheckboxTitle ?? 'Incluir no roteiro do Google Maps'}
             style={{ marginTop: 2, flexShrink: 0, width: 18, height: 18, borderRadius: 4, border: `1.5px solid ${routeSelected ? RED : 'var(--arvo-border)'}`, background: routeSelected ? RED : 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
           >
             {routeSelected && <span style={{ fontSize: 10, color: '#fff' }}>✓</span>}
@@ -1039,9 +1039,9 @@ export default function TripItineraryPanel({ tripId, tripCity, tripCountry, trip
         {activeTool === null && !showToolMenu && (
           <div style={{ display: 'flex', gap: 6 }}>
             <button type="button" onClick={() => { setRouteMode(v => !v); if (routeMode) setRouteSelection([]) }}
-              title="Selecionar lugares para montar um roteiro no Google Maps"
+              title={tv.routeSelectTitle ?? 'Marque lugares para montar uma rota personalizada no Google Maps'}
               style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: 'var(--arvo-font-body)', fontSize: 11, letterSpacing: '0.02em', padding: '4px 10px', borderRadius: 999, background: routeMode ? 'rgba(214,59,47,0.10)' : 'none', border: `1px solid ${routeMode ? RED : 'var(--arvo-border)'}`, color: routeMode ? RED : 'var(--arvo-fg-muted)', cursor: 'pointer' }}>
-              {routeMode ? 'Cancelar seleção' : 'Selecionar lugares'}
+              {routeMode ? (tv.routeSelectCancel ?? 'Cancelar rota') : (tv.routeSelectToggle ?? 'Montar rota no Maps')}
             </button>
             {canEdit && (
               <button type="button" onClick={() => setShowToolMenu(true)}
@@ -1129,12 +1129,12 @@ export default function TripItineraryPanel({ tripId, tripCity, tripCountry, trip
                 </span>
                 <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   {items.filter(p => p.day_number === d && p.kind === 'place' && p.lat != null && p.lng != null).length > 1 && (
-                    <button type="button" onClick={() => openDayRoute(d)} title="Abrir roteiro deste dia no Google Maps"
+                    <button type="button" onClick={() => openDayRoute(d)} title={tv.dayRouteTitle ?? 'Abrir roteiro deste dia no Google Maps'}
                       style={{ display: 'flex', alignItems: 'center', gap: 3, background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'var(--arvo-font-body)', fontSize: 10.5, color: 'var(--arvo-fg-soft)' }}>
                       <svg width="10" height="10" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.5">
                         <path strokeLinecap="round" d="M5 2H2a1 1 0 00-1 1v8a1 1 0 001 1h8a1 1 0 001-1V8M8 1h4m0 0v4m0-4L5.5 7.5" />
                       </svg>
-                      Roteiro no Maps
+                      {tv.dayRouteShort ?? 'Roteiro no Maps'}
                     </button>
                   )}
                   {canEdit && items.some(p => p.day_number === d && p.arrive_time) && (
@@ -1182,14 +1182,16 @@ export default function TripItineraryPanel({ tripId, tripCity, tripCountry, trip
         }}>
           <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg)' }}>
             {routeSelection.length === 0
-              ? 'Marque lugares na lista para montar a rota'
-              : `${routeSelection.length} lugar${routeSelection.length > 1 ? 'es' : ''} selecionado${routeSelection.length > 1 ? 's' : ''}`}
+              ? (tv.routeSelectEmpty ?? 'Marque lugares na lista para montar a rota')
+              : (routeSelection.length === 1
+                  ? (tv.routeSelectCountOne ?? '{n} lugar selecionado').replace('{n}', String(routeSelection.length))
+                  : (tv.routeSelectCountMany ?? '{n} lugares selecionados').replace('{n}', String(routeSelection.length)))}
           </span>
           <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
             {routeSelection.length > 0 && (
               <button type="button" onClick={() => setRouteSelection([])}
                 style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-soft)', background: 'none', border: 'none', cursor: 'pointer' }}>
-                Limpar
+                {tv.routeSelectClear ?? 'Limpar'}
               </button>
             )}
             <button
@@ -1203,7 +1205,7 @@ export default function TripItineraryPanel({ tripId, tripCity, tripCountry, trip
                 openDirections(stops, currentLocation)
               }}
               style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, padding: '5px 12px', borderRadius: 999, background: routeSelection.length > 0 ? RED : 'var(--arvo-border)', color: '#fff', border: 'none', cursor: routeSelection.length > 0 ? 'pointer' : 'default' }}>
-              Abrir no Google Maps
+              {tv.routeSelectOpen ?? 'Abrir no Google Maps'}
             </button>
           </div>
         </div>

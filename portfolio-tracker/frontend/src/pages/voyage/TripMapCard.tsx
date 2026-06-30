@@ -233,7 +233,7 @@ export default function TripMapCard({ tripId, refreshKey, selectedDay: selectedD
             <button
               type="button"
               onClick={() => openDirections(visibleCoords.map(p => ({ lat: p.lat!, lng: p.lng! })), currentLocation)}
-              title={tv.openDayRoute ?? 'Abrir roteiro deste dia no Google Maps'}
+              title={tv.dayRouteTitle ?? 'Abrir roteiro deste dia no Google Maps'}
               style={{
                 display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0, cursor: 'pointer',
                 fontFamily: 'var(--arvo-font-body)', fontSize: 10.5,
@@ -245,7 +245,7 @@ export default function TripMapCard({ tripId, refreshKey, selectedDay: selectedD
               <svg width="11" height="11" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.5">
                 <path strokeLinecap="round" d="M5 2H2a1 1 0 00-1 1v8a1 1 0 001 1h8a1 1 0 001-1V8M8 1h4m0 0v4m0-4L5.5 7.5" />
               </svg>
-              {tv.openDayRouteShort ?? 'Roteiro no Maps'}
+              {tv.dayRouteShort ?? 'Roteiro no Maps'}
             </button>
           )}
           <button

@@ -1036,7 +1036,19 @@
     "freedomInflationIpca": "IPCA (Brésil)",
     "freedomInflationHicp": "IHPC (France/EUR)",
     "freedomInflationCpi": "CPI (États-Unis)",
-    "freedomInflationPrefill": "Utiliser {rate}% ({index})"
+    "freedomInflationPrefill": "Utiliser {rate}% ({index})",
+    "momentCollaboratorsTitle": "Collaborateurs",
+    "momentCollaboratorsHint": "Collaborateurs",
+    "momentInvite": "Inviter",
+    "momentInvitePlaceholder": "email@exemple.com ou @utilisateur",
+    "momentNoCollaborators": "Aucun collaborateur pour l'instant — invitez quelqu'un à partager ce moment.",
+    "momentRevoke": "Révoquer",
+    "momentRevokeConfirm": "Révoquer l'accès de {name} ? Ses transactions dans ce moment seront supprimées.",
+    "momentInviteError": "Erreur lors de l'invitation",
+    "momentByUserTitle": "Qui a payé quoi",
+    "momentTransformToTrip": "Transformer en voyage",
+    "momentTransformCreating": "Création…",
+    "momentTransformOpening": "Ouverture du voyage…"
   },
   "classes": {
     "title": "Classes d'actifs",
@@ -2079,7 +2091,6 @@
     "highlightTitle": "Mettre en avant",
     "expensesTitle": "Dépenses",
     "linkExpenseShort": "Lier une dépense",
-    "linkAnotherMoment": "+ Lier un autre moment",
     "editTripBtn": "Modifier",
     "photoAlbumTitle": "Album photo partagé",
     "photoAlbumSubtitle": "Ouvrir dans un nouvel onglet",
@@ -2219,10 +2230,19 @@
     },
     "public": {
       "category": {
-        "restaurants": "Restaurants", "bakeries": "Boulangeries", "cafes": "Cafés",
-        "museums": "Musées", "hotels": "Hôtels", "bars": "Bars", "beaches": "Plages",
-        "parks": "Parcs", "shopping": "Shopping", "markets": "Marchés",
-        "touristSpots": "Sites touristiques", "favorites": "Favoris", "carRental": "Location de voiture"
+        "restaurants": "Restaurants",
+        "bakeries": "Boulangeries",
+        "cafes": "Cafés",
+        "museums": "Musées",
+        "hotels": "Hôtels",
+        "bars": "Bars",
+        "beaches": "Plages",
+        "parks": "Parcs",
+        "shopping": "Shopping",
+        "markets": "Marchés",
+        "touristSpots": "Sites touristiques",
+        "favorites": "Favoris",
+        "carRental": "Location de voiture"
       },
       "loadError": "Erreur de chargement de la page",
       "notFound": "Page introuvable",
@@ -2264,6 +2284,17 @@
       "ctaBody": "Créez votre propre itinéraire, organisez vos lieux sur la carte et suivez le coût du voyage — tout en un seul endroit.",
       "ctaButton": "Créer mon itinéraire sur Arvo Voyage →",
       "createdWith": "Créé avec"
-    }
+    },
+    "routeSelectToggle": "Créer un itinéraire Maps",
+    "routeSelectCancel": "Annuler l'itinéraire",
+    "routeSelectTitle": "Cochez des lieux pour créer un itinéraire personnalisé dans Google Maps",
+    "routeSelectEmpty": "Cochez des lieux dans la liste pour créer l'itinéraire",
+    "routeSelectCountOne": "{n} lieu sélectionné",
+    "routeSelectCountMany": "{n} lieux sélectionnés",
+    "routeSelectClear": "Effacer",
+    "routeSelectOpen": "Ouvrir dans Google Maps",
+    "routeCheckboxTitle": "Inclure dans l'itinéraire Google Maps",
+    "dayRouteTitle": "Ouvrir l'itinéraire du jour dans Google Maps",
+    "dayRouteShort": "Itinéraire Maps"
   }
 }

@@ -1036,7 +1036,19 @@
     "freedomInflationIpca": "IPCA (Brazil)",
     "freedomInflationHicp": "HICP (France/EUR)",
     "freedomInflationCpi": "CPI (USA)",
-    "freedomInflationPrefill": "Use {rate}% ({index})"
+    "freedomInflationPrefill": "Use {rate}% ({index})",
+    "momentCollaboratorsTitle": "Collaborators",
+    "momentCollaboratorsHint": "Collaborators",
+    "momentInvite": "Invite",
+    "momentInvitePlaceholder": "email@example.com or @username",
+    "momentNoCollaborators": "No collaborators yet — invite someone to split this moment.",
+    "momentRevoke": "Revoke",
+    "momentRevokeConfirm": "Revoke {name}'s access? Their transactions in this moment will be deleted.",
+    "momentInviteError": "Error sending invite",
+    "momentByUserTitle": "Who paid what",
+    "momentTransformToTrip": "Turn into a trip",
+    "momentTransformCreating": "Creating…",
+    "momentTransformOpening": "Opening trip…"
   },
   "classes": {
     "title": "Asset Classes",
@@ -2079,7 +2091,6 @@
     "highlightTitle": "Highlight",
     "expensesTitle": "Expenses",
     "linkExpenseShort": "Link expense",
-    "linkAnotherMoment": "+ Link another moment",
     "editTripBtn": "Edit",
     "photoAlbumTitle": "Shared photo album",
     "photoAlbumSubtitle": "Open in a new tab",
@@ -2219,10 +2230,19 @@
     },
     "public": {
       "category": {
-        "restaurants": "Restaurants", "bakeries": "Bakeries", "cafes": "Cafés",
-        "museums": "Museums", "hotels": "Hotels", "bars": "Bars", "beaches": "Beaches",
-        "parks": "Parks", "shopping": "Shopping", "markets": "Markets",
-        "touristSpots": "Tourist spots", "favorites": "Favorites", "carRental": "Car rental"
+        "restaurants": "Restaurants",
+        "bakeries": "Bakeries",
+        "cafes": "Cafés",
+        "museums": "Museums",
+        "hotels": "Hotels",
+        "bars": "Bars",
+        "beaches": "Beaches",
+        "parks": "Parks",
+        "shopping": "Shopping",
+        "markets": "Markets",
+        "touristSpots": "Tourist spots",
+        "favorites": "Favorites",
+        "carRental": "Car rental"
       },
       "loadError": "Error loading page",
       "notFound": "Page not found",
@@ -2264,6 +2284,17 @@
       "ctaBody": "Build your own itinerary, organize places on the map and track your trip's cost — all in one place.",
       "ctaButton": "Create my itinerary on Arvo Voyage →",
       "createdWith": "Created with"
-    }
+    },
+    "routeSelectToggle": "Build route in Maps",
+    "routeSelectCancel": "Cancel route",
+    "routeSelectTitle": "Check places to build a custom route in Google Maps",
+    "routeSelectEmpty": "Check places in the list to build the route",
+    "routeSelectCountOne": "{n} place selected",
+    "routeSelectCountMany": "{n} places selected",
+    "routeSelectClear": "Clear",
+    "routeSelectOpen": "Open in Google Maps",
+    "routeCheckboxTitle": "Include in the Google Maps route",
+    "dayRouteTitle": "Open this day's route in Google Maps",
+    "dayRouteShort": "Route in Maps"
   }
 }

@@ -1036,7 +1036,19 @@
     "freedomInflationIpca": "IPCA (Brasil)",
     "freedomInflationHicp": "IHPC (França/EUR)",
     "freedomInflationCpi": "CPI (EUA)",
-    "freedomInflationPrefill": "Usar {rate}% ({index})"
+    "freedomInflationPrefill": "Usar {rate}% ({index})",
+    "momentCollaboratorsTitle": "Colaboradores",
+    "momentCollaboratorsHint": "Colaboradores",
+    "momentInvite": "Convidar",
+    "momentInvitePlaceholder": "email@exemplo.com ou @usuario",
+    "momentNoCollaborators": "Nenhum colaborador ainda — convide alguém para dividir este momento.",
+    "momentRevoke": "Revogar",
+    "momentRevokeConfirm": "Revogar acesso de {name}? As transações dele(a) neste momento serão apagadas.",
+    "momentInviteError": "Erro ao convidar",
+    "momentByUserTitle": "Quem pagou o quê",
+    "momentTransformToTrip": "Transformar em viagem",
+    "momentTransformCreating": "Criando…",
+    "momentTransformOpening": "Abrindo viagem…"
   },
   "classes": {
     "title": "Classes de Ativos",
@@ -2079,7 +2091,6 @@
     "highlightTitle": "Destaque",
     "expensesTitle": "Despesas",
     "linkExpenseShort": "Vincular gasto",
-    "linkAnotherMoment": "+ Vincular outro momento",
     "editTripBtn": "Editar",
     "photoAlbumTitle": "Álbum de fotos compartilhado",
     "photoAlbumSubtitle": "Abrir em uma nova aba",
@@ -2219,10 +2230,19 @@
     },
     "public": {
       "category": {
-        "restaurants": "Restaurantes", "bakeries": "Padarias", "cafes": "Cafés",
-        "museums": "Museus", "hotels": "Hotéis", "bars": "Bares", "beaches": "Praias",
-        "parks": "Parques", "shopping": "Compras", "markets": "Mercados",
-        "touristSpots": "Pontos turísticos", "favorites": "Favoritos", "carRental": "Aluguel de carro"
+        "restaurants": "Restaurantes",
+        "bakeries": "Padarias",
+        "cafes": "Cafés",
+        "museums": "Museus",
+        "hotels": "Hotéis",
+        "bars": "Bares",
+        "beaches": "Praias",
+        "parks": "Parques",
+        "shopping": "Compras",
+        "markets": "Mercados",
+        "touristSpots": "Pontos turísticos",
+        "favorites": "Favoritos",
+        "carRental": "Aluguel de carro"
       },
       "loadError": "Erro ao carregar página",
       "notFound": "Página não encontrada",
@@ -2264,6 +2284,17 @@
       "ctaBody": "Monte seu próprio roteiro, organize lugares no mapa e acompanhe o custo da viagem — tudo num só lugar.",
       "ctaButton": "Criar meu roteiro no Arvo Voyage →",
       "createdWith": "Criado com"
-    }
+    },
+    "routeSelectToggle": "Montar rota no Maps",
+    "routeSelectCancel": "Cancelar rota",
+    "routeSelectTitle": "Marque lugares para montar uma rota personalizada no Google Maps",
+    "routeSelectEmpty": "Marque lugares na lista para montar a rota",
+    "routeSelectCountOne": "{n} lugar selecionado",
+    "routeSelectCountMany": "{n} lugares selecionados",
+    "routeSelectClear": "Limpar",
+    "routeSelectOpen": "Abrir no Google Maps",
+    "routeCheckboxTitle": "Incluir no roteiro do Google Maps",
+    "dayRouteTitle": "Abrir roteiro deste dia no Google Maps",
+    "dayRouteShort": "Roteiro no Maps"
   }
 }
