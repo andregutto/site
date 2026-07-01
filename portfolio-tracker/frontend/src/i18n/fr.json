@@ -167,6 +167,8 @@
   },
   "common": {
     "loading": "Chargement...",
+    "all": "Tous",
+    "thisYear": "Cette année",
     "error": "Erreur",
     "save": "Enregistrer",
     "cancel": "Annuler",

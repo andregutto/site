@@ -44,6 +44,7 @@ import FinancesTransactionsPage from './pages/finances/FinancesTransactionsPage'
 import FinancesBudgetPage from './pages/finances/FinancesBudgetPage'
 import FinancesFreedomPage from './pages/finances/FinancesFreedomPage'
 import FinancesMomentsPage from './pages/finances/FinancesMomentsPage'
+import MomentDetailPage from './pages/finances/MomentDetailPage'
 import AppLayout from './components/AppLayout'
 import AchievementsPage from './pages/AchievementsPage'
 import NotificationsPage from './pages/NotificationsPage'
@@ -176,6 +177,7 @@ function AppRoutes() {
           <Route path="transactions"  element={<FinancesTransactionsPage />} />
           <Route path="budget"        element={<FinancesBudgetPage />} />
           <Route path="moments"       element={<FinancesMomentsPage />} />
+          <Route path="moments/:id"   element={<MomentDetailPage />} />
           <Route path="freedom"       element={<FinancesFreedomPage />} />
           <Route path="shared"         element={<SharedCategoriesPage />} />
           <Route path="insights"      element={<FinancesInsightsPage />} />

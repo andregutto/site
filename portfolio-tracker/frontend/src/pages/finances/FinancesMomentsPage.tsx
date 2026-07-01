@@ -1,10 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { apiFetch } from '../../lib/api'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
 import { useI18n } from '../../contexts/I18nContext'
-import { useCurrency } from '../../contexts/CurrencyContext'
 import { useTheme } from '../../contexts/ThemeContext'
 import { Icon } from '../../components/icons'
 import { MOMENT_ICON_KEYS, resolveMomentIcon } from '../../lib/momentIcons'
@@ -41,7 +40,7 @@ async function compressImage(file: File, maxDim = 3000, quality = 0.95): Promise
   return new File([blob], name, { type: 'image/jpeg' })
 }
 
-interface Moment {
+export interface Moment {
   id: number
   user_id: string
   name: string
@@ -57,27 +56,28 @@ interface Moment {
   share_expires_at: string | null
   share_hide_descriptions: boolean
   created_at: string
+  moment_type: 'trip' | 'party' | 'dinner' | 'other'
 }
 
-interface ShareInfo {
+export interface ShareInfo {
   share_token: string
   share_expires_at: string | null
   share_hide_descriptions: boolean
 }
 
-interface ByUser {
+export interface ByUser {
   user_id: string
   total: number
   display?: { name?: string; email?: string; avatar_url?: string }
 }
 
-interface MomentDetail {
+export interface MomentDetail {
   moment: Moment
   transactions: { id: number; date: string; description: string; amount: number; currency: string; notes: string | null; finance_categories: { name: string; name_key: string | null; icon: string; color: string } | null }[]
   summary: { total: number; by_category: { name: string; name_key: string | null; icon: string; color: string; total: number }[]; by_user: ByUser[] }
 }
 
-interface MomentMember {
+export interface MomentMember {
   id: number
   user_id: string | null
   invite_email: string | null
@@ -87,18 +87,18 @@ interface MomentMember {
   display?: { name?: string; email?: string; avatar_url?: string }
 }
 
-interface MomentPickerRow {
+export interface MomentPickerRow {
   id: number; name: string; icon: string; color: string
 }
 
 // Azul arara, terracota, ocre, verde, dourado — paleta limitada aos tons da marca.
 const COLORS = ['#1B4FD8', '#A36A52', '#E8A020', '#1F8A5B', '#C8B89A']
 
-function _fmt(n: number, currency: string) {
+export function _fmt(n: number, currency: string) {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n)
 }
 
-function fmtDate(d: string) {
+export function fmtDate(d: string) {
   return new Date(d + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
 }
 
@@ -118,7 +118,7 @@ type MomentKind = 'trip' | 'party' | 'dinner' | 'other'
 
 function MomentForm({ initial, onSave, onCancel, saving, userId }: FormProps) {
   const { t } = useI18n()
-  const [momentKind,   setMomentKind]   = useState<MomentKind>('other')
+  const [momentKind,   setMomentKind]   = useState<MomentKind>(initial?.moment_type ?? 'other')
   const [autoCreateTrip, setAutoCreateTrip] = useState(true)
   const [name,         setName]         = useState(initial?.name ?? '')
   const [description,  setDescription]  = useState(initial?.description ?? '')
@@ -240,6 +240,7 @@ function MomentForm({ initial, onSave, onCancel, saving, userId }: FormProps) {
       budget: budget !== '' ? Number(budget) : null,
       cover_image_url: coverImageUrl,
       cover_image_position: `${photoPos.x.toFixed(1)}% ${photoPos.y.toFixed(1)}%`,
+      moment_type: momentKind,
     }, { createTripLinked: !initial && momentKind === 'trip' && autoCreateTrip })
   }
 
@@ -259,22 +260,20 @@ function MomentForm({ initial, onSave, onCancel, saving, userId }: FormProps) {
           <input value={description} onChange={e => setDescription(e.target.value)} className={fieldCls} />
         </div>
 
-        {!initial && (
-          <div className="col-span-2">
-            <label className={labelCls}>{t.finances.momentKindLabel}</label>
-            <div className="flex flex-wrap gap-1.5">
-              {(['trip', 'party', 'dinner', 'other'] as MomentKind[]).map(k => (
-                <button
-                  key={k} type="button"
-                  onClick={() => setMomentKind(k)}
-                  className={`px-3 py-1.5 rounded-full text-xs border transition-colors ${momentKind === k ? 'border-[var(--arvo-fg)] bg-[var(--arvo-fg)]/10 text-[var(--arvo-fg)]' : 'border-[var(--arvo-border)] text-[var(--arvo-fg-muted)]'}`}
-                >
-                  {k === 'trip' ? t.finances.momentKindTrip : k === 'party' ? t.finances.momentKindParty : k === 'dinner' ? t.finances.momentKindDinner : t.finances.momentKindOther}
-                </button>
-              ))}
-            </div>
+        <div className="col-span-2">
+          <label className={labelCls}>{t.finances.momentKindLabel}</label>
+          <div className="flex flex-wrap gap-1.5">
+            {(['trip', 'party', 'dinner', 'other'] as MomentKind[]).map(k => (
+              <button
+                key={k} type="button"
+                onClick={() => setMomentKind(k)}
+                className={`px-3 py-1.5 rounded-full text-xs border transition-colors ${momentKind === k ? 'border-[var(--arvo-fg)] bg-[var(--arvo-fg)]/10 text-[var(--arvo-fg)]' : 'border-[var(--arvo-border)] text-[var(--arvo-fg-muted)]'}`}
+              >
+                {k === 'trip' ? t.finances.momentKindTrip : k === 'party' ? t.finances.momentKindParty : k === 'dinner' ? t.finances.momentKindDinner : t.finances.momentKindOther}
+              </button>
+            ))}
           </div>
-        )}
+        </div>
 
         {!initial && momentKind === 'trip' && (
           <div className="col-span-2 flex items-center justify-between gap-3 py-1">
@@ -446,7 +445,7 @@ interface ShareModalProps {
   onUpdate: (info: ShareInfo) => void
 }
 
-function ShareModal({ moment, onClose, onRevoke, onUpdate }: ShareModalProps) {
+export function ShareModal({ moment, onClose, onRevoke, onUpdate }: ShareModalProps) {
   const { t } = useI18n()
   const baseUrl = window.location.origin
   const EXPIRY_OPTIONS = [
@@ -607,7 +606,7 @@ interface AssignModalProps {
   onClose: () => void
 }
 
-function AssignModal({ momentId: _momentId, moments, transactionId, currentMomentId, onDone, onClose }: AssignModalProps) {
+export function AssignModal({ momentId: _momentId, moments, transactionId, currentMomentId, onDone, onClose }: AssignModalProps) {
   const { t } = useI18n()
   const [saving, setSaving] = useState(false)
 
@@ -655,7 +654,7 @@ function AssignModal({ momentId: _momentId, moments, transactionId, currentMomen
 interface MomentInviteFriend { email: string; name?: string; avatar_url?: string; user_id: string | null }
 interface MomentInviteSuggestion { user_id: string; username: string; name?: string; avatar_url?: string }
 
-function MembersPanel({ momentId, ownerId }: { momentId: number; ownerId: string }) {
+export function MembersPanel({ momentId, ownerId }: { momentId: number; ownerId: string }) {
   const { t } = useI18n()
   const { user } = useAuth()
   const [members, setMembers]     = useState<MomentMember[]>([])
@@ -850,7 +849,7 @@ function MembersPanel({ momentId, ownerId }: { momentId: number; ownerId: string
 // espelha o CollaboratorsHero da Voyage (mesmo padrão visual e de interação).
 interface HeroMember { id: number; status: 'pending' | 'active' | 'left'; display?: { name?: string; email?: string; avatar_url?: string } }
 
-function MomentCollaboratorsHero({ momentId, onOpen }: { momentId: number; onOpen: () => void }) {
+export function MomentCollaboratorsHero({ momentId, onOpen }: { momentId: number; onOpen: () => void }) {
   const { t } = useI18n()
   const [members, setMembers] = useState<HeroMember[]>([])
 
@@ -901,7 +900,7 @@ function MomentCollaboratorsHero({ momentId, onOpen }: { momentId: number; onOpe
   )
 }
 
-function ByUserBreakdown({ byUser, total, currency, fmt }: { byUser: ByUser[]; total: number; currency: string; fmt: (n: number, c: string) => string }) {
+export function ByUserBreakdown({ byUser, total, currency, fmt }: { byUser: ByUser[]; total: number; currency: string; fmt: (n: number, c: string) => string }) {
   const { t } = useI18n()
   const { resolvedTheme } = useTheme()
   const USER_COLORS = resolvedTheme === 'dark' ? USER_COLORS_DARK : USER_COLORS_LIGHT
@@ -930,14 +929,14 @@ function ByUserBreakdown({ byUser, total, currency, fmt }: { byUser: ByUser[]; t
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 
-function resolveKey(name: string, nameKey: string | null | undefined, keys: Record<string, string>): string {
+export function resolveKey(name: string, nameKey: string | null | undefined, keys: Record<string, string>): string {
   if (!nameKey) return name
   return keys[nameKey] ?? name
 }
 
 // Botão de ícone no header do card (ao lado de compartilhar/editar/excluir) —
 // movido pra lá pra ficar visível sem precisar expandir o momento.
-function TransformToTripButton({ momentId, onTrip }: { momentId: number; onTrip: (tripId: number) => void }) {
+export function TransformToTripButton({ momentId, onTrip }: { momentId: number; onTrip: (tripId: number) => void }) {
   const { t } = useI18n()
   const [loading, setLoading] = useState(false)
   const [done, setDone] = useState(false)
@@ -971,41 +970,17 @@ function TransformToTripButton({ momentId, onTrip }: { momentId: number; onTrip:
 export default function FinancesMomentsPage() {
   const { t } = useI18n()
   const { user } = useAuth()
-  const { hideValues } = useCurrency()
   const navigate = useNavigate()
-  const fmt = (n: number, currency: string) => hideValues ? '•••' : _fmt(n, currency)
-  const nameKeys: Record<string, string> = {
-    categoryTransfer: t.finances.categoryTransfer, categorySalary: t.finances.categorySalary,
-    categoryUncategorized: t.finances.categoryUncategorized, categoryGroceries: t.finances.categoryGroceries,
-    categoryRestaurant: t.finances.categoryRestaurant, categoryTransport: t.finances.categoryTransport,
-    categoryHealth: t.finances.categoryHealth, categoryEntertainment: t.finances.categoryEntertainment,
-    categoryHousing: t.finances.categoryHousing, categoryStreaming: t.finances.categoryStreaming,
-    categorySubscriptions: t.finances.categorySubscriptions, categoryPharmacy: t.finances.categoryPharmacy,
-    categoryClothing: t.finances.categoryClothing, categoryTravel: t.finances.categoryTravel,
-    categoryCoffee: t.finances.categoryCoffee, categoryUtilities: t.finances.categoryUtilities,
-    categoryEducation: t.finances.categoryEducation, categoryPersonalCare: t.finances.categoryPersonalCare,
-    categoryElectronics: t.finances.categoryElectronics, categoryAirbnb: t.finances.categoryAirbnb,
-    categoryOther: t.finances.categoryOther, categoryGifts: t.finances.categoryGifts,
-    categoryShopping: t.finances.categoryShopping, categoryTaxes: t.finances.categoryTaxes,
-    categoryFees: t.finances.categoryFees, categoryBarsRestaurants: t.finances.categoryBarsRestaurants,
-    categoryShowsParties: t.finances.categoryShowsParties, categoryPhone: t.finances.categoryPhone,
-    categoryInvestment: t.finances.categoryInvestment,
-  }
+  const location = useLocation()
+
   const [moments,     setMoments]     = useState<Moment[]>([])
   const [loading,     setLoading]     = useState(true)
   const [showForm,    setShowForm]    = useState(false)
   const [editing,     setEditing]     = useState<Moment | null>(null)
   const [saving,      setSaving]      = useState(false)
-  const [expanded,    setExpanded]    = useState<number | null>(null)
-  const [detail,      setDetail]      = useState<MomentDetail | null>(null)
-  const [detailLoading, setDetailLoading] = useState(false)
-  const [pickerMoments, setPickerMoments] = useState<MomentPickerRow[]>([])
-  const [assignTarget,  setAssignTarget]  = useState<{ txId: number; currentMomentId: number | null } | null>(null)
-  const [sharingMoment, setSharingMoment] = useState<Moment | null>(null)
-  const [membersMoment, setMembersMoment] = useState<Moment | null>(null)
-  const [spentByMoment, setSpentByMoment] = useState<Record<number, number>>({})
   const [selectedTripId, setSelectedTripId] = useState<number | null>(null)
   const [tripOptions, setTripOptions]       = useState<{ id: number; title: string }[]>([])
+  const [typeFilter,  setTypeFilter]  = useState<'all' | MomentKind>('all')
 
   useEffect(() => {
     if (showForm && !editing) {
@@ -1021,12 +996,8 @@ export default function FinancesMomentsPage() {
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const [data, picker] = await Promise.all([
-        apiFetch<Moment[]>('/finances/moments'),
-        apiFetch<MomentPickerRow[]>('/finances/moments-for-picker'),
-      ])
+      const data = await apiFetch<Moment[]>('/finances/moments')
       setMoments(data)
-      setPickerMoments(picker)
     } finally {
       setLoading(false)
     }
@@ -1034,27 +1005,17 @@ export default function FinancesMomentsPage() {
 
   useEffect(() => { load() }, [load])
 
-  async function loadDetail(id: number) {
-    setDetailLoading(true)
-    try {
-      const d = await apiFetch<MomentDetail>(`/finances/moments/${id}`)
-      setDetail(d)
-      setSpentByMoment(prev => ({ ...prev, [id]: d.summary.total }))
-    } finally {
-      setDetailLoading(false)
+  // Voltando da página de detalhe pelo botão "Editar" — abre o formulário
+  // já preenchido, sem forçar o usuário a achar o momento na lista de novo.
+  useEffect(() => {
+    const editId = (location.state as { editId?: number } | null)?.editId
+    if (editId && moments.length > 0) {
+      const m = moments.find(mm => mm.id === editId)
+      if (m) { setEditing(m); setShowForm(true) }
+      navigate(location.pathname, { replace: true, state: null })
     }
-  }
-
-  function toggleExpand(id: number) {
-    if (expanded === id) {
-      setExpanded(null)
-      setDetail(null)
-    } else {
-      setExpanded(id)
-      setDetail(null)
-      loadDetail(id)
-    }
-  }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [moments])
 
   async function saveMoment(data: MomentFormData, opts?: { createTripLinked?: boolean }) {
     setSaving(true)
@@ -1093,7 +1054,6 @@ export default function FinancesMomentsPage() {
   async function deleteMoment(id: number) {
     if (!confirm(t.finances.momentConfirmDelete)) return
     await apiFetch(`/finances/moments/${id}`, { method: 'DELETE' })
-    if (expanded === id) { setExpanded(null); setDetail(null) }
     await load()
   }
 
@@ -1104,6 +1064,23 @@ export default function FinancesMomentsPage() {
       </div>
     )
   }
+
+  const typeLabel = (k: MomentKind) =>
+    k === 'trip' ? t.finances.momentKindTrip : k === 'party' ? t.finances.momentKindParty : k === 'dinner' ? t.finances.momentKindDinner : t.finances.momentKindOther
+
+  const filtered = typeFilter === 'all' ? moments : moments.filter(m => (m.moment_type ?? 'other') === typeFilter)
+
+  // Agrupamento por ano — "Este ano" primeiro, anos anteriores em ordem decrescente,
+  // mesmo padrão que a Voyage usa pra listas que crescem com o tempo.
+  const currentYear = new Date().getFullYear()
+  const yearOf = (m: Moment) => new Date(m.start_date ?? m.created_at).getFullYear()
+  const groups = new Map<number, Moment[]>()
+  for (const m of filtered) {
+    const y = yearOf(m)
+    if (!groups.has(y)) groups.set(y, [])
+    groups.get(y)!.push(m)
+  }
+  const sortedYears = [...groups.keys()].sort((a, b) => b - a)
 
   return (
     <div className="space-y-5">
@@ -1179,268 +1156,72 @@ export default function FinancesMomentsPage() {
         </div>
       )}
 
-      {/* Moments list */}
-      <div className="space-y-3">
-        {moments.map(m => (
-          <div key={m.id} className="bg-[var(--arvo-surface)] rounded-2xl border border-[var(--arvo-border)] shadow-sm overflow-hidden">
-            {/* Cover photo or color gradient — hero, com avatares de colaboradores no canto inferior direito (espelha a Voyage) */}
-            {m.cover_image_url ? (
-              <div className="h-28 overflow-hidden relative">
-                <img src={m.cover_image_url} alt={m.name} className="w-full h-full object-cover"
-                  style={{ objectPosition: m.cover_image_position ?? '50% 50%' }} />
-                <div style={{ position: 'absolute', bottom: 8, right: 8 }}>
-                  <MomentCollaboratorsHero momentId={m.id} onOpen={() => setMembersMoment(m)} />
-                </div>
-              </div>
-            ) : (
-              <div className="h-20 flex items-center justify-center relative" style={{ background: 'var(--arvo-surface-2)' }}>
-                <Icon name={resolveMomentIcon(m.icon)} size={36} style={{ color: m.color }} />
-                <div style={{ position: 'absolute', bottom: 6, right: 6 }}>
-                  <MomentCollaboratorsHero momentId={m.id} onOpen={() => setMembersMoment(m)} />
-                </div>
-              </div>
-            )}
-            {/* Moment header */}
-            <div
-              className="flex items-center gap-3 px-5 py-4 cursor-pointer hover:bg-[var(--arvo-surface-2)] transition-colors"
-              onClick={() => toggleExpand(m.id)}
+      {/* Type filter — só faz sentido mostrar quando a lista já tem alguma variedade */}
+      {moments.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {(['all', 'trip', 'party', 'dinner', 'other'] as const).map(k => (
+            <button
+              key={k} type="button"
+              onClick={() => setTypeFilter(k)}
+              className={`px-3 py-1.5 rounded-full text-xs border transition-colors ${typeFilter === k ? 'border-[var(--arvo-fg)] bg-[var(--arvo-fg)]/10 text-[var(--arvo-fg)]' : 'border-[var(--arvo-border)] text-[var(--arvo-fg-muted)]'}`}
             >
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: m.color + '20', color: m.color }}>
-                <Icon name={resolveMomentIcon(m.icon)} size={20} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-[var(--arvo-fg)] text-sm truncate">{m.name}</p>
-                {(m.start_date || m.description) && (
-                  <p className="text-xs text-[var(--arvo-fg-soft)] mt-0.5 truncate">
-                    {m.start_date && m.end_date
-                      ? `${fmtDate(m.start_date)} – ${fmtDate(m.end_date)}`
-                      : m.start_date
-                      ? `${t.finances.momentFromDate} ${fmtDate(m.start_date)}`
-                      : m.description}
-                  </p>
-                )}
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <TransformToTripButton momentId={m.id} onTrip={tripId => navigate(`/voyage/${tripId}`)} />
-                <button
-                  onClick={e => { e.stopPropagation(); setSharingMoment(m) }}
-                  className={`p-1.5 transition-colors rounded-lg hover:bg-[var(--arvo-track-bg)] ${m.share_token ? 'text-[var(--arvo-fg)]' : 'text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg)]'}`}
-                  title={t.finances.shareTitle}
+              {k === 'all' ? t.common.all : typeLabel(k)}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Moments list — linhas compactas, sem expandir inline; clique leva
+          pra página de detalhe própria do momento (mesmo padrão da Voyage). */}
+      {sortedYears.map(year => (
+        <div key={year} className="space-y-2">
+          <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 10, letterSpacing: '0.20em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)' }}>
+            {year === currentYear ? t.common.thisYear : year}
+          </p>
+          <div className="bg-[var(--arvo-surface)] rounded-2xl border border-[var(--arvo-border)] shadow-sm divide-y divide-[var(--arvo-border-soft)] overflow-hidden">
+            {groups.get(year)!.map(m => (
+              <div
+                key={m.id}
+                className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-[var(--arvo-surface-2)] transition-colors group"
+                onClick={() => navigate(`/finances/moments/${m.id}`)}
+              >
+                <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: m.color + '20', color: m.color }}>
+                  <Icon name={resolveMomentIcon(m.icon)} size={17} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-[var(--arvo-fg)] text-sm truncate">{m.name}</p>
+                  {(m.start_date || m.description) && (
+                    <p className="text-xs text-[var(--arvo-fg-soft)] truncate">
+                      {m.start_date && m.end_date
+                        ? `${fmtDate(m.start_date)} – ${fmtDate(m.end_date)}`
+                        : m.start_date
+                        ? `${t.finances.momentFromDate} ${fmtDate(m.start_date)}`
+                        : m.description}
+                    </p>
+                  )}
+                </div>
+                <span
+                  className="text-[10px] px-2 py-0.5 rounded-full shrink-0 hidden sm:inline-block"
+                  style={{ background: 'var(--arvo-hover-bg)', color: 'var(--arvo-fg-muted)' }}
                 >
-                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-                  </svg>
-                </button>
-                <button
-                  onClick={e => { e.stopPropagation(); setEditing(m); setShowForm(true) }}
-                  className="p-1.5 text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg)] transition-colors rounded-lg hover:bg-[var(--arvo-track-bg)]"
-                >
-                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                  </svg>
-                </button>
+                  {typeLabel(m.moment_type ?? 'other')}
+                </span>
                 <button
                   onClick={e => { e.stopPropagation(); deleteMoment(m.id) }}
-                  className="p-1.5 text-[var(--arvo-fg-soft)] hover:text-red-500 transition-colors rounded-lg hover:bg-red-50"
+                  className="p-1.5 text-[var(--arvo-fg-faint)] hover:text-red-500 transition-colors rounded-lg opacity-0 group-hover:opacity-100 shrink-0"
                 >
                   <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                   </svg>
                 </button>
-                <svg className={`w-4 h-4 text-[var(--arvo-fg-soft)] transition-transform ${expanded === m.id ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                <svg className="w-4 h-4 text-[var(--arvo-fg-soft)] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                 </svg>
               </div>
-            </div>
-
-            {/* Budget bar (collapsed preview — only once detail has been loaded once) */}
-            {m.budget != null && spentByMoment[m.id] != null && expanded !== m.id && (
-              <div className="px-5 pb-3">
-                {(() => {
-                  const spent = spentByMoment[m.id]
-                  const pct = Math.min(100, (spent / m.budget!) * 100)
-                  const over = spent > m.budget!
-                  const currency = 'EUR'
-                  return (
-                    <>
-                      <div className="flex justify-between text-xs mb-1" style={{ color: over ? 'var(--arvo-red)' : 'var(--arvo-fg-muted)' }}>
-                        <span>{fmt(spent, currency)}</span>
-                        <span>{t.finances.momentBudgetOf} {fmt(m.budget!, currency)}{over ? ` · ${t.finances.momentBudgetOver}` : ''}</span>
-                      </div>
-                      <div className="h-1.5 bg-[var(--arvo-track-bg)] rounded-full overflow-hidden">
-                        <div className="h-full rounded-full transition-all" style={{ width: `${pct.toFixed(1)}%`, backgroundColor: over ? 'var(--arvo-red)' : m.color }} />
-                      </div>
-                    </>
-                  )
-                })()}
-              </div>
-            )}
-
-            {/* Expanded detail */}
-            {expanded === m.id && (
-              <div className="border-t border-[var(--arvo-border)] px-5 py-4 space-y-4">
-                {detailLoading && <p className="text-center text-sm text-[var(--arvo-fg-soft)]">{t.common.loading}</p>}
-                {detail && detail.moment.id === m.id && (
-                  <>
-                    {/* Summary */}
-                    <div className="flex items-center gap-4 flex-wrap">
-                      <div>
-                        <p className="text-xs text-[var(--arvo-fg-soft)]">{t.finances.momentTotal}</p>
-                        <p className="text-xl font-bold text-[var(--arvo-fg)]">
-                          {fmt(detail.summary.total, detail.transactions[0]?.currency ?? 'EUR')}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-[var(--arvo-fg-soft)]">{t.finances.momentTransactions}</p>
-                        <p className="text-xl font-bold text-[var(--arvo-fg)]">{detail.transactions.filter(tx => tx.amount < 0).length}</p>
-                      </div>
-                    </div>
-
-                    {/* Budget progress (expanded) */}
-                    {m.budget != null && (() => {
-                      const spent = detail.summary.total
-                      const pct = Math.min(100, (spent / m.budget!) * 100)
-                      const over = spent > m.budget!
-                      const currency = detail.transactions[0]?.currency ?? 'EUR'
-                      return (
-                        <div>
-                          <div className="flex justify-between text-xs mb-1.5" style={{ color: over ? 'var(--arvo-red)' : 'var(--arvo-fg-muted)' }}>
-                            <span className="font-medium">{t.finances.momentBudget}</span>
-                            <span>{fmt(spent, currency)} {t.finances.momentBudgetOf} {fmt(m.budget!, currency)}{over ? ` · ${t.finances.momentBudgetOver}` : ` · ${pct.toFixed(0)}%`}</span>
-                          </div>
-                          <div className="h-2 bg-[var(--arvo-track-bg)] rounded-full overflow-hidden">
-                            <div className="h-full rounded-full transition-all" style={{ width: `${pct.toFixed(1)}%`, backgroundColor: over ? 'var(--arvo-red)' : m.color }} />
-                          </div>
-                        </div>
-                      )
-                    })()}
-
-                    {/* Por pessoa (quem pagou o quê) — só aparece com colaboração ativa */}
-                    <ByUserBreakdown
-                      byUser={detail.summary.by_user}
-                      total={detail.summary.total}
-                      currency={detail.transactions[0]?.currency ?? 'EUR'}
-                      fmt={fmt}
-                    />
-
-                    {/* Category breakdown */}
-                    {detail.summary.by_category.length > 0 && (
-                      <div className="space-y-1.5">
-                        {detail.summary.by_category.map(cat => {
-                          const pct = detail.summary.total > 0 ? (cat.total / detail.summary.total) * 100 : 0
-                          return (
-                            <div key={cat.name} className="flex items-center gap-2">
-                              <span className="text-sm w-5 text-center">{cat.icon}</span>
-                              <span className="text-xs text-[var(--arvo-fg-muted)] w-28 truncate">{resolveKey(cat.name, cat.name_key, nameKeys)}</span>
-                              <div className="flex-1 h-1.5 bg-[var(--arvo-track-bg)] rounded-full overflow-hidden">
-                                <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: cat.color }} />
-                              </div>
-                              <span className="text-xs text-[var(--arvo-fg-muted)] w-16 text-right">
-                                {fmt(cat.total, detail.transactions[0]?.currency ?? 'EUR')}
-                              </span>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    )}
-
-                    {/* Transactions */}
-                    {detail.transactions.length > 0 ? (
-                      <div className="space-y-0 border border-[var(--arvo-border)] rounded-xl overflow-hidden">
-                        {detail.transactions.map((tx, i) => (
-                          <div key={tx.id} className={`flex items-center gap-3 px-4 py-2.5 text-sm ${i > 0 ? 'border-t border-[var(--arvo-border-soft)]' : ''}`}>
-                            <span className="text-[var(--arvo-fg-soft)] text-xs w-16 shrink-0">{fmtDate(tx.date)}</span>
-                            <span className="text-xs">{tx.finance_categories?.icon ?? '❓'}</span>
-                            <div className="flex-1 min-w-0">
-                              <span className="text-[var(--arvo-fg)] truncate text-xs block">{tx.description}</span>
-                              {tx.notes && <span className="text-[10px] text-[var(--arvo-fg-soft)] italic truncate block">{tx.notes}</span>}
-                            </div>
-                            <span className={`text-xs font-semibold shrink-0 ${tx.amount < 0 ? 'text-[var(--arvo-fg)]' : 'text-emerald-600'}`}>
-                              {fmt(Math.abs(tx.amount), tx.currency)}
-                            </span>
-                            <button
-                              onClick={() => setAssignTarget({ txId: tx.id, currentMomentId: m.id })}
-                              className="ml-1 p-1 text-[var(--arvo-fg-faint)] hover:text-[var(--arvo-fg)] transition-colors"
-                              title={t.finances.assignMoment}
-                            >
-                              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a0 0 0 010 0V7a4 4 0 014-4z" />
-                              </svg>
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-xs text-[var(--arvo-fg-soft)] text-center py-4">
-                        {t.finances.momentNoTransactions}
-                      </p>
-                    )}
-
-                  </>
-                )}
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-
-      {/* Share modal */}
-      {sharingMoment && (
-        <ShareModal
-          moment={sharingMoment}
-          onClose={() => setSharingMoment(null)}
-          onRevoke={() => {
-            setMoments(ms => ms.map(m => m.id === sharingMoment.id ? { ...m, share_token: null, share_expires_at: null } : m))
-          }}
-          onUpdate={info => {
-            setMoments(ms => ms.map(m => m.id === sharingMoment.id ? { ...m, ...info } : m))
-            setSharingMoment(prev => prev ? { ...prev, ...info } : null)
-          }}
-        />
-      )}
-
-      {/* Members modal — bottom sheet, mesmo padrão da Voyage */}
-      {membersMoment && (
-        <div
-          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
-          style={{ background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)' }}
-          onClick={e => { if (e.target === e.currentTarget) setMembersMoment(null) }}
-        >
-          <div
-            className="w-full sm:max-w-md max-h-[90vh] overflow-y-auto rounded-t-[18px] sm:rounded-[18px]"
-            style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border-soft)', boxShadow: 'var(--arvo-shadow-lg)' }}
-          >
-            <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: '1px solid var(--arvo-border-soft)' }}>
-              <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 13, letterSpacing: '0.10em', color: 'var(--arvo-fg)' }}>
-                {t.finances.momentCollaboratorsTitle}
-              </p>
-              <button
-                type="button" onClick={() => setMembersMoment(null)}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--arvo-fg-soft)', padding: 4 }}
-              >
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-                  <path strokeLinecap="round" d="M3 3l10 10M13 3L3 13" />
-                </svg>
-              </button>
-            </div>
-            <div style={{ padding: 20 }}>
-              <MembersPanel momentId={membersMoment.id} ownerId={membersMoment.user_id} />
-            </div>
+            ))}
           </div>
         </div>
-      )}
-
-      {/* Assign modal */}
-      {assignTarget && (
-        <AssignModal
-          momentId={assignTarget.currentMomentId ?? 0}
-          moments={pickerMoments}
-          transactionId={assignTarget.txId}
-          currentMomentId={assignTarget.currentMomentId}
-          onDone={async () => { setAssignTarget(null); await loadDetail(expanded!) }}
-          onClose={() => setAssignTarget(null)}
-        />
-      )}
+      ))}
     </div>
   )
 }

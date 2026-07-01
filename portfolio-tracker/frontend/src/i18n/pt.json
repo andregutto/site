@@ -167,6 +167,8 @@
   },
   "common": {
     "loading": "Carregando...",
+    "all": "Todos",
+    "thisYear": "Este ano",
     "error": "Erro",
     "save": "Salvar",
     "cancel": "Cancelar",

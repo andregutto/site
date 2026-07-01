@@ -2222,10 +2222,10 @@ router.get('/moments/:id', requireAuth, async (req, res: Response) => {
 
 router.post('/moments', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
-  const { name, description, icon, color, start_date, end_date, cover_image_url, cover_image_position, budget } = req.body
+  const { name, description, icon, color, start_date, end_date, cover_image_url, cover_image_position, budget, moment_type } = req.body
   const { data, error } = await supabaseAdmin
     .from('finance_moments')
-    .insert({ user_id: userId, name, description, icon: icon ?? '✨', color: color ?? '#7C3AED', start_date: start_date ?? null, end_date: end_date ?? null, cover_image_url: cover_image_url ?? null, cover_image_position: cover_image_position ?? '50% 50%', budget: budget ?? null })
+    .insert({ user_id: userId, name, description, icon: icon ?? '✨', color: color ?? '#7C3AED', start_date: start_date ?? null, end_date: end_date ?? null, cover_image_url: cover_image_url ?? null, cover_image_position: cover_image_position ?? '50% 50%', budget: budget ?? null, moment_type: moment_type ?? 'other' })
     .select().single()
   if (error) { res.status(500).json({ error: error.message }); return }
   res.json(data)

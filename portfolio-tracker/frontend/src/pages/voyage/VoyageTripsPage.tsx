@@ -172,7 +172,7 @@ export default function VoyageTripsPage() {
       {!loading && trips.length > 0 && (
         <div className="flex gap-2 flex-wrap mb-5">
           {([
-            { key: 'all',      label: 'Todas' },
+            { key: 'all',      label: t.common.all ?? 'Todas' },
             { key: 'planning', label: tv.statusPlanning ?? 'Planejando' },
             { key: 'ongoing',  label: tv.statusOngoing  ?? 'Em viagem' },
             { key: 'past',     label: tv.statusPast     ?? 'Concluídas' },
@@ -224,11 +224,33 @@ export default function VoyageTripsPage() {
             Nenhuma viagem neste filtro
           </p>
         )
+        // Agrupamento por ano — mesmo padrão da lista de Momentos, útil quando
+        // a lista cresce (viagens antigas não competem por atenção com as recentes).
+        const currentYear = new Date().getFullYear()
+        const yearOf = (trip: Trip) => new Date(trip.start_date ?? trip.created_at).getFullYear()
+        const groups = new Map<number, Trip[]>()
+        for (const trip of visible) {
+          const y = yearOf(trip)
+          if (!groups.has(y)) groups.set(y, [])
+          groups.get(y)!.push(trip)
+        }
+        const sortedYears = [...groups.keys()].sort((a, b) => b - a)
         return (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {visible.map((trip, i) => (
-              <div key={trip.id} style={{ animation: 'fadeUp 320ms cubic-bezier(0.22,0.61,0.36,1) both', animationDelay: `${i * 40}ms` }}>
-                <TripCard trip={trip} t={t} onClick={() => navigate(`/voyage/${trip.id}`)} />
+          <div className="space-y-6">
+            {sortedYears.map(year => (
+              <div key={year}>
+                {sortedYears.length > 1 && (
+                  <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 10, letterSpacing: '0.20em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)', marginBottom: 10 }}>
+                    {year === currentYear ? (t.common.thisYear ?? 'Este ano') : year}
+                  </p>
+                )}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                  {groups.get(year)!.map((trip, i) => (
+                    <div key={trip.id} style={{ animation: 'fadeUp 320ms cubic-bezier(0.22,0.61,0.36,1) both', animationDelay: `${i * 40}ms` }}>
+                      <TripCard trip={trip} t={t} onClick={() => navigate(`/voyage/${trip.id}`)} />
+                    </div>
+                  ))}
+                </div>
               </div>
             ))}
           </div>
