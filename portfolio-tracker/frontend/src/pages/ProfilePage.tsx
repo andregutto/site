@@ -191,7 +191,7 @@ export default function ProfilePage() {
       setUsernameSaved(true)
       setEditingUsername(false)
     } catch (ex: unknown) {
-      setUsernameError((ex as Error).message ?? 'Erro ao salvar')
+      setUsernameError((ex as Error).message ?? t.profile.usernameSaveError)
     } finally {
       setUsernameSaving(false)
     }
@@ -636,7 +636,7 @@ export default function ProfilePage() {
                   <button
                     type="button"
                     onClick={() => { setUsernameInput(username); setEditingUsername(true) }}
-                    title="Editar @"
+                    title={t.profile.editUsername}
                     className="shrink-0"
                     style={{ color: 'var(--arvo-fg-faint)' }}
                   >
@@ -654,7 +654,7 @@ export default function ProfilePage() {
                   className="mt-1 text-xs rounded-full px-2.5 py-1 inline-flex items-center gap-1.5"
                   style={{ border: '1px dashed var(--arvo-border-secondary, var(--arvo-border))', color: 'var(--arvo-fg-soft)', background: 'none' }}
                 >
-                  <span style={{ fontSize: 12 }}>@</span>Escolher um @usuário
+                  <span style={{ fontSize: 12 }}>@</span>{t.profile.chooseUsername}
                 </button>
               )}
 
@@ -668,7 +668,7 @@ export default function ProfilePage() {
                         autoFocus
                         value={usernameInput}
                         onChange={e => setUsernameInput(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
-                        placeholder="seu_usuario"
+                        placeholder={t.profile.usernamePlaceholder}
                         maxLength={20}
                         className="border border-[var(--arvo-border)] rounded-[3px] pl-5 pr-2 py-1 text-xs w-32 bg-[var(--arvo-surface)] text-[var(--arvo-fg)] focus:outline-none focus:border-[var(--arvo-gold)]"
                       />
@@ -680,7 +680,7 @@ export default function ProfilePage() {
                         disabled={usernameStatus !== 'available' || usernameSaving}
                         className="shrink-0 text-xs font-medium px-2 py-1 rounded-[3px] bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] disabled:opacity-40"
                       >
-                        {usernameSaving ? '…' : 'Salvar'}
+                        {usernameSaving ? '…' : t.profile.usernameSave}
                       </button>
                     )}
                     <button
@@ -688,21 +688,21 @@ export default function ProfilePage() {
                       onClick={() => { setEditingUsername(false); setUsernameInput(username); setUsernameStatus('idle') }}
                       className="text-xs text-[var(--arvo-fg-soft)] hover:underline shrink-0"
                     >
-                      Cancelar
+                      {t.profile.usernameCancel}
                     </button>
                   </div>
                   <p className="text-xs mt-0.5" style={{ color: usernameStatus === 'taken' || usernameStatus === 'invalid' ? '#D63B2F' : usernameStatus === 'available' ? '#1F8A5B' : 'var(--arvo-fg-soft)' }}>
-                    {usernameStatus === 'checking' && 'Verificando…'}
-                    {usernameStatus === 'available' && 'Disponível'}
-                    {usernameStatus === 'taken' && 'Esse @ já está em uso'}
-                    {usernameStatus === 'invalid' && 'Use 3-20 letras minúsculas, números ou _'}
+                    {usernameStatus === 'checking' && t.profile.usernameChecking}
+                    {usernameStatus === 'available' && t.profile.usernameAvailable}
+                    {usernameStatus === 'taken' && t.profile.usernameTaken}
+                    {usernameStatus === 'invalid' && t.profile.usernameInvalid}
                   </p>
                   {usernameError && <p className="text-xs text-red-600 mt-0.5">{usernameError}</p>}
                 </div>
               )}
 
               <p className="text-xs mt-1 truncate" style={{ color: 'var(--arvo-fg-faint)' }}>{emailForDisplay}</p>
-              {usernameSaved && <p className="text-xs text-green-600 mt-0.5">@ salvo!</p>}
+              {usernameSaved && <p className="text-xs text-green-600 mt-0.5">{t.profile.usernameSaved}</p>}
             </div>
           </div>
 
