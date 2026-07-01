@@ -80,3 +80,27 @@ export function getTotalXp(earnedKeys: string[]): number {
 }
 
 export const ACHIEVEMENT_MAP = Object.fromEntries(ACHIEVEMENT_DEFS.map(a => [a.key, a]))
+
+// Wealth-milestone achievements whose description embeds a {amount} placeholder
+export const WEALTH_THRESHOLDS: Record<string, { brl: number; other: number }> = {
+  builder:         { brl: 10_000,      other: 2_000 },
+  five_digits:     { brl: 10_000,      other: 10_000 },
+  six_digits:      { brl: 100_000,     other: 100_000 },
+  quarter_million: { brl: 250_000,     other: 250_000 },
+  half_million:    { brl: 500_000,     other: 500_000 },
+  million_club:    { brl: 1_000_000,   other: 1_000_000 },
+  three_million:   { brl: 3_000_000,   other: 3_000_000 },
+  five_million:    { brl: 5_000_000,   other: 5_000_000 },
+  ten_million:     { brl: 10_000_000,  other: 10_000_000 },
+}
+
+export function resolveAchievementDesc(key: string, desc: string, displayCurrency?: string | null): string {
+  if (!desc.includes('{amount}')) return desc
+  const thresholds = WEALTH_THRESHOLDS[key]
+  if (!thresholds) return desc
+  const isBRL = !displayCurrency || displayCurrency === 'BRL'
+  const currency = isBRL ? 'BRL' : displayCurrency
+  const amount = isBRL ? thresholds.brl : thresholds.other
+  const formatted = new Intl.NumberFormat(undefined, { style: 'currency', currency, maximumFractionDigits: 0 }).format(amount)
+  return desc.replace('{amount}', formatted)
+}

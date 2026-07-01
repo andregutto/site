@@ -1,5 +1,7 @@
 import type { AchievementDef } from '../lib/achievementDefs'
+import { resolveAchievementDesc } from '../lib/achievementDefs'
 import { useI18n } from '../contexts/I18nContext'
+import { useCurrency } from '../contexts/CurrencyContext'
 import Medal from './Medal'
 
 interface Props {
@@ -9,6 +11,7 @@ interface Props {
 
 export default function CelebrationModal({ def, onClose }: Props) {
   const { t } = useI18n()
+  const { currency: displayCurrency } = useCurrency()
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm" style={{ background: 'var(--arvo-overlay)' }}>
@@ -54,7 +57,7 @@ export default function CelebrationModal({ def, onClose }: Props) {
         </div>
 
         <h2 className="text-2xl font-bold mt-5" style={{ color: 'var(--arvo-fg)' }}>{(t.achievementDefs as Record<string, {name: string; desc: string}>)[def.key]?.name ?? def.name}</h2>
-        <p className="text-sm mt-1" style={{ color: 'var(--arvo-fg-soft)' }}>{(t.achievementDefs as Record<string, {name: string; desc: string}>)[def.key]?.desc ?? def.description}</p>
+        <p className="text-sm mt-1" style={{ color: 'var(--arvo-fg-soft)' }}>{resolveAchievementDesc(def.key, (t.achievementDefs as Record<string, {name: string; desc: string}>)[def.key]?.desc ?? def.description, displayCurrency)}</p>
 
         <div className="mt-4 inline-flex items-center gap-2 rounded-full px-4 py-1.5" style={{ background: 'var(--arvo-gold-tint)', border: '1px solid rgba(200,184,154,0.30)' }}>
           <span className="font-bold text-lg" style={{ color: 'var(--arvo-gold-text)' }}>+{def.xp}</span>
