@@ -1159,82 +1159,123 @@ export default function FinancesFreedomPage() {
         <>
           {/* Hero: progress toward goal */}
           <div
-            className="rounded-2xl p-6 sm:p-7"
+            className="rounded-[24px] p-6 sm:p-8 shadow-sm"
             style={{
               background: 'linear-gradient(155deg, var(--arvo-surface) 0%, var(--arvo-surface-2) 100%)',
               border: '1px solid var(--arvo-border)',
             }}
           >
-            <div className="flex items-end justify-between flex-wrap gap-3 mb-4">
-              <div>
-                <span style={kpiLabelStyle}>{t.finances.freedomActualNow}</span>
-                <p
-                  className="arvo-num"
-                  style={{ fontFamily: "'Tenor Sans', serif", fontSize: 34, letterSpacing: '0.01em', lineHeight: 1.1, color: 'var(--arvo-fg)', margin: '4px 0 0' }}
-                >
-                  {fmt(cxFreedom(currentValue), displayCurrency, true)}
-                </p>
-              </div>
-              <div className="text-right">
-                <span style={kpiLabelStyle}>{t.finances.freedomGoal}</span>
-                <p className="arvo-num arvo-accent-blue" style={{ fontFamily: "'Tenor Sans', serif", fontSize: 22, letterSpacing: '0.01em', margin: '4px 0 0' }}>
-                  {fmt(cxFreedom(activePlan!.target_amount), displayCurrency, true)}
-                </p>
-              </div>
-            </div>
+            <div className="flex items-center gap-6 sm:gap-9 flex-wrap sm:flex-nowrap">
+              {/* Progress ring */}
+              {(() => {
+                const pct = Math.min(100, Math.max(0, (currentValue / (activePlan!.target_amount || 1)) * 100))
+                const r = 46, c = 2 * Math.PI * r
+                return (
+                  <div className="relative shrink-0 mx-auto sm:mx-0" style={{ width: 116, height: 116 }}>
+                    <svg width={116} height={116} viewBox="0 0 116 116" style={{ transform: 'rotate(-90deg)' }}>
+                      <circle cx={58} cy={58} r={r} fill="none" stroke="var(--arvo-track-bg)" strokeWidth={9} />
+                      <circle
+                        cx={58} cy={58} r={r} fill="none"
+                        stroke="url(#freedomRingGradient)"
+                        strokeWidth={9}
+                        strokeLinecap="round"
+                        strokeDasharray={c}
+                        strokeDashoffset={c - (pct / 100) * c}
+                        style={{ transition: 'stroke-dashoffset 0.6s ease' }}
+                      />
+                      <defs>
+                        <linearGradient id="freedomRingGradient" x1="0" y1="0" x2="1" y2="1">
+                          <stop offset="0%" stopColor="var(--arvo-gold)" />
+                          <stop offset="100%" stopColor="var(--arvo-blue)" />
+                        </linearGradient>
+                      </defs>
+                    </svg>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <span className="arvo-num" style={{ fontFamily: "'Tenor Sans', serif", fontSize: 24, color: 'var(--arvo-fg)', lineHeight: 1 }}>
+                        {Math.round(pct * 10) / 10}%
+                      </span>
+                      <span className="text-[9px] uppercase mt-0.5" style={{ letterSpacing: '0.1em', color: 'var(--arvo-fg-soft)' }}>{t.finances.freedomOfGoal}</span>
+                    </div>
+                  </div>
+                )
+              })()}
 
-            {/* Progress bar */}
-            <div className="h-2 rounded-full overflow-hidden" style={{ background: 'var(--arvo-track-bg)' }}>
-              <div
-                className="h-full rounded-full transition-all"
-                style={{
-                  width: `${Math.min(100, Math.max(2, (currentValue / (activePlan!.target_amount || 1)) * 100))}%`,
-                  background: 'linear-gradient(90deg, var(--arvo-gold), var(--arvo-blue))',
-                }}
-              />
+              <div className="flex-1 min-w-[220px] flex items-center justify-between gap-6 flex-wrap">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0" style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', color: 'var(--arvo-fg-muted)' }}>
+                    <Icon name="wallet" size={16} />
+                  </div>
+                  <div>
+                    <span style={kpiLabelStyle}>{t.finances.freedomActualNow}</span>
+                    <p
+                      className="arvo-num"
+                      style={{ fontFamily: "'Tenor Sans', serif", fontSize: 30, letterSpacing: '0.01em', lineHeight: 1.1, color: 'var(--arvo-fg)', margin: '2px 0 0' }}
+                    >
+                      {fmt(cxFreedom(currentValue), displayCurrency, true)}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0" style={{ background: 'var(--arvo-gold-soft, var(--arvo-surface))', border: '1px solid var(--arvo-gold)', color: 'var(--arvo-gold-text)' }}>
+                    <Icon name="target" size={16} />
+                  </div>
+                  <div>
+                    <span style={kpiLabelStyle}>{t.finances.freedomGoal}</span>
+                    <p className="arvo-num" style={{ fontFamily: "'Tenor Sans', serif", fontSize: 22, letterSpacing: '0.01em', color: 'var(--arvo-fg)', margin: '2px 0 0' }}>
+                      {fmt(cxFreedom(activePlan!.target_amount), displayCurrency, true)}
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
-            <p className="text-[11px] mt-1.5" style={{ color: 'var(--arvo-fg-soft)' }}>
-              {Math.min(100, Math.round((currentValue / (activePlan!.target_amount || 1)) * 100 * 10) / 10)}% {t.finances.freedomOfGoal}
-            </p>
 
             {/* Supporting tiles */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-6 mt-6 pt-5" style={{ borderTop: '1px solid var(--arvo-border)' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <span style={kpiLabelStyle}>{t.finances.freedomPassive} {t.finances.freedomPerMonth}</span>
-                <span className="arvo-num arvo-delta-pos text-base sm:text-lg">{fmt(cxFreedom(passiveIncome), displayCurrency, true)}</span>
-                {passiveIncomeReal != null && passiveIncomeReal !== passiveIncome && (
-                  <span className="arvo-num arvo-delta-pos text-xs">≈ {fmt(cxFreedom(passiveIncomeReal), displayCurrency, true)} {t.finances.freedomRealToday}</span>
-                )}
-                <span className="text-[10px]" style={{ color: 'var(--arvo-fg-soft)' }}>{(activePlan!.monthly_income_rate * 100).toFixed(1)}% {t.finances.freedomIncomeNominalTag}</span>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-6 mt-7 pt-6" style={{ borderTop: '1px solid var(--arvo-border)' }}>
+              <div className="flex gap-2.5">
+                <Icon name="coin" size={15} className="mt-0.5 shrink-0" style={{ color: 'var(--arvo-green)' }} />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  <span style={kpiLabelStyle}>{t.finances.freedomPassive} {t.finances.freedomPerMonth}</span>
+                  <span className="arvo-num arvo-delta-pos text-base sm:text-lg">{fmt(cxFreedom(passiveIncome), displayCurrency, true)}</span>
+                  {passiveIncomeReal != null && passiveIncomeReal !== passiveIncome && (
+                    <span className="arvo-num arvo-delta-pos text-xs">≈ {fmt(cxFreedom(passiveIncomeReal), displayCurrency, true)} {t.finances.freedomRealToday}</span>
+                  )}
+                  <span className="text-[10px]" style={{ color: 'var(--arvo-fg-soft)' }}>{(activePlan!.monthly_income_rate * 100).toFixed(1)}% {t.finances.freedomIncomeNominalTag}</span>
+                </div>
               </div>
 
-              <div className="sm:border-l sm:pl-6" style={{ display: 'flex', flexDirection: 'column', gap: 6, borderColor: 'var(--arvo-border)' }}>
-                <span style={kpiLabelStyle}>{t.finances.freedomTarget}</span>
-                {reachMonth ? (
-                  <span className="arvo-num text-base sm:text-lg" style={kpiValueStyle}>
-                    {new Date(reachMonth + '-01').toLocaleDateString(intlLocale, { month: 'short', year: 'numeric' })}
+              <div className="flex gap-2.5 sm:border-l sm:pl-6" style={{ borderColor: 'var(--arvo-border)' }}>
+                <Icon name="clock" size={15} className="mt-0.5 shrink-0" style={{ color: 'var(--arvo-fg-soft)' }} />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  <span style={kpiLabelStyle}>{t.finances.freedomTarget}</span>
+                  {reachMonth ? (
+                    <span className="arvo-num text-base sm:text-lg" style={kpiValueStyle}>
+                      {new Date(reachMonth + '-01').toLocaleDateString(intlLocale, { month: 'short', year: 'numeric' })}
+                    </span>
+                  ) : (
+                    <span className="arvo-num text-base sm:text-lg" style={{ color: 'var(--arvo-fg-faint)' }}>—</span>
+                  )}
+                  <span className="text-[10px]" style={{ color: 'var(--arvo-fg-soft)' }}>
+                    {reachYearsFromNow != null && `${t.finances.freedomIn} ${reachYearsFromNow} ${t.finances.freedomAgeAtTarget}`}
+                    {userBirthdate && reachMonth && ` · ${ageAtDate(userBirthdate, reachMonth + '-01')} ${t.finances.freedomAgeAtTarget}`}
                   </span>
-                ) : (
-                  <span className="arvo-num text-base sm:text-lg" style={{ color: 'var(--arvo-fg-faint)' }}>—</span>
-                )}
-                <span className="text-[10px]" style={{ color: 'var(--arvo-fg-soft)' }}>
-                  {reachYearsFromNow != null && `${t.finances.freedomIn} ${reachYearsFromNow} ${t.finances.freedomAgeAtTarget}`}
-                  {userBirthdate && reachMonth && ` · ${ageAtDate(userBirthdate, reachMonth + '-01')} ${t.finances.freedomAgeAtTarget}`}
-                </span>
-                {scheduleDeltaYears != null && Math.abs(scheduleDeltaYears) >= 0.5 && (
-                  <span className={`arvo-num text-[10px] font-semibold ${scheduleDeltaYears > 0 ? 'arvo-delta-pos' : 'arvo-delta-neg'}`}>
-                    {scheduleDeltaYears > 0
-                      ? `${t.finances.freedomAheadOfSchedule} ${scheduleDeltaYears} ${t.finances.freedomAgeAtTarget}`
-                      : `${t.finances.freedomBehindSchedule} ${Math.abs(scheduleDeltaYears)} ${t.finances.freedomAgeAtTarget}`}
-                  </span>
-                )}
-                <span className="text-[10px]" style={{ color: 'var(--arvo-fg-faint)' }}>{t.finances.freedomBasedOnCurrent} — {t.finances.freedomNotThePlanGoal}</span>
+                  {scheduleDeltaYears != null && Math.abs(scheduleDeltaYears) >= 0.5 && (
+                    <span className={`arvo-num text-[10px] font-semibold ${scheduleDeltaYears > 0 ? 'arvo-delta-pos' : 'arvo-delta-neg'}`}>
+                      {scheduleDeltaYears > 0
+                        ? `${t.finances.freedomAheadOfSchedule} ${scheduleDeltaYears} ${t.finances.freedomAgeAtTarget}`
+                        : `${t.finances.freedomBehindSchedule} ${Math.abs(scheduleDeltaYears)} ${t.finances.freedomAgeAtTarget}`}
+                    </span>
+                  )}
+                  <span className="text-[10px]" style={{ color: 'var(--arvo-fg-faint)' }}>{t.finances.freedomBasedOnCurrent} — {t.finances.freedomNotThePlanGoal}</span>
+                </div>
               </div>
 
-              <div className="sm:border-l sm:pl-6 col-span-2 sm:col-span-1" style={{ display: 'flex', flexDirection: 'column', gap: 6, borderColor: 'var(--arvo-border)' }}>
-                <span style={kpiLabelStyle}>{t.finances.freedomPlannedToday}</span>
-                <span className="arvo-num text-base sm:text-lg" style={kpiValueStyle}>{fmt(cxFreedom(plannedAtCurrentMonth), displayCurrency, true)}</span>
-                <span className="text-[10px]" style={{ color: 'var(--arvo-fg-soft)' }}>{t.finances.freedomAccordingToPlan}</span>
+              <div className="flex gap-2.5 sm:border-l sm:pl-6 col-span-2 sm:col-span-1" style={{ borderColor: 'var(--arvo-border)' }}>
+                <Icon name="refresh" size={15} className="mt-0.5 shrink-0" style={{ color: 'var(--arvo-fg-soft)' }} />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  <span style={kpiLabelStyle}>{t.finances.freedomPlannedToday}</span>
+                  <span className="arvo-num text-base sm:text-lg" style={kpiValueStyle}>{fmt(cxFreedom(plannedAtCurrentMonth), displayCurrency, true)}</span>
+                  <span className="text-[10px]" style={{ color: 'var(--arvo-fg-soft)' }}>{t.finances.freedomAccordingToPlan}</span>
+                </div>
               </div>
             </div>
           </div>
