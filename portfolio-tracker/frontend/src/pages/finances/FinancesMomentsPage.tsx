@@ -15,8 +15,12 @@ const RED = '#D63B2F'
 const USER_COLORS = ['#1B4FD8', '#A36A52', '#E8A020', '#1F8A5B', '#C8B89A']
 const ALLOWED_PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
 
-// Downscale + re-encode as JPEG so phone photos (often >5MB HEIC/JPEG) fit the storage bucket limit.
-async function compressImage(file: File, maxDim = 1920, quality = 0.85): Promise<File> {
+// Downscale + re-encode only when the file actually needs it (too big for the bucket, or a
+// format the bucket rejects like HEIC). Otherwise upload the original untouched — the earlier
+// blanket compression (1920px/0.85) visibly degraded photos that never needed shrinking.
+const MAX_UPLOAD_BYTES = 8 * 1024 * 1024
+async function compressImage(file: File, maxDim = 3000, quality = 0.95): Promise<File> {
+  if (file.size <= MAX_UPLOAD_BYTES && ALLOWED_PHOTO_TYPES.includes(file.type)) return file
   const bitmap = await createImageBitmap(file)
   const scale = Math.min(1, maxDim / Math.max(bitmap.width, bitmap.height))
   const w = Math.round(bitmap.width * scale)
