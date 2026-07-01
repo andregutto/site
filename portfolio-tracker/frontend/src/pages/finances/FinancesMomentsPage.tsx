@@ -200,16 +200,22 @@ function MomentForm({ initial, onSave, onCancel, saving, userId }: FormProps) {
       setUploading(true)
       setPhotoError(null)
       try {
+        // Make sure the auth token isn't stale (long editing sessions can let it expire)
+        // before hitting the storage API directly with the browser's session.
+        await supabase.auth.getSession()
         const ext = photoFile.name.split('.').pop() ?? 'jpg'
         const path = `${userId}/${Date.now()}.${ext}`
-        const { error } = await supabase.storage.from('moment-photos').upload(path, photoFile, { upsert: true })
+        const { error } = await supabase.storage.from('moment-photos')
+          .upload(path, photoFile, { upsert: true, contentType: photoFile.type || 'image/jpeg' })
         if (!error) {
           const { data } = supabase.storage.from('moment-photos').getPublicUrl(path)
           coverImageUrl = data.publicUrl
         } else {
+          console.error('[moment-photo-upload] failed:', error, { name: photoFile.name, type: photoFile.type, size: photoFile.size })
           setPhotoError(error.message || true)
         }
       } catch (ex) {
+        console.error('[moment-photo-upload] threw:', ex, { name: photoFile.name, type: photoFile.type, size: photoFile.size })
         setPhotoError((ex as Error).message || true)
       } finally {
         setUploading(false)
