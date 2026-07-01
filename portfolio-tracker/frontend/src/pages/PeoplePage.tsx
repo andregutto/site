@@ -668,12 +668,12 @@ export default function PeoplePage() {
           onFocus={() => setShowSuggestions(true)}
           onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
           style={{
-            flex: 1, fontFamily: 'var(--arvo-font-body)', fontSize: 13, padding: '10px 14px',
-            borderRadius: 10, border: '1px solid var(--arvo-border)',
+            flex: 1, fontFamily: 'var(--arvo-font-body)', fontSize: 13, padding: '8px 12px',
+            borderRadius: 8, border: '1px solid var(--arvo-border)',
             background: 'var(--arvo-surface)', color: 'var(--arvo-fg)',
           }}
         />
-        <button type="submit" disabled={inviting} className="arvo-btn arvo-btn--primary" style={{ flexShrink: 0 }}>
+        <button type="submit" disabled={inviting} className="arvo-btn arvo-btn--primary arvo-btn--sm" style={{ flexShrink: 0 }}>
           {inviting ? '…' : t.people.inviteFormButton}
         </button>
 
