@@ -2485,8 +2485,21 @@ router.delete('/moments/:id/share', requireAuth, async (req, res: Response) => {
 router.patch('/moments/:id', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const momentId = Number(req.params.id)
+
+  const { data: moment } = await supabaseAdmin
+    .from('finance_moments').select('user_id').eq('id', momentId).single()
+  if (!moment) { res.status(404).json({ error: 'Momento não encontrado' }); return }
+
+  const isOwner = moment.user_id === userId
+  if (!isOwner) {
+    const { data: member } = await supabaseAdmin
+      .from('finance_moment_members')
+      .select('id').eq('moment_id', momentId).eq('user_id', userId).eq('role', 'editor').eq('status', 'active').maybeSingle()
+    if (!member) { res.status(403).json({ error: 'Sem permissão para editar este momento' }); return }
+  }
+
   const { data, error } = await supabaseAdmin
-    .from('finance_moments').update(req.body).eq('id', momentId).eq('user_id', userId).select().single()
+    .from('finance_moments').update(req.body).eq('id', momentId).select().single()
   if (error) { res.status(500).json({ error: error.message }); return }
   res.json(data)
 })
