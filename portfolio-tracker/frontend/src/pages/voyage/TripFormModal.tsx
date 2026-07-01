@@ -33,6 +33,7 @@ export default function TripFormModal({ trip, onClose, onSaved, onFromMoment, on
   const [summary, setSummary] = useState(trip?.summary ?? '')
   const [photoAlbumUrl, setPhotoAlbumUrl] = useState(trip?.photo_album_url ?? '')
   const [destinations, setDestinations] = useState<TripDestination[]>([])
+  const [autoCreateMoment, setAutoCreateMoment] = useState(true)
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [error, setError] = useState('')
@@ -77,6 +78,12 @@ export default function TripFormModal({ trip, onClose, onSaved, onFromMoment, on
         result = await apiFetch(`/voyage/trips/${trip.id}`, { method: 'PATCH', body: JSON.stringify(body) })
       } else {
         result = await apiFetch('/voyage/trips', { method: 'POST', body: JSON.stringify(body) })
+        if (autoCreateMoment && result.trip?.id) {
+          await apiFetch(`/voyage/trips/${result.trip.id}/create-moment`, {
+            method: 'POST',
+            body: JSON.stringify({ name: title.trim() }),
+          })
+        }
       }
       onSaved(result.trip)
     } catch {
@@ -248,6 +255,35 @@ export default function TripFormModal({ trip, onClose, onSaved, onFromMoment, on
               onBlur={e => (e.target.style.borderColor = 'var(--arvo-border)')}
             />
           </label>
+
+          {/* Auto-criar momento financeiro vinculado */}
+          {!trip && (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '10px 0' }}>
+              <div>
+                <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg)' }}>
+                  {tv.autoCreateMoment ?? 'Criar momento financeiro para esta viagem'}
+                </p>
+                <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-muted)', marginTop: 2 }}>
+                  {tv.autoCreateMomentHint ?? 'Você poderá lançar e organizar os gastos da viagem'}
+                </p>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={autoCreateMoment}
+                onClick={() => setAutoCreateMoment(v => !v)}
+                style={{
+                  flexShrink: 0, width: 44, height: 26, borderRadius: 999, border: 'none', cursor: 'pointer',
+                  padding: 2, display: 'flex', alignItems: 'center',
+                  justifyContent: autoCreateMoment ? 'flex-end' : 'flex-start',
+                  background: autoCreateMoment ? RED : 'var(--arvo-border)',
+                  transition: 'background 160ms ease',
+                }}
+              >
+                <span style={{ width: 22, height: 22, borderRadius: '50%', background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,0.25)', display: 'block' }} />
+              </button>
+            </div>
+          )}
 
           {error && (
             <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: RED }}>{error}</p>

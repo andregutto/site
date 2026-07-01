@@ -108,14 +108,18 @@ type MomentFormData = Omit<Moment, 'id' | 'user_id' | 'created_at' | 'share_toke
 
 interface FormProps {
   initial?: Partial<Moment>
-  onSave: (data: MomentFormData) => Promise<void>
+  onSave: (data: MomentFormData, opts?: { createTripLinked?: boolean }) => Promise<void>
   onCancel: () => void
   saving: boolean
   userId: string
 }
 
+type MomentKind = 'trip' | 'party' | 'dinner' | 'other'
+
 function MomentForm({ initial, onSave, onCancel, saving, userId }: FormProps) {
   const { t } = useI18n()
+  const [momentKind,   setMomentKind]   = useState<MomentKind>('other')
+  const [autoCreateTrip, setAutoCreateTrip] = useState(true)
   const [name,         setName]         = useState(initial?.name ?? '')
   const [description,  setDescription]  = useState(initial?.description ?? '')
   const [icon,         setIcon]         = useState(initial?.icon ?? 'sparkle')
@@ -236,7 +240,7 @@ function MomentForm({ initial, onSave, onCancel, saving, userId }: FormProps) {
       budget: budget !== '' ? Number(budget) : null,
       cover_image_url: coverImageUrl,
       cover_image_position: `${photoPos.x.toFixed(1)}% ${photoPos.y.toFixed(1)}%`,
-    })
+    }, { createTripLinked: !initial && momentKind === 'trip' && autoCreateTrip })
   }
 
   const fieldCls = 'w-full border border-[var(--arvo-border)] rounded-[3px] px-3 py-2 text-sm bg-[var(--arvo-surface)] text-[var(--arvo-fg)] focus:outline-none focus:border-[var(--arvo-gold)] focus:ring-2 focus:ring-[var(--arvo-gold)]/25'
@@ -254,6 +258,47 @@ function MomentForm({ initial, onSave, onCancel, saving, userId }: FormProps) {
           <label className={labelCls}>{t.common.description} (opcional)</label>
           <input value={description} onChange={e => setDescription(e.target.value)} className={fieldCls} />
         </div>
+
+        {!initial && (
+          <div className="col-span-2">
+            <label className={labelCls}>{t.finances.momentKindLabel}</label>
+            <div className="flex flex-wrap gap-1.5">
+              {(['trip', 'party', 'dinner', 'other'] as MomentKind[]).map(k => (
+                <button
+                  key={k} type="button"
+                  onClick={() => setMomentKind(k)}
+                  className={`px-3 py-1.5 rounded-full text-xs border transition-colors ${momentKind === k ? 'border-[var(--arvo-fg)] bg-[var(--arvo-fg)]/10 text-[var(--arvo-fg)]' : 'border-[var(--arvo-border)] text-[var(--arvo-fg-muted)]'}`}
+                >
+                  {k === 'trip' ? t.finances.momentKindTrip : k === 'party' ? t.finances.momentKindParty : k === 'dinner' ? t.finances.momentKindDinner : t.finances.momentKindOther}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {!initial && momentKind === 'trip' && (
+          <div className="col-span-2 flex items-center justify-between gap-3 py-1">
+            <div>
+              <p className="text-sm text-[var(--arvo-fg)]">{t.finances.momentAutoCreateTrip}</p>
+              <p className="text-xs text-[var(--arvo-fg-muted)] mt-0.5">{t.finances.momentAutoCreateTripHint}</p>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={autoCreateTrip}
+              onClick={() => setAutoCreateTrip(v => !v)}
+              style={{
+                flexShrink: 0, width: 44, height: 26, borderRadius: 999, border: 'none', cursor: 'pointer',
+                padding: 2, display: 'flex', alignItems: 'center',
+                justifyContent: autoCreateTrip ? 'flex-end' : 'flex-start',
+                background: autoCreateTrip ? '#D63B2F' : 'var(--arvo-border)',
+                transition: 'background 160ms ease',
+              }}
+            >
+              <span style={{ width: 22, height: 22, borderRadius: '50%', background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,0.25)', display: 'block' }} />
+            </button>
+          </div>
+        )}
 
         {/* Photo */}
         <div className="col-span-2">
@@ -1011,7 +1056,7 @@ export default function FinancesMomentsPage() {
     }
   }
 
-  async function saveMoment(data: MomentFormData) {
+  async function saveMoment(data: MomentFormData, opts?: { createTripLinked?: boolean }) {
     setSaving(true)
     try {
       if (editing) {
@@ -1023,6 +1068,17 @@ export default function FinancesMomentsPage() {
             method: 'POST',
             body: JSON.stringify({ moment_id: created.id }),
           })
+        } else if (opts?.createTripLinked && created?.id) {
+          const tripResult = await apiFetch<{ trip: { id: number } }>('/voyage/trips', {
+            method: 'POST',
+            body: JSON.stringify({ title: data.name, start_date: data.start_date, end_date: data.end_date }),
+          })
+          if (tripResult?.trip?.id) {
+            await apiFetch(`/voyage/trips/${tripResult.trip.id}/moments`, {
+              method: 'POST',
+              body: JSON.stringify({ moment_id: created.id }),
+            })
+          }
         }
       }
       setShowForm(false)
