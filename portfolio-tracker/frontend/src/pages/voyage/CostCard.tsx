@@ -18,6 +18,14 @@ const GOLD = '#C8B89A'
 const ARVO_PALETTE = ['#A36A52', '#C8B89A', '#1B4FD8', '#E8A020', '#1F8A5B', '#8C6A28', '#D63B2F']
 const USER_COLORS = ['#1B4FD8', '#A36A52', '#E8A020', '#1F8A5B', '#C8B89A']
 
+// Default finance categories carry a name_key so they translate regardless of which
+// locale the category was originally created under (mirrors the pattern used across
+// the Finance pages' own resolveKey/nameKeys helpers).
+function resolveCategoryName(name: string, nameKey: string | null | undefined, keys: Record<string, string>): string {
+  if (!nameKey) return name
+  return keys[nameKey] ?? name
+}
+
 interface Props {
   tripId: number
   cost: TripCost
@@ -109,6 +117,19 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 export default function CostCard({ tripId, cost, onCostChanged }: Props) {
   const { t } = useI18n()
   const tv = (t as any).voyage ?? {}
+  const categoryNameKeys: Record<string, string> = {
+    categoryTransfer:      t.finances.categoryTransfer,
+    categorySalary:        t.finances.categorySalary,
+    categoryUncategorized: t.finances.categoryUncategorized,
+    categoryGroceries:     t.finances.categoryGroceries,
+    categoryRestaurant:    t.finances.categoryRestaurant,
+    categoryTransport:     t.finances.categoryTransport,
+    categoryHealth:        t.finances.categoryHealth,
+    categoryEntertainment: t.finances.categoryEntertainment,
+    categoryHousing:       t.finances.categoryHousing,
+    categoryStreaming:     t.finances.categoryStreaming,
+    categorySubscriptions: t.finances.categorySubscriptions,
+  }
   const fmt = (n: number) => fmtCurrency(n, cost.currency || 'EUR')
   const hasMoments = cost.moments.length > 0
   const overBudget = cost.budget != null && cost.total > cost.budget
@@ -164,7 +185,8 @@ export default function CostCard({ tripId, cost, onCostChanged }: Props) {
             {categories.map((c, i) => {
               const pct = cost.total > 0 ? (c.total / cost.total) * 100 : 0
               if (pct <= 0) return null
-              return <div key={c.id} title={`${c.name} · ${fmt(c.total)}`} style={{ width: `${pct}%`, background: ARVO_PALETTE[i % ARVO_PALETTE.length], transition: 'width 400ms ease' }} />
+              const label = resolveCategoryName(c.name, c.name_key, categoryNameKeys)
+              return <div key={c.id} title={`${label} · ${fmt(c.total)}`} style={{ width: `${pct}%`, background: ARVO_PALETTE[i % ARVO_PALETTE.length], transition: 'width 400ms ease' }} />
             })}
           </div>
 
@@ -175,7 +197,7 @@ export default function CostCard({ tripId, cost, onCostChanged }: Props) {
                 <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
                   <span style={{ width: 8, height: 8, borderRadius: 999, background: ARVO_PALETTE[i % ARVO_PALETTE.length], flexShrink: 0 }} />
                   <span style={{ fontSize: 14, flexShrink: 0 }}>{c.icon}</span>
-                  <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</span>
+                  <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{resolveCategoryName(c.name, c.name_key, categoryNameKeys)}</span>
                   <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)', fontVariantNumeric: 'tabular-nums', minWidth: 32, textAlign: 'right' }}>{pct}%</span>
                   <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg)', fontVariantNumeric: 'tabular-nums', minWidth: 60, textAlign: 'right' }}>{fmt(c.total)}</span>
                 </div>

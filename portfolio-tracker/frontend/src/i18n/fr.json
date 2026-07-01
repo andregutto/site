@@ -2226,6 +2226,7 @@
       "title": "Dépenses"
     },
     "places": {
+      "empty": "Ajoutez des lieux au voyage pour construire l'itinéraire",
       "addedSuffix": "{name} ajouté",
       "allFem": "Toutes",
       "categoryLabel": "Catégorie",

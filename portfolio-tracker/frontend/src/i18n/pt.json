@@ -2226,6 +2226,7 @@
       "title": "Despesas"
     },
     "places": {
+      "empty": "Adicione lugares à viagem para montar o roteiro",
       "addedSuffix": "{name} adicionado",
       "allFem": "Todas",
       "categoryLabel": "Categoria",

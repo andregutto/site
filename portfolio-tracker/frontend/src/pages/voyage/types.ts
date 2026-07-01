@@ -57,6 +57,7 @@ export interface CostByUser {
 export interface CostByCategory {
   id: number
   name: string
+  name_key: string | null
   icon: string
   color: string
   total: number

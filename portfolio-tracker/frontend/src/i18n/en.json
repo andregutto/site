@@ -2226,6 +2226,7 @@
       "title": "Expenses"
     },
     "places": {
+      "empty": "Add places to the trip to build the itinerary",
       "addedSuffix": "{name} added",
       "allFem": "All",
       "categoryLabel": "Category",

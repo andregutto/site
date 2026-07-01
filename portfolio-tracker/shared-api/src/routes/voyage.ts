@@ -65,7 +65,7 @@ export async function buildCostSummary(tripId: number, requestingUserId: string)
   // Busca nomes/ícones das categorias encontradas
   const catIds = Object.keys(categoryTotals).map(Number)
   const { data: categories } = catIds.length > 0
-    ? await supabaseAdmin.from('finance_categories').select('id, name, icon, color').in('id', catIds)
+    ? await supabaseAdmin.from('finance_categories').select('id, name, name_key, icon, color').in('id', catIds)
     : { data: [] as any[] }
 
   // Agrupa por usuário para o split
