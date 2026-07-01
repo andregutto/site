@@ -1053,6 +1053,7 @@
     "momentNoTransactions": "Nenhuma transação neste Momento ainda. Vá em Transações e arraste para cá.",
     "momentFromDate": "a partir de",
     "momentPhotoUploadError": "Erro ao enviar foto. O momento foi salvo sem imagem.",
+    "momentPhotoUnsupportedFormat": "Formato de imagem não suportado (comum em fotos HEIC do iPhone). Salve como JPG, PNG ou WEBP e tente novamente.",
     "freedomInflationRef": "Referências de inflação",
     "freedomInflationIpca": "IPCA (Brasil)",
     "freedomInflationHicp": "IHPC (França/EUR)",

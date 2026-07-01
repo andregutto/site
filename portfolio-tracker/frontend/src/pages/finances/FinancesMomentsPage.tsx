@@ -13,6 +13,7 @@ import PendingInvitesBanner from '../../components/PendingInvitesBanner'
 
 const RED = '#D63B2F'
 const USER_COLORS = ['#1B4FD8', '#A36A52', '#E8A020', '#1F8A5B', '#C8B89A']
+const ALLOWED_PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
 
 // Downscale + re-encode as JPEG so phone photos (often >5MB HEIC/JPEG) fit the storage bucket limit.
 async function compressImage(file: File, maxDim = 1920, quality = 0.85): Promise<File> {
@@ -132,10 +133,24 @@ function MomentForm({ initial, onSave, onCancel, saving, userId }: FormProps) {
     const file = e.target.files?.[0]
     if (!file) return
     setPhotoError(null)
-    const toUpload = await compressImage(file).catch(() => file)
-    setPhotoFile(toUpload)
-    setPhotoPreview(URL.createObjectURL(toUpload))
-    setPhotoPos({ x: 50, y: 50 })
+    try {
+      const toUpload = await compressImage(file)
+      setPhotoFile(toUpload)
+      setPhotoPreview(URL.createObjectURL(toUpload))
+      setPhotoPos({ x: 50, y: 50 })
+    } catch {
+      // createImageBitmap can't decode some formats (notably HEIC/HEIF from iPhones) in
+      // Chrome/Firefox. Falling back to the raw file would just fail at upload time with an
+      // opaque 400 (the bucket only allows jpeg/png/webp/gif), so surface it clearly instead.
+      if (ALLOWED_PHOTO_TYPES.includes(file.type)) {
+        setPhotoFile(file)
+        setPhotoPreview(URL.createObjectURL(file))
+        setPhotoPos({ x: 50, y: 50 })
+      } else {
+        setPhotoError('unsupported-format')
+        if (fileInputRef.current) fileInputRef.current.value = ''
+      }
+    }
   }
 
   function onDragStart(e: React.MouseEvent | React.TouchEvent) {
@@ -340,8 +355,12 @@ function MomentForm({ initial, onSave, onCancel, saving, userId }: FormProps) {
 
       {photoError && (
         <p className="text-xs text-amber-600 bg-amber-50 rounded-lg px-3 py-2">
-          {t.finances.momentPhotoUploadError}
-          {typeof photoError === 'string' && ` (${photoError})`}
+          {photoError === 'unsupported-format' ? t.finances.momentPhotoUnsupportedFormat : (
+            <>
+              {t.finances.momentPhotoUploadError}
+              {typeof photoError === 'string' && ` (${photoError})`}
+            </>
+          )}
         </p>
       )}
       <div className="flex gap-2">
