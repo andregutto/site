@@ -14,6 +14,24 @@ import PendingInvitesBanner from '../../components/PendingInvitesBanner'
 const RED = '#D63B2F'
 const USER_COLORS = ['#1B4FD8', '#A36A52', '#E8A020', '#1F8A5B', '#C8B89A']
 
+// Downscale + re-encode as JPEG so phone photos (often >5MB HEIC/JPEG) fit the storage bucket limit.
+async function compressImage(file: File, maxDim = 1920, quality = 0.85): Promise<File> {
+  const bitmap = await createImageBitmap(file)
+  const scale = Math.min(1, maxDim / Math.max(bitmap.width, bitmap.height))
+  const w = Math.round(bitmap.width * scale)
+  const h = Math.round(bitmap.height * scale)
+  const canvas = document.createElement('canvas')
+  canvas.width = w
+  canvas.height = h
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return file
+  ctx.drawImage(bitmap, 0, 0, w, h)
+  const blob: Blob | null = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', quality))
+  if (!blob) return file
+  const name = file.name.replace(/\.[^.]+$/, '') + '.jpg'
+  return new File([blob], name, { type: 'image/jpeg' })
+}
+
 interface Moment {
   id: number
   user_id: string
@@ -105,16 +123,18 @@ function MomentForm({ initial, onSave, onCancel, saving, userId }: FormProps) {
     return { x: isNaN(x) ? 50 : x, y: isNaN(y) ? 50 : y }
   })
   const [isDragging,   setIsDragging]   = useState(false)
-  const [photoError,   setPhotoError]   = useState(false)
+  const [photoError,   setPhotoError]   = useState<string | true | null>(null)
   const fileInputRef  = useRef<HTMLInputElement>(null)
   const photoContainerRef = useRef<HTMLDivElement>(null)
   const dragStart = useRef<{ mx: number; my: number; px: number; py: number } | null>(null)
 
-  function onFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+  async function onFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
-    setPhotoFile(file)
-    setPhotoPreview(URL.createObjectURL(file))
+    setPhotoError(null)
+    const toUpload = await compressImage(file).catch(() => file)
+    setPhotoFile(toUpload)
+    setPhotoPreview(URL.createObjectURL(toUpload))
     setPhotoPos({ x: 50, y: 50 })
   }
 
@@ -163,7 +183,7 @@ function MomentForm({ initial, onSave, onCancel, saving, userId }: FormProps) {
 
     if (photoFile) {
       setUploading(true)
-      setPhotoError(false)
+      setPhotoError(null)
       try {
         const ext = photoFile.name.split('.').pop() ?? 'jpg'
         const path = `${userId}/${Date.now()}.${ext}`
@@ -172,8 +192,10 @@ function MomentForm({ initial, onSave, onCancel, saving, userId }: FormProps) {
           const { data } = supabase.storage.from('moment-photos').getPublicUrl(path)
           coverImageUrl = data.publicUrl
         } else {
-          setPhotoError(true)
+          setPhotoError(error.message || true)
         }
+      } catch (ex) {
+        setPhotoError((ex as Error).message || true)
       } finally {
         setUploading(false)
       }
@@ -317,7 +339,10 @@ function MomentForm({ initial, onSave, onCancel, saving, userId }: FormProps) {
       </div>
 
       {photoError && (
-        <p className="text-xs text-amber-600 bg-amber-50 rounded-lg px-3 py-2">{t.finances.momentPhotoUploadError}</p>
+        <p className="text-xs text-amber-600 bg-amber-50 rounded-lg px-3 py-2">
+          {t.finances.momentPhotoUploadError}
+          {typeof photoError === 'string' && ` (${photoError})`}
+        </p>
       )}
       <div className="flex gap-2">
         <button type="submit" disabled={saving || uploading}
