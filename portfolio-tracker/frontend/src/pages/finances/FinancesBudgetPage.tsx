@@ -433,7 +433,7 @@ export default function FinancesBudgetPage() {
       setData(d)
       setIncomeVal(String(d.income.monthly_net))
       setIncomeCur(d.income.currency)
-      setExpandedIds(new Set(d.envelopes.map(e => e.id)))
+      setExpandedIds(new Set(d.envelopes.filter(e => e.type !== 'income').map(e => e.id)))
       setSharedGroups(groups)
 
       // Current month actuals (for total-consumed row at bottom)
