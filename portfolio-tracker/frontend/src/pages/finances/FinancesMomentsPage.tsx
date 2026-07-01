@@ -807,7 +807,9 @@ function MomentCollaboratorsHero({ momentId, onOpen }: { momentId: number; onOpe
       .catch(() => {})
   }, [momentId])
 
-  const shown = members.slice(0, 4)
+  // Only show the avatar stack once someone besides the owner has actually joined —
+  // a moment with no collaborators just shows the "invite" affordance, as before.
+  const shown = members.length > 1 ? members.slice(0, 4) : []
 
   return (
     <button
