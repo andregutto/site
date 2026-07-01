@@ -5,6 +5,7 @@ import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
 import { useI18n } from '../../contexts/I18nContext'
 import { useCurrency } from '../../contexts/CurrencyContext'
+import { useTheme } from '../../contexts/ThemeContext'
 import { Icon } from '../../components/icons'
 import { MOMENT_ICON_KEYS, resolveMomentIcon } from '../../lib/momentIcons'
 import Avatar from '../voyage/_shared/Avatar'
@@ -12,7 +13,10 @@ import { RoleChip, StatusChip } from '../voyage/_shared/Chips'
 import PendingInvitesBanner from '../../components/PendingInvitesBanner'
 
 const RED = '#D63B2F'
-const USER_COLORS = ['#1B4FD8', '#A36A52', '#E8A020', '#1F8A5B', '#C8B89A']
+// Brand palette (Azul Arara, Terracota, Ocre Tucano, Verde Maritaca, Dourado) — dark siblings
+// are softer/lighter so the per-user spending chart doesn't read as neon on dark surfaces.
+const USER_COLORS_LIGHT = ['#1B4FD8', '#A36A52', '#E8A020', '#1F8A5B', '#C8B89A']
+const USER_COLORS_DARK  = ['#7FA3F0', '#D9A88F', '#F0C878', '#7BC9A4', '#C8B89A']
 const ALLOWED_PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
 
 // Downscale + re-encode only when the file actually needs it (too big for the bucket, or a
@@ -854,6 +858,8 @@ function MomentCollaboratorsHero({ momentId, onOpen }: { momentId: number; onOpe
 
 function ByUserBreakdown({ byUser, total, currency, fmt }: { byUser: ByUser[]; total: number; currency: string; fmt: (n: number, c: string) => string }) {
   const { t } = useI18n()
+  const { resolvedTheme } = useTheme()
+  const USER_COLORS = resolvedTheme === 'dark' ? USER_COLORS_DARK : USER_COLORS_LIGHT
   if (byUser.length < 2) return null
   return (
     <div className="space-y-1.5">

@@ -65,6 +65,8 @@
   --arvo-green-on-dark: #7BC9A4; /* lighter sibling for dark surfaces */
   --arvo-blue-on-dark:  #7FA3F0; /* lighter sibling for dark surfaces */
   --arvo-red-on-dark:   #E8867C; /* lighter sibling for dark surfaces */
+  --arvo-ocre-on-dark:       #F0C878; /* lighter sibling for dark surfaces */
+  --arvo-terracotta-on-dark: #D9A88F; /* lighter sibling for dark surfaces */
 
   /* Softer companions (10–14% tints; never invent new ones) */
   --arvo-blue-tint:        rgba(27, 79, 216, 0.10);
