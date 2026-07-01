@@ -26,6 +26,8 @@ function validLocale(v: unknown): v is Locale {
 }
 
 export function I18nProvider({ children }: { children: ReactNode }) {
+  const hadStoredLocale = validLocale(localStorage.getItem(STORAGE_KEY))
+
   const [locale, setLocaleState] = useState<Locale>(() => {
     const stored = localStorage.getItem(STORAGE_KEY)
     if (validLocale(stored)) return stored
@@ -35,11 +37,14 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     return 'pt'
   })
 
-  // After auth session is ready, sync locale from user_metadata (server wins over browser default)
+  // Sync locale from user_metadata only when this device has no explicit local choice yet
+  // (e.g. first login on a new device). Never let a stale/failed server value stomp an
+  // explicit local pick — that previously caused the language to silently revert.
   useEffect(() => {
+    if (hadStoredLocale) return
     supabase.auth.getUser().then(({ data }) => {
       const server = data.user?.user_metadata?.preferred_locale
-      if (validLocale(server) && server !== locale) {
+      if (validLocale(server)) {
         setLocaleState(server)
         localStorage.setItem(STORAGE_KEY, server)
       }
@@ -50,8 +55,11 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   function setLocale(l: Locale) {
     setLocaleState(l)
     localStorage.setItem(STORAGE_KEY, l)
-    // Persist to Supabase so every device/session gets the same preference
-    supabase.auth.updateUser({ data: { preferred_locale: l } }).catch(() => {})
+    // Persist to Supabase so every device/session gets the same preference.
+    // localStorage is the source of truth for this device regardless of whether this succeeds.
+    supabase.auth.updateUser({ data: { preferred_locale: l } }).catch(err => {
+      console.warn('[i18n] failed to persist locale preference to server:', err)
+    })
   }
 
   useEffect(() => {
