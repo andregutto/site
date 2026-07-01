@@ -2059,6 +2059,9 @@
     "statusLabel": "Status",
     "summaryLabel": "Summary",
     "coverLabel": "Cover photo",
+    "photoAlbumLabel": "Photo album (optional)",
+    "photoAlbumPlaceholder": "Shared album link",
+    "deleting": "Deleting…",
     "statusPlanning": "Planning",
     "statusOngoing": "Ongoing",
     "statusPast": "Past",
@@ -2162,7 +2165,27 @@
       "save": "Save failed",
       "deleteTrip": "Delete failed",
       "link": "Failed to link",
-      "titleRequired": "Title required"
+      "titleRequired": "Title required",
+      "uploadCover": "Error uploading photo"
+    },
+    "roles": {
+      "owner": "Owner",
+      "editor": "Editor",
+      "viewer": "Viewer"
+    },
+    "memberStatus": {
+      "active": "Active",
+      "left": "Left",
+      "pending": "Pending"
+    },
+    "members": {
+      "invite": "Invite",
+      "inviteAs": "Invite {name} as {role}",
+      "placeholder": "email@example.com or @username",
+      "remove": "Remove",
+      "directOk": "✓ Added directly — already an active trip member.",
+      "noAccountYet": "No Arvo account yet — invite link generated",
+      "inviteError": "Error sending invite"
     },
     "actions": {
       "copy": "Copy",

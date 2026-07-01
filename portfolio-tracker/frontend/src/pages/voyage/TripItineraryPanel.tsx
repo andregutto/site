@@ -1045,7 +1045,7 @@ export default function TripItineraryPanel({ tripId, tripCity, tripCountry, trip
             </button>
             {canEdit && (
               <button type="button" onClick={() => setShowToolMenu(true)}
-                style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: 'var(--arvo-font-body)', fontSize: 11, letterSpacing: '0.02em', padding: '4px 10px', borderRadius: 999, background: 'none', border: '1px solid var(--arvo-border)', color: 'var(--arvo-fg-muted)', cursor: 'pointer' }}>
+                style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: 'var(--arvo-font-body)', fontSize: 11, fontWeight: 600, letterSpacing: '0.02em', padding: '5px 12px', borderRadius: 999, background: RED, border: `1px solid ${RED}`, color: '#fff', cursor: 'pointer', boxShadow: '0 1px 3px rgba(214,59,47,0.35)' }}>
                 {tv.actions?.add ?? '+ Adicionar'}
               </button>
             )}

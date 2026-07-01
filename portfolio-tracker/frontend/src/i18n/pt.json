@@ -2059,6 +2059,9 @@
     "statusLabel": "Status",
     "summaryLabel": "Resumo",
     "coverLabel": "Foto de capa",
+    "photoAlbumLabel": "Álbum de fotos (opcional)",
+    "photoAlbumPlaceholder": "Link de álbum compartilhado",
+    "deleting": "Excluindo…",
     "statusPlanning": "Planejamento",
     "statusOngoing": "Em viagem",
     "statusPast": "Concluída",
@@ -2162,7 +2165,27 @@
       "save": "Erro ao salvar",
       "deleteTrip": "Erro ao excluir",
       "link": "Erro ao vincular",
-      "titleRequired": "Título obrigatório"
+      "titleRequired": "Título obrigatório",
+      "uploadCover": "Erro ao enviar a foto"
+    },
+    "roles": {
+      "owner": "Owner",
+      "editor": "Editor",
+      "viewer": "Leitor"
+    },
+    "memberStatus": {
+      "active": "Ativo",
+      "left": "Saiu",
+      "pending": "Pendente"
+    },
+    "members": {
+      "invite": "Convidar",
+      "inviteAs": "Convidar {name} como {role}",
+      "placeholder": "email@exemplo.com ou @usuario",
+      "remove": "Remover",
+      "directOk": "✓ Adicionado direto — já é um membro ativo da viagem.",
+      "noAccountYet": "Sem conta no Arvo ainda — link de convite gerado",
+      "inviteError": "Erro ao convidar"
     },
     "actions": {
       "copy": "Copiar",

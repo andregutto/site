@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { apiFetch } from '../../lib/api'
+import { useI18n } from '../../contexts/I18nContext'
 import Avatar from './_shared/Avatar'
 import { RoleChip, StatusChip } from './_shared/Chips'
 
@@ -30,6 +31,9 @@ interface Props {
 const RED = '#D63B2F'
 
 export default function MembersPanel({ tripId, isOwner }: Props) {
+  const { t } = useI18n()
+  const tv = (t as any).voyage ?? {}
+  const mv = tv.members ?? {}
   const [members, setMembers] = useState<Member[]>([])
   const [loading, setLoading] = useState(true)
   const [friends, setFriends] = useState<Friend[]>([])
@@ -105,7 +109,7 @@ export default function MembersPanel({ tripId, isOwner }: Props) {
       setShowSuggestions(false)
       load()
     } catch (ex: unknown) {
-      setInviteError((ex as Error).message ?? 'Erro ao convidar')
+      setInviteError((ex as Error).message ?? mv.inviteError ?? 'Erro ao convidar')
     } finally {
       setInviting(false)
     }
@@ -116,7 +120,7 @@ export default function MembersPanel({ tripId, isOwner }: Props) {
       // já tem conta — convite direto sem precisar resolver @/e-mail
       apiFetch(`/voyage/trips/${tripId}/invite`, { method: 'POST', body: JSON.stringify({ email: f.email, role: inviteRole }) })
         .then(() => { setInviteDirectOk(true); load() })
-        .catch((ex: unknown) => setInviteError((ex as Error).message ?? 'Erro ao convidar'))
+        .catch((ex: unknown) => setInviteError((ex as Error).message ?? mv.inviteError ?? 'Erro ao convidar'))
     } else {
       sendInvite({ email: f.email })
     }
@@ -176,7 +180,7 @@ export default function MembersPanel({ tripId, isOwner }: Props) {
                   onClick={() => removeMember(m.id)}
                   disabled={removing === m.id}
                   style={{ padding: 4, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--arvo-fg-soft)', borderRadius: 4, opacity: removing === m.id ? 0.4 : 1 }}
-                  title="Remover"
+                  title={mv.remove ?? 'Remover'}
                 >
                   <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
                     <path strokeLinecap="round" d="M2 2l8 8M10 2L2 10" />
@@ -193,15 +197,15 @@ export default function MembersPanel({ tripId, isOwner }: Props) {
         <div style={{ borderTop: '1px solid var(--arvo-border-soft)', paddingTop: 14 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
             <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.20em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)' }}>
-              Convidar
+              {mv.invite ?? 'Convidar'}
             </p>
             <select
               value={inviteRole}
               onChange={e => setInviteRole(e.target.value as 'editor' | 'viewer')}
               style={{ ...fieldStyle, padding: '4px 8px', fontSize: 11.5, minWidth: 76 }}
             >
-              <option value="editor">Editor</option>
-              <option value="viewer">Leitor</option>
+              <option value="editor">{tv.roles?.editor ?? 'Editor'}</option>
+              <option value="viewer">{tv.roles?.viewer ?? 'Leitor'}</option>
             </select>
           </div>
 
@@ -213,7 +217,7 @@ export default function MembersPanel({ tripId, isOwner }: Props) {
                   key={f.email}
                   type="button"
                   onClick={() => inviteFriend(f)}
-                  title={`Convidar ${f.name || f.email} como ${inviteRole === 'editor' ? 'editor' : 'leitor'}`}
+                  title={(mv.inviteAs ?? 'Convidar {name} como {role}').replace('{name}', f.name || f.email).replace('{role}', inviteRole === 'editor' ? (tv.roles?.editor ?? 'editor') : (tv.roles?.viewer ?? 'leitor'))}
                   style={{
                     display: 'flex', alignItems: 'center', gap: 6, padding: '4px 10px 4px 4px',
                     borderRadius: 999, border: '1px solid var(--arvo-border)', background: 'var(--arvo-hover-bg)',
@@ -233,7 +237,7 @@ export default function MembersPanel({ tripId, isOwner }: Props) {
               <input
                 style={{ ...fieldStyle, flex: 1 }}
                 type="text"
-                placeholder="email@exemplo.com ou @usuario"
+                placeholder={mv.placeholder ?? 'email@exemplo.com ou @usuario'}
                 value={inviteQuery}
                 onChange={e => setInviteQuery(e.target.value)}
                 onFocus={() => setShowSuggestions(true)}
@@ -250,7 +254,7 @@ export default function MembersPanel({ tripId, isOwner }: Props) {
                   fontFamily: 'var(--arvo-font-body)', fontSize: 12, transition: 'all 160ms',
                 }}
               >
-                {inviting ? '…' : 'Convidar'}
+                {inviting ? '…' : (mv.invite ?? 'Convidar')}
               </button>
             </div>
 
@@ -286,7 +290,7 @@ export default function MembersPanel({ tripId, isOwner }: Props) {
 
           {inviteDirectOk && (
             <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: '#1F8A5B', marginTop: 10 }}>
-              ✓ Adicionado direto — já é um membro ativo da viagem.
+              {mv.directOk ?? '✓ Adicionado direto — já é um membro ativo da viagem.'}
             </p>
           )}
 
@@ -294,7 +298,7 @@ export default function MembersPanel({ tripId, isOwner }: Props) {
           {inviteResult && (
             <div style={{ marginTop: 10, padding: '10px 12px', borderRadius: 8, background: 'var(--arvo-hover-bg)', border: '1px solid var(--arvo-border-soft)' }}>
               <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)', marginBottom: 6 }}>
-                Sem conta no Arvo ainda — link de convite gerado
+                {mv.noAccountYet ?? 'Sem conta no Arvo ainda — link de convite gerado'}
               </p>
               <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                 <input
@@ -307,7 +311,7 @@ export default function MembersPanel({ tripId, isOwner }: Props) {
                   onClick={() => copyLink(inviteResult.url)}
                   style={{ padding: '6px 12px', borderRadius: 5, background: copied ? '#1F8A5B' : 'var(--arvo-fg)', color: 'var(--arvo-bg)', border: 'none', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 11, flexShrink: 0, transition: 'background 200ms' }}
                 >
-                  {copied ? '✓' : 'Copiar'}
+                  {copied ? '✓' : (tv.actions?.copy ?? 'Copiar')}
                 </button>
               </div>
             </div>
