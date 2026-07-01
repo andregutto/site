@@ -2259,7 +2259,15 @@ router.get('/moments/:id/members', requireAuth, async (req, res: Response) => {
     return { ...m, display: d }
   }))
 
-  res.json({ members: enriched })
+  // The moment's creator has no row in finance_moment_members — synthesize one so their
+  // avatar shows up alongside invited collaborators everywhere this list is rendered.
+  const ownerDisplay = await userDisplay(moment.user_id)
+  const ownerEntry = {
+    id: -1, user_id: moment.user_id, invite_email: null, role: 'owner', status: 'active',
+    joined_at: null, created_at: null, display: ownerDisplay,
+  }
+
+  res.json({ members: [ownerEntry, ...enriched] })
 })
 
 // ── POST /finances/moments/:id/invite  (convidar por e-mail ou @username) ────
