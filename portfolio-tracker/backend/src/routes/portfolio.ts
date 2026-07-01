@@ -10,8 +10,8 @@ import * as yahoo from '../../../shared-api/src/services/yahooService.js'
 import {
   computeInception, computePerformanceSummary, computeMonthlySeries, computeBenchmarks,
   computeAssetReturns, fetchPrefetchedData, prefetchFIRates, localYM, localDate,
-} from './performance.js'
-import type { PerformanceSummary, MonthlyPoint } from './performance.js'
+} from '../../../shared-api/src/routes/performance.js'
+import type { PerformanceSummary, MonthlyPoint } from '../../../shared-api/src/routes/performance.js'
 // computeDividendsSummary was a backend-only export; production's dividends.ts
 // never had it (the snapshot endpoints below are dead code — unused, per
 // the dual-server cleanup). Stub keeps this file compiling without resurrecting

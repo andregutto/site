@@ -1,7 +1,7 @@
 // Lightweight regression check for stock-split holdings adjustment.
 // No test framework is wired up yet (see CLAUDE.md) — run directly with:
 //   npx tsx src/routes/performance.split.test.ts
-import { computeSplitFactorEvents, getSplitAdjustmentFactor, type PrefetchedData } from './performance.js'
+import { computeSplitFactorEvents, getSplitAdjustmentFactor, type PrefetchedData } from '../../../shared-api/src/routes/performance.js'
 
 function assert(cond: boolean, msg: string) {
   if (!cond) throw new Error(`FAIL: ${msg}`)

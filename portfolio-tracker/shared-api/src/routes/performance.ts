@@ -424,12 +424,73 @@ async function getPortfolioValueAtMonth(
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
 
+export interface PerformanceSummary {
+  from: string; to: string
+  value_start: number; value_end: number
+  contributions: number
+  return_abs: number; return_pct: number | null
+}
+
+// Modified Dietz return for [fromStr, toStr] (both 'YYYY-MM'). Pass `prefetched`
+// (already through prefetchFIRates) to avoid re-fetching when called alongside
+// computeMonthlySeries for the same user/range.
+export async function computePerformanceSummary(
+  userId: string, fromStr: string, toStr: string, prefetched?: PrefetchedData
+): Promise<PerformanceSummary> {
+  const [fromY, fromM] = fromStr.split('-').map(Number)
+  const [toY,   toM  ] = toStr.split('-').map(Number)
+
+  const prevM = fromM === 1 ? 12 : fromM - 1
+  const prevY = fromM === 1 ? fromY - 1 : fromY
+
+  const fromDateStr = `${fromY}-${String(fromM).padStart(2, '0')}-01`
+  const toLastDay   = new Date(toY, toM, 0).getDate()
+  const toDateStr   = `${toY}-${String(toM).padStart(2, '0')}-${toLastDay}`
+
+  const currentYM = localYM(new Date())
+  const clampedToStr = toStr > currentYM ? currentYM : toStr
+  const [clampedToY, clampedToM] = clampedToStr.split('-').map(Number)
+
+  const data = prefetched ?? await fetchPrefetchedData(userId)
+  if (!prefetched) await prefetchFIRates(data)
+
+  const totalContribs = data.contributions
+    .filter(c => c.date >= fromDateStr && c.date <= toDateStr)
+    .reduce((s: number, c) => {
+      if (c.type === 'income') return s
+      const v = estimateContribValue(c)
+      return s + (c.type === 'buy' ? v : -v)
+    }, 0)
+
+  const [start, end] = await Promise.all([
+    computePortfolioValueAtMonth(data, prevY,      prevM),
+    computePortfolioValueAtMonth(data, clampedToY, clampedToM),
+  ])
+
+  const v_ini = start.total
+  const v_fim = end.total
+
+  const return_abs = v_fim - v_ini - totalContribs
+  const dietz_base = v_ini + 0.5 * totalContribs
+  const return_pct = dietz_base > 0 ? (return_abs / dietz_base) * 100 : null
+
+  return {
+    from:          fromStr,
+    to:            toStr,
+    value_start:   v_ini,
+    value_end:     v_fim,
+    contributions: Math.round(totalContribs * 100) / 100,
+    return_abs:    Math.round(return_abs * 100) / 100,
+    return_pct:    return_pct !== null ? Math.round(return_pct * 100) / 100 : null,
+  }
+}
+
 // Modified Dietz return for an exact date range [fromDateStr, toDateStr] (both 'YYYY-MM-DD').
 // Reuses computePortfolioValueAtDay (already daily-granular, defined below) instead of the
 // calendar-month-anchored computePortfolioValueAtMonth — needed for sub-month periods like
 // "last 7 days" / "last 30 days" where a rolling window must start on an exact date, not a
 // month boundary.
-async function computePerformanceSummaryDaily(userId: string, fromDateStr: string, toDateStr: string) {
+export async function computePerformanceSummaryDaily(userId: string, fromDateStr: string, toDateStr: string, prefetched?: PrefetchedData): Promise<PerformanceSummary> {
   const today = localDate(new Date())
   const clampedToDateStr = toDateStr > today ? today : toDateStr
 
@@ -437,19 +498,22 @@ async function computePerformanceSummaryDaily(userId: string, fromDateStr: strin
   startDate.setDate(startDate.getDate() - 1)
   const startDateStr = localDate(startDate)
 
-  const priceFromDate = new Date(startDateStr + 'T12:00:00')
-  priceFromDate.setDate(priceFromDate.getDate() - 90)
-  const priceFrom = localDate(priceFromDate)
-
-  const prefetched = await fetchPrefetchedData(userId, priceFrom)
-  await prefetchFIRates(prefetched)
+  let data: PrefetchedData
+  if (prefetched) {
+    data = prefetched
+  } else {
+    const priceFromDate = new Date(startDateStr + 'T12:00:00')
+    priceFromDate.setDate(priceFromDate.getDate() - 90)
+    data = await fetchPrefetchedData(userId, localDate(priceFromDate))
+    await prefetchFIRates(data)
+  }
 
   const pricesByAsset: Record<number, Array<{ ref_date: string; price: number; currency: string }>> = {}
-  for (const p of prefetched.prices) {
+  for (const p of data.prices) {
     (pricesByAsset[p.asset_id] ??= []).push(p)
   }
 
-  const totalContribs = prefetched.contributions
+  const totalContribs = data.contributions
     .filter(c => c.date > startDateStr && c.date <= clampedToDateStr)
     .reduce((s: number, c) => {
       if (c.type === 'income') return s
@@ -458,8 +522,8 @@ async function computePerformanceSummaryDaily(userId: string, fromDateStr: strin
     }, 0)
 
   const [start, end] = await Promise.all([
-    computePortfolioValueAtDay(prefetched, startDateStr, pricesByAsset),
-    computePortfolioValueAtDay(prefetched, clampedToDateStr, pricesByAsset),
+    computePortfolioValueAtDay(data, startDateStr, pricesByAsset),
+    computePortfolioValueAtDay(data, clampedToDateStr, pricesByAsset),
   ])
 
   const v_ini = start.total
@@ -489,8 +553,7 @@ router.get('/summary', requireAuth, async (req, res: Response) => {
     if (fromStr > toStr) {
       res.status(400).json({ error: '"from" deve ser anterior a "to"' }); return
     }
-    const result = await computePerformanceSummaryDaily(userId, fromStr, toStr)
-    res.json(result)
+    res.json(await computePerformanceSummaryDaily(userId, fromStr, toStr))
     return
   }
 
@@ -501,73 +564,26 @@ router.get('/summary', requireAuth, async (req, res: Response) => {
     res.status(400).json({ error: '"from" deve ser anterior a "to"' }); return
   }
 
-  // v_ini = valor ao fim do mês ANTERIOR a from (= início real do período)
-  // Isso evita contar aportes de from no denominador errado
-  const prevM = fromM === 1 ? 12 : fromM - 1
-  const prevY = fromM === 1 ? fromY - 1 : fromY
-
-  const fromDateStr = `${fromY}-${String(fromM).padStart(2, '0')}-01`
-  const toLastDay   = new Date(toY, toM, 0).getDate()
-  const toDateStr   = `${toY}-${String(toM).padStart(2, '0')}-${toLastDay}`
-
-  // Cap value_end to the current month: future months (e.g. Dec 2026 when viewing year 2026)
-  // use the same live prices as the current month, so clamp to currentYM for a stable result
-  // that matches the dashboard's total.
-  const currentYM = localYM(new Date())
-  const clampedToStr = toStr > currentYM ? currentYM : toStr
-  const [clampedToY, clampedToM] = clampedToStr.split('-').map(Number)
-
-  // Pre-fetch all data once — shared across both computePortfolioValueAtMonth calls
-  const prefetched = await fetchPrefetchedData(userId)
-  await prefetchFIRates(prefetched)
-
-  // Contributions: filter in memory instead of a separate DB query
-  const totalContribs = prefetched.contributions
-    .filter(c => c.date >= fromDateStr && c.date <= toDateStr)
-    .reduce((s: number, c) => {
-      if (c.type === 'income') return s
-      const v = estimateContribValue(c)
-      return s + (c.type === 'buy' ? v : -v)
-    }, 0)
-
-  const [start, end] = await Promise.all([
-    computePortfolioValueAtMonth(prefetched, prevY,      prevM),
-    computePortfolioValueAtMonth(prefetched, clampedToY, clampedToM),
-  ])
-
-  const v_ini = start.total
-  const v_fim = end.total
-
-  // Simple Dietz: R = (V_fim - V_ini - CF) / (V_ini + 0.5 * CF)
-  const return_abs = v_fim - v_ini - totalContribs
-  const dietz_base = v_ini + 0.5 * totalContribs
-  const return_pct = dietz_base > 0 ? (return_abs / dietz_base) * 100 : null
-
-  res.json({
-    from:          fromStr,
-    to:            toStr,
-    value_start:   v_ini,
-    value_end:     v_fim,
-    contributions: Math.round(totalContribs * 100) / 100,
-    return_abs:    Math.round(return_abs * 100) / 100,
-    return_pct:    return_pct !== null ? Math.round(return_pct * 100) / 100 : null,
-  })
+  res.json(await computePerformanceSummary(userId, fromStr, toStr))
 })
 
-router.get('/monthly', requireAuth, async (req, res: Response) => {
-  const { userId } = req as AuthRequest
+export interface MonthlyPoint {
+  month: string
+  total: number
+  prev_total: number
+  contributions: number
+  contributions_cumulative: number
+  detail: Array<{ asset_id: number; code: string; name: string; value: number; prev_value: number; contributions: number; gain: number }>
+}
+
+// Monthly portfolio value series for [fromStr, toStr] (both 'YYYY-MM'), with per-asset
+// detail and running contribution totals. Pass `prefetched` (already through
+// prefetchFIRates) to avoid re-fetching when called alongside computePerformanceSummary.
+export async function computeMonthlySeries(
+  userId: string, fromStr: string, toStr: string, prefetched?: PrefetchedData
+): Promise<{ monthly: MonthlyPoint[] }> {
   const now = new Date()
   const currentYM = localYM(now)
-
-  let fromStr: string, toStr: string
-  if (req.query.from && req.query.to) {
-    fromStr = req.query.from as string
-    toStr   = req.query.to   as string
-  } else {
-    const year = parseInt(req.query.year as string || String(now.getFullYear()))
-    fromStr = `${year}-01`
-    toStr   = `${year}-12`
-  }
 
   const [fromY, fromM] = fromStr.split('-').map(Number)
   const [toY,   toM  ] = toStr.split('-').map(Number)
@@ -585,50 +601,39 @@ router.get('/monthly', requireAuth, async (req, res: Response) => {
   const rangeToLastDay = new Date(toY, toM, 0).getDate()
   const rangeToDate    = `${toY}-${String(toM).padStart(2, '0')}-${String(rangeToLastDay).padStart(2, '0')}`
 
-  // Previous month for first-row prev_total
   const prevM = fromM === 1 ? 12 : fromM - 1
   const prevY = fromM === 1 ? fromY - 1 : fromY
 
-  // Pre-fetch all data once — eliminates N+1 DB round-trips (was N×4 queries, now 4 total)
-  const prefetched = await fetchPrefetchedData(userId)
-  await prefetchFIRates(prefetched)
+  const data = prefetched ?? await fetchPrefetchedData(userId)
+  if (!prefetched) await prefetchFIRates(data)
 
   const assetInfo: Record<number, { code: string; name: string }> = {}
-  // Native FI: fi_principal + fi_start_date are set — their CDI returns are already baked into
-  // the value computation, so contributions entered for tracking should not be subtracted as
-  // new cash flows in the per-asset gain formula.
   const nativeFIIds = new Set<number>()
-  for (const a of prefetched.assets) {
+  for (const a of data.assets) {
     assetInfo[a.id] = { code: a.code, name: a.name }
     if (a.asset_type === 'fixed_income' && Number(a.fi_principal) > 0 && a.fi_start_date) {
       nativeFIIds.add(a.id)
     }
   }
 
-  // Compute all months using pre-fetched data — no additional DB queries
   const [prevMonthResult, valuesArr] = await Promise.all([
-    computePortfolioValueAtMonth(prefetched, prevY, prevM),
+    computePortfolioValueAtMonth(data, prevY, prevM),
     Promise.all(
       months.map(async ({ year: y, month: m, label }) => {
-        const { total, detail } = await computePortfolioValueAtMonth(prefetched, y, m)
+        const { total, detail } = await computePortfolioValueAtMonth(data, y, m)
         return { month: label, total, detail }
       })
     ),
   ])
 
-  // Use pre-fetched contributions for per-month breakdown (no extra DB query)
-  const filteredContribs = prefetched.contributions.filter(c => c.date <= rangeToDate)
+  const filteredContribs = data.contributions.filter(c => c.date <= rangeToDate)
 
   const contribsByMonth: Record<string, number> = {}
   const contribsByAssetMonth: Record<string, Record<number, number>> = {}
-  // Running total since inception, through months BEFORE the selected range —
-  // mirrors the asset-level invested_brl so the "Aportes" chart line reflects
-  // total invested-to-date even when the period doesn't start at inception.
   let cumulContrib = 0
   for (const c of filteredContribs) {
-    if (c.type === 'income') continue  // income is portfolio return, not a cash flow
+    if (c.type === 'income') continue
     const ym = c.date.substring(0, 7)
-    // Use Number() to safely coerce Supabase DECIMAL fields (may arrive as strings)
     const vBrl = Number(c.value_brl) > 0
       ? Number(c.value_brl)
       : (Number(c.price_orig) > 0 && Number(c.quantity) > 0
@@ -642,7 +647,7 @@ router.get('/monthly', requireAuth, async (req, res: Response) => {
     contribsByAssetMonth[ym][aid] = (contribsByAssetMonth[ym][aid] ?? 0) + delta
   }
 
-  const monthly = valuesArr.map((v, i) => {
+  const monthly: MonthlyPoint[] = valuesArr.map((v, i) => {
     const prevDetail = i > 0 ? valuesArr[i - 1].detail : prevMonthResult.detail
     const prevByAsset: Record<number, number> = {}
     for (const d of prevDetail) prevByAsset[d.asset_id] = d.value
@@ -656,8 +661,6 @@ router.get('/monthly', requireAuth, async (req, res: Response) => {
       const info = assetInfo[assetId] ?? { code: '?', name: '?' }
       const value = v.detail.find(d => d.asset_id === assetId)?.value ?? 0
       const prev_value = prevByAsset[assetId] ?? 0
-      // Native FI assets compute CDI from fi_start_date; their contributions are tracking
-      // entries (not real monthly cash flows), so don't subtract them from the gain.
       const contributions = nativeFIIds.has(assetId) ? 0 : (assetContribs[assetId] ?? 0)
       const gain = Math.round((value - prev_value - contributions) * 100) / 100
       return { asset_id: assetId, code: info.code, name: info.name, value, prev_value, contributions, gain }
@@ -675,7 +678,24 @@ router.get('/monthly', requireAuth, async (req, res: Response) => {
     }
   })
 
-  res.json({ monthly })
+  return { monthly }
+}
+
+router.get('/monthly', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const now = new Date()
+
+  let fromStr: string, toStr: string
+  if (req.query.from && req.query.to) {
+    fromStr = req.query.from as string
+    toStr   = req.query.to   as string
+  } else {
+    const year = parseInt(req.query.year as string || String(now.getFullYear()))
+    fromStr = `${year}-01`
+    toStr   = `${year}-12`
+  }
+
+  res.json(await computeMonthlySeries(userId, fromStr, toStr))
 })
 
 // ── Daily portfolio value ─────────────────────────────────────────────────────
@@ -684,12 +704,11 @@ export async function computePortfolioValueAtDay(
   data: PrefetchedData,
   dateStr: string,
   pricesByAsset: Record<number, Array<{ ref_date: string; price: number; currency: string }>>
-): Promise<{ total: number }> {
-  const today   = localDate(new Date())
-  const isToday = dateStr === today
+): Promise<{ total: number; detail: Array<{ asset_id: number; value: number }> }> {
+  const isCurrentOrFuture = dateStr >= localDate(new Date())
 
   const { assets, contributions: allContribs, manualValues: allMVRaw } = data
-  if (!assets.length) return { total: 0 }
+  if (!assets.length) return { total: 0, detail: [] }
 
   const contributions = allContribs.filter(c => c.date <= dateStr)
 
@@ -720,7 +739,7 @@ export async function computePortfolioValueAtDay(
     fiTranchesMap[c.asset_id].push({ principal: vBrl, start_date: c.date as string })
   }
 
-  function getPriceAtDay(assetId: number): { price: number; currency: string } | undefined {
+  function getPriceAtDay(assetId: number): { price: number; currency: string; ref_date: string } | undefined {
     const arr = pricesByAsset[assetId]
     if (!arr) return undefined
     let best: typeof arr[0] | undefined
@@ -728,7 +747,7 @@ export async function computePortfolioValueAtDay(
       if (p.ref_date <= dateStr) best = p
       else break
     }
-    return best ? { price: best.price, currency: best.currency } : undefined
+    return best ? { price: best.price, currency: best.currency, ref_date: best.ref_date } : undefined
   }
 
   const allMVByAsset: Record<number, ValPoint[]> = {}
@@ -746,6 +765,7 @@ export async function computePortfolioValueAtDay(
   }
 
   let total = 0
+  const detail: Array<{ asset_id: number; value: number }> = []
   for (const a of assets) {
     if (!a.active) continue
     let value = 0
@@ -772,7 +792,8 @@ export async function computePortfolioValueAtDay(
         if (fiEarliestStart && fiEarliestStart > dateStr) continue
 
         const ph = getPriceAtDay(a.id)
-        if (ph && !isToday) {
+        const phIsExact = ph?.ref_date === dateStr
+        if (ph && (phIsExact || !isCurrentOrFuture)) {
           const fx = ph.currency === 'BRL' ? 1 : await getFxRate(ph.currency)
           value = ph.price * fx
         } else {
@@ -803,7 +824,8 @@ export async function computePortfolioValueAtDay(
           const splitEvents = computeSplitFactorEvents(allContribs, a.id)
           const adjHoldings = holdings * getSplitAdjustmentFactor(splitEvents, dateStr)
           const ph = getPriceAtDay(a.id)
-          if (isToday) {
+          const phIsExact = ph?.ref_date === dateStr
+          if (isCurrentOrFuture && !phIsExact) {
             try {
               const result = await getCurrentPrice(a as Asset)
               const fx = result.currency === 'BRL' ? 1 : await getFxRate(result.currency)
@@ -820,10 +842,13 @@ export async function computePortfolioValueAtDay(
       }
     } catch { value = costBasisValue }
 
-    if (value > 0) total += value
+    if (value > 0) {
+      detail.push({ asset_id: a.id, value: Math.round(value * 100) / 100 })
+      total += value
+    }
   }
 
-  return { total: Math.round(total * 100) / 100 }
+  return { total: Math.round(total * 100) / 100, detail }
 }
 
 router.get('/daily', requireAuth, async (req, res: Response) => {
@@ -892,19 +917,14 @@ router.get('/daily', requireAuth, async (req, res: Response) => {
   res.json({ daily })
 })
 
-router.get('/benchmarks', requireAuth, async (req, res: Response) => {
+export interface BenchmarksResult {
+  cdi_pct: number | null; ibov_pct: number | null; sp500_pct: number | null
+  monthly: Array<{ month: string; cdi_cum: number | null; ibov_cum: number | null; sp500_cum: number | null }>
+}
+
+export async function computeBenchmarks(fromStr: string, toStr: string): Promise<BenchmarksResult> {
   const today   = localDate(new Date())
   const todayYM = today.substring(0, 7)
-
-  let fromStr: string, toStr: string
-  if (req.query.from && req.query.to) {
-    fromStr = req.query.from as string
-    toStr   = req.query.to   as string
-  } else {
-    const year = parseInt(req.query.year as string || String(new Date().getFullYear()))
-    fromStr = `${year}-01`
-    toStr   = `${year}-12`
-  }
 
   const [fromY, fromM] = fromStr.split('-').map(Number)
   const [toY,   toM  ] = toStr.split('-').map(Number)
@@ -919,7 +939,7 @@ router.get('/benchmarks', requireAuth, async (req, res: Response) => {
     }
   }
   if (months.length === 0) {
-    res.json({ cdi_pct: null, ibov_pct: null, sp500_pct: null, monthly: [] }); return
+    return { cdi_pct: null, ibov_pct: null, sp500_pct: null, monthly: [] }
   }
 
   type Monthly = { month: string; cdi_cum: number | null; ibov_cum: number | null; sp500_cum: number | null }
@@ -958,7 +978,6 @@ router.get('/benchmarks', requireAuth, async (req, res: Response) => {
       price: r.close ?? r.adjClose ?? 0,
     })).filter(r => r.ym >= fromStr && r.ym <= toStr)
 
-    // Override current month with latest daily close for intraday accuracy
     if (todayYM <= toStr) {
       try {
         const d2ago = localDate(new Date(Date.now() - 2 * 86400000))
@@ -1003,7 +1022,6 @@ router.get('/benchmarks', requireAuth, async (req, res: Response) => {
     }
   }
 
-  // Fill forward null gaps
   let lastIbov: number | null = null
   let lastSp500: number | null = null
   for (const entry of monthly) {
@@ -1017,11 +1035,24 @@ router.get('/benchmarks', requireAuth, async (req, res: Response) => {
   if (lastEntry.ibov_cum  != null) ibovPct  = Math.round((lastEntry.ibov_cum  - 1) * 10000) / 100
   if (lastEntry.sp500_cum != null) sp500Pct = Math.round((lastEntry.sp500_cum - 1) * 10000) / 100
 
-  res.json({ cdi_pct: cdiPct, ibov_pct: ibovPct, sp500_pct: sp500Pct, monthly })
+  return { cdi_pct: cdiPct, ibov_pct: ibovPct, sp500_pct: sp500Pct, monthly }
+}
+
+router.get('/benchmarks', requireAuth, async (req, res: Response) => {
+  let fromStr: string, toStr: string
+  if (req.query.from && req.query.to) {
+    fromStr = req.query.from as string
+    toStr   = req.query.to   as string
+  } else {
+    const year = parseInt(req.query.year as string || String(new Date().getFullYear()))
+    fromStr = `${year}-01`
+    toStr   = `${year}-12`
+  }
+
+  res.json(await computeBenchmarks(fromStr, toStr))
 })
 
-router.get('/inception', requireAuth, async (req, res: Response) => {
-  const { userId } = req as AuthRequest
+export async function computeInception(userId: string): Promise<string | null> {
   const { data: userAssets } = await supabaseAdmin
     .from('assets').select('id').eq('user_id', userId).eq('active', true)
   const userAssetIds = (userAssets ?? []).map(a => a.id)
@@ -1034,8 +1065,13 @@ router.get('/inception', requireAuth, async (req, res: Response) => {
     .limit(1)
 
   const firstDate = (data as Array<{ date: string }> | null)?.[0]?.date
-  if (!firstDate) { res.json({ inception: null }); return }
-  res.json({ inception: firstDate.substring(0, 7) })
+  return firstDate ? firstDate.substring(0, 7) : null
+}
+
+router.get('/inception', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const inception = await computeInception(userId)
+  res.json({ inception })
 })
 
 router.get('/debug-manual', requireAuth, async (req, res: Response) => {
@@ -1091,11 +1127,7 @@ router.get('/debug-manual', requireAuth, async (req, res: Response) => {
   })
 })
 
-router.get('/asset-returns', requireAuth, async (req, res: Response) => {
-  const { userId } = req as AuthRequest
-  const fromStr = (req.query.from as string) || localYM(new Date())
-  const toStr   = (req.query.to   as string) || localYM(new Date())
-
+export async function computeAssetReturns(userId: string, fromStr: string, toStr: string): Promise<Record<number, number | null>> {
   const isDaily = DATE_RE.test(fromStr) && DATE_RE.test(toStr)
   const todayStr = localDate(new Date())
 
@@ -1125,7 +1157,7 @@ router.get('/asset-returns', requireAuth, async (req, res: Response) => {
     .eq('active', true)
     .in('asset_type', ['ticker', 'manual'])
 
-  if (!assets?.length) { res.json({}); return }
+  if (!assets?.length) return {}
 
   const tickerAssets = assets.filter(a => a.asset_type === 'ticker')
   const manualAssets = assets.filter(a => a.asset_type === 'manual')
@@ -1264,7 +1296,14 @@ router.get('/asset-returns', requireAuth, async (req, res: Response) => {
     }
   }
 
-  res.json(returns)
+  return returns
+}
+
+router.get('/asset-returns', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const fromStr = (req.query.from as string) || localYM(new Date())
+  const toStr   = (req.query.to   as string) || localYM(new Date())
+  res.json(await computeAssetReturns(userId, fromStr, toStr))
 })
 
 export default router
