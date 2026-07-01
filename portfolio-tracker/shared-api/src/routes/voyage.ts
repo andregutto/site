@@ -536,11 +536,22 @@ router.patch('/trips/:id', requireAuth, async (req, res: Response) => {
 
   if (Object.keys(update).length === 0) { res.status(400).json({ error: 'No fields' }); return }
 
+  const { data: trip } = await supabaseAdmin
+    .from('voyage_trips').select('user_id').eq('id', tripId).single()
+  if (!trip) { res.status(404).json({ error: 'Viagem não encontrada' }); return }
+
+  const isOwner = trip.user_id === userId
+  if (!isOwner) {
+    const { data: member } = await supabaseAdmin
+      .from('voyage_trip_members')
+      .select('id').eq('trip_id', tripId).eq('user_id', userId).eq('role', 'editor').eq('status', 'active').maybeSingle()
+    if (!member) { res.status(403).json({ error: 'Sem permissão para editar esta viagem' }); return }
+  }
+
   const { data, error } = await supabaseAdmin
     .from('voyage_trips')
     .update(update)
     .eq('id', tripId)
-    .or(`user_id.eq.${userId}`)
     .select('*')
     .single()
 
