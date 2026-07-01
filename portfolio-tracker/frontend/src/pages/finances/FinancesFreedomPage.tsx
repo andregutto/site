@@ -24,6 +24,9 @@ interface FreedomPlan {
   notes: string | null
   created_at: string
   start_date: string | null
+  goal_mode?: 'capital' | 'income'
+  desired_income?: number | null
+  income_inflation_pct?: number | null
 }
 
 interface MonthlyPerf {
@@ -161,9 +164,9 @@ function PlanForm({ initial, portfolio, ipcaAnnual, hicpAnnual, cpiAnnual, userC
     ? Math.floor((Date.now() - new Date(birthdate + 'T00:00:00').getTime()) / (365.25 * 24 * 60 * 60 * 1000))
     : null
 
-  // step: 0=goal(new only), 1=info, 2=capital, 3=target, 4=strategy
+  // step: 0=goal(new only), 1=info, 2=capital, 3=target+strategy (merged)
   const [step, setStep]           = useState(isNew ? 0 : 1)
-  const [goalMode, setGoalMode]   = useState<'capital' | 'income'>('capital')
+  const [goalMode, setGoalMode]   = useState<'capital' | 'income'>(initial.goal_mode ?? 'capital')
   const [currency, setCurrencyState] = useState(initial.currency ?? 'EUR')
   const [name, setName]           = useState(initial.name ?? '')
   const [startDate, setStartDate] = useState(
@@ -180,8 +183,11 @@ function PlanForm({ initial, portfolio, ipcaAnnual, hicpAnnual, cpiAnnual, userC
   const [target, setTarget]       = useState(String(initial.target_amount ?? 0))
   const [horizon, setHorizon]     = useState(String(initial.horizon_years ?? 20))
   const [notes, setNotes]         = useState(initial.notes ?? '')
-  const [desiredIncome, setDesiredIncome] = useState('')
+  const [desiredIncome, setDesiredIncome] = useState(
+    initial.desired_income != null ? String(initial.desired_income) : ''
+  )
   const [inflation, setInflation] = useState(() => {
+    if (initial.income_inflation_pct != null) return String(initial.income_inflation_pct)
     if (initial.id) return '2'
     const country = (userCountry ?? '').toUpperCase()
     if (country === 'BR' && ipcaAnnual != null) return String(ipcaAnnual)
@@ -306,16 +312,19 @@ function PlanForm({ initial, portfolio, ipcaAnnual, hicpAnnual, cpiAnnual, userC
       currency,
       horizon_years:        savedHorizon || parseInt(horizon) || 20,
       notes: notes || null,
+      goal_mode: goalMode,
+      desired_income: goalMode === 'income' && desiredIncome ? parseFloat(desiredIncome) : null,
+      income_inflation_pct: goalMode === 'income' && inflation ? parseFloat(inflation) : null,
     })
   }
 
   const fieldCls = 'w-full border border-[var(--arvo-border)] rounded-[3px] px-3 py-2 text-sm bg-[var(--arvo-surface)] text-[var(--arvo-fg)] focus:outline-none focus:border-[var(--arvo-gold)] focus:ring-2 focus:ring-[var(--arvo-gold)]/25'
   const labelCls = 'block text-xs text-[var(--arvo-fg-muted)] mb-1'
 
-  // Steps 0=goal(new only), 1=info, 2=capital, 3=target, 4=strategy
-  // Edit mode starts at step 1, so totalSteps = 4; new mode starts at 0, totalSteps = 5
+  // Steps 0=goal(new only), 1=info, 2=capital, 3=target+strategy (merged)
+  // Edit mode starts at step 1, so totalSteps = 3; new mode starts at 0, totalSteps = 4
   const firstStep   = isNew ? 0 : 1
-  const lastStep    = 4
+  const lastStep    = 3
   const isLastStep  = step === lastStep
 
   // Indicator items: only show steps that are part of this flow
@@ -324,7 +333,6 @@ function PlanForm({ initial, portfolio, ipcaAnnual, hicpAnnual, cpiAnnual, userC
     { key: 1, label: t.finances.freedomStepInfo },
     { key: 2, label: t.finances.freedomStepStarting },
     { key: 3, label: t.finances.freedomStepTarget },
-    { key: 4, label: t.finances.freedomStepStrategy },
   ].filter(s => s.key >= firstStep)
 
   const fmtCur = (n: number) =>
@@ -548,16 +556,16 @@ function PlanForm({ initial, portfolio, ipcaAnnual, hicpAnnual, cpiAnnual, userC
                     <strong>{fmtCur(Math.round(parseFloat(desiredIncome || '0') * Math.pow(1 + parseFloat(inflation || '2') / 100, horizonInputYears || 20)))}{t.finances.freedomPerMonth}</strong>
                     &nbsp;— {t.finances.freedomRealToday}: <strong>{fmtCur(parseFloat(desiredIncome || '0'))}{t.finances.freedomPerMonth}</strong>
                   </p>
+                  <p className="text-[10px] text-[var(--arvo-fg-soft)] leading-snug pt-1 border-t border-indigo-100">
+                    {t.finances.freedomComputedGoalLiveHint}
+                  </p>
                 </div>
               )}
             </div>
           )}
-        </div>
-      )}
 
-      {/* ─── Step 4: Strategy ─── */}
-      {step === 4 && (
-        <div className="space-y-4">
+          <hr className="border-[var(--arvo-border)]" />
+
           <p className="text-sm text-[var(--arvo-fg-muted)]">{t.finances.freedomHowToGetThere}</p>
 
           {/* Strategy mode toggle */}
@@ -750,11 +758,9 @@ function PlanForm({ initial, portfolio, ipcaAnnual, hicpAnnual, cpiAnnual, userC
             {saving ? '…' : isLastStep ? t.common.save : `${t.finances.freedomNext} →`}
           </button>
 
-          {step === firstStep && (
-            <button type="button" onClick={onCancel} className="text-sm text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg-muted)] transition-colors">
-              {t.common.cancel}
-            </button>
-          )}
+          <button type="button" onClick={onCancel} className="text-sm text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg-muted)] transition-colors">
+            {t.common.cancel}
+          </button>
 
           {onDelete && isLastStep && (
             <button
@@ -1003,6 +1009,14 @@ export default function FinancesFreedomPage() {
     ? Math.round(monthsBetween(currentMonth(), reachMonth) / 12 * 10) / 10
     : null
 
+  // Compare the live reforecast against the plan's originally committed horizon:
+  // how many years earlier/later than the committed end date this reforecast lands.
+  const scheduleDeltaYears = (() => {
+    if (!activePlan || reachMonth == null) return null
+    const committedEndMonth = addMonths(planStart, activePlan.horizon_years * 12)
+    return Math.round(monthsBetween(reachMonth, committedEndMonth) / 12 * 10) / 10
+  })()
+
   // How many months ahead/behind is actual vs plan?
   const latestActualMonth = perf.length > 0 ? perf[perf.length - 1].month : null
   const planStatusText = (() => {
@@ -1060,7 +1074,7 @@ export default function FinancesFreedomPage() {
       {/* Header */}
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
-          <h1 style={{ fontFamily: "var(--arvo-font-body)", fontSize: 18, letterSpacing: '0.06em', color: 'var(--arvo-fg)' }}>{t.finances.freedomTitle}</h1>
+          <h1 style={{ fontFamily: "'Tenor Sans', serif", fontSize: 20, letterSpacing: '0.04em', color: 'var(--arvo-fg)' }}>{t.finances.freedomTitle}</h1>
           <p className="text-sm mt-0.5" style={{ color: 'var(--arvo-fg-muted)' }}>{t.finances.freedomSubtitle}</p>
         </div>
         <div className="flex items-center gap-4">
@@ -1143,19 +1157,49 @@ export default function FinancesFreedomPage() {
         </div>
       ) : (
         <>
-          {/* KPIs em faixa */}
-          <div className="rounded-2xl p-5" style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)' }}>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6">
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <span style={kpiLabelStyle}>{t.finances.freedomToday}</span>
-                <span className="arvo-num text-base sm:text-lg" style={kpiValueStyle}>{fmt(cxFreedom(currentValue), displayCurrency, true)}</span>
-                <span className="text-[10px]" style={{ color: 'var(--arvo-fg-soft)' }}>{t.finances.freedomActualNow}</span>
+          {/* Hero: progress toward goal */}
+          <div
+            className="rounded-2xl p-6 sm:p-7"
+            style={{
+              background: 'linear-gradient(155deg, var(--arvo-surface) 0%, var(--arvo-surface-2) 100%)',
+              border: '1px solid var(--arvo-border)',
+            }}
+          >
+            <div className="flex items-end justify-between flex-wrap gap-3 mb-4">
+              <div>
+                <span style={kpiLabelStyle}>{t.finances.freedomActualNow}</span>
+                <p
+                  className="arvo-num"
+                  style={{ fontFamily: "'Tenor Sans', serif", fontSize: 34, letterSpacing: '0.01em', lineHeight: 1.1, color: 'var(--arvo-fg)', margin: '4px 0 0' }}
+                >
+                  {fmt(cxFreedom(currentValue), displayCurrency, true)}
+                </p>
               </div>
-              <div className="sm:border-l sm:pl-6" style={{ display: 'flex', flexDirection: 'column', gap: 6, borderColor: 'var(--arvo-border)' }}>
+              <div className="text-right">
                 <span style={kpiLabelStyle}>{t.finances.freedomGoal}</span>
-                <span className="arvo-num text-base sm:text-lg" style={kpiValueStyle}>{fmt(cxFreedom(activePlan!.target_amount), displayCurrency, true)}</span>
+                <p className="arvo-num arvo-accent-blue" style={{ fontFamily: "'Tenor Sans', serif", fontSize: 22, letterSpacing: '0.01em', margin: '4px 0 0' }}>
+                  {fmt(cxFreedom(activePlan!.target_amount), displayCurrency, true)}
+                </p>
               </div>
-              <div className="sm:border-l sm:pl-6" style={{ display: 'flex', flexDirection: 'column', gap: 6, borderColor: 'var(--arvo-border)' }}>
+            </div>
+
+            {/* Progress bar */}
+            <div className="h-2 rounded-full overflow-hidden" style={{ background: 'var(--arvo-track-bg)' }}>
+              <div
+                className="h-full rounded-full transition-all"
+                style={{
+                  width: `${Math.min(100, Math.max(2, (currentValue / (activePlan!.target_amount || 1)) * 100))}%`,
+                  background: 'linear-gradient(90deg, var(--arvo-gold), var(--arvo-blue))',
+                }}
+              />
+            </div>
+            <p className="text-[11px] mt-1.5" style={{ color: 'var(--arvo-fg-soft)' }}>
+              {Math.min(100, Math.round((currentValue / (activePlan!.target_amount || 1)) * 100 * 10) / 10)}% {t.finances.freedomOfGoal}
+            </p>
+
+            {/* Supporting tiles */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-6 mt-6 pt-5" style={{ borderTop: '1px solid var(--arvo-border)' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 <span style={kpiLabelStyle}>{t.finances.freedomPassive} {t.finances.freedomPerMonth}</span>
                 <span className="arvo-num arvo-delta-pos text-base sm:text-lg">{fmt(cxFreedom(passiveIncome), displayCurrency, true)}</span>
                 {passiveIncomeReal != null && passiveIncomeReal !== passiveIncome && (
@@ -1163,6 +1207,7 @@ export default function FinancesFreedomPage() {
                 )}
                 <span className="text-[10px]" style={{ color: 'var(--arvo-fg-soft)' }}>{(activePlan!.monthly_income_rate * 100).toFixed(1)}% {t.finances.freedomIncomeNominalTag}</span>
               </div>
+
               <div className="sm:border-l sm:pl-6" style={{ display: 'flex', flexDirection: 'column', gap: 6, borderColor: 'var(--arvo-border)' }}>
                 <span style={kpiLabelStyle}>{t.finances.freedomTarget}</span>
                 {reachMonth ? (
@@ -1176,16 +1221,22 @@ export default function FinancesFreedomPage() {
                   {reachYearsFromNow != null && `${t.finances.freedomIn} ${reachYearsFromNow} ${t.finances.freedomAgeAtTarget}`}
                   {userBirthdate && reachMonth && ` · ${ageAtDate(userBirthdate, reachMonth + '-01')} ${t.finances.freedomAgeAtTarget}`}
                 </span>
-                <span className="text-[10px]" style={{ color: 'var(--arvo-fg-faint)' }}>{t.finances.freedomBasedOnCurrent}</span>
+                {scheduleDeltaYears != null && Math.abs(scheduleDeltaYears) >= 0.5 && (
+                  <span className={`arvo-num text-[10px] font-semibold ${scheduleDeltaYears > 0 ? 'arvo-delta-pos' : 'arvo-delta-neg'}`}>
+                    {scheduleDeltaYears > 0
+                      ? `${t.finances.freedomAheadOfSchedule} ${scheduleDeltaYears} ${t.finances.freedomAgeAtTarget}`
+                      : `${t.finances.freedomBehindSchedule} ${Math.abs(scheduleDeltaYears)} ${t.finances.freedomAgeAtTarget}`}
+                  </span>
+                )}
+                <span className="text-[10px]" style={{ color: 'var(--arvo-fg-faint)' }}>{t.finances.freedomBasedOnCurrent} — {t.finances.freedomNotThePlanGoal}</span>
+              </div>
+
+              <div className="sm:border-l sm:pl-6 col-span-2 sm:col-span-1" style={{ display: 'flex', flexDirection: 'column', gap: 6, borderColor: 'var(--arvo-border)' }}>
+                <span style={kpiLabelStyle}>{t.finances.freedomPlannedToday}</span>
+                <span className="arvo-num text-base sm:text-lg" style={kpiValueStyle}>{fmt(cxFreedom(plannedAtCurrentMonth), displayCurrency, true)}</span>
+                <span className="text-[10px]" style={{ color: 'var(--arvo-fg-soft)' }}>{t.finances.freedomAccordingToPlan}</span>
               </div>
             </div>
-          </div>
-
-          {/* Previsto para hoje */}
-          <div className="rounded-xl p-4" style={{ background: 'var(--arvo-surface-2)', border: '1px solid var(--arvo-border)' }}>
-            <p className="text-xs" style={{ color: 'var(--arvo-fg-muted)' }}>{t.finances.freedomPlannedToday}</p>
-            <p className="arvo-num text-lg font-bold" style={{ color: 'var(--arvo-fg)' }}>{fmt(cxFreedom(plannedAtCurrentMonth), displayCurrency, true)}</p>
-            <p className="text-[10px]" style={{ color: 'var(--arvo-fg-soft)' }}>{t.finances.freedomAccordingToPlan}</p>
           </div>
 
           {/* Status banner */}
@@ -1288,8 +1339,8 @@ export default function FinancesFreedomPage() {
 
           {/* Plan details */}
           <div className="bg-[var(--arvo-surface)] rounded-2xl border border-[var(--arvo-border)] shadow-sm p-5">
-            <h3 className="text-sm font-semibold text-[var(--arvo-fg)] mb-3">{activePlan!.name}</h3>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
+            <h3 className="text-sm font-semibold text-[var(--arvo-fg)] mb-4">{activePlan!.name}</h3>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
               {[
                 { label: t.finances.freedomCapital, value: fmt(cxFreedom(activePlan!.initial_capital), displayCurrency) },
                 { label: `${t.finances.freedomContrib} ${t.finances.freedomPerMonth}`, value: fmt(cxFreedom(activePlan!.monthly_contribution), displayCurrency, false, intlLocale) },
@@ -1298,14 +1349,14 @@ export default function FinancesFreedomPage() {
                 { label: t.finances.freedomHorizon, value: `${activePlan!.horizon_years} ${t.finances.freedomAgeAtTarget}` },
                 { label: t.finances.freedomCurrency, value: `${planCurrency}${planCurrency !== displayCurrency ? ` → ${displayCurrency}` : ''}` },
               ].map(({ label, value }) => (
-                <div key={label}>
-                  <p className="text-xs text-[var(--arvo-fg-soft)]">{label}</p>
-                  <p className="font-medium text-[var(--arvo-fg)]">{value}</p>
+                <div key={label} className="rounded-xl px-3 py-2.5" style={{ background: 'var(--arvo-surface-2)' }}>
+                  <p className="text-[11px] text-[var(--arvo-fg-soft)]">{label}</p>
+                  <p className="arvo-num font-medium text-[var(--arvo-fg)] mt-0.5">{value}</p>
                 </div>
               ))}
             </div>
             {activePlan!.notes && (
-              <p className="text-xs text-[var(--arvo-fg-soft)] mt-3 border-t border-[var(--arvo-border-soft)] pt-3">{activePlan!.notes}</p>
+              <p className="text-xs text-[var(--arvo-fg-soft)] mt-4 border-t border-[var(--arvo-border-soft)] pt-3">{activePlan!.notes}</p>
             )}
           </div>
         </>
