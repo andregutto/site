@@ -12,6 +12,7 @@ const RED = '#D63B2F'
 interface Props {
   trip: Trip
   destinations: TripDestination[]
+  isOwner?: boolean
   onSaved: (trip: Trip) => void
   onDestinationsChanged: (destinations: TripDestination[]) => void
   onDeleted: () => void
@@ -21,8 +22,10 @@ interface Props {
 // Painel inline (não-modal) anexado ao hero — substitui o antigo modal de
 // edição. Título/capa/resumo/datas/destinos formam um conjunto coerente que
 // o owner edita junto, na prática, então ficam todos aqui em vez de cada um
-// clicável separadamente no hero.
-export default function TripEditPanel({ trip, destinations, onSaved, onDestinationsChanged, onDeleted, onClose }: Props) {
+// clicável separadamente no hero. Collaborators with the 'editor' role can
+// open this panel too (backend already allows it) — only account/delete stays
+// owner-only.
+export default function TripEditPanel({ trip, destinations, isOwner = true, onSaved, onDestinationsChanged, onDeleted, onClose }: Props) {
   const { t } = useI18n()
   const tv = (t as any).voyage ?? {}
   const { user } = useAuth()
@@ -199,9 +202,11 @@ export default function TripEditPanel({ trip, destinations, onSaved, onDestinati
       {error && <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: RED }}>{error}</p>}
 
       <div className="flex gap-3 justify-end pt-1">
-        <button type="button" onClick={deleteTrip} disabled={deleting || saving}
-          style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, padding: '7px 14px', borderRadius: 6, background: 'transparent', border: `1px solid ${RED}`, color: RED, cursor: deleting ? 'default' : 'pointer', opacity: deleting ? 0.5 : 1, marginRight: 'auto' }}
-        >{deleting ? (tv.deleting ?? 'Excluindo…') : (tv.deleteTrip ?? 'Excluir viagem')}</button>
+        {isOwner && (
+          <button type="button" onClick={deleteTrip} disabled={deleting || saving}
+            style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, padding: '7px 14px', borderRadius: 6, background: 'transparent', border: `1px solid ${RED}`, color: RED, cursor: deleting ? 'default' : 'pointer', opacity: deleting ? 0.5 : 1, marginRight: 'auto' }}
+          >{deleting ? (tv.deleting ?? 'Excluindo…') : (tv.deleteTrip ?? 'Excluir viagem')}</button>
+        )}
         <button type="submit" disabled={saving || deleting || uploadingCover}
           style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, letterSpacing: '0.04em', padding: '7px 18px', borderRadius: 6, background: RED, color: '#fff', border: 'none', cursor: saving ? 'default' : 'pointer', opacity: saving ? 0.7 : 1 }}
         >{saving ? (tv.actions?.saving ?? 'Salvando…') : (tv.actions?.save ?? 'Salvar')}</button>

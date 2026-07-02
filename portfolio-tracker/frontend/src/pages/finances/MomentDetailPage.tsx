@@ -213,37 +213,36 @@ export default function MomentDetailPage() {
       )}
 
       <div className="space-y-4">
-        {/* Summary — the full budget block (bar + exact amounts) now lives entirely in the
-            space beside the two stats, instead of a compact bar up here that just repeated
-            the detailed one further down — one place for it, and the space gets used. */}
-        <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div className="flex items-center gap-5">
-            <div>
-              <p className="text-sm text-[var(--arvo-fg-soft)]">{t.finances.momentTotal}</p>
-              <p className="text-3xl font-bold text-[var(--arvo-fg)]">{fmt(summary.total, currency)}</p>
-            </div>
-            <div>
-              <p className="text-sm text-[var(--arvo-fg-soft)]">{t.finances.momentTransactions}</p>
-              <p className="text-3xl font-bold text-[var(--arvo-fg)]">{transactions.filter(tx => tx.amount < 0).length}</p>
-            </div>
+        {/* Summary. Budget gets its own full-width row below the stats instead of squeezing
+            into the leftover space beside them — that read as cramped/jumbled on mobile, where
+            there's barely any width left next to the large 3xl total/count numbers. */}
+        <div className="flex items-center gap-5">
+          <div>
+            <p className="text-sm text-[var(--arvo-fg-soft)]">{t.finances.momentTotal}</p>
+            <p className="text-3xl font-bold text-[var(--arvo-fg)]">{fmt(summary.total, currency)}</p>
           </div>
-          {m.budget != null && (() => {
-            const spent = summary.total
-            const pct = Math.min(100, (spent / m.budget!) * 100)
-            const over = spent > m.budget!
-            return (
-              <div style={{ minWidth: 180 }} className="flex-1 max-w-xs">
-                <div className="flex justify-between text-xs mb-1.5" style={{ color: over ? 'var(--arvo-red)' : 'var(--arvo-fg-muted)' }}>
-                  <span className="font-medium">{t.finances.momentBudget}</span>
-                  <span>{fmt(spent, currency)} {t.finances.momentBudgetOf} {fmt(m.budget!, currency)}{over ? ` · ${t.finances.momentBudgetOver}` : ` · ${pct.toFixed(0)}%`}</span>
-                </div>
-                <div className="h-2 bg-[var(--arvo-track-bg)] rounded-full overflow-hidden">
-                  <div className="h-full rounded-full transition-all" style={{ width: `${pct.toFixed(1)}%`, backgroundColor: over ? 'var(--arvo-red)' : m.color }} />
-                </div>
-              </div>
-            )
-          })()}
+          <div>
+            <p className="text-sm text-[var(--arvo-fg-soft)]">{t.finances.momentTransactions}</p>
+            <p className="text-3xl font-bold text-[var(--arvo-fg)]">{transactions.filter(tx => tx.amount < 0).length}</p>
+          </div>
         </div>
+
+        {m.budget != null && (() => {
+          const spent = summary.total
+          const pct = Math.min(100, (spent / m.budget!) * 100)
+          const over = spent > m.budget!
+          return (
+            <div>
+              <div className="flex justify-between text-xs mb-1.5" style={{ color: over ? 'var(--arvo-red)' : 'var(--arvo-fg-muted)' }}>
+                <span className="font-medium">{t.finances.momentBudget}</span>
+                <span>{fmt(spent, currency)} {t.finances.momentBudgetOf} {fmt(m.budget!, currency)}{over ? ` · ${t.finances.momentBudgetOver}` : ` · ${pct.toFixed(0)}%`}</span>
+              </div>
+              <div className="h-2 bg-[var(--arvo-track-bg)] rounded-full overflow-hidden">
+                <div className="h-full rounded-full transition-all" style={{ width: `${pct.toFixed(1)}%`, backgroundColor: over ? 'var(--arvo-red)' : m.color }} />
+              </div>
+            </div>
+          )
+        })()}
 
         {summary.by_user.length > 1 && (
           <Section title={t.finances.momentByUserTitle}>

@@ -226,7 +226,7 @@ export default function VoyageTripDetailPage() {
           {tv.title ?? 'Viagens'}
         </button>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          {isOwner && (
+          {canEdit && (
             <button
               onClick={() => setShowEditPanel(v => !v)}
               style={{ display: 'flex', alignItems: 'center', gap: 5, background: showEditPanel ? 'var(--arvo-hover-bg)' : 'none', border: '1px solid var(--arvo-border)', borderRadius: 7, padding: '5px 11px', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-muted)' }}
@@ -357,10 +357,11 @@ export default function VoyageTripDetailPage() {
         </div>
       </div>
 
-      {showEditPanel && isOwner && (
+      {showEditPanel && canEdit && (
         <TripEditPanel
           trip={trip}
           destinations={destinations}
+          isOwner={isOwner}
           onSaved={updatedTrip => setData(prev => prev ? { ...prev, trip: updatedTrip } : prev)}
           onDestinationsChanged={updated => setData(prev => prev ? { ...prev, destinations: updated } : prev)}
           onDeleted={() => navigate('/voyage')}
