@@ -284,7 +284,13 @@ export default function FinancesOverviewPage() {
   }
 
   const [month,          setMonth]          = useState(defaultMonth)
-  const [historyMonths,  setHistoryMonths]  = useState<6 | 12 | 60>(6)
+  // Each history chart has its own independent period toggle now — they used to share one
+  // state, which meant switching either one re-fetched /spending-summary (the source for the
+  // hero, envelope cards, top categories, everything) and blanked the WHOLE page while it
+  // reloaded, just to redraw one chart. /spending-summary is now fetched once, at the max
+  // range either chart could need, and each toggle only re-slices/re-fetches its own chart.
+  const [envHistoryMonths, setEnvHistoryMonths] = useState<6 | 12 | 60>(6)
+  const [catHistoryMonths, setCatHistoryMonths] = useState<6 | 12 | 60>(6)
   const [data,           setData]           = useState<SpendingSummary | null>(null)
   const [loading,        setLoading]        = useState(true)
   const [expandedEnvIds, setExpandedEnvIds] = useState<Set<number>>(new Set())
@@ -296,22 +302,22 @@ export default function FinancesOverviewPage() {
   useEffect(() => {
     const now = new Date()
     const to = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
-    const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - (historyMonths - 1))
+    const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - (catHistoryMonths - 1))
     const from = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
     setCatHistLoading(true)
     apiFetch<CatHistoryEntry[]>(`/finances/categories/monthly-history?from=${from}&to=${to}`)
       .then(setCatHistory)
       .catch(() => {})
       .finally(() => setCatHistLoading(false))
-  }, [historyMonths])
+  }, [catHistoryMonths])
 
   useEffect(() => {
     setLoading(true)
-    apiFetch<SpendingSummary>(`/finances/spending-summary?months=${historyMonths}`)
+    apiFetch<SpendingSummary>('/finances/spending-summary?months=60')
       .then(setData)
       .catch(() => {})
       .finally(() => setLoading(false))
-  }, [historyMonths])
+  }, [])
 
   const historyLabel = (n: 6 | 12 | 60) => {
     if (n === 6) return '6M'
@@ -415,10 +421,11 @@ export default function FinancesOverviewPage() {
     .sort((a, b) => b.actual - a.actual)
     .slice(0, 5)
 
-  // Chart data
-  let chartData = data.months.map(ms => {
+  // Chart data — spending-summary is fetched once at the max range (60mo); each toggle just
+  // re-slices/re-labels client-side instead of re-fetching everything.
+  let chartData = data.months.slice(-envHistoryMonths).map(ms => {
     const row: Record<string, number | string> = {
-      month:    historyMonths >= 12 ? fmtMonthYear(ms.month, browserLocale) : fmtMonth(ms.month, browserLocale),
+      month:    envHistoryMonths >= 12 ? fmtMonthYear(ms.month, browserLocale) : fmtMonth(ms.month, browserLocale),
       rawMonth: ms.month,
     }
     for (const env of ms.by_envelope.filter(e => e.envelope_id !== -1 && e.type !== 'income' && e.actual > 0)) {
@@ -427,7 +434,7 @@ export default function FinancesOverviewPage() {
     return row
   })
   // For "Tudo", trim leading months with no data so the chart starts from first transaction
-  if (historyMonths > 12) {
+  if (envHistoryMonths > 12) {
     const firstNonEmpty = chartData.findIndex(r => Object.keys(r).some(k => k !== 'month' && k !== 'rawMonth'))
     if (firstNonEmpty > 0) chartData = chartData.slice(firstNonEmpty)
   }
@@ -922,7 +929,10 @@ export default function FinancesOverviewPage() {
                   {env.categories.map(cat => {
                     const catBudget = cat.budget ?? 0
                     const over = catBudget > 0 && cat.actual > catBudget
-                    const dotColor = over ? 'var(--arvo-red)' : cat.actual === 0 ? 'var(--arvo-track-bg)' : cat.color
+                    // cat.color is the raw Tailwind swatch from the category picker (neon
+                    // against the brand palette) — use the envelope's brand token instead,
+                    // same as its own bar above, so every dot under it reads as "this envelope".
+                    const dotColor = over ? 'var(--arvo-red)' : cat.actual === 0 ? 'var(--arvo-track-bg)' : (ENV_TYPE_COLOR[env.type ?? ''] ?? cat.color)
                     return (
                       <div key={cat.id} className="px-4 py-2 flex items-center gap-2.5 pl-12 cursor-pointer hover:bg-[var(--arvo-hover-bg)] transition-colors" onClick={() => navigate(`/finances/transactions?category_id=${cat.id}`)}>
                         <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: dotColor }} />
@@ -961,7 +971,10 @@ export default function FinancesOverviewPage() {
               // 100% of its own target, since other categories/envelopes spent money too.
               const hasBudget = (cat.budget ?? 0) > 0
               const pct = hasBudget ? (cat.actual / (cat.budget as number)) * 100 : 0
-              const barPct = totalExpenses > 0 ? (cat.actual / totalExpenses) * 100 : 0
+              // Bar fill must reflect the SAME percentage shown next to it (% of the
+              // category's own budget) — it previously showed share-of-total-spend instead,
+              // so a category at e.g. 100% of its budget could render with a half-empty bar.
+              const barPct = hasBudget ? Math.min(pct, 100) : 0
               return (
                 <div key={cat.id} className="px-5 py-2.5 flex items-center gap-3 cursor-pointer hover:bg-[var(--arvo-hover-bg)] transition-colors" onClick={() => navigate(`/finances/transactions?category_id=${cat.id}`)}>
                   <span style={{ fontSize: 12, color: 'var(--arvo-fg-soft)', width: 16, flexShrink: 0 }}>{i + 1}</span>
@@ -972,7 +985,7 @@ export default function FinancesOverviewPage() {
                       <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--arvo-fg)', flexShrink: 0, marginLeft: 8 }}>{fmt(cx(cat.actual), currency, true)}</span>
                     </div>
                     <div className="mt-1 h-1 w-24 ml-auto bg-[var(--arvo-track-bg)] rounded-full overflow-hidden">
-                      <div className="h-full rounded-full" style={{ width: `${Math.min(barPct, 100)}%`, backgroundColor: breakdownColor(i) }} />
+                      <div className="h-full rounded-full" style={{ width: `${barPct}%`, backgroundColor: hasBudget && pct > 100 ? 'var(--arvo-red)' : breakdownColor(i) }} />
                     </div>
                   </div>
                   <span style={{ fontSize: 12, color: hasBudget && pct > 100 ? 'var(--arvo-red)' : 'var(--arvo-fg-soft)', width: 32, textAlign: 'right', flexShrink: 0 }}>
@@ -994,11 +1007,11 @@ export default function FinancesOverviewPage() {
               {([6, 12, 60] as const).map(n => (
                 <button
                   key={n}
-                  onClick={() => setHistoryMonths(n)}
+                  onClick={() => setEnvHistoryMonths(n)}
                   style={{
                     padding: '4px 10px', fontSize: 12, borderRadius: 8, fontWeight: 500, transition: 'all 0.15s',
-                    background: historyMonths === n ? 'var(--arvo-pill-active-bg)' : 'transparent',
-                    color: historyMonths === n ? 'var(--arvo-pill-active-fg)' : 'var(--arvo-fg-soft)',
+                    background: envHistoryMonths === n ? 'var(--arvo-pill-active-bg)' : 'transparent',
+                    color: envHistoryMonths === n ? 'var(--arvo-pill-active-fg)' : 'var(--arvo-fg-soft)',
                     border: 'none', cursor: 'pointer',
                   }}
                 >
@@ -1022,7 +1035,7 @@ export default function FinancesOverviewPage() {
               <XAxis
                 dataKey="month"
                 tick={{ fontSize: 11, fill: 'var(--arvo-fg-soft)' }}
-                interval={historyMonths <= 6 ? 0 : historyMonths <= 12 ? 1 : Math.max(0, Math.ceil(chartData.length / 8) - 1)}
+                interval={envHistoryMonths <= 6 ? 0 : envHistoryMonths <= 12 ? 1 : Math.max(0, Math.ceil(chartData.length / 8) - 1)}
               />
               <YAxis tickFormatter={v => fmt(cx(v as number), currency, true)} tick={{ fontSize: 10, fill: 'var(--arvo-fg-soft)' }} width={70} />
               <Tooltip content={<ChartTooltip currency={currency} locale={browserLocale} />} />
@@ -1042,11 +1055,30 @@ export default function FinancesOverviewPage() {
         </div>
       )}
 
-      {/* Category history chart — shares historyMonths toggle from envelope chart above */}
+      {/* Category history chart — own independent period toggle, doesn't affect the
+          envelope chart above or re-fetch /spending-summary. */}
       {(catHistLoading || catHistory.length > 0) && (
         <div className="lg:col-span-2 bg-[var(--arvo-surface)] rounded-2xl border border-[var(--arvo-border)] shadow-sm p-5">
           <div className="mb-4">
-            <h2 style={{ fontFamily: "var(--arvo-font-body)", fontSize: 14, color: 'var(--arvo-fg)', fontWeight: 600 }} className="mb-3">{t.finances.categoryHistory}</h2>
+            <div className="flex items-center justify-between mb-3">
+              <h2 style={{ fontFamily: "var(--arvo-font-body)", fontSize: 14, color: 'var(--arvo-fg)', fontWeight: 600 }}>{t.finances.categoryHistory}</h2>
+              <div className="flex gap-1">
+                {([6, 12, 60] as const).map(n => (
+                  <button
+                    key={n}
+                    onClick={() => setCatHistoryMonths(n)}
+                    style={{
+                      padding: '4px 10px', fontSize: 12, borderRadius: 8, fontWeight: 500, transition: 'all 0.15s',
+                      background: catHistoryMonths === n ? 'var(--arvo-pill-active-bg)' : 'transparent',
+                      color: catHistoryMonths === n ? 'var(--arvo-pill-active-fg)' : 'var(--arvo-fg-soft)',
+                      border: 'none', cursor: 'pointer',
+                    }}
+                  >
+                    {historyLabel(n)}
+                  </button>
+                ))}
+              </div>
+            </div>
             {/* Horizontal scroll strip instead of wrapping pills — with 15-20 categories the
                 wrapped list could take up several lines, blowing up this card's header height
                 and pushing its chart out of alignment with the envelope chart beside it. */}
@@ -1087,7 +1119,7 @@ export default function FinancesOverviewPage() {
             const allMonths = Array.from(new Set(filtered.flatMap(c => c.months.map(m => m.month)))).sort()
             const catChartData = allMonths.map(month => {
               const row: Record<string, string | number> = {
-                month: historyMonths >= 12 ? fmtMonthYear(month, browserLocale) : fmtMonth(month, browserLocale),
+                month: catHistoryMonths >= 12 ? fmtMonthYear(month, browserLocale) : fmtMonth(month, browserLocale),
               }
               for (const cat of filtered) {
                 const m = cat.months.find(m2 => m2.month === month)
@@ -1100,7 +1132,7 @@ export default function FinancesOverviewPage() {
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={catChartData} margin={{ top: 5, right: 5, bottom: 5, left: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--arvo-border)" />
-                  <XAxis dataKey="month" tick={{ fontSize: 11, fill: 'var(--arvo-fg-soft)' }} interval={historyMonths <= 6 ? 0 : historyMonths <= 12 ? 1 : Math.max(0, Math.ceil(catChartData.length / 8) - 1)} />
+                  <XAxis dataKey="month" tick={{ fontSize: 11, fill: 'var(--arvo-fg-soft)' }} interval={catHistoryMonths <= 6 ? 0 : catHistoryMonths <= 12 ? 1 : Math.max(0, Math.ceil(catChartData.length / 8) - 1)} />
                   <YAxis tickFormatter={v => fmt(cx(Number(v)), currency, true)} tick={{ fontSize: 10, fill: 'var(--arvo-fg-soft)' }} width={70} />
                   <Tooltip content={<ChartTooltip currency={currency} locale={browserLocale} />} />
                   {filtered.map((cat, i) => (

@@ -740,13 +740,29 @@ router.get('/spending-summary', requireAuth, async (req, res: Response) => {
   const oldestFM   = `${oldestDate.getFullYear()}-${String(oldestDate.getMonth() + 1).padStart(2, '0')}`
   const { start: sinceStr } = financialMonthRange(oldestFM, cycleDay)
 
-  const [txnRes, catRes, envRes, incomeRes] = await Promise.all([
-    supabaseAdmin
-      .from('finance_transactions')
-      .select('date, amount, category_id, shared_category_id, is_internal_transfer, exclude_from_stats')
-      .eq('user_id', userId)
-      .gte('date', sinceStr)
-      .order('date', { ascending: true }),
+  // PostgREST caps a single response at 1000 rows — with "Tudo" (up to 120 months) pulling
+  // in a user's whole transaction history, that silently truncated to the oldest 1000 rows
+  // (ascending date order), so any month past that point showed as empty. Paginate instead.
+  async function fetchAllTransactions() {
+    const PAGE_SIZE = 1000
+    const all: { date: string; amount: number; category_id: number | null; shared_category_id: number | null; is_internal_transfer: boolean; exclude_from_stats: boolean }[] = []
+    for (let from = 0; ; from += PAGE_SIZE) {
+      const { data } = await supabaseAdmin
+        .from('finance_transactions')
+        .select('date, amount, category_id, shared_category_id, is_internal_transfer, exclude_from_stats')
+        .eq('user_id', userId)
+        .gte('date', sinceStr)
+        .order('date', { ascending: true })
+        .range(from, from + PAGE_SIZE - 1)
+      if (!data?.length) break
+      all.push(...data)
+      if (data.length < PAGE_SIZE) break
+    }
+    return all
+  }
+
+  const [txns, catRes, envRes, incomeRes] = await Promise.all([
+    fetchAllTransactions(),
     supabaseAdmin
       .from('finance_categories')
       .select('id, name, name_key, icon, color, envelope_id, budget_monthly')
@@ -763,7 +779,6 @@ router.get('/spending-summary', requireAuth, async (req, res: Response) => {
       .single(),
   ])
 
-  const txns    = txnRes.data ?? []
   const cats    = (catRes.data ?? []) as { id: number; name: string; name_key: string | null; icon: string; color: string; envelope_id: number | null; budget_monthly: number | null }[]
   const allEnvs = envRes.data ?? []
   const envs    = allEnvs.filter(e => e.type !== 'income')
@@ -2031,26 +2046,49 @@ router.get('/categories/monthly-history', requireAuth, async (req, res: Response
   const { start: dateFrom } = financialMonthRange(from, cycleDay)
   const { end:   dateTo   } = financialMonthRange(to,   cycleDay)
 
-  const { data, error } = await supabaseAdmin
-    .from('finance_transactions')
-    .select('date, amount, category_id, finance_categories(id, name, name_key, icon, color)')
-    .eq('user_id', userId)
-    .gte('date', dateFrom)
-    .lte('date', dateTo)
-    .eq('is_internal_transfer', false)
-    .eq('exclude_from_stats', false)
-    .not('category_id', 'is', null)
-    .lt('amount', 0)
+  // Paginate — a heavy user's expense history over "Tudo" (up to 5 years) can exceed
+  // PostgREST's 1000-row response cap, which would silently drop everything past that point.
+  async function fetchAllExpenseTxns() {
+    const PAGE_SIZE = 1000
+    const all: any[] = []
+    for (let from = 0; ; from += PAGE_SIZE) {
+      const { data } = await supabaseAdmin
+        .from('finance_transactions')
+        .select('date, amount, category_id, finance_categories(id, name, name_key, icon, color, envelope_id)')
+        .eq('user_id', userId)
+        .gte('date', dateFrom)
+        .lte('date', dateTo)
+        .eq('is_internal_transfer', false)
+        .eq('exclude_from_stats', false)
+        .not('category_id', 'is', null)
+        .lt('amount', 0)
+        .range(from, from + PAGE_SIZE - 1)
+      if (!data?.length) break
+      all.push(...data)
+      if (data.length < PAGE_SIZE) break
+    }
+    return all
+  }
 
-  if (error) { res.status(500).json({ error: error.message }); return }
+  const [data, { data: incomeEnvs }] = await Promise.all([
+    fetchAllExpenseTxns(),
+    supabaseAdmin.from('finance_envelopes').select('id').eq('user_id', userId).eq('type', 'income'),
+  ])
 
-  type CatInfo = { id: number; name: string; name_key: string | null; icon: string; color: string }
+  // Income-type categories (e.g. Airbnb rental income) can occasionally carry a stray
+  // negative-amount entry (a refund, a correction) and would otherwise show up here with
+  // just that one lonely month — this chart is about spending categories, so exclude them
+  // the same way the envelope trend chart already excludes income envelopes.
+  const incomeEnvIds = new Set((incomeEnvs ?? []).map(e => e.id))
+
+  type CatInfo = { id: number; name: string; name_key: string | null; icon: string; color: string; envelope_id: number | null }
   const catMap = new Map<number, CatInfo>()
   const monthlyMap = new Map<number, Map<string, number>>()
 
   for (const row of (data ?? []) as any[]) {
     const cat = row.finance_categories as CatInfo | null
     if (!cat) continue
+    if (cat.envelope_id != null && incomeEnvIds.has(cat.envelope_id)) continue
     const catId = cat.id
     if (!catMap.has(catId)) catMap.set(catId, cat)
     const ym = financialMonthKey(row.date as string, cycleDay)
