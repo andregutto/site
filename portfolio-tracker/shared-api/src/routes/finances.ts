@@ -2729,6 +2729,158 @@ router.delete('/moments/:id', requireAuth, async (req, res: Response) => {
   res.json({ ok: true })
 })
 
+// ── Lançamento manual de despesa (split) dentro de um Momento ────────────────
+// Reaproveita finance_moment_members para achar quem pode participar; ao contrário
+// de transações reais, não exige conta bancária/CSV — é o "quick add" do Splitwise.
+
+async function assertMomentAccess(momentId: number, userId: string): Promise<{ ok: boolean; isOwner: boolean }> {
+  const { data: moment } = await supabaseAdmin
+    .from('finance_moments').select('user_id').eq('id', momentId).single()
+  if (!moment) return { ok: false, isOwner: false }
+  const isOwner = moment.user_id === userId
+  if (isOwner) return { ok: true, isOwner: true }
+  const { data: member } = await supabaseAdmin
+    .from('finance_moment_members')
+    .select('id').eq('moment_id', momentId).eq('user_id', userId).eq('status', 'active').maybeSingle()
+  return { ok: !!member, isOwner: false }
+}
+
+// Todos os participantes elegíveis para dividir uma despesa: dono do momento +
+// membros ativos com user_id (convites pendentes ainda não têm conta para dever/receber).
+async function momentParticipantIds(momentId: number): Promise<string[]> {
+  const { data: moment } = await supabaseAdmin.from('finance_moments').select('user_id').eq('id', momentId).single()
+  const { data: members } = await supabaseAdmin
+    .from('finance_moment_members')
+    .select('user_id').eq('moment_id', momentId).eq('status', 'active').not('user_id', 'is', null)
+  const ids = new Set<string>()
+  if (moment?.user_id) ids.add(moment.user_id)
+  for (const m of members ?? []) if (m.user_id) ids.add(m.user_id)
+  return [...ids]
+}
+
+router.get('/moments/:id/expenses', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const momentId = Number(req.params.id)
+
+  const access = await assertMomentAccess(momentId, userId)
+  if (!access.ok) { res.status(404).json({ error: 'Momento não encontrado' }); return }
+
+  const { data: expenses, error } = await supabaseAdmin
+    .from('finance_moment_expenses')
+    .select('id, description, amount, currency, paid_by_user_id, split_type, expense_date, created_by, created_at, finance_moment_expense_shares(user_id, share_amount)')
+    .eq('moment_id', momentId)
+    .order('expense_date', { ascending: false })
+  if (error) { res.status(500).json({ error: error.message }); return }
+
+  const userIds = new Set<string>()
+  for (const e of expenses ?? []) {
+    userIds.add(e.paid_by_user_id)
+    for (const s of (e as any).finance_moment_expense_shares ?? []) userIds.add(s.user_id)
+  }
+  const displayEntries = await Promise.all([...userIds].map(async uid => [uid, await userDisplay(uid)] as const))
+  const displayMap = Object.fromEntries(displayEntries)
+
+  const enriched = (expenses ?? []).map((e: any) => ({
+    ...e,
+    paid_by_display: displayMap[e.paid_by_user_id],
+    shares: (e.finance_moment_expense_shares ?? []).map((s: any) => ({ ...s, display: displayMap[s.user_id] })),
+    finance_moment_expense_shares: undefined,
+  }))
+
+  res.json({ expenses: enriched })
+})
+
+router.post('/moments/:id/expenses', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const momentId = Number(req.params.id)
+  const { description, amount, currency, paid_by_user_id, expense_date, split_type, participant_ids, custom_shares } = req.body as {
+    description?: string
+    amount?: number
+    currency?: string
+    paid_by_user_id?: string
+    expense_date?: string
+    split_type?: 'equal' | 'custom'
+    participant_ids?: string[]
+    custom_shares?: Record<string, number>
+  }
+
+  const access = await assertMomentAccess(momentId, userId)
+  if (!access.ok) { res.status(404).json({ error: 'Momento não encontrado' }); return }
+
+  if (!description?.trim() || !amount || amount <= 0 || !paid_by_user_id) {
+    res.status(400).json({ error: 'Descrição, valor e pagador são obrigatórios' }); return
+  }
+
+  const eligibleIds = await momentParticipantIds(momentId)
+  if (!eligibleIds.includes(paid_by_user_id)) {
+    res.status(400).json({ error: 'Pagador não é participante deste momento' }); return
+  }
+
+  const participants = (participant_ids && participant_ids.length > 0 ? participant_ids : eligibleIds)
+    .filter(id => eligibleIds.includes(id))
+  if (participants.length === 0) { res.status(400).json({ error: 'Selecione ao menos um participante' }); return }
+
+  let shares: { user_id: string; share_amount: number }[]
+  if (split_type === 'custom') {
+    if (!custom_shares) { res.status(400).json({ error: 'Informe os valores de cada participante' }); return }
+    shares = participants.map(uid => ({ user_id: uid, share_amount: Math.round((custom_shares[uid] ?? 0) * 100) / 100 }))
+    const sum = Math.round(shares.reduce((s, x) => s + x.share_amount, 0) * 100) / 100
+    if (Math.abs(sum - amount) > 0.02) {
+      res.status(400).json({ error: 'A soma das partes precisa bater com o valor total' }); return
+    }
+  } else {
+    const base = Math.floor((amount / participants.length) * 100) / 100
+    shares = participants.map(uid => ({ user_id: uid, share_amount: base }))
+    // sobra de arredondamento fica com quem pagou, pra soma bater exatamente com o total
+    const remainder = Math.round((amount - base * participants.length) * 100) / 100
+    const payerShare = shares.find(s => s.user_id === paid_by_user_id) ?? shares[0]
+    payerShare.share_amount = Math.round((payerShare.share_amount + remainder) * 100) / 100
+  }
+
+  const { data: expense, error } = await supabaseAdmin
+    .from('finance_moment_expenses')
+    .insert({
+      moment_id: momentId,
+      description: description.trim(),
+      amount,
+      currency: currency ?? 'BRL',
+      paid_by_user_id,
+      split_type: split_type ?? 'equal',
+      expense_date: expense_date ?? new Date().toISOString().slice(0, 10),
+      created_by: userId,
+    })
+    .select().single()
+  if (error) { res.status(500).json({ error: error.message }); return }
+
+  const { error: sharesError } = await supabaseAdmin
+    .from('finance_moment_expense_shares')
+    .insert(shares.map(s => ({ expense_id: expense.id, user_id: s.user_id, share_amount: s.share_amount })))
+  if (sharesError) {
+    await supabaseAdmin.from('finance_moment_expenses').delete().eq('id', expense.id)
+    res.status(500).json({ error: sharesError.message }); return
+  }
+
+  res.json({ ...expense, shares })
+})
+
+router.delete('/moments/:id/expenses/:expenseId', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const momentId = Number(req.params.id)
+  const expenseId = Number(req.params.expenseId)
+
+  const access = await assertMomentAccess(momentId, userId)
+  if (!access.ok) { res.status(404).json({ error: 'Momento não encontrado' }); return }
+
+  const { data: expense } = await supabaseAdmin
+    .from('finance_moment_expenses').select('created_by').eq('id', expenseId).eq('moment_id', momentId).maybeSingle()
+  if (!expense) { res.status(404).json({ error: 'Despesa não encontrada' }); return }
+  if (expense.created_by !== userId && !access.isOwner) { res.status(403).json({ error: 'Sem permissão para excluir esta despesa' }); return }
+
+  const { error } = await supabaseAdmin.from('finance_moment_expenses').delete().eq('id', expenseId)
+  if (error) { res.status(500).json({ error: error.message }); return }
+  res.json({ ok: true })
+})
+
 // ── Scanner de Assinaturas ────────────────────────────────────────────────────
 
 function normalizeSubscriptionDesc(raw: string): string {

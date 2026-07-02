@@ -11,6 +11,7 @@ import {
   ShareModal, AssignModal, MembersPanel, MomentForm,
 } from './FinancesMomentsPage'
 import type { Moment, MomentDetail, MomentPickerRow, ShareInfo, MomentFormData } from './FinancesMomentsPage'
+import ExpensesPanel from './ExpensesPanel'
 
 const RED = '#D63B2F'
 
@@ -276,6 +277,10 @@ export default function MomentDetailPage() {
             <ByUserBreakdown byUser={summary.by_user} total={summary.total} currency={currency} fmt={fmt} hideLabel />
           </Section>
         )}
+
+        <Section title={t.finances.momentSectionExpenses}>
+          <ExpensesPanel momentId={m.id} currency={currency} fmt={fmt} />
+        </Section>
 
         {summary.by_category.length > 0 && (
           <Section title={t.finances.momentSectionCategories} meta={String(summary.by_category.length)}>
