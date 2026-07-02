@@ -4,6 +4,7 @@ import { useI18n } from '../../contexts/I18nContext'
 import { useAuth } from '../../contexts/AuthContext'
 import { useCurrency } from '../../contexts/CurrencyContext'
 import { Icon } from '../../components/icons'
+import { useActiveFriends } from '../../hooks/useActiveFriends'
 import VoyageAvatar from '../voyage/_shared/Avatar'
 import PendingInvitesBanner from '../../components/PendingInvitesBanner'
 
@@ -822,23 +823,10 @@ function InviteModal({ s, result, copied, onInvite, onCopy, onClose }: {
   const [query, setQuery] = useState('')
   const [saving, setSaving] = useState(false)
   const [err, setErr] = useState('')
-  const [friends, setFriends] = useState<InviteFriend[]>([])
+  const friends: InviteFriend[] = useActiveFriends()
   const [suggestions, setSuggestions] = useState<InviteUserSuggestion[]>([])
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [directOk, setDirectOk] = useState(false)
-
-  // Atalho de "convidar amigos": reaproveita a lista unificada de /people,
-  // filtrando só conexões já confirmadas — mesmo padrão da Voyage.
-  useEffect(() => {
-    apiFetch<{ contacts: { email: string; name?: string; avatar_url?: string; user_id: string | null; contexts: { type: string; friend_status?: string }[] }[] }>('/people')
-      .then(data => {
-        const list = data.contacts
-          .filter(c => c.contexts.some(ctx => ctx.type === 'friend' && (ctx as any).friend_status === 'active'))
-          .map(c => ({ email: c.email, name: c.name, avatar_url: c.avatar_url, user_id: c.user_id }))
-        setFriends(list)
-      })
-      .catch(() => {})
-  }, [])
 
   const isEmailLike = /\S+@\S+\.\S+/.test(query)
 

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { apiFetch } from '../../lib/api'
 import { useI18n } from '../../contexts/I18nContext'
+import { useActiveFriends } from '../../hooks/useActiveFriends'
 import Avatar from './_shared/Avatar'
 import { RoleChip, StatusChip } from './_shared/Chips'
 
@@ -36,7 +37,7 @@ export default function MembersPanel({ tripId, isOwner }: Props) {
   const mv = tv.members ?? {}
   const [members, setMembers] = useState<Member[]>([])
   const [loading, setLoading] = useState(true)
-  const [friends, setFriends] = useState<Friend[]>([])
+  const friends = useActiveFriends()
   const [inviteQuery, setInviteQuery] = useState('')
   const [inviteRole, setInviteRole] = useState<'editor' | 'viewer'>('editor')
   const [inviting, setInviting] = useState(false)
@@ -59,20 +60,6 @@ export default function MembersPanel({ tripId, isOwner }: Props) {
   }
 
   useEffect(() => { load() }, [tripId])
-
-  // Atalho de "convidar amigos": reaproveita a lista unificada de /people,
-  // filtrando só conexões já confirmadas — sem isso o owner teria que
-  // digitar o e-mail/@ de alguém que já está conectado na plataforma.
-  useEffect(() => {
-    apiFetch<{ contacts: { email: string; name?: string; avatar_url?: string; user_id: string | null; contexts: { type: string; friend_status?: string }[] }[] }>('/people')
-      .then(data => {
-        const list = data.contacts
-          .filter(c => c.contexts.some(ctx => ctx.type === 'friend' && (ctx as any).friend_status === 'active'))
-          .map(c => ({ email: c.email, name: c.name, avatar_url: c.avatar_url, user_id: c.user_id }))
-        setFriends(list)
-      })
-      .catch(() => {})
-  }, [])
 
   const isEmailLike = /\S+@\S+\.\S+/.test(inviteQuery)
   const memberEmails = new Set(members.map(m => m.invite_email).filter(Boolean))

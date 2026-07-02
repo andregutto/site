@@ -8,6 +8,7 @@ import { useI18n } from '../../contexts/I18nContext'
 import { useTheme } from '../../contexts/ThemeContext'
 import { Icon } from '../../components/icons'
 import { MOMENT_ICON_KEYS, resolveMomentIcon } from '../../lib/momentIcons'
+import { useActiveFriends } from '../../hooks/useActiveFriends'
 import Avatar from '../voyage/_shared/Avatar'
 import { RoleChip, StatusChip } from '../voyage/_shared/Chips'
 import PendingInvitesBanner from '../../components/PendingInvitesBanner'
@@ -666,7 +667,7 @@ export function MembersPanel({ momentId, ownerId }: { momentId: number; ownerId:
   const [inviting, setInviting]   = useState(false)
   const [error, setError]         = useState('')
   const [removing, setRemoving]   = useState<number | null>(null)
-  const [friends, setFriends]     = useState<MomentInviteFriend[]>([])
+  const friends: MomentInviteFriend[] = useActiveFriends()
   const [suggestions, setSuggestions] = useState<MomentInviteSuggestion[]>([])
   const [showSuggestions, setShowSuggestions] = useState(false)
 
@@ -685,20 +686,6 @@ export function MembersPanel({ momentId, ownerId }: { momentId: number; ownerId:
   }, [momentId])
 
   useEffect(() => { load() }, [load])
-
-  // Atalho de "convidar amigos" — reaproveita a lista unificada de /people,
-  // filtrando só conexões já confirmadas (mesmo padrão da Voyage).
-  useEffect(() => {
-    if (!isOwner) return
-    apiFetch<{ contacts: { email: string; name?: string; avatar_url?: string; user_id: string | null; contexts: { type: string; friend_status?: string }[] }[] }>('/people')
-      .then(data => {
-        const list = data.contacts
-          .filter(c => c.contexts.some(ctx => ctx.type === 'friend' && (ctx as any).friend_status === 'active'))
-          .map(c => ({ email: c.email, name: c.name, avatar_url: c.avatar_url, user_id: c.user_id }))
-        setFriends(list)
-      })
-      .catch(() => {})
-  }, [isOwner])
 
   const isEmailLike = /\S+@\S+\.\S+/.test(inviteValue)
 
