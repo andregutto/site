@@ -1,4 +1,4 @@
-const CACHE = 'arvo-v33'
+const CACHE = 'arvo-v34'
 const STATIC = ['/manifest.json', '/favicon.svg', '/offline.html']
 
 self.addEventListener('install', e => {
@@ -21,6 +21,12 @@ self.addEventListener('fetch', e => {
 
   // Never intercept cross-origin requests (Supabase auth, external APIs)
   if (url.origin !== self.location.origin) return
+
+  // Never intercept the Supabase proxy either — /sb/* is same-origin (so it'd otherwise
+  // fall into the cache-first bucket below meant for our own static assets), but it's
+  // actually third-party storage/auth traffic that must always hit the network: caching it
+  // can serve a stale/broken response (e.g. a photo that failed once) forever afterwards.
+  if (url.pathname.startsWith('/sb/')) return
 
   // Network-first for API calls
   if (url.pathname.startsWith('/api/')) {
