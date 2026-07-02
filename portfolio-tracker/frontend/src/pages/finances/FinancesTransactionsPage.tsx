@@ -14,7 +14,7 @@ function resolveKey(name: string, nameKey: string | null | undefined, keys: Reco
   return keys[nameKey] ?? name
 }
 interface MomentRef  { id: number; name: string; icon: string; color: string }
-interface FinanceAccount { id: number; name: string; icon: string; currency: string }
+interface FinanceAccount { id: number; name: string; icon: string; currency: string; transaction_count?: number }
 interface Transaction {
   id: number
   date: string
@@ -284,9 +284,17 @@ export default function FinancesTransactionsPage() {
     apiFetch<FinanceAccount[]>('/finances/accounts')
       .then(data => {
         setAccounts(data)
+        // Default the import selectors to the account with the most transactions
+        // (or the only one, if there's just one) instead of leaving them unselected.
         if (data.length === 1) {
           setCsvAccountId(data[0].id)
           setAddAccountId(data[0].id)
+        } else if (data.length > 1) {
+          const mostUsed = data.reduce((best, a) => (a.transaction_count ?? 0) > (best.transaction_count ?? 0) ? a : best)
+          if ((mostUsed.transaction_count ?? 0) > 0) {
+            setCsvAccountId(mostUsed.id)
+            setAddAccountId(mostUsed.id)
+          }
         }
         setAccountsLoaded(true)
       })

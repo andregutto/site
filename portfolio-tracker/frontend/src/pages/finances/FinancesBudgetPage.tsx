@@ -72,6 +72,16 @@ const ENV_TYPE_KEY: Record<string, string> = {
   income:     'envelopeIncome',
 }
 
+// Envelope colors stored in the DB (e.g. #3b82f6) are raw Tailwind swatches picked from
+// the category color picker — too saturated against the brand's muted palette. Use the
+// brand tokens for the summary bar instead (same mapping as Overview's envelope charts).
+const ENV_TYPE_COLOR: Record<string, string> = {
+  essential:  'var(--arvo-blue)',
+  investment: 'var(--arvo-green)',
+  savings:    'var(--arvo-ocre)',
+  free:       'var(--arvo-gold)',
+}
+
 function resolveEnvName(name: string, type: string, nameKey: string | null | undefined, keys: Record<string, string>): string {
   const k = nameKey ?? ENV_TYPE_KEY[type] ?? null
   if (!k) return name
@@ -629,9 +639,11 @@ export default function FinancesBudgetPage() {
             <p className="text-xl font-semibold text-[var(--arvo-fg)]">{fmt(totalBudget, data.income.currency)}</p>
           </div>
           <div>
-            <p className="text-xs text-[var(--arvo-fg-soft)] uppercase tracking-wide font-medium mb-1">{t.finances.unallocated}</p>
-            <p className="text-xl font-semibold" style={{ color: unallocated < 0 ? 'var(--arvo-red)' : 'var(--arvo-green)' }}>
-              {fmt(Math.abs(unallocated), data.income.currency)}
+            <p className="text-xs text-[var(--arvo-fg-soft)] uppercase tracking-wide font-medium mb-1">
+              {unallocated < 0 ? t.finances.overspent : t.finances.unallocated}
+            </p>
+            <p className="text-xl font-semibold" style={{ color: unallocated < 0 ? 'var(--arvo-red)' : 'var(--arvo-fg)' }}>
+              {unallocated < 0 ? '−' : ''}{fmt(Math.abs(unallocated), data.income.currency)}
             </p>
           </div>
         </div>
@@ -640,14 +652,9 @@ export default function FinancesBudgetPage() {
             {expenseEnvelopes.map(env => {
               const envTotal = env.categories.reduce((s, c) => s + (c.budget_monthly ?? 0), 0)
               const pct = Math.max(0, Math.min(100, (envTotal / data.income.monthly_net) * 100))
-              return pct > 0 ? <div key={env.id} style={{ width: `${pct}%`, backgroundColor: env.color }} /> : null
+              return pct > 0 ? <div key={env.id} style={{ width: `${pct}%`, backgroundColor: ENV_TYPE_COLOR[env.type] ?? env.color }} /> : null
             })}
           </div>
-        )}
-        {unallocated < -0.5 && (
-          <p className="text-xs mt-2" style={{ color: 'var(--arvo-red)' }}>
-            {t.finances.overspentBanner} {fmt(Math.abs(unallocated), data.income.currency)}
-          </p>
         )}
       </div>
 

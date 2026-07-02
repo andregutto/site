@@ -816,6 +816,7 @@ router.get('/accounts', requireAuth, async (req, res: Response) => {
   // Paginate to bypass PostgREST's server-side max_rows cap (default 1,000 rows).
   // .limit(50000) is silently capped, causing wrong balances for accounts with >1,000 transactions.
   const balanceMap = new Map<number, number>()
+  const txnCountMap = new Map<number, number>()
   let offset = 0
   while (true) {
     const { data: page } = await supabaseAdmin
@@ -826,7 +827,10 @@ router.get('/accounts', requireAuth, async (req, res: Response) => {
       .range(offset, offset + 999)
     if (!page || page.length === 0) break
     for (const tx of page) {
-      if (tx.account_id != null) balanceMap.set(tx.account_id, (balanceMap.get(tx.account_id) ?? 0) + Number(tx.amount))
+      if (tx.account_id != null) {
+        balanceMap.set(tx.account_id, (balanceMap.get(tx.account_id) ?? 0) + Number(tx.amount))
+        txnCountMap.set(tx.account_id, (txnCountMap.get(tx.account_id) ?? 0) + 1)
+      }
     }
     if (page.length < 1000) break
     offset += 1000
@@ -839,6 +843,7 @@ router.get('/accounts', requireAuth, async (req, res: Response) => {
   const result = (acctRes.data ?? []).map(a => ({
     ...a,
     balance: Math.round((balanceMap.get(a.id) ?? 0) * 100) / 100,
+    transaction_count: txnCountMap.get(a.id) ?? 0,
     bank_connection: connMap.get(a.id) ?? null,
   }))
   res.json(result)

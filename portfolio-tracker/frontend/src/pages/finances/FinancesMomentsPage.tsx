@@ -1185,7 +1185,8 @@ export default function FinancesMomentsPage() {
                 onChange={e => setSearch(e.target.value)}
                 onBlur={() => { if (!search) setShowSearch(false) }}
                 placeholder={t.common.search ?? 'Buscar...'}
-                className="pl-8 pr-3 py-1.5 text-xs rounded-full border border-[var(--arvo-border)] bg-[var(--arvo-surface)] text-[var(--arvo-fg)] w-full focus:outline-none focus:border-[var(--arvo-gold)] transition-colors"
+                style={{ fontSize: 16 }}
+                className="pl-8 pr-3 py-1.5 sm:text-xs rounded-full border border-[var(--arvo-border)] bg-[var(--arvo-surface)] text-[var(--arvo-fg)] w-full focus:outline-none focus:border-[var(--arvo-gold)] transition-colors"
               />
             </div>
           ) : (
