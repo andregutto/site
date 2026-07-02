@@ -982,6 +982,7 @@ export default function FinancesMomentsPage() {
   const [tripOptions, setTripOptions]       = useState<{ id: number; title: string }[]>([])
   const [typeFilter,  setTypeFilter]  = useState<'all' | MomentKind>('all')
   const [search,      setSearch]      = useState('')
+  const [showSearch,  setShowSearch]  = useState(false)
   const [expandedYears, setExpandedYears] = useState<Set<number>>(() => new Set([new Date().getFullYear()]))
 
   useEffect(() => {
@@ -1095,18 +1096,17 @@ export default function FinancesMomentsPage() {
   const sortedYears = [...groups.keys()].sort((a, b) => b - a)
 
   return (
-    <div className="space-y-5">
-      {/* Header */}
-      <div className="flex items-start justify-between flex-wrap gap-3">
-        <div>
-          <h1 style={{ fontFamily: "var(--arvo-font-body)", fontSize: 18, letterSpacing: '0.06em', color: 'var(--arvo-fg)' }}>{t.finances.momentsTitle}</h1>
-          <p className="text-sm mt-0.5" style={{ color: 'var(--arvo-fg-muted)' }}>{t.finances.momentsSubtitle}</p>
-        </div>
+    <div className="space-y-4">
+      {/* Header — título e ação na mesma linha, sem quebrar; o botão vira um
+          "+" compacto pra não ocupar uma linha inteira embaixo do título. */}
+      <div className="flex items-center justify-between gap-3">
+        <h1 style={{ fontFamily: "var(--arvo-font-body)", fontSize: 18, letterSpacing: '0.06em', color: 'var(--arvo-fg)' }}>{t.finances.momentsTitle}</h1>
         <button
           onClick={() => { setEditing(null); setShowForm(true) }}
-          className="px-3 py-1.5 bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] text-sm rounded-lg hover:opacity-80 transition-opacity"
+          title={t.finances.newMoment}
+          className="w-8 h-8 flex items-center justify-center bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] text-lg leading-none rounded-full hover:opacity-80 transition-opacity shrink-0"
         >
-          + {t.finances.newMoment}
+          +
         </button>
       </div>
 
@@ -1168,32 +1168,49 @@ export default function FinancesMomentsPage() {
         </div>
       )}
 
-      {/* Filtro por tipo + busca — a busca fica discreta, alinhada à direita,
-          acima do grupo do ano atual (só compensa quando a lista crescer). */}
+      {/* Filtro por tipo + busca — tudo numa linha só; os pills rolam
+          horizontalmente e a busca é um ícone que expande, pra não gastar
+          uma linha inteira de altura só com controles. */}
       {moments.length > 0 && (
-        <div className="flex items-center justify-between flex-wrap gap-2">
-          <div className="flex flex-wrap gap-1.5">
-            {(['all', 'trip', 'party', 'dinner', 'other'] as const).map(k => (
+        <div className="flex items-center gap-2">
+          {showSearch ? (
+            <div className="relative flex-1">
+              <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--arvo-fg-faint)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 10.5A6.5 6.5 0 114 10.5a6.5 6.5 0 0113 0z" />
+              </svg>
+              <input
+                autoFocus
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                onBlur={() => { if (!search) setShowSearch(false) }}
+                placeholder={t.common.search ?? 'Buscar...'}
+                className="pl-8 pr-3 py-1.5 text-xs rounded-full border border-[var(--arvo-border)] bg-[var(--arvo-surface)] text-[var(--arvo-fg)] w-full focus:outline-none focus:border-[var(--arvo-gold)] transition-colors"
+              />
+            </div>
+          ) : (
+            <>
+              <div className="flex gap-1.5 overflow-x-auto flex-1 min-w-0" style={{ scrollbarWidth: 'none' }}>
+                {(['all', 'trip', 'party', 'dinner', 'other'] as const).map(k => (
+                  <button
+                    key={k} type="button"
+                    onClick={() => setTypeFilter(k)}
+                    className={`px-3 py-1.5 rounded-full text-xs border transition-colors shrink-0 ${typeFilter === k ? 'border-[var(--arvo-fg)] bg-[var(--arvo-fg)]/10 text-[var(--arvo-fg)]' : 'border-[var(--arvo-border)] text-[var(--arvo-fg-muted)]'}`}
+                  >
+                    {k === 'all' ? t.common.all : typeLabel(k)}
+                  </button>
+                ))}
+              </div>
               <button
-                key={k} type="button"
-                onClick={() => setTypeFilter(k)}
-                className={`px-3 py-1.5 rounded-full text-xs border transition-colors ${typeFilter === k ? 'border-[var(--arvo-fg)] bg-[var(--arvo-fg)]/10 text-[var(--arvo-fg)]' : 'border-[var(--arvo-border)] text-[var(--arvo-fg-muted)]'}`}
+                type="button"
+                onClick={() => setShowSearch(true)}
+                className="w-7 h-7 flex items-center justify-center rounded-full border border-[var(--arvo-border)] text-[var(--arvo-fg-muted)] hover:text-[var(--arvo-fg)] transition-colors shrink-0"
               >
-                {k === 'all' ? t.common.all : typeLabel(k)}
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 10.5A6.5 6.5 0 114 10.5a6.5 6.5 0 0113 0z" />
+                </svg>
               </button>
-            ))}
-          </div>
-          <div className="relative">
-            <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--arvo-fg-faint)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 10.5A6.5 6.5 0 114 10.5a6.5 6.5 0 0113 0z" />
-            </svg>
-            <input
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder={t.common.search ?? 'Buscar...'}
-              className="pl-8 pr-3 py-1.5 text-xs rounded-full border border-[var(--arvo-border)] bg-[var(--arvo-surface)] text-[var(--arvo-fg)] w-36 focus:outline-none focus:border-[var(--arvo-gold)] transition-colors"
-            />
-          </div>
+            </>
+          )}
         </div>
       )}
 

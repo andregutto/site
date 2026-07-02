@@ -127,6 +127,7 @@ export default function VoyageTripsPage() {
   const [showMomentPicker, setShowMomentPicker] = useState(false)
   const [filter, setFilter] = useState<'all' | 'planning' | 'ongoing' | 'past'>('all')
   const [search, setSearch] = useState('')
+  const [showSearch, setShowSearch] = useState(false)
   const [expandedYears, setExpandedYears] = useState<Set<number>>(() => new Set([new Date().getFullYear()]))
 
   function toggleYear(year: number) {
@@ -151,71 +152,89 @@ export default function VoyageTripsPage() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 2xl:px-8 py-6">
-      {/* Header */}
-      <div className="flex items-start justify-between mb-6 gap-4">
-        <div>
-          <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 10, letterSpacing: '0.30em', textTransform: 'uppercase', color: RED, marginBottom: 6 }}>
-            ARVO VOYAGE
-          </p>
-          <h1 style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 28, letterSpacing: '0.08em', color: 'var(--arvo-fg)' }}>
+      {/* Header — kicker pequeno + título e ação na mesma linha */}
+      <div className="mb-4">
+        <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.30em', textTransform: 'uppercase', color: RED, marginBottom: 4 }}>
+          ARVO VOYAGE
+        </p>
+        <div className="flex items-center justify-between gap-4">
+          <h1 style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 24, letterSpacing: '0.06em', color: 'var(--arvo-fg)' }}>
             {tv.title ?? 'Viagens'}
           </h1>
+          <button
+            onClick={() => setShowForm(true)}
+            title={tv.addTrip ?? 'Adicionar viagem'}
+            style={{
+              width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 18, lineHeight: 1, borderRadius: 999,
+              background: RED, color: '#fff', border: 'none', cursor: 'pointer',
+              transition: 'all 160ms ease', flexShrink: 0,
+            }}
+            onMouseEnter={e => (e.currentTarget.style.opacity = '0.85')}
+            onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+          >
+            +
+          </button>
         </div>
-        <button
-          onClick={() => setShowForm(true)}
-          style={{
-            fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, letterSpacing: '0.08em',
-            padding: '8px 18px', borderRadius: 8,
-            background: RED, color: '#fff', border: 'none', cursor: 'pointer',
-            transition: 'all 160ms ease', flexShrink: 0,
-          }}
-          onMouseEnter={e => (e.currentTarget.style.opacity = '0.85')}
-          onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
-        >
-          {tv.addTrip ?? 'Adicionar viagem'}
-        </button>
       </div>
 
       <PendingInvitesBanner types={['trip_invite']} />
 
-      {/* Filter pills + busca discreta — mesmo padrão da lista de Momentos */}
+      {/* Filter pills + busca — uma linha só; os pills rolam horizontalmente
+          e a busca é um ícone que expande, mesmo padrão da lista de Momentos. */}
       {!loading && trips.length > 0 && (
-        <div className="flex items-center justify-between flex-wrap gap-2 mb-5">
-          <div className="flex gap-2 flex-wrap">
-            {([
-              { key: 'all',      label: t.common.all ?? 'Todas' },
-              { key: 'planning', label: tv.statusPlanning ?? 'Planejando' },
-              { key: 'ongoing',  label: tv.statusOngoing  ?? 'Em viagem' },
-              { key: 'past',     label: tv.statusPast     ?? 'Concluídas' },
-            ] as const).map(({ key, label }) => (
+        <div className="flex items-center gap-2 mb-5">
+          {showSearch ? (
+            <div className="relative flex-1">
+              <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--arvo-fg-faint)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 10.5A6.5 6.5 0 114 10.5a6.5 6.5 0 0113 0z" />
+              </svg>
+              <input
+                autoFocus
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                onBlur={() => { if (!search) setShowSearch(false) }}
+                placeholder={t.common.search ?? 'Buscar...'}
+                className="pl-8 pr-3 py-1.5 text-xs rounded-full border border-[var(--arvo-border)] bg-[var(--arvo-surface)] text-[var(--arvo-fg)] w-full focus:outline-none focus:border-[var(--arvo-gold)] transition-colors"
+              />
+            </div>
+          ) : (
+            <>
+              <div className="flex gap-2 overflow-x-auto flex-1 min-w-0" style={{ scrollbarWidth: 'none' }}>
+                {([
+                  { key: 'all',      label: t.common.all ?? 'Todas' },
+                  { key: 'planning', label: tv.statusPlanning ?? 'Planejando' },
+                  { key: 'ongoing',  label: tv.statusOngoing  ?? 'Em viagem' },
+                  { key: 'past',     label: tv.statusPast     ?? 'Concluídas' },
+                ] as const).map(({ key, label }) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setFilter(key)}
+                    style={{
+                      fontFamily: 'var(--arvo-font-display)', fontSize: 9.5, letterSpacing: '0.18em',
+                      textTransform: 'uppercase', padding: '4px 14px', borderRadius: 999,
+                      background: filter === key ? 'var(--arvo-fg)' : 'transparent',
+                      color: filter === key ? 'var(--arvo-surface)' : 'var(--arvo-fg-muted)',
+                      border: `1px solid ${filter === key ? 'var(--arvo-fg)' : 'var(--arvo-border)'}`,
+                      cursor: 'pointer', transition: 'all 160ms ease', flexShrink: 0,
+                    }}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
               <button
-                key={key}
                 type="button"
-                onClick={() => setFilter(key)}
-                style={{
-                  fontFamily: 'var(--arvo-font-display)', fontSize: 9.5, letterSpacing: '0.18em',
-                  textTransform: 'uppercase', padding: '4px 14px', borderRadius: 999,
-                  background: filter === key ? 'var(--arvo-fg)' : 'transparent',
-                  color: filter === key ? 'var(--arvo-surface)' : 'var(--arvo-fg-muted)',
-                  border: `1px solid ${filter === key ? 'var(--arvo-fg)' : 'var(--arvo-border)'}`,
-                  cursor: 'pointer', transition: 'all 160ms ease',
-                }}
+                onClick={() => setShowSearch(true)}
+                className="w-7 h-7 flex items-center justify-center rounded-full border border-[var(--arvo-border)] text-[var(--arvo-fg-muted)] hover:text-[var(--arvo-fg)] transition-colors shrink-0"
               >
-                {label}
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 10.5A6.5 6.5 0 114 10.5a6.5 6.5 0 0113 0z" />
+                </svg>
               </button>
-            ))}
-          </div>
-          <div className="relative">
-            <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--arvo-fg-faint)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 10.5A6.5 6.5 0 114 10.5a6.5 6.5 0 0113 0z" />
-            </svg>
-            <input
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder={t.common.search ?? 'Buscar...'}
-              className="pl-8 pr-3 py-1.5 text-xs rounded-full border border-[var(--arvo-border)] bg-[var(--arvo-surface)] text-[var(--arvo-fg)] w-36 focus:outline-none focus:border-[var(--arvo-gold)] transition-colors"
-            />
-          </div>
+            </>
+          )}
         </div>
       )}
 
