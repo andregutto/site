@@ -422,11 +422,46 @@ router.get('/budget', requireAuth, async (req, res: Response) => {
   const effectiveIncome = incomeCatTotal > 0 ? incomeCatTotal : income.monthly_net
   const fromCategories  = incomeCatTotal > 0
 
+  // Shared categories the user linked to one of their own envelopes (mirrors the same
+  // join used by /spending-summary) — attached per-envelope here so the Budget page can
+  // nest them inside the envelope they belong to and fold their goal into its total,
+  // instead of only listing them in a separate section further down the page.
+  const { data: sharedEnvRows } = await supabaseAdmin
+    .from('shared_category_user_settings')
+    .select('shared_category_id, local_envelope_id')
+    .eq('user_id', userId)
+  const sharedCatToEnv = new Map<number, number>(
+    (sharedEnvRows ?? []).filter(r => r.local_envelope_id != null).map(r => [r.shared_category_id, r.local_envelope_id as number])
+  )
+  const sharedByEnv = new Map<number, { id: number; name: string; icon: string; color: string; my_goal: number; total_goal: number; currency: string; group_id: number; group_name: string }[]>()
+  if (sharedCatToEnv.size > 0) {
+    const sharedCatIds = [...sharedCatToEnv.keys()]
+    const { data: sharedCatRows } = await supabaseAdmin
+      .from('shared_categories').select('id, name, icon, color, total_goal, currency, group_id').in('id', sharedCatIds)
+    const groupIds = [...new Set((sharedCatRows ?? []).map(c => c.group_id))]
+    const [{ data: myMemberships }, { data: groupRows }] = await Promise.all([
+      supabaseAdmin.from('shared_group_members').select('group_id, share_pct').eq('user_id', userId).eq('status', 'active').in('group_id', groupIds.length > 0 ? groupIds : [-1]),
+      supabaseAdmin.from('shared_groups').select('id, name').in('id', groupIds.length > 0 ? groupIds : [-1]),
+    ])
+    const pctByGroup = new Map((myMemberships ?? []).map(m => [m.group_id, Number(m.share_pct ?? 50)]))
+    const groupNameMap = new Map((groupRows ?? []).map(g => [g.id, g.name]))
+    for (const cat of sharedCatRows ?? []) {
+      const envId = sharedCatToEnv.get(cat.id)
+      if (!envId) continue
+      const pct = pctByGroup.get(cat.group_id) ?? 50
+      const myGoal = Number(cat.total_goal) * pct / 100
+      const list = sharedByEnv.get(envId) ?? []
+      list.push({ id: cat.id, name: cat.name, icon: cat.icon, color: cat.color, my_goal: myGoal, total_goal: Number(cat.total_goal), currency: cat.currency, group_id: cat.group_id, group_name: groupNameMap.get(cat.group_id) ?? '' })
+      sharedByEnv.set(envId, list)
+    }
+  }
+
   // Attach categories to envelopes; expense envelopes use effective income for budget_amount
   const result = envelopes.map(env => ({
     ...env,
     budget_amount: env.type === 'income' ? 0 : effectiveIncome * (env.pct_target / 100),
     categories: categories.filter(c => c.envelope_id === env.id),
+    shared_categories: sharedByEnv.get(env.id) ?? [],
   }))
 
   res.json({ income: { ...income, monthly_net: effectiveIncome, from_categories: fromCategories }, envelopes: result })

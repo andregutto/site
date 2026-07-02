@@ -17,6 +17,18 @@ interface Category {
   envelope_id: number | null
 }
 
+interface EnvSharedCategory {
+  id: number
+  name: string
+  icon: string
+  color: string
+  my_goal: number
+  total_goal: number
+  currency: string
+  group_id: number
+  group_name: string
+}
+
 interface Envelope {
   id: number
   name: string
@@ -28,6 +40,7 @@ interface Envelope {
   budget_amount: number
   description?: string | null
   categories: Category[]
+  shared_categories: EnvSharedCategory[]
 }
 
 interface BudgetData {
@@ -95,8 +108,8 @@ function resolveKey(name: string, nameKey: string | null | undefined, keys: Reco
 }
 
 
-function EnvelopeBar({ env, allEnvelopes, expanded, onToggle, onEditCategory, onDeleteCategory, onAddCategory, onSaveDescription, onShareCategory, onSaveCategoryBudget, onMoveCategory, actuals: _actuals, historicals, currency, incomeMonthly }:
-  { env: Envelope; allEnvelopes: Envelope[]; expanded: boolean; onToggle: () => void; onEditCategory: (c: Category) => void; onDeleteCategory: (id: number) => void; onAddCategory: (envId: number) => void; onSaveDescription: (id: number, desc: string) => void; onShareCategory: (c: Category) => void; onSaveCategoryBudget: (id: number, value: number | null) => void; onMoveCategory: (id: number, envId: number) => void; actuals: Map<number, number>; historicals: Map<number, number>; currency: string; incomeMonthly: number }) {
+function EnvelopeBar({ env, allEnvelopes, expanded, onToggle, onEditCategory, onDeleteCategory, onAddCategory, onSaveDescription, onShareCategory, onSaveCategoryBudget, onMoveCategory, actuals: _actuals, historicals, currency, incomeMonthly, sharedGroups, onSetSharedEnvelope }:
+  { env: Envelope; allEnvelopes: Envelope[]; expanded: boolean; onToggle: () => void; onEditCategory: (c: Category) => void; onDeleteCategory: (id: number) => void; onAddCategory: (envId: number) => void; onSaveDescription: (id: number, desc: string) => void; onShareCategory: (c: Category) => void; onSaveCategoryBudget: (id: number, value: number | null) => void; onMoveCategory: (id: number, envId: number) => void; actuals: Map<number, number>; historicals: Map<number, number>; currency: string; incomeMonthly: number; sharedGroups: SharedGroup[]; onSetSharedEnvelope: (catId: number, envId: number | null) => void }) {
   const { t } = useI18n()
   const { hideValues } = useCurrency()
   const fmt = (n: number, cur: string) => hideValues ? '•••' : _fmt(n, cur)
@@ -158,6 +171,8 @@ function EnvelopeBar({ env, allEnvelopes, expanded, onToggle, onEditCategory, on
   // Envelope budget is now the sum of its categories (bottom-up), not an independent
   // pct-of-income target the user has to reconcile category totals against by hand.
   const totalCategoryBudget = env.categories.reduce((s, c) => s + (c.budget_monthly ?? 0), 0)
+    + env.shared_categories.reduce((s, c) => s + c.my_goal, 0)
+  const [sharedEnvPickerId, setSharedEnvPickerId] = useState<number | null>(null)
 
   function saveDesc() {
     setEditingDesc(false)
@@ -328,6 +343,66 @@ function EnvelopeBar({ env, allEnvelopes, expanded, onToggle, onEditCategory, on
                           </svg>
                         </button>
                       </div>
+                    </div>
+                  </li>
+                )
+              })}
+            </ul>
+          )}
+          {env.shared_categories.length > 0 && (
+            <ul className="divide-y divide-[var(--arvo-border-soft)] border-t border-[var(--arvo-border-soft)]">
+              {env.shared_categories.map(cat => {
+                const group = sharedGroups.find(g => g.id === cat.group_id)
+                const activeMembers = group?.members.filter(m => m.status === 'active') ?? []
+                return (
+                  <li key={`shared-${cat.id}`} className="px-5 py-2.5 flex items-start gap-3">
+                    <span className="text-base leading-none w-6 shrink-0 mt-0.5">{cat.icon}</span>
+                    <div className="flex-1 min-w-0 space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-[var(--arvo-fg)] truncate">{cat.name}</span>
+                        <div className="flex -space-x-1.5 shrink-0">
+                          {activeMembers.slice(0, 3).map(m => (
+                            <div key={m.id} style={{ border: '2px solid var(--arvo-surface)', borderRadius: '50%' }}>
+                              <Avatar name={m.display.name} email={m.display.email} avatarUrl={m.display.avatar_url} size={18} />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      <span className="text-xs text-[var(--arvo-fg-soft)]">{cat.group_name} · {t.finances.myGoal}: {fmt(cat.my_goal, cat.currency)}</span>
+                    </div>
+                    <div className="relative shrink-0">
+                      <button
+                        onClick={() => setSharedEnvPickerId(cat.id)}
+                        className="p-1.5 text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg)] transition-colors rounded"
+                        title={t.finances.moveCategoryTitle}
+                      >
+                        <span className="text-sm leading-none">{env.icon}</span>
+                      </button>
+                      {sharedEnvPickerId === cat.id && (
+                        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 px-4" onClick={() => setSharedEnvPickerId(null)}>
+                          <div className="bg-[var(--arvo-surface)] rounded-t-2xl sm:rounded-2xl shadow-xl w-full sm:max-w-sm max-h-[70vh] overflow-y-auto py-2" onClick={e => e.stopPropagation()}>
+                            <p className="px-4 py-2 text-xs text-[var(--arvo-fg-soft)] uppercase tracking-wide font-medium">{t.finances.moveCategoryTitle}</p>
+                            <button
+                              onClick={() => { onSetSharedEnvelope(cat.id, null); setSharedEnvPickerId(null) }}
+                              className="w-full flex items-center gap-2 px-4 py-3 text-sm text-left transition-colors hover:bg-[var(--arvo-surface-2)] text-[var(--arvo-fg-soft)]"
+                            >
+                              <span className="w-4 h-4 rounded-full border-2 border-[var(--arvo-border)] shrink-0" />
+                              {t.finances.noEnvelope}
+                            </button>
+                            {allEnvelopes.map(e => (
+                              <button
+                                key={e.id}
+                                onClick={() => { onSetSharedEnvelope(cat.id, e.id); setSharedEnvPickerId(null) }}
+                                className={`w-full flex items-center gap-2 px-4 py-3 text-sm text-left transition-colors hover:bg-[var(--arvo-surface-2)] ${e.id === env.id ? 'font-semibold text-[var(--arvo-fg)]' : 'text-[var(--arvo-fg-muted)]'}`}
+                              >
+                                <span className="text-lg leading-none">{e.icon}</span>
+                                <span className="flex-1 truncate">{resolveEnvName(e.name, e.type, e.name_key, nameKeys)}</span>
+                                {e.id === env.id && <svg className="w-4 h-4 text-[var(--arvo-blue)] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </li>
                 )
@@ -610,9 +685,10 @@ export default function FinancesBudgetPage() {
   const incomeEnvelopes  = data.envelopes.filter(e => e.type === 'income')
   const expenseEnvelopes = data.envelopes.filter(e => e.type !== 'income')
 
-  // Envelope budget is the sum of its categories (bottom-up) — no more separate pct-of-income
-  // target for the user to reconcile category totals against by hand.
-  const totalCatBudget = expenseEnvelopes.reduce((s, e) => s + e.categories.reduce((cs, c) => cs + (c.budget_monthly ?? 0), 0), 0)
+  // Envelope budget is the sum of its categories (bottom-up) plus any shared-category goals
+  // assigned to it — matching the Overview page's total so the two pages don't disagree.
+  const envBudgetTotal = (e: Envelope) => e.categories.reduce((cs, c) => cs + (c.budget_monthly ?? 0), 0) + e.shared_categories.reduce((cs, c) => cs + c.my_goal, 0)
+  const totalCatBudget = expenseEnvelopes.reduce((s, e) => s + envBudgetTotal(e), 0)
   const totalBudget    = totalCatBudget
   const unallocated    = data.income.monthly_net - totalCatBudget
 
@@ -666,7 +742,7 @@ export default function FinancesBudgetPage() {
           <>
             <div className="h-1.5 rounded-full bg-[var(--arvo-track-bg)] overflow-hidden mt-4 flex">
               {expenseEnvelopes.map(env => {
-                const envTotal = env.categories.reduce((s, c) => s + (c.budget_monthly ?? 0), 0)
+                const envTotal = envBudgetTotal(env)
                 const pct = Math.max(0, Math.min(100, (envTotal / data.income.monthly_net) * 100))
                 return pct > 0 ? <div key={env.id} style={{ width: `${pct}%`, backgroundColor: ENV_TYPE_COLOR[env.type] ?? env.color }} /> : null
               })}
@@ -675,7 +751,7 @@ export default function FinancesBudgetPage() {
                 since envelope colors here are the muted brand tokens, not the raw category color. */}
             <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2">
               {expenseEnvelopes.map(env => {
-                const envTotal = env.categories.reduce((s, c) => s + (c.budget_monthly ?? 0), 0)
+                const envTotal = envBudgetTotal(env)
                 if (envTotal <= 0) return null
                 return (
                   <span key={env.id} className="inline-flex items-center gap-1.5 text-xs text-[var(--arvo-fg-soft)]">
@@ -694,7 +770,7 @@ export default function FinancesBudgetPage() {
         <div className="space-y-3">
           <p className="text-xs text-[var(--arvo-fg-soft)] uppercase tracking-wide font-medium px-1">{t.finances.incomeLabel}</p>
           {incomeEnvelopes.map(env => {
-            const envTotal = env.categories.reduce((s, c) => s + (c.budget_monthly ?? 0), 0)
+            const envTotal = envBudgetTotal(env)
             return (
               <div key={env.id} className="bg-[var(--arvo-surface)] rounded-2xl border border-[var(--arvo-border)] shadow-sm overflow-hidden">
                 {/* Header: envelope name + total */}
@@ -873,15 +949,18 @@ export default function FinancesBudgetPage() {
             historicals={catHistoricals}
             currency={data.income.currency}
             incomeMonthly={data.income.monthly_net}
+            sharedGroups={sharedGroups}
+            onSetSharedEnvelope={setSharedEnvelope}
           />
         ))}
       </div>
 
-      {/* Shared categories section — a SharedGroup is a group of people (e.g. "Família 💕"),
-          not itself a category; it can hold several shared categories. The avatar stack
-          (same pattern as Voyage/Moments) makes that "this is people, not a category" at
-          a glance, instead of a plain first-name list that read like a label. */}
-      {sharedGroups.some(g => g.categories.length > 0) && (
+      {/* Shared categories section — once a shared category is assigned to an envelope
+          (local_envelope_id), it now renders nested inside that envelope instead of here,
+          so its goal is counted once. This section is only the "inbox" for categories not
+          yet assigned anywhere, still grouped by SharedGroup (e.g. "Família 💕", a group of
+          people, not itself a category — the avatar stack makes that distinction clear). */}
+      {sharedGroups.some(g => g.categories.some(c => c.local_envelope_id == null)) && (
         <div className="space-y-3">
           <div className="flex items-center justify-between px-1">
             <div>
@@ -894,7 +973,7 @@ export default function FinancesBudgetPage() {
               {t.finances.viewShared} →
             </button>
           </div>
-          {sharedGroups.filter(g => g.categories.length > 0).map(group => {
+          {sharedGroups.filter(g => g.categories.some(c => c.local_envelope_id == null)).map(group => {
             const myMember = group.members.find(m => m.user_id === user?.id)
             const myPct = myMember?.share_pct ?? 50
             const activeMembers = group.members.filter(m => m.status === 'active')
@@ -920,7 +999,7 @@ export default function FinancesBudgetPage() {
                   </span>
                 </div>
                 <ul className="divide-y divide-[var(--arvo-border-soft)]">
-                  {group.categories.map(cat => {
+                  {group.categories.filter(c => c.local_envelope_id == null).map(cat => {
                     const myGoal = Math.round(cat.total_goal * myPct / 100)
                     return (
                       <li key={cat.id} className="px-5 py-3 flex items-start gap-3">
