@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { apiFetch } from '../../lib/api'
 import { useI18n } from '../../contexts/I18nContext'
-import type { TripCost, MomentPicker } from './types'
+import type { TripCost, MomentPicker, MomentTransaction } from './types'
 import Avatar from './_shared/Avatar'
 
 function fmtCurrency(n: number, currency: string) {
@@ -142,6 +142,43 @@ export default function CostCard({ tripId, cost, onCostChanged }: Props) {
   const hasPlaces = places.length > 0
   const hasSplit = users.length > 1
 
+  const [showTransactions, setShowTransactions] = useState(false)
+  const [transactions, setTransactions] = useState<MomentTransaction[] | null>(null)
+  const [groupNames, setGroupNames] = useState<Record<string, string>>({})
+  const [loadingTx, setLoadingTx] = useState(false)
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
+
+  async function toggleTransactions() {
+    const next = !showTransactions
+    setShowTransactions(next)
+    if (next && transactions === null) {
+      setLoadingTx(true)
+      const data = await apiFetch<{ transactions: MomentTransaction[]; reimbursement_groups: Record<string, string> }>(`/voyage/trips/${tripId}/transactions`)
+      setTransactions(data.transactions)
+      setGroupNames(data.reimbursement_groups)
+      setLoadingTx(false)
+    }
+  }
+
+  type TxDisplayItem =
+    | { kind: 'tx'; tx: MomentTransaction }
+    | { kind: 'group'; groupId: string; name: string; txs: MomentTransaction[]; net: number }
+  const txDisplayItems: TxDisplayItem[] = []
+  if (transactions) {
+    const seenGroups = new Set<string>()
+    for (const tx of transactions) {
+      if (tx.reimbursement_group_id) {
+        if (seenGroups.has(tx.reimbursement_group_id)) continue
+        seenGroups.add(tx.reimbursement_group_id)
+        const groupTxs = transactions.filter(t => t.reimbursement_group_id === tx.reimbursement_group_id)
+        const net = groupTxs.reduce((s, t) => s + t.amount, 0)
+        txDisplayItems.push({ kind: 'group', groupId: tx.reimbursement_group_id, name: groupNames[tx.reimbursement_group_id] ?? (tv.reimbursementGroup ?? 'Grupo de reembolso'), txs: groupTxs, net })
+      } else {
+        txDisplayItems.push({ kind: 'tx', tx })
+      }
+    }
+  }
+
   // Estado vazio: nenhum momento vinculado ainda.
   if (!hasMoments) {
     return (
@@ -263,6 +300,74 @@ export default function CostCard({ tripId, cost, onCostChanged }: Props) {
           )}
         </div>
       )}
+
+      {/* TODAS AS TRANSAÇÕES — secundário, recolhido por padrão (evita poluir o card). */}
+      <div style={{ marginTop: 16, paddingTop: 14, borderTop: '1px solid var(--arvo-border-soft)' }}>
+        <button type="button" onClick={toggleTransactions}
+          style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
+        >
+          <SectionLabel>{tv.allTransactions ?? 'Todas as transações'}</SectionLabel>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)' }}>
+            {showTransactions ? (tv.actions?.collapse ?? 'Recolher') : (tv.actions?.expand ?? 'Expandir')}
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ transform: showTransactions ? 'rotate(180deg)' : 'none', transition: 'transform 160ms' }}>
+              <path strokeLinecap="round" d="M2 3.5l3 3 3-3" />
+            </svg>
+          </span>
+        </button>
+        {showTransactions && (
+          <div style={{ marginTop: 12 }}>
+            {loadingTx ? (
+              <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)' }}>Carregando…</p>
+            ) : txDisplayItems.length === 0 ? (
+              <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)' }}>{tv.noTransactions ?? 'Nenhuma transação'}</p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', border: '1px solid var(--arvo-border-soft)', borderRadius: 10, overflow: 'hidden' }}>
+                {txDisplayItems.map((item, i) => {
+                  if (item.kind === 'group') {
+                    const expanded = expandedGroups.has(item.groupId)
+                    return (
+                      <div key={`g-${item.groupId}`}>
+                        <div
+                          onClick={() => setExpandedGroups(prev => {
+                            const next = new Set(prev)
+                            next.has(item.groupId) ? next.delete(item.groupId) : next.add(item.groupId)
+                            return next
+                          })}
+                          style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', cursor: 'pointer', background: 'var(--arvo-hover-bg)', borderTop: i > 0 ? '1px solid var(--arvo-border-soft)' : 'none' }}
+                        >
+                          <svg width="9" height="9" viewBox="0 0 16 16" fill="currentColor" style={{ color: 'var(--arvo-fg-soft)', transform: expanded ? 'rotate(90deg)' : 'none', transition: 'transform 160ms', flexShrink: 0 }}>
+                            <path d="M6 3.5L10.5 8 6 12.5V3.5z"/>
+                          </svg>
+                          <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</span>
+                          <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)' }}>{item.txs.length}</span>
+                          <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)', fontVariantNumeric: 'tabular-nums', minWidth: 56, textAlign: 'right' }}>{fmt(Math.abs(item.net))}</span>
+                        </div>
+                        {expanded && item.txs.map(tx => (
+                          <div key={tx.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px 7px 26px', borderTop: '1px solid var(--arvo-border-soft)' }}>
+                            <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)', width: 44, flexShrink: 0 }}>{new Date(tx.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}</span>
+                            <span style={{ fontSize: 12, flexShrink: 0 }}>{tx.finance_categories?.icon ?? '❓'}</span>
+                            <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tx.description}</span>
+                            <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)', fontVariantNumeric: 'tabular-nums' }}>{fmt(Math.abs(tx.amount))}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )
+                  }
+                  const tx = item.tx
+                  return (
+                    <div key={tx.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderTop: i > 0 ? '1px solid var(--arvo-border-soft)' : 'none' }}>
+                      <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)', width: 44, flexShrink: 0 }}>{new Date(tx.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}</span>
+                      <span style={{ fontSize: 12, flexShrink: 0 }}>{tx.finance_categories?.icon ?? '❓'}</span>
+                      <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tx.description}</span>
+                      <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: tx.amount < 0 ? 'var(--arvo-fg-soft)' : GREEN, fontVariantNumeric: 'tabular-nums' }}>{fmt(Math.abs(tx.amount))}</span>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* MOMENTOS VINCULADOS — rodapé discreto. */}
       <div style={{ marginTop: 16, paddingTop: 14, borderTop: '1px solid var(--arvo-border-soft)' }}>

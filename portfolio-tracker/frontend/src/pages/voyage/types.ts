@@ -89,6 +89,17 @@ export interface PlaceExpense {
   category: { name: string; icon: string; color: string } | null
 }
 
+export interface MomentTransaction {
+  id: number
+  date: string
+  description: string
+  amount: number
+  currency: string
+  notes: string | null
+  reimbursement_group_id: string | null
+  finance_categories: { id: number; name: string; name_key: string | null; icon: string; color: string } | null
+}
+
 export interface TripMember {
   id: number
   user_id: string | null

@@ -634,6 +634,48 @@ router.delete('/trips/:id/moments/:momentId', requireAuth, async (req, res: Resp
   res.json({ ok: true, cost })
 })
 
+// ── GET /api/voyage/trips/:id/transactions ────────────────────────────────────
+// Lista todas as transações dos momentos vinculados à viagem — o CostCard só mostra
+// agregados (por categoria/pessoa/lugar), sem visão das transações em si.
+router.get('/trips/:id/transactions', requireAuth, async (req, res: Response) => {
+  const userId = uid(req)
+  const tripId = Number(req.params.id)
+
+  const { data: trip } = await supabaseAdmin
+    .from('voyage_trips').select('user_id').eq('id', tripId).single()
+  if (!trip) { res.status(404).json({ error: 'Viagem não encontrada' }); return }
+  const isOwner = trip.user_id === userId
+  if (!isOwner) {
+    const { data: member } = await supabaseAdmin
+      .from('voyage_trip_members')
+      .select('status').eq('trip_id', tripId).eq('user_id', userId).in('status', ['active', 'pending']).maybeSingle()
+    if (!member) { res.status(403).json({ error: 'Sem permissão' }); return }
+  }
+
+  const { data: tripMoments } = await supabaseAdmin
+    .from('voyage_trip_moments').select('moment_id').eq('trip_id', tripId)
+  const momentIds = (tripMoments ?? []).map(m => m.moment_id)
+  if (momentIds.length === 0) { res.json({ transactions: [], reimbursement_groups: {} }); return }
+
+  const { data: ftmRows } = await supabaseAdmin
+    .from('finance_transaction_moments')
+    .select('finance_transactions(id, date, description, amount, currency, notes, reimbursement_group_id, finance_categories(id, name, name_key, icon, color))')
+    .in('moment_id', momentIds)
+
+  const transactions = (ftmRows ?? [])
+    .map((r: any) => r.finance_transactions)
+    .filter(Boolean)
+    .sort((a: any, b: any) => (a.date < b.date ? 1 : -1))
+
+  const groupIds = [...new Set(transactions.map((tx: any) => tx.reimbursement_group_id).filter(Boolean))]
+  const { data: groupRows } = groupIds.length > 0
+    ? await supabaseAdmin.from('reimbursement_groups').select('id, name').in('id', groupIds)
+    : { data: [] as { id: string; name: string }[] }
+  const reimbursement_groups = Object.fromEntries((groupRows ?? []).map((g: any) => [g.id, g.name]))
+
+  res.json({ transactions, reimbursement_groups })
+})
+
 // ── POST /api/voyage/from-moment/:momentId  (Fluxo B: momento → viagem) ───────
 router.post('/from-moment/:momentId', requireAuth, async (req, res: Response) => {
   const userId = uid(req)
