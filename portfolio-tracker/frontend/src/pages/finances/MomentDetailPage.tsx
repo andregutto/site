@@ -45,6 +45,7 @@ export default function MomentDetailPage() {
   const [assignTarget, setAssignTarget] = useState<{ txId: number; currentMomentId: number | null } | null>(null)
   const [sharingMoment, setSharingMoment] = useState<Moment | null>(null)
   const [showMembers, setShowMembers] = useState(false)
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
 
   const load = useCallback(async () => {
     if (!id) return
@@ -85,8 +86,27 @@ export default function MomentDetailPage() {
     )
   }
 
-  const { moment: m, transactions, summary } = detail
+  const { moment: m, transactions, summary, reimbursement_groups } = detail
   const currency = transactions[0]?.currency ?? 'EUR'
+
+  // Reimbursement groups are one unit everywhere else in the app (Transactions page) — show
+  // them collapsed here too instead of as N separate rows split across the moment's list.
+  type DisplayItem =
+    | { kind: 'tx'; tx: typeof transactions[number] }
+    | { kind: 'group'; groupId: string; name: string; txs: typeof transactions; net: number }
+  const displayItems: DisplayItem[] = []
+  const seenGroups = new Set<string>()
+  for (const tx of transactions) {
+    if (tx.reimbursement_group_id) {
+      if (seenGroups.has(tx.reimbursement_group_id)) continue
+      seenGroups.add(tx.reimbursement_group_id)
+      const groupTxs = transactions.filter(t => t.reimbursement_group_id === tx.reimbursement_group_id)
+      const net = groupTxs.reduce((s, t) => s + t.amount, 0)
+      displayItems.push({ kind: 'group', groupId: tx.reimbursement_group_id, name: reimbursement_groups[tx.reimbursement_group_id] ?? t.finances.reimbursementGroup, txs: groupTxs, net })
+    } else {
+      displayItems.push({ kind: 'tx', tx })
+    }
+  }
   const isOwner = m.user_id === user?.id
 
   return (
@@ -221,28 +241,68 @@ export default function MomentDetailPage() {
 
         {transactions.length > 0 ? (
           <div className="space-y-0 border border-[var(--arvo-border)] rounded-xl overflow-hidden">
-            {transactions.map((tx, i) => (
-              <div key={tx.id} className={`flex items-center gap-3 px-4 py-2.5 text-sm ${i > 0 ? 'border-t border-[var(--arvo-border-soft)]' : ''}`}>
-                <span className="text-[var(--arvo-fg-soft)] text-xs w-16 shrink-0">{fmtDate(tx.date)}</span>
-                <span className="text-xs">{tx.finance_categories?.icon ?? '❓'}</span>
-                <div className="flex-1 min-w-0">
-                  <span className="text-[var(--arvo-fg)] truncate text-xs block">{tx.description}</span>
-                  {tx.notes && <span className="text-[10px] text-[var(--arvo-fg-soft)] italic truncate block">{tx.notes}</span>}
+            {displayItems.map((item, i) => {
+              if (item.kind === 'group') {
+                const expanded = expandedGroups.has(item.groupId)
+                return (
+                  <div key={`group-${item.groupId}`}>
+                    <div
+                      className={`flex items-center gap-2.5 px-4 py-2.5 text-sm cursor-pointer hover:bg-[var(--arvo-surface-2)] transition-colors ${i > 0 ? 'border-t border-[var(--arvo-border-soft)]' : ''}`}
+                      onClick={() => setExpandedGroups(prev => {
+                        const next = new Set(prev)
+                        next.has(item.groupId) ? next.delete(item.groupId) : next.add(item.groupId)
+                        return next
+                      })}
+                    >
+                      <svg className={`w-3 h-3 text-[var(--arvo-fg-soft)] transition-transform shrink-0 ${expanded ? 'rotate-90' : ''}`} fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M6 3.5L10.5 8 6 12.5V3.5z"/>
+                      </svg>
+                      <Icon name="repeat" size={12} style={{ color: 'var(--arvo-fg-soft)' }} />
+                      <span className="text-[var(--arvo-fg)] text-xs font-medium flex-1 truncate">{item.name}</span>
+                      <span className="text-[10px] text-[var(--arvo-fg-soft)]">{item.txs.length} transações</span>
+                      <span className={`text-xs font-semibold shrink-0 ${Math.abs(item.net) < 0.01 ? 'text-[var(--arvo-fg-soft)]' : item.net > 0 ? 'text-emerald-600' : 'text-[var(--arvo-fg)]'}`}>
+                        {fmt(Math.abs(item.net), item.txs[0]?.currency)}
+                      </span>
+                    </div>
+                    {expanded && item.txs.map(tx => (
+                      <div key={tx.id} className="flex items-center gap-3 pl-9 pr-4 py-2 text-sm border-t border-[var(--arvo-border-soft)] bg-[var(--arvo-track-bg)]">
+                        <span className="text-[var(--arvo-fg-soft)] text-xs w-16 shrink-0">{fmtDate(tx.date)}</span>
+                        <span className="text-xs">{tx.finance_categories?.icon ?? '❓'}</span>
+                        <div className="flex-1 min-w-0">
+                          <span className="text-[var(--arvo-fg)] truncate text-xs block">{tx.description}</span>
+                        </div>
+                        <span className={`text-xs font-semibold shrink-0 ${tx.amount < 0 ? 'text-[var(--arvo-fg)]' : 'text-emerald-600'}`}>
+                          {fmt(Math.abs(tx.amount), tx.currency)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )
+              }
+              const tx = item.tx
+              return (
+                <div key={tx.id} className={`flex items-center gap-3 px-4 py-2.5 text-sm ${i > 0 ? 'border-t border-[var(--arvo-border-soft)]' : ''}`}>
+                  <span className="text-[var(--arvo-fg-soft)] text-xs w-16 shrink-0">{fmtDate(tx.date)}</span>
+                  <span className="text-xs">{tx.finance_categories?.icon ?? '❓'}</span>
+                  <div className="flex-1 min-w-0">
+                    <span className="text-[var(--arvo-fg)] truncate text-xs block">{tx.description}</span>
+                    {tx.notes && <span className="text-[10px] text-[var(--arvo-fg-soft)] italic truncate block">{tx.notes}</span>}
+                  </div>
+                  <span className={`text-xs font-semibold shrink-0 ${tx.amount < 0 ? 'text-[var(--arvo-fg)]' : 'text-emerald-600'}`}>
+                    {fmt(Math.abs(tx.amount), tx.currency)}
+                  </span>
+                  <button
+                    onClick={() => setAssignTarget({ txId: tx.id, currentMomentId: m.id })}
+                    className="ml-1 p-1 text-[var(--arvo-fg-faint)] hover:text-[var(--arvo-fg)] transition-colors"
+                    title={t.finances.assignMoment}
+                  >
+                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a0 0 0 010 0V7a4 4 0 014-4z" />
+                    </svg>
+                  </button>
                 </div>
-                <span className={`text-xs font-semibold shrink-0 ${tx.amount < 0 ? 'text-[var(--arvo-fg)]' : 'text-emerald-600'}`}>
-                  {fmt(Math.abs(tx.amount), tx.currency)}
-                </span>
-                <button
-                  onClick={() => setAssignTarget({ txId: tx.id, currentMomentId: m.id })}
-                  className="ml-1 p-1 text-[var(--arvo-fg-faint)] hover:text-[var(--arvo-fg)] transition-colors"
-                  title={t.finances.assignMoment}
-                >
-                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a0 0 0 010 0V7a4 4 0 014-4z" />
-                  </svg>
-                </button>
-              </div>
-            ))}
+              )
+            })}
           </div>
         ) : (
           <p className="text-xs text-[var(--arvo-fg-soft)] text-center py-4">{t.finances.momentNoTransactions}</p>

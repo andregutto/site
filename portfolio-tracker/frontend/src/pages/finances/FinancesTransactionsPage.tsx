@@ -1395,10 +1395,23 @@ export default function FinancesTransactionsPage() {
                   {displayItems.map(item => {
                     if (item.kind === 'group') {
                       const expanded = expandedGroups.has(item.groupId)
+                      const groupIds = item.txs.map(t => t.id)
+                      const groupAllSelected = groupIds.every(gid => selected.has(gid))
                       return (
                         <>
                           <tr key={`group-${item.groupId}`} className="hover:bg-[var(--arvo-surface-2)] transition-colors cursor-pointer" onClick={() => toggleExpandGroup(item.groupId)}>
-                            <td className="pl-4 pr-2 py-2.5 w-8" />
+                            <td className="pl-3 pr-1 sm:pl-4 sm:pr-2 py-2.5 w-8" onClick={e => e.stopPropagation()}>
+                              <input
+                                type="checkbox"
+                                checked={groupAllSelected}
+                                onChange={() => setSelected(prev => {
+                                  const next = new Set(prev)
+                                  groupIds.forEach(gid => groupAllSelected ? next.delete(gid) : next.add(gid))
+                                  return next
+                                })}
+                                className="rounded border-[var(--arvo-border)] accent-[var(--arvo-fg)] focus:ring-[var(--arvo-fg)]/20 cursor-pointer"
+                              />
+                            </td>
                             <td colSpan={6} className="px-3 py-2.5">
                               <div className="flex items-center gap-2.5">
                                 <svg className={`w-3 h-3 text-[var(--arvo-fg-soft)] transition-transform shrink-0 ${expanded ? 'rotate-90' : ''}`} fill="currentColor" viewBox="0 0 16 16">

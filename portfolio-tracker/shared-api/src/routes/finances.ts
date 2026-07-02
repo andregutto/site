@@ -1187,13 +1187,31 @@ router.patch('/transactions/:id', requireAuth, async (req, res: Response) => {
     const ids: number[] = moment_ids !== undefined
       ? moment_ids
       : (moment_id === null ? [] : [moment_id])
+
+    // A reimbursement group is displayed/managed as a single unit (collapsed row in the
+    // Transactions page) — assigning a moment to one member must assign it to the whole
+    // group, or the group would show up split across "in a moment" / "not in a moment".
+    const { data: selfTx } = await supabaseAdmin
+      .from('finance_transactions').select('reimbursement_group_id').eq('id', id).eq('user_id', userId).single()
+    const groupId = reimbursement_group_id !== undefined ? reimbursement_group_id : selfTx?.reimbursement_group_id
+    let targetIds = [Number(id)]
+    if (groupId) {
+      const { data: siblings } = await supabaseAdmin
+        .from('finance_transactions').select('id').eq('reimbursement_group_id', groupId).eq('user_id', userId)
+      targetIds = (siblings ?? []).map((s: { id: number }) => s.id)
+    }
+
     await supabaseAdmin.from('finance_transaction_moments')
-      .delete().eq('transaction_id', id).eq('user_id', userId)
+      .delete().in('transaction_id', targetIds).eq('user_id', userId)
     if (ids.length > 0) {
       await supabaseAdmin.from('finance_transaction_moments')
-        .insert(ids.map((mid: number) => ({ transaction_id: Number(id), moment_id: mid, user_id: userId })))
+        .insert(targetIds.flatMap(tid => ids.map((mid: number) => ({ transaction_id: tid, moment_id: mid, user_id: userId }))))
     }
     update.moment_id = ids[0] ?? null  // keep legacy column in sync
+    const otherIds = targetIds.filter(tid => tid !== Number(id))
+    if (otherIds.length > 0) {
+      await supabaseAdmin.from('finance_transactions').update({ moment_id: ids[0] ?? null }).in('id', otherIds).eq('user_id', userId)
+    }
   }
 
   if (Object.keys(update).length > 0) {
@@ -2196,13 +2214,19 @@ router.get('/moments/:id', requireAuth, async (req, res: Response) => {
   // não só do usuário requisitante — necessário para o split "quem pagou o quê".
   const { data: ftmRows } = await supabaseAdmin
     .from('finance_transaction_moments')
-    .select('transaction_id, finance_transactions(id, date, description, amount, currency, notes, user_id, finance_categories(id, name, name_key, icon, color))')
+    .select('transaction_id, finance_transactions(id, date, description, amount, currency, notes, user_id, reimbursement_group_id, finance_categories(id, name, name_key, icon, color))')
     .eq('moment_id', momentId)
 
   const transactions = (ftmRows ?? [])
     .map((r: any) => r.finance_transactions)
     .filter(Boolean)
     .sort((a: any, b: any) => (a.date < b.date ? 1 : -1))
+
+  const groupIds = [...new Set(transactions.map((tx: any) => tx.reimbursement_group_id).filter(Boolean))]
+  const { data: groupRows } = groupIds.length > 0
+    ? await supabaseAdmin.from('reimbursement_groups').select('id, name').in('id', groupIds)
+    : { data: [] as { id: string; name: string }[] }
+  const groupNameMap = new Map((groupRows ?? []).map((g: any) => [g.id, g.name]))
 
   const total = transactions.reduce((sum: number, tx: any) => sum + (tx.amount < 0 ? Math.abs(tx.amount) : 0), 0)
   const catMap: Record<string, { name: string; name_key: string | null; icon: string; color: string; total: number }> = {}
@@ -2227,6 +2251,7 @@ router.get('/moments/:id', requireAuth, async (req, res: Response) => {
   res.json({
     moment,
     transactions,
+    reimbursement_groups: Object.fromEntries(groupNameMap),
     summary: {
       total: Math.round(total * 100) / 100,
       by_category: Object.values(catMap).sort((a, b) => b.total - a.total),

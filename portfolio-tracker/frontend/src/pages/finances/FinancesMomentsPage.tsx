@@ -74,7 +74,8 @@ export interface ByUser {
 
 export interface MomentDetail {
   moment: Moment
-  transactions: { id: number; date: string; description: string; amount: number; currency: string; notes: string | null; finance_categories: { name: string; name_key: string | null; icon: string; color: string } | null }[]
+  transactions: { id: number; date: string; description: string; amount: number; currency: string; notes: string | null; reimbursement_group_id: string | null; finance_categories: { name: string; name_key: string | null; icon: string; color: string } | null }[]
+  reimbursement_groups: Record<string, string>
   summary: { total: number; by_category: { name: string; name_key: string | null; icon: string; color: string; total: number }[]; by_user: ByUser[] }
 }
 
