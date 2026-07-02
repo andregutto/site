@@ -987,7 +987,7 @@ export default function FinancesOverviewPage() {
 
       {/* Historical trend with time range toggle */}
       {hasHistory && (
-        <div className={`bg-[var(--arvo-surface)] rounded-2xl border border-[var(--arvo-border)] shadow-sm p-5 ${!(catHistLoading || catHistory.length > 0) ? 'lg:col-span-2' : ''}`}>
+        <div className="lg:col-span-2 bg-[var(--arvo-surface)] rounded-2xl border border-[var(--arvo-border)] shadow-sm p-5">
           <div className="flex items-center justify-between mb-4">
             <h2 style={{ fontFamily: "var(--arvo-font-body)", fontSize: 14, color: 'var(--arvo-fg)', fontWeight: 600 }}>{t.finances.overviewHistory}</h2>
             <div className="flex gap-1">
@@ -1044,13 +1044,16 @@ export default function FinancesOverviewPage() {
 
       {/* Category history chart — shares historyMonths toggle from envelope chart above */}
       {(catHistLoading || catHistory.length > 0) && (
-        <div className={`bg-[var(--arvo-surface)] rounded-2xl border border-[var(--arvo-border)] shadow-sm p-5 ${!hasHistory ? 'lg:col-span-2' : ''}`}>
+        <div className="lg:col-span-2 bg-[var(--arvo-surface)] rounded-2xl border border-[var(--arvo-border)] shadow-sm p-5">
           <div className="mb-4">
             <h2 style={{ fontFamily: "var(--arvo-font-body)", fontSize: 14, color: 'var(--arvo-fg)', fontWeight: 600 }} className="mb-3">{t.finances.categoryHistory}</h2>
-            <div className="flex flex-wrap gap-1.5">
+            {/* Horizontal scroll strip instead of wrapping pills — with 15-20 categories the
+                wrapped list could take up several lines, blowing up this card's header height
+                and pushing its chart out of alignment with the envelope chart beside it. */}
+            <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1" style={{ scrollbarWidth: 'thin' }}>
               <button
                 onClick={() => setSelectedCatId('')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                className={`shrink-0 whitespace-nowrap flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
                   selectedCatId === ''
                     ? 'bg-[var(--arvo-pill-active-bg)] text-[var(--arvo-pill-active-fg)] border-[var(--arvo-pill-active-bg)]'
                     : 'bg-[var(--arvo-surface)] text-[var(--arvo-fg-muted)] border-[var(--arvo-border)] hover:border-[var(--arvo-fg)] hover:text-[var(--arvo-fg)]'
@@ -1060,7 +1063,7 @@ export default function FinancesOverviewPage() {
                 <button
                   key={c.id}
                   onClick={() => setSelectedCatId(selectedCatId === c.id ? '' : c.id)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                  className={`shrink-0 whitespace-nowrap flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
                     selectedCatId === c.id
                       ? 'text-white border-transparent'
                       : 'bg-[var(--arvo-surface)] text-[var(--arvo-fg-muted)] border-[var(--arvo-border)] hover:border-gray-400'
