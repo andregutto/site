@@ -318,7 +318,7 @@ export default function MomentDetailPage() {
                       </svg>
                       <Icon name="repeat" size={12} style={{ color: 'var(--arvo-fg-soft)' }} />
                       <span className="text-[var(--arvo-fg)] text-xs font-medium flex-1 truncate">{item.name}</span>
-                      <span className="text-[10px] text-[var(--arvo-fg-soft)]">{item.txs.length} transações</span>
+                      <span className="text-[10px] text-[var(--arvo-fg-soft)]">{item.txs.length} {t.shared.transactions.toLowerCase()}</span>
                       <span className={`text-xs font-semibold shrink-0 ${Math.abs(item.net) < 0.01 ? 'text-[var(--arvo-fg-soft)]' : item.net > 0 ? 'text-emerald-600' : 'text-[var(--arvo-fg)]'}`}>
                         {fmt(Math.abs(item.net), item.txs[0]?.currency)}
                       </span>

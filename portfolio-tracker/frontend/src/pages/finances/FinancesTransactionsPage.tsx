@@ -578,7 +578,7 @@ export default function FinancesTransactionsPage() {
   }
 
   async function deleteGroup(id: string) {
-    if (!confirm('Excluir grupo? As transações voltarão a aparecer nos cálculos.')) return
+    if (!confirm(t.finances.reimbursementGroupDeleteConfirm)) return
     await apiFetch(`/finances/reimbursement-groups/${id}`, { method: 'DELETE' })
     setGroups(prev => prev.filter(g => g.id !== id))
     loadTransactions()
@@ -1419,7 +1419,7 @@ export default function FinancesTransactionsPage() {
                                 </svg>
                                 <Icon name="repeat" size={12} style={{ color: 'var(--arvo-fg-soft)' }} />
                                 <span className="text-sm font-medium text-[var(--arvo-fg)]">{item.name}</span>
-                                <span className="text-xs text-[var(--arvo-fg-soft)]">{item.txs.length} transações</span>
+                                <span className="text-xs text-[var(--arvo-fg-soft)]">{item.txs.length} {t.shared.transactions.toLowerCase()}</span>
                                 <span className={`ml-auto text-xs sm:text-sm font-semibold tabular-nums ${Math.abs(item.net) < 0.01 ? 'text-[var(--arvo-fg-soft)]' : item.net > 0 ? 'arvo-delta-pos' : 'arvo-delta-neg'}`}>
                                   {t.finances.reimbursementGroupNet}: {fmt(item.net, item.txs[0]?.currency)}
                                 </span>
