@@ -1,7 +1,7 @@
 import { Router, Response } from 'express'
 import { requireAuth, AuthRequest } from '../../../shared-api/src/middleware/auth.js'
 import { supabaseAdmin } from '../../../shared-api/src/lib/supabase.js'
-import { getActiveSubscriptions, getBudgetAlerts, getPendingMomentInvites, getRecentMomentAdditions } from '../../../shared-api/src/routes/finances.js'
+import { getActiveSubscriptions, getBudgetAlerts, getMonthlyReviewAlerts, getPendingMomentInvites, getRecentMomentAdditions } from '../../../shared-api/src/routes/finances.js'
 import { getSplitWarnings, getStaleManualAssets } from './portfolio.js'
 import { getPendingGroupInvites } from '../../../shared-api/src/routes/shared.js'
 import { getPendingTripInvites, getRecentTripAdditions } from '../../../shared-api/src/routes/voyage.js'
@@ -25,11 +25,12 @@ const NON_DISMISSIBLE_HISTORY_TYPES = new Set(['bank_connected', 'bank_connect_e
 router.get('/', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
 
-  const [achievementsRes, subsResult, notifDismissalsRes, budgetAlerts, splitWarnings, staleManualAssets, pendingInvites, pendingTripInvites, pendingFriendInvites, recentFriendAcceptances, recentTripAdditions, pendingMomentInvites, recentMomentAdditions] = await Promise.all([
+  const [achievementsRes, subsResult, notifDismissalsRes, budgetAlerts, monthlyReviewAlerts, splitWarnings, staleManualAssets, pendingInvites, pendingTripInvites, pendingFriendInvites, recentFriendAcceptances, recentTripAdditions, pendingMomentInvites, recentMomentAdditions] = await Promise.all([
     supabaseAdmin.from('achievements').select('achievement_key, earned_at').eq('user_id', userId).order('earned_at', { ascending: true }),
     getActiveSubscriptions(userId),
     supabaseAdmin.from('notification_dismissals').select('key, type, params, severity, link, occurred_at, dismissed_at').eq('user_id', userId),
     getBudgetAlerts(userId),
+    getMonthlyReviewAlerts(userId),
     getSplitWarnings(userId),
     getStaleManualAssets(userId),
     getPendingGroupInvites(userId),
@@ -91,6 +92,36 @@ router.get('/', requireAuth, async (req, res: Response) => {
       params: { name: alert.name, name_key: alert.name_key, icon: alert.icon, pct: alert.pct },
       link: '/finances',
       occurred_at: `${alert.month}-01T00:00:00.000Z`,
+      dismissed_at: null,
+      dismissible: true,
+    })
+  }
+
+  // Category 19: over-budget 3 closed months in a row -> suggests reviewing the plan
+  if (monthlyReviewAlerts.streak && !dismissedKeys.has(monthlyReviewAlerts.streak.key)) {
+    const s = monthlyReviewAlerts.streak
+    active.push({
+      key: s.key,
+      type: 'overbudget_streak',
+      severity: 'warning',
+      params: { months: s.months },
+      link: '/finances/budget',
+      occurred_at: `${s.last_month}-01T00:00:00.000Z`,
+      dismissed_at: null,
+      dismissible: true,
+    })
+  }
+
+  // Category 20: last closed month ended with expenses > income
+  if (monthlyReviewAlerts.negative && !dismissedKeys.has(monthlyReviewAlerts.negative.key)) {
+    const n = monthlyReviewAlerts.negative
+    active.push({
+      key: n.key,
+      type: 'negative_balance',
+      severity: 'danger',
+      params: { month: n.month },
+      link: '/finances',
+      occurred_at: `${n.month}-01T00:00:00.000Z`,
       dismissed_at: null,
       dismissible: true,
     })

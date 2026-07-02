@@ -18,6 +18,8 @@ export const TYPE_ICONS: Record<string, IconName> = {
   split_warning: 'scissors',
   stale_manual_asset: 'clock',
   budget_alert: 'wallet',
+  overbudget_streak: 'alert',
+  negative_balance: 'alert',
   shared_category_alert: 'users',
   home_prompt: 'home',
   budget_reminder_setup: 'clock',
@@ -130,6 +132,13 @@ export function resolveNotificationText(item: NotificationItem, t: any, locale: 
         ? n.type_budget_alert_full.replace('{name}', displayName)
         : n.type_budget_alert.replace('{name}', displayName).replace('{pct}', String(pctNum))
       return { title }
+    }
+    case 'overbudget_streak': {
+      const months = String(item.params.months ?? '')
+      return { title: n.type_overbudget_streak.replace('{months}', months) }
+    }
+    case 'negative_balance': {
+      return { title: n.type_negative_balance }
     }
     default:
       return { title: item.key }

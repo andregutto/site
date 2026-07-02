@@ -231,6 +231,81 @@ export async function getBudgetAlerts(userId: string): Promise<BudgetAlertItem[]
   return alerts
 }
 
+// ── Monthly review alerts (over-budget streak + negative balance) ─────────────
+// Both look only at CLOSED financial months (never the current, in-progress one) so
+// they can't fire on a partial month that still has time left to recover.
+
+export interface OverBudgetStreakAlert { key: string; months: number; last_month: string }
+export interface NegativeBalanceAlert { key: string; month: string }
+
+export async function getMonthlyReviewAlerts(userId: string): Promise<{ streak: OverBudgetStreakAlert | null; negative: NegativeBalanceAlert | null }> {
+  const cycleDay = await getUserCycleDay(userId)
+  const todayStr = new Date().toISOString().slice(0, 10)
+  const currentFM = financialMonthKey(todayStr, cycleDay)
+
+  const [catRes, envRes] = await Promise.all([
+    supabaseAdmin.from('finance_categories').select('id, envelope_id, budget_monthly').eq('user_id', userId),
+    supabaseAdmin.from('finance_envelopes').select('id, type').eq('user_id', userId),
+  ])
+  const cats = catRes.data ?? []
+  const expenseEnvIds = new Set((envRes.data ?? []).filter(e => e.type !== 'income').map(e => e.id))
+  let totalBudgeted = cats
+    .filter(c => c.envelope_id != null && expenseEnvIds.has(c.envelope_id) && c.budget_monthly != null)
+    .reduce((s, c) => s + (c.budget_monthly as number), 0)
+
+  // Add shared-category goals assigned to an expense envelope (mirrors /finances/budget)
+  const { data: sharedEnvRows } = await supabaseAdmin
+    .from('shared_category_user_settings').select('shared_category_id, local_envelope_id').eq('user_id', userId)
+  const sharedCatIds = (sharedEnvRows ?? []).filter(r => r.local_envelope_id != null && expenseEnvIds.has(r.local_envelope_id)).map(r => r.shared_category_id)
+  if (sharedCatIds.length > 0) {
+    const { data: sharedCatRows } = await supabaseAdmin.from('shared_categories').select('id, total_goal, group_id').in('id', sharedCatIds)
+    const groupIds = [...new Set((sharedCatRows ?? []).map(c => c.group_id))]
+    const { data: myMemberships } = await supabaseAdmin
+      .from('shared_group_members').select('group_id, share_pct').eq('user_id', userId).eq('status', 'active').in('group_id', groupIds.length > 0 ? groupIds : [-1])
+    const pctByGroup = new Map((myMemberships ?? []).map(m => [m.group_id, Number(m.share_pct ?? 50)]))
+    for (const cat of sharedCatRows ?? []) totalBudgeted += Number(cat.total_goal) * (pctByGroup.get(cat.group_id) ?? 50) / 100
+  }
+
+  // Last 3 CLOSED financial months (most recent first) — skip the current, in-progress one
+  const [cfy, cfm] = currentFM.split('-').map(Number)
+  const closedMonths: string[] = []
+  for (let i = 1; i <= 3; i++) {
+    const d = new Date(cfy, cfm - 1 - i, 1)
+    closedMonths.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`)
+  }
+
+  const monthTotals = await Promise.all(closedMonths.map(async fm => {
+    const { start, end } = financialMonthRange(fm, cycleDay)
+    const { data: txns } = await supabaseAdmin
+      .from('finance_transactions').select('amount, is_internal_transfer, exclude_from_stats')
+      .eq('user_id', userId).gte('date', start).lte('date', end)
+    let income = 0, expenses = 0
+    for (const tx of txns ?? []) {
+      if (tx.is_internal_transfer || tx.exclude_from_stats) continue
+      if (tx.amount > 0) income += tx.amount
+      else expenses += Math.abs(tx.amount)
+    }
+    return { month: fm, income, expenses }
+  }))
+
+  // Streak: fires only once all 3 of the last 3 closed months went over budget — a single
+  // bad month isn't a signal the plan is stale, three in a row usually is.
+  let streak: OverBudgetStreakAlert | null = null
+  if (totalBudgeted > 0 && monthTotals.every(m => m.expenses > totalBudgeted)) {
+    streak = { key: `overbudget_streak:${monthTotals[0].month}`, months: monthTotals.length, last_month: monthTotals[0].month }
+  }
+
+  // Negative balance: only the most recently closed month, and only if it actually had
+  // transactions (avoids firing for a brand-new account with no history yet).
+  let negative: NegativeBalanceAlert | null = null
+  const lastClosed = monthTotals[0]
+  if (lastClosed && (lastClosed.income > 0 || lastClosed.expenses > 0) && lastClosed.expenses > lastClosed.income) {
+    negative = { key: `negative_balance:${lastClosed.month}`, month: lastClosed.month }
+  }
+
+  return { streak, negative }
+}
+
 const DEFAULT_NAMES: Record<string, { income: string; transfer: string; salary: string; essential: string; investment: string; savings: string; free: string }> = {
   pt: { income: 'Rendas',  transfer: 'Transferência', salary: 'Salário',  essential: 'Gastos Essenciais',      investment: 'Investimentos',    savings: 'Reserva', free: 'Lazer'    },
   en: { income: 'Income',  transfer: 'Transfer',      salary: 'Salary',   essential: 'Essential Expenses',     investment: 'Investments',      savings: 'Savings', free: 'Fun Money' },

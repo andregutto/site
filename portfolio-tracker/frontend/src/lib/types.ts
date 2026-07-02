@@ -227,6 +227,8 @@ export type NotificationType =
   | 'split_warning'
   | 'stale_manual_asset'
   | 'budget_alert'
+  | 'overbudget_streak'
+  | 'negative_balance'
   | 'shared_category_alert'
   | 'home_prompt'
   | 'budget_reminder_setup'

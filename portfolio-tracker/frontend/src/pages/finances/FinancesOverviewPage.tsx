@@ -669,6 +669,11 @@ export default function FinancesOverviewPage() {
                     )}
                   </div>
                 </div>
+                {isCurrentMonth && (
+                  <p style={{ fontSize: 10, color: 'var(--arvo-fg-faint)', fontStyle: 'italic', margin: '-4px 0 8px' }}>
+                    {t.finances.overviewProjectionBasis}
+                  </p>
+                )}
                 {showSparkline && (
                   <div style={{ marginBottom: 4 }}>
                     <ResponsiveContainer width="100%" height={56}>
@@ -717,6 +722,11 @@ export default function FinancesOverviewPage() {
                     <span style={{ fontSize: 12, color: 'var(--arvo-fg-faint)' }}>/ {fmt(cx(totalBudgeted), currency, false)}</span>
                   )}
                 </div>
+                {isCurrentMonth && (
+                  <p style={{ fontSize: 11, color: 'var(--arvo-fg-faint)', fontStyle: 'italic', margin: '-4px 0 8px' }}>
+                    {t.finances.overviewProjectionBasis}
+                  </p>
+                )}
                 {showSparkline && (
                   <div style={{ marginBottom: 6, marginTop: 4 }}>
                     <ResponsiveContainer width="100%" height={72}>
