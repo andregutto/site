@@ -2329,7 +2329,21 @@ router.get('/moments', requireAuth, async (req, res: Response) => {
     if (error) { res.status(500).json({ error: error.message }); return }
     shared = data ?? []
   }
-  res.json([...(ownedRes.data ?? []), ...shared])
+  const allMoments = [...(ownedRes.data ?? []), ...shared]
+
+  // Attach which trip (if any) this moment has already been transformed into/linked to, so
+  // the UI can offer "go to trip" instead of "create trip" without an extra round-trip.
+  const momentIds = allMoments.map(m => m.id)
+  const linkedTripByMoment = new Map<number, number>()
+  if (momentIds.length > 0) {
+    const { data: tripLinks } = await supabaseAdmin
+      .from('voyage_trip_moments').select('trip_id, moment_id').in('moment_id', momentIds)
+    for (const link of tripLinks ?? []) {
+      if (!linkedTripByMoment.has(link.moment_id)) linkedTripByMoment.set(link.moment_id, link.trip_id)
+    }
+  }
+
+  res.json(allMoments.map(m => ({ ...m, linked_trip_id: linkedTripByMoment.get(m.id) ?? null })))
 })
 
 router.get('/moments-for-picker', requireAuth, async (req, res: Response) => {
@@ -2405,8 +2419,13 @@ router.get('/moments/:id', requireAuth, async (req, res: Response) => {
     display: displays[i],
   })).sort((a, b) => b.total - a.total)
 
+  // Already transformed into / linked to a trip? Lets the UI offer "go to trip" instead of
+  // "create trip" without the caller having to POST /from-moment first just to find out.
+  const { data: tripLinks } = await supabaseAdmin
+    .from('voyage_trip_moments').select('trip_id').eq('moment_id', momentId).limit(1)
+
   res.json({
-    moment,
+    moment: { ...moment, linked_trip_id: tripLinks?.[0]?.trip_id ?? null },
     transactions,
     reimbursement_groups: Object.fromEntries(groupNameMap),
     summary: {

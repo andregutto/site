@@ -1095,7 +1095,8 @@
     "momentByUserTitle": "Who paid what",
     "momentTransformToTrip": "Turn into a trip",
     "momentTransformCreating": "Creating…",
-    "momentTransformOpening": "Opening trip…"
+    "momentTransformOpening": "Opening trip…",
+    "momentViewTrip": "View trip"
   },
   "classes": {
     "title": "Asset Classes",

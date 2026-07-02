@@ -58,6 +58,7 @@ export interface Moment {
   share_hide_descriptions: boolean
   created_at: string
   moment_type: 'trip' | 'party' | 'dinner' | 'other'
+  linked_trip_id?: number | null
 }
 
 export interface ShareInfo {
@@ -937,14 +938,17 @@ export function resolveKey(name: string, nameKey: string | null | undefined, key
 }
 
 // Botão de ícone no header do card (ao lado de compartilhar/editar/excluir) —
-// movido pra lá pra ficar visível sem precisar expandir o momento.
-export function TransformToTripButton({ momentId, onTrip }: { momentId: number; onTrip: (tripId: number) => void }) {
+// movido pra lá pra ficar visível sem precisar expandir o momento. Quando o momento já
+// tem uma viagem vinculada, o clique só navega até ela em vez de tentar criar outra —
+// e o ícone/tooltip mudam de acordo, em vez de sempre parecer "criar viagem".
+export function TransformToTripButton({ momentId, linkedTripId, onTrip }: { momentId: number; linkedTripId?: number | null; onTrip: (tripId: number) => void }) {
   const { t } = useI18n()
   const [loading, setLoading] = useState(false)
   const [done, setDone] = useState(false)
 
   async function handle(e: React.MouseEvent) {
     e.stopPropagation()
+    if (linkedTripId) { onTrip(linkedTripId); return }
     setLoading(true)
     try {
       const result = await apiFetch<{ trip: { id: number } }>(`/voyage/from-moment/${momentId}`, { method: 'POST' })
@@ -955,16 +959,20 @@ export function TransformToTripButton({ momentId, onTrip }: { momentId: number; 
     }
   }
 
+  const title = linkedTripId
+    ? t.finances.momentViewTrip
+    : done ? t.finances.momentTransformOpening : loading ? t.finances.momentTransformCreating : t.finances.momentTransformToTrip
+
   return (
     <button
       type="button"
       onClick={handle}
       disabled={loading || done}
-      title={done ? t.finances.momentTransformOpening : loading ? t.finances.momentTransformCreating : t.finances.momentTransformToTrip}
+      title={title}
       className="p-1.5 transition-colors rounded-lg hover:bg-[var(--arvo-track-bg)] disabled:opacity-50"
-      style={{ color: '#D63B2F' }}
+      style={{ color: linkedTripId ? 'var(--arvo-blue)' : '#D63B2F' }}
     >
-      <span style={{ fontSize: 13, lineHeight: 1, display: 'inline-block' }}>◈</span>
+      <Icon name="plane" size={14} />
     </button>
   )
 }
@@ -1283,7 +1291,7 @@ export default function FinancesMomentsPage() {
                         {typeLabel(m.moment_type ?? 'other')}
                       </span>
                       <div className="flex items-center gap-2 shrink-0">
-                        <TransformToTripButton momentId={m.id} onTrip={tripId => navigate(`/voyage/${tripId}`)} />
+                        <TransformToTripButton momentId={m.id} linkedTripId={m.linked_trip_id} onTrip={tripId => navigate(`/voyage/${tripId}`)} />
                         <button
                           onClick={e => { e.stopPropagation(); setEditing(m); setShowForm(true) }}
                           className="p-1.5 text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg)] transition-colors rounded-lg hover:bg-[var(--arvo-track-bg)]"

@@ -123,7 +123,7 @@ export default function MomentDetailPage() {
           {t.finances.momentsTitle}
         </button>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <TransformToTripButton momentId={m.id} onTrip={tripId => navigate(`/voyage/${tripId}`)} />
+          <TransformToTripButton momentId={m.id} linkedTripId={m.linked_trip_id} onTrip={tripId => navigate(`/voyage/${tripId}`)} />
           {isOwner && (
             <button
               onClick={() => setSharingMoment(m)}

@@ -1095,7 +1095,8 @@
     "momentByUserTitle": "Qui a payé quoi",
     "momentTransformToTrip": "Transformer en voyage",
     "momentTransformCreating": "Création…",
-    "momentTransformOpening": "Ouverture du voyage…"
+    "momentTransformOpening": "Ouverture du voyage…",
+    "momentViewTrip": "Voir le voyage"
   },
   "classes": {
     "title": "Classes d'actifs",
