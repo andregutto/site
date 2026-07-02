@@ -8,11 +8,15 @@ if (!supabaseUrl || !supabaseAnonKey) {
 }
 
 // In production, route all Supabase traffic through our own domain (/sb/* → Vercel proxy → Supabase)
-// so corporate firewalls blocking supabase.co don't affect users. Must be the stable canonical
-// domain, NOT window.location.origin — a branch/preview Vercel deployment URL would otherwise get
-// baked into storage public URLs (e.g. getPublicUrl()) and go dead once that preview is torn down.
+// so corporate firewalls blocking supabase.co don't affect users. Must stay same-origin
+// (window.location.origin) — hardcoding a fixed domain here makes every request cross-origin
+// whenever the app is accessed from a different alias (default Vercel domain, preview deploys),
+// which breaks login/storage calls with "Failed to fetch". The one place this origin leaking into
+// stored data actually matters is getPublicUrl() results for cover photos — normalize those to the
+// canonical domain at the point they're saved (see normalizeStorageUrl in lib/storageUrl.ts),
+// not by changing the client's own base URL.
 const effectiveUrl = import.meta.env.PROD
-  ? 'https://arvo.andregutto.com/sb'
+  ? `${window.location.origin}/sb`
   : (supabaseUrl || 'https://placeholder.supabase.co')
 
 export const supabase = createClient(
