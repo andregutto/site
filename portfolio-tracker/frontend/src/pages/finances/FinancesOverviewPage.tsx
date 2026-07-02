@@ -933,7 +933,13 @@ export default function FinancesOverviewPage() {
           </div>
           <div className="divide-y divide-[var(--arvo-border-soft)]">
             {topCategories.map((cat, i) => {
-              const pct = totalExpenses > 0 ? (cat.actual / totalExpenses) * 100 : 0
+              // % of the category's OWN budget consumed — consistent with the rest of the
+              // page (envelope rows, alerts). Previously this was the category's share of
+              // total monthly spend, which could read e.g. "58%" for a category already at
+              // 100% of its own target, since other categories/envelopes spent money too.
+              const hasBudget = (cat.budget ?? 0) > 0
+              const pct = hasBudget ? (cat.actual / (cat.budget as number)) * 100 : 0
+              const barPct = totalExpenses > 0 ? (cat.actual / totalExpenses) * 100 : 0
               return (
                 <div key={cat.id} className="px-5 py-2.5 flex items-center gap-3 cursor-pointer hover:bg-[var(--arvo-hover-bg)] transition-colors" onClick={() => navigate(`/finances/transactions?category_id=${cat.id}`)}>
                   <span style={{ fontSize: 12, color: 'var(--arvo-fg-soft)', width: 16, flexShrink: 0 }}>{i + 1}</span>
@@ -944,10 +950,12 @@ export default function FinancesOverviewPage() {
                       <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--arvo-fg)', flexShrink: 0, marginLeft: 8 }}>{fmt(cx(cat.actual), currency, true)}</span>
                     </div>
                     <div className="mt-1 h-1 bg-[var(--arvo-track-bg)] rounded-full overflow-hidden">
-                      <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: breakdownColor(i) }} />
+                      <div className="h-full rounded-full" style={{ width: `${Math.min(barPct, 100)}%`, backgroundColor: breakdownColor(i) }} />
                     </div>
                   </div>
-                  <span style={{ fontSize: 12, color: 'var(--arvo-fg-soft)', width: 32, textAlign: 'right', flexShrink: 0 }}>{pct.toFixed(0)}%</span>
+                  <span style={{ fontSize: 12, color: hasBudget && pct > 100 ? 'var(--arvo-red)' : 'var(--arvo-fg-soft)', width: 32, textAlign: 'right', flexShrink: 0 }}>
+                    {hasBudget ? `${pct.toFixed(0)}%` : '—'}
+                  </span>
                 </div>
               )
             })}
