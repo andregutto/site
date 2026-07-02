@@ -263,24 +263,22 @@ export default function VoyageTripsPage() {
         return (
           <div className="space-y-6">
             {sortedYears.map(year => {
-              const isOpen = sortedYears.length === 1 || expandedYears.has(year)
+              const isOpen = expandedYears.has(year)
               return (
                 <div key={year}>
-                  {sortedYears.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => toggleYear(year)}
-                      className="flex items-center gap-2 w-full mb-3"
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-                    >
-                      <svg className={`w-3 h-3 text-[var(--arvo-fg-soft)] transition-transform ${isOpen ? 'rotate-90' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                      </svg>
-                      <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 10, letterSpacing: '0.20em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)' }}>
-                        {year === currentYear ? (t.common.thisYear ?? 'Este ano') : year} · {groups.get(year)!.length}
-                      </p>
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    onClick={() => toggleYear(year)}
+                    className="flex items-center gap-2 w-full mb-3"
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                  >
+                    <svg className={`w-3 h-3 text-[var(--arvo-fg-soft)] transition-transform ${isOpen ? 'rotate-90' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                    </svg>
+                    <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 10, letterSpacing: '0.20em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)' }}>
+                      {year === currentYear ? (t.common.thisYear ?? 'Este ano') : year} · {groups.get(year)!.length}
+                    </p>
+                  </button>
                   {isOpen && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                       {groups.get(year)!.map((trip, i) => (
