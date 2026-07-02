@@ -76,7 +76,7 @@ export interface ByUser {
 
 export interface MomentDetail {
   moment: Moment
-  transactions: { id: number; date: string; description: string; amount: number; currency: string; notes: string | null; reimbursement_group_id: string | null; finance_categories: { name: string; name_key: string | null; icon: string; color: string } | null }[]
+  transactions: { id: number; date: string; description: string; amount: number; currency: string; notes: string | null; reimbursement_group_id: string | null; user_id: string; has_split?: boolean; finance_categories: { name: string; name_key: string | null; icon: string; color: string } | null }[]
   reimbursement_groups: Record<string, string>
   summary: { total: number; by_category: { name: string; name_key: string | null; icon: string; color: string; total: number }[]; by_user: ByUser[] }
 }
@@ -930,10 +930,15 @@ export function resolveKey(name: string, nameKey: string | null | undefined, key
 // movido pra lá pra ficar visível sem precisar expandir o momento. Quando o momento já
 // tem uma viagem vinculada, o clique só navega até ela em vez de tentar criar outra —
 // e o ícone/tooltip mudam de acordo, em vez de sempre parecer "criar viagem".
-export function TransformToTripButton({ momentId, linkedTripId, onTrip }: { momentId: number; linkedTripId?: number | null; onTrip: (tripId: number) => void }) {
+export function TransformToTripButton({ momentId, momentType, linkedTripId, onTrip }: { momentId: number; momentType?: string; linkedTripId?: number | null; onTrip: (tripId: number) => void }) {
   const { t } = useI18n()
   const [loading, setLoading] = useState(false)
   const [done, setDone] = useState(false)
+
+  // Só faz sentido oferecer "virar viagem" pra Momentos do tipo viagem — pra festa/jantar/
+  // outro isso não tinha efeito (a API aceita, mas confundia o usuário à toa). Se já foi
+  // transformado antes (linkedTripId), sempre mostra "ver viagem" independente do tipo atual.
+  if (momentType && momentType !== 'trip' && !linkedTripId) return null
 
   async function handle(e: React.MouseEvent) {
     e.stopPropagation()
@@ -1267,7 +1272,7 @@ export default function FinancesMomentsPage() {
                         {typeLabel(m.moment_type ?? 'other')}
                       </span>
                       <div className="flex items-center gap-2 shrink-0">
-                        <TransformToTripButton momentId={m.id} linkedTripId={m.linked_trip_id} onTrip={tripId => navigate(`/voyage/${tripId}`)} />
+                        <TransformToTripButton momentId={m.id} momentType={m.moment_type} linkedTripId={m.linked_trip_id} onTrip={tripId => navigate(`/voyage/${tripId}`)} />
                         <button
                           onClick={e => { e.stopPropagation(); setEditing(m); setShowForm(true) }}
                           className="p-1.5 text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg)] transition-colors rounded-lg hover:bg-[var(--arvo-track-bg)]"

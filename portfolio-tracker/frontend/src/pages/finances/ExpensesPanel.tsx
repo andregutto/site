@@ -128,6 +128,7 @@ export default function ExpensesPanel({ momentId, currency, fmt }: { momentId: n
 
   return (
     <div className="space-y-3">
+      <p className="text-[11px] italic text-[var(--arvo-fg-soft)]">{t.finances.expenseSectionHint}</p>
       {expenses.length > 0 ? (
         <div className="space-y-0 border border-[var(--arvo-border)] rounded-xl overflow-hidden">
           {expenses.map((e, i) => (
@@ -243,6 +244,121 @@ export default function ExpensesPanel({ momentId, currency, fmt }: { momentId: n
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+// Modal pra "dividir" uma transação JÁ existente (ex: veio do banco) — reaproveita o
+// valor/descrição dela em vez de criar uma nova, só pede participantes + tipo de divisão
+// (quem pagou já é fixo: o dono da transação).
+export function SplitTransactionModal({ momentId, transaction, onDone, onClose }: {
+  momentId: number
+  transaction: { id: number; description: string; amount: number; currency: string; user_id: string }
+  onDone: () => void
+  onClose: () => void
+}) {
+  const { t } = useI18n()
+  const [participants, setParticipants] = useState<Participant[]>([])
+  const [loading, setLoading] = useState(true)
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [splitType, setSplitType] = useState<'equal' | 'custom'>('equal')
+  const [customShares, setCustomShares] = useState<Record<string, string>>({})
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    apiFetch<{ members: MomentMember[] }>(`/finances/moments/${momentId}/members`).then(res => {
+      const active = res.members.filter(m => m.status === 'active' && m.user_id)
+      const parts = active.map(m => ({ user_id: m.user_id as string, display: m.display }))
+      setParticipants(parts)
+      setSelected(new Set(parts.map(p => p.user_id)))
+      setLoading(false)
+    })
+  }, [momentId])
+
+  function toggleParticipant(uid: string) {
+    setSelected(prev => {
+      const next = new Set(prev)
+      next.has(uid) ? next.delete(uid) : next.add(uid)
+      return next
+    })
+  }
+
+  async function submit() {
+    setError('')
+    const participantIds = [...selected]
+    if (participantIds.length === 0) { setError(t.finances.expenseFormIncomplete); return }
+    const body: Record<string, unknown> = {
+      from_transaction_id: transaction.id, split_type: splitType, participant_ids: participantIds,
+    }
+    if (splitType === 'custom') {
+      body.custom_shares = Object.fromEntries(participantIds.map(uid => [uid, parseFloat((customShares[uid] ?? '0').replace(',', '.')) || 0]))
+    }
+    setSaving(true)
+    try {
+      await apiFetch(`/finances/moments/${momentId}/expenses`, { method: 'POST', body: JSON.stringify(body) })
+      onDone()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : t.finances.expenseFormIncomplete)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-[var(--arvo-surface)] rounded-2xl shadow-xl w-full max-w-xs p-5 space-y-3" onClick={e => e.stopPropagation()}>
+        <div>
+          <h3 className="font-semibold text-[var(--arvo-fg)] text-sm">{t.finances.expenseSplitTransactionTitle}</h3>
+          <p className="text-xs text-[var(--arvo-fg-soft)] truncate">{transaction.description} · {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: transaction.currency }).format(Math.abs(transaction.amount))}</p>
+        </div>
+
+        {loading ? <p className="text-xs text-[var(--arvo-fg-soft)]">…</p> : (<>
+          <div className="flex gap-2 text-xs">
+            <button
+              onClick={() => setSplitType('equal')}
+              className={`flex-1 py-1.5 rounded-lg border transition-colors ${splitType === 'equal' ? 'bg-[var(--arvo-fg)]/10 border-[var(--arvo-fg)]/30 text-[var(--arvo-fg)]' : 'border-[var(--arvo-border)] text-[var(--arvo-fg-soft)]'}`}
+            >
+              {t.finances.expenseSplitEqual}
+            </button>
+            <button
+              onClick={() => setSplitType('custom')}
+              className={`flex-1 py-1.5 rounded-lg border transition-colors ${splitType === 'custom' ? 'bg-[var(--arvo-fg)]/10 border-[var(--arvo-fg)]/30 text-[var(--arvo-fg)]' : 'border-[var(--arvo-border)] text-[var(--arvo-fg-soft)]'}`}
+            >
+              {t.finances.expenseSplitCustom}
+            </button>
+          </div>
+
+          <div className="space-y-1.5">
+            {participants.map(p => (
+              <div key={p.user_id} className="flex items-center gap-2">
+                <input type="checkbox" checked={selected.has(p.user_id)} onChange={() => toggleParticipant(p.user_id)} className="shrink-0" />
+                <Avatar name={p.display?.name} email={p.display?.email} avatarUrl={p.display?.avatar_url} size={18} />
+                <span className="text-xs text-[var(--arvo-fg)] flex-1 truncate">{p.display?.name ?? p.user_id}</span>
+                {splitType === 'custom' && selected.has(p.user_id) && (
+                  <input
+                    value={customShares[p.user_id] ?? ''}
+                    onChange={e => setCustomShares(prev => ({ ...prev, [p.user_id]: e.target.value }))}
+                    placeholder="0" inputMode="decimal"
+                    className="w-20 text-xs px-2 py-1 rounded-md bg-[var(--arvo-surface-2)] border border-[var(--arvo-border)] text-[var(--arvo-fg)] text-right"
+                  />
+                )}
+              </div>
+            ))}
+          </div>
+
+          {error && <p className="text-xs text-[var(--arvo-red)]">{error}</p>}
+
+          <div className="flex gap-2">
+            <button onClick={onClose} className="flex-1 text-xs py-2 rounded-lg border border-[var(--arvo-border)] text-[var(--arvo-fg-soft)]">
+              {t.common.cancel}
+            </button>
+            <button onClick={submit} disabled={saving} className="flex-1 text-xs py-2 rounded-lg bg-[var(--arvo-fg)] text-[var(--arvo-bg)] disabled:opacity-60">
+              {t.common.save}
+            </button>
+          </div>
+        </>)}
+      </div>
     </div>
   )
 }

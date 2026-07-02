@@ -33,6 +33,7 @@ export const TYPE_ICONS: Record<string, IconName> = {
   friend_invite: 'users',
   friend_accepted: 'users',
   friend_invite_accepted: 'users',
+  settlement_received: 'wallet',
 }
 
 export function formatTimestamp(iso: string, locale: Locale): string {
@@ -139,6 +140,12 @@ export function resolveNotificationText(item: NotificationItem, t: any, locale: 
     }
     case 'negative_balance': {
       return { title: n.type_negative_balance }
+    }
+    case 'settlement_received': {
+      const from = String(item.params.from_user_name ?? '')
+      const amounts = (item.params.amounts as { currency: string; amount: number }[] | undefined) ?? []
+      const amountStr = amounts.map(a => formatMoney(a.amount, a.currency, locale)).join(', ')
+      return { title: n.type_settlement_received.replace('{from}', from).replace('{amount}', amountStr) }
     }
     default:
       return { title: item.key }

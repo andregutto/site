@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { randomBytes } from 'crypto'
+import { randomBytes, randomUUID } from 'crypto'
 import { requireAuth, AuthRequest } from '../middleware/auth.js'
 import { supabaseAdmin } from '../lib/supabase.js'
 
@@ -597,6 +597,109 @@ router.patch('/friends/auto-accept', async (req: any, res: any) => {
     res.json({ ok: true })
   } catch (e: any) {
     res.status(500).json({ error: e.message ?? 'Erro ao atualizar' })
+  }
+})
+
+// ── POST /api/people/settle  ("acertar contas" com um amigo) ───────────────────
+// Zera o saldo pendente com um amigo em CADA Momento compartilhado onde há
+// pendência (não um registro global à parte) — assim o próprio Momento também
+// mostra zerado, não só o agregado da tela Pessoas. Cria uma linha de
+// finance_moment_expenses marcada is_settlement=true por Momento/moeda pendente,
+// todas com o mesmo settlement_batch_id pra virar UMA notificação só pro amigo.
+router.post('/settle', async (req: any, res: any) => {
+  try {
+    const userId = uid(req)
+    const { friend_user_id } = req.body as { friend_user_id?: string }
+    if (!friend_user_id) { res.status(400).json({ error: 'friend_user_id obrigatório' }); return }
+
+    // Momentos onde AMBOS (eu e o amigo) são participantes (dono ou membro ativo) —
+    // só nesses pode haver despesa dividida entre nós dois.
+    const { data: ownerRows } = await supabaseAdmin
+      .from('finance_moments').select('id, user_id').in('user_id', [userId, friend_user_id])
+    const ownerMap = new Map((ownerRows ?? []).map((r: any) => [r.id as number, r.user_id as string]))
+
+    const { data: memberRows } = await supabaseAdmin
+      .from('finance_moment_members').select('moment_id, user_id')
+      .eq('status', 'active').in('user_id', [userId, friend_user_id])
+    const memberSet = new Set((memberRows ?? []).map((r: any) => `${r.moment_id}:${r.user_id}`))
+
+    const candidateIds = new Set<number>([...ownerMap.keys(), ...(memberRows ?? []).map((r: any) => r.moment_id as number)])
+    const isParticipant = (momentId: number, u: string) => ownerMap.get(momentId) === u || memberSet.has(`${momentId}:${u}`)
+    const sharedMomentIds = [...candidateIds].filter(id => isParticipant(id, userId) && isParticipant(id, friend_user_id))
+
+    if (sharedMomentIds.length === 0) { res.json({ ok: true, settled: [] }); return }
+
+    const { data: expenseRows } = await supabaseAdmin
+      .from('finance_moment_expenses')
+      .select('moment_id, currency, paid_by_user_id, finance_moment_expense_shares(user_id, share_amount)')
+      .in('moment_id', sharedMomentIds)
+
+    // balancePerMoment[momentId][currency]: positivo = amigo me deve, negativo = eu devo a ele
+    const balancePerMoment: Record<number, Record<string, number>> = {}
+    for (const e of expenseRows ?? []) {
+      const momentId = (e as any).moment_id as number
+      const payer = (e as any).paid_by_user_id as string
+      const currency = (e as any).currency as string
+      const shares = ((e as any).finance_moment_expense_shares ?? []) as { user_id: string; share_amount: number }[]
+      if (payer === userId) {
+        const s = shares.find(s => s.user_id === friend_user_id)
+        if (s) {
+          balancePerMoment[momentId] ??= {}
+          balancePerMoment[momentId][currency] = (balancePerMoment[momentId][currency] ?? 0) + s.share_amount
+        }
+      } else if (payer === friend_user_id) {
+        const mine = shares.find(s => s.user_id === userId)
+        if (mine) {
+          balancePerMoment[momentId] ??= {}
+          balancePerMoment[momentId][currency] = (balancePerMoment[momentId][currency] ?? 0) - mine.share_amount
+        }
+      }
+    }
+
+    const batchId = randomUUID()
+    const inserts: Record<string, unknown>[] = []
+    const totals: Record<string, number> = {}
+    for (const [momentIdStr, byCurrency] of Object.entries(balancePerMoment)) {
+      const momentId = Number(momentIdStr)
+      for (const [currency, bal] of Object.entries(byCurrency)) {
+        const rounded = Math.round(bal * 100) / 100
+        if (Math.abs(rounded) < 0.01) continue
+        // Cancela o saldo: quem estava em débito "paga" o valor total pro outro,
+        // registrado como uma despesa cujo pagador é o credor e cuja única parte é
+        // o devedor — mesma mecânica que o Splitwise usa pra um "payment".
+        const paidBy = rounded > 0 ? friend_user_id : userId
+        const owesUser = rounded > 0 ? userId : friend_user_id
+        const amount = Math.abs(rounded)
+        inserts.push({
+          moment_id: momentId, description: 'Acerto de contas', amount, currency,
+          paid_by_user_id: paidBy, split_type: 'custom', is_settlement: true,
+          settlement_batch_id: batchId, created_by: userId,
+        })
+        totals[currency] = (totals[currency] ?? 0) + amount
+        ;(inserts[inserts.length - 1] as any)._owesUser = owesUser
+      }
+    }
+
+    if (inserts.length === 0) { res.json({ ok: true, settled: [] }); return }
+
+    for (const row of inserts) {
+      const owesUser = (row as any)._owesUser as string
+      delete (row as any)._owesUser
+      const { data: expense, error } = await supabaseAdmin
+        .from('finance_moment_expenses').insert(row).select().single()
+      if (error) { res.status(500).json({ error: error.message }); return }
+      const { error: shareErr } = await supabaseAdmin
+        .from('finance_moment_expense_shares')
+        .insert({ expense_id: expense.id, user_id: owesUser, share_amount: row.amount })
+      if (shareErr) {
+        await supabaseAdmin.from('finance_moment_expenses').delete().eq('id', expense.id)
+        res.status(500).json({ error: shareErr.message }); return
+      }
+    }
+
+    res.json({ ok: true, settled: Object.entries(totals).map(([currency, amount]) => ({ currency, amount: Math.round(amount * 100) / 100 })) })
+  } catch (e: any) {
+    res.status(500).json({ error: e.message ?? 'Erro ao acertar contas' })
   }
 })
 

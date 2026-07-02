@@ -171,6 +171,19 @@ function ContactCard({
   const [shareTarget, setShareTarget] = useState<number | ''>('')
   const [sharing, setSharing] = useState(false)
   const [shareError, setShareError] = useState('')
+  const [settling, setSettling] = useState(false)
+
+  async function settleUp() {
+    if (!contact.user_id) return
+    if (!confirm(t.people.settleUpConfirm)) return
+    setSettling(true)
+    try {
+      await apiFetch('/people/settle', { method: 'POST', body: JSON.stringify({ friend_user_id: contact.user_id }) })
+      onFriendChanged()
+    } finally {
+      setSettling(false)
+    }
+  }
 
   async function removeTrip(ctx: TripContext) {
     if (!confirm(t.people.removeTripConfirm.replace('{email}', contact.email).replace('{title}', ctx.trip_title))) return
@@ -360,6 +373,35 @@ function ContactCard({
           >
             {accepting ? '…' : t.people.accept}
           </button>
+        </div>
+      )}
+
+      {/* Saldo de despesas divididas — soma finance_moment_expense_shares de todos os
+          Momentos compartilhados; "Acertar contas" zera em CADA Momento pendente,
+          não só aqui (ver POST /people/settle). */}
+      {(contact.balances ?? []).length > 0 && contact.user_id && (
+        <div style={{ borderTop: '1px solid var(--arvo-border-soft)', paddingTop: 12, marginBottom: 4 }}>
+          <p style={{
+            fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.22em',
+            textTransform: 'uppercase', color: 'var(--arvo-fg-muted)', marginBottom: 6,
+          }}>
+            {t.people.sectionBalance}
+          </p>
+          {(contact.balances ?? []).map(b => (
+            <div key={b.currency} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '4px 0' }}>
+              <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: b.amount > 0 ? '#1F8A5B' : RED, flex: 1 }}>
+                {b.amount > 0
+                  ? t.people.balanceTheyOweYouLine.replace('{amount}', new Intl.NumberFormat('pt-BR', { style: 'currency', currency: b.currency }).format(Math.abs(b.amount)))
+                  : t.people.balanceYouOweThemLine.replace('{amount}', new Intl.NumberFormat('pt-BR', { style: 'currency', currency: b.currency }).format(Math.abs(b.amount)))}
+              </span>
+              <button
+                type="button" onClick={() => settleUp()} disabled={settling}
+                className="arvo-btn" style={{ fontSize: 10.5, padding: '3px 10px' }}
+              >
+                {settling ? '…' : t.people.settleUp}
+              </button>
+            </div>
+          ))}
         </div>
       )}
 

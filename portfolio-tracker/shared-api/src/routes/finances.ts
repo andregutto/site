@@ -93,6 +93,51 @@ export async function getRecentMomentAdditions(userId: string): Promise<RecentMo
   return result
 }
 
+export interface RecentSettlement {
+  key: string
+  from_user_name: string
+  amounts: { currency: string; amount: number }[]
+  occurred_at: string
+}
+
+// "Acertar contas" (POST /people/settle) cria uma linha is_settlement=true por
+// Momento/moeda pendente, todas com o mesmo settlement_batch_id — aqui a gente
+// re-agrupa pelo batch_id pra virar UMA notificação só, não N (uma por Momento).
+export async function getRecentSettlements(userId: string): Promise<RecentSettlement[]> {
+  const since = new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString()
+  const { data } = await supabaseAdmin
+    .from('finance_moment_expenses')
+    .select('id, amount, currency, paid_by_user_id, created_by, created_at, settlement_batch_id, finance_moment_expense_shares(user_id)')
+    .eq('is_settlement', true)
+    .neq('created_by', userId)
+    .gte('created_at', since)
+
+  const relevant = (data ?? []).filter((e: any) => {
+    const participants = new Set([e.paid_by_user_id, ...((e.finance_moment_expense_shares ?? []).map((s: any) => s.user_id))])
+    return participants.has(userId)
+  })
+
+  const batches = new Map<string, { created_by: string; occurred_at: string; totals: Record<string, number> }>()
+  for (const e of relevant as any[]) {
+    const batchKey = e.settlement_batch_id ?? `single:${e.id}`
+    if (!batches.has(batchKey)) batches.set(batchKey, { created_by: e.created_by, occurred_at: e.created_at, totals: {} })
+    const b = batches.get(batchKey)!
+    b.totals[e.currency] = (b.totals[e.currency] ?? 0) + e.amount
+    if (e.created_at > b.occurred_at) b.occurred_at = e.created_at
+  }
+
+  const result: RecentSettlement[] = []
+  for (const [key, b] of batches) {
+    const from = await userDisplay(b.created_by)
+    result.push({
+      key: `settlement:${key}`,
+      from_user_name: from.name ?? from.email,
+      amounts: Object.entries(b.totals).map(([currency, amount]) => ({ currency, amount: Math.round(amount * 100) / 100 })),
+      occurred_at: b.occurred_at,
+    })
+  }
+  return result
+}
 
 // ── Financial month helpers ───────────────────────────────────────────────────
 
@@ -2388,10 +2433,20 @@ router.get('/moments/:id', requireAuth, async (req, res: Response) => {
     .select('transaction_id, finance_transactions(id, date, description, amount, currency, notes, user_id, reimbursement_group_id, finance_categories(id, name, name_key, icon, color))')
     .eq('moment_id', momentId)
 
-  const transactions = (ftmRows ?? [])
+  let transactions = (ftmRows ?? [])
     .map((r: any) => r.finance_transactions)
     .filter(Boolean)
     .sort((a: any, b: any) => (a.date < b.date ? 1 : -1))
+
+  // Marca quais transações já viraram uma despesa dividida (finance_moment_expenses),
+  // pra UI oferecer "Dividir" só onde ainda faz sentido e não duplicar a divisão.
+  const txIds = transactions.map((tx: any) => tx.id)
+  if (txIds.length > 0) {
+    const { data: splitRows } = await supabaseAdmin
+      .from('finance_moment_expenses').select('transaction_id').in('transaction_id', txIds)
+    const splitSet = new Set((splitRows ?? []).map((r: any) => r.transaction_id))
+    transactions = transactions.map((tx: any) => ({ ...tx, has_split: splitSet.has(tx.id) }))
+  }
 
   const groupIds = [...new Set(transactions.map((tx: any) => tx.reimbursement_group_id).filter(Boolean))]
   const { data: groupRows } = groupIds.length > 0
@@ -2767,7 +2822,7 @@ router.get('/moments/:id/expenses', requireAuth, async (req, res: Response) => {
 
   const { data: expenses, error } = await supabaseAdmin
     .from('finance_moment_expenses')
-    .select('id, description, amount, currency, paid_by_user_id, split_type, expense_date, created_by, created_at, finance_moment_expense_shares(user_id, share_amount)')
+    .select('id, description, amount, currency, paid_by_user_id, split_type, expense_date, created_by, created_at, is_settlement, transaction_id, finance_moment_expense_shares(user_id, share_amount)')
     .eq('moment_id', momentId)
     .order('expense_date', { ascending: false })
   if (error) { res.status(500).json({ error: error.message }); return }
@@ -2793,7 +2848,7 @@ router.get('/moments/:id/expenses', requireAuth, async (req, res: Response) => {
 router.post('/moments/:id/expenses', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const momentId = Number(req.params.id)
-  const { description, amount, currency, paid_by_user_id, expense_date, split_type, participant_ids, custom_shares } = req.body as {
+  const { description, amount, currency, paid_by_user_id, expense_date, split_type, participant_ids, custom_shares, from_transaction_id } = req.body as {
     description?: string
     amount?: number
     currency?: string
@@ -2802,17 +2857,46 @@ router.post('/moments/:id/expenses', requireAuth, async (req, res: Response) => 
     split_type?: 'equal' | 'custom'
     participant_ids?: string[]
     custom_shares?: Record<string, number>
+    from_transaction_id?: number
   }
 
   const access = await assertMomentAccess(momentId, userId)
   if (!access.ok) { res.status(404).json({ error: 'Momento não encontrado' }); return }
 
-  if (!description?.trim() || !amount || amount <= 0 || !paid_by_user_id) {
+  // Duas origens possíveis: (a) despesa manual do zero — cria uma finance_transactions
+  // nova, pra contar no total gasto/lista do Momento como qualquer outra; ou (b) "dividir"
+  // uma transação já existente (ex: veio do banco) — reaproveita ela, sem duplicar valor.
+  let baseDescription = description?.trim()
+  let baseAmount = amount
+  let baseCurrency = currency ?? 'BRL'
+  let basePaidBy = paid_by_user_id
+  let baseDate = expense_date ?? new Date().toISOString().slice(0, 10)
+  let existingTx: { id: number; user_id: string; amount: number; currency: string; description: string; date: string } | null = null
+
+  if (from_transaction_id) {
+    const { data: ftm } = await supabaseAdmin
+      .from('finance_transaction_moments').select('transaction_id').eq('transaction_id', from_transaction_id).eq('moment_id', momentId).maybeSingle()
+    if (!ftm) { res.status(404).json({ error: 'Transação não encontrada neste momento' }); return }
+    const { data: tx } = await supabaseAdmin
+      .from('finance_transactions').select('id, user_id, amount, currency, description, date').eq('id', from_transaction_id).single()
+    if (!tx) { res.status(404).json({ error: 'Transação não encontrada' }); return }
+    const { data: alreadySplit } = await supabaseAdmin
+      .from('finance_moment_expenses').select('id').eq('transaction_id', tx.id).maybeSingle()
+    if (alreadySplit) { res.status(409).json({ error: 'Esta transação já está dividida' }); return }
+    existingTx = tx as any
+    baseDescription = tx.description
+    baseAmount = Math.abs(tx.amount)
+    baseCurrency = tx.currency
+    basePaidBy = tx.user_id
+    baseDate = tx.date
+  }
+
+  if (!baseDescription || !baseAmount || baseAmount <= 0 || !basePaidBy) {
     res.status(400).json({ error: 'Descrição, valor e pagador são obrigatórios' }); return
   }
 
   const eligibleIds = await momentParticipantIds(momentId)
-  if (!eligibleIds.includes(paid_by_user_id)) {
+  if (!eligibleIds.includes(basePaidBy)) {
     res.status(400).json({ error: 'Pagador não é participante deste momento' }); return
   }
 
@@ -2825,38 +2909,68 @@ router.post('/moments/:id/expenses', requireAuth, async (req, res: Response) => 
     if (!custom_shares) { res.status(400).json({ error: 'Informe os valores de cada participante' }); return }
     shares = participants.map(uid => ({ user_id: uid, share_amount: Math.round((custom_shares[uid] ?? 0) * 100) / 100 }))
     const sum = Math.round(shares.reduce((s, x) => s + x.share_amount, 0) * 100) / 100
-    if (Math.abs(sum - amount) > 0.02) {
+    if (Math.abs(sum - baseAmount) > 0.02) {
       res.status(400).json({ error: 'A soma das partes precisa bater com o valor total' }); return
     }
   } else {
-    const base = Math.floor((amount / participants.length) * 100) / 100
+    const base = Math.floor((baseAmount / participants.length) * 100) / 100
     shares = participants.map(uid => ({ user_id: uid, share_amount: base }))
     // sobra de arredondamento fica com quem pagou, pra soma bater exatamente com o total
-    const remainder = Math.round((amount - base * participants.length) * 100) / 100
-    const payerShare = shares.find(s => s.user_id === paid_by_user_id) ?? shares[0]
+    const remainder = Math.round((baseAmount - base * participants.length) * 100) / 100
+    const payerShare = shares.find(s => s.user_id === basePaidBy) ?? shares[0]
     payerShare.share_amount = Math.round((payerShare.share_amount + remainder) * 100) / 100
+  }
+
+  let transactionId: number
+  let ownsTransaction: boolean
+  if (existingTx) {
+    transactionId = existingTx.id
+    ownsTransaction = false
+  } else {
+    const { data: tx, error: txError } = await supabaseAdmin
+      .from('finance_transactions')
+      .insert({
+        user_id: basePaidBy, date: baseDate, description: baseDescription,
+        amount: -baseAmount, currency: baseCurrency, source: 'manual',
+      })
+      .select('id').single()
+    if (txError) { res.status(500).json({ error: txError.message }); return }
+    const { error: linkError } = await supabaseAdmin
+      .from('finance_transaction_moments').insert({ transaction_id: tx.id, moment_id: momentId, user_id: basePaidBy })
+    if (linkError) {
+      await supabaseAdmin.from('finance_transactions').delete().eq('id', tx.id)
+      res.status(500).json({ error: linkError.message }); return
+    }
+    transactionId = tx.id
+    ownsTransaction = true
   }
 
   const { data: expense, error } = await supabaseAdmin
     .from('finance_moment_expenses')
     .insert({
       moment_id: momentId,
-      description: description.trim(),
-      amount,
-      currency: currency ?? 'BRL',
-      paid_by_user_id,
+      description: baseDescription,
+      amount: baseAmount,
+      currency: baseCurrency,
+      paid_by_user_id: basePaidBy,
       split_type: split_type ?? 'equal',
-      expense_date: expense_date ?? new Date().toISOString().slice(0, 10),
+      expense_date: baseDate,
       created_by: userId,
+      transaction_id: transactionId,
+      owns_transaction: ownsTransaction,
     })
     .select().single()
-  if (error) { res.status(500).json({ error: error.message }); return }
+  if (error) {
+    if (ownsTransaction) await supabaseAdmin.from('finance_transactions').delete().eq('id', transactionId)
+    res.status(500).json({ error: error.message }); return
+  }
 
   const { error: sharesError } = await supabaseAdmin
     .from('finance_moment_expense_shares')
     .insert(shares.map(s => ({ expense_id: expense.id, user_id: s.user_id, share_amount: s.share_amount })))
   if (sharesError) {
     await supabaseAdmin.from('finance_moment_expenses').delete().eq('id', expense.id)
+    if (ownsTransaction) await supabaseAdmin.from('finance_transactions').delete().eq('id', transactionId)
     res.status(500).json({ error: sharesError.message }); return
   }
 
@@ -2872,12 +2986,20 @@ router.delete('/moments/:id/expenses/:expenseId', requireAuth, async (req, res: 
   if (!access.ok) { res.status(404).json({ error: 'Momento não encontrado' }); return }
 
   const { data: expense } = await supabaseAdmin
-    .from('finance_moment_expenses').select('created_by').eq('id', expenseId).eq('moment_id', momentId).maybeSingle()
+    .from('finance_moment_expenses').select('created_by, transaction_id, owns_transaction').eq('id', expenseId).eq('moment_id', momentId).maybeSingle()
   if (!expense) { res.status(404).json({ error: 'Despesa não encontrada' }); return }
   if (expense.created_by !== userId && !access.isOwner) { res.status(403).json({ error: 'Sem permissão para excluir esta despesa' }); return }
 
-  const { error } = await supabaseAdmin.from('finance_moment_expenses').delete().eq('id', expenseId)
-  if (error) { res.status(500).json({ error: error.message }); return }
+  // Se a transação foi criada JUNTO com a despesa (owns_transaction), apagar a
+  // despesa também remove a transação — senão ela ficaria órfã, sem divisão nem dono.
+  // Se veio de uma transação PRÉ-EXISTENTE (ex: banco), só desfaz a divisão.
+  if (expense.owns_transaction && expense.transaction_id) {
+    await supabaseAdmin.from('finance_transactions').delete().eq('id', expense.transaction_id)
+    // A cascade da FK transaction_id já apaga a linha de finance_moment_expenses.
+  } else {
+    const { error } = await supabaseAdmin.from('finance_moment_expenses').delete().eq('id', expenseId)
+    if (error) { res.status(500).json({ error: error.message }); return }
+  }
   res.json({ ok: true })
 })
 

@@ -11,7 +11,7 @@ import {
   ShareModal, AssignModal, MembersPanel, MomentForm,
 } from './FinancesMomentsPage'
 import type { Moment, MomentDetail, MomentPickerRow, ShareInfo, MomentFormData } from './FinancesMomentsPage'
-import ExpensesPanel from './ExpensesPanel'
+import ExpensesPanel, { SplitTransactionModal } from './ExpensesPanel'
 
 const RED = '#D63B2F'
 
@@ -68,6 +68,7 @@ export default function MomentDetailPage() {
   const [loading, setLoading] = useState(true)
   const [pickerMoments, setPickerMoments] = useState<MomentPickerRow[]>([])
   const [assignTarget, setAssignTarget] = useState<{ txId: number; currentMomentId: number | null } | null>(null)
+  const [splitTarget, setSplitTarget] = useState<{ id: number; description: string; amount: number; currency: string; user_id: string } | null>(null)
   const [sharingMoment, setSharingMoment] = useState<Moment | null>(null)
   const [showMembers, setShowMembers] = useState(false)
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
@@ -162,7 +163,7 @@ export default function MomentDetailPage() {
           {t.finances.momentsTitle}
         </button>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <TransformToTripButton momentId={m.id} linkedTripId={m.linked_trip_id} onTrip={tripId => navigate(`/voyage/${tripId}`)} />
+          <TransformToTripButton momentId={m.id} momentType={m.moment_type} linkedTripId={m.linked_trip_id} onTrip={tripId => navigate(`/voyage/${tripId}`)} />
           {isOwner && (
             <button
               onClick={() => setSharingMoment(m)}
@@ -355,6 +356,21 @@ export default function MomentDetailPage() {
                   <span className={`text-xs font-semibold shrink-0 ${tx.amount < 0 ? 'text-[var(--arvo-fg)]' : 'text-emerald-600'}`}>
                     {fmt(Math.abs(tx.amount), tx.currency)}
                   </span>
+                  {tx.amount < 0 && (
+                    tx.has_split ? (
+                      <span className="ml-1 p-1 text-[var(--arvo-fg-faint)]" title={t.finances.expenseAlreadySplit}>
+                        <Icon name="users" size={12} />
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => setSplitTarget({ id: tx.id, description: tx.description, amount: tx.amount, currency: tx.currency, user_id: tx.user_id })}
+                        className="ml-1 p-1 text-[var(--arvo-fg-faint)] hover:text-[var(--arvo-fg)] transition-colors"
+                        title={t.finances.expenseSplitTransaction}
+                      >
+                        <Icon name="users" size={12} />
+                      </button>
+                    )
+                  )}
                   <button
                     onClick={() => setAssignTarget({ txId: tx.id, currentMomentId: m.id })}
                     className="ml-1 p-1 text-[var(--arvo-fg-faint)] hover:text-[var(--arvo-fg)] transition-colors"
@@ -424,6 +440,15 @@ export default function MomentDetailPage() {
           currentMomentId={assignTarget.currentMomentId}
           onDone={async () => { setAssignTarget(null); await load() }}
           onClose={() => setAssignTarget(null)}
+        />
+      )}
+
+      {splitTarget && (
+        <SplitTransactionModal
+          momentId={m.id}
+          transaction={splitTarget}
+          onDone={async () => { setSplitTarget(null); await load() }}
+          onClose={() => setSplitTarget(null)}
         />
       )}
     </div>

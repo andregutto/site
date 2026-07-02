@@ -18,6 +18,55 @@ async function userDisplay(userId: string): Promise<{ name: string; email: strin
   return { name, email: data?.user?.email ?? '', avatar_url: meta.avatar_url }
 }
 
+// Quando alguém vira colaborador ATIVO de uma viagem, ele também deve virar
+// colaborador ativo de qualquer Momento financeiro vinculado a ela (voyage_trip_moments)
+// — sem isso o usuário precisa ser convidado DUAS vezes (viagem + momento) só pra poder
+// atribuir uma despesa dividida à viagem, o que é confuso e foi pedido explicitamente
+// pra ser unificado.
+async function syncTripMemberToLinkedMoments(tripId: number, targetUserId: string, inviteEmail: string | null, role: string) {
+  const { data: links } = await supabaseAdmin.from('voyage_trip_moments').select('moment_id').eq('trip_id', tripId)
+  const momentIds = (links ?? []).map((l: any) => l.moment_id as number)
+  if (momentIds.length === 0) return
+
+  for (const momentId of momentIds) {
+    const { data: moment } = await supabaseAdmin.from('finance_moments').select('user_id').eq('id', momentId).single()
+    if (!moment || moment.user_id === targetUserId) continue // já é o dono do momento
+
+    const { data: existing } = await supabaseAdmin
+      .from('finance_moment_members').select('id, status').eq('moment_id', momentId).eq('user_id', targetUserId).maybeSingle()
+    if (existing) {
+      if (existing.status !== 'active') {
+        await supabaseAdmin.from('finance_moment_members')
+          .update({ status: 'active', joined_at: new Date().toISOString() }).eq('id', existing.id)
+      }
+      continue
+    }
+
+    await supabaseAdmin.from('finance_moment_members').insert({
+      moment_id: momentId,
+      user_id: targetUserId,
+      invite_email: inviteEmail,
+      role: role === 'viewer' ? 'viewer' : 'editor',
+      status: 'active',
+      joined_at: new Date().toISOString(),
+    })
+  }
+}
+
+// Direção inversa da anterior: quando um Momento é vinculado a uma viagem que JÁ tem
+// colaboradores ativos (attach-moment / create-moment), esses colaboradores devem
+// entrar no Momento também — senão só quem entrar na viagem DEPOIS do vínculo ganha
+// acesso automático ao Momento, o que é inconsistente.
+async function syncAllTripMembersToLinkedMoments(tripId: number) {
+  const { data: trip } = await supabaseAdmin.from('voyage_trips').select('user_id').eq('id', tripId).single()
+  const { data: tripMembers } = await supabaseAdmin
+    .from('voyage_trip_members').select('user_id, invite_email, role').eq('trip_id', tripId).eq('status', 'active')
+  for (const tm of tripMembers ?? []) {
+    if (!tm.user_id || tm.user_id === trip?.user_id) continue
+    await syncTripMemberToLinkedMoments(tripId, tm.user_id, tm.invite_email, tm.role)
+  }
+}
+
 // ── Cost helper ────────────────────────────────────────────────────────────────
 // Agrega custo de todos os momentos vinculados à viagem.
 // Retorna total + breakdown por usuário (split-ready para V2).
@@ -582,6 +631,7 @@ router.post('/trips/:id/moments', requireAuth, async (req, res: Response) => {
 
   await supabaseAdmin.from('voyage_trip_moments')
     .upsert({ trip_id: tripId, moment_id: Number(moment_id), user_id: userId }, { onConflict: 'trip_id,moment_id' })
+  await syncAllTripMembersToLinkedMoments(tripId)
 
   const cost = await buildCostSummary(tripId, userId)
   res.json({ ok: true, cost })
@@ -616,6 +666,7 @@ router.post('/trips/:id/create-moment', requireAuth, async (req, res: Response) 
 
   await supabaseAdmin.from('voyage_trip_moments')
     .insert({ trip_id: tripId, moment_id: moment.id, user_id: userId })
+  await syncAllTripMembersToLinkedMoments(tripId)
 
   const cost = await buildCostSummary(tripId, userId)
   res.status(201).json({ moment, cost })
@@ -724,6 +775,18 @@ router.post('/from-moment/:momentId', requireAuth, async (req, res: Response) =>
       trip_id: trip.id, moment_id: momentId, user_id: userId,
     }),
   ])
+
+  // Direção momento→viagem: quem já colaborava no Momento entra direto na viagem
+  // recém-criada também, mesma lógica unificada do lado viagem→momento.
+  const { data: momentMembers } = await supabaseAdmin
+    .from('finance_moment_members').select('user_id, invite_email, role').eq('moment_id', momentId).eq('status', 'active')
+  for (const mm of momentMembers ?? []) {
+    if (!mm.user_id || mm.user_id === userId) continue
+    await supabaseAdmin.from('voyage_trip_members').insert({
+      trip_id: trip.id, user_id: mm.user_id, invite_email: mm.invite_email,
+      role: mm.role === 'viewer' ? 'viewer' : 'editor', status: 'active', joined_at: new Date().toISOString(),
+    })
+  }
 
   res.status(201).json({ trip, already_existed: false })
 })
@@ -1653,6 +1716,7 @@ router.post('/trips/:id/invite', requireAuth, async (req, res: Response) => {
       joined_at: new Date().toISOString(),
     })
     if (error) { res.status(500).json({ error: error.message }); return }
+    await syncTripMemberToLinkedMoments(tripId, targetUserId, targetEmail, role)
     res.json({ direct: true })
     return
   }
@@ -1746,7 +1810,7 @@ router.post('/invite/accept', requireAuth, async (req, res: Response) => {
 
   const { data: member } = await supabaseAdmin
     .from('voyage_trip_members')
-    .select('id, trip_id, status, invite_email')
+    .select('id, trip_id, status, invite_email, role')
     .eq('invite_token', token)
     .single()
 
@@ -1757,6 +1821,8 @@ router.post('/invite/accept', requireAuth, async (req, res: Response) => {
     .from('voyage_trip_members')
     .update({ user_id: userId, status: 'active', joined_at: new Date().toISOString(), invite_token: null })
     .eq('id', member.id)
+
+  await syncTripMemberToLinkedMoments(member.trip_id, userId, member.invite_email, member.role)
 
   // 4.2 — registrar conexão bidirecional
   try {
