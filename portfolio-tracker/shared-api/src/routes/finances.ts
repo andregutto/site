@@ -1476,6 +1476,15 @@ router.post('/transactions/csv-parse', requireAuth, async (req, res: Response) =
 
   const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
 
+  // "Internal transfer" only makes sense between two of the user's OWN accounts — with a
+  // single account registered there's nothing for a SEPA/TED/PIX transfer to be internal
+  // to, so every such transaction is necessarily external (salary, rent, a friend paying
+  // you back, etc.) and must not be auto-hidden just because the label says "VIREMENT".
+  const { count: accountCount } = await supabaseAdmin
+    .from('finance_accounts').select('id', { count: 'exact', head: true })
+    .eq('user_id', userId).eq('is_active', true)
+  const hasMultipleAccounts = (accountCount ?? 0) >= 2
+
   let transferCat = categories.find(c => { const n = norm(c.name); return n.includes('transfer') || n.includes('virement') })
   // Ensure transfer category exists — create it if not (fix: transfers get proper category)
   if (!transferCat) {
@@ -1580,10 +1589,11 @@ router.post('/transactions/csv-parse', requireAuth, async (req, res: Response) =
 
     const isTransferByType = TRANSFER_TYPE_PATTERNS.some(t => rawTypeNorm.includes(t))
     const isTransferByP2P  = P2P_DESC_RE.test(rawDesc) || P2P_DESC_RE.test(rawDescNorm)
-    // SEPA viremements (VIR INSTANTANE, VIR SEPA, TED, PIX…) are unambiguously bank transfers.
-    // Unlike Revolut "type=TRANSFER" or P2P patterns, keyword rules must NOT override them —
-    // the description may contain bank/person names that happen to match a user category.
-    const isTransferBySEPA = SEPA_VIREMENT_RE.test(rawDesc)
+    // SEPA viremements (VIR INSTANTANE, VIR SEPA, TED, PIX…) only mean "internal transfer"
+    // when the user actually has another account for it to be internal to — otherwise this
+    // is just how their bank labels any bank-to-bank movement (salary, rent, a refund from
+    // a friend) and must not be auto-hidden.
+    const isTransferBySEPA = hasMultipleAccounts && SEPA_VIREMENT_RE.test(rawDesc)
     const isTransfer = isTransferByType || isTransferByP2P || isTransferBySEPA
 
     const broker = detectBroker(rawDesc)
