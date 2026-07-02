@@ -270,8 +270,10 @@ export async function computePortfolioValueAtMonth(
   data: PrefetchedData,
   year: number,
   month: number,
-  splitEventsCache?: Map<number, SplitFactorEvent[]>
+  splitEventsCache?: Map<number, SplitFactorEvent[]>,
+  fxMemo?: (currency: string) => Promise<number>
 ): Promise<{ total: number; detail: Array<{ asset_id: number; value: number }> }> {
+  const getFx = fxMemo ?? getFxRate
   const ym      = `${year}-${String(month).padStart(2, '0')}`
   const lastDay = new Date(year, month, 0).getDate()
   const dateStr = `${ym}-${String(lastDay).padStart(2, '0')}`
@@ -367,7 +369,7 @@ export async function computePortfolioValueAtMonth(
           pts.sort((x, y) => x.ref_date.localeCompare(y.ref_date))
           const interp = interpolateKnownPoints(pts, dateStr)
           if (interp) {
-            const fx = interp.currency === 'BRL' ? 1 : await getFxRate(interp.currency)
+            const fx = interp.currency === 'BRL' ? 1 : await getFx(interp.currency)
             value = interp.value * fx
           }
         }
@@ -383,7 +385,7 @@ export async function computePortfolioValueAtMonth(
         if (ph && (phIsExact || !isCurrentOrFuture)) {
           // If the logged DB price represents a total portfolio manual entry rather than unit price
           value = ph.price > 50000 && fiStartDate ? ph.price : ph.price
-          const fx = ph.currency === 'BRL' ? 1 : await getFxRate(ph.currency)
+          const fx = ph.currency === 'BRL' ? 1 : await getFx(ph.currency)
           value = value * fx
         } else {
           const fiPrincipal = Number(a.fi_principal) || 0
@@ -410,16 +412,16 @@ export async function computePortfolioValueAtMonth(
           const ph = getPrice(a.id, ym)
           if (isCurrentOrFuture) {
             if (ph && ph.ref_date.substring(0, 7) === ym) {
-              const fx = await getFxRate(ph.currency)
+              const fx = await getFx(ph.currency)
               value = adjHoldings * ph.price * fx
             } else {
               try {
                 const result = await getCurrentPrice(a as Asset)
-                const fx = result.currency === 'BRL' ? 1 : await getFxRate(result.currency)
+                const fx = result.currency === 'BRL' ? 1 : await getFx(result.currency)
                 value = adjHoldings * result.price * fx
               } catch {
                 if (ph) {
-                  const fx = await getFxRate(ph.currency)
+                  const fx = await getFx(ph.currency)
                   value = adjHoldings * ph.price * fx
                 } else {
                   value = costBasisValue
@@ -428,7 +430,7 @@ export async function computePortfolioValueAtMonth(
             }
           } else {
             if (ph) {
-              const fx = await getFxRate(ph.currency)
+              const fx = await getFx(ph.currency)
               value = adjHoldings * ph.price * fx
             } else {
               value = costBasisValue
