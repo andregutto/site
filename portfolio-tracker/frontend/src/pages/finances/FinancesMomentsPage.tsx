@@ -981,6 +981,8 @@ export default function FinancesMomentsPage() {
   const [selectedTripId, setSelectedTripId] = useState<number | null>(null)
   const [tripOptions, setTripOptions]       = useState<{ id: number; title: string }[]>([])
   const [typeFilter,  setTypeFilter]  = useState<'all' | MomentKind>('all')
+  const [search,      setSearch]      = useState('')
+  const [expandedYears, setExpandedYears] = useState<Set<number>>(() => new Set([new Date().getFullYear()]))
 
   useEffect(() => {
     if (showForm && !editing) {
@@ -1068,7 +1070,17 @@ export default function FinancesMomentsPage() {
   const typeLabel = (k: MomentKind) =>
     k === 'trip' ? t.finances.momentKindTrip : k === 'party' ? t.finances.momentKindParty : k === 'dinner' ? t.finances.momentKindDinner : t.finances.momentKindOther
 
-  const filtered = typeFilter === 'all' ? moments : moments.filter(m => (m.moment_type ?? 'other') === typeFilter)
+  const filtered = moments
+    .filter(m => typeFilter === 'all' || (m.moment_type ?? 'other') === typeFilter)
+    .filter(m => search.trim() === '' || m.name.toLowerCase().includes(search.trim().toLowerCase()))
+
+  function toggleYear(year: number) {
+    setExpandedYears(prev => {
+      const next = new Set(prev)
+      if (next.has(year)) next.delete(year); else next.add(year)
+      return next
+    })
+  }
 
   // Agrupamento por ano — "Este ano" primeiro, anos anteriores em ordem decrescente,
   // mesmo padrão que a Voyage usa pra listas que crescem com o tempo.
@@ -1156,72 +1168,130 @@ export default function FinancesMomentsPage() {
         </div>
       )}
 
-      {/* Type filter — só faz sentido mostrar quando a lista já tem alguma variedade */}
+      {/* Filtro por tipo + busca — a busca fica discreta, alinhada à direita,
+          acima do grupo do ano atual (só compensa quando a lista crescer). */}
       {moments.length > 0 && (
-        <div className="flex flex-wrap gap-1.5">
-          {(['all', 'trip', 'party', 'dinner', 'other'] as const).map(k => (
-            <button
-              key={k} type="button"
-              onClick={() => setTypeFilter(k)}
-              className={`px-3 py-1.5 rounded-full text-xs border transition-colors ${typeFilter === k ? 'border-[var(--arvo-fg)] bg-[var(--arvo-fg)]/10 text-[var(--arvo-fg)]' : 'border-[var(--arvo-border)] text-[var(--arvo-fg-muted)]'}`}
-            >
-              {k === 'all' ? t.common.all : typeLabel(k)}
-            </button>
-          ))}
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div className="flex flex-wrap gap-1.5">
+            {(['all', 'trip', 'party', 'dinner', 'other'] as const).map(k => (
+              <button
+                key={k} type="button"
+                onClick={() => setTypeFilter(k)}
+                className={`px-3 py-1.5 rounded-full text-xs border transition-colors ${typeFilter === k ? 'border-[var(--arvo-fg)] bg-[var(--arvo-fg)]/10 text-[var(--arvo-fg)]' : 'border-[var(--arvo-border)] text-[var(--arvo-fg-muted)]'}`}
+              >
+                {k === 'all' ? t.common.all : typeLabel(k)}
+              </button>
+            ))}
+          </div>
+          <div className="relative">
+            <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--arvo-fg-faint)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 10.5A6.5 6.5 0 114 10.5a6.5 6.5 0 0113 0z" />
+            </svg>
+            <input
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder={t.common.search ?? 'Buscar...'}
+              className="pl-8 pr-3 py-1.5 text-xs rounded-full border border-[var(--arvo-border)] bg-[var(--arvo-surface)] text-[var(--arvo-fg)] w-36 focus:outline-none focus:border-[var(--arvo-gold)] transition-colors"
+            />
+          </div>
         </div>
       )}
 
-      {/* Moments list — linhas compactas, sem expandir inline; clique leva
-          pra página de detalhe própria do momento (mesmo padrão da Voyage). */}
-      {sortedYears.map(year => (
-        <div key={year} className="space-y-2">
-          <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 10, letterSpacing: '0.20em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)' }}>
-            {year === currentYear ? t.common.thisYear : year}
-          </p>
-          <div className="bg-[var(--arvo-surface)] rounded-2xl border border-[var(--arvo-border)] shadow-sm divide-y divide-[var(--arvo-border-soft)] overflow-hidden">
-            {groups.get(year)!.map(m => (
-              <div
-                key={m.id}
-                className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-[var(--arvo-surface-2)] transition-colors group"
-                onClick={() => navigate(`/finances/moments/${m.id}`)}
-              >
-                <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: m.color + '20', color: m.color }}>
-                  <Icon name={resolveMomentIcon(m.icon)} size={17} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-[var(--arvo-fg)] text-sm truncate">{m.name}</p>
-                  {(m.start_date || m.description) && (
-                    <p className="text-xs text-[var(--arvo-fg-soft)] truncate">
-                      {m.start_date && m.end_date
-                        ? `${fmtDate(m.start_date)} – ${fmtDate(m.end_date)}`
-                        : m.start_date
-                        ? `${t.finances.momentFromDate} ${fmtDate(m.start_date)}`
-                        : m.description}
-                    </p>
-                  )}
-                </div>
-                <span
-                  className="text-[10px] px-2 py-0.5 rounded-full shrink-0 hidden sm:inline-block"
-                  style={{ background: 'var(--arvo-hover-bg)', color: 'var(--arvo-fg-muted)' }}
-                >
-                  {typeLabel(m.moment_type ?? 'other')}
-                </span>
-                <button
-                  onClick={e => { e.stopPropagation(); deleteMoment(m.id) }}
-                  className="p-1.5 text-[var(--arvo-fg-faint)] hover:text-red-500 transition-colors rounded-lg opacity-0 group-hover:opacity-100 shrink-0"
-                >
-                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                </button>
-                <svg className="w-4 h-4 text-[var(--arvo-fg-soft)] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                </svg>
+      {/* Moments list — cards com foto (mesma linguagem visual de antes),
+          agrupados por ano em accordion; só o ano atual abre por padrão.
+          Clique no card leva pra página de detalhe própria do momento. */}
+      {sortedYears.map(year => {
+        const isOpen = expandedYears.has(year)
+        return (
+          <div key={year} className="space-y-3">
+            <button
+              type="button"
+              onClick={() => toggleYear(year)}
+              className="flex items-center gap-2 w-full"
+              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+            >
+              <svg className={`w-3 h-3 text-[var(--arvo-fg-soft)] transition-transform ${isOpen ? 'rotate-90' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+              <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 10, letterSpacing: '0.20em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)' }}>
+                {year === currentYear ? t.common.thisYear : year} · {groups.get(year)!.length}
+              </p>
+            </button>
+            {isOpen && (
+              <div className="space-y-3">
+                {groups.get(year)!.map(m => (
+                  <div key={m.id} className="bg-[var(--arvo-surface)] rounded-2xl border border-[var(--arvo-border)] shadow-sm overflow-hidden">
+                    {m.cover_image_url ? (
+                      <div className="h-28 overflow-hidden relative cursor-pointer" onClick={() => navigate(`/finances/moments/${m.id}`)}>
+                        <img src={m.cover_image_url} alt={m.name} className="w-full h-full object-cover"
+                          style={{ objectPosition: m.cover_image_position ?? '50% 50%' }} />
+                        <div style={{ position: 'absolute', bottom: 8, right: 8 }}>
+                          <MomentCollaboratorsHero momentId={m.id} onOpen={() => navigate(`/finances/moments/${m.id}`)} />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="h-20 flex items-center justify-center relative cursor-pointer" style={{ background: 'var(--arvo-surface-2)' }} onClick={() => navigate(`/finances/moments/${m.id}`)}>
+                        <Icon name={resolveMomentIcon(m.icon)} size={36} style={{ color: m.color }} />
+                        <div style={{ position: 'absolute', bottom: 6, right: 6 }}>
+                          <MomentCollaboratorsHero momentId={m.id} onOpen={() => navigate(`/finances/moments/${m.id}`)} />
+                        </div>
+                      </div>
+                    )}
+                    <div
+                      className="flex items-center gap-3 px-5 py-4 cursor-pointer hover:bg-[var(--arvo-surface-2)] transition-colors"
+                      onClick={() => navigate(`/finances/moments/${m.id}`)}
+                    >
+                      <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: m.color + '20', color: m.color }}>
+                        <Icon name={resolveMomentIcon(m.icon)} size={20} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-[var(--arvo-fg)] text-sm truncate">{m.name}</p>
+                        {(m.start_date || m.description) && (
+                          <p className="text-xs text-[var(--arvo-fg-soft)] mt-0.5 truncate">
+                            {m.start_date && m.end_date
+                              ? `${fmtDate(m.start_date)} – ${fmtDate(m.end_date)}`
+                              : m.start_date
+                              ? `${t.finances.momentFromDate} ${fmtDate(m.start_date)}`
+                              : m.description}
+                          </p>
+                        )}
+                      </div>
+                      <span
+                        className="text-[10px] px-2 py-0.5 rounded-full shrink-0 hidden sm:inline-block"
+                        style={{ background: 'var(--arvo-hover-bg)', color: 'var(--arvo-fg-muted)' }}
+                      >
+                        {typeLabel(m.moment_type ?? 'other')}
+                      </span>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <TransformToTripButton momentId={m.id} onTrip={tripId => navigate(`/voyage/${tripId}`)} />
+                        <button
+                          onClick={e => { e.stopPropagation(); setEditing(m); setShowForm(true) }}
+                          className="p-1.5 text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg)] transition-colors rounded-lg hover:bg-[var(--arvo-track-bg)]"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                          </svg>
+                        </button>
+                        <button
+                          onClick={e => { e.stopPropagation(); deleteMoment(m.id) }}
+                          className="p-1.5 text-[var(--arvo-fg-soft)] hover:text-red-500 transition-colors rounded-lg hover:bg-red-50"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                        <svg className="w-4 h-4 text-[var(--arvo-fg-soft)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
+            )}
           </div>
-        </div>
-      ))}
+        )
+      })}
     </div>
   )
 }
