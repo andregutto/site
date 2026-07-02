@@ -446,24 +446,27 @@ export default function FinancesBudgetPage() {
       }
       setCatActuals(actMap)
 
-      // Historical averages: last 3 complete months (excluding current)
+      // Historical averages: last 3 complete months (excluding current). The API only lists a
+      // category under a month's by_envelope.categories when it had actual spend > 0 that month
+      // (see finances.ts spending-summary), so dividing by "months the category appeared in"
+      // (instead of the fixed window size) silently degenerates into "last active month" for any
+      // category that isn't spent on every single month — dividing by pastMonths.length instead
+      // treats months with no spend as 0, giving a true 3-month average.
       const pastMonths = spending.months.filter(m => m.month !== currentMonth).slice(0, 3)
       const histMap = new Map<number, number>()
       if (pastMonths.length > 0) {
         const catSums = new Map<number, number>()
-        const catCounts = new Map<number, number>()
         for (const month of pastMonths) {
           for (const env of month.by_envelope) {
             for (const cat of env.categories) {
               if (cat.actual > 0) {
                 catSums.set(cat.id, (catSums.get(cat.id) ?? 0) + cat.actual)
-                catCounts.set(cat.id, (catCounts.get(cat.id) ?? 0) + 1)
               }
             }
           }
         }
         for (const [id, sum] of catSums) {
-          histMap.set(id, Math.round(sum / (catCounts.get(id) ?? 1)))
+          histMap.set(id, Math.round(sum / pastMonths.length))
         }
       }
       setCatHistoricals(histMap)
