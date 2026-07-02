@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { apiFetch } from '../../lib/api'
 import { supabase } from '../../lib/supabase'
 import { normalizeStorageUrl } from '../../lib/storageUrl'
@@ -107,7 +107,7 @@ export function fmtDate(d: string) {
 
 // ── Form ──────────────────────────────────────────────────────────────────────
 
-type MomentFormData = Omit<Moment, 'id' | 'user_id' | 'created_at' | 'share_token' | 'share_expires_at' | 'share_hide_descriptions'>
+export type MomentFormData = Omit<Moment, 'id' | 'user_id' | 'created_at' | 'share_token' | 'share_expires_at' | 'share_hide_descriptions'>
 
 interface FormProps {
   initial?: Partial<Moment>
@@ -119,7 +119,7 @@ interface FormProps {
 
 type MomentKind = 'trip' | 'party' | 'dinner' | 'other'
 
-function MomentForm({ initial, onSave, onCancel, saving, userId }: FormProps) {
+export function MomentForm({ initial, onSave, onCancel, saving, userId }: FormProps) {
   const { t } = useI18n()
   const [momentKind,   setMomentKind]   = useState<MomentKind>(initial?.moment_type ?? 'other')
   const [autoCreateTrip, setAutoCreateTrip] = useState(true)
@@ -983,7 +983,6 @@ export default function FinancesMomentsPage() {
   const { t } = useI18n()
   const { user } = useAuth()
   const navigate = useNavigate()
-  const location = useLocation()
 
   const [moments,     setMoments]     = useState<Moment[]>([])
   const [loading,     setLoading]     = useState(true)
@@ -1019,18 +1018,6 @@ export default function FinancesMomentsPage() {
   }, [])
 
   useEffect(() => { load() }, [load])
-
-  // Voltando da página de detalhe pelo botão "Editar" — abre o formulário
-  // já preenchido, sem forçar o usuário a achar o momento na lista de novo.
-  useEffect(() => {
-    const editId = (location.state as { editId?: number } | null)?.editId
-    if (editId && moments.length > 0) {
-      const m = moments.find(mm => mm.id === editId)
-      if (m) { setEditing(m); setShowForm(true) }
-      navigate(location.pathname, { replace: true, state: null })
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [moments])
 
   async function saveMoment(data: MomentFormData, opts?: { createTripLinked?: boolean }) {
     setSaving(true)

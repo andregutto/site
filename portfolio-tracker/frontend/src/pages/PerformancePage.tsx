@@ -314,9 +314,12 @@ export default function PerformancePage() {
   const valueChartYDomain = (() => {
     const vals = valueChartData.flatMap(d => [d.value, d.contributions]).filter((v): v is number => typeof v === 'number')
     if (vals.length === 0) return ['auto', 'auto'] as const
-    const max = Math.max(...vals, 0)
-    const min = Math.min(...vals, 0)
-    const pad = (max - min) * 0.1
+    // Don't force 0 into the range — forcing it as a floor candidate pushed the axis
+    // below zero (a negative net worth minimum that never happened) whenever the
+    // actual data stayed comfortably positive and far from zero.
+    const max = Math.max(...vals)
+    const min = Math.min(...vals)
+    const pad = (max - min) * 0.1 || Math.abs(max) * 0.1
     return [Math.floor(min - pad), Math.ceil(max + pad)] as [number, number]
   })()
 

@@ -8,9 +8,9 @@ import { Icon } from '../../components/icons'
 import { resolveMomentIcon } from '../../lib/momentIcons'
 import {
   _fmt, fmtDate, resolveKey, ByUserBreakdown, MomentCollaboratorsHero, TransformToTripButton,
-  ShareModal, AssignModal, MembersPanel,
+  ShareModal, AssignModal, MembersPanel, MomentForm,
 } from './FinancesMomentsPage'
-import type { Moment, MomentDetail, MomentPickerRow, ShareInfo } from './FinancesMomentsPage'
+import type { Moment, MomentDetail, MomentPickerRow, ShareInfo, MomentFormData } from './FinancesMomentsPage'
 
 const RED = '#D63B2F'
 
@@ -70,6 +70,8 @@ export default function MomentDetailPage() {
   const [sharingMoment, setSharingMoment] = useState<Moment | null>(null)
   const [showMembers, setShowMembers] = useState(false)
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
+  const [showEditForm, setShowEditForm] = useState(false)
+  const [savingEdit, setSavingEdit] = useState(false)
 
   const load = useCallback(async () => {
     if (!id) return
@@ -92,6 +94,18 @@ export default function MomentDetailPage() {
     if (!id || !confirm(t.finances.momentConfirmDelete)) return
     await apiFetch(`/finances/moments/${id}`, { method: 'DELETE' })
     navigate('/finances/moments')
+  }
+
+  async function saveEdit(data: MomentFormData) {
+    if (!id) return
+    setSavingEdit(true)
+    try {
+      await apiFetch(`/finances/moments/${id}`, { method: 'PATCH', body: JSON.stringify(data) })
+      setShowEditForm(false)
+      await load()
+    } finally {
+      setSavingEdit(false)
+    }
   }
 
   if (loading) {
@@ -157,7 +171,7 @@ export default function MomentDetailPage() {
             </button>
           )}
           <button
-            onClick={() => navigate('/finances/moments', { state: { editId: m.id } })}
+            onClick={() => setShowEditForm(v => !v)}
             style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'none', border: '1px solid var(--arvo-border)', borderRadius: 7, padding: '5px 11px', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-muted)' }}
           >
             {t.common.edit}
@@ -210,6 +224,19 @@ export default function MomentDetailPage() {
             ? `${t.finances.momentFromDate} ${fmtDate(m.start_date)}`
             : m.description}
         </p>
+      )}
+
+      {showEditForm && (
+        <div className="bg-[var(--arvo-surface)] rounded-2xl border border-[var(--arvo-border)] shadow-sm p-6 mb-4">
+          <h3 className="font-semibold text-[var(--arvo-fg)] mb-4 text-sm">{t.finances.editMoment}</h3>
+          <MomentForm
+            initial={m}
+            onSave={saveEdit}
+            onCancel={() => setShowEditForm(false)}
+            saving={savingEdit}
+            userId={user?.id ?? ''}
+          />
+        </div>
       )}
 
       <div className="space-y-4">
