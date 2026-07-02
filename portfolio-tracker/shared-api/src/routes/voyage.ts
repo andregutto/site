@@ -1257,15 +1257,11 @@ router.post('/trips/:id/places', requireAuth, async (req, res: Response) => {
 
   if (!body.name?.trim()) { res.status(400).json({ error: 'Nome obrigatório' }); return }
 
-  // Adding the same library place to a trip it's already in (e.g. clicking
-  // "Adicionar" twice, or picking it again after losing track) would create
-  // a duplicate itinerary entry — return the existing one instead.
-  if (body.library_place_id != null) {
-    const { data: existingTripPlace } = await supabaseAdmin
-      .from('voyage_trip_places').select('*')
-      .eq('trip_id', tripId).eq('library_place_id', body.library_place_id).maybeSingle()
-    if (existingTripPlace) { res.status(200).json({ place: existingTripPlace }); return }
-  }
+  // A library place can legitimately be visited more than once during a trip (e.g. the
+  // same restaurant on two different days), so it's intentionally NOT deduplicated here —
+  // each "Adicionar" creates its own itinerary entry (voyage_trip_places row) pointing at
+  // the same library_place_id. Deduplication only applies to the place LIBRARY itself
+  // (voyage_places), which is handled where places are searched/created, not here.
 
   const { data: existingPlaces } = await supabaseAdmin
     .from('voyage_trip_places').select('sort_order').eq('trip_id', tripId)

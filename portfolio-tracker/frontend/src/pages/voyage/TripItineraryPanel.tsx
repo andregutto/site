@@ -1086,8 +1086,17 @@ export default function TripItineraryPanel({ tripId, tripCity, tripCountry, trip
               forceOpen forceMode="url"
               onClose={() => setActiveTool(null)}
               onAdded={p => {
-                if (activeTool === 'stay') setPendingStayItemId(p.id)
-                load()
+                const wasStay = activeTool === 'stay'
+                if (wasStay) setPendingStayItemId(p.id)
+                load().then(() => {
+                  // One-shot: ItemRow reads autoOpenStay only at mount to seed its own
+                  // expanded/showStayFields state. If pendingStayItemId is never cleared,
+                  // it keeps matching whatever place is later added at that id — e.g. a
+                  // subsequent reload remounting an unrelated card (like Heeton Concept)
+                  // with its "Mais" panel stuck open. Clear it after the fetch that
+                  // rendered the new item with autoOpenStay=true has committed.
+                  if (wasStay) setTimeout(() => setPendingStayItemId(null), 0)
+                })
               }}
             />
           )}
