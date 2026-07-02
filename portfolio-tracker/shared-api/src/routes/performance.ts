@@ -11,6 +11,26 @@ const yf = new YahooFinance({ suppressNotices: ['yahooSurvey', 'ripHistorical'] 
 
 const router = Router()
 
+// getFxRate(currency) only depends on the currency pair (it always returns AwesomeAPI's "current"
+// rate via the shared TTL cache — see lib/fx.ts), never on the historical date being valued. So
+// within a single request, computePortfolioValueAtMonth/AtDay call it many times (once per
+// FX-denominated asset, per month/day) with the exact same arguments and get the exact same
+// already-resolved value back every time. `cache.getOrFetch` already avoids the HTTP round-trip,
+// but each call still pays a fresh Promise + microtask hop. A tiny per-request Map of
+// currency -> in-flight/resolved Promise<number> collapses all of those into a single lookup per
+// currency per request, with zero change to the returned rate.
+function makeFxMemo(): (currency: string) => Promise<number> {
+  const memo = new Map<string, Promise<number>>()
+  return (currency: string) => {
+    let p = memo.get(currency)
+    if (!p) {
+      p = getFxRate(currency)
+      memo.set(currency, p)
+    }
+    return p
+  }
+}
+
 // Use local date components to avoid UTC offset shifting months
 export function localDate(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
@@ -220,6 +240,20 @@ export function computeSplitFactorEvents(
   return events
 }
 
+// Split events depend only on an asset's full contribution history, not on the month/day being
+// evaluated. computePortfolioValueAtMonth/computePortfolioValueAtDay are invoked once per
+// month (or per day, for /daily — far more calls) over the SAME `data.contributions`, so
+// recomputing this filter+sort per call is pure repeated work. Callers that loop over many
+// months/days for one `data` object should build this map once and pass it through.
+export function buildSplitEventsCache(
+  contributions: PrefetchedData['contributions'],
+  assetIds: number[]
+): Map<number, SplitFactorEvent[]> {
+  const cache = new Map<number, SplitFactorEvent[]>()
+  for (const id of assetIds) cache.set(id, computeSplitFactorEvents(contributions, id))
+  return cache
+}
+
 // Adjustment factor to apply to nominal holdings computed as-of `dateStr`, so the result is
 // consistent with a split-adjusted price series. Equals the product of all split factors for
 // events that occur strictly after dateStr (future splits get "baked back" into past holdings).
@@ -235,7 +269,8 @@ export function getSplitAdjustmentFactor(events: SplitFactorEvent[], dateStr: st
 export async function computePortfolioValueAtMonth(
   data: PrefetchedData,
   year: number,
-  month: number
+  month: number,
+  splitEventsCache?: Map<number, SplitFactorEvent[]>
 ): Promise<{ total: number; detail: Array<{ asset_id: number; value: number }> }> {
   const ym      = `${year}-${String(month).padStart(2, '0')}`
   const lastDay = new Date(year, month, 0).getDate()
@@ -370,7 +405,7 @@ export async function computePortfolioValueAtMonth(
         // Ticker / Variable income assets logic
         if (!a.active) continue
         if (holdings > 0) {
-          const splitEvents = computeSplitFactorEvents(allContribs, a.id)
+          const splitEvents = splitEventsCache?.get(a.id) ?? computeSplitFactorEvents(allContribs, a.id)
           const adjHoldings = holdings * getSplitAdjustmentFactor(splitEvents, dateStr)
           const ph = getPrice(a.id, ym)
           if (isCurrentOrFuture) {
@@ -462,9 +497,10 @@ export async function computePerformanceSummary(
       return s + (c.type === 'buy' ? v : -v)
     }, 0)
 
+  const splitEventsCache = buildSplitEventsCache(data.contributions, data.assets.map(a => a.id))
   const [start, end] = await Promise.all([
-    computePortfolioValueAtMonth(data, prevY,      prevM),
-    computePortfolioValueAtMonth(data, clampedToY, clampedToM),
+    computePortfolioValueAtMonth(data, prevY,      prevM,      splitEventsCache),
+    computePortfolioValueAtMonth(data, clampedToY, clampedToM, splitEventsCache),
   ])
 
   const v_ini = start.total
@@ -521,9 +557,10 @@ export async function computePerformanceSummaryDaily(userId: string, fromDateStr
       return s + (c.type === 'buy' ? v : -v)
     }, 0)
 
+  const splitEventsCache = buildSplitEventsCache(data.contributions, data.assets.map(a => a.id))
   const [start, end] = await Promise.all([
-    computePortfolioValueAtDay(data, startDateStr, pricesByAsset),
-    computePortfolioValueAtDay(data, clampedToDateStr, pricesByAsset),
+    computePortfolioValueAtDay(data, startDateStr, pricesByAsset, splitEventsCache),
+    computePortfolioValueAtDay(data, clampedToDateStr, pricesByAsset, splitEventsCache),
   ])
 
   const v_ini = start.total
@@ -616,11 +653,12 @@ export async function computeMonthlySeries(
     }
   }
 
+  const splitEventsCache = buildSplitEventsCache(data.contributions, data.assets.map(a => a.id))
   const [prevMonthResult, valuesArr] = await Promise.all([
-    computePortfolioValueAtMonth(data, prevY, prevM),
+    computePortfolioValueAtMonth(data, prevY, prevM, splitEventsCache),
     Promise.all(
       months.map(async ({ year: y, month: m, label }) => {
-        const { total, detail } = await computePortfolioValueAtMonth(data, y, m)
+        const { total, detail } = await computePortfolioValueAtMonth(data, y, m, splitEventsCache)
         return { month: label, total, detail }
       })
     ),
@@ -703,7 +741,8 @@ router.get('/monthly', requireAuth, async (req, res: Response) => {
 export async function computePortfolioValueAtDay(
   data: PrefetchedData,
   dateStr: string,
-  pricesByAsset: Record<number, Array<{ ref_date: string; price: number; currency: string }>>
+  pricesByAsset: Record<number, Array<{ ref_date: string; price: number; currency: string }>>,
+  splitEventsCache?: Map<number, SplitFactorEvent[]>
 ): Promise<{ total: number; detail: Array<{ asset_id: number; value: number }> }> {
   const isCurrentOrFuture = dateStr >= localDate(new Date())
 
@@ -821,7 +860,7 @@ export async function computePortfolioValueAtDay(
         }
       } else {
         if (holdings > 0) {
-          const splitEvents = computeSplitFactorEvents(allContribs, a.id)
+          const splitEvents = splitEventsCache?.get(a.id) ?? computeSplitFactorEvents(allContribs, a.id)
           const adjHoldings = holdings * getSplitAdjustmentFactor(splitEvents, dateStr)
           const ph = getPriceAtDay(a.id)
           const phIsExact = ph?.ref_date === dateStr
@@ -885,7 +924,8 @@ router.get('/daily', requireAuth, async (req, res: Response) => {
   const end = new Date(toStr   + 'T12:00:00')
   while (cur <= end) { dates.push(localDate(cur)); cur.setDate(cur.getDate() + 1) }
 
-  const values = await Promise.all(dates.map(d => computePortfolioValueAtDay(prefetched, d, pricesByAsset)))
+  const splitEventsCache = buildSplitEventsCache(prefetched.contributions, prefetched.assets.map(a => a.id))
+  const values = await Promise.all(dates.map(d => computePortfolioValueAtDay(prefetched, d, pricesByAsset, splitEventsCache)))
 
   const contribsByDay: Record<string, number> = {}
   // Running total since inception through days BEFORE the window — mirrors the
