@@ -2453,6 +2453,8 @@
     "view": "Voir →",
     "removeAccessTitle": "Supprimer l'accès",
     "connectedTooltip": "Vous êtes connectés — les invitations entre vous peuvent être acceptées automatiquement",
+    "balanceTheyOweYou": "Cette personne vous doit ce montant (dépenses partagées dans des Moments)",
+    "balanceYouOweThem": "Vous devez ce montant à cette personne (dépenses partagées dans des Moments)",
     "removePersonButton": "Supprimer cette personne",
     "removeCategoryConfirm": "Supprimer l'accès de {email} à la catégorie « {name} » ?",
     "shareButton": "+ Partager"

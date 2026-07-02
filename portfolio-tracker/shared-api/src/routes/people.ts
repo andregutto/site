@@ -392,6 +392,39 @@ router.get('/', async (req: any, res: any) => {
       })
     }
 
+    // ── 5.5 Saldo agregado por amigo (Splitwise-lite) ──────────────────────────
+    // Soma finance_moment_expense_shares de TODOS os Momentos compartilhados com o
+    // usuário (donos ou membros) — não só o momento aberto no momento — pra responder
+    // "quanto eu devo/me devem no total com essa pessoa" na página Pessoas.
+    const allMomentIds = [...new Set([...ownedMomentIds, ...(myMomentMemberships ?? []).map((m: any) => m.moment_id)])]
+    // balanceByUser[otherUserId][currency]: positivo = a pessoa me deve, negativo = eu devo a ela
+    const balanceByUser: Record<string, Record<string, number>> = {}
+    if (allMomentIds.length > 0) {
+      const { data: expenseRows } = await supabaseAdmin
+        .from('finance_moment_expenses')
+        .select('paid_by_user_id, currency, finance_moment_expense_shares(user_id, share_amount)')
+        .in('moment_id', allMomentIds)
+
+      for (const e of expenseRows ?? []) {
+        const payer = (e as any).paid_by_user_id as string
+        const currency = (e as any).currency as string
+        const shares = ((e as any).finance_moment_expense_shares ?? []) as { user_id: string; share_amount: number }[]
+        if (payer === userId) {
+          for (const s of shares) {
+            if (s.user_id === userId) continue
+            balanceByUser[s.user_id] ??= {}
+            balanceByUser[s.user_id][currency] = (balanceByUser[s.user_id][currency] ?? 0) + s.share_amount
+          }
+        } else {
+          const mine = shares.find(s => s.user_id === userId)
+          if (mine) {
+            balanceByUser[payer] ??= {}
+            balanceByUser[payer][currency] = (balanceByUser[payer][currency] ?? 0) - mine.share_amount
+          }
+        }
+      }
+    }
+
     // ── 6. Enriquecer com avatar_url (e nome, se faltar) para contatos com user_id ──
     const contacts = Array.from(contactMap.values())
     const idsNeedingDisplay = [...new Set(contacts.filter(c => c.user_id).map(c => c.user_id as string))]
@@ -407,6 +440,15 @@ router.get('/', async (req: any, res: any) => {
           if (!c.name) c.name = displayMap[c.user_id].name
         }
       }
+    }
+
+    for (const c of contacts) {
+      const perCurrency = c.user_id ? balanceByUser[c.user_id] : undefined
+      c.balances = perCurrency
+        ? Object.entries(perCurrency)
+            .map(([currency, amount]) => ({ currency, amount: Math.round(amount * 100) / 100 }))
+            .filter(b => Math.abs(b.amount) >= 0.01)
+        : []
     }
 
     res.json({ contacts })

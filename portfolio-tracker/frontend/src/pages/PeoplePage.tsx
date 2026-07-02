@@ -50,6 +50,8 @@ interface FriendContext {
 
 type Context = TripContext | FinanceContext | MomentContext | FriendContext
 
+interface Balance { currency: string; amount: number }
+
 interface Contact {
   email: string
   name?: string
@@ -58,6 +60,7 @@ interface Contact {
   user_id: string | null
   status: 'active' | 'pending'
   contexts: Context[]
+  balances?: Balance[]
 }
 
 interface Trip { id: number; title: string }
@@ -304,6 +307,21 @@ function ContactCard({
             {contact.email}
           </p>
         </div>
+        {/* Saldo agregado de despesas divididas — soma finance_moment_expense_shares de
+            TODOS os Momentos compartilhados com essa pessoa, não só um. Positivo = ela
+            me deve, negativo = eu devo a ela (ver GET /people no backend). */}
+        {(contact.balances ?? []).map(b => (
+          <span
+            key={b.currency}
+            title={b.amount > 0 ? t.people.balanceTheyOweYou : t.people.balanceYouOweThem}
+            style={{
+              flexShrink: 0, fontFamily: 'var(--arvo-font-body)', fontSize: 12, fontWeight: 600,
+              color: b.amount > 0 ? '#1F8A5B' : RED,
+            }}
+          >
+            {b.amount > 0 ? '+' : '−'}{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: b.currency, minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(Math.abs(b.amount))}
+          </span>
+        ))}
         {/* Badge único de relação — só aparece se houver conexão de amizade
             (direta ou pendente); o tooltip explica o que cada estado significa,
             já que "Ativo" sozinho não dizia nada sobre o que está conectado. */}
