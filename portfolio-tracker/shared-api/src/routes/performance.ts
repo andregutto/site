@@ -350,10 +350,10 @@ export async function computePortfolioValueAtMonth(
     }
   }
 
-  const detail: Array<{ asset_id: number; value: number }> = []
-  let total = 0
-
-  for (const a of assets) {
+  // Assets are independent of each other here (each reads only its own slice of the
+  // pre-built maps above and writes only to its own `value`/`detail` entry), so the awaits
+  // for FX/BCB/live-price lookups can run concurrently instead of one-asset-at-a-time.
+  const perAsset = await Promise.all(assets.map(async (a): Promise<{ asset_id: number; value: number } | null> => {
     let value = 0
     const holdings = holdingsMap[a.id] ?? 0
     const cost = costMap[a.id]
@@ -361,7 +361,7 @@ export async function computePortfolioValueAtMonth(
 
     try {
       if (a.asset_type === 'manual') {
-        if (!a.active) continue
+        if (!a.active) return null
         const anchor = firstBuyMap[a.id]
         const mvPts = allMVByAsset[a.id] ?? []
         if (anchor || mvPts.length > 0) {
@@ -374,10 +374,10 @@ export async function computePortfolioValueAtMonth(
           }
         }
       } else if (a.asset_type === 'fixed_income') {
-        if (!a.active) continue
+        if (!a.active) return null
         const fiStartDate = (a.fi_start_date as string | null)
         const fiEarliestStart = fiStartDate ?? fiTranchesMap[a.id]?.[0]?.start_date ?? null
-        if (fiEarliestStart && fiEarliestStart > dateStr) continue
+        if (fiEarliestStart && fiEarliestStart > dateStr) return null
 
         const ph = getPrice(a.id, ym)
         const phIsExact = ph?.ref_date.substring(0, 7) === ym
@@ -405,7 +405,7 @@ export async function computePortfolioValueAtMonth(
         }
       } else {
         // Ticker / Variable income assets logic
-        if (!a.active) continue
+        if (!a.active) return null
         if (holdings > 0) {
           const splitEvents = splitEventsCache?.get(a.id) ?? computeSplitFactorEvents(allContribs, a.id)
           const adjHoldings = holdings * getSplitAdjustmentFactor(splitEvents, dateStr)
@@ -440,10 +440,15 @@ export async function computePortfolioValueAtMonth(
       }
     } catch { value = costBasisValue }
 
-    if (value > 0) {
-      detail.push({ asset_id: a.id, value: Math.round(value * 100) / 100 })
-      total += value
-    }
+    return value > 0 ? { asset_id: a.id, value: Math.round(value * 100) / 100 } : null
+  }))
+
+  const detail: Array<{ asset_id: number; value: number }> = []
+  let total = 0
+  for (const r of perAsset) {
+    if (!r) continue
+    detail.push(r)
+    total += r.value
   }
 
   return { total: Math.round(total * 100) / 100, detail }
@@ -500,9 +505,10 @@ export async function computePerformanceSummary(
     }, 0)
 
   const splitEventsCache = buildSplitEventsCache(data.contributions, data.assets.map(a => a.id))
+  const fxMemo = makeFxMemo()
   const [start, end] = await Promise.all([
-    computePortfolioValueAtMonth(data, prevY,      prevM,      splitEventsCache),
-    computePortfolioValueAtMonth(data, clampedToY, clampedToM, splitEventsCache),
+    computePortfolioValueAtMonth(data, prevY,      prevM,      splitEventsCache, fxMemo),
+    computePortfolioValueAtMonth(data, clampedToY, clampedToM, splitEventsCache, fxMemo),
   ])
 
   const v_ini = start.total
@@ -560,9 +566,10 @@ export async function computePerformanceSummaryDaily(userId: string, fromDateStr
     }, 0)
 
   const splitEventsCache = buildSplitEventsCache(data.contributions, data.assets.map(a => a.id))
+  const fxMemo = makeFxMemo()
   const [start, end] = await Promise.all([
-    computePortfolioValueAtDay(data, startDateStr, pricesByAsset, splitEventsCache),
-    computePortfolioValueAtDay(data, clampedToDateStr, pricesByAsset, splitEventsCache),
+    computePortfolioValueAtDay(data, startDateStr, pricesByAsset, splitEventsCache, fxMemo),
+    computePortfolioValueAtDay(data, clampedToDateStr, pricesByAsset, splitEventsCache, fxMemo),
   ])
 
   const v_ini = start.total
@@ -656,11 +663,12 @@ export async function computeMonthlySeries(
   }
 
   const splitEventsCache = buildSplitEventsCache(data.contributions, data.assets.map(a => a.id))
+  const fxMemo = makeFxMemo()
   const [prevMonthResult, valuesArr] = await Promise.all([
-    computePortfolioValueAtMonth(data, prevY, prevM, splitEventsCache),
+    computePortfolioValueAtMonth(data, prevY, prevM, splitEventsCache, fxMemo),
     Promise.all(
       months.map(async ({ year: y, month: m, label }) => {
-        const { total, detail } = await computePortfolioValueAtMonth(data, y, m, splitEventsCache)
+        const { total, detail } = await computePortfolioValueAtMonth(data, y, m, splitEventsCache, fxMemo)
         return { month: label, total, detail }
       })
     ),
@@ -744,8 +752,10 @@ export async function computePortfolioValueAtDay(
   data: PrefetchedData,
   dateStr: string,
   pricesByAsset: Record<number, Array<{ ref_date: string; price: number; currency: string }>>,
-  splitEventsCache?: Map<number, SplitFactorEvent[]>
+  splitEventsCache?: Map<number, SplitFactorEvent[]>,
+  fxMemo?: (currency: string) => Promise<number>
 ): Promise<{ total: number; detail: Array<{ asset_id: number; value: number }> }> {
+  const getFx = fxMemo ?? getFxRate
   const isCurrentOrFuture = dateStr >= localDate(new Date())
 
   const { assets, contributions: allContribs, manualValues: allMVRaw } = data
@@ -805,10 +815,10 @@ export async function computePortfolioValueAtDay(
     firstBuyMap[c.asset_id] = { ref_date: c.date as string, value: vBrl, currency: 'BRL' }
   }
 
-  let total = 0
-  const detail: Array<{ asset_id: number; value: number }> = []
-  for (const a of assets) {
-    if (!a.active) continue
+  // Assets are independent of each other here (same reasoning as computePortfolioValueAtMonth
+  // above), so the FX/BCB/live-price awaits can run concurrently instead of serially per asset.
+  const perAsset = await Promise.all(assets.map(async (a): Promise<{ asset_id: number; value: number } | null> => {
+    if (!a.active) return null
     let value = 0
     const holdings = holdingsMap[a.id] ?? 0
     const cost = costMap[a.id]
@@ -823,19 +833,19 @@ export async function computePortfolioValueAtDay(
           pts.sort((x, y) => x.ref_date.localeCompare(y.ref_date))
           const interp = interpolateKnownPointsDaily(pts, dateStr)
           if (interp) {
-            const fx = interp.currency === 'BRL' ? 1 : await getFxRate(interp.currency)
+            const fx = interp.currency === 'BRL' ? 1 : await getFx(interp.currency)
             value = interp.value * fx
           }
         }
       } else if (a.asset_type === 'fixed_income') {
         const fiStartDate     = a.fi_start_date as string | null
         const fiEarliestStart = fiStartDate ?? fiTranchesMap[a.id]?.[0]?.start_date ?? null
-        if (fiEarliestStart && fiEarliestStart > dateStr) continue
+        if (fiEarliestStart && fiEarliestStart > dateStr) return null
 
         const ph = getPriceAtDay(a.id)
         const phIsExact = ph?.ref_date === dateStr
         if (ph && (phIsExact || !isCurrentOrFuture)) {
-          const fx = ph.currency === 'BRL' ? 1 : await getFxRate(ph.currency)
+          const fx = ph.currency === 'BRL' ? 1 : await getFx(ph.currency)
           value = ph.price * fx
         } else {
           const fiPrincipal = Number(a.fi_principal) || 0
@@ -869,24 +879,29 @@ export async function computePortfolioValueAtDay(
           if (isCurrentOrFuture && !phIsExact) {
             try {
               const result = await getCurrentPrice(a as Asset)
-              const fx = result.currency === 'BRL' ? 1 : await getFxRate(result.currency)
+              const fx = result.currency === 'BRL' ? 1 : await getFx(result.currency)
               value = adjHoldings * result.price * fx
             } catch {
-              if (ph) { const fx = await getFxRate(ph.currency); value = adjHoldings * ph.price * fx }
+              if (ph) { const fx = await getFx(ph.currency); value = adjHoldings * ph.price * fx }
               else     { value = costBasisValue }
             }
           } else {
-            if (ph) { const fx = await getFxRate(ph.currency); value = adjHoldings * ph.price * fx }
+            if (ph) { const fx = await getFx(ph.currency); value = adjHoldings * ph.price * fx }
             else     { value = costBasisValue }
           }
         }
       }
     } catch { value = costBasisValue }
 
-    if (value > 0) {
-      detail.push({ asset_id: a.id, value: Math.round(value * 100) / 100 })
-      total += value
-    }
+    return value > 0 ? { asset_id: a.id, value: Math.round(value * 100) / 100 } : null
+  }))
+
+  let total = 0
+  const detail: Array<{ asset_id: number; value: number }> = []
+  for (const r of perAsset) {
+    if (!r) continue
+    detail.push(r)
+    total += r.value
   }
 
   return { total: Math.round(total * 100) / 100, detail }
@@ -927,7 +942,8 @@ router.get('/daily', requireAuth, async (req, res: Response) => {
   while (cur <= end) { dates.push(localDate(cur)); cur.setDate(cur.getDate() + 1) }
 
   const splitEventsCache = buildSplitEventsCache(prefetched.contributions, prefetched.assets.map(a => a.id))
-  const values = await Promise.all(dates.map(d => computePortfolioValueAtDay(prefetched, d, pricesByAsset, splitEventsCache)))
+  const fxMemo = makeFxMemo()
+  const values = await Promise.all(dates.map(d => computePortfolioValueAtDay(prefetched, d, pricesByAsset, splitEventsCache, fxMemo)))
 
   const contribsByDay: Record<string, number> = {}
   // Running total since inception through days BEFORE the window — mirrors the
