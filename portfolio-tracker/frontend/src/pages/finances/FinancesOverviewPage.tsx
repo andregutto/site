@@ -484,7 +484,15 @@ export default function FinancesOverviewPage() {
   }
   const missingRecurrents: { id: number; name: string; icon: string; amount: number }[] = []
   let missingTotal = 0
-  if (isCurrentMonth && pastMonthsData.length > 0 && totalBudgeted > 0) {
+  // Total historical median of EVERY qualifying recurring category (rent, etc.), regardless of
+  // whether it's already been recorded this cycle. This must come out of the daily rate
+  // unconditionally: a lump-sum paid once per cycle isn't a "per day" cost, so leaving it in
+  // histDailyAvg and then multiplying by daysRemaining re-projects it a second time for the
+  // rest of the month even when it was already paid in full at the start of the cycle (the old
+  // code only subtracted the ones still "missing", so already-paid rent kept inflating the
+  // projection for every day left in the month).
+  let recurringHistTotal = 0
+  if (pastMonthsData.length > 0 && totalBudgeted > 0) {
     for (const [catId, hist] of catHistMap.entries()) {
       if (hist.amounts.length < pastMonthsData.length) continue // must appear in every past month
       const sorted = [...hist.amounts].sort((a, b) => a - b)
@@ -495,15 +503,19 @@ export default function FinancesOverviewPage() {
       if (maxAmt > minAmt * 3) continue
       // Only significant fixed items: median ≥ 20% of budget
       if (medianAmt < totalBudgeted * 0.20) continue
-      const current = currentCatActuals.get(catId) ?? 0
-      if (current < minAmt * 0.25) { // less than 25% of lowest historical month → not yet recorded
-        missingRecurrents.push({ id: catId, name: hist.name, icon: hist.icon, amount: Math.round(medianAmt) })
-        missingTotal += medianAmt
+      recurringHistTotal += medianAmt
+      if (isCurrentMonth) {
+        const current = currentCatActuals.get(catId) ?? 0
+        if (current < minAmt * 0.25) { // less than 25% of lowest historical month → not yet recorded
+          missingRecurrents.push({ id: catId, name: hist.name, icon: hist.icon, amount: Math.round(medianAmt) })
+          missingTotal += medianAmt
+        }
       }
     }
   }
-  // Subtract recurring component from daily avg to avoid double-counting
-  const adjustedDailyAvg = Math.max(0, histDailyAvg - (avgMonthDays > 0 ? missingTotal / avgMonthDays : 0))
+  // Strip the full recurring lump sum out of the daily rate (not just the still-missing part),
+  // then missingTotal alone adds back only what hasn't actually been recorded this cycle.
+  const adjustedDailyAvg = Math.max(0, histDailyAvg - (avgMonthDays > 0 ? recurringHistTotal / avgMonthDays : 0))
 
   // For current month: project using actual + missing recurrents + adjusted daily avg × remaining
   // For past months: display value = actual expenses (the real result)
