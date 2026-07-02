@@ -6,7 +6,6 @@ import { useI18n } from '../../contexts/I18nContext'
 import { useCurrency } from '../../contexts/CurrencyContext'
 import { Icon } from '../../components/icons'
 import { resolveMomentIcon } from '../../lib/momentIcons'
-import Avatar from '../voyage/_shared/Avatar'
 import {
   _fmt, fmtDate, resolveKey, ByUserBreakdown, MomentCollaboratorsHero, TransformToTripButton,
   ShareModal, AssignModal, MembersPanel,
@@ -204,7 +203,7 @@ export default function MomentDetailPage() {
       </div>
 
       {(m.start_date || m.description) && (
-        <p style={{ fontFamily: 'var(--arvo-font-serif)', fontStyle: 'italic', fontSize: 13.5, color: 'var(--arvo-fg-soft)', marginBottom: 20 }}>
+        <p style={{ fontFamily: 'var(--arvo-font-serif)', fontStyle: 'italic', fontSize: 12.5, color: 'var(--arvo-fg-soft)', letterSpacing: '0.01em', marginBottom: 20 }}>
           {m.start_date && m.end_date
             ? `${fmtDate(m.start_date)} – ${fmtDate(m.end_date)}`
             : m.start_date
@@ -214,34 +213,35 @@ export default function MomentDetailPage() {
       )}
 
       <div className="space-y-4">
-        {/* Summary — the "who paid" mini chip fills what used to be dead space beside the
-            two stats; the full breakdown with bars still lives in its own section below. */}
+        {/* Summary — a compact budget indicator (same narrow-bar style as Overview's envelope
+            rows) fills the space beside the two stats, instead of singling out "who paid
+            most" up here, which read as a competition and just repeated the full per-person
+            breakdown that already lives in its own section below. */}
         <div className="flex items-center justify-between gap-4 flex-wrap">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-5">
             <div>
-              <p className="text-xs text-[var(--arvo-fg-soft)]">{t.finances.momentTotal}</p>
-              <p className="text-xl font-bold text-[var(--arvo-fg)]">{fmt(summary.total, currency)}</p>
+              <p className="text-sm text-[var(--arvo-fg-soft)]">{t.finances.momentTotal}</p>
+              <p className="text-3xl font-bold text-[var(--arvo-fg)]">{fmt(summary.total, currency)}</p>
             </div>
             <div>
-              <p className="text-xs text-[var(--arvo-fg-soft)]">{t.finances.momentTransactions}</p>
-              <p className="text-xl font-bold text-[var(--arvo-fg)]">{transactions.filter(tx => tx.amount < 0).length}</p>
+              <p className="text-sm text-[var(--arvo-fg-soft)]">{t.finances.momentTransactions}</p>
+              <p className="text-3xl font-bold text-[var(--arvo-fg)]">{transactions.filter(tx => tx.amount < 0).length}</p>
             </div>
           </div>
-          {summary.by_user.length > 1 && (() => {
-            const top = [...summary.by_user].sort((a, b) => b.total - a.total)[0]
-            const topPct = summary.total > 0 ? Math.round((top.total / summary.total) * 100) : 0
+          {m.budget != null && (() => {
+            const spent = summary.total
+            const pct = Math.min(100, (spent / m.budget!) * 100)
+            const over = spent > m.budget!
             return (
-              <div className="flex items-center gap-2">
-                <div className="flex -space-x-2">
-                  {summary.by_user.slice(0, 3).map(u => (
-                    <div key={u.user_id} style={{ border: '2px solid var(--arvo-surface)', borderRadius: '50%' }}>
-                      <Avatar name={u.display?.name} email={u.display?.email} avatarUrl={u.display?.avatar_url} size={26} />
-                    </div>
-                  ))}
+              <div>
+                <div className="flex items-center justify-between gap-3 mb-1">
+                  <span className="text-xs text-[var(--arvo-fg-soft)]">{t.finances.momentBudget}</span>
+                  <span className="text-xs font-medium" style={{ color: over ? 'var(--arvo-red)' : 'var(--arvo-fg-muted)' }}>
+                    {over ? t.finances.momentBudgetOver : `${pct.toFixed(0)}%`}
+                  </span>
                 </div>
-                <div>
-                  <p className="text-[10px] text-[var(--arvo-fg-soft)] uppercase tracking-wide">{t.finances.momentByUserTitle}</p>
-                  <p className="text-xs text-[var(--arvo-fg-muted)]">{top.display?.name ?? '—'} · {topPct}%</p>
+                <div className="h-1.5 w-24 ml-auto bg-[var(--arvo-track-bg)] rounded-full overflow-hidden">
+                  <div className="h-full rounded-full transition-all" style={{ width: `${pct.toFixed(1)}%`, backgroundColor: over ? 'var(--arvo-red)' : m.color }} />
                 </div>
               </div>
             )
