@@ -159,8 +159,8 @@ function PlanForm({ initial, portfolio, ipcaAnnual, hicpAnnual, cpiAnnual, userC
     ? Math.floor((Date.now() - new Date(birthdate + 'T00:00:00').getTime()) / (365.25 * 24 * 60 * 60 * 1000))
     : null
 
-  // step: 0=goal(new only), 1=info, 2=capital, 3=target+strategy (merged)
-  const [step, setStep]           = useState(isNew ? 0 : 1)
+  // step: 0=goal, 1=info, 2=capital, 3=target+strategy (merged) — same flow for new and edit
+  const [step, setStep]           = useState(0)
   const [goalMode, setGoalMode]   = useState<'capital' | 'income'>(initial.goal_mode ?? 'capital')
   const [currency, setCurrencyState] = useState(initial.currency ?? 'EUR')
   const [name, setName]           = useState(initial.name ?? '')
@@ -316,9 +316,8 @@ function PlanForm({ initial, portfolio, ipcaAnnual, hicpAnnual, cpiAnnual, userC
   const fieldCls = 'w-full border border-[var(--arvo-border)] rounded-[3px] px-3 py-2 text-sm bg-[var(--arvo-surface)] text-[var(--arvo-fg)] focus:outline-none focus:border-[var(--arvo-gold)] focus:ring-2 focus:ring-[var(--arvo-gold)]/25'
   const labelCls = 'block text-xs text-[var(--arvo-fg-muted)] mb-1'
 
-  // Steps 0=goal(new only), 1=info, 2=capital, 3=target+strategy (merged)
-  // Edit mode starts at step 1, so totalSteps = 3; new mode starts at 0, totalSteps = 4
-  const firstStep   = isNew ? 0 : 1
+  // Steps 0=goal, 1=info, 2=capital, 3=target+strategy (merged) — same flow for new and edit
+  const firstStep   = 0
   const lastStep    = 3
   const isLastStep  = step === lastStep
 
@@ -372,7 +371,15 @@ function PlanForm({ initial, portfolio, ipcaAnnual, hicpAnnual, cpiAnnual, userC
               <button
                 key={mode}
                 type="button"
-                onClick={() => { setGoalMode(mode); setStep(1) }}
+                onClick={() => {
+                  // Switching from 'income' to 'capital': carry over the currently
+                  // computed target as the starting value instead of leaving it stale/blank.
+                  if (mode === 'capital' && goalMode === 'income' && computedTarget != null) {
+                    setTarget(String(computedTarget))
+                  }
+                  setGoalMode(mode)
+                  setStep(1)
+                }}
                 className={`p-5 rounded-2xl border-2 text-left transition-all hover:shadow-md ${
                   goalMode === mode
                     ? 'border-[var(--arvo-fg)] bg-[var(--arvo-fg)]/5 shadow-sm'
