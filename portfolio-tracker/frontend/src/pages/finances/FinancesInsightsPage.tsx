@@ -127,33 +127,33 @@ export default function FinancesInsightsPage() {
   const [feeResult, setFeeResult] = useState<FeeScanResult | null>(null)
   const [feeError, setFeeError] = useState<string | null>(null)
 
-  useEffect(() => {
-    async function loadSubscriptions() {
-      let legacyKeys: string[] = []
-      try { legacyKeys = JSON.parse(localStorage.getItem('arvo_dismissed_subs') ?? '[]') } catch { /* ignore */ }
+  async function loadSubscriptions() {
+    let legacyKeys: string[] = []
+    try { legacyKeys = JSON.parse(localStorage.getItem('arvo_dismissed_subs') ?? '[]') } catch { /* ignore */ }
 
-      const [subsRes, dismissedRes] = await Promise.all([
-        apiFetch<{ subscriptions: Subscription[] }>('/finances/subscriptions'),
-        apiFetch<{ dismissed: DismissedSub[] }>('/finances/subscriptions/dismissed'),
-      ])
+    const [subsRes, dismissedRes] = await Promise.all([
+      apiFetch<{ subscriptions: Subscription[] }>('/finances/subscriptions'),
+      apiFetch<{ dismissed: DismissedSub[] }>('/finances/subscriptions/dismissed'),
+    ])
 
-      let dismissedList = dismissedRes.dismissed
-      const knownKeys = new Set(dismissedList.map(d => d.key))
-      const toMigrate = legacyKeys.filter(k => !knownKeys.has(k))
-      if (toMigrate.length > 0) {
-        await Promise.all(toMigrate.map(key => {
-          const sub = subsRes.subscriptions.find(s => s.key === key)
-          return apiFetch('/finances/subscriptions/dismiss', { method: 'POST', body: JSON.stringify({ key, name: sub?.name ?? '' }) })
-        }))
-        const refreshed = await apiFetch<{ dismissed: DismissedSub[] }>('/finances/subscriptions/dismissed')
-        dismissedList = refreshed.dismissed
-      }
-      if (legacyKeys.length > 0) localStorage.removeItem('arvo_dismissed_subs')
-
-      setSubscriptions(subsRes.subscriptions)
-      setDismissed(dismissedList)
+    let dismissedList = dismissedRes.dismissed
+    const knownKeys = new Set(dismissedList.map(d => d.key))
+    const toMigrate = legacyKeys.filter(k => !knownKeys.has(k))
+    if (toMigrate.length > 0) {
+      await Promise.all(toMigrate.map(key => {
+        const sub = subsRes.subscriptions.find(s => s.key === key)
+        return apiFetch('/finances/subscriptions/dismiss', { method: 'POST', body: JSON.stringify({ key, name: sub?.name ?? '' }) })
+      }))
+      const refreshed = await apiFetch<{ dismissed: DismissedSub[] }>('/finances/subscriptions/dismissed')
+      dismissedList = refreshed.dismissed
     }
+    if (legacyKeys.length > 0) localStorage.removeItem('arvo_dismissed_subs')
 
+    setSubscriptions(subsRes.subscriptions)
+    setDismissed(dismissedList)
+  }
+
+  useEffect(() => {
     loadSubscriptions().catch(() => {}).finally(() => setLoading(false))
 
     apiFetch<FeeScanResult>('/finances/fee-scan')

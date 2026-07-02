@@ -5,6 +5,7 @@ import { useI18n } from '../../contexts/I18nContext'
 import { useAuth } from '../../contexts/AuthContext'
 import { useCurrency } from '../../contexts/CurrencyContext'
 import { Icon } from '../../components/icons'
+import Avatar from '../voyage/_shared/Avatar'
 
 interface Category {
   id: number
@@ -40,7 +41,7 @@ interface SharedMember {
   invite_email: string | null
   status: string
   share_pct: number
-  display: { name: string; email: string }
+  display: { name: string; email: string; avatar_url?: string }
 }
 
 interface SharedCategory {
@@ -846,7 +847,10 @@ export default function FinancesBudgetPage() {
         ))}
       </div>
 
-      {/* Shared categories section */}
+      {/* Shared categories section — a SharedGroup is a group of people (e.g. "Família 💕"),
+          not itself a category; it can hold several shared categories. The avatar stack
+          (same pattern as Voyage/Moments) makes that "this is people, not a category" at
+          a glance, instead of a plain first-name list that read like a label. */}
       {sharedGroups.some(g => g.categories.length > 0) && (
         <div className="space-y-3">
           <div className="flex items-center justify-between px-1">
@@ -867,14 +871,23 @@ export default function FinancesBudgetPage() {
             return (
               <div key={group.id} className="bg-[var(--arvo-surface)] rounded-2xl border border-[var(--arvo-border)] shadow-sm overflow-hidden">
                 <div className="px-5 py-3 border-b border-[var(--arvo-border-soft)] flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-semibold text-[var(--arvo-fg)]">{group.name}</span>
-                    <span className="text-xs bg-[var(--arvo-surface-2)] text-[var(--arvo-fg-muted)] px-1.5 py-0.5 rounded-full font-medium flex items-center gap-1">
-                      <Icon name="users" size={11} />
-                      {activeMembers.length}
-                    </span>
+                  <div className="flex items-center gap-2.5">
+                    <div className="flex -space-x-2 shrink-0">
+                      {activeMembers.slice(0, 4).map(m => (
+                        <div key={m.id} style={{ border: '2px solid var(--arvo-surface)', borderRadius: '50%' }}>
+                          <Avatar name={m.display.name} email={m.display.email} avatarUrl={m.display.avatar_url} size={24} />
+                        </div>
+                      ))}
+                    </div>
+                    <div>
+                      <span className="text-sm font-semibold text-[var(--arvo-fg)] block leading-tight">{group.name}</span>
+                      <span className="text-[10px] text-[var(--arvo-fg-soft)] uppercase tracking-wide">{t.finances.sharedGroupLabel}</span>
+                    </div>
                   </div>
-                  <span className="text-xs text-[var(--arvo-fg-soft)]">{activeMembers.map(m => m.display.name.split(' ')[0]).join(', ')}</span>
+                  <span className="text-xs bg-[var(--arvo-surface-2)] text-[var(--arvo-fg-muted)] px-1.5 py-0.5 rounded-full font-medium flex items-center gap-1 shrink-0">
+                    <Icon name="users" size={11} />
+                    {activeMembers.length}
+                  </span>
                 </div>
                 <ul className="divide-y divide-[var(--arvo-border-soft)]">
                   {group.categories.map(cat => {
@@ -883,10 +896,7 @@ export default function FinancesBudgetPage() {
                       <li key={cat.id} className="px-5 py-3 flex items-start gap-3">
                         <span className="text-base leading-none w-6 shrink-0 mt-0.5">{cat.icon}</span>
                         <div className="flex-1 min-w-0 space-y-1.5">
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-sm text-[var(--arvo-fg)] truncate">{cat.name}</span>
-                            <Icon name="users" size={12} style={{ color: 'var(--arvo-fg-soft)' }} />
-                          </div>
+                          <span className="text-sm text-[var(--arvo-fg)] truncate block">{cat.name}</span>
                           <span className="text-xs text-[var(--arvo-fg-soft)]">{myPct}% · {t.finances.myGoal}: {fmt(myGoal, cat.currency)}</span>
                           <div className="relative">
                             <button

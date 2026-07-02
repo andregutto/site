@@ -672,6 +672,7 @@
     "unallocatedBanner": "unallocated",
     "overspentBanner": "Categories exceed income by",
     "sharedSection": "Shared categories",
+    "sharedGroupLabel": "Sharing group",
     "sharedSectionSubtitle": "Budget categories shared with others",
     "viewShared": "View all",
     "shareCategory": "Share",
