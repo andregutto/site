@@ -582,20 +582,20 @@ export default function FinancesOverviewPage() {
       )}
 
       {/* Header + month nav inline */}
-      <div className="lg:col-span-2 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-        <div className="min-w-0 sm:flex-1 overflow-hidden">
-          <h1 style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 18, letterSpacing: '0.06em', color: 'var(--arvo-fg)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.finances.overviewTitle}</h1>
-          <p className="text-sm mt-0.5" style={{ color: 'var(--arvo-fg-muted)' }}>{t.finances.overviewSubtitle}</p>
+      <div className="lg:col-span-2">
+        <div className="flex items-center justify-between gap-2">
+          <h1 className="truncate" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 18, letterSpacing: '0.06em', color: 'var(--arvo-fg)' }}>{t.finances.overviewTitle}</h1>
+          <div className="flex items-center shrink-0">
+            <button onClick={prevMonth} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--arvo-fg-faint)', borderRadius: 8 }}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+            </button>
+            <span style={{ fontSize: 13, fontFamily: 'var(--arvo-font-body)', fontWeight: 600, letterSpacing: '0.02em', color: 'var(--arvo-fg)', minWidth: 100, textAlign: 'center', textTransform: 'capitalize' }}>{fmtMonthFull(month)}</span>
+            <button onClick={nextMonth} disabled={month >= defaultMonth} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, background: 'none', border: 'none', cursor: 'pointer', color: month >= defaultMonth ? 'var(--arvo-fg-faint)' : 'var(--arvo-fg-faint)', borderRadius: 8 }}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+            </button>
+          </div>
         </div>
-        <div className="flex items-center sm:flex-shrink-0">
-          <button onClick={prevMonth} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 32, height: 32, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--arvo-fg-faint)', borderRadius: 8 }}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
-          </button>
-          <span style={{ fontSize: 13, fontFamily: 'var(--arvo-font-body)', fontWeight: 600, letterSpacing: '0.02em', color: 'var(--arvo-fg)', minWidth: 130, textAlign: 'center', textTransform: 'capitalize' }}>{fmtMonthFull(month)}</span>
-          <button onClick={nextMonth} disabled={month >= defaultMonth} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 32, height: 32, background: 'none', border: 'none', cursor: 'pointer', color: month >= defaultMonth ? 'var(--arvo-fg-faint)' : 'var(--arvo-fg-faint)', borderRadius: 8 }}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"/></svg>
-          </button>
-        </div>
+        <p className="text-sm mt-0.5" style={{ color: 'var(--arvo-fg-muted)' }}>{t.finances.overviewSubtitle}</p>
       </div>
 
       {/* Hero card — white with gold glow */}

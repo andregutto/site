@@ -1076,6 +1076,8 @@
     "momentStartDate": "Début (optionnel)",
     "momentEndDate": "Fin (optionnel)",
     "momentNoTransactions": "Aucune transaction dans ce Moment. Allez dans Transactions et glissez ici.",
+    "momentSectionCategories": "Par catégorie",
+    "momentSectionTransactions": "Transactions",
     "momentFromDate": "à partir du",
     "momentPhotoUploadError": "Erreur lors de l'envoi de la photo. Le moment a été sauvegardé sans image.",
     "momentPhotoUnsupportedFormat": "Format d'image non pris en charge (fréquent avec les photos HEIC d'iPhone). Enregistrez-la en JPG, PNG ou WEBP et réessayez.",

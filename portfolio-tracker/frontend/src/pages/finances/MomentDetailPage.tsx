@@ -6,6 +6,7 @@ import { useI18n } from '../../contexts/I18nContext'
 import { useCurrency } from '../../contexts/CurrencyContext'
 import { Icon } from '../../components/icons'
 import { resolveMomentIcon } from '../../lib/momentIcons'
+import Avatar from '../voyage/_shared/Avatar'
 import {
   _fmt, fmtDate, resolveKey, ByUserBreakdown, MomentCollaboratorsHero, TransformToTripButton,
   ShareModal, AssignModal, MembersPanel,
@@ -13,6 +14,30 @@ import {
 import type { Moment, MomentDetail, MomentPickerRow, ShareInfo } from './FinancesMomentsPage'
 
 const RED = '#D63B2F'
+
+// Collapsible section — same pattern as Voyage's CostCard (SectionLabel + chevron, starts
+// expanded) so "quem pagou o quê" / categorias / transações read as distinct blocks instead
+// of one long stacked list.
+function Section({ title, meta, defaultOpen = true, children }: { title: string; meta?: string; defaultOpen?: boolean; children: React.ReactNode }) {
+  const [open, setOpen] = useState(defaultOpen)
+  return (
+    <div style={{ borderTop: '1px solid var(--arvo-border-soft)', paddingTop: 14 }}>
+      <button
+        type="button" onClick={() => setOpen(o => !o)}
+        style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
+      >
+        <span style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)' }}>{title}</span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)' }}>
+          {meta}
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 160ms' }}>
+            <path strokeLinecap="round" d="M2 3.5l3 3 3-3" />
+          </svg>
+        </span>
+      </button>
+      {open && <div style={{ marginTop: 12 }}>{children}</div>}
+    </div>
+  )
+}
 
 export default function MomentDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -189,16 +214,38 @@ export default function MomentDetailPage() {
       )}
 
       <div className="space-y-4">
-        {/* Summary */}
-        <div className="flex items-center gap-4 flex-wrap">
-          <div>
-            <p className="text-xs text-[var(--arvo-fg-soft)]">{t.finances.momentTotal}</p>
-            <p className="text-xl font-bold text-[var(--arvo-fg)]">{fmt(summary.total, currency)}</p>
+        {/* Summary — the "who paid" mini chip fills what used to be dead space beside the
+            two stats; the full breakdown with bars still lives in its own section below. */}
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <div className="flex items-center gap-4">
+            <div>
+              <p className="text-xs text-[var(--arvo-fg-soft)]">{t.finances.momentTotal}</p>
+              <p className="text-xl font-bold text-[var(--arvo-fg)]">{fmt(summary.total, currency)}</p>
+            </div>
+            <div>
+              <p className="text-xs text-[var(--arvo-fg-soft)]">{t.finances.momentTransactions}</p>
+              <p className="text-xl font-bold text-[var(--arvo-fg)]">{transactions.filter(tx => tx.amount < 0).length}</p>
+            </div>
           </div>
-          <div>
-            <p className="text-xs text-[var(--arvo-fg-soft)]">{t.finances.momentTransactions}</p>
-            <p className="text-xl font-bold text-[var(--arvo-fg)]">{transactions.filter(tx => tx.amount < 0).length}</p>
-          </div>
+          {summary.by_user.length > 1 && (() => {
+            const top = [...summary.by_user].sort((a, b) => b.total - a.total)[0]
+            const topPct = summary.total > 0 ? Math.round((top.total / summary.total) * 100) : 0
+            return (
+              <div className="flex items-center gap-2">
+                <div className="flex -space-x-2">
+                  {summary.by_user.slice(0, 3).map(u => (
+                    <div key={u.user_id} style={{ border: '2px solid var(--arvo-surface)', borderRadius: '50%' }}>
+                      <Avatar name={u.display?.name} email={u.display?.email} avatarUrl={u.display?.avatar_url} size={26} />
+                    </div>
+                  ))}
+                </div>
+                <div>
+                  <p className="text-[10px] text-[var(--arvo-fg-soft)] uppercase tracking-wide">{t.finances.momentByUserTitle}</p>
+                  <p className="text-xs text-[var(--arvo-fg-muted)]">{top.display?.name ?? '—'} · {topPct}%</p>
+                </div>
+              </div>
+            )
+          })()}
         </div>
 
         {/* Budget */}
@@ -219,26 +266,33 @@ export default function MomentDetailPage() {
           )
         })()}
 
-        <ByUserBreakdown byUser={summary.by_user} total={summary.total} currency={currency} fmt={fmt} />
-
-        {summary.by_category.length > 0 && (
-          <div className="space-y-1.5">
-            {summary.by_category.map(cat => {
-              const pct = summary.total > 0 ? (cat.total / summary.total) * 100 : 0
-              return (
-                <div key={cat.name} className="flex items-center gap-2">
-                  <span className="text-sm w-5 text-center">{cat.icon}</span>
-                  <span className="text-xs text-[var(--arvo-fg-muted)] w-28 truncate">{resolveKey(cat.name, cat.name_key, nameKeys)}</span>
-                  <div className="flex-1 h-1.5 bg-[var(--arvo-track-bg)] rounded-full overflow-hidden">
-                    <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: cat.color }} />
-                  </div>
-                  <span className="text-xs text-[var(--arvo-fg-muted)] w-16 text-right">{fmt(cat.total, currency)}</span>
-                </div>
-              )
-            })}
-          </div>
+        {summary.by_user.length > 1 && (
+          <Section title={t.finances.momentByUserTitle}>
+            <ByUserBreakdown byUser={summary.by_user} total={summary.total} currency={currency} fmt={fmt} hideLabel />
+          </Section>
         )}
 
+        {summary.by_category.length > 0 && (
+          <Section title={t.finances.momentSectionCategories} meta={String(summary.by_category.length)}>
+            <div className="space-y-1.5">
+              {summary.by_category.map(cat => {
+                const pct = summary.total > 0 ? (cat.total / summary.total) * 100 : 0
+                return (
+                  <div key={cat.name} className="flex items-center gap-2">
+                    <span className="text-sm w-5 text-center">{cat.icon}</span>
+                    <span className="text-xs text-[var(--arvo-fg-muted)] w-28 truncate">{resolveKey(cat.name, cat.name_key, nameKeys)}</span>
+                    <div className="flex-1 h-1.5 bg-[var(--arvo-track-bg)] rounded-full overflow-hidden">
+                      <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: cat.color }} />
+                    </div>
+                    <span className="text-xs text-[var(--arvo-fg-muted)] w-16 text-right">{fmt(cat.total, currency)}</span>
+                  </div>
+                )
+              })}
+            </div>
+          </Section>
+        )}
+
+        <Section title={t.finances.momentSectionTransactions} meta={transactions.length > 0 ? String(transactions.length) : undefined}>
         {transactions.length > 0 ? (
           <div className="space-y-0 border border-[var(--arvo-border)] rounded-xl overflow-hidden">
             {displayItems.map((item, i) => {
@@ -307,6 +361,7 @@ export default function MomentDetailPage() {
         ) : (
           <p className="text-xs text-[var(--arvo-fg-soft)] text-center py-4">{t.finances.momentNoTransactions}</p>
         )}
+        </Section>
       </div>
 
       {sharingMoment && (

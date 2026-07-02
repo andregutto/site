@@ -903,16 +903,18 @@ export function MomentCollaboratorsHero({ momentId, onOpen }: { momentId: number
   )
 }
 
-export function ByUserBreakdown({ byUser, total, currency, fmt }: { byUser: ByUser[]; total: number; currency: string; fmt: (n: number, c: string) => string }) {
+export function ByUserBreakdown({ byUser, total, currency, fmt, hideLabel }: { byUser: ByUser[]; total: number; currency: string; fmt: (n: number, c: string) => string; hideLabel?: boolean }) {
   const { t } = useI18n()
   const { resolvedTheme } = useTheme()
   const USER_COLORS = resolvedTheme === 'dark' ? USER_COLORS_DARK : USER_COLORS_LIGHT
   if (byUser.length < 2) return null
   return (
     <div className="space-y-1.5">
-      <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)', marginBottom: 4 }}>
-        {t.finances.momentByUserTitle}
-      </p>
+      {!hideLabel && (
+        <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)', marginBottom: 4 }}>
+          {t.finances.momentByUserTitle}
+        </p>
+      )}
       {byUser.map((u, i) => {
         const pct = total > 0 ? Math.round((u.total / total) * 100) : 0
         return (

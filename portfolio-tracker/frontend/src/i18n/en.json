@@ -1076,6 +1076,8 @@
     "momentStartDate": "Start (optional)",
     "momentEndDate": "End (optional)",
     "momentNoTransactions": "No transactions in this Moment yet. Go to Transactions and drag here.",
+    "momentSectionCategories": "By category",
+    "momentSectionTransactions": "Transactions",
     "momentFromDate": "from",
     "momentPhotoUploadError": "Error uploading photo. The moment was saved without an image.",
     "momentPhotoUnsupportedFormat": "Unsupported image format (common with iPhone HEIC photos). Save it as JPG, PNG or WEBP and try again.",
