@@ -785,6 +785,7 @@
     "freedomPlanned": "Planejado",
     "freedomActual": "Realizado",
     "freedomChartTitle": "Trajetória: planejado vs realizado",
+    "freedomProjected": "Projeção além da meta",
     "freedomAhead": "Adiantado em relação ao plano",
     "freedomBehind": "Atrasado em relação ao plano",
     "freedomApprox": "Valores históricos em BRL convertidos pela taxa atual.",

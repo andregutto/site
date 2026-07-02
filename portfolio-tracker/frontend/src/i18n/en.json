@@ -785,6 +785,7 @@
     "freedomPlanned": "Planned",
     "freedomActual": "Actual",
     "freedomChartTitle": "Trajectory: planned vs actual",
+    "freedomProjected": "Projection beyond goal",
     "freedomAhead": "Ahead of plan",
     "freedomBehind": "Behind plan",
     "freedomApprox": "Historical BRL values converted at current rate.",
