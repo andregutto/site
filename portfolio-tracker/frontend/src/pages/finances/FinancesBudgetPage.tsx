@@ -108,8 +108,8 @@ function resolveKey(name: string, nameKey: string | null | undefined, keys: Reco
 }
 
 
-function EnvelopeBar({ env, allEnvelopes, expanded, onToggle, onEditCategory, onDeleteCategory, onAddCategory, onSaveDescription, onShareCategory, onSaveCategoryBudget, onMoveCategory, actuals: _actuals, historicals, currency, incomeMonthly, sharedGroups, onSetSharedEnvelope }:
-  { env: Envelope; allEnvelopes: Envelope[]; expanded: boolean; onToggle: () => void; onEditCategory: (c: Category) => void; onDeleteCategory: (id: number) => void; onAddCategory: (envId: number) => void; onSaveDescription: (id: number, desc: string) => void; onShareCategory: (c: Category) => void; onSaveCategoryBudget: (id: number, value: number | null) => void; onMoveCategory: (id: number, envId: number) => void; actuals: Map<number, number>; historicals: Map<number, number>; currency: string; incomeMonthly: number; sharedGroups: SharedGroup[]; onSetSharedEnvelope: (catId: number, envId: number | null) => void }) {
+function EnvelopeBar({ env, allEnvelopes, expanded, onToggle, onEditCategory, onDeleteCategory, onAddCategory, onSaveDescription, onShareCategory, onSaveCategoryBudget, onMoveCategory, actuals: _actuals, historicals, currency, incomeMonthly, sharedGroups, onSetSharedEnvelope, onSaveSharedGoal, onDeleteSharedCategory }:
+  { env: Envelope; allEnvelopes: Envelope[]; expanded: boolean; onToggle: () => void; onEditCategory: (c: Category) => void; onDeleteCategory: (id: number) => void; onAddCategory: (envId: number) => void; onSaveDescription: (id: number, desc: string) => void; onShareCategory: (c: Category) => void; onSaveCategoryBudget: (id: number, value: number | null) => void; onMoveCategory: (id: number, envId: number) => void; actuals: Map<number, number>; historicals: Map<number, number>; currency: string; incomeMonthly: number; sharedGroups: SharedGroup[]; onSetSharedEnvelope: (catId: number, envId: number | null) => void; onSaveSharedGoal: (catId: number, value: number) => void; onDeleteSharedCategory: (catId: number) => void }) {
   const { t } = useI18n()
   const { hideValues } = useCurrency()
   const fmt = (n: number, cur: string) => hideValues ? '•••' : _fmt(n, cur)
@@ -173,6 +173,14 @@ function EnvelopeBar({ env, allEnvelopes, expanded, onToggle, onEditCategory, on
   const totalCategoryBudget = env.categories.reduce((s, c) => s + (c.budget_monthly ?? 0), 0)
     + env.shared_categories.reduce((s, c) => s + c.my_goal, 0)
   const [sharedEnvPickerId, setSharedEnvPickerId] = useState<number | null>(null)
+  const [editingSharedCatId, setEditingSharedCatId] = useState<number | null>(null)
+  const [sharedGoalInput, setSharedGoalInput] = useState('')
+
+  function saveSharedGoal(catId: number) {
+    setEditingSharedCatId(null)
+    const v = parseFloat(sharedGoalInput)
+    if (!isNaN(v) && v >= 0) onSaveSharedGoal(catId, v)
+  }
 
   function saveDesc() {
     setEditingDesc(false)
@@ -355,54 +363,85 @@ function EnvelopeBar({ env, allEnvelopes, expanded, onToggle, onEditCategory, on
                 const group = sharedGroups.find(g => g.id === cat.group_id)
                 const activeMembers = group?.members.filter(m => m.status === 'active') ?? []
                 return (
-                  <li key={`shared-${cat.id}`} className="px-5 py-2.5 flex items-start gap-3">
-                    <span className="text-base leading-none w-6 shrink-0 mt-0.5">{cat.icon}</span>
-                    <div className="flex-1 min-w-0 space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-[var(--arvo-fg)] truncate">{cat.name}</span>
-                        <div className="flex -space-x-1.5 shrink-0">
-                          {activeMembers.slice(0, 3).map(m => (
-                            <div key={m.id} style={{ border: '2px solid var(--arvo-surface)', borderRadius: '50%' }}>
-                              <Avatar name={m.display.name} email={m.display.email} avatarUrl={m.display.avatar_url} size={18} />
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                      <span className="text-xs text-[var(--arvo-fg-soft)]">{cat.group_name} · {t.finances.myGoal}: {fmt(cat.my_goal, cat.currency)}</span>
-                    </div>
-                    <div className="relative shrink-0">
-                      <button
-                        onClick={() => setSharedEnvPickerId(cat.id)}
-                        className="p-1.5 text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg)] transition-colors rounded"
-                        title={t.finances.moveCategoryTitle}
-                      >
-                        <span className="text-sm leading-none">{env.icon}</span>
-                      </button>
-                      {sharedEnvPickerId === cat.id && (
-                        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 px-4" onClick={() => setSharedEnvPickerId(null)}>
-                          <div className="bg-[var(--arvo-surface)] rounded-t-2xl sm:rounded-2xl shadow-xl w-full sm:max-w-sm max-h-[70vh] overflow-y-auto py-2" onClick={e => e.stopPropagation()}>
-                            <p className="px-4 py-2 text-xs text-[var(--arvo-fg-soft)] uppercase tracking-wide font-medium">{t.finances.moveCategoryTitle}</p>
-                            <button
-                              onClick={() => { onSetSharedEnvelope(cat.id, null); setSharedEnvPickerId(null) }}
-                              className="w-full flex items-center gap-2 px-4 py-3 text-sm text-left transition-colors hover:bg-[var(--arvo-surface-2)] text-[var(--arvo-fg-soft)]"
-                            >
-                              <span className="w-4 h-4 rounded-full border-2 border-[var(--arvo-border)] shrink-0" />
-                              {t.finances.noEnvelope}
-                            </button>
-                            {allEnvelopes.map(e => (
-                              <button
-                                key={e.id}
-                                onClick={() => { onSetSharedEnvelope(cat.id, e.id); setSharedEnvPickerId(null) }}
-                                className={`w-full flex items-center gap-2 px-4 py-3 text-sm text-left transition-colors hover:bg-[var(--arvo-surface-2)] ${e.id === env.id ? 'font-semibold text-[var(--arvo-fg)]' : 'text-[var(--arvo-fg-muted)]'}`}
-                              >
-                                <span className="text-lg leading-none">{e.icon}</span>
-                                <span className="flex-1 truncate">{resolveEnvName(e.name, e.type, e.name_key, nameKeys)}</span>
-                                {e.id === env.id && <svg className="w-4 h-4 text-[var(--arvo-blue)] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>}
-                              </button>
-                            ))}
+                  <li key={`shared-${cat.id}`} className="px-5 py-2.5 flex flex-col gap-1">
+                    <div className="flex items-center gap-3">
+                      <span className="text-base leading-none w-6 shrink-0">{cat.icon}</span>
+                      <span className="flex-1 min-w-0 text-sm text-[var(--arvo-fg)] truncate">{cat.name}</span>
+                      <div className="flex -space-x-1.5 shrink-0">
+                        {activeMembers.slice(0, 3).map(m => (
+                          <div key={m.id} style={{ border: '2px solid var(--arvo-surface)', borderRadius: '50%' }}>
+                            <Avatar name={m.display.name} email={m.display.email} avatarUrl={m.display.avatar_url} size={18} />
                           </div>
-                        </div>
+                        ))}
+                      </div>
+                      {editingSharedCatId === cat.id ? (
+                        <input
+                          autoFocus
+                          type="number"
+                          value={sharedGoalInput}
+                          onChange={e => setSharedGoalInput(e.target.value)}
+                          onBlur={() => saveSharedGoal(cat.id)}
+                          onKeyDown={e => { if (e.key === 'Enter') saveSharedGoal(cat.id); if (e.key === 'Escape') setEditingSharedCatId(null) }}
+                          onClick={e => e.stopPropagation()}
+                          className="w-20 text-sm text-right text-[var(--arvo-fg)] border border-[var(--arvo-border)] rounded px-1.5 py-0.5 focus:outline-none focus:ring-1 focus:ring-[var(--arvo-fg)]/30 shrink-0"
+                        />
+                      ) : (
+                        <button
+                          onClick={() => { setSharedGoalInput(String(cat.total_goal)); setEditingSharedCatId(cat.id) }}
+                          className="text-sm font-medium text-[var(--arvo-fg)] underline decoration-dotted decoration-[var(--arvo-fg-soft)] underline-offset-2 shrink-0 hover:decoration-[var(--arvo-fg)]"
+                          title={t.finances.clickToEditBudget}
+                        >
+                          {fmt(cat.total_goal, cat.currency)}
+                        </button>
                       )}
+                    </div>
+                    <div className="flex items-center justify-between gap-2 pl-9">
+                      <span className="text-xs text-[var(--arvo-fg-soft)]">{cat.group_name} · {t.finances.myGoal}: {fmt(cat.my_goal, cat.currency)}</span>
+                      <div className="flex items-center gap-0.5 shrink-0">
+                        <div className="relative">
+                          <button
+                            onClick={() => setSharedEnvPickerId(cat.id)}
+                            className="p-1.5 text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg)] transition-colors rounded"
+                            title={t.finances.moveCategoryTitle}
+                          >
+                            <span className="text-sm leading-none">{env.icon}</span>
+                          </button>
+                          {sharedEnvPickerId === cat.id && (
+                            <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 px-4" onClick={() => setSharedEnvPickerId(null)}>
+                              <div className="bg-[var(--arvo-surface)] rounded-t-2xl sm:rounded-2xl shadow-xl w-full sm:max-w-sm max-h-[70vh] overflow-y-auto py-2" onClick={e => e.stopPropagation()}>
+                                <p className="px-4 py-2 text-xs text-[var(--arvo-fg-soft)] uppercase tracking-wide font-medium">{t.finances.moveCategoryTitle}</p>
+                                <button
+                                  onClick={() => { onSetSharedEnvelope(cat.id, null); setSharedEnvPickerId(null) }}
+                                  className="w-full flex items-center gap-2 px-4 py-3 text-sm text-left transition-colors hover:bg-[var(--arvo-surface-2)] text-[var(--arvo-fg-soft)]"
+                                >
+                                  <span className="w-4 h-4 rounded-full border-2 border-[var(--arvo-border)] shrink-0" />
+                                  {t.finances.noEnvelope}
+                                </button>
+                                {allEnvelopes.map(e => (
+                                  <button
+                                    key={e.id}
+                                    onClick={() => { onSetSharedEnvelope(cat.id, e.id); setSharedEnvPickerId(null) }}
+                                    className={`w-full flex items-center gap-2 px-4 py-3 text-sm text-left transition-colors hover:bg-[var(--arvo-surface-2)] ${e.id === env.id ? 'font-semibold text-[var(--arvo-fg)]' : 'text-[var(--arvo-fg-muted)]'}`}
+                                  >
+                                    <span className="text-lg leading-none">{e.icon}</span>
+                                    <span className="flex-1 truncate">{resolveEnvName(e.name, e.type, e.name_key, nameKeys)}</span>
+                                    {e.id === env.id && <svg className="w-4 h-4 text-[var(--arvo-blue)] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        <button
+                          onClick={() => onDeleteSharedCategory(cat.id)}
+                          className="p-1.5 text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-red)] transition-colors rounded"
+                          title={t.common.delete}
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5">
+                            <path fillRule="evenodd" d="M5 3.25V4H2.75a.75.75 0 0 0 0 1.5h.3l.815 8.15A1.5 1.5 0 0 0 5.357 15h5.285a1.5 1.5 0 0 0 1.493-1.35l.815-8.15h.3a.75.75 0 0 0 0-1.5H11v-.75A2.25 2.25 0 0 0 8.75 1h-1.5A2.25 2.25 0 0 0 5 3.25Zm2.25-.75a.75.75 0 0 0-.75.75V4h3v-.75a.75.75 0 0 0-.75-.75h-1.5ZM6.05 6a.75.75 0 0 1 .787.713l.275 5.5a.75.75 0 0 1-1.498.075l-.275-5.5A.75.75 0 0 1 6.05 6Zm3.9 0a.75.75 0 0 1 .712.787l-.275 5.5a.75.75 0 0 1-1.498-.075l.275-5.5a.75.75 0 0 1 .786-.712Z" clipRule="evenodd" />
+                          </svg>
+                        </button>
+                      </div>
                     </div>
                   </li>
                 )
@@ -497,6 +536,8 @@ export default function FinancesBudgetPage() {
   const [sharingGroupId, setSharingGroupId] = useState<number | null>(null)
   const [sharingSaving, setSharingSaving]   = useState(false)
   const [openEnvPicker, setOpenEnvPicker] = useState<number | null>(null)
+  const [editingUnassignedSharedId, setEditingUnassignedSharedId] = useState<number | null>(null)
+  const [unassignedGoalInput, setUnassignedGoalInput] = useState('')
   const [showRefInfo, setShowRefInfo] = useState(false)
 
   const load = useCallback(async (silent = false) => {
@@ -650,6 +691,20 @@ export default function FinancesBudgetPage() {
       method: 'PATCH',
       body: JSON.stringify({ envelope_id: envId }),
     })
+    await load(true)
+  }
+
+  async function saveSharedGoal(catId: number, totalGoal: number) {
+    await apiFetch(`/shared/categories/${catId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ total_goal: totalGoal }),
+    })
+    await load(true)
+  }
+
+  async function deleteSharedCategory(catId: number) {
+    if (!confirm(t.finances.confirmDeleteCategory)) return
+    await apiFetch(`/shared/categories/${catId}`, { method: 'DELETE' })
     await load(true)
   }
 
@@ -951,6 +1006,8 @@ export default function FinancesBudgetPage() {
             incomeMonthly={data.income.monthly_net}
             sharedGroups={sharedGroups}
             onSetSharedEnvelope={setSharedEnvelope}
+            onSaveSharedGoal={saveSharedGoal}
+            onDeleteSharedCategory={deleteSharedCategory}
           />
         ))}
       </div>
@@ -1045,9 +1102,39 @@ export default function FinancesBudgetPage() {
                             )}
                           </div>
                         </div>
-                        {cat.total_goal > 0 && (
-                          <span className="text-xs text-[var(--arvo-fg-soft)] shrink-0 mt-0.5">/ {fmt(cat.total_goal, cat.currency)}</span>
-                        )}
+                        <div className="flex items-center gap-1 shrink-0">
+                          {editingUnassignedSharedId === cat.id ? (
+                            <input
+                              autoFocus
+                              type="number"
+                              value={unassignedGoalInput}
+                              onChange={e => setUnassignedGoalInput(e.target.value)}
+                              onBlur={() => { const v = parseFloat(unassignedGoalInput); setEditingUnassignedSharedId(null); if (!isNaN(v) && v >= 0) saveSharedGoal(cat.id, v) }}
+                              onKeyDown={e => {
+                                if (e.key === 'Enter') { const v = parseFloat(unassignedGoalInput); setEditingUnassignedSharedId(null); if (!isNaN(v) && v >= 0) saveSharedGoal(cat.id, v) }
+                                if (e.key === 'Escape') setEditingUnassignedSharedId(null)
+                              }}
+                              className="w-20 text-xs text-right text-[var(--arvo-fg)] border border-[var(--arvo-border)] rounded px-1.5 py-0.5 focus:outline-none focus:ring-1 focus:ring-[var(--arvo-fg)]/30"
+                            />
+                          ) : (
+                            <button
+                              onClick={() => { setUnassignedGoalInput(String(cat.total_goal)); setEditingUnassignedSharedId(cat.id) }}
+                              className="text-xs text-[var(--arvo-fg-soft)] underline decoration-dotted underline-offset-2 hover:decoration-[var(--arvo-fg)]"
+                              title={t.finances.clickToEditBudget}
+                            >
+                              / {fmt(cat.total_goal, cat.currency)}
+                            </button>
+                          )}
+                          <button
+                            onClick={() => deleteSharedCategory(cat.id)}
+                            className="p-1 text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-red)] transition-colors rounded"
+                            title={t.common.delete}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5">
+                              <path fillRule="evenodd" d="M5 3.25V4H2.75a.75.75 0 0 0 0 1.5h.3l.815 8.15A1.5 1.5 0 0 0 5.357 15h5.285a1.5 1.5 0 0 0 1.493-1.35l.815-8.15h.3a.75.75 0 0 0 0-1.5H11v-.75A2.25 2.25 0 0 0 8.75 1h-1.5A2.25 2.25 0 0 0 5 3.25Zm2.25-.75a.75.75 0 0 0-.75.75V4h3v-.75a.75.75 0 0 0-.75-.75h-1.5ZM6.05 6a.75.75 0 0 1 .787.713l.275 5.5a.75.75 0 0 1-1.498.075l-.275-5.5A.75.75 0 0 1 6.05 6Zm3.9 0a.75.75 0 0 1 .712.787l-.275 5.5a.75.75 0 0 1-1.498-.075l.275-5.5a.75.75 0 0 1 .786-.712Z" clipRule="evenodd" />
+                            </svg>
+                          </button>
+                        </div>
                       </li>
                     )
                   })}

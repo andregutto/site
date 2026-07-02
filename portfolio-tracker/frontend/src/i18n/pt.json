@@ -975,6 +975,7 @@
     "categoryBonds": "Renda Fixa",
     "categoryEmergency": "Reserva de Emergência",
     "heroSavingsRate": "Saldo do mês",
+    "heroIncomeLabel": "Renda",
     "institutionsSubtitle": "Ativos e contas por instituição",
     "institutionsLegalProfiles": "Perfis legais",
     "institutionsAutoAssetNote": "Um ativo de caixa será criado automaticamente no portfólio e vinculado a esta conta.",

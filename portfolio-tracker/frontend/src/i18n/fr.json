@@ -975,6 +975,7 @@
     "categoryBonds": "Revenu fixe",
     "categoryEmergency": "Fonds d'urgence",
     "heroSavingsRate": "Solde du mois",
+    "heroIncomeLabel": "Revenu",
     "institutionsSubtitle": "Actifs et comptes par institution",
     "institutionsLegalProfiles": "Profils légaux",
     "institutionsAutoAssetNote": "Un actif de trésorerie sera créé automatiquement dans le portefeuille et lié à ce compte.",

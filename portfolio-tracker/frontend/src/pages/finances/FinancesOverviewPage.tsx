@@ -611,7 +611,7 @@ export default function FinancesOverviewPage() {
 
             <div style={{ marginTop: 20, paddingTop: 18, borderTop: '1px solid var(--arvo-border)', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-                <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 10, fontWeight: 600, letterSpacing: '0.10em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)' }}>{t.finances.income}</span>
+                <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 10, fontWeight: 600, letterSpacing: '0.10em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)', whiteSpace: 'nowrap' }}>{t.finances.heroIncomeLabel}</span>
                 <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 18, letterSpacing: '0.04em', color: receivedIncome > 0 && receivedIncome >= configuredIncome ? 'var(--arvo-green)' : receivedIncome > 0 ? 'var(--arvo-ocre)' : 'var(--arvo-fg)' }}>
                   {receivedIncome > 0 ? fmt(cx(receivedIncome), currency, false) : '—'}
                 </span>
@@ -949,7 +949,7 @@ export default function FinancesOverviewPage() {
                       <span style={{ fontSize: 14, color: 'var(--arvo-fg-muted)', fontFamily: "var(--arvo-font-body)" }} className="truncate">{resolveKey(cat.name, cat.name_key, nameKeys)}</span>
                       <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--arvo-fg)', flexShrink: 0, marginLeft: 8 }}>{fmt(cx(cat.actual), currency, true)}</span>
                     </div>
-                    <div className="mt-1 h-1 bg-[var(--arvo-track-bg)] rounded-full overflow-hidden">
+                    <div className="mt-1 h-1 w-24 ml-auto bg-[var(--arvo-track-bg)] rounded-full overflow-hidden">
                       <div className="h-full rounded-full" style={{ width: `${Math.min(barPct, 100)}%`, backgroundColor: breakdownColor(i) }} />
                     </div>
                   </div>

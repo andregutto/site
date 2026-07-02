@@ -975,6 +975,7 @@
     "categoryBonds": "Fixed Income",
     "categoryEmergency": "Emergency Fund",
     "heroSavingsRate": "Month balance",
+    "heroIncomeLabel": "Income",
     "institutionsSubtitle": "Assets and accounts by institution",
     "institutionsLegalProfiles": "Legal profiles",
     "institutionsAutoAssetNote": "A cash asset will be created automatically in the portfolio and linked to this account.",
