@@ -879,7 +879,7 @@ export default function FinancesOverviewPage() {
                       })()}
                     </div>
                   </div>
-                  <div className="h-1.5 bg-[var(--arvo-track-bg)] rounded-full overflow-hidden">
+                  <div className="h-1.5 w-24 ml-auto bg-[var(--arvo-track-bg)] rounded-full overflow-hidden">
                     <div
                       className="h-full rounded-full transition-all duration-500"
                       style={{
@@ -890,27 +890,23 @@ export default function FinancesOverviewPage() {
                   </div>
                 </div>
               </div>
-              {/* Expanded categories */}
+              {/* Expanded categories — dot + text only, no per-category bar (keeps the page
+                  from turning into a wall of red progress bars) */}
               {expandedEnvIds.has(env.id) && env.categories.length > 0 && (
                 <div className="bg-[var(--arvo-surface-2)] border-t border-[var(--arvo-border-soft)]">
                   {env.categories.map(cat => {
                     const catBudget = cat.budget ?? 0
-                    const budgetPct = catBudget > 0 ? Math.min((cat.actual / catBudget) * 100, 100) : 0
-                    const envPct = env.actual > 0 ? (cat.actual / env.actual) * 100 : 0
                     const over = catBudget > 0 && cat.actual > catBudget
+                    const dotColor = over ? 'var(--arvo-red)' : cat.actual === 0 ? 'var(--arvo-track-bg)' : cat.color
                     return (
                       <div key={cat.id} className="px-4 py-2 flex items-center gap-2.5 pl-12 cursor-pointer hover:bg-[var(--arvo-hover-bg)] transition-colors" onClick={() => navigate(`/finances/transactions?category_id=${cat.id}`)}>
+                        <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: dotColor }} />
                         <span className="text-sm leading-none w-5 shrink-0">{cat.icon}</span>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between gap-2 mb-1">
-                            <span style={{ fontSize: 12, color: 'var(--arvo-fg-muted)' }} className="truncate">{resolveKey(cat.name, cat.name_key, nameKeys)}</span>
-                            <div className="flex items-center gap-1 shrink-0">
-                              <span style={{ fontSize: 12, fontWeight: 600, color: over ? 'var(--arvo-red)' : 'var(--arvo-fg-muted)' }}>{fmt(cx(cat.actual), currency, true)}</span>
-                              {catBudget > 0 && <span style={{ fontSize: 11, color: 'var(--arvo-fg-faint)' }}>/ {fmt(cx(catBudget), currency, true)}</span>}
-                            </div>
-                          </div>
-                          <div className="h-1 bg-[var(--arvo-track-bg)] rounded-full overflow-hidden">
-                            <div className="h-full rounded-full" style={{ width: catBudget > 0 ? `${budgetPct}%` : `${Math.min(envPct, 100)}%`, backgroundColor: over ? 'var(--arvo-red)' : cat.color }} />
+                        <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
+                          <span style={{ fontSize: 12, color: 'var(--arvo-fg-muted)' }} className="truncate">{resolveKey(cat.name, cat.name_key, nameKeys)}</span>
+                          <div className="flex items-center gap-1 shrink-0">
+                            <span style={{ fontSize: 12, fontWeight: 600, color: over ? 'var(--arvo-red)' : 'var(--arvo-fg-muted)' }}>{fmt(cx(cat.actual), currency, true)}</span>
+                            {catBudget > 0 && <span style={{ fontSize: 11, color: 'var(--arvo-fg-faint)' }}>/ {fmt(cx(catBudget), currency, true)}</span>}
                           </div>
                         </div>
                       </div>

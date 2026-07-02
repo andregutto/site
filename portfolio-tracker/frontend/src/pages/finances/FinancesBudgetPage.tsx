@@ -4,7 +4,6 @@ import { apiFetch } from '../../lib/api'
 import { useI18n } from '../../contexts/I18nContext'
 import { useAuth } from '../../contexts/AuthContext'
 import { useCurrency } from '../../contexts/CurrencyContext'
-import { Banner } from '../../components/ui'
 import { Icon } from '../../components/icons'
 
 interface Category {
@@ -85,8 +84,8 @@ function resolveKey(name: string, nameKey: string | null | undefined, keys: Reco
 }
 
 
-function EnvelopeBar({ env, allEnvelopes, expanded, onToggle, onEditCategory, onDeleteCategory, onAddCategory, onSaveDescription, onShareCategory, onSaveCategoryBudget, onMoveCategory, actuals: _actuals, historicals, currency }:
-  { env: Envelope; allEnvelopes: Envelope[]; expanded: boolean; onToggle: () => void; onEditCategory: (c: Category) => void; onDeleteCategory: (id: number) => void; onAddCategory: (envId: number) => void; onSaveDescription: (id: number, desc: string) => void; onShareCategory: (c: Category) => void; onSaveCategoryBudget: (id: number, value: number | null) => void; onMoveCategory: (id: number, envId: number) => void; actuals: Map<number, number>; historicals: Map<number, number>; currency: string }) {
+function EnvelopeBar({ env, allEnvelopes, expanded, onToggle, onEditCategory, onDeleteCategory, onAddCategory, onSaveDescription, onShareCategory, onSaveCategoryBudget, onMoveCategory, actuals: _actuals, historicals, currency, incomeMonthly }:
+  { env: Envelope; allEnvelopes: Envelope[]; expanded: boolean; onToggle: () => void; onEditCategory: (c: Category) => void; onDeleteCategory: (id: number) => void; onAddCategory: (envId: number) => void; onSaveDescription: (id: number, desc: string) => void; onShareCategory: (c: Category) => void; onSaveCategoryBudget: (id: number, value: number | null) => void; onMoveCategory: (id: number, envId: number) => void; actuals: Map<number, number>; historicals: Map<number, number>; currency: string; incomeMonthly: number }) {
   const { t } = useI18n()
   const { hideValues } = useCurrency()
   const fmt = (n: number, cur: string) => hideValues ? '•••' : _fmt(n, cur)
@@ -173,7 +172,12 @@ function EnvelopeBar({ env, allEnvelopes, expanded, onToggle, onEditCategory, on
         <span className="text-2xl leading-none w-8 shrink-0">{env.icon}</span>
         <div className="flex-1 min-w-0 flex items-center justify-between">
           <span className="font-semibold text-[var(--arvo-fg)] text-sm">{resolveEnvName(env.name, env.type, env.name_key, nameKeys)}</span>
-          <span className="text-sm font-semibold text-[var(--arvo-fg)] shrink-0 ml-3">{fmt(totalCategoryBudget, currency)}</span>
+          <div className="flex items-baseline gap-1.5 shrink-0 ml-3">
+            {incomeMonthly > 0 && (
+              <span className="text-xs text-[var(--arvo-fg-soft)]">{Math.round(totalCategoryBudget / incomeMonthly * 100)}%{t.finances.ofIncomeSuffix}</span>
+            )}
+            <span className="text-sm font-semibold text-[var(--arvo-fg)]">{fmt(totalCategoryBudget, currency)}</span>
+          </div>
         </div>
         <svg
           className={`w-4 h-4 text-[var(--arvo-fg-soft)] shrink-0 transition-transform ${expanded ? 'rotate-180' : ''}`}
@@ -228,92 +232,92 @@ function EnvelopeBar({ env, allEnvelopes, expanded, onToggle, onEditCategory, on
                 const hasBudget = cat.budget_monthly != null && cat.budget_monthly > 0
                 const hist = historicals.get(cat.id) ?? 0
                 return (
-                  <li key={cat.id} className="px-5 py-2.5 flex items-center gap-3 group">
-                    <span className="text-base leading-none w-6 shrink-0">{cat.icon}</span>
-                    <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
-                      <span className="text-sm text-[var(--arvo-fg)] truncate">{resolveKey(cat.name, cat.name_key, nameKeys)}</span>
-                      <div className="flex flex-col items-end gap-0.5 shrink-0">
-                        {editingCatId === cat.id ? (
-                          <input
-                            autoFocus
-                            type="number"
-                            value={catBudgetInput}
-                            onChange={e => setCatBudgetInput(e.target.value)}
-                            onBlur={() => saveCatBudget(cat.id)}
-                            onKeyDown={e => { if (e.key === 'Enter') saveCatBudget(cat.id); if (e.key === 'Escape') setEditingCatId(null) }}
-                            onClick={e => e.stopPropagation()}
-                            className="w-20 text-sm text-right text-[var(--arvo-fg)] border border-[var(--arvo-border)] rounded px-1.5 py-0.5 focus:outline-none focus:ring-1 focus:ring-[var(--arvo-fg)]/30"
-                          />
-                        ) : (
-                          <button
-                            onClick={() => { setCatBudgetInput(cat.budget_monthly != null ? String(cat.budget_monthly) : ''); setEditingCatId(cat.id) }}
-                            className="text-sm font-medium text-[var(--arvo-fg)] hover:underline decoration-dotted underline-offset-2"
-                            title={t.finances.clickToEditBudget}
-                          >
-                            {hasBudget ? fmt(cat.budget_monthly!, currency) : t.finances.setBudget}
-                          </button>
-                        )}
-                        {hist > 0 && (
-                          <span className="text-xs text-[var(--arvo-fg-soft)]">{t.finances.avg3m}: {fmt(hist, currency)}</span>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1 [@media(hover:none)]:opacity-100 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <div className="relative">
+                  <li key={cat.id} className="px-5 py-2.5 flex flex-col gap-1">
+                    <div className="flex items-center gap-3">
+                      <span className="text-base leading-none w-6 shrink-0">{cat.icon}</span>
+                      <span className="flex-1 min-w-0 text-sm text-[var(--arvo-fg)] truncate">{resolveKey(cat.name, cat.name_key, nameKeys)}</span>
+                      {editingCatId === cat.id ? (
+                        <input
+                          autoFocus
+                          type="number"
+                          value={catBudgetInput}
+                          onChange={e => setCatBudgetInput(e.target.value)}
+                          onBlur={() => saveCatBudget(cat.id)}
+                          onKeyDown={e => { if (e.key === 'Enter') saveCatBudget(cat.id); if (e.key === 'Escape') setEditingCatId(null) }}
+                          onClick={e => e.stopPropagation()}
+                          className="w-20 text-sm text-right text-[var(--arvo-fg)] border border-[var(--arvo-border)] rounded px-1.5 py-0.5 focus:outline-none focus:ring-1 focus:ring-[var(--arvo-fg)]/30 shrink-0"
+                        />
+                      ) : (
                         <button
-                          onClick={() => setEnvPickerCatId(envPickerCatId === cat.id ? null : cat.id)}
-                          className="p-2 text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg)] transition-colors rounded"
-                          title={t.finances.moveCategoryTitle}
+                          onClick={() => { setCatBudgetInput(cat.budget_monthly != null ? String(cat.budget_monthly) : ''); setEditingCatId(cat.id) }}
+                          className="text-sm font-medium text-[var(--arvo-fg)] underline decoration-dotted decoration-[var(--arvo-fg-soft)] underline-offset-2 shrink-0 hover:decoration-[var(--arvo-fg)]"
+                          title={t.finances.clickToEditBudget}
                         >
-                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4">
-                            <path d="M4.72 3.22a.75.75 0 0 1 1.06 0l3.75 3.75a.75.75 0 0 1 0 1.06L5.78 11.78a.75.75 0 0 1-1.06-1.06L7.94 7.5 4.72 4.28a.75.75 0 0 1 0-1.06Z" />
+                          {hasBudget ? fmt(cat.budget_monthly!, currency) : t.finances.setBudget}
+                        </button>
+                      )}
+                    </div>
+                    <div className="flex items-center justify-between gap-2 pl-9">
+                      {hist > 0 ? (
+                        <span className="text-xs text-[var(--arvo-fg-soft)]">{t.finances.avg3m}: {fmt(hist, currency)}</span>
+                      ) : <span />}
+                      <div className="flex items-center gap-0.5 shrink-0">
+                        <div className="relative">
+                          <button
+                            onClick={() => setEnvPickerCatId(envPickerCatId === cat.id ? null : cat.id)}
+                            className="p-1.5 text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg)] transition-colors rounded"
+                            title={t.finances.moveCategoryTitle}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5">
+                              <path d="M4.72 3.22a.75.75 0 0 1 1.06 0l3.75 3.75a.75.75 0 0 1 0 1.06L5.78 11.78a.75.75 0 0 1-1.06-1.06L7.94 7.5 4.72 4.28a.75.75 0 0 1 0-1.06Z" />
+                            </svg>
+                          </button>
+                          {envPickerCatId === cat.id && (
+                            <>
+                              <div className="fixed inset-0 z-10" onClick={() => setEnvPickerCatId(null)} />
+                              <div className="absolute right-0 top-full mt-1 z-20 bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-xl shadow-lg py-1 min-w-[160px]">
+                                {allEnvelopes.map(e => (
+                                  <button
+                                    key={e.id}
+                                    onClick={() => { onMoveCategory(cat.id, e.id); setEnvPickerCatId(null) }}
+                                    className={`w-full flex items-center gap-2 px-3 py-2 text-xs text-left transition-colors hover:bg-[var(--arvo-surface-2)] ${e.id === env.id ? 'font-semibold text-[var(--arvo-fg)]' : 'text-[var(--arvo-fg-muted)]'}`}
+                                  >
+                                    <span className="text-sm leading-none">{e.icon}</span>
+                                    <span className="flex-1 truncate">{resolveEnvName(e.name, e.type, e.name_key, nameKeys)}</span>
+                                  </button>
+                                ))}
+                              </div>
+                            </>
+                          )}
+                        </div>
+                        <button
+                          onClick={() => onShareCategory(cat)}
+                          className="p-1.5 text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-blue)] transition-colors rounded"
+                          title={t.finances.shareCategory}
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5">
+                            <path d="M11.25 1.5a2.25 2.25 0 1 1 0 4.5 2.25 2.25 0 0 1 0-4.5ZM4.75 7.25a2.25 2.25 0 1 1 0 4.5 2.25 2.25 0 0 1 0-4.5ZM11.25 11a2.25 2.25 0 1 1 0 4.5 2.25 2.25 0 0 1 0-4.5ZM6.27 8.944l3.46-1.888.013.009-.013-.009-3.46 1.888Zm0-1.888 3.46 1.888-.013-.009.013.009-3.46-1.888Z" />
                           </svg>
                         </button>
-                        {envPickerCatId === cat.id && (
-                          <>
-                            <div className="fixed inset-0 z-10" onClick={() => setEnvPickerCatId(null)} />
-                            <div className="absolute right-0 top-full mt-1 z-20 bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-xl shadow-lg py-1 min-w-[160px]">
-                              {allEnvelopes.map(e => (
-                                <button
-                                  key={e.id}
-                                  onClick={() => { onMoveCategory(cat.id, e.id); setEnvPickerCatId(null) }}
-                                  className={`w-full flex items-center gap-2 px-3 py-2 text-xs text-left transition-colors hover:bg-[var(--arvo-surface-2)] ${e.id === env.id ? 'font-semibold text-[var(--arvo-fg)]' : 'text-[var(--arvo-fg-muted)]'}`}
-                                >
-                                  <span className="text-sm leading-none">{e.icon}</span>
-                                  <span className="flex-1 truncate">{resolveEnvName(e.name, e.type, e.name_key, nameKeys)}</span>
-                                </button>
-                              ))}
-                            </div>
-                          </>
-                        )}
+                        <button
+                          onClick={() => onEditCategory(cat)}
+                          className="p-1.5 text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg)] transition-colors rounded"
+                          title={t.common.edit}
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5">
+                            <path d="M13.488 2.513a1.75 1.75 0 0 0-2.475 0L6.75 6.774a2.75 2.75 0 0 0-.596.892l-.848 2.047a.75.75 0 0 0 .98.98l2.047-.848a2.75 2.75 0 0 0 .892-.596l4.261-4.263a1.75 1.75 0 0 0 0-2.474ZM4.75 14a.75.75 0 0 0 0-1.5H3.5a.5.5 0 0 1-.5-.5V4a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v1.25a.75.75 0 0 0 1.5 0V4a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h1.25Z" />
+                          </svg>
+                        </button>
+                        <button
+                          onClick={() => onDeleteCategory(cat.id)}
+                          className="p-1.5 text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-red)] transition-colors rounded"
+                          title={t.common.delete}
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5">
+                            <path fillRule="evenodd" d="M5 3.25V4H2.75a.75.75 0 0 0 0 1.5h.3l.815 8.15A1.5 1.5 0 0 0 5.357 15h5.285a1.5 1.5 0 0 0 1.493-1.35l.815-8.15h.3a.75.75 0 0 0 0-1.5H11v-.75A2.25 2.25 0 0 0 8.75 1h-1.5A2.25 2.25 0 0 0 5 3.25Zm2.25-.75a.75.75 0 0 0-.75.75V4h3v-.75a.75.75 0 0 0-.75-.75h-1.5ZM6.05 6a.75.75 0 0 1 .787.713l.275 5.5a.75.75 0 0 1-1.498.075l-.275-5.5A.75.75 0 0 1 6.05 6Zm3.9 0a.75.75 0 0 1 .712.787l-.275 5.5a.75.75 0 0 1-1.498-.075l.275-5.5a.75.75 0 0 1 .786-.712Z" clipRule="evenodd" />
+                          </svg>
+                        </button>
                       </div>
-                      <button
-                        onClick={() => onShareCategory(cat)}
-                        className="p-2 text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-blue)] transition-colors rounded"
-                        title={t.finances.shareCategory}
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4">
-                          <path d="M11.25 1.5a2.25 2.25 0 1 1 0 4.5 2.25 2.25 0 0 1 0-4.5ZM4.75 7.25a2.25 2.25 0 1 1 0 4.5 2.25 2.25 0 0 1 0-4.5ZM11.25 11a2.25 2.25 0 1 1 0 4.5 2.25 2.25 0 0 1 0-4.5ZM6.27 8.944l3.46-1.888.013.009-.013-.009-3.46 1.888Zm0-1.888 3.46 1.888-.013-.009.013.009-3.46-1.888Z" />
-                        </svg>
-                      </button>
-                      <button
-                        onClick={() => onEditCategory(cat)}
-                        className="p-2 text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg)] transition-colors rounded"
-                        title={t.common.edit}
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4">
-                          <path d="M13.488 2.513a1.75 1.75 0 0 0-2.475 0L6.75 6.774a2.75 2.75 0 0 0-.596.892l-.848 2.047a.75.75 0 0 0 .98.98l2.047-.848a2.75 2.75 0 0 0 .892-.596l4.261-4.263a1.75 1.75 0 0 0 0-2.474ZM4.75 14a.75.75 0 0 0 0-1.5H3.5a.5.5 0 0 1-.5-.5V4a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v1.25a.75.75 0 0 0 1.5 0V4a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h1.25Z" />
-                        </svg>
-                      </button>
-                      <button
-                        onClick={() => onDeleteCategory(cat.id)}
-                        className="p-2 text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-red)] transition-colors rounded"
-                        title={t.common.delete}
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4">
-                          <path fillRule="evenodd" d="M5 3.25V4H2.75a.75.75 0 0 0 0 1.5h.3l.815 8.15A1.5 1.5 0 0 0 5.357 15h5.285a1.5 1.5 0 0 0 1.493-1.35l.815-8.15h.3a.75.75 0 0 0 0-1.5H11v-.75A2.25 2.25 0 0 0 8.75 1h-1.5A2.25 2.25 0 0 0 5 3.25Zm2.25-.75a.75.75 0 0 0-.75.75V4h3v-.75a.75.75 0 0 0-.75-.75h-1.5ZM6.05 6a.75.75 0 0 1 .787.713l.275 5.5a.75.75 0 0 1-1.498.075l-.275-5.5A.75.75 0 0 1 6.05 6Zm3.9 0a.75.75 0 0 1 .712.787l-.275 5.5a.75.75 0 0 1-1.498-.075l.275-5.5a.75.75 0 0 1 .786-.712Z" clipRule="evenodd" />
-                        </svg>
-                      </button>
                     </div>
                   </li>
                 )
@@ -430,7 +434,6 @@ export default function FinancesBudgetPage() {
       setData(d)
       setIncomeVal(String(d.income.monthly_net))
       setIncomeCur(d.income.currency)
-      setExpandedIds(new Set(d.envelopes.map(e => e.id)))
       setSharedGroups(groups)
 
       // Current month actuals (for total-consumed row at bottom)
@@ -602,12 +605,6 @@ export default function FinancesBudgetPage() {
   const totalCatBudget = expenseEnvelopes.reduce((s, e) => s + e.categories.reduce((cs, c) => cs + (c.budget_monthly ?? 0), 0), 0)
   const totalBudget    = totalCatBudget
   const unallocated    = data.income.monthly_net - totalCatBudget
-  // catActuals holds every category across every envelope (incl. income), but only expense
-  // envelopes are rendered below — sum just those so this total matches what's on screen.
-  const expenseCategoryIds = new Set(expenseEnvelopes.flatMap(e => e.categories.map(c => c.id)))
-  const totalActual = Array.from(catActuals.entries())
-    .filter(([catId]) => expenseCategoryIds.has(catId))
-    .reduce((s, [, v]) => s + v, 0)
 
   return (
     <div className="space-y-5">
@@ -617,6 +614,41 @@ export default function FinancesBudgetPage() {
           <h1 style={{ fontFamily: "var(--arvo-font-body)", fontSize: 18, letterSpacing: '0.06em', color: 'var(--arvo-fg)' }}>{t.finances.budgetTitle}</h1>
           <p className="text-sm mt-0.5" style={{ color: 'var(--arvo-fg-muted)' }}>{t.finances.budgetSubtitle}</p>
         </div>
+      </div>
+
+      {/* Unified summary card — renda / orçado / a alocar, replaces the separate
+          bottom total row and unallocated banner so it's all in one glance. */}
+      <div className="bg-[var(--arvo-surface)] rounded-2xl border border-[var(--arvo-border)] shadow-sm p-5">
+        <div className="grid grid-cols-3 gap-4">
+          <div>
+            <p className="text-xs text-[var(--arvo-fg-soft)] uppercase tracking-wide font-medium mb-1">{t.finances.incomeLabel}</p>
+            <p className="text-xl font-semibold text-[var(--arvo-fg)]">{fmt(data.income.monthly_net, data.income.currency)}</p>
+          </div>
+          <div>
+            <p className="text-xs text-[var(--arvo-fg-soft)] uppercase tracking-wide font-medium mb-1">{t.finances.totalBudgeted}</p>
+            <p className="text-xl font-semibold text-[var(--arvo-fg)]">{fmt(totalBudget, data.income.currency)}</p>
+          </div>
+          <div>
+            <p className="text-xs text-[var(--arvo-fg-soft)] uppercase tracking-wide font-medium mb-1">{t.finances.unallocated}</p>
+            <p className="text-xl font-semibold" style={{ color: unallocated < 0 ? 'var(--arvo-red)' : 'var(--arvo-green)' }}>
+              {fmt(Math.abs(unallocated), data.income.currency)}
+            </p>
+          </div>
+        </div>
+        {data.income.monthly_net > 0 && (
+          <div className="h-1.5 rounded-full bg-[var(--arvo-track-bg)] overflow-hidden mt-4 flex">
+            {expenseEnvelopes.map(env => {
+              const envTotal = env.categories.reduce((s, c) => s + (c.budget_monthly ?? 0), 0)
+              const pct = Math.max(0, Math.min(100, (envTotal / data.income.monthly_net) * 100))
+              return pct > 0 ? <div key={env.id} style={{ width: `${pct}%`, backgroundColor: env.color }} /> : null
+            })}
+          </div>
+        )}
+        {unallocated < -0.5 && (
+          <p className="text-xs mt-2" style={{ color: 'var(--arvo-red)' }}>
+            {t.finances.overspentBanner} {fmt(Math.abs(unallocated), data.income.currency)}
+          </p>
+        )}
       </div>
 
       {/* Income card — unified with income envelope categories */}
@@ -731,32 +763,56 @@ export default function FinancesBudgetPage() {
           not shown ambient next to each envelope's real numbers (that reads as a judgment
           even without computing any delta, especially for envelopes far from the reference). */}
       {expenseEnvelopes.length > 0 && (
-        <div className="flex items-center gap-1.5 px-1 relative">
-          <p className="text-xs text-[var(--arvo-fg-soft)] uppercase tracking-wide font-medium">{t.finances.expenses}</p>
+        <div className="flex items-center gap-1.5 px-1">
+          <p className="text-sm text-[var(--arvo-fg-muted)] uppercase tracking-wide font-semibold">{t.finances.expenses}</p>
           <button
-            onClick={() => setShowRefInfo(v => !v)}
+            onClick={() => setShowRefInfo(true)}
             className="w-4 h-4 rounded-full border border-[var(--arvo-fg-soft)] text-[var(--arvo-fg-soft)] text-[10px] leading-none flex items-center justify-center hover:border-[var(--arvo-fg)] hover:text-[var(--arvo-fg)] transition-colors"
             title={t.finances.referenceSplitTitle}
           >?</button>
-          {showRefInfo && (
-            <>
-              <div className="fixed inset-0 z-10" onClick={() => setShowRefInfo(false)} />
-              <div className="absolute left-0 top-full mt-1 z-20 bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-xl shadow-lg p-3 text-xs text-[var(--arvo-fg-muted)] max-w-xs">
-                <p className="font-medium text-[var(--arvo-fg)] mb-1">{t.finances.referenceSplitTitle}</p>
-                <p>{t.finances.referenceSplitBody}</p>
-              </div>
-            </>
-          )}
         </div>
       )}
 
-      {/* Unallocated banner */}
-      {Math.abs(unallocated) > 0.5 && (
-        <Banner variant={unallocated > 0 ? 'info' : 'alert'}>
-          {unallocated > 0
-            ? `${fmt(unallocated, data.income.currency)} ${t.finances.unallocatedBanner}`
-            : `${t.finances.overspentBanner} ${fmt(Math.abs(unallocated), data.income.currency)}`}
-        </Banner>
+      {/* Reference-split info modal — a fuller, structured overlay instead of a tiny
+          popover, built entirely from existing translated envelope name/description keys
+          so it stays translatable across pt/en/fr. */}
+      {showRefInfo && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={() => setShowRefInfo(false)}>
+          <div className="bg-[var(--arvo-surface)] rounded-2xl shadow-xl w-full max-w-md max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="p-6 pb-4">
+              <h3 className="font-semibold text-[var(--arvo-fg)] text-base mb-1.5">{t.finances.referenceSplitTitle}</h3>
+              <p className="text-sm text-[var(--arvo-fg-muted)] leading-relaxed">{t.finances.referenceSplitBody}</p>
+            </div>
+            <div className="px-6 pb-2 space-y-1">
+              {[
+                { pct: 50, icon: '🏠', name: t.finances.envelopeEssential,  desc: t.finances.descEssential,  color: 'var(--arvo-blue)' },
+                { pct: 30, icon: '📈', name: t.finances.envelopeInvestment, desc: t.finances.descInvestment, color: 'var(--arvo-green)' },
+                { pct: 10, icon: '🏦', name: t.finances.envelopeSavings,    desc: t.finances.descSavings,    color: 'var(--arvo-ocre)' },
+                { pct: 10, icon: '✨', name: t.finances.envelopeFree,       desc: t.finances.descFree,       color: 'var(--arvo-gold)' },
+              ].map(row => (
+                <div key={row.name} className="flex items-start gap-3 py-3 border-t border-[var(--arvo-border-soft)]">
+                  <div className="w-9 h-9 rounded-full flex items-center justify-center text-base shrink-0" style={{ background: 'var(--arvo-surface-2)' }}>{row.icon}</div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2 mb-0.5">
+                      <span className="text-sm font-semibold text-[var(--arvo-fg)]">{row.name}</span>
+                      <span className="text-sm font-semibold shrink-0" style={{ color: row.color }}>{row.pct}%</span>
+                    </div>
+                    <p className="text-xs text-[var(--arvo-fg-soft)] leading-relaxed">{row.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="px-6 pt-3 pb-6">
+              <p className="text-xs text-[var(--arvo-fg-soft)] italic leading-relaxed">{t.finances.referenceSplitFooter}</p>
+              <button
+                onClick={() => setShowRefInfo(false)}
+                className="w-full mt-4 bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] text-sm py-2 rounded-xl hover:opacity-80 transition-opacity"
+              >
+                {t.common.close}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Expense envelopes */}
@@ -778,24 +834,9 @@ export default function FinancesBudgetPage() {
             actuals={catActuals}
             historicals={catHistoricals}
             currency={data.income.currency}
+            incomeMonthly={data.income.monthly_net}
           />
         ))}
-      </div>
-
-      {/* Total row */}
-      <div className="bg-[var(--arvo-surface-2)] rounded-xl px-5 py-3 flex items-center justify-between gap-4">
-        <span className="text-sm text-[var(--arvo-fg-muted)]">{t.finances.totalBudgeted}</span>
-        <div className="flex items-center gap-4">
-          {totalActual > 0 && (
-            <div className="flex items-center gap-1.5">
-              <span className="text-xs text-[var(--arvo-fg-soft)]">{t.finances.totalConsumed}</span>
-              <span className="text-sm font-semibold" style={{ color: totalActual > totalBudget ? 'var(--arvo-red)' : 'var(--arvo-fg)' }}>
-                {fmt(totalActual, data.income.currency)}
-              </span>
-            </div>
-          )}
-          <span className="text-sm font-semibold text-[var(--arvo-fg)]">/ {fmt(totalBudget, data.income.currency)}</span>
-        </div>
       </div>
 
       {/* Shared categories section */}
