@@ -595,7 +595,12 @@ export default function FinancesBudgetPage() {
   const totalBudget    = expenseEnvelopes.reduce((s, e) => s + e.budget_amount, 0)
   const totalCatBudget = expenseEnvelopes.reduce((s, e) => s + e.categories.reduce((cs, c) => cs + (c.budget_monthly ?? 0), 0), 0)
   const unallocated    = data.income.monthly_net - totalCatBudget
-  const totalActual    = Array.from(catActuals.values()).reduce((s, v) => s + v, 0)
+  // catActuals holds every category across every envelope (incl. income), but only expense
+  // envelopes are rendered below — sum just those so this total matches what's on screen.
+  const expenseCategoryIds = new Set(expenseEnvelopes.flatMap(e => e.categories.map(c => c.id)))
+  const totalActual = Array.from(catActuals.entries())
+    .filter(([catId]) => expenseCategoryIds.has(catId))
+    .reduce((s, [, v]) => s + v, 0)
 
   return (
     <div className="space-y-5">
