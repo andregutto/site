@@ -731,10 +731,15 @@ router.post('/from-moment/:momentId', requireAuth, async (req, res: Response) =>
 // ── GET /api/voyage/moments-for-picker  (reusar endpoint de finanças) ─────────
 router.get('/moments-for-picker', requireAuth, async (req, res: Response) => {
   const userId = uid(req)
+  // Same fix as /finances/moments-for-picker: include moments the user is an active
+  // collaborator on, not just ones they own.
+  const { data: memberRows } = await supabaseAdmin
+    .from('finance_moment_members').select('moment_id').eq('user_id', userId).eq('status', 'active')
+  const sharedIds = (memberRows ?? []).map(m => m.moment_id)
   const { data } = await supabaseAdmin
     .from('finance_moments')
     .select('id, name, icon, color, start_date, end_date, budget')
-    .eq('user_id', userId)
+    .or(`user_id.eq.${userId}${sharedIds.length > 0 ? `,id.in.(${sharedIds.join(',')})` : ''}`)
     .order('created_at', { ascending: false })
   res.json({ moments: data ?? [] })
 })

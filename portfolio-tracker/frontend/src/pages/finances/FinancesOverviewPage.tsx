@@ -593,7 +593,7 @@ export default function FinancesOverviewPage() {
           <div>
             <div>
               <p style={{ fontFamily: "var(--arvo-font-body)", fontSize: 42, letterSpacing: '0.02em', lineHeight: 1.05, margin: 0, color: receivedIncome > 0 && netBalance < 0 ? 'var(--arvo-red)' : 'var(--arvo-fg)' }}>
-                {receivedIncome > 0 ? fmt(cx(netBalance), currency, true) : '—'}
+                {receivedIncome > 0 ? fmt(cx(netBalance), currency, false) : '—'}
               </p>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
                 <p style={{ fontFamily: "var(--arvo-font-body)", fontSize: 9, fontWeight: 600, letterSpacing: '0.10em', textTransform: 'uppercase', color: 'var(--arvo-gold-text)', margin: 0 }}>{t.finances.overviewBalance}</p>
@@ -604,7 +604,7 @@ export default function FinancesOverviewPage() {
                 }}>
                   {totalExpenses !== 0 && <Icon name={isWithinBudget ? 'check' : 'alert'} size={11} />}
                   {totalExpenses === 0 ? '—' : isWithinBudget ? t.finances.overviewOnTrack : t.finances.overviewOverspent}
-                  {overspentAmount > 0 && ` +${fmt(cx(overspentAmount), currency, true)}`}
+                  {overspentAmount > 0 && ` +${fmt(cx(overspentAmount), currency, false)}`}
                 </div>
               </div>
             </div>
@@ -613,20 +613,20 @@ export default function FinancesOverviewPage() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
                 <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 10, fontWeight: 600, letterSpacing: '0.10em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)' }}>{t.finances.income}</span>
                 <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 18, letterSpacing: '0.04em', color: receivedIncome > 0 && receivedIncome >= configuredIncome ? 'var(--arvo-green)' : receivedIncome > 0 ? 'var(--arvo-ocre)' : 'var(--arvo-fg)' }}>
-                  {receivedIncome > 0 ? fmt(cx(receivedIncome), currency, true) : '—'}
+                  {receivedIncome > 0 ? fmt(cx(receivedIncome), currency, false) : '—'}
                 </span>
                 <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 11, color: 'var(--arvo-fg-soft)' }}>
-                  {t.finances.overviewPlanned} {fmt(cx(configuredIncome), currency, true)}
+                  {t.finances.overviewPlanned} {fmt(cx(configuredIncome), currency, false)}
                 </span>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
                 <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 10, fontWeight: 600, letterSpacing: '0.10em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)' }}>{t.finances.expenses}</span>
                 <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 18, letterSpacing: '0.04em', color: totalExpenses > totalBudgeted && totalBudgeted > 0 ? 'var(--arvo-red)' : 'var(--arvo-fg)' }}>
-                  {totalExpenses > 0 ? fmt(cx(totalExpenses), currency, true) : '—'}
+                  {totalExpenses > 0 ? fmt(cx(totalExpenses), currency, false) : '—'}
                 </span>
                 {totalBudgeted > 0 && (
                   <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 11, color: 'var(--arvo-fg-soft)' }}>
-                    {t.finances.overviewPlanned} {fmt(cx(totalBudgeted), currency, true)}
+                    {t.finances.overviewPlanned} {fmt(cx(totalBudgeted), currency, false)}
                   </span>
                 )}
               </div>
@@ -650,10 +650,10 @@ export default function FinancesOverviewPage() {
                   </span>
                   <div style={{ display: 'flex', alignItems: 'baseline', gap: 5 }}>
                     <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 16, letterSpacing: '0.02em', color: displayOver ? 'var(--arvo-red)' : 'var(--arvo-fg)' }}>
-                      {fmt(cx(displayValue), currency, true)}
+                      {fmt(cx(displayValue), currency, false)}
                     </span>
                     {totalBudgeted > 0 && (
-                      <span style={{ fontSize: 11, color: 'var(--arvo-fg-faint)' }}>/ {fmt(cx(totalBudgeted), currency, true)}</span>
+                      <span style={{ fontSize: 11, color: 'var(--arvo-fg-faint)' }}>/ {fmt(cx(totalBudgeted), currency, false)}</span>
                     )}
                   </div>
                 </div>
@@ -681,8 +681,8 @@ export default function FinancesOverviewPage() {
                 {totalBudgeted > 0 && displayValue != null && (
                   <span style={{ fontSize: 11, fontWeight: 600, color: displayOver ? 'var(--arvo-red)' : 'var(--arvo-green)' }}>
                     {displayOver
-                      ? `+${fmt(cx(displayValue - totalBudgeted), currency, true)} ${t.finances.overviewOverBudget}`
-                      : `${fmt(cx(totalBudgeted - displayValue), currency, true)} ${t.finances.overviewUnderBudget}`}
+                      ? `+${fmt(cx(displayValue - totalBudgeted), currency, false)} ${t.finances.overviewOverBudget}`
+                      : `${fmt(cx(totalBudgeted - displayValue), currency, false)} ${t.finances.overviewUnderBudget}`}
                   </span>
                 )}
               </div>
@@ -699,10 +699,10 @@ export default function FinancesOverviewPage() {
               <>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 8 }}>
                   <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 26, letterSpacing: '0.02em', color: displayOver ? 'var(--arvo-red)' : 'var(--arvo-fg)' }}>
-                    {fmt(cx(displayValue), currency, true)}
+                    {fmt(cx(displayValue), currency, false)}
                   </span>
                   {totalBudgeted > 0 && (
-                    <span style={{ fontSize: 12, color: 'var(--arvo-fg-faint)' }}>/ {fmt(cx(totalBudgeted), currency, true)}</span>
+                    <span style={{ fontSize: 12, color: 'var(--arvo-fg-faint)' }}>/ {fmt(cx(totalBudgeted), currency, false)}</span>
                   )}
                 </div>
                 {showSparkline && (
@@ -728,8 +728,8 @@ export default function FinancesOverviewPage() {
                 {totalBudgeted > 0 && displayValue != null && (
                   <span style={{ fontSize: 12, fontWeight: 600, color: displayOver ? 'var(--arvo-red)' : 'var(--arvo-green)', display: 'block' }}>
                     {displayOver
-                      ? `+${fmt(cx(displayValue - totalBudgeted), currency, true)} ${t.finances.overviewOverBudget}`
-                      : `${fmt(cx(totalBudgeted - displayValue), currency, true)} ${t.finances.overviewUnderBudget}`}
+                      ? `+${fmt(cx(displayValue - totalBudgeted), currency, false)} ${t.finances.overviewOverBudget}`
+                      : `${fmt(cx(totalBudgeted - displayValue), currency, false)} ${t.finances.overviewUnderBudget}`}
                   </span>
                 )}
               </>
@@ -745,7 +745,7 @@ export default function FinancesOverviewPage() {
               <CollapsibleInfoCard
                 title={
                   isCurrentMonth && histDailyAvg > 0
-                    ? `${t.finances.overviewHistAvg} ${fmt(cx(histDailyAvg), currency, true)}${t.finances.overviewPerDay} · ${pastMonthsData.length} ${t.finances.overviewNMonths}`
+                    ? `${t.finances.overviewHistAvg} ${fmt(cx(histDailyAvg), currency, false)}${t.finances.overviewPerDay} · ${pastMonthsData.length} ${t.finances.overviewNMonths}`
                     : t.finances.overviewDetailsLabel
                 }
               >
@@ -758,7 +758,7 @@ export default function FinancesOverviewPage() {
                 </p>
                 {isCurrentMonth && missingRecurrents.length > 0 && (
                   <p style={{ margin: 0 }}>
-                    {t.finances.overviewRecurringIncluded}: {missingRecurrents.map(r => `${r.icon} ${fmt(cx(r.amount), currency, true)}`).join(' · ')}
+                    {t.finances.overviewRecurringIncluded}: {missingRecurrents.map(r => `${r.icon} ${fmt(cx(r.amount), currency, false)}`).join(' · ')}
                   </p>
                 )}
               </CollapsibleInfoCard>
@@ -809,7 +809,7 @@ export default function FinancesOverviewPage() {
                   )}
                 </div>
               </div>
-              <div className="h-1.5 bg-[var(--arvo-track-bg)] rounded-full overflow-hidden">
+              <div className="h-1.5 w-24 ml-auto bg-[var(--arvo-track-bg)] rounded-full overflow-hidden">
                 <div
                   className="h-full rounded-full transition-all duration-500"
                   style={{
@@ -870,10 +870,13 @@ export default function FinancesOverviewPage() {
                         <span style={{ fontSize: 12, color: 'var(--arvo-fg-faint)' }}>/ {fmt(cx(env.budget), currency, true)}</span>
                       )}
                       {env.budget > 0 && env.actual > 0 && (() => {
-                        const pct = Math.round((env.actual - env.budget) / env.budget * 100)
+                        // % of the envelope's budget already spent (not the delta vs budget) —
+                        // a negative "-90%" for an envelope with plenty of room left read as if
+                        // something had gone wrong, when it just meant "10% consumed".
+                        const pctConsumed = Math.round((env.actual / env.budget) * 100)
                         return (
-                          <span style={{ fontSize: 11, fontWeight: 600, color: pct > 0 ? 'var(--arvo-red)' : 'var(--arvo-green)', minWidth: 30, textAlign: 'right' }}>
-                            {pct > 0 ? `+${pct}%` : `${pct}%`}
+                          <span style={{ fontSize: 11, fontWeight: 600, color: pctConsumed > 100 ? 'var(--arvo-red)' : 'var(--arvo-fg-soft)', minWidth: 30, textAlign: 'right' }}>
+                            {pctConsumed}%
                           </span>
                         )
                       })()}

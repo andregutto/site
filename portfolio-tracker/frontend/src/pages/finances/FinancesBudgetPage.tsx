@@ -247,6 +247,9 @@ function EnvelopeBar({ env, allEnvelopes, expanded, onToggle, onEditCategory, on
                     <div className="flex items-center gap-3">
                       <span className="text-base leading-none w-6 shrink-0">{cat.icon}</span>
                       <span className="flex-1 min-w-0 text-sm text-[var(--arvo-fg)] truncate">{resolveKey(cat.name, cat.name_key, nameKeys)}</span>
+                      {hist > 0 && (
+                        <span className="text-xs text-[var(--arvo-fg-soft)] shrink-0">{t.finances.avg3m}: {fmt(hist, currency)}</span>
+                      )}
                       {editingCatId === cat.id ? (
                         <input
                           autoFocus
@@ -268,39 +271,35 @@ function EnvelopeBar({ env, allEnvelopes, expanded, onToggle, onEditCategory, on
                         </button>
                       )}
                     </div>
-                    <div className="flex items-center justify-between gap-2 pl-9">
-                      {hist > 0 ? (
-                        <span className="text-xs text-[var(--arvo-fg-soft)]">{t.finances.avg3m}: {fmt(hist, currency)}</span>
-                      ) : <span />}
+                    <div className="flex items-center justify-end gap-2 pl-9">
                       <div className="flex items-center gap-0.5 shrink-0">
-                        <div className="relative">
-                          <button
-                            onClick={() => setEnvPickerCatId(envPickerCatId === cat.id ? null : cat.id)}
-                            className="p-1.5 text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg)] transition-colors rounded"
-                            title={t.finances.moveCategoryTitle}
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5">
-                              <path d="M4.72 3.22a.75.75 0 0 1 1.06 0l3.75 3.75a.75.75 0 0 1 0 1.06L5.78 11.78a.75.75 0 0 1-1.06-1.06L7.94 7.5 4.72 4.28a.75.75 0 0 1 0-1.06Z" />
-                            </svg>
-                          </button>
-                          {envPickerCatId === cat.id && (
-                            <>
-                              <div className="fixed inset-0 z-10" onClick={() => setEnvPickerCatId(null)} />
-                              <div className="absolute right-0 top-full mt-1 z-20 bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-xl shadow-lg py-1 min-w-[160px]">
-                                {allEnvelopes.map(e => (
-                                  <button
-                                    key={e.id}
-                                    onClick={() => { onMoveCategory(cat.id, e.id); setEnvPickerCatId(null) }}
-                                    className={`w-full flex items-center gap-2 px-3 py-2 text-xs text-left transition-colors hover:bg-[var(--arvo-surface-2)] ${e.id === env.id ? 'font-semibold text-[var(--arvo-fg)]' : 'text-[var(--arvo-fg-muted)]'}`}
-                                  >
-                                    <span className="text-sm leading-none">{e.icon}</span>
-                                    <span className="flex-1 truncate">{resolveEnvName(e.name, e.type, e.name_key, nameKeys)}</span>
-                                  </button>
-                                ))}
-                              </div>
-                            </>
-                          )}
-                        </div>
+                        <button
+                          onClick={() => setEnvPickerCatId(cat.id)}
+                          className="p-1.5 text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg)] transition-colors rounded"
+                          title={t.finances.moveCategoryTitle}
+                        >
+                          <span className="text-sm leading-none">{env.icon}</span>
+                        </button>
+                        {envPickerCatId === cat.id && (
+                          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 px-4" onClick={() => setEnvPickerCatId(null)}>
+                            <div className="bg-[var(--arvo-surface)] rounded-t-2xl sm:rounded-2xl shadow-xl w-full sm:max-w-sm max-h-[70vh] overflow-y-auto py-2" onClick={e => e.stopPropagation()}>
+                              <p className="px-4 py-2 text-xs text-[var(--arvo-fg-soft)] uppercase tracking-wide font-medium">{t.finances.moveCategoryTitle}</p>
+                              {allEnvelopes.map(e => (
+                                <button
+                                  key={e.id}
+                                  onClick={() => { onMoveCategory(cat.id, e.id); setEnvPickerCatId(null) }}
+                                  className={`w-full flex items-center gap-2 px-4 py-3 text-sm text-left transition-colors hover:bg-[var(--arvo-surface-2)] ${e.id === env.id ? 'font-semibold text-[var(--arvo-fg)]' : 'text-[var(--arvo-fg-muted)]'}`}
+                                >
+                                  <span className="text-lg leading-none">{e.icon}</span>
+                                  <span className="flex-1 truncate">{resolveEnvName(e.name, e.type, e.name_key, nameKeys)}</span>
+                                  {e.id === env.id && (
+                                    <svg className="w-4 h-4 text-[var(--arvo-blue)] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
+                                  )}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                         <button
                           onClick={() => onShareCategory(cat)}
                           className="p-1.5 text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-blue)] transition-colors rounded"
@@ -425,8 +424,8 @@ export default function FinancesBudgetPage() {
   const [openEnvPicker, setOpenEnvPicker] = useState<number | null>(null)
   const [showRefInfo, setShowRefInfo] = useState(false)
 
-  const load = useCallback(async () => {
-    setLoading(true)
+  const load = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true)
     try {
       const today = new Date()
       const _cycleDay: number = (user?.user_metadata?.month_cycle_day as number) || 1
@@ -482,7 +481,7 @@ export default function FinancesBudgetPage() {
       }
       setCatHistoricals(histMap)
     } finally {
-      setLoading(false)
+      if (!silent) setLoading(false)
     }
   }, [])
 
@@ -493,7 +492,7 @@ export default function FinancesBudgetPage() {
     setSaving(true)
     try {
       await apiFetch('/finances/income', { method: 'PATCH', body: JSON.stringify({ monthly_net: parseFloat(incomeVal), currency: incomeCur }) })
-      await load()
+      await load(true)
       setIncomeEdit(false)
     } finally {
       setSaving(false)
@@ -538,7 +537,7 @@ export default function FinancesBudgetPage() {
       } else {
         await apiFetch(`/finances/categories/${modal.category!.id}`, { method: 'PATCH', body: JSON.stringify(payload) })
       }
-      await load()
+      await load(true)
       setModal(null)
     } finally {
       setSaving(false)
@@ -548,22 +547,22 @@ export default function FinancesBudgetPage() {
   async function deleteCategory(id: number) {
     if (!confirm(t.finances.confirmDeleteCategory)) return
     await apiFetch(`/finances/categories/${id}`, { method: 'DELETE' })
-    await load()
+    await load(true)
   }
 
   async function saveDescription(envId: number, description: string) {
     await apiFetch(`/finances/envelopes/${envId}`, { method: 'PATCH', body: JSON.stringify({ description }) })
-    await load()
+    await load(true)
   }
 
   async function saveCategoryBudget(catId: number, value: number | null) {
     await apiFetch(`/finances/categories/${catId}`, { method: 'PATCH', body: JSON.stringify({ budget_monthly: value }) })
-    await load()
+    await load(true)
   }
 
   async function moveCategory(catId: number, envelopeId: number) {
     await apiFetch(`/finances/categories/${catId}`, { method: 'PATCH', body: JSON.stringify({ envelope_id: envelopeId }) })
-    await load()
+    await load(true)
   }
 
   function openShareModal(cat: Category) {
@@ -576,7 +575,7 @@ export default function FinancesBudgetPage() {
       method: 'PATCH',
       body: JSON.stringify({ envelope_id: envId }),
     })
-    await load()
+    await load(true)
   }
 
   async function confirmShare() {
@@ -595,7 +594,7 @@ export default function FinancesBudgetPage() {
         }),
       })
       setShareModal(null)
-      await load()
+      await load(true)
     } finally {
       setSharingSaving(false)
     }
@@ -640,22 +639,53 @@ export default function FinancesBudgetPage() {
             <p className="text-xl font-semibold text-[var(--arvo-fg)]">{fmt(totalBudget, data.income.currency)}</p>
           </div>
           <div>
-            <p className="text-xs text-[var(--arvo-fg-soft)] uppercase tracking-wide font-medium mb-1">
-              {unallocated < 0 ? t.finances.overspent : t.finances.unallocated}
-            </p>
-            <p className="text-xl font-semibold" style={{ color: unallocated < 0 ? 'var(--arvo-red)' : 'var(--arvo-fg)' }}>
-              {unallocated < 0 ? '−' : ''}{fmt(Math.abs(unallocated), data.income.currency)}
-            </p>
+            {Math.round(unallocated) === 0 ? (
+              <>
+                <p className="text-xs text-[var(--arvo-fg-soft)] uppercase tracking-wide font-medium mb-1">{t.finances.unallocated}</p>
+                <span
+                  className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full"
+                  style={{ background: 'rgba(31,138,91,0.10)', color: 'var(--arvo-green)', border: '1px solid rgba(31,138,91,0.25)' }}
+                >
+                  <Icon name="check" size={11} />
+                  {t.finances.budgetFullyAllocated}
+                </span>
+              </>
+            ) : (
+              <>
+                <p className="text-xs text-[var(--arvo-fg-soft)] uppercase tracking-wide font-medium mb-1">
+                  {unallocated < 0 ? t.finances.overspent : t.finances.unallocated}
+                </p>
+                <p className="text-xl font-semibold" style={{ color: unallocated < 0 ? 'var(--arvo-red)' : 'var(--arvo-fg)' }}>
+                  {unallocated < 0 ? '−' : ''}{fmt(Math.abs(unallocated), data.income.currency)}
+                </p>
+              </>
+            )}
           </div>
         </div>
         {data.income.monthly_net > 0 && (
-          <div className="h-1.5 rounded-full bg-[var(--arvo-track-bg)] overflow-hidden mt-4 flex">
-            {expenseEnvelopes.map(env => {
-              const envTotal = env.categories.reduce((s, c) => s + (c.budget_monthly ?? 0), 0)
-              const pct = Math.max(0, Math.min(100, (envTotal / data.income.monthly_net) * 100))
-              return pct > 0 ? <div key={env.id} style={{ width: `${pct}%`, backgroundColor: ENV_TYPE_COLOR[env.type] ?? env.color }} /> : null
-            })}
-          </div>
+          <>
+            <div className="h-1.5 rounded-full bg-[var(--arvo-track-bg)] overflow-hidden mt-4 flex">
+              {expenseEnvelopes.map(env => {
+                const envTotal = env.categories.reduce((s, c) => s + (c.budget_monthly ?? 0), 0)
+                const pct = Math.max(0, Math.min(100, (envTotal / data.income.monthly_net) * 100))
+                return pct > 0 ? <div key={env.id} style={{ width: `${pct}%`, backgroundColor: ENV_TYPE_COLOR[env.type] ?? env.color }} /> : null
+              })}
+            </div>
+            {/* Legend — the bar's colored segments were unreadable without a key, especially
+                since envelope colors here are the muted brand tokens, not the raw category color. */}
+            <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2">
+              {expenseEnvelopes.map(env => {
+                const envTotal = env.categories.reduce((s, c) => s + (c.budget_monthly ?? 0), 0)
+                if (envTotal <= 0) return null
+                return (
+                  <span key={env.id} className="inline-flex items-center gap-1.5 text-xs text-[var(--arvo-fg-soft)]">
+                    <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: ENV_TYPE_COLOR[env.type] ?? env.color }} />
+                    {resolveEnvName(env.name, env.type, env.name_key, nameKeys)}
+                  </span>
+                )
+              })}
+            </div>
+          </>
         )}
       </div>
 
@@ -898,9 +928,9 @@ export default function FinancesBudgetPage() {
                         <div className="flex-1 min-w-0 space-y-1.5">
                           <span className="text-sm text-[var(--arvo-fg)] truncate block">{cat.name}</span>
                           <span className="text-xs text-[var(--arvo-fg-soft)]">{myPct}% · {t.finances.myGoal}: {fmt(myGoal, cat.currency)}</span>
-                          <div className="relative">
+                          <div>
                             <button
-                              onClick={() => setOpenEnvPicker(openEnvPicker === cat.id ? null : cat.id)}
+                              onClick={() => setOpenEnvPicker(cat.id)}
                               className="flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg border border-[var(--arvo-border)] hover:border-[var(--arvo-border)] bg-[var(--arvo-surface)] text-[var(--arvo-fg-muted)] transition-colors"
                             >
                               {cat.local_envelope_id
@@ -910,29 +940,29 @@ export default function FinancesBudgetPage() {
                               <svg className={`w-3 h-3 text-[var(--arvo-fg-soft)] transition-transform ${openEnvPicker === cat.id ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7"/></svg>
                             </button>
                             {openEnvPicker === cat.id && (
-                              <>
-                              <div className="fixed inset-0 z-10" onClick={() => setOpenEnvPicker(null)} />
-                              <div className="absolute left-0 top-full mt-1 z-20 bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-xl shadow-lg py-1 min-w-[180px]">
-                                <button
-                                  onClick={() => { setSharedEnvelope(cat.id, null); setOpenEnvPicker(null) }}
-                                  className={`w-full flex items-center gap-2 px-3 py-2 text-xs text-left transition-colors hover:bg-[var(--arvo-surface-2)] ${!cat.local_envelope_id ? 'font-semibold text-[var(--arvo-fg)]' : 'text-[var(--arvo-fg-soft)]'}`}
-                                >
-                                  <span className="w-4 h-4 rounded-full border-2 border-[var(--arvo-border)] shrink-0" />
-                                  {t.finances.noEnvelope}
-                                </button>
-                                {expenseEnvelopes.map(env => (
+                              <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 px-4" onClick={() => setOpenEnvPicker(null)}>
+                                <div className="bg-[var(--arvo-surface)] rounded-t-2xl sm:rounded-2xl shadow-xl w-full sm:max-w-sm max-h-[70vh] overflow-y-auto py-2" onClick={e => e.stopPropagation()}>
+                                  <p className="px-4 py-2 text-xs text-[var(--arvo-fg-soft)] uppercase tracking-wide font-medium">{t.finances.moveCategoryTitle}</p>
                                   <button
-                                    key={env.id}
-                                    onClick={() => { setSharedEnvelope(cat.id, env.id); setOpenEnvPicker(null) }}
-                                    className={`w-full flex items-center gap-2 px-3 py-2 text-xs text-left transition-colors hover:bg-[var(--arvo-surface-2)] ${cat.local_envelope_id === env.id ? 'font-semibold text-[var(--arvo-fg)]' : 'text-[var(--arvo-fg-muted)]'}`}
+                                    onClick={() => { setSharedEnvelope(cat.id, null); setOpenEnvPicker(null) }}
+                                    className={`w-full flex items-center gap-2 px-4 py-3 text-sm text-left transition-colors hover:bg-[var(--arvo-surface-2)] ${!cat.local_envelope_id ? 'font-semibold text-[var(--arvo-fg)]' : 'text-[var(--arvo-fg-soft)]'}`}
                                   >
-                                    <span className="text-sm leading-none">{env.icon}</span>
-                                    <span className="flex-1 truncate">{resolveEnvName(env.name, env.type, env.name_key, nameKeys)}</span>
-                                    {cat.local_envelope_id === env.id && <svg className="w-3.5 h-3.5 text-[var(--arvo-blue)] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>}
+                                    <span className="w-4 h-4 rounded-full border-2 border-[var(--arvo-border)] shrink-0" />
+                                    {t.finances.noEnvelope}
                                   </button>
-                                ))}
+                                  {expenseEnvelopes.map(env => (
+                                    <button
+                                      key={env.id}
+                                      onClick={() => { setSharedEnvelope(cat.id, env.id); setOpenEnvPicker(null) }}
+                                      className={`w-full flex items-center gap-2 px-4 py-3 text-sm text-left transition-colors hover:bg-[var(--arvo-surface-2)] ${cat.local_envelope_id === env.id ? 'font-semibold text-[var(--arvo-fg)]' : 'text-[var(--arvo-fg-muted)]'}`}
+                                    >
+                                      <span className="text-lg leading-none">{env.icon}</span>
+                                      <span className="flex-1 truncate">{resolveEnvName(env.name, env.type, env.name_key, nameKeys)}</span>
+                                      {cat.local_envelope_id === env.id && <svg className="w-4 h-4 text-[var(--arvo-blue)] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>}
+                                    </button>
+                                  ))}
+                                </div>
                               </div>
-                              </>
                             )}
                           </div>
                         </div>

@@ -2186,8 +2186,17 @@ router.get('/moments', requireAuth, async (req, res: Response) => {
 
 router.get('/moments-for-picker', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
+
+  // Moments the user owns, PLUS ones they're an active collaborator on — without the
+  // second half, shared moments silently never showed up when assigning a transaction.
+  const { data: memberRows } = await supabaseAdmin
+    .from('finance_moment_members').select('moment_id').eq('user_id', userId).eq('status', 'active')
+  const sharedIds = (memberRows ?? []).map(m => m.moment_id)
+
   const { data, error } = await supabaseAdmin
-    .from('finance_moments').select('id, name, icon, color').eq('user_id', userId).order('created_at', { ascending: false })
+    .from('finance_moments').select('id, name, icon, color')
+    .or(`user_id.eq.${userId}${sharedIds.length > 0 ? `,id.in.(${sharedIds.join(',')})` : ''}`)
+    .order('created_at', { ascending: false })
   if (error) { res.status(500).json({ error: error.message }); return }
   res.json(data)
 })

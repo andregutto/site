@@ -401,7 +401,7 @@ export default function AppLayout() {
                         <>
                           <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: `${color}1A`, color }}><Icon name={iconName} size={15} /></div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-xs font-medium truncate" style={{ color: 'var(--arvo-fg)' }}>{title}</p>
+                            <p className="text-xs font-medium line-clamp-2" style={{ color: 'var(--arvo-fg)' }}>{title}</p>
                             <p className="text-[11px] mt-0.5 truncate" style={{ color: 'var(--arvo-fg-soft)' }}>
                               {subtitle ? `${subtitle} · ` : ''}{formatTimestamp(item.occurred_at, locale)}
                             </p>
@@ -409,9 +409,9 @@ export default function AppLayout() {
                         </>
                       )
                       return item.link ? (
-                        <Link key={item.key} to={item.link} onClick={() => setShowNotifMenu(false)} className="flex items-center gap-3 px-4 py-2.5 hover:bg-[var(--arvo-surface-2)] transition-colors">{inner}</Link>
+                        <Link key={item.key} to={item.link} onClick={() => setShowNotifMenu(false)} className="flex items-start gap-3 px-4 py-2.5 hover:bg-[var(--arvo-surface-2)] transition-colors">{inner}</Link>
                       ) : (
-                        <div key={item.key} className="flex items-center gap-3 px-4 py-2.5">{inner}</div>
+                        <div key={item.key} className="flex items-start gap-3 px-4 py-2.5">{inner}</div>
                       )
                     })}
                   </div>

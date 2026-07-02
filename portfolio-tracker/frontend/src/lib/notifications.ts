@@ -122,8 +122,14 @@ export function resolveNotificationText(item: NotificationItem, t: any, locale: 
       const finance = t.finances as Record<string, string>
       const name = (nameKey && finance[nameKey]) || String(item.params.name ?? '')
       const icon = String(item.params.icon ?? '')
-      const pct = String(item.params.pct ?? '')
-      return { title: n.type_budget_alert.replace('{name}', icon ? `${icon} ${name}` : name).replace('{pct}', pct) }
+      const pctNum = Number(item.params.pct ?? 0)
+      const displayName = icon ? `${icon} ${name}` : name
+      // At/above 100% "X% of budget" reads as if it overspent by that much — a distinct,
+      // unambiguous "reached the budget" phrasing avoids that misread at the boundary.
+      const title = pctNum >= 100
+        ? n.type_budget_alert_full.replace('{name}', displayName)
+        : n.type_budget_alert.replace('{name}', displayName).replace('{pct}', String(pctNum))
+      return { title }
     }
     default:
       return { title: item.key }

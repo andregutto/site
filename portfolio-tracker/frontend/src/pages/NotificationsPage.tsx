@@ -35,7 +35,7 @@ function NotificationRow({ item, action }: { item: NotificationItem; action: Rea
         <Icon name={icon} size={18} />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium truncate" style={{ color: 'var(--arvo-fg)' }}>{title}</p>
+        <p className="text-sm font-medium line-clamp-2" style={{ color: 'var(--arvo-fg)' }}>{title}</p>
         <p className="text-xs mt-0.5" style={{ color: 'var(--arvo-fg-soft)' }}>
           {subtitle ? `${subtitle} · ` : ''}{timestamp}
         </p>
@@ -44,11 +44,11 @@ function NotificationRow({ item, action }: { item: NotificationItem; action: Rea
   )
 
   return (
-    <div className="bg-[var(--arvo-surface)] rounded-2xl border border-[var(--arvo-border)] shadow-sm px-5 py-4 flex items-center gap-4">
+    <div className="bg-[var(--arvo-surface)] rounded-2xl border border-[var(--arvo-border)] shadow-sm px-5 py-4 flex items-start gap-4">
       {item.link ? (
-        <Link to={item.link} className="flex-1 min-w-0 flex items-center gap-4">{content}</Link>
+        <Link to={item.link} className="flex-1 min-w-0 flex items-start gap-4">{content}</Link>
       ) : (
-        <div className="flex-1 min-w-0 flex items-center gap-4">{content}</div>
+        <div className="flex-1 min-w-0 flex items-start gap-4">{content}</div>
       )}
       {canAccept && (
         <button
