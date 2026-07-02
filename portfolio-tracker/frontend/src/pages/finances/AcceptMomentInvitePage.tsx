@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
+import { useI18n } from '../../contexts/I18nContext'
 import { apiFetch } from '../../lib/api'
 import ArvoLoader from '../../components/ArvoLoader'
 
 const RED = '#D63B2F'
+const GREEN = '#1F8A5B'
 
 interface MomentInvitePreview {
   moment_name: string
@@ -16,6 +18,8 @@ export default function AcceptMomentInvitePage() {
   const { token } = useParams<{ token: string }>()
   const navigate = useNavigate()
   const { user, loading: authLoading } = useAuth()
+  const { t } = useI18n()
+  const iv = t.invite
 
   const [preview, setPreview] = useState<MomentInvitePreview | null>(null)
   const [loadingPreview, setLoadingPreview] = useState(true)
@@ -31,8 +35,9 @@ export default function AcceptMomentInvitePage() {
         if (data.error) setError(data.error)
         else setPreview(data)
       })
-      .catch(() => setError('Erro ao carregar convite'))
+      .catch(() => setError(iv.loadError))
       .finally(() => setLoadingPreview(false))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token])
 
   async function handleAccept() {
@@ -51,7 +56,7 @@ export default function AcceptMomentInvitePage() {
       setTimeout(() => navigate('/finances/moments'), 1800)
       void result
     } catch (ex: unknown) {
-      setError((ex as Error).message ?? 'Erro ao aceitar convite')
+      setError((ex as Error).message ?? iv.acceptError)
     } finally {
       setAccepting(false)
     }
@@ -64,6 +69,7 @@ export default function AcceptMomentInvitePage() {
       sessionStorage.removeItem('pending_moment_invite_token')
       handleAccept()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, authLoading])
 
   if (loadingPreview || authLoading) {
@@ -92,7 +98,7 @@ export default function AcceptMomentInvitePage() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
                 </svg>
               </div>
-              <p style={{ fontSize: 14, color: 'var(--arvo-black)', fontWeight: 600 }}>Convite inválido</p>
+              <p style={{ fontSize: 14, color: 'var(--arvo-black)', fontWeight: 600 }}>{iv.invalidTitle}</p>
               <p style={{ fontSize: 13, color: 'var(--arvo-fg-soft)' }}>{error}</p>
             </div>
           ) : done ? (
@@ -102,8 +108,8 @@ export default function AcceptMomentInvitePage() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                 </svg>
               </div>
-              <p style={{ fontSize: 14, color: 'var(--arvo-black)', fontWeight: 600 }}>Bem-vindo ao momento!</p>
-              <p style={{ fontSize: 12, color: 'var(--arvo-fg-soft)' }}>Redirecionando...</p>
+              <p style={{ fontSize: 14, color: 'var(--arvo-black)', fontWeight: 600 }}>{iv.welcomeMoment}</p>
+              <p style={{ fontSize: 12, color: 'var(--arvo-fg-soft)' }}>{iv.redirecting}</p>
             </div>
           ) : preview && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -116,7 +122,7 @@ export default function AcceptMomentInvitePage() {
                 </div>
                 <div>
                   <p style={{ fontSize: 11, color: 'var(--arvo-fg-soft)', letterSpacing: '0.10em', textTransform: 'uppercase', fontFamily: 'var(--arvo-font-body)', marginBottom: 4 }}>
-                    Convite de {preview.inviter_name}
+                    {iv.invitedBy.replace('{name}', preview.inviter_name)}
                   </p>
                   <p style={{ fontSize: 20, fontFamily: "'Tenor Sans', 'Times New Roman', serif", letterSpacing: '0.04em', color: 'var(--arvo-black)' }}>
                     {preview.moment_name}
@@ -126,23 +132,23 @@ export default function AcceptMomentInvitePage() {
 
               {!user && (
                 <p style={{ fontSize: 12, color: 'var(--arvo-fg-soft)', textAlign: 'center', padding: '8px 0', borderTop: '1px solid var(--arvo-border-soft)', borderBottom: '1px solid var(--arvo-border-soft)' }}>
-                  Faça login para aceitar o convite
+                  {iv.loginToAccept}
                 </p>
               )}
 
               <button
                 onClick={handleAccept}
                 disabled={accepting}
-                style={{ width: '100%', padding: '10px 0', borderRadius: 8, background: RED, color: '#fff', border: 'none', cursor: accepting ? 'default' : 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, opacity: accepting ? 0.7 : 1, transition: 'opacity 160ms' }}
+                style={{ width: '100%', padding: '10px 0', borderRadius: 8, background: GREEN, color: '#fff', border: 'none', cursor: accepting ? 'default' : 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, opacity: accepting ? 0.7 : 1, transition: 'opacity 160ms' }}
               >
-                {accepting ? '...' : 'Entrar no momento'}
+                {accepting ? '...' : iv.acceptMoment}
               </button>
 
               <button
                 onClick={() => navigate('/')}
                 style={{ width: '100%', padding: '8px 0', borderRadius: 8, background: 'none', border: '1px solid var(--arvo-border)', color: 'var(--arvo-fg-muted)', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 12.5 }}
               >
-                Cancelar
+                {iv.cancel}
               </button>
             </div>
           )}

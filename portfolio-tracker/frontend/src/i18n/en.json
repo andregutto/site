@@ -2444,5 +2444,19 @@
     "removePersonButton": "Remove this person",
     "removeCategoryConfirm": "Remove {email}'s access to the category \"{name}\"?",
     "shareButton": "+ Share"
+  },
+  "invite": {
+    "invalidTitle": "Invalid invite",
+    "loadError": "Error loading invite",
+    "acceptError": "Error accepting invite",
+    "welcomeTrip": "Welcome to the trip!",
+    "welcomeMoment": "Welcome to the moment!",
+    "redirecting": "Redirecting...",
+    "invitedBy": "Invite from {name}",
+    "loginToAccept": "Log in to accept the invite",
+    "acceptTrip": "Join trip",
+    "acceptMoment": "Join moment",
+    "cancel": "Cancel",
+    "alsoShareMoments": "Also share this trip's linked moments"
   }
 }

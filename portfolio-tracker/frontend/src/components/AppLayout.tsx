@@ -18,6 +18,7 @@ import { Banner } from './ui'
 
 const onboardingKey = (userId: string) => `onboarding_v1_done_${userId}`
 const CURRENCIES: Currency[] = ['BRL', 'USD', 'EUR']
+const NOTIF_ACCEPTABLE_TYPES = new Set(['trip_invite', 'moment_invite', 'shared_group_invite', 'friend_invite'])
 
 const NOTIF_ICON: Record<string, IconName> = {
   achievement: 'seal',
@@ -53,7 +54,8 @@ export default function AppLayout() {
   const { currency, setCurrency, hideValues, toggleHideValues } = useCurrency()
   const { resolvedTheme } = useTheme()
   const { t, locale } = useI18n()
-  const { active: activeNotifications, unreadCount, dismissAll } = useNotificationsContext()
+  const { active: activeNotifications, unreadCount, dismissAll, acceptInvite } = useNotificationsContext()
+  const [acceptingKey, setAcceptingKey] = useState<string | null>(null)
   const location = useLocation()
 
   const [showOnboarding, setShowOnboarding] = useState(false)
@@ -397,6 +399,7 @@ export default function AppLayout() {
                       const { title, subtitle } = resolveNotificationText(item, t, locale)
                       const color = SEVERITY_COLORS[item.severity] ?? SEVERITY_COLORS.info
                       const iconName = NOTIF_ICON[item.type] ?? 'bell'
+                      const canAccept = NOTIF_ACCEPTABLE_TYPES.has(item.type) && !!item.params.token
                       const inner = (
                         <>
                           <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: `${color}1A`, color }}><Icon name={iconName} size={15} /></div>
@@ -406,6 +409,21 @@ export default function AppLayout() {
                               {subtitle ? `${subtitle} · ` : ''}{formatTimestamp(item.occurred_at, locale)}
                             </p>
                           </div>
+                          {canAccept && (
+                            <button
+                              onClick={async e => {
+                                e.preventDefault()
+                                e.stopPropagation()
+                                setAcceptingKey(item.key)
+                                try { await acceptInvite(item) } finally { setAcceptingKey(null) }
+                              }}
+                              disabled={acceptingKey === item.key}
+                              className="shrink-0 text-[11px] font-medium px-2.5 py-1 rounded-lg disabled:opacity-50"
+                              style={{ background: 'var(--arvo-green)', color: '#fff' }}
+                            >
+                              {acceptingKey === item.key ? '…' : t.notifications.accept}
+                            </button>
+                          )}
                         </>
                       )
                       return item.link ? (

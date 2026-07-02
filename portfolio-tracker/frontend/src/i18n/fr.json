@@ -2444,5 +2444,19 @@
     "removePersonButton": "Supprimer cette personne",
     "removeCategoryConfirm": "Supprimer l'accès de {email} à la catégorie « {name} » ?",
     "shareButton": "+ Partager"
+  },
+  "invite": {
+    "invalidTitle": "Invitation invalide",
+    "loadError": "Erreur lors du chargement de l'invitation",
+    "acceptError": "Erreur lors de l'acceptation de l'invitation",
+    "welcomeTrip": "Bienvenue dans le voyage !",
+    "welcomeMoment": "Bienvenue dans le moment !",
+    "redirecting": "Redirection...",
+    "invitedBy": "Invitation de {name}",
+    "loginToAccept": "Connectez-vous pour accepter l'invitation",
+    "acceptTrip": "Rejoindre le voyage",
+    "acceptMoment": "Rejoindre le moment",
+    "cancel": "Annuler",
+    "alsoShareMoments": "Partager aussi les moments liés à ce voyage"
   }
 }
