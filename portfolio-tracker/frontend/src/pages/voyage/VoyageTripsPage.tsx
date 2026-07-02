@@ -126,6 +126,16 @@ export default function VoyageTripsPage() {
   const [showForm, setShowForm]               = useState(false)
   const [showMomentPicker, setShowMomentPicker] = useState(false)
   const [filter, setFilter] = useState<'all' | 'planning' | 'ongoing' | 'past'>('all')
+  const [search, setSearch] = useState('')
+  const [expandedYears, setExpandedYears] = useState<Set<number>>(() => new Set([new Date().getFullYear()]))
+
+  function toggleYear(year: number) {
+    setExpandedYears(prev => {
+      const next = new Set(prev)
+      if (next.has(year)) next.delete(year); else next.add(year)
+      return next
+    })
+  }
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -168,31 +178,44 @@ export default function VoyageTripsPage() {
 
       <PendingInvitesBanner types={['trip_invite']} />
 
-      {/* Filter pills */}
+      {/* Filter pills + busca discreta — mesmo padrão da lista de Momentos */}
       {!loading && trips.length > 0 && (
-        <div className="flex gap-2 flex-wrap mb-5">
-          {([
-            { key: 'all',      label: t.common.all ?? 'Todas' },
-            { key: 'planning', label: tv.statusPlanning ?? 'Planejando' },
-            { key: 'ongoing',  label: tv.statusOngoing  ?? 'Em viagem' },
-            { key: 'past',     label: tv.statusPast     ?? 'Concluídas' },
-          ] as const).map(({ key, label }) => (
-            <button
-              key={key}
-              type="button"
-              onClick={() => setFilter(key)}
-              style={{
-                fontFamily: 'var(--arvo-font-display)', fontSize: 9.5, letterSpacing: '0.18em',
-                textTransform: 'uppercase', padding: '4px 14px', borderRadius: 999,
-                background: filter === key ? 'var(--arvo-fg)' : 'transparent',
-                color: filter === key ? 'var(--arvo-surface)' : 'var(--arvo-fg-muted)',
-                border: `1px solid ${filter === key ? 'var(--arvo-fg)' : 'var(--arvo-border)'}`,
-                cursor: 'pointer', transition: 'all 160ms ease',
-              }}
-            >
-              {label}
-            </button>
-          ))}
+        <div className="flex items-center justify-between flex-wrap gap-2 mb-5">
+          <div className="flex gap-2 flex-wrap">
+            {([
+              { key: 'all',      label: t.common.all ?? 'Todas' },
+              { key: 'planning', label: tv.statusPlanning ?? 'Planejando' },
+              { key: 'ongoing',  label: tv.statusOngoing  ?? 'Em viagem' },
+              { key: 'past',     label: tv.statusPast     ?? 'Concluídas' },
+            ] as const).map(({ key, label }) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setFilter(key)}
+                style={{
+                  fontFamily: 'var(--arvo-font-display)', fontSize: 9.5, letterSpacing: '0.18em',
+                  textTransform: 'uppercase', padding: '4px 14px', borderRadius: 999,
+                  background: filter === key ? 'var(--arvo-fg)' : 'transparent',
+                  color: filter === key ? 'var(--arvo-surface)' : 'var(--arvo-fg-muted)',
+                  border: `1px solid ${filter === key ? 'var(--arvo-fg)' : 'var(--arvo-border)'}`,
+                  cursor: 'pointer', transition: 'all 160ms ease',
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <div className="relative">
+            <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--arvo-fg-faint)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 10.5A6.5 6.5 0 114 10.5a6.5 6.5 0 0113 0z" />
+            </svg>
+            <input
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder={t.common.search ?? 'Buscar...'}
+              className="pl-8 pr-3 py-1.5 text-xs rounded-full border border-[var(--arvo-border)] bg-[var(--arvo-surface)] text-[var(--arvo-fg)] w-36 focus:outline-none focus:border-[var(--arvo-gold)] transition-colors"
+            />
+          </div>
         </div>
       )}
 
@@ -218,14 +241,16 @@ export default function VoyageTripsPage() {
           </p>
         </div>
       ) : (() => {
-        const visible = filter === 'all' ? trips : trips.filter(t => t.status === filter)
+        const visible = trips
+          .filter(t => filter === 'all' || t.status === filter)
+          .filter(t => search.trim() === '' || t.title.toLowerCase().includes(search.trim().toLowerCase()))
         if (visible.length === 0) return (
           <p style={{ fontFamily: 'var(--arvo-font-serif)', fontStyle: 'italic', fontSize: 15, color: GOLD, textAlign: 'center', padding: '48px 0' }}>
             Nenhuma viagem neste filtro
           </p>
         )
-        // Agrupamento por ano — mesmo padrão da lista de Momentos, útil quando
-        // a lista cresce (viagens antigas não competem por atenção com as recentes).
+        // Agrupamento por ano em accordion — mesmo padrão da lista de Momentos;
+        // só o ano atual abre por padrão, os anteriores ficam recolhidos.
         const currentYear = new Date().getFullYear()
         const yearOf = (trip: Trip) => new Date(trip.start_date ?? trip.created_at).getFullYear()
         const groups = new Map<number, Trip[]>()
@@ -237,22 +262,37 @@ export default function VoyageTripsPage() {
         const sortedYears = [...groups.keys()].sort((a, b) => b - a)
         return (
           <div className="space-y-6">
-            {sortedYears.map(year => (
-              <div key={year}>
-                {sortedYears.length > 1 && (
-                  <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 10, letterSpacing: '0.20em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)', marginBottom: 10 }}>
-                    {year === currentYear ? (t.common.thisYear ?? 'Este ano') : year}
-                  </p>
-                )}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                  {groups.get(year)!.map((trip, i) => (
-                    <div key={trip.id} style={{ animation: 'fadeUp 320ms cubic-bezier(0.22,0.61,0.36,1) both', animationDelay: `${i * 40}ms` }}>
-                      <TripCard trip={trip} t={t} onClick={() => navigate(`/voyage/${trip.id}`)} />
+            {sortedYears.map(year => {
+              const isOpen = sortedYears.length === 1 || expandedYears.has(year)
+              return (
+                <div key={year}>
+                  {sortedYears.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => toggleYear(year)}
+                      className="flex items-center gap-2 w-full mb-3"
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                    >
+                      <svg className={`w-3 h-3 text-[var(--arvo-fg-soft)] transition-transform ${isOpen ? 'rotate-90' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                      </svg>
+                      <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 10, letterSpacing: '0.20em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)' }}>
+                        {year === currentYear ? (t.common.thisYear ?? 'Este ano') : year} · {groups.get(year)!.length}
+                      </p>
+                    </button>
+                  )}
+                  {isOpen && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                      {groups.get(year)!.map((trip, i) => (
+                        <div key={trip.id} style={{ animation: 'fadeUp 320ms cubic-bezier(0.22,0.61,0.36,1) both', animationDelay: `${i * 40}ms` }}>
+                          <TripCard trip={trip} t={t} onClick={() => navigate(`/voyage/${trip.id}`)} />
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  )}
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )
       })()}
