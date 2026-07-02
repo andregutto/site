@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { apiFetch } from '../../lib/api'
 import { supabase } from '../../lib/supabase'
+import { normalizeStorageUrl } from '../../lib/storageUrl'
 import { useAuth } from '../../contexts/AuthContext'
 import { useI18n } from '../../contexts/I18nContext'
 import { useTheme } from '../../contexts/ThemeContext'
@@ -221,7 +222,7 @@ function MomentForm({ initial, onSave, onCancel, saving, userId }: FormProps) {
           .upload(path, photoFile, { upsert: true, contentType: photoFile.type || 'image/jpeg' })
         if (!error) {
           const { data } = supabase.storage.from('moment-photos').getPublicUrl(path)
-          coverImageUrl = data.publicUrl
+          coverImageUrl = normalizeStorageUrl(data.publicUrl)
         } else {
           console.error('[moment-photo-upload] failed:', error, { name: photoFile.name, type: photoFile.type, size: photoFile.size })
           setPhotoError(error.message || true)

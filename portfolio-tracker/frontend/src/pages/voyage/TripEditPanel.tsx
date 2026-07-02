@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react'
 import { apiFetch } from '../../lib/api'
 import { supabase } from '../../lib/supabase'
+import { normalizeStorageUrl } from '../../lib/storageUrl'
 import { useAuth } from '../../contexts/AuthContext'
 import { useI18n } from '../../contexts/I18nContext'
 import DestinationsEditor from './DestinationsEditor'
@@ -51,7 +52,7 @@ export default function TripEditPanel({ trip, destinations, onSaved, onDestinati
         .upload(path, file, { upsert: true, contentType: file.type })
       if (upErr) throw upErr
       const { data } = supabase.storage.from('trip-covers').getPublicUrl(path)
-      setCoverUrl(`${data.publicUrl}?v=${Date.now()}`)
+      setCoverUrl(`${normalizeStorageUrl(data.publicUrl)}?v=${Date.now()}`)
     } catch {
       setError(tv.errors?.uploadCover ?? 'Erro ao enviar a foto')
     } finally {

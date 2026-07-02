@@ -12,6 +12,7 @@ import { useI18n } from '../contexts/I18nContext'
 import { getLevel, getNextLevel, getLevelProgress, ACHIEVEMENT_DEFS } from '../lib/achievementDefs'
 import { Icon } from '../components/icons'
 import { supabase } from '../lib/supabase'
+import { normalizeStorageUrl } from '../lib/storageUrl'
 import { useResetPriceHistory, useSyncStatus } from '../hooks/usePortfolio'
 import { useDividendSync } from '../hooks/useDividends'
 
@@ -357,7 +358,7 @@ export default function ProfilePage() {
         .upload(path, blob, { upsert: true, contentType: 'image/jpeg' })
       if (upErr) throw upErr
       const { data } = supabase.storage.from('avatars').getPublicUrl(path)
-      const avatar_url = `${data.publicUrl}?v=${Date.now()}`
+      const avatar_url = `${normalizeStorageUrl(data.publicUrl)}?v=${Date.now()}`
       await apiFetch('/profile', { method: 'PATCH', body: JSON.stringify({ avatar_url }) })
       setAvatarUrl(avatar_url)
       setShowAvatarModal(false)
