@@ -1,7 +1,7 @@
 import { Router, Response } from 'express'
 import { requireAuth, AuthRequest } from '../../../shared-api/src/middleware/auth.js'
 import { supabaseAdmin } from '../../../shared-api/src/lib/supabase.js'
-import { getActiveSubscriptions, getBudgetAlerts, getMonthlyReviewAlerts, getPendingMomentInvites, getRecentMomentAdditions, getRecentSettlements } from '../../../shared-api/src/routes/finances.js'
+import { getActiveSubscriptions, getBudgetAlerts, getMonthlyReviewAlerts, getPendingMomentInvites, getRecentMomentAdditions, getRecentSettlements, getRecentExpenseShares } from '../../../shared-api/src/routes/finances.js'
 import { getSplitWarnings, getStaleManualAssets } from './portfolio.js'
 import { getPendingGroupInvites } from '../../../shared-api/src/routes/shared.js'
 import { getPendingTripInvites, getRecentTripAdditions } from '../../../shared-api/src/routes/voyage.js'
@@ -25,7 +25,7 @@ const NON_DISMISSIBLE_HISTORY_TYPES = new Set(['bank_connected', 'bank_connect_e
 router.get('/', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
 
-  const [achievementsRes, subsResult, notifDismissalsRes, budgetAlerts, monthlyReviewAlerts, splitWarnings, staleManualAssets, pendingInvites, pendingTripInvites, pendingFriendInvites, recentFriendAcceptances, recentTripAdditions, pendingMomentInvites, recentMomentAdditions, recentSettlements] = await Promise.all([
+  const [achievementsRes, subsResult, notifDismissalsRes, budgetAlerts, monthlyReviewAlerts, splitWarnings, staleManualAssets, pendingInvites, pendingTripInvites, pendingFriendInvites, recentFriendAcceptances, recentTripAdditions, pendingMomentInvites, recentMomentAdditions, recentSettlements, recentExpenseShares] = await Promise.all([
     supabaseAdmin.from('achievements').select('achievement_key, earned_at').eq('user_id', userId).order('earned_at', { ascending: true }),
     getActiveSubscriptions(userId),
     supabaseAdmin.from('notification_dismissals').select('key, type, params, severity, link, occurred_at, dismissed_at').eq('user_id', userId),
@@ -41,6 +41,7 @@ router.get('/', requireAuth, async (req, res: Response) => {
     getPendingMomentInvites(userId),
     getRecentMomentAdditions(userId),
     getRecentSettlements(userId),
+    getRecentExpenseShares(userId),
   ])
 
   const dismissedKeys = new Set((notifDismissalsRes.data ?? []).map(n => n.key))
@@ -274,6 +275,24 @@ router.get('/', requireAuth, async (req, res: Response) => {
       severity: 'success',
       params: { from_user_name: s.from_user_name, amounts: s.amounts },
       link: '/people',
+      occurred_at: s.occurred_at,
+      dismissed_at: null,
+      dismissible: true,
+    })
+  }
+
+  // Category 22: alguém te incluiu numa despesa dividida (não-acionável, só FYI)
+  for (const s of recentExpenseShares) {
+    if (dismissedKeys.has(s.key)) continue
+    active.push({
+      key: s.key,
+      type: 'expense_share_added',
+      severity: 'info',
+      params: {
+        creator_name: s.creator_name, moment_name: s.moment_name, description: s.description,
+        share_amount: s.share_amount, currency: s.currency,
+      },
+      link: `/finances/moments/${s.moment_id}`,
       occurred_at: s.occurred_at,
       dismissed_at: null,
       dismissible: true,

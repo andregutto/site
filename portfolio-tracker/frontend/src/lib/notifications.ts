@@ -34,6 +34,7 @@ export const TYPE_ICONS: Record<string, IconName> = {
   friend_accepted: 'users',
   friend_invite_accepted: 'users',
   settlement_received: 'wallet',
+  expense_share_added: 'users',
 }
 
 export function formatTimestamp(iso: string, locale: Locale): string {
@@ -146,6 +147,16 @@ export function resolveNotificationText(item: NotificationItem, t: any, locale: 
       const amounts = (item.params.amounts as { currency: string; amount: number }[] | undefined) ?? []
       const amountStr = amounts.map(a => formatMoney(a.amount, a.currency, locale)).join(', ')
       return { title: n.type_settlement_received.replace('{from}', from).replace('{amount}', amountStr) }
+    }
+    case 'expense_share_added': {
+      const creator = String(item.params.creator_name ?? '')
+      const moment = String(item.params.moment_name ?? '')
+      const amount = Number(item.params.share_amount ?? 0)
+      const currency = String(item.params.currency ?? 'BRL')
+      return {
+        title: n.type_expense_share_added.replace('{creator}', creator).replace('{amount}', formatMoney(amount, currency, locale)),
+        subtitle: moment || undefined,
+      }
     }
     default:
       return { title: item.key }

@@ -139,6 +139,48 @@ export async function getRecentSettlements(userId: string): Promise<RecentSettle
   return result
 }
 
+export interface RecentExpenseShare {
+  key: string
+  moment_id: number
+  moment_name: string
+  description: string
+  share_amount: number
+  currency: string
+  creator_name: string
+  occurred_at: string
+}
+
+// Alguém te incluiu numa despesa dividida (ou te marcou como quem pagou) — sem isso
+// você só descobre que tem um saldo pendente entrando na tela Pessoas por acaso.
+// Não inclui acertos de conta (is_settlement) — esses já têm sua própria notificação.
+export async function getRecentExpenseShares(userId: string): Promise<RecentExpenseShare[]> {
+  const since = new Date(Date.now() - 14 * 24 * 3600 * 1000).toISOString()
+  const { data } = await supabaseAdmin
+    .from('finance_moment_expense_shares')
+    .select('share_amount, created_at, finance_moment_expenses(id, moment_id, description, currency, created_by, is_settlement, finance_moments(name))')
+    .eq('user_id', userId)
+    .gte('created_at', since)
+
+  const result: RecentExpenseShare[] = []
+  for (const row of (data ?? []) as any[]) {
+    const expense = row.finance_moment_expenses
+    if (!expense || expense.is_settlement || expense.created_by === userId) continue
+    const moment = expense.finance_moments
+    const creator = await userDisplay(expense.created_by)
+    result.push({
+      key: `expense_share:${expense.id}`,
+      moment_id: expense.moment_id,
+      moment_name: moment?.name ?? '',
+      description: expense.description,
+      share_amount: row.share_amount,
+      currency: expense.currency,
+      creator_name: creator.name,
+      occurred_at: row.created_at,
+    })
+  }
+  return result
+}
+
 // ── Financial month helpers ───────────────────────────────────────────────────
 
 function financialMonthKey(dateStr: string, cycleDay: number): string {

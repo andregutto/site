@@ -601,6 +601,7 @@
     "type_friend_accepted": "{friend} a accepté votre invitation",
     "type_friend_invite_accepted": "Vous êtes connecté avec {inviter}",
     "type_settlement_received": "{from} a réglé ses comptes avec vous : {amount}",
+    "type_expense_share_added": "{creator} vous a inclus dans une dépense partagée : {amount}",
     "type_trip_invite": "{inviter} vous a invité au voyage « {trip} »",
     "type_trip_added": "{inviter} vous a ajouté au voyage « {trip} »",
     "type_stale_manual_asset": "Mettez à jour {code} — obsolète depuis {n} jours",

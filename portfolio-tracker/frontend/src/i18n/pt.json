@@ -601,6 +601,7 @@
     "type_friend_accepted": "{friend} aceitou seu convite",
     "type_friend_invite_accepted": "Você se conectou com {inviter}",
     "type_settlement_received": "{from} acertou contas com você: {amount}",
+    "type_expense_share_added": "{creator} incluiu você numa despesa dividida: {amount}",
     "type_trip_invite": "{inviter} convidou você para a viagem \"{trip}\"",
     "type_trip_added": "{inviter} adicionou você à viagem \"{trip}\"",
     "type_stale_manual_asset": "Atualize o valor de {code} — desatualizado há {n} dias",

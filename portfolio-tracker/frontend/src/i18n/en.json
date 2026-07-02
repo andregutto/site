@@ -601,6 +601,7 @@
     "type_friend_accepted": "{friend} accepted your invite",
     "type_friend_invite_accepted": "You connected with {inviter}",
     "type_settlement_received": "{from} settled up with you: {amount}",
+    "type_expense_share_added": "{creator} added you to a split expense: {amount}",
     "type_trip_invite": "{inviter} invited you to the trip \"{trip}\"",
     "type_trip_added": "{inviter} added you to the trip \"{trip}\"",
     "type_stale_manual_asset": "Update {code}'s value — stale for {n} days",

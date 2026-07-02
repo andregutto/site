@@ -243,6 +243,7 @@ export type NotificationType =
   | 'friend_accepted'
   | 'friend_invite_accepted'
   | 'settlement_received'
+  | 'expense_share_added'
 
 export interface NotificationItem {
   key: string
