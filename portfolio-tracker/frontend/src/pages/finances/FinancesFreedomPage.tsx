@@ -6,7 +6,6 @@ import {
 import { apiFetch } from '../../lib/api'
 import { useI18n } from '../../contexts/I18nContext'
 import { useCurrency } from '../../contexts/CurrencyContext'
-import { Banner } from '../../components/ui'
 import { Icon } from '../../components/icons'
 import { CHART_AXIS_TICK, CHART_AXIS_LINE, formatCompactCurrency } from '../../components/charts'
 
@@ -798,7 +797,7 @@ function ChartTooltip({ active, payload, label, currency, locale = 'pt-BR' }: {
 export default function FinancesFreedomPage() {
   const { t, locale } = useI18n()
   const intlLocale = ({ pt: 'pt-BR', en: 'en-US', fr: 'fr-FR' } as Record<string, string>)[locale] ?? 'pt-BR'
-  const { currency: displayCurrency, convert, fxRates, hideValues } = useCurrency()
+  const { currency: displayCurrency, convert, fxRates, hideValues, fmt: fmtBrl } = useCurrency()
   const fmt = (n: number, currency: string, compact = false, locale = 'pt-BR') => hideValues ? '•••' : _fmt(n, currency, compact, locale)
 
   const [plans,        setPlans]        = useState<FreedomPlan[]>([])
@@ -968,13 +967,15 @@ export default function FinancesFreedomPage() {
     actual:       pt.actual       != null ? Math.round(cxFreedom(pt.actual))       : null,
   }))
 
-  // Summary cards
+  // Summary cards — derived from the same fxRates the dashboard uses (via
+  // portfolio.total_brl), instead of portfolio.total_eur/total_usd (which are
+  // baked in by the portfolio API's own FX snapshot and can drift from the
+  // live rate here), so the headline number always matches the dashboard.
   const currentValue = (() => {
     if (!activePlan || !portfolio) return 0
-    const eur = portfolio.total_eur ?? 0
-    if (activePlan.currency === 'EUR') return eur
     if (activePlan.currency === 'BRL') return portfolio.total_brl
-    return eur / 1.08
+    if (activePlan.currency === 'EUR') return portfolio.total_brl / fxRates.EUR
+    return portfolio.total_brl / (fxRates.USD ?? 5.7)
   })()
 
   const passiveIncome = activePlan
@@ -1054,15 +1055,22 @@ export default function FinancesFreedomPage() {
     return { diff: Math.round(diff), pct: pct.toFixed(1), ahead: diff >= 0 }
   })()
 
+  // Convert a value from activePlan.currency to BRL
+  function planToBrl(value: number): number {
+    const planCur = activePlan?.currency ?? 'EUR'
+    if (planCur === 'BRL') return value
+    if (planCur === 'EUR') return value * fxRates.EUR
+    return value * (fxRates.USD ?? 5.7)
+  }
+
   // Convert a value from activePlan.currency to the app display currency
   function cxFreedom(value: number): number {
     const planCur = activePlan?.currency ?? 'EUR'
     if (planCur === displayCurrency) return value
-    const inBrl = planCur === 'BRL' ? value
-      : planCur === 'EUR' ? value * fxRates.EUR
-      : value * (fxRates.USD ?? 5.7)
-    return convert(inBrl)
+    return convert(planToBrl(value))
   }
+
+  const targetBrl = activePlan ? planToBrl(activePlan.target_amount) : 0
 
   // "Ano-alvo" — fixed horizon end year (the plan's committed target date)
   const targetYear = activePlan
@@ -1171,20 +1179,26 @@ export default function FinancesFreedomPage() {
         </div>
       ) : (
         <>
-          {/* Hero: progress toward goal */}
+          {/* Hero: progress toward goal — same restrained gold treatment as the dashboard's ValueCards hero */}
           <div
-            className="rounded-[24px] p-6 sm:p-8 shadow-sm"
+            className="rounded-2xl p-5 sm:p-6"
             style={{
-              background: 'linear-gradient(155deg, var(--arvo-surface) 0%, var(--arvo-surface-2) 100%)',
-              border: '1px solid var(--arvo-gold)',
-              boxShadow: '0 0 48px -14px var(--arvo-gold), var(--arvo-shadow-sm)',
+              background: 'var(--arvo-surface)',
+              position: 'relative',
+              overflow: 'hidden',
+              border: '1px solid rgba(200,184,154,0.35)',
+              boxShadow: '0 4px 24px rgba(200,184,154,0.18), 0 1px 0 rgba(200,184,154,0.22)',
             }}
           >
-            <div className="flex items-center gap-6 sm:gap-9 flex-wrap sm:flex-nowrap">
+            {/* Gold glow — top-right, matching ValueCards */}
+            <div style={{ position: 'absolute', top: -120, right: -60, width: 360, height: 360, borderRadius: '50%', background: 'rgba(200,184,154,0.10)', filter: 'blur(70px)', pointerEvents: 'none' }} />
+            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 1, background: 'linear-gradient(to right, transparent, rgba(200,184,154,0.65), transparent)', pointerEvents: 'none' }} />
+
+            <div className="flex items-center gap-6 sm:gap-8 flex-wrap sm:flex-nowrap" style={{ position: 'relative', zIndex: 2 }}>
               {/* Progress ring */}
               {(() => {
-                const pct = Math.min(100, Math.max(0, (currentValue / (activePlan!.target_amount || 1)) * 100))
-                const size = 136, r = 54, c = 2 * Math.PI * r
+                const pct = Math.min(100, Math.max(0, ((portfolio?.total_brl ?? 0) / (targetBrl || 1)) * 100))
+                const size = 116, r = 46, c = 2 * Math.PI * r
                 return (
                   <div className="relative shrink-0 mx-auto sm:mx-0" style={{ width: size, height: size }}>
                     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ transform: 'rotate(-90deg)' }}>
@@ -1215,7 +1229,7 @@ export default function FinancesFreedomPage() {
                 )
               })()}
 
-              <div className="flex-1 min-w-[220px] flex items-center justify-between gap-6 flex-wrap">
+              <div className="flex-1 min-w-[220px] flex items-center gap-8 flex-wrap">
                 <div className="flex items-center gap-2.5">
                   <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0" style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', color: 'var(--arvo-fg-muted)' }}>
                     <Icon name="wallet" size={16} />
@@ -1223,10 +1237,10 @@ export default function FinancesFreedomPage() {
                   <div>
                     <span style={kpiLabelStyle}>{t.finances.freedomActualNow}</span>
                     <p
-                      className="arvo-num"
-                      style={{ fontFamily: "'Tenor Sans', serif", fontSize: 30, letterSpacing: '0.01em', lineHeight: 1.1, color: 'var(--arvo-fg)', margin: '2px 0 0' }}
+                      className="arvo-num text-[26px] sm:text-[32px]"
+                      style={{ fontFamily: "var(--arvo-font-body)", letterSpacing: '0.02em', lineHeight: 1.05, color: 'var(--arvo-fg)', margin: '4px 0 0' }}
                     >
-                      {fmt(cxFreedom(currentValue), displayCurrency, true)}
+                      {fmtBrl(portfolio?.total_brl ?? 0, 0)}
                     </p>
                   </div>
                 </div>
@@ -1236,8 +1250,8 @@ export default function FinancesFreedomPage() {
                   </div>
                   <div>
                     <span style={kpiLabelStyle}>{t.finances.freedomGoal}</span>
-                    <p className="arvo-num" style={{ fontFamily: "'Tenor Sans', serif", fontSize: 22, letterSpacing: '0.01em', color: 'var(--arvo-fg)', margin: '2px 0 0' }}>
-                      {fmt(cxFreedom(activePlan!.target_amount), displayCurrency, true)}
+                    <p className="arvo-num text-lg sm:text-xl" style={{ fontFamily: "var(--arvo-font-body)", letterSpacing: '0.02em', color: 'var(--arvo-fg)', margin: '4px 0 0' }}>
+                      {fmtBrl(targetBrl, 0)}
                     </p>
                   </div>
                 </div>
@@ -1290,20 +1304,16 @@ export default function FinancesFreedomPage() {
                   <span style={kpiLabelStyle}>{t.finances.freedomPlannedToday}</span>
                   <span className="arvo-num text-base sm:text-lg" style={{ fontWeight: 600, color: 'var(--arvo-gold-text)' }}>{fmt(cxFreedom(plannedAtCurrentMonth), displayCurrency, true)}</span>
                   <span className="text-[11px]" style={{ color: 'var(--arvo-fg-muted)' }}>{t.finances.freedomAccordingToPlan}</span>
+                  {planStatusText && (
+                    <span className={`arvo-num text-[11px] font-semibold ${planStatusText.ahead ? 'arvo-delta-pos' : 'arvo-delta-neg'}`}>
+                      {planStatusText.ahead ? '+' : '−'}{fmt(cxFreedom(Math.abs(planStatusText.diff)), displayCurrency, true, intlLocale)}
+                      &nbsp;({planStatusText.ahead ? '+' : ''}{planStatusText.pct}% {t.finances.freedomVsPlanned})
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
           </div>
-
-          {/* Status banner */}
-          {planStatusText && (
-            <Banner variant={planStatusText.ahead ? 'info' : 'alert'}>
-              <Icon name={planStatusText.ahead ? 'check' : 'alert'} size={12} className="inline-block mr-1.5 -mb-0.5" />
-              {planStatusText.ahead ? t.finances.freedomAhead : t.finances.freedomBehind}:&nbsp;
-              <strong className="arvo-num">{fmt(cxFreedom(Math.abs(planStatusText.diff)), displayCurrency, true, intlLocale)}</strong>
-              &nbsp;({planStatusText.ahead ? '+' : ''}{planStatusText.pct}% {t.finances.freedomVsPlanned})
-            </Banner>
-          )}
 
           {/* Chart */}
           {perfLoading && (
@@ -1338,8 +1348,10 @@ export default function FinancesFreedomPage() {
                     tickLine={false}
                     interval={Math.floor(displayChartData.length / 8)}
                   />
+                  {/* Cap at ~1.15x the goal/current value (not the extrapolated tail's peak) so
+                      history and near-term data stay readable; the projection just exits the top. */}
                   <YAxis
-                    domain={[0, (max: number) => Math.max(max, fireValue ?? 0)]}
+                    domain={[0, () => Math.max(fireValue ?? 0, cxFreedom(currentValue)) * 1.15]}
                     tickFormatter={v => hideValues ? '•••' : formatCompactCurrency(v, displayCurrency, intlLocale)}
                     tick={{ ...CHART_AXIS_TICK, fontSize: 11, fill: 'var(--arvo-fg-muted)' }}
                     axisLine={CHART_AXIS_LINE}
