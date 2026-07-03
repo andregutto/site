@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, type CSSProperties } from 'react'
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom'
-import { useAssetDetail, clearPerfCache } from '../hooks/usePortfolio'
+import { useAssetDetail, clearPerfCache, clearPortfolioValueCache } from '../hooks/usePortfolio'
 import { useDividends } from '../hooks/useDividends'
 import { useCurrency } from '../contexts/CurrencyContext'
 import { useFavorites } from '../hooks/useFavorites'
@@ -174,6 +174,7 @@ export default function AssetDetailPage() {
     try {
       await apiFetch(`/assets/${id}/manual-value/${valueId}`, { method: 'DELETE' })
       setManualValueHistory(h => h.filter(v => v.id !== valueId))
+      clearPortfolioValueCache()
       refresh()
     } catch { /* ignore */ }
   }
@@ -1080,7 +1081,7 @@ export default function AssetDetailPage() {
             asset={assetForModal}
             initialMode="valorizacao"
             onClose={() => setShowManualModal(false)}
-            onSaved={() => { setShowManualModal(false); refresh() }}
+            onSaved={() => { setShowManualModal(false); clearPortfolioValueCache(); refresh() }}
           />
         )
       })()}

@@ -497,6 +497,7 @@ router.post('/:id/manual-value', requireAuth, async (req, res: Response) => {
       { onConflict: 'asset_id,ref_date' }
     )
   if (error) { res.status(500).json({ error: error.message }); return }
+  cache.deletePattern(`portfolio:value:${userId}`)
   res.json({ ok: true })
 })
 
@@ -513,6 +514,7 @@ router.delete('/:id/manual-value/:valueId', requireAuth, async (req, res: Respon
     .eq('id', valueId)
     .eq('asset_id', assetId)
   if (error) { res.status(500).json({ error: error.message }); return }
+  cache.deletePattern(`portfolio:value:${userId}`)
   res.json({ ok: true })
 })
 
