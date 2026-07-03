@@ -51,6 +51,7 @@ interface FriendContext {
 type Context = TripContext | FinanceContext | MomentContext | FriendContext
 
 interface Balance { currency: string; amount: number }
+interface MomentBalance { moment_id: number; moment_name: string; balances: Balance[] }
 
 interface Contact {
   email: string
@@ -61,6 +62,7 @@ interface Contact {
   status: 'active' | 'pending'
   contexts: Context[]
   balances?: Balance[]
+  balancesByMoment?: MomentBalance[]
 }
 
 interface Trip { id: number; title: string }
@@ -396,12 +398,36 @@ function ContactCard({
               </span>
               <button
                 type="button" onClick={() => settleUp()} disabled={settling}
-                className="arvo-btn" style={{ fontSize: 10.5, padding: '3px 10px' }}
+                className="arvo-btn arvo-btn--ghost" style={{ fontSize: 10.5, padding: '3px 10px' }}
               >
                 {settling ? '…' : t.people.settleUp}
               </button>
             </div>
           ))}
+          {(contact.balancesByMoment ?? []).length > 0 && (
+            <div style={{ marginTop: 4, paddingLeft: 2 }}>
+              {(contact.balancesByMoment ?? []).map(m => (
+                <button
+                  key={m.moment_id}
+                  type="button"
+                  onClick={() => navigate(`/finances/moments/${m.moment_id}`)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 8, padding: '3px 0', width: '100%',
+                    background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left',
+                  }}
+                >
+                  <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {m.moment_name}
+                  </span>
+                  {m.balances.map(b => (
+                    <span key={b.currency} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, fontWeight: 600, color: b.amount > 0 ? '#1F8A5B' : RED, flexShrink: 0 }}>
+                      {b.amount > 0 ? '+' : '−'}{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: b.currency, minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(Math.abs(b.amount))}
+                    </span>
+                  ))}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

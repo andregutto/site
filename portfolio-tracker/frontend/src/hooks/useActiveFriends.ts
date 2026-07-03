@@ -35,6 +35,13 @@ function fetchActiveFriends(): Promise<ActiveFriend[]> {
   return inFlight
 }
 
+// Called once from AppLayout on mount so the list is already warm by the time the
+// user opens the first share/invite overlay in a session, instead of only starting
+// the fetch (and showing an empty list for a few seconds) at that point.
+export function prefetchActiveFriends(): void {
+  if (!cached && !inFlight) fetchActiveFriends()
+}
+
 export function useActiveFriends(): ActiveFriend[] {
   const [friends, setFriends] = useState<ActiveFriend[]>(cached ?? [])
 

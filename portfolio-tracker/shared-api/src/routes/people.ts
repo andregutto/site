@@ -2,6 +2,7 @@ import { Router } from 'express'
 import { randomBytes, randomUUID } from 'crypto'
 import { requireAuth, AuthRequest } from '../middleware/auth.js'
 import { supabaseAdmin } from '../lib/supabase.js'
+import { cache } from '../lib/cache.js'
 
 const router = Router()
 router.use(requireAuth)
@@ -10,14 +11,22 @@ function uid(req: Parameters<typeof requireAuth>[0]): string {
   return (req as AuthRequest).userId
 }
 
+// `getUserById` is a real network round-trip to Supabase Auth (not the DB), and this
+// function used to get called once per contact per request with no de-dupe/cache —
+// on pages listing many contacts (Pessoas, friend-invite overlays) that meant dozens
+// of sequential ~150-300ms admin API calls, which is what made those screens feel slow.
+// A short TTL is enough since name/avatar/username rarely change mid-session.
+const USER_DISPLAY_TTL_MS = 5 * 60 * 1000
 async function userDisplay(userId: string): Promise<{ email: string; name?: string; avatar_url?: string; username?: string }> {
-  const [{ data }, { data: handle }] = await Promise.all([
-    supabaseAdmin.auth.admin.getUserById(userId),
-    supabaseAdmin.from('user_handles').select('username').eq('user_id', userId).maybeSingle(),
-  ])
-  const meta = data?.user?.user_metadata ?? {}
-  const name = [meta.first_name, meta.last_name].filter(Boolean).join(' ') || undefined
-  return { email: data?.user?.email ?? userId, name, avatar_url: meta.avatar_url, username: handle?.username }
+  return cache.getOrFetch(`userDisplay:${userId}`, USER_DISPLAY_TTL_MS, async () => {
+    const [{ data }, { data: handle }] = await Promise.all([
+      supabaseAdmin.auth.admin.getUserById(userId),
+      supabaseAdmin.from('user_handles').select('username').eq('user_id', userId).maybeSingle(),
+    ])
+    const meta = data?.user?.user_metadata ?? {}
+    const name = [meta.first_name, meta.last_name].filter(Boolean).join(' ') || undefined
+    return { email: data?.user?.email ?? userId, name, avatar_url: meta.avatar_url, username: handle?.username }
+  })
 }
 
 // Checks whether `inviteeUserId` has opted in to auto-accepting invites sent
@@ -399,28 +408,42 @@ router.get('/', async (req: any, res: any) => {
     const allMomentIds = [...new Set([...ownedMomentIds, ...(myMomentMemberships ?? []).map((m: any) => m.moment_id)])]
     // balanceByUser[otherUserId][currency]: positivo = a pessoa me deve, negativo = eu devo a ela
     const balanceByUser: Record<string, Record<string, number>> = {}
+    // balanceByUserMoment[otherUserId][momentId][currency] — mesmo saldo, mas granular por
+    // Momento, pra a página Pessoas mostrar "com quem devo o quê" além do total agregado.
+    const balanceByUserMoment: Record<string, Record<number, Record<string, number>>> = {}
+    const momentNameMap: Record<number, string> = { ...ownedMomentMap }
     if (allMomentIds.length > 0) {
       const { data: expenseRows } = await supabaseAdmin
         .from('finance_moment_expenses')
-        .select('paid_by_user_id, currency, finance_moment_expense_shares(user_id, share_amount)')
+        .select('moment_id, paid_by_user_id, currency, finance_moment_expense_shares(user_id, share_amount)')
         .in('moment_id', allMomentIds)
 
+      const missingNameIds = allMomentIds.filter(id => !(id in momentNameMap))
+      if (missingNameIds.length > 0) {
+        const { data: names } = await supabaseAdmin.from('finance_moments').select('id, name').in('id', missingNameIds)
+        for (const m of names ?? []) momentNameMap[m.id] = m.name
+      }
+
       for (const e of expenseRows ?? []) {
+        const momentId = (e as any).moment_id as number
         const payer = (e as any).paid_by_user_id as string
         const currency = (e as any).currency as string
         const shares = ((e as any).finance_moment_expense_shares ?? []) as { user_id: string; share_amount: number }[]
+        const applyDelta = (otherUserId: string, delta: number) => {
+          balanceByUser[otherUserId] ??= {}
+          balanceByUser[otherUserId][currency] = (balanceByUser[otherUserId][currency] ?? 0) + delta
+          balanceByUserMoment[otherUserId] ??= {}
+          balanceByUserMoment[otherUserId][momentId] ??= {}
+          balanceByUserMoment[otherUserId][momentId][currency] = (balanceByUserMoment[otherUserId][momentId][currency] ?? 0) + delta
+        }
         if (payer === userId) {
           for (const s of shares) {
             if (s.user_id === userId) continue
-            balanceByUser[s.user_id] ??= {}
-            balanceByUser[s.user_id][currency] = (balanceByUser[s.user_id][currency] ?? 0) + s.share_amount
+            applyDelta(s.user_id, s.share_amount)
           }
         } else {
           const mine = shares.find(s => s.user_id === userId)
-          if (mine) {
-            balanceByUser[payer] ??= {}
-            balanceByUser[payer][currency] = (balanceByUser[payer][currency] ?? 0) - mine.share_amount
-          }
+          if (mine) applyDelta(payer, -mine.share_amount)
         }
       }
     }
@@ -443,6 +466,18 @@ router.get('/', async (req: any, res: any) => {
     }
 
     for (const c of contacts) {
+      const perMoment = c.user_id ? balanceByUserMoment[c.user_id] : undefined
+      c.balancesByMoment = perMoment
+        ? Object.entries(perMoment)
+            .map(([momentId, perCurrency]) => ({
+              moment_id: Number(momentId),
+              moment_name: momentNameMap[Number(momentId)] ?? '',
+              balances: Object.entries(perCurrency)
+                .map(([currency, amount]) => ({ currency, amount: Math.round(amount * 100) / 100 }))
+                .filter(b => Math.abs(b.amount) >= 0.01),
+            }))
+            .filter(m => m.balances.length > 0)
+        : []
       const perCurrency = c.user_id ? balanceByUser[c.user_id] : undefined
       c.balances = perCurrency
         ? Object.entries(perCurrency)
@@ -609,7 +644,7 @@ router.patch('/friends/auto-accept', async (req: any, res: any) => {
 router.post('/settle', async (req: any, res: any) => {
   try {
     const userId = uid(req)
-    const { friend_user_id } = req.body as { friend_user_id?: string }
+    const { friend_user_id, moment_id } = req.body as { friend_user_id?: string; moment_id?: number }
     if (!friend_user_id) { res.status(400).json({ error: 'friend_user_id obrigatório' }); return }
 
     // Momentos onde AMBOS (eu e o amigo) são participantes (dono ou membro ativo) —
@@ -625,7 +660,11 @@ router.post('/settle', async (req: any, res: any) => {
 
     const candidateIds = new Set<number>([...ownerMap.keys(), ...(memberRows ?? []).map((r: any) => r.moment_id as number)])
     const isParticipant = (momentId: number, u: string) => ownerMap.get(momentId) === u || memberSet.has(`${momentId}:${u}`)
-    const sharedMomentIds = [...candidateIds].filter(id => isParticipant(id, userId) && isParticipant(id, friend_user_id))
+    // `moment_id` scopes the settle-up to a single Momento — used by the "acertar contas"
+    // action inside a Momento's expense list, as opposed to the Pessoas page which settles
+    // across every shared Momento at once.
+    let sharedMomentIds = [...candidateIds].filter(id => isParticipant(id, userId) && isParticipant(id, friend_user_id))
+    if (moment_id != null) sharedMomentIds = sharedMomentIds.filter(id => id === moment_id)
 
     if (sharedMomentIds.length === 0) { res.json({ ok: true, settled: [] }); return }
 

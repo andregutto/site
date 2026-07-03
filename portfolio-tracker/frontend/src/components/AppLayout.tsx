@@ -15,6 +15,7 @@ import ChatWidget from './ChatWidget'
 import SetupChecklist from './SetupChecklist'
 import { Icon, type IconName } from './icons'
 import { Banner } from './ui'
+import { prefetchActiveFriends } from '../hooks/useActiveFriends'
 
 const onboardingKey = (userId: string) => `onboarding_v1_done_${userId}`
 const CURRENCIES: Currency[] = ['BRL', 'USD', 'EUR']
@@ -87,6 +88,8 @@ export default function AppLayout() {
     setShowUserMenu(false)
     setShowNotifMenu(false)
   }, [location.pathname])
+
+  useEffect(() => { prefetchActiveFriends() }, [])
 
   // Auto-scroll active sub-nav tab into center view (Option B)
   useEffect(() => {

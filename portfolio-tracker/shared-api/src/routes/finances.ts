@@ -3019,6 +3019,93 @@ router.post('/moments/:id/expenses', requireAuth, async (req, res: Response) => 
   res.json({ ...expense, shares })
 })
 
+// Edição de uma despesa existente — qualquer membro ativo do Momento pode editar
+// qualquer despesa (não só quem criou). Não mexe em from_transaction_id/settlement;
+// recalcula as shares do zero e, se a despesa é dona da transação, mantém a
+// finance_transactions ligada em sincronia (senão o total gasto do Momento desalinha).
+router.patch('/moments/:id/expenses/:expenseId', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const momentId = Number(req.params.id)
+  const expenseId = Number(req.params.expenseId)
+  const { description, amount, currency, paid_by_user_id, expense_date, split_type, participant_ids, custom_shares } = req.body as {
+    description?: string
+    amount?: number
+    currency?: string
+    paid_by_user_id?: string
+    expense_date?: string
+    split_type?: 'equal' | 'custom'
+    participant_ids?: string[]
+    custom_shares?: Record<string, number>
+  }
+
+  const access = await assertMomentAccess(momentId, userId)
+  if (!access.ok) { res.status(404).json({ error: 'Momento não encontrado' }); return }
+
+  const { data: existing } = await supabaseAdmin
+    .from('finance_moment_expenses')
+    .select('id, transaction_id, owns_transaction, is_settlement')
+    .eq('id', expenseId).eq('moment_id', momentId).maybeSingle()
+  if (!existing) { res.status(404).json({ error: 'Despesa não encontrada' }); return }
+  if (existing.is_settlement) { res.status(400).json({ error: 'Acertos de contas não podem ser editados' }); return }
+
+  if (!description?.trim() || !amount || amount <= 0 || !paid_by_user_id) {
+    res.status(400).json({ error: 'Descrição, valor e pagador são obrigatórios' }); return
+  }
+
+  const eligibleIds = await momentParticipantIds(momentId)
+  if (!eligibleIds.includes(paid_by_user_id)) {
+    res.status(400).json({ error: 'Pagador não é participante deste momento' }); return
+  }
+  const participants = (participant_ids && participant_ids.length > 0 ? participant_ids : eligibleIds)
+    .filter(id => eligibleIds.includes(id))
+  if (participants.length === 0) { res.status(400).json({ error: 'Selecione ao menos um participante' }); return }
+
+  let shares: { user_id: string; share_amount: number }[]
+  if (split_type === 'custom') {
+    if (!custom_shares) { res.status(400).json({ error: 'Informe os valores de cada participante' }); return }
+    shares = participants.map(uid => ({ user_id: uid, share_amount: Math.round((custom_shares[uid] ?? 0) * 100) / 100 }))
+    const sum = Math.round(shares.reduce((s, x) => s + x.share_amount, 0) * 100) / 100
+    if (Math.abs(sum - amount) > 0.02) {
+      res.status(400).json({ error: 'A soma das partes precisa bater com o valor total' }); return
+    }
+  } else {
+    const base = Math.floor((amount / participants.length) * 100) / 100
+    shares = participants.map(uid => ({ user_id: uid, share_amount: base }))
+    const remainder = Math.round((amount - base * participants.length) * 100) / 100
+    const payerShare = shares.find(s => s.user_id === paid_by_user_id) ?? shares[0]
+    payerShare.share_amount = Math.round((payerShare.share_amount + remainder) * 100) / 100
+  }
+
+  const baseCurrency = currency ?? 'BRL'
+  const baseDate = expense_date ?? new Date().toISOString().slice(0, 10)
+
+  const { error: updateError } = await supabaseAdmin
+    .from('finance_moment_expenses')
+    .update({
+      description: description.trim(), amount, currency: baseCurrency,
+      paid_by_user_id, split_type: split_type ?? 'equal', expense_date: baseDate,
+    })
+    .eq('id', expenseId)
+  if (updateError) { res.status(500).json({ error: updateError.message }); return }
+
+  const { error: deleteSharesError } = await supabaseAdmin
+    .from('finance_moment_expense_shares').delete().eq('expense_id', expenseId)
+  if (deleteSharesError) { res.status(500).json({ error: deleteSharesError.message }); return }
+  const { error: sharesError } = await supabaseAdmin
+    .from('finance_moment_expense_shares')
+    .insert(shares.map(s => ({ expense_id: expenseId, user_id: s.user_id, share_amount: s.share_amount })))
+  if (sharesError) { res.status(500).json({ error: sharesError.message }); return }
+
+  if (existing.owns_transaction && existing.transaction_id) {
+    await supabaseAdmin
+      .from('finance_transactions')
+      .update({ description: description.trim(), amount: -amount, currency: baseCurrency, date: baseDate, user_id: paid_by_user_id })
+      .eq('id', existing.transaction_id)
+  }
+
+  res.json({ ok: true, shares })
+})
+
 router.delete('/moments/:id/expenses/:expenseId', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const momentId = Number(req.params.id)
@@ -3030,7 +3117,8 @@ router.delete('/moments/:id/expenses/:expenseId', requireAuth, async (req, res: 
   const { data: expense } = await supabaseAdmin
     .from('finance_moment_expenses').select('created_by, transaction_id, owns_transaction').eq('id', expenseId).eq('moment_id', momentId).maybeSingle()
   if (!expense) { res.status(404).json({ error: 'Despesa não encontrada' }); return }
-  if (expense.created_by !== userId && !access.isOwner) { res.status(403).json({ error: 'Sem permissão para excluir esta despesa' }); return }
+  // Qualquer membro ativo do Momento (não só quem criou/dono) pode editar/excluir
+  // qualquer despesa — pedido explícito do André: despesas de grupo são de todos.
 
   // Se a transação foi criada JUNTO com a despesa (owns_transaction), apagar a
   // despesa também remove a transação — senão ela ficaria órfã, sem divisão nem dono.
