@@ -1121,6 +1121,7 @@
     "expenseDescription": "Descrição",
     "expenseAmount": "Valor",
     "expensePaidBy": "Pago por",
+    "expenseCategorizeLaterHint": "A categoria dessa despesa fica com quem pagou — você pode categorizá-la depois em Transações.",
     "expenseSplitEqual": "Dividir igualmente",
     "expenseSplitCustom": "Dividir personalizado",
     "expenseParticipants": "Participantes",

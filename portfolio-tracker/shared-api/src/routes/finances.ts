@@ -702,7 +702,7 @@ router.get('/categories', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const { data } = await supabaseAdmin
     .from('finance_categories')
-    .select('id, name, icon, color, budget_monthly, name_key, archived')
+    .select('id, name, icon, color, budget_monthly, name_key, archived, keyword_rules')
     .eq('user_id', userId)
     .eq('archived', false)
     .order('name')

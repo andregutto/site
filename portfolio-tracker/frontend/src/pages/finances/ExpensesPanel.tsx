@@ -15,7 +15,26 @@ interface ExpenseShare {
   display?: { name?: string; email?: string; avatar_url?: string }
 }
 
-interface ExpenseCategory { id: number; name: string; icon: string; color: string }
+interface ExpenseCategory { id: number; name: string; icon: string; color: string; keyword_rules?: string[] }
+
+const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+
+// Mesma heurística usada no import bancário (matchCategory em shared-api/finances.ts):
+// nome da categoria como substring, senão as keyword_rules configuradas — só que rodando
+// local, sem chamada de rede, pra sugerir enquanto o usuário ainda digita a descrição.
+function suggestCategory(description: string, categories: ExpenseCategory[]): ExpenseCategory | null {
+  const d = norm(description)
+  if (!d) return null
+  for (const cat of categories) {
+    const catName = norm(cat.name)
+    if (catName.length >= 4 && d.includes(catName)) return cat
+  }
+  for (const cat of categories) {
+    const rules = cat.keyword_rules ?? []
+    if (rules.some(kw => d.includes(norm(kw)))) return cat
+  }
+  return null
+}
 
 interface MomentExpense {
   id: number
@@ -68,6 +87,7 @@ export default function ExpensesPanel({ momentId, currency, fmt }: { momentId: n
   const [customValues, setCustomValues] = useState<Record<string, string>>({})
   const [customPercents, setCustomPercents] = useState<Record<string, string>>({})
   const [categoryId, setCategoryId] = useState<number | ''>('')
+  const [categoryTouched, setCategoryTouched] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -95,6 +115,16 @@ export default function ExpensesPanel({ momentId, currency, fmt }: { momentId: n
 
   useEffect(() => { load() }, [load])
 
+  // Sugere categoria com base na descrição enquanto o usuário digita, mas só
+  // enquanto ele não tiver escolhido uma manualmente — não queremos sobrescrever
+  // uma escolha explícita a cada tecla.
+  useEffect(() => {
+    if (categoryTouched || paidBy !== user?.id) return
+    const match = suggestCategory(description, myCategories)
+    setCategoryId(match ? match.id : '')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [description, myCategories, paidBy])
+
   function toggleParticipant(uid: string) {
     setSelected(prev => {
       const next = new Set(prev)
@@ -108,6 +138,7 @@ export default function ExpensesPanel({ momentId, currency, fmt }: { momentId: n
     setSelected(new Set(participants.map(p => p.user_id)))
     setCustomValues({}); setCustomPercents({})
     setCategoryId('')
+    setCategoryTouched(false)
     setEditingId(null)
     const me = participants.find(p => p.user_id === user?.id)
     setPaidBy(me?.user_id ?? participants[0]?.user_id ?? '')
@@ -150,6 +181,7 @@ export default function ExpensesPanel({ momentId, currency, fmt }: { momentId: n
     setCustomValues(values)
     setCustomPercents(percents)
     setCategoryId(e.category?.id ?? '')
+    setCategoryTouched(true)
     setError('')
     setShowForm(true)
   }
@@ -365,12 +397,18 @@ export default function ExpensesPanel({ momentId, currency, fmt }: { momentId: n
 
           {/* Categoria só existe pro próprio pagador (categorias são por usuário) — se quem
               está editando não é quem pagou, não dá pra saber/mexer na categoria dele. */}
-          {paidBy === user?.id && myCategories.length > 0 && (
-            <select value={categoryId} onChange={e => setCategoryId(e.target.value === '' ? '' : Number(e.target.value))} className={`w-full ${fieldCls}`}>
+          {paidBy === user?.id && myCategories.length > 0 ? (
+            <select
+              value={categoryId}
+              onChange={e => { setCategoryTouched(true); setCategoryId(e.target.value === '' ? '' : Number(e.target.value)) }}
+              className={`w-full ${fieldCls}`}
+            >
               <option value="">{t.finances.noCategory}</option>
               {myCategories.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
             </select>
-          )}
+          ) : paidBy && paidBy !== user?.id ? (
+            <p className="text-[11px] text-[var(--arvo-fg-soft)]">{t.finances.expenseCategorizeLaterHint}</p>
+          ) : null}
 
           <div className="flex gap-2 text-xs">
             <button
