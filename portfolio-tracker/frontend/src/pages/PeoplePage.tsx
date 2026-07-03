@@ -80,7 +80,7 @@ function Toggle({ checked, disabled, onChange }: { checked: boolean; disabled?: 
       style={{
         position: 'relative', width: 36, height: 21, borderRadius: 999, flexShrink: 0,
         border: 'none', cursor: disabled ? 'default' : 'pointer', padding: 0,
-        background: checked ? RED : 'var(--arvo-border)',
+        background: checked ? 'var(--arvo-fg)' : 'var(--arvo-border)',
         opacity: disabled ? 0.5 : 1,
         transition: 'background 180ms ease',
       }}

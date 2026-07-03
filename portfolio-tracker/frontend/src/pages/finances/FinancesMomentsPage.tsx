@@ -1052,7 +1052,16 @@ export default function FinancesMomentsPage() {
 
   async function deleteMoment(id: number) {
     if (!confirm(t.finances.momentConfirmDelete)) return
-    await apiFetch(`/finances/moments/${id}`, { method: 'DELETE' })
+    try {
+      await apiFetch(`/finances/moments/${id}`, { method: 'DELETE' })
+    } catch (e) {
+      // 409 = pending shared-expense balance — backend's message already asks "delete anyway?"
+      if (e instanceof Error && confirm(e.message)) {
+        await apiFetch(`/finances/moments/${id}?force=true`, { method: 'DELETE' })
+      } else {
+        return
+      }
+    }
     await load()
   }
 
