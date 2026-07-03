@@ -709,6 +709,8 @@
     "internalTransfer": "internal transfer",
     "brokerTransfer": "Broker",
     "csvTransferBadge": "↔ Transfer",
+    "csvManualMatchHint": "Looks like the manual expense \"{description}\" you already split",
+    "csvManualMatchLink": "Link",
     "csvParsingTitle": "Processing statement…",
     "csvParsingHint": "Detecting columns and applying keyword rules",
     "csvShowUncategorized": "Show uncategorised",

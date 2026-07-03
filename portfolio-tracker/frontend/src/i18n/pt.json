@@ -709,6 +709,8 @@
     "internalTransfer": "transferência interna",
     "brokerTransfer": "Corretora",
     "csvTransferBadge": "↔ Transferência",
+    "csvManualMatchHint": "Parece com a despesa manual \"{description}\" já dividida",
+    "csvManualMatchLink": "Vincular",
     "csvParsingTitle": "Processando extrato…",
     "csvParsingHint": "Detectando colunas e aplicando regras de palavras-chave",
     "csvShowUncategorized": "Mostrar sem categoria",

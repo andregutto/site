@@ -57,6 +57,7 @@ interface ParsedRow {
   shared_category_id?: number | null
   source?: string
   is_duplicate?: boolean
+  manual_match?: { transaction_id: number; description: string; amount: number; date: string; moment_id: number | null; moment_name: string } | null
 }
 
 interface AiDebug { ran: boolean; assigned: number; unmatched: number; error: string | null }
@@ -724,6 +725,21 @@ export default function FinancesTransactionsPage() {
     }
   }
 
+  // O usuário confirmou que essa linha do CSV é a mesma despesa que ele já lançou manualmente
+  // numa divisão (moment_match). Em vez de importar como transação nova (duplicando), atualiza
+  // a transação manual existente com os dados "oficiais" do banco e tira a linha do preview.
+  async function linkManualMatch(row: ParsedRow) {
+    if (!row.manual_match) return
+    await apiFetch(`/finances/transactions/${row.manual_match.transaction_id}/adopt-import`, {
+      method: 'POST',
+      body: JSON.stringify({
+        date: row.date, description: row.description, amount: row.amount, currency: row.currency,
+        category_id: row.category_id ?? null, account_id: csvAccountId, is_internal_transfer: row.is_internal_transfer,
+      }),
+    })
+    setCsvRows(prev => prev.filter(r => r !== row))
+  }
+
   async function importCSV() {
     setCsvStep('importing')
     setCsvError('')
@@ -1156,6 +1172,12 @@ export default function FinancesTransactionsPage() {
                         </button>
                       </div>
                     </div>
+                    {row.manual_match && (
+                      <div className="flex items-center gap-2 mb-2 px-2 py-1.5 rounded-lg text-[11px]" style={{ background: 'color-mix(in srgb, var(--arvo-gold) 12%, var(--arvo-surface))', color: 'var(--arvo-gold-text)' }}>
+                        <span className="flex-1">{t.finances.csvManualMatchHint.replace('{description}', row.manual_match.description)}</span>
+                        <button onClick={() => linkManualMatch(row)} className="arvo-btn arvo-btn--ghost arvo-btn--sm shrink-0">{t.finances.csvManualMatchLink}</button>
+                      </div>
+                    )}
                     <div className="flex items-center gap-1">
                       {row.suggested_by === 'ai' && row.category_id === row.suggested_category_id && (
                         <span title={t.common.aiSuggested} className="text-[10px] bg-violet-100 text-violet-600 rounded px-1 font-medium shrink-0">✦ IA</span>
@@ -1231,6 +1253,12 @@ export default function FinancesTransactionsPage() {
                         {row.suggested_by === 'transfer' && <span className="text-[10px] bg-blue-100 text-blue-700 rounded px-1 mr-1.5 font-medium">{t.finances.csvTransferBadge}</span>}
                         {row.description}
                         {sameDescCount > 1 && <span className="ml-1.5 text-[10px] text-[var(--arvo-fg-soft)]">×{sameDescCount}</span>}
+                        {row.manual_match && (
+                          <div className="mt-1 flex items-center gap-2 whitespace-normal">
+                            <span className="text-[10px]" style={{ color: 'var(--arvo-gold-text)' }}>{t.finances.csvManualMatchHint.replace('{description}', row.manual_match.description)}</span>
+                            <button onClick={() => linkManualMatch(row)} className="arvo-btn arvo-btn--ghost arvo-btn--sm shrink-0" style={{ fontSize: 10, padding: '2px 8px' }}>{t.finances.csvManualMatchLink}</button>
+                          </div>
+                        )}
                       </td>
                       <td className={`px-4 py-2 text-right font-medium whitespace-nowrap tabular-nums ${row.amount < 0 ? 'text-[var(--arvo-fg)]' : 'arvo-delta-pos'}`}>
                         {fmt(row.amount, row.currency)}

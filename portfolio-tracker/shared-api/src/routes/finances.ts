@@ -1881,9 +1881,61 @@ router.post('/transactions/csv-parse', requireAuth, async (req, res: Response) =
     csvOffset += 1000
   }
   const sourceKeys = assignSourceKeys(transactions)
+
+  // Candidatas a "já lancei isso manualmente numa divisão de despesa, não importar de novo
+  // como linha nova" — não dá pra comparar descrição (banco nunca escreve igual ao que o
+  // usuário digitou), então o critério é: mesmo valor (exato, ou até 2% se quiser cobrir
+  // arredondamento de câmbio) + data a até 2 dias de distância. Sempre um "sugestão pra
+  // confirmar", nunca fundido automático — ver POST /transactions/:id/adopt-import.
+  const { data: manualExpenseLinks } = await supabaseAdmin
+    .from('finance_moment_expenses')
+    .select('transaction_id, moment_id, finance_moments(name)')
+    .eq('paid_by_user_id', userId)
+    .eq('owns_transaction', true)
+    .not('transaction_id', 'is', null)
+  const manualTxIds = [...new Set((manualExpenseLinks ?? []).map(l => l.transaction_id as number))]
+  const momentByTxId = new Map<number, { moment_id: number; moment_name: string }>()
+  for (const l of manualExpenseLinks ?? []) {
+    momentByTxId.set(l.transaction_id as number, { moment_id: l.moment_id as number, moment_name: (l as any).finance_moments?.name ?? '' })
+  }
+
+  let manualCandidates: { id: number; date: string; description: string; amount: number; currency: string }[] = []
+  if (manualTxIds.length > 0) {
+    const { data } = await supabaseAdmin
+      .from('finance_transactions')
+      .select('id, date, description, amount, currency')
+      .in('id', manualTxIds)
+      .eq('source', 'manual')
+    manualCandidates = data ?? []
+  }
+
+  const DAY_MS = 24 * 60 * 60 * 1000
+  function findManualMatch(t: { date: string; amount: number; currency: string }) {
+    if (manualCandidates.length === 0) return null
+    const targetAbs = Math.abs(t.amount)
+    let best: typeof manualCandidates[number] | null = null
+    let bestDiffDays = Infinity
+    for (const c of manualCandidates) {
+      if (c.currency !== t.currency) continue
+      const candAbs = Math.abs(c.amount)
+      const withinValue = candAbs === targetAbs || Math.abs(candAbs - targetAbs) / targetAbs <= 0.02
+      if (!withinValue) continue
+      const diffDays = Math.abs(new Date(c.date + 'T00:00:00').getTime() - new Date(t.date + 'T00:00:00').getTime()) / DAY_MS
+      if (diffDays > 2) continue
+      if (diffDays < bestDiffDays) { best = c; bestDiffDays = diffDays }
+    }
+    if (!best) return null
+    const momentInfo = momentByTxId.get(best.id)
+    return {
+      transaction_id: best.id, description: best.description, amount: best.amount, date: best.date,
+      moment_id: momentInfo?.moment_id ?? null, moment_name: momentInfo?.moment_name ?? '',
+    }
+  }
+
   const taggedTransactions = transactions.map((t, i) => {
     const source = sourceKeys[i]
-    return { ...t, source, is_duplicate: existingSet.has(source) }
+    const is_duplicate = existingSet.has(source)
+    return { ...t, source, is_duplicate, manual_match: is_duplicate ? null : findManualMatch(t) }
   })
   const duplicateCount = taggedTransactions.filter(t => t.is_duplicate).length
 
@@ -1917,6 +1969,49 @@ router.post('/transactions/ai-categorize', requireAuth, async (req, res: Respons
 
   const { map, error } = await aiCategorize(items, categories, reqDeadline)
   res.json({ map, error: error ?? null })
+})
+
+// POST /api/finances/transactions/:id/adopt-import — user confirmed that a bank CSV row
+// is the same real-world charge as a manual split expense they already logged (surfaced
+// as `manual_match` by csv-parse). Instead of importing a second transaction, overwrite
+// the existing manual one with the bank's authoritative date/description/amount/category
+// and give it a real csv: source key, so (a) the CSV row is skipped, not duplicated, and
+// (b) re-importing the same statement later correctly treats it as already-imported.
+router.post('/transactions/:id/adopt-import', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const txId = Number(req.params.id)
+  const { date, description, amount, currency, category_id, account_id, is_internal_transfer } = req.body as {
+    date?: string; description?: string; amount?: number; currency?: string
+    category_id?: number | null; account_id?: number | null; is_internal_transfer?: boolean
+  }
+  if (!date || !description || amount == null || !currency) {
+    res.status(400).json({ error: 'date, description, amount e currency são obrigatórios' }); return
+  }
+
+  const { data: tx } = await supabaseAdmin
+    .from('finance_transactions').select('id, user_id, source').eq('id', txId).maybeSingle()
+  if (!tx || tx.user_id !== userId) { res.status(404).json({ error: 'Transação não encontrada' }); return }
+  if (tx.source !== 'manual') { res.status(400).json({ error: 'Esta transação já não é manual' }); return }
+
+  const source = csvSourceKey({ date, description, amount, currency })
+  const { error: updateError } = await supabaseAdmin
+    .from('finance_transactions')
+    .update({
+      date, description, amount, currency, source,
+      category_id: category_id ?? null, account_id: account_id ?? null,
+      is_internal_transfer: !!is_internal_transfer,
+    })
+    .eq('id', txId)
+  if (updateError) { res.status(500).json({ error: updateError.message }); return }
+
+  // Mantém a despesa dividida em sincronia com os dados agora "de banco" — mesmo padrão
+  // do PATCH de edição de despesa, só que aqui os valores vêm do CSV em vez do usuário.
+  await supabaseAdmin
+    .from('finance_moment_expenses')
+    .update({ description, amount: Math.abs(amount), currency, expense_date: date })
+    .eq('transaction_id', txId)
+
+  res.json({ ok: true })
 })
 
 function csvSourceKey(t: { date: string; description: string; amount: number; currency: string }, seq = 1): string {

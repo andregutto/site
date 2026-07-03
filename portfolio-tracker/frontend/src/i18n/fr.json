@@ -709,6 +709,8 @@
     "internalTransfer": "transfert interne",
     "brokerTransfer": "Courtier",
     "csvTransferBadge": "↔ Transfert",
+    "csvManualMatchHint": "Ressemble à la dépense manuelle \"{description}\" déjà répartie",
+    "csvManualMatchLink": "Lier",
     "csvParsingTitle": "Traitement du relevé…",
     "csvParsingHint": "Détection des colonnes et application des règles de mots-clés",
     "csvShowUncategorized": "Afficher sans catégorie",
