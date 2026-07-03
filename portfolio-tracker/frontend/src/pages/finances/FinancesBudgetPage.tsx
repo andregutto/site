@@ -7,6 +7,7 @@ import { useCurrency } from '../../contexts/CurrencyContext'
 import { Icon } from '../../components/icons'
 import Avatar from '../voyage/_shared/Avatar'
 import GroupSplitSection from '../../components/GroupSplitSection'
+import { GroupModal } from './SharedCategoriesPage'
 
 interface Category {
   id: number
@@ -580,6 +581,10 @@ export default function FinancesBudgetPage() {
   const [shareModal, setShareModal]   = useState<Category | null>(null)
   const [sharingGroupId, setSharingGroupId] = useState<number | null>(null)
   const [sharingSaving, setSharingSaving]   = useState(false)
+  // Antes só dava pra compartilhar com um grupo já existente — se o usuário não
+  // tinha nenhum, precisava ir em Amigos criar um e voltar. Agora dá pra criar
+  // direto daqui.
+  const [newGroupModal, setNewGroupModal] = useState(false)
   const [openEnvPicker, setOpenEnvPicker] = useState<number | null>(null)
   const [editingUnassignedSharedId, setEditingUnassignedSharedId] = useState<number | null>(null)
   const [unassignedGoalInput, setUnassignedGoalInput] = useState('')
@@ -1289,9 +1294,9 @@ export default function FinancesBudgetPage() {
               <span className="text-sm font-medium text-[var(--arvo-fg)]">{shareModal.name}</span>
             </div>
             {sharedGroups.length === 0 ? (
-              <p className="text-sm text-[var(--arvo-fg-muted)] mt-3 mb-4">{t.shared.noGroups}</p>
+              <p className="text-sm text-[var(--arvo-fg-muted)] mt-3 mb-2">{t.shared.noGroups}</p>
             ) : (
-              <div className="mt-3 space-y-2 mb-4">
+              <div className="mt-3 space-y-2 mb-2">
                 <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{t.finances.pickGroup}</label>
                 {sharedGroups.map(g => (
                   <button
@@ -1310,6 +1315,13 @@ export default function FinancesBudgetPage() {
                 ))}
               </div>
             )}
+            <button
+              type="button" onClick={() => setNewGroupModal(true)}
+              className="text-xs mb-4"
+              style={{ color: 'var(--arvo-fg-soft)' }}
+            >
+              {t.shared.newGroup}
+            </button>
             <div className="flex gap-2 mt-2">
               <button
                 onClick={confirmShare}
@@ -1322,6 +1334,17 @@ export default function FinancesBudgetPage() {
             </div>
           </div>
         </div>
+      )}
+      {newGroupModal && (
+        <GroupModal
+          s={t.shared}
+          onClose={() => setNewGroupModal(false)}
+          onSaved={async id => {
+            setNewGroupModal(false)
+            await load(true)
+            if (id) setSharingGroupId(id)
+          }}
+        />
       )}
     </div>
   )

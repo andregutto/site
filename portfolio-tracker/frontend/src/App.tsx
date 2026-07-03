@@ -57,7 +57,6 @@ import { AchievementProvider } from './contexts/AchievementContext'
 import { NotificationsProvider } from './contexts/NotificationsContext'
 import LandingPage from './pages/LandingPage'
 import AcceptInvitePage from './pages/AcceptInvitePage'
-import SharedCategoriesPage from './pages/finances/SharedCategoriesPage'
 import FinancesInsightsPage from './pages/finances/FinancesInsightsPage'
 import VoyageLayout from './pages/voyage/VoyageLayout'
 import VoyageTripsPage from './pages/voyage/VoyageTripsPage'
@@ -179,7 +178,9 @@ function AppRoutes() {
           <Route path="moments"       element={<FinancesMomentsPage />} />
           <Route path="moments/:id"   element={<MomentDetailPage />} />
           <Route path="freedom"       element={<FinancesFreedomPage />} />
-          <Route path="shared"         element={<SharedCategoriesPage />} />
+          {/* Grupo criação/edição/membros migrou pra Amigos; categorias compartilhadas
+              se editam direto no Planejamento (botão "Compartilhar" na categoria). */}
+          <Route path="shared"         element={<Navigate to="/people" replace />} />
           <Route path="insights"      element={<FinancesInsightsPage />} />
           <Route path="subscriptions" element={<Navigate to="/finances/insights" replace />} />
           <Route path="fees"          element={<Navigate to="/finances/insights" replace />} />
