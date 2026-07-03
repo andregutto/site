@@ -67,12 +67,15 @@ export async function getPendingMomentInvites(userId: string): Promise<PendingMo
 }
 
 // Membros adicionados direto (auto-aceite) não passam por token/link — sem
-// isso eles nunca saberiam que foram incluídos no momento.
+// isso eles nunca saberiam que foram incluídos no momento. EXCETO o momento
+// oculto padrão (1:1 ou de grupo — ver docs/SHARED_EXPENSES_MODEL.md): esse
+// nunca é uma superfície de colaboração nova, só formaliza uma conexão que já
+// existe, então não deve gerar notificação nenhuma.
 export async function getRecentMomentAdditions(userId: string): Promise<RecentMomentAddition[]> {
   const since = new Date(Date.now() - 14 * 24 * 3600 * 1000).toISOString()
   const { data } = await supabaseAdmin
     .from('finance_moment_members')
-    .select('id, joined_at, finance_moments(id, name, user_id)')
+    .select('id, joined_at, finance_moments(id, name, user_id, is_pair_default)')
     .eq('user_id', userId).eq('status', 'active')
     .is('invite_token', null)
     .gte('joined_at', since)
@@ -80,7 +83,7 @@ export async function getRecentMomentAdditions(userId: string): Promise<RecentMo
   const result: RecentMomentAddition[] = []
   for (const row of (data ?? []) as any[]) {
     const moment = row.finance_moments
-    if (!moment || moment.user_id === userId) continue
+    if (!moment || moment.user_id === userId || moment.is_pair_default) continue
     const inviter = await userDisplay(moment.user_id)
     result.push({
       key: `moment_added:${row.id}`,

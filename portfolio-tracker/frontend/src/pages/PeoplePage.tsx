@@ -795,6 +795,7 @@ function ManageGroupModal({ group, userId, s, onClose, onChanged }: {
   const [showInvite, setShowInvite] = useState(false)
   const [inviteResult, setInviteResult] = useState<string | null>(null)
   const [removing, setRemoving] = useState<number | null>(null)
+  const [showRename, setShowRename] = useState(false)
 
   async function removeMember(memberId: number) {
     setRemoving(memberId)
@@ -810,9 +811,14 @@ function ManageGroupModal({ group, userId, s, onClose, onChanged }: {
     <>
       <ModalOverlay onClose={onClose}>
         <div className="flex flex-col gap-4">
-          <h2 className="text-sm font-semibold" style={{ color: 'var(--arvo-fg)', fontFamily: 'var(--arvo-font-body)', letterSpacing: '0.06em' }}>
-            {group.name}
-          </h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-sm font-semibold flex-1" style={{ color: 'var(--arvo-fg)', fontFamily: 'var(--arvo-font-body)', letterSpacing: '0.06em' }}>
+              {group.name}
+            </h2>
+            <button type="button" onClick={() => setShowRename(true)} className="text-xs" style={{ color: 'var(--arvo-fg-soft)' }}>
+              {s.editGroup ?? 'Editar nome'}
+            </button>
+          </div>
           <div className="flex flex-col gap-2">
             {group.members.filter(m => m.status !== 'left').map(m => {
               const isMe = m.user_id === userId
@@ -861,6 +867,14 @@ function ManageGroupModal({ group, userId, s, onClose, onChanged }: {
           }}
           onCopy={() => { if (inviteResult) navigator.clipboard.writeText(inviteResult) }}
           onClose={() => { setShowInvite(false); setInviteResult(null) }}
+        />
+      )}
+      {showRename && (
+        <GroupModal
+          s={s}
+          initial={group}
+          onClose={() => setShowRename(false)}
+          onSaved={() => { setShowRename(false); onChanged() }}
         />
       )}
     </>
@@ -924,7 +938,17 @@ function GroupsSection({ fullGroups, onOpenExpenses, onManage, onNewGroup }: {
                   </button>
                 )}
                 {(g.balance ?? []).length === 0 && (
-                  <button type="button" onClick={() => onOpenExpenses(g)} title={t.people.splitExpenseButton} style={{ fontSize: 12, color: 'var(--arvo-fg-soft)', background: 'none', border: 'none', cursor: 'pointer' }}>
+                  <button
+                    type="button" onClick={() => onOpenExpenses(g)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'var(--arvo-font-body)', fontSize: 12, letterSpacing: '0.02em',
+                      padding: '5px 12px', borderRadius: 999, background: 'none', border: '1px solid var(--arvo-border)',
+                      color: 'var(--arvo-fg-muted)', cursor: 'pointer', flexShrink: 0,
+                    }}
+                  >
+                    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M2 4.5h9M2 4.5l2.5-2.5M2 4.5l2.5 2.5M14 11.5H5M14 11.5l-2.5-2.5M14 11.5l-2.5 2.5"/>
+                    </svg>
                     {t.people.splitExpenseButton}
                   </button>
                 )}
@@ -1213,6 +1237,9 @@ export default function PeoplePage() {
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 14, letterSpacing: '0.10em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)', marginBottom: -2 }}>
+            {t.nav.people}
+          </p>
           {contacts.map((contact, i) => (
             <div key={contact.email} style={{ animation: 'fadeUp 320ms cubic-bezier(0.22,0.61,0.36,1) both', animationDelay: `${i * 50}ms` }}>
               <ContactCard contact={contact} trips={trips} groups={groups} moments={moments} onRemoved={handleRemoved} onFriendChanged={load} />

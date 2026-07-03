@@ -518,7 +518,21 @@ function SplitModal({ group, userId, onClose, onSaved }: { group: SharedGroup; u
     if (isNaN(pct) || pct < 0 || pct > 100) return
     setSaving(true)
     try {
-      await apiFetch(`/shared/groups/${group.id}/members/${memberId}`, { method: 'PATCH', body: JSON.stringify({ share_pct: pct }) })
+      // O backend força share_mode='manual' pra qualquer membro cuja % é editada
+      // diretamente (evita que o próximo recálculo salarial sobrescreva o valor).
+      await apiFetch(`/shared/groups/${group.id}/members/${memberId}`, {
+        method: 'PATCH', body: JSON.stringify({ share_pct: pct }),
+      })
+      // Com só 2 pessoas ativas a divisão é sempre complementar — sem isso, editar
+      // sua % deixava a soma diferente de 100% até a outra pessoa entrar e ajustar
+      // a dela manualmente, o que na prática nunca acontecia. O backend agora
+      // permite qualquer membro ativo ajustar a % de outro membro do mesmo grupo.
+      const other = activeMembers.find(m => m.id !== memberId)
+      if (activeMembers.length === 2 && other) {
+        await apiFetch(`/shared/groups/${group.id}/members/${other.id}`, {
+          method: 'PATCH', body: JSON.stringify({ share_pct: Math.round((100 - pct) * 100) / 100 }),
+        })
+      }
       onSaved()
     } finally {
       setSaving(false)

@@ -464,19 +464,35 @@ router.post('/invite/accept', requireAuth, async (req, res: Response) => {
 // ─── Members ─────────────────────────────────────────────────────────────────
 
 // PATCH /api/shared/groups/:groupId/members/:memberId  (update share settings)
+//
+// share_pct pode ser ajustado por QUALQUER membro ativo do grupo, não só o
+// dono da linha — numa divisão de 2 pessoas, exigir que cada um edite só a
+// própria % deixava a soma sempre desbalanceada (a outra pessoa nunca entrava
+// pra corrigir manualmente). share_mode/salary_authorized continuam restritos
+// à própria linha, porque "autorizar meu salário" é uma decisão pessoal.
 router.patch('/groups/:groupId/members/:memberId', requireAuth, async (req, res: Response) => {
   const userId = uid(req)
+  const groupIdParam = Number(req.params.groupId)
   const { share_pct, share_mode, salary_authorized } = req.body as {
     share_pct?: number
     share_mode?: string
     salary_authorized?: boolean
   }
 
-  // Can only update own membership
   const updates: Record<string, unknown> = {}
-  if (share_pct !== undefined) updates.share_pct = share_pct
+  if (share_pct !== undefined) {
+    const { data: caller } = await supabaseAdmin
+      .from('shared_group_members').select('id').eq('group_id', groupIdParam).eq('user_id', userId).eq('status', 'active').maybeSingle()
+    if (!caller) { res.status(403).json({ error: 'Você não é membro ativo deste grupo' }); return }
+    updates.share_pct = share_pct
+    // Editar manualmente sempre derruba o modo salário — senão o próximo
+    // recálculo automático sobrescreveria o valor que a pessoa acabou de definir.
+    updates.share_mode = 'manual'
+  }
   if (share_mode !== undefined) updates.share_mode = share_mode
   if (salary_authorized !== undefined) updates.salary_authorized = salary_authorized
+
+  const ownRowOnly = share_mode !== undefined || salary_authorized !== undefined
 
   // Recalculate if salary_based and both members authorize
   if (salary_authorized === true || share_mode === 'salary_based') {
@@ -513,13 +529,9 @@ router.patch('/groups/:groupId/members/:memberId', requireAuth, async (req, res:
     }
   }
 
-  const { data, error } = await supabaseAdmin
-    .from('shared_group_members')
-    .update(updates)
-    .eq('id', req.params.memberId)
-    .eq('user_id', userId)
-    .select()
-    .single()
+  let query = supabaseAdmin.from('shared_group_members').update(updates).eq('id', req.params.memberId)
+  if (ownRowOnly) query = query.eq('user_id', userId)
+  const { data, error } = await query.select().single()
 
   if (error) { res.status(500).json({ error: error.message }); return }
   res.json(data)
