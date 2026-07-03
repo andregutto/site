@@ -672,6 +672,10 @@ export function MembersPanel({ momentId, ownerId }: { momentId: number; ownerId:
   const [showSuggestions, setShowSuggestions] = useState(false)
 
   const isOwner = user?.id === ownerId
+  // Convidar mais gente não é só privilégio do dono — um editor ativo também pode
+  // (o backend já permitia isso em POST /moments/:id/invite; só a UI estava restrita ao dono).
+  const myMembership = members.find(m => m.user_id === user?.id)
+  const canInvite = isOwner || (myMembership?.status === 'active' && myMembership.role === 'editor')
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -767,7 +771,7 @@ export function MembersPanel({ momentId, ownerId }: { momentId: number; ownerId:
         </div>
       )}
 
-      {isOwner && (
+      {canInvite && (
         <div style={{ borderTop: '1px solid var(--arvo-border-soft)', paddingTop: 12 }}>
           {friends.length > 0 && (
             <div className="flex flex-wrap gap-2" style={{ marginBottom: 8 }}>

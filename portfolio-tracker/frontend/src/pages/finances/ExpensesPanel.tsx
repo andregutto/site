@@ -387,15 +387,7 @@ export default function ExpensesPanel({ momentId, currency, fmt }: { momentId: n
           </div>
 
           <div className="space-y-1.5">
-            <div className="flex items-center gap-2">
-              <p className="text-[10px] uppercase tracking-wide text-[var(--arvo-fg-soft)] flex-1">{t.finances.expenseParticipants}</p>
-              {splitType === 'custom' && (
-                <>
-                  <p className="text-[10px] uppercase tracking-wide text-[var(--arvo-fg-soft)] w-16 text-right">{t.finances.expenseSplitCustomValue}</p>
-                  <p className="text-[10px] uppercase tracking-wide text-[var(--arvo-fg-soft)] w-14 text-right">{t.finances.expenseSplitCustomPercent}</p>
-                </>
-              )}
-            </div>
+            <p className="text-[10px] uppercase tracking-wide text-[var(--arvo-fg-soft)]">{t.finances.expenseParticipants}</p>
             {participants.map(p => (
               <div key={p.user_id} className="flex items-center gap-2">
                 <input
