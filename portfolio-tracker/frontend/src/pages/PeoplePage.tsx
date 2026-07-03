@@ -976,60 +976,80 @@ function GroupsSection({ fullGroups, onOpenExpenses, onManage, onNewGroup }: {
         <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg-soft)' }}>{t.people.noGroupsYet}</p>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {fullGroups.map(g => {
-            const activeMembers = g.members.filter(m => m.status === 'active')
-            return (
-              <div key={g.id} style={{
-                display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', borderRadius: 12,
-                background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)',
-              }}>
-                <div style={{ display: 'flex', flex: '0 0 auto' }}>
-                  {activeMembers.slice(0, 4).map(m => (
-                    <div key={m.id} style={{ marginLeft: -6, border: '2px solid var(--arvo-surface)', borderRadius: '50%' }}>
-                      <Avatar name={m.display.name} email={m.display.email} avatarUrl={m.display.avatar_url} size={24} />
-                    </div>
-                  ))}
-                </div>
-                <span style={{ flex: 1, minWidth: 0, fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {g.name}
-                </span>
-                {(g.balance ?? []).length > 0 && (
-                  <button type="button" onClick={() => onOpenExpenses(g)} style={{ display: 'flex', gap: 6, background: 'none', border: 'none', cursor: 'pointer' }}>
-                    {(g.balance ?? []).map(b => (
-                      <span key={b.currency} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, fontWeight: 600, color: b.amount > 0 ? '#1F8A5B' : RED }}>
-                        {b.amount > 0 ? '+' : '−'}{fmt(Math.abs(b.amount), b.currency)}
-                      </span>
-                    ))}
-                  </button>
-                )}
-                {(g.balance ?? []).length === 0 && (
-                  <button
-                    type="button" onClick={() => onOpenExpenses(g)}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'var(--arvo-font-body)', fontSize: 12, letterSpacing: '0.02em',
-                      padding: '5px 12px', borderRadius: 999, background: 'none', border: '1px solid var(--arvo-border)',
-                      color: 'var(--arvo-fg-muted)', cursor: 'pointer', flexShrink: 0,
-                    }}
-                  >
-                    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M2 4.5h9M2 4.5l2.5-2.5M2 4.5l2.5 2.5M14 11.5H5M14 11.5l-2.5-2.5M14 11.5l-2.5 2.5"/>
-                    </svg>
-                    {t.people.splitExpenseButton}
-                  </button>
-                )}
-                <button
-                  type="button" onClick={() => onManage(g)}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0, fontFamily: 'var(--arvo-font-body)', fontSize: 12,
-                    padding: '5px 12px', borderRadius: 999, background: 'none', border: '1px solid var(--arvo-border)', cursor: 'pointer', color: 'var(--arvo-fg-soft)',
-                  }}
-                >
-                  <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M8 4a1 1 0 110-2 1 1 0 010 2zm0 5a1 1 0 110-2 1 1 0 010 2zm0 5a1 1 0 110-2 1 1 0 010 2z"/></svg>
-                  {t.people.manageGroupButton}
-                </button>
-              </div>
-            )
-          })}
+          {fullGroups.map(g => (
+            <GroupCard key={g.id} group={g} fmt={fmt} onOpenExpenses={() => onOpenExpenses(g)} onManage={() => onManage(g)} />
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// Card de grupo colapsado — só nome + avatares, igual ao card de amigo; os
+// botões (dividir despesa, gerenciar) só aparecem expandido, senão o card já
+// chega "cobrando" alguém antes mesmo do usuário decidir se quer interagir.
+function GroupCard({ group: g, fmt, onOpenExpenses, onManage }: {
+  group: SharedGroupFull
+  fmt: (n: number, c: string) => string
+  onOpenExpenses: () => void
+  onManage: () => void
+}) {
+  const { t } = useI18n()
+  const [expanded, setExpanded] = useState(false)
+  const activeMembers = g.members.filter(m => m.status === 'active')
+
+  return (
+    <div style={{ padding: '10px 14px', borderRadius: 12, background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)' }}>
+      <div
+        role="button" tabIndex={0}
+        onClick={() => setExpanded(v => !v)}
+        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') setExpanded(v => !v) }}
+        style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}
+      >
+        <div style={{ display: 'flex', flex: '0 0 auto' }}>
+          {activeMembers.slice(0, 4).map(m => (
+            <div key={m.id} style={{ marginLeft: -6, border: '2px solid var(--arvo-surface)', borderRadius: '50%' }}>
+              <Avatar name={m.display.name} email={m.display.email} avatarUrl={m.display.avatar_url} size={24} />
+            </div>
+          ))}
+        </div>
+        <span style={{ flex: 1, minWidth: 0, fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {g.name}
+        </span>
+        {(g.balance ?? []).map(b => (
+          <span key={b.currency} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, fontWeight: 600, color: b.amount > 0 ? '#1F8A5B' : RED, flexShrink: 0 }}>
+            {b.amount > 0 ? '+' : '−'}{fmt(Math.abs(b.amount), b.currency)}
+          </span>
+        ))}
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="var(--arvo-fg-soft)" strokeWidth="1.5" style={{ flexShrink: 0, transform: expanded ? 'rotate(180deg)' : 'none', transition: 'transform 160ms' }}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M2.5 4.5L6 8l3.5-3.5" />
+        </svg>
+      </div>
+      {expanded && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--arvo-border-soft)' }}>
+          <button
+            type="button" onClick={onOpenExpenses}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'var(--arvo-font-body)', fontSize: 12, letterSpacing: '0.02em',
+              padding: '5px 12px', borderRadius: 999, background: 'none', border: '1px solid var(--arvo-border)',
+              color: 'var(--arvo-fg-muted)', cursor: 'pointer',
+            }}
+          >
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M2 4.5h9M2 4.5l2.5-2.5M2 4.5l2.5 2.5M14 11.5H5M14 11.5l-2.5-2.5M14 11.5l-2.5 2.5"/>
+            </svg>
+            {t.people.splitExpenseButton}
+          </button>
+          <button
+            type="button" onClick={onManage}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'var(--arvo-font-body)', fontSize: 12,
+              padding: '5px 12px', borderRadius: 999, background: 'none', border: '1px solid var(--arvo-border)', cursor: 'pointer', color: 'var(--arvo-fg-soft)',
+            }}
+          >
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M8 4a1 1 0 110-2 1 1 0 010 2zm0 5a1 1 0 110-2 1 1 0 010 2zm0 5a1 1 0 110-2 1 1 0 010 2z"/></svg>
+            {t.people.manageGroupButton}
+          </button>
         </div>
       )}
     </div>
