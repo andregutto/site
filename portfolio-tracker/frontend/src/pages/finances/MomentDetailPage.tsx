@@ -279,7 +279,10 @@ export default function MomentDetailPage() {
           </Section>
         )}
 
-        <Section title={t.finances.momentSectionExpenses}>
+        {/* Fecha por padrão quando não há nenhuma despesa dividida ainda — `has_split` nas
+            transações já carregadas é um proxy rápido pra isso sem esperar o fetch próprio
+            do ExpensesPanel (que só sabe o total depois de montar). */}
+        <Section title={t.finances.momentSectionExpenses} defaultOpen={transactions.some(tx => tx.has_split)}>
           <ExpensesPanel momentId={m.id} currency={currency} fmt={fmt} />
         </Section>
 
