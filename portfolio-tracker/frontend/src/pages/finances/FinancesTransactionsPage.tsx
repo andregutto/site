@@ -1682,7 +1682,7 @@ export default function FinancesTransactionsPage() {
                             {/* Split with friend — só faz sentido pra transação ainda sem Momento */}
                             {tx.moments.length === 0 && (
                               <button onClick={() => setSplitPickerTx(tx)} title={t.finances.expenseSplitShort} className="p-2 rounded-lg text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg)] hover:bg-[var(--arvo-fg)]/10 transition-colors">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4"><circle cx="8" cy="8" r="6.5"/><path strokeLinecap="round" strokeLinejoin="round" d="M8 5v6M6 7h3a1 1 0 010 2H6"/></svg>
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="M2 4.5h6M2 4.5l2.2-2.2M2 4.5l2.2 2.2M14 11.5H6M14 11.5l-2.2-2.2M14 11.5l-2.2 2.2"/></svg>
                               </button>
                             )}
                             {/* Delete */}
@@ -1719,7 +1719,7 @@ export default function FinancesTransactionsPage() {
                                 </button>
                                 {tx.moments.length === 0 && (
                                   <button onClick={() => { setSplitPickerTx(tx); setMobileActionsTxId(null) }} style={menuItemStyle}>
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4 shrink-0"><circle cx="8" cy="8" r="6.5"/><path strokeLinecap="round" strokeLinejoin="round" d="M8 5v6M6 7h3a1 1 0 010 2H6"/></svg>
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4 shrink-0"><path strokeLinecap="round" strokeLinejoin="round" d="M2 4.5h6M2 4.5l2.2-2.2M2 4.5l2.2 2.2M14 11.5H6M14 11.5l-2.2-2.2M14 11.5l-2.2 2.2"/></svg>
                                     <span>{t.finances.expenseSplitShort}</span>
                                   </button>
                                 )}

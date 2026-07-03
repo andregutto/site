@@ -54,6 +54,8 @@ interface SharedMember {
   invite_email: string | null
   status: string
   share_pct: number
+  share_mode: 'salary_based' | 'manual'
+  salary_authorized: boolean
   display: { name: string; email: string; avatar_url?: string }
 }
 
@@ -108,9 +110,10 @@ function resolveKey(name: string, nameKey: string | null | undefined, keys: Reco
 }
 
 
-function EnvelopeBar({ env, allEnvelopes, expanded, onToggle, onEditCategory, onDeleteCategory, onAddCategory, onSaveDescription, onShareCategory, onSaveCategoryBudget, onMoveCategory, actuals: _actuals, historicals, currency, incomeMonthly, sharedGroups, onSetSharedEnvelope, onSaveSharedGoal, onDeleteSharedCategory }:
-  { env: Envelope; allEnvelopes: Envelope[]; expanded: boolean; onToggle: () => void; onEditCategory: (c: Category) => void; onDeleteCategory: (id: number) => void; onAddCategory: (envId: number) => void; onSaveDescription: (id: number, desc: string) => void; onShareCategory: (c: Category) => void; onSaveCategoryBudget: (id: number, value: number | null) => void; onMoveCategory: (id: number, envId: number) => void; actuals: Map<number, number>; historicals: Map<number, number>; currency: string; incomeMonthly: number; sharedGroups: SharedGroup[]; onSetSharedEnvelope: (catId: number, envId: number | null) => void; onSaveSharedGoal: (catId: number, value: number) => void; onDeleteSharedCategory: (catId: number) => void }) {
+function EnvelopeBar({ env, allEnvelopes, expanded, onToggle, onEditCategory, onDeleteCategory, onAddCategory, onSaveDescription, onShareCategory, onSaveCategoryBudget, onMoveCategory, actuals: _actuals, historicals, currency, incomeMonthly, sharedGroups, onSetSharedEnvelope, onSaveSharedGoal, onDeleteSharedCategory, onEditSplit }:
+  { env: Envelope; allEnvelopes: Envelope[]; expanded: boolean; onToggle: () => void; onEditCategory: (c: Category) => void; onDeleteCategory: (id: number) => void; onAddCategory: (envId: number) => void; onSaveDescription: (id: number, desc: string) => void; onShareCategory: (c: Category) => void; onSaveCategoryBudget: (id: number, value: number | null) => void; onMoveCategory: (id: number, envId: number) => void; actuals: Map<number, number>; historicals: Map<number, number>; currency: string; incomeMonthly: number; sharedGroups: SharedGroup[]; onSetSharedEnvelope: (catId: number, envId: number | null) => void; onSaveSharedGoal: (catId: number, value: number) => void; onDeleteSharedCategory: (catId: number) => void; onEditSplit: (group: SharedGroup) => void }) {
   const { t } = useI18n()
+  const { user } = useAuth()
   const { hideValues } = useCurrency()
   const fmt = (n: number, cur: string) => hideValues ? '•••' : _fmt(n, cur)
   const nameKeys: Record<string, string> = {
@@ -176,10 +179,13 @@ function EnvelopeBar({ env, allEnvelopes, expanded, onToggle, onEditCategory, on
   const [editingSharedCatId, setEditingSharedCatId] = useState<number | null>(null)
   const [sharedGoalInput, setSharedGoalInput] = useState('')
 
-  function saveSharedGoal(catId: number) {
+  // O campo editável mostra "minha meta" (pra ficar alinhado com as categorias
+  // normais), mas o backend só guarda a meta TOTAL do grupo — então convertemos
+  // de volta usando o % de participação atual do usuário.
+  function saveSharedGoal(catId: number, myPct: number) {
     setEditingSharedCatId(null)
     const v = parseFloat(sharedGoalInput)
-    if (!isNaN(v) && v >= 0) onSaveSharedGoal(catId, v)
+    if (!isNaN(v) && v >= 0 && myPct > 0) onSaveSharedGoal(catId, Math.round((v / (myPct / 100)) * 100) / 100)
   }
 
   function saveDesc() {
@@ -362,6 +368,8 @@ function EnvelopeBar({ env, allEnvelopes, expanded, onToggle, onEditCategory, on
               {env.shared_categories.map(cat => {
                 const group = sharedGroups.find(g => g.id === cat.group_id)
                 const activeMembers = group?.members.filter(m => m.status === 'active') ?? []
+                const myMember = activeMembers.find(m => m.user_id === user?.id)
+                const myPct = myMember?.share_pct ?? 50
                 return (
                   <li key={`shared-${cat.id}`} className="px-5 py-2.5 flex flex-col gap-1">
                     <div className="flex items-center gap-3">
@@ -374,30 +382,43 @@ function EnvelopeBar({ env, allEnvelopes, expanded, onToggle, onEditCategory, on
                           </div>
                         ))}
                       </div>
+                      {/* Alinhado com a meta das categorias normais: aqui mostra
+                          MINHA meta (não o total do grupo, que fica na linha de baixo). */}
                       {editingSharedCatId === cat.id ? (
                         <input
                           autoFocus
                           type="number"
                           value={sharedGoalInput}
                           onChange={e => setSharedGoalInput(e.target.value)}
-                          onBlur={() => saveSharedGoal(cat.id)}
-                          onKeyDown={e => { if (e.key === 'Enter') saveSharedGoal(cat.id); if (e.key === 'Escape') setEditingSharedCatId(null) }}
+                          onBlur={() => saveSharedGoal(cat.id, myPct)}
+                          onKeyDown={e => { if (e.key === 'Enter') saveSharedGoal(cat.id, myPct); if (e.key === 'Escape') setEditingSharedCatId(null) }}
                           onClick={e => e.stopPropagation()}
                           className="w-20 text-sm text-right text-[var(--arvo-fg)] border border-[var(--arvo-border)] rounded px-1.5 py-0.5 focus:outline-none focus:ring-1 focus:ring-[var(--arvo-fg)]/30 shrink-0"
                         />
                       ) : (
                         <button
-                          onClick={() => { setSharedGoalInput(String(cat.total_goal)); setEditingSharedCatId(cat.id) }}
+                          onClick={() => { setSharedGoalInput(String(cat.my_goal)); setEditingSharedCatId(cat.id) }}
                           className="text-sm font-medium text-[var(--arvo-fg)] underline decoration-dotted decoration-[var(--arvo-fg-soft)] underline-offset-2 shrink-0 hover:decoration-[var(--arvo-fg)]"
                           title={t.finances.clickToEditBudget}
                         >
-                          {fmt(cat.total_goal, cat.currency)}
+                          {fmt(cat.my_goal, cat.currency)}
                         </button>
                       )}
                     </div>
                     <div className="flex items-center justify-between gap-2 pl-9">
-                      <span className="text-xs text-[var(--arvo-fg-soft)]">{cat.group_name} · {t.finances.myGoal}: {fmt(cat.my_goal, cat.currency)}</span>
+                      <span className="text-xs text-[var(--arvo-fg-soft)]">{cat.group_name} · {t.finances.groupGoal}: {fmt(cat.total_goal, cat.currency)}</span>
                       <div className="flex items-center gap-0.5 shrink-0">
+                        {group && (
+                          <button
+                            onClick={() => onEditSplit(group)}
+                            className="p-1.5 text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg)] transition-colors rounded"
+                            title={t.finances.editSplit}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5">
+                              <path d="M11.25 1.5a2.25 2.25 0 1 1 0 4.5 2.25 2.25 0 0 1 0-4.5ZM4.75 7.25a2.25 2.25 0 1 1 0 4.5 2.25 2.25 0 0 1 0-4.5ZM11.25 11a2.25 2.25 0 1 1 0 4.5 2.25 2.25 0 0 1 0-4.5ZM6.27 8.944l3.46-1.888.013.009-.013-.009-3.46 1.888Zm0-1.888 3.46 1.888-.013-.009.013.009-3.46-1.888Z" />
+                            </svg>
+                          </button>
+                        )}
                         <div className="relative">
                           <button
                             onClick={() => setSharedEnvPickerId(cat.id)}
@@ -478,6 +499,107 @@ interface SpendingEnv { envelope_id: number; categories: SpendingCat[] }
 interface SpendingMonth { month: string; by_envelope: SpendingEnv[] }
 interface SpendingSummary { months: SpendingMonth[] }
 
+// Divisão de contribuição por membro do grupo — reaproveita o mesmo endpoint
+// (PATCH /shared/groups/:groupId/members/:memberId) que a antiga página de
+// Compartilhado usava, só que embutido no Planejamento pra não exigir navegar
+// pra outra tela pra ajustar % ou ativar o modo "baseado no salário".
+function SplitModal({ group, userId, onClose, onSaved }: { group: SharedGroup; userId: string; onClose: () => void; onSaved: () => void }) {
+  const { t } = useI18n()
+  const activeMembers = group.members.filter(m => m.status === 'active')
+  const [editingId, setEditingId] = useState<number | null>(null)
+  const [pctInput, setPctInput] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [togglingSalary, setTogglingSalary] = useState<number | null>(null)
+
+  async function savePct(memberId: number) {
+    const pct = parseFloat(pctInput)
+    setEditingId(null)
+    if (isNaN(pct) || pct < 0 || pct > 100) return
+    setSaving(true)
+    try {
+      await apiFetch(`/shared/groups/${group.id}/members/${memberId}`, { method: 'PATCH', body: JSON.stringify({ share_pct: pct }) })
+      onSaved()
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function toggleSalary(memberId: number, current: boolean) {
+    setTogglingSalary(memberId)
+    try {
+      await apiFetch(`/shared/groups/${group.id}/members/${memberId}`, {
+        method: 'PATCH', body: JSON.stringify({ salary_authorized: !current, share_mode: !current ? 'salary_based' : 'manual' }),
+      })
+      onSaved()
+    } finally {
+      setTogglingSalary(null)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={onClose}>
+      <div className="bg-[var(--arvo-surface)] rounded-2xl shadow-xl w-full max-w-sm p-6" onClick={e => e.stopPropagation()}>
+        <h3 className="font-semibold text-[var(--arvo-fg)] mb-1">{t.finances.editSplitTitle.replace('{name}', group.name)}</h3>
+        <p className="text-xs text-[var(--arvo-fg-muted)] mb-4">{t.finances.editSplitHint}</p>
+        <div className="flex flex-col gap-3">
+          {activeMembers.map(m => {
+            const isMe = m.user_id === userId
+            return (
+              <div key={m.id} className="flex items-center gap-3">
+                <Avatar name={m.display.name} email={m.display.email} avatarUrl={m.display.avatar_url} size={28} />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-[var(--arvo-fg)] truncate">{m.display.name}</p>
+                  {m.share_mode === 'salary_based' && (
+                    <p className="text-xs text-[var(--arvo-fg-soft)]">{t.finances.splitSalaryBased}</p>
+                  )}
+                </div>
+                {editingId === m.id ? (
+                  <input
+                    autoFocus
+                    type="number" min="0" max="100"
+                    value={pctInput}
+                    onChange={e => setPctInput(e.target.value)}
+                    onBlur={() => savePct(m.id)}
+                    onKeyDown={e => { if (e.key === 'Enter') savePct(m.id); if (e.key === 'Escape') setEditingId(null) }}
+                    className="w-16 text-sm text-right border border-[var(--arvo-border)] rounded px-1.5 py-0.5 focus:outline-none focus:ring-1 focus:ring-[var(--arvo-fg)]/30"
+                  />
+                ) : (
+                  <button
+                    onClick={() => isMe && (setEditingId(m.id), setPctInput(String(m.share_pct)))}
+                    className={`text-sm font-medium shrink-0 ${isMe ? 'text-[var(--arvo-fg)] underline decoration-dotted decoration-[var(--arvo-fg-soft)] underline-offset-2' : 'text-[var(--arvo-fg-soft)]'}`}
+                    disabled={!isMe || saving}
+                  >
+                    {m.share_pct}%
+                  </button>
+                )}
+              </div>
+            )
+          })}
+        </div>
+        {activeMembers.some(m => m.user_id === userId) && (
+          <button
+            onClick={() => {
+              const me = activeMembers.find(m => m.user_id === userId)!
+              toggleSalary(me.id, me.salary_authorized)
+            }}
+            disabled={togglingSalary !== null}
+            className="mt-4 flex items-center gap-2 text-xs"
+            style={{ color: activeMembers.find(m => m.user_id === userId)?.salary_authorized ? 'var(--arvo-green)' : 'var(--arvo-fg-soft)', opacity: togglingSalary !== null ? 0.5 : 1 }}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5"><path d="M8 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"/><path d="M1.38 8a6.998 6.998 0 0 1 13.24 0 7 7 0 0 1-13.24 0ZM8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5Z"/></svg>
+            {activeMembers.find(m => m.user_id === userId)?.salary_authorized ? t.finances.splitSalaryAuthorized : t.finances.splitAuthorizeSalary}
+          </button>
+        )}
+        <div className="flex gap-2 mt-5">
+          <button onClick={onClose} className="flex-1 bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] text-sm py-2 rounded-xl hover:opacity-80 transition-opacity">
+            {t.common.close}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function FinancesBudgetPage() {
   const { t } = useI18n()
   const { user } = useAuth()
@@ -539,6 +661,7 @@ export default function FinancesBudgetPage() {
   const [editingUnassignedSharedId, setEditingUnassignedSharedId] = useState<number | null>(null)
   const [unassignedGoalInput, setUnassignedGoalInput] = useState('')
   const [showRefInfo, setShowRefInfo] = useState(false)
+  const [splitGroup, setSplitGroup] = useState<SharedGroup | null>(null)
 
   const load = useCallback(async (silent = false) => {
     if (!silent) setLoading(true)
@@ -1008,9 +1131,19 @@ export default function FinancesBudgetPage() {
             onSetSharedEnvelope={setSharedEnvelope}
             onSaveSharedGoal={saveSharedGoal}
             onDeleteSharedCategory={deleteSharedCategory}
+            onEditSplit={setSplitGroup}
           />
         ))}
       </div>
+
+      {splitGroup && (
+        <SplitModal
+          group={splitGroup}
+          userId={user?.id ?? ''}
+          onClose={() => setSplitGroup(null)}
+          onSaved={() => load(true)}
+        />
+      )}
 
       {/* Shared categories section — once a shared category is assigned to an envelope
           (local_envelope_id), it now renders nested inside that envelope instead of here,

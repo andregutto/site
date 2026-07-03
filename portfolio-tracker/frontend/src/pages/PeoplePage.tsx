@@ -424,43 +424,29 @@ function ContactCard({
             {b.amount > 0 ? '+' : '−'}{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: b.currency, minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(Math.abs(b.amount))}
           </span>
         ))}
-        {/* Badge único de relação — só aparece se houver conexão de amizade
-            (direta ou pendente); o tooltip explica o que cada estado significa,
-            já que "Ativo" sozinho não dizia nada sobre o que está conectado. */}
-        {friendState && (
+        {/* Estado de amizade — "conectado" vira só um check verde (a pílula com
+            texto ocupava espaço à toa pro caso mais comum); pendente continua
+            como pílula com texto porque precisa chamar atenção. */}
+        {friendState === 'connected' && (
           <span
-            title={friendState === 'connected' ? t.people.connectedTooltip : undefined}
+            title={t.people.connectedTooltip}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, width: 18, height: 18, borderRadius: 999, background: 'rgba(31,138,91,0.12)', color: '#1F8A5B' }}
+          >
+            <svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor"><path fillRule="evenodd" d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z" clipRule="evenodd" /></svg>
+          </span>
+        )}
+        {(friendState === 'incoming' || friendState === 'outgoing') && (
+          <span
             style={{
               display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0,
               fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.16em', textTransform: 'uppercase',
               padding: '3px 9px', borderRadius: 999,
-              background: friendState === 'connected' ? 'rgba(31,138,91,0.10)' : 'rgba(200,184,154,0.14)',
-              color: friendState === 'connected' ? '#1F8A5B' : GOLD,
-              border: `1px solid ${friendState === 'connected' ? 'rgba(31,138,91,0.22)' : 'rgba(200,184,154,0.30)'}`,
+              background: 'rgba(200,184,154,0.14)', color: GOLD, border: '1px solid rgba(200,184,154,0.30)',
             }}
           >
             <span style={{ width: 5, height: 5, borderRadius: 999, background: 'currentColor', flexShrink: 0 }} />
-            {friendState === 'connected' ? t.people.connected : t.people.pending}
+            {t.people.pending}
           </span>
-        )}
-        {/* Atalho pra dividir uma despesa direto com essa pessoa, sem precisar
-            criar/abrir um Momento antes — cria/reaproveita o momento 1:1
-            oculto por trás (ver POST /finances/moments/default-with/:id). */}
-        {isConnected && contact.user_id && (
-          <button
-            type="button"
-            title={t.people.splitExpenseButton}
-            onClick={e => { e.stopPropagation(); setPairModal({ momentId: null }) }}
-            style={{
-              flexShrink: 0, width: 26, height: 26, borderRadius: 999, display: 'flex', alignItems: 'center', justifyContent: 'center',
-              background: 'none', border: '1px solid var(--arvo-border)', cursor: 'pointer', color: 'var(--arvo-fg-soft)',
-            }}
-          >
-            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <circle cx="8" cy="8" r="6.5"/>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M8 5v6M6 7h3a1 1 0 010 2H6"/>
-            </svg>
-          </button>
         )}
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="var(--arvo-fg-soft)" strokeWidth="1.5" style={{ flexShrink: 0, transform: expanded ? 'rotate(180deg)' : 'none', transition: 'transform 160ms' }}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M2.5 4.5L6 8l3.5-3.5" />
@@ -619,22 +605,26 @@ function ContactCard({
         </CollapsibleSection>
       )}
 
-      {/* Auto-aceite — só faz sentido pra quem já está conectado */}
-      {isConnected && contact.user_id && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 14, padding: '12px', borderRadius: 10, background: 'var(--arvo-hover-bg)' }}>
-          <Toggle
-            checked={auto} disabled={togglingAutoAccept}
-            onChange={() => toggleAutoAccept(mineFriendCtx ?? { type: 'friend', direction: 'owned_by_me', friend_id: 0, friend_status: 'active', auto_accept_invites: false })}
-          />
-          <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-soft)', lineHeight: 1.4 }}>
-            {t.people.autoAcceptLabel}
-          </span>
-        </div>
-      )}
-
-      {/* Compartilhar — um botão só, com um menu compacto em vez de 3 textos
-          soltos disputando espaço. */}
+      {/* Compartilhar + dividir despesa — ações relacionadas a "fazer algo com
+          essa pessoa", lado a lado; o botão de dividir despesa cria/reaproveita
+          o momento 1:1 oculto por trás (ver POST /finances/moments/default-with/:id). */}
       <div style={{ borderTop: '1px solid var(--arvo-border-soft)', marginTop: 14, paddingTop: 14 }}>
+        {isConnected && contact.user_id && (
+          <button
+            type="button"
+            onClick={() => setPairModal({ momentId: null })}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 7, fontFamily: 'var(--arvo-font-body)', fontSize: 12, letterSpacing: '0.02em',
+              padding: '6px 14px', borderRadius: 999, background: 'none', border: '1px solid var(--arvo-border)',
+              color: 'var(--arvo-fg-muted)', cursor: 'pointer', marginBottom: 10,
+            }}
+          >
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M2 4.5h9M2 4.5l2.5-2.5M2 4.5l2.5 2.5M14 11.5H5M14 11.5l-2.5-2.5M14 11.5l-2.5 2.5"/>
+            </svg>
+            {t.people.splitExpenseButton.replace('{name}', displayName)}
+          </button>
+        )}
         {shareMode ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <select
@@ -694,6 +684,21 @@ function ContactCard({
         )}
         {shareError && <p style={{ fontSize: 11, color: RED, marginTop: 8 }}>{shareError}</p>}
       </div>
+
+      {/* Auto-aceite — vale para qualquer convite (viagem, momento, categoria),
+          não só compartilhamento; fica fora do bloco "Compartilhar" pra não parecer
+          que é uma opção só de Momentos. */}
+      {isConnected && contact.user_id && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 14, padding: '12px', borderRadius: 10, background: 'var(--arvo-hover-bg)' }}>
+          <Toggle
+            checked={auto} disabled={togglingAutoAccept}
+            onChange={() => toggleAutoAccept(mineFriendCtx ?? { type: 'friend', direction: 'owned_by_me', friend_id: 0, friend_status: 'active', auto_accept_invites: false })}
+          />
+          <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-soft)', lineHeight: 1.4 }}>
+            {t.people.autoAcceptLabel}
+          </span>
+        </div>
+      )}
 
       {/* Remover pessoa — única ação que de fato desfaz a conexão (e revoga
           todo compartilhamento); separada das ações de "remover acesso a

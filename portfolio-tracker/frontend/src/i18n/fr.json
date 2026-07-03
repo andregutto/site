@@ -687,6 +687,13 @@
     "pickGroup": "Quel groupe ?",
     "pickGroupHint": "La catégorie sera partagée avec les membres du groupe.",
     "myGoal": "Mon objectif",
+    "groupGoal": "Objectif du groupe",
+    "editSplit": "Modifier la répartition",
+    "editSplitTitle": "Répartition de {name}",
+    "editSplitHint": "Ajustez la contribution de chaque personne à cette catégorie partagée.",
+    "splitSalaryBased": "Basé sur le salaire",
+    "splitSalaryAuthorized": "Salaire autorisé ✓",
+    "splitAuthorizeSalary": "Utiliser mon salaire pour calculer la répartition proportionnelle",
     "noEnvelope": "— sans enveloppe —",
     "configureIncome": "Configurez votre revenu mensuel pour commencer",
     "configureBudget": "Configurer la planification",
@@ -2485,7 +2492,7 @@
     "removePersonButton": "Supprimer cette personne",
     "removeCategoryConfirm": "Supprimer l'accès de {email} à la catégorie « {name} » ?",
     "shareButton": "+ Partager",
-    "splitExpenseButton": "Diviser une dépense",
+    "splitExpenseButton": "Diviser une dépense avec {name}",
     "expensesWithPrefix": "Dépenses avec"
   },
   "invite": {

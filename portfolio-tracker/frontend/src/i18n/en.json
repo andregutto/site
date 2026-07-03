@@ -687,6 +687,13 @@
     "pickGroup": "Which group?",
     "pickGroupHint": "The category will be shared with the group members.",
     "myGoal": "My goal",
+    "groupGoal": "Group goal",
+    "editSplit": "Edit split",
+    "editSplitTitle": "Split for {name}",
+    "editSplitHint": "Adjust how much each person contributes to this shared category.",
+    "splitSalaryBased": "Based on salary",
+    "splitSalaryAuthorized": "Salary authorized ✓",
+    "splitAuthorizeSalary": "Use my salary to calculate the proportional split",
     "noEnvelope": "— no envelope —",
     "configureIncome": "Set your monthly income to get started",
     "configureBudget": "Configure planning",
@@ -2485,7 +2492,7 @@
     "removePersonButton": "Remove this person",
     "removeCategoryConfirm": "Remove {email}'s access to the category \"{name}\"?",
     "shareButton": "+ Share",
-    "splitExpenseButton": "Split expense",
+    "splitExpenseButton": "Split expense with {name}",
     "expensesWithPrefix": "Expenses with"
   },
   "invite": {
