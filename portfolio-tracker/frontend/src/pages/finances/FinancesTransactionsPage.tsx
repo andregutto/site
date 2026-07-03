@@ -867,13 +867,17 @@ export default function FinancesTransactionsPage() {
     const seenGroups = new Set<string>()
     for (const tx of filteredTransactions) {
       if (tx.reimbursement_group_id) {
+        const rawName = groups.find(g => g.id === tx.reimbursement_group_id)?.name ?? t.finances.reimbursementGroup
+        // Grupos auto-detectados (fee + estorno automático que se repete todo mês) já
+        // ficam visíveis/gerenciáveis na seção "grupo(s) auto-detectado(s)" logo abaixo —
+        // mostrá-los também aqui, um card por mês, só polui a lista principal. Grupos
+        // manuais (criados deliberadamente pelo usuário) continuam aparecendo normalmente.
+        if (rawName.startsWith('auto: ')) continue
         if (!seenGroups.has(tx.reimbursement_group_id)) {
           seenGroups.add(tx.reimbursement_group_id)
           const groupTxs = transactions.filter(t => t.reimbursement_group_id === tx.reimbursement_group_id)
           const net = groupTxs.reduce((s, t) => s + t.amount, 0)
-          const rawName = groups.find(g => g.id === tx.reimbursement_group_id)?.name ?? t.finances.reimbursementGroup
-          const name = rawName.startsWith('auto: ') ? rawName.slice(6) : rawName
-          items.push({ kind: 'group', groupId: tx.reimbursement_group_id, name, txs: groupTxs, net })
+          items.push({ kind: 'group', groupId: tx.reimbursement_group_id, name: rawName, txs: groupTxs, net })
         }
       } else {
         items.push({ kind: 'tx', tx })
