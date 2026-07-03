@@ -871,7 +871,8 @@ export default function FinancesTransactionsPage() {
           seenGroups.add(tx.reimbursement_group_id)
           const groupTxs = transactions.filter(t => t.reimbursement_group_id === tx.reimbursement_group_id)
           const net = groupTxs.reduce((s, t) => s + t.amount, 0)
-          const name = groups.find(g => g.id === tx.reimbursement_group_id)?.name ?? t.finances.reimbursementGroup
+          const rawName = groups.find(g => g.id === tx.reimbursement_group_id)?.name ?? t.finances.reimbursementGroup
+          const name = rawName.startsWith('auto: ') ? rawName.slice(6) : rawName
           items.push({ kind: 'group', groupId: tx.reimbursement_group_id, name, txs: groupTxs, net })
         }
       } else {
@@ -1549,11 +1550,14 @@ export default function FinancesTransactionsPage() {
                             {tx.exclude_from_stats && !tx.reimbursement_group_id && (
                               <span className="text-[10px] bg-[var(--arvo-track-bg)] text-[var(--arvo-fg-muted)] rounded px-1.5 py-0.5 font-medium">{t.finances.excludedBadge}</span>
                             )}
-                            {tx.reimbursement_group_id && (
-                              <span className="text-[10px] bg-[var(--arvo-track-bg)] text-[var(--arvo-fg-muted)] rounded px-1.5 py-0.5 font-medium">
-                                {groups.find(g => g.id === tx.reimbursement_group_id)?.name ?? t.finances.reimbursementGroup}
-                              </span>
-                            )}
+                            {tx.reimbursement_group_id && (() => {
+                              const rawName = groups.find(g => g.id === tx.reimbursement_group_id)?.name ?? t.finances.reimbursementGroup
+                              return (
+                                <span className="text-[10px] bg-[var(--arvo-track-bg)] text-[var(--arvo-fg-muted)] rounded px-1.5 py-0.5 font-medium">
+                                  {rawName.startsWith('auto: ') ? rawName.slice(6) : rawName}
+                                </span>
+                              )
+                            })()}
                             {/* Moment badges — only visible on mobile where the moment column is hidden */}
                             {tx.moments.length > 0 && tx.moments.map(m => (
                               <span
