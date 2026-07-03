@@ -7,6 +7,7 @@ import Avatar from '../voyage/_shared/Avatar'
 import type { MomentMember } from './FinancesMomentsPage'
 
 const CURRENCIES = ['BRL', 'EUR', 'USD'] as const
+const CURRENCY_SYMBOLS: Record<string, string> = { BRL: 'R$', EUR: '€', USD: '$' }
 
 interface ExpenseShare {
   user_id: string
@@ -386,7 +387,15 @@ export default function ExpensesPanel({ momentId, currency, fmt }: { momentId: n
           </div>
 
           <div className="space-y-1.5">
-            <p className="text-[10px] uppercase tracking-wide text-[var(--arvo-fg-soft)]">{t.finances.expenseParticipants}</p>
+            <div className="flex items-center gap-2">
+              <p className="text-[10px] uppercase tracking-wide text-[var(--arvo-fg-soft)] flex-1">{t.finances.expenseParticipants}</p>
+              {splitType === 'custom' && (
+                <>
+                  <p className="text-[10px] uppercase tracking-wide text-[var(--arvo-fg-soft)] w-16 text-right">{t.finances.expenseSplitCustomValue}</p>
+                  <p className="text-[10px] uppercase tracking-wide text-[var(--arvo-fg-soft)] w-14 text-right">{t.finances.expenseSplitCustomPercent}</p>
+                </>
+              )}
+            </div>
             {participants.map(p => (
               <div key={p.user_id} className="flex items-center gap-2">
                 <input
@@ -399,20 +408,24 @@ export default function ExpensesPanel({ momentId, currency, fmt }: { momentId: n
                 <span className="text-xs text-[var(--arvo-fg)] flex-1 truncate">{p.display?.name ?? p.user_id}</span>
                 {splitType === 'custom' && selected.has(p.user_id) && (
                   <>
-                    <input
-                      value={customValues[p.user_id] ?? ''}
-                      onChange={e => setCustomValue(p.user_id, e.target.value)}
-                      placeholder={t.finances.expenseSplitCustomValue}
-                      inputMode="decimal"
-                      className="w-16 text-xs px-2 py-1 rounded-md bg-[var(--arvo-surface-2)] border border-[var(--arvo-border)] text-[var(--arvo-fg)] text-right"
-                    />
-                    <input
-                      value={customPercents[p.user_id] ?? ''}
-                      onChange={e => setCustomPercent(p.user_id, e.target.value)}
-                      placeholder={t.finances.expenseSplitCustomPercent}
-                      inputMode="decimal"
-                      className="w-14 text-xs px-2 py-1 rounded-md bg-[var(--arvo-surface-2)] border border-[var(--arvo-border)] text-[var(--arvo-fg)] text-right"
-                    />
+                    <div className="w-16 flex items-center rounded-md bg-[var(--arvo-surface-2)] border border-[var(--arvo-border)] overflow-hidden">
+                      <span className="text-[10px] text-[var(--arvo-fg-soft)] pl-1.5 shrink-0">{CURRENCY_SYMBOLS[expCurrency] ?? expCurrency}</span>
+                      <input
+                        value={customValues[p.user_id] ?? ''}
+                        onChange={e => setCustomValue(p.user_id, e.target.value)}
+                        inputMode="decimal"
+                        className="w-full min-w-0 text-xs pl-1 pr-1.5 py-1 bg-transparent text-[var(--arvo-fg)] text-right"
+                      />
+                    </div>
+                    <div className="w-14 flex items-center rounded-md bg-[var(--arvo-surface-2)] border border-[var(--arvo-border)] overflow-hidden">
+                      <input
+                        value={customPercents[p.user_id] ?? ''}
+                        onChange={e => setCustomPercent(p.user_id, e.target.value)}
+                        inputMode="decimal"
+                        className="w-full min-w-0 text-xs pl-1.5 py-1 bg-transparent text-[var(--arvo-fg)] text-right"
+                      />
+                      <span className="text-[10px] text-[var(--arvo-fg-soft)] pr-1.5 shrink-0">%</span>
+                    </div>
                   </>
                 )}
               </div>
