@@ -1117,6 +1117,7 @@
     "expenseFormIncomplete": "Preencha descrição, valor, pagador e participantes.",
     "expenseSectionHint": "Cada divisão aqui também vira uma transação normal, contando no total gasto do Momento.",
     "expenseSplitTransaction": "Dividir esta transação com participantes",
+    "expenseSplitShort": "Dividir",
     "expenseAlreadySplit": "Esta transação já está dividida",
     "expenseSplitTransactionTitle": "Dividir transação",
     "expenseCurrency": "Moeda",

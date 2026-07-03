@@ -1117,6 +1117,7 @@
     "expenseFormIncomplete": "Renseignez description, montant, payeur et participants.",
     "expenseSectionHint": "Chaque répartition ici devient aussi une transaction normale, comptant dans le total dépensé du Moment.",
     "expenseSplitTransaction": "Répartir cette transaction entre participants",
+    "expenseSplitShort": "Répartir",
     "expenseAlreadySplit": "Cette transaction est déjà répartie",
     "expenseSplitTransactionTitle": "Répartir la transaction",
     "expenseCurrency": "Devise",

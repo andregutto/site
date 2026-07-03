@@ -1117,6 +1117,7 @@
     "expenseFormIncomplete": "Fill in description, amount, payer and participants.",
     "expenseSectionHint": "Each split here also becomes a regular transaction, counting toward the Moment's total spent.",
     "expenseSplitTransaction": "Split this transaction with participants",
+    "expenseSplitShort": "Split",
     "expenseAlreadySplit": "This transaction is already split",
     "expenseSplitTransactionTitle": "Split transaction",
     "expenseCurrency": "Currency",

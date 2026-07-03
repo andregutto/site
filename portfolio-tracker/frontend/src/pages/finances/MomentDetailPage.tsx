@@ -367,10 +367,11 @@ export default function MomentDetailPage() {
                     ) : (
                       <button
                         onClick={() => setSplitTarget({ id: tx.id, description: tx.description, amount: tx.amount, currency: tx.currency, user_id: tx.user_id })}
-                        className="ml-1 p-1 text-[var(--arvo-fg-faint)] hover:text-[var(--arvo-fg)] transition-colors"
+                        className="ml-1 pl-1.5 pr-2 py-1 rounded-md flex items-center gap-1 shrink-0 text-[10px] font-medium text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg)] hover:bg-[var(--arvo-surface-2)] transition-colors"
                         title={t.finances.expenseSplitTransaction}
                       >
                         <Icon name="users" size={12} />
+                        {t.finances.expenseSplitShort}
                       </button>
                     )
                   )}
