@@ -361,8 +361,9 @@ export default function MomentDetailPage() {
                   </span>
                   {tx.amount < 0 && (
                     tx.has_split ? (
-                      <span className="ml-1 p-1 text-[var(--arvo-fg-faint)]" title={t.finances.expenseAlreadySplit}>
+                      <span className="ml-1 pl-1.5 pr-2 py-1 flex items-center gap-1 shrink-0 text-[10px] font-medium text-[var(--arvo-fg-faint)]" title={t.finances.expenseAlreadySplit}>
                         <Icon name="users" size={12} />
+                        {t.finances.expenseSplitDone}
                       </span>
                     ) : (
                       <button

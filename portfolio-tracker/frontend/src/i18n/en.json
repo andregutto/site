@@ -1118,6 +1118,7 @@
     "expenseSectionHint": "Each split here also becomes a regular transaction, counting toward the Moment's total spent.",
     "expenseSplitTransaction": "Split this transaction with participants",
     "expenseSplitShort": "Split",
+    "expenseSplitDone": "Already split",
     "expenseAlreadySplit": "This transaction is already split",
     "expenseSplitTransactionTitle": "Split transaction",
     "expenseCurrency": "Currency",

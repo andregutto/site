@@ -1118,6 +1118,7 @@
     "expenseSectionHint": "Chaque répartition ici devient aussi une transaction normale, comptant dans le total dépensé du Moment.",
     "expenseSplitTransaction": "Répartir cette transaction entre participants",
     "expenseSplitShort": "Répartir",
+    "expenseSplitDone": "Répartie",
     "expenseAlreadySplit": "Cette transaction est déjà répartie",
     "expenseSplitTransactionTitle": "Répartir la transaction",
     "expenseCurrency": "Devise",
