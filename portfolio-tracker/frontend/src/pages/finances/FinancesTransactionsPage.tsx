@@ -195,6 +195,10 @@ export default function FinancesTransactionsPage() {
   const [splitPickerTx, setSplitPickerTx] = useState<Transaction | null>(null)
   const [splitMoment, setSplitMoment] = useState<{ tx: Transaction; momentId: number } | null>(null)
   const activeFriends = useActiveFriends()
+  const [splitGroups, setSplitGroups] = useState<{ id: number; name: string }[]>([])
+  useEffect(() => {
+    apiFetch<{ id: number; name: string }[]>('/shared/groups').then(setSplitGroups).catch(() => {})
+  }, [])
   const [sheetCatId, setSheetCatId]   = useState<number | null>(null)
   const [sheetSharedCatId, setSheetSharedCatId] = useState<number | null>(null)
 
@@ -420,6 +424,12 @@ export default function FinancesTransactionsPage() {
 
   async function pickSplitFriend(tx: Transaction, friendUserId: string) {
     const res = await apiFetch<{ moment_id: number }>(`/finances/moments/default-with/${friendUserId}`, { method: 'POST' })
+    setSplitPickerTx(null)
+    setSplitMoment({ tx, momentId: res.moment_id })
+  }
+
+  async function pickSplitGroup(tx: Transaction, groupId: number) {
+    const res = await apiFetch<{ moment_id: number }>(`/shared/groups/${groupId}/default-moment`, { method: 'POST' })
     setSplitPickerTx(null)
     setSplitMoment({ tx, momentId: res.moment_id })
   }
@@ -2318,26 +2328,47 @@ export default function FinancesTransactionsPage() {
         </>
       )}
 
-      {/* Escolher com quem dividir uma transação avulsa — a lista já é só
-          amigos ativos (mesma fonte usada nos overlays de convite). */}
+      {/* Escolher com quem dividir uma transação avulsa — amigos (momento oculto
+          1:1) ou grupos já existentes (momento oculto do grupo, ver
+          docs/SHARED_EXPENSES_MODEL.md), não só amigos individuais. */}
       {splitPickerTx && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setSplitPickerTx(null)}>
           <div className="bg-[var(--arvo-surface)] rounded-2xl shadow-xl w-full max-w-xs p-5 space-y-3" onClick={e => e.stopPropagation()}>
             <h3 className="font-semibold text-[var(--arvo-fg)] text-sm">{t.finances.expenseSplitShort}</h3>
-            {activeFriends.length === 0 ? (
+            {activeFriends.length === 0 && splitGroups.length === 0 ? (
               <p className="text-xs text-[var(--arvo-fg-soft)]">{t.people.emptyBody}</p>
             ) : (
-              <div className="space-y-1 max-h-64 overflow-y-auto">
-                {activeFriends.filter(f => f.user_id).map(f => (
-                  <button
-                    key={f.user_id}
-                    onClick={() => pickSplitFriend(splitPickerTx, f.user_id as string)}
-                    className="flex items-center gap-2 w-full text-left px-2 py-1.5 rounded-lg hover:bg-[var(--arvo-surface-2)] transition-colors"
-                  >
-                    <Avatar name={f.name} email={f.email} avatarUrl={f.avatar_url} size={22} />
-                    <span className="text-xs text-[var(--arvo-fg)] truncate">{f.name ?? f.email}</span>
-                  </button>
-                ))}
+              <div className="space-y-3 max-h-72 overflow-y-auto">
+                {splitGroups.length > 0 && (
+                  <div className="space-y-1">
+                    <p className="text-[10px] uppercase tracking-widest text-[var(--arvo-fg-soft)] px-2">{t.people.sectionGroups}</p>
+                    {splitGroups.map(g => (
+                      <button
+                        key={`group-${g.id}`}
+                        onClick={() => pickSplitGroup(splitPickerTx, g.id)}
+                        className="flex items-center gap-2 w-full text-left px-2 py-1.5 rounded-lg hover:bg-[var(--arvo-surface-2)] transition-colors"
+                      >
+                        <span className="text-base leading-none w-[22px] text-center">🤝</span>
+                        <span className="text-xs text-[var(--arvo-fg)] truncate">{g.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {activeFriends.length > 0 && (
+                  <div className="space-y-1">
+                    <p className="text-[10px] uppercase tracking-widest text-[var(--arvo-fg-soft)] px-2">{t.nav.people}</p>
+                    {activeFriends.filter(f => f.user_id).map(f => (
+                      <button
+                        key={f.user_id}
+                        onClick={() => pickSplitFriend(splitPickerTx, f.user_id as string)}
+                        className="flex items-center gap-2 w-full text-left px-2 py-1.5 rounded-lg hover:bg-[var(--arvo-surface-2)] transition-colors"
+                      >
+                        <Avatar name={f.name} email={f.email} avatarUrl={f.avatar_url} size={22} />
+                        <span className="text-xs text-[var(--arvo-fg)] truncate">{f.name ?? f.email}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
             <button onClick={() => setSplitPickerTx(null)} className="w-full py-2 rounded-lg border border-[var(--arvo-border)] text-xs text-[var(--arvo-fg-muted)]">

@@ -405,12 +405,17 @@ function ContactCard({
               <span style={{ fontSize: 11.5, fontWeight: 400, color: 'var(--arvo-fg-soft)', flexShrink: 0 }}>@{contact.username}</span>
             )}
           </p>
-          <p style={{
-            fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-soft)',
-            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: 1,
-          }}>
-            {contact.email}
-          </p>
+          {/* Sem e-mail aqui — só @usuário, pra deixar a altura do card igual à
+              dos Grupos. O e-mail completo aparece expandido (abaixo), se não
+              tiver @usuário mostramos o e-mail aqui mesmo como fallback. */}
+          {!contact.username && (
+            <p style={{
+              fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-soft)',
+              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: 1,
+            }}>
+              {contact.email}
+            </p>
+          )}
         </div>
         {/* Saldo agregado de despesas divididas — soma finance_moment_expense_shares de
             TODOS os Momentos compartilhados com essa pessoa, não só um. Positivo = ela
@@ -466,6 +471,14 @@ function ContactCard({
       )}
 
       {!expanded ? null : (<>
+      {contact.username && (
+        <p style={{
+          fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-soft)',
+          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 10,
+        }}>
+          {contact.email}
+        </p>
+      )}
       {/* Convite de amizade pendente recebido — ação principal, fica no topo
           do corpo expandido, fora das listas de recursos. */}
       {incomingPending && (
