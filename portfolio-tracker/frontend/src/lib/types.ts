@@ -244,6 +244,7 @@ export type NotificationType =
   | 'friend_invite_accepted'
   | 'settlement_received'
   | 'expense_share_added'
+  | 'moment_deleted_with_balance'
 
 export interface NotificationItem {
   key: string

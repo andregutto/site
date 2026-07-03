@@ -602,6 +602,8 @@
     "type_friend_invite_accepted": "You connected with {inviter}",
     "type_settlement_received": "{from} settled up with you: {amount}",
     "type_expense_share_added": "{creator} added you to a split expense: {amount}",
+    "type_moment_deleted_owed_to_you": "{deleter} deleted a moment where they owed you {amount} — that balance no longer exists",
+    "type_moment_deleted_you_owed": "{deleter} deleted a moment where you owed {amount} — that balance no longer exists",
     "type_trip_invite": "{inviter} invited you to the trip \"{trip}\"",
     "type_trip_added": "{inviter} added you to the trip \"{trip}\"",
     "type_stale_manual_asset": "Update {code}'s value — stale for {n} days",

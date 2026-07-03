@@ -35,6 +35,7 @@ export const TYPE_ICONS: Record<string, IconName> = {
   friend_invite_accepted: 'users',
   settlement_received: 'wallet',
   expense_share_added: 'users',
+  moment_deleted_with_balance: 'alert',
 }
 
 export function formatTimestamp(iso: string, locale: Locale): string {
@@ -155,6 +156,17 @@ export function resolveNotificationText(item: NotificationItem, t: any, locale: 
       const currency = String(item.params.currency ?? 'BRL')
       return {
         title: n.type_expense_share_added.replace('{creator}', creator).replace('{amount}', formatMoney(amount, currency, locale)),
+        subtitle: moment || undefined,
+      }
+    }
+    case 'moment_deleted_with_balance': {
+      const deleter = String(item.params.deleter_name ?? '')
+      const moment = String(item.params.moment_name ?? '')
+      const amount = Number(item.params.amount ?? 0)
+      const currency = String(item.params.currency ?? 'BRL')
+      const key = amount > 0 ? 'type_moment_deleted_owed_to_you' : 'type_moment_deleted_you_owed'
+      return {
+        title: n[key].replace('{deleter}', deleter).replace('{amount}', formatMoney(Math.abs(amount), currency, locale)),
         subtitle: moment || undefined,
       }
     }

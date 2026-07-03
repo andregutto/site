@@ -2920,54 +2920,76 @@ router.delete('/moments/:id', requireAuth, async (req, res: Response) => {
   // finance_moment_expenses/shares CASCADE-delete with the moment (migration 058), with no
   // settlement record left behind — deleting a moment that still has a pending shared-expense
   // balance would silently wipe out a real debt between the user and a friend. Block it unless
-  // the caller explicitly confirms (force=true), after being shown what would be lost.
-  if (!force) {
-    const { data: expenseRows } = await supabaseAdmin
-      .from('finance_moment_expenses')
-      .select('paid_by_user_id, currency, is_settlement, finance_moment_expense_shares(user_id, share_amount)')
-      .eq('moment_id', momentId)
-    const balance: Record<string, Record<string, number>> = {}
-    for (const e of expenseRows ?? []) {
-      if (e.is_settlement) continue
-      const shares = (e.finance_moment_expense_shares ?? []) as { user_id: string; share_amount: number }[]
-      if (e.paid_by_user_id === userId) {
-        for (const s of shares) {
-          if (s.user_id === userId) continue
-          balance[s.user_id] ??= {}
-          balance[s.user_id][e.currency] = (balance[s.user_id][e.currency] ?? 0) + s.share_amount
-        }
-      } else {
-        const mine = shares.find(s => s.user_id === userId)
-        if (mine) {
-          balance[e.paid_by_user_id] ??= {}
-          balance[e.paid_by_user_id][e.currency] = (balance[e.paid_by_user_id][e.currency] ?? 0) - mine.share_amount
-        }
+  // the caller explicitly confirms (force=true), after being shown what would be lost — and even
+  // then, notify each affected participant, since only the deleter sees that confirm dialog.
+  const { data: expenseRows } = await supabaseAdmin
+    .from('finance_moment_expenses')
+    .select('paid_by_user_id, currency, is_settlement, finance_moment_expense_shares(user_id, share_amount)')
+    .eq('moment_id', momentId)
+  const balance: Record<string, Record<string, number>> = {}
+  for (const e of expenseRows ?? []) {
+    if (e.is_settlement) continue
+    const shares = (e.finance_moment_expense_shares ?? []) as { user_id: string; share_amount: number }[]
+    if (e.paid_by_user_id === userId) {
+      for (const s of shares) {
+        if (s.user_id === userId) continue
+        balance[s.user_id] ??= {}
+        balance[s.user_id][e.currency] = (balance[s.user_id][e.currency] ?? 0) + s.share_amount
       }
-    }
-    const pending: { user_id: string; name: string; currency: string; amount: number }[] = []
-    for (const [uid, perCurrency] of Object.entries(balance)) {
-      for (const [currency, amount] of Object.entries(perCurrency)) {
-        const rounded = Math.round(amount * 100) / 100
-        if (Math.abs(rounded) >= 0.01) pending.push({ user_id: uid, name: (await userDisplay(uid)).name ?? uid, currency, amount: rounded })
+    } else {
+      const mine = shares.find(s => s.user_id === userId)
+      if (mine) {
+        balance[e.paid_by_user_id] ??= {}
+        balance[e.paid_by_user_id][e.currency] = (balance[e.paid_by_user_id][e.currency] ?? 0) - mine.share_amount
       }
-    }
-    if (pending.length > 0) {
-      // The error string doubles as the confirm-dialog message on the frontend (apiFetch only
-      // surfaces `.error`, not the structured `pending_balances`) — so it needs to be readable
-      // on its own, not just a flag the UI has to look up meaning for separately.
-      const summary = pending
-        .map(p => `${p.name} ${p.amount > 0 ? 'te deve' : 'você deve'} ${Math.abs(p.amount).toFixed(2)} ${p.currency}`)
-        .join('; ')
-      res.status(409).json({
-        error: `Saldo pendente de despesas divididas: ${summary}. Apagar este momento apaga esse saldo sem registrar acerto de contas — apagar mesmo assim?`,
-        pending_balances: pending,
-      }); return
     }
   }
+  const pending: { user_id: string; name: string; currency: string; amount: number }[] = []
+  for (const [uid, perCurrency] of Object.entries(balance)) {
+    for (const [currency, amount] of Object.entries(perCurrency)) {
+      const rounded = Math.round(amount * 100) / 100
+      if (Math.abs(rounded) >= 0.01) pending.push({ user_id: uid, name: (await userDisplay(uid)).name ?? uid, currency, amount: rounded })
+    }
+  }
+
+  if (pending.length > 0 && !force) {
+    // The error string doubles as the confirm-dialog message on the frontend (apiFetch only
+    // surfaces `.error`, not the structured `pending_balances`) — so it needs to be readable
+    // on its own, not just a flag the UI has to look up meaning for separately.
+    const summary = pending
+      .map(p => `${p.name} ${p.amount > 0 ? 'te deve' : 'você deve'} ${Math.abs(p.amount).toFixed(2)} ${p.currency}`)
+      .join('; ')
+    res.status(409).json({
+      error: `Saldo pendente de despesas divididas: ${summary}. Apagar este momento apaga esse saldo sem registrar acerto de contas — apagar mesmo assim?`,
+      pending_balances: pending,
+    }); return
+  }
+
+  const { data: momentRow } = await supabaseAdmin.from('finance_moments').select('name').eq('id', momentId).maybeSingle()
+  const momentName = momentRow?.name ?? ''
 
   await supabaseAdmin.from('finance_transactions').update({ moment_id: null }).eq('moment_id', momentId).eq('user_id', userId)
   const { error } = await supabaseAdmin.from('finance_moments').delete().eq('id', momentId).eq('user_id', userId)
   if (error) { res.status(500).json({ error: error.message }); return }
+
+  if (pending.length > 0) {
+    const deleter = await userDisplay(userId)
+    // Sign flips from the deleter's perspective (balance[uid] > 0 = uid owed the deleter) to the
+    // recipient's own perspective (positive = they were owed money that just vanished).
+    await Promise.all(pending.map(p => supabaseAdmin.from('notification_dismissals').upsert({
+      user_id: p.user_id,
+      key: `moment_deleted_balance:${momentId}:${p.user_id}:${p.currency}`,
+      type: 'moment_deleted_with_balance',
+      params: {
+        deleter_name: deleter.name ?? deleter.email, moment_name: momentName,
+        amount: -p.amount, currency: p.currency,
+      },
+      severity: 'warning',
+      link: '/people',
+      occurred_at: new Date().toISOString(),
+    }, { onConflict: 'user_id,key' })))
+  }
+
   res.json({ ok: true })
 })
 
