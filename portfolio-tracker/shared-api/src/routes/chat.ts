@@ -3,6 +3,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import { requireAuth, AuthRequest } from '../middleware/auth.js'
 import { supabaseAdmin } from '../lib/supabase.js'
 import { haversineKm, buildCostSummary } from './voyage.js'
+import { userDisplay } from './people.js'
 
 const router = Router()
 
@@ -113,6 +114,20 @@ Finance concepts:
 - Moments: named life events with grouped transactions
 - Accounts: bank accounts under Instituições (e.g., Revolut EUR, C6 BRL)
 - Reimbursement groups: link related transactions so only the net amount counts in calculations
+
+## Shared expenses (Splitwise-lite, inside Moments)
+
+A Moment can have collaborators (other app users). Within a shared Moment, any active
+collaborator can log a split expense: an amount, who paid, and how it's divided among
+participants (equally or with custom amounts/percentages). Each split expense also creates
+a normal transaction, so it counts in the Moment's total and shows up in Transações too.
+
+- **ALWAYS use tools for this** — never guess who owes whom or by how much.
+- If the user mentions a Moment by name without an id ("na viagem para Paris", "no momento Eurotrip"), call **list_moments** first and match by name.
+- For "quem pagou o quê"/"quanto cada um deve" **within one specific Moment/trip**, call **get_moment_expenses** with that moment_id.
+- For "quanto eu devo pro/pra [pessoa]", "quem me deve dinheiro", "preciso acertar contas com alguém" — i.e. anything spanning **multiple Moments/all shared expenses at once** — call **get_shared_balances** instead. This is the aggregate the Pessoas page shows; a single Moment's balance is only part of it.
+- Settling up ("acertar contas") is an action the user does in the UI (Pessoas page, or inside a Moment's "Divisão de despesas" section) — you cannot do it for them; if asked, explain where the "Acertar contas" button is instead of trying to call a tool.
+- Balance sign convention you must follow when explaining: positive/"they owe you" means the other person owes the user money; negative/"you owe them" means the user owes money to the other person.
 
 ## Key actions
 - Add new asset: Investimentos → Aportes → "Novo ativo" button (top right)
@@ -250,6 +265,32 @@ const TOOLS: Anthropic.Messages.Tool[] = [
         year: { type: 'number', description: 'Calendar year (defaults to current year)' },
       },
     },
+  },
+  {
+    name: 'list_moments',
+    description: 'List the user\'s Finance Moments (owned or shared, e.g. a trip or event with grouped transactions): id, name, type, dates, and whether it has collaborators. ALWAYS call this first if the user mentions a moment/trip/event by name without an id, or asks which moments/shared expenses they have.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        search: { type: 'string', description: 'Optional filter by moment name (case-insensitive, partial match)' },
+      },
+    },
+  },
+  {
+    name: 'get_moment_expenses',
+    description: 'Get the split/shared expenses inside ONE Moment: each expense\'s description, amount, currency, who paid, how it was divided among participants, and the net balance between the user and each other participant within that Moment only. Use for "quem pagou o quê"/"quanto cada um deve" about a specific Moment or trip. For a balance spanning multiple Moments, use get_shared_balances instead.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        moment_id: { type: 'number', description: 'The moment id (get it from list_moments first if unknown)' },
+      },
+      required: ['moment_id'],
+    },
+  },
+  {
+    name: 'get_shared_balances',
+    description: 'Get the user\'s aggregated shared-expense balance with each person they share a Moment with, summed across ALL shared Moments (not just one). Positive = that person owes the user; negative = the user owes them. Use for "quanto eu devo pro fulano no total", "quem me deve dinheiro", "preciso acertar contas com alguém" — anything not scoped to a single named Moment.',
+    input_schema: { type: 'object' as const, properties: {} },
   },
   {
     name: 'list_trips',
@@ -827,6 +868,132 @@ async function executeTool(
           `${a.name}${a.institution_name ? ` (${a.institution_name})` : ''} | ${a.currency} | balance: ${a.current_balance ?? 0}`
         )
         return `Accounts (${accounts.length}):\n${lines.join('\n')}`
+      }
+
+      case 'list_moments': {
+        const inp = input as { search?: string }
+        const [ownedRes, memberRes] = await Promise.all([
+          supabaseAdmin.from('finance_moments').select('id, name, moment_type, start_date, end_date').eq('user_id', userId),
+          supabaseAdmin.from('finance_moment_members').select('moment_id').eq('user_id', userId).eq('status', 'active'),
+        ])
+        const sharedIds = (memberRes.data ?? []).map(m => m.moment_id)
+        const { data: sharedMoments } = sharedIds.length > 0
+          ? await supabaseAdmin.from('finance_moments').select('id, name, moment_type, start_date, end_date').in('id', sharedIds).neq('user_id', userId)
+          : { data: [] as { id: number; name: string; moment_type: string; start_date: string | null; end_date: string | null }[] }
+        let moments = [...(ownedRes.data ?? []), ...(sharedMoments ?? [])]
+        if (inp.search) {
+          const q = inp.search.toLowerCase()
+          moments = moments.filter(m => m.name.toLowerCase().includes(q))
+        }
+        if (!moments.length) return 'No moments found.'
+        const lines = moments.map(m => `${m.name} (id: ${m.id}) | type: ${m.moment_type}${m.start_date ? ` | ${m.start_date}${m.end_date ? ` to ${m.end_date}` : ''}` : ''}`)
+        return `Moments (${moments.length}):\n${lines.join('\n')}`
+      }
+
+      case 'get_moment_expenses': {
+        const inp = input as { moment_id: number }
+        const momentId = Number(inp.moment_id)
+        if (!momentId) return 'moment_id is required.'
+
+        const { data: moment } = await supabaseAdmin.from('finance_moments').select('id, name, user_id').eq('id', momentId).single()
+        if (!moment) return `Moment ${momentId} not found.`
+        const isOwner = moment.user_id === userId
+        if (!isOwner) {
+          const { data: member } = await supabaseAdmin
+            .from('finance_moment_members').select('id').eq('moment_id', momentId).eq('user_id', userId).eq('status', 'active').maybeSingle()
+          if (!member) return `Moment ${momentId} not found or you don't have access to it.`
+        }
+
+        const { data: expenses } = await supabaseAdmin
+          .from('finance_moment_expenses')
+          .select('description, amount, currency, paid_by_user_id, split_type, expense_date, is_settlement, finance_moment_expense_shares(user_id, share_amount)')
+          .eq('moment_id', momentId)
+          .order('expense_date', { ascending: false })
+        if (!expenses?.length) return `Moment "${moment.name}" has no split expenses yet.`
+
+        const uids = new Set<string>()
+        for (const e of expenses) {
+          uids.add(e.paid_by_user_id)
+          for (const s of (e.finance_moment_expense_shares ?? []) as { user_id: string }[]) uids.add(s.user_id)
+        }
+        const displays = await Promise.all([...uids].map(async id => [id, await userDisplay(id)] as const))
+        const nameOf = Object.fromEntries(displays.map(([id, d]) => [id, d.name ?? d.email]))
+
+        const balance: Record<string, number> = {}
+        const lines = expenses.map(e => {
+          const shares = (e.finance_moment_expense_shares ?? []) as { user_id: string; share_amount: number }[]
+          if (!e.is_settlement) {
+            const mine = shares.find(s => s.user_id === userId)
+            if (e.paid_by_user_id === userId) {
+              for (const s of shares) if (s.user_id !== userId) balance[s.user_id] = (balance[s.user_id] ?? 0) + s.share_amount
+            } else if (mine) {
+              balance[e.paid_by_user_id] = (balance[e.paid_by_user_id] ?? 0) - mine.share_amount
+            }
+          }
+          const shareStr = shares.map(s => `${nameOf[s.user_id] ?? s.user_id}: ${s.share_amount.toFixed(2)}`).join(', ')
+          return `${e.expense_date} | ${e.description}${e.is_settlement ? ' [settlement]' : ''} | ${e.amount.toFixed(2)} ${e.currency} | paid by ${nameOf[e.paid_by_user_id] ?? e.paid_by_user_id} | split: ${shareStr}`
+        })
+
+        const balanceLines = Object.entries(balance)
+          .filter(([, v]) => Math.abs(v) >= 0.01)
+          .map(([uid, v]) => `${nameOf[uid] ?? uid}: ${v > 0 ? 'owes you' : 'you owe'} ${Math.abs(v).toFixed(2)}`)
+
+        return [
+          `Moment "${moment.name}" (id: ${momentId}) — ${expenses.length} expense(s):`,
+          ...lines,
+          balanceLines.length ? `\nNet balance within this Moment:\n${balanceLines.join('\n')}` : '\nEverything is settled within this Moment.',
+        ].join('\n')
+      }
+
+      case 'get_shared_balances': {
+        const [ownedMomentsRes, memberRowsRes] = await Promise.all([
+          supabaseAdmin.from('finance_moments').select('id').eq('user_id', userId),
+          supabaseAdmin.from('finance_moment_members').select('moment_id').eq('user_id', userId).eq('status', 'active'),
+        ])
+        const momentIds = [...new Set([
+          ...(ownedMomentsRes.data ?? []).map(m => m.id),
+          ...(memberRowsRes.data ?? []).map(m => m.moment_id),
+        ])]
+        if (!momentIds.length) return 'No shared Moments found — nothing to owe or be owed.'
+
+        const { data: expenseRows } = await supabaseAdmin
+          .from('finance_moment_expenses')
+          .select('paid_by_user_id, currency, finance_moment_expense_shares(user_id, share_amount)')
+          .in('moment_id', momentIds)
+
+        const balanceByUser: Record<string, Record<string, number>> = {}
+        for (const e of expenseRows ?? []) {
+          const payer = e.paid_by_user_id
+          const shares = (e.finance_moment_expense_shares ?? []) as { user_id: string; share_amount: number }[]
+          if (payer === userId) {
+            for (const s of shares) {
+              if (s.user_id === userId) continue
+              balanceByUser[s.user_id] ??= {}
+              balanceByUser[s.user_id][e.currency] = (balanceByUser[s.user_id][e.currency] ?? 0) + s.share_amount
+            }
+          } else {
+            const mine = shares.find(s => s.user_id === userId)
+            if (mine) {
+              balanceByUser[payer] ??= {}
+              balanceByUser[payer][e.currency] = (balanceByUser[payer][e.currency] ?? 0) - mine.share_amount
+            }
+          }
+        }
+
+        const otherIds = Object.keys(balanceByUser)
+        if (!otherIds.length) return 'No split expenses with anyone yet.'
+        const displays = await Promise.all(otherIds.map(async id => [id, await userDisplay(id)] as const))
+        const nameOf = Object.fromEntries(displays.map(([id, d]) => [id, d.name ?? d.email]))
+
+        const lines: string[] = []
+        for (const uid of otherIds) {
+          const perCurrency = Object.entries(balanceByUser[uid]).filter(([, v]) => Math.abs(v) >= 0.01)
+          if (!perCurrency.length) continue
+          const parts = perCurrency.map(([cur, v]) => `${v > 0 ? 'owes you' : 'you owe'} ${Math.abs(v).toFixed(2)} ${cur}`)
+          lines.push(`${nameOf[uid] ?? uid}: ${parts.join(', ')}`)
+        }
+        if (!lines.length) return 'Everything is settled with everyone — no pending balance.'
+        return `Shared expense balances (across all Moments):\n${lines.join('\n')}`
       }
 
       case 'list_trips': {

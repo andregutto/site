@@ -17,7 +17,7 @@ function uid(req: Parameters<typeof requireAuth>[0]): string {
 // of sequential ~150-300ms admin API calls, which is what made those screens feel slow.
 // A short TTL is enough since name/avatar/username rarely change mid-session.
 const USER_DISPLAY_TTL_MS = 5 * 60 * 1000
-async function userDisplay(userId: string): Promise<{ email: string; name?: string; avatar_url?: string; username?: string }> {
+export async function userDisplay(userId: string): Promise<{ email: string; name?: string; avatar_url?: string; username?: string }> {
   return cache.getOrFetch(`userDisplay:${userId}`, USER_DISPLAY_TTL_MS, async () => {
     const [{ data }, { data: handle }] = await Promise.all([
       supabaseAdmin.auth.admin.getUserById(userId),
