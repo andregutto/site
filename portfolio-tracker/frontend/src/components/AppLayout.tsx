@@ -604,24 +604,48 @@ export default function AppLayout() {
         <LoginFooter />
       </div>
 
-      {/* Mobile bottom nav — floating glass pill, merged with sub-nav (Fase 2.1) */}
+      {/* Mobile bottom nav — floating glass pill, merged with sub-nav (Fase 2.1).
+          Liquid-glass effect: the SVG filter (defined once below) refracts/distorts what's
+          behind the pill instead of just blurring it flat, like iOS/Instagram's glass material.
+          Applied to a dedicated backdrop layer (not the whole nav) so icons/text stay crisp —
+          `filter` on the nav itself would distort its own content too. */}
+      <svg style={{ position: 'absolute', width: 0, height: 0, overflow: 'hidden' }} aria-hidden="true">
+        <defs>
+          <filter id="arvo-liquid-glass" x="-20%" y="-20%" width="140%" height="140%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.010 0.018" numOctaves="2" seed="7" result="noise" />
+            <feGaussianBlur in="noise" stdDeviation="2.5" result="blurredNoise" />
+            <feDisplacementMap in="SourceGraphic" in2="blurredNoise" scale="42" xChannelSelector="R" yChannelSelector="G" />
+          </filter>
+        </defs>
+      </svg>
       <nav
         className="sm:hidden fixed z-20"
         style={{
           bottom: 'calc(16px + env(safe-area-inset-bottom, 0px))',
           left: '50%',
           transform: 'translateX(-50%)',
-          width: 'calc(100% - 32px)',
-          maxWidth: 360,
-          background: 'var(--arvo-glass-bg)',
-          backdropFilter: 'blur(24px) saturate(200%)',
-          WebkitBackdropFilter: 'blur(24px) saturate(200%)',
-          border: '1px solid var(--arvo-glass-border)',
+          width: navCollapsed ? 'calc(100% - 120px)' : 'calc(100% - 32px)',
+          maxWidth: navCollapsed ? 220 : 360,
           borderRadius: 24,
-          boxShadow: '0 8px 32px rgba(0,0,0,0.12), 0 2px 6px rgba(0,0,0,0.06), inset 0 1px 0 var(--arvo-glass-highlight)',
           overflow: 'hidden',
+          transition: 'width 320ms cubic-bezier(0.22,0.61,0.36,1), max-width 320ms cubic-bezier(0.22,0.61,0.36,1)',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.12), 0 2px 6px rgba(0,0,0,0.06)',
         }}
       >
+        {/* Backdrop layer: refracted blur + tint, sits behind the content layer */}
+        <div
+          aria-hidden="true"
+          style={{
+            position: 'absolute', inset: 0,
+            background: 'var(--arvo-glass-bg)',
+            backdropFilter: 'blur(20px) saturate(200%) url(#arvo-liquid-glass)',
+            WebkitBackdropFilter: 'blur(20px) saturate(200%)',
+            border: '1px solid var(--arvo-glass-border)',
+            borderRadius: 24,
+            boxShadow: 'inset 0 1px 0 var(--arvo-glass-highlight), inset 0 -1px 0 rgba(0,0,0,0.06)',
+          }}
+        />
+        <div style={{ position: 'relative' }}>
         {activeSubItems.length > 0 && (
           <div
             style={{
@@ -699,6 +723,7 @@ export default function AppLayout() {
               >{label}</span>
             </NavLink>
           ))}
+        </div>
         </div>
       </nav>
 
