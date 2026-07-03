@@ -12,7 +12,7 @@
     "navigate": "Naviguer",
     "account": "Compte",
     "achievements": "Succès",
-    "people": "Personnes",
+    "people": "Amis",
     "notifications": "Notifications",
     "favorites": "Favoris",
     "profile": "Profil",
@@ -691,6 +691,7 @@
     "editSplit": "Modifier la répartition",
     "editSplitTitle": "Répartition de {name}",
     "editSplitHint": "Ajustez la contribution de chaque personne à cette catégorie partagée.",
+    "editSplitScopeWarning": "Cette répartition s'applique à tout le groupe — elle change le % de toutes les catégories partagées avec ce groupe, pas seulement celle-ci.",
     "splitSalaryBased": "Basé sur le salaire",
     "splitSalaryAuthorized": "Salaire autorisé ✓",
     "splitAuthorizeSalary": "Utiliser mon salaire pour calculer la répartition proportionnelle",
@@ -2492,7 +2493,7 @@
     "removePersonButton": "Supprimer cette personne",
     "removeCategoryConfirm": "Supprimer l'accès de {email} à la catégorie « {name} » ?",
     "shareButton": "+ Partager",
-    "splitExpenseButton": "Diviser une dépense avec {name}",
+    "splitExpenseButton": "Diviser une dépense",
     "expensesWithPrefix": "Dépenses avec"
   },
   "invite": {

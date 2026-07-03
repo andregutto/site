@@ -691,6 +691,7 @@
     "editSplit": "Editar divisão",
     "editSplitTitle": "Divisão de {name}",
     "editSplitHint": "Ajuste quanto cada pessoa contribui pra essa categoria compartilhada.",
+    "editSplitScopeWarning": "Essa divisão vale pro grupo inteiro — muda o % de todas as categorias compartilhadas com esse grupo, não só desta.",
     "splitSalaryBased": "Baseado no salário",
     "splitSalaryAuthorized": "Salário autorizado ✓",
     "splitAuthorizeSalary": "Usar meu salário pra calcular a divisão proporcional",
@@ -2492,7 +2493,7 @@
     "removePersonButton": "Remover esta pessoa",
     "removeCategoryConfirm": "Remover acesso de {email} à categoria \"{name}\"?",
     "shareButton": "+ Compartilhar",
-    "splitExpenseButton": "Dividir despesa com {name}",
+    "splitExpenseButton": "Dividir despesa",
     "expensesWithPrefix": "Despesas com"
   },
   "invite": {

@@ -110,7 +110,7 @@ function CollapsibleSection({ title, count, children, defaultOpen }: { title: st
         style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', background: 'none', border: 'none', cursor: 'pointer', padding: 0, marginBottom: open ? 6 : 0 }}
       >
         <p style={{
-          fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.22em',
+          fontFamily: 'var(--arvo-font-display)', fontSize: 11.5, letterSpacing: '0.16em',
           textTransform: 'uppercase', color: 'var(--arvo-fg-muted)', flex: 1, textAlign: 'left',
         }}>
           {title} <span style={{ color: 'var(--arvo-fg-soft)' }}>({count})</span>
@@ -485,7 +485,7 @@ function ContactCard({
       {(contact.balances ?? []).length > 0 && contact.user_id && (
         <div style={{ borderTop: '1px solid var(--arvo-border-soft)', paddingTop: 12, marginBottom: 4 }}>
           <p style={{
-            fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.22em',
+            fontFamily: 'var(--arvo-font-display)', fontSize: 11.5, letterSpacing: '0.16em',
             textTransform: 'uppercase', color: 'var(--arvo-fg-muted)', marginBottom: 6,
           }}>
             {t.people.sectionBalance}
@@ -517,11 +517,11 @@ function ContactCard({
                     background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left',
                   }}
                 >
-                  <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg-soft)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {m.is_pair_default ? t.people.expensesWithPrefix : m.moment_name}
                   </span>
                   {m.balances.map(b => (
-                    <span key={b.currency} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, fontWeight: 600, color: b.amount > 0 ? '#1F8A5B' : RED, flexShrink: 0 }}>
+                    <span key={b.currency} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, fontWeight: 600, color: b.amount > 0 ? '#1F8A5B' : RED, flexShrink: 0 }}>
                       {b.amount > 0 ? '+' : '−'}{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: b.currency, minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(Math.abs(b.amount))}
                     </span>
                   ))}
@@ -607,25 +607,66 @@ function ContactCard({
 
       {/* Compartilhar + dividir despesa — ações relacionadas a "fazer algo com
           essa pessoa", lado a lado; o botão de dividir despesa cria/reaproveita
-          o momento 1:1 oculto por trás (ver POST /finances/moments/default-with/:id). */}
+          o momento 1:1 oculto por trás (ver POST /finances/moments/default-with/:id).
+          Sem o nome no texto — já está óbvio de quem é o card. */}
       <div style={{ borderTop: '1px solid var(--arvo-border-soft)', marginTop: 14, paddingTop: 14 }}>
-        {isConnected && contact.user_id && (
-          <button
-            type="button"
-            onClick={() => setPairModal({ momentId: null })}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 7, fontFamily: 'var(--arvo-font-body)', fontSize: 12, letterSpacing: '0.02em',
-              padding: '6px 14px', borderRadius: 999, background: 'none', border: '1px solid var(--arvo-border)',
-              color: 'var(--arvo-fg-muted)', cursor: 'pointer', marginBottom: 10,
-            }}
-          >
-            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M2 4.5h9M2 4.5l2.5-2.5M2 4.5l2.5 2.5M14 11.5H5M14 11.5l-2.5-2.5M14 11.5l-2.5 2.5"/>
-            </svg>
-            {t.people.splitExpenseButton.replace('{name}', displayName)}
-          </button>
-        )}
-        {shareMode ? (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: shareMode ? 10 : 0 }}>
+          {isConnected && contact.user_id && (
+            <button
+              type="button"
+              onClick={() => setPairModal({ momentId: null })}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 7, fontFamily: 'var(--arvo-font-body)', fontSize: 12, letterSpacing: '0.02em',
+                padding: '6px 14px', borderRadius: 999, background: 'none', border: '1px solid var(--arvo-border)',
+                color: 'var(--arvo-fg-muted)', cursor: 'pointer',
+              }}
+            >
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M2 4.5h9M2 4.5l2.5-2.5M2 4.5l2.5 2.5M14 11.5H5M14 11.5l-2.5-2.5M14 11.5l-2.5 2.5"/>
+              </svg>
+              {t.people.splitExpenseButton}
+            </button>
+          )}
+          {!shareMode && (
+            <div style={{ position: 'relative' }}>
+              <button
+                type="button" onClick={() => setShowShareMenu(v => !v)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'var(--arvo-font-body)', fontSize: 12, letterSpacing: '0.02em',
+                  padding: '6px 14px', borderRadius: 999, background: 'none', border: '1px solid var(--arvo-border)',
+                  color: 'var(--arvo-fg-muted)', cursor: 'pointer',
+                }}
+              >
+                {t.people.shareButton}
+              </button>
+              {showShareMenu && (
+                <>
+                  <div onClick={() => setShowShareMenu(false)} style={{ position: 'fixed', inset: 0, zIndex: 40 }} />
+                  <div style={{
+                    position: 'absolute', top: 'calc(100% + 6px)', left: 0, zIndex: 50, minWidth: 190,
+                    background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', borderRadius: 10,
+                    boxShadow: 'var(--arvo-shadow-lg)', overflow: 'hidden',
+                  }}>
+                    {([
+                      ['trip', t.people.shareTrip],
+                      ['group', t.people.shareCategory],
+                      ['moment', t.people.shareMoment],
+                    ] as const).map(([mode, label]) => (
+                      <button
+                        key={mode} type="button"
+                        onClick={() => { setShareMode(mode); setShowShareMenu(false) }}
+                        style={{ display: 'block', width: '100%', textAlign: 'left', padding: '9px 14px', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg)' }}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+        </div>
+        {shareMode && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <select
               value={shareTarget}
@@ -644,43 +685,6 @@ function ContactCard({
               {t.people.cancel}
             </button>
           </div>
-        ) : (
-          <div style={{ position: 'relative' }}>
-            <button
-              type="button" onClick={() => setShowShareMenu(v => !v)}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'var(--arvo-font-body)', fontSize: 12, letterSpacing: '0.02em',
-                padding: '6px 14px', borderRadius: 999, background: 'none', border: '1px solid var(--arvo-border)',
-                color: 'var(--arvo-fg-muted)', cursor: 'pointer',
-              }}
-            >
-              {t.people.shareButton}
-            </button>
-            {showShareMenu && (
-              <>
-                <div onClick={() => setShowShareMenu(false)} style={{ position: 'fixed', inset: 0, zIndex: 40 }} />
-                <div style={{
-                  position: 'absolute', top: 'calc(100% + 6px)', left: 0, zIndex: 50, minWidth: 190,
-                  background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', borderRadius: 10,
-                  boxShadow: 'var(--arvo-shadow-lg)', overflow: 'hidden',
-                }}>
-                  {([
-                    ['trip', t.people.shareTrip],
-                    ['group', t.people.shareCategory],
-                    ['moment', t.people.shareMoment],
-                  ] as const).map(([mode, label]) => (
-                    <button
-                      key={mode} type="button"
-                      onClick={() => { setShareMode(mode); setShowShareMenu(false) }}
-                      style={{ display: 'block', width: '100%', textAlign: 'left', padding: '9px 14px', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg)' }}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
         )}
         {shareError && <p style={{ fontSize: 11, color: RED, marginTop: 8 }}>{shareError}</p>}
       </div>
@@ -694,7 +698,7 @@ function ContactCard({
             checked={auto} disabled={togglingAutoAccept}
             onChange={() => toggleAutoAccept(mineFriendCtx ?? { type: 'friend', direction: 'owned_by_me', friend_id: 0, friend_status: 'active', auto_accept_invites: false })}
           />
-          <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-soft)', lineHeight: 1.4 }}>
+          <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-soft)', lineHeight: 1.4 }}>
             {t.people.autoAcceptLabel}
           </span>
         </div>

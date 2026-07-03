@@ -415,7 +415,8 @@ function EnvelopeBar({ env, allEnvelopes, expanded, onToggle, onEditCategory, on
                             title={t.finances.editSplit}
                           >
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5">
-                              <path d="M11.25 1.5a2.25 2.25 0 1 1 0 4.5 2.25 2.25 0 0 1 0-4.5ZM4.75 7.25a2.25 2.25 0 1 1 0 4.5 2.25 2.25 0 0 1 0-4.5ZM11.25 11a2.25 2.25 0 1 1 0 4.5 2.25 2.25 0 0 1 0-4.5ZM6.27 8.944l3.46-1.888.013.009-.013-.009-3.46 1.888Zm0-1.888 3.46 1.888-.013-.009.013.009-3.46-1.888Z" />
+                              <path d="M4.5 4a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3ZM11.5 9a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3Z" />
+                              <path fillRule="evenodd" d="M11.53 3.97a.75.75 0 0 1 0 1.06l-7.5 7.5a.75.75 0 0 1-1.06-1.06l7.5-7.5a.75.75 0 0 1 1.06 0Z" clipRule="evenodd" />
                             </svg>
                           </button>
                         )}
@@ -540,17 +541,31 @@ function SplitModal({ group, userId, onClose, onSaved }: { group: SharedGroup; u
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={onClose}>
       <div className="bg-[var(--arvo-surface)] rounded-2xl shadow-xl w-full max-w-sm p-6" onClick={e => e.stopPropagation()}>
         <h3 className="font-semibold text-[var(--arvo-fg)] mb-1">{t.finances.editSplitTitle.replace('{name}', group.name)}</h3>
-        <p className="text-xs text-[var(--arvo-fg-muted)] mb-4">{t.finances.editSplitHint}</p>
+        <p className="text-xs text-[var(--arvo-fg-muted)] mb-1">{t.finances.editSplitHint}</p>
+        <p className="text-xs mb-4 px-2.5 py-2 rounded-lg" style={{ background: 'var(--arvo-hover-bg)', color: 'var(--arvo-fg-soft)' }}>
+          {t.finances.editSplitScopeWarning}
+        </p>
         <div className="flex flex-col gap-3">
           {activeMembers.map(m => {
             const isMe = m.user_id === userId
             return (
-              <div key={m.id} className="flex items-center gap-3">
+              <div key={m.id} className="flex items-start gap-3">
                 <Avatar name={m.display.name} email={m.display.email} avatarUrl={m.display.avatar_url} size={28} />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-[var(--arvo-fg)] truncate">{m.display.name}</p>
                   {m.share_mode === 'salary_based' && (
                     <p className="text-xs text-[var(--arvo-fg-soft)]">{t.finances.splitSalaryBased}</p>
+                  )}
+                  {isMe && (
+                    <button
+                      onClick={() => toggleSalary(m.id, m.salary_authorized)}
+                      disabled={togglingSalary !== null}
+                      className="mt-1 flex items-center gap-1.5 text-xs"
+                      style={{ color: m.salary_authorized ? 'var(--arvo-green)' : 'var(--arvo-fg-soft)', opacity: togglingSalary !== null ? 0.5 : 1 }}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3"><path d="M8 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"/><path d="M1.38 8a6.998 6.998 0 0 1 13.24 0 7 7 0 0 1-13.24 0ZM8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5Z"/></svg>
+                      {m.salary_authorized ? t.finances.splitSalaryAuthorized : t.finances.splitAuthorizeSalary}
+                    </button>
                   )}
                 </div>
                 {editingId === m.id ? (
@@ -568,6 +583,7 @@ function SplitModal({ group, userId, onClose, onSaved }: { group: SharedGroup; u
                     onClick={() => isMe && (setEditingId(m.id), setPctInput(String(m.share_pct)))}
                     className={`text-sm font-medium shrink-0 ${isMe ? 'text-[var(--arvo-fg)] underline decoration-dotted decoration-[var(--arvo-fg-soft)] underline-offset-2' : 'text-[var(--arvo-fg-soft)]'}`}
                     disabled={!isMe || saving}
+                    title={isMe ? t.finances.clickToEditBudget : undefined}
                   >
                     {m.share_pct}%
                   </button>
@@ -576,20 +592,6 @@ function SplitModal({ group, userId, onClose, onSaved }: { group: SharedGroup; u
             )
           })}
         </div>
-        {activeMembers.some(m => m.user_id === userId) && (
-          <button
-            onClick={() => {
-              const me = activeMembers.find(m => m.user_id === userId)!
-              toggleSalary(me.id, me.salary_authorized)
-            }}
-            disabled={togglingSalary !== null}
-            className="mt-4 flex items-center gap-2 text-xs"
-            style={{ color: activeMembers.find(m => m.user_id === userId)?.salary_authorized ? 'var(--arvo-green)' : 'var(--arvo-fg-soft)', opacity: togglingSalary !== null ? 0.5 : 1 }}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5"><path d="M8 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"/><path d="M1.38 8a6.998 6.998 0 0 1 13.24 0 7 7 0 0 1-13.24 0ZM8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5Z"/></svg>
-            {activeMembers.find(m => m.user_id === userId)?.salary_authorized ? t.finances.splitSalaryAuthorized : t.finances.splitAuthorizeSalary}
-          </button>
-        )}
         <div className="flex gap-2 mt-5">
           <button onClick={onClose} className="flex-1 bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] text-sm py-2 rounded-xl hover:opacity-80 transition-opacity">
             {t.common.close}
@@ -661,7 +663,12 @@ export default function FinancesBudgetPage() {
   const [editingUnassignedSharedId, setEditingUnassignedSharedId] = useState<number | null>(null)
   const [unassignedGoalInput, setUnassignedGoalInput] = useState('')
   const [showRefInfo, setShowRefInfo] = useState(false)
-  const [splitGroup, setSplitGroup] = useState<SharedGroup | null>(null)
+  // Guarda só o ID, não o objeto — assim, depois de salvar % ou alternar o modo
+  // salário (que dispara load(true) e atualiza sharedGroups), o modal reflete o
+  // dado fresco na hora em vez de continuar mostrando o valor antigo que tinha
+  // quando foi aberto.
+  const [splitGroupId, setSplitGroupId] = useState<number | null>(null)
+  const splitGroup = sharedGroups.find(g => g.id === splitGroupId) ?? null
 
   const load = useCallback(async (silent = false) => {
     if (!silent) setLoading(true)
@@ -1020,7 +1027,7 @@ export default function FinancesBudgetPage() {
         /* Fallback: manual income input when no income envelope exists yet */
         <div className="bg-[var(--arvo-surface)] rounded-2xl border border-[var(--arvo-border)] shadow-sm p-5">
           <div className="flex items-center justify-between mb-1">
-            <span className="text-xs text-[var(--arvo-fg-muted)] uppercase tracking-wide font-medium">{t.finances.income}</span>
+            <span className="text-sm text-[var(--arvo-fg-muted)] uppercase tracking-wide font-semibold">{t.finances.income}</span>
             {!incomeEdit && (
               <button onClick={() => setIncomeEdit(true)} className="text-xs text-[var(--arvo-fg)] hover:opacity-70 transition-opacity">{t.common.edit}</button>
             )}
@@ -1131,7 +1138,7 @@ export default function FinancesBudgetPage() {
             onSetSharedEnvelope={setSharedEnvelope}
             onSaveSharedGoal={saveSharedGoal}
             onDeleteSharedCategory={deleteSharedCategory}
-            onEditSplit={setSplitGroup}
+            onEditSplit={group => setSplitGroupId(group.id)}
           />
         ))}
       </div>
@@ -1140,7 +1147,7 @@ export default function FinancesBudgetPage() {
         <SplitModal
           group={splitGroup}
           userId={user?.id ?? ''}
-          onClose={() => setSplitGroup(null)}
+          onClose={() => setSplitGroupId(null)}
           onSaved={() => load(true)}
         />
       )}
@@ -1372,7 +1379,7 @@ export default function FinancesBudgetPage() {
                     className={`w-full text-left px-3 py-2.5 rounded-xl border text-sm transition-colors ${sharingGroupId === g.id ? 'border-[var(--arvo-fg)] bg-[var(--arvo-fg)]/5 font-medium' : 'border-[var(--arvo-border)] hover:border-[var(--arvo-border)]'}`}
                   >
                     <div className="flex items-center justify-between">
-                      <span>{g.name}</span>
+                      <span className="text-[var(--arvo-fg)]">{g.name}</span>
                       <span className="text-xs text-[var(--arvo-fg-soft)] flex items-center gap-1">
                         <Icon name="users" size={11} />
                         {g.members.filter(m => m.status === 'active').length}

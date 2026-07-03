@@ -3162,12 +3162,20 @@ router.post('/moments/:id/expenses', requireAuth, async (req, res: Response) => 
   let existingTx: { id: number; user_id: string; amount: number; currency: string; description: string; date: string } | null = null
 
   if (from_transaction_id) {
-    const { data: ftm } = await supabaseAdmin
-      .from('finance_transaction_moments').select('transaction_id').eq('transaction_id', from_transaction_id).eq('moment_id', momentId).maybeSingle()
-    if (!ftm) { res.status(404).json({ error: 'Transação não encontrada neste momento' }); return }
     const { data: tx } = await supabaseAdmin
       .from('finance_transactions').select('id, user_id, amount, currency, description, date').eq('id', from_transaction_id).single()
     if (!tx) { res.status(404).json({ error: 'Transação não encontrada' }); return }
+    const { data: ftm } = await supabaseAdmin
+      .from('finance_transaction_moments').select('transaction_id').eq('transaction_id', from_transaction_id).eq('moment_id', momentId).maybeSingle()
+    if (!ftm) {
+      // Transação ainda não linkada a este momento — acontece no fluxo "dividir direto
+      // da tela de Transações" (a transação nunca esteve num Momento antes). Só o dono
+      // da transação pode linká-la aqui; a partir daí funciona igual ao fluxo antigo.
+      if (tx.user_id !== userId) { res.status(404).json({ error: 'Transação não encontrada neste momento' }); return }
+      const { error: linkErr } = await supabaseAdmin
+        .from('finance_transaction_moments').insert({ transaction_id: tx.id, moment_id: momentId, user_id: tx.user_id })
+      if (linkErr) { res.status(500).json({ error: linkErr.message }); return }
+    }
     const { data: alreadySplit } = await supabaseAdmin
       .from('finance_moment_expenses').select('id').eq('transaction_id', tx.id).maybeSingle()
     if (alreadySplit) { res.status(409).json({ error: 'Esta transação já está dividida' }); return }
