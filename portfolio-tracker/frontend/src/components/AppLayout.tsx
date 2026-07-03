@@ -611,10 +611,10 @@ export default function AppLayout() {
           `filter` on the nav itself would distort its own content too. */}
       <svg style={{ position: 'absolute', width: 0, height: 0, overflow: 'hidden' }} aria-hidden="true">
         <defs>
-          <filter id="arvo-liquid-glass" x="-20%" y="-20%" width="140%" height="140%">
-            <feTurbulence type="fractalNoise" baseFrequency="0.010 0.018" numOctaves="2" seed="7" result="noise" />
-            <feGaussianBlur in="noise" stdDeviation="2.5" result="blurredNoise" />
-            <feDisplacementMap in="SourceGraphic" in2="blurredNoise" scale="42" xChannelSelector="R" yChannelSelector="G" />
+          <filter id="arvo-liquid-glass" x="-30%" y="-30%" width="160%" height="160%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.006 0.010" numOctaves="3" seed="7" result="noise" />
+            <feGaussianBlur in="noise" stdDeviation="1.2" result="sharpNoise" />
+            <feDisplacementMap in="SourceGraphic" in2="sharpNoise" scale="110" xChannelSelector="R" yChannelSelector="B" />
           </filter>
         </defs>
       </svg>
@@ -632,17 +632,30 @@ export default function AppLayout() {
           boxShadow: '0 8px 32px rgba(0,0,0,0.12), 0 2px 6px rgba(0,0,0,0.06)',
         }}
       >
-        {/* Backdrop layer: refracted blur + tint, sits behind the content layer */}
+        {/* Backdrop layer: refracted blur + tint, sits behind the content layer. The SVG
+            distortion must run BEFORE the blur in the filter list (CSS applies functions
+            left-to-right) — distorting an already-blurred image barely shows, distorting the
+            sharp backdrop first and blurring after keeps the warp visible. */}
         <div
           aria-hidden="true"
           style={{
             position: 'absolute', inset: 0,
             background: 'var(--arvo-glass-bg)',
-            backdropFilter: 'blur(20px) saturate(200%) url(#arvo-liquid-glass)',
-            WebkitBackdropFilter: 'blur(20px) saturate(200%)',
+            backdropFilter: 'url(#arvo-liquid-glass) blur(9px) saturate(220%)',
+            WebkitBackdropFilter: 'blur(9px) saturate(220%)',
             border: '1px solid var(--arvo-glass-border)',
             borderRadius: 24,
             boxShadow: 'inset 0 1px 0 var(--arvo-glass-highlight), inset 0 -1px 0 rgba(0,0,0,0.06)',
+          }}
+        />
+        {/* Specular highlight sweep — the glossy top-left shine real glass/Instagram's
+            material has, that a flat blur alone never reads as "glass". */}
+        <div
+          aria-hidden="true"
+          style={{
+            position: 'absolute', inset: 0, borderRadius: 24, pointerEvents: 'none',
+            background: 'linear-gradient(115deg, var(--arvo-glass-highlight) 0%, transparent 18%, transparent 78%, var(--arvo-glass-highlight) 100%)',
+            opacity: 0.5, mixBlendMode: 'overlay',
           }}
         />
         <div style={{ position: 'relative' }}>
