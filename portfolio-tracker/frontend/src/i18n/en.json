@@ -1054,6 +1054,7 @@
     "freedomSwitchToAge": "use age",
     "freedomSwitchToYears": "use years",
     "freedomTargetAge": "Target age",
+    "freedomCurrentAge": "current age",
     "freedomYearsOld": "years old",
     "txMoment": "Moment",
     "txNoMoment": "No Moments created yet",

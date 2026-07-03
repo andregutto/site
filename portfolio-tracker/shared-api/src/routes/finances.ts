@@ -2877,11 +2877,24 @@ router.get('/moments/:id/expenses', requireAuth, async (req, res: Response) => {
   const displayEntries = await Promise.all([...userIds].map(async uid => [uid, await userDisplay(uid)] as const))
   const displayMap = Object.fromEntries(displayEntries)
 
+  // Categoria vive na finance_transactions ligada (não na despesa em si) — uma
+  // despesa manual sempre cria/aponta pra uma transação real, ver POST acima.
+  const txIds = [...new Set((expenses ?? []).map(e => e.transaction_id).filter((id): id is number => id != null))]
+  const categoryByTx: Record<number, { id: number; name: string; icon: string; color: string } | null> = {}
+  if (txIds.length > 0) {
+    const { data: txRows } = await supabaseAdmin
+      .from('finance_transactions')
+      .select('id, finance_categories(id, name, icon, color)')
+      .in('id', txIds)
+    for (const row of txRows ?? []) categoryByTx[(row as any).id] = (row as any).finance_categories ?? null
+  }
+
   const enriched = (expenses ?? []).map((e: any) => ({
     ...e,
     paid_by_display: displayMap[e.paid_by_user_id],
     shares: (e.finance_moment_expense_shares ?? []).map((s: any) => ({ ...s, display: displayMap[s.user_id] })),
     finance_moment_expense_shares: undefined,
+    category: e.transaction_id != null ? (categoryByTx[e.transaction_id] ?? null) : null,
   }))
 
   res.json({ expenses: enriched })
@@ -2890,7 +2903,7 @@ router.get('/moments/:id/expenses', requireAuth, async (req, res: Response) => {
 router.post('/moments/:id/expenses', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const momentId = Number(req.params.id)
-  const { description, amount, currency, paid_by_user_id, expense_date, split_type, participant_ids, custom_shares, from_transaction_id } = req.body as {
+  const { description, amount, currency, paid_by_user_id, expense_date, split_type, participant_ids, custom_shares, from_transaction_id, category_id } = req.body as {
     description?: string
     amount?: number
     currency?: string
@@ -2900,6 +2913,7 @@ router.post('/moments/:id/expenses', requireAuth, async (req, res: Response) => 
     participant_ids?: string[]
     custom_shares?: Record<string, number>
     from_transaction_id?: number
+    category_id?: number | null
   }
 
   const access = await assertMomentAccess(momentId, userId)
@@ -2963,6 +2977,15 @@ router.post('/moments/:id/expenses', requireAuth, async (req, res: Response) => 
     payerShare.share_amount = Math.round((payerShare.share_amount + remainder) * 100) / 100
   }
 
+  // category_id pertence ao próprio pagador (categorias são por usuário) — só aplica se
+  // for uma categoria de despesa dele, senão ignora silenciosamente em vez de dar 500.
+  let validCategoryId: number | null = null
+  if (category_id != null) {
+    const { data: cat } = await supabaseAdmin
+      .from('finance_categories').select('id').eq('id', category_id).eq('user_id', basePaidBy).maybeSingle()
+    if (cat) validCategoryId = cat.id
+  }
+
   let transactionId: number
   let ownsTransaction: boolean
   if (existingTx) {
@@ -2973,7 +2996,7 @@ router.post('/moments/:id/expenses', requireAuth, async (req, res: Response) => 
       .from('finance_transactions')
       .insert({
         user_id: basePaidBy, date: baseDate, description: baseDescription,
-        amount: -baseAmount, currency: baseCurrency, source: 'manual',
+        amount: -baseAmount, currency: baseCurrency, source: 'manual', category_id: validCategoryId,
       })
       .select('id').single()
     if (txError) { res.status(500).json({ error: txError.message }); return }
@@ -3027,7 +3050,7 @@ router.patch('/moments/:id/expenses/:expenseId', requireAuth, async (req, res: R
   const { userId } = req as AuthRequest
   const momentId = Number(req.params.id)
   const expenseId = Number(req.params.expenseId)
-  const { description, amount, currency, paid_by_user_id, expense_date, split_type, participant_ids, custom_shares } = req.body as {
+  const { description, amount, currency, paid_by_user_id, expense_date, split_type, participant_ids, custom_shares, category_id } = req.body as {
     description?: string
     amount?: number
     currency?: string
@@ -3036,6 +3059,7 @@ router.patch('/moments/:id/expenses/:expenseId', requireAuth, async (req, res: R
     split_type?: 'equal' | 'custom'
     participant_ids?: string[]
     custom_shares?: Record<string, number>
+    category_id?: number | null
   }
 
   const access = await assertMomentAccess(momentId, userId)
@@ -3097,9 +3121,22 @@ router.patch('/moments/:id/expenses/:expenseId', requireAuth, async (req, res: R
   if (sharesError) { res.status(500).json({ error: sharesError.message }); return }
 
   if (existing.owns_transaction && existing.transaction_id) {
+    let validCategoryId: number | null | undefined = undefined
+    if (category_id !== undefined) {
+      if (category_id == null) {
+        validCategoryId = null
+      } else {
+        const { data: cat } = await supabaseAdmin
+          .from('finance_categories').select('id').eq('id', category_id).eq('user_id', paid_by_user_id).maybeSingle()
+        validCategoryId = cat ? cat.id : null
+      }
+    }
     await supabaseAdmin
       .from('finance_transactions')
-      .update({ description: description.trim(), amount: -amount, currency: baseCurrency, date: baseDate, user_id: paid_by_user_id })
+      .update({
+        description: description.trim(), amount: -amount, currency: baseCurrency, date: baseDate, user_id: paid_by_user_id,
+        ...(validCategoryId !== undefined ? { category_id: validCategoryId } : {}),
+      })
       .eq('id', existing.transaction_id)
   }
 

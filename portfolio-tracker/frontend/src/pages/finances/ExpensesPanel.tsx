@@ -14,6 +14,8 @@ interface ExpenseShare {
   display?: { name?: string; email?: string; avatar_url?: string }
 }
 
+interface ExpenseCategory { id: number; name: string; icon: string; color: string }
+
 interface MomentExpense {
   id: number
   description: string
@@ -26,6 +28,7 @@ interface MomentExpense {
   is_settlement?: boolean
   paid_by_display?: { name?: string; email?: string; avatar_url?: string }
   shares: ExpenseShare[]
+  category?: ExpenseCategory | null
 }
 
 interface Participant {
@@ -47,6 +50,7 @@ export default function ExpensesPanel({ momentId, currency, fmt }: { momentId: n
   const { currency: displayCurrency, fxRates } = useCurrency()
   const [expenses, setExpenses] = useState<MomentExpense[]>([])
   const [participants, setParticipants] = useState<Participant[]>([])
+  const [myCategories, setMyCategories] = useState<ExpenseCategory[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<number | null>(null)
@@ -62,6 +66,7 @@ export default function ExpensesPanel({ momentId, currency, fmt }: { momentId: n
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [customValues, setCustomValues] = useState<Record<string, string>>({})
   const [customPercents, setCustomPercents] = useState<Record<string, string>>({})
+  const [categoryId, setCategoryId] = useState<number | ''>('')
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -69,6 +74,7 @@ export default function ExpensesPanel({ momentId, currency, fmt }: { momentId: n
       const [expensesRes, membersRes] = await Promise.all([
         apiFetch<{ expenses: MomentExpense[] }>(`/finances/moments/${momentId}/expenses`),
         apiFetch<{ members: MomentMember[] }>(`/finances/moments/${momentId}/members`),
+        apiFetch<ExpenseCategory[]>('/finances/categories').then(setMyCategories).catch(() => {}),
       ])
       setExpenses(expensesRes.expenses)
       const active = membersRes.members.filter(m => m.status === 'active' && m.user_id)
@@ -100,6 +106,7 @@ export default function ExpensesPanel({ momentId, currency, fmt }: { momentId: n
     setDescription(''); setAmount(''); setExpCurrency(currency); setSplitType('equal'); setError('')
     setSelected(new Set(participants.map(p => p.user_id)))
     setCustomValues({}); setCustomPercents({})
+    setCategoryId('')
     setEditingId(null)
     const me = participants.find(p => p.user_id === user?.id)
     setPaidBy(me?.user_id ?? participants[0]?.user_id ?? '')
@@ -141,6 +148,7 @@ export default function ExpensesPanel({ momentId, currency, fmt }: { momentId: n
     }
     setCustomValues(values)
     setCustomPercents(percents)
+    setCategoryId(e.category?.id ?? '')
     setError('')
     setShowForm(true)
   }
@@ -164,6 +172,11 @@ export default function ExpensesPanel({ momentId, currency, fmt }: { momentId: n
     }
     if (splitType === 'custom') {
       body.custom_shares = Object.fromEntries(participantIds.map(uid => [uid, parseFloat((customValues[uid] ?? '0').replace(',', '.')) || 0]))
+    }
+    // Categoria só pode vir da lista do próprio pagador — se ele não é quem está preenchendo
+    // o formulário, o seletor fica oculto (ver JSX) e nunca chega aqui.
+    if (paidBy === user?.id) {
+      body.category_id = categoryId === '' ? null : categoryId
     }
 
     setSaving(true)
@@ -276,7 +289,14 @@ export default function ExpensesPanel({ momentId, currency, fmt }: { momentId: n
               <div key={e.id} className={`flex items-center gap-2.5 px-4 py-2.5 text-sm ${i > 0 ? 'border-t border-[var(--arvo-border-soft)]' : ''}`}>
                 <Avatar name={e.paid_by_display?.name} email={e.paid_by_display?.email} avatarUrl={e.paid_by_display?.avatar_url} size={22} />
                 <div className="flex-1 min-w-0">
-                  <span className="text-[var(--arvo-fg)] truncate text-xs block">{e.description}</span>
+                  <span className="text-[var(--arvo-fg)] truncate text-xs flex items-center gap-1.5">
+                    {e.description}
+                    {e.category && (
+                      <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full font-medium shrink-0" style={{ background: e.category.color + '22', color: e.category.color }}>
+                        {e.category.icon} {e.category.name}
+                      </span>
+                    )}
+                  </span>
                   <span className="text-[10px] text-[var(--arvo-fg-soft)] block truncate">
                     {t.finances.expensePaidBy}: {e.paid_by_display?.name} · {e.shares.length} {t.finances.expenseParticipants.toLowerCase()}
                   </span>
@@ -340,6 +360,15 @@ export default function ExpensesPanel({ momentId, currency, fmt }: { momentId: n
               ))}
             </select>
           </div>
+
+          {/* Categoria só existe pro próprio pagador (categorias são por usuário) — se quem
+              está editando não é quem pagou, não dá pra saber/mexer na categoria dele. */}
+          {paidBy === user?.id && myCategories.length > 0 && (
+            <select value={categoryId} onChange={e => setCategoryId(e.target.value === '' ? '' : Number(e.target.value))} className={`w-full ${fieldCls}`}>
+              <option value="">{t.finances.noCategory}</option>
+              {myCategories.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
+            </select>
+          )}
 
           <div className="flex gap-2 text-xs">
             <button

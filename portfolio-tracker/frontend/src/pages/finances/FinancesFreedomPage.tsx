@@ -717,7 +717,10 @@ function PlanForm({ initial, portfolio, ipcaAnnual, hicpAnnual, cpiAnnual, userC
             {ageMode && birthdate ? (
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <p className="text-[10px] text-[var(--arvo-fg-soft)] mb-1">{t.finances.freedomTargetAge}</p>
+                  <p className="text-[10px] text-[var(--arvo-fg-soft)] mb-1">
+                    {t.finances.freedomTargetAge}
+                    {currentAge != null && <span className="text-[var(--arvo-fg-faint)]"> · {t.finances.freedomCurrentAge}: {currentAge}</span>}
+                  </p>
                   {stratMode === 'fixHorizon' ? (
                     <input
                       autoFocus

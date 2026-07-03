@@ -6,6 +6,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { useI18n } from '../../contexts/I18nContext'
 import { useCurrency } from '../../contexts/CurrencyContext'
 import { Icon } from '../../components/icons'
+import { resolveMomentIcon } from '../../lib/momentIcons'
 
 interface Category { id: number; name: string; name_key?: string | null; icon: string; color: string }
 
@@ -1045,8 +1046,9 @@ export default function FinancesTransactionsPage() {
             </span>
           )}
           {filterMomentId !== '' && (
-            <span style={chipStyle}>
-              {moments.find(m => m.id === filterMomentId)?.icon} {moments.find(m => m.id === filterMomentId)?.name}
+            <span style={{ ...chipStyle, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+              {(() => { const fm = moments.find(m => m.id === filterMomentId); return fm ? <Icon name={resolveMomentIcon(fm.icon)} size={12} /> : null })()}
+              {moments.find(m => m.id === filterMomentId)?.name}
               <button onClick={() => setFilterMomentId('')} style={chipXStyle}>✕</button>
             </span>
           )}
@@ -1502,12 +1504,12 @@ export default function FinancesTransactionsPage() {
                             {tx.moments.length > 0 && tx.moments.map(m => (
                               <span
                                 key={m.id}
-                                className="md:hidden text-[10px] px-1 py-0.5 rounded-full font-medium cursor-pointer"
+                                className="md:hidden inline-flex items-center px-1 py-0.5 rounded-full font-medium cursor-pointer"
                                 style={{ backgroundColor: m.color + '22', color: m.color }}
                                 onClick={() => { setSelected(new Set([tx.id])); setShowMomentDropdown(true) }}
                                 title={m.name}
                               >
-                                {m.icon}
+                                <Icon name={resolveMomentIcon(m.icon)} size={11} />
                               </span>
                             ))}
                             {/* Category chip — only on mobile where the category column is hidden */}
@@ -1587,11 +1589,11 @@ export default function FinancesTransactionsPage() {
                               {tx.moments.map(m => (
                                 <span
                                   key={m.id}
-                                  className="text-xs px-2 py-0.5 rounded-full font-medium cursor-pointer hover:opacity-80"
+                                  className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium cursor-pointer hover:opacity-80"
                                   style={{ backgroundColor: m.color + '22', color: m.color }}
                                   onClick={() => { setSelected(new Set([tx.id])); setShowMomentDropdown(true) }}
                                 >
-                                  {m.icon} {m.name}
+                                  <Icon name={resolveMomentIcon(m.icon)} size={12} /> {m.name}
                                 </span>
                               ))}
                             </div>
@@ -1720,7 +1722,7 @@ export default function FinancesTransactionsPage() {
                         onClick={() => bulkToggleMoment(m.id)}
                         className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-[var(--arvo-fg)] hover:bg-[var(--arvo-surface-2)] transition-colors"
                       >
-                        <span className="text-base">{m.icon}</span>
+                        <Icon name={resolveMomentIcon(m.icon)} size={16} style={{ color: m.color }} />
                         <span className="flex-1 text-left">{m.name}</span>
                         {allHave  && <span className="text-[10px] text-emerald-500 font-bold">✓</span>}
                         {someHave && <span className="text-[10px] text-[var(--arvo-fg-soft)]">−</span>}
@@ -1952,7 +1954,7 @@ export default function FinancesTransactionsPage() {
                     {manualGroups.length === 0 && autoGroups.length === 0 && (
                       <div className="px-5 py-4 space-y-3 text-sm text-[var(--arvo-fg-muted)]">
                         <p dangerouslySetInnerHTML={{ __html: t.finances.reimbursementHelpBody }} />
-                        <div className="bg-blue-50 rounded-xl p-3 text-xs text-blue-700 space-y-1">
+                        <div className="rounded-xl p-3 text-xs space-y-1" style={{ background: 'color-mix(in srgb, var(--arvo-blue) 10%, var(--arvo-surface))', color: 'var(--arvo-blue)' }}>
                           <p className="font-semibold mb-1">{t.finances.reimbursementHelpTitle}</p>
                           <p>1. <span dangerouslySetInnerHTML={{ __html: t.finances.reimbursementHelpStep1 }} /></p>
                           <p>2. <span dangerouslySetInnerHTML={{ __html: t.finances.reimbursementHelpStep2 }} /></p>
