@@ -347,20 +347,21 @@ export default function ExpensesPanel({ momentId, currency, fmt }: { momentId: n
               value={amount} onChange={e => setAmount(e.target.value)}
               placeholder={t.finances.expenseAmount}
               inputMode="decimal"
-              className={`flex-1 ${fieldCls}`}
+              className={`flex-1 min-w-0 ${fieldCls}`}
             />
-            <select value={expCurrency} onChange={e => setExpCurrency(e.target.value)} className={fieldCls}>
+            <select value={expCurrency} onChange={e => setExpCurrency(e.target.value)} className={`shrink-0 ${fieldCls}`}>
               {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
-            <select
-              value={paidBy} onChange={e => setPaidBy(e.target.value)}
-              className={`flex-1 ${fieldCls}`}
-            >
-              {participants.map(p => (
-                <option key={p.user_id} value={p.user_id}>{p.display?.name ?? p.user_id}</option>
-              ))}
-            </select>
           </div>
+          <p className="text-[10px] uppercase tracking-wide text-[var(--arvo-fg-soft)]">{t.finances.expensePaidBy}</p>
+          <select
+            value={paidBy} onChange={e => setPaidBy(e.target.value)}
+            className={`w-full ${fieldCls}`}
+          >
+            {participants.map(p => (
+              <option key={p.user_id} value={p.user_id}>{p.display?.name ?? p.user_id}</option>
+            ))}
+          </select>
 
           {/* Categoria só existe pro próprio pagador (categorias são por usuário) — se quem
               está editando não é quem pagou, não dá pra saber/mexer na categoria dele. */}

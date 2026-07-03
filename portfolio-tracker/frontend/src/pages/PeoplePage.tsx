@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, type FormEvent, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { apiFetch } from '../lib/api'
 import { useI18n } from '../contexts/I18nContext'
@@ -152,7 +153,7 @@ function PairMomentModal({ friendUserId, friendName, initialMomentId, onClose }:
       .finally(() => setLoading(false))
   }, [friendUserId, initialMomentId])
 
-  return (
+  return createPortal(
     <div style={{ position: 'fixed', inset: 0, zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
       <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.45)' }} />
       <div style={{
@@ -177,7 +178,8 @@ function PairMomentModal({ friendUserId, friendName, initialMomentId, onClose }:
           <ExpensesPanel momentId={momentId} currency={currency} fmt={fmt} />
         ) : null}
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 
@@ -1056,14 +1058,24 @@ function GroupCard({ group: g, fmt, onOpenExpenses, onManage }: {
   )
 }
 
+// Lê o cache de contatos da última visita pra a página já renderizar com esses
+// dados (mesmo que levemente desatualizados) em vez de mostrar o skeleton toda
+// vez — `load()` revalida em seguida e substitui assim que a resposta chegar.
+function cachedContacts(): Contact[] {
+  try {
+    const raw = sessionStorage.getItem('arvo_people_cache')
+    return raw ? JSON.parse(raw) as Contact[] : []
+  } catch { return [] }
+}
+
 export default function PeoplePage() {
   const { t } = useI18n()
   const { user } = useAuth()
-  const [contacts, setContacts] = useState<Contact[]>([])
+  const [contacts, setContacts] = useState<Contact[]>(cachedContacts)
   const [trips, setTrips]   = useState<Trip[]>([])
   const [groups, setGroups] = useState<Group[]>([])
   const [moments, setMoments] = useState<MomentOption[]>([])
-  const [loading, setLoading]   = useState(true)
+  const [loading, setLoading]   = useState(() => cachedContacts().length === 0)
   const [inviteEmail, setInviteEmail] = useState('')
   const [inviting, setInviting] = useState(false)
   const [inviteError, setInviteError] = useState('')
@@ -1079,11 +1091,11 @@ export default function PeoplePage() {
   const [groupExpenseModal, setGroupExpenseModal] = useState<{ groupId: number; momentId: number | null } | null>(null)
 
   const load = useCallback(async () => {
-    setLoading(true)
     setLoadError('')
     try {
       const data = await apiFetch<{ contacts: Contact[] }>('/people')
       setContacts(data.contacts)
+      try { sessionStorage.setItem('arvo_people_cache', JSON.stringify(data.contacts)) } catch { /* quota/incognito — ignora */ }
     } catch (ex: unknown) {
       setLoadError((ex as Error).message ?? t.people.loadErrorDefault)
     } finally {
