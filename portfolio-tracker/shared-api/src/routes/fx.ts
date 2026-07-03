@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express'
 import { cache, TTL } from '../lib/cache.js'
+import { getFxRate } from '../lib/fx.js'
 
 const router = Router()
 const AWESOME_BASE = 'https://economia.awesomeapi.com.br/json'
@@ -12,6 +13,10 @@ async function awesomeFetch<T>(url: string, ttlMs: number): Promise<T> {
   })
 }
 
+// Se a AwesomeAPI falhar (rate limit, sem rede no ambiente, etc.), cai pro mesmo
+// fallback de 3 níveis do getFxRate (cache DB → aproximação fixa) em vez de um 502
+// que deixa o CurrencyContext do frontend travado na taxa fixa pro resto da sessão
+// inteira — foi exatamente isso que causou a conversão distorcida no valor de um ativo.
 router.get('/current', async (req: Request, res: Response) => {
   const pairs = (req.query.pairs as string) || 'USD-BRL,EUR-BRL'
   try {
@@ -25,8 +30,13 @@ router.get('/current', async (req: Request, res: Response) => {
       timestamp: parseInt(e.timestamp),
       date:      new Date(parseInt(e.timestamp) * 1000).toISOString(),
     })))
-  } catch (err) {
-    res.status(502).json({ error: String(err) })
+  } catch {
+    const now = Math.floor(Date.now() / 1000)
+    const fromCodes = pairs.split(',').map(p => p.split('-')[0])
+    const rates = await Promise.all(fromCodes.map(async from => ({
+      from, to: 'BRL', rate: await getFxRate(from, 'BRL'), timestamp: now, date: new Date().toISOString(),
+    })))
+    res.json(rates)
   }
 })
 
