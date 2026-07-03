@@ -831,6 +831,13 @@ export function InviteModal({ s, result, copied, onInvite, onCopy, onClose }: {
   const [suggestions, setSuggestions] = useState<InviteUserSuggestion[]>([])
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [directOk, setDirectOk] = useState(false)
+  // Com muitos amigos os chips de "já conectado" ficam gigantes — acima de 8,
+  // corta e oferece um filtro local em vez de listar todo mundo de uma vez.
+  const [friendFilter, setFriendFilter] = useState('')
+  const FRIEND_CHIP_CAP = 8
+  const filteredFriends = friendFilter.trim()
+    ? friends.filter(f => (f.name ?? f.email).toLowerCase().includes(friendFilter.trim().toLowerCase()))
+    : friends.slice(0, FRIEND_CHIP_CAP)
 
   const isEmailLike = /\S+@\S+\.\S+/.test(query)
 
@@ -881,9 +888,17 @@ export function InviteModal({ s, result, copied, onInvite, onCopy, onClose }: {
               </p>
             )}
 
+            {friends.length > FRIEND_CHIP_CAP && (
+              <input
+                type="text" value={friendFilter} onChange={e => setFriendFilter(e.target.value)}
+                placeholder={s.filterFriendsPlaceholder ?? 'Filtrar amigos já conectados...'}
+                className="w-full px-3 py-2 rounded-lg text-xs"
+                style={{ border: '1px solid var(--arvo-border)', background: 'var(--arvo-surface)', color: 'var(--arvo-fg)', outline: 'none' }}
+              />
+            )}
             {friends.length > 0 && (
               <div className="flex flex-wrap gap-2">
-                {friends.map(f => (
+                {filteredFriends.map(f => (
                   <button
                     key={f.email} type="button" onClick={() => send({ email: f.email })} disabled={saving}
                     title={`Convidar ${f.name || f.email}`}
@@ -899,6 +914,11 @@ export function InviteModal({ s, result, copied, onInvite, onCopy, onClose }: {
                   </button>
                 ))}
               </div>
+            )}
+            {friends.length > FRIEND_CHIP_CAP && !friendFilter.trim() && (
+              <p className="text-[11px]" style={{ color: 'var(--arvo-fg-soft)' }}>
+                {(s.andMoreFriends ?? '+ {n} amigos — use o filtro acima').replace('{n}', String(friends.length - FRIEND_CHIP_CAP))}
+              </p>
             )}
 
             <div className="flex flex-col gap-1" style={{ position: 'relative' }}>

@@ -1741,6 +1741,8 @@
     "resendInvite": "Renvoyer le lien",
     "editGroup": "Modifier le groupe",
     "deleteGroup": "Supprimer le groupe",
+    "filterFriendsPlaceholder": "Filtrer les amis déjà connectés...",
+    "andMoreFriends": "+ {n} amis — utilisez le filtre ci-dessus",
     "deleteGroupConfirm": "Supprimer ce groupe ? Les catégories partagées avec lui cesseront d'être partagées.",
     "editPct": "Modifier mon pourcentage",
     "editPctHint": "Cliquez sur votre pourcentage pour modifier votre part.",
