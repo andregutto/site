@@ -3,10 +3,12 @@ import { useNavigate } from 'react-router-dom'
 import { apiFetch } from '../lib/api'
 import { useI18n } from '../contexts/I18nContext'
 import { useCurrency } from '../contexts/CurrencyContext'
+import { useAuth } from '../contexts/AuthContext'
 import Avatar from './voyage/_shared/Avatar'
 import { RoleChip } from './voyage/_shared/Chips'
 import ExpensesPanel from './finances/ExpensesPanel'
 import { _fmt } from './finances/FinancesMomentsPage'
+import { GroupModal, InviteModal, ModalOverlay, type Group as SharedGroupFull } from './finances/SharedCategoriesPage'
 
 const RED  = '#D63B2F'
 const GOLD = '#C8B89A'
@@ -725,8 +727,225 @@ function ContactCard({
   )
 }
 
+// Painel de despesas do momento oculto do GRUPO — mesma ideia do PairMomentModal
+// (1:1), só que cria/reaproveita o momento via POST /shared/groups/:id/default-moment
+// e serve pra despesas avulsas com a galera do grupo, sem virar categoria de
+// orçamento (ver docs/SHARED_EXPENSES_MODEL.md).
+function GroupExpensesModal({ groupId, groupName, initialMomentId, onClose }: {
+  groupId: number
+  groupName: string
+  initialMomentId: number | null
+  onClose: () => void
+}) {
+  const { t } = useI18n()
+  const { currency, hideValues } = useCurrency()
+  const [momentId, setMomentId] = useState<number | null>(initialMomentId)
+  const [loading, setLoading] = useState(!initialMomentId)
+  const [error, setError] = useState('')
+  const fmt = (n: number, c: string) => hideValues ? '•••' : _fmt(n, c)
+
+  useEffect(() => {
+    if (initialMomentId) return
+    apiFetch<{ moment_id: number }>(`/shared/groups/${groupId}/default-moment`, { method: 'POST' })
+      .then(r => setMomentId(r.moment_id))
+      .catch((ex: unknown) => setError((ex as Error).message ?? t.people.loadErrorDefault))
+      .finally(() => setLoading(false))
+  }, [groupId, initialMomentId])
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+      <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.45)' }} />
+      <div style={{
+        position: 'relative', width: '100%', maxWidth: 480, maxHeight: '85vh', overflowY: 'auto',
+        background: 'var(--arvo-surface)', borderRadius: 16, boxShadow: 'var(--arvo-shadow-lg)', padding: '20px 22px',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+          <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, fontWeight: 600, color: 'var(--arvo-fg)', flex: 1 }}>
+            {t.people.expensesWithPrefix} {groupName}
+          </p>
+          <button type="button" onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--arvo-fg-soft)' }}>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6">
+              <path strokeLinecap="round" d="M1.5 1.5l11 11M12.5 1.5l-11 11" />
+            </svg>
+          </button>
+        </div>
+        {loading ? (
+          <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg-soft)' }}>…</p>
+        ) : error ? (
+          <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: RED }}>{error}</p>
+        ) : momentId ? (
+          <ExpensesPanel momentId={momentId} currency={currency} fmt={fmt} />
+        ) : null}
+      </div>
+    </div>
+  )
+}
+
+// Gerenciar membros do grupo — convite (já reaproveitando o InviteModal do
+// Compartilhado) + lista com opção de remover. Fica em Amigos agora porque
+// "quem está no meu círculo" é o assunto natural desta página, não do
+// Planejamento (que só edita categoria/meta/% de divisão).
+function ManageGroupModal({ group, userId, s, onClose, onChanged }: {
+  group: SharedGroupFull
+  userId: string
+  s: Record<string, string>
+  onClose: () => void
+  onChanged: () => void
+}) {
+  const [showInvite, setShowInvite] = useState(false)
+  const [inviteResult, setInviteResult] = useState<string | null>(null)
+  const [removing, setRemoving] = useState<number | null>(null)
+
+  async function removeMember(memberId: number) {
+    setRemoving(memberId)
+    try {
+      await apiFetch(`/shared/groups/${group.id}/members/${memberId}`, { method: 'DELETE' })
+      onChanged()
+    } finally {
+      setRemoving(null)
+    }
+  }
+
+  return (
+    <>
+      <ModalOverlay onClose={onClose}>
+        <div className="flex flex-col gap-4">
+          <h2 className="text-sm font-semibold" style={{ color: 'var(--arvo-fg)', fontFamily: 'var(--arvo-font-body)', letterSpacing: '0.06em' }}>
+            {group.name}
+          </h2>
+          <div className="flex flex-col gap-2">
+            {group.members.filter(m => m.status !== 'left').map(m => {
+              const isMe = m.user_id === userId
+              return (
+                <div key={m.id} className="flex items-center gap-3">
+                  <Avatar name={m.display.name} email={m.display.email} avatarUrl={m.display.avatar_url} size={28} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm truncate" style={{ color: 'var(--arvo-fg)' }}>
+                      {m.display.name}{isMe ? <span className="font-normal text-xs ml-1" style={{ color: 'var(--arvo-fg-soft)' }}>({s.you ?? 'você'})</span> : ''}
+                    </p>
+                    {m.status === 'pending' && <p className="text-xs" style={{ color: 'var(--arvo-fg-soft)' }}>{s.pending}</p>}
+                  </div>
+                  {!isMe && (
+                    <button
+                      onClick={() => removeMember(m.id)} disabled={removing === m.id}
+                      className="text-xs px-2.5 py-1 rounded-lg"
+                      style={{ color: RED, background: 'rgba(214,59,47,0.08)', opacity: removing === m.id ? 0.5 : 1 }}
+                    >
+                      {removing === m.id ? '…' : (s.remove ?? 'Remover')}
+                    </button>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+          <div className="flex gap-2 justify-end">
+            <button type="button" onClick={() => { setInviteResult(null); setShowInvite(true) }} className="px-4 py-2 rounded-lg text-xs" style={{ background: 'var(--arvo-fg)', color: 'var(--arvo-pill-active-fg)' }}>
+              {s.invite}
+            </button>
+            <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg text-xs" style={{ background: 'var(--arvo-chip-bg)', color: 'var(--arvo-fg)' }}>
+              {s.close ?? 'Fechar'}
+            </button>
+          </div>
+        </div>
+      </ModalOverlay>
+      {showInvite && (
+        <InviteModal
+          s={s}
+          result={inviteResult}
+          copied={false}
+          onInvite={async payload => {
+            const data = await apiFetch<{ direct?: boolean; invite_url?: string }>(`/shared/groups/${group.id}/invite`, { method: 'POST', body: JSON.stringify(payload) })
+            if (!data.direct) setInviteResult(data.invite_url ?? null)
+            onChanged()
+            return { direct: !!data.direct }
+          }}
+          onCopy={() => { if (inviteResult) navigator.clipboard.writeText(inviteResult) }}
+          onClose={() => { setShowInvite(false); setInviteResult(null) }}
+        />
+      )}
+    </>
+  )
+}
+
+// Seção "Grupos" — lista os shared_groups do usuário com saldo do momento oculto
+// (despesas avulsas, real, liquidável) separado da meta de categoria (só
+// referência, nunca vira dívida — ver docs/SHARED_EXPENSES_MODEL.md).
+function GroupsSection({ fullGroups, onOpenExpenses, onManage, onNewGroup }: {
+  fullGroups: SharedGroupFull[]
+  onOpenExpenses: (group: SharedGroupFull) => void
+  onManage: (group: SharedGroupFull) => void
+  onNewGroup: () => void
+}) {
+  const { t } = useI18n()
+  const { hideValues } = useCurrency()
+  const fmt = (n: number, c: string) => hideValues ? '•••' : _fmt(n, c)
+
+  return (
+    <div style={{ marginBottom: 20 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+        <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 14, letterSpacing: '0.10em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)', flex: 1 }}>
+          {t.people.sectionGroups}
+        </p>
+        <button
+          type="button" onClick={onNewGroup}
+          style={{ fontSize: 12, fontFamily: 'var(--arvo-font-body)', padding: '5px 12px', borderRadius: 999, border: '1px solid var(--arvo-border)', background: 'none', color: 'var(--arvo-fg-muted)', cursor: 'pointer' }}
+        >
+          {t.people.newGroupButton}
+        </button>
+      </div>
+      {fullGroups.length === 0 ? (
+        <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg-soft)' }}>{t.people.noGroupsYet}</p>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {fullGroups.map(g => {
+            const activeMembers = g.members.filter(m => m.status === 'active')
+            return (
+              <div key={g.id} style={{
+                display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', borderRadius: 12,
+                background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)',
+              }}>
+                <div style={{ display: 'flex', flex: '0 0 auto' }}>
+                  {activeMembers.slice(0, 4).map(m => (
+                    <div key={m.id} style={{ marginLeft: -6, border: '2px solid var(--arvo-surface)', borderRadius: '50%' }}>
+                      <Avatar name={m.display.name} email={m.display.email} avatarUrl={m.display.avatar_url} size={24} />
+                    </div>
+                  ))}
+                </div>
+                <span style={{ flex: 1, minWidth: 0, fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {g.name}
+                </span>
+                {(g.balance ?? []).length > 0 && (
+                  <button type="button" onClick={() => onOpenExpenses(g)} style={{ display: 'flex', gap: 6, background: 'none', border: 'none', cursor: 'pointer' }}>
+                    {(g.balance ?? []).map(b => (
+                      <span key={b.currency} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, fontWeight: 600, color: b.amount > 0 ? '#1F8A5B' : RED }}>
+                        {b.amount > 0 ? '+' : '−'}{fmt(Math.abs(b.amount), b.currency)}
+                      </span>
+                    ))}
+                  </button>
+                )}
+                {(g.balance ?? []).length === 0 && (
+                  <button type="button" onClick={() => onOpenExpenses(g)} title={t.people.splitExpenseButton} style={{ fontSize: 12, color: 'var(--arvo-fg-soft)', background: 'none', border: 'none', cursor: 'pointer' }}>
+                    {t.people.splitExpenseButton}
+                  </button>
+                )}
+                <button
+                  type="button" onClick={() => onManage(g)} title={t.people.manageGroupButton}
+                  style={{ width: 24, height: 24, borderRadius: 999, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: '1px solid var(--arvo-border)', cursor: 'pointer', color: 'var(--arvo-fg-soft)' }}
+                >
+                  <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M8 4a1 1 0 110-2 1 1 0 010 2zm0 5a1 1 0 110-2 1 1 0 010 2zm0 5a1 1 0 110-2 1 1 0 010 2z"/></svg>
+                </button>
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function PeoplePage() {
   const { t } = useI18n()
+  const { user } = useAuth()
   const [contacts, setContacts] = useState<Contact[]>([])
   const [trips, setTrips]   = useState<Trip[]>([])
   const [groups, setGroups] = useState<Group[]>([])
@@ -738,6 +957,13 @@ export default function PeoplePage() {
   const [suggestions, setSuggestions] = useState<UserSuggestion[]>([])
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [loadError, setLoadError] = useState('')
+  // Grupos de categoria compartilhada — carregados com detalhe completo (membros,
+  // saldo do momento oculto) pra alimentar a nova seção "Grupos" desta página;
+  // `groups` continua só com {id,name} pra não quebrar o seletor de "Compartilhar".
+  const [fullGroups, setFullGroups] = useState<SharedGroupFull[]>([])
+  const [groupModal, setGroupModal] = useState<'new' | SharedGroupFull | null>(null)
+  const [manageGroupId, setManageGroupId] = useState<number | null>(null)
+  const [groupExpenseModal, setGroupExpenseModal] = useState<{ groupId: number; momentId: number | null } | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -752,12 +978,19 @@ export default function PeoplePage() {
     }
   }, [])
 
+  const loadGroups = useCallback(() => {
+    apiFetch<SharedGroupFull[]>('/shared/groups').then(gs => {
+      setFullGroups(gs)
+      setGroups(gs.map(g => ({ id: g.id, name: g.name })))
+    }).catch(() => {})
+  }, [])
+
   useEffect(() => { load() }, [load])
   useEffect(() => {
     apiFetch<{ trips: Trip[] }>('/voyage/trips').then(r => setTrips(r.trips)).catch(() => {})
-    apiFetch<Group[]>('/shared/groups').then(setGroups).catch(() => {})
+    loadGroups()
     apiFetch<MomentOption[]>('/finances/moments-for-picker').then(setMoments).catch(() => {})
-  }, [])
+  }, [loadGroups])
 
   const isEmailLike = /\S+@\S+\.\S+/.test(inviteEmail)
 
@@ -897,6 +1130,41 @@ export default function PeoplePage() {
         )}
       </form>
       {inviteError && <p style={{ fontSize: 12, color: RED, marginBottom: 16 }}>{inviteError}</p>}
+
+      <GroupsSection
+        fullGroups={fullGroups}
+        onOpenExpenses={g => setGroupExpenseModal({ groupId: g.id, momentId: g.default_moment_id ?? null })}
+        onManage={g => setManageGroupId(g.id)}
+        onNewGroup={() => setGroupModal('new')}
+      />
+      {groupModal && (
+        <GroupModal
+          s={t.shared}
+          initial={groupModal === 'new' ? undefined : groupModal}
+          onClose={() => setGroupModal(null)}
+          onSaved={() => { setGroupModal(null); loadGroups() }}
+        />
+      )}
+      {manageGroupId && (() => {
+        const g = fullGroups.find(x => x.id === manageGroupId)
+        return g ? (
+          <ManageGroupModal
+            group={g}
+            userId={user?.id ?? ''}
+            s={t.shared}
+            onClose={() => setManageGroupId(null)}
+            onChanged={loadGroups}
+          />
+        ) : null
+      })()}
+      {groupExpenseModal && (
+        <GroupExpensesModal
+          groupId={groupExpenseModal.groupId}
+          groupName={fullGroups.find(g => g.id === groupExpenseModal.groupId)?.name ?? ''}
+          initialMomentId={groupExpenseModal.momentId}
+          onClose={() => { setGroupExpenseModal(null); loadGroups() }}
+        />
+      )}
 
       {loadError ? (
         <div style={{

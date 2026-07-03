@@ -2545,6 +2545,40 @@ router.post('/moments/default-with/:friendUserId', requireAuth, async (req, res:
   }
 })
 
+// Generalização do momento oculto pra grupo (shared_groups): pra despesas avulsas
+// entre as mesmas pessoas de um grupo recorrente que não merecem virar categoria
+// de orçamento nem um Momento nomeado — ver docs/SHARED_EXPENSES_MODEL.md.
+// Diferente do par (que precisa procurar nos dois sentidos, já que não tinha uma
+// coluna de vínculo), aqui shared_group_id já identifica o momento diretamente.
+export async function getOrCreateDefaultGroupMoment(userId: string, groupId: number): Promise<number> {
+  const { data: existing } = await supabaseAdmin
+    .from('finance_moments').select('id').eq('shared_group_id', groupId).eq('is_pair_default', true).maybeSingle()
+  if (existing) return existing.id
+
+  const { data: group } = await supabaseAdmin.from('shared_groups').select('name').eq('id', groupId).single()
+  if (!group) throw new Error('Grupo não encontrado')
+
+  const { data: members } = await supabaseAdmin
+    .from('shared_group_members').select('user_id, invite_email').eq('group_id', groupId).eq('status', 'active')
+  const others = (members ?? []).filter(m => m.user_id && m.user_id !== userId)
+
+  const { data: created, error } = await supabaseAdmin
+    .from('finance_moments')
+    .insert({ user_id: userId, name: group.name, icon: '🤝', is_pair_default: true, shared_group_id: groupId })
+    .select('id').single()
+  if (error || !created) throw new Error(error?.message ?? 'Falha ao criar momento padrão do grupo')
+
+  // Mesma lógica do par: todos já são conexões ativas dentro do grupo, então
+  // entram direto como membros ativos, sem convite/aceite.
+  if (others.length > 0) {
+    await supabaseAdmin.from('finance_moment_members').insert(others.map(m => ({
+      moment_id: created.id, user_id: m.user_id, invite_email: m.invite_email,
+      role: 'editor', status: 'active', joined_at: new Date().toISOString(),
+    })))
+  }
+  return created.id
+}
+
 // Transforma o momento 1:1 oculto num Momento normal (visível, nomeado) —
 // disparado quando um 3º participante é adicionado a uma despesa, já que o
 // conceito de "1:1 implícito" deixa de fazer sentido com um grupo.

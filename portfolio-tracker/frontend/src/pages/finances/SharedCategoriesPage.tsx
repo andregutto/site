@@ -10,8 +10,8 @@ import PendingInvitesBanner from '../../components/PendingInvitesBanner'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-interface MemberDisplay { name: string; email: string; avatar_url?: string }
-interface Member {
+export interface MemberDisplay { name: string; email: string; avatar_url?: string }
+export interface Member {
   id: number
   user_id: string | null
   invite_email: string | null
@@ -34,12 +34,16 @@ interface SharedCategory {
   my_share_pct: number
   my_goal: number
 }
-interface Group {
+export interface Group {
   id: number
   name: string
   created_by: string
   members: Member[]
   categories: SharedCategory[]
+  // Saldo do "momento oculto do grupo" (despesas avulsas, não categoria de
+  // orçamento) — ver docs/SHARED_EXPENSES_MODEL.md.
+  default_moment_id?: number | null
+  balance?: { currency: string; amount: number }[]
 }
 interface DetailMember {
   member_id: number
@@ -763,7 +767,7 @@ function CategoryDetailPanel({ loading, detail, s, onClose }: {
 
 // ─── Modals ───────────────────────────────────────────────────────────────────
 
-function GroupModal({ s, initial, onClose, onSaved }: {
+export function GroupModal({ s, initial, onClose, onSaved }: {
   s: Record<string, string>
   initial?: Group
   onClose: () => void
@@ -816,7 +820,7 @@ function GroupModal({ s, initial, onClose, onSaved }: {
 interface InviteFriend { email: string; name?: string; avatar_url?: string; user_id: string | null }
 interface InviteUserSuggestion { user_id: string; username: string; name?: string; avatar_url?: string }
 
-function InviteModal({ s, result, copied, onInvite, onCopy, onClose }: {
+export function InviteModal({ s, result, copied, onInvite, onCopy, onClose }: {
   s: Record<string, string>; result: string | null; copied: boolean
   onInvite: (payload: { email?: string; username?: string }) => Promise<{ direct: boolean }>; onCopy: () => void; onClose: () => void
 }) {
@@ -1110,7 +1114,7 @@ function CategoryModal({ s, groupId, initial, prefilled, onClose, onSaved }: {
   )
 }
 
-function ModalOverlay({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
+export function ModalOverlay({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center" style={{ background: 'rgba(0,0,0,0.45)' }} onClick={onClose}>
       <div

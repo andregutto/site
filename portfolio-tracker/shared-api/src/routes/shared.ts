@@ -2,7 +2,7 @@ import { Router, Response } from 'express'
 import { randomBytes } from 'crypto'
 import { requireAuth, AuthRequest } from '../middleware/auth.js'
 import { supabaseAdmin } from '../lib/supabase.js'
-import { revertSharedCategory } from './finances.js'
+import { revertSharedCategory, getOrCreateDefaultGroupMoment } from './finances.js'
 import { canAutoAccept } from './people.js'
 
 const router = Router()
@@ -143,6 +143,37 @@ router.get('/groups', requireAuth, async (req, res: Response) => {
     }
   }
 
+  // Saldo do "momento oculto do grupo" (ver docs/SHARED_EXPENSES_MODEL.md) — despesas
+  // avulsas divididas com a galera do grupo, sem virar categoria de orçamento. É um
+  // saldo real (positivo = me devem, negativo = eu devo), diferente da meta das
+  // categorias abaixo, que é só referência e nunca gera dívida.
+  const { data: defaultMoments } = await supabaseAdmin
+    .from('finance_moments').select('id, shared_group_id').in('shared_group_id', groupIds).eq('is_pair_default', true)
+  const defaultMomentByGroup = new Map((defaultMoments ?? []).map(m => [m.shared_group_id as number, m.id as number]))
+  const defaultMomentIds = [...defaultMomentByGroup.values()]
+
+  const balanceByMoment = new Map<number, Record<string, number>>()
+  if (defaultMomentIds.length > 0) {
+    const { data: expenseRows } = await supabaseAdmin
+      .from('finance_moment_expenses')
+      .select('moment_id, paid_by_user_id, currency, finance_moment_expense_shares(user_id, share_amount)')
+      .in('moment_id', defaultMomentIds)
+    for (const e of expenseRows ?? []) {
+      const momentId = (e as any).moment_id as number
+      const payer = (e as any).paid_by_user_id as string
+      const currency = (e as any).currency as string
+      const shares = ((e as any).finance_moment_expense_shares ?? []) as { user_id: string; share_amount: number }[]
+      const perCur = balanceByMoment.get(momentId) ?? {}
+      if (payer === userId) {
+        for (const s of shares) { if (s.user_id !== userId) perCur[currency] = (perCur[currency] ?? 0) + s.share_amount }
+      } else {
+        const mine = shares.find(s => s.user_id === userId)
+        if (mine) perCur[currency] = (perCur[currency] ?? 0) - mine.share_amount
+      }
+      balanceByMoment.set(momentId, perCur)
+    }
+  }
+
   // Enrich with members and categories
   const result = await Promise.all((groups ?? []).map(async g => {
     const { data: members } = await supabaseAdmin
@@ -170,10 +201,33 @@ router.get('/groups', requireAuth, async (req, res: Response) => {
       member_spent: Object.fromEntries(memberCatMap.get(c.id) ?? new Map()),
     }))
 
-    return { ...g, members: enrichedMembers, categories: categoriesWithEnv }
+    const defaultMomentId = defaultMomentByGroup.get(g.id) ?? null
+    const rawBalance = defaultMomentId ? (balanceByMoment.get(defaultMomentId) ?? {}) : {}
+    const balance = Object.entries(rawBalance)
+      .map(([currency, amount]) => ({ currency, amount: Math.round(amount * 100) / 100 }))
+      .filter(b => Math.abs(b.amount) >= 0.01)
+
+    return { ...g, members: enrichedMembers, categories: categoriesWithEnv, default_moment_id: defaultMomentId, balance }
   }))
 
   res.json(result)
+})
+
+// Cria/reaproveita o momento oculto do grupo pra dividir uma despesa avulsa com
+// todos os membros ativos, sem precisar transformar isso numa categoria de
+// orçamento — ver docs/SHARED_EXPENSES_MODEL.md.
+router.post('/groups/:id/default-moment', requireAuth, async (req, res: Response) => {
+  const userId = uid(req)
+  const groupId = Number(req.params.id)
+  const { data: membership } = await supabaseAdmin
+    .from('shared_group_members').select('id').eq('group_id', groupId).eq('user_id', userId).eq('status', 'active').maybeSingle()
+  if (!membership) { res.status(403).json({ error: 'Você não é membro ativo deste grupo' }); return }
+  try {
+    const momentId = await getOrCreateDefaultGroupMoment(userId, groupId)
+    res.json({ moment_id: momentId })
+  } catch (e: any) {
+    res.status(500).json({ error: e.message })
+  }
 })
 
 // POST /api/shared/groups
