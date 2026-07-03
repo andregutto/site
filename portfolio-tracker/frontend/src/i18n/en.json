@@ -692,6 +692,7 @@
     "editSplitTitle": "Split for {name}",
     "editSplitHint": "Adjust how much each person contributes to this shared category.",
     "editSplitScopeWarning": "This split applies to the whole group — it changes the % for every category shared with this group, not just this one.",
+    "editSplitNeedsTwo": "Invite someone else to the group to set up the split.",
     "splitSalaryBased": "Based on salary",
     "splitSalaryAuthorized": "Salary authorized ✓",
     "splitAuthorizeSalary": "Use my salary to calculate the proportional split",

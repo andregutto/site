@@ -6,6 +6,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { useCurrency } from '../../contexts/CurrencyContext'
 import { Icon } from '../../components/icons'
 import Avatar from '../voyage/_shared/Avatar'
+import GroupSplitSection from '../../components/GroupSplitSection'
 
 interface Category {
   id: number
@@ -506,106 +507,12 @@ interface SpendingSummary { months: SpendingMonth[] }
 // pra outra tela pra ajustar % ou ativar o modo "baseado no salário".
 function SplitModal({ group, userId, onClose, onSaved }: { group: SharedGroup; userId: string; onClose: () => void; onSaved: () => void }) {
   const { t } = useI18n()
-  const activeMembers = group.members.filter(m => m.status === 'active')
-  const [editingId, setEditingId] = useState<number | null>(null)
-  const [pctInput, setPctInput] = useState('')
-  const [saving, setSaving] = useState(false)
-  const [togglingSalary, setTogglingSalary] = useState<number | null>(null)
-
-  async function savePct(memberId: number) {
-    const pct = parseFloat(pctInput)
-    setEditingId(null)
-    if (isNaN(pct) || pct < 0 || pct > 100) return
-    setSaving(true)
-    try {
-      // O backend força share_mode='manual' pra qualquer membro cuja % é editada
-      // diretamente (evita que o próximo recálculo salarial sobrescreva o valor).
-      await apiFetch(`/shared/groups/${group.id}/members/${memberId}`, {
-        method: 'PATCH', body: JSON.stringify({ share_pct: pct }),
-      })
-      // Com só 2 pessoas ativas a divisão é sempre complementar — sem isso, editar
-      // sua % deixava a soma diferente de 100% até a outra pessoa entrar e ajustar
-      // a dela manualmente, o que na prática nunca acontecia. O backend agora
-      // permite qualquer membro ativo ajustar a % de outro membro do mesmo grupo.
-      const other = activeMembers.find(m => m.id !== memberId)
-      if (activeMembers.length === 2 && other) {
-        await apiFetch(`/shared/groups/${group.id}/members/${other.id}`, {
-          method: 'PATCH', body: JSON.stringify({ share_pct: Math.round((100 - pct) * 100) / 100 }),
-        })
-      }
-      onSaved()
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  async function toggleSalary(memberId: number, current: boolean) {
-    setTogglingSalary(memberId)
-    try {
-      await apiFetch(`/shared/groups/${group.id}/members/${memberId}`, {
-        method: 'PATCH', body: JSON.stringify({ salary_authorized: !current, share_mode: !current ? 'salary_based' : 'manual' }),
-      })
-      onSaved()
-    } finally {
-      setTogglingSalary(null)
-    }
-  }
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={onClose}>
       <div className="bg-[var(--arvo-surface)] rounded-2xl shadow-xl w-full max-w-sm p-6" onClick={e => e.stopPropagation()}>
         <h3 className="font-semibold text-[var(--arvo-fg)] mb-1">{t.finances.editSplitTitle.replace('{name}', group.name)}</h3>
-        <p className="text-xs text-[var(--arvo-fg-muted)] mb-1">{t.finances.editSplitHint}</p>
-        <p className="text-xs mb-4 px-2.5 py-2 rounded-lg" style={{ background: 'var(--arvo-hover-bg)', color: 'var(--arvo-fg-soft)' }}>
-          {t.finances.editSplitScopeWarning}
-        </p>
-        <div className="flex flex-col gap-3">
-          {activeMembers.map(m => {
-            const isMe = m.user_id === userId
-            return (
-              <div key={m.id} className="flex items-start gap-3">
-                <Avatar name={m.display.name} email={m.display.email} avatarUrl={m.display.avatar_url} size={28} />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm text-[var(--arvo-fg)] truncate">{m.display.name}</p>
-                  {m.share_mode === 'salary_based' && (
-                    <p className="text-xs text-[var(--arvo-fg-soft)]">{t.finances.splitSalaryBased}</p>
-                  )}
-                  {isMe && (
-                    <button
-                      onClick={() => toggleSalary(m.id, m.salary_authorized)}
-                      disabled={togglingSalary !== null}
-                      className="mt-1 flex items-center gap-1.5 text-xs"
-                      style={{ color: m.salary_authorized ? 'var(--arvo-green)' : 'var(--arvo-fg-soft)', opacity: togglingSalary !== null ? 0.5 : 1 }}
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3"><path d="M8 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"/><path d="M1.38 8a6.998 6.998 0 0 1 13.24 0 7 7 0 0 1-13.24 0ZM8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5Z"/></svg>
-                      {m.salary_authorized ? t.finances.splitSalaryAuthorized : t.finances.splitAuthorizeSalary}
-                    </button>
-                  )}
-                </div>
-                {editingId === m.id ? (
-                  <input
-                    autoFocus
-                    type="number" min="0" max="100"
-                    value={pctInput}
-                    onChange={e => setPctInput(e.target.value)}
-                    onBlur={() => savePct(m.id)}
-                    onKeyDown={e => { if (e.key === 'Enter') savePct(m.id); if (e.key === 'Escape') setEditingId(null) }}
-                    className="w-16 text-sm text-right border border-[var(--arvo-border)] rounded px-1.5 py-0.5 focus:outline-none focus:ring-1 focus:ring-[var(--arvo-fg)]/30"
-                  />
-                ) : (
-                  <button
-                    onClick={() => isMe && (setEditingId(m.id), setPctInput(String(m.share_pct)))}
-                    className={`text-sm font-medium shrink-0 ${isMe ? 'text-[var(--arvo-fg)] underline decoration-dotted decoration-[var(--arvo-fg-soft)] underline-offset-2' : 'text-[var(--arvo-fg-soft)]'}`}
-                    disabled={!isMe || saving}
-                    title={isMe ? t.finances.clickToEditBudget : undefined}
-                  >
-                    {m.share_pct}%
-                  </button>
-                )}
-              </div>
-            )
-          })}
-        </div>
+        <p className="text-xs text-[var(--arvo-fg-muted)] mb-4">{t.finances.editSplitHint}</p>
+        <GroupSplitSection groupId={group.id} members={group.members} userId={userId} onSaved={onSaved} showScopeWarning />
         <div className="flex gap-2 mt-5">
           <button onClick={onClose} className="flex-1 bg-[var(--arvo-fg)] text-[var(--arvo-pill-active-fg)] text-sm py-2 rounded-xl hover:opacity-80 transition-opacity">
             {t.common.close}

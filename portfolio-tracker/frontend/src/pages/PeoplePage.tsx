@@ -9,6 +9,7 @@ import { RoleChip } from './voyage/_shared/Chips'
 import ExpensesPanel from './finances/ExpensesPanel'
 import { _fmt } from './finances/FinancesMomentsPage'
 import { GroupModal, InviteModal, ModalOverlay, type Group as SharedGroupFull } from './finances/SharedCategoriesPage'
+import GroupSplitSection from '../components/GroupSplitSection'
 
 const RED  = '#D63B2F'
 const GOLD = '#C8B89A'
@@ -792,7 +793,10 @@ function ManageGroupModal({ group, userId, s, onClose, onChanged }: {
   onClose: () => void
   onChanged: () => void
 }) {
-  const [showInvite, setShowInvite] = useState(false)
+  const { t } = useI18n()
+  // Grupo recém-criado (só eu como membro) já abre direto no convite — criar
+  // um grupo sem convidar ninguém não serve pra nada.
+  const [showInvite, setShowInvite] = useState(() => group.members.filter(m => m.status === 'active' && m.user_id !== userId).length === 0)
   const [inviteResult, setInviteResult] = useState<string | null>(null)
   const [removing, setRemoving] = useState<number | null>(null)
   const [showRename, setShowRename] = useState(false)
@@ -852,6 +856,14 @@ function ManageGroupModal({ group, userId, s, onClose, onChanged }: {
               {s.close ?? 'Fechar'}
             </button>
           </div>
+          {/* Divisão de despesas — vale pro grupo inteiro (todas as categorias
+              compartilhadas com ele), não só uma; fica recolhida porque a maioria
+              das visitas a este modal é só invite/remove membro. */}
+          <CollapsibleSection title={t.finances.editSplit} count={group.members.filter(m => m.status === 'active').length}>
+            <div style={{ paddingTop: 4 }}>
+              <GroupSplitSection groupId={group.id} members={group.members} userId={userId} onSaved={onChanged} />
+            </div>
+          </CollapsibleSection>
         </div>
       </ModalOverlay>
       {showInvite && (
@@ -953,10 +965,14 @@ function GroupsSection({ fullGroups, onOpenExpenses, onManage, onNewGroup }: {
                   </button>
                 )}
                 <button
-                  type="button" onClick={() => onManage(g)} title={t.people.manageGroupButton}
-                  style={{ width: 24, height: 24, borderRadius: 999, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: '1px solid var(--arvo-border)', cursor: 'pointer', color: 'var(--arvo-fg-soft)' }}
+                  type="button" onClick={() => onManage(g)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0, fontFamily: 'var(--arvo-font-body)', fontSize: 12,
+                    padding: '5px 12px', borderRadius: 999, background: 'none', border: '1px solid var(--arvo-border)', cursor: 'pointer', color: 'var(--arvo-fg-soft)',
+                  }}
                 >
                   <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M8 4a1 1 0 110-2 1 1 0 010 2zm0 5a1 1 0 110-2 1 1 0 010 2zm0 5a1 1 0 110-2 1 1 0 010 2z"/></svg>
+                  {t.people.manageGroupButton}
                 </button>
               </div>
             )
@@ -1002,11 +1018,12 @@ export default function PeoplePage() {
     }
   }, [])
 
-  const loadGroups = useCallback(() => {
-    apiFetch<SharedGroupFull[]>('/shared/groups').then(gs => {
+  const loadGroups = useCallback(async () => {
+    try {
+      const gs = await apiFetch<SharedGroupFull[]>('/shared/groups')
       setFullGroups(gs)
       setGroups(gs.map(g => ({ id: g.id, name: g.name })))
-    }).catch(() => {})
+    } catch { /* silencioso — não é crítico pro resto da página */ }
   }, [])
 
   useEffect(() => { load() }, [load])
@@ -1166,7 +1183,13 @@ export default function PeoplePage() {
           s={t.shared}
           initial={groupModal === 'new' ? undefined : groupModal}
           onClose={() => setGroupModal(null)}
-          onSaved={() => { setGroupModal(null); loadGroups() }}
+          onSaved={async id => {
+            setGroupModal(null)
+            await loadGroups()
+            // Grupo novo: já cai direto em "Gerenciar" (convite + divisão), já
+            // que criar um grupo sem convidar ninguém não serve pra nada.
+            if (id) setManageGroupId(id)
+          }}
         />
       )}
       {manageGroupId && (() => {

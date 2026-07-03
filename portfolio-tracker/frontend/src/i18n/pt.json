@@ -692,6 +692,7 @@
     "editSplitTitle": "Divisão de {name}",
     "editSplitHint": "Ajuste quanto cada pessoa contribui pra essa categoria compartilhada.",
     "editSplitScopeWarning": "Essa divisão vale pro grupo inteiro — muda o % de todas as categorias compartilhadas com esse grupo, não só desta.",
+    "editSplitNeedsTwo": "Convide mais alguém pro grupo pra poder configurar a divisão.",
     "splitSalaryBased": "Baseado no salário",
     "splitSalaryAuthorized": "Salário autorizado ✓",
     "splitAuthorizeSalary": "Usar meu salário pra calcular a divisão proporcional",
