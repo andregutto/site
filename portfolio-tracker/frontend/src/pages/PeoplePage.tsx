@@ -1,9 +1,12 @@
-import { useState, useEffect, useCallback, type FormEvent } from 'react'
+import { useState, useEffect, useCallback, type FormEvent, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { apiFetch } from '../lib/api'
 import { useI18n } from '../contexts/I18nContext'
+import { useCurrency } from '../contexts/CurrencyContext'
 import Avatar from './voyage/_shared/Avatar'
 import { RoleChip } from './voyage/_shared/Chips'
+import ExpensesPanel from './finances/ExpensesPanel'
+import { _fmt } from './finances/FinancesMomentsPage'
 
 const RED  = '#D63B2F'
 const GOLD = '#C8B89A'
@@ -51,7 +54,7 @@ interface FriendContext {
 type Context = TripContext | FinanceContext | MomentContext | FriendContext
 
 interface Balance { currency: string; amount: number }
-interface MomentBalance { moment_id: number; moment_name: string; balances: Balance[] }
+interface MomentBalance { moment_id: number; moment_name: string; is_pair_default?: boolean; balances: Balance[] }
 
 interface Contact {
   email: string
@@ -92,6 +95,86 @@ function Toggle({ checked, disabled, onChange }: { checked: boolean; disabled?: 
         transition: 'left 180ms cubic-bezier(0.4, 0, 0.2, 1)',
       }} />
     </button>
+  )
+}
+
+// Bloco recolhível genérico — os cards de contato viviam ficando enormes com
+// várias viagens/momentos/categorias compartilhadas todas abertas ao mesmo
+// tempo; agora cada seção some por padrão e mostra só a contagem.
+function CollapsibleSection({ title, count, children, defaultOpen }: { title: string; count: number; children: ReactNode; defaultOpen?: boolean }) {
+  const [open, setOpen] = useState(!!defaultOpen)
+  return (
+    <div style={{ borderTop: '1px solid var(--arvo-border-soft)', paddingTop: 12, marginBottom: 4 }}>
+      <button
+        type="button" onClick={() => setOpen(v => !v)}
+        style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', background: 'none', border: 'none', cursor: 'pointer', padding: 0, marginBottom: open ? 6 : 0 }}
+      >
+        <p style={{
+          fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.22em',
+          textTransform: 'uppercase', color: 'var(--arvo-fg-muted)', flex: 1, textAlign: 'left',
+        }}>
+          {title} <span style={{ color: 'var(--arvo-fg-soft)' }}>({count})</span>
+        </p>
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="var(--arvo-fg-soft)" strokeWidth="1.5" style={{ flexShrink: 0, transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 160ms' }}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M2.5 4.5L6 8l3.5-3.5" />
+        </svg>
+      </button>
+      {open && children}
+    </div>
+  )
+}
+
+// Painel de despesas do Momento 1:1 oculto (criado sob demanda entre dois
+// amigos) — reaproveita o ExpensesPanel normal (mesma lista + form de nova
+// despesa) só que sem a moldura de Momento (nome/ícone/capa/colaboradores),
+// já que pra quem usa o Arvo só como Splitwise esse conceito nunca aparece.
+function PairMomentModal({ friendUserId, friendName, initialMomentId, onClose }: {
+  friendUserId: string
+  friendName: string
+  initialMomentId: number | null
+  onClose: () => void
+}) {
+  const { t } = useI18n()
+  const { currency, hideValues } = useCurrency()
+  const [momentId, setMomentId] = useState<number | null>(initialMomentId)
+  const [loading, setLoading] = useState(!initialMomentId)
+  const [error, setError] = useState('')
+  const fmt = (n: number, c: string) => hideValues ? '•••' : _fmt(n, c)
+
+  useEffect(() => {
+    if (initialMomentId) return
+    apiFetch<{ moment_id: number }>(`/finances/moments/default-with/${friendUserId}`, { method: 'POST' })
+      .then(r => setMomentId(r.moment_id))
+      .catch((ex: unknown) => setError((ex as Error).message ?? t.people.loadErrorDefault))
+      .finally(() => setLoading(false))
+  }, [friendUserId, initialMomentId])
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+      <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.45)' }} />
+      <div style={{
+        position: 'relative', width: '100%', maxWidth: 480, maxHeight: '85vh', overflowY: 'auto',
+        background: 'var(--arvo-surface)', borderRadius: 16, boxShadow: 'var(--arvo-shadow-lg)', padding: '20px 22px',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+          <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, fontWeight: 600, color: 'var(--arvo-fg)', flex: 1 }}>
+            {t.people.expensesWithPrefix} {friendName}
+          </p>
+          <button type="button" onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--arvo-fg-soft)' }}>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6">
+              <path strokeLinecap="round" d="M1.5 1.5l11 11M12.5 1.5l-11 11" />
+            </svg>
+          </button>
+        </div>
+        {loading ? (
+          <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg-soft)' }}>…</p>
+        ) : error ? (
+          <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: RED }}>{error}</p>
+        ) : momentId ? (
+          <ExpensesPanel momentId={momentId} currency={currency} fmt={fmt} />
+        ) : null}
+      </div>
+    </div>
   )
 }
 
@@ -174,6 +257,7 @@ function ContactCard({
   const [sharing, setSharing] = useState(false)
   const [shareError, setShareError] = useState('')
   const [settling, setSettling] = useState(false)
+  const [pairModal, setPairModal] = useState<{ momentId: number | null } | null>(null)
 
   async function settleUp() {
     if (!contact.user_id) return
@@ -297,10 +381,13 @@ function ContactCard({
       borderRadius: 16, boxShadow: 'var(--arvo-shadow-sm)', padding: '20px 22px',
     }}>
       {/* Cabeçalho — sempre visível; o resto só aparece expandido (senão a
-          lista fica enorme com várias pessoas) */}
-      <button
-        type="button"
+          lista fica enorme com várias pessoas). É uma <div> clicável (não
+          <button>) porque o botão de "dividir despesa" precisa ficar dentro
+          dela — botão dentro de botão não é válido em HTML. */}
+      <div
+        role="button" tabIndex={0}
         onClick={() => setExpanded(v => !v)}
+        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') setExpanded(v => !v) }}
         style={{ display: 'flex', alignItems: 'center', gap: 14, width: '100%', background: 'none', border: 'none', cursor: 'pointer', padding: 0, marginBottom: expanded ? 16 : 0, textAlign: 'left' }}
       >
         <Avatar name={contact.name} email={contact.email} avatarUrl={contact.avatar_url} size={44} tone={isActive ? 'active' : 'neutral'} />
@@ -356,10 +443,38 @@ function ContactCard({
             {friendState === 'connected' ? t.people.connected : t.people.pending}
           </span>
         )}
+        {/* Atalho pra dividir uma despesa direto com essa pessoa, sem precisar
+            criar/abrir um Momento antes — cria/reaproveita o momento 1:1
+            oculto por trás (ver POST /finances/moments/default-with/:id). */}
+        {isConnected && contact.user_id && (
+          <button
+            type="button"
+            title={t.people.splitExpenseButton}
+            onClick={e => { e.stopPropagation(); setPairModal({ momentId: null }) }}
+            style={{
+              flexShrink: 0, width: 26, height: 26, borderRadius: 999, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: 'none', border: '1px solid var(--arvo-border)', cursor: 'pointer', color: 'var(--arvo-fg-soft)',
+            }}
+          >
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <circle cx="8" cy="8" r="6.5"/>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8 5v6M6 7h3a1 1 0 010 2H6"/>
+            </svg>
+          </button>
+        )}
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="var(--arvo-fg-soft)" strokeWidth="1.5" style={{ flexShrink: 0, transform: expanded ? 'rotate(180deg)' : 'none', transition: 'transform 160ms' }}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M2.5 4.5L6 8l3.5-3.5" />
         </svg>
-      </button>
+      </div>
+
+      {pairModal && contact.user_id && (
+        <PairMomentModal
+          friendUserId={contact.user_id}
+          friendName={displayName}
+          initialMomentId={pairModal.momentId}
+          onClose={() => { setPairModal(null); onFriendChanged() }}
+        />
+      )}
 
       {!expanded ? null : (<>
       {/* Convite de amizade pendente recebido — ação principal, fica no topo
@@ -410,14 +525,14 @@ function ContactCard({
                 <button
                   key={m.moment_id}
                   type="button"
-                  onClick={() => navigate(`/finances/moments/${m.moment_id}`)}
+                  onClick={() => m.is_pair_default ? setPairModal({ momentId: m.moment_id }) : navigate(`/finances/moments/${m.moment_id}`)}
                   style={{
                     display: 'flex', alignItems: 'center', gap: 8, padding: '3px 0', width: '100%',
                     background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left',
                   }}
                 >
                   <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {m.moment_name}
+                    {m.is_pair_default ? t.people.expensesWithPrefix : m.moment_name}
                   </span>
                   {m.balances.map(b => (
                     <span key={b.currency} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, fontWeight: 600, color: b.amount > 0 ? '#1F8A5B' : RED, flexShrink: 0 }}>
@@ -433,13 +548,7 @@ function ContactCard({
 
       {/* Viagens */}
       {tripContexts.length > 0 && (
-        <div style={{ borderTop: '1px solid var(--arvo-border-soft)', paddingTop: 12, marginBottom: 4 }}>
-          <p style={{
-            fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.22em',
-            textTransform: 'uppercase', color: 'var(--arvo-fg-muted)', marginBottom: 4,
-          }}>
-            {t.people.sectionTrips}
-          </p>
+        <CollapsibleSection title={t.people.sectionTrips} count={tripContexts.length}>
           {tripContexts.map(ctx => (
             <ResourceRow
               key={ctx.member_id}
@@ -459,18 +568,12 @@ function ContactCard({
               pendingTitle={t.people.pending}
             />
           ))}
-        </div>
+        </CollapsibleSection>
       )}
 
       {/* Finanças compartilhadas */}
       {financeContexts.length > 0 && (
-        <div style={{ borderTop: '1px solid var(--arvo-border-soft)', paddingTop: 12, marginBottom: 4 }}>
-          <p style={{
-            fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.22em',
-            textTransform: 'uppercase', color: 'var(--arvo-fg-muted)', marginBottom: 4,
-          }}>
-            {t.people.sectionFinances}
-          </p>
+        <CollapsibleSection title={t.people.sectionFinances} count={financeContexts.length}>
           {financeContexts.map(ctx => (
             <ResourceRow
               key={ctx.member_id}
@@ -489,18 +592,12 @@ function ContactCard({
               pendingTitle={t.people.pending}
             />
           ))}
-        </div>
+        </CollapsibleSection>
       )}
 
       {/* Momentos compartilhados */}
       {momentContexts.length > 0 && (
-        <div style={{ borderTop: '1px solid var(--arvo-border-soft)', paddingTop: 12, marginBottom: 4 }}>
-          <p style={{
-            fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.22em',
-            textTransform: 'uppercase', color: 'var(--arvo-fg-muted)', marginBottom: 4,
-          }}>
-            {t.people.sectionMoments}
-          </p>
+        <CollapsibleSection title={t.people.sectionMoments} count={momentContexts.length}>
           {momentContexts.map(ctx => (
             <ResourceRow
               key={ctx.member_id}
@@ -519,7 +616,7 @@ function ContactCard({
               pendingTitle={t.people.pending}
             />
           ))}
-        </div>
+        </CollapsibleSection>
       )}
 
       {/* Auto-aceite — só faz sentido pra quem já está conectado */}

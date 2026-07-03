@@ -2496,10 +2496,75 @@ router.delete('/freedom-plans/:id', requireAuth, async (req, res: Response) => {
 
 // ── Momentos ──────────────────────────────────────────────────────────────────
 
+// Momento oculto 1:1 usado como "conta corrente" implícita entre dois amigos,
+// pra permitir dividir uma despesa direto de Transações sem exigir que o
+// usuário crie um Momento antes. Nunca aparece em GET /moments — só existe
+// pra carregar finance_moment_expenses/shares e pra ser exibido como saldo
+// (com lista de despesas) na página Pessoas.
+export async function getOrCreateDefaultPairMoment(userId: string, friendUserId: string): Promise<number> {
+  const { data: mine } = await supabaseAdmin
+    .from('finance_moments')
+    .select('id, finance_moment_members(user_id, status)')
+    .eq('user_id', userId).eq('is_pair_default', true)
+  for (const m of mine ?? []) {
+    if (((m as any).finance_moment_members ?? []).some((mm: any) => mm.user_id === friendUserId && mm.status === 'active')) return m.id
+  }
+  const { data: theirs } = await supabaseAdmin
+    .from('finance_moments')
+    .select('id, finance_moment_members(user_id, status)')
+    .eq('user_id', friendUserId).eq('is_pair_default', true)
+  for (const m of theirs ?? []) {
+    if (((m as any).finance_moment_members ?? []).some((mm: any) => mm.user_id === userId && mm.status === 'active')) return m.id
+  }
+
+  const friend = await userDisplay(friendUserId)
+  const { data: created, error } = await supabaseAdmin
+    .from('finance_moments')
+    .insert({ user_id: userId, name: `Você e ${friend.name}`, icon: '🤝', is_pair_default: true })
+    .select('id').single()
+  if (error || !created) throw new Error(error?.message ?? 'Falha ao criar momento padrão')
+
+  // Amigo já é uma conexão ativa (pré-condição pra "dividir com" aparecer na
+  // UI), então entra direto como membro ativo — sem convite/aceite, já que
+  // esse momento nunca é exposto como uma superfície de colaboração nova.
+  await supabaseAdmin.from('finance_moment_members').insert({
+    moment_id: created.id, user_id: friendUserId, invite_email: friend.email,
+    role: 'editor', status: 'active', joined_at: new Date().toISOString(),
+  })
+  return created.id
+}
+
+router.post('/moments/default-with/:friendUserId', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const friendUserId = req.params.friendUserId
+  try {
+    const momentId = await getOrCreateDefaultPairMoment(userId, friendUserId)
+    res.json({ moment_id: momentId })
+  } catch (e: any) {
+    res.status(500).json({ error: e.message })
+  }
+})
+
+// Transforma o momento 1:1 oculto num Momento normal (visível, nomeado) —
+// disparado quando um 3º participante é adicionado a uma despesa, já que o
+// conceito de "1:1 implícito" deixa de fazer sentido com um grupo.
+router.post('/moments/:id/promote', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const momentId = Number(req.params.id)
+  const { name } = req.body as { name?: string }
+  if (!name?.trim()) { res.status(400).json({ error: 'Nome obrigatório' }); return }
+  const access = await assertMomentAccess(momentId, userId)
+  if (!access.ok) { res.status(403).json({ error: 'Sem permissão' }); return }
+  const { error } = await supabaseAdmin
+    .from('finance_moments').update({ is_pair_default: false, name: name.trim() }).eq('id', momentId)
+  if (error) { res.status(500).json({ error: error.message }); return }
+  res.json({ ok: true })
+})
+
 router.get('/moments', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const [ownedRes, memberRes] = await Promise.all([
-    supabaseAdmin.from('finance_moments').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
+    supabaseAdmin.from('finance_moments').select('*').eq('user_id', userId).eq('is_pair_default', false).order('created_at', { ascending: false }),
     supabaseAdmin.from('finance_moment_members').select('moment_id').eq('user_id', userId).eq('status', 'active'),
   ])
   if (ownedRes.error) { res.status(500).json({ error: ownedRes.error.message }); return }
@@ -2507,7 +2572,7 @@ router.get('/moments', requireAuth, async (req, res: Response) => {
   let shared: any[] = []
   if (sharedIds.length > 0) {
     const { data, error } = await supabaseAdmin
-      .from('finance_moments').select('*').in('id', sharedIds).neq('user_id', userId).order('created_at', { ascending: false })
+      .from('finance_moments').select('*').in('id', sharedIds).neq('user_id', userId).eq('is_pair_default', false).order('created_at', { ascending: false })
     if (error) { res.status(500).json({ error: error.message }); return }
     shared = data ?? []
   }

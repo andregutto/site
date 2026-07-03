@@ -7,6 +7,9 @@ import { useI18n } from '../../contexts/I18nContext'
 import { useCurrency } from '../../contexts/CurrencyContext'
 import { Icon } from '../../components/icons'
 import { resolveMomentIcon } from '../../lib/momentIcons'
+import { useActiveFriends } from '../../hooks/useActiveFriends'
+import { SplitTransactionModal } from './ExpensesPanel'
+import Avatar from '../voyage/_shared/Avatar'
 
 interface Category { id: number; name: string; name_key?: string | null; icon: string; color: string }
 
@@ -185,6 +188,13 @@ export default function FinancesTransactionsPage() {
   const [notesInput, setNotesInput]         = useState('')
   // Mobile bottom sheet for category edit
   const [editSheetTx, setEditSheetTx] = useState<Transaction | null>(null)
+  // Dividir uma transação avulsa (sem Momento) direto com um amigo — sem
+  // exigir que o usuário crie um Momento antes. Resolve/cria o momento 1:1
+  // oculto (POST /finances/moments/default-with/:id) e abre o mesmo
+  // SplitTransactionModal já usado dentro de um Momento normal.
+  const [splitPickerTx, setSplitPickerTx] = useState<Transaction | null>(null)
+  const [splitMoment, setSplitMoment] = useState<{ tx: Transaction; momentId: number } | null>(null)
+  const activeFriends = useActiveFriends()
   const [sheetCatId, setSheetCatId]   = useState<number | null>(null)
   const [sheetSharedCatId, setSheetSharedCatId] = useState<number | null>(null)
 
@@ -406,6 +416,12 @@ export default function FinancesTransactionsPage() {
     } finally {
       setSaving(false)
     }
+  }
+
+  async function pickSplitFriend(tx: Transaction, friendUserId: string) {
+    const res = await apiFetch<{ moment_id: number }>(`/finances/moments/default-with/${friendUserId}`, { method: 'POST' })
+    setSplitPickerTx(null)
+    setSplitMoment({ tx, momentId: res.moment_id })
   }
 
   async function deleteTransaction(id: number) {
@@ -1663,6 +1679,12 @@ export default function FinancesTransactionsPage() {
                             >
                               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z" clipRule="evenodd" /></svg>
                             </button>
+                            {/* Split with friend — só faz sentido pra transação ainda sem Momento */}
+                            {tx.moments.length === 0 && (
+                              <button onClick={() => setSplitPickerTx(tx)} title={t.finances.expenseSplitShort} className="p-2 rounded-lg text-[var(--arvo-fg-soft)] hover:text-[var(--arvo-fg)] hover:bg-[var(--arvo-fg)]/10 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4"><circle cx="8" cy="8" r="6.5"/><path strokeLinecap="round" strokeLinejoin="round" d="M8 5v6M6 7h3a1 1 0 010 2H6"/></svg>
+                              </button>
+                            )}
                             {/* Delete */}
                             <button onClick={() => deleteTransaction(tx.id)} title={t.common.delete} className="p-2 rounded-lg text-[var(--arvo-fg-soft)] hover:text-red-500 hover:bg-red-50 transition-colors">
                               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M5 3.25V4H2.75a.75.75 0 0 0 0 1.5h.3l.815 8.15A1.5 1.5 0 0 0 5.357 15h5.285a1.5 1.5 0 0 0 1.493-1.35l.815-8.15h.3a.75.75 0 0 0 0-1.5H11v-.75A2.25 2.25 0 0 0 8.75 1h-1.5A2.25 2.25 0 0 0 5 3.25Zm2.25-.75a.75.75 0 0 0-.75.75V4h3v-.75a.75.75 0 0 0-.75-.75h-1.5ZM6.05 6a.75.75 0 0 1 .787.713l.275 5.5a.75.75 0 0 1-1.498.075l-.275-5.5A.75.75 0 0 1 6.05 6Zm3.9 0a.75.75 0 0 1 .712.787l-.275 5.5a.75.75 0 0 1-1.498-.075l.275-5.5a.75.75 0 0 1 .786-.712Z" clipRule="evenodd" /></svg>
@@ -1695,6 +1717,12 @@ export default function FinancesTransactionsPage() {
                                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4 shrink-0"><path fillRule="evenodd" d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z" clipRule="evenodd" /></svg>
                                   <span>{tx.is_internal_transfer ? t.finances.markAsReal : t.finances.markAsTransfer}</span>
                                 </button>
+                                {tx.moments.length === 0 && (
+                                  <button onClick={() => { setSplitPickerTx(tx); setMobileActionsTxId(null) }} style={menuItemStyle}>
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4 shrink-0"><circle cx="8" cy="8" r="6.5"/><path strokeLinecap="round" strokeLinejoin="round" d="M8 5v6M6 7h3a1 1 0 010 2H6"/></svg>
+                                    <span>{t.finances.expenseSplitShort}</span>
+                                  </button>
+                                )}
                                 <button onClick={() => { deleteTransaction(tx.id); setMobileActionsTxId(null) }} style={{ ...menuItemStyle, color: 'var(--arvo-red)' }}>
                                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4 shrink-0"><path fillRule="evenodd" d="M5 3.25V4H2.75a.75.75 0 0 0 0 1.5h.3l.815 8.15A1.5 1.5 0 0 0 5.357 15h5.285a1.5 1.5 0 0 0 1.493-1.35l.815-8.15h.3a.75.75 0 0 0 0-1.5H11v-.75A2.25 2.25 0 0 0 8.75 1h-1.5A2.25 2.25 0 0 0 5 3.25Zm2.25-.75a.75.75 0 0 0-.75.75V4h3v-.75a.75.75 0 0 0-.75-.75h-1.5ZM6.05 6a.75.75 0 0 1 .787.713l.275 5.5a.75.75 0 0 1-1.498.075l-.275-5.5A.75.75 0 0 1 6.05 6Zm3.9 0a.75.75 0 0 1 .712.787l-.275 5.5a.75.75 0 0 1-1.498-.075l.275-5.5a.75.75 0 0 1 .786-.712Z" clipRule="evenodd" /></svg>
                                   <span>{t.common.delete}</span>
@@ -2288,6 +2316,44 @@ export default function FinancesTransactionsPage() {
             </div>
           </div>
         </>
+      )}
+
+      {/* Escolher com quem dividir uma transação avulsa — a lista já é só
+          amigos ativos (mesma fonte usada nos overlays de convite). */}
+      {splitPickerTx && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setSplitPickerTx(null)}>
+          <div className="bg-[var(--arvo-surface)] rounded-2xl shadow-xl w-full max-w-xs p-5 space-y-3" onClick={e => e.stopPropagation()}>
+            <h3 className="font-semibold text-[var(--arvo-fg)] text-sm">{t.finances.expenseSplitShort}</h3>
+            {activeFriends.length === 0 ? (
+              <p className="text-xs text-[var(--arvo-fg-soft)]">{t.people.emptyBody}</p>
+            ) : (
+              <div className="space-y-1 max-h-64 overflow-y-auto">
+                {activeFriends.filter(f => f.user_id).map(f => (
+                  <button
+                    key={f.user_id}
+                    onClick={() => pickSplitFriend(splitPickerTx, f.user_id as string)}
+                    className="flex items-center gap-2 w-full text-left px-2 py-1.5 rounded-lg hover:bg-[var(--arvo-surface-2)] transition-colors"
+                  >
+                    <Avatar name={f.name} email={f.email} avatarUrl={f.avatar_url} size={22} />
+                    <span className="text-xs text-[var(--arvo-fg)] truncate">{f.name ?? f.email}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+            <button onClick={() => setSplitPickerTx(null)} className="w-full py-2 rounded-lg border border-[var(--arvo-border)] text-xs text-[var(--arvo-fg-muted)]">
+              {t.common.cancel}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {splitMoment && user && (
+        <SplitTransactionModal
+          momentId={splitMoment.momentId}
+          transaction={{ id: splitMoment.tx.id, description: splitMoment.tx.description, amount: splitMoment.tx.amount, currency: splitMoment.tx.currency, user_id: user.id }}
+          onDone={() => { setSplitMoment(null); loadTransactions() }}
+          onClose={() => setSplitMoment(null)}
+        />
       )}
     </div>
   )

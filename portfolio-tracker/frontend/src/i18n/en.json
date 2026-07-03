@@ -2484,7 +2484,9 @@
     "balanceYouOweThem": "You owe this person this amount (split expenses in Moments)",
     "removePersonButton": "Remove this person",
     "removeCategoryConfirm": "Remove {email}'s access to the category \"{name}\"?",
-    "shareButton": "+ Share"
+    "shareButton": "+ Share",
+    "splitExpenseButton": "Split expense",
+    "expensesWithPrefix": "Expenses with"
   },
   "invite": {
     "invalidTitle": "Invalid invite",

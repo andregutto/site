@@ -277,7 +277,7 @@ router.get('/', async (req: any, res: any) => {
     // ── 4.5 Momentos financeiros que o usuário CRIOU (outbound) ────────────────
     const { data: ownedMoments, error: momentErr } = await supabaseAdmin
       .from('finance_moments')
-      .select('id, name')
+      .select('id, name, is_pair_default')
       .eq('user_id', userId)
     if (momentErr) throw momentErr
 
@@ -285,6 +285,9 @@ router.get('/', async (req: any, res: any) => {
     const ownedMomentMap: Record<number, string> = Object.fromEntries(
       (ownedMoments ?? []).map((m: any) => [m.id, m.name])
     )
+    // Momentos 1:1 ocultos nunca viram um "contexto" visível de relacionamento —
+    // só entram no cálculo de saldo (balanceByUserMoment), abaixo.
+    const pairDefaultIds = new Set<number>((ownedMoments ?? []).filter((m: any) => m.is_pair_default).map((m: any) => m.id))
 
     if (ownedMomentIds.length > 0) {
       const { data: mMembers, error: mmErr } = await supabaseAdmin
@@ -295,6 +298,7 @@ router.get('/', async (req: any, res: any) => {
       if (mmErr) throw mmErr
 
       for (const m of mMembers ?? []) {
+        if (pairDefaultIds.has(m.moment_id)) continue
         const email: string = m.invite_email
         if (!email) continue
         if (!contactMap.has(email)) {
@@ -320,13 +324,16 @@ router.get('/', async (req: any, res: any) => {
       const inboundMomentIds = (myMomentMemberships!).map((m: any) => m.moment_id)
       const { data: inboundMoments } = await supabaseAdmin
         .from('finance_moments')
-        .select('id, name, user_id')
+        .select('id, name, user_id, is_pair_default')
         .in('id', inboundMomentIds)
         .neq('user_id', userId)
 
       const inboundMomentMap: Record<number, { name: string; owner_id: string }> = Object.fromEntries(
         (inboundMoments ?? []).map((m: any) => [m.id, { name: m.name, owner_id: m.user_id }])
       )
+      for (const m of inboundMoments ?? []) {
+        if ((m as any).is_pair_default) pairDefaultIds.add((m as any).id)
+      }
       const momentOwnerIds = [...new Set((inboundMoments ?? []).map((m: any) => m.user_id as string))]
       const momentOwnerDisplays = await Promise.all(momentOwnerIds.map(id => userDisplay(id).then(d => ({ id, ...d }))))
       const momentOwnerMap: Record<string, { email: string; name?: string }> = Object.fromEntries(
@@ -334,6 +341,7 @@ router.get('/', async (req: any, res: any) => {
       )
 
       for (const m of myMomentMemberships ?? []) {
+        if (pairDefaultIds.has(m.moment_id)) continue
         const momentInfo = inboundMomentMap[m.moment_id]
         if (!momentInfo) continue
         const owner = momentOwnerMap[momentInfo.owner_id]
@@ -472,6 +480,7 @@ router.get('/', async (req: any, res: any) => {
             .map(([momentId, perCurrency]) => ({
               moment_id: Number(momentId),
               moment_name: momentNameMap[Number(momentId)] ?? '',
+              is_pair_default: pairDefaultIds.has(Number(momentId)),
               balances: Object.entries(perCurrency)
                 .map(([currency, amount]) => ({ currency, amount: Math.round(amount * 100) / 100 }))
                 .filter(b => Math.abs(b.amount) >= 0.01),

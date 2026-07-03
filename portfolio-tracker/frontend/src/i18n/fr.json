@@ -2484,7 +2484,9 @@
     "balanceYouOweThem": "Vous devez ce montant à cette personne (dépenses partagées dans des Moments)",
     "removePersonButton": "Supprimer cette personne",
     "removeCategoryConfirm": "Supprimer l'accès de {email} à la catégorie « {name} » ?",
-    "shareButton": "+ Partager"
+    "shareButton": "+ Partager",
+    "splitExpenseButton": "Diviser une dépense",
+    "expensesWithPrefix": "Dépenses avec"
   },
   "invite": {
     "invalidTitle": "Invitation invalide",

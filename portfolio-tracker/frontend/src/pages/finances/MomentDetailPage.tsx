@@ -315,7 +315,7 @@ export default function MomentDetailPage() {
           </Section>
         )}
 
-        <Section title={t.finances.momentSectionTransactions} meta={transactions.length > 0 ? String(transactions.length) : undefined}>
+        <Section title={t.finances.momentSectionTransactions} meta={transactions.length > 0 ? String(transactions.length) : undefined} defaultOpen={transactions.length > 0}>
         {transactions.length > 0 ? (
           <div className="space-y-0 border border-[var(--arvo-border)] rounded-xl overflow-hidden">
             {displayItems.map((item, i) => {
