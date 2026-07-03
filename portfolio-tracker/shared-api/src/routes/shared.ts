@@ -274,12 +274,87 @@ router.patch('/groups/:id', requireAuth, async (req, res: Response) => {
 // DELETE /api/shared/groups/:id
 router.delete('/groups/:id', requireAuth, async (req, res: Response) => {
   const userId = uid(req)
+  const groupId = Number(req.params.id)
+  const force = req.query.force === 'true' || (req.body as { force?: boolean } | undefined)?.force === true
+
+  const { data: group } = await supabaseAdmin.from('shared_groups').select('id, name, created_by').eq('id', groupId).maybeSingle()
+  if (!group || group.created_by !== userId) { res.status(404).json({ error: 'Grupo não encontrado' }); return }
+
+  // O grupo pode ter um momento oculto (ver docs/SHARED_EXPENSES_MODEL.md) com
+  // despesas avulsas reais entre os membros — apagar o grupo sem checar isso
+  // apagaria esse saldo silenciosamente (mesma lógica do DELETE de Momento em
+  // finances.ts, duplicada aqui porque o momento é só um detalhe interno do
+  // grupo do ponto de vista do usuário).
+  const { data: defaultMoment } = await supabaseAdmin
+    .from('finance_moments').select('id').eq('shared_group_id', groupId).eq('is_pair_default', true).maybeSingle()
+
+  const pending: { user_id: string; name: string; currency: string; amount: number }[] = []
+  if (defaultMoment) {
+    const { data: expenseRows } = await supabaseAdmin
+      .from('finance_moment_expenses')
+      .select('paid_by_user_id, currency, is_settlement, finance_moment_expense_shares(user_id, share_amount)')
+      .eq('moment_id', defaultMoment.id)
+    const balance: Record<string, Record<string, number>> = {}
+    for (const e of expenseRows ?? []) {
+      if (e.is_settlement) continue
+      const shares = (e.finance_moment_expense_shares ?? []) as { user_id: string; share_amount: number }[]
+      if (e.paid_by_user_id === userId) {
+        for (const s of shares) {
+          if (s.user_id === userId) continue
+          balance[s.user_id] ??= {}
+          balance[s.user_id][e.currency] = (balance[s.user_id][e.currency] ?? 0) + s.share_amount
+        }
+      } else {
+        const mine = shares.find(s => s.user_id === userId)
+        if (mine) {
+          balance[e.paid_by_user_id] ??= {}
+          balance[e.paid_by_user_id][e.currency] = (balance[e.paid_by_user_id][e.currency] ?? 0) - mine.share_amount
+        }
+      }
+    }
+    for (const [uid2, perCurrency] of Object.entries(balance)) {
+      for (const [currency, amount] of Object.entries(perCurrency)) {
+        const rounded = Math.round(amount * 100) / 100
+        if (Math.abs(rounded) >= 0.01) pending.push({ user_id: uid2, name: (await userDisplay(uid2)).name ?? uid2, currency, amount: rounded })
+      }
+    }
+  }
+
+  if (pending.length > 0 && !force) {
+    const summary = pending
+      .map(p => `${p.name} ${p.amount > 0 ? 'te deve' : 'você deve'} ${Math.abs(p.amount).toFixed(2)} ${p.currency}`)
+      .join('; ')
+    res.status(409).json({
+      error: `Saldo pendente de despesas divididas neste grupo: ${summary}. Apagar este grupo apaga esse saldo sem registrar acerto de contas — apagar mesmo assim?`,
+      pending_balances: pending,
+    }); return
+  }
+
+  if (defaultMoment) await supabaseAdmin.from('finance_moments').delete().eq('id', defaultMoment.id)
+
   const { error } = await supabaseAdmin
     .from('shared_groups')
     .delete()
-    .eq('id', req.params.id)
+    .eq('id', groupId)
     .eq('created_by', userId)
   if (error) { res.status(500).json({ error: error.message }); return }
+
+  if (pending.length > 0) {
+    const deleter = await userDisplay(userId)
+    await Promise.all(pending.map(p => supabaseAdmin.from('notification_dismissals').upsert({
+      user_id: p.user_id,
+      key: `group_deleted_balance:${groupId}:${p.user_id}:${p.currency}`,
+      type: 'group_deleted_with_balance',
+      params: {
+        deleter_name: deleter.name ?? deleter.email, group_name: group.name,
+        amount: -p.amount, currency: p.currency,
+      },
+      severity: 'warning',
+      link: '/people',
+      occurred_at: new Date().toISOString(),
+    }, { onConflict: 'user_id,key' })))
+  }
+
   res.json({ ok: true })
 })
 

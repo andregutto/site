@@ -118,6 +118,11 @@ router.get('/', async (req: any, res: any) => {
 
   try {
     const contactMap = new Map<string, any>()
+    // Momento vinculado a uma viagem (voyage_trip_moments) não vira um contexto
+    // "Momento" separado — compartilhar a viagem já compartilha o momento dela
+    // junto, então mostrar os dois é a mesma relação duas vezes (ver conversa em
+    // docs/SHARED_EXPENSES_MODEL.md sobre esse tipo de duplicação).
+    const tripLinkedMomentIds = new Set<number>()
 
     // ── 1. Viagens que o usuário é DONO (outbound) ─────────────────────────────
     const { data: ownedTrips, error: tripErr } = await supabaseAdmin
@@ -290,6 +295,12 @@ router.get('/', async (req: any, res: any) => {
     const pairDefaultIds = new Set<number>((ownedMoments ?? []).filter((m: any) => m.is_pair_default).map((m: any) => m.id))
 
     if (ownedMomentIds.length > 0) {
+      const { data: linkedTrips } = await supabaseAdmin
+        .from('voyage_trip_moments').select('moment_id').in('moment_id', ownedMomentIds)
+      for (const l of linkedTrips ?? []) tripLinkedMomentIds.add((l as any).moment_id)
+    }
+
+    if (ownedMomentIds.length > 0) {
       const { data: mMembers, error: mmErr } = await supabaseAdmin
         .from('finance_moment_members')
         .select('id, moment_id, invite_email, role, status, user_id')
@@ -298,7 +309,7 @@ router.get('/', async (req: any, res: any) => {
       if (mmErr) throw mmErr
 
       for (const m of mMembers ?? []) {
-        if (pairDefaultIds.has(m.moment_id)) continue
+        if (pairDefaultIds.has(m.moment_id) || tripLinkedMomentIds.has(m.moment_id)) continue
         const email: string = m.invite_email
         if (!email) continue
         if (!contactMap.has(email)) {
@@ -322,6 +333,9 @@ router.get('/', async (req: any, res: any) => {
 
     if ((myMomentMemberships ?? []).length > 0) {
       const inboundMomentIds = (myMomentMemberships!).map((m: any) => m.moment_id)
+      const { data: inboundLinkedTrips } = await supabaseAdmin
+        .from('voyage_trip_moments').select('moment_id').in('moment_id', inboundMomentIds)
+      for (const l of inboundLinkedTrips ?? []) tripLinkedMomentIds.add((l as any).moment_id)
       const { data: inboundMoments } = await supabaseAdmin
         .from('finance_moments')
         .select('id, name, user_id, is_pair_default')
@@ -341,7 +355,7 @@ router.get('/', async (req: any, res: any) => {
       )
 
       for (const m of myMomentMemberships ?? []) {
-        if (pairDefaultIds.has(m.moment_id)) continue
+        if (pairDefaultIds.has(m.moment_id) || tripLinkedMomentIds.has(m.moment_id)) continue
         const momentInfo = inboundMomentMap[m.moment_id]
         if (!momentInfo) continue
         const owner = momentOwnerMap[momentInfo.owner_id]

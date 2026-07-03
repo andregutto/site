@@ -812,7 +812,11 @@ function ManageGroupModal({ group, userId, s, onClose, onChanged }: {
   const [showInvite, setShowInvite] = useState(() => group.members.filter(m => m.status === 'active' && m.user_id !== userId).length === 0)
   const [inviteResult, setInviteResult] = useState<string | null>(null)
   const [removing, setRemoving] = useState<number | null>(null)
-  const [showRename, setShowRename] = useState(false)
+  const [editingName, setEditingName] = useState(false)
+  const [nameInput, setNameInput] = useState(group.name)
+  const [savingName, setSavingName] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const isOwner = group.created_by === userId
 
   async function removeMember(memberId: number) {
     setRemoving(memberId)
@@ -824,18 +828,64 @@ function ManageGroupModal({ group, userId, s, onClose, onChanged }: {
     }
   }
 
+  async function saveName() {
+    setEditingName(false)
+    if (!nameInput.trim() || nameInput.trim() === group.name) { setNameInput(group.name); return }
+    setSavingName(true)
+    try {
+      await apiFetch(`/shared/groups/${group.id}`, { method: 'PATCH', body: JSON.stringify({ name: nameInput.trim() }) })
+      onChanged()
+    } finally {
+      setSavingName(false)
+    }
+  }
+
+  async function deleteGroup() {
+    if (!confirm(s.deleteGroupConfirm ?? 'Excluir este grupo?')) return
+    setDeleting(true)
+    try {
+      await apiFetch(`/shared/groups/${group.id}`, { method: 'DELETE' })
+      onChanged()
+      onClose()
+    } catch (e) {
+      if (e instanceof Error && confirm(e.message)) {
+        await apiFetch(`/shared/groups/${group.id}?force=true`, { method: 'DELETE' })
+        onChanged()
+        onClose()
+      }
+    } finally {
+      setDeleting(false)
+    }
+  }
+
   return (
     <>
       <ModalOverlay onClose={onClose}>
         <div className="flex flex-col gap-4">
-          <div className="flex items-center gap-2">
-            <h2 className="text-sm font-semibold flex-1" style={{ color: 'var(--arvo-fg)', fontFamily: 'var(--arvo-font-body)', letterSpacing: '0.06em' }}>
+          {editingName ? (
+            <input
+              autoFocus
+              value={nameInput}
+              onChange={e => setNameInput(e.target.value)}
+              onBlur={saveName}
+              onKeyDown={e => { if (e.key === 'Enter') saveName(); if (e.key === 'Escape') { setEditingName(false); setNameInput(group.name) } }}
+              className="text-sm font-semibold px-2 py-1 rounded-lg border"
+              style={{ color: 'var(--arvo-fg)', fontFamily: 'var(--arvo-font-body)', letterSpacing: '0.06em', borderColor: 'var(--arvo-border)', background: 'var(--arvo-surface)' }}
+            />
+          ) : (
+            <h2
+              className="text-sm font-semibold cursor-pointer"
+              onClick={() => { setNameInput(group.name); setEditingName(true) }}
+              style={{
+                color: 'var(--arvo-fg)', fontFamily: 'var(--arvo-font-body)', letterSpacing: '0.06em',
+                textDecoration: 'underline dotted', textDecorationColor: 'var(--arvo-fg-soft)', textUnderlineOffset: 3,
+                opacity: savingName ? 0.5 : 1, width: 'fit-content',
+              }}
+              title={t.finances.clickToEditBudget}
+            >
               {group.name}
             </h2>
-            <button type="button" onClick={() => setShowRename(true)} className="text-xs" style={{ color: 'var(--arvo-fg-soft)' }}>
-              {s.editGroup ?? 'Editar nome'}
-            </button>
-          </div>
+          )}
           <div className="flex flex-col gap-2">
             {group.members.filter(m => m.status !== 'left').map(m => {
               const isMe = m.user_id === userId
@@ -862,6 +912,15 @@ function ManageGroupModal({ group, userId, s, onClose, onChanged }: {
             })}
           </div>
           <div className="flex gap-2 justify-end">
+            {isOwner && (
+              <button
+                type="button" onClick={deleteGroup} disabled={deleting}
+                className="px-4 py-2 rounded-lg text-xs"
+                style={{ color: RED, background: 'rgba(214,59,47,0.08)', opacity: deleting ? 0.5 : 1, marginRight: 'auto' }}
+              >
+                {deleting ? '…' : (s.deleteGroup ?? 'Excluir grupo')}
+              </button>
+            )}
             <button type="button" onClick={() => { setInviteResult(null); setShowInvite(true) }} className="px-4 py-2 rounded-lg text-xs" style={{ background: 'var(--arvo-fg)', color: 'var(--arvo-pill-active-fg)' }}>
               {s.invite}
             </button>
@@ -892,14 +951,6 @@ function ManageGroupModal({ group, userId, s, onClose, onChanged }: {
           }}
           onCopy={() => { if (inviteResult) navigator.clipboard.writeText(inviteResult) }}
           onClose={() => { setShowInvite(false); setInviteResult(null) }}
-        />
-      )}
-      {showRename && (
-        <GroupModal
-          s={s}
-          initial={group}
-          onClose={() => setShowRename(false)}
-          onSaved={() => { setShowRename(false); onChanged() }}
         />
       )}
     </>
