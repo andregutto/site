@@ -987,6 +987,7 @@ export default function FinancesMomentsPage() {
   const [search,      setSearch]      = useState('')
   const [showSearch,  setShowSearch]  = useState(false)
   const [expandedYears, setExpandedYears] = useState<Set<number>>(() => new Set([new Date().getFullYear()]))
+  const [membersTarget, setMembersTarget] = useState<Moment | null>(null)
 
   useEffect(() => {
     if (showForm && !editing) {
@@ -1235,14 +1236,14 @@ export default function FinancesMomentsPage() {
                         <img src={m.cover_image_url} alt={m.name} className="w-full h-full object-cover"
                           style={{ objectPosition: m.cover_image_position ?? '50% 50%' }} />
                         <div style={{ position: 'absolute', bottom: 8, right: 8 }}>
-                          <MomentCollaboratorsHero momentId={m.id} onOpen={() => navigate(`/finances/moments/${m.id}`)} />
+                          <MomentCollaboratorsHero momentId={m.id} onOpen={() => setMembersTarget(m)} />
                         </div>
                       </div>
                     ) : (
                       <div className="h-20 flex items-center justify-center relative cursor-pointer" style={{ background: 'var(--arvo-surface-2)' }} onClick={() => navigate(`/finances/moments/${m.id}`)}>
                         <Icon name={resolveMomentIcon(m.icon)} size={36} style={{ color: m.color }} />
                         <div style={{ position: 'absolute', bottom: 6, right: 6 }}>
-                          <MomentCollaboratorsHero momentId={m.id} onOpen={() => navigate(`/finances/moments/${m.id}`)} />
+                          <MomentCollaboratorsHero momentId={m.id} onOpen={() => setMembersTarget(m)} />
                         </div>
                       </div>
                     )}
@@ -1301,6 +1302,38 @@ export default function FinancesMomentsPage() {
           </div>
         )
       })}
+
+      {/* Overlay de colaboradores — clicar nos avatares/+ do card deveria abrir isso, não
+          navegar pro Momento (era o bug: onOpen chamava navigate em vez de abrir o painel). */}
+      {membersTarget && (
+        <div
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
+          style={{ background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)' }}
+          onClick={e => { if (e.target === e.currentTarget) setMembersTarget(null) }}
+        >
+          <div
+            className="w-full sm:max-w-md max-h-[90vh] overflow-y-auto rounded-t-[18px] sm:rounded-[18px]"
+            style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border-soft)', boxShadow: 'var(--arvo-shadow-lg)' }}
+          >
+            <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: '1px solid var(--arvo-border-soft)' }}>
+              <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 13, letterSpacing: '0.10em', color: 'var(--arvo-fg)' }}>
+                {t.finances.momentCollaboratorsTitle}
+              </p>
+              <button
+                type="button" onClick={() => setMembersTarget(null)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--arvo-fg-soft)', padding: 4 }}
+              >
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <path strokeLinecap="round" d="M3 3l10 10M13 3L3 13" />
+                </svg>
+              </button>
+            </div>
+            <div style={{ padding: 20 }}>
+              <MembersPanel momentId={membersTarget.id} ownerId={membersTarget.user_id} />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
