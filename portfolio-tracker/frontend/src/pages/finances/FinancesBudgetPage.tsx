@@ -7,7 +7,7 @@ import { useCurrency } from '../../contexts/CurrencyContext'
 import { Icon } from '../../components/icons'
 import Avatar from '../voyage/_shared/Avatar'
 import GroupSplitSection from '../../components/GroupSplitSection'
-import { GroupModal } from './SharedCategoriesPage'
+import { GroupModal } from '../../components/SharedGroupModals'
 
 interface Category {
   id: number

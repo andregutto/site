@@ -8,7 +8,7 @@ import Avatar from './voyage/_shared/Avatar'
 import { RoleChip } from './voyage/_shared/Chips'
 import ExpensesPanel from './finances/ExpensesPanel'
 import { _fmt } from './finances/FinancesMomentsPage'
-import { GroupModal, InviteModal, ModalOverlay, type Group as SharedGroupFull } from './finances/SharedCategoriesPage'
+import { GroupModal, InviteModal, ModalOverlay, type Group as SharedGroupFull } from '../components/SharedGroupModals'
 import GroupSplitSection from '../components/GroupSplitSection'
 
 const RED  = '#D63B2F'
