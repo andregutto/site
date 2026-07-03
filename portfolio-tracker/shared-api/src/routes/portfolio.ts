@@ -1,23 +1,52 @@
+// GET /api/portfolio/value — valor atual consolidado do portfólio
 import { Router, Response } from 'express'
-import { requireAuth, AuthRequest } from '../../../shared-api/src/middleware/auth.js'
-import { supabaseAdmin } from '../../../shared-api/src/lib/supabase.js'
-import { getCurrentPrice, getDailyHistory, getMonthlyHistory, Asset, FITranche } from '../../../shared-api/src/services/priceService.js'
-import { getSplitEvents } from '../../../shared-api/src/services/yahooService.js'
-import { getFxRate } from '../../../shared-api/src/lib/fx.js'
-import { cache, TTL } from '../../../shared-api/src/lib/cache.js'
-import * as yahoo from '../../../shared-api/src/services/yahooService.js'
-import { buildPortfolioSnapshot } from '../../../shared-api/src/services/snapshotService.js'
+import { requireAuth, AuthRequest } from '../middleware/auth.js'
+import { supabaseAdmin } from '../lib/supabase.js'
+import { getCurrentPrice, getDailyHistory, Asset, FITranche } from '../services/priceService.js'
+import { getSplitEvents } from '../services/yahooService.js'
+import { getFxRate } from '../lib/fx.js'
+import { cache, TTL } from '../lib/cache.js'
+import * as yahoo from '../services/yahooService.js'
+import { buildPortfolioSnapshot } from '../services/snapshotService.js'
 
 const router = Router()
 
-router.get('/value', requireAuth, async (req, res: Response, next) => {
-  try {
-  const { userId } = req as AuthRequest
+export interface ByClassValue {
+  name: string; name_key: string | null; color: string; value_brl: number; pct: number
+}
 
-  const cacheKey = `portfolio:value:${userId}`
-  const cached = cache.get<object>(cacheKey)
-  if (cached) { res.json(cached); return }
+export interface ByAssetValue {
+  id: number; code: string; name: string
+  value_brl: number; value_orig: number; currency: string
+  class_id: number | null; class_name: string; class_name_key: string | null; class_color: string; class_icon?: string | null
+  holdings: number | null; price: number | null; source: string
+  needs_manual: boolean
+  invested_brl: number | null
+  last_manual_date: string | null
+  fi_type?: string | null
+  fi_start_date?: string | null
+  fi_rate?: number | null
+  fi_spread?: number | null
+  fi_maturity?: string | null
+  exchange?: string | null
+}
 
+export interface PortfolioValueResult {
+  total_brl: number
+  total_usd?: number | null
+  total_eur?: number | null
+  by_class: ByClassValue[]
+  by_asset: ByAssetValue[]
+  generated_at?: string
+}
+
+// Fonte única de verdade do valor do portfólio: usada por GET /portfolio/value
+// e (via buildPortfolioSnapshot, em services/snapshotService.ts) pelo relatório
+// compartilhado — snapshotService mantém sua própria cópia mais completa (com
+// performance/benchmarks/dividendos) em vez de reusar esta diretamente, então
+// as duas ainda podem divergir; ver nota no PR que uniu backend/frontend-api.
+export async function computePortfolioValue(userId: string): Promise<PortfolioValueResult> {
+  // 1. Busca todos ativos ativos do usuário com classe
   const { data: assets, error: assetsErr } = await supabaseAdmin
     .from('assets')
     .select(`
@@ -29,11 +58,12 @@ router.get('/value', requireAuth, async (req, res: Response, next) => {
     .eq('user_id', userId)
     .eq('active', true)
 
-  if (assetsErr) { res.status(500).json({ error: assetsErr.message }); return }
-  if (!assets?.length) { res.json({ total_brl: 0, by_class: [], by_asset: [] }); return }
+  if (assetsErr) throw new Error(assetsErr.message)
+  if (!assets?.length) return { total_brl: 0, by_class: [], by_asset: [] }
 
   const assetIds = assets.map((a) => a.id)
 
+  // 2. Holdings e invested por ativo
   const { data: contributions } = await supabaseAdmin
     .from('contributions')
     .select('asset_id, type, quantity, date, value_brl')
@@ -42,31 +72,28 @@ router.get('/value', requireAuth, async (req, res: Response, next) => {
 
   const holdingsMap: Record<number, number> = {}
   const investedMap: Record<number, number> = {}
+  const rfAssetIds = assets.filter(a => a.asset_type === 'fixed_income').map(a => a.id)
+  const rfTranchesMap: Record<number, FITranche[]> = {}
   for (const c of (contributions ?? [])) {
     if (c.type === 'income') continue
     holdingsMap[c.asset_id] = (holdingsMap[c.asset_id] ?? 0) +
       (c.type === 'buy' ? c.quantity : -c.quantity)
-    if (c.type === 'buy' && c.value_brl && c.value_brl > 0) {
-      investedMap[c.asset_id] = (investedMap[c.asset_id] ?? 0) + c.value_brl
+    if (c.value_brl && c.value_brl > 0) {
+      if (c.type === 'buy') {
+        investedMap[c.asset_id] = (investedMap[c.asset_id] ?? 0) + c.value_brl
+      }
+      if (rfAssetIds.includes(c.asset_id)) {
+        if (!rfTranchesMap[c.asset_id]) rfTranchesMap[c.asset_id] = []
+        if (c.type === 'buy') {
+          rfTranchesMap[c.asset_id].push({ principal: c.value_brl, start_date: c.date })
+        } else if (c.type === 'sell') {
+          rfTranchesMap[c.asset_id].push({ principal: -c.value_brl, start_date: c.date })
+        }
+      }
     }
   }
 
-  const rfAssetIds = assets.filter(a => a.asset_type === 'fixed_income').map(a => a.id)
-  const rfTranchesMap: Record<number, FITranche[]> = {}
-  for (const c of (contributions ?? [])) {
-    if (!rfAssetIds.includes(c.asset_id)) continue
-    if (!c.value_brl || c.value_brl <= 0) continue
-    if (!rfTranchesMap[c.asset_id]) rfTranchesMap[c.asset_id] = []
-    if (c.type === 'buy') {
-      // Positive tranche: capital deposited, earns CDI from start_date to today
-      rfTranchesMap[c.asset_id].push({ principal: c.value_brl, start_date: c.date })
-    } else if (c.type === 'sell') {
-      // Negative tranche: interest/principal withdrawal. Subtracts the CDI-accrued value
-      // from withdrawal date to today — mathematically equivalent to running balance model.
-      rfTranchesMap[c.asset_id].push({ principal: -c.value_brl, start_date: c.date })
-    }
-  }
-
+  // 3. Último valor manual — cobre todos os asset_types (fallback para tickers sem preço público)
   const manualMap: Record<number, { value: number; currency: string; last_date: string }> = {}
   const oldestManualMap: Record<number, { value: number; currency: string; ref_date: string }> = {}
   if (assetIds.length > 0) {
@@ -103,32 +130,19 @@ router.get('/value', requireAuth, async (req, res: Response, next) => {
       })
   )
 
-  const byAsset: Array<{
-    id: number; code: string; name: string
-    value_brl: number; value_orig: number; currency: string
-    class_id: number | null; class_name: string; class_name_key: string | null; class_color: string; class_icon?: string | null
-    holdings: number | null; price: number | null; source: string
-    needs_manual: boolean
-    invested_brl: number | null
-    last_manual_date: string | null
-    fi_type?: string | null
-    fi_start_date?: string | null
-    fi_rate?: number | null
-    fi_spread?: number | null
-    fi_maturity?: string | null
-    exchange?: string | null
-  }> = []
+  // 4. Calcula valor em BRL por ativo — todos os ativos aparecem, mesmo sem valor
+  const byAsset: ByAssetValue[] = []
 
   await Promise.allSettled(
     assets.map(async (a) => {
       const cls = (a.asset_classes as unknown as { id: number; name: string; color: string; name_key?: string | null } | null)
       const base = {
         id: a.id, code: a.code, name: a.name,
-        class_id:      cls?.id ?? null,
-        class_name:    cls?.name ?? 'Sem classe',
+        class_id:       cls?.id ?? null,
+        class_name:     cls?.name ?? 'Sem classe',
         class_name_key: cls?.name_key ?? null,
-        class_color:   cls?.color ?? '#6B7280',
-        exchange:      (a.exchange as string | null) ?? null,
+        class_color:    cls?.color ?? '#6B7280',
+        exchange:       (a.exchange as string | null) ?? null,
       }
 
       try {
@@ -165,30 +179,25 @@ router.get('/value', requireAuth, async (req, res: Response, next) => {
           value_brl  = currency === 'BRL' ? value_orig : value_orig * await getFxRate(currency)
 
         } else {
+          // ticker
           holdings = holdingsMap[a.id] ?? 0
           if (holdings <= 0) return  // zero position → contributes nothing to portfolio
-
-          // manual_value is a hard override: user explicitly set the position value
-          const mvOverride = manualMap[a.id]
-
-          if (mvOverride) {
-            value_orig = mvOverride.value
-            currency   = mvOverride.currency
-            source     = 'manual'
+          try {
+            const result = await getCurrentPrice(a as Asset)
+            price      = result.price
+            currency   = result.currency
+            source     = result.source
+            value_orig = holdings * price
             value_brl  = currency === 'BRL' ? value_orig : value_orig * await getFxRate(currency)
-          } else {
-            // Try live price (brapi → Yahoo .SA fallback → coingecko → yahoo)
-            try {
-              const result = await getCurrentPrice(a as Asset)
-              price      = result.price
-              currency   = result.currency
-              source     = result.source
-              value_orig = holdings * price
+          } catch {
+            const mv = manualMap[a.id]
+            if (mv) {
+              value_orig = mv.value
+              currency   = mv.currency
+              source     = 'manual'
               value_brl  = currency === 'BRL' ? value_orig : value_orig * await getFxRate(currency)
-            } catch {
-              // Fallback: last known price_history entry, so a flaky price source
-              // (e.g. CoinGecko rate-limiting) doesn't silently drop the asset's
-              // value from the portfolio total instead of just showing a stale price.
+            } else {
+              // Fallback: use last price_history entry to avoid dropping asset value to zero
               const { data: lastPh } = await supabaseAdmin
                 .from('price_history')
                 .select('price, currency')
@@ -200,18 +209,11 @@ router.get('/value', requireAuth, async (req, res: Response, next) => {
                 price      = lastPh.price
                 currency   = lastPh.currency
                 source     = 'stale'
-                value_orig = holdings * price
+                value_orig = (holdings ?? 0) * (price ?? lastPh.price)
                 value_brl  = currency === 'BRL' ? value_orig : value_orig * await getFxRate(currency)
               } else {
-                const invested = investedMap[a.id]
-                if (invested != null && invested > 0) {
-                  value_brl  = invested
-                  value_orig = invested
-                  source     = 'cost_basis'
-                } else {
-                  byAsset.push({ ...base, value_brl: 0, value_orig: 0, currency: a.currency || 'BRL', holdings, price: null, source: 'error', needs_manual: true, invested_brl: investedMap[a.id] ?? null, last_manual_date: null })
-                  return
-                }
+                byAsset.push({ ...base, value_brl: 0, value_orig: 0, currency: a.currency || 'BRL', holdings, price: null, source: 'error', needs_manual: true, invested_brl: investedMap[a.id] ?? null, last_manual_date: null })
+                return
               }
             }
           }
@@ -225,7 +227,6 @@ router.get('/value', requireAuth, async (req, res: Response, next) => {
           needs_manual: false,
           invested_brl: investedMap[a.id] != null ? Math.round(investedMap[a.id] * 100) / 100 : null,
           last_manual_date: source === 'manual' ? (manualMap[a.id]?.last_date ?? null) : null,
-          exchange: a.exchange ?? null,
         })
       } catch (err) {
         console.warn(`[portfolio] Erro ao calcular ${a.code}:`, err)
@@ -233,6 +234,7 @@ router.get('/value', requireAuth, async (req, res: Response, next) => {
     })
   )
 
+  // 5. Agrupa por classe
   const classMap: Record<string, { name: string; name_key: string | null; color: string; value_brl: number }> = {}
   for (const a of byAsset) {
     const key = a.class_name
@@ -245,12 +247,13 @@ router.get('/value', requireAuth, async (req, res: Response, next) => {
     .map((c) => ({ ...c, pct: total_brl > 0 ? (c.value_brl / total_brl) * 100 : 0 }))
     .sort((a, b) => b.value_brl - a.value_brl)
 
+  // Câmbio para exibir total em USD e EUR
   const [fx_usd, fx_eur] = await Promise.all([
     getFxRate('USD').then((r) => 1 / r).catch(() => null),
     getFxRate('EUR').then((r) => 1 / r).catch(() => null),
   ])
 
-  const result = {
+  return {
     total_brl: Math.round(total_brl * 100) / 100,
     total_usd: fx_usd ? Math.round(total_brl * fx_usd * 100) / 100 : null,
     total_eur: fx_eur ? Math.round(total_brl * fx_eur * 100) / 100 : null,
@@ -258,8 +261,20 @@ router.get('/value', requireAuth, async (req, res: Response, next) => {
     by_asset: byAsset.sort((a, b) => b.value_brl - a.value_brl),
     generated_at: new Date().toISOString(),
   }
-  cache.set(cacheKey, result, TTL.PORTFOLIO_VALUE)
-  res.json(result)
+}
+
+// GET /api/portfolio/value
+router.get('/value', requireAuth, async (req, res: Response, next) => {
+  try {
+    const { userId } = req as AuthRequest
+
+    const cacheKey = `portfolio:value:${userId}`
+    const cached = cache.get<object>(cacheKey)
+    if (cached) { res.json(cached); return }
+
+    const result = await computePortfolioValue(userId)
+    cache.set(cacheKey, result, TTL.PORTFOLIO_VALUE)
+    res.json(result)
   } catch (err) { next(err) }
 })
 
@@ -365,11 +380,10 @@ router.get('/split-check', requireAuth, async (req, res: Response) => {
   res.json({ warnings })
 })
 
+// POST /api/portfolio/sync-history — popula price_history para todos os ativos ticker
 router.post('/sync-history', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
 
-  // Sync ALL ticker assets (active + sold/inactive) so that historical portfolio
-  // values computed by getPortfolioValueAtMonth can use real prices for past months.
   const { data: assets } = await supabaseAdmin
     .from('assets')
     .select('id,code,asset_type,currency,ticker_brapi,ticker_yahoo,coingecko_id,fi_principal,fi_start_date,fi_type,fi_rate,fi_spread')
@@ -378,79 +392,7 @@ router.post('/sync-history', requireAuth, async (req, res: Response) => {
 
   if (!assets?.length) { res.json({ synced: 0, errors: 0, total: 0, details: [] }); return }
 
-  const syncAssetIds = assets.map(a => a.id as number)
-  const { data: earliestContrib } = await supabaseAdmin
-    .from('contributions')
-    .select('date')
-    .in('asset_id', syncAssetIds)
-    .order('date', { ascending: true })
-    .limit(1)
-    .single()
-  const syncMonthsBack = earliestContrib?.date
-    ? Math.max(3, Math.ceil((Date.now() - new Date(earliestContrib.date).getTime()) / (1000 * 60 * 60 * 24 * 30)) + 1)
-    : 36
-
-  type Detail = { id: number; code: string; status: 'ok' | 'empty' | 'error'; points?: number; error?: string }
-
-  const syncOne = async (a: (typeof assets)[number], source: string): Promise<Detail> => {
-    try {
-      const history = await getDailyHistory(a as Asset, syncMonthsBack * 30)
-      if (!history.length) return { id: a.id, code: a.code, status: 'empty' }
-      const { error: upsertErr } = await supabaseAdmin.from('price_history').upsert(
-        history.map(p => ({ asset_id: a.id, ref_date: p.date, price: p.price, currency: p.currency, source })),
-        { onConflict: 'asset_id,ref_date' }
-      )
-      if (upsertErr) throw new Error(`DB upsert: ${upsertErr.message}`)
-      return { id: a.id, code: a.code, status: 'ok', points: history.length }
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err)
-      console.warn(`[sync-history] ${a.code}:`, msg)
-      return { id: a.id, code: a.code, status: 'error', error: msg }
-    }
-  }
-
-  // Yahoo and CoinGecko have no tight rate limits — process in parallel before responding.
-  // brapi free tier (~15 req/min) would require 4 s/req × N assets which exceeds Vercel's
-  // serverless timeout, so brapi runs fire-and-forget after the response is sent.
-  const fastAssets  = assets.filter(a => a.ticker_yahoo || a.coingecko_id)
-  const brapiAssets = assets.filter(a => a.ticker_brapi && !a.ticker_yahoo && !a.coingecko_id)
-
-  const fastResults = await Promise.all(fastAssets.map(a => syncOne(a, 'sync')))
-  const synced = fastResults.filter(r => r.status === 'ok').length
-  const errors  = fastResults.filter(r => r.status === 'error').length
-
-  res.json({ synced, errors, total: assets.length, details: fastResults })
-
-  // Brapi: sequential with 4 s delay — fire-and-forget (may not complete on Vercel)
-  ;(async () => {
-    for (let i = 0; i < brapiAssets.length; i++) {
-      await syncOne(brapiAssets[i], 'sync')
-      if (i + 1 < brapiAssets.length) await new Promise(r => setTimeout(r, 4000))
-    }
-  })().catch(() => {})
-})
-
-// ─── POST /api/portfolio/reset-price-history ─────────────────────────────────
-// Purges all price_history for the user's ticker assets, then re-syncs.
-// Yahoo + CoinGecko assets are synced synchronously before responding (parallel,
-// fast enough for Vercel's serverless timeout). Brapi-only assets are synced
-// fire-and-forget after the response — they may not complete on Vercel due to
-// the 15 req/min rate limit; re-run the backend sync script for full coverage.
-
-router.post('/reset-price-history', requireAuth, async (req, res: Response) => {
-  const { userId } = req as AuthRequest
-
-  const { data: assets } = await supabaseAdmin
-    .from('assets')
-    .select('id,code,asset_type,currency,ticker_brapi,ticker_yahoo,coingecko_id,fi_principal,fi_start_date,fi_type,fi_rate,fi_spread')
-    .eq('user_id', userId)
-    .eq('asset_type', 'ticker')
-
-  if (!assets?.length) { res.json({ status: 'started', deleted: 0, total: 0 }); return }
-
   const assetIds = assets.map(a => a.id as number)
-
-  // Determine how many months back to fetch based on user's earliest contribution
   const { data: earliest } = await supabaseAdmin
     .from('contributions')
     .select('date')
@@ -462,53 +404,120 @@ router.post('/reset-price-history', requireAuth, async (req, res: Response) => {
     ? Math.max(3, Math.ceil((Date.now() - new Date(earliest.date).getTime()) / (1000 * 60 * 60 * 24 * 30)) + 1)
     : 36
 
-  const { count: deleted } = await supabaseAdmin
-    .from('price_history')
-    .delete({ count: 'exact' })
-    .in('asset_id', assetIds)
+  type Detail = { id: number; code: string; status: 'ok' | 'empty' | 'error'; points?: number; error?: string }
 
-  // Clear in-memory cache so requests fetch fresh data
-  cache.deletePattern('brapi:history:')
-  cache.deletePattern('yahoo:history:')
-  cache.deletePattern('coingecko:history:')
-
-  const syncOne = async (a: (typeof assets)[number], source: string) => {
+  const syncOne = async (a: (typeof assets)[number]): Promise<Detail> => {
     try {
       const history = await getDailyHistory(a as Asset, monthsBack * 30)
-      if (history.length) {
-        const { error: upsertErr } = await supabaseAdmin.from('price_history').upsert(
-          history.map(p => ({ asset_id: a.id, ref_date: p.date, price: p.price, currency: p.currency, source })),
-          { onConflict: 'asset_id,ref_date' }
-        )
-        if (upsertErr) console.warn(`[reset] DB upsert ${a.code}:`, upsertErr.message)
-        else console.log(`[reset] ${a.code} ok (${history.length} pts)`)
-      } else {
-        console.log(`[reset] ${a.code} empty`)
-      }
+      if (!history.length) return { id: a.id, code: a.code, status: 'empty' }
+      const { error: upsertErr } = await supabaseAdmin.from('price_history').upsert(
+        history.map(p => ({ asset_id: a.id, ref_date: p.date, price: p.price, currency: p.currency, source: 'sync' })),
+        { onConflict: 'asset_id,ref_date' }
+      )
+      if (upsertErr) throw new Error(`DB upsert: ${upsertErr.message}`)
+      return { id: a.id, code: a.code, status: 'ok', points: history.length }
     } catch (err) {
-      console.warn(`[reset] ${a.code} error:`, err instanceof Error ? err.message : String(err))
+      const msg = err instanceof Error ? err.message : String(err)
+      console.warn(`[sync-history] ${a.code}:`, msg)
+      return { id: a.id, code: a.code, status: 'error', error: msg }
     }
   }
 
-  // Yahoo + CoinGecko: sync in parallel synchronously before responding.
-  // These complete well within Vercel's serverless timeout.
+  // Yahoo and CoinGecko: process in parallel (no rate-limit constraints)
   const fastAssets  = assets.filter(a => a.ticker_yahoo || a.coingecko_id)
   const brapiAssets = assets.filter(a => a.ticker_brapi && !a.ticker_yahoo && !a.coingecko_id)
 
-  await Promise.all(fastAssets.map(a => syncOne(a, 'reset')))
+  const fastResults = await Promise.all(fastAssets.map(syncOne))
+  const synced = fastResults.filter(r => r.status === 'ok').length
+  const errors  = fastResults.filter(r => r.status === 'error').length
 
-  // Yahoo + CoinGecko data is now in DB — respond so the UI unblocks
-  res.json({ status: 'started', deleted: deleted ?? 0, total: assets.length })
+  res.json({ synced, errors, total: assets.length, details: fastResults })
 
-  // Brapi: fire-and-forget — may not complete on Vercel; use the backend sync script
-  // (tsx scripts/sync-price-history.ts) for full Brazilian-stock coverage.
+  // Brapi: sequential 4 s delay — fire-and-forget (express server stays alive, so this completes)
   ;(async () => {
     for (let i = 0; i < brapiAssets.length; i++) {
-      await syncOne(brapiAssets[i], 'reset')
+      await syncOne(brapiAssets[i])
       if (i + 1 < brapiAssets.length) await new Promise(r => setTimeout(r, 4000))
     }
-    console.log('[reset-price-history] brapi background sync complete')
-  })().catch(err => console.error('[reset-price-history] fatal:', err))
+  })().catch(() => {})
+})
+
+// POST /api/portfolio/reset-baseline
+// Deletes all contributions dated SOURCE_DATE and recreates them at TARGET_DATE
+// with historical prices from Yahoo Finance.
+router.post('/reset-baseline', requireAuth, async (req, res: Response) => {
+  const { userId }   = req as AuthRequest
+  const SOURCE_DATE  = '2023-01-01'
+  const TARGET_DATE  = '2025-01-01'
+
+  const { data: assets } = await supabaseAdmin
+    .from('assets')
+    .select('id, code, ticker_yahoo, currency')
+    .eq('user_id', userId)
+    .eq('asset_type', 'ticker')
+
+  const assetMap = new Map((assets ?? []).map(a => [a.id as number, a]))
+  const assetIds = [...assetMap.keys()]
+  if (assetIds.length === 0) { res.json({ deleted: 0, created: 0, results: [] }); return }
+
+  const { data: oldContribs } = await supabaseAdmin
+    .from('contributions')
+    .select('id, asset_id, quantity, currency')
+    .in('asset_id', assetIds)
+    .eq('date', SOURCE_DATE)
+    .eq('type', 'buy')
+
+  if (!oldContribs?.length) {
+    res.json({ message: `Nenhuma contribuição ${SOURCE_DATE} encontrada`, deleted: 0, created: 0, results: [] }); return
+  }
+
+  const [usdBrl, eurBrl] = await Promise.all([getFxRate('USD'), getFxRate('EUR')])
+
+  // Fetch all historical prices in parallel
+  const priceEntries = await Promise.all(
+    oldContribs.map(async (c) => {
+      const a = assetMap.get(c.asset_id)
+      const price = a?.ticker_yahoo ? await yahoo.getPriceAtDate(a.ticker_yahoo, TARGET_DATE) : null
+      return { assetId: c.asset_id, price }
+    })
+  )
+  const priceMap = new Map(priceEntries.map(e => [e.assetId, e.price]))
+
+  type ResultRow = { code: string; price: number | null; status: string }
+  const results: ResultRow[] = []
+  const toInsert: Record<string, unknown>[] = []
+
+  for (const c of oldContribs) {
+    const a     = assetMap.get(c.asset_id)
+    const price = priceMap.get(c.asset_id) ?? null
+    const qty   = c.quantity ?? 0
+    const cur   = a?.currency || 'BRL'
+    const fx    = cur === 'USD' ? usdBrl : cur === 'EUR' ? eurBrl : 1
+
+    const row: Record<string, unknown> = {
+      asset_id: c.asset_id,
+      date:     TARGET_DATE,
+      type:     'buy',
+      quantity: qty,
+      currency: cur,
+    }
+    if (price != null) {
+      row.price_orig   = price
+      row.fx_rate_brl  = cur !== 'BRL' ? fx : null
+      row.value_brl    = Math.round(price * qty * fx * 100) / 100
+    }
+    toInsert.push(row)
+    results.push({ code: a?.code ?? String(c.asset_id), price, status: price != null ? 'ok' : 'sem_preco' })
+  }
+
+  const { error: delErr } = await supabaseAdmin
+    .from('contributions').delete().in('id', oldContribs.map(c => c.id))
+  if (delErr) { res.status(500).json({ error: delErr.message }); return }
+
+  const { error: insErr } = await supabaseAdmin.from('contributions').insert(toInsert)
+  if (insErr) { res.status(500).json({ error: insErr.message }); return }
+
+  res.json({ deleted: oldContribs.length, created: toInsert.length, results })
 })
 
 // GET /api/portfolio/sync-status — how many ticker assets have price_history rows
@@ -544,83 +553,11 @@ router.get('/sync-status', requireAuth, async (req, res: Response) => {
   })
 })
 
-router.post('/reset-baseline', requireAuth, async (req, res: Response) => {
-  const { userId }   = req as AuthRequest
-  const SOURCE_DATE  = '2023-01-01'
-  const TARGET_DATE  = '2025-01-01'
-
-  const { data: assets } = await supabaseAdmin
-    .from('assets')
-    .select('id, code, ticker_yahoo, currency')
-    .eq('user_id', userId)
-    .eq('asset_type', 'ticker')
-
-  const assetMap = new Map((assets ?? []).map(a => [a.id as number, a]))
-  const assetIds = [...assetMap.keys()]
-  if (assetIds.length === 0) { res.json({ deleted: 0, created: 0, results: [] }); return }
-
-  const { data: oldContribs } = await supabaseAdmin
-    .from('contributions')
-    .select('id, asset_id, quantity, currency')
-    .in('asset_id', assetIds)
-    .eq('date', SOURCE_DATE)
-    .eq('type', 'buy')
-
-  if (!oldContribs?.length) {
-    res.json({ message: `Nenhuma contribuição ${SOURCE_DATE} encontrada`, deleted: 0, created: 0, results: [] }); return
-  }
-
-  const [usdBrl, eurBrl] = await Promise.all([getFxRate('USD'), getFxRate('EUR')])
-
-  const priceEntries = await Promise.all(
-    oldContribs.map(async (c) => {
-      const a = assetMap.get(c.asset_id)
-      const price = a?.ticker_yahoo ? await yahoo.getPriceAtDate(a.ticker_yahoo, TARGET_DATE) : null
-      return { assetId: c.asset_id, price }
-    })
-  )
-  const priceMap = new Map(priceEntries.map(e => [e.assetId, e.price]))
-
-  type ResultRow = { code: string; price: number | null; status: string }
-  const resultRows: ResultRow[] = []
-  const toInsert: Record<string, unknown>[] = []
-
-  for (const c of oldContribs) {
-    const a     = assetMap.get(c.asset_id)
-    const price = priceMap.get(c.asset_id) ?? null
-    const qty   = c.quantity ?? 0
-    const cur   = a?.currency || 'BRL'
-    const fx    = cur === 'USD' ? usdBrl : cur === 'EUR' ? eurBrl : 1
-
-    const row: Record<string, unknown> = {
-      asset_id: c.asset_id,
-      date:     TARGET_DATE,
-      type:     'buy',
-      quantity: qty,
-      currency: cur,
-    }
-    if (price != null) {
-      row.price_orig   = price
-      row.fx_rate_brl  = cur !== 'BRL' ? fx : null
-      row.value_brl    = Math.round(price * qty * fx * 100) / 100
-    }
-    toInsert.push(row)
-    resultRows.push({ code: a?.code ?? String(c.asset_id), price, status: price != null ? 'ok' : 'sem_preco' })
-  }
-
-  const { error: delErr } = await supabaseAdmin
-    .from('contributions').delete().in('id', oldContribs.map(c => c.id))
-  if (delErr) { res.status(500).json({ error: delErr.message }); return }
-
-  const { error: insErr } = await supabaseAdmin.from('contributions').insert(toInsert)
-  if (insErr) { res.status(500).json({ error: insErr.message }); return }
-
-  res.json({ deleted: oldContribs.length, created: toInsert.length, results: resultRows })
-})
-
 // ─── Portfolio share-link ─────────────────────────────────────────────────────
+// O snapshot em si (métricas de performance, benchmarks, dividendos etc. — não
+// só o valor atual) é montado por buildPortfolioSnapshot em services/snapshotService.ts,
+// que é a mesma função usada pela página pública de relatório (routes/public.ts).
 
-// GET /api/portfolio/share-link
 router.get('/share-link', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const { data } = await supabaseAdmin
@@ -630,10 +567,15 @@ router.get('/share-link', requireAuth, async (req, res: Response) => {
   res.json(data)
 })
 
-// POST /api/portfolio/share-link — create or update, always refresh snapshot
+// POST /api/portfolio/share-link — create or update, always refresh snapshot.
+// portfolio_value (opcional): valor já calculado no frontend, evita recalcular
+// tudo de novo em buildPortfolioSnapshot quando a página já tem os dados em mãos.
 router.post('/share-link', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
-  const { show_values = false, hide_holdings = false, label = null, display_currency = 'BRL', period = 'inception', portfolio_value } = req.body ?? {}
+  const {
+    show_values = false, hide_holdings = false, label = null,
+    display_currency = 'BRL', period = 'inception', portfolio_value,
+  } = req.body ?? {}
   const snapshot = await buildPortfolioSnapshot(userId, display_currency, period, portfolio_value ?? undefined)
 
   const { data: existing } = await supabaseAdmin
@@ -652,18 +594,18 @@ router.post('/share-link', requireAuth, async (req, res: Response) => {
   res.json({ token: share.token, show_values, hide_holdings, label, updated_at: new Date().toISOString() })
 })
 
-// PATCH /api/portfolio/share-link — update show_values/hide_holdings without rebuilding snapshot
 router.patch('/share-link', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const { show_values, hide_holdings } = req.body ?? {}
   const update: Record<string, boolean> = {}
-  if (show_values    !== undefined) update.show_values    = show_values
-  if (hide_holdings  !== undefined) update.hide_holdings  = hide_holdings
-  await supabaseAdmin.from('portfolio_shares').update(update).eq('user_id', userId).eq('is_active', true)
+  if (show_values !== undefined) update.show_values = show_values
+  if (hide_holdings !== undefined) update.hide_holdings = hide_holdings
+  await supabaseAdmin.from('portfolio_shares')
+    .update(update)
+    .eq('user_id', userId).eq('is_active', true)
   res.json({ ok: true })
 })
 
-// DELETE /api/portfolio/share-link
 router.delete('/share-link', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
   await supabaseAdmin.from('portfolio_shares').update({ is_active: false }).eq('user_id', userId)
@@ -699,43 +641,48 @@ function mapSectorPt(sector: string | null, classNameKey?: string | null): strin
   return null
 }
 
+const SECTOR_DAY_TTL = 24 * 60 * 60 * 1000
+
+export async function getSectorMap(userId: string): Promise<Record<string, string | null>> {
+  const cacheKey = `portfolio:sectors:${userId}`
+  const cached = cache.get<Record<string, string | null>>(cacheKey)
+  if (cached) return cached
+
+  const { data: assets } = await supabaseAdmin
+    .from('assets')
+    .select('id, code, asset_type, ticker_brapi, ticker_yahoo, coingecko_id, asset_classes(name_key)')
+    .eq('user_id', userId)
+    .eq('active', true)
+
+  const sectors: Record<string, string | null> = {}
+
+  await Promise.allSettled(
+    (assets ?? []).map(async (a) => {
+      const classKey = (a.asset_classes as { name_key?: string } | null)?.name_key ?? null
+      if (a.asset_type === 'fixed_income') {
+        sectors[a.code] = 'Renda Fixa'; return
+      }
+      if (a.coingecko_id) {
+        sectors[a.code] = 'Cripto'; return
+      }
+      const yahooTicker = (a.ticker_yahoo as string | null) ?? (a.ticker_brapi ? `${a.ticker_brapi}.SA` : null)
+      if (yahooTicker) {
+        const raw = await yahoo.getAssetSector(yahooTicker)
+        sectors[a.code] = mapSectorPt(raw, classKey)
+      } else {
+        sectors[a.code] = mapSectorPt(null, classKey)
+      }
+    })
+  )
+
+  cache.set(cacheKey, sectors, SECTOR_DAY_TTL)
+  return sectors
+}
+
 router.get('/sector-data', requireAuth, async (req, res: Response) => {
   try {
     const { userId } = (req as AuthRequest)
-    const cacheKey = `portfolio:sectors:${userId}`
-    const cached = cache.get<Record<string, string | null>>(cacheKey)
-    if (cached) { res.json({ sectors: cached }); return }
-
-    const { data: assets } = await supabaseAdmin
-      .from('assets')
-      .select('id, code, asset_type, ticker_brapi, ticker_yahoo, coingecko_id, asset_classes(name_key)')
-      .eq('user_id', userId)
-      .eq('active', true)
-
-    const sectors: Record<string, string | null> = {}
-
-    await Promise.allSettled(
-      (assets ?? []).map(async (a) => {
-        const classKey = (a.asset_classes as { name_key?: string } | null)?.name_key ?? null
-        if (a.asset_type === 'fixed_income') {
-          sectors[a.code] = 'Renda Fixa'; return
-        }
-        if (a.coingecko_id) {
-          sectors[a.code] = 'Cripto'; return
-        }
-        // Build Yahoo ticker: use ticker_yahoo directly, or append .SA for BRAPI-only BR stocks
-        const yahooTicker = (a.ticker_yahoo as string | null) ?? (a.ticker_brapi ? `${a.ticker_brapi}.SA` : null)
-        if (yahooTicker) {
-          const raw = await yahoo.getAssetSector(yahooTicker)
-          sectors[a.code] = mapSectorPt(raw, classKey)
-        } else {
-          sectors[a.code] = mapSectorPt(null, classKey)
-        }
-      })
-    )
-
-    const DAY = 24 * 60 * 60 * 1000
-    cache.set(cacheKey, sectors, DAY)
+    const sectors = await getSectorMap(userId)
     res.json({ sectors })
   } catch (err) {
     res.status(500).json({ error: String(err) })

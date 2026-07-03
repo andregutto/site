@@ -1,11 +1,11 @@
 import { Router, Response } from 'express'
-import { requireAuth, AuthRequest } from '../../../shared-api/src/middleware/auth.js'
-import { supabaseAdmin } from '../../../shared-api/src/lib/supabase.js'
-import { getActiveSubscriptions, getBudgetAlerts, getMonthlyReviewAlerts, getPendingMomentInvites, getRecentMomentAdditions, getRecentSettlements, getRecentExpenseShares } from '../../../shared-api/src/routes/finances.js'
+import { requireAuth, AuthRequest } from '../middleware/auth.js'
+import { supabaseAdmin } from '../lib/supabase.js'
+import { getActiveSubscriptions, getBudgetAlerts, getMonthlyReviewAlerts, getPendingMomentInvites, getRecentMomentAdditions, getRecentSettlements, getRecentExpenseShares } from './finances.js'
 import { getSplitWarnings, getStaleManualAssets } from './portfolio.js'
-import { getPendingGroupInvites } from '../../../shared-api/src/routes/shared.js'
-import { getPendingTripInvites, getRecentTripAdditions } from '../../../shared-api/src/routes/voyage.js'
-import { getPendingFriendInvites, getRecentFriendAcceptances } from '../../../shared-api/src/routes/people.js'
+import { getPendingGroupInvites } from './shared.js'
+import { getPendingTripInvites, getRecentTripAdditions } from './voyage.js'
+import { getPendingFriendInvites, getRecentFriendAcceptances } from './people.js'
 
 const router = Router()
 
