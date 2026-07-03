@@ -794,6 +794,8 @@
     "freedomActual": "Réalisé",
     "freedomChartTitle": "Trajectoire : planifié vs réalisé",
     "freedomProjected": "Projection au-delà de l'objectif",
+    "freedomContributed": "Total apporté",
+    "freedomPreviewChartTitle": "Aperçu en temps réel",
     "freedomAhead": "En avance sur le plan",
     "freedomBehind": "En retard sur le plan",
     "freedomApprox": "Valeurs historiques en BRL converties au taux actuel.",

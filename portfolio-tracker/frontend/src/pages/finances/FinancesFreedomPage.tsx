@@ -44,6 +44,7 @@ interface ChartPoint {
   planned: number | null
   plannedExtra: number | null
   actual: number | null
+  contributed: number | null
 }
 
 function _fmt(n: number, currency: string, compact = false, locale = 'pt-BR') {
@@ -108,6 +109,23 @@ function buildPlanned(
   for (let i = 0; i <= horizonMonths; i++) {
     result.push({ month: addMonths(startMonth, i), value: Math.round(w) })
     w = w * (1 + monthlyRate) + monthlyContrib
+  }
+  return result
+}
+
+// Build contributed trajectory: cumulative capital + contributions, no interest applied.
+// Used to contrast against `planned` so the gap between the two reads as compound interest at work.
+function buildContributed(
+  initial: number,
+  monthlyContrib: number,
+  horizonMonths: number,
+  startMonth: string,
+): { month: string; value: number }[] {
+  const result: { month: string; value: number }[] = []
+  let w = initial
+  for (let i = 0; i <= horizonMonths; i++) {
+    result.push({ month: addMonths(startMonth, i), value: Math.round(w) })
+    w = w + monthlyContrib
   }
   return result
 }
@@ -272,6 +290,22 @@ function PlanForm({ initial, portfolio, ipcaAnnual, hicpAnnual, cpiAnnual, userC
     : horizonInputYears
 
   const horizonMonths = effectiveHorizonYears * 12
+
+  // Live preview data for the step-3 chart: recomputed on every keystroke from
+  // the current form state, mirroring the main dashboard chart's planned/contributed logic.
+  const previewEffectiveContrib = stratMode === 'fixHorizon' && calculatedContrib != null
+    ? calculatedContrib
+    : parseFloat(contrib) || 0
+  const previewData = (() => {
+    const C = parseFloat(capital) || 0
+    const r = (parseFloat(rate) || 0) / 100
+    const n = Math.max(1, horizonMonths || 1)
+    const planned = buildPlanned(C, previewEffectiveContrib, r, n, startDate.slice(0, 7) || currentMonth())
+    const contributed = buildContributed(C, previewEffectiveContrib, n, startDate.slice(0, 7) || currentMonth())
+    return planned.map((p, i) => ({ month: p.month, planned: p.value, contributed: contributed[i]?.value ?? null }))
+  })()
+  const previewTarget = parseFloat(effectiveTarget) || 0
+
   const targetDateISO = (() => {
     try {
       const d = new Date(startDate + 'T12:00:00')
@@ -485,6 +519,35 @@ function PlanForm({ initial, portfolio, ipcaAnnual, hicpAnnual, cpiAnnual, userC
           <p className="text-sm text-[var(--arvo-fg-muted)]">
             {goalMode === 'capital' ? t.finances.freedomTargetCapitalDesc : t.finances.freedomTargetIncomeDesc}
           </p>
+
+          {/* Live preview chart — updates as capital/contribution/rate/horizon change below */}
+          <div className="rounded-2xl border border-[var(--arvo-border)] bg-[var(--arvo-surface-2)] p-3">
+            <h4 className="text-xs font-semibold text-[var(--arvo-fg-muted)] mb-2">{t.finances.freedomPreviewChartTitle}</h4>
+            <ResponsiveContainer width="100%" height={180}>
+              <ComposedChart data={previewData} margin={{ top: 5, right: 5, bottom: 0, left: 0 }}>
+                <defs>
+                  <linearGradient id="previewPlannedGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="var(--arvo-blue)" stopOpacity={0.18} />
+                    <stop offset="100%" stopColor="var(--arvo-blue)" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="previewContributedGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="var(--arvo-terracotta)" stopOpacity={0.20} />
+                    <stop offset="100%" stopColor="var(--arvo-terracotta)" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <XAxis dataKey="month" tickFormatter={m => fmtMonth(m, intlLocale)} tick={{ ...CHART_AXIS_TICK, fontSize: 10, fill: 'var(--arvo-fg-muted)' }} axisLine={CHART_AXIS_LINE} tickLine={false} interval={Math.floor(previewData.length / 6)} />
+                <YAxis tickFormatter={v => formatCompactCurrency(v, currency, intlLocale)} tick={{ ...CHART_AXIS_TICK, fontSize: 10, fill: 'var(--arvo-fg-muted)' }} axisLine={CHART_AXIS_LINE} tickLine={false} width={56} />
+                <Tooltip content={<ChartTooltip currency={currency} locale={intlLocale} />} />
+                {previewTarget > 0 && (
+                  <ReferenceLine y={previewTarget} stroke="var(--arvo-gold)" strokeDasharray="4 2" label={{ value: t.finances.freedomGoal, position: 'insideTopRight', fontSize: 9, fill: 'var(--arvo-gold-text)' }} />
+                )}
+                <Area type="monotone" dataKey="contributed" stroke="none" fill="url(#previewContributedGradient)" connectNulls legendType="none" tooltipType="none" />
+                <Area type="monotone" dataKey="planned" stroke="none" fill="url(#previewPlannedGradient)" connectNulls legendType="none" tooltipType="none" />
+                <Line type="monotone" dataKey="contributed" name={t.finances.freedomContributed} stroke="var(--arvo-terracotta)" strokeWidth={1.5} dot={false} connectNulls />
+                <Line type="monotone" dataKey="planned" name={t.finances.freedomPlanned} stroke="var(--arvo-fg)" strokeWidth={2} dot={false} connectNulls />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </div>
 
           {goalMode === 'capital' ? (
             <div>
@@ -950,6 +1013,15 @@ export default function FinancesFreedomPage() {
     )
     const plannedMap = new Map(planned.map(p => [p.month, p.value]))
 
+    // Cumulative contributions (no interest) — the gap to `planned` visualizes compound interest at work.
+    const contributed = buildContributed(
+      activePlan.initial_capital,
+      activePlan.monthly_contribution,
+      horizonMonths + extraMonths,
+      planStart,
+    )
+    const contributedMap = new Map(contributed.map(p => [p.month, p.value]))
+
     // Generate all months from chartStart to chartEnd
     let m = chartStart
     while (m <= chartEnd) {
@@ -961,6 +1033,7 @@ export default function FinancesFreedomPage() {
         // Extrapolated tail carries the same value as `planned` at planEnd so the two lines join seamlessly.
         plannedExtra: (isExtra || m === planEnd) && !isPast ? plannedMap.get(m) ?? null : null,
         actual: actualMap.get(m) ?? null,
+        contributed: isPast ? null : (contributedMap.get(m) ?? null),
       })
       m = addMonths(m, 1)
     }
@@ -972,6 +1045,7 @@ export default function FinancesFreedomPage() {
     planned:      pt.planned      != null ? Math.round(cxFreedom(pt.planned))      : null,
     plannedExtra: pt.plannedExtra != null ? Math.round(cxFreedom(pt.plannedExtra)) : null,
     actual:       pt.actual       != null ? Math.round(cxFreedom(pt.actual))       : null,
+    contributed:  pt.contributed  != null ? Math.round(cxFreedom(pt.contributed))  : null,
   }))
 
   // Summary cards — derived from the same fxRates the dashboard uses (via
@@ -1346,6 +1420,10 @@ export default function FinancesFreedomPage() {
                       <stop offset="0%" stopColor="var(--arvo-gold)" stopOpacity={0.14} />
                       <stop offset="100%" stopColor="var(--arvo-gold)" stopOpacity={0} />
                     </linearGradient>
+                    <linearGradient id="freedomContributedGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="var(--arvo-terracotta)" stopOpacity={0.20} />
+                      <stop offset="100%" stopColor="var(--arvo-terracotta)" stopOpacity={0} />
+                    </linearGradient>
                   </defs>
                   <XAxis
                     dataKey="month"
@@ -1375,6 +1453,15 @@ export default function FinancesFreedomPage() {
                   />
                   <Area
                     type="monotone"
+                    dataKey="contributed"
+                    stroke="none"
+                    fill="url(#freedomContributedGradient)"
+                    connectNulls
+                    legendType="none"
+                    tooltipType="none"
+                  />
+                  <Area
+                    type="monotone"
                     dataKey="planned"
                     stroke="none"
                     fill="url(#freedomAreaGradient)"
@@ -1399,6 +1486,15 @@ export default function FinancesFreedomPage() {
                     connectNulls
                     legendType="none"
                     tooltipType="none"
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="contributed"
+                    name={t.finances.freedomContributed}
+                    stroke="var(--arvo-terracotta)"
+                    strokeWidth={1.5}
+                    dot={false}
+                    connectNulls
                   />
                   <Line
                     type="monotone"
