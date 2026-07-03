@@ -201,7 +201,12 @@ function ResourceRow({
 }) {
   const { t } = useI18n()
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '8px 0', borderBottom: '1px solid var(--arvo-border-soft)' }}>
+    <div
+      role="button" tabIndex={0}
+      onClick={onView}
+      onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onView() } }}
+      style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '8px 0', borderBottom: '1px solid var(--arvo-border-soft)', cursor: 'pointer' }}
+    >
       <span style={{ color: 'var(--arvo-fg-muted)', display: 'flex', flexShrink: 0 }}>{icon}</span>
       <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
         {title}
@@ -211,7 +216,7 @@ function ResourceRow({
         <span title={pendingTitle} style={{ width: 7, height: 7, borderRadius: 999, background: GOLD, flexShrink: 0 }} />
       ) : ownedByMe && onRemove ? (
         <button
-          type="button" onClick={onRemove} disabled={removing} title={t.people.removeAccessTitle}
+          type="button" onClick={e => { e.stopPropagation(); onRemove() }} disabled={removing} title={t.people.removeAccessTitle}
           style={{
             width: 22, height: 22, borderRadius: 999, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
             background: 'none', border: '1px solid var(--arvo-border)', cursor: removing ? 'default' : 'pointer',
@@ -225,14 +230,11 @@ function ResourceRow({
           </svg>
         </button>
       ) : (
-        <button
-          type="button" onClick={onView} title={t.people.view}
-          style={{ width: 22, height: 22, borderRadius: 999, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--arvo-fg-soft)' }}
-        >
+        <span title={t.people.view} style={{ width: 22, height: 22, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--arvo-fg-soft)' }}>
           <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
             <path strokeLinecap="round" strokeLinejoin="round" d="M4 2l4 4-4 4" />
           </svg>
-        </button>
+        </span>
       )}
     </div>
   )
@@ -381,42 +383,31 @@ function ContactCard({
   return (
     <div style={{
       background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)',
-      borderRadius: 16, boxShadow: 'var(--arvo-shadow-sm)', padding: '20px 22px',
+      borderRadius: 16, boxShadow: 'var(--arvo-shadow-sm)', padding: '14px 16px',
     }}>
       {/* Cabeçalho — sempre visível; o resto só aparece expandido (senão a
           lista fica enorme com várias pessoas). É uma <div> clicável (não
           <button>) porque o botão de "dividir despesa" precisa ficar dentro
-          dela — botão dentro de botão não é válido em HTML. */}
+          dela — botão dentro de botão não é válido em HTML. Uma linha só
+          (nome + @usuário, sem e-mail) pra ficar com a mesma altura do card
+          de Grupos — o e-mail completo só aparece expandido. */}
       <div
         role="button" tabIndex={0}
         onClick={() => setExpanded(v => !v)}
         onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') setExpanded(v => !v) }}
-        style={{ display: 'flex', alignItems: 'center', gap: 14, width: '100%', background: 'none', border: 'none', cursor: 'pointer', padding: 0, marginBottom: expanded ? 16 : 0, textAlign: 'left' }}
+        style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', background: 'none', border: 'none', cursor: 'pointer', padding: 0, marginBottom: expanded ? 14 : 0, textAlign: 'left' }}
       >
-        <Avatar name={contact.name} email={contact.email} avatarUrl={contact.avatar_url} size={44} tone={isActive ? 'active' : 'neutral'} />
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <p style={{
-            fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: 'var(--arvo-fg)',
-            fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-            display: 'flex', alignItems: 'baseline', gap: 6,
-          }}>
-            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{displayName}</span>
-            {contact.username && (
-              <span style={{ fontSize: 11.5, fontWeight: 400, color: 'var(--arvo-fg-soft)', flexShrink: 0 }}>@{contact.username}</span>
-            )}
-          </p>
-          {/* Sem e-mail aqui — só @usuário, pra deixar a altura do card igual à
-              dos Grupos. O e-mail completo aparece expandido (abaixo), se não
-              tiver @usuário mostramos o e-mail aqui mesmo como fallback. */}
-          {!contact.username && (
-            <p style={{
-              fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-soft)',
-              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: 1,
-            }}>
-              {contact.email}
-            </p>
+        <Avatar name={contact.name} email={contact.email} avatarUrl={contact.avatar_url} size={28} tone={isActive ? 'active' : 'neutral'} />
+        <p style={{
+          flex: 1, minWidth: 0, fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg)',
+          fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+          display: 'flex', alignItems: 'baseline', gap: 6,
+        }}>
+          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{displayName}</span>
+          {contact.username && (
+            <span style={{ fontSize: 11.5, fontWeight: 400, color: 'var(--arvo-fg-soft)', flexShrink: 0 }}>@{contact.username}</span>
           )}
-        </div>
+        </p>
         {/* Saldo agregado de despesas divididas — soma finance_moment_expense_shares de
             TODOS os Momentos compartilhados com essa pessoa, não só um. Positivo = ela
             me deve, negativo = eu devo a ela (ver GET /people no backend). */}
@@ -471,14 +462,12 @@ function ContactCard({
       )}
 
       {!expanded ? null : (<>
-      {contact.username && (
-        <p style={{
-          fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-soft)',
-          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 10,
-        }}>
-          {contact.email}
-        </p>
-      )}
+      <p style={{
+        fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-soft)',
+        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 10,
+      }}>
+        {contact.email}
+      </p>
       {/* Convite de amizade pendente recebido — ação principal, fica no topo
           do corpo expandido, fora das listas de recursos. */}
       {incomingPending && (
@@ -613,7 +602,7 @@ function ContactCard({
               status={ctx.member_status}
               ownedByMe={ctx.direction === 'owned_by_me'}
               onRemove={() => removeMoment(ctx)}
-              onView={() => navigate('/finances/moments')}
+              onView={() => navigate(`/finances/moments/${ctx.moment_id}`)}
               removing={removing === ctx.member_id}
               pendingTitle={t.people.pending}
             />
