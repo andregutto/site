@@ -182,8 +182,9 @@ export default function AppLayout() {
     location.pathname.startsWith('/institutions')
   const inFinances = location.pathname.startsWith('/finances')
   const inVoyage = location.pathname.startsWith('/voyage')
+  const inCommunity = location.pathname.startsWith('/community')
 
-  const sectionAccent = inInvestimentos ? '#1B4FD8' : inFinances ? '#A36A52' : inVoyage ? '#D63B2F' : '#1F8A5B'
+  const sectionAccent = inInvestimentos ? '#1B4FD8' : inFinances ? '#A36A52' : inVoyage ? '#D63B2F' : inCommunity ? '#E8A020' : '#1F8A5B'
 
   const investimentosItems = [
     { to: '/dashboard', label: t.nav.dashboard, end: true, icon: (
@@ -295,7 +296,38 @@ export default function AppLayout() {
     )},
   ]
 
-  const activeSubItems = inInvestimentos ? investimentosItems : inFinances ? financesItems : inVoyage ? voyageItems : []
+  // Categorias fixas da V1 (mesmo seed da migration 053_community.sql) — sem
+  // busca assíncrona no header, é uma lista pequena e estável.
+  const communityItems = [
+    { to: '/community',            label: (t as any).community?.title ?? 'Comunidade', end: true, icon: (
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M2 2.5h12v8H6.5L3 13.5V10.5H2v-8Z"/>
+      </svg>
+    )},
+    { to: '/community/geral',      label: (t as any).community?.cat?.geral ?? 'Geral', end: false, icon: (
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M2 2.5h12v8H6.5L3 13.5V10.5H2v-8Z"/>
+      </svg>
+    )},
+    { to: '/community/suporte',    label: (t as any).community?.cat?.suporte ?? 'Suporte', end: false, icon: (
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
+        <circle cx="8" cy="8" r="6.5"/><path strokeLinecap="round" strokeLinejoin="round" d="M8 5.5v3M8 10.5h.01"/>
+      </svg>
+    )},
+    { to: '/community/sugestoes',  label: (t as any).community?.cat?.sugestoes ?? 'Sugestões', end: false, icon: (
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M8 1.5a4 4 0 00-2 7.465V11h4V8.965A4 4 0 008 1.5ZM6.5 13h3M7 14.5h2"/>
+      </svg>
+    )},
+    { to: '/community/viagens',    label: (t as any).community?.cat?.viagens ?? 'Viagens', end: false, icon: (
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M1 11.5l3-7 4 3 3-5 4 3"/>
+        <path strokeLinecap="round" d="M1 14.5h14"/>
+      </svg>
+    )},
+  ]
+
+  const activeSubItems = inInvestimentos ? investimentosItems : inFinances ? financesItems : inVoyage ? voyageItems : inCommunity ? communityItems : []
 
   return (
     <div className={`min-h-screen flex flex-col${resolvedTheme === 'dark' ? ' dark' : ''}`} style={{ background: 'var(--arvo-bg)' }}>
@@ -314,8 +346,8 @@ export default function AppLayout() {
             <span style={{ fontFamily: "var(--arvo-font-display)", fontSize: 16, letterSpacing: '0.30em', textIndent: '0.30em', color: 'var(--arvo-fg)', lineHeight: 1 }}>arvo</span>
           </Link>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, paddingLeft: 14, borderLeft: '1px solid var(--arvo-border)', height: 24 }}>
-            <span style={{ fontFamily: "var(--arvo-font-display)", fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: inVoyage ? '#D63B2F' : 'var(--arvo-fg-soft)', lineHeight: 1, transition: 'color 280ms' }}>
-              {inVoyage ? 'Voyage' : 'Capital'}
+            <span style={{ fontFamily: "var(--arvo-font-display)", fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: inVoyage ? '#D63B2F' : inCommunity ? '#E8A020' : 'var(--arvo-fg-soft)', lineHeight: 1, transition: 'color 280ms' }}>
+              {inVoyage ? 'Voyage' : inCommunity ? 'Comunidade' : 'Capital'}
             </span>
           </div>
 
@@ -325,6 +357,7 @@ export default function AppLayout() {
               { to: '/dashboard',    label: t.nav.investments,                         active: inInvestimentos },
               { to: '/finances',     label: t.nav.finances,                            active: inFinances },
               { to: '/voyage',       label: (t as any).nav?.voyage ?? 'Viagens',       active: inVoyage },
+              { to: '/community',    label: (t as any).nav?.community ?? 'Comunidade', active: inCommunity },
             ] as Array<{ to: string; label: string; active: boolean }>).map(({ to, label, active }) => (
               <NavLink
                 key={to} to={to}
@@ -696,6 +729,11 @@ export default function AppLayout() {
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 2C8.134 2 5 5.134 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.866-3.134-7-7-7Z"/>
                 <circle cx="12" cy="9" r="2.5"/>
+              </svg>
+            )},
+            { to: '/community', label: (t as any).nav?.community ?? 'Comunidade', match: inCommunity, accent: '#E8A020', icon: (
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 4.5h18v12H10l-5 4.5v-4.5H3v-12Z"/>
               </svg>
             )},
           ].map(({ to, label, match, icon }) => (

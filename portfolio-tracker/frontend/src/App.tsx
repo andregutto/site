@@ -67,6 +67,10 @@ import AcceptTripInvitePage from './pages/voyage/AcceptTripInvitePage'
 import AcceptMomentInvitePage from './pages/finances/AcceptMomentInvitePage'
 import PublicTripPage from './pages/voyage/PublicTripPage'
 import PeoplePage from './pages/PeoplePage'
+import CommunityLayout from './pages/community/CommunityLayout'
+import CommunityHomePage from './pages/community/CommunityHomePage'
+import CommunityCategoryPage from './pages/community/CommunityCategoryPage'
+import CommunityTopicPage from './pages/community/CommunityTopicPage'
 
 function EmailConfirmGate({ email }: { email: string }) {
   const { signOut } = useAuth()
@@ -170,6 +174,11 @@ function AppRoutes() {
           <Route path=":id"           element={<VoyageTripDetailPage />} />
           <Route path="places"        element={<VoyagePlacesPage />} />
           <Route path="map"           element={<VoyageMapPage />} />
+        </Route>
+        <Route path="/community"       element={<CommunityLayout />}>
+          <Route index                element={<CommunityHomePage />} />
+          <Route path=":slug"         element={<CommunityCategoryPage />} />
+          <Route path=":slug/:topicId" element={<CommunityTopicPage />} />
         </Route>
         <Route path="/finances"       element={<FinancesLayout />}>
           <Route index                element={<FinancesOverviewPage />} />

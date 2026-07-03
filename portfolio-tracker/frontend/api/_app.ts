@@ -23,6 +23,7 @@ import dividendsRouter      from '../../shared-api/src/routes/dividends.js'
 import sharedRouter         from '../../shared-api/src/routes/shared.js'
 import voyageRouter         from '../../shared-api/src/routes/voyage.js'
 import peopleRouter         from '../../shared-api/src/routes/people.js'
+import communityRouter      from '../../shared-api/src/routes/community.js'
 
 const app = express()
 
@@ -56,6 +57,7 @@ app.use('/api/dividends',    dividendsRouter)
 app.use('/api/shared',      sharedRouter)
 app.use('/api/voyage',      voyageRouter)
 app.use('/api/people',      peopleRouter)
+app.use('/api/community',   communityRouter)
 
 // Health — acessível em /api/health via Vercel routing
 app.get(['/health', '/api/health'], (_req, res) => {
