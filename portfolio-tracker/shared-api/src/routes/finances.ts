@@ -932,11 +932,20 @@ router.get('/spending-summary', requireAuth, async (req, res: Response) => {
     const md = monthMap.get(m)!
     if (tx.is_internal_transfer || tx.exclude_from_stats) continue
     if (tx.amount > 0) {
-      md.income += tx.amount
-      const incomeEnvId2 = tx.category_id ? (catToEnv.get(tx.category_id) ?? null) : null
-      if (incomeEnvId2 != null) {
-        md.byEnv.set(incomeEnvId2, (md.byEnv.get(incomeEnvId2) ?? 0) + tx.amount)
-        md.byCat.set(tx.category_id, (md.byCat.get(tx.category_id) ?? 0) + tx.amount)
+      const txEnvId = tx.category_id ? (catToEnv.get(tx.category_id) ?? null) : null
+      if (txEnvId != null && txEnvId !== incomeEnvId) {
+        // Positive amount categorized under an expense category — a refund/reimbursement,
+        // not income. Nets against that category's spend instead of inflating "income" or
+        // (worse) piling on top of the expense as if it were more spending.
+        md.expenses -= tx.amount
+        md.byEnv.set(txEnvId, (md.byEnv.get(txEnvId) ?? 0) - tx.amount)
+        md.byCat.set(tx.category_id, (md.byCat.get(tx.category_id) ?? 0) - tx.amount)
+      } else {
+        md.income += tx.amount
+        if (txEnvId != null) {
+          md.byEnv.set(txEnvId, (md.byEnv.get(txEnvId) ?? 0) + tx.amount)
+          md.byCat.set(tx.category_id, (md.byCat.get(tx.category_id) ?? 0) + tx.amount)
+        }
       }
     } else {
       md.expenses += Math.abs(tx.amount)
