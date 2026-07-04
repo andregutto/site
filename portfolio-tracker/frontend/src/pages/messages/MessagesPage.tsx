@@ -13,7 +13,7 @@ const GOLD = '#C8B89A'
 interface ConversationSummary {
   id: number
   peer: { user_id: string; name?: string; username?: string; avatar_url?: string }
-  last_message: { body: string; created_at: string; from_me: boolean } | null
+  last_message: { body: string; created_at: string; from_me: boolean; deleted_at: string | null } | null
   last_message_at: string
   unread_count: number
 }
@@ -113,8 +113,10 @@ export default function MessagesPage() {
                   {c.peer.username && <span style={{ fontSize: 12, color: 'var(--arvo-fg-soft)' }}>@{c.peer.username}</span>}
                 </div>
                 {c.last_message && (
-                  <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg-soft)', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {c.last_message.from_me ? `${tm.you ?? 'Você'}: ` : ''}{c.last_message.body}
+                  <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg-soft)', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontStyle: c.last_message.deleted_at ? 'italic' : 'normal' }}>
+                    {c.last_message.deleted_at
+                      ? (tm.messageDeleted ?? 'Mensagem apagada')
+                      : <>{c.last_message.from_me ? `${tm.you ?? 'Você'}: ` : ''}{c.last_message.body}</>}
                   </p>
                 )}
               </div>

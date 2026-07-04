@@ -2614,6 +2614,11 @@
     "loadEarlier": "Charger les messages précédents",
     "sending": "Envoi...",
     "errorLoading": "Impossible de charger les messages.",
-    "notFriendsAnymore": "Vous n'êtes plus amis."
+    "notFriendsAnymore": "Vous n'êtes plus amis.",
+    "typing": "en train d'écrire...",
+    "messageDeleted": "Message supprimé",
+    "deleteForMe": "Supprimer pour moi",
+    "deleteForEveryone": "Supprimer pour tout le monde",
+    "seenAt": "Vu à {time}"
   }
 }

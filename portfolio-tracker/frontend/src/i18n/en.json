@@ -2614,6 +2614,11 @@
     "loadEarlier": "Load earlier messages",
     "sending": "Sending...",
     "errorLoading": "Could not load messages.",
-    "notFriendsAnymore": "You're not friends anymore."
+    "notFriendsAnymore": "You're not friends anymore.",
+    "typing": "typing...",
+    "messageDeleted": "Message deleted",
+    "deleteForMe": "Delete for me",
+    "deleteForEveryone": "Delete for everyone",
+    "seenAt": "Seen at {time}"
   }
 }

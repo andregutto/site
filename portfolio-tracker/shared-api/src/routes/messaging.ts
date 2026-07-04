@@ -41,6 +41,24 @@ async function getConversationOrThrow(conversationId: number, userId: string) {
   return data
 }
 
+// Ids de mensagens que o próprio usuário apagou "só pra mim" — excluídas de tudo
+// que ele lê, sem afetar a visão do outro participante.
+async function getHiddenMessageIds(userId: string, conversationId?: number): Promise<number[]> {
+  let query = supabaseAdmin.from('dm_message_hidden_for').select('message_id').eq('user_id', userId)
+  if (conversationId != null) {
+    const { data: msgIds } = await supabaseAdmin.from('dm_messages').select('id').eq('conversation_id', conversationId)
+    query = query.in('message_id', (msgIds ?? []).map((m: any) => m.id))
+  }
+  const { data } = await query
+  return (data ?? []).map((r: any) => r.message_id)
+}
+
+function serializeMessage(m: any) {
+  return m.deleted_at
+    ? { id: m.id, sender_id: m.sender_id, body: '', created_at: m.created_at, deleted_at: m.deleted_at }
+    : { id: m.id, sender_id: m.sender_id, body: m.body, created_at: m.created_at, deleted_at: null }
+}
+
 // ── GET /api/messages/conversations ─────────────────────────────────────────────
 router.get('/conversations', async (req: any, res: any) => {
   try {
@@ -64,15 +82,18 @@ router.get('/conversations', async (req: any, res: any) => {
 
     const conversations = await Promise.all(convs.map(async (c: any) => {
       const otherId = c.user_a === userId ? c.user_b : c.user_a
+      const hiddenIds = await getHiddenMessageIds(userId, c.id)
+      let lastMsgQuery = supabaseAdmin
+        .from('dm_messages')
+        .select('body, created_at, sender_id, deleted_at')
+        .eq('conversation_id', c.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+      if (hiddenIds.length) lastMsgQuery = lastMsgQuery.not('id', 'in', `(${hiddenIds.join(',')})`)
+
       const [other, { data: lastMsg }, { count: unreadCount }] = await Promise.all([
         userDisplay(otherId),
-        supabaseAdmin
-          .from('dm_messages')
-          .select('body, created_at, sender_id')
-          .eq('conversation_id', c.id)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle(),
+        lastMsgQuery.maybeSingle(),
         supabaseAdmin
           .from('dm_messages')
           .select('id', { count: 'exact', head: true })
@@ -84,7 +105,7 @@ router.get('/conversations', async (req: any, res: any) => {
       return {
         id: c.id,
         peer: { user_id: otherId, name: other.name, username: other.username, avatar_url: other.avatar_url },
-        last_message: lastMsg ? { body: lastMsg.body, created_at: lastMsg.created_at, from_me: lastMsg.sender_id === userId } : null,
+        last_message: lastMsg ? { body: lastMsg.deleted_at ? '' : lastMsg.body, deleted_at: lastMsg.deleted_at, created_at: lastMsg.created_at, from_me: lastMsg.sender_id === userId } : null,
         last_message_at: c.last_message_at,
         unread_count: unreadCount ?? 0,
       }
@@ -93,6 +114,37 @@ router.get('/conversations', async (req: any, res: any) => {
     res.json({ conversations })
   } catch (e: any) {
     res.status(500).json({ error: e.message ?? 'Erro ao listar conversas' })
+  }
+})
+
+// ── GET /api/messages/conversations/:id  (detalhe + read-receipt do outro) ─────
+router.get('/conversations/:id', async (req: any, res: any) => {
+  try {
+    const userId = uid(req)
+    const conversationId = Number(req.params.id)
+    const conv = await getConversationOrThrow(conversationId, userId)
+    if (!conv) { res.status(404).json({ error: 'Conversa não encontrada' }); return }
+
+    const otherId = conv.user_a === userId ? conv.user_b : conv.user_a
+    const [other, { data: peerState }] = await Promise.all([
+      userDisplay(otherId),
+      supabaseAdmin
+        .from('dm_participants_state')
+        .select('last_read_at')
+        .eq('conversation_id', conversationId)
+        .eq('user_id', otherId)
+        .maybeSingle(),
+    ])
+
+    res.json({
+      conversation: {
+        id: conv.id,
+        peer: { user_id: otherId, name: other.name, username: other.username, avatar_url: other.avatar_url },
+        peer_last_read_at: peerState?.last_read_at ?? null,
+      },
+    })
+  } catch (e: any) {
+    res.status(500).json({ error: e.message ?? 'Erro ao carregar conversa' })
   }
 })
 
@@ -135,17 +187,19 @@ router.get('/conversations/:id/messages', async (req: any, res: any) => {
     if (!conv) { res.status(404).json({ error: 'Conversa não encontrada' }); return }
 
     const before = req.query.before ? String(req.query.before) : null
+    const hiddenIds = await getHiddenMessageIds(userId, conversationId)
     let query = supabaseAdmin
       .from('dm_messages')
-      .select('id, sender_id, body, created_at')
+      .select('id, sender_id, body, created_at, deleted_at')
       .eq('conversation_id', conversationId)
       .order('created_at', { ascending: false })
       .limit(50)
     if (before) query = query.lt('created_at', before)
+    if (hiddenIds.length) query = query.not('id', 'in', `(${hiddenIds.join(',')})`)
 
     const { data, error } = await query
     if (error) { res.status(500).json({ error: error.message }); return }
-    res.json({ messages: (data ?? []).slice().reverse() })
+    res.json({ messages: (data ?? []).slice().reverse().map(serializeMessage) })
   } catch (e: any) {
     res.status(500).json({ error: e.message ?? 'Erro ao carregar mensagens' })
   }
@@ -172,7 +226,7 @@ router.post('/conversations/:id/messages', async (req: any, res: any) => {
     const { data: message, error } = await supabaseAdmin
       .from('dm_messages')
       .insert({ conversation_id: conversationId, sender_id: userId, body })
-      .select('id, sender_id, body, created_at')
+      .select('id, sender_id, body, created_at, deleted_at')
       .single()
     if (error) { res.status(500).json({ error: error.message }); return }
 
@@ -181,9 +235,47 @@ router.post('/conversations/:id/messages', async (req: any, res: any) => {
       .update({ last_message_at: message.created_at })
       .eq('id', conversationId)
 
-    res.json({ message })
+    res.json({ message: serializeMessage(message) })
   } catch (e: any) {
     res.status(500).json({ error: e.message ?? 'Erro ao enviar mensagem' })
+  }
+})
+
+// ── DELETE /api/messages/conversations/:id/messages/:messageId ─────────────────
+// mode='everyone': só o autor pode; esvazia o corpo e marca deleted_at (mantém a
+// linha pra não quebrar a ordenação/threading). mode='me': oculta só pra quem pediu,
+// sem tocar na mensagem em si — o outro participante nem sabe que isso aconteceu.
+router.delete('/conversations/:id/messages/:messageId', async (req: any, res: any) => {
+  try {
+    const userId = uid(req)
+    const conversationId = Number(req.params.id)
+    const messageId = Number(req.params.messageId)
+    const mode = String(req.query.mode ?? req.body?.mode ?? 'me')
+
+    const conv = await getConversationOrThrow(conversationId, userId)
+    if (!conv) { res.status(404).json({ error: 'Conversa não encontrada' }); return }
+
+    const { data: message } = await supabaseAdmin
+      .from('dm_messages').select('id, sender_id, conversation_id').eq('id', messageId).maybeSingle()
+    if (!message || message.conversation_id !== conversationId) { res.status(404).json({ error: 'Mensagem não encontrada' }); return }
+
+    if (mode === 'everyone') {
+      if (message.sender_id !== userId) { res.status(403).json({ error: 'Só quem enviou pode apagar pra todos' }); return }
+      const { error } = await supabaseAdmin
+        .from('dm_messages')
+        .update({ body: '', deleted_at: new Date().toISOString() })
+        .eq('id', messageId)
+      if (error) { res.status(500).json({ error: error.message }); return }
+    } else {
+      const { error } = await supabaseAdmin
+        .from('dm_message_hidden_for')
+        .upsert({ message_id: messageId, user_id: userId }, { onConflict: 'message_id,user_id' })
+      if (error) { res.status(500).json({ error: error.message }); return }
+    }
+
+    res.json({ ok: true })
+  } catch (e: any) {
+    res.status(500).json({ error: e.message ?? 'Erro ao apagar mensagem' })
   }
 })
 
