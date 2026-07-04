@@ -235,30 +235,33 @@ export default function CommunityHomePage() {
           </p>
         ) : (
           <div className="space-y-2">
-            {recent.map((topic) => (
+            {recent.map((topic) => {
+              const cat = categories?.find((c) => c.id === topic.category_id)
+              return (
               <button
                 key={topic.id}
-                onClick={() => {
-                  const cat = categories?.find((c) => c.id === topic.category_id)
-                  if (cat) navigate(`/community/${cat.slug}/${topic.id}`)
-                }}
+                onClick={() => { if (cat) navigate(`/community/${cat.slug}/${topic.id}`) }}
                 className="w-full text-left flex items-center gap-3 rounded-[12px] p-3"
                 style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', cursor: 'pointer' }}
               >
                 <Avatar name={topic.author.name} avatarUrl={topic.author.avatar_url} size={30} />
                 <div className="flex-1 min-w-0">
-                  <div style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: 'var(--arvo-fg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {topic.pinned ? '📌 ' : ''}{topic.title}
+                  <div className="flex items-center gap-1.5" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: 'var(--arvo-fg)' }}>
+                    {cat?.icon && <span style={{ flexShrink: 0 }}>{cat.icon}</span>}
+                    {topic.pinned && <span style={{ flexShrink: 0 }}>📌</span>}
+                    {topic.locked && <span style={{ flexShrink: 0 }}>🔒</span>}
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{topic.title}</span>
                   </div>
                   <div style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-muted)' }}>
-                    @{topic.author.username ?? topic.author.name} · {timeAgo(topic.last_post_at)}
+                    {topic.author.name ?? topic.author.username} · {timeAgo(topic.last_post_at)}
                   </div>
                 </div>
                 <div style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg-muted)', flexShrink: 0 }}>
                   {topic.reply_count}
                 </div>
               </button>
-            ))}
+              )
+            })}
           </div>
         )}
       </div>

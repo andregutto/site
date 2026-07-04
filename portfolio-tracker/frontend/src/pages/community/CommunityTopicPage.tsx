@@ -163,10 +163,11 @@ export default function CommunityTopicPage() {
       </div>
 
       {topic.linked_trip && (
-        <a
-          href={`/trip/${topic.linked_trip.share_token}`}
-          target="_blank"
-          rel="noreferrer"
+        // Link (SPA, mesma janela) em vez de <a target="_blank"> — no PWA em modo
+        // standalone, target="_blank" abre em tela cheia sem histórico de volta
+        // (o "app" só tem uma janela), então o usuário ficava preso lá.
+        <Link
+          to={`/trip/${topic.linked_trip.share_token}`}
           className="flex items-center gap-3 rounded-[12px] p-3"
           style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', textDecoration: 'none' }}
         >
@@ -182,7 +183,7 @@ export default function CommunityTopicPage() {
             </p>
           </div>
           <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: OCRE, flexShrink: 0 }}>{tc?.viewTrip ?? 'Ver viagem'} →</span>
-        </a>
+        </Link>
       )}
 
       {topic.is_admin_viewer && (

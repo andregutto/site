@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, cloneElement } from 'react'
-import { NavLink, Outlet, Link, useLocation } from 'react-router-dom'
+import { NavLink, Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useCurrency, type Currency } from '../contexts/CurrencyContext'
 import { useTheme } from '../contexts/ThemeContext'
@@ -67,6 +67,25 @@ export default function AppLayout() {
   const [showNotifMenu,  setShowNotifMenu]  = useState(false)
   const subNavScrollRef = useRef<HTMLDivElement>(null)
   const [navCollapsed,  setNavCollapsed]  = useState(false)
+  const navigate = useNavigate()
+  // Drag-to-select na pill nav mobile (efeito "liquid glass" tipo iOS Control
+  // Center): pressiona um item e arrasta o dedo pelos outros, o destaque
+  // acompanha em tempo real; solta sobre um item diferente do que iniciou
+  // e navega pra ele. Um toque simples (sem arrastar) continua funcionando
+  // normalmente via o onClick nativo do NavLink.
+  const [dragHighlightIndex, setDragHighlightIndex] = useState<number | null>(null)
+  const dragStartIndexRef = useRef<number | null>(null)
+  const navItemRefs = useRef<(HTMLElement | null)[]>([])
+
+  function indexAtPoint(clientX: number, clientY: number): number | null {
+    for (let i = 0; i < navItemRefs.current.length; i++) {
+      const el = navItemRefs.current[i]
+      if (!el) continue
+      const r = el.getBoundingClientRect()
+      if (clientX >= r.left && clientX <= r.right && clientY >= r.top && clientY <= r.bottom) return i
+    }
+    return null
+  }
   const [chatVisible,    setChatVisible]    = useState(() => localStorage.getItem('arvo_chat_visible') !== 'false')
   const [openChatNow,    setOpenChatNow]    = useState(false)
 
@@ -335,6 +354,34 @@ export default function AppLayout() {
 
   const activeSubItems = inInvestimentos ? investimentosItems : inFinances ? financesItems : inVoyage ? voyageItems : inCommunity ? communityItems : []
 
+  const navItems = [
+    { to: '/dashboard', label: t.nav.investments, match: inInvestimentos, icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.5l7.5-7.5 4 4L21 4.5M3 20.5h18" />
+      </svg>
+    )},
+    { to: '/finances', label: t.nav.finances, match: inFinances, icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+        <circle cx="12" cy="12" r="9.75" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.75v10.5M15 9.3c-.6-1.05-1.65-1.65-3-1.65-1.8 0-3.15 1.05-3.15 2.55S10.2 12.3 12 12.6s3.3 1.05 3.3 2.55-1.35 2.55-3.3 2.55c-1.35 0-2.55-.6-3.15-1.65" />
+      </svg>
+    )},
+    { to: '/voyage', label: (t as any).nav?.voyage ?? 'Viagens', match: inVoyage, icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 2C8.134 2 5 5.134 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.866-3.134-7-7-7Z"/>
+        <circle cx="12" cy="9" r="2.5"/>
+      </svg>
+    )},
+    { to: '/community', label: (t as any).nav?.community ?? 'Comunidade', match: inCommunity, icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+        <circle cx="9" cy="8" r="3"/>
+        <circle cx="17" cy="9" r="2.4"/>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3.5 19.5v-1a5.5 5.5 0 0 1 11 0v1"/>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M15.5 13.2a4.3 4.3 0 0 1 5 4.2v1.1"/>
+      </svg>
+    )},
+  ]
+
   return (
     <div className={`min-h-screen flex flex-col${resolvedTheme === 'dark' ? ' dark' : ''}`} style={{ background: 'var(--arvo-bg)' }}>
       <header className="sticky top-0 z-10" style={{ background: 'var(--arvo-header-bg)', backdropFilter: 'blur(12px) saturate(1.05)', WebkitBackdropFilter: 'blur(12px) saturate(1.05)', borderBottom: '1px solid var(--arvo-border-soft)', paddingTop: 'env(safe-area-inset-top, 0px)' }}>
@@ -412,7 +459,7 @@ export default function AppLayout() {
               onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
             >
               <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="var(--arvo-fg-soft)" strokeWidth={1.8}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 8.511c.884.284 1.5 1.128 1.5 2.097v4.286c0 1.136-.847 2.1-1.98 2.193-.34.027-.68.052-1.02.072v3.091l-3-3c-1.354 0-2.694-.055-4.02-.163a2.115 2.115 0 01-.825-.242m9.345-8.334V6.75c0-1.108-.806-2.057-1.907-2.185a48.507 48.507 0 00-11.186 0C4.806 4.693 4 5.642 4 6.75v6.75c0 1.108.806 2.057 1.907 2.185.28.033.562.062.845.088" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 20.25c4.97 0 9-3.694 9-8.25s-4.03-8.25-9-8.25S3 7.444 3 12c0 2.104.859 4.023 2.273 5.48.432.447.74 1.04.586 1.641a4.483 4.483 0 01-.923 1.785A5.969 5.969 0 006 21c1.282 0 2.47-.402 3.445-1.087.81.22 1.668.337 2.555.337z" />
               </svg>
               {messagesUnreadTotal > 0 && (
                 <span style={{ position: 'absolute', top: 2, right: 2, minWidth: 14, height: 14, padding: '0 3px', borderRadius: 999, background: 'var(--arvo-red)', color: 'white', fontSize: 9, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--arvo-font-body)', lineHeight: 1 }}>
@@ -563,7 +610,7 @@ export default function AppLayout() {
                   </Link>
                   <Link to="/messages" onClick={() => setShowUserMenu(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors sm:hidden" style={{ color: 'var(--arvo-fg-muted)' }} onMouseEnter={e => (e.currentTarget.style.background='var(--arvo-hover-bg)')} onMouseLeave={e => (e.currentTarget.style.background='')}>
                     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4 shrink-0">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M14 5.5c.6.2 1 .75 1 1.4v2.86c0 .76-.56 1.4-1.32 1.46-.23.02-.45.03-.68.05v2.06l-2-2c-.9 0-1.8-.04-2.68-.11a1.41 1.41 0 01-.55-.16M14 5.5v-.6c0-.74-.54-1.37-1.27-1.46a32.34 32.34 0 00-7.46 0C4.54 3.53 4 4.16 4 4.9v4.5c0 .74.54 1.37 1.27 1.46.19.02.37.04.56.06"/>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M8 13.5c3.314 0 6-2.463 6-5.5s-2.686-5.5-6-5.5-6 2.463-6 5.5c0 1.403.573 2.682 1.516 3.653.288.298.494.694.39 1.094a2.989 2.989 0 01-.615 1.19A3.98 3.98 0 004 14c.855 0 1.647-.268 2.297-.725A6.68 6.68 0 008 13.5z"/>
                     </svg>
                     {(t as any).messages?.title ?? 'Mensagens'}
                     {messagesUnreadTotal > 0 && (
@@ -752,36 +799,31 @@ export default function AppLayout() {
             <div style={{ height: 1, margin: '0 14px', background: 'var(--arvo-border-soft)' }} />
           </div>
         )}
-        <div className="flex" style={{ padding: '5px' }}>
-          {[
-            { to: '/dashboard', label: t.nav.investments, match: inInvestimentos, accent: '#1B4FD8', icon: (
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.5l7.5-7.5 4 4L21 4.5M3 20.5h18" />
-              </svg>
-            )},
-            { to: '/finances', label: t.nav.finances, match: inFinances, accent: '#A36A52', icon: (
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                <circle cx="12" cy="12" r="9.75" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.75v10.5M15 9.3c-.6-1.05-1.65-1.65-3-1.65-1.8 0-3.15 1.05-3.15 2.55S10.2 12.3 12 12.6s3.3 1.05 3.3 2.55-1.35 2.55-3.3 2.55c-1.35 0-2.55-.6-3.15-1.65" />
-              </svg>
-            )},
-            { to: '/voyage', label: (t as any).nav?.voyage ?? 'Viagens', match: inVoyage, accent: '#D63B2F', icon: (
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 2C8.134 2 5 5.134 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.866-3.134-7-7-7Z"/>
-                <circle cx="12" cy="9" r="2.5"/>
-              </svg>
-            )},
-            { to: '/community', label: (t as any).nav?.community ?? 'Comunidade', match: inCommunity, accent: '#E8A020', icon: (
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                <circle cx="9" cy="8" r="3"/>
-                <circle cx="17" cy="9" r="2.4"/>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3.5 19.5v-1a5.5 5.5 0 0 1 11 0v1"/>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15.5 13.2a4.3 4.3 0 0 1 5 4.2v1.1"/>
-              </svg>
-            )},
-          ].map(({ to, label, match, icon }) => (
+        <div
+          className="flex"
+          style={{ padding: '5px' }}
+          onTouchStart={(e) => {
+            const idx = indexAtPoint(e.touches[0].clientX, e.touches[0].clientY)
+            dragStartIndexRef.current = idx
+          }}
+          onTouchMove={(e) => {
+            if (dragStartIndexRef.current == null) return
+            const idx = indexAtPoint(e.touches[0].clientX, e.touches[0].clientY)
+            if (idx != null) { e.preventDefault(); setDragHighlightIndex(idx) }
+          }}
+          onTouchEnd={() => {
+            if (dragHighlightIndex != null && dragHighlightIndex !== dragStartIndexRef.current) {
+              const target = navItems[dragHighlightIndex]
+              if (target) navigate(target.to)
+            }
+            dragStartIndexRef.current = null
+            setDragHighlightIndex(null)
+          }}
+        >
+          {navItems.map(({ to, label, match, icon }, i) => (
             <NavLink
               key={to} to={to}
+              ref={(el) => { navItemRefs.current[i] = el }}
               className="flex-1 flex flex-col items-center shrink-0"
               style={{
                 fontFamily: "var(--arvo-font-body)",
@@ -790,9 +832,9 @@ export default function AppLayout() {
                 gap: navCollapsed ? 0 : 4,
                 padding: navCollapsed ? '9px 6px' : '6px 6px 7px',
                 borderRadius: 999,
-                color: match ? 'var(--arvo-fg)' : 'var(--arvo-fg-soft)',
-                background: match ? 'var(--arvo-glass-active-bg)' : 'transparent',
-                boxShadow: match ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
+                color: (match || dragHighlightIndex === i) ? 'var(--arvo-fg)' : 'var(--arvo-fg-soft)',
+                background: (match || dragHighlightIndex === i) ? 'var(--arvo-glass-active-bg)' : 'transparent',
+                boxShadow: (match || dragHighlightIndex === i) ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
                 // overflow:hidden aqui (no próprio item flex, não só no label)
                 // zera o "automatic minimum size" do item pela spec do flexbox —
                 // sem isso, o label escondido ainda inflava a largura mínima do
@@ -800,7 +842,7 @@ export default function AppLayout() {
                 // ao recolher. Faz isso sem precisar animar width (que competia
                 // com a transição do card inteiro e deixava o recolher travado).
                 overflow: 'hidden',
-                transition: 'all 240ms cubic-bezier(0.22,0.61,0.36,1)',
+                transition: dragHighlightIndex != null ? 'none' : 'all 240ms cubic-bezier(0.22,0.61,0.36,1)',
                 textDecoration: 'none',
               }}
             >

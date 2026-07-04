@@ -2534,7 +2534,7 @@
     },
     "categoryTopicsOne": "1 topic",
     "categoryTopicsMany": "{count} topics",
-    "recentTitle": "Recent conversations",
+    "recentTitle": "Recent topics",
     "recentEmpty": "No conversations yet. Be the first to start one!",
     "newTopic": "New topic",
     "topicTitleLabel": "Title",

@@ -5,7 +5,6 @@ import { apiFetch } from '../../lib/api'
 import { useI18n } from '../../contexts/I18nContext'
 import { PageLoader } from '../../components/ArvoLoader'
 import Avatar from '../voyage/_shared/Avatar'
-import { formatTimestamp } from '../../lib/notifications'
 import { useActiveFriends } from '../../hooks/useActiveFriends'
 import MessagingPaywall from './MessagingPaywall'
 
@@ -14,6 +13,19 @@ const RED = '#D63B2F'
 const ACTION_WIDTH = 72 // px per revealed action button (archive/delete on the left)
 const OPEN_THRESHOLD = 36 // px of drag before actions start snapping open
 const UNREAD_THRESHOLD = 70 // px of right-swipe before "mark as unread" fires
+
+// Horário se for hoje, senão data curta — evita "há 3 dias" no meio de uma lista
+// de conversas, onde escanear por data é mais útil que tempo relativo.
+function conversationTimeLabel(iso: string, locale: string): string {
+  const d = new Date(iso)
+  const now = new Date()
+  if (d.toDateString() === now.toDateString()) {
+    return d.toLocaleTimeString(locale === 'pt' ? 'pt-BR' : locale === 'fr' ? 'fr-FR' : 'en-US', { hour: '2-digit', minute: '2-digit' })
+  }
+  const dd = String(d.getDate()).padStart(2, '0')
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  return `${dd}/${mm}/${d.getFullYear()}`
+}
 
 interface ConversationSummary {
   id: number
@@ -232,7 +244,6 @@ export default function MessagesPage() {
                     <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, fontWeight: 600, color: 'var(--arvo-fg)' }}>
                       {c.peer.name ?? c.peer.username ?? '—'}
                     </span>
-                    {c.peer.username && <span style={{ fontSize: 12, color: 'var(--arvo-fg-soft)' }}>@{c.peer.username}</span>}
                   </div>
                   {c.last_message && (
                     <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg-soft)', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontStyle: c.last_message.deleted_at ? 'italic' : 'normal' }}>
@@ -244,7 +255,7 @@ export default function MessagesPage() {
                 </div>
                 <div className="flex flex-col items-end gap-1" style={{ flexShrink: 0 }}>
                   <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-faint)' }}>
-                    {formatTimestamp(c.last_message_at, locale)}
+                    {conversationTimeLabel(c.last_message_at, locale)}
                   </span>
                   {c.unread_count > 0 && (
                     <span style={{
