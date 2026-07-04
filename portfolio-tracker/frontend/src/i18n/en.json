@@ -2588,6 +2588,8 @@
       "bodyRequired": "Message is required."
     },
     "searchResults": "Search results",
-    "searchEmpty": "No topics found."
+    "searchEmpty": "No topics found.",
+    "myTopics": "My topics",
+    "myTopicsEmpty": "You haven't created any topics yet."
   }
 }

@@ -2588,6 +2588,8 @@
       "bodyRequired": "Le message est obligatoire."
     },
     "searchResults": "Résultats de recherche",
-    "searchEmpty": "Aucun sujet trouvé."
+    "searchEmpty": "Aucun sujet trouvé.",
+    "myTopics": "Mes sujets",
+    "myTopicsEmpty": "Vous n'avez encore créé aucun sujet."
   }
 }

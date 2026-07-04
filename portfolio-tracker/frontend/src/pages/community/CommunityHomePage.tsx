@@ -17,6 +17,38 @@ function useDebounced<T>(value: T, delayMs: number): T {
 
 const OCRE = '#E8A020'
 
+function TopicResultsList({ topics, tc, navigate }: {
+  topics: CommunityTopicSummary[]
+  tc: any
+  navigate: (path: string) => void
+}) {
+  return (
+    <div className="space-y-2">
+      {topics.map((topic) => (
+        <button
+          key={topic.id}
+          onClick={() => navigate(`/community/${topic.category_slug}/${topic.id}`)}
+          className="w-full text-left flex items-center gap-3 rounded-[12px] p-3"
+          style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', cursor: 'pointer' }}
+        >
+          <Avatar name={topic.author.name} avatarUrl={topic.author.avatar_url} size={30} />
+          <div className="flex-1 min-w-0">
+            <div style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: 'var(--arvo-fg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {topic.pinned ? '📌 ' : ''}{topic.title}
+            </div>
+            <div style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-muted)' }}>
+              {tc?.cat?.[topic.category_slug ?? ''] ?? topic.category_slug} · @{topic.author.username ?? topic.author.name} · {timeAgo(topic.last_post_at)}
+            </div>
+          </div>
+          <div style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg-muted)', flexShrink: 0 }}>
+            {topic.reply_count}
+          </div>
+        </button>
+      ))}
+    </div>
+  )
+}
+
 function timeAgo(iso: string): string {
   const diffMs = Date.now() - new Date(iso).getTime()
   const mins = Math.floor(diffMs / 60000)
@@ -40,6 +72,9 @@ export default function CommunityHomePage() {
   const debouncedSearch = useDebounced(search.trim(), 300)
   const [searchResults, setSearchResults] = useState<CommunityTopicSummary[] | null>(null)
   const [searching, setSearching] = useState(false)
+  const [showMine, setShowMine] = useState(false)
+  const [mineResults, setMineResults] = useState<CommunityTopicSummary[] | null>(null)
+  const [loadingMine, setLoadingMine] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -70,6 +105,17 @@ export default function CommunityHomePage() {
       .finally(() => { if (!cancelled) setSearching(false) })
     return () => { cancelled = true }
   }, [debouncedSearch])
+
+  function toggleMine() {
+    if (showMine) { setShowMine(false); return }
+    setShowMine(true)
+    setShowSearch(false)
+    setSearch('')
+    setLoadingMine(true)
+    apiFetch<{ topics: CommunityTopicSummary[] }>('/community/mine')
+      .then(res => setMineResults(res.topics))
+      .finally(() => setLoadingMine(false))
+  }
 
   if (loading) return <PageLoader />
 
@@ -102,15 +148,30 @@ export default function CommunityHomePage() {
             />
           </div>
         ) : (
-          <button
-            type="button"
-            onClick={() => setShowSearch(true)}
-            className="w-8 h-8 flex items-center justify-center rounded-full border border-[var(--arvo-border)] text-[var(--arvo-fg-muted)] hover:text-[var(--arvo-fg)] transition-colors shrink-0"
-          >
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 10.5A6.5 6.5 0 114 10.5a6.5 6.5 0 0113 0z" />
-            </svg>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={toggleMine}
+              style={{
+                fontFamily: 'var(--arvo-font-body)', fontSize: 12, padding: '6px 14px', borderRadius: 999,
+                border: `1px solid ${showMine ? OCRE : 'var(--arvo-border)'}`,
+                color: showMine ? OCRE : 'var(--arvo-fg-muted)',
+                background: showMine ? 'rgba(232,160,32,0.08)' : 'transparent',
+                cursor: 'pointer', whiteSpace: 'nowrap',
+              }}
+            >
+              {tc?.myTopics ?? 'Meus tópicos'}
+            </button>
+            <button
+              type="button"
+              onClick={() => { setShowSearch(true); setShowMine(false) }}
+              className="w-8 h-8 flex items-center justify-center rounded-full border border-[var(--arvo-border)] text-[var(--arvo-fg-muted)] hover:text-[var(--arvo-fg)] transition-colors shrink-0"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 10.5A6.5 6.5 0 114 10.5a6.5 6.5 0 0113 0z" />
+              </svg>
+            </button>
+          </div>
         )}
       </div>
 
@@ -126,31 +187,29 @@ export default function CommunityHomePage() {
               {tc?.searchEmpty ?? 'Nenhum tópico encontrado.'}
             </p>
           ) : (
-            <div className="space-y-2">
-              {(searchResults ?? []).map((topic) => (
-                <button
-                  key={topic.id}
-                  onClick={() => navigate(`/community/${topic.category_slug}/${topic.id}`)}
-                  className="w-full text-left flex items-center gap-3 rounded-[12px] p-3"
-                  style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', cursor: 'pointer' }}
-                >
-                  <Avatar name={topic.author.name} avatarUrl={topic.author.avatar_url} size={30} />
-                  <div className="flex-1 min-w-0">
-                    <div style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: 'var(--arvo-fg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {topic.title}
-                    </div>
-                    <div style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-muted)' }}>
-                      {tc?.cat?.[topic.category_slug ?? ''] ?? topic.category_slug} · @{topic.author.username ?? topic.author.name} · {timeAgo(topic.last_post_at)}
-                    </div>
-                  </div>
-                </button>
-              ))}
-            </div>
+            <TopicResultsList topics={searchResults ?? []} tc={tc} navigate={navigate} />
           )}
         </div>
       )}
 
-      {!debouncedSearch && <>
+      {!debouncedSearch && showMine && (
+        <div>
+          <h2 style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 17, color: 'var(--arvo-fg)', marginBottom: 10 }}>
+            {tc?.myTopics ?? 'Meus tópicos'}
+          </h2>
+          {loadingMine ? (
+            <PageLoader />
+          ) : (mineResults ?? []).length === 0 ? (
+            <p style={{ fontFamily: 'var(--arvo-font-display)', fontStyle: 'italic', color: 'var(--arvo-gold)', fontSize: 14 }}>
+              {tc?.myTopicsEmpty ?? 'Você ainda não criou nenhum tópico.'}
+            </p>
+          ) : (
+            <TopicResultsList topics={mineResults ?? []} tc={tc} navigate={navigate} />
+          )}
+        </div>
+      )}
+
+      {!debouncedSearch && !showMine && <>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {(categories ?? []).map((c) => (
           <button

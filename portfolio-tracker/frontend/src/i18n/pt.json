@@ -2588,6 +2588,8 @@
       "bodyRequired": "A mensagem é obrigatória."
     },
     "searchResults": "Resultados da busca",
-    "searchEmpty": "Nenhum tópico encontrado."
+    "searchEmpty": "Nenhum tópico encontrado.",
+    "myTopics": "Meus tópicos",
+    "myTopicsEmpty": "Você ainda não criou nenhum tópico."
   }
 }

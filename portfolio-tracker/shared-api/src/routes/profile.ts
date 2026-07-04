@@ -47,6 +47,14 @@ router.patch('/', requireAuth, async (req, res: Response) => {
     default_section?: string; month_cycle_day?: number; saida_fiscal_brasil?: boolean
     budget_reminder_freq?: number
   }
+
+  // avatar_url vai pro JWT (user_metadata) em toda sessão — um data: URI aqui
+  // já inchou o token o suficiente pra estourar o limite de header HTTP (431)
+  // em todas as chamadas de API. Só aceita URL de arquivo hospedado (Storage).
+  if (avatar_url && (avatar_url.startsWith('data:') || avatar_url.length > 500)) {
+    res.status(400).json({ error: 'avatar_url deve ser uma URL de arquivo hospedado, não uma imagem embutida' }); return
+  }
+
   const { data: { user: current } } = await supabaseAdmin.auth.admin.getUserById(userId)
   const meta = {
     ...(current?.user_metadata ?? {}),
