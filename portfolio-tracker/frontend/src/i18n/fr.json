@@ -141,7 +141,12 @@
     "budgetReminderGoTo": "Aller au Budget",
     "budgetReminderDismiss": "Ignorer",
     "budgetReminderSetupBody": "Voulez-vous être rappelé de revoir votre budget ?",
-    "budgetReminderSetupLink": "Configurer un rappel"
+    "budgetReminderSetupLink": "Configurer un rappel",
+    "deletePendingBalancesTitle": "Soldes en attente qui seront réglés automatiquement :",
+    "deleteBalanceOwedToYou": "vous doit {amount}",
+    "deleteBalanceYouOwe": "vous devez {amount}",
+    "deleteBalancesWillSettle": "Si vous continuez, ces soldes seront remis à zéro et chaque ami sera averti.",
+    "deleteAffectedNotice": "{count} personne(s) avec qui vous partagez des voyages, catégories ou moments seront averties que votre compte a été supprimé."
   },
   "reports": {
     "title": "Rapports fiscaux",
@@ -614,7 +619,8 @@
     "accepting": "Acceptation…",
     "type_moment_invite": "{inviter} vous a invité au moment « {moment} »",
     "type_moment_added": "{inviter} vous a ajouté au moment « {moment} »",
-    "type_community_reply": "{replier} a répondu à votre sujet"
+    "type_community_reply": "{replier} a répondu à votre sujet",
+    "type_friend_account_deleted": "Votre ami(e) {friend} a supprimé son compte Arvo"
   },
   "finances": {
     "navOverview": "Vue d'ensemble",

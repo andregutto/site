@@ -141,7 +141,12 @@
     "budgetReminderGoTo": "Go to Budget",
     "budgetReminderDismiss": "Dismiss",
     "budgetReminderSetupBody": "Want to be reminded to review your budget plan?",
-    "budgetReminderSetupLink": "Set up reminder"
+    "budgetReminderSetupLink": "Set up reminder",
+    "deletePendingBalancesTitle": "Pending balances that will be settled automatically:",
+    "deleteBalanceOwedToYou": "owes you {amount}",
+    "deleteBalanceYouOwe": "you owe {amount}",
+    "deleteBalancesWillSettle": "If you continue, these balances will be zeroed out and each friend will be notified.",
+    "deleteAffectedNotice": "{count} people you share trips, categories or moments with will be notified that your account was deleted."
   },
   "reports": {
     "title": "Tax Reports",
@@ -614,7 +619,8 @@
     "accepting": "Accepting…",
     "type_moment_invite": "{inviter} invited you to the moment \"{moment}\"",
     "type_moment_added": "{inviter} added you to the moment \"{moment}\"",
-    "type_community_reply": "{replier} replied to your topic"
+    "type_community_reply": "{replier} replied to your topic",
+    "type_friend_account_deleted": "Your friend {friend} deleted their Arvo account"
   },
   "finances": {
     "navOverview": "Overview",

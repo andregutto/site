@@ -33,6 +33,7 @@ export const TYPE_ICONS: Record<string, IconName> = {
   friend_invite: 'users',
   friend_accepted: 'users',
   friend_invite_accepted: 'users',
+  friend_account_deleted: 'alert',
   settlement_received: 'wallet',
   expense_share_added: 'users',
   moment_deleted_with_balance: 'alert',
@@ -123,6 +124,11 @@ export function resolveNotificationText(item: NotificationItem, t: any, locale: 
       const inviter = String(item.params.inviter_name ?? '')
       const username = item.params.inviter_username ? `@${item.params.inviter_username}` : ''
       return { title: n.type_friend_invite_accepted.replace('{inviter}', inviter), subtitle: username || undefined }
+    }
+    case 'friend_account_deleted': {
+      const friend = String(item.params.friend_name ?? '')
+      const username = item.params.friend_username ? `@${item.params.friend_username}` : ''
+      return { title: n.type_friend_account_deleted.replace('{friend}', friend), subtitle: username || undefined }
     }
     case 'budget_alert': {
       const nameKey = item.params.name_key ? String(item.params.name_key) : null

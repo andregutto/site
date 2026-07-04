@@ -5,6 +5,7 @@ import { useI18n } from '../../contexts/I18nContext'
 import { PageLoader } from '../../components/ArvoLoader'
 import { SearchBox } from '../../components/ui'
 import Avatar from '../voyage/_shared/Avatar'
+import PullToRefresh from '../../components/PullToRefresh'
 import type { CommunityCategory, CommunityTopicSummary } from './types'
 
 function useDebounced<T>(value: T, delayMs: number): T {
@@ -78,25 +79,24 @@ export default function CommunityHomePage() {
   const [mineResults, setMineResults] = useState<CommunityTopicSummary[] | null>(null)
   const [loadingMine, setLoadingMine] = useState(false)
 
-  useEffect(() => {
-    let cancelled = false
+  async function loadCategoriesAndRecent() {
     setLoading(true)
-    apiFetch<{ categories: CommunityCategory[] }>('/community/categories')
-      .then(async (data) => {
-        if (cancelled) return
-        setCategories(data.categories)
-        const lists = await Promise.all(
-          data.categories.map((c) =>
-            apiFetch<{ topics: CommunityTopicSummary[] }>(`/community/categories/${c.slug}/topics`).then((r) => r.topics)
-          )
+    try {
+      const data = await apiFetch<{ categories: CommunityCategory[] }>('/community/categories')
+      setCategories(data.categories)
+      const lists = await Promise.all(
+        data.categories.map((c) =>
+          apiFetch<{ topics: CommunityTopicSummary[] }>(`/community/categories/${c.slug}/topics`).then((r) => r.topics)
         )
-        if (cancelled) return
-        const merged = lists.flat().sort((a, b) => new Date(b.last_post_at).getTime() - new Date(a.last_post_at).getTime())
-        setRecent(merged.slice(0, 8))
-      })
-      .finally(() => { if (!cancelled) setLoading(false) })
-    return () => { cancelled = true }
-  }, [])
+      )
+      const merged = lists.flat().sort((a, b) => new Date(b.last_post_at).getTime() - new Date(a.last_post_at).getTime())
+      setRecent(merged.slice(0, 8))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => { loadCategoriesAndRecent() }, [])
 
   useEffect(() => {
     if (!debouncedSearch) { setSearchResults(null); return }
@@ -122,6 +122,7 @@ export default function CommunityHomePage() {
   if (loading) return <PageLoader />
 
   return (
+    <PullToRefresh onRefresh={loadCategoriesAndRecent}>
     <div className="space-y-7">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
@@ -267,5 +268,6 @@ export default function CommunityHomePage() {
       </div>
       </>}
     </div>
+    </PullToRefresh>
   )
 }

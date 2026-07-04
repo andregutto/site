@@ -6,6 +6,7 @@ import TripFormModal from './TripFormModal'
 import PendingInvitesBanner from '../../components/PendingInvitesBanner'
 import MomentPickerModal from './MomentPickerModal'
 import { SearchBox } from '../../components/ui'
+import PullToRefresh from '../../components/PullToRefresh'
 import type { Trip } from './types'
 
 function fmtCost(n: number) {
@@ -152,6 +153,7 @@ export default function VoyageTripsPage() {
   useEffect(() => { load() }, [load])
 
   return (
+    <PullToRefresh onRefresh={load}>
     <div className="max-w-6xl mx-auto px-4 2xl:px-8 py-6">
       {/* Header — kicker pequeno + título e ação na mesma linha */}
       <div className="mb-4">
@@ -315,5 +317,6 @@ export default function VoyageTripsPage() {
         <MomentPickerModal onClose={() => setShowMomentPicker(false)} />
       )}
     </div>
+    </PullToRefresh>
   )
 }

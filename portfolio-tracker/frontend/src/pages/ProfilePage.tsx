@@ -104,6 +104,8 @@ export default function ProfilePage() {
   const [deleteConfirm,   setDeleteConfirm]   = useState('')
   const [deleting,        setDeleting]        = useState(false)
   const [deleteError,     setDeleteError]     = useState<string | null>(null)
+  const [deletePreview,   setDeletePreview]   = useState<{ pending_balances: { friend_user_id: string; name?: string; username?: string; currency: string; amount: number }[]; affected_count: number } | null>(null)
+  const [loadingPreview,  setLoadingPreview]  = useState(false)
 
   const [exporting,     setExporting]     = useState(false)
   const [exportError,   setExportError]   = useState<string | null>(null)
@@ -896,7 +898,18 @@ export default function ProfilePage() {
               <p className="text-xs text-[var(--arvo-fg-muted)]">{t.profile.deleteDesc}</p>
               <button
                 type="button"
-                onClick={() => { setShowDeleteModal(true); setDeleteConfirm(''); setDeleteError(null) }}
+                onClick={async () => {
+                  setShowDeleteModal(true); setDeleteConfirm(''); setDeleteError(null)
+                  setLoadingPreview(true)
+                  try {
+                    const preview = await apiFetch<{ pending_balances: { friend_user_id: string; name?: string; username?: string; currency: string; amount: number }[]; affected_count: number }>('/profile/delete-preview')
+                    setDeletePreview(preview)
+                  } catch {
+                    setDeletePreview(null)
+                  } finally {
+                    setLoadingPreview(false)
+                  }
+                }}
                 className="px-4 py-2 text-sm font-semibold text-[var(--arvo-red)] border border-[var(--arvo-red)]/30 rounded-lg hover:bg-[var(--arvo-red-tint)] transition-colors"
               >
                 {t.profile.deleteBtn}
@@ -1278,6 +1291,32 @@ export default function ProfilePage() {
               <div className="bg-[var(--arvo-surface)] rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
                 <h3 className="text-lg font-bold text-[var(--arvo-fg)]">{t.profile.deleteModalTitle}</h3>
                 <p className="text-sm text-[var(--arvo-fg-muted)]">{t.profile.deleteModalDesc}</p>
+
+                {loadingPreview ? (
+                  <p className="text-xs text-[var(--arvo-fg-faint)]">{t.common.loading}</p>
+                ) : deletePreview && (deletePreview.pending_balances.length > 0 || deletePreview.affected_count > 0) && (
+                  <div className="bg-[var(--arvo-red-tint)] border border-[var(--arvo-red)]/20 rounded-xl px-4 py-3 space-y-2">
+                    {deletePreview.pending_balances.length > 0 && (
+                      <div>
+                        <p className="text-xs font-semibold text-[var(--arvo-red)]">{t.profile.deletePendingBalancesTitle}</p>
+                        <ul className="text-xs text-[var(--arvo-fg-muted)] mt-1 space-y-0.5">
+                          {deletePreview.pending_balances.map((b, i) => (
+                            <li key={i}>
+                              {b.name ?? b.username ?? '—'}: {b.amount > 0
+                                ? t.profile.deleteBalanceOwedToYou.replace('{amount}', `${b.currency} ${Math.abs(b.amount).toFixed(2)}`)
+                                : t.profile.deleteBalanceYouOwe.replace('{amount}', `${b.currency} ${Math.abs(b.amount).toFixed(2)}`)}
+                            </li>
+                          ))}
+                        </ul>
+                        <p className="text-xs text-[var(--arvo-fg-muted)] mt-1">{t.profile.deleteBalancesWillSettle}</p>
+                      </div>
+                    )}
+                    {deletePreview.affected_count > 0 && (
+                      <p className="text-xs text-[var(--arvo-fg-muted)]">{t.profile.deleteAffectedNotice.replace('{count}', String(deletePreview.affected_count))}</p>
+                    )}
+                  </div>
+                )}
+
                 <p className="text-xs font-mono bg-[var(--arvo-surface-2)] border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-[var(--arvo-fg)] select-all">{emailForDisplay}</p>
 
                 <input

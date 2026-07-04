@@ -7,6 +7,7 @@ import { PageLoader } from '../../components/ArvoLoader'
 import Avatar from '../voyage/_shared/Avatar'
 import { useActiveFriends } from '../../hooks/useActiveFriends'
 import MessagingPaywall from './MessagingPaywall'
+import PullToRefresh from '../../components/PullToRefresh'
 
 const GOLD = '#C8B89A'
 const RED = '#D63B2F'
@@ -124,7 +125,7 @@ export default function MessagesPage() {
 
   function load(archived: boolean) {
     setLoading(true)
-    apiFetch<{ conversations: ConversationSummary[] }>(`/messages/conversations${archived ? '?archived=true' : ''}`)
+    return apiFetch<{ conversations: ConversationSummary[] }>(`/messages/conversations${archived ? '?archived=true' : ''}`)
       .then(res => setConversations(res.conversations))
       .catch(err => { if (err?.message === 'premium_required') setPremiumBlocked(true) })
       .finally(() => setLoading(false))
@@ -157,6 +158,7 @@ export default function MessagesPage() {
   if (premiumBlocked) return <MessagingPaywall />
 
   return (
+    <PullToRefresh onRefresh={() => load(showArchived)}>
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <h1 style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 22, color: 'var(--arvo-fg)' }}>{tm.title ?? 'Mensagens'}</h1>
@@ -272,5 +274,6 @@ export default function MessagesPage() {
         </div>
       )}
     </div>
+    </PullToRefresh>
   )
 }

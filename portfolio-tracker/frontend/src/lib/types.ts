@@ -242,6 +242,7 @@ export type NotificationType =
   | 'friend_invite'
   | 'friend_accepted'
   | 'friend_invite_accepted'
+  | 'friend_account_deleted'
   | 'settlement_received'
   | 'expense_share_added'
   | 'moment_deleted_with_balance'

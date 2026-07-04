@@ -141,7 +141,12 @@
     "budgetReminderGoTo": "Ir ao Planejamento",
     "budgetReminderDismiss": "Dispensar",
     "budgetReminderSetupBody": "Quer ser lembrado de revisar seu planejamento financeiro?",
-    "budgetReminderSetupLink": "Configurar lembrete"
+    "budgetReminderSetupLink": "Configurar lembrete",
+    "deletePendingBalancesTitle": "Saldos pendentes que serão quitados automaticamente:",
+    "deleteBalanceOwedToYou": "te deve {amount}",
+    "deleteBalanceYouOwe": "você deve {amount}",
+    "deleteBalancesWillSettle": "Ao continuar, esses saldos serão zerados e cada amigo será avisado.",
+    "deleteAffectedNotice": "{count} pessoa(s) com quem você compartilha viagens, categorias ou momentos será(ão) avisada(s) de que sua conta foi apagada."
   },
   "reports": {
     "title": "Relatórios IR",
@@ -614,7 +619,8 @@
     "accepting": "Aceitando…",
     "type_moment_invite": "{inviter} convidou você para o momento \"{moment}\"",
     "type_moment_added": "{inviter} te adicionou ao momento \"{moment}\"",
-    "type_community_reply": "{replier} respondeu no seu tópico"
+    "type_community_reply": "{replier} respondeu no seu tópico",
+    "type_friend_account_deleted": "Seu amigo {friend} apagou a conta do Arvo"
   },
   "finances": {
     "navOverview": "Visão Geral",

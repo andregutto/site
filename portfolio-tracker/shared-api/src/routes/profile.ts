@@ -1,10 +1,125 @@
 import { Router, Response } from 'express'
 import { requireAuth, AuthRequest } from '../middleware/auth.js'
 import { supabaseAdmin } from '../lib/supabase.js'
+import { userDisplay, settleBalanceWithFriend } from './people.js'
 
 const router = Router()
 
 const USERNAME_RE = /^[a-z0-9_]{3,20}$/
+
+interface PendingBalance { friend_user_id: string; name?: string; username?: string; currency: string; amount: number }
+
+// Saldo pendente com CADA amigo (positivo = amigo deve pro usuário, negativo =
+// usuário deve pro amigo) somando todos os Momentos compartilhados — mesma
+// matemática da seção 5.5 de GET /api/people, mas agregada por amigo pra exibir
+// e depois quitar tudo de uma vez na exclusão de conta.
+async function computePendingBalances(userId: string): Promise<PendingBalance[]> {
+  const { data: ownedMoments } = await supabaseAdmin.from('finance_moments').select('id').eq('user_id', userId)
+  const { data: memberMoments } = await supabaseAdmin.from('finance_moment_members').select('moment_id').eq('user_id', userId).eq('status', 'active')
+  const allMomentIds = [...new Set([...(ownedMoments ?? []).map(m => m.id), ...(memberMoments ?? []).map((m: any) => m.moment_id)])]
+  if (!allMomentIds.length) return []
+
+  const { data: expenseRows } = await supabaseAdmin
+    .from('finance_moment_expenses')
+    .select('paid_by_user_id, currency, finance_moment_expense_shares(user_id, share_amount)')
+    .in('moment_id', allMomentIds)
+
+  const balanceByUser: Record<string, Record<string, number>> = {}
+  for (const e of expenseRows ?? []) {
+    const payer = (e as any).paid_by_user_id as string
+    const currency = (e as any).currency as string
+    const shares = ((e as any).finance_moment_expense_shares ?? []) as { user_id: string; share_amount: number }[]
+    const applyDelta = (otherUserId: string, delta: number) => {
+      balanceByUser[otherUserId] ??= {}
+      balanceByUser[otherUserId][currency] = (balanceByUser[otherUserId][currency] ?? 0) + delta
+    }
+    if (payer === userId) {
+      for (const s of shares) { if (s.user_id !== userId) applyDelta(s.user_id, s.share_amount) }
+    } else {
+      const mine = shares.find(s => s.user_id === userId)
+      if (mine) applyDelta(payer, -mine.share_amount)
+    }
+  }
+
+  const result: PendingBalance[] = []
+  for (const [friendUserId, byCurrency] of Object.entries(balanceByUser)) {
+    const display = await userDisplay(friendUserId)
+    for (const [currency, amount] of Object.entries(byCurrency)) {
+      const rounded = Math.round(amount * 100) / 100
+      if (Math.abs(rounded) >= 0.01) result.push({ friend_user_id: friendUserId, name: display.name, username: display.username, currency, amount: rounded })
+    }
+  }
+  return result
+}
+
+// Todo mundo que compartilha algo com o usuário (amigo ativo, viagem, categoria
+// compartilhada ou Momento financeiro, em qualquer direção) — usado pra notificar
+// antes de apagar a conta, já que depois do delete essas linhas somem via cascade
+// e não dá mais pra descobrir quem foi afetado.
+async function computeAffectedUserIds(userId: string): Promise<string[]> {
+  const ids = new Set<string>()
+
+  const { data: friendsOwned } = await supabaseAdmin.from('user_friends').select('friend_user_id').eq('owner_user_id', userId).eq('status', 'active')
+  for (const f of friendsOwned ?? []) if (f.friend_user_id) ids.add(f.friend_user_id)
+  const { data: friendsOfMine } = await supabaseAdmin.from('user_friends').select('owner_user_id').eq('friend_user_id', userId).eq('status', 'active')
+  for (const f of friendsOfMine ?? []) ids.add(f.owner_user_id)
+
+  const { data: ownedTrips } = await supabaseAdmin.from('voyage_trips').select('id').eq('user_id', userId)
+  const ownedTripIds = (ownedTrips ?? []).map(t => t.id)
+  if (ownedTripIds.length) {
+    const { data: members } = await supabaseAdmin.from('voyage_trip_members').select('user_id').in('trip_id', ownedTripIds).not('user_id', 'is', null)
+    for (const m of members ?? []) if (m.user_id) ids.add(m.user_id)
+  }
+  const { data: myTripMemberships } = await supabaseAdmin.from('voyage_trip_members').select('trip_id').eq('user_id', userId)
+  const myTripIds = (myTripMemberships ?? []).map((m: any) => m.trip_id)
+  if (myTripIds.length) {
+    const { data: trips } = await supabaseAdmin.from('voyage_trips').select('user_id').in('id', myTripIds)
+    for (const t of trips ?? []) ids.add(t.user_id)
+  }
+
+  const { data: ownedGroups } = await supabaseAdmin.from('shared_groups').select('id').eq('created_by', userId)
+  const ownedGroupIds = (ownedGroups ?? []).map(g => g.id)
+  if (ownedGroupIds.length) {
+    const { data: members } = await supabaseAdmin.from('shared_group_members').select('user_id').in('group_id', ownedGroupIds).not('user_id', 'is', null)
+    for (const m of members ?? []) if (m.user_id) ids.add(m.user_id)
+  }
+  const { data: myGroupMemberships } = await supabaseAdmin.from('shared_group_members').select('group_id').eq('user_id', userId)
+  const myGroupIds = (myGroupMemberships ?? []).map((m: any) => m.group_id)
+  if (myGroupIds.length) {
+    const { data: groups } = await supabaseAdmin.from('shared_groups').select('created_by').in('id', myGroupIds)
+    for (const g of groups ?? []) ids.add(g.created_by)
+  }
+
+  const { data: ownedMoments } = await supabaseAdmin.from('finance_moments').select('id').eq('user_id', userId)
+  const ownedMomentIds = (ownedMoments ?? []).map(m => m.id)
+  if (ownedMomentIds.length) {
+    const { data: members } = await supabaseAdmin.from('finance_moment_members').select('user_id').in('moment_id', ownedMomentIds).not('user_id', 'is', null)
+    for (const m of members ?? []) if (m.user_id) ids.add(m.user_id)
+  }
+  const { data: myMomentMemberships } = await supabaseAdmin.from('finance_moment_members').select('moment_id').eq('user_id', userId)
+  const myMomentIds = (myMomentMemberships ?? []).map((m: any) => m.moment_id)
+  if (myMomentIds.length) {
+    const { data: moments } = await supabaseAdmin.from('finance_moments').select('user_id').in('id', myMomentIds)
+    for (const m of moments ?? []) ids.add(m.user_id)
+  }
+
+  ids.delete(userId)
+  return [...ids]
+}
+
+// ── GET /api/profile/delete-preview  (o que muda pros outros ao apagar a conta) ──
+router.get('/delete-preview', requireAuth, async (req, res: Response) => {
+  try {
+    const { userId } = req as AuthRequest
+    const [pendingBalances, affectedUserIds] = await Promise.all([
+      computePendingBalances(userId),
+      computeAffectedUserIds(userId),
+    ])
+    res.json({ pending_balances: pendingBalances, affected_count: affectedUserIds.length })
+  } catch (e: any) {
+    res.status(500).json({ error: e.message ?? 'Erro ao calcular impacto da exclusão' })
+  }
+})
 
 router.get('/', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
@@ -173,6 +288,36 @@ router.get('/export', requireAuth, async (req, res: Response) => {
 
 router.delete('/', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
+
+  // Quita todo saldo pendente (com cada amigo, em todos os Momentos compartilhados)
+  // antes de apagar — sem isso a dívida simplesmente desaparece sem registro pro
+  // outro lado. Recalcula do zero (não confia em nada vindo do preview do cliente).
+  const pendingBalances = await computePendingBalances(userId)
+  const friendsWithBalance = [...new Set(pendingBalances.map(b => b.friend_user_id))]
+  for (const friendUserId of friendsWithBalance) {
+    await settleBalanceWithFriend(userId, friendUserId)
+  }
+
+  // Captura quem é afetado E o nome de quem está saindo ANTES de apagar —
+  // depois do delete essas linhas somem via cascade e não dá mais pra descobrir.
+  const [affectedUserIds, deletingUserDisplay] = await Promise.all([
+    computeAffectedUserIds(userId),
+    userDisplay(userId),
+  ])
+  if (affectedUserIds.length > 0) {
+    const occurredAt = new Date().toISOString()
+    await supabaseAdmin.from('notification_dismissals').insert(
+      affectedUserIds.map(otherUserId => ({
+        user_id: otherUserId,
+        key: `friend_account_deleted:${userId}:${occurredAt}`,
+        type: 'friend_account_deleted',
+        params: { friend_name: deletingUserDisplay.name ?? deletingUserDisplay.email, friend_username: deletingUserDisplay.username },
+        severity: 'warning',
+        link: '/people',
+        occurred_at: occurredAt,
+      }))
+    )
+  }
 
   // Transfer ownership of owned groups to another active member before deleting
   const { data: ownedGroups } = await supabaseAdmin

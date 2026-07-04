@@ -426,9 +426,10 @@ export default function AppLayout() {
           {/* Right — user */}
           <div className="flex items-center gap-3 shrink-0 ml-auto">
             {/* Eye: hide/show all values — só faz sentido em Capital/Finanças, onde
-                há valores monetários na tela; em Voyage/Comunidade é um ícone a mais
-                sem função, então some pra aliviar o header no mobile. */}
-            {!inVoyage && !inCommunity && (
+                há valores monetários na tela. Em qualquer outra seção (Voyage,
+                Comunidade, Mensagens, Pessoas, Perfil, Notificações...) é um ícone
+                a mais sem função, então mostra só onde realmente serve. */}
+            {(inInvestimentos || inFinances) && (
             <button
               onClick={toggleHideValues}
               title={hideValues ? (t.common.showValues ?? 'Mostrar valores') : (t.common.hideValues ?? 'Ocultar valores')}

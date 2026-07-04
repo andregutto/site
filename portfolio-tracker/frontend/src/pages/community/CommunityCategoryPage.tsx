@@ -5,6 +5,7 @@ import { useI18n } from '../../contexts/I18nContext'
 import { PageLoader } from '../../components/ArvoLoader'
 import Avatar from '../voyage/_shared/Avatar'
 import NewTopicModal from './NewTopicModal'
+import PullToRefresh from '../../components/PullToRefresh'
 import type { CommunityCategory, CommunityTopicSummary } from './types'
 
 const OCRE = '#E8A020'
@@ -53,6 +54,7 @@ export default function CommunityCategoryPage() {
   if (!category) return null
 
   return (
+    <PullToRefresh onRefresh={load}>
     <div className="space-y-5">
       <Link to="/community" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)', textDecoration: 'none' }}>
         ← {tc?.backToCommunity ?? 'Voltar para a comunidade'}
@@ -124,5 +126,6 @@ export default function CommunityCategoryPage() {
         />
       )}
     </div>
+    </PullToRefresh>
   )
 }

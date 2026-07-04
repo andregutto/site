@@ -13,6 +13,7 @@ import { useActiveFriends } from '../../hooks/useActiveFriends'
 import Avatar from '../voyage/_shared/Avatar'
 import { RoleChip, StatusChip } from '../voyage/_shared/Chips'
 import PendingInvitesBanner from '../../components/PendingInvitesBanner'
+import PullToRefresh from '../../components/PullToRefresh'
 
 const RED = '#D63B2F'
 // Brand palette (Azul Arara, Terracota, Ocre Tucano, Verde Maritaca, Dourado) — dark siblings
@@ -1102,6 +1103,7 @@ export default function FinancesMomentsPage() {
   const sortedYears = [...groups.keys()].sort((a, b) => b - a)
 
   return (
+    <PullToRefresh onRefresh={load}>
     <div className="space-y-4">
       {/* Header — título e ação na mesma linha, sem quebrar; o botão vira um
           "+" compacto pra não ocupar uma linha inteira embaixo do título. */}
@@ -1336,5 +1338,6 @@ export default function FinancesMomentsPage() {
         </div>
       )}
     </div>
+    </PullToRefresh>
   )
 }
