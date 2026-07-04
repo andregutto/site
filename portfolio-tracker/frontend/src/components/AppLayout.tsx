@@ -759,12 +759,13 @@ export default function AppLayout() {
                 style: { width: navCollapsed ? 16 : 20, height: navCollapsed ? 16 : 20, transition: 'width 240ms ease, height 240ms ease' },
               })}
               <span
-                className="truncate w-full text-center px-1"
+                className="truncate text-center px-1"
                 style={{
+                  width: navCollapsed ? 0 : '100%',
                   maxHeight: navCollapsed ? 0 : 14,
                   opacity: navCollapsed ? 0 : 1,
                   overflow: 'hidden',
-                  transition: 'max-height 240ms ease, opacity 160ms ease',
+                  transition: 'max-height 240ms ease, opacity 160ms ease, width 240ms ease',
                 }}
               >{label}</span>
             </NavLink>

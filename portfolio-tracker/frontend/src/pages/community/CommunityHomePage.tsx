@@ -6,6 +6,15 @@ import { PageLoader } from '../../components/ArvoLoader'
 import Avatar from '../voyage/_shared/Avatar'
 import type { CommunityCategory, CommunityTopicSummary } from './types'
 
+function useDebounced<T>(value: T, delayMs: number): T {
+  const [debounced, setDebounced] = useState(value)
+  useEffect(() => {
+    const id = setTimeout(() => setDebounced(value), delayMs)
+    return () => clearTimeout(id)
+  }, [value, delayMs])
+  return debounced
+}
+
 const OCRE = '#E8A020'
 
 function timeAgo(iso: string): string {
@@ -26,6 +35,11 @@ export default function CommunityHomePage() {
   const [categories, setCategories] = useState<CommunityCategory[] | null>(null)
   const [recent, setRecent] = useState<CommunityTopicSummary[]>([])
   const [loading, setLoading] = useState(true)
+  const [showSearch, setShowSearch] = useState(false)
+  const [search, setSearch] = useState('')
+  const debouncedSearch = useDebounced(search.trim(), 300)
+  const [searchResults, setSearchResults] = useState<CommunityTopicSummary[] | null>(null)
+  const [searching, setSearching] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -47,20 +61,96 @@ export default function CommunityHomePage() {
     return () => { cancelled = true }
   }, [])
 
+  useEffect(() => {
+    if (!debouncedSearch) { setSearchResults(null); return }
+    let cancelled = false
+    setSearching(true)
+    apiFetch<{ topics: CommunityTopicSummary[] }>(`/community/search?q=${encodeURIComponent(debouncedSearch)}`)
+      .then(res => { if (!cancelled) setSearchResults(res.topics) })
+      .finally(() => { if (!cancelled) setSearching(false) })
+    return () => { cancelled = true }
+  }, [debouncedSearch])
+
   if (loading) return <PageLoader />
 
   return (
     <div className="space-y-7">
-      <div>
-        <div style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: OCRE, marginBottom: 6 }}>
-          {tc?.eyebrow ?? 'ARVO COMUNIDADE'}
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <div style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: OCRE, marginBottom: 6 }}>
+            {tc?.eyebrow ?? 'ARVO COMUNIDADE'}
+          </div>
+          <h1 style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 28, color: 'var(--arvo-fg)' }}>{tc?.title ?? 'Comunidade'}</h1>
+          <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: 'var(--arvo-fg-muted)', marginTop: 4 }}>
+            {tc?.subtitle}
+          </p>
         </div>
-        <h1 style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 28, color: 'var(--arvo-fg)' }}>{tc?.title ?? 'Comunidade'}</h1>
-        <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: 'var(--arvo-fg-muted)', marginTop: 4 }}>
-          {tc?.subtitle}
-        </p>
+
+        {showSearch ? (
+          <div className="relative flex-1 min-w-[200px] max-w-xs">
+            <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--arvo-fg-faint)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 10.5A6.5 6.5 0 114 10.5a6.5 6.5 0 0113 0z" />
+            </svg>
+            <input
+              autoFocus
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              onBlur={() => { if (!search) setShowSearch(false) }}
+              placeholder={(t as any).common?.search ?? 'Buscar...'}
+              style={{ fontSize: 16 }}
+              className="pl-8 pr-3 py-1.5 sm:text-xs rounded-full border border-[var(--arvo-border)] bg-[var(--arvo-surface)] text-[var(--arvo-fg)] w-full focus:outline-none focus:border-[var(--arvo-gold)] transition-colors"
+            />
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setShowSearch(true)}
+            className="w-8 h-8 flex items-center justify-center rounded-full border border-[var(--arvo-border)] text-[var(--arvo-fg-muted)] hover:text-[var(--arvo-fg)] transition-colors shrink-0"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 10.5A6.5 6.5 0 114 10.5a6.5 6.5 0 0113 0z" />
+            </svg>
+          </button>
+        )}
       </div>
 
+      {debouncedSearch && (
+        <div>
+          <h2 style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 17, color: 'var(--arvo-fg)', marginBottom: 10 }}>
+            {(tc?.searchResults ?? 'Resultados da busca')}
+          </h2>
+          {searching ? (
+            <PageLoader />
+          ) : (searchResults ?? []).length === 0 ? (
+            <p style={{ fontFamily: 'var(--arvo-font-display)', fontStyle: 'italic', color: 'var(--arvo-gold)', fontSize: 14 }}>
+              {tc?.searchEmpty ?? 'Nenhum tópico encontrado.'}
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {(searchResults ?? []).map((topic) => (
+                <button
+                  key={topic.id}
+                  onClick={() => navigate(`/community/${topic.category_slug}/${topic.id}`)}
+                  className="w-full text-left flex items-center gap-3 rounded-[12px] p-3"
+                  style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', cursor: 'pointer' }}
+                >
+                  <Avatar name={topic.author.name} avatarUrl={topic.author.avatar_url} size={30} />
+                  <div className="flex-1 min-w-0">
+                    <div style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: 'var(--arvo-fg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {topic.title}
+                    </div>
+                    <div style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-muted)' }}>
+                      {tc?.cat?.[topic.category_slug ?? ''] ?? topic.category_slug} · @{topic.author.username ?? topic.author.name} · {timeAgo(topic.last_post_at)}
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {!debouncedSearch && <>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {(categories ?? []).map((c) => (
           <button
@@ -119,6 +209,7 @@ export default function CommunityHomePage() {
           </div>
         )}
       </div>
+      </>}
     </div>
   )
 }

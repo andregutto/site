@@ -127,6 +127,54 @@ router.get('/categories', async (req: any, res: any) => {
   }
 })
 
+// ── GET /api/community/search?q= ─────────────────────────────────────────────
+// Busca por título em todas as categorias (não paginada — volume baixo na V1).
+router.get('/search', async (req: any, res: any) => {
+  const userId = uid(req)
+  const q = String(req.query.q ?? '').trim()
+  if (!q) { res.json({ topics: [] }); return }
+
+  try {
+    await ensureMember(userId)
+
+    const { data: topics, error } = await supabaseAdmin
+      .from('community_topics')
+      .select('*')
+      .is('deleted_at', null)
+      .ilike('title', `%${q}%`)
+      .order('last_post_at', { ascending: false })
+      .limit(30)
+    if (error) { res.status(500).json({ error: error.message }); return }
+
+    const categoryIds = [...new Set((topics ?? []).map((t: any) => t.category_id))]
+    const { data: categories } = categoryIds.length
+      ? await supabaseAdmin.from('community_categories').select('id, slug').in('id', categoryIds)
+      : { data: [] as any[] }
+    const categorySlugById = new Map((categories ?? []).map((c: any) => [c.id, c.slug]))
+
+    const authorIds = [...new Set((topics ?? []).map((t: any) => t.user_id))]
+    const displays = await Promise.all(authorIds.map(async (id) => [id, await userDisplay(id)] as const))
+    const displayMap = new Map(displays)
+
+    const result = (topics ?? []).map((t: any) => ({
+      id: t.id,
+      category_id: t.category_id,
+      category_slug: categorySlugById.get(t.category_id) ?? '',
+      title: t.title,
+      pinned: t.pinned,
+      locked: t.locked,
+      reply_count: t.reply_count,
+      last_post_at: t.last_post_at,
+      created_at: t.created_at,
+      author: toAuthor(t.user_id, displayMap.get(t.user_id)!),
+    }))
+
+    res.json({ topics: result })
+  } catch (err: any) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
 // ── GET /api/community/categories/:slug/topics ──────────────────────────────
 router.get('/categories/:slug/topics', async (req: any, res: any) => {
   const userId = uid(req)

@@ -2586,6 +2586,8 @@
       "generic": "Une erreur est survenue. Veuillez réessayer.",
       "titleRequired": "Le titre est obligatoire.",
       "bodyRequired": "Le message est obligatoire."
-    }
+    },
+    "searchResults": "Résultats de recherche",
+    "searchEmpty": "Aucun sujet trouvé."
   }
 }

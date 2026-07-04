@@ -17,6 +17,7 @@ export interface CommunityAuthor {
 export interface CommunityTopicSummary {
   id: number
   category_id: number
+  category_slug?: string
   title: string
   pinned: boolean
   locked: boolean

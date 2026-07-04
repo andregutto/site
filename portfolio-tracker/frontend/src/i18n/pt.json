@@ -2586,6 +2586,8 @@
       "generic": "Algo deu errado. Tente novamente.",
       "titleRequired": "O título é obrigatório.",
       "bodyRequired": "A mensagem é obrigatória."
-    }
+    },
+    "searchResults": "Resultados da busca",
+    "searchEmpty": "Nenhum tópico encontrado."
   }
 }

@@ -2586,6 +2586,8 @@
       "generic": "Something went wrong. Please try again.",
       "titleRequired": "Title is required.",
       "bodyRequired": "Message is required."
-    }
+    },
+    "searchResults": "Search results",
+    "searchEmpty": "No topics found."
   }
 }
