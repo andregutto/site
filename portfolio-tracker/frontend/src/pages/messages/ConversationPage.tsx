@@ -335,8 +335,8 @@ export default function ConversationPage() {
             rows={1}
             style={{
               flex: 1, fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg)',
-              background: 'var(--arvo-bg)', border: '1px solid var(--arvo-border)', borderRadius: 10,
-              padding: '10px 12px', resize: 'none', lineHeight: 1.5, maxHeight: 120,
+              background: 'var(--arvo-bg)', border: '1px solid var(--arvo-border)', borderRadius: 21,
+              padding: '10px 16px', resize: 'none', lineHeight: 1.5, maxHeight: 120, boxSizing: 'border-box',
             }}
           />
           <button
@@ -344,13 +344,15 @@ export default function ConversationPage() {
             disabled={sending || !draft.trim()}
             title={tm.send ?? 'Enviar'}
             style={{
-              width: 40, height: 40, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
-              borderRadius: 10, border: 'none', cursor: 'pointer',
-              background: GOLD, color: '#1a1200', opacity: sending || !draft.trim() ? 0.5 : 1,
+              width: 42, height: 42, flexShrink: 0, boxSizing: 'border-box', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              borderRadius: '50%', border: 'none', cursor: !draft.trim() ? 'default' : 'pointer',
+              background: draft.trim() ? GOLD : 'var(--arvo-hover-bg)',
+              color: draft.trim() ? '#1a1200' : 'var(--arvo-fg-faint)',
+              opacity: sending ? 0.6 : 1, transition: 'background 160ms ease, color 160ms ease',
             }}
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 19.5l15-7.5-15-7.5v6l10 1.5-10 1.5v6z" />
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M3.478 2.404a.75.75 0 00-.926.941l2.432 7.905H13.5a.75.75 0 010 1.5H4.984l-2.432 7.905a.75.75 0 00.926.94 60.519 60.519 0 0018.445-8.986.75.75 0 000-1.218A60.517 60.517 0 003.478 2.404z" />
             </svg>
           </button>
         </div>
