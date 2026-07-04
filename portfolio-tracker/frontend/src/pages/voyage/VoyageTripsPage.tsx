@@ -5,6 +5,7 @@ import { useI18n } from '../../contexts/I18nContext'
 import TripFormModal from './TripFormModal'
 import PendingInvitesBanner from '../../components/PendingInvitesBanner'
 import MomentPickerModal from './MomentPickerModal'
+import { SearchBox } from '../../components/ui'
 import type { Trip } from './types'
 
 function fmtCost(n: number) {
@@ -185,20 +186,7 @@ export default function VoyageTripsPage() {
       {!loading && trips.length > 0 && (
         <div className="flex items-center gap-2 mb-5">
           {showSearch ? (
-            <div className="relative flex-1">
-              <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--arvo-fg-faint)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 10.5A6.5 6.5 0 114 10.5a6.5 6.5 0 0113 0z" />
-              </svg>
-              <input
-                autoFocus
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                onBlur={() => { if (!search) setShowSearch(false) }}
-                placeholder={t.common.search ?? 'Buscar...'}
-                style={{ fontSize: 16 }}
-                className="pl-8 pr-3 py-1.5 sm:text-xs rounded-full border border-[var(--arvo-border)] bg-[var(--arvo-surface)] text-[var(--arvo-fg)] w-full focus:outline-none focus:border-[var(--arvo-gold)] transition-colors"
-              />
-            </div>
+            <SearchBox value={search} onChange={setSearch} onBlurEmpty={() => setShowSearch(false)} />
           ) : (
             <>
               <div className="flex gap-2 overflow-x-auto flex-1 min-w-0" style={{ scrollbarWidth: 'none' }}>

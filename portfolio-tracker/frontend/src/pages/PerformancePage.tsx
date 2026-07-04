@@ -399,7 +399,12 @@ export default function PerformancePage() {
       ) : (
         <>
           {summary && (
-            <div className="rounded-2xl p-5" style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)' }}>
+            <div className="rounded-2xl p-5" style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', position: 'relative' }}>
+              {currency !== 'BRL' && (
+                <p style={{ position: 'absolute', top: 14, right: 18, fontFamily: 'var(--arvo-font-body)', fontSize: 9.5, color: 'var(--arvo-fg-faint)', whiteSpace: 'nowrap', margin: 0 }}>
+                  1 {currency} = R$ {(fxRates[currency] ?? 0).toFixed(2)}
+                </p>
+              )}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6">
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   <span style={kpiLabelStyle}>{t.performance.periodStart}</span>

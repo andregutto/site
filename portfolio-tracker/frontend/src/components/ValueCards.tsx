@@ -15,7 +15,7 @@ interface Props {
 }
 
 export default function ValueCards({ total_brl, generated_at, invested_brl, gain_brl, gain_pct, period_abs, chartLoading, period_pct, period_label }: Props) {
-  const { currency, fmt, hideValues } = useCurrency()
+  const { currency, fmt, fxRates, hideValues } = useCurrency()
   const { t, locale } = useI18n()
   const ts = new Date(generated_at).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })
   const showSecondary = invested_brl != null && gain_brl != null
@@ -66,9 +66,16 @@ export default function ValueCards({ total_brl, generated_at, invested_brl, gain
             {fmt(total_brl, 0)}
           </p>
         </div>
-        <p className="hidden sm:block" style={{ fontFamily: "var(--arvo-font-body)", fontSize: 10, fontWeight: 600, letterSpacing: '0.10em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)', marginTop: 4, whiteSpace: 'nowrap' }}>
-          {t.dashboard.updatedAt.replace('{time}', ts)}
-        </p>
+        <div className="hidden sm:flex" style={{ flexDirection: 'column', alignItems: 'flex-end', gap: 3, marginTop: 4 }}>
+          <p style={{ fontFamily: "var(--arvo-font-body)", fontSize: 10, fontWeight: 600, letterSpacing: '0.10em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)', whiteSpace: 'nowrap', margin: 0 }}>
+            {t.dashboard.updatedAt.replace('{time}', ts)}
+          </p>
+          {currency !== 'BRL' && (
+            <p style={{ fontFamily: "var(--arvo-font-body)", fontSize: 9.5, color: 'var(--arvo-fg-faint)', whiteSpace: 'nowrap', margin: 0 }}>
+              1 {currency} = R$ {(fxRates[currency] ?? 0).toFixed(2)}
+            </p>
+          )}
+        </div>
       </div>
 
       {/* KPI grid */}

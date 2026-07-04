@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { apiFetch } from '../../lib/api'
 import { useI18n } from '../../contexts/I18nContext'
 import { PageLoader } from '../../components/ArvoLoader'
+import { SearchBox } from '../../components/ui'
 import Avatar from '../voyage/_shared/Avatar'
 import type { CommunityCategory, CommunityTopicSummary } from './types'
 
@@ -38,6 +39,7 @@ function TopicResultsList({ topics, tc, navigate }: {
             </div>
             <div style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-muted)' }}>
               {tc?.cat?.[topic.category_slug ?? ''] ?? topic.category_slug} · @{topic.author.username ?? topic.author.name} · {timeAgo(topic.last_post_at)}
+              {topic.matched_in_body && ` · ${tc?.matchedInBody ?? 'encontrado numa resposta'}`}
             </div>
           </div>
           <div style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg-muted)', flexShrink: 0 }}>
@@ -133,20 +135,12 @@ export default function CommunityHomePage() {
         </div>
 
         {showSearch ? (
-          <div className="relative flex-1 min-w-[200px] max-w-xs">
-            <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--arvo-fg-faint)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 10.5A6.5 6.5 0 114 10.5a6.5 6.5 0 0113 0z" />
-            </svg>
-            <input
-              autoFocus
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              onBlur={() => { if (!search) setShowSearch(false) }}
-              placeholder={(t as any).common?.search ?? 'Buscar...'}
-              style={{ fontSize: 16 }}
-              className="pl-8 pr-3 py-1.5 sm:text-xs rounded-full border border-[var(--arvo-border)] bg-[var(--arvo-surface)] text-[var(--arvo-fg)] w-full focus:outline-none focus:border-[var(--arvo-gold)] transition-colors"
-            />
-          </div>
+          <SearchBox
+            value={search}
+            onChange={setSearch}
+            onBlurEmpty={() => setShowSearch(false)}
+            className="relative flex-1 min-w-[200px] max-w-xs"
+          />
         ) : (
           <div className="flex items-center gap-2">
             <button

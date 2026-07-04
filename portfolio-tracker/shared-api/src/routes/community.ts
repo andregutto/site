@@ -170,7 +170,10 @@ router.get('/mine', async (req: any, res: any) => {
 })
 
 // ── GET /api/community/search?q= ─────────────────────────────────────────────
-// Busca por título em todas as categorias (não paginada — volume baixo na V1).
+// Busca por título E pelo corpo dos posts, em todas as categorias (não
+// paginada — volume baixo na V1). Relevância: tópicos com match no título
+// vêm primeiro (mais recente → mais antigo), depois os que só têm match no
+// corpo de algum post (mesmo critério de ordenação), sem repetir tópicos.
 router.get('/search', async (req: any, res: any) => {
   const userId = uid(req)
   const q = String(req.query.q ?? '').trim()
@@ -179,26 +182,48 @@ router.get('/search', async (req: any, res: any) => {
   try {
     await ensureMember(userId)
 
-    const { data: topics, error } = await supabaseAdmin
+    const { data: titleMatches, error: titleErr } = await supabaseAdmin
       .from('community_topics')
       .select('*')
       .is('deleted_at', null)
       .ilike('title', `%${q}%`)
       .order('last_post_at', { ascending: false })
       .limit(30)
-    if (error) { res.status(500).json({ error: error.message }); return }
+    if (titleErr) { res.status(500).json({ error: titleErr.message }); return }
 
-    const categoryIds = [...new Set((topics ?? []).map((t: any) => t.category_id))]
+    const titleMatchIds = new Set((titleMatches ?? []).map((t: any) => t.id))
+
+    const { data: bodyPosts, error: bodyErr } = await supabaseAdmin
+      .from('community_posts')
+      .select('topic_id')
+      .is('deleted_at', null)
+      .ilike('body', `%${q}%`)
+      .limit(100)
+    if (bodyErr) { res.status(500).json({ error: bodyErr.message }); return }
+
+    const bodyTopicIds = [...new Set((bodyPosts ?? []).map((p: any) => p.topic_id))]
+      .filter((id) => !titleMatchIds.has(id))
+
+    const { data: bodyMatchTopics } = bodyTopicIds.length
+      ? await supabaseAdmin.from('community_topics').select('*').is('deleted_at', null).in('id', bodyTopicIds)
+      : { data: [] as any[] }
+    const bodyMatches = (bodyMatchTopics ?? []).sort(
+      (a: any, b: any) => new Date(b.last_post_at).getTime() - new Date(a.last_post_at).getTime()
+    )
+
+    const topics = [...(titleMatches ?? []), ...bodyMatches].slice(0, 30)
+
+    const categoryIds = [...new Set(topics.map((t: any) => t.category_id))]
     const { data: categories } = categoryIds.length
       ? await supabaseAdmin.from('community_categories').select('id, slug').in('id', categoryIds)
       : { data: [] as any[] }
     const categorySlugById = new Map((categories ?? []).map((c: any) => [c.id, c.slug]))
 
-    const authorIds = [...new Set((topics ?? []).map((t: any) => t.user_id))]
+    const authorIds = [...new Set(topics.map((t: any) => t.user_id))]
     const displays = await Promise.all(authorIds.map(async (id) => [id, await userDisplay(id)] as const))
     const displayMap = new Map(displays)
 
-    const result = (topics ?? []).map((t: any) => ({
+    const result = topics.map((t: any) => ({
       id: t.id,
       category_id: t.category_id,
       category_slug: categorySlugById.get(t.category_id) ?? '',
@@ -209,6 +234,7 @@ router.get('/search', async (req: any, res: any) => {
       last_post_at: t.last_post_at,
       created_at: t.created_at,
       author: toAuthor(t.user_id, displayMap.get(t.user_id)!),
+      matched_in_body: !titleMatchIds.has(t.id),
     }))
 
     res.json({ topics: result })

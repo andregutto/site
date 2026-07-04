@@ -2590,6 +2590,7 @@
     "searchResults": "Résultats de recherche",
     "searchEmpty": "Aucun sujet trouvé.",
     "myTopics": "Mes sujets",
-    "myTopicsEmpty": "Vous n'avez encore créé aucun sujet."
+    "myTopicsEmpty": "Vous n'avez encore créé aucun sujet.",
+    "matchedInBody": "trouvé dans une réponse"
   }
 }

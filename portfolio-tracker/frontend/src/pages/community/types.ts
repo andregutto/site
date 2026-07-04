@@ -19,6 +19,7 @@ export interface CommunityTopicSummary {
   category_id: number
   category_slug?: string
   title: string
+  matched_in_body?: boolean
   pinned: boolean
   locked: boolean
   reply_count: number
