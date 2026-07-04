@@ -37,6 +37,7 @@ export const TYPE_ICONS: Record<string, IconName> = {
   expense_share_added: 'users',
   moment_deleted_with_balance: 'alert',
   group_deleted_with_balance: 'alert',
+  community_reply: 'share',
 }
 
 export function formatTimestamp(iso: string, locale: Locale): string {
@@ -149,6 +150,14 @@ export function resolveNotificationText(item: NotificationItem, t: any, locale: 
       const amounts = (item.params.amounts as { currency: string; amount: number }[] | undefined) ?? []
       const amountStr = amounts.map(a => formatMoney(a.amount, a.currency, locale)).join(', ')
       return { title: n.type_settlement_received.replace('{from}', from).replace('{amount}', amountStr) }
+    }
+    case 'community_reply': {
+      const replier = String(item.params.replier_name ?? '')
+      const topicTitle = String(item.params.topic_title ?? '')
+      return {
+        title: n.type_community_reply.replace('{replier}', replier),
+        subtitle: topicTitle || undefined,
+      }
     }
     case 'expense_share_added': {
       const creator = String(item.params.creator_name ?? '')

@@ -6,6 +6,7 @@ import { getSplitWarnings, getStaleManualAssets } from './portfolio.js'
 import { getPendingGroupInvites } from './shared.js'
 import { getPendingTripInvites, getRecentTripAdditions } from './voyage.js'
 import { getPendingFriendInvites, getRecentFriendAcceptances } from './people.js'
+import { getRecentCommunityReplies } from './community.js'
 
 const router = Router()
 
@@ -25,7 +26,7 @@ const NON_DISMISSIBLE_HISTORY_TYPES = new Set(['bank_connected', 'bank_connect_e
 router.get('/', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
 
-  const [achievementsRes, subsResult, notifDismissalsRes, budgetAlerts, monthlyReviewAlerts, splitWarnings, staleManualAssets, pendingInvites, pendingTripInvites, pendingFriendInvites, recentFriendAcceptances, recentTripAdditions, pendingMomentInvites, recentMomentAdditions, recentSettlements, recentExpenseShares] = await Promise.all([
+  const [achievementsRes, subsResult, notifDismissalsRes, budgetAlerts, monthlyReviewAlerts, splitWarnings, staleManualAssets, pendingInvites, pendingTripInvites, pendingFriendInvites, recentFriendAcceptances, recentTripAdditions, pendingMomentInvites, recentMomentAdditions, recentSettlements, recentExpenseShares, recentCommunityReplies] = await Promise.all([
     supabaseAdmin.from('achievements').select('achievement_key, earned_at').eq('user_id', userId).order('earned_at', { ascending: true }),
     getActiveSubscriptions(userId),
     supabaseAdmin.from('notification_dismissals').select('key, type, params, severity, link, occurred_at, dismissed_at').eq('user_id', userId),
@@ -42,6 +43,7 @@ router.get('/', requireAuth, async (req, res: Response) => {
     getRecentMomentAdditions(userId),
     getRecentSettlements(userId),
     getRecentExpenseShares(userId),
+    getRecentCommunityReplies(userId),
   ])
 
   const dismissedKeys = new Set((notifDismissalsRes.data ?? []).map(n => n.key))
@@ -294,6 +296,21 @@ router.get('/', requireAuth, async (req, res: Response) => {
       },
       link: `/finances/moments/${s.moment_id}`,
       occurred_at: s.occurred_at,
+      dismissed_at: null,
+      dismissible: true,
+    })
+  }
+
+  // Category 23: alguém respondeu num tópico seu na Comunidade (não-acionável, só FYI)
+  for (const r of recentCommunityReplies) {
+    if (dismissedKeys.has(r.key)) continue
+    active.push({
+      key: r.key,
+      type: 'community_reply',
+      severity: 'info',
+      params: { replier_name: r.replier_name, topic_title: r.topic_title },
+      link: `/community/${r.topic_slug}/${r.topic_id}`,
+      occurred_at: r.occurred_at,
       dismissed_at: null,
       dismissible: true,
     })

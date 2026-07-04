@@ -613,7 +613,8 @@
     "accept": "Aceitar",
     "accepting": "Aceitando…",
     "type_moment_invite": "{inviter} convidou você para o momento \"{moment}\"",
-    "type_moment_added": "{inviter} te adicionou ao momento \"{moment}\""
+    "type_moment_added": "{inviter} te adicionou ao momento \"{moment}\"",
+    "type_community_reply": "{replier} respondeu no seu tópico"
   },
   "finances": {
     "navOverview": "Visão Geral",

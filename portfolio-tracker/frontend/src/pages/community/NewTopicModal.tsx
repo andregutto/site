@@ -15,7 +15,11 @@ interface NewTopicModalProps {
 export default function NewTopicModal({ categories, defaultCategorySlug, onClose, onCreated }: NewTopicModalProps) {
   const { t } = useI18n()
   const tc = (t as any).community ?? {}
-  const [categorySlug, setCategorySlug] = useState(defaultCategorySlug ?? categories[0]?.slug ?? '')
+  const [categorySlug, setCategorySlugState] = useState(defaultCategorySlug ?? categories[0]?.slug ?? '')
+  function setCategorySlug(slug: string) {
+    setCategorySlugState(slug)
+    if (slug !== 'viagens') setLinkedTripId(null)
+  }
   const [title, setTitle] = useState('')
   const [body, setBody] = useState('')
   const [linkedTripId, setLinkedTripId] = useState<number | null>(null)
@@ -98,7 +102,7 @@ export default function NewTopicModal({ categories, defaultCategorySlug, onClose
           style={{ width: '100%', marginTop: 6, marginBottom: 14, padding: '9px 12px', borderRadius: 10, border: '1px solid var(--arvo-border)', background: 'var(--arvo-bg)', color: 'var(--arvo-fg)', fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, resize: 'vertical', lineHeight: 1.6 }}
         />
 
-        {trips.length > 0 && (
+        {categorySlug === 'viagens' && trips.length > 0 && (
           <>
             <label style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)' }}>
               {tc.linkTripLabel ?? 'Vincular uma viagem (opcional)'}

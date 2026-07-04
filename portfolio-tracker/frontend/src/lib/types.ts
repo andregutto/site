@@ -246,6 +246,7 @@ export type NotificationType =
   | 'expense_share_added'
   | 'moment_deleted_with_balance'
   | 'group_deleted_with_balance'
+  | 'community_reply'
 
 export interface NotificationItem {
   key: string

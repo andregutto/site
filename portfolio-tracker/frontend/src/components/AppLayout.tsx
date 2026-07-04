@@ -37,6 +37,7 @@ const NOTIF_ICON: Record<string, IconName> = {
   friend_invite: 'users',
   friend_accepted: 'users',
   friend_invite_accepted: 'users',
+  community_reply: 'share',
 }
 
 function useClickOutside(ref: React.RefObject<HTMLElement | null>, cb: () => void, active: boolean) {

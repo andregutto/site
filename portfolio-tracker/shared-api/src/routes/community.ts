@@ -487,4 +487,67 @@ router.delete('/topics/:id', async (req: any, res: any) => {
   }
 })
 
+// ── Notificações: respostas recentes em tópicos que o usuário criou ─────────
+// Padrão "pull" (mesmo de settlement_received/expense_share_added em
+// notifications.ts): consultado ao vivo no GET /api/notifications, sem
+// tabela de eventos própria. Só notifica o autor do tópico, e só quando
+// outra pessoa responde — não dispara para likes nem para quem só comentou.
+export interface RecentCommunityReply {
+  key: string
+  topic_id: number
+  topic_slug: string
+  topic_title: string
+  replier_name: string
+  occurred_at: string
+}
+
+const RECENT_REPLY_WINDOW_MS = 14 * 24 * 60 * 60 * 1000 // 14 dias
+
+export async function getRecentCommunityReplies(userId: string): Promise<RecentCommunityReply[]> {
+  const since = new Date(Date.now() - RECENT_REPLY_WINDOW_MS).toISOString()
+
+  const { data: myTopics } = await supabaseAdmin
+    .from('community_topics')
+    .select('id, title, category_id')
+    .eq('user_id', userId)
+    .is('deleted_at', null)
+  if (!myTopics || myTopics.length === 0) return []
+
+  const topicIds = myTopics.map((t: any) => t.id)
+  const { data: replies } = await supabaseAdmin
+    .from('community_posts')
+    .select('id, topic_id, user_id, created_at')
+    .in('topic_id', topicIds)
+    .neq('user_id', userId)
+    .is('deleted_at', null)
+    .gte('created_at', since)
+    .order('created_at', { ascending: false })
+  if (!replies || replies.length === 0) return []
+
+  const categoryIds = [...new Set(myTopics.map((t: any) => t.category_id))]
+  const { data: categories } = await supabaseAdmin
+    .from('community_categories')
+    .select('id, slug')
+    .in('id', categoryIds)
+  const categorySlugById = new Map((categories ?? []).map((c: any) => [c.id, c.slug]))
+  const topicById = new Map(myTopics.map((t: any) => [t.id, t]))
+
+  const replierIds = [...new Set(replies.map((r: any) => r.user_id))]
+  const displays = await Promise.all(replierIds.map(async (id) => [id, await userDisplay(id)] as const))
+  const displayMap = new Map(displays)
+
+  return replies.map((r: any) => {
+    const topic = topicById.get(r.topic_id)
+    const display = displayMap.get(r.user_id)
+    return {
+      key: `community_reply:${r.id}`,
+      topic_id: r.topic_id,
+      topic_slug: categorySlugById.get(topic?.category_id) ?? '',
+      topic_title: topic?.title ?? '',
+      replier_name: display?.name ?? display?.email ?? '',
+      occurred_at: r.created_at,
+    }
+  })
+}
+
 export default router

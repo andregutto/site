@@ -34,6 +34,18 @@ export default function CommunityTopicPage() {
     }
   }
 
+  // Recarrega os dados do tópico sem acionar o PageLoader de tela cheia —
+  // usado depois de like/edit/delete/reply pra não "piscar" a página inteira.
+  async function reloadSilently() {
+    if (!topicId) return
+    try {
+      const res = await apiFetch<{ topic: CommunityTopicDetail }>(`/community/topics/${topicId}`)
+      setTopic(res.topic)
+    } catch {
+      // mantém o estado atual se a atualização silenciosa falhar
+    }
+  }
+
   useEffect(() => { load() }, [topicId])
 
   async function sendReply() {
@@ -42,20 +54,26 @@ export default function CommunityTopicPage() {
     try {
       await apiFetch(`/community/topics/${topicId}/posts`, { method: 'POST', body: JSON.stringify({ body: reply.trim() }) })
       setReply('')
-      await load()
+      await reloadSilently()
     } finally {
       setSending(false)
     }
   }
 
   async function likePost(postId: number) {
-    await apiFetch<{ like_count: number; liked_by_me: boolean }>(`/community/posts/${postId}/like`, { method: 'POST' })
-    await load()
+    const res = await apiFetch<{ like_count: number; liked_by_me: boolean }>(`/community/posts/${postId}/like`, { method: 'POST' })
+    setTopic(prev => prev ? {
+      ...prev,
+      posts: prev.posts.map(p => p.id === postId ? { ...p, like_count: res.like_count, liked_by_me: res.liked_by_me } : p),
+    } : prev)
   }
 
   async function editPost(postId: number, body: string) {
-    await apiFetch(`/community/posts/${postId}`, { method: 'PATCH', body: JSON.stringify({ body }) })
-    await load()
+    const res = await apiFetch<{ post: { body: string; edited_at: string } }>(`/community/posts/${postId}`, { method: 'PATCH', body: JSON.stringify({ body }) })
+    setTopic(prev => prev ? {
+      ...prev,
+      posts: prev.posts.map(p => p.id === postId ? { ...p, body: res.post.body, edited_at: res.post.edited_at } : p),
+    } : prev)
   }
 
   async function deletePost(postId: number) {
@@ -65,20 +83,20 @@ export default function CommunityTopicPage() {
     if (wasFirstPost) {
       navigate(`/community/${slug}`)
     } else {
-      await load()
+      setTopic(prev => prev ? { ...prev, posts: prev.posts.filter(p => p.id !== postId) } : prev)
     }
   }
 
   async function togglePin() {
     if (!topic) return
     await apiFetch(`/community/topics/${topic.id}`, { method: 'PATCH', body: JSON.stringify({ pinned: !topic.pinned }) })
-    await load()
+    setTopic(prev => prev ? { ...prev, pinned: !prev.pinned } : prev)
   }
 
   async function toggleLock() {
     if (!topic) return
     await apiFetch(`/community/topics/${topic.id}`, { method: 'PATCH', body: JSON.stringify({ locked: !topic.locked }) })
-    await load()
+    setTopic(prev => prev ? { ...prev, locked: !prev.locked } : prev)
   }
 
   async function deleteTopic() {

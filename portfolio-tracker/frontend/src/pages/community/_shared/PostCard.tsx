@@ -2,6 +2,7 @@ import { useState } from 'react'
 import Avatar from '../../voyage/_shared/Avatar'
 import { useI18n } from '../../../contexts/I18nContext'
 import { formatTimestamp } from '../../../lib/notifications'
+import { linkifyText } from './linkify'
 import type { CommunityPost } from '../types'
 
 const GOLD = '#E8A020'
@@ -84,7 +85,7 @@ export default function PostCard({ post, currentUserId, isAdmin, onLike, onEdit,
             </div>
           ) : (
             <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg)', lineHeight: 1.7, marginTop: 8, whiteSpace: 'pre-wrap' }}>
-              {post.body}
+              {linkifyText(post.body)}
             </p>
           )}
 
