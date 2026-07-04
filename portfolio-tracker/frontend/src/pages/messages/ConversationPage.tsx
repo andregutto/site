@@ -260,16 +260,16 @@ export default function ConversationPage() {
               const isLastOwn = lastOwnMessage?.id === m.id
               return (
                 <div key={m.id} className="flex flex-col" style={{ alignItems: mine ? 'flex-end' : 'flex-start' }}>
-                  <div
-                    className="flex items-start gap-1.5 group relative"
-                    style={{ flexDirection: mine ? 'row-reverse' : 'row' }}
-                    onMouseLeave={() => setOpenMenuFor(prev => prev === m.id ? null : prev)}
-                  >
-                    <div style={{
-                      maxWidth: 420, padding: '9px 13px', borderRadius: 14,
-                      background: mine ? 'var(--arvo-hover-bg)' : 'var(--arvo-surface)',
-                      border: '1px solid var(--arvo-border)',
-                    }}>
+                  <div className="relative" style={{ maxWidth: 420 }}>
+                    <div
+                      onClick={() => { if (!m.deleted_at && m.id > 0) setOpenMenuFor(prev => prev === m.id ? null : m.id) }}
+                      style={{
+                        padding: '9px 13px', borderRadius: 14,
+                        background: mine ? 'var(--arvo-hover-bg)' : 'var(--arvo-surface)',
+                        border: '1px solid var(--arvo-border)',
+                        cursor: (!m.deleted_at && m.id > 0) ? 'pointer' : 'default',
+                      }}
+                    >
                       {m.deleted_at ? (
                         <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-faint)', fontStyle: 'italic', margin: 0 }}>
                           {tm.messageDeleted ?? 'Mensagem apagada'}
@@ -284,33 +284,29 @@ export default function ConversationPage() {
                         </p>
                       )}
                     </div>
-                    {!m.deleted_at && m.id > 0 && (
-                      <div className="relative">
-                        <button
-                          onClick={() => setOpenMenuFor(prev => prev === m.id ? null : m.id)}
-                          className="opacity-60 group-hover:opacity-100 focus:opacity-100"
-                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--arvo-fg-faint)', fontSize: 16, padding: '4px 8px', transition: 'opacity 160ms ease' }}
-                        >⋯</button>
-                        {openMenuFor === m.id && (
-                          <div
-                            className="absolute z-10"
-                            style={{ [mine ? 'right' : 'left']: 0, top: '100%', background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', borderRadius: 10, minWidth: 160, boxShadow: 'var(--arvo-shadow-md)' }}
-                          >
+                    {openMenuFor === m.id && (
+                      <>
+                        {/* Camada invisível pra fechar o menu ao tocar/clicar fora, sem
+                            depender de :hover (que não existe em touch). */}
+                        <div className="fixed inset-0 z-[5]" onClick={() => setOpenMenuFor(null)} />
+                        <div
+                          className="absolute z-10"
+                          style={{ [mine ? 'right' : 'left']: 0, top: '100%', marginTop: 4, background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', borderRadius: 10, minWidth: 160, boxShadow: 'var(--arvo-shadow-md)' }}
+                        >
+                          <button
+                            onClick={() => deleteMessage(m.id, 'me')}
+                            className="w-full text-left"
+                            style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg)', background: 'none', border: 'none', cursor: 'pointer', padding: '8px 12px' }}
+                          >{tm.deleteForMe ?? 'Apagar pra mim'}</button>
+                          {mine && (
                             <button
-                              onClick={() => deleteMessage(m.id, 'me')}
+                              onClick={() => deleteMessage(m.id, 'everyone')}
                               className="w-full text-left"
-                              style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg)', background: 'none', border: 'none', cursor: 'pointer', padding: '8px 12px' }}
-                            >{tm.deleteForMe ?? 'Apagar pra mim'}</button>
-                            {mine && (
-                              <button
-                                onClick={() => deleteMessage(m.id, 'everyone')}
-                                className="w-full text-left"
-                                style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-red, #D63B2F)', background: 'none', border: 'none', cursor: 'pointer', padding: '8px 12px', borderTop: '1px solid var(--arvo-border-soft)' }}
-                              >{tm.deleteForEveryone ?? 'Apagar pra todos'}</button>
-                            )}
-                          </div>
-                        )}
-                      </div>
+                              style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-red, #D63B2F)', background: 'none', border: 'none', cursor: 'pointer', padding: '8px 12px', borderTop: '1px solid var(--arvo-border-soft)' }}
+                            >{tm.deleteForEveryone ?? 'Apagar pra todos'}</button>
+                          )}
+                        </div>
+                      </>
                     )}
                   </div>
                   {isLastOwn && peerHasReadLastOwn && (

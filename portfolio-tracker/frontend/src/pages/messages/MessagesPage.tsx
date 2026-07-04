@@ -97,8 +97,8 @@ function SwipeableRow({ children, onArchive, onDelete, onMarkUnread }: {
           style={{ background: RED, color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 11 }}
         >{tm.deleteAction ?? 'Apagar'}</button>
       </div>
-      <div className="absolute inset-y-0 left-0 flex items-center justify-start" style={{ width: UNREAD_THRESHOLD + 20, opacity: Math.min(1, Math.max(0, dragX) / UNREAD_THRESHOLD) }}>
-        <span style={{ color: GOLD, fontFamily: 'var(--arvo-font-body)', fontSize: 11, paddingLeft: 14 }}>{tm.markUnread ?? 'Não lida'}</span>
+      <div className="absolute inset-y-0 left-0 flex items-center justify-start" style={{ width: UNREAD_THRESHOLD + 20, background: GOLD, opacity: Math.min(1, Math.max(0, dragX) / UNREAD_THRESHOLD) }}>
+        <span style={{ color: '#1a1200', fontFamily: 'var(--arvo-font-body)', fontSize: 11, fontWeight: 600, paddingLeft: 14 }}>{tm.markUnread ?? 'Não lida'}</span>
       </div>
       <div
         onTouchStart={onTouchStart}
