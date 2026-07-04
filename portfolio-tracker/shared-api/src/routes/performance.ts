@@ -1220,7 +1220,6 @@ export async function computeAssetReturns(userId: string, fromStr: string, toStr
   const tickerAssets = assets.filter(a => a.asset_type === 'ticker')
   const manualAssets = assets.filter(a => a.asset_type === 'manual')
   const tickerIds    = tickerAssets.map(a => a.id)
-  const manualIds    = manualAssets.map(a => a.id)
 
   const returns: Record<number, number | null> = {}
 
@@ -1306,52 +1305,15 @@ export async function computeAssetReturns(userId: string, fromStr: string, toStr
     }
   }
 
-  // ── Manual assets: interpolate manual_values ────────────────────────────────
-  if (manualIds.length > 0) {
-    const [{ data: mvRows }, { data: firstBuys }] = await Promise.all([
-      supabaseAdmin.from('manual_values').select('asset_id, value, currency, ref_date')
-        .in('asset_id', manualIds).order('ref_date', { ascending: true }),
-      supabaseAdmin.from('contributions').select('asset_id, value_brl, date')
-        .in('asset_id', manualIds).eq('type', 'buy').order('date', { ascending: true }),
-    ])
-
-    const mvByAsset: Record<number, ValPoint[]> = {}
-    for (const mv of (mvRows ?? [])) {
-      if (!mvByAsset[mv.asset_id]) mvByAsset[mv.asset_id] = []
-      mvByAsset[mv.asset_id].push({ ref_date: mv.ref_date, value: mv.value, currency: mv.currency })
-    }
-
-    const firstBuyByAsset: Record<number, ValPoint> = {}
-    for (const c of (firstBuys ?? [])) {
-      const aid = c.asset_id as number
-      if (!firstBuyByAsset[aid] && Number(c.value_brl) > 0) {
-        firstBuyByAsset[aid] = { ref_date: c.date as string, value: Number(c.value_brl), currency: 'BRL' }
-      }
-    }
-
-    for (const a of manualAssets) {
-      const anchor = firstBuyByAsset[a.id]
-      const mvPts  = mvByAsset[a.id] ?? []
-      if (!anchor && mvPts.length === 0) { returns[a.id] = null; continue }
-
-      const pts: ValPoint[] = anchor ? [anchor, ...mvPts] : [...mvPts]
-      pts.sort((x, y) => x.ref_date.localeCompare(y.ref_date))
-
-      const endDateForInterp = isCurrentPeriod ? localDate(new Date()) : toDate
-      const startPt = interpFn(pts, fromDate)
-      const endPt   = interpFn(pts, endDateForInterp)
-
-      if (!startPt || !endPt || startPt.value <= 0) { returns[a.id] = null; continue }
-
-      const fxS = startPt.currency === 'BRL' ? 1 : await getFxRate(startPt.currency)
-      const fxE = endPt.currency   === 'BRL' ? 1 : await getFxRate(endPt.currency)
-      const vs  = startPt.value * fxS
-      const ve  = endPt.value   * fxE
-
-      returns[a.id] = vs > 0 && Math.abs(ve - vs) > 0.01
-        ? Math.round((ve / vs - 1) * 10000) / 100
-        : (Math.abs(ve - vs) <= 0.01 ? 0 : null)
-    }
+  // Manual assets don't have a real return: their "value" is just whatever the
+  // user typed in for that month, not a market price with a purchase cost basis,
+  // so (end/start - 1) would report a plain value update as if it were an
+  // investment return %. Same distinction the monthly performance series already
+  // makes (there gain = value - prev_value - contributions, which for manual
+  // assets naturally collapses to a value delta rather than a % return) —
+  // here we just don't compute a return at all for them.
+  for (const a of manualAssets) {
+    returns[a.id] = null
   }
 
   return returns

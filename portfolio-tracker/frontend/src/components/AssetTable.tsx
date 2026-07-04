@@ -390,7 +390,7 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
                             <span className={`text-xs font-semibold arvo-num ${ret >= 0 ? 'arvo-delta-pos' : 'arvo-delta-neg'}`}>
                               {ret >= 0 ? '+' : ''}{ret.toFixed(2)}%
                             </span>
-                          ) : asset.invested_brl != null && asset.invested_brl > 0 && asset.value_brl > 0 ? (
+                          ) : asset.source !== 'manual' && asset.invested_brl != null && asset.invested_brl > 0 && asset.value_brl > 0 ? (
                             (() => {
                               const r = (asset.value_brl - asset.invested_brl) / asset.invested_brl * 100
                               return (
