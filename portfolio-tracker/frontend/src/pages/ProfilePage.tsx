@@ -13,6 +13,7 @@ import { getLevel, getNextLevel, getLevelProgress, ACHIEVEMENT_DEFS } from '../l
 import { Icon } from '../components/icons'
 import { supabase } from '../lib/supabase'
 import { normalizeStorageUrl } from '../lib/storageUrl'
+import { REOPEN_SETUP_CHECKLIST_EVENT } from '../components/SetupChecklist'
 import { useResetPriceHistory, useSyncStatus } from '../hooks/usePortfolio'
 import { useDividendSync } from '../hooks/useDividends'
 
@@ -1054,6 +1055,21 @@ export default function ProfilePage() {
 
         {tab === 'advanced' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+          {/* Checklist de configuração — reabre o painel que fica no header, caso
+              tenha sido dispensado antes; útil pra quem quer conferir de novo o
+              progresso sem esperar ele reaparecer sozinho. */}
+          <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl p-6 shadow-sm space-y-3">
+            <h2 className="font-semibold text-[var(--arvo-fg)]">{t.profile.setupChecklistTitle}</h2>
+            <p className="text-xs text-[var(--arvo-fg-muted)]">{t.profile.setupChecklistDesc}</p>
+            <button
+              type="button"
+              onClick={() => window.dispatchEvent(new Event(REOPEN_SETUP_CHECKLIST_EVENT))}
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-[var(--arvo-fg)] border border-[var(--arvo-border)] rounded-lg hover:bg-[var(--arvo-surface-2)] transition-colors"
+            >
+              {t.profile.setupChecklistBtn}
+            </button>
+          </div>
+
           {/* Exportar dados */}
           <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl p-6 shadow-sm space-y-3">
             <h2 className="font-semibold text-[var(--arvo-fg)]">{t.profile.exportTitle}</h2>

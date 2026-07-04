@@ -449,12 +449,13 @@ export default function AppLayout() {
               )}
             </button>
             )}
-            {/* Balloon: messages — só no header desktop (já tem espaço); no mobile
-                fica só na gaveta do avatar pra não competir por espaço com o resto. */}
+            {/* Balloon: messages — visível em qualquer tamanho de tela; escondê-lo só no
+                mobile machucava a descoberta da feature (ficava enterrado no menu do
+                avatar), então volta a aparecer no header em ambos. */}
             <Link
               to="/messages"
               title={(t as any).messages?.title ?? 'Mensagens'}
-              className="hidden sm:flex"
+              className="flex"
               style={{ height: 32, width: 32, borderRadius: 8, alignItems: 'center', justifyContent: 'center', position: 'relative', flexShrink: 0, transition: 'all 160ms ease' }}
               onMouseEnter={e => (e.currentTarget.style.background = 'var(--arvo-hover-bg)')}
               onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
@@ -608,17 +609,6 @@ export default function AppLayout() {
                       <path strokeLinecap="round" strokeLinejoin="round" d="M8 1.5l1.8 3.6 4 .6-2.9 2.8.7 4L8 10.4l-3.6 1.9.7-4L2.2 5.7l4-.6L8 1.5z"/>
                     </svg>
                     {t.nav.achievements}
-                  </Link>
-                  <Link to="/messages" onClick={() => setShowUserMenu(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors sm:hidden" style={{ color: 'var(--arvo-fg-muted)' }} onMouseEnter={e => (e.currentTarget.style.background='var(--arvo-hover-bg)')} onMouseLeave={e => (e.currentTarget.style.background='')}>
-                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4 shrink-0">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M8 13.5c3.314 0 6-2.463 6-5.5s-2.686-5.5-6-5.5-6 2.463-6 5.5c0 1.403.573 2.682 1.516 3.653.288.298.494.694.39 1.094a2.989 2.989 0 01-.615 1.19A3.98 3.98 0 004 14c.855 0 1.647-.268 2.297-.725A6.68 6.68 0 008 13.5z"/>
-                    </svg>
-                    {(t as any).messages?.title ?? 'Mensagens'}
-                    {messagesUnreadTotal > 0 && (
-                      <span style={{ marginLeft: 'auto', minWidth: 16, height: 16, padding: '0 4px', borderRadius: 999, background: 'var(--arvo-red)', color: 'white', fontSize: 9, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        {messagesUnreadTotal > 9 ? '9+' : messagesUnreadTotal}
-                      </span>
-                    )}
                   </Link>
                   <Link to="/people" onClick={() => setShowUserMenu(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors" style={{ color: 'var(--arvo-fg-muted)' }} onMouseEnter={e => (e.currentTarget.style.background='var(--arvo-hover-bg)')} onMouseLeave={e => (e.currentTarget.style.background='')}>
                     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4 shrink-0">

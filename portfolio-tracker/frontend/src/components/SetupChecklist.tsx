@@ -4,6 +4,11 @@ import { useI18n } from '../contexts/I18nContext'
 import { apiFetch } from '../lib/api'
 
 const STORAGE_PREFIX = 'arvo_setup_checklist_hidden_'
+// Evento global disparado pelo botão "Ver checklist de configuração" no Perfil —
+// o componente mora persistentemente no header, então reabrir de outro lugar da
+// UI precisa de um jeito de "acordá-lo" de novo em vez de só mexer no localStorage
+// (que ele não re-lê sozinho enquanto está montado).
+export const REOPEN_SETUP_CHECKLIST_EVENT = 'arvo:reopen-setup-checklist'
 
 interface SetupState {
   hasAssets: boolean
@@ -11,6 +16,29 @@ interface SetupState {
   hasIncome: boolean
   hasFreedomPlan: boolean
   hasPlanning: boolean
+}
+
+// O que fica salvo ao dispensar: não só "escondido", mas uma foto de quais passos
+// já estavam concluídos naquele momento — assim dá pra saber depois se algo NOVO
+// foi desbloqueado (ex: conectou um banco) e reabrir sozinho pra comemorar/mostrar
+// o que falta, em vez de ficar escondido para sempre mesmo com progresso novo.
+interface DismissedSnapshot {
+  hiddenAt: string
+  snapshot: SetupState
+}
+
+function readDismissedSnapshot(storageKey: string | null): DismissedSnapshot | null {
+  if (!storageKey) return null
+  const raw = localStorage.getItem(storageKey)
+  if (!raw) return null
+  try {
+    const parsed = JSON.parse(raw)
+    if (parsed && typeof parsed === 'object' && parsed.snapshot) return parsed as DismissedSnapshot
+  } catch {
+    // Formato antigo (só '1', sem snapshot) — trata como "sem dados de progresso",
+    // qualquer item concluído no futuro já é motivo suficiente pra reabrir.
+  }
+  return { hiddenAt: '', snapshot: { hasAssets: false, hasAccount: false, hasIncome: false, hasFreedomPlan: false, hasPlanning: false } }
 }
 
 interface Props {
@@ -52,8 +80,22 @@ export default function SetupChecklist({ firstName, userId }: Props) {
     setHidden(!!(storageKey && localStorage.getItem(storageKey)))
   }, [storageKey])
 
+  // Reabrir manualmente a partir do Perfil: limpa a dispensa e já expande o
+  // painel, pra confirmar visualmente que funcionou.
   useEffect(() => {
-    if (hidden) return
+    function onReopen() {
+      if (storageKey) localStorage.removeItem(storageKey)
+      setHidden(false)
+      setOpen(true)
+    }
+    window.addEventListener(REOPEN_SETUP_CHECKLIST_EVENT, onReopen)
+    return () => window.removeEventListener(REOPEN_SETUP_CHECKLIST_EVENT, onReopen)
+  }, [storageKey])
+
+  useEffect(() => {
+    // Mesmo dispensado, continua buscando o estado em segundo plano — é o que
+    // permite comparar com a foto salva e reabrir sozinho se algo novo foi
+    // concluído (ex: conectou um banco depois de ter ignorado o checklist).
     Promise.all([
       apiFetch<Array<{ id: number }>>('/assets').catch(() => [] as Array<{ id: number }>),
       apiFetch<Array<{ linked_asset_id?: number | null }>>('/finances/accounts').catch(() => []),
@@ -74,18 +116,31 @@ export default function SetupChecklist({ firstName, userId }: Props) {
       // not the user setting deliberate spending goals.
       const planningCategories = (categories ?? []).filter(c => c.name_key !== 'categorySalary')
 
-      setState({
+      const freshState: SetupState = {
         hasAssets: realAssets.length > 0,
         hasAccount: Array.isArray(accounts) && accounts.length > 0,
         hasIncome: ((income as { monthly_net?: number }).monthly_net ?? 0) > 0,
         hasFreedomPlan: Array.isArray(plans) && plans.some((p: { is_active: boolean }) => p.is_active),
         hasPlanning: planningCategories.some(c => (c.budget_monthly ?? 0) > 0),
-      })
+      }
+      setState(freshState)
+
+      if (hidden) {
+        const dismissed = readDismissedSnapshot(storageKey)
+        const unlockedSomethingNew = dismissed && (Object.keys(freshState) as (keyof SetupState)[])
+          .some(k => freshState[k] && !dismissed.snapshot[k])
+        if (unlockedSomethingNew) {
+          if (storageKey) localStorage.removeItem(storageKey)
+          setHidden(false)
+        }
+      }
     })
-  }, [hidden])
+  }, [hidden, storageKey])
 
   function dismiss() {
-    if (storageKey) localStorage.setItem(storageKey, '1')
+    if (storageKey && state) {
+      localStorage.setItem(storageKey, JSON.stringify({ hiddenAt: new Date().toISOString(), snapshot: state } satisfies DismissedSnapshot))
+    }
     setHidden(true)
     setOpen(false)
   }

@@ -146,7 +146,10 @@
     "deleteBalanceOwedToYou": "owes you {amount}",
     "deleteBalanceYouOwe": "you owe {amount}",
     "deleteBalancesWillSettle": "If you continue, these balances will be zeroed out and each friend will be notified.",
-    "deleteAffectedNotice": "{count} people you share trips, categories or moments with will be notified that your account was deleted."
+    "deleteAffectedNotice": "{count} people you share trips, categories or moments with will be notified that your account was deleted.",
+    "setupChecklistTitle": "Setup checklist",
+    "setupChecklistDesc": "If you dismissed the initial setup guide, you can reopen it here anytime.",
+    "setupChecklistBtn": "View setup checklist"
   },
   "reports": {
     "title": "Tax Reports",

@@ -146,7 +146,10 @@
     "deleteBalanceOwedToYou": "vous doit {amount}",
     "deleteBalanceYouOwe": "vous devez {amount}",
     "deleteBalancesWillSettle": "Si vous continuez, ces soldes seront remis à zéro et chaque ami sera averti.",
-    "deleteAffectedNotice": "{count} personne(s) avec qui vous partagez des voyages, catégories ou moments seront averties que votre compte a été supprimé."
+    "deleteAffectedNotice": "{count} personne(s) avec qui vous partagez des voyages, catégories ou moments seront averties que votre compte a été supprimé.",
+    "setupChecklistTitle": "Liste de configuration",
+    "setupChecklistDesc": "Si vous avez fermé le guide de configuration initiale, vous pouvez le rouvrir ici à tout moment.",
+    "setupChecklistBtn": "Voir la liste de configuration"
   },
   "reports": {
     "title": "Rapports fiscaux",
