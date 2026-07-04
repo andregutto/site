@@ -96,10 +96,14 @@ export default function ValueCards({ total_brl, generated_at, invested_brl, gain
           </div>
           <div className="2xl:border-l 2xl:pl-6" style={{ display: 'flex', flexDirection: 'column', gap: 6, borderColor: 'var(--arvo-border)' }}>
             <span style={labelStyle}>{t.dashboard.result}</span>
-            <span className={`arvo-num text-base sm:text-lg ${pctClass(gain_brl)}`} style={{ fontFamily: "var(--arvo-font-body)", letterSpacing: '0.04em', ...pctStyle(gain_brl) }}>
+            <span className={`arvo-num text-base sm:text-lg ${pctClass(gain_brl)}`} style={{ fontFamily: "var(--arvo-font-body)", letterSpacing: '0.04em', whiteSpace: 'nowrap', ...pctStyle(gain_brl) }}>
               {gain_brl! >= 0 ? '+' : ''}{fmt(gain_brl!, 0)}
-              {gain_pct != null && !hideValues && <span style={{ fontSize: 12, opacity: 0.75, marginLeft: 4 }}>({gain_brl! >= 0 ? '+' : ''}{gain_pct.toFixed(1)}%)</span>}
             </span>
+            {gain_pct != null && !hideValues && (
+              <span style={{ fontSize: 12, opacity: 0.75, fontFamily: "var(--arvo-font-body)", whiteSpace: 'nowrap', ...pctStyle(gain_brl) }}>
+                ({gain_brl! >= 0 ? '+' : ''}{gain_pct.toFixed(1)}%)
+              </span>
+            )}
           </div>
           <div className="2xl:border-l 2xl:pl-6" style={{ display: 'flex', flexDirection: 'column', gap: 6, borderColor: 'var(--arvo-border)' }}>
             <span style={labelStyle}>{t.dashboard.periodGainBrl} · {periodLbl}</span>

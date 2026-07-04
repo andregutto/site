@@ -736,7 +736,10 @@ export default function AppLayout() {
               </svg>
             )},
             { to: '/community', label: (t as any).nav?.community ?? 'Comunidade', match: inCommunity, accent: '#E8A020', icon: (
-              <img className="w-5 h-5" src={`/brand/logo/arvo-symbol-${resolvedTheme === 'dark' ? 'offwhite' : 'black'}.svg`} alt="" style={{ opacity: inCommunity ? 1 : 0.55 }} />
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 3c-3.5 2-6 5.5-6 9.5A6 6 0 0 0 12 18a6 6 0 0 0 6-5.5C18 8.5 15.5 5 12 3Z"/>
+                <path strokeLinecap="round" d="M12 18v3"/>
+              </svg>
             )},
           ].map(({ to, label, match, icon }) => (
             <NavLink
