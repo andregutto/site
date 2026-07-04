@@ -302,7 +302,10 @@ export default function AppLayout() {
   const communityItems = [
     { to: '/community',            label: (t as any).community?.title ?? 'Comunidade', end: true, icon: (
       <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M2 2.5h12v8H6.5L3 13.5V10.5H2v-8Z"/>
+        <rect x="2" y="2.5" width="12" height="11" rx="1.2"/>
+        <rect x="4" y="5" width="4" height="3.5" rx="0.5"/>
+        <rect x="9.5" y="5" width="2.5" height="2.5" rx="0.5"/>
+        <rect x="9.5" y="8.5" width="2.5" height="3" rx="0.5"/>
       </svg>
     )},
     { to: '/community/geral',      label: (t as any).community?.cat?.geral ?? 'Geral', end: false, icon: (
@@ -734,7 +737,10 @@ export default function AppLayout() {
             )},
             { to: '/community', label: (t as any).nav?.community ?? 'Comunidade', match: inCommunity, accent: '#E8A020', icon: (
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3 4.5h18v12H10l-5 4.5v-4.5H3v-12Z"/>
+                <rect x="3" y="4" width="18" height="16" rx="2"/>
+                <rect x="6" y="7.5" width="6" height="5" rx="0.6"/>
+                <rect x="14" y="7.5" width="4" height="3.5" rx="0.6"/>
+                <rect x="14" y="12.5" width="4" height="4.5" rx="0.6"/>
               </svg>
             )},
           ].map(({ to, label, match, icon }) => (
