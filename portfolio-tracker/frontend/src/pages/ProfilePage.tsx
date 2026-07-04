@@ -360,6 +360,7 @@ export default function ProfilePage() {
       const { data } = supabase.storage.from('avatars').getPublicUrl(path)
       const avatar_url = `${normalizeStorageUrl(data.publicUrl)}?v=${Date.now()}`
       await apiFetch('/profile', { method: 'PATCH', body: JSON.stringify({ avatar_url }) })
+      await supabase.auth.refreshSession()
       setAvatarUrl(avatar_url)
       setShowAvatarModal(false)
       triggerCheck()
@@ -375,6 +376,7 @@ export default function ProfilePage() {
     try {
       if (user) await supabase.storage.from('avatars').remove([`${user.id}/avatar.jpg`])
       await apiFetch('/profile', { method: 'PATCH', body: JSON.stringify({ avatar_url: '' }) })
+      await supabase.auth.refreshSession()
       setAvatarUrl('')
       setShowAvatarModal(false)
     } catch {
