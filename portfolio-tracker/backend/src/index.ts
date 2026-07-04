@@ -24,6 +24,7 @@ import sharedRouter         from '../../shared-api/src/routes/shared.js'
 import voyageRouter         from '../../shared-api/src/routes/voyage.js'
 import peopleRouter         from '../../shared-api/src/routes/people.js'
 import communityRouter      from '../../shared-api/src/routes/community.js'
+import messagingRouter      from '../../shared-api/src/routes/messaging.js'
 
 const app  = express()
 const PORT = process.env.PORT || 3001
@@ -53,6 +54,7 @@ app.use('/api/shared',      sharedRouter)
 app.use('/api/voyage',      voyageRouter)
 app.use('/api/people',     peopleRouter)
 app.use('/api/community',  communityRouter)
+app.use('/api/messages',   messagingRouter)
 
 app.get('/health', (_req, res) => res.json({ status: 'ok', ts: new Date().toISOString() }))
 

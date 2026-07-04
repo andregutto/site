@@ -2591,6 +2591,29 @@
     "searchEmpty": "No topics found.",
     "myTopics": "My topics",
     "myTopicsEmpty": "You haven't created any topics yet.",
-    "matchedInBody": "found in a reply"
+    "matchedInBody": "found in a reply",
+    "message": "Message",
+    "addFriend": "+ Friend",
+    "inviteSent": "Invite sent"
+  },
+  "messages": {
+    "title": "Messages",
+    "newMessage": "New message",
+    "emptyTitle": "No conversations yet.",
+    "emptySubtitle": "Start a conversation with an active friend.",
+    "pickFriend": "Choose a friend",
+    "noFriendsYet": "You don't have any active friends yet.",
+    "you": "You",
+    "send": "Send",
+    "typePlaceholder": "Write a message...",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "premiumTitle": "Messages is a premium feature",
+    "premiumSubtitle": "Chat in real time with your friends on Arvo. Available on the paid plan.",
+    "premiumCta": "Learn about premium",
+    "loadEarlier": "Load earlier messages",
+    "sending": "Sending...",
+    "errorLoading": "Could not load messages.",
+    "notFriendsAnymore": "You're not friends anymore."
   }
 }

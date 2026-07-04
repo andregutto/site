@@ -6,6 +6,7 @@ import { useTheme } from '../contexts/ThemeContext'
 import { useI18n } from '../contexts/I18nContext'
 import type React from 'react'
 import { useNotificationsContext } from '../contexts/NotificationsContext'
+import { useMessagingContext } from '../contexts/MessagingContext'
 import { resolveNotificationText, SEVERITY_COLORS, formatTimestamp } from '../lib/notifications'
 import { apiFetch } from '../lib/api'
 import LoginFooter from './LoginFooter'
@@ -57,6 +58,7 @@ export default function AppLayout() {
   const { resolvedTheme } = useTheme()
   const { t, locale } = useI18n()
   const { active: activeNotifications, unreadCount, dismissAll, acceptInvite } = useNotificationsContext()
+  const { unreadTotal: messagesUnreadTotal } = useMessagingContext()
   const [acceptingKey, setAcceptingKey] = useState<string | null>(null)
   const location = useLocation()
 
@@ -395,6 +397,23 @@ export default function AppLayout() {
                 </svg>
               )}
             </button>
+            {/* Balloon: messages */}
+            <Link
+              to="/messages"
+              title={(t as any).messages?.title ?? 'Mensagens'}
+              style={{ height: 32, width: 32, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', flexShrink: 0, transition: 'all 160ms ease' }}
+              onMouseEnter={e => (e.currentTarget.style.background = 'var(--arvo-hover-bg)')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+            >
+              <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="var(--arvo-fg-soft)" strokeWidth={1.8}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 8.511c.884.284 1.5 1.128 1.5 2.097v4.286c0 1.136-.847 2.1-1.98 2.193-.34.027-.68.052-1.02.072v3.091l-3-3c-1.354 0-2.694-.055-4.02-.163a2.115 2.115 0 01-.825-.242m9.345-8.334V6.75c0-1.108-.806-2.057-1.907-2.185a48.507 48.507 0 00-11.186 0C4.806 4.693 4 5.642 4 6.75v6.75c0 1.108.806 2.057 1.907 2.185.28.033.562.062.845.088" />
+              </svg>
+              {messagesUnreadTotal > 0 && (
+                <span style={{ position: 'absolute', top: 2, right: 2, minWidth: 14, height: 14, padding: '0 3px', borderRadius: 999, background: 'var(--arvo-red)', color: 'white', fontSize: 9, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--arvo-font-body)', lineHeight: 1 }}>
+                  {messagesUnreadTotal > 9 ? '9+' : messagesUnreadTotal}
+                </span>
+              )}
+            </Link>
             {/* Bell: notifications */}
             <div ref={notifMenuRef} className="relative">
               <button
@@ -535,6 +554,17 @@ export default function AppLayout() {
                       <path strokeLinecap="round" strokeLinejoin="round" d="M8 1.5l1.8 3.6 4 .6-2.9 2.8.7 4L8 10.4l-3.6 1.9.7-4L2.2 5.7l4-.6L8 1.5z"/>
                     </svg>
                     {t.nav.achievements}
+                  </Link>
+                  <Link to="/messages" onClick={() => setShowUserMenu(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors sm:hidden" style={{ color: 'var(--arvo-fg-muted)' }} onMouseEnter={e => (e.currentTarget.style.background='var(--arvo-hover-bg)')} onMouseLeave={e => (e.currentTarget.style.background='')}>
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4 shrink-0">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M14 5.5c.6.2 1 .75 1 1.4v2.86c0 .76-.56 1.4-1.32 1.46-.23.02-.45.03-.68.05v2.06l-2-2c-.9 0-1.8-.04-2.68-.11a1.41 1.41 0 01-.55-.16M14 5.5v-.6c0-.74-.54-1.37-1.27-1.46a32.34 32.34 0 00-7.46 0C4.54 3.53 4 4.16 4 4.9v4.5c0 .74.54 1.37 1.27 1.46.19.02.37.04.56.06"/>
+                    </svg>
+                    {(t as any).messages?.title ?? 'Mensagens'}
+                    {messagesUnreadTotal > 0 && (
+                      <span style={{ marginLeft: 'auto', minWidth: 16, height: 16, padding: '0 4px', borderRadius: 999, background: 'var(--arvo-red)', color: 'white', fontSize: 9, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        {messagesUnreadTotal > 9 ? '9+' : messagesUnreadTotal}
+                      </span>
+                    )}
                   </Link>
                   <Link to="/people" onClick={() => setShowUserMenu(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors" style={{ color: 'var(--arvo-fg-muted)' }} onMouseEnter={e => (e.currentTarget.style.background='var(--arvo-hover-bg)')} onMouseLeave={e => (e.currentTarget.style.background='')}>
                     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4 shrink-0">

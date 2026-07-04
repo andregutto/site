@@ -14,9 +14,12 @@ interface PostCardProps {
   onLike: (postId: number) => void
   onEdit: (postId: number, body: string) => Promise<void>
   onDelete: (postId: number) => void
+  friendshipStatus?: 'self' | 'active' | 'pending' | 'none'
+  onInvite?: (authorId: string) => void
+  onMessage?: (authorId: string) => void
 }
 
-export default function PostCard({ post, currentUserId, isAdmin, onLike, onEdit, onDelete }: PostCardProps) {
+export default function PostCard({ post, currentUserId, isAdmin, onLike, onEdit, onDelete, friendshipStatus, onInvite, onMessage }: PostCardProps) {
   const { t, locale } = useI18n()
   const tc = (t as any).community ?? {}
   const [editing, setEditing] = useState(false)
@@ -53,6 +56,23 @@ export default function PostCard({ post, currentUserId, isAdmin, onLike, onEdit,
               {formatTimestamp(post.created_at, locale)}
               {post.edited_at ? ` · ${tc.edited ?? '(editado)'}` : ''}
             </span>
+            {friendshipStatus === 'active' && onMessage && (
+              <button
+                onClick={() => onMessage(post.author.id)}
+                style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, letterSpacing: '0.04em', color: GOLD, background: 'none', border: `1px solid ${GOLD}`, borderRadius: 999, padding: '2px 10px', cursor: 'pointer' }}
+              >{tc.message ?? 'Mensagem'}</button>
+            )}
+            {friendshipStatus === 'none' && onInvite && post.author.username && (
+              <button
+                onClick={() => onInvite(post.author.id)}
+                style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, letterSpacing: '0.04em', color: 'var(--arvo-fg-soft)', background: 'none', border: '1px solid var(--arvo-border)', borderRadius: 999, padding: '2px 10px', cursor: 'pointer' }}
+              >{tc.addFriend ?? '+ Amizade'}</button>
+            )}
+            {friendshipStatus === 'pending' && (
+              <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-faint)', border: '1px solid var(--arvo-border)', borderRadius: 999, padding: '2px 10px' }}>
+                {tc.inviteSent ?? 'Convite enviado'}
+              </span>
+            )}
           </div>
 
           {editing ? (

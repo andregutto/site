@@ -46,6 +46,28 @@ export async function canAutoAccept(inviteeUserId: string, inviterUserId: string
   return !!data?.auto_accept_invites
 }
 
+// Checks mutual active friendship between two users, in either direction
+// (a friend row can be owned by either side of the pair) — used by
+// messaging.ts to gate DM conversation creation/sending.
+export async function areActiveFriends(userA: string, userB: string): Promise<boolean> {
+  const { data: forward } = await supabaseAdmin
+    .from('user_friends')
+    .select('id')
+    .eq('owner_user_id', userA)
+    .eq('friend_user_id', userB)
+    .eq('status', 'active')
+    .maybeSingle()
+  if (forward) return true
+  const { data: backward } = await supabaseAdmin
+    .from('user_friends')
+    .select('id')
+    .eq('owner_user_id', userB)
+    .eq('friend_user_id', userA)
+    .eq('status', 'active')
+    .maybeSingle()
+  return !!backward
+}
+
 interface PendingFriendInvite {
   key: string
   token: string
@@ -799,6 +821,9 @@ router.delete('/friends/:id', async (req: any, res: any) => {
 // Revoga, nas duas direções, todo compartilhamento entre userA e userB:
 // viagens, momentos financeiros e categorias compartilhadas onde um convidou
 // o outro. Chamado ao desfazer uma conexão de amizade.
+// NÃO apaga conversas/mensagens de DM (dm_conversations/dm_messages) — o
+// histórico permanece intacto; messaging.ts revalida areActiveFriends() a
+// cada envio, então o par simplesmente não consegue mais trocar mensagens.
 async function revokeAllSharingBetween(userA: string, userB: string) {
   for (const [ownerId, memberId] of [[userA, userB], [userB, userA]] as const) {
     // Viagens: hard delete da linha de membro (mesma semântica do botão "Remover" da Voyage)

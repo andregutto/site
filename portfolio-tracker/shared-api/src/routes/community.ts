@@ -20,10 +20,16 @@ function isAdmin(userId: string): boolean {
 // Garante que o usuário tem uma linha em community_members (tier 'free' por
 // padrão) — chamado no primeiro acesso a qualquer endpoint da comunidade.
 async function ensureMember(userId: string): Promise<void> {
-  const { data } = await supabaseAdmin.from('community_members').select('user_id').eq('user_id', userId).maybeSingle()
-  if (!data) {
-    await supabaseAdmin.from('community_members').insert({ user_id: userId, tier: 'free' })
-  }
+  await ensureMemberTier(userId)
+}
+
+// Mesma garantia acima, mas retornando o tier — usado pelo gate premium de
+// messaging.ts (MESSAGING_TIER_REQUIRED) sem duplicar a lógica de upsert.
+export async function ensureMemberTier(userId: string): Promise<'free' | 'paid'> {
+  const { data } = await supabaseAdmin.from('community_members').select('tier').eq('user_id', userId).maybeSingle()
+  if (data) return data.tier as 'free' | 'paid'
+  await supabaseAdmin.from('community_members').insert({ user_id: userId, tier: 'free' })
+  return 'free'
 }
 
 export interface CommunityCategory {

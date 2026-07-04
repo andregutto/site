@@ -71,6 +71,9 @@ import CommunityLayout from './pages/community/CommunityLayout'
 import CommunityHomePage from './pages/community/CommunityHomePage'
 import CommunityCategoryPage from './pages/community/CommunityCategoryPage'
 import CommunityTopicPage from './pages/community/CommunityTopicPage'
+import { MessagingProvider } from './contexts/MessagingContext'
+import MessagesPage from './pages/messages/MessagesPage'
+import ConversationPage from './pages/messages/ConversationPage'
 
 function EmailConfirmGate({ email }: { email: string }) {
   const { signOut } = useAuth()
@@ -124,7 +127,7 @@ function ProtectedRoutes() {
 
   if (!user.email_confirmed_at) return <EmailConfirmGate email={user.email ?? ''} />
 
-  return <AchievementProvider><NotificationsProvider><AppLayout /></NotificationsProvider></AchievementProvider>
+  return <AchievementProvider><NotificationsProvider><MessagingProvider><AppLayout /></MessagingProvider></NotificationsProvider></AchievementProvider>
 }
 
 function AppRoutes() {
@@ -167,6 +170,8 @@ function AppRoutes() {
         <Route path="/achievements"   element={<AchievementsPage />} />
         <Route path="/notifications"  element={<NotificationsPage />} />
         <Route path="/people"         element={<PeoplePage />} />
+        <Route path="/messages"       element={<MessagesPage />} />
+        <Route path="/messages/:conversationId" element={<ConversationPage />} />
         <Route path="/archived"       element={<Navigate to="/assets?view=archived" replace />} />
         <Route path="/diversification" element={<DiversificationPage />} />
         <Route path="/voyage"          element={<VoyageLayout />}>

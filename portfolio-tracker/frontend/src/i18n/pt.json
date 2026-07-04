@@ -2591,6 +2591,29 @@
     "searchEmpty": "Nenhum tópico encontrado.",
     "myTopics": "Meus tópicos",
     "myTopicsEmpty": "Você ainda não criou nenhum tópico.",
-    "matchedInBody": "encontrado numa resposta"
+    "matchedInBody": "encontrado numa resposta",
+    "message": "Mensagem",
+    "addFriend": "+ Amizade",
+    "inviteSent": "Convite enviado"
+  },
+  "messages": {
+    "title": "Mensagens",
+    "newMessage": "Nova mensagem",
+    "emptyTitle": "Nenhuma conversa por aqui.",
+    "emptySubtitle": "Comece uma conversa com um amigo ativo.",
+    "pickFriend": "Escolha um amigo",
+    "noFriendsYet": "Você ainda não tem amigos ativos.",
+    "you": "Você",
+    "send": "Enviar",
+    "typePlaceholder": "Escreva uma mensagem...",
+    "today": "Hoje",
+    "yesterday": "Ontem",
+    "premiumTitle": "Mensagens é um recurso premium",
+    "premiumSubtitle": "Converse em tempo real com seus amigos no Arvo. Disponível no plano pago.",
+    "premiumCta": "Conhecer o plano premium",
+    "loadEarlier": "Carregar mensagens anteriores",
+    "sending": "Enviando...",
+    "errorLoading": "Não foi possível carregar as mensagens.",
+    "notFriendsAnymore": "Vocês não são mais amigos."
   }
 }
