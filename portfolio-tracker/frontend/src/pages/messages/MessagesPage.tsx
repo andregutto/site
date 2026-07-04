@@ -36,11 +36,12 @@ interface ConversationSummary {
   unread_count: number
 }
 
-function SwipeableRow({ children, onArchive, onDelete, onMarkUnread }: {
+function SwipeableRow({ children, onArchive, onDelete, onMarkUnread, isArchived }: {
   children: React.ReactNode
   onArchive: () => void
   onDelete: () => void
   onMarkUnread: () => void
+  isArchived: boolean
 }) {
   const { t } = useI18n()
   const tm = (t as any).messages ?? {}
@@ -90,7 +91,7 @@ function SwipeableRow({ children, onArchive, onDelete, onMarkUnread }: {
           onClick={() => { onArchive(); setDragX(0); setOpen(false) }}
           className="flex-1 flex items-center justify-center"
           style={{ background: 'var(--arvo-fg-soft)', color: 'white', border: 'none', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 11 }}
-        >{tm.archive ?? 'Arquivar'}</button>
+        >{isArchived ? (tm.unarchive ?? 'Desarquivar') : (tm.archive ?? 'Arquivar')}</button>
         <button
           onClick={() => { onDelete(); setDragX(0); setOpen(false) }}
           className="flex-1 flex items-center justify-center"
@@ -228,6 +229,7 @@ export default function MessagesPage() {
           {conversations.map(c => (
             <SwipeableRow
               key={c.id}
+              isArchived={showArchived}
               onArchive={() => archiveConversation(c.id)}
               onDelete={() => deleteConversation(c.id)}
               onMarkUnread={() => markUnread(c.id)}
