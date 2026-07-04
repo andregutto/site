@@ -736,12 +736,7 @@ export default function AppLayout() {
               </svg>
             )},
             { to: '/community', label: (t as any).nav?.community ?? 'Comunidade', match: inCommunity, accent: '#E8A020', icon: (
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                <rect x="3" y="4" width="18" height="16" rx="2"/>
-                <rect x="6" y="7.5" width="6" height="5" rx="0.6"/>
-                <rect x="14" y="7.5" width="4" height="3.5" rx="0.6"/>
-                <rect x="14" y="12.5" width="4" height="4.5" rx="0.6"/>
-              </svg>
+              <img className="w-5 h-5" src={`/brand/logo/arvo-symbol-${resolvedTheme === 'dark' ? 'offwhite' : 'black'}.svg`} alt="" style={{ opacity: inCommunity ? 1 : 0.55 }} />
             )},
           ].map(({ to, label, match, icon }) => (
             <NavLink
@@ -757,6 +752,13 @@ export default function AppLayout() {
                 color: match ? 'var(--arvo-fg)' : 'var(--arvo-fg-soft)',
                 background: match ? 'var(--arvo-glass-active-bg)' : 'transparent',
                 boxShadow: match ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
+                // overflow:hidden aqui (no próprio item flex, não só no label)
+                // zera o "automatic minimum size" do item pela spec do flexbox —
+                // sem isso, o label escondido ainda inflava a largura mínima do
+                // item e empurrava o último ícone (Comunidade) pra fora da barra
+                // ao recolher. Faz isso sem precisar animar width (que competia
+                // com a transição do card inteiro e deixava o recolher travado).
+                overflow: 'hidden',
                 transition: 'all 240ms cubic-bezier(0.22,0.61,0.36,1)',
                 textDecoration: 'none',
               }}
@@ -765,13 +767,12 @@ export default function AppLayout() {
                 style: { width: navCollapsed ? 16 : 20, height: navCollapsed ? 16 : 20, transition: 'width 240ms ease, height 240ms ease' },
               })}
               <span
-                className="truncate text-center px-1"
+                className="truncate text-center px-1 w-full"
                 style={{
-                  width: navCollapsed ? 0 : '100%',
                   maxHeight: navCollapsed ? 0 : 14,
                   opacity: navCollapsed ? 0 : 1,
                   overflow: 'hidden',
-                  transition: 'max-height 240ms ease, opacity 160ms ease, width 240ms ease',
+                  transition: 'max-height 240ms ease, opacity 160ms ease',
                 }}
               >{label}</span>
             </NavLink>

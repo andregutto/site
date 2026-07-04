@@ -406,7 +406,10 @@ export default function PerformancePage() {
                 return (
                   <p
                     title={fxIsStale ? `Cotação de ${new Date(fxDate + 'T00:00:00').toLocaleDateString(locale)} — a fonte atual pode estar indisponível` : undefined}
-                    style={{ position: 'absolute', top: 14, right: 18, fontFamily: 'var(--arvo-font-body)', fontSize: 9.5, color: fxIsStale ? 'var(--arvo-ocre, #E8A020)' : 'var(--arvo-fg-faint)', whiteSpace: 'nowrap', margin: 0 }}
+                    style={fxIsStale
+                      ? { position: 'absolute', top: 14, right: 18, fontFamily: 'var(--arvo-font-body)', fontSize: 9.5, fontWeight: 600, color: 'var(--arvo-gold-text)', background: 'var(--arvo-ocre-tint)', padding: '2px 7px', borderRadius: 999, whiteSpace: 'nowrap', margin: 0 }
+                      : { position: 'absolute', top: 14, right: 18, fontFamily: 'var(--arvo-font-body)', fontSize: 9.5, color: 'var(--arvo-fg-soft)', whiteSpace: 'nowrap', margin: 0 }
+                    }
                   >
                     1 {currency} = R$ {(fxRates[currency] ?? 0).toFixed(2)}
                     {fxIsStale && ` (${new Date(fxDate + 'T00:00:00').toLocaleDateString(locale, { day: '2-digit', month: '2-digit' })})`}
