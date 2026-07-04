@@ -349,9 +349,9 @@ export default function AppLayout() {
             style={{ textDecoration: 'none' }}
           >
             <img src={`/brand/logo/arvo-symbol-${resolvedTheme === 'dark' ? 'offwhite' : 'black'}.svg`} width="22" height="22" alt="" />
-            <span style={{ fontFamily: "var(--arvo-font-display)", fontSize: 16, letterSpacing: '0.30em', textIndent: '0.30em', color: 'var(--arvo-fg)', lineHeight: 1 }}>arvo</span>
+            <span className="hidden sm:inline" style={{ fontFamily: "var(--arvo-font-display)", fontSize: 16, letterSpacing: '0.30em', textIndent: '0.30em', color: 'var(--arvo-fg)', lineHeight: 1 }}>arvo</span>
           </Link>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, paddingLeft: 14, borderLeft: '1px solid var(--arvo-border)', height: 24 }}>
+          <div className="hidden sm:flex" style={{ alignItems: 'center', gap: 12, paddingLeft: 14, borderLeft: '1px solid var(--arvo-border)', height: 24 }}>
             <span style={{ fontFamily: "var(--arvo-font-display)", fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: inVoyage ? '#D63B2F' : inCommunity ? '#E8A020' : 'var(--arvo-fg-soft)', lineHeight: 1, transition: 'color 280ms' }}>
               {inVoyage ? 'Voyage' : inCommunity ? 'Comunidade' : 'Capital'}
             </span>
@@ -378,7 +378,10 @@ export default function AppLayout() {
 
           {/* Right — user */}
           <div className="flex items-center gap-3 shrink-0 ml-auto">
-            {/* Eye: hide/show all values */}
+            {/* Eye: hide/show all values — só faz sentido em Capital/Finanças, onde
+                há valores monetários na tela; em Voyage/Comunidade é um ícone a mais
+                sem função, então some pra aliviar o header no mobile. */}
+            {!inVoyage && !inCommunity && (
             <button
               onClick={toggleHideValues}
               title={hideValues ? (t.common.showValues ?? 'Mostrar valores') : (t.common.hideValues ?? 'Ocultar valores')}
@@ -397,11 +400,14 @@ export default function AppLayout() {
                 </svg>
               )}
             </button>
-            {/* Balloon: messages */}
+            )}
+            {/* Balloon: messages — só no header desktop (já tem espaço); no mobile
+                fica só na gaveta do avatar pra não competir por espaço com o resto. */}
             <Link
               to="/messages"
               title={(t as any).messages?.title ?? 'Mensagens'}
-              style={{ height: 32, width: 32, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', flexShrink: 0, transition: 'all 160ms ease' }}
+              className="hidden sm:flex"
+              style={{ height: 32, width: 32, borderRadius: 8, alignItems: 'center', justifyContent: 'center', position: 'relative', flexShrink: 0, transition: 'all 160ms ease' }}
               onMouseEnter={e => (e.currentTarget.style.background = 'var(--arvo-hover-bg)')}
               onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
             >

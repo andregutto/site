@@ -2619,6 +2619,12 @@
     "messageDeleted": "Mensagem apagada",
     "deleteForMe": "Apagar pra mim",
     "deleteForEveryone": "Apagar pra todos",
-    "seenAt": "Visto às {time}"
+    "seenAt": "Visto às {time}",
+    "archive": "Arquivar",
+    "deleteAction": "Apagar",
+    "markUnread": "Não lida",
+    "tabActive": "Ativas",
+    "tabArchived": "Arquivadas",
+    "emptyArchived": "Nenhuma conversa arquivada."
   }
 }

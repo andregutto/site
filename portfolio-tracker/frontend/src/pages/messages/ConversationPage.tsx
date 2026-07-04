@@ -86,7 +86,7 @@ export default function ConversationPage() {
         setConversation(convRes.conversation)
         setMessages(msgRes.messages)
         setHasMore(msgRes.messages.length === 50)
-        await markRead(id)
+        markRead(id) // fire-and-forget — não bloqueia a tela aparecer
       } catch (err: any) {
         if (err?.message === 'premium_required') setPremiumBlocked(true)
         else navigate('/messages')
@@ -225,7 +225,7 @@ export default function ConversationPage() {
   const peerHasReadLastOwn = !!(lastOwnMessage && conversation.peer_last_read_at && new Date(conversation.peer_last_read_at) >= new Date(lastOwnMessage.created_at))
 
   return (
-    <div className="flex flex-col" style={{ height: 'calc(100vh - 140px)' }}>
+    <div className="dm-thread-shell">
       <div className="flex items-center gap-3 pb-3" style={{ borderBottom: '1px solid var(--arvo-border)' }}>
         <button onClick={() => navigate('/messages')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--arvo-fg-soft)', fontSize: 18, padding: 4 }}>←</button>
         <Avatar name={conversation.peer.name} avatarUrl={conversation.peer.avatar_url} size={34} />
@@ -271,24 +271,25 @@ export default function ConversationPage() {
                       border: '1px solid var(--arvo-border)',
                     }}>
                       {m.deleted_at ? (
-                        <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-faint)', fontStyle: 'italic' }}>
+                        <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-faint)', fontStyle: 'italic', margin: 0 }}>
                           {tm.messageDeleted ?? 'Mensagem apagada'}
+                          <span style={{ fontSize: 10, whiteSpace: 'nowrap', marginLeft: 8, fontStyle: 'normal' }}>{formatClock(m.created_at, locale)}</span>
                         </p>
                       ) : (
-                        <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg)', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
+                        <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg)', lineHeight: 1.6, whiteSpace: 'pre-wrap', margin: 0 }}>
                           {linkifyText(m.body)}
+                          <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 10, color: 'var(--arvo-fg-faint)', whiteSpace: 'nowrap', marginLeft: 8 }}>
+                            {formatClock(m.created_at, locale)}
+                          </span>
                         </p>
                       )}
-                      <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 10, color: 'var(--arvo-fg-faint)', marginTop: 4, textAlign: mine ? 'right' : 'left' }}>
-                        {formatClock(m.created_at, locale)}
-                      </p>
                     </div>
                     {!m.deleted_at && m.id > 0 && (
                       <div className="relative">
                         <button
                           onClick={() => setOpenMenuFor(prev => prev === m.id ? null : m.id)}
-                          className="opacity-0 group-hover:opacity-100"
-                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--arvo-fg-faint)', fontSize: 14, padding: '4px 6px', transition: 'opacity 160ms ease' }}
+                          className="opacity-60 group-hover:opacity-100 focus:opacity-100"
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--arvo-fg-faint)', fontSize: 16, padding: '4px 8px', transition: 'opacity 160ms ease' }}
                         >⋯</button>
                         {openMenuFor === m.id && (
                           <div

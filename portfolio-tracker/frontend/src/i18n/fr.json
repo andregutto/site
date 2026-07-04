@@ -2619,6 +2619,12 @@
     "messageDeleted": "Message supprimé",
     "deleteForMe": "Supprimer pour moi",
     "deleteForEveryone": "Supprimer pour tout le monde",
-    "seenAt": "Vu à {time}"
+    "seenAt": "Vu à {time}",
+    "archive": "Archiver",
+    "deleteAction": "Supprimer",
+    "markUnread": "Non lu",
+    "tabActive": "Actives",
+    "tabArchived": "Archivées",
+    "emptyArchived": "Aucune conversation archivée."
   }
 }

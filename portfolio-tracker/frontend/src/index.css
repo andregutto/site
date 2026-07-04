@@ -130,6 +130,29 @@ textarea:focus-visible {
   }
 }
 
+/* DM thread — self-contained scroll area (not just relying on .main-content's
+   padding) because it fills a fixed height rather than flowing normally, so the
+   floating bottom nav clearance has to be baked into the height calc itself. */
+.dm-thread-shell {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 132px);
+}
+@media (max-width: 639px) {
+  .dm-thread-shell {
+    height: calc(100dvh - 118px - 8rem - env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* #root defensive containment — belt-and-suspenders alongside html/body's
+   overflow-x: hidden above; a flex/grid descendant forcing a fraction-of-a-px
+   overflow can otherwise reveal html's dark background as a sliver on the
+   right edge during momentum/rubber-band scroll on mobile. */
+#root {
+  overflow-x: hidden;
+  width: 100%;
+}
+
 /* Prevent iOS Safari auto-zoom when focusing inputs with small font */
 @media screen and (max-width: 640px) {
   input[type="text"],
