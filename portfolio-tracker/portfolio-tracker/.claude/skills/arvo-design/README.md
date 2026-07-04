@@ -364,6 +364,7 @@ are legacy and should be swapped for stroke icons during the re-skin.
 ```
 README.md                  ← you are here
 SKILL.md                   ← Agent-Skills entry-point for Claude Code
+BRAND_CONCEPT_HISTORY.md   ← naming origin, symbol anatomy, color/vertical rationale (source of intent behind this file)
 colors_and_type.css        ← the foundation. import this before anything else.
 
 assets/
