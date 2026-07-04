@@ -736,9 +736,11 @@ export default function AppLayout() {
               </svg>
             )},
             { to: '/community', label: (t as any).nav?.community ?? 'Comunidade', match: inCommunity, accent: '#E8A020', icon: (
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 3c-3.5 2-6 5.5-6 9.5A6 6 0 0 0 12 18a6 6 0 0 0 6-5.5C18 8.5 15.5 5 12 3Z"/>
-                <path strokeLinecap="round" d="M12 18v3"/>
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 17V8"/>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 8C9 8 6.5 6 7 3.5 9.7 4.2 12 5.8 12 8Z"/>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 8C15 8 17.5 6 17 3.5 14.3 4.2 12 5.8 12 8Z"/>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 17c-1.5 1.3-2.7 2-4 3.5M12 17c1.5 1.3 2.7 2 4 3.5M12 17v3.5"/>
               </svg>
             )},
           ].map(({ to, label, match, icon }) => (
