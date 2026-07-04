@@ -15,9 +15,11 @@ interface Props {
 }
 
 export default function ValueCards({ total_brl, generated_at, invested_brl, gain_brl, gain_pct, period_abs, chartLoading, period_pct, period_label }: Props) {
-  const { currency, fmt, fxRates, hideValues } = useCurrency()
+  const { currency, fmt, fxRates, fxRateDates, hideValues } = useCurrency()
   const { t, locale } = useI18n()
   const ts = new Date(generated_at).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })
+  const fxDate = fxRateDates[currency]
+  const fxIsStale = !!fxDate && fxDate !== new Date().toISOString().split('T')[0]
   const showSecondary = invested_brl != null && gain_brl != null
 
   function pctText(val: number | null | undefined) {
@@ -71,8 +73,12 @@ export default function ValueCards({ total_brl, generated_at, invested_brl, gain
             {t.dashboard.updatedAt.replace('{time}', ts)}
           </p>
           {currency !== 'BRL' && (
-            <p style={{ fontFamily: "var(--arvo-font-body)", fontSize: 9.5, color: 'var(--arvo-fg-faint)', whiteSpace: 'nowrap', margin: 0 }}>
+            <p
+              title={fxIsStale ? `Cotação de ${new Date(fxDate + 'T00:00:00').toLocaleDateString(locale)} — a fonte atual pode estar indisponível` : undefined}
+              style={{ fontFamily: "var(--arvo-font-body)", fontSize: 9.5, color: fxIsStale ? 'var(--arvo-ocre, #E8A020)' : 'var(--arvo-fg-faint)', whiteSpace: 'nowrap', margin: 0 }}
+            >
               1 {currency} = R$ {(fxRates[currency] ?? 0).toFixed(2)}
+              {fxIsStale && ` (${new Date(fxDate + 'T00:00:00').toLocaleDateString(locale, { day: '2-digit', month: '2-digit' })})`}
             </p>
           )}
         </div>

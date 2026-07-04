@@ -63,7 +63,7 @@ export default function PerformancePage() {
   const currentYM   = localYM(now)
 
   const navigate = useNavigate()
-  const { convert, currency, fxRates } = useCurrency()
+  const { convert, currency, fxRates, fxRateDates } = useCurrency()
   const { t, locale } = useI18n()
   const intlLocale = locale === 'pt' ? 'pt-BR' : locale === 'fr' ? 'fr-FR' : 'en-US'
   const { data: livePortfolio } = usePortfolioValue()
@@ -400,11 +400,19 @@ export default function PerformancePage() {
         <>
           {summary && (
             <div className="rounded-2xl p-5" style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', position: 'relative' }}>
-              {currency !== 'BRL' && (
-                <p style={{ position: 'absolute', top: 14, right: 18, fontFamily: 'var(--arvo-font-body)', fontSize: 9.5, color: 'var(--arvo-fg-faint)', whiteSpace: 'nowrap', margin: 0 }}>
-                  1 {currency} = R$ {(fxRates[currency] ?? 0).toFixed(2)}
-                </p>
-              )}
+              {currency !== 'BRL' && (() => {
+                const fxDate = fxRateDates[currency]
+                const fxIsStale = !!fxDate && fxDate !== new Date().toISOString().split('T')[0]
+                return (
+                  <p
+                    title={fxIsStale ? `Cotação de ${new Date(fxDate + 'T00:00:00').toLocaleDateString(locale)} — a fonte atual pode estar indisponível` : undefined}
+                    style={{ position: 'absolute', top: 14, right: 18, fontFamily: 'var(--arvo-font-body)', fontSize: 9.5, color: fxIsStale ? 'var(--arvo-ocre, #E8A020)' : 'var(--arvo-fg-faint)', whiteSpace: 'nowrap', margin: 0 }}
+                  >
+                    1 {currency} = R$ {(fxRates[currency] ?? 0).toFixed(2)}
+                    {fxIsStale && ` (${new Date(fxDate + 'T00:00:00').toLocaleDateString(locale, { day: '2-digit', month: '2-digit' })})`}
+                  </p>
+                )
+              })()}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6">
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   <span style={kpiLabelStyle}>{t.performance.periodStart}</span>

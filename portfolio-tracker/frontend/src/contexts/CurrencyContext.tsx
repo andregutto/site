@@ -10,10 +10,17 @@ export interface FxRates {
   [key: string]: number
 }
 
+export interface FxRateDates {
+  USD?: string  // data de referência (YYYY-MM-DD) da cotação usada
+  EUR?: string
+  [key: string]: string | undefined
+}
+
 interface CurrencyContextValue {
   currency: Currency
   setCurrency: (c: Currency) => void
   fxRates: FxRates
+  fxRateDates: FxRateDates
   /** Converte valor em BRL para a moeda selecionada */
   convert: (valueBrl: number) => number
   /** Formata valor em BRL na moeda selecionada. Retorna "•••" quando hideValues=true */
@@ -34,16 +41,21 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
     () => (localStorage.getItem('preferredCurrency') as Currency | null) ?? 'BRL'
   )
   const [fxRates, setFxRates] = useState<FxRates>({ USD: 5.70, EUR: 6.40 })
+  const [fxRateDates, setFxRateDates] = useState<FxRateDates>({})
   const [hideValues, setHideValues] = useState<boolean>(
     () => localStorage.getItem('arvo_hide_values') === '1'
   )
 
   useEffect(() => {
-    apiFetch<Array<{ from: string; rate: number }>>('/fx/current?pairs=USD-BRL,EUR-BRL')
+    apiFetch<Array<{ from: string; rate: number; date?: string }>>('/fx/current?pairs=USD-BRL,EUR-BRL')
       .then(rates => {
-        const usd = rates.find(r => r.from === 'USD')?.rate
-        const eur = rates.find(r => r.from === 'EUR')?.rate
-        setFxRates({ USD: usd ?? 5.70, EUR: eur ?? 6.40 })
+        const usd = rates.find(r => r.from === 'USD')
+        const eur = rates.find(r => r.from === 'EUR')
+        setFxRates({ USD: usd?.rate ?? 5.70, EUR: eur?.rate ?? 6.40 })
+        setFxRateDates({
+          USD: usd?.date ? usd.date.split('T')[0] : undefined,
+          EUR: eur?.date ? eur.date.split('T')[0] : undefined,
+        })
       })
       .catch(() => {})
   }, [])
@@ -79,7 +91,7 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
 
   return (
     <CurrencyContext.Provider value={{
-      currency, setCurrency, fxRates, convert, fmt,
+      currency, setCurrency, fxRates, fxRateDates, convert, fmt,
       symbol: SYMBOLS[currency],
       hideValues, toggleHideValues,
     }}>
