@@ -840,7 +840,7 @@ export default function AppLayout() {
               }}
             >
               {cloneElement(icon, {
-                style: { width: navCollapsed ? 16 : 20, height: navCollapsed ? 16 : 20, transition: 'width 240ms ease, height 240ms ease' },
+                style: { width: navCollapsed ? 18 : 24, height: navCollapsed ? 18 : 24, transition: 'width 240ms ease, height 240ms ease' },
               })}
               <span
                 className="truncate text-center px-1 w-full"
