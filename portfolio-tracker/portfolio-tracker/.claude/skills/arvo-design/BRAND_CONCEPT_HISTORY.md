@@ -168,6 +168,23 @@ princípio de "constante e único" acima (repetir o selo como ícone de aba
 dilui o reconhecimento). Ver discussão em memória de sessão — decisão de
 produto ainda pendente, não resolvida neste documento.
 
+### Esclarecimento: broto/folha + monograma, não "pássaro"
+
+Confirmado por André em 2026-07-04: a leitura de "asas" (usada acima e
+pelo Gemini) é só porque a forma é simétrica — **não é um pássaro**. A
+intenção real é:
+
+- **Metade de cima do símbolo = uma folha.**
+- **Metade de baixo = um tronco.**
+- Juntas, as duas metades formam **um broto** — a mesma imagem que já
+  aparece na fototeca da marca (`01-broto-floresta.jpg`, `07-broto-escuro.jpg`).
+
+Ou seja, o símbolo é **broto/folha E monograma oculto ao mesmo tempo** —
+as duas leituras (orgânica e matemática) são intencionais e simultâneas,
+não uma "cobrindo" a outra. Isso resolve uma confusão de sessões
+anteriores do Claude, que chegou a chamar o símbolo de "pássaro" sem base
+documental nenhuma — não repetir esse erro.
+
 ---
 
 ## 5. O mantra
@@ -250,6 +267,39 @@ memória de sessão do Claude).
 > nem "Comunidade" — três nomes diferentes circulando pra mesma vertical
 > em três lugares (código = "community"/"Comunidade", este histórico =
 > "Journal", README do skill = "Raiz"). Precisa alinhar um nome canônico.
+
+### Esclarecimento importante (2026-07-04): a sigla é sobre a vida, não sobre o menu
+
+André corrigiu uma leitura errada do Claude: **a sigla A-R-V-O não precisa
+mapear 1:1 pras verticais/abas do produto.** A ideia é uma **sigla pra
+vida** — os 4 pilares que uma vida organizada e próspera tem (patrimônio,
+relações, experiências, organização/planejamento) — e o Arvo **como
+plataforma inteira** ajuda a cultivar os 4, não que cada letra vire um
+item de menu separado. O "O" (organização), por exemplo, se aplica a
+dashboards, acompanhamento de evolução e definição de plano de liberdade
+financeira — coisas que já *atravessam* várias telas do produto, não uma
+tela isolada chamada "Organização".
+
+Isso muda o cálculo: não precisa esperar um "4º pilar de produto" existir
+pra formalizar a sigla — ela pode virar linguagem de manifesto/vídeo/canal
+já, sem depender de nenhuma mudança de código.
+
+### Brainstorm criativo por letra (2026-07-04, ainda sem decisão)
+
+André pediu opções além das duas do Gemini, mesmo registro concreto
+(Opção 1), sem se limitar ao que já tinha sido sugerido. Ainda **não
+decidiu** — fica registrado pra retomar depois:
+
+| Letra | Opções |
+|---|---|
+| **A** | **Ativos** (direta, bate com Capital) · Alicerce (menos financeiro, "a base que sustenta tudo") · Ancoragem (estabilidade antes de crescer) |
+| **R** | **Relações** (original) · **Raízes** (⭐ mais forte — fecha o círculo com árvore/cultivo/"Arvo Raiz" já documentado) · Rede (comunidade/pessoas conectadas) |
+| **V** | **Vivências** (original, ampla) · Valores (loop reflexivo com "Arvo = valor" em finlandês) · Voos (poético, mais estreito) |
+| **O** | **Organização** (original, bate com dashboards/evolução/plano de liberdade financeira) · Objetivos (mais orientado a ação/meta) · Órbita (poético, "seu próprio ritmo de vida") |
+
+Combinação sugerida pelo Claude (não escolhida ainda): **Ativos, Raízes,
+Vivências, Organização** — mas André respondeu "ainda não gostei, vamos
+ver isso depois". **Status: em aberto, revisitar futuramente.**
 
 ---
 
