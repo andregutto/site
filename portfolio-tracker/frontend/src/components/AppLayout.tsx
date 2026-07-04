@@ -69,13 +69,21 @@ export default function AppLayout() {
   const [navCollapsed,  setNavCollapsed]  = useState(false)
   const navigate = useNavigate()
   // Drag-to-select na pill nav mobile (efeito "liquid glass" tipo iOS Control
-  // Center): pressiona um item e arrasta o dedo pelos outros, o destaque
-  // acompanha em tempo real; solta sobre um item diferente do que iniciou
-  // e navega pra ele. Um toque simples (sem arrastar) continua funcionando
+  // Center): pressiona um item e arrasta o dedo pelos outros. Ao contrário da
+  // v1 (que só trocava o fundo de um item pro outro instantaneamente, sem
+  // nenhuma sensação de "líquido"), a bolha de destaque agora segue a posição
+  // exata do dedo em tempo real (sem transição, 1:1) e só ganha uma animação
+  // com leve overshoot ("mola") quando solta — é essa combinação (rígido
+  // durante o arrasto, elástico ao soltar) que lembra o material de vidro
+  // líquido da Apple, em vez de um highlight que simplesmente pula de item
+  // em item. Um toque simples (sem arrastar) continua funcionando
   // normalmente via o onClick nativo do NavLink.
   const [dragHighlightIndex, setDragHighlightIndex] = useState<number | null>(null)
+  const [liquidX, setLiquidX] = useState<number | null>(null) // posição da bolha, relativa ao container da nav
+  const [liquidSettling, setLiquidSettling] = useState(false) // true só durante a animação de encaixe ao soltar
   const dragStartIndexRef = useRef<number | null>(null)
   const navItemRefs = useRef<(HTMLElement | null)[]>([])
+  const navRowRef = useRef<HTMLDivElement>(null)
 
   function indexAtPoint(clientX: number, clientY: number): number | null {
     for (let i = 0; i < navItemRefs.current.length; i++) {
@@ -85,6 +93,15 @@ export default function AppLayout() {
       if (clientX >= r.left && clientX <= r.right && clientY >= r.top && clientY <= r.bottom) return i
     }
     return null
+  }
+
+  function itemCenterX(index: number): number | null {
+    const el = navItemRefs.current[index]
+    const containerEl = navRowRef.current
+    if (!el || !containerEl) return null
+    const r = el.getBoundingClientRect()
+    const containerRect = containerEl.getBoundingClientRect()
+    return (r.left - containerRect.left) + r.width / 2
   }
   const [chatVisible,    setChatVisible]    = useState(() => localStorage.getItem('arvo_chat_visible') !== 'false')
   const [openChatNow,    setOpenChatNow]    = useState(false)
@@ -793,31 +810,65 @@ export default function AppLayout() {
           </div>
         )}
         <div
-          className="flex"
+          ref={navRowRef}
+          className="flex relative"
           style={{ padding: '5px' }}
           onTouchStart={(e) => {
             const idx = indexAtPoint(e.touches[0].clientX, e.touches[0].clientY)
             dragStartIndexRef.current = idx
+            if (idx == null || !navRowRef.current) return
+            setLiquidSettling(false)
+            setDragHighlightIndex(idx)
+            setLiquidX(e.touches[0].clientX - navRowRef.current.getBoundingClientRect().left)
           }}
           onTouchMove={(e) => {
-            if (dragStartIndexRef.current == null) return
+            if (dragStartIndexRef.current == null || !navRowRef.current) return
+            e.preventDefault()
+            const rect = navRowRef.current.getBoundingClientRect()
+            const rawX = e.touches[0].clientX - rect.left
+            setLiquidX(Math.max(0, Math.min(rect.width, rawX))) // segue o dedo 1:1, sem transição
             const idx = indexAtPoint(e.touches[0].clientX, e.touches[0].clientY)
-            if (idx != null) { e.preventDefault(); setDragHighlightIndex(idx) }
+            if (idx != null) setDragHighlightIndex(idx)
           }}
           onTouchEnd={() => {
-            if (dragHighlightIndex != null && dragHighlightIndex !== dragStartIndexRef.current) {
-              const target = navItems[dragHighlightIndex]
+            const finalIndex = dragHighlightIndex
+            if (finalIndex != null && finalIndex !== dragStartIndexRef.current) {
+              const target = navItems[finalIndex]
               if (target) navigate(target.to)
+            }
+            // Encaixa a bolha no centro do item final com uma pequena "mola" (overshoot)
+            // antes de sumir — é o toque de "vidro líquido" que faltava na v1.
+            if (finalIndex != null) {
+              setLiquidSettling(true)
+              const center = itemCenterX(finalIndex)
+              if (center != null) setLiquidX(center)
             }
             dragStartIndexRef.current = null
             setDragHighlightIndex(null)
+            setTimeout(() => { setLiquidX(null); setLiquidSettling(false) }, 320)
           }}
         >
+          {liquidX != null && (
+            <div
+              aria-hidden="true"
+              style={{
+                position: 'absolute', top: 5, bottom: 5, left: 0,
+                width: `calc(${100 / navItems.length}% - 4px)`,
+                borderRadius: 999,
+                background: 'var(--arvo-glass-active-bg)',
+                boxShadow: '0 1px 4px rgba(0,0,0,0.08)',
+                transform: `translateX(${liquidX}px) translateX(-50%)`,
+                transition: liquidSettling ? 'transform 320ms cubic-bezier(0.34, 1.56, 0.64, 1)' : 'none',
+                pointerEvents: 'none',
+                zIndex: 0,
+              }}
+            />
+          )}
           {navItems.map(({ to, label, match, icon }, i) => (
             <NavLink
               key={to} to={to}
               ref={(el) => { navItemRefs.current[i] = el }}
-              className="flex-1 flex flex-col items-center shrink-0"
+              className="flex-1 flex flex-col items-center shrink-0 relative"
               style={{
                 fontFamily: "var(--arvo-font-body)",
                 letterSpacing: '0.06em',
@@ -825,9 +876,11 @@ export default function AppLayout() {
                 gap: navCollapsed ? 0 : 4,
                 padding: navCollapsed ? '9px 6px' : '6px 6px 7px',
                 borderRadius: 999,
+                zIndex: 1,
                 color: (match || dragHighlightIndex === i) ? 'var(--arvo-fg)' : 'var(--arvo-fg-soft)',
-                background: (match || dragHighlightIndex === i) ? 'var(--arvo-glass-active-bg)' : 'transparent',
-                boxShadow: (match || dragHighlightIndex === i) ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
+                background: (liquidX == null && match) ? 'var(--arvo-glass-active-bg)' : 'transparent',
+                boxShadow: (liquidX == null && match) ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
+                transform: dragHighlightIndex === i && liquidX != null && !liquidSettling ? 'scale(1.08)' : 'scale(1)',
                 // overflow:hidden aqui (no próprio item flex, não só no label)
                 // zera o "automatic minimum size" do item pela spec do flexbox —
                 // sem isso, o label escondido ainda inflava a largura mínima do
