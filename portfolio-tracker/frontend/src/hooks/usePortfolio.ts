@@ -5,7 +5,7 @@ import type { PortfolioValue, PerformanceSummary, PerformanceMonthly, Performanc
 
 // Daily cache v9 — bumped 2026-07-05 to invalidate series cached before inactive
 // (sold/archived) assets were included in historical month/day valuations.
-const CACHE_PREFIX = 'perf9_'
+const CACHE_PREFIX = 'perf10_'
 
 function perfCacheGet<T>(key: string): T | null {
   try {

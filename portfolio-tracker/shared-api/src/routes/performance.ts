@@ -277,6 +277,54 @@ export function getSplitAdjustmentFactor(events: SplitFactorEvent[], dateStr: st
   return factor
 }
 
+// Corporate actions que o usuário nunca atravessou (posição fechada antes de um
+// grupamento/desdobramento) não deixam linha de split nos aportes, mas a série de
+// preços sincronizada hoje vem ajustada retroativamente pelo evento. Avaliar as
+// holdings nominais contra a série ajustada infla/deflaciona o histórico pelo fator
+// do split (ex.: 500 IRBR3 compradas a R$6,70 avaliadas a R$186 = +R$90k fantasmas).
+// O preço realmente pago é a verdade: a mediana da razão price_orig / preço-da-série
+// no mês de cada compra recupera a diferença de base. Só se aplica quando NÃO há
+// eventos de split nos aportes (senão o ajuste de holdings já cobre e isso dobraria).
+const calibrationMemo = new WeakMap<object, Map<number, number>>()
+export function getSeriesCalibrationFactor(
+  data: Pick<PrefetchedData, 'contributions' | 'prices'>,
+  assetId: number,
+): number {
+  let memo = calibrationMemo.get(data.contributions)
+  if (!memo) { memo = new Map(); calibrationMemo.set(data.contributions, memo) }
+  const hit = memo.get(assetId)
+  if (hit !== undefined) return hit
+
+  const byMonth = new Map<string, { price: number; currency: string; ref_date: string }>()
+  for (const pr of data.prices) {
+    if (pr.asset_id !== assetId) continue
+    const ym = pr.ref_date.substring(0, 7)
+    const cur = byMonth.get(ym)
+    if (!cur || pr.ref_date > cur.ref_date) byMonth.set(ym, { price: pr.price, currency: pr.currency, ref_date: pr.ref_date })
+  }
+
+  const ratios: number[] = []
+  for (const c of data.contributions) {
+    if (c.asset_id !== assetId || c.type !== 'buy') continue
+    const po = Number(c.price_orig) || 0
+    if (po <= 0) continue
+    const ph = byMonth.get(String(c.date).substring(0, 7))
+    if (!ph || ph.price <= 0) continue
+    if (c.currency && ph.currency && c.currency !== ph.currency) continue
+    ratios.push(po / ph.price)
+  }
+
+  let factor = 1
+  if (ratios.length) {
+    ratios.sort((x, y) => x - y)
+    const median = ratios[Math.floor(ratios.length / 2)]
+    // até ±35% é ruído de mercado (compra intradiária vs fechamento), não split
+    if (median <= 0.75 || median >= 1.35) factor = median
+  }
+  memo.set(assetId, factor)
+  return factor
+}
+
 // Month-keyed price index, built once per request. computePortfolioValueAtMonth used to rebuild
 // this from every price_history row on every call — for a multi-year "Início" series that meant
 // O(months × total price rows) work plus an Object.keys().filter().sort() prior-month fallback per
@@ -407,7 +455,11 @@ export async function computePortfolioValueAtMonth(
         if (anchor || mvPts.length > 0) {
           const pts = anchor ? [anchor, ...mvPts] : [...mvPts]
           pts.sort((x, y) => x.ref_date.localeCompare(y.ref_date))
-          const interp = interpolateKnownPoints(pts, dateStr)
+          // Antes do primeiro ponto conhecido (primeira compra ou primeiro valor
+          // manual) o ativo não existia: extrapolar o primeiro valor para trás
+          // criava patrimônio fantasma que "evaporava" na data real de entrada.
+          const interp = dateStr >= pts[0].ref_date.substring(0, 7) + '-01'
+            ? interpolateKnownPoints(pts, dateStr) : null
           if (interp) {
             const fx = interp.currency === 'BRL' ? 1 : await getFx(interp.currency)
             value = interp.value * fx
@@ -454,7 +506,9 @@ export async function computePortfolioValueAtMonth(
         if (!a.active && isCurrentOrFuture) return null
         if (holdings > 0) {
           const splitEvents = splitEventsCache?.get(a.id) ?? computeSplitFactorEvents(allContribs, a.id)
-          const adjHoldings = holdings * getSplitAdjustmentFactor(splitEvents, dateStr)
+          const adjHoldings = splitEvents.length > 0
+            ? holdings * getSplitAdjustmentFactor(splitEvents, dateStr)
+            : holdings * getSeriesCalibrationFactor(data, a.id)
           const ph = getPrice(a.id, ym)
           if (isCurrentOrFuture) {
             if (ph && ph.ref_date.substring(0, 7) === ym) {
@@ -884,7 +938,8 @@ export async function computePortfolioValueAtDay(
         if (anchor || mvPts.length > 0) {
           const pts = anchor ? [anchor, ...mvPts] : [...mvPts]
           pts.sort((x, y) => x.ref_date.localeCompare(y.ref_date))
-          const interp = interpolateKnownPointsDaily(pts, dateStr)
+          const interp = dateStr >= pts[0].ref_date
+            ? interpolateKnownPointsDaily(pts, dateStr) : null
           if (interp) {
             const fx = interp.currency === 'BRL' ? 1 : await getFx(interp.currency)
             value = interp.value * fx
@@ -926,7 +981,9 @@ export async function computePortfolioValueAtDay(
       } else {
         if (holdings > 0) {
           const splitEvents = splitEventsCache?.get(a.id) ?? computeSplitFactorEvents(allContribs, a.id)
-          const adjHoldings = holdings * getSplitAdjustmentFactor(splitEvents, dateStr)
+          const adjHoldings = splitEvents.length > 0
+            ? holdings * getSplitAdjustmentFactor(splitEvents, dateStr)
+            : holdings * getSeriesCalibrationFactor(data, a.id)
           const ph = getPriceAtDay(a.id)
           const phIsExact = ph?.ref_date === dateStr
           if (isCurrentOrFuture && !phIsExact) {
