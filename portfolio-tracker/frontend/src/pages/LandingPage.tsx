@@ -66,7 +66,7 @@ function DashboardMockupContent({ td, tn, tc, ti }: MockupLabels) {
         <div style={{ width: 1, height: 22, background: 'rgba(13,13,13,0.12)', flexShrink: 0 }} />
         <span style={{ fontFamily: FD, fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.50)', flexShrink: 0 }}>Capital</span>
         <nav style={{ flex: 1, display: 'flex', justifyContent: 'center', gap: 4 }}>
-          {([tn.investments, tn.finances, tn.institutions] as string[]).map((label, i) => (
+          {([tn.investments, tn.finances, tn.voyage, tn.community] as string[]).map((label, i) => (
             <span key={i} style={{ padding: '6px 18px', borderRadius: 99, fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', background: i === 0 ? DARK : 'transparent', color: i === 0 ? '#fff' : 'rgba(13,13,13,0.62)', fontFamily: FS, whiteSpace: 'nowrap' }}>{label}</span>
           ))}
         </nav>
@@ -97,10 +97,12 @@ function DashboardMockupContent({ td, tn, tc, ti }: MockupLabels) {
         {/* Period selector */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
           <span style={{ fontFamily: FD, fontSize: 13, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.50)' }}>Dashboard</span>
-          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-            {(['Mês', 'YTD', '12M', 'Início'] as const).map((lbl, i) => (
-              <span key={lbl} style={{ padding: '5px 12px', borderRadius: 6, fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', border: i === 1 ? `1px solid ${DARK}` : '1px solid rgba(13,13,13,0.18)', background: i === 1 ? DARK : '#fff', color: i === 1 ? '#fff' : 'rgba(13,13,13,0.52)', fontFamily: FS }}>{lbl}</span>
-            ))}
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+            <div style={{ display: 'flex', border: '1px solid rgba(13,13,13,0.14)', borderRadius: 3, overflow: 'hidden', background: '#fff' }}>
+              {(['Mês', '30D', '12M', 'YTD', 'Início'] as const).map((lbl, i) => (
+                <span key={lbl} style={{ padding: '5px 12px', fontSize: 10, letterSpacing: '0.06em', background: i === 3 ? DARK : 'transparent', color: i === 3 ? '#fff' : 'rgba(13,13,13,0.55)', fontFamily: FS }}>{lbl}</span>
+              ))}
+            </div>
             <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="rgba(13,13,13,0.42)" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
           </div>
         </div>
@@ -121,7 +123,7 @@ function DashboardMockupContent({ td, tn, tc, ti }: MockupLabels) {
               { label: td.invested,      val: 'R$ 236.000',           color: DARK },
               { label: td.result,        val: '+R$ 48.500 (+20,6%)',   color: '#1F8A5B' },
               { label: td.currentMonth,  val: '+1,4%',                 color: '#1F8A5B' },
-              { label: 'YTD 2025',       val: '+8,2%',                 color: '#1F8A5B' },
+              { label: 'YTD 2026',       val: '+8,2%',                 color: '#1F8A5B' },
             ] as Array<{ label: string; val: string; color: string }>).map(({ label, val, color }) => (
               <div key={label} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 <span style={{ fontFamily: FS, fontSize: 11, letterSpacing: '0.20em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.60)' }}>{label}</span>
@@ -177,7 +179,7 @@ function DashboardMockupContent({ td, tn, tc, ti }: MockupLabels) {
             <line x1="0" y1="55" x2="1200" y2="55" stroke="#f0f0f0" strokeWidth="1"/>
             <line x1="0" y1="30" x2="1200" y2="30" stroke="#f0f0f0" strokeWidth="1"/>
             <path d="M 0 72 C 100 70 200 65 350 55 C 500 45 600 38 750 28 C 900 18 1050 10 1200 5 L 1200 80 L 0 80 Z" fill="url(#evGrad)"/>
-            <path d="M 0 72 C 100 70 200 65 350 55 C 500 45 600 38 750 28 C 900 18 1050 10 1200 5" fill="none" stroke={DARK} strokeWidth="2"/>
+            <path className="arvo-anim-line" style={{ '--len': '1260px' } as React.CSSProperties} d="M 0 72 C 100 70 200 65 350 55 C 500 45 600 38 750 28 C 900 18 1050 10 1200 5" fill="none" stroke={DARK} strokeWidth="2"/>
             {(['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'] as const).map((lbl, i) => (
               <text key={lbl} x={i * 109} y={79} fontSize="9" fill="rgba(13,13,13,0.35)" textAnchor={i === 0 ? 'start' : i === 11 ? 'end' : 'middle'} fontFamily={FS}>{lbl}</text>
             ))}
@@ -293,7 +295,7 @@ function FreedomMockupContent({ l, showStatusBar = true }: { l?: Record<string, 
               <span style={{ fontFamily: FS, fontSize: 10, color: ARARA, fontWeight: 600 }}>6,8%</span>
             </div>
             <div style={{ height: 6, borderRadius: 99, background: 'rgba(27,79,216,0.10)', overflow: 'hidden' }}>
-              <div style={{ width: '6.8%', height: '100%', borderRadius: 99, background: ARARA }} />
+              <div className="arvo-anim-fill" style={{ width: '6.8%', height: '100%', borderRadius: 99, background: ARARA }} />
             </div>
           </div>
         </div>
@@ -309,7 +311,7 @@ function FreedomMockupContent({ l, showStatusBar = true }: { l?: Record<string, 
               </linearGradient>
             </defs>
             <path d={areaPath} fill="url(#freedomGrad)"/>
-            <polyline points={pts} fill="none" stroke={ARARA} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round"/>
+            <polyline className="arvo-anim-line" style={{ '--len': '420px' } as React.CSSProperties} points={pts} fill="none" stroke={ARARA} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round"/>
             <circle cx="0" cy={H} r="3.5" fill={ARARA}/>
             <circle cx={W} cy={(H - (3200/maxVal)*H).toFixed(1) as unknown as number} r="3.5" fill={ARARA}/>
           </svg>
@@ -371,7 +373,7 @@ function PortfolioPhoneMockupContent({ l }: { l: Record<string, string> }) {
               { label: l.mkInvested, val: 'R$ 236k', color: DARK },
               { label: l.mkResult,   val: '+20,6%',  color: '#1F8A5B' },
               { label: l.mkMonth,    val: '+1,4%',   color: '#1F8A5B' },
-              { label: 'YTD 2025',   val: '+8,2%',   color: '#1F8A5B' },
+              { label: 'YTD 2026',   val: '+8,2%',   color: '#1F8A5B' },
             ] as Array<{ label: string; val: string; color: string }>).map(({ label, val, color }) => (
               <div key={label}>
                 <p style={{ fontFamily: FS, fontSize: 9, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.50)', margin: 0 }}>{label}</p>
@@ -469,7 +471,7 @@ function MomentosMockupContent({ l }: { l: Record<string, string> }) {
               <span style={{ fontSize: 10, color: 'rgba(13,13,13,0.42)', fontFamily: FS }}>{g.target}</span>
             </div>
             <div style={{ height: 6, borderRadius: 99, background: 'rgba(13,13,13,0.08)', overflow: 'hidden' }}>
-              <div style={{ width: `${g.pct}%`, height: '100%', borderRadius: 99, background: g.color }} />
+              <div className="arvo-anim-fill" style={{ width: `${g.pct}%`, height: '100%', borderRadius: 99, background: g.color }} />
             </div>
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 5 }}>
               <span style={{ fontSize: 10, color: g.color, fontWeight: 600, fontFamily: FS }}>{g.pct}%</span>
@@ -524,6 +526,103 @@ function CasalMockupContent({ l }: { l: Record<string, string> }) {
             <div style={{ height: 6, borderRadius: 99, overflow: 'hidden', display: 'flex' }}>
               <div style={{ flex: c.ag, background: c.color }} />
               <div style={{ flex: c.p, background: `${c.color}55` }} />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function VoyageMockupContent({ l }: { l: Record<string, string> }) {
+  const FS = "'DM Sans', system-ui, sans-serif"
+  const FD = "'Tenor Sans', serif"
+  const RED = '#D63B2F'
+  const cats = [
+    { nameKey: 'mkTripCatFlights', val: '€ 620', pct: 92 },
+    { nameKey: 'mkTripCatStay',    val: '€ 540', pct: 68 },
+    { nameKey: 'mkTripCatFood',    val: '€ 320', pct: 54 },
+    { nameKey: 'mkTripCatTours',   val: '€ 200', pct: 33 },
+  ]
+  return (
+    <div style={{ width: '100%', height: '100%', background: '#F4F4F4', fontFamily: FS, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <PhoneNav />
+      <div style={{ flex: 1, overflow: 'hidden', padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div>
+          <p style={{ fontFamily: FS, fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.45)', margin: 0 }}>{l.f7label}</p>
+          <p style={{ fontFamily: FD, fontSize: 18, color: DARK, margin: '2px 0 0' }}>{l.mkTripName}</p>
+          <p style={{ fontFamily: FS, fontSize: 11, color: 'rgba(13,13,13,0.45)', margin: '3px 0 0' }}>{l.mkTripDates}</p>
+        </div>
+        <div style={{ background: '#fff', borderRadius: 14, padding: '14px 16px', border: '1px solid rgba(214,59,47,0.16)', boxShadow: '0 2px 12px rgba(214,59,47,0.06)', flexShrink: 0 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div>
+              <p style={{ fontFamily: FS, fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.42)', margin: 0 }}>{l.mkTripBudget}</p>
+              <p style={{ fontFamily: FD, fontSize: 22, color: DARK, margin: '3px 0 0', lineHeight: 1 }}>€ 2.400</p>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <p style={{ fontFamily: FS, fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.42)', margin: 0 }}>{l.mkTripSpent}</p>
+              <p style={{ fontFamily: FD, fontSize: 16, color: RED, margin: '3px 0 0' }}>€ 1.680</p>
+            </div>
+          </div>
+          <div style={{ height: 6, borderRadius: 99, background: 'rgba(214,59,47,0.10)', overflow: 'hidden', marginTop: 12 }}>
+            <div className="arvo-anim-fill" style={{ width: '70%', height: '100%', borderRadius: 99, background: RED }} />
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 5 }}>
+            <span style={{ fontSize: 10, color: RED, fontWeight: 600, fontFamily: FS }}>70%</span>
+          </div>
+        </div>
+        {cats.map((c, i) => (
+          <div key={c.nameKey} className="arvo-anim-row" style={{ animationDelay: `${0.5 + i * 0.12}s`, background: '#fff', borderRadius: 12, padding: '10px 14px', border: '1px solid rgba(13,13,13,0.06)', flexShrink: 0 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+              <span style={{ fontFamily: FS, fontSize: 12, fontWeight: 600, color: DARK }}>{l[c.nameKey]}</span>
+              <span style={{ fontFamily: FS, fontSize: 11, color: 'rgba(13,13,13,0.45)' }}>{c.val}</span>
+            </div>
+            <div style={{ height: 4, borderRadius: 99, background: 'rgba(13,13,13,0.07)', overflow: 'hidden' }}>
+              <div className="arvo-anim-fill" style={{ width: `${c.pct}%`, height: '100%', borderRadius: 99, background: `rgba(214,59,47,${0.9 - i * 0.15})` }} />
+            </div>
+          </div>
+        ))}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, marginTop: 2 }}>
+          {['AG', 'CM', 'RP'].map((ini, i) => (
+            <div key={ini} style={{ width: 26, height: 26, borderRadius: '50%', background: i === 0 ? DARK : '#fff', border: i === 0 ? 'none' : '1px solid rgba(13,13,13,0.14)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8, letterSpacing: '0.05em', color: i === 0 ? '#C8B89A' : 'rgba(13,13,13,0.6)', marginLeft: i > 0 ? -10 : 0, zIndex: 3 - i }}>{ini}</div>
+          ))}
+          <span style={{ fontFamily: FS, fontSize: 10, color: 'rgba(13,13,13,0.45)', marginLeft: 4 }}>{l.mkTripShared}</span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function ComunidadeMockupContent({ l }: { l: Record<string, string> }) {
+  const FS = "'DM Sans', system-ui, sans-serif"
+  const FD = "'Tenor Sans', serif"
+  const OCRE = '#E8A020'
+  const posts = [
+    { ini: 'MB', name: 'Marina', tKey: 'mkCommPost1t', aKey: 'mkCommPost1a', replies: 14, tagKey: 'mkCommTag1' },
+    { ini: 'RS', name: 'Rafael', tKey: 'mkCommPost2t', aKey: 'mkCommPost2a', replies: 8,  tagKey: 'mkCommTag2' },
+    { ini: 'LC', name: 'Luísa',  tKey: 'mkCommPost3t', aKey: 'mkCommPost3a', replies: 21, tagKey: 'mkCommTag1' },
+  ]
+  return (
+    <div style={{ width: '100%', height: '100%', background: '#F4F4F4', fontFamily: FS, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <PhoneNav />
+      <div style={{ flex: 1, overflow: 'hidden', padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div>
+          <p style={{ fontFamily: FS, fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.45)', margin: 0 }}>{l.f8label}</p>
+          <p style={{ fontFamily: FD, fontSize: 18, color: DARK, margin: '2px 0 0' }}>{l.mkCommTitle}</p>
+        </div>
+        {posts.map((p, i) => (
+          <div key={p.ini} className="arvo-anim-row" style={{ animationDelay: `${0.35 + i * 0.15}s`, background: '#fff', borderRadius: 14, padding: '13px 15px', border: '1px solid rgba(13,13,13,0.06)', flexShrink: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+              <div style={{ width: 26, height: 26, borderRadius: '50%', background: DARK, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8, letterSpacing: '0.05em', color: '#C8B89A', flexShrink: 0 }}>{p.ini}</div>
+              <span style={{ fontSize: 12, fontWeight: 600, color: DARK }}>{p.name}</span>
+              <span style={{ fontSize: 10, color: 'rgba(13,13,13,0.35)' }}>· 2h</span>
+              <span style={{ marginLeft: 'auto', fontSize: 9, letterSpacing: '0.08em', textTransform: 'uppercase', color: OCRE, background: 'rgba(232,160,32,0.10)', borderRadius: 99, padding: '3px 9px' }}>{l[p.tagKey]}</span>
+            </div>
+            <p style={{ fontSize: 12.5, fontWeight: 600, color: DARK, margin: 0, lineHeight: 1.35 }}>{l[p.tKey]}</p>
+            <p style={{ fontSize: 11, color: 'rgba(13,13,13,0.55)', margin: '4px 0 0', lineHeight: 1.5, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{l[p.aKey]}</p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 8 }}>
+              <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="rgba(13,13,13,0.40)" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+              <span style={{ fontSize: 10, color: 'rgba(13,13,13,0.45)' }}>{p.replies} {l.mkCommReplies}</span>
             </div>
           </div>
         ))}
@@ -673,6 +772,43 @@ export default function LandingPage() {
         .arvo-feat-p4 { animation: arvo-feat-bird 3s ease-in-out infinite; animation-delay: 0.75s; }
         .arvo-feat-p5 { animation: arvo-feat-bird 3s ease-in-out infinite; animation-delay: 1.0s; }
         .arvo-feat-p6 { animation: arvo-feat-bird 3s ease-in-out infinite; animation-delay: 1.25s; }
+
+        /* Mockup micro-animations — slow, almost-linear, run once. Inside a
+           .arvo-reveal they stay paused until the section becomes visible. */
+        @keyframes arvo-draw { from { stroke-dashoffset: var(--len, 1400px); } to { stroke-dashoffset: 0; } }
+        .arvo-anim-line { stroke-dasharray: var(--len, 1400px); animation: arvo-draw 1.8s cubic-bezier(0.4,0,0.2,1) 0.4s both; }
+        @keyframes arvo-fillw { from { width: 0; } }
+        .arvo-anim-fill { animation: arvo-fillw 1.4s cubic-bezier(0.4,0,0.2,1) 0.5s both; }
+        @keyframes arvo-fadeup { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+        .arvo-anim-row { animation: arvo-fadeup 0.7s ease-out both; }
+        .arvo-reveal .arvo-anim-line, .arvo-reveal .arvo-anim-fill, .arvo-reveal .arvo-anim-row { animation-play-state: paused; }
+        .arvo-reveal.is-visible .arvo-anim-line, .arvo-reveal.is-visible .arvo-anim-fill, .arvo-reveal.is-visible .arvo-anim-row { animation-play-state: running; }
+        @media (prefers-reduced-motion: reduce) {
+          .arvo-anim-line, .arvo-anim-fill, .arvo-anim-row { animation: none; }
+        }
+
+        /* Hero CTAs — desktop: pill + quiet text link; mobile: stacked, one
+           obvious primary action and an explicit "already have an account" line. */
+        .arvo-hero-ctas { display: flex; gap: 28px; align-items: center; flex-wrap: wrap; }
+        .arvo-hero-cta-primary {
+          font-family: ${F_SANS}; font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase;
+          background: ${GOLD}; color: ${DARK}; text-decoration: none; padding: 17px 40px;
+          border-radius: 999px; transition: background 0.28s ease, box-shadow 0.28s ease;
+          box-shadow: 0 8px 32px rgba(200,184,154,0.25);
+        }
+        .arvo-hero-cta-primary:hover { background: #D6C8AC; box-shadow: 0 10px 40px rgba(200,184,154,0.38); }
+        .arvo-hero-cta-secondary {
+          font-family: ${F_SANS}; font-size: 13px; letter-spacing: 0.04em;
+          color: rgba(255,255,255,0.82); text-decoration: none;
+          border-bottom: 1px solid rgba(255,255,255,0.35); padding-bottom: 3px;
+          transition: color 0.28s ease, border-color 0.28s ease;
+        }
+        .arvo-hero-cta-secondary:hover { color: #fff; border-color: rgba(255,255,255,0.7); }
+        @media (max-width: 639px) {
+          .arvo-hero-ctas { flex-direction: column; align-items: stretch; gap: 18px; }
+          .arvo-hero-cta-primary { text-align: center; padding: 17px 24px; }
+          .arvo-hero-cta-secondary { align-self: center; }
+        }
       `}</style>
 
       {/* ── HEADER ── */}
@@ -756,7 +892,7 @@ export default function LandingPage() {
             </div>
 
             <Link to="/login?mode=register"
-              style={{ fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', background: headerOpaque ? DARK : 'rgba(255,255,255,0.12)', color: '#fff', textDecoration: 'none', padding: '10px 20px', borderRadius: 3, border: headerOpaque ? 'none' : '1px solid rgba(255,255,255,0.30)', transition: 'background 0.3s ease, border-color 0.3s ease' }}>
+              style={{ fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', background: headerOpaque ? DARK : 'transparent', color: headerOpaque ? '#fff' : GOLD, textDecoration: 'none', padding: '10px 24px', borderRadius: 999, border: headerOpaque ? '1px solid transparent' : `1px solid rgba(200,184,154,0.55)`, transition: 'background 0.3s ease, border-color 0.3s ease, color 0.3s ease' }}>
               {l.createBtn}
             </Link>
           </div>
@@ -785,15 +921,15 @@ export default function LandingPage() {
               <LanguageSelector />
             </div>
             {!mobileLoginOpen ? (
-              <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
-                <button onClick={() => { setMobileLoginOpen(true); setLoginErr('') }}
-                  style={{ flex: 1, textAlign: 'center', padding: '13px 0', fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', color: DARK, background: '#fff', border: `1px solid ${BORDER}`, borderRadius: 3, cursor: 'pointer' }}>
-                  {l.enterBtn}
-                </button>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 18 }}>
                 <Link to="/login?mode=register" onClick={() => setMenuOpen(false)}
-                  style={{ flex: 1, textAlign: 'center', padding: '13px 0', fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', background: DARK, color: '#fff', textDecoration: 'none', borderRadius: 3 }}>
+                  style={{ textAlign: 'center', padding: '14px 0', fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', background: DARK, color: '#fff', textDecoration: 'none', borderRadius: 999 }}>
                   {l.createAccount}
                 </Link>
+                <button onClick={() => { setMobileLoginOpen(true); setLoginErr('') }}
+                  style={{ textAlign: 'center', padding: '10px 0', fontFamily: F_SANS, fontSize: 12, letterSpacing: '0.04em', color: T_SECONDARY, background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: 4 }}>
+                  {l.heroAlready} · {l.enterBtn}
+                </button>
               </div>
             ) : (
               <form onSubmit={async e => { await handleLogin(e); if (!loginErr) setMenuOpen(false) }}
@@ -821,11 +957,11 @@ export default function LandingPage() {
                 )}
                 <div style={{ display: 'flex', gap: 10 }}>
                   <button type="button" onClick={() => setMobileLoginOpen(false)}
-                    style={{ flex: 1, padding: '12px 0', fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', background: '#fff', border: `1px solid ${BORDER}`, borderRadius: 3, cursor: 'pointer', color: T_SECONDARY }}>
+                    style={{ flex: 1, padding: '12px 0', fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', background: '#fff', border: `1px solid ${BORDER}`, borderRadius: 999, cursor: 'pointer', color: T_SECONDARY }}>
                     ←
                   </button>
                   <button type="submit" disabled={loginLoading}
-                    style={{ flex: 2, padding: '12px 0', fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', background: DARK, color: '#fff', border: 'none', borderRadius: 3, cursor: 'pointer', opacity: loginLoading ? 0.6 : 1 }}>
+                    style={{ flex: 2, padding: '12px 0', fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', background: DARK, color: '#fff', border: 'none', borderRadius: 999, cursor: 'pointer', opacity: loginLoading ? 0.6 : 1 }}>
                     {loginLoading ? '...' : l.enterBtn}
                   </button>
                 </div>
@@ -897,14 +1033,12 @@ export default function LandingPage() {
               {l.heroParaMobile}
             </p>
 
-            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
-              <Link to="/login?mode=register"
-                style={{ fontFamily: F_SANS, fontSize: 12, letterSpacing: '0.16em', textTransform: 'uppercase', background: GOLD, color: DARK, textDecoration: 'none', padding: '16px 34px', borderRadius: 2 }}>
+            <div className="arvo-hero-ctas">
+              <Link to="/login?mode=register" className="arvo-hero-cta-primary">
                 {l.heroCta}
               </Link>
-              <Link to="/login"
-                style={{ fontFamily: F_SANS, fontSize: 12, letterSpacing: '0.16em', textTransform: 'uppercase', background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.78)', textDecoration: 'none', padding: '16px 34px', borderRadius: 2, border: '1px solid rgba(255,255,255,0.18)' }}>
-                {l.heroAlready}
+              <Link to="/login" className="arvo-hero-cta-secondary">
+                {l.heroAlready} →
               </Link>
             </div>
 
@@ -1016,6 +1150,37 @@ export default function LandingPage() {
               <FeatureEyebrow color="#1B4FD8">{l.f4label}</FeatureEyebrow>
               <h3 style={{ fontFamily: F_DISPLAY, fontSize: 'clamp(1.4rem, 2.4vw, 1.9rem)', fontWeight: 400, color: DARK, lineHeight: 1.2, marginBottom: 14 }}>{l.f4title}</h3>
               <p style={{ fontFamily: F_SANS, fontSize: 15, color: T_BODY, lineHeight: 1.85 }}>{l.f4desc}</p>
+            </div>
+          </div>
+
+          {/* ── f7/f8: Voyage + Comunidade — 2-card strip over full-bleed beige band ── */}
+          <div className="arvo-reveal" style={{ background: '#F1EDE5', padding: 'clamp(56px, 8vw, 100px) 0' }}>
+            <div className="grid grid-cols-1 md:grid-cols-2" style={{ maxWidth: 980, margin: '0 auto', padding: '0 24px', gap: 'clamp(40px, 5vw, 72px)' }}>
+
+              {/* f7: Voyage */}
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <FeatureEyebrow color="#D63B2F">{l.f7label}</FeatureEyebrow>
+                <h3 style={{ fontFamily: F_DISPLAY, fontSize: 'clamp(1.15rem, 1.6vw, 1.4rem)', fontWeight: 400, color: DARK, lineHeight: 1.25, marginBottom: 10 }}>{l.f7title}</h3>
+                <p style={{ fontFamily: F_SANS, fontSize: 14, color: T_BODY, lineHeight: 1.75, marginBottom: 28 }}>{l.f7desc}</p>
+                <div style={{ display: 'flex', justifyContent: 'center', marginTop: 'auto' }}>
+                  <div style={{ width: 300, height: 430, borderRadius: 18, overflow: 'hidden', boxShadow: '0 16px 56px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.05)', border: '1px solid rgba(13,13,13,0.08)', flexShrink: 0 }}>
+                    <VoyageMockupContent l={l} />
+                  </div>
+                </div>
+              </div>
+
+              {/* f8: Comunidade */}
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <FeatureEyebrow color="#E8A020">{l.f8label}</FeatureEyebrow>
+                <h3 style={{ fontFamily: F_DISPLAY, fontSize: 'clamp(1.15rem, 1.6vw, 1.4rem)', fontWeight: 400, color: DARK, lineHeight: 1.25, marginBottom: 10 }}>{l.f8title}</h3>
+                <p style={{ fontFamily: F_SANS, fontSize: 14, color: T_BODY, lineHeight: 1.75, marginBottom: 28 }}>{l.f8desc}</p>
+                <div style={{ display: 'flex', justifyContent: 'center', marginTop: 'auto' }}>
+                  <div style={{ width: 300, height: 430, borderRadius: 18, overflow: 'hidden', boxShadow: '0 16px 56px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.05)', border: '1px solid rgba(13,13,13,0.08)', flexShrink: 0 }}>
+                    <ComunidadeMockupContent l={l} />
+                  </div>
+                </div>
+              </div>
+
             </div>
           </div>
 
@@ -1156,8 +1321,7 @@ export default function LandingPage() {
           <p style={{ fontFamily: F_SANS, fontSize: 15, color: 'rgba(255,255,255,0.58)', lineHeight: 1.75, marginBottom: 40 }}>
             {l.ctaPara}
           </p>
-          <Link to="/login?mode=register"
-            style={{ display: 'inline-block', fontFamily: F_SANS, fontSize: 12, letterSpacing: '0.16em', textTransform: 'uppercase', background: GOLD, color: DARK, textDecoration: 'none', padding: '16px 38px', borderRadius: 2 }}>
+          <Link to="/login?mode=register" className="arvo-hero-cta-primary" style={{ display: 'inline-block' }}>
             {l.ctaBtn}
           </Link>
         </div>
