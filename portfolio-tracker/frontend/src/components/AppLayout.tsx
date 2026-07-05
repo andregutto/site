@@ -365,6 +365,15 @@ export default function AppLayout() {
         <path strokeLinecap="round" strokeLinejoin="round" d="M15.5 13.2a4.3 4.3 0 0 1 5 4.2v1.1"/>
       </svg>
     )},
+    // Perfil no pill (padrão Instagram): avatar real como ícone; o clone só
+    // sobrescreve width/height, então o resto do estilo vem de className.
+    { to: '/profile', label: t.nav.profile, match: location.pathname.startsWith('/profile'), icon: (
+      avatarUrl ? (
+        <img src={avatarUrl} alt="" className="rounded-full object-cover" style={{ outline: '1px solid var(--arvo-gold)', outlineOffset: 1 }} />
+      ) : (
+        <div className="rounded-full flex items-center justify-center text-[8px] bg-[var(--arvo-black)] text-[var(--arvo-gold)]" style={{ fontFamily: 'var(--arvo-font-body)', letterSpacing: '0.06em', outline: '1px solid var(--arvo-gold)', outlineOffset: 1 }}>{avatarInitials}</div>
+      )
+    )},
   ]
 
   return (
@@ -541,7 +550,7 @@ export default function AppLayout() {
               )}
             </div>
             <SetupChecklist firstName={meta.first_name as string | undefined} userId={user?.id} />
-            <div ref={userMenuRef} className="relative">
+            <div ref={userMenuRef} className="relative hidden sm:block">
               <button
                 onClick={() => setShowUserMenu(v => !v)}
                 className="flex items-center gap-2 hover:opacity-80 transition-opacity"

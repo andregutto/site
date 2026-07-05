@@ -61,7 +61,7 @@ function initials(firstName: string, lastName: string, email: string) {
 
 
 export default function ProfilePage() {
-  const { user } = useAuth()
+  const { user, signOut } = useAuth()
   const { currency, setCurrency } = useCurrency()
   const { theme, setTheme } = useTheme()
   const { totalXp, earnedKeys, triggerCheck } = useAchievementContext()
@@ -1386,6 +1386,19 @@ export default function ProfilePage() {
               </div>
             </div>
           )}
+
+          {/* Sair: no mobile o avatar do header (que tinha o menu com Sair)
+              migrou pro pill de navegação, então o logout mora aqui. */}
+          <button
+            onClick={() => signOut()}
+            className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border transition-colors"
+            style={{ borderColor: 'var(--arvo-border)', color: 'var(--arvo-red)', fontFamily: 'var(--arvo-font-body)', fontSize: 14, background: 'var(--arvo-surface)' }}
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
+            </svg>
+            {t.nav.signout}
+          </button>
 
           {/* Termos */}
           <div className="bg-[var(--arvo-surface-2)] border border-[var(--arvo-border)] rounded-2xl p-5 text-xs text-[var(--arvo-fg-soft)] space-y-1">
