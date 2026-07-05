@@ -59,12 +59,12 @@ export default function PostCard({ post, currentUserId, isAdmin, onLike, onEdit,
             {friendshipStatus === 'active' && onMessage && (
               <button
                 onClick={() => onMessage(post.author.id)}
-                title={tc.message ?? 'Mensagem'}
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 22, height: 22, color: GOLD, background: 'none', border: `1px solid ${GOLD}`, borderRadius: 999, padding: 0, cursor: 'pointer' }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontFamily: 'var(--arvo-font-body)', fontSize: 11, letterSpacing: '0.04em', color: GOLD, background: 'none', border: `1px solid ${GOLD}`, borderRadius: 999, padding: '2px 10px', cursor: 'pointer' }}
               >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 20.25c4.97 0 9-3.694 9-8.25s-4.03-8.25-9-8.25S3 7.444 3 12c0 2.104.859 4.023 2.273 5.48.432.447.74 1.04.586 1.641a4.483 4.483 0 01-.923 1.785A5.969 5.969 0 006 21c1.282 0 2.47-.402 3.445-1.087.81.22 1.668.337 2.555.337z" />
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
                 </svg>
+                {tc.message ?? 'Mensagem'}
               </button>
             )}
             {friendshipStatus === 'none' && onInvite && post.author.username && (

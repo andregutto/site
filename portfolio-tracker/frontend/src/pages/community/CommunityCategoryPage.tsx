@@ -109,9 +109,6 @@ export default function CommunityCategoryPage() {
                   {topic.author.username ? `@${topic.author.username}` : topic.author.name} · {timeAgo(topic.last_post_at)}
                 </div>
               </div>
-              <div style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg-soft)', flexShrink: 0 }}>
-                {topic.reply_count === 1 ? (tc?.repliesOne ?? '1 resposta') : (tc?.repliesMany ?? '{count} respostas').replace('{count}', String(topic.reply_count))}
-              </div>
             </button>
           ))}
         </div>

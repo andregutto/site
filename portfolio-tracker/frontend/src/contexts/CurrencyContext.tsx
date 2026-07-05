@@ -36,28 +36,79 @@ const CurrencyContext = createContext<CurrencyContextValue | null>(null)
 
 const SYMBOLS: Record<Currency, string> = { BRL: 'R$', USD: 'US$', EUR: '€' }
 
+const FX_LS_KEY = 'arvo_fx_rates_v1'
+
+interface StoredFx { rates: FxRates; dates: FxRateDates; fetchedAt: number }
+
+function loadStoredFx(): StoredFx | null {
+  try {
+    const raw = localStorage.getItem(FX_LS_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as StoredFx
+    if (typeof parsed?.rates?.USD !== 'number' || typeof parsed?.rates?.EUR !== 'number') return null
+    return parsed
+  } catch { return null }
+}
+
 export function CurrencyProvider({ children }: { children: ReactNode }) {
   const [currency, setCurrencyState] = useState<Currency>(
     () => (localStorage.getItem('preferredCurrency') as Currency | null) ?? 'BRL'
   )
-  const [fxRates, setFxRates] = useState<FxRates>({ USD: 5.70, EUR: 6.40 })
-  const [fxRateDates, setFxRateDates] = useState<FxRateDates>({})
+  // Boot from the last good rates instead of the hardcoded approximation —
+  // a single failed fetch used to leave the whole session converting at
+  // EUR 6.40 (≈ €20k off on the dashboard total).
+  const [fxRates, setFxRates] = useState<FxRates>(() => loadStoredFx()?.rates ?? { USD: 5.70, EUR: 6.40 })
+  const [fxRateDates, setFxRateDates] = useState<FxRateDates>(() => loadStoredFx()?.dates ?? {})
   const [hideValues, setHideValues] = useState<boolean>(
     () => localStorage.getItem('arvo_hide_values') === '1'
   )
 
   useEffect(() => {
-    apiFetch<Array<{ from: string; rate: number; date?: string }>>('/fx/current?pairs=USD-BRL,EUR-BRL')
-      .then(rates => {
+    let disposed = false
+    let lastSuccess = 0
+    let retryTimer: ReturnType<typeof setTimeout> | null = null
+
+    async function fetchRates(attempt = 0) {
+      try {
+        const rates = await apiFetch<Array<{ from: string; rate: number | string; date?: string }>>(
+          '/fx/current?pairs=USD-BRL,EUR-BRL'
+        )
+        if (disposed) return
         const usd = rates.find(r => r.from === 'USD')
         const eur = rates.find(r => r.from === 'EUR')
-        setFxRates({ USD: usd?.rate ?? 5.70, EUR: eur?.rate ?? 6.40 })
-        setFxRateDates({
-          USD: usd?.date ? usd.date.split('T')[0] : undefined,
-          EUR: eur?.date ? eur.date.split('T')[0] : undefined,
-        })
-      })
-      .catch(() => {})
+        const usdRate = Number(usd?.rate)
+        const eurRate = Number(eur?.rate)
+        if (!(usdRate > 0) || !(eurRate > 0)) throw new Error('invalid fx payload')
+        const next: FxRates = { USD: usdRate, EUR: eurRate }
+        const nextDates: FxRateDates = {
+          USD: usd?.date ? String(usd.date).split('T')[0] : undefined,
+          EUR: eur?.date ? String(eur.date).split('T')[0] : undefined,
+        }
+        lastSuccess = Date.now()
+        setFxRates(next)
+        setFxRateDates(nextDates)
+        try { localStorage.setItem(FX_LS_KEY, JSON.stringify({ rates: next, dates: nextDates, fetchedAt: lastSuccess })) } catch { /* quota */ }
+      } catch {
+        if (disposed || attempt >= 4) return
+        retryTimer = setTimeout(() => fetchRates(attempt + 1), 2000 * 2 ** attempt)
+      }
+    }
+
+    fetchRates()
+
+    // PWA resumes from background with stale state — refresh when the app
+    // regains focus if the current rates are older than 10 minutes.
+    function onVisible() {
+      if (document.visibilityState === 'visible' && Date.now() - lastSuccess > 10 * 60_000) {
+        fetchRates()
+      }
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => {
+      disposed = true
+      if (retryTimer) clearTimeout(retryTimer)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
   }, [])
 
   const setCurrency = useCallback((c: Currency) => {

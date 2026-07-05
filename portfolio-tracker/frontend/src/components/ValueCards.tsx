@@ -1,6 +1,7 @@
 import type React from 'react'
 import { useCurrency } from '../contexts/CurrencyContext'
 import { useI18n } from '../contexts/I18nContext'
+import FxRateNote from './FxRateNote'
 
 interface Props {
   total_brl: number
@@ -15,11 +16,9 @@ interface Props {
 }
 
 export default function ValueCards({ total_brl, generated_at, invested_brl, gain_brl, gain_pct, period_abs, chartLoading, period_pct, period_label }: Props) {
-  const { currency, fmt, fxRates, fxRateDates, hideValues } = useCurrency()
+  const { currency, fmt, hideValues } = useCurrency()
   const { t, locale } = useI18n()
   const ts = new Date(generated_at).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })
-  const fxDate = fxRateDates[currency]
-  const fxIsStale = !!fxDate && fxDate !== new Date().toISOString().split('T')[0]
   const showSecondary = invested_brl != null && gain_brl != null
 
   function pctText(val: number | null | undefined) {
@@ -67,23 +66,16 @@ export default function ValueCards({ total_brl, generated_at, invested_brl, gain
           <p className="arvo-num text-[28px] sm:text-[44px]" style={{ fontFamily: "var(--arvo-font-body)", letterSpacing: '0.02em', lineHeight: 1.05, color: 'var(--arvo-fg)', margin: '6px 0 0' }}>
             {fmt(total_brl, 0)}
           </p>
+          {/* Mobile: FX note under the total (the right column below is sm-only) */}
+          <div className="sm:hidden" style={{ marginTop: 6 }}>
+            <FxRateNote style={{ display: 'inline-block' }} />
+          </div>
         </div>
         <div className="hidden sm:flex" style={{ flexDirection: 'column', alignItems: 'flex-end', gap: 3, marginTop: 4 }}>
           <p style={{ fontFamily: "var(--arvo-font-body)", fontSize: 10, fontWeight: 600, letterSpacing: '0.10em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)', whiteSpace: 'nowrap', margin: 0 }}>
             {t.dashboard.updatedAt.replace('{time}', ts)}
           </p>
-          {currency !== 'BRL' && (
-            <p
-              title={fxIsStale ? `Cotação de ${new Date(fxDate + 'T00:00:00').toLocaleDateString(locale)} — a fonte atual pode estar indisponível` : undefined}
-              style={fxIsStale
-                ? { fontFamily: "var(--arvo-font-body)", fontSize: 9.5, fontWeight: 600, color: 'var(--arvo-gold-text)', background: 'var(--arvo-ocre-tint)', padding: '2px 7px', borderRadius: 999, whiteSpace: 'nowrap', margin: 0 }
-                : { fontFamily: "var(--arvo-font-body)", fontSize: 9.5, color: 'var(--arvo-fg-soft)', whiteSpace: 'nowrap', margin: 0 }
-              }
-            >
-              1 {currency} = R$ {(fxRates[currency] ?? 0).toFixed(2)}
-              {fxIsStale && ` (${new Date(fxDate + 'T00:00:00').toLocaleDateString(locale, { day: '2-digit', month: '2-digit' })})`}
-            </p>
-          )}
+          <FxRateNote />
         </div>
       </div>
 

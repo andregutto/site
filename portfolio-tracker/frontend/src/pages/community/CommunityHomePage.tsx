@@ -39,13 +39,13 @@ function TopicResultsList({ topics, tc, navigate }: {
               {topic.pinned ? '📌 ' : ''}{topic.title}
             </div>
             <div style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-muted)' }}>
-              {tc?.cat?.[topic.category_slug ?? ''] ?? topic.category_slug} · @{topic.author.username ?? topic.author.name} · {timeAgo(topic.last_post_at)}
+              @{topic.author.username ?? topic.author.name} · {timeAgo(topic.last_post_at)}
               {topic.matched_in_body && ` · ${tc?.matchedInBody ?? 'encontrado numa resposta'}`}
             </div>
           </div>
-          <div style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg-muted)', flexShrink: 0 }}>
-            {topic.reply_count}
-          </div>
+          <span className="hidden sm:inline-block" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', color: OCRE, background: 'rgba(232,160,32,0.10)', borderRadius: 999, padding: '3px 10px', flexShrink: 0 }}>
+            {tc?.cat?.[topic.category_slug ?? ''] ?? topic.category_slug}
+          </span>
         </button>
       ))}
     </div>
@@ -205,23 +205,24 @@ export default function CommunityHomePage() {
       )}
 
       {!debouncedSearch && !showMine && <>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      {/* Compact category chips — replaced the big 2×4 card grid */}
+      <div className="flex gap-2 flex-wrap">
         {(categories ?? []).map((c) => (
           <button
             key={c.id}
             onClick={() => navigate(`/community/${c.slug}`)}
-            className="text-left rounded-[14px] p-4"
-            style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', cursor: 'pointer', transition: 'transform 200ms ease' }}
-            onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)' }}
-            onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)' }}
+            className="flex items-center gap-2"
+            style={{
+              fontFamily: 'var(--arvo-font-body)', fontSize: 13, padding: '8px 16px', borderRadius: 999,
+              background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)',
+              color: 'var(--arvo-fg)', cursor: 'pointer',
+              transition: 'border-color 200ms ease, background 200ms ease',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.borderColor = OCRE; e.currentTarget.style.background = 'rgba(232,160,32,0.06)' }}
+            onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--arvo-border)'; e.currentTarget.style.background = 'var(--arvo-surface)' }}
           >
-            <div style={{ fontSize: 22, marginBottom: 8 }}>{c.icon}</div>
-            <div style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 15, color: 'var(--arvo-fg)' }}>
-              {tc?.cat?.[c.slug] ?? c.slug}
-            </div>
-            <div style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg-muted)', marginTop: 2 }}>
-              {c.topic_count === 1 ? tc?.categoryTopicsOne : (tc?.categoryTopicsMany ?? '{count} tópicos').replace('{count}', String(c.topic_count))}
-            </div>
+            <span style={{ fontSize: 15, lineHeight: 1 }}>{c.icon}</span>
+            {tc?.cat?.[c.slug] ?? c.slug}
           </button>
         ))}
       </div>
@@ -257,9 +258,11 @@ export default function CommunityHomePage() {
                     {topic.author.name ?? topic.author.username} · {timeAgo(topic.last_post_at)}
                   </div>
                 </div>
-                <div style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg-muted)', flexShrink: 0 }}>
-                  {topic.reply_count}
-                </div>
+                {cat && (
+                  <span className="hidden sm:inline-block" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', color: OCRE, background: 'rgba(232,160,32,0.10)', borderRadius: 999, padding: '3px 10px', flexShrink: 0 }}>
+                    {tc?.cat?.[cat.slug] ?? cat.slug}
+                  </span>
+                )}
               </button>
               )
             })}

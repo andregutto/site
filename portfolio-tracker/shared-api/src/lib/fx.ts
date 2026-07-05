@@ -52,7 +52,7 @@ async function resolveFxRate(from: string, to: string): Promise<FxResult> {
       .from('fx_rates').select('rate, ref_date')
       .eq('from_currency', from).eq('to_currency', to)
       .order('ref_date', { ascending: false }).limit(1).single()
-    if (fx?.rate) return { rate: fx.rate, date: fx.ref_date }
+    if (fx?.rate != null && Number(fx.rate) > 0) return { rate: Number(fx.rate), date: fx.ref_date }
     return { rate: FX_FALLBACK[from] ?? 5.70, date: new Date().toISOString().split('T')[0] }
   }
 }
