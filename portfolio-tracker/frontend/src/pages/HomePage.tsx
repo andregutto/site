@@ -17,7 +17,7 @@ import type { PortfolioValue } from '../lib/types'
 interface TodayData {
   first_name: string
   hot_topics: Array<{ id: number; title: string; category_slug: string; category_name: string | null; reply_count: number; last_post_at: string }>
-  next_trip: { id: number; title: string; destination: string | null; start_date: string; end_date: string | null; ongoing: boolean; past: boolean } | null
+  next_trip: { id: number; title: string; destination: string | null; start_date: string; end_date: string | null; cover_image_url: string | null; ongoing: boolean; past: boolean } | null
   active_moment: { id: number; name: string; icon: string; color: string; start_date: string | null; end_date: string | null; ongoing: boolean } | null
   month_summary: { spent: number; budget: number; currency: string } | null
   community_unseen: number
@@ -198,20 +198,28 @@ export default function HomePage() {
             </Link>
           )}
 
-          {/* Viagem */}
+          {/* Viagem — com miniatura da capa, linka pro detalhe (onde ficam as despesas) */}
           {data?.next_trip && (
-            <Link to="/voyage" style={{ ...card, padding: '16px 18px', textDecoration: 'none', display: 'block' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                <span style={{ color: 'var(--arvo-red)', display: 'inline-flex' }}>
-                  <svg width="13" height="13" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2c-3.9 0-7 3.1-7 7 0 5.2 7 13 7 13s7-7.8 7-13c0-3.9-3.1-7-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5Z" /></svg>
-                </span>
-                <p style={cardLabel}>{data.next_trip.ongoing ? (th.tripNow ?? 'Viagem em andamento') : data.next_trip.past ? (th.tripLast ?? 'Última viagem') : (th.tripNext ?? 'Próxima viagem')}</p>
+            <Link to={`/voyage/${data.next_trip.id}`} style={{ ...card, overflow: 'hidden', textDecoration: 'none', display: 'flex', alignItems: 'stretch' }}>
+              <div style={{
+                width: 78, flexShrink: 0, position: 'relative',
+                background: data.next_trip.cover_image_url
+                  ? `center/cover no-repeat url(${data.next_trip.cover_image_url})`
+                  : 'linear-gradient(150deg, rgba(214,59,47,0.16), var(--arvo-surface-2))',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                {!data.next_trip.cover_image_url && (
+                  <svg width="22" height="22" fill="var(--arvo-red)" viewBox="0 0 24 24"><path d="M12 2c-3.9 0-7 3.1-7 7 0 5.2 7 13 7 13s7-7.8 7-13c0-3.9-3.1-7-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5Z" /></svg>
+                )}
               </div>
-              <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 18, color: 'var(--arvo-fg)', marginTop: 7 }}>{data.next_trip.title}</p>
-              <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)', marginTop: 3 }}>
-                {data.next_trip.destination ? `${data.next_trip.destination} · ` : ''}
-                {fmtDay(data.next_trip.start_date)}{data.next_trip.end_date ? ` – ${fmtDay(data.next_trip.end_date)}` : ''}
-              </p>
+              <div style={{ flex: 1, minWidth: 0, padding: '14px 16px' }}>
+                <p style={cardLabel}>{data.next_trip.ongoing ? (th.tripNow ?? 'Viagem em andamento') : data.next_trip.past ? (th.tripLast ?? 'Última viagem') : (th.tripNext ?? 'Próxima viagem')}</p>
+                <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 17, color: 'var(--arvo-fg)', marginTop: 6, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{data.next_trip.title}</p>
+                <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)', marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {data.next_trip.destination ? `${data.next_trip.destination} · ` : ''}
+                  {fmtDay(data.next_trip.start_date)}{data.next_trip.end_date ? ` – ${fmtDay(data.next_trip.end_date)}` : ''}
+                </p>
+              </div>
             </Link>
           )}
 

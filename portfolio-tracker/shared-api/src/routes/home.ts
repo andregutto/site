@@ -64,7 +64,7 @@ router.get('/today', async (req: any, res: any) => {
       : `user_id.eq.${userId}`
     const { data: trips } = await supabaseAdmin
       .from('voyage_trips')
-      .select('id, title, destination, start_date, end_date')
+      .select('id, title, destination, start_date, end_date, cover_image_url')
       .or(orFilter)
       .not('start_date', 'is', null)
       .order('start_date', { ascending: true })

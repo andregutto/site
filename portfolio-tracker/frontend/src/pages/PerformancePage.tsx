@@ -150,7 +150,10 @@ export default function PerformancePage() {
     return pts.map(pt => {
       cfCumul += (pt.contributions ?? 0)
       const denom = periodStart + 0.5 * cfCumul
-      const retPct = periodStart > 0 && denom > 0
+      // No período "Início" o periodStart é 0 (nada antes da criação da carteira);
+      // a base do retorno passa a ser os aportes (0.5·cfCumul), igual ao resumo.
+      // Exigir periodStart > 0 zerava a linha inteira nesse caso.
+      const retPct = denom > 0
         ? Math.round(((pt.total - periodStart - cfCumul) / denom) * 10000) / 100
         : 0
       const dayBm = interpolateBenchmarkCumAtDate(pt.date)
@@ -285,7 +288,10 @@ export default function PerformancePage() {
   const chartData = monthsWithData.map((m) => {
     cfCumul += (m.contributions ?? 0)
     const denom = periodStart + 0.5 * cfCumul
-    const portfolioPct = periodStart > 0 && denom > 0
+    // No período "Início" o periodStart é 0 (nada antes da criação da carteira);
+    // a base vira os aportes (0.5·cfCumul), como no resumo/displayReturnPct.
+    // O antigo periodStart > 0 zerava a Carteira inteira no gráfico de Retorno %.
+    const portfolioPct = denom > 0
       ? Math.round(((m.total - periodStart - cfCumul) / denom) * 10000) / 100
       : 0
     const b = benchmarkMap.get(m.month)
