@@ -30,7 +30,7 @@ router.get('/today', async (req: any, res: any) => {
       .select('id, title, category_id, reply_count, last_post_at')
       .is('deleted_at', null)
       .order('last_post_at', { ascending: false })
-      .limit(3)
+      .limit(5)
 
     const catIds = [...new Set((topics ?? []).map((t: any) => t.category_id))]
     const { data: cats } = catIds.length

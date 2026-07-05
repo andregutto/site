@@ -26,7 +26,7 @@ interface TodayData {
 }
 
 interface ContactBalance { currency: string; amount: number }
-interface FreedomPlan { id: number; name: string; is_active: boolean; target_amount: number; currency: string; goal_mode?: 'capital' | 'income' }
+interface FreedomPlan { id: number; name: string; is_active: boolean; target_amount: number; currency: string; goal_mode?: 'capital' | 'income'; horizon_years?: number | null; start_date?: string | null }
 
 const GOLD_RGB = '200,184,154'
 
@@ -41,6 +41,7 @@ function timeAgo(iso: string): string {
 
 const card: React.CSSProperties = { background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', borderRadius: 16 }
 const cardLabel: React.CSSProperties = { fontFamily: 'var(--arvo-font-body)', fontSize: 10, fontWeight: 600, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)' }
+const pillStyle: React.CSSProperties = { display: 'inline-flex', alignItems: 'center', gap: 8, cursor: 'pointer', padding: '11px 18px', borderRadius: 999, border: '1px solid var(--arvo-border)', background: 'var(--arvo-surface)', color: 'var(--arvo-fg-muted)', fontFamily: 'var(--arvo-font-body)', fontSize: 13.5 }
 
 export default function HomePage() {
   const { t, locale } = useI18n()
@@ -95,11 +96,9 @@ export default function HomePage() {
   const fmtDay = (d: string) => new Date(d + 'T00:00:00').toLocaleDateString(intlLocale, { day: 'numeric', month: 'short' })
 
   const shortcuts: { to: string; label: string; icon: React.ReactNode }[] = [
-    { to: '/finances/transactions', label: th.quickTransaction ?? 'Nova transação', icon: <path strokeLinecap="round" strokeLinejoin="round" d="M12 5v14M5 12h14" /> },
-    { to: '/people', label: t.nav.people, icon: <><circle cx="12" cy="8" r="3.2" /><path strokeLinecap="round" strokeLinejoin="round" d="M5.5 20v-.8a6.5 6.5 0 0 1 13 0v.8" /></> },
-    { to: '/finances/freedom', label: th.quickGoals ?? 'Metas', icon: <><circle cx="12" cy="12" r="8" /><circle cx="12" cy="12" r="3.2" /><circle cx="12" cy="12" r="0.6" fill="currentColor" /></> },
+    { to: '/people', label: t.nav.people, icon: <><circle cx="9" cy="8" r="3" /><circle cx="17" cy="9" r="2.4" /><path strokeLinecap="round" strokeLinejoin="round" d="M3.5 19.5v-1a5.5 5.5 0 0 1 11 0v1M15.5 13.2a4.3 4.3 0 0 1 5 4.2v1.1" /></> },
     { to: '/finances/moments', label: th.quickMoments ?? 'Momentos', icon: <><circle cx="12" cy="12" r="8.5" /><path strokeLinecap="round" strokeLinejoin="round" d="M12 7.5v4.7l3 1.8" /></> },
-    { to: '/profile', label: th.quickProfile ?? 'Perfil', icon: <><circle cx="12" cy="8" r="3.4" /><path strokeLinecap="round" strokeLinejoin="round" d="M5 20v-1a7 7 0 0 1 14 0v1" /></> },
+    { to: '/dividends', label: (t as any).nav?.dividends ?? 'Renda passiva', icon: <><ellipse cx="12" cy="6.5" rx="7" ry="3" /><path strokeLinecap="round" strokeLinejoin="round" d="M5 6.5v5c0 1.66 3.13 3 7 3s7-1.34 7-3v-5M5 11.5v5c0 1.66 3.13 3 7 3s7-1.34 7-3v-5" /></> },
   ]
 
   if (loading) return <PageLoader />
@@ -128,16 +127,16 @@ export default function HomePage() {
             <Link to="/dashboard" style={{
               ...card,
               position: 'relative', overflow: 'hidden', display: 'block', textDecoration: 'none',
-              padding: '24px 26px',
+              padding: '32px 34px',
               border: `1px solid rgba(${GOLD_RGB},0.55)`,
               background: `linear-gradient(150deg, rgba(${GOLD_RGB},0.16), var(--arvo-surface) 62%)`,
               boxShadow: `0 12px 40px -16px rgba(${GOLD_RGB},0.7)`,
             }}>
-              <img src="/brand/logo/arvo-symbol-gold.svg" alt="" aria-hidden style={{ position: 'absolute', right: -18, bottom: -22, width: 150, opacity: 0.07, pointerEvents: 'none' }} />
+              <img src="/brand/logo/arvo-symbol-gold.svg" alt="" aria-hidden style={{ position: 'absolute', right: -20, bottom: -26, width: 185, opacity: 0.07, pointerEvents: 'none' }} />
               <div style={{ position: 'relative', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12 }}>
                 <div>
                   <p style={{ ...cardLabel, color: '#8C6A28' }}>{th.wealthLabel ?? 'Patrimônio'}</p>
-                  <p className="arvo-num" style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 38, lineHeight: 1.05, color: 'var(--arvo-fg)', marginTop: 8 }}>
+                  <p className="arvo-num" style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 46, lineHeight: 1.05, color: 'var(--arvo-fg)', marginTop: 10 }}>
                     {wealth != null ? fmt(wealth, 0) : '…'}
                   </p>
                 </div>
@@ -151,7 +150,7 @@ export default function HomePage() {
           {/* Comunidade — cabeçalho com cor + ponto vermelho de respostas novas */}
           {data && data.hot_topics.length > 0 && (
             <div style={{ ...card, overflow: 'hidden' }}>
-              <div style={{ padding: '14px 18px 11px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'linear-gradient(90deg, rgba(232,160,32,0.12), transparent 70%)' }}>
+              <div style={{ padding: '16px 20px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'linear-gradient(90deg, rgba(232,160,32,0.12), transparent 70%)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <span style={{ color: '#E8A020', display: 'inline-flex' }}>
                     <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7}><circle cx="9" cy="8" r="3" /><circle cx="17" cy="9" r="2.4" /><path strokeLinecap="round" strokeLinejoin="round" d="M3.5 19.5v-1a5.5 5.5 0 0 1 11 0v1M15.5 13.2a4.3 4.3 0 0 1 5 4.2v1.1" /></svg>
@@ -170,7 +169,7 @@ export default function HomePage() {
                   key={topic.id}
                   onClick={() => navigate(`/community/${topic.category_slug}/${topic.id}`)}
                   className="w-full text-left flex items-center gap-3"
-                  style={{ padding: '11px 18px', borderTop: '1px solid var(--arvo-border-soft)', background: 'none', border: 'none', borderTopStyle: 'solid', cursor: 'pointer' }}
+                  style={{ padding: '14px 20px', borderTop: '1px solid var(--arvo-border-soft)', background: 'none', border: 'none', borderTopStyle: 'solid', cursor: 'pointer' }}
                 >
                   <span style={{ color: '#E8A020', display: 'inline-flex', flexShrink: 0 }}><CategoryIcon slug={topic.category_slug} size={15} /></span>
                   <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{topic.title}</span>
@@ -185,7 +184,7 @@ export default function HomePage() {
         <div className="space-y-5">
           {/* Finanças do mês */}
           {data?.month_summary && (
-            <Link to="/finances" style={{ ...card, padding: '16px 18px', textDecoration: 'none', display: 'block' }}>
+            <Link to="/finances" style={{ ...card, padding: '18px 20px', textDecoration: 'none', display: 'block' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
                 <p style={cardLabel}>{th.financesLabel ?? 'Finanças do mês'}</p>
                 {data.month_summary.budget > 0 && !hideValues && (
@@ -194,7 +193,7 @@ export default function HomePage() {
                   </span>
                 )}
               </div>
-              <p className="arvo-num" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 21, color: 'var(--arvo-fg)', marginTop: 6 }}>
+              <p className="arvo-num" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 23, color: 'var(--arvo-fg)', marginTop: 7 }}>
                 {fmtCur(data.month_summary.spent, data.month_summary.currency)}
                 {data.month_summary.budget > 0 && (
                   <span style={{ fontSize: 12, color: 'var(--arvo-fg-soft)' }}> {th.ofBudget ?? 'de'} {fmtCur(data.month_summary.budget, data.month_summary.currency)}</span>
@@ -223,17 +222,19 @@ export default function HomePage() {
             const cur = plan.currency as 'USD' | 'EUR'
             const targetBrl = plan.currency === 'BRL' ? plan.target_amount : plan.target_amount * (fxRates[cur] ?? 1)
             const pct = wealth != null && targetBrl > 0 ? Math.min(100, (wealth / targetBrl) * 100) : 0
+            const baseYear = plan.start_date ? new Date(plan.start_date).getFullYear() : new Date().getFullYear()
+            const goalYear = plan.horizon_years ? baseYear + Math.round(plan.horizon_years) : null
             return (
-              <Link to="/finances/freedom" style={{ ...card, padding: '16px 18px', textDecoration: 'none', display: 'block' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                  <p style={cardLabel}>{th.goalsLabel ?? 'Liberdade financeira'}</p>
+              <Link to="/finances/freedom" style={{ ...card, padding: '18px 20px', textDecoration: 'none', display: 'block' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
+                  <p style={cardLabel}>{th.goalsLabel ?? 'Liberdade financeira'}{goalYear ? ` · ${goalYear}` : ''}</p>
                   {!hideValues && <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, fontWeight: 600, color: 'var(--arvo-gold-text, #8C6A28)' }}>{Math.round(pct)}%</span>}
                 </div>
-                <p className="arvo-num" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 21, color: 'var(--arvo-fg)', marginTop: 6 }}>
+                <p className="arvo-num" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 23, color: 'var(--arvo-fg)', marginTop: 7 }}>
                   {wealth != null ? fmt(wealth, 0) : '…'}
-                  <span style={{ fontSize: 12, color: 'var(--arvo-fg-soft)' }}> {th.ofBudget ?? 'de'} {fmt(targetBrl, 0)}</span>
+                  <span style={{ fontSize: 12.5, color: 'var(--arvo-fg-soft)' }}> {th.ofBudget ?? 'de'} {fmt(targetBrl, 0)}</span>
                 </p>
-                <div style={{ height: 6, borderRadius: 99, background: 'var(--arvo-hover-bg)', overflow: 'hidden', marginTop: 10 }}>
+                <div style={{ height: 6, borderRadius: 99, background: 'var(--arvo-hover-bg)', overflow: 'hidden', marginTop: 12 }}>
                   <div style={{ width: `${pct}%`, height: '100%', borderRadius: 99, background: 'var(--arvo-gold)' }} />
                 </div>
               </Link>
@@ -307,33 +308,22 @@ export default function HomePage() {
       </div>
 
       {/* Atalhos — pills pra ações e destinos que não estão no header */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 9, paddingTop: 2 }}>
-        <button
-          type="button"
-          onClick={() => setSplitPicker(true)}
-          style={{
-            display: 'inline-flex', alignItems: 'center', gap: 8, cursor: 'pointer',
-            padding: '9px 15px', borderRadius: 999, border: `1px solid rgba(${GOLD_RGB},0.6)`,
-            background: `linear-gradient(150deg, rgba(${GOLD_RGB},0.14), var(--arvo-surface))`, color: 'var(--arvo-fg)',
-            fontFamily: 'var(--arvo-font-body)', fontSize: 12.5,
-          }}
-        >
-          <svg width="15" height="15" fill="none" viewBox="0 0 16 16" stroke="var(--arvo-gold-text, #8C6A28)" strokeWidth={1.6}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M2 4.5h9M2 4.5l2.5-2.5M2 4.5l2.5 2.5M14 11.5H5M14 11.5l-2.5-2.5M14 11.5l-2.5 2.5" />
-          </svg>
-          {th.splitExpense ?? 'Dividir despesa'}
-        </button>
-        {shortcuts.map(s => (
-          <Link key={s.to} to={s.to} style={{
-            display: 'inline-flex', alignItems: 'center', gap: 8, textDecoration: 'none',
-            padding: '9px 15px', borderRadius: 999, border: '1px solid var(--arvo-border)',
-            background: 'var(--arvo-surface)', color: 'var(--arvo-fg-muted)',
-            fontFamily: 'var(--arvo-font-body)', fontSize: 12.5,
-          }}>
-            <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="var(--arvo-fg-soft)" strokeWidth={1.7}>{s.icon}</svg>
-            {s.label}
-          </Link>
-        ))}
+      <div>
+        <p style={{ ...cardLabel, marginBottom: 11 }}>{th.shortcuts ?? 'Atalhos'}</p>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+          <button type="button" onClick={() => setSplitPicker(true)} style={pillStyle}>
+            <svg width="17" height="17" fill="none" viewBox="0 0 16 16" stroke="var(--arvo-fg-soft)" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M2 4.5h9M2 4.5l2.5-2.5M2 4.5l2.5 2.5M14 11.5H5M14 11.5l-2.5-2.5M14 11.5l-2.5 2.5" />
+            </svg>
+            {th.splitExpense ?? 'Dividir despesa'}
+          </button>
+          {shortcuts.map(s => (
+            <Link key={s.to} to={s.to} style={{ ...pillStyle, textDecoration: 'none' }}>
+              <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="var(--arvo-fg-soft)" strokeWidth={1.7}>{s.icon}</svg>
+              {s.label}
+            </Link>
+          ))}
+        </div>
       </div>
 
       {/* Seletor de amigo pra dividir despesa → abre o painel do momento oculto */}
