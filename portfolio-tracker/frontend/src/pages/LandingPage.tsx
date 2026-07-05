@@ -4,651 +4,467 @@ import { useAuth } from '../contexts/AuthContext'
 import { useI18n } from '../contexts/I18nContext'
 import { supabase } from '../lib/supabase'
 import LanguageSelector from '../components/LanguageSelector'
-import { Icon, type IconName } from '../components/icons'
 
-const DARK     = '#0D0D0D'
-const GOLD     = '#C8B89A'
-const BG       = '#FFFFFF'
-const BORDER   = 'rgba(13,13,13,0.09)'
-// Text hierarchy on beige/offwhite — NEVER use raw gray-* classes on light bg
-const T_PRIMARY   = 'rgba(13,13,13,0.92)'   // headings
-const T_BODY      = 'rgba(13,13,13,0.78)'   // body paragraphs
-const T_SECONDARY = 'rgba(13,13,13,0.72)'   // labels / eyebrows / metadata
+const DARK = '#0D0D0D'
+const GOLD = '#C8B89A'
 
-const F_SANS    = "'Tenor Sans', sans-serif"
-const F_DISPLAY = "'Playfair Display', serif"
-
-
-const TABLE_ROWS: [string, string, string, string, string][] = [
-  ['BOVA11',   'ETF',     'R$45,2k', '+5,8%',  '#1F8A5B'],
-  ['WEGE3',    'Ação',    'R$38,7k', '+12,4%', '#1F8A5B'],
-  ['BTC',      'Cripto',  'R$28,4k', '-2,1%',  '#D63B2F'],
-  ['KNRI11',   'FII',     'R$21,3k', '+3,2%',  '#1F8A5B'],
-  ['IVV',      'ETF EUA', 'R$18,9k', '+7,6%',  '#1F8A5B'],
-  ['TESOURO+', 'Renda F.','R$52,0k', '+1,1%',  '#1F8A5B'],
+// Institution names shown in the marquee are proper nouns: not translated.
+const INSTITUTIONS = [
+  'B3', 'Itaú', 'XP Investimentos', 'BTG Pactual', 'Nubank', 'Rico', 'Clear',
+  'BNP Paribas', 'Société Générale', 'Crédit Agricole', 'BoursoBank', 'Trade Republic',
+  'Millennium bcp', 'Caixa Geral de Depósitos', 'Novo Banco', 'ActivoBank',
+  'DEGIRO', 'Interactive Brokers', 'Trading 212', 'Revolut', 'N26',
 ]
 
-interface MockupLabels {
-  td: Record<string, string>
-  tn: Record<string, string>
-  tc: Record<string, string>
-  ti: Record<string, string>
-}
+const CSS = `
+  .lv3{background:#FAF8F4;color:rgba(13,13,13,.92);font-family:'DM Sans',system-ui,sans-serif;overflow-x:clip}
+  .lv3 a{text-decoration:none;color:inherit}
+  .lv3 .wrap{max-width:1180px;margin:0 auto;padding:0 24px}
+  .lv3 .eyebrow{font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:rgba(13,13,13,.55);display:flex;align-items:center;gap:9px}
+  .lv3 .eyebrow .dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+  .lv3 .rv{opacity:0;transform:translateY(24px);transition:opacity .7s cubic-bezier(.22,.61,.36,1),transform .7s cubic-bezier(.22,.61,.36,1)}
+  .lv3 .rv.on{opacity:1;transform:none}
+  .lv3 .av{width:26px;height:26px;border-radius:50%;background:#0D0D0D;color:#C8B89A;font-size:9px;font-weight:600;letter-spacing:.04em;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .lv3 .av.lt{background:#fff;color:rgba(13,13,13,.55);border:1px solid rgba(13,13,13,.09)}
 
-const ALLOC_ROWS: [string, string, string, string][] = [
-  ['#1B4FD8', 'classAcoesBrasil',  '38%', 'R$ 108.000'],
-  ['#A36A52', 'classFiis',         '22%', 'R$ 63.000'],
-  ['#C8B89A', 'classRendaFixa',    '20%', 'R$ 57.000'],
-  ['#5A5248', 'classCripto',       '12%', 'R$ 34.000'],
-  ['#E8A020', 'classAcoesExterior','8%',  'R$ 23.000'],
-]
+  .lv3 .hero{position:relative;min-height:100svh;background:#0D0D0D;overflow:hidden;display:flex;align-items:flex-end}
+  .lv3 .hero-bg{position:absolute;inset:0;background:url('/brand/imagery/01-broto-floresta.jpg') center 35%/cover;filter:brightness(.30) sepia(.28) saturate(1.15);animation:lv3kb 26s cubic-bezier(.22,.61,.36,1) infinite alternate}
+  @keyframes lv3kb{from{transform:scale(1)}to{transform:scale(1.06)}}
+  .lv3 .hero-fade{position:absolute;inset:0;background:linear-gradient(100deg,rgba(6,8,14,.82) 0%,rgba(6,8,14,.45) 48%,rgba(6,8,14,.15) 100%)}
+  .lv3 .hero-fade2{position:absolute;bottom:0;left:0;right:0;height:40%;background:linear-gradient(to top,rgba(8,10,16,.9),transparent)}
+  .lv3 .hero-grid{position:relative;z-index:2;width:100%;max-width:1180px;margin:0 auto;padding:120px 24px 0}
+  .lv3 .hero-copy{max-width:540px;padding-bottom:clamp(56px,9vh,110px)}
+  .lv3 .hero-eb{display:inline-flex;align-items:center;gap:9px;font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:rgba(255,255,255,.66)}
+  .lv3 .hero-eb .dot{width:5px;height:5px;border-radius:50%;background:#C8B89A}
+  .lv3 .hero h1{font-family:'Playfair Display',serif;font-weight:400;font-size:clamp(2.4rem,4.6vw,3.9rem);line-height:1.08;color:#fff;letter-spacing:-.5px;margin:22px 0 0}
+  .lv3 .hero h1 em{font-style:italic;color:#C8B89A}
+  .lv3 .hero .sub{font-size:clamp(15px,1.6vw,16.5px);line-height:1.7;color:rgba(255,255,255,.66);max-width:420px;margin-top:18px}
+  .lv3 .hero-ctas{display:flex;align-items:center;gap:26px;flex-wrap:wrap;margin-top:34px}
+  .lv3 .btn-gold{font-size:12px;letter-spacing:.16em;text-transform:uppercase;background:#C8B89A;color:#0D0D0D;padding:16px 38px;border-radius:999px;box-shadow:0 8px 32px rgba(200,184,154,.28);transition:all .28s;display:inline-block}
+  .lv3 .btn-gold:hover{background:#D6C8AC}
+  .lv3 .lnk{font-size:13px;color:rgba(255,255,255,.78);border-bottom:1px solid rgba(255,255,255,.32);padding-bottom:3px;transition:color .28s}
+  .lv3 .lnk:hover{color:#fff}
+  .lv3 .assure{font-size:11.5px;color:rgba(255,255,255,.42);margin-top:18px;letter-spacing:.04em}
 
-const MOCK_INDICES: [string, string, string, string][] = [
-  ['Ibovespa', '130.450', '+1,2%', '#1F8A5B'],
-  ['CDI',      '10,50%',  '+0,05%','#1F8A5B'],
-  ['S&P 500',  '5.210',   '+2,8%', '#1F8A5B'],
-  ['IPCA',     '4,83%',   '-0,1%', '#D63B2F'],
-]
+  .lv3 .hero-mocks{position:absolute;inset:0;z-index:1;pointer-events:none}
+  .lv3 .laptop{position:absolute;bottom:0;right:-18vw;width:55vw;height:82%;border:12px solid #1C1C1E;border-bottom:none;border-radius:18px 18px 0 0;background:#F4F2EE;box-shadow:0 0 0 1px rgba(255,255,255,.06) inset,-16px 0 60px rgba(0,0,0,.45);overflow:hidden}
+  .lv3 .lp-in{padding:14px 18px;height:100%;display:flex;flex-direction:column;gap:9px}
+  .lv3 .lp-head{display:flex;align-items:center;gap:8px}
+  .lv3 .lp-head img{width:16px;height:16px}
+  .lv3 .lp-head span.wm{font-family:'Tenor Sans',serif;font-size:11px;letter-spacing:.28em;color:#0D0D0D}
+  .lv3 .lp-div{width:1px;height:14px;background:rgba(13,13,13,.14)}
+  .lv3 .lp-cap{font-family:'Tenor Sans',serif;font-size:8.5px;letter-spacing:.16em;text-transform:uppercase;color:rgba(13,13,13,.45)}
+  .lv3 .lp-head .tabs{flex:1;display:flex;justify-content:center;gap:4px}
+  .lv3 .lp-head .tabs i{font-style:normal;font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;padding:4px 10px;border-radius:99px;color:rgba(13,13,13,.5)}
+  .lv3 .lp-head .tabs i.on{background:#0D0D0D;color:#fff}
+  .lv3 .lp-subnav{display:flex;justify-content:center;gap:18px;border-bottom:1px solid rgba(13,13,13,.07);padding-bottom:6px;margin-top:-2px}
+  .lv3 .lp-subnav i{font-style:normal;font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;color:rgba(13,13,13,.42)}
+  .lv3 .lp-subnav i.on{color:#0D0D0D;border-bottom:2px solid #0D0D0D;padding-bottom:4px;margin-bottom:-6px}
+  .lv3 .lp-toolbar{display:flex;justify-content:space-between;align-items:center}
+  .lv3 .lp-seg{display:flex;border:1px solid rgba(13,13,13,.14);border-radius:3px;overflow:hidden;background:#fff}
+  .lv3 .lp-seg i{font-style:normal;font-size:8px;letter-spacing:.06em;padding:3px 9px;color:rgba(13,13,13,.55)}
+  .lv3 .lp-seg i.on{background:#0D0D0D;color:#fff}
+  .lv3 .lp-total{background:#fff;border:1px solid rgba(200,184,154,.4);border-radius:12px;padding:12px 15px;box-shadow:0 2px 14px rgba(200,184,154,.15)}
+  .lv3 .lp-total .lb{font-size:8.5px;font-weight:600;letter-spacing:.26em;text-transform:uppercase;color:#8C6A28}
+  .lv3 .lp-total .v{font-size:23px;color:#0D0D0D;margin-top:3px}
+  .lv3 .lp-total .d{font-size:11px;color:#1F8A5B;margin-top:2px}
+  .lv3 .lp-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px;padding-top:9px;border-top:1px solid rgba(13,13,13,.07)}
+  .lv3 .lp-kpis p{font-size:7.5px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:rgba(13,13,13,.55);margin:0}
+  .lv3 .lp-kpis p.k{font-size:11.5px;font-weight:400;letter-spacing:.02em;text-transform:none;color:#0D0D0D;margin-top:2px}
+  .lv3 .lp-indices{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:9px;padding-top:8px;border-top:1px solid rgba(13,13,13,.06)}
+  .lv3 .lp-indices p{font-size:7px;letter-spacing:.14em;text-transform:uppercase;color:rgba(13,13,13,.4);margin:0}
+  .lv3 .lp-indices p.k{font-size:10.5px;letter-spacing:0;text-transform:none;color:#0D0D0D;margin-top:1px}
+  .lv3 .lp-indices p.d{font-size:8px;letter-spacing:0;text-transform:none;margin-top:1px}
+  .lv3 .lp-indices p.d i{font-style:normal;color:rgba(13,13,13,.35)}
+  .lv3 .up{color:#1F8A5B!important}.lv3 .dn{color:#D63B2F!important}
+  .lv3 .lp-card{background:#fff;border:1px solid rgba(13,13,13,.09);border-radius:12px;padding:11px 13px;overflow:hidden}
+  .lv3 .lp-lb{font-size:8.5px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:rgba(13,13,13,.55)}
+  .lv3 .alloc{display:flex;align-items:center;gap:26px;margin-top:8px}
+  .lv3 .alloc .legend{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:6px 32px;font-size:10px;color:rgba(13,13,13,.75)}
+  .lv3 .alloc .legend i{font-style:normal;display:flex;align-items:center;gap:6px}
+  .lv3 .alloc .legend b{width:7px;height:7px;border-radius:50%;font-weight:400;flex-shrink:0}
+  .lv3 .alloc .legend em{font-style:italic;color:rgba(13,13,13,.4);font-size:8.5px;margin-left:3px}
+  .lv3 .donut circle{fill:none;stroke-width:12;transform-origin:center;transform:rotate(-90deg)}
+  .lv3 .donut .seg{stroke-dasharray:0 164;transition:stroke-dasharray 1.4s cubic-bezier(.22,.61,.36,1)}
+  .lv3 .draw{stroke-dasharray:var(--len,900px);stroke-dashoffset:var(--len,900px);animation:lv3draw 7s cubic-bezier(.22,.61,.36,1) infinite}
+  @keyframes lv3draw{0%{stroke-dashoffset:var(--len,900px)}32%{stroke-dashoffset:0}86%{stroke-dashoffset:0;opacity:1}94%{opacity:0}100%{stroke-dashoffset:var(--len,900px);opacity:1}}
+  .lv3 .lp-months{display:flex;justify-content:space-between;margin-top:3px}
+  .lv3 .lp-months i{font-style:normal;font-size:7px;color:rgba(13,13,13,.35)}
+  .lv3 .lp-table{padding:0}
+  .lv3 .lp-table .tr{display:grid;grid-template-columns:1.4fr 1.2fr 1fr .9fr;padding:5px 13px;border-bottom:1px solid rgba(13,13,13,.04);font-size:9.5px;color:#0D0D0D}
+  .lv3 .lp-table .tr span:nth-child(2){color:rgba(13,13,13,.5)}
+  .lv3 .lp-table .tr:last-child{border-bottom:none}
+  .lv3 .lp-table .th{background:rgba(248,247,245,.9);font-size:7.5px;letter-spacing:.14em;text-transform:uppercase;color:rgba(13,13,13,.38);padding:6px 13px}
 
-function DashboardMockupContent({ td, tn, tc, ti }: MockupLabels) {
-  const FS = "'DM Sans', system-ui, sans-serif"
-  const FD = "'Tenor Sans', serif"
+  .lv3 .phone{position:absolute;bottom:0;right:calc(37vw - 50px);width:260px;height:520px;border:9px solid #1C1C1E;border-radius:50px;background:#F4F4F4;box-shadow:0 0 0 1px rgba(255,255,255,.08) inset,0 32px 80px rgba(0,0,0,.65),0 0 40px rgba(200,184,154,.10);overflow:hidden;z-index:3;pointer-events:auto}
+  .lv3 .ph-island{position:absolute;top:9px;left:50%;transform:translateX(-50%);width:52px;height:14px;border-radius:8px;background:#000;z-index:9}
+  .lv3 .ph-nav{position:absolute;top:0;left:0;right:0;height:58px;background:#fff;border-bottom:1px solid rgba(13,13,13,.09);display:flex;align-items:flex-end;padding:0 12px 7px;gap:6px;z-index:8}
+  .lv3 .ph-nav img{width:13px;height:13px}
+  .lv3 .ph-nav span{font-family:'Tenor Sans',serif;font-size:9.5px;letter-spacing:.28em;color:#0D0D0D}
+  .lv3 .ph-nav .av{margin-left:auto;width:19px;height:19px;font-size:6.5px}
+  .lv3 .ph-screens{position:absolute;inset:0}
+  .lv3 .ph-s{position:absolute;inset:0;opacity:0;z-index:1;transition:opacity .9s cubic-bezier(.22,.61,.36,1);padding:68px 12px 14px;display:flex;flex-direction:column;gap:8px;background:#F4F4F4}
+  .lv3 .ph-s.prev{opacity:1;z-index:2;transition:none}
+  .lv3 .ph-s.on{opacity:1;z-index:3}
+  .lv3 .ph-tag{font-size:8px;font-weight:600;letter-spacing:.24em;text-transform:uppercase;color:rgba(13,13,13,.55);margin:0}
+  .lv3 .ph-title{font-family:'Tenor Sans',serif;font-size:16px;color:#0D0D0D;margin:1px 0 0}
+  .lv3 .ph-card{background:#fff;border:1px solid rgba(13,13,13,.09);border-radius:12px;padding:10px 12px}
+  .lv3 .ph-dots{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);display:flex;gap:5px;z-index:9}
+  .lv3 .ph-dots i{width:5px;height:5px;border-radius:50%;background:rgba(13,13,13,.18);transition:background .4s}
+  .lv3 .ph-dots i.on{background:#0D0D0D}
+  .lv3 .pbar{height:5px;border-radius:99px;background:rgba(13,13,13,.08);overflow:hidden;margin-top:7px}
+  .lv3 .pbar>i{display:block;height:100%;border-radius:99px;width:0;transition:width 1.3s cubic-bezier(.22,.61,.36,1)}
+  .lv3 .ph-s.on .pbar>i{width:var(--w)}
+  .lv3 .ph-kpis{display:grid;grid-template-columns:1fr 1fr;gap:7px 10px}
+  .lv3 .ph-kpis p{font-size:7.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:rgba(13,13,13,.55);margin:0}
+  .lv3 .ph-kpis p.k{font-size:12px;font-weight:400;letter-spacing:0;text-transform:none;color:#0D0D0D;margin-top:1px}
+  .lv3 .ph-r{display:flex;justify-content:space-between;padding:5.5px 0;border-bottom:1px solid rgba(13,13,13,.05);font-size:10.5px;color:#0D0D0D}
+  .lv3 .ph-pill{margin-left:auto;font-size:7px;letter-spacing:.08em;text-transform:uppercase;color:#E8A020;background:rgba(232,160,32,.1);border-radius:99px;padding:2px 7px}
+  .lv3 .typing{display:inline-flex;gap:3px;align-items:center}
+  .lv3 .typing i{width:4px;height:4px;border-radius:50%;background:rgba(13,13,13,.55);animation:lv3ty 1.2s infinite}
+  .lv3 .typing i:nth-child(2){animation-delay:.18s}.lv3 .typing i:nth-child(3){animation-delay:.36s}
+  @keyframes lv3ty{0%,60%,100%{opacity:.25;transform:none}30%{opacity:1;transform:translateY(-2px)}}
 
-  return (
-    <div style={{ width: 1280, height: '100%', background: '#F4F4F4', fontFamily: FS, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-
-      {/* ── App header ── */}
-      <header style={{ height: 56, flexShrink: 0, background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(13,13,13,0.08)', display: 'flex', alignItems: 'center', padding: '0 24px', gap: 14 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-          <img src="/brand/logo/arvo-symbol-black.svg" width="22" height="22" alt="" />
-          <span style={{ fontFamily: FD, fontSize: 16, letterSpacing: '0.30em', color: DARK, lineHeight: 1 }}>arvo</span>
-        </div>
-        <div style={{ width: 1, height: 22, background: 'rgba(13,13,13,0.12)', flexShrink: 0 }} />
-        <span style={{ fontFamily: FD, fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.50)', flexShrink: 0 }}>Capital</span>
-        <nav style={{ flex: 1, display: 'flex', justifyContent: 'center', gap: 4 }}>
-          {([tn.investments, tn.finances, tn.voyage, tn.community] as string[]).map((label, i) => (
-            <span key={i} style={{ padding: '6px 18px', borderRadius: 99, fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', background: i === 0 ? DARK : 'transparent', color: i === 0 ? '#fff' : 'rgba(13,13,13,0.62)', fontFamily: FS, whiteSpace: 'nowrap' }}>{label}</span>
-          ))}
-        </nav>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-          <div style={{ width: 28, height: 28, borderRadius: '50%', background: DARK, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, color: GOLD, letterSpacing: '0.08em' }}>AG</div>
-          <span style={{ fontSize: 12, color: 'rgba(13,13,13,0.50)' }}>André</span>
-          <svg width="10" height="10" fill="none" viewBox="0 0 24 24" stroke="rgba(13,13,13,0.38)" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7"/></svg>
-        </div>
-      </header>
-
-      {/* ── Sub-nav ── */}
-      <div style={{ height: 40, flexShrink: 0, background: '#fff', borderBottom: '1px solid rgba(13,13,13,0.06)', display: 'flex', alignItems: 'stretch', padding: '0 24px', overflow: 'hidden' }}>
-        {([
-          { label: tn.dashboard, active: true },
-          { label: tn.performance, active: false },
-          { label: tn.dividends, active: false },
-          { label: tn.contributions, active: false },
-          { label: tn.rebalance, active: false },
-          { label: tn.classes, active: false },
-        ] as Array<{ label: string; active: boolean }>).map(({ label, active }, i) => (
-          <span key={i} style={{ padding: '0 16px', display: 'flex', alignItems: 'center', fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', color: active ? DARK : 'rgba(13,13,13,0.42)', borderBottom: active ? `2px solid ${DARK}` : '2px solid transparent', fontFamily: FS, whiteSpace: 'nowrap', flexShrink: 0 }}>{label}</span>
-        ))}
-      </div>
-
-      {/* ── Content ── */}
-      <div style={{ flex: 1, padding: '20px 24px', overflow: 'hidden', display: 'flex', flexDirection: 'column', gap: 14 }}>
-
-        {/* Period selector */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
-          <span style={{ fontFamily: FD, fontSize: 13, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.50)' }}>Dashboard</span>
-          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-            <div style={{ display: 'flex', border: '1px solid rgba(13,13,13,0.14)', borderRadius: 3, overflow: 'hidden', background: '#fff' }}>
-              {(['Mês', '30D', '12M', 'YTD', 'Início'] as const).map((lbl, i) => (
-                <span key={lbl} style={{ padding: '5px 12px', fontSize: 10, letterSpacing: '0.06em', background: i === 3 ? DARK : 'transparent', color: i === 3 ? '#fff' : 'rgba(13,13,13,0.55)', fontFamily: FS }}>{lbl}</span>
-              ))}
-            </div>
-            <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="rgba(13,13,13,0.42)" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-          </div>
-        </div>
-
-        {/* ValueCard */}
-        <div style={{ flexShrink: 0, background: '#fff', borderRadius: 16, padding: 20, position: 'relative', overflow: 'hidden', border: '1px solid rgba(200,184,154,0.35)', boxShadow: '0 4px 24px rgba(200,184,154,0.18), 0 1px 0 rgba(200,184,154,0.22)' }}>
-          <div style={{ position: 'absolute', top: -120, right: -60, width: 360, height: 360, borderRadius: '50%', background: 'rgba(200,184,154,0.10)', filter: 'blur(70px)', pointerEvents: 'none' }} />
-          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 1, background: 'linear-gradient(to right, transparent, rgba(200,184,154,0.65), transparent)', pointerEvents: 'none' }} />
-          <div style={{ position: 'relative', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', zIndex: 2 }}>
-            <div>
-              <p style={{ fontFamily: FS, fontSize: 10, letterSpacing: '0.30em', textTransform: 'uppercase', color: '#8C6A28', margin: 0 }}>Total BRL</p>
-              <p style={{ fontFamily: FS, fontSize: 36, letterSpacing: '0.02em', lineHeight: 1.05, color: DARK, margin: '6px 0 0' }}>R$ 284.500</p>
-            </div>
-            <span style={{ fontFamily: FS, fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.52)', marginTop: 4 }}>14:30</span>
-          </div>
-          <div style={{ position: 'relative', zIndex: 2, display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '12px 24px', marginTop: 16, paddingTop: 16, borderTop: '1px solid rgba(13,13,13,0.08)' }}>
-            {([
-              { label: td.invested,      val: 'R$ 236.000',           color: DARK },
-              { label: td.result,        val: '+R$ 48.500 (+20,6%)',   color: '#1F8A5B' },
-              { label: td.currentMonth,  val: '+1,4%',                 color: '#1F8A5B' },
-              { label: 'YTD 2026',       val: '+8,2%',                 color: '#1F8A5B' },
-            ] as Array<{ label: string; val: string; color: string }>).map(({ label, val, color }) => (
-              <div key={label} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <span style={{ fontFamily: FS, fontSize: 11, letterSpacing: '0.20em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.60)' }}>{label}</span>
-                <span style={{ fontFamily: FS, fontSize: 16, letterSpacing: '0.02em', color }}>{val}</span>
-              </div>
-            ))}
-          </div>
-          <div style={{ position: 'relative', zIndex: 2, display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '10px 8px', marginTop: 16, paddingTop: 14, borderTop: '1px solid rgba(13,13,13,0.07)' }}>
-            {MOCK_INDICES.map(([name, val, pct, color]) => (
-              <div key={name} style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                <span style={{ fontFamily: FS, fontSize: 10, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.40)' }}>{name}</span>
-                <span style={{ fontFamily: FS, fontSize: 14, color: DARK, lineHeight: 1 }}>{val}</span>
-                <span style={{ fontFamily: FS, fontSize: 11, color }}>{pct} <span style={{ color: 'rgba(13,13,13,0.35)' }}>{ti.month ?? 'mês'}</span></span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Allocation chart */}
-        <div style={{ flexShrink: 0, background: '#fff', borderRadius: 16, padding: '16px 20px', border: '1px solid rgba(13,13,13,0.08)' }}>
-          <div style={{ fontFamily: FS, fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.52)', marginBottom: 12 }}>{td.allocationByClass}</div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 28 }}>
-            <svg width="90" height="90" viewBox="0 0 80 80" style={{ flexShrink: 0 }}>
-              <circle cx="40" cy="40" r="28" fill="none" stroke="#f3f4f6" strokeWidth="13"/>
-              <circle cx="40" cy="40" r="28" fill="none" stroke="#1B4FD8" strokeWidth="13" strokeDasharray="67 109" strokeDashoffset="0" transform="rotate(-90 40 40)"/>
-              <circle cx="40" cy="40" r="28" fill="none" stroke="#A36A52" strokeWidth="13" strokeDasharray="39 137" strokeDashoffset="-67" transform="rotate(-90 40 40)"/>
-              <circle cx="40" cy="40" r="28" fill="none" stroke="#C8B89A" strokeWidth="13" strokeDasharray="35 141" strokeDashoffset="-106" transform="rotate(-90 40 40)"/>
-              <circle cx="40" cy="40" r="28" fill="none" stroke="#0D0D0D" strokeWidth="13" strokeDasharray="21 155" strokeDashoffset="-141" transform="rotate(-90 40 40)"/>
-              <circle cx="40" cy="40" r="28" fill="none" stroke="#E8A020" strokeWidth="13" strokeDasharray="14 162" strokeDashoffset="-162" transform="rotate(-90 40 40)"/>
-            </svg>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px 40px', flex: 1 }}>
-              {ALLOC_ROWS.map(([color, classKey, pct, val]) => (
-                <div key={classKey} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: color, flexShrink: 0 }} />
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span style={{ fontSize: 12, color: 'rgba(13,13,13,0.75)', fontFamily: FS, whiteSpace: 'nowrap' }}>{tc[classKey] ?? classKey}</span>
-                      <span style={{ fontSize: 11, color: 'rgba(13,13,13,0.42)', fontFamily: FS }}>{pct}</span>
-                    </div>
-                    <span style={{ fontSize: 11, fontStyle: 'italic', color: 'rgba(13,13,13,0.42)', fontFamily: FS }}>{val}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Evolution chart */}
-        <div style={{ flexShrink: 0, background: '#fff', borderRadius: 16, padding: '16px 20px', border: '1px solid rgba(13,13,13,0.08)' }}>
-          <div style={{ fontFamily: FS, fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.52)', marginBottom: 10 }}>{td.portfolioEvolution}</div>
-          <svg width="100%" height="80" viewBox="0 0 1200 80" preserveAspectRatio="none" style={{ display: 'block' }}>
-            <defs><linearGradient id="evGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#0D0D0D" stopOpacity="0.07"/><stop offset="100%" stopColor="#0D0D0D" stopOpacity="0"/></linearGradient></defs>
-            <line x1="0" y1="55" x2="1200" y2="55" stroke="#f0f0f0" strokeWidth="1"/>
-            <line x1="0" y1="30" x2="1200" y2="30" stroke="#f0f0f0" strokeWidth="1"/>
-            <path d="M 0 72 C 100 70 200 65 350 55 C 500 45 600 38 750 28 C 900 18 1050 10 1200 5 L 1200 80 L 0 80 Z" fill="url(#evGrad)"/>
-            <path className="arvo-anim-line" style={{ '--len': '1260px' } as React.CSSProperties} d="M 0 72 C 100 70 200 65 350 55 C 500 45 600 38 750 28 C 900 18 1050 10 1200 5" fill="none" stroke={DARK} strokeWidth="2"/>
-            {(['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'] as const).map((lbl, i) => (
-              <text key={lbl} x={i * 109} y={79} fontSize="9" fill="rgba(13,13,13,0.35)" textAnchor={i === 0 ? 'start' : i === 11 ? 'end' : 'middle'} fontFamily={FS}>{lbl}</text>
-            ))}
-          </svg>
-        </div>
-
-        {/* Asset table */}
-        <div style={{ flex: 1, background: '#fff', borderRadius: 16, border: '1px solid rgba(13,13,13,0.08)', overflow: 'hidden' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1.5fr 1.5fr 1fr', padding: '10px 20px', background: 'rgba(248,247,245,0.9)', borderBottom: '1px solid rgba(13,13,13,0.05)' }}>
-            {([td.asset?.charAt(0).toUpperCase() + (td.asset?.slice(1) ?? ''), td.colHoldings, td.colValue, td.colReturn] as string[]).map(h => (
-              <span key={h} style={{ fontFamily: FS, fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.38)' }}>{h}</span>
-            ))}
-          </div>
-          {TABLE_ROWS.map(([ticker, classe, valor, pct, color]) => (
-            <div key={ticker} style={{ display: 'grid', gridTemplateColumns: '2fr 1.5fr 1.5fr 1fr', padding: '11px 20px', borderBottom: '1px solid rgba(13,13,13,0.04)', alignItems: 'center' }}>
-              <span style={{ fontFamily: FS, fontSize: 13, color: DARK }}>{ticker}</span>
-              <span style={{ fontFamily: FS, fontSize: 12, color: 'rgba(13,13,13,0.50)' }}>{classe}</span>
-              <span style={{ fontFamily: FS, fontSize: 13, color: DARK }}>{valor}</span>
-              <span style={{ fontFamily: FS, fontSize: 13, color }}>{pct}</span>
-            </div>
-          ))}
-        </div>
-
-      </div>
-    </div>
-  )
-}
-
-function FreedomMockupContent({ l, showStatusBar = true }: { l?: Record<string, string>; showStatusBar?: boolean }) {
-  const FS = "'DM Sans', system-ui, sans-serif"
-  const FD = "'Tenor Sans', serif"
-  const ARARA = '#1B4FD8'
-  const txt = {
-    simulation:   l?.mkSimulation   ?? 'Simulação',
-    freedom:      l?.f4title        ?? 'Liberdade Financeira',
-    goalLbl:      l?.mkGoalLbl      ?? 'Meta',
-    yearsTarget:  l?.mkYearsTarget  ?? '15 anos · independência total',
-    wealthTarget: l?.mkWealthTarget ?? 'Patrimônio alvo',
-    withdrawal:   l?.mkWithdrawal   ?? '4% regra de retirada',
-    currentBal:   l?.mkCurrentBalance ?? 'R$ 284k atual',
-    projection:   l?.mkProjection   ?? 'Projeção patrimonial',
-    targetLbl:    l?.mkTargetLbl    ?? 'R$ 4,2M em 2041',
-    monthlyContrib: l?.mkMonthlyContrib ?? 'Aporte mensal',
-    annualReturn: l?.mkAnnualReturn ?? 'Retorno anual',
+  @media(max-width:900px){
+    .lv3 .hero-grid{padding-top:104px}
+    .lv3 .hero-copy{max-width:none;padding-bottom:0}
+    .lv3 .hero-mocks{position:relative;inset:auto;height:600px;margin-top:44px;pointer-events:auto}
+    .lv3 .laptop{display:none}
+    .lv3 .phone{left:50%;right:auto;transform:translateX(-50%);width:290px;height:580px}
+    .lv3 .hero-ctas{flex-direction:column;align-items:stretch;gap:16px}
+    .lv3 .btn-gold{text-align:center}
+    .lv3 .lnk{align-self:center}
   }
 
-  const projData = [
-    [0, 284], [6, 310], [12, 340], [18, 372], [24, 400], [30, 432],
-    [36, 465], [42, 500], [48, 540], [54, 585], [60, 632], [66, 682],
-    [72, 738], [78, 800], [84, 868], [90, 940], [96, 1020], [102, 1100],
-    [108, 1190], [114, 1290], [120, 1400], [126, 1520], [132, 1650],
-    [138, 1790], [144, 1940], [150, 2100], [156, 2280], [162, 2480],
-    [168, 2700], [174, 2950], [180, 3200],
-  ]
-  const maxVal = 3200
-  const W = 320, H = 90
-  const pts = projData.map(([m, v]) => {
-    const x = (m / 180) * W
-    const y = H - (v / maxVal) * H
-    return `${x.toFixed(1)},${y.toFixed(1)}`
-  }).join(' ')
-  const areaPath = `M 0,${H} ${projData.map(([m, v]) => `L ${((m / 180) * W).toFixed(1)},${(H - (v / maxVal) * H).toFixed(1)}`).join(' ')} L ${W},${H} Z`
+  .lv3 .trust{background:#0D0D0D;border-top:1px solid rgba(255,255,255,.07)}
+  .lv3 .trust-in{max-width:1180px;margin:0 auto;padding:20px 24px;display:flex;flex-wrap:wrap;justify-content:center;gap:12px 42px}
+  .lv3 .trust span{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.45)}
+  .lv3 .trust b{color:#C8B89A;font-weight:400}
+
+  .lv3 .logos{background:#fff;border-top:1px solid rgba(13,13,13,.09);border-bottom:1px solid rgba(13,13,13,.09);padding:clamp(36px,5vw,52px) 0}
+  .lv3 .logos .cap{text-align:center;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:rgba(13,13,13,.55);margin-bottom:26px;padding:0 24px}
+  .lv3 .marq{overflow:hidden;position:relative;mask-image:linear-gradient(to right,transparent,#000 8%,#000 92%,transparent);-webkit-mask-image:linear-gradient(to right,transparent,#000 8%,#000 92%,transparent)}
+  .lv3 .marq-track{display:flex;align-items:center;gap:44px;width:max-content;animation:lv3marq 60s linear infinite}
+  .lv3 .marq:hover .marq-track{animation-play-state:paused}
+  .lv3 .wm2{font-family:'Tenor Sans',serif;font-size:clamp(14px,1.5vw,16.5px);letter-spacing:.06em;color:rgba(13,13,13,.34);white-space:nowrap}
+  .lv3 .wm-dot{width:4px;height:4px;border-radius:50%;background:rgba(200,184,154,.55);flex-shrink:0}
+  @keyframes lv3marq{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+  @media (prefers-reduced-motion: reduce){.lv3 .marq-track{animation:none;flex-wrap:wrap;justify-content:center;width:auto}.lv3 .draw{animation:none;stroke-dashoffset:0}}
+
+  .lv3 .acts{padding:clamp(84px,10vw,140px) 0 0}
+  .lv3 .acts-head h2{font-family:'Playfair Display',serif;font-weight:400;font-size:clamp(1.8rem,3.4vw,2.6rem);line-height:1.15;letter-spacing:-.3px;max-width:600px;margin-top:16px}
+  .lv3 .act{display:grid;grid-template-columns:1fr 1fr;gap:clamp(36px,6vw,90px);align-items:center;margin-top:clamp(72px,9vw,120px)}
+  .lv3 .act.flip .vis{order:-1}
+  .lv3 .act h3{font-family:'Playfair Display',serif;font-weight:400;font-size:clamp(1.45rem,2.5vw,2rem);line-height:1.2;margin:14px 0 12px;letter-spacing:-.2px}
+  .lv3 .act .desc{font-size:15px;line-height:1.8;color:rgba(13,13,13,.75);max-width:400px}
+  .lv3 .act ul{list-style:none;margin:18px 0 0;padding:0;display:flex;flex-direction:column;gap:9px}
+  .lv3 .act ul li{font-size:13.5px;color:rgba(13,13,13,.75);display:flex;gap:10px;align-items:baseline}
+  .lv3 .act ul li::before{content:'';width:4px;height:4px;border-radius:50%;background:#C8B89A;flex-shrink:0;transform:translateY(-2px)}
+  .lv3 .vis{display:flex;justify-content:center}
+  .lv3 .stage{background:#F1EDE5;border-radius:20px;padding:clamp(20px,3.2vw,36px);box-shadow:0 30px 70px -28px rgba(13,13,13,.28);width:100%;display:flex;justify-content:center}
+  .lv3 .band .stage{background:#FAF8F4}
+  .lv3 .shot{background:#F7F5F1;border:1px solid rgba(13,13,13,.09);border-radius:16px;overflow:hidden;width:100%;max-width:350px;box-shadow:0 18px 56px rgba(0,0,0,.10)}
+  .lv3 .shot-nav{height:42px;display:flex;align-items:center;gap:8px;padding:0 14px;border-bottom:1px solid rgba(13,13,13,.09);background:#fff}
+  .lv3 .shot-nav span{font-family:'Tenor Sans',serif;font-size:11.5px;letter-spacing:.28em;color:#0D0D0D}
+  .lv3 .shot-nav .av{margin-left:auto;width:23px;height:23px;font-size:8px}
+  .lv3 .shot-body{padding:13px 14px 16px;display:flex;flex-direction:column;gap:8px}
+  .lv3 .mcard{background:#fff;border:1px solid rgba(13,13,13,.09);border-radius:12px;padding:11px 13px}
+  .lv3 .mlb{font-size:8.5px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:rgba(13,13,13,.55)}
+  .lv3 .mval{font-family:'Tenor Sans',serif;font-size:18px;color:#0D0D0D;margin-top:2px}
+  .lv3 .fillbar{height:5px;border-radius:99px;background:rgba(13,13,13,.07);overflow:hidden;margin-top:7px}
+  .lv3 .fillbar>i{display:block;height:100%;border-radius:99px;width:0;transition:width 1.4s cubic-bezier(.22,.61,.36,1) .3s}
+  .lv3 .on .fillbar>i{width:var(--w)}
+  .lv3 .feedmsg{opacity:0;transform:translateY(10px);animation:lv3msg 9s cubic-bezier(.22,.61,.36,1) infinite;animation-play-state:paused}
+  .lv3 .on .feedmsg{animation-play-state:running}
+  .lv3 .feedmsg:nth-child(2){animation-delay:.9s}
+  .lv3 .feedmsg:nth-child(3){animation-delay:1.8s}
+  @keyframes lv3msg{0%{opacity:0;transform:translateY(10px)}8%,88%{opacity:1;transform:none}96%,100%{opacity:0;transform:translateY(10px)}}
+  .lv3 .band{padding:clamp(64px,8vw,100px) 0;margin-top:clamp(72px,9vw,120px)}
+  .lv3 .band.beige{background:#F1EDE5}
+  .lv3 .band.white{background:#fff;border-top:1px solid rgba(13,13,13,.09);border-bottom:1px solid rgba(13,13,13,.09)}
+  .lv3 .band .act{margin-top:0}
+
+  .lv3 .day-chips{display:flex;gap:6px}
+  .lv3 .day-chips i{font-style:normal;font-size:9px;letter-spacing:.04em;padding:4px 11px;border-radius:999px;border:1px solid rgba(13,13,13,.09);color:rgba(13,13,13,.55);background:#fff}
+  .lv3 .day-chips i.c1.on{background:rgba(214,59,47,.1);border-color:#D63B2F;color:#D63B2F}
+  .lv3 .day-chips i.c2{color:#1B4FD8}
+  .lv3 .day-chips i.c3{color:#1F8A5B}
+  .lv3 .trip-map{position:relative;height:148px;padding:0;overflow:hidden}
+  .lv3 .pin{position:absolute;width:24px;height:24px;border-radius:50% 50% 50% 0;transform:rotate(-45deg) translate(-50%,-50%);border:2px solid rgba(255,255,255,.95);box-shadow:0 2px 6px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center}
+  .lv3 .pin span{transform:rotate(45deg);font-size:10px;font-weight:600;color:#fff}
+  .lv3 .pin.p1{background:#D63B2F}.lv3 .pin.p2{background:#1B4FD8}.lv3 .pin.p3{background:#1F8A5B}
+  .lv3 .it-row{display:flex;align-items:center;gap:9px;padding:7px 0;border-bottom:1px solid rgba(13,13,13,.05)}
+  .lv3 .it-row .it-mid{flex:1;min-width:0}
+  .lv3 .day-badge{width:17px;height:17px;border-radius:50%;color:#fff;font-size:8.5px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .lv3 .it-name{font-size:11px;font-weight:600;color:#0D0D0D;line-height:1.3;margin:0}
+  .lv3 .it-sub{font-size:9px;color:rgba(13,13,13,.55);margin:1px 0 0}
+  .lv3 .it-open{font-size:11px;color:rgba(13,13,13,.55);flex-shrink:0}
+
+  .lv3 .quote{position:relative;margin-top:clamp(90px,11vw,150px);padding:clamp(84px,11vw,140px) 24px;overflow:hidden}
+  .lv3 .quote .bg{position:absolute;inset:0;background:url('/brand/imagery/03-capins-dourados.jpg') center/cover;filter:brightness(.38) sepia(.30) saturate(1.25)}
+  .lv3 .quote .in{position:relative;text-align:center;max-width:680px;margin:0 auto}
+  .lv3 .quote .rule{width:34px;height:1px;background:#C8B89A;margin:0 auto 28px}
+  .lv3 .quote .q{font-family:'Playfair Display',serif;font-style:italic;font-size:clamp(1.5rem,3.4vw,2.4rem);color:#fff;line-height:1.45}
+  .lv3 .quote .a{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:rgba(255,255,255,.45);margin-top:24px}
+
+  .lv3 .how{border-top:1px solid rgba(13,13,13,.09);border-bottom:1px solid rgba(13,13,13,.09);background:#fff;padding:clamp(70px,9vw,110px) 0}
+  .lv3 .how h2{font-family:'Playfair Display',serif;font-weight:400;font-size:clamp(1.7rem,3vw,2.3rem);margin-top:14px}
+  .lv3 .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:52px;position:relative}
+  .lv3 .steps::before{content:'';position:absolute;top:34px;left:11%;right:11%;height:1px;background:rgba(13,13,13,.09)}
+  .lv3 .steps .prog{position:absolute;top:34px;left:11%;height:1px;background:#C8B89A;width:0;transition:width 1.1s cubic-bezier(.22,.61,.36,1)}
+  .lv3 .step{position:relative;text-align:center;padding:0 14px}
+  .lv3 .step .ball{width:68px;height:68px;border-radius:50%;background:#FAF8F4;border:1px solid rgba(13,13,13,.09);margin:0 auto;display:flex;align-items:center;justify-content:center;position:relative;z-index:2;transition:all .5s cubic-bezier(.22,.61,.36,1)}
+  .lv3 .step .ball svg{width:24px;height:24px;stroke:rgba(13,13,13,.55);transition:stroke .5s}
+  .lv3 .step.live .ball{background:#0D0D0D;border-color:#0D0D0D;box-shadow:0 10px 30px rgba(13,13,13,.25)}
+  .lv3 .step.live .ball svg{stroke:#C8B89A}
+  .lv3 .step h3{font-family:'Tenor Sans',serif;font-weight:400;font-size:18px;margin:20px 0 9px;letter-spacing:.02em;color:rgba(13,13,13,.92)}
+  .lv3 .step p{font-size:14.5px;line-height:1.75;color:rgba(13,13,13,.75)}
+  @media(max-width:860px){
+    .lv3 .steps{grid-template-columns:1fr;gap:38px}
+    .lv3 .steps::before,.lv3 .steps .prog{display:none}
+    .lv3 .step{display:grid;grid-template-columns:68px 1fr;gap:18px;text-align:left;align-items:start}
+    .lv3 .step .ball{margin:0}
+    .lv3 .step h3{margin-top:8px}
+    .lv3 .act{grid-template-columns:1fr}
+    .lv3 .act.flip .vis{order:0}
+  }
+
+  .lv3 .faq{max-width:720px;margin:0 auto;padding:clamp(76px,9vw,120px) 24px}
+  .lv3 .faq h2{font-family:'Playfair Display',serif;font-weight:400;font-size:clamp(1.6rem,2.8vw,2.2rem);margin-top:14px}
+  .lv3 .faq .list{margin-top:40px}
+  .lv3 .faq details{border-top:1px solid rgba(13,13,13,.09)}
+  .lv3 .faq details:last-child{border-bottom:1px solid rgba(13,13,13,.09)}
+  .lv3 .faq summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:18px;padding:21px 0;font-size:15px;color:rgba(13,13,13,.92)}
+  .lv3 .faq summary::-webkit-details-marker{display:none}
+  .lv3 .faq summary .n{font-family:'Playfair Display',serif;font-size:17px;color:rgba(13,13,13,.18);width:26px;flex-shrink:0}
+  .lv3 .faq summary .chev{margin-left:auto;transition:transform .28s;flex-shrink:0}
+  .lv3 .faq details[open] summary .chev{transform:rotate(180deg)}
+  .lv3 .faq .ans{padding:0 0 22px 44px;font-size:14.5px;line-height:1.85;color:rgba(13,13,13,.75)}
+
+  .lv3 .cta{position:relative;padding:clamp(84px,11vw,140px) 24px;overflow:hidden}
+  .lv3 .cta .bg{position:absolute;inset:0;background:url('/brand/imagery/07-broto-escuro.jpg') center/cover;filter:brightness(.24) sepia(.32) saturate(1.2)}
+  .lv3 .cta .ov{position:absolute;inset:0;background:rgba(8,8,8,.6)}
+  .lv3 .cta .in{position:relative;text-align:center;max-width:560px;margin:0 auto}
+  .lv3 .cta .rule{width:34px;height:1px;background:#C8B89A;margin:0 auto 28px}
+  .lv3 .cta h2{font-family:'Playfair Display',serif;font-weight:400;font-size:clamp(1.9rem,4vw,3rem);color:#fff;line-height:1.12;letter-spacing:-.4px}
+  .lv3 .cta p{font-size:15px;color:rgba(255,255,255,.6);line-height:1.75;margin:16px 0 34px}
+`
+
+function Eyebrow({ color, children }: { color: string; children: ReactNode }) {
+  return (
+    <span className="eyebrow"><span className="dot" style={{ background: color }} />{children}</span>
+  )
+}
+
+function ShotNav() {
+  return (
+    <div className="shot-nav">
+      <img src="/brand/logo/arvo-symbol-black.svg" width="15" height="15" alt="" />
+      <span>arvo</span>
+      <div className="av">LS</div>
+    </div>
+  )
+}
+
+// Animated laptop dashboard (hero, desktop only)
+function LaptopMock({ l }: { l: Record<string, string> }) {
+  const cntRef = useRef<HTMLSpanElement>(null)
+  const donutRef = useRef<SVGSVGElement>(null)
+
+  useEffect(() => {
+    const el = cntRef.current
+    if (el) {
+      const T = 152480, D = 1800, t0 = performance.now()
+      let raf = 0
+      const tick = (t: number) => {
+        const p = Math.min(1, (t - t0) / D)
+        const e = 1 - Math.pow(1 - p, 3)
+        el.textContent = Math.round(T * e).toLocaleString('pt-BR')
+        if (p < 1) raf = requestAnimationFrame(tick)
+      }
+      raf = requestAnimationFrame(tick)
+      return () => cancelAnimationFrame(raf)
+    }
+  }, [])
+
+  useEffect(() => {
+    const id = setTimeout(() => {
+      const C = 2 * Math.PI * 26
+      const segs: Array<[string, number, number]> = [['s1', .34, 0], ['s2', .18, .34], ['s3', .22, .52], ['s4', .14, .74], ['s5', .12, .88]]
+      segs.forEach(([c, f, o]) => {
+        const el = donutRef.current?.querySelector<SVGCircleElement>('.' + c)
+        if (el) { el.style.strokeDasharray = `${C * f - 2} ${C - (C * f - 2)}`; el.style.strokeDashoffset = String(-(C * o)) }
+      })
+    }, 600)
+    return () => clearTimeout(id)
+  }, [])
 
   return (
-    <div style={{ width: '100%', height: '100%', background: '#F4F4F4', fontFamily: FS, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      {showStatusBar && (
-        <div style={{ height: 54, flexShrink: 0, background: '#fff', display: 'flex', alignItems: 'center', padding: '0 16px', fontSize: 11, color: DARK }}>
-          <span style={{ fontFamily: FS, fontWeight: 600, fontSize: 12, flex: 1 }}>14:30</span>
-          <div style={{ width: 80 }} />
-          <div style={{ flex: 1, display: 'flex', gap: 5, alignItems: 'center', justifyContent: 'flex-end' }}>
-            <svg width="13" height="10" viewBox="0 0 14 10" fill={DARK}><rect x="0" y="3" width="3" height="7" rx="0.5"/><rect x="4" y="2" width="3" height="8" rx="0.5"/><rect x="8" y="0" width="3" height="10" rx="0.5"/><rect x="12" y="1" width="2" height="9" rx="0.5" opacity="0.3"/></svg>
-            <svg width="13" height="10" viewBox="0 0 14 10" fill="none"><path d="M7 2C9.2 2 11.2 2.9 12.6 4.4L14 3C12.2 1.1 9.7 0 7 0S1.8 1.1 0 3L1.4 4.4C2.8 2.9 4.8 2 7 2Z" fill={DARK} opacity="0.3"/><path d="M7 5C8.4 5 9.6 5.6 10.5 6.5L11.9 5.1C10.6 3.8 8.9 3 7 3S3.4 3.8 2.1 5.1L3.5 6.5C4.4 5.6 5.6 5 7 5Z" fill={DARK} opacity="0.6"/><path d="M7 8C7.8 8 8.5 8.3 9 8.8L10.4 7.4C9.5 6.5 8.3 6 7 6S4.5 6.5 3.6 7.4L5 8.8C5.5 8.3 6.2 8 7 8Z" fill={DARK}/><circle cx="7" cy="10" r="1" fill={DARK}/></svg>
-            <svg width="19" height="10" viewBox="0 0 20 10" fill="none"><rect x="0.5" y="0.5" width="17" height="9" rx="2" stroke={DARK} strokeWidth="1" opacity="0.35"/><rect x="1.5" y="1.5" width="14" height="7" rx="1.5" fill={DARK}/><path d="M18.5 3.5C19.3 3.5 19.3 6.5 18.5 6.5" stroke={DARK} strokeWidth="1" strokeLinecap="round" opacity="0.35"/></svg>
-          </div>
+    <div className="laptop">
+      <div className="lp-in">
+        <div className="lp-head">
+          <img src="/brand/logo/arvo-symbol-black.svg" alt="" /><span className="wm">arvo</span>
+          <span className="lp-div" /><span className="lp-cap">Capital</span>
+          <div className="tabs"><i className="on">{l.a1l}</i><i>Finanças</i><i>{l.a2l}</i><i>{l.a5l}</i></div>
+          <div className="av" style={{ width: 20, height: 20, fontSize: 7, marginLeft: 8 }}>LS</div>
         </div>
-      )}
-
-      {/* Nav bar */}
-      <div style={{ height: 48, flexShrink: 0, background: '#fff', borderBottom: '1px solid rgba(13,13,13,0.07)', display: 'flex', alignItems: 'center', padding: '0 16px', gap: 8 }}>
-        <img src="/brand/logo/arvo-symbol-black.svg" width="18" height="18" alt="" />
-        <span style={{ fontFamily: FD, fontSize: 13, letterSpacing: '0.28em', color: DARK }}>arvo</span>
-        <div style={{ flex: 1 }} />
-        <div style={{ width: 28, height: 28, borderRadius: '50%', background: DARK, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, color: '#C8B89A', letterSpacing: '0.06em' }}>AG</div>
-      </div>
-
-      {/* Content */}
-      <div style={{ flex: 1, overflowY: 'hidden', padding: '16px 18px 0', display: 'flex', flexDirection: 'column', gap: 10 }}>
-
-        {/* Page title */}
-        <div>
-          <p style={{ fontFamily: FS, fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.45)', margin: 0 }}>{txt.simulation}</p>
-          <p style={{ fontFamily: FD, fontSize: 20, letterSpacing: '0.01em', color: DARK, margin: '2px 0 0' }}>{txt.freedom}</p>
+        <div className="lp-subnav"><i className="on">Dashboard</i><i>Performance</i><i>{l.mkPassive}</i><i>Aportes</i><i>Balanço</i></div>
+        <div className="lp-toolbar">
+          <span className="lp-cap" style={{ letterSpacing: '.22em' }}>Dashboard</span>
+          <div className="lp-seg"><i>Mês</i><i>30D</i><i>12M</i><i className="on">YTD</i><i>Início</i></div>
         </div>
-
-        {/* Target year */}
-        <div style={{ background: '#fff', borderRadius: 14, padding: '14px 16px', border: '1px solid rgba(27,79,216,0.18)', boxShadow: '0 2px 12px rgba(27,79,216,0.07)' }}>
+        <div className="lp-total">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
-              <p style={{ fontFamily: FS, fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.42)', margin: 0 }}>{txt.goalLbl}</p>
-              <p style={{ fontFamily: FD, fontSize: 24, letterSpacing: '0.01em', color: ARARA, margin: '3px 0 0', lineHeight: 1 }}>2041</p>
-              <p style={{ fontFamily: FS, fontSize: 11, color: 'rgba(13,13,13,0.50)', margin: '4px 0 0' }}>{txt.yearsTarget}</p>
+              <p className="lb">{l.mkTotal}</p>
+              <p className="v">€ <span ref={cntRef}>0</span></p>
             </div>
-            <div style={{ textAlign: 'right' }}>
-              <p style={{ fontFamily: FS, fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.42)', margin: 0 }}>{txt.wealthTarget}</p>
-              <p style={{ fontFamily: FD, fontSize: 18, color: DARK, margin: '3px 0 0' }}>R$ 4,2M</p>
-              <p style={{ fontFamily: FS, fontSize: 11, color: 'rgba(13,13,13,0.50)', margin: '4px 0 0' }}>{txt.withdrawal}</p>
-            </div>
+            <p style={{ fontSize: 8, letterSpacing: '.14em', textTransform: 'uppercase', color: 'rgba(13,13,13,.55)', textAlign: 'right', margin: 0 }}>{l.mkUpdatedAt}<br />1 EUR = R$ 5,95</p>
           </div>
-          {/* Progress bar */}
-          <div style={{ marginTop: 14 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-              <span style={{ fontFamily: FS, fontSize: 10, color: 'rgba(13,13,13,0.45)', letterSpacing: '0.08em' }}>{txt.currentBal}</span>
-              <span style={{ fontFamily: FS, fontSize: 10, color: ARARA, fontWeight: 600 }}>6,8%</span>
-            </div>
-            <div style={{ height: 6, borderRadius: 99, background: 'rgba(27,79,216,0.10)', overflow: 'hidden' }}>
-              <div className="arvo-anim-fill" style={{ width: '6.8%', height: '100%', borderRadius: 99, background: ARARA }} />
+          <div className="lp-kpis">
+            <div><p>{l.mkInvestedLbl}</p><p className="k">€ 128.000</p></div>
+            <div><p>{l.mkResultLbl}</p><p className="k up">+€ 24.480 (+19,1%)</p></div>
+            <div><p>{l.mkThisMonth}</p><p className="k up">+1,2%</p></div>
+            <div><p>YTD 2026</p><p className="k up">+7,4%</p></div>
+          </div>
+          <div className="lp-indices">
+            <div><p>Ibovespa</p><p className="k">130.450</p><p className="d up">+1,2%</p></div>
+            <div><p>CDI</p><p className="k">10,50%</p><p className="d up">+0,05%</p></div>
+            <div><p>S&P 500</p><p className="k">5.210</p><p className="d up">+2,8%</p></div>
+            <div><p>EUR/BRL</p><p className="k">5,95</p><p className="d dn">-0,4%</p></div>
+          </div>
+        </div>
+        <div className="lp-card">
+          <p className="lp-lb">{l.mkAllocClass}</p>
+          <div className="alloc">
+            <svg ref={donutRef} className="donut" width="76" height="76" viewBox="0 0 64 64" style={{ flexShrink: 0 }}>
+              <circle cx="32" cy="32" r="26" stroke="#EFECE6" />
+              <circle className="seg s1" cx="32" cy="32" r="26" stroke="#1B4FD8" />
+              <circle className="seg s2" cx="32" cy="32" r="26" stroke="#A36A52" />
+              <circle className="seg s3" cx="32" cy="32" r="26" stroke="#C8B89A" />
+              <circle className="seg s4" cx="32" cy="32" r="26" stroke="#0D0D0D" />
+              <circle className="seg s5" cx="32" cy="32" r="26" stroke="#E8A020" />
+            </svg>
+            <div className="legend">
+              <i><b style={{ background: '#1B4FD8' }} />{l.mkClAcoesBr} · 34% <em>€ 51.800</em></i>
+              <i><b style={{ background: '#A36A52' }} />{l.mkClFiis} · 18% <em>€ 27.400</em></i>
+              <i><b style={{ background: '#C8B89A' }} />{l.mkClRf} · 22% <em>€ 33.600</em></i>
+              <i><b style={{ background: '#0D0D0D' }} />{l.mkClCripto} · 14% <em>€ 21.300</em></i>
+              <i><b style={{ background: '#E8A020' }} />{l.mkClExterior} · 12% <em>€ 18.300</em></i>
+              <i><b style={{ background: '#1F8A5B' }} />{l.mkClCaixa} · 0,4% <em>€ 580</em></i>
             </div>
           </div>
         </div>
-
-        {/* Projection chart */}
-        <div style={{ background: '#fff', borderRadius: 14, padding: '14px 16px', border: '1px solid rgba(13,13,13,0.07)' }}>
-          <p style={{ fontFamily: FS, fontSize: 10, letterSpacing: '0.20em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.42)', margin: '0 0 8px' }}>{txt.projection}</p>
-          <svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ display: 'block' }}>
-            <defs>
-              <linearGradient id="freedomGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={ARARA} stopOpacity="0.15"/>
-                <stop offset="100%" stopColor={ARARA} stopOpacity="0"/>
-              </linearGradient>
-            </defs>
-            <path d={areaPath} fill="url(#freedomGrad)"/>
-            <polyline className="arvo-anim-line" style={{ '--len': '420px' } as React.CSSProperties} points={pts} fill="none" stroke={ARARA} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round"/>
-            <circle cx="0" cy={H} r="3.5" fill={ARARA}/>
-            <circle cx={W} cy={(H - (3200/maxVal)*H).toFixed(1) as unknown as number} r="3.5" fill={ARARA}/>
+        <div className="lp-card">
+          <p className="lp-lb">{l.mkEvolution}</p>
+          <svg width="100%" height="56" viewBox="0 0 800 56" preserveAspectRatio="none" style={{ display: 'block', marginTop: 8 }}>
+            <defs><linearGradient id="lv3g1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#0D0D0D" stopOpacity=".08" /><stop offset="100%" stopColor="#0D0D0D" stopOpacity="0" /></linearGradient></defs>
+            <line x1="0" y1="19" x2="800" y2="19" stroke="#f0efec" strokeWidth="1" />
+            <line x1="0" y1="38" x2="800" y2="38" stroke="#f0efec" strokeWidth="1" />
+            <path d="M0 50 C 70 48 130 45 200 39 C 300 31 380 28 480 21 C 580 14 700 8 800 4 L 800 56 L 0 56 Z" fill="url(#lv3g1)" />
+            <path className="draw" style={{ '--len': '860px' } as React.CSSProperties} d="M0 50 C 70 48 130 45 200 39 C 300 31 380 28 480 21 C 580 14 700 8 800 4" fill="none" stroke="#0D0D0D" strokeWidth="2" />
           </svg>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
-            <span style={{ fontFamily: FS, fontSize: 10, color: 'rgba(13,13,13,0.38)' }}>2026</span>
-            <span style={{ fontFamily: FS, fontSize: 10, color: ARARA }}>{txt.targetLbl}</span>
-          </div>
+          <div className="lp-months">{['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'].map(m => <i key={m}>{m}</i>)}</div>
         </div>
-
-        {/* Monthly contribution */}
-        <div style={{ background: '#fff', borderRadius: 14, padding: '14px 16px', border: '1px solid rgba(13,13,13,0.07)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <p style={{ fontFamily: FS, fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.42)', margin: 0 }}>{txt.monthlyContrib}</p>
-              <p style={{ fontFamily: FD, fontSize: 20, color: DARK, margin: '4px 0 0' }}>R$ 3.500</p>
-            </div>
-            <div style={{ textAlign: 'right' }}>
-              <p style={{ fontFamily: FS, fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.42)', margin: 0 }}>{txt.annualReturn}</p>
-              <p style={{ fontFamily: FD, fontSize: 20, color: '#1F8A5B', margin: '4px 0 0' }}>+12,4%</p>
-            </div>
-          </div>
+        <div className="lp-card lp-table" style={{ flex: 1 }}>
+          <div className="tr th"><span>{l.mkColAsset}</span><span>{l.mkColClass}</span><span>{l.mkColValue}</span><span>{l.mkColReturn}</span></div>
+          <div className="tr"><span>BOVA11</span><span>{l.mkClEtf}</span><span>R$ 45,2k</span><span className="up">+5,8%</span></div>
+          <div className="tr"><span>WEGE3</span><span>{l.mkClAcao}</span><span>R$ 38,7k</span><span className="up">+12,4%</span></div>
+          <div className="tr"><span>BTC</span><span>{l.mkClCripto}</span><span>R$ 28,4k</span><span className="dn">-2,1%</span></div>
+          <div className="tr"><span>KNRI11</span><span>{l.mkClFii}</span><span>R$ 21,3k</span><span className="up">+3,2%</span></div>
+          <div className="tr"><span>IVV</span><span>{l.mkClEtfEua}</span><span>R$ 18,9k</span><span className="up">+7,6%</span></div>
+          <div className="tr"><span>TESOURO+</span><span>{l.mkClRf}</span><span>R$ 52,0k</span><span className="up">+1,1%</span></div>
         </div>
-
       </div>
     </div>
   )
 }
 
-function PhoneNav() {
+// Phone with 3 cycling screens (hero)
+function PhoneMock({ l }: { l: Record<string, string> }) {
+  const [cur, setCur] = useState(0)
+  const [prev, setPrev] = useState(-1)
+  useEffect(() => {
+    const id = setInterval(() => {
+      setCur(c => { setPrev(c); return (c + 1) % 3 })
+    }, 3600)
+    return () => clearInterval(id)
+  }, [])
+  const cls = (i: number) => `ph-s${i === cur ? ' on' : i === prev ? ' prev' : ''}`
   return (
-    <div style={{ height: 48, flexShrink: 0, background: '#fff', borderBottom: '1px solid rgba(13,13,13,0.07)', display: 'flex', alignItems: 'center', padding: '0 16px', gap: 8 }}>
-      <img src="/brand/logo/arvo-symbol-black.svg" width="18" height="18" alt="" />
-      <span style={{ fontFamily: "'Tenor Sans', serif", fontSize: 13, letterSpacing: '0.28em', color: DARK }}>arvo</span>
-      <div style={{ flex: 1 }} />
-      <div style={{ width: 28, height: 28, borderRadius: '50%', background: DARK, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, color: '#C8B89A' }}>AG</div>
-    </div>
-  )
-}
-
-function PortfolioPhoneMockupContent({ l }: { l: Record<string, string> }) {
-  const FS = "'DM Sans', system-ui, sans-serif"
-  const rows: [string, string, string][] = [
-    ['BOVA11',    '+5,8%',  '#1F8A5B'],
-    ['WEGE3',     '+12,4%', '#1F8A5B'],
-    ['BTC',       '-2,1%',  '#D63B2F'],
-    ['KNRI11',    '+3,2%',  '#1F8A5B'],
-    ['TESOURO+',  '+1,1%',  '#1F8A5B'],
-  ]
-  return (
-    <div style={{ width: '100%', height: '100%', background: '#F4F4F4', fontFamily: FS, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      <PhoneNav />
-      <div style={{ flex: 1, overflow: 'hidden', padding: '16px 18px 0', display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <div style={{ background: '#fff', borderRadius: 16, padding: '16px 16px', border: '1px solid rgba(200,184,154,0.35)', boxShadow: '0 2px 12px rgba(200,184,154,0.14)', flexShrink: 0, position: 'relative', overflow: 'hidden' }}>
-          <div style={{ position: 'absolute', top: -60, right: -30, width: 180, height: 180, borderRadius: '50%', background: 'rgba(200,184,154,0.10)', filter: 'blur(40px)', pointerEvents: 'none' }} />
-          <p style={{ fontFamily: FS, fontSize: 10, letterSpacing: '0.28em', textTransform: 'uppercase', color: '#8C6A28', margin: 0 }}>Total BRL</p>
-          <p style={{ fontFamily: FS, fontSize: 30, color: DARK, margin: '4px 0 0', lineHeight: 1 }}>R$ 284.500</p>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px 14px', marginTop: 14, paddingTop: 12, borderTop: '1px solid rgba(13,13,13,0.07)' }}>
-            {([
-              { label: l.mkInvested, val: 'R$ 236k', color: DARK },
-              { label: l.mkResult,   val: '+20,6%',  color: '#1F8A5B' },
-              { label: l.mkMonth,    val: '+1,4%',   color: '#1F8A5B' },
-              { label: 'YTD 2026',   val: '+8,2%',   color: '#1F8A5B' },
-            ] as Array<{ label: string; val: string; color: string }>).map(({ label, val, color }) => (
-              <div key={label}>
-                <p style={{ fontFamily: FS, fontSize: 9, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.50)', margin: 0 }}>{label}</p>
-                <p style={{ fontFamily: FS, fontSize: 14, color, margin: '3px 0 0' }}>{val}</p>
-              </div>
-            ))}
+    <div className="phone">
+      <div className="ph-island" />
+      <div className="ph-nav"><img src="/brand/logo/arvo-symbol-black.svg" alt="" /><span>arvo</span><div className="av">LS</div></div>
+      <div className="ph-screens">
+        <div className={cls(0)}>
+          <p className="ph-tag" style={{ color: '#8C6A28' }}>{l.mkTotal}</p>
+          <p className="ph-title" style={{ fontSize: 22 }}>€ 152.480</p>
+          <div className="ph-card">
+            <div className="ph-kpis">
+              <div><p>{l.mkInvestedLbl}</p><p className="k">€ 128k</p></div>
+              <div><p>{l.mkResultLbl}</p><p className="k up">+19,1%</p></div>
+              <div><p>{l.mkThisMonth}</p><p className="k up">+1,2%</p></div>
+              <div><p>YTD 2026</p><p className="k up">+7,4%</p></div>
+            </div>
+          </div>
+          <div className="ph-card" style={{ padding: '6px 12px' }}>
+            <div className="ph-r"><span>BOVA11</span><span className="up">+5,8%</span></div>
+            <div className="ph-r"><span>WEGE3</span><span className="up">+12,4%</span></div>
+            <div className="ph-r"><span>BTC</span><span className="dn">-2,1%</span></div>
+            <div className="ph-r"><span>KNRI11</span><span className="up">+3,2%</span></div>
+            <div className="ph-r" style={{ border: 'none' }}><span>TESOURO+</span><span className="up">+1,1%</span></div>
+          </div>
+          <div className="ph-card">
+            <p className="mlb">{l.mkBrEu}</p>
+            <div className="pbar"><i style={{ '--w': '62%', background: GOLD } as React.CSSProperties} /></div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9, color: 'rgba(13,13,13,.55)', marginTop: 4 }}><span>R$ 412k</span><span>€ 84k</span></div>
           </div>
         </div>
-        <div style={{ background: '#fff', borderRadius: 14, overflow: 'hidden', border: '1px solid rgba(13,13,13,0.07)', flexShrink: 0 }}>
-          {rows.map(([ticker, pct, color]) => (
-            <div key={ticker} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 16px', borderBottom: '1px solid rgba(13,13,13,0.04)' }}>
-              <span style={{ fontFamily: FS, fontSize: 13, color: DARK }}>{ticker}</span>
-              <span style={{ fontFamily: FS, fontSize: 13, color }}>{pct}</span>
+        <div className={cls(1)}>
+          <p className="ph-tag">{l.mkTrip}</p>
+          <p className="ph-title">{l.mkTripName}</p>
+          <div className="ph-card">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}><p className="mlb">{l.mkBudget}</p><p style={{ fontSize: 10, color: '#D63B2F', fontWeight: 600, margin: 0 }}>70%</p></div>
+            <p style={{ fontSize: 15, color: DARK, marginTop: 2 }}>€ 1.680 <span style={{ fontSize: 9.5, color: 'rgba(13,13,13,.55)' }}>{l.mkOf} € 2.400</span></p>
+            <div className="pbar"><i style={{ '--w': '70%', background: '#D63B2F' } as React.CSSProperties} /></div>
+          </div>
+          <div className="ph-card" style={{ padding: '6px 12px' }}>
+            <div className="ph-r"><span>{l.mkFlights}</span><span>€ 620</span></div>
+            <div className="ph-r"><span>{l.mkStay}</span><span>€ 540</span></div>
+            <div className="ph-r"><span>{l.mkFood}</span><span>€ 320</span></div>
+            <div className="ph-r" style={{ border: 'none' }}><span>{l.mkTours}</span><span>€ 200</span></div>
+          </div>
+          <div className="ph-card" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ display: 'flex' }}><div className="av" style={{ width: 22, height: 22, fontSize: 7.5 }}>LS</div><div className="av lt" style={{ width: 22, height: 22, fontSize: 7.5, marginLeft: -8 }}>CM</div><div className="av lt" style={{ width: 22, height: 22, fontSize: 7.5, marginLeft: -8 }}>RP</div></div>
+            <p style={{ fontSize: 10, color: 'rgba(13,13,13,.55)', margin: 0 }}>{l.mkSplit3}</p>
+          </div>
+        </div>
+        <div className={cls(2)}>
+          <p className="ph-tag">{l.mkCommunity}</p>
+          <p className="ph-title">{l.mkConversations}</p>
+          {[
+            { ini: 'MB', name: 'Marina', tKey: 'mkP1', tag: 'mkTag1', time: '2h' },
+            { ini: 'RS', name: 'Rafael', tKey: 'mkP2', tag: 'mkTag2', time: '4h' },
+            { ini: 'JT', name: 'Júlia', tKey: 'mkP3', tag: 'mkTag3', time: '6h' },
+          ].map(post => (
+            <div className="ph-card" key={post.ini}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                <div className="av" style={{ width: 20, height: 20, fontSize: 7 }}>{post.ini}</div>
+                <p style={{ fontSize: 10.5, fontWeight: 600, margin: 0 }}>{post.name}</p>
+                <span style={{ fontSize: 8.5, color: 'rgba(13,13,13,.55)' }}>· {post.time}</span>
+                <span className="ph-pill">{l[post.tag]}</span>
+              </div>
+              <p style={{ fontSize: 10.5, fontWeight: 600, marginTop: 6, lineHeight: 1.4 }}>{l[post.tKey]}</p>
             </div>
           ))}
+          <div className="ph-card" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div className="av" style={{ width: 20, height: 20, fontSize: 7 }}>LC</div>
+            <span className="typing"><i /><i /><i /></span>
+            <p style={{ fontSize: 9.5, color: 'rgba(13,13,13,.55)', margin: 0 }}>{l.mkWriting}</p>
+          </div>
         </div>
       </div>
-    </div>
-  )
-}
-
-function MultimoedaMockupContent({ l }: { l: Record<string, string> }) {
-  const FS = "'DM Sans', system-ui, sans-serif"
-  const FD = "'Tenor Sans', serif"
-  const ARARA = '#1B4FD8'
-  return (
-    <div style={{ width: '100%', height: '100%', background: '#F4F4F4', fontFamily: FS, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      <PhoneNav />
-      <div style={{ flex: 1, overflow: 'hidden', padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <div>
-          <p style={{ fontFamily: FS, fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.45)', margin: 0 }}>{l.f2label}</p>
-          <p style={{ fontFamily: FD, fontSize: 18, color: DARK, margin: '2px 0 0' }}>{l.f2title}</p>
-        </div>
-        <div style={{ background: DARK, borderRadius: 14, padding: '16px 16px', flexShrink: 0 }}>
-          <p style={{ fontFamily: FS, fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'rgba(200,184,154,0.70)', margin: 0 }}>{l.mkBRLPrimary}</p>
-          <p style={{ fontFamily: FD, fontSize: 24, color: '#fff', margin: '4px 0 0', lineHeight: 1 }}>R$ 284.500</p>
-          <p style={{ fontFamily: FS, fontSize: 11, color: 'rgba(255,255,255,0.42)', margin: '5px 0 0' }}>{l.mkTotalWealth}</p>
-        </div>
-        <div style={{ background: '#fff', borderRadius: 14, padding: '14px 16px', border: '1px solid rgba(27,79,216,0.14)', flexShrink: 0 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <p style={{ fontFamily: FS, fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.42)', margin: 0 }}>EUR</p>
-              <p style={{ fontFamily: FD, fontSize: 20, color: DARK, margin: '3px 0 0', lineHeight: 1 }}>€ 44.453</p>
-            </div>
-            <div style={{ textAlign: 'right' }}>
-              <p style={{ fontFamily: FS, fontSize: 10, color: 'rgba(13,13,13,0.38)', margin: 0 }}>1 EUR =</p>
-              <p style={{ fontFamily: FS, fontSize: 13, color: ARARA, margin: '3px 0 0', fontWeight: 600 }}>R$ 6,40</p>
-            </div>
-          </div>
-        </div>
-        <div style={{ background: '#fff', borderRadius: 14, padding: '14px 16px', border: '1px solid rgba(13,13,13,0.07)', flexShrink: 0 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <p style={{ fontFamily: FS, fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.42)', margin: 0 }}>USD</p>
-              <p style={{ fontFamily: FD, fontSize: 20, color: DARK, margin: '3px 0 0', lineHeight: 1 }}>$ 49.912</p>
-            </div>
-            <div style={{ textAlign: 'right' }}>
-              <p style={{ fontFamily: FS, fontSize: 10, color: 'rgba(13,13,13,0.38)', margin: 0 }}>1 USD =</p>
-              <p style={{ fontFamily: FS, fontSize: 13, color: 'rgba(13,13,13,0.55)', margin: '3px 0 0', fontWeight: 600 }}>R$ 5,70</p>
-            </div>
-          </div>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 14px', background: 'rgba(27,79,216,0.06)', borderRadius: 10, flexShrink: 0 }}>
-          <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke={ARARA} strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-          <span style={{ fontFamily: FS, fontSize: 10, color: ARARA, letterSpacing: '0.08em' }}>{l.mkAutoUpdated}</span>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function MomentosMockupContent({ l }: { l: Record<string, string> }) {
-  const FS = "'DM Sans', system-ui, sans-serif"
-  const FD = "'Tenor Sans', serif"
-  const goals = [
-    { icon: 'plane' as IconName, nameKey: 'mkGoal1', target: '€ 3.000',   pct: 78, color: '#1B4FD8' },
-    { icon: 'home'  as IconName, nameKey: 'mkGoal2', target: 'R$ 15.000', pct: 35, color: '#E8A020' },
-    { icon: 'seal'  as IconName, nameKey: 'mkGoal3', target: 'R$ 1.200',  pct: 60, color: '#D63B2F' },
-  ]
-  return (
-    <div style={{ width: '100%', height: '100%', background: '#F4F4F4', fontFamily: FS, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      <PhoneNav />
-      <div style={{ flex: 1, overflow: 'hidden', padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <div>
-          <p style={{ fontFamily: FS, fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.45)', margin: 0 }}>{l.f3label}</p>
-          <p style={{ fontFamily: FD, fontSize: 18, color: DARK, margin: '2px 0 0' }}>{l.f3title}</p>
-        </div>
-        {goals.map(g => (
-          <div key={g.nameKey} style={{ background: '#fff', borderRadius: 14, padding: '14px 16px', border: '1px solid rgba(13,13,13,0.07)', flexShrink: 0 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <Icon name={g.icon} size={15} style={{ color: g.color }} />
-                <span style={{ fontSize: 13, fontWeight: 600, color: DARK, fontFamily: FS }}>{l[g.nameKey]}</span>
-              </div>
-              <span style={{ fontSize: 10, color: 'rgba(13,13,13,0.42)', fontFamily: FS }}>{g.target}</span>
-            </div>
-            <div style={{ height: 6, borderRadius: 99, background: 'rgba(13,13,13,0.08)', overflow: 'hidden' }}>
-              <div className="arvo-anim-fill" style={{ width: `${g.pct}%`, height: '100%', borderRadius: 99, background: g.color }} />
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 5 }}>
-              <span style={{ fontSize: 10, color: g.color, fontWeight: 600, fontFamily: FS }}>{g.pct}%</span>
-            </div>
-          </div>
-        ))}
-        <div style={{ background: '#fff', borderRadius: 14, padding: '12px 16px', border: '1px solid rgba(13,13,13,0.06)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{ fontFamily: FS, fontSize: 11, color: 'rgba(13,13,13,0.55)' }}>{l.mkCommitted}</span>
-          <span style={{ fontFamily: FD, fontSize: 16, color: DARK }}>R$ 20.540</span>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function CasalMockupContent({ l }: { l: Record<string, string> }) {
-  const FS = "'DM Sans', system-ui, sans-serif"
-  const FD = "'Tenor Sans', serif"
-  const ARARA = '#1B4FD8'
-  const cats = [
-    { nameKey: 'mkCatHousing',   ag: 1800, p: 1200, color: ARARA },
-    { nameKey: 'mkCatFood',      ag: 900,  p: 600,  color: '#1F8A5B' },
-    { nameKey: 'mkCatLeisure',   ag: 400,  p: 400,  color: '#E8A020' },
-    { nameKey: 'mkCatTransport', ag: 350,  p: 200,  color: '#A36A52' },
-  ]
-  return (
-    <div style={{ width: '100%', height: '100%', background: '#F4F4F4', fontFamily: FS, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      <PhoneNav />
-      <div style={{ flex: 1, overflow: 'hidden', padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <div>
-          <p style={{ fontFamily: FS, fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.45)', margin: 0 }}>{l.f6label}</p>
-          <p style={{ fontFamily: FD, fontSize: 18, color: DARK, margin: '2px 0 0' }}>{l.f6title}</p>
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, flexShrink: 0 }}>
-          <div style={{ background: DARK, borderRadius: 12, padding: '12px 14px' }}>
-            <p style={{ fontFamily: FS, fontSize: 10, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'rgba(200,184,154,0.70)', margin: 0 }}>André</p>
-            <p style={{ fontFamily: FD, fontSize: 18, color: '#fff', margin: '4px 0 0' }}>R$ 3.450</p>
-            <p style={{ fontFamily: FS, fontSize: 10, color: 'rgba(255,255,255,0.42)', margin: '4px 0 0' }}>{l.mkIncome1}</p>
-          </div>
-          <div style={{ background: '#fff', borderRadius: 12, padding: '12px 14px', border: '1px solid rgba(13,13,13,0.08)' }}>
-            <p style={{ fontFamily: FS, fontSize: 10, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.45)', margin: 0 }}>Camille</p>
-            <p style={{ fontFamily: FD, fontSize: 18, color: DARK, margin: '4px 0 0' }}>R$ 1.800</p>
-            <p style={{ fontFamily: FS, fontSize: 10, color: 'rgba(13,13,13,0.42)', margin: '4px 0 0' }}>{l.mkIncome2}</p>
-          </div>
-        </div>
-        {cats.map(c => (
-          <div key={c.nameKey} style={{ background: '#fff', borderRadius: 12, padding: '11px 14px', border: '1px solid rgba(13,13,13,0.06)', flexShrink: 0 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 7 }}>
-              <span style={{ fontFamily: FS, fontSize: 12, fontWeight: 600, color: DARK }}>{l[c.nameKey]}</span>
-              <span style={{ fontFamily: FS, fontSize: 10, color: 'rgba(13,13,13,0.42)' }}>R$ {c.ag + c.p}</span>
-            </div>
-            <div style={{ height: 6, borderRadius: 99, overflow: 'hidden', display: 'flex' }}>
-              <div style={{ flex: c.ag, background: c.color }} />
-              <div style={{ flex: c.p, background: `${c.color}55` }} />
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-function VoyageMockupContent({ l }: { l: Record<string, string> }) {
-  const FS = "'DM Sans', system-ui, sans-serif"
-  const FD = "'Tenor Sans', serif"
-  const RED = '#D63B2F'
-  const cats = [
-    { nameKey: 'mkTripCatFlights', val: '€ 620', pct: 92 },
-    { nameKey: 'mkTripCatStay',    val: '€ 540', pct: 68 },
-    { nameKey: 'mkTripCatFood',    val: '€ 320', pct: 54 },
-    { nameKey: 'mkTripCatTours',   val: '€ 200', pct: 33 },
-  ]
-  return (
-    <div style={{ width: '100%', height: '100%', background: '#F4F4F4', fontFamily: FS, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      <PhoneNav />
-      <div style={{ flex: 1, overflow: 'hidden', padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <div>
-          <p style={{ fontFamily: FS, fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.45)', margin: 0 }}>{l.f7label}</p>
-          <p style={{ fontFamily: FD, fontSize: 18, color: DARK, margin: '2px 0 0' }}>{l.mkTripName}</p>
-          <p style={{ fontFamily: FS, fontSize: 11, color: 'rgba(13,13,13,0.45)', margin: '3px 0 0' }}>{l.mkTripDates}</p>
-        </div>
-        <div style={{ background: '#fff', borderRadius: 14, padding: '14px 16px', border: '1px solid rgba(214,59,47,0.16)', boxShadow: '0 2px 12px rgba(214,59,47,0.06)', flexShrink: 0 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <div>
-              <p style={{ fontFamily: FS, fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.42)', margin: 0 }}>{l.mkTripBudget}</p>
-              <p style={{ fontFamily: FD, fontSize: 22, color: DARK, margin: '3px 0 0', lineHeight: 1 }}>€ 2.400</p>
-            </div>
-            <div style={{ textAlign: 'right' }}>
-              <p style={{ fontFamily: FS, fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.42)', margin: 0 }}>{l.mkTripSpent}</p>
-              <p style={{ fontFamily: FD, fontSize: 16, color: RED, margin: '3px 0 0' }}>€ 1.680</p>
-            </div>
-          </div>
-          <div style={{ height: 6, borderRadius: 99, background: 'rgba(214,59,47,0.10)', overflow: 'hidden', marginTop: 12 }}>
-            <div className="arvo-anim-fill" style={{ width: '70%', height: '100%', borderRadius: 99, background: RED }} />
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 5 }}>
-            <span style={{ fontSize: 10, color: RED, fontWeight: 600, fontFamily: FS }}>70%</span>
-          </div>
-        </div>
-        {cats.map((c, i) => (
-          <div key={c.nameKey} className="arvo-anim-row" style={{ animationDelay: `${0.5 + i * 0.12}s`, background: '#fff', borderRadius: 12, padding: '10px 14px', border: '1px solid rgba(13,13,13,0.06)', flexShrink: 0 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-              <span style={{ fontFamily: FS, fontSize: 12, fontWeight: 600, color: DARK }}>{l[c.nameKey]}</span>
-              <span style={{ fontFamily: FS, fontSize: 11, color: 'rgba(13,13,13,0.45)' }}>{c.val}</span>
-            </div>
-            <div style={{ height: 4, borderRadius: 99, background: 'rgba(13,13,13,0.07)', overflow: 'hidden' }}>
-              <div className="arvo-anim-fill" style={{ width: `${c.pct}%`, height: '100%', borderRadius: 99, background: `rgba(214,59,47,${0.9 - i * 0.15})` }} />
-            </div>
-          </div>
-        ))}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, marginTop: 2 }}>
-          {['AG', 'CM', 'RP'].map((ini, i) => (
-            <div key={ini} style={{ width: 26, height: 26, borderRadius: '50%', background: i === 0 ? DARK : '#fff', border: i === 0 ? 'none' : '1px solid rgba(13,13,13,0.14)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8, letterSpacing: '0.05em', color: i === 0 ? '#C8B89A' : 'rgba(13,13,13,0.6)', marginLeft: i > 0 ? -10 : 0, zIndex: 3 - i }}>{ini}</div>
-          ))}
-          <span style={{ fontFamily: FS, fontSize: 10, color: 'rgba(13,13,13,0.45)', marginLeft: 4 }}>{l.mkTripShared}</span>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function ComunidadeMockupContent({ l }: { l: Record<string, string> }) {
-  const FS = "'DM Sans', system-ui, sans-serif"
-  const FD = "'Tenor Sans', serif"
-  const OCRE = '#E8A020'
-  const posts = [
-    { ini: 'MB', name: 'Marina', tKey: 'mkCommPost1t', aKey: 'mkCommPost1a', replies: 14, tagKey: 'mkCommTag1' },
-    { ini: 'RS', name: 'Rafael', tKey: 'mkCommPost2t', aKey: 'mkCommPost2a', replies: 8,  tagKey: 'mkCommTag2' },
-    { ini: 'LC', name: 'Luísa',  tKey: 'mkCommPost3t', aKey: 'mkCommPost3a', replies: 21, tagKey: 'mkCommTag1' },
-  ]
-  return (
-    <div style={{ width: '100%', height: '100%', background: '#F4F4F4', fontFamily: FS, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      <PhoneNav />
-      <div style={{ flex: 1, overflow: 'hidden', padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <div>
-          <p style={{ fontFamily: FS, fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'rgba(13,13,13,0.45)', margin: 0 }}>{l.f8label}</p>
-          <p style={{ fontFamily: FD, fontSize: 18, color: DARK, margin: '2px 0 0' }}>{l.mkCommTitle}</p>
-        </div>
-        {posts.map((p, i) => (
-          <div key={p.ini} className="arvo-anim-row" style={{ animationDelay: `${0.35 + i * 0.15}s`, background: '#fff', borderRadius: 14, padding: '13px 15px', border: '1px solid rgba(13,13,13,0.06)', flexShrink: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-              <div style={{ width: 26, height: 26, borderRadius: '50%', background: DARK, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8, letterSpacing: '0.05em', color: '#C8B89A', flexShrink: 0 }}>{p.ini}</div>
-              <span style={{ fontSize: 12, fontWeight: 600, color: DARK }}>{p.name}</span>
-              <span style={{ fontSize: 10, color: 'rgba(13,13,13,0.35)' }}>· 2h</span>
-              <span style={{ marginLeft: 'auto', fontSize: 9, letterSpacing: '0.08em', textTransform: 'uppercase', color: OCRE, background: 'rgba(232,160,32,0.10)', borderRadius: 99, padding: '3px 9px' }}>{l[p.tagKey]}</span>
-            </div>
-            <p style={{ fontSize: 12.5, fontWeight: 600, color: DARK, margin: 0, lineHeight: 1.35 }}>{l[p.tKey]}</p>
-            <p style={{ fontSize: 11, color: 'rgba(13,13,13,0.55)', margin: '4px 0 0', lineHeight: 1.5, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{l[p.aKey]}</p>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 8 }}>
-              <svg width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="rgba(13,13,13,0.40)" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
-              <span style={{ fontSize: 10, color: 'rgba(13,13,13,0.45)' }}>{p.replies} {l.mkCommReplies}</span>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-// f1–f6 section labels: small accent dot + neutral uppercase text, used
-// instead of the old colored-eyebrow / borderTop-accent treatment.
-function FeatureEyebrow({ color, children }: { color: string; children: ReactNode }) {
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-      <span style={{ width: 5, height: 5, borderRadius: '50%', background: color, flexShrink: 0, display: 'inline-block' }} />
-      <span style={{ fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: T_SECONDARY }}>{children}</span>
-    </div>
-  )
-}
-
-// Beige "stage" tile framing the f1/f4 hero-feature mockups.
-function FeatureStage({ width, height, children }: { width: number; height: number; children: ReactNode }) {
-  return (
-    <div style={{ display: 'flex', justifyContent: 'center', padding: 'clamp(20px, 3vw, 36px)', borderRadius: 18, background: '#F1EDE5', boxShadow: '0 24px 60px -20px rgba(13,13,13,0.25)' }}>
-      <div style={{ width, height, borderRadius: 20, overflow: 'hidden', boxShadow: '0 16px 56px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.05)', border: '1px solid rgba(13,13,13,0.08)', flexShrink: 0 }}>
-        {children}
-      </div>
+      <div className="ph-dots">{[0, 1, 2].map(i => <i key={i} className={i === cur ? 'on' : ''} />)}</div>
     </div>
   )
 }
@@ -659,34 +475,21 @@ export default function LandingPage() {
   const { t } = useI18n()
   const l = (t as unknown as Record<string, Record<string, string>>).landing ?? {}
 
-  const STEPS = [
-    { num: l.s1num, title: l.s1title, desc: l.s1desc },
-    { num: l.s2num, title: l.s2title, desc: l.s2desc },
-    { num: l.s3num, title: l.s3title, desc: l.s3desc },
-  ]
-  const FAQS = [
-    { q: l.q1, a: l.a1 },
-    { q: l.q2, a: l.a2 },
-    { q: l.q3, a: l.a3 },
-    { q: l.q4, a: l.a4 },
-    { q: l.q5, a: l.a5 },
-    { q: l.q6, a: l.a6 },
-  ]
-
-  const [openFaq,          setOpenFaq]          = useState<number | null>(null)
-  const [menuOpen,         setMenuOpen]          = useState(false)
-  const [loginOpen,        setLoginOpen]         = useState(false)
-  const [loginEmail,       setLoginEmail]        = useState('')
-  const [loginPass,        setLoginPass]         = useState('')
-  const [loginErr,         setLoginErr]          = useState('')
-  const [loginLoading,     setLoginLoading]      = useState(false)
-  const [loginResending,   setLoginResending]    = useState(false)
-  const [loginResent,      setLoginResent]       = useState(false)
-  const [mobileLoginOpen,  setMobileLoginOpen]   = useState(false)
-  const [scrolled,         setScrolled]          = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [loginOpen, setLoginOpen] = useState(false)
+  const [loginEmail, setLoginEmail] = useState('')
+  const [loginPass, setLoginPass] = useState('')
+  const [loginErr, setLoginErr] = useState('')
+  const [loginLoading, setLoginLoading] = useState(false)
+  const [loginResending, setLoginResending] = useState(false)
+  const [loginResent, setLoginResent] = useState(false)
+  const [mobileLoginOpen, setMobileLoginOpen] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
+  const [liveStep, setLiveStep] = useState(0)
 
   const loginRef = useRef<HTMLDivElement>(null)
   const heroEndRef = useRef<HTMLDivElement>(null)
+  const stepsRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (!loginOpen) return
@@ -697,9 +500,6 @@ export default function LandingPage() {
     return () => document.removeEventListener('mousedown', onDown)
   }, [loginOpen])
 
-  // Header goes from transparent (over the hero photo) to opaque once the
-  // user scrolls past ~80% of the hero — sentinel-based, accounts for the
-  // sticky header's own height via rootMargin.
   useEffect(() => {
     const el = heroEndRef.current
     if (!el) return
@@ -711,13 +511,28 @@ export default function LandingPage() {
     return () => observer.disconnect()
   }, [])
 
+  // section reveals
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('is-visible') }),
-      { threshold: 0.08 }
+    const io = new IntersectionObserver(
+      es => es.forEach(e => { if (e.isIntersecting) e.target.classList.add('on') }),
+      { threshold: 0.12 }
     )
-    document.querySelectorAll('.arvo-reveal').forEach(el => observer.observe(el))
-    return () => observer.disconnect()
+    document.querySelectorAll('.lv3 .rv').forEach(el => io.observe(el))
+    return () => io.disconnect()
+  }, [])
+
+  // "como funciona" stepper: starts cycling once visible
+  useEffect(() => {
+    const el = stepsRef.current
+    if (!el) return
+    let interval: ReturnType<typeof setInterval> | null = null
+    const io = new IntersectionObserver(es => {
+      if (es[0].isIntersecting && !interval) {
+        interval = setInterval(() => setLiveStep(s => (s + 1) % 3), 2600)
+      }
+    }, { threshold: 0.4 })
+    io.observe(el)
+    return () => { io.disconnect(); if (interval) clearInterval(interval) }
   }, [])
 
   async function handleLogin(e: React.FormEvent) {
@@ -747,120 +562,64 @@ export default function LandingPage() {
     setLoginResent(true)
   }
 
-  // Header reads as "scrolled" (opaque) once past the hero, or while the
-  // mobile drawer is open — keeps the open drawer visually anchored.
   const headerOpaque = scrolled || menuOpen
+  const BORDER = 'rgba(13,13,13,0.09)'
+  const F_SANS = "'DM Sans', system-ui, sans-serif"
+
+  const NAV = [
+    ['#produto', l.navConcept],
+    ['#comunidade', l.navCommunity],
+    ['#como-funciona', l.navHow],
+    ['#faq', l.navFaq],
+  ] as Array<[string, string]>
+
+  const stepIcons = [
+    <svg key="u" fill="none" viewBox="0 0 24 24" strokeWidth={1.6}><path strokeLinecap="round" strokeLinejoin="round" d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
+    <svg key="p" fill="none" viewBox="0 0 24 24" strokeWidth={1.6}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>,
+    <svg key="g" fill="none" viewBox="0 0 24 24" strokeWidth={1.6}><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941" /></svg>,
+  ]
 
   return (
-    <div style={{ background: BG, color: T_PRIMARY, fontFamily: F_SANS, minHeight: '100vh', overflow: 'clip' }}>
-      <style>{`
-        @keyframes arvo-feat-spin { to { transform: rotate(360deg); } }
-        @keyframes arvo-feat-bird {
-          0%,100% { fill: #1B4FD8; filter: drop-shadow(0 0 3px rgba(27,79,216,0.5)); }
-          33%      { fill: #E8A020; filter: drop-shadow(0 0 3px rgba(232,160,32,0.5)); }
-          66%      { fill: #D63B2F; filter: drop-shadow(0 0 3px rgba(214,59,47,0.5)); }
-        }
-        .arvo-feat-glow {
-          position: absolute; inset: -10px; border-radius: 50%;
-          background: conic-gradient(from 0deg, #1B4FD8, #E8A020, #D63B2F, #1B4FD8);
-          animation: arvo-feat-spin 7s linear infinite;
-          filter: blur(16px); opacity: 0.5; pointer-events: none;
-        }
-        .arvo-feat-p1 { animation: arvo-feat-bird 3s ease-in-out infinite; animation-delay: 0s; }
-        .arvo-feat-p2 { animation: arvo-feat-bird 3s ease-in-out infinite; animation-delay: 0.25s; }
-        .arvo-feat-p3 { animation: arvo-feat-bird 3s ease-in-out infinite; animation-delay: 0.5s; }
-        .arvo-feat-p4 { animation: arvo-feat-bird 3s ease-in-out infinite; animation-delay: 0.75s; }
-        .arvo-feat-p5 { animation: arvo-feat-bird 3s ease-in-out infinite; animation-delay: 1.0s; }
-        .arvo-feat-p6 { animation: arvo-feat-bird 3s ease-in-out infinite; animation-delay: 1.25s; }
-
-        /* Mockup micro-animations — slow, almost-linear, run once. Inside a
-           .arvo-reveal they stay paused until the section becomes visible. */
-        @keyframes arvo-draw { from { stroke-dashoffset: var(--len, 1400px); } to { stroke-dashoffset: 0; } }
-        .arvo-anim-line { stroke-dasharray: var(--len, 1400px); animation: arvo-draw 1.8s cubic-bezier(0.4,0,0.2,1) 0.4s both; }
-        @keyframes arvo-fillw { from { width: 0; } }
-        .arvo-anim-fill { animation: arvo-fillw 1.4s cubic-bezier(0.4,0,0.2,1) 0.5s both; }
-        @keyframes arvo-fadeup { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
-        .arvo-anim-row { animation: arvo-fadeup 0.7s ease-out both; }
-        .arvo-reveal .arvo-anim-line, .arvo-reveal .arvo-anim-fill, .arvo-reveal .arvo-anim-row { animation-play-state: paused; }
-        .arvo-reveal.is-visible .arvo-anim-line, .arvo-reveal.is-visible .arvo-anim-fill, .arvo-reveal.is-visible .arvo-anim-row { animation-play-state: running; }
-        @media (prefers-reduced-motion: reduce) {
-          .arvo-anim-line, .arvo-anim-fill, .arvo-anim-row { animation: none; }
-        }
-
-        /* Hero CTAs — desktop: pill + quiet text link; mobile: stacked, one
-           obvious primary action and an explicit "already have an account" line. */
-        .arvo-hero-ctas { display: flex; gap: 28px; align-items: center; flex-wrap: wrap; }
-        .arvo-hero-cta-primary {
-          font-family: ${F_SANS}; font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase;
-          background: ${GOLD}; color: ${DARK}; text-decoration: none; padding: 17px 40px;
-          border-radius: 999px; transition: background 0.28s ease, box-shadow 0.28s ease;
-          box-shadow: 0 8px 32px rgba(200,184,154,0.25);
-        }
-        .arvo-hero-cta-primary:hover { background: #D6C8AC; box-shadow: 0 10px 40px rgba(200,184,154,0.38); }
-        .arvo-hero-cta-secondary {
-          font-family: ${F_SANS}; font-size: 13px; letter-spacing: 0.04em;
-          color: rgba(255,255,255,0.82); text-decoration: none;
-          border-bottom: 1px solid rgba(255,255,255,0.35); padding-bottom: 3px;
-          transition: color 0.28s ease, border-color 0.28s ease;
-        }
-        .arvo-hero-cta-secondary:hover { color: #fff; border-color: rgba(255,255,255,0.7); }
-        @media (max-width: 639px) {
-          .arvo-hero-ctas { flex-direction: column; align-items: stretch; gap: 18px; }
-          .arvo-hero-cta-primary { text-align: center; padding: 17px 24px; }
-          .arvo-hero-cta-secondary { align-self: center; }
-        }
-      `}</style>
+    <div className="lv3">
+      <style>{CSS}</style>
 
       {/* ── HEADER ── */}
-      <header style={{ position: 'sticky', top: 0, zIndex: 100, marginBottom: -65, background: headerOpaque ? 'rgba(250,248,244,0.85)' : 'transparent', backdropFilter: headerOpaque ? 'blur(12px)' : 'none', borderBottom: `1px solid ${headerOpaque ? BORDER : 'transparent'}`, paddingTop: 'env(safe-area-inset-top, 0px)', transition: 'background 0.3s ease, backdrop-filter 0.3s ease, border-color 0.3s ease' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
-
-          <a href="#hero" style={{ textDecoration: 'none', flexShrink: 0, display: 'flex', alignItems: 'center', gap: 10 }}>
+      <header style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 60, background: headerOpaque ? 'rgba(250,248,244,0.9)' : 'transparent', backdropFilter: headerOpaque ? 'blur(14px)' : 'none', borderBottom: `1px solid ${headerOpaque ? BORDER : 'transparent'}`, paddingTop: 'env(safe-area-inset-top, 0px)', transition: 'background .4s, backdrop-filter .4s, border-color .4s' }}>
+        <div style={{ maxWidth: 1180, margin: '0 auto', padding: '0 24px', height: 64, display: 'flex', alignItems: 'center', gap: 32 }}>
+          <a href="#hero" style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
             <img src={headerOpaque ? '/brand/logo/arvo-symbol-black.svg' : '/brand/logo/arvo-symbol-gold.svg'} width="20" height="20" alt="" />
-            <span style={{ fontFamily: F_SANS, fontSize: 15, letterSpacing: '0.30em', textIndent: '0.30em', color: headerOpaque ? DARK : '#fff', lineHeight: 1, transition: 'color 0.3s ease' }}>arvo</span>
+            <span style={{ fontFamily: "'Tenor Sans', serif", fontSize: 15, letterSpacing: '0.30em', textIndent: '0.30em', color: headerOpaque ? DARK : '#fff', lineHeight: 1, transition: 'color .4s' }}>arvo</span>
           </a>
 
-          {/* Desktop nav */}
-          <nav className="hidden md:flex" style={{ alignItems: 'center', gap: 36 }}>
-            {[[`#funcionalidades`, l.navFeatures],[`#como-funciona`, l.navHow],[`#faq`, l.navFaq]].map(([href, label]) => (
-              <a key={href} href={href} style={{ fontFamily: F_SANS, fontSize: 12, letterSpacing: '0.12em', textTransform: 'uppercase', color: headerOpaque ? T_SECONDARY : 'rgba(255,255,255,0.78)', textDecoration: 'none', transition: 'color 0.2s' }}
+          <nav className="hidden md:flex" style={{ gap: 28 }}>
+            {NAV.map(([href, label]) => (
+              <a key={href} href={href} style={{ fontSize: 11.5, letterSpacing: '0.12em', textTransform: 'uppercase', color: headerOpaque ? 'rgba(13,13,13,.55)' : 'rgba(255,255,255,.7)', transition: 'color .3s' }}
                 onMouseEnter={e => (e.currentTarget.style.color = headerOpaque ? DARK : '#fff')}
-                onMouseLeave={e => (e.currentTarget.style.color = headerOpaque ? T_SECONDARY : 'rgba(255,255,255,0.78)')}
+                onMouseLeave={e => (e.currentTarget.style.color = headerOpaque ? 'rgba(13,13,13,.55)' : 'rgba(255,255,255,.7)')}
               >{label}</a>
             ))}
           </nav>
 
-          {/* Desktop right */}
-          <div className="hidden md:flex" style={{ alignItems: 'center', gap: 28 }}>
-            <div className={headerOpaque ? '' : 'dark'}>
-              <LanguageSelector />
-            </div>
+          <div style={{ flex: 1 }} />
 
-            <div style={{ width: 1, height: 14, background: headerOpaque ? BORDER : 'rgba(255,255,255,0.20)', transition: 'background 0.3s ease' }} />
-
+          <div className="hidden md:flex" style={{ alignItems: 'center', gap: 22 }}>
+            <div className={headerOpaque ? '' : 'dark'}><LanguageSelector /></div>
+            <div style={{ width: 1, height: 14, background: headerOpaque ? BORDER : 'rgba(255,255,255,0.20)' }} />
             <div ref={loginRef} style={{ position: 'relative' }}>
               <button onClick={() => { setLoginOpen(o => !o); setLoginErr('') }}
-                style={{ fontFamily: F_SANS, fontSize: 12, letterSpacing: '0.1em', textTransform: 'uppercase', color: headerOpaque ? DARK : '#fff', background: 'none', border: 'none', cursor: 'pointer', padding: 0, transition: 'color 0.3s ease' }}>
+                style={{ fontSize: 12.5, color: headerOpaque ? 'rgba(13,13,13,.75)' : 'rgba(255,255,255,.85)', background: 'none', border: 'none', borderBottom: `1px solid ${headerOpaque ? 'rgba(13,13,13,.25)' : 'rgba(255,255,255,.3)'}`, cursor: 'pointer', padding: '0 0 2px', fontFamily: F_SANS, transition: 'color .4s' }}>
                 {l.enterBtn}
               </button>
-
               {loginOpen && (
                 <div style={{ position: 'absolute', top: 'calc(100% + 12px)', right: 0, background: '#fff', border: `1px solid ${BORDER}`, borderRadius: 10, boxShadow: '0 8px 32px rgba(0,0,0,0.10)', padding: '24px 22px', width: 288, zIndex: 10 }}>
-                  <p style={{ fontFamily: F_DISPLAY, fontSize: 17, fontWeight: 400, color: DARK, marginBottom: 18 }}>{l.loginTitle}</p>
+                  <p style={{ fontFamily: "'Playfair Display', serif", fontSize: 17, color: DARK, marginBottom: 18 }}>{l.loginTitle}</p>
                   <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                     <input type="email" required autoFocus placeholder="E-mail" value={loginEmail} onChange={e => setLoginEmail(e.target.value)}
-                      className="arvo-input"
-                      style={{ fontFamily: F_SANS, fontSize: 13, padding: '10px 12px', border: `1px solid ${BORDER}`, borderRadius: 4, outline: 'none', color: DARK, background: '#fff', width: '100%', boxSizing: 'border-box' }}
-                      onFocus={e => { e.currentTarget.style.borderColor = GOLD; e.currentTarget.style.boxShadow = `0 0 0 2px rgba(200,184,154,0.25)` }}
-                      onBlur={e => { e.currentTarget.style.borderColor = BORDER; e.currentTarget.style.boxShadow = 'none' }}
-                    />
+                      style={{ fontFamily: F_SANS, fontSize: 13, padding: '10px 12px', border: `1px solid ${BORDER}`, borderRadius: 4, outline: 'none', color: DARK, background: '#fff', width: '100%', boxSizing: 'border-box' }} />
                     <input type="password" required placeholder="Senha" value={loginPass} onChange={e => setLoginPass(e.target.value)}
-                      style={{ fontFamily: F_SANS, fontSize: 13, padding: '10px 12px', border: `1px solid ${BORDER}`, borderRadius: 4, outline: 'none', color: DARK, background: '#fff', width: '100%', boxSizing: 'border-box' }}
-                      onFocus={e => { e.currentTarget.style.borderColor = GOLD; e.currentTarget.style.boxShadow = `0 0 0 2px rgba(200,184,154,0.25)` }}
-                      onBlur={e => { e.currentTarget.style.borderColor = BORDER; e.currentTarget.style.boxShadow = 'none' }}
-                    />
+                      style={{ fontFamily: F_SANS, fontSize: 13, padding: '10px 12px', border: `1px solid ${BORDER}`, borderRadius: 4, outline: 'none', color: DARK, background: '#fff', width: '100%', boxSizing: 'border-box' }} />
                     {loginErr && (
-                      <div style={{ fontFamily: F_SANS, fontSize: 12, color: 'var(--arvo-red)', margin: 0 }}>
+                      <div style={{ fontSize: 12, color: 'var(--arvo-red)' }}>
                         <p style={{ margin: 0 }}>{loginErr}</p>
                         {loginErr === t.login.errEmailNotConfirmed && (
                           <div style={{ marginTop: 8 }}>
@@ -877,29 +636,28 @@ export default function LandingPage() {
                       </div>
                     )}
                     <button type="submit" disabled={loginLoading}
-                      style={{ fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', background: DARK, color: '#fff', border: 'none', borderRadius: 4, padding: '11px 0', cursor: 'pointer', opacity: loginLoading ? 0.6 : 1, marginTop: 4 }}>
+                      style={{ fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', background: DARK, color: '#fff', border: 'none', borderRadius: 999, padding: '11px 0', cursor: 'pointer', opacity: loginLoading ? 0.6 : 1, marginTop: 4 }}>
                       {loginLoading ? '...' : l.enterBtn}
                     </button>
                   </form>
                   <div style={{ marginTop: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <Link to="/login?mode=forgot" onClick={() => setLoginOpen(false)}
-                      style={{ fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.08em', color: T_SECONDARY, textDecoration: 'none' }}>{l.forgotPwd}</Link>
+                      style={{ fontSize: 11, letterSpacing: '0.08em', color: 'rgba(13,13,13,.55)' }}>{l.forgotPwd}</Link>
                     <Link to="/login?mode=register" onClick={() => setLoginOpen(false)}
-                      style={{ fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.08em', color: DARK, textDecoration: 'none' }}>{l.createAccount}</Link>
+                      style={{ fontSize: 11, letterSpacing: '0.08em', color: DARK }}>{l.createAccount}</Link>
                   </div>
                 </div>
               )}
             </div>
-
             <Link to="/login?mode=register"
-              style={{ fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', background: headerOpaque ? DARK : 'transparent', color: headerOpaque ? '#fff' : GOLD, textDecoration: 'none', padding: '10px 24px', borderRadius: 999, border: headerOpaque ? '1px solid transparent' : `1px solid rgba(200,184,154,0.55)`, transition: 'background 0.3s ease, border-color 0.3s ease, color 0.3s ease' }}>
+              style={{ fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', padding: '10px 24px', borderRadius: 999, background: headerOpaque ? DARK : 'transparent', color: headerOpaque ? '#fff' : GOLD, border: headerOpaque ? '1px solid transparent' : '1px solid rgba(200,184,154,0.55)', transition: 'all .4s' }}>
               {l.createBtn}
             </Link>
           </div>
 
           {/* Mobile hamburger */}
           <button className="md:hidden" onClick={() => setMenuOpen(o => !o)} aria-label="Menu"
-            style={{ background: 'none', border: 'none', cursor: 'pointer', color: headerOpaque ? DARK : '#fff', padding: 8, lineHeight: 0, marginRight: -8, transition: 'color 0.3s ease' }}>
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: headerOpaque ? DARK : '#fff', padding: 8, lineHeight: 0, marginRight: -8, transition: 'color .3s' }}>
             <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
               {menuOpen
                 ? <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -911,9 +669,9 @@ export default function LandingPage() {
         {/* Mobile drawer */}
         {menuOpen && (
           <div className="md:hidden" style={{ background: 'rgba(255,255,255,0.98)', borderTop: `1px solid ${BORDER}`, padding: '8px 24px 20px' }}>
-            {[[`#funcionalidades`, l.navFeatures],[`#como-funciona`, l.navHow],[`#faq`, l.navFaq]].map(([href, label]) => (
+            {NAV.map(([href, label]) => (
               <a key={href} href={href} onClick={() => setMenuOpen(false)}
-                style={{ display: 'flex', alignItems: 'center', padding: '15px 0', fontFamily: F_SANS, fontSize: 12, letterSpacing: '0.12em', textTransform: 'uppercase', color: T_SECONDARY, textDecoration: 'none', borderBottom: `1px solid ${BORDER}` }}>
+                style={{ display: 'flex', alignItems: 'center', padding: '15px 0', fontSize: 12, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(13,13,13,.55)', borderBottom: `1px solid ${BORDER}` }}>
                 {label}
               </a>
             ))}
@@ -923,11 +681,11 @@ export default function LandingPage() {
             {!mobileLoginOpen ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 18 }}>
                 <Link to="/login?mode=register" onClick={() => setMenuOpen(false)}
-                  style={{ textAlign: 'center', padding: '14px 0', fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', background: DARK, color: '#fff', textDecoration: 'none', borderRadius: 999 }}>
+                  style={{ textAlign: 'center', padding: '14px 0', fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', background: DARK, color: '#fff', borderRadius: 999 }}>
                   {l.createAccount}
                 </Link>
                 <button onClick={() => { setMobileLoginOpen(true); setLoginErr('') }}
-                  style={{ textAlign: 'center', padding: '10px 0', fontFamily: F_SANS, fontSize: 12, letterSpacing: '0.04em', color: T_SECONDARY, background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: 4 }}>
+                  style={{ textAlign: 'center', padding: '10px 0', fontFamily: F_SANS, fontSize: 12, color: 'rgba(13,13,13,.55)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: 4 }}>
                   {l.heroAlready} · {l.enterBtn}
                 </button>
               </div>
@@ -938,30 +696,14 @@ export default function LandingPage() {
                   style={{ fontFamily: F_SANS, fontSize: 13, padding: '11px 12px', border: `1px solid ${BORDER}`, borderRadius: 4, color: DARK, background: '#fff', boxSizing: 'border-box' as const }} />
                 <input type="password" required placeholder="Senha" value={loginPass} onChange={e => setLoginPass(e.target.value)}
                   style={{ fontFamily: F_SANS, fontSize: 13, padding: '11px 12px', border: `1px solid ${BORDER}`, borderRadius: 4, color: DARK, background: '#fff', boxSizing: 'border-box' as const }} />
-                {loginErr && (
-                  <div style={{ fontFamily: F_SANS, fontSize: 12, color: 'var(--arvo-red)', margin: 0 }}>
-                    <p style={{ margin: 0 }}>{loginErr}</p>
-                    {loginErr === t.login.errEmailNotConfirmed && (
-                      <div style={{ marginTop: 8 }}>
-                        {loginResent ? (
-                          <p style={{ margin: 0, fontSize: 11, color: 'var(--arvo-green)' }}>{t.login.emailResent ?? 'E-mail reenviado.'}</p>
-                        ) : (
-                          <button type="button" onClick={handleResendFromOverlay} disabled={loginResending || !loginEmail}
-                            style={{ background: 'none', border: '1px solid var(--arvo-red)', borderRadius: 3, padding: '4px 10px', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--arvo-red)', cursor: loginResending || !loginEmail ? 'not-allowed' : 'pointer', opacity: loginResending || !loginEmail ? 0.6 : 1 }}>
-                            {loginResending ? '...' : (t.login.resendEmail ?? 'Reenviar e-mail')}
-                          </button>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
+                {loginErr && <p style={{ fontSize: 12, color: 'var(--arvo-red)', margin: 0 }}>{loginErr}</p>}
                 <div style={{ display: 'flex', gap: 10 }}>
                   <button type="button" onClick={() => setMobileLoginOpen(false)}
-                    style={{ flex: 1, padding: '12px 0', fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', background: '#fff', border: `1px solid ${BORDER}`, borderRadius: 999, cursor: 'pointer', color: T_SECONDARY }}>
+                    style={{ flex: 1, padding: '12px 0', fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', background: '#fff', border: `1px solid ${BORDER}`, borderRadius: 999, cursor: 'pointer', color: 'rgba(13,13,13,.55)' }}>
                     ←
                   </button>
                   <button type="submit" disabled={loginLoading}
-                    style={{ flex: 2, padding: '12px 0', fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', background: DARK, color: '#fff', border: 'none', borderRadius: 999, cursor: 'pointer', opacity: loginLoading ? 0.6 : 1 }}>
+                    style={{ flex: 2, padding: '12px 0', fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', background: DARK, color: '#fff', border: 'none', borderRadius: 999, cursor: 'pointer', opacity: loginLoading ? 0.6 : 1 }}>
                     {loginLoading ? '...' : l.enterBtn}
                   </button>
                 </div>
@@ -972,393 +714,355 @@ export default function LandingPage() {
       </header>
 
       {/* ── HERO ── */}
-      <section id="hero" style={{ position: 'relative', minHeight: '93vh', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', overflow: 'hidden' }}>
-        {/* Sentinel — header flips to opaque once this scrolls past the sticky header */}
-        <div ref={heroEndRef} style={{ position: 'absolute', top: '80%', left: 0, width: 1, height: 1 }} />
-        <div style={{ position: 'absolute', inset: 0, background: '#0D0D0D' }} />
-        <div className="arvo-kenburns" style={{ position: 'absolute', inset: 0, backgroundImage: "url('/brand/imagery/01-broto-floresta.jpg')", backgroundSize: 'cover', backgroundPosition: 'center 40%', filter: 'brightness(0.28) sepia(0.30) saturate(1.20)' }} />
-        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '55%', background: 'linear-gradient(to top, rgba(6,12,24,0.90) 0%, transparent 100%)' }} />
+      <section className="hero" id="hero">
+        <div className="hero-bg" />
+        <div className="hero-fade" />
+        <div className="hero-fade2" />
         <div className="arvo-grain" />
+        <div ref={heroEndRef} style={{ position: 'absolute', top: '78%', left: 0, width: 1, height: 1 }} />
 
-        {/* Desktop mockup — MacBook-style bezel, gold glow behind, ~80% hero height, anchored to bottom, shifted right */}
-        <div className="hidden lg:block" style={{ position: 'absolute', bottom: 0, right: '-18vw', width: '55%', height: '82%', zIndex: 1 }}>
-          {/* Gold aura behind the screen */}
-          <div style={{ position: 'absolute', inset: '-30px -40px -0px -40px', background: 'radial-gradient(ellipse 70% 60% at 50% 80%, rgba(200,184,154,0.22) 0%, rgba(200,184,154,0.08) 45%, transparent 75%)', pointerEvents: 'none', zIndex: 0 }} />
-          {/* Screen content + bezel */}
-          <div style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden', borderRadius: '18px 18px 0 0', border: '12px solid #1C1C1E', borderBottom: 'none', boxShadow: '0 0 0 1px rgba(255,255,255,0.06) inset, -16px 0 60px rgba(0,0,0,0.45)', zIndex: 1 }}>
-            <DashboardMockupContent
-              td={(t as unknown as Record<string, Record<string, string>>).dashboard ?? {}}
-              tn={(t as unknown as Record<string, Record<string, string>>).nav ?? {}}
-              tc={((t as unknown as Record<string, Record<string, Record<string, string>>>).classes?.names ?? {}) as Record<string, string>}
-              ti={(t as unknown as Record<string, Record<string, string>>).indices ?? {}}
-            />
-          </div>
+        <div className="hero-mocks">
+          <LaptopMock l={l} />
+          <PhoneMock l={l} />
         </div>
 
-        {/* iPhone mockup — lower-left of desktop, larger, anchored to bottom */}
-        <div className="hidden lg:block" style={{ position: 'absolute', bottom: 0, right: 'calc(37vw - 50px)', zIndex: 3 }}>
-          {/* iPhone shell */}
-          <div style={{ width: 260, height: 520, borderRadius: 50, border: '9px solid #1C1C1E', background: '#1C1C1E', boxShadow: '0 0 0 1px rgba(255,255,255,0.08) inset, 0 32px 80px rgba(0,0,0,0.65), 0 0 40px rgba(200,184,154,0.10)', position: 'relative', overflow: 'hidden' }}>
-            {/* Dynamic Island */}
-            <div style={{ position: 'absolute', top: 12, left: '50%', transform: 'translateX(-50%)', width: 64, height: 18, borderRadius: 9, background: '#000', zIndex: 10 }} />
-            {/* Screen content */}
-            <div style={{ width: '100%', height: '100%', borderRadius: 38, overflow: 'hidden' }}>
-              <FreedomMockupContent l={l} />
+        <div className="hero-grid">
+          <div className="hero-copy">
+            <span className="hero-eb"><span className="dot" />{l.eyebrow}</span>
+            <h1>{l.h1a}<br /><em>{l.h1b}</em></h1>
+            <p className="sub">{l.heroSub}</p>
+            <div className="hero-ctas">
+              <Link className="btn-gold" to="/login?mode=register">{l.heroCta}</Link>
+              <Link className="lnk" to="/login">{l.heroAlready} →</Link>
             </div>
-          </div>
-        </div>
-
-        {/* Left text — constrained to left half */}
-        <div style={{ position: 'relative', maxWidth: 1200, margin: '0 auto', padding: '0 24px', width: '100%', zIndex: 2 }}>
-          <div style={{ maxWidth: 540, paddingTop: 'clamp(80px, 10vh, 120px)', paddingBottom: 'clamp(48px, 6vh, 72px)' }}>
-            <div style={{ marginBottom: 22, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ width: 5, height: 5, borderRadius: '50%', background: GOLD, display: 'inline-block', flexShrink: 0 }} />
-              <span className="hidden sm:inline" style={{ fontFamily: F_SANS, fontSize: 12, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.72)' }}>
-                {l.eyebrow}
-              </span>
-              <span className="sm:hidden" style={{ fontFamily: F_SANS, fontSize: 12, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.72)' }}>
-                {l.eyebrowMobile}
-              </span>
-            </div>
-
-            <h1 style={{ fontFamily: F_DISPLAY, fontSize: 'clamp(2rem, 3.8vw, 3.6rem)', fontWeight: 400, lineHeight: 1.08, color: '#fff', marginBottom: 26, letterSpacing: '-0.3px' }}>
-              {l.h1line1}<br />
-              <em style={{ fontStyle: 'italic', color: `${GOLD}CC` }}>{l.h1line2}</em>
-            </h1>
-
-            <p className="hidden sm:block" style={{ fontFamily: F_SANS, fontSize: 'clamp(15px, 2vw, 18px)', color: 'rgba(255,255,255,0.72)', lineHeight: 1.75, marginBottom: 40 }}>
-              {l.heroPara}
-            </p>
-            <p className="sm:hidden" style={{ fontFamily: F_SANS, fontSize: 15, color: 'rgba(255,255,255,0.72)', lineHeight: 1.75, marginBottom: 40 }}>
-              {l.heroParaMobile}
-            </p>
-
-            <div className="arvo-hero-ctas">
-              <Link to="/login?mode=register" className="arvo-hero-cta-primary">
-                {l.heroCta}
-              </Link>
-              <Link to="/login" className="arvo-hero-cta-secondary">
-                {l.heroAlready} →
-              </Link>
-            </div>
-
-            <p style={{ fontFamily: F_SANS, fontSize: 12, letterSpacing: '0.06em', color: 'rgba(255,255,255,0.52)', marginTop: 18 }}>
-              {l.assurance}
-            </p>
+            <p className="assure">{l.assurance}</p>
           </div>
         </div>
       </section>
 
-      {/* Static phone mockup — mobile only, own beige stage so it isn't lost in the hero's bottom gradient */}
-      <div className="lg:hidden" style={{ background: '#F1EDE5', padding: '40px 24px' }}>
-        <img src="/brand/imagery/hero-phone-mobile.svg" width={180} height={360} alt=""
-          style={{ display: 'block', margin: '0 auto' }} />
-      </div>
-
-      {/* ── STATS BAR ── */}
-      <div style={{ background: '#fff', borderBottom: `1px solid ${BORDER}` }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '56px 24px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '28px 0' }}>
-          {[
-            { value: l.stat1v, label: l.stat1l },
-            { value: l.stat2v, label: l.stat2l },
-            { value: l.stat3v, label: l.stat3l },
-            { value: l.stat4v, label: l.stat4l },
-          ].map((s, i) => (
-            <div key={s.label} className={`arvo-reveal arvo-reveal-d${i + 1}`}
-              style={{ paddingLeft: i > 0 ? 24 : 0, borderLeft: i > 0 ? `1px solid ${BORDER}` : 'none' }}>
-              <div style={{ fontFamily: F_DISPLAY, fontSize: 'clamp(1.5rem, 2.8vw, 2rem)', fontWeight: 400, color: DARK, marginBottom: 6 }}>{s.value}</div>
-              <div style={{ fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', color: T_SECONDARY, lineHeight: 1.4 }}>{s.label}</div>
-            </div>
-          ))}
+      {/* ── TRUST ── */}
+      <div className="trust">
+        <div className="trust-in">
+          <span><b>{l.t1a}</b> {l.t1b}</span>
+          <span><b>{l.t2a}</b> {l.t2b}</span>
+          <span>{l.t3a} <b>{l.t3b}</b></span>
+          <span>{l.t4a} <b>{l.t4b}</b></span>
         </div>
       </div>
 
-      {/* ── FUNCIONALIDADES ── */}
-      <section id="funcionalidades" style={{ padding: 'clamp(28px, 4vw, 48px) 0' }}>
-        <div className="arvo-reveal" style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px', marginBottom: 'clamp(64px, 9vw, 110px)' }}>
-          <p style={{ fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.22em', textTransform: 'uppercase', color: T_SECONDARY, marginBottom: 16 }}>{l.featEyebrow}</p>
-          <h2 style={{ fontFamily: F_DISPLAY, fontSize: 'clamp(1.9rem, 3.5vw, 2.7rem)', fontWeight: 400, lineHeight: 1.12, color: DARK, letterSpacing: '-0.3px', maxWidth: 560 }}>
-            {l.featH2}
-          </h2>
-        </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(96px, 10vw, 140px)' }}>
-
-          {/* ── f1: Portfólio — hero feature, text 5 / stage 6 ── */}
-          <div className="arvo-reveal grid grid-cols-1 lg:grid-cols-[5fr_6fr] items-center" style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px', gap: 'clamp(40px, 6vw, 96px)' }}>
-            <div style={{ maxWidth: 460 }}>
-              <FeatureEyebrow color="#1B4FD8">{l.f1label}</FeatureEyebrow>
-              <h3 style={{ fontFamily: F_DISPLAY, fontSize: 'clamp(1.4rem, 2.4vw, 1.9rem)', fontWeight: 400, color: DARK, lineHeight: 1.2, marginBottom: 14 }}>{l.f1title}</h3>
-              <p style={{ fontFamily: F_SANS, fontSize: 15, color: T_BODY, lineHeight: 1.85 }}>{l.f1desc}</p>
-            </div>
-            <FeatureStage width={320} height={370}>
-              <PortfolioPhoneMockupContent l={l} />
-            </FeatureStage>
+      {/* ── LOGOS MARQUEE ── */}
+      <section className="logos">
+        <p className="cap">{l.logosCap}</p>
+        <div className="marq">
+          <div className="marq-track">
+            {[0, 1].map(rep => INSTITUTIONS.map(n => (
+              <span key={`${rep}-${n}`} style={{ display: 'contents' }}>
+                <span className="wm2">{n}</span><span className="wm-dot" />
+              </span>
+            )))}
           </div>
-
-          {/* ── f2/f3/f6: 3-card strip over full-bleed beige band ── */}
-          <div className="arvo-reveal" style={{ background: '#F1EDE5', padding: 'clamp(56px, 8vw, 100px) 0' }}>
-            <div className="grid grid-cols-1 md:grid-cols-3" style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px', gap: 'clamp(40px, 5vw, 56px)' }}>
-
-              {/* f2: Multimoeda */}
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <FeatureEyebrow color="#E8A020">{l.f2label}</FeatureEyebrow>
-                <h3 style={{ fontFamily: F_DISPLAY, fontSize: 'clamp(1.15rem, 1.6vw, 1.4rem)', fontWeight: 400, color: DARK, lineHeight: 1.25, marginBottom: 10 }}>{l.f2title}</h3>
-                <p style={{ fontFamily: F_SANS, fontSize: 14, color: T_BODY, lineHeight: 1.75, marginBottom: 28 }}>{l.f2desc}</p>
-                <div style={{ display: 'flex', justifyContent: 'center', marginTop: 'auto' }}>
-                  <div style={{ width: 300, height: 356, borderRadius: 18, overflow: 'hidden', boxShadow: '0 16px 56px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.05)', border: '1px solid rgba(13,13,13,0.08)', flexShrink: 0 }}>
-                    <MultimoedaMockupContent l={l} />
-                  </div>
-                </div>
-              </div>
-
-              {/* f3: Momentos */}
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <FeatureEyebrow color="#D63B2F">{l.f3label}</FeatureEyebrow>
-                <h3 style={{ fontFamily: F_DISPLAY, fontSize: 'clamp(1.15rem, 1.6vw, 1.4rem)', fontWeight: 400, color: DARK, lineHeight: 1.25, marginBottom: 10 }}>{l.f3title}</h3>
-                <p style={{ fontFamily: F_SANS, fontSize: 14, color: T_BODY, lineHeight: 1.75, marginBottom: 28 }}>{l.f3desc}</p>
-                <div style={{ display: 'flex', justifyContent: 'center', marginTop: 'auto' }}>
-                  <div style={{ width: 300, height: 366, borderRadius: 18, overflow: 'hidden', boxShadow: '0 16px 56px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.05)', border: '1px solid rgba(13,13,13,0.08)', flexShrink: 0 }}>
-                    <MomentosMockupContent l={l} />
-                  </div>
-                </div>
-              </div>
-
-              {/* f6: Casal & Família */}
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <FeatureEyebrow color="#D63B2F">{l.f6label}</FeatureEyebrow>
-                <h3 style={{ fontFamily: F_DISPLAY, fontSize: 'clamp(1.15rem, 1.6vw, 1.4rem)', fontWeight: 400, color: DARK, lineHeight: 1.25, marginBottom: 10 }}>{l.f6title}</h3>
-                <p style={{ fontFamily: F_SANS, fontSize: 14, color: T_BODY, lineHeight: 1.75, marginBottom: 28 }}>{l.f6desc}</p>
-                <div style={{ display: 'flex', justifyContent: 'center', marginTop: 'auto' }}>
-                  <div style={{ width: 300, height: 366, borderRadius: 18, overflow: 'hidden', boxShadow: '0 16px 56px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.05)', border: '1px solid rgba(13,13,13,0.08)', flexShrink: 0 }}>
-                    <CasalMockupContent l={l} />
-                  </div>
-                </div>
-              </div>
-
-            </div>
-          </div>
-
-          {/* ── f4: Liberdade Financeira — hero feature, stage 6 / text 5 (mirrored) ── */}
-          <div className="arvo-reveal grid grid-cols-1 lg:grid-cols-[6fr_5fr] items-center" style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px', gap: 'clamp(40px, 6vw, 96px)' }}>
-            <div className="order-2 lg:order-1">
-              <FeatureStage width={320} height={400}>
-                <FreedomMockupContent l={l} showStatusBar={false} />
-              </FeatureStage>
-            </div>
-            <div className="order-1 lg:order-2" style={{ maxWidth: 460 }}>
-              <FeatureEyebrow color="#1B4FD8">{l.f4label}</FeatureEyebrow>
-              <h3 style={{ fontFamily: F_DISPLAY, fontSize: 'clamp(1.4rem, 2.4vw, 1.9rem)', fontWeight: 400, color: DARK, lineHeight: 1.2, marginBottom: 14 }}>{l.f4title}</h3>
-              <p style={{ fontFamily: F_SANS, fontSize: 15, color: T_BODY, lineHeight: 1.85 }}>{l.f4desc}</p>
-            </div>
-          </div>
-
-          {/* ── f7/f8: Voyage + Comunidade — 2-card strip over full-bleed beige band ── */}
-          <div className="arvo-reveal" style={{ background: '#F1EDE5', padding: 'clamp(56px, 8vw, 100px) 0' }}>
-            <div className="grid grid-cols-1 md:grid-cols-2" style={{ maxWidth: 980, margin: '0 auto', padding: '0 24px', gap: 'clamp(40px, 5vw, 72px)' }}>
-
-              {/* f7: Voyage */}
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <FeatureEyebrow color="#D63B2F">{l.f7label}</FeatureEyebrow>
-                <h3 style={{ fontFamily: F_DISPLAY, fontSize: 'clamp(1.15rem, 1.6vw, 1.4rem)', fontWeight: 400, color: DARK, lineHeight: 1.25, marginBottom: 10 }}>{l.f7title}</h3>
-                <p style={{ fontFamily: F_SANS, fontSize: 14, color: T_BODY, lineHeight: 1.75, marginBottom: 28 }}>{l.f7desc}</p>
-                <div style={{ display: 'flex', justifyContent: 'center', marginTop: 'auto' }}>
-                  <div style={{ width: 300, height: 430, borderRadius: 18, overflow: 'hidden', boxShadow: '0 16px 56px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.05)', border: '1px solid rgba(13,13,13,0.08)', flexShrink: 0 }}>
-                    <VoyageMockupContent l={l} />
-                  </div>
-                </div>
-              </div>
-
-              {/* f8: Comunidade */}
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <FeatureEyebrow color="#E8A020">{l.f8label}</FeatureEyebrow>
-                <h3 style={{ fontFamily: F_DISPLAY, fontSize: 'clamp(1.15rem, 1.6vw, 1.4rem)', fontWeight: 400, color: DARK, lineHeight: 1.25, marginBottom: 10 }}>{l.f8title}</h3>
-                <p style={{ fontFamily: F_SANS, fontSize: 14, color: T_BODY, lineHeight: 1.75, marginBottom: 28 }}>{l.f8desc}</p>
-                <div style={{ display: 'flex', justifyContent: 'center', marginTop: 'auto' }}>
-                  <div style={{ width: 300, height: 430, borderRadius: 18, overflow: 'hidden', boxShadow: '0 16px 56px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.05)', border: '1px solid rgba(13,13,13,0.08)', flexShrink: 0 }}>
-                    <ComunidadeMockupContent l={l} />
-                  </div>
-                </div>
-              </div>
-
-            </div>
-          </div>
-
-          {/* ── f5: IA Assistente — aurora-bird protagonist ── */}
-          <div className="arvo-reveal grid grid-cols-1 lg:grid-cols-[5fr_6fr] items-center" style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px', gap: 'clamp(40px, 6vw, 96px)' }}>
-            <div style={{ maxWidth: 460 }}>
-              <FeatureEyebrow color="#E8A020">{l.f5label}</FeatureEyebrow>
-              <h3 style={{ fontFamily: F_DISPLAY, fontSize: 'clamp(1.4rem, 2.4vw, 1.9rem)', fontWeight: 400, color: DARK, lineHeight: 1.2, marginBottom: 14 }}>{l.f5title}</h3>
-              <p style={{ fontFamily: F_SANS, fontSize: 15, color: T_BODY, lineHeight: 1.85 }}>{l.f5desc}</p>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20, padding: '8px 0' }}>
-              {/* Chat exchange */}
-              <div style={{ width: '100%', maxWidth: 380, display: 'flex', flexDirection: 'column', gap: 12 }}>
-                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                  <div style={{ background: DARK, color: '#fff', borderRadius: '16px 16px 4px 16px', padding: '10px 16px', maxWidth: '80%', fontSize: 13, fontFamily: F_SANS, lineHeight: 1.55 }}>
-                    {l.f5mockQ}
-                  </div>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                  <div style={{ width: 30, height: 30, borderRadius: '50%', background: '#1B4FD8', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <img src="/brand/logo/arvo-symbol-black.svg" width="14" height="14" alt="" style={{ filter: 'invert(1)', opacity: 0.9 }} />
-                  </div>
-                  <div style={{ background: '#F0F0F0', color: DARK, borderRadius: '4px 16px 16px 16px', padding: '10px 16px', maxWidth: '80%', fontSize: 13, fontFamily: F_SANS, lineHeight: 1.55 }}>
-                    {l.f5mockA}
-                  </div>
-                </div>
-              </div>
-              {/* Animated glow bird — small, below the chat */}
-              <div style={{ position: 'relative', width: 68, height: 68 }}>
-                <div className="arvo-feat-glow" />
-                <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 40px rgba(0,0,0,0.12)' }}>
-                  <svg viewBox="0 0 174 180" width="30" height="30" fill="none">
-                    <path className="arvo-feat-p1" d="M96.9642 82.5762C83.7642 28.1762 141.798 5.2429 172.464 0.576233C173.464 15.7429 159.764 53.3762 96.9642 82.5762Z"/>
-                    <path className="arvo-feat-p2" d="M165.464 82.5762V53.5762L136.964 73.9631V111.674C144.263 106.015 151.778 100.102 155.964 96.5762C163.564 90.1762 165.464 84.5762 165.464 82.5762Z"/>
-                    <path className="arvo-feat-p3" d="M121.464 85.0507V123.576C125.207 120.732 131.014 116.287 136.964 111.674V73.9631L121.464 85.0507Z"/>
-                    <path className="arvo-feat-p4" d="M96.9642 102.576L121.464 123.576V85.0507L96.9642 102.576Z"/>
-                    <path className="arvo-feat-p5" d="M121.464 155.576V123.576L96.9642 102.576V178.576L121.464 155.576Z"/>
-                    <path className="arvo-feat-p6" d="M0.513985 24.5762V51.5762C0.513985 53.5762 -0.135759 66.6762 7.46424 73.0762L44.514 101.576V155.076L69.014 178.076V82.0762L37.9642 56.0762L0.513985 24.5762Z"/>
-                  </svg>
-                </div>
-              </div>
-              <p style={{ fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: T_SECONDARY, margin: 0 }}>{l.f5badge}</p>
-            </div>
-          </div>
-
         </div>
       </section>
 
-      {/* ── IMAGE BREAK — árvore solitária ── */}
-      <div style={{ position: 'relative', height: 'clamp(220px, 30vw, 380px)', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', inset: 0, backgroundImage: "url('/brand/imagery/02-arvore-solitaria.jpg')", backgroundSize: 'cover', backgroundPosition: 'center 55%', filter: 'sepia(0.22) saturate(1.10) brightness(0.82)' }} />
-        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(242,237,228,0.45) 0%, rgba(242,237,228,0) 30%, rgba(242,237,228,0) 70%, rgba(242,237,228,0.60) 100%)' }} />
-      </div>
+      {/* ── ACTS ── */}
+      <section className="acts" id="produto">
+        <div className="wrap">
+          <div className="acts-head rv">
+            <Eyebrow color={GOLD}>{l.actsEyebrow}</Eyebrow>
+            <h2>{l.actsH2}</h2>
+          </div>
+        </div>
+
+        {/* Ato 1: Patrimônio */}
+        <div className="wrap">
+          <div className="act rv">
+            <div>
+              <Eyebrow color="#1B4FD8">{l.a1l}</Eyebrow>
+              <h3>{l.a1t}</h3>
+              <p className="desc">{l.a1d}</p>
+              <ul><li>{l.a1b1}</li><li>{l.a1b2}</li><li>{l.a1b3}</li></ul>
+            </div>
+            <div className="vis">
+              <div className="stage"><div className="shot">
+                <ShotNav />
+                <div className="shot-body">
+                  <div className="mcard" style={{ borderColor: 'rgba(200,184,154,.4)' }}>
+                    <p className="mlb" style={{ color: '#8C6A28' }}>{l.mkTotal}</p>
+                    <p className="mval">€ 152.480</p>
+                    <p style={{ fontSize: 11, color: '#1F8A5B', marginTop: 2 }}>↑ +19,1%</p>
+                  </div>
+                  <div className="mcard">
+                    <p className="mlb">{l.mkAllocClass}</p>
+                    <div className="fillbar"><i style={{ '--w': '34%', background: '#1B4FD8' } as React.CSSProperties} /></div>
+                    <div className="fillbar"><i style={{ '--w': '22%', background: GOLD, transitionDelay: '.5s' } as React.CSSProperties} /></div>
+                    <div className="fillbar"><i style={{ '--w': '14%', background: '#5A5248', transitionDelay: '.7s' } as React.CSSProperties} /></div>
+                  </div>
+                  <div className="mcard" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div><p className="mlb">{l.mkFreedom}</p><p className="mval" style={{ fontSize: 15 }}>2041</p></div>
+                    <p style={{ fontSize: 11, color: '#1B4FD8', margin: 0 }}>{l.mkFreedomPath}</p>
+                  </div>
+                </div>
+              </div></div>
+            </div>
+          </div>
+        </div>
+
+        {/* Ato 2: Vida & Viagens (beige band, flip) */}
+        <div className="band beige">
+          <div className="wrap">
+            <div className="act flip rv">
+              <div>
+                <Eyebrow color="#D63B2F">{l.a2l}</Eyebrow>
+                <h3>{l.a2t}</h3>
+                <p className="desc">{l.a2d}</p>
+                <ul><li>{l.a2b1}</li><li>{l.a2b2}</li><li>{l.a2b3}</li></ul>
+              </div>
+              <div className="vis">
+                <div className="stage"><div className="shot">
+                  <ShotNav />
+                  <div className="shot-body">
+                    <div className="mcard">
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}><p className="mlb">{l.mkTripName}</p><p style={{ fontSize: 11, color: '#D63B2F', fontWeight: 600, margin: 0 }}>70%</p></div>
+                      <p className="mval" style={{ fontSize: 16 }}>€ 1.680 <span style={{ fontSize: 10, color: 'rgba(13,13,13,.55)' }}>{l.mkOf} € 2.400</span></p>
+                      <div className="fillbar"><i style={{ '--w': '70%', background: '#D63B2F' } as React.CSSProperties} /></div>
+                    </div>
+                    <div className="mcard">
+                      <p className="mlb">{l.mkHome}</p>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6, fontSize: 11.5, color: 'rgba(13,13,13,.75)' }}><span>Lucas · € 1.120</span><span>Camille · € 890</span></div>
+                      <div className="fillbar"><i style={{ '--w': '56%', background: 'rgba(214,59,47,.7)', transitionDelay: '.4s' } as React.CSSProperties} /></div>
+                    </div>
+                    <div className="mcard" style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+                      <div style={{ display: 'flex' }}><div className="av">LS</div><div className="av lt" style={{ marginLeft: -9 }}>CM</div></div>
+                      <p style={{ fontSize: 11, color: 'rgba(13,13,13,.55)', margin: 0 }}>{l.mkAutoSplit}</p>
+                    </div>
+                  </div>
+                </div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Ato 3: Roteiros */}
+        <div className="wrap">
+          <div className="act rv">
+            <div>
+              <Eyebrow color="#D63B2F">{l.a3l}</Eyebrow>
+              <h3>{l.a3t}</h3>
+              <p className="desc">{l.a3d}</p>
+              <ul><li>{l.a3b1}</li><li>{l.a3b2}</li><li>{l.a3b3}</li></ul>
+            </div>
+            <div className="vis">
+              <div className="stage"><div className="shot">
+                <ShotNav />
+                <div className="shot-body">
+                  <div className="day-chips">
+                    <i>{l.mkAll}</i><i className="c1 on">{l.mkDay} 1</i><i className="c2">{l.mkDay} 2</i><i className="c3">{l.mkDay} 3</i>
+                  </div>
+                  <div className="mcard trip-map">
+                    <svg width="100%" height="100%" viewBox="0 0 320 148" preserveAspectRatio="xMidYMid slice" style={{ position: 'absolute', inset: 0 }}>
+                      <rect width="320" height="148" fill="#EDEAE3" />
+                      <path d="M-10 118 C 60 96 130 128 200 108 S 330 96 340 100 L 340 160 L -10 160 Z" fill="#C9D6DB" />
+                      <path d="M0 30 H320 M0 62 H320 M0 94 H320" stroke="#fff" strokeWidth="5" />
+                      <path d="M52 0 V148 M126 0 V148 M206 0 V148 M272 0 V148" stroke="#fff" strokeWidth="4" />
+                      <path d="M-10 12 L330 84" stroke="#fff" strokeWidth="7" />
+                      <path d="M-10 12 L330 84" stroke="#F6D9A0" strokeWidth="3" />
+                    </svg>
+                    <div className="pin p1" style={{ left: '18%', top: '52%' }}><span>1</span></div>
+                    <div className="pin p1" style={{ left: '44%', top: '24%' }}><span>1</span></div>
+                    <div className="pin p2" style={{ left: '66%', top: '56%' }}><span>2</span></div>
+                    <div className="pin p3" style={{ left: '84%', top: '30%' }}><span>3</span></div>
+                  </div>
+                  <div className="mcard" style={{ padding: '8px 12px' }}>
+                    <div className="it-row"><span className="day-badge" style={{ background: '#D63B2F' }}>1</span><div className="it-mid"><p className="it-name">Torre de Belém</p><p className="it-sub">{l.mkMonument} · € 8</p></div><span className="it-open">↗</span></div>
+                    <div className="it-row"><span className="day-badge" style={{ background: '#D63B2F' }}>1</span><div className="it-mid"><p className="it-name">Time Out Market</p><p className="it-sub">{l.mkRestaurant} · € 42</p></div><span className="it-open">↗</span></div>
+                    <div className="it-row" style={{ border: 'none' }}><span className="day-badge" style={{ background: '#1B4FD8' }}>2</span><div className="it-mid"><p className="it-name">Alfama</p><p className="it-sub">{l.mkQuarter}</p></div><span className="it-open">↗</span></div>
+                  </div>
+                  <div className="mcard" style={{ display: 'flex', alignItems: 'center', gap: 9, justifyContent: 'space-between' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+                      <div style={{ display: 'flex' }}><div className="av">LS</div><div className="av lt" style={{ marginLeft: -9 }}>CM</div></div>
+                      <p style={{ fontSize: 10.5, color: 'rgba(13,13,13,.55)', margin: 0 }}>{l.mkSharedItin}</p>
+                    </div>
+                    <span style={{ fontSize: 9.5, color: '#D63B2F', whiteSpace: 'nowrap' }}>{l.mkOpenMaps} ↗</span>
+                  </div>
+                </div>
+              </div></div>
+            </div>
+          </div>
+        </div>
+
+        {/* Ato 4: Entre amigos (beige band, flip) */}
+        <div className="band beige">
+          <div className="wrap">
+            <div className="act flip rv">
+              <div>
+                <Eyebrow color="#D63B2F">{l.a4l}</Eyebrow>
+                <h3>{l.a4t}</h3>
+                <p className="desc">{l.a4d}</p>
+                <ul><li>{l.a4b1}</li><li>{l.a4b2}</li><li>{l.a4b3}</li></ul>
+              </div>
+              <div className="vis">
+                <div className="stage"><div className="shot">
+                  <ShotNav />
+                  <div className="shot-body">
+                    <div className="mcard">
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+                        <div style={{ display: 'flex' }}><div className="av">LS</div><div className="av lt" style={{ marginLeft: -9 }}>CM</div><div className="av lt" style={{ marginLeft: -9 }}>RP</div></div>
+                        <div>
+                          <p className="mlb" style={{ letterSpacing: '.14em' }}>{l.mkGroupName}</p>
+                          <p style={{ fontSize: 9.5, color: 'rgba(13,13,13,.55)', marginTop: 1 }}>{l.mkGroupMeta}</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="mcard" style={{ padding: '6px 12px' }}>
+                      <div className="ph-r"><span>{l.mkExp1}<br /><i style={{ fontStyle: 'normal', fontSize: 8.5, color: 'rgba(13,13,13,.55)' }}>{l.mkPaidYou}</i></span><span>€ 96</span></div>
+                      <div className="ph-r"><span>{l.mkExp2}<br /><i style={{ fontStyle: 'normal', fontSize: 8.5, color: 'rgba(13,13,13,.55)' }}>{l.mkPaidCam}</i></span><span>€ 27</span></div>
+                      <div className="ph-r" style={{ border: 'none' }}><span>{l.mkExp3}<br /><i style={{ fontStyle: 'normal', fontSize: 8.5, color: 'rgba(13,13,13,.55)' }}>{l.mkPaidRaf}</i></span><span>€ 34</span></div>
+                    </div>
+                    <div className="mcard">
+                      <p className="mlb">{l.mkBalances}</p>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 7, fontSize: 11 }}><span style={{ color: 'rgba(13,13,13,.75)' }}>{l.mkOwesYou}</span><span className="up" style={{ fontWeight: 600 }}>€ 23</span></div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 5, fontSize: 11 }}><span style={{ color: 'rgba(13,13,13,.75)' }}>{l.mkYouOwe}</span><span className="dn" style={{ fontWeight: 600 }}>€ 17</span></div>
+                    </div>
+                    <div className="mcard" style={{ textAlign: 'center', background: DARK, borderColor: DARK }}>
+                      <span style={{ fontSize: 10, letterSpacing: '.12em', textTransform: 'uppercase', color: GOLD }}>{l.mkSettle}</span>
+                    </div>
+                  </div>
+                </div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Ato 5: Comunidade (white band) */}
+        <div className="band white" id="comunidade">
+          <div className="wrap">
+            <div className="act rv">
+              <div>
+                <Eyebrow color="#E8A020">{l.a5l}</Eyebrow>
+                <h3>{l.a5t}</h3>
+                <p className="desc">{l.a5d}</p>
+                <ul><li>{l.a5b1}</li><li>{l.a5b2}</li><li>{l.a5b3}</li></ul>
+              </div>
+              <div className="vis">
+                <div className="stage" style={{ background: '#F1EDE5' }}><div className="shot">
+                  <ShotNav />
+                  <div className="shot-body">
+                    {[
+                      { ini: 'MB', name: 'Marina', tKey: 'mkP1', tag: 'mkTag1', time: '2h' },
+                      { ini: 'RS', name: 'Rafael', tKey: 'mkP2', tag: 'mkTag2', time: '4h' },
+                    ].map(post => (
+                      <div className="mcard feedmsg" key={post.ini}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <div className="av" style={{ width: 23, height: 23, fontSize: 8 }}>{post.ini}</div>
+                          <p style={{ fontSize: 11.5, fontWeight: 600, margin: 0 }}>{post.name}</p>
+                          <span style={{ fontSize: 9, color: 'rgba(13,13,13,.55)' }}>· {post.time}</span>
+                          <span className="ph-pill" style={{ fontSize: 8, padding: '2px 8px' }}>{l[post.tag]}</span>
+                        </div>
+                        <p style={{ fontSize: 11.5, fontWeight: 600, marginTop: 7, lineHeight: 1.4 }}>{l[post.tKey]}</p>
+                      </div>
+                    ))}
+                    <div className="mcard feedmsg" style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+                      <div className="av" style={{ width: 23, height: 23, fontSize: 8 }}>LC</div>
+                      <span className="typing"><i /><i /><i /></span>
+                      <p style={{ fontSize: 10.5, color: 'rgba(13,13,13,.55)', margin: 0 }}>{l.mkWriting}</p>
+                    </div>
+                  </div>
+                </div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── QUOTE ── */}
+      <section className="quote">
+        <div className="bg" />
+        <div className="arvo-grain" />
+        <div className="in rv">
+          <div className="rule" />
+          <p className="q">"{l.quoteText}"</p>
+          <p className="a">{l.quoteAuthor}</p>
+        </div>
+      </section>
 
       {/* ── COMO FUNCIONA ── */}
-      <section id="como-funciona" style={{ background: BG, borderTop: `1px solid ${BORDER}`, borderBottom: `1px solid ${BORDER}`, padding: 'clamp(64px, 8vw, 100px) 24px' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-          <div className="arvo-reveal" style={{ marginBottom: 56 }}>
-            <p style={{ fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.22em', textTransform: 'uppercase', color: T_SECONDARY, marginBottom: 16 }}>{l.howEyebrow}</p>
-            <h2 style={{ fontFamily: F_DISPLAY, fontSize: 'clamp(1.9rem, 3.5vw, 2.7rem)', fontWeight: 400, lineHeight: 1.12, color: DARK, letterSpacing: '-0.3px', maxWidth: 480 }}>
-              {l.howH2}
-            </h2>
+      <section className="how" id="como-funciona">
+        <div className="wrap">
+          <div className="rv">
+            <Eyebrow color={GOLD}>{l.howEyebrow}</Eyebrow>
+            <h2>{l.howH2v3}</h2>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 40 }}>
-            {STEPS.map((step, i) => (
-              <div key={i} className={`arvo-reveal arvo-reveal-d${i + 1}`} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                  <span style={{ fontFamily: F_SANS, fontSize: 28, color: 'rgba(13,13,13,0.14)', letterSpacing: '-1px', lineHeight: 1 }}>{step.num}</span>
-                  {i < 2 && <div style={{ flex: 1, height: 1, background: BORDER }} className="hidden lg:block" />}
-                </div>
-                <h3 style={{ fontFamily: F_DISPLAY, fontSize: '1.2rem', fontWeight: 400, color: DARK, lineHeight: 1.2 }}>{step.title}</h3>
-                <p style={{ fontFamily: F_SANS, fontSize: 14, color: T_BODY, lineHeight: 1.8 }}>{step.desc}</p>
+          <div className="steps rv" ref={stepsRef}>
+            <div className="prog" style={{ width: `${(liveStep / 2) * 78}%` }} />
+            {[
+              { t: l.st1t, d: l.st1d },
+              { t: l.st2t, d: l.st2d },
+              { t: l.st3t, d: l.st3d },
+            ].map((step, i) => (
+              <div key={i} className={`step${liveStep === i ? ' live' : ''}`}>
+                <div className="ball">{stepIcons[i]}</div>
+                <h3>{step.t}</h3>
+                <p>{step.d}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── PHILOSOPHY STRIP — floresta ao pôr do sol ── */}
-      <section style={{ position: 'relative', padding: 'clamp(64px, 8vw, 100px) 24px', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', inset: 0, backgroundImage: "url('/brand/imagery/06-floresta-por-do-sol.jpg')", backgroundSize: 'cover', backgroundPosition: 'center', filter: 'brightness(0.25) sepia(0.40) saturate(1.30)' }} />
-        <div style={{ position: 'absolute', inset: 0, background: 'rgba(8,8,8,0.70)' }} />
-        <div className="arvo-grain" />
-        <div style={{ position: 'relative', maxWidth: 760, margin: '0 auto', textAlign: 'center' }}>
-          <div style={{ width: 32, height: 1, background: GOLD, margin: '0 auto 32px' }} />
-          <p style={{ fontFamily: F_DISPLAY, fontSize: 'clamp(1.3rem, 3vw, 2.1rem)', fontWeight: 400, fontStyle: 'italic', color: '#fff', lineHeight: 1.55, letterSpacing: '-0.2px' }}>
-            "{l.philoQuote}"
-          </p>
-          <div style={{ marginTop: 32 }}>
-            <p style={{ fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.38)' }}>
-              {l.philoAuthor}
-            </p>
-          </div>
-        </div>
-      </section>
-
       {/* ── FAQ ── */}
-      <section id="faq" style={{ padding: 'clamp(64px, 8vw, 100px) 24px', maxWidth: 760, margin: '0 auto' }}>
-        <div style={{ marginBottom: 52 }}>
-          <p style={{ fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.22em', textTransform: 'uppercase', color: T_SECONDARY, marginBottom: 16 }}>{l.faqEyebrow}</p>
-          <h2 style={{ fontFamily: F_DISPLAY, fontSize: 'clamp(1.7rem, 3vw, 2.3rem)', fontWeight: 400, color: DARK, letterSpacing: '-0.3px' }}>
-            {l.faqH2}
-          </h2>
+      <section className="faq" id="faq">
+        <div className="rv">
+          <Eyebrow color={GOLD}>{l.faqEyebrow}</Eyebrow>
+          <h2>{l.faqH2v3}</h2>
         </div>
-        <div>
-          {FAQS.map((faq, i) => (
-            <div key={i} style={{ borderTop: `1px solid ${BORDER}` }}>
-              <button onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                style={{ width: '100%', display: 'flex', alignItems: 'center', padding: '22px 0', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', gap: 20 }}>
-                <span style={{ fontFamily: F_DISPLAY, fontSize: 20, color: 'rgba(13,13,13,0.16)', flexShrink: 0, width: 30 }}>{String(i + 1).padStart(2, '0')}</span>
-                <span style={{ fontFamily: F_SANS, fontSize: 'clamp(14px, 1.8vw, 16px)', color: DARK, lineHeight: 1.4, flex: 1 }}>{faq.q}</span>
-                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke={T_SECONDARY} strokeWidth={2}
-                  style={{ flexShrink: 0, transition: 'transform 0.25s', transform: openFaq === i ? 'rotate(180deg)' : 'rotate(0deg)' }}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-              <div style={{ display: 'grid', gridTemplateRows: openFaq === i ? '1fr' : '0fr', overflow: 'hidden', transition: 'grid-template-rows 280ms ease' }}>
-                <div style={{ overflow: 'hidden' }}>
-                  <div style={{ paddingBottom: 22, paddingLeft: 50, fontFamily: F_SANS, fontSize: 15, color: T_BODY, lineHeight: 1.85 }}>{faq.a}</div>
-                </div>
-              </div>
-            </div>
+        <div className="list rv">
+          {[
+            { q: l.fq1, a: l.fa1 }, { q: l.fq2, a: l.fa2 }, { q: l.fq3, a: l.fa3 }, { q: l.fq4, a: l.fa4 },
+          ].map((faq, i) => (
+            <details key={i}>
+              <summary>
+                <span className="n">{String(i + 1).padStart(2, '0')}</span>{faq.q}
+                <svg className="chev" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="rgba(13,13,13,0.5)" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+              </summary>
+              <p className="ans">{faq.a}</p>
+            </details>
           ))}
-          <div style={{ borderTop: `1px solid ${BORDER}` }} />
         </div>
       </section>
 
-      {/* ── BOTTOM CTA — broto escuro ── */}
-      <section style={{ position: 'relative', padding: 'clamp(64px, 8vw, 100px) 24px', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', inset: 0, backgroundImage: "url('/brand/imagery/07-broto-escuro.jpg')", backgroundSize: 'cover', backgroundPosition: 'center', filter: 'brightness(0.22) sepia(0.35) saturate(1.20)' }} />
-        <div style={{ position: 'absolute', inset: 0, background: 'rgba(8,8,8,0.75)' }} />
+      {/* ── CTA ── */}
+      <section className="cta">
+        <div className="bg" />
+        <div className="ov" />
         <div className="arvo-grain" />
-        <div style={{ position: 'relative', maxWidth: 560, margin: '0 auto', textAlign: 'center' }}>
-          <div style={{ width: 32, height: 1, background: GOLD, margin: '0 auto 32px' }} />
-          <h2 style={{ fontFamily: F_DISPLAY, fontSize: 'clamp(1.9rem, 4vw, 2.9rem)', fontWeight: 400, lineHeight: 1.10, color: '#fff', letterSpacing: '-0.4px', marginBottom: 18 }}>
-            {l.ctaH2}
-          </h2>
-          <p style={{ fontFamily: F_SANS, fontSize: 15, color: 'rgba(255,255,255,0.58)', lineHeight: 1.75, marginBottom: 40 }}>
-            {l.ctaPara}
-          </p>
-          <Link to="/login?mode=register" className="arvo-hero-cta-primary" style={{ display: 'inline-block' }}>
-            {l.ctaBtn}
-          </Link>
+        <div className="in rv">
+          <div className="rule" />
+          <h2>{l.ctaA}<br />{l.ctaB}</h2>
+          <p>{l.ctaSub}</p>
+          <Link className="btn-gold" to="/login?mode=register">{l.heroCta}</Link>
         </div>
       </section>
 
       {/* ── FOOTER ── */}
-      <footer style={{ borderTop: '1px solid rgba(255,255,255,0.06)', background: DARK, padding: '56px 24px 32px' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-          {/* Row 1 — wordmark + nav */}
-          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', justifyContent: 'space-between', gap: 24, paddingBottom: 28, borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+      <footer style={{ borderTop: '1px solid rgba(255,255,255,0.06)', background: DARK, padding: '52px 24px 30px' }}>
+        <div style={{ maxWidth: 1180, margin: '0 auto' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', justifyContent: 'space-between', gap: 22, paddingBottom: 24, borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <img src="/brand/logo/arvo-symbol-gold.svg" width="20" height="20" alt="" style={{ opacity: 0.55 }} />
-              <span style={{ fontFamily: F_SANS, fontSize: 16, letterSpacing: '0.30em', textIndent: '0.30em', color: '#fff', lineHeight: 1 }}>arvo</span>
+              <span style={{ fontFamily: "'Tenor Sans', serif", fontSize: 16, letterSpacing: '0.30em', textIndent: '0.30em', color: '#fff', lineHeight: 1 }}>arvo</span>
             </div>
-            <div style={{ display: 'flex', gap: 28, alignItems: 'center', flexWrap: 'wrap' }}>
-              <Link to="/privacy" style={{ fontFamily: F_SANS, fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.30)', textDecoration: 'none' }}>{l.footerPrivacy}</Link>
-              <Link to="/terms"   style={{ fontFamily: F_SANS, fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.30)', textDecoration: 'none' }}>{l.footerTerms}</Link>
-              <Link to="/login"   style={{ fontFamily: F_SANS, fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.30)', textDecoration: 'none' }}>{l.footerEnter}</Link>
+            <div style={{ display: 'flex', gap: 26, alignItems: 'center', flexWrap: 'wrap' }}>
+              <Link to="/privacy" style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.32)' }}>{l.footerPrivacy}</Link>
+              <Link to="/terms" style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.32)' }}>{l.footerTerms}</Link>
+              <Link to="/login" style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.32)' }}>{l.footerEnter}</Link>
             </div>
           </div>
-          {/* Row 2 — slogan + socials */}
-          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 16, paddingTop: 24 }}>
-            <span style={{ fontFamily: F_SANS, fontSize: 10, letterSpacing: '0.22em', color: 'rgba(200,184,154,0.30)' }}>
-              {l.footerSlogan}
-            </span>
-            <div style={{ display: 'flex', gap: 20, alignItems: 'center', flexWrap: 'wrap' }}>
-              <a href="https://www.instagram.com/andregutto/" target="_blank" rel="noopener noreferrer" aria-label="Instagram" style={{ color: 'rgba(255,255,255,0.30)', lineHeight: 0 }}>
-                <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
-              </a>
-              <a href="https://www.youtube.com/@andregutto" target="_blank" rel="noopener noreferrer" aria-label="YouTube" style={{ color: 'rgba(255,255,255,0.30)', lineHeight: 0 }}>
-                <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
-              </a>
-            </div>
+          <div style={{ paddingTop: 20, display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', gap: 14 }}>
+            <span style={{ fontSize: 10, letterSpacing: '0.22em', color: 'rgba(200,184,154,0.32)' }}>{l.footerSlogan}</span>
+            <span style={{ fontSize: 10, letterSpacing: '0.1em', color: 'rgba(200,184,154,0.32)' }}>© 2026 arvo</span>
           </div>
         </div>
       </footer>
-
     </div>
   )
 }

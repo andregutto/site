@@ -481,7 +481,9 @@ router.patch('/posts/:id', async (req: any, res: any) => {
   try {
     const { data: post } = await supabaseAdmin.from('community_posts').select('*').eq('id', postId).is('deleted_at', null).maybeSingle()
     if (!post) { res.status(404).json({ error: 'post not found' }); return }
-    if (post.user_id !== userId && !isAdmin(userId)) { res.status(403).json({ error: 'forbidden' }); return }
+    // Editing is owner-only: admins moderate by deleting, never by rewriting
+    // someone else's words.
+    if (post.user_id !== userId) { res.status(403).json({ error: 'forbidden' }); return }
 
     const { data: updated, error } = await supabaseAdmin
       .from('community_posts')
