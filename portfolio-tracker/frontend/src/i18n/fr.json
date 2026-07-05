@@ -2845,6 +2845,9 @@
     "quickGoals": "Objectifs",
     "quickMoments": "Moments",
     "quickProfile": "Profil",
-    "newReplies": "nouvelles réponses"
+    "newReplies": "nouvelles réponses",
+    "goalsLabel": "Liberté financière",
+    "goalEmpty": "Définissez votre objectif et suivez la progression.",
+    "goalCreate": "Créer un plan"
   }
 }

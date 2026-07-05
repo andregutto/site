@@ -24,6 +24,7 @@ interface TodayData {
 }
 
 interface ContactBalance { currency: string; amount: number }
+interface FreedomPlan { id: number; name: string; is_active: boolean; target_amount: number; currency: string; goal_mode?: 'capital' | 'income' }
 
 const GOLD_RGB = '200,184,154'
 
@@ -44,7 +45,7 @@ export default function HomePage() {
   const th = (t as any).home ?? {}
   const navigate = useNavigate()
   const { user } = useAuth()
-  const { fmt, hideValues } = useCurrency()
+  const { fmt, hideValues, fxRates } = useCurrency()
   const setup = useSetupChecklist(user?.id)
 
   const [data, setData] = useState<TodayData | null>(null)
@@ -52,6 +53,7 @@ export default function HomePage() {
   const [wealth, setWealth] = useState<number | null>(null)
   const [hasAssets, setHasAssets] = useState<boolean | null>(null)
   const [balances, setBalances] = useState<{ toReceive: ContactBalance[]; toPay: ContactBalance[] } | null>(null)
+  const [plan, setPlan] = useState<FreedomPlan | null | undefined>(undefined) // undefined = carregando
 
   useEffect(() => {
     apiFetch<TodayData>('/home/today')
@@ -71,6 +73,9 @@ export default function HomePage() {
         setBalances(toReceive.length || toPay.length ? { toReceive, toPay } : null)
       })
       .catch(() => {})
+    apiFetch<FreedomPlan[]>('/finances/freedom-plans')
+      .then(plans => setPlan((plans ?? []).find(p => p.is_active) ?? null))
+      .catch(() => setPlan(null))
   }, [])
 
   function fmtCur(amount: number, cur: string) {
@@ -197,6 +202,38 @@ export default function HomePage() {
               )}
             </Link>
           )}
+
+          {/* Metas — progresso rumo à liberdade financeira, ou convite pra criar o plano */}
+          {plan === null && (
+            <Link to="/finances/freedom" style={{ ...card, padding: '16px 18px', textDecoration: 'none', display: 'block' }}>
+              <p style={cardLabel}>{th.goalsLabel ?? 'Liberdade financeira'}</p>
+              <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-soft)', marginTop: 8, lineHeight: 1.4 }}>{th.goalEmpty ?? 'Defina sua meta e acompanhe o progresso.'}</p>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 12, fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, letterSpacing: '0.06em', textTransform: 'uppercase', padding: '8px 15px', borderRadius: 999, background: 'var(--arvo-pill-active-bg)', color: 'var(--arvo-pill-active-fg)' }}>
+                <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 5v14M5 12h14" /></svg>
+                {th.goalCreate ?? 'Criar plano'}
+              </span>
+            </Link>
+          )}
+          {plan && (() => {
+            const cur = plan.currency as 'USD' | 'EUR'
+            const targetBrl = plan.currency === 'BRL' ? plan.target_amount : plan.target_amount * (fxRates[cur] ?? 1)
+            const pct = wealth != null && targetBrl > 0 ? Math.min(100, (wealth / targetBrl) * 100) : 0
+            return (
+              <Link to="/finances/freedom" style={{ ...card, padding: '16px 18px', textDecoration: 'none', display: 'block' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                  <p style={cardLabel}>{th.goalsLabel ?? 'Liberdade financeira'}</p>
+                  {!hideValues && <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, fontWeight: 600, color: 'var(--arvo-gold-text, #8C6A28)' }}>{Math.round(pct)}%</span>}
+                </div>
+                <p className="arvo-num" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 21, color: 'var(--arvo-fg)', marginTop: 6 }}>
+                  {wealth != null ? fmt(wealth, 0) : '…'}
+                  <span style={{ fontSize: 12, color: 'var(--arvo-fg-soft)' }}> {th.ofBudget ?? 'de'} {fmt(targetBrl, 0)}</span>
+                </p>
+                <div style={{ height: 6, borderRadius: 99, background: 'var(--arvo-hover-bg)', overflow: 'hidden', marginTop: 10 }}>
+                  <div style={{ width: `${pct}%`, height: '100%', borderRadius: 99, background: 'var(--arvo-gold)' }} />
+                </div>
+              </Link>
+            )
+          })()}
 
           {/* Viagem — com miniatura da capa, linka pro detalhe (onde ficam as despesas) */}
           {data?.next_trip && (
