@@ -73,11 +73,16 @@ export default function CommunityCategoryPage() {
         </div>
         <button
           onClick={() => setShowNewTopic(true)}
+          title={tc?.newTopic ?? 'Novo tópico'}
           style={{
-            fontFamily: 'var(--arvo-font-body)', fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase',
-            padding: '10px 18px', borderRadius: 10, border: 'none', cursor: 'pointer', background: OCRE, color: '#1a1200',
+            width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 18, lineHeight: 1, borderRadius: 999,
+            background: OCRE, color: '#1a1200', border: 'none', cursor: 'pointer',
+            transition: 'all 160ms ease', flexShrink: 0,
           }}
-        >+ {tc?.newTopic ?? 'Novo tópico'}</button>
+          onMouseEnter={e => (e.currentTarget.style.opacity = '0.85')}
+          onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+        >+</button>
       </div>
 
       {topics.length === 0 ? (

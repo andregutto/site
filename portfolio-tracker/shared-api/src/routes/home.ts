@@ -74,15 +74,28 @@ router.get('/today', async (req: any, res: any) => {
       if (t.start_date >= todayStr) { nextTrip = { ...t, ongoing: false }; break }
     }
 
-    // Momento em andamento (ou sem data de fim), do próprio usuário
+    // Momento do card: nunca os ocultos de par/grupo (is_pair_default); prioridade
+    // 1) em andamento pelas datas, 2) o próximo futuro, 3) o momento real mais
+    // recente sem datas (um evento ainda sem período definido).
     const { data: moments } = await supabaseAdmin
       .from('finance_moments')
-      .select('id, name, icon, color, start_date, end_date')
+      .select('id, name, icon, color, start_date, end_date, created_at')
       .eq('user_id', userId)
-      .or(`end_date.is.null,end_date.gte.${todayStr}`)
+      .eq('is_pair_default', false)
       .order('created_at', { ascending: false })
-      .limit(1)
-    const activeMoment = moments && moments.length ? moments[0] : null
+
+    let activeMoment: any = null
+    const dated = (moments ?? []).filter((m: any) => m.start_date)
+      .sort((a: any, b: any) => a.start_date.localeCompare(b.start_date))
+    for (const m of dated) {
+      const ongoing = m.start_date <= todayStr && (!m.end_date || m.end_date >= todayStr)
+      if (ongoing) { activeMoment = { ...m, ongoing: true }; break }
+      if (m.start_date >= todayStr) { activeMoment = { ...m, ongoing: false }; break }
+    }
+    if (!activeMoment) {
+      const dateless = (moments ?? []).find((m: any) => !m.start_date && !m.end_date)
+      if (dateless) activeMoment = { ...dateless, ongoing: false }
+    }
 
     res.json({
       first_name: firstName,

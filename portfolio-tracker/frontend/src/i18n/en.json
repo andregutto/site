@@ -2831,8 +2831,9 @@
     "seeAll": "See all",
     "tripNow": "Trip in progress",
     "tripNext": "Next trip",
-    "momentLabel": "Active moment",
+    "momentLabel": "Moment in progress",
     "until": "until",
-    "shortcuts": "Shortcuts"
+    "shortcuts": "Shortcuts",
+    "momentNext": "Next moment"
   }
 }

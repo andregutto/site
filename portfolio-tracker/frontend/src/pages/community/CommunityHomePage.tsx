@@ -154,13 +154,16 @@ export default function CommunityHomePage() {
             <button
               type="button"
               onClick={() => setShowNewTopic(true)}
+              title={tc?.newTopic ?? 'Novo tópico'}
               style={{
-                fontFamily: 'var(--arvo-font-body)', fontSize: 12, padding: '7px 16px', borderRadius: 999,
-                border: 'none', background: OCRE, color: '#1a1200', cursor: 'pointer', whiteSpace: 'nowrap',
-              }}
-            >
-              + {tc?.newTopic ?? 'Novo tópico'}
-            </button>
+            width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 18, lineHeight: 1, borderRadius: 999,
+            background: OCRE, color: '#1a1200', border: 'none', cursor: 'pointer',
+            transition: 'all 160ms ease', flexShrink: 0,
+          }}
+              onMouseEnter={e => (e.currentTarget.style.opacity = '0.85')}
+              onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+            >+</button>
             <button
               type="button"
               onClick={toggleMine}

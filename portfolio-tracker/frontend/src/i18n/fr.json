@@ -2831,8 +2831,9 @@
     "seeAll": "Tout voir",
     "tripNow": "Voyage en cours",
     "tripNext": "Prochain voyage",
-    "momentLabel": "Moment actif",
+    "momentLabel": "Moment en cours",
     "until": "jusqu’au",
-    "shortcuts": "Raccourcis"
+    "shortcuts": "Raccourcis",
+    "momentNext": "Prochain moment"
   }
 }

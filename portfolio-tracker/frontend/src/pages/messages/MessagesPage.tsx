@@ -165,11 +165,16 @@ export default function MessagesPage() {
         <h1 style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 22, color: 'var(--arvo-fg)' }}>{tm.title ?? 'Mensagens'}</h1>
         <button
           onClick={() => setShowPicker(v => !v)}
+          title={tm.newMessage ?? 'Nova mensagem'}
           style={{
-            fontFamily: 'var(--arvo-font-body)', fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase',
-            padding: '9px 16px', borderRadius: 10, border: 'none', cursor: 'pointer', background: GOLD, color: '#1a1200',
+            width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 18, lineHeight: 1, borderRadius: 999,
+            background: GOLD, color: '#1a1200', border: 'none', cursor: 'pointer',
+            transition: 'all 160ms ease', flexShrink: 0,
           }}
-        >{tm.newMessage ?? 'Nova mensagem'}</button>
+          onMouseEnter={e => (e.currentTarget.style.opacity = '0.85')}
+          onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+        >+</button>
       </div>
 
       <div className="flex items-center gap-1" style={{ background: 'var(--arvo-chip-bg, var(--arvo-hover-bg))', borderRadius: 999, padding: 3, width: 'fit-content' }}>

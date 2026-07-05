@@ -14,7 +14,7 @@ interface TodayData {
   first_name: string
   hot_topics: Array<{ id: number; title: string; category_slug: string; category_name: string | null; reply_count: number; last_post_at: string }>
   next_trip: { id: number; title: string; destination: string | null; start_date: string; end_date: string | null; ongoing: boolean } | null
-  active_moment: { id: number; name: string; icon: string; color: string; start_date: string | null; end_date: string | null } | null
+  active_moment: { id: number; name: string; icon: string; color: string; start_date: string | null; end_date: string | null; ongoing: boolean } | null
 }
 
 function timeAgo(iso: string): string {
@@ -144,7 +144,7 @@ export default function HomePage() {
           )}
           {data?.active_moment && (
             <Link to="/finances/moments" style={{ ...card, padding: '14px 18px', textDecoration: 'none', display: 'block' }}>
-              <p style={cardLabel}>{th.momentLabel ?? 'Momento ativo'}</p>
+              <p style={cardLabel}>{data.active_moment.ongoing ? (th.momentLabel ?? 'Momento em andamento') : (th.momentNext ?? 'Próximo momento')}</p>
               <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 18, color: 'var(--arvo-fg)', marginTop: 6 }}>{data.active_moment.name}</p>
               {data.active_moment.end_date && (
                 <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)', marginTop: 3 }}>
