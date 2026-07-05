@@ -203,6 +203,10 @@ export default function PerformancePage() {
   const [showIBOV,  setShowIBOV]  = useState(false)
   const [showSP500, setShowSP500] = useState(false)
   const [chartView, setChartView] = useState<'return' | 'value'>('return')
+  // Escala do gráfico de patrimônio. Log é essencial no "Início": um patrimônio
+  // que multiplicou centenas de vezes deixa os primeiros anos colados no zero
+  // em escala linear (não é bug de dado, é o range).
+  const [valueScale, setValueScale] = useState<'linear' | 'log'>('linear')
 
   const [activePlan, setActivePlan] = useState<FreedomPlan | null | undefined>(undefined)
   useEffect(() => {
@@ -495,6 +499,17 @@ export default function PerformancePage() {
                         { value: 'value'  as const, label: t.dashboard.patrimony },
                       ]}
                     />
+                    {chartView === 'value' && (
+                      <Segmented
+                        ariaLabel="Escala"
+                        value={valueScale}
+                        onChange={setValueScale}
+                        options={[
+                          { value: 'linear' as const, label: t.performance.scaleLinear ?? 'Linear' },
+                          { value: 'log' as const, label: t.performance.scaleLog ?? 'Log' },
+                        ]}
+                      />
+                    )}
                     {chartView === 'return' && (
                       <div className="flex items-center gap-1.5">
                         {([
@@ -537,7 +552,10 @@ export default function PerformancePage() {
                             const n = typeof v === 'number' ? v : 0
                             return currency === 'BRL' ? `${(n / 1000).toFixed(0)}k` : (n >= 1000 ? `${(n / 1000).toFixed(0)}k` : n.toFixed(0))
                           }}
-                          domain={valueChartYDomain}
+                          scale={valueScale}
+                          domain={valueScale === 'log'
+                            ? [Math.max(1, Math.floor(Number(valueChartYDomain[0]) || 1)), 'auto']
+                            : valueChartYDomain}
                           allowDataOverflow={!!activePlan}
                         />
                         <Tooltip

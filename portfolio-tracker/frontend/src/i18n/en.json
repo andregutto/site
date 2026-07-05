@@ -1380,7 +1380,9 @@
     "visitDashboard": "Visit the Dashboard to load asset prices.",
     "wallet": "Portfolio",
     "ytd": "This year (YTD)",
-    "daily": "Daily"
+    "daily": "Daily",
+    "scaleLinear": "Linear",
+    "scaleLog": "Log"
   },
   "indices": {
     "title": "Market Indices",

@@ -1380,7 +1380,9 @@
     "visitDashboard": "Accédez au Dashboard pour charger les prix des actifs.",
     "wallet": "Portefeuille",
     "ytd": "Cette année (YTD)",
-    "daily": "Journalier"
+    "daily": "Journalier",
+    "scaleLinear": "Linéaire",
+    "scaleLog": "Log"
   },
   "indices": {
     "title": "Indices de marché",

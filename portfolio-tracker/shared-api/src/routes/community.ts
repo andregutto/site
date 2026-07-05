@@ -721,10 +721,11 @@ router.get('/admin/members', async (req: any, res: any) => {
   const q = String(req.query.q ?? '').trim().toLowerCase()
 
   try {
-    const { data: members } = await supabaseAdmin
+    const { data: members, error } = await supabaseAdmin
       .from('community_members')
-      .select('user_id, tier, created_at')
-      .order('created_at', { ascending: true })
+      .select('user_id, tier, joined_at')
+      .order('joined_at', { ascending: true })
+    if (error) { res.status(500).json({ error: error.message }); return }
     const adminIds = await getAdminIds()
 
     const rows = await Promise.all((members ?? []).map(async (m: any) => {
@@ -735,7 +736,7 @@ router.get('/admin/members', async (req: any, res: any) => {
         username: d.username ?? null,
         avatar_url: d.avatar_url ?? null,
         tier: m.tier,
-        joined_at: m.created_at,
+        joined_at: m.joined_at,
         is_admin: adminIds.has(m.user_id),
       }
     }))
