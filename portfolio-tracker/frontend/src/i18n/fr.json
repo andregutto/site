@@ -2859,6 +2859,10 @@
     "incomeLabel": "Revenu",
     "momentLast": "Dernier moment",
     "goalAchieved": "atteint",
-    "goalForYear": "objectif"
+    "goalForYear": "objectif",
+    "indicatorsLabel": "Indicateurs",
+    "returnLabel": "Rendement",
+    "gainLabel": "Gain",
+    "contributionsLabel": "Apports"
   }
 }

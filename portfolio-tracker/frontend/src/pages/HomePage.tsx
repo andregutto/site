@@ -7,7 +7,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { PageLoader } from '../components/ArvoLoader'
 import { useSetupChecklist } from '../components/SetupChecklist'
 import { useActiveFriends, type ActiveFriend } from '../hooks/useActiveFriends'
-import { usePerformanceMonthly } from '../hooks/usePortfolio'
+import { usePerformanceMonthly, usePerformanceSummary, usePerformanceInception } from '../hooks/usePortfolio'
 import { PairMomentModal } from './PeoplePage'
 import CategoryIcon from './community/_shared/CategoryIcon'
 import type { PortfolioValue } from '../lib/types'
@@ -45,27 +45,42 @@ const cardLabel: React.CSSProperties = { fontFamily: 'var(--arvo-font-body)', fo
 const pillStyle: React.CSSProperties = { display: 'inline-flex', alignItems: 'center', gap: 8, cursor: 'pointer', padding: '11px 18px', borderRadius: 999, border: '1px solid var(--arvo-border)', background: 'var(--arvo-surface)', color: 'var(--arvo-fg-muted)', fontFamily: 'var(--arvo-font-body)', fontSize: 13.5 }
 
 // Mini gráfico da evolução do patrimônio no hero: legenda + meses nas pontas +
-// ponto no valor atual, pra deixar claro o que é (patrimônio) e o período.
-function Sparkline({ values, caption, startLabel, endLabel }: { values: number[]; caption: string; startLabel: string; endLabel: string }) {
+// pontos interativos (hover no desktop, toque no mobile) mostrando mês e valor.
+function Sparkline({ data, caption, startLabel, endLabel }: { data: { v: number; monthLabel: string; valueLabel: string }[]; caption: string; startLabel: string; endLabel: string }) {
+  const [active, setActive] = useState<number | null>(null)
   const w = 320, h = 44, pad = 3
-  const min = Math.min(...values), max = Math.max(...values)
+  const vals = data.map(d => d.v)
+  const min = Math.min(...vals), max = Math.max(...vals)
   const range = max - min || 1
-  const coords = values.map((v, i) => ({
-    x: pad + (i / (values.length - 1)) * (w - 2 * pad),
-    y: h - pad - ((v - min) / range) * (h - 2 * pad),
+  const coords = data.map((d, i) => ({
+    x: pad + (i / (data.length - 1)) * (w - 2 * pad),
+    y: h - pad - ((d.v - min) / range) * (h - 2 * pad),
   }))
   const pts = coords.map(c => `${c.x.toFixed(1)},${c.y.toFixed(1)}`)
   const area = `M${pad},${h} L${pts.join(' L')} L${w - pad},${h} Z`
-  const last = coords[coords.length - 1]
+  const shownIdx = active ?? data.length - 1
+  const dot = coords[shownIdx]
+  const tipXpct = active != null ? (coords[active].x / w) * 100 : 0
+  const tipShift = tipXpct <= 20 ? '0' : tipXpct >= 80 ? '-100%' : '-50%'
   return (
     <div style={{ marginTop: 18 }}>
       <p style={{ ...cardLabel, fontSize: 9.5, color: '#8C6A28', marginBottom: 7 }}>{caption}</p>
-      <div style={{ position: 'relative', width: '100%', height: h }}>
+      <div style={{ position: 'relative', width: '100%', height: h }} onMouseLeave={() => setActive(null)}>
         <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}>
           <path d={area} fill="rgba(200,184,154,0.16)" stroke="none" />
           <polyline points={pts.join(' ')} fill="none" stroke="#8C6A28" strokeWidth={1.5} strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
         </svg>
-        <span style={{ position: 'absolute', left: `${(last.x / w) * 100}%`, top: `${(last.y / h) * 100}%`, transform: 'translate(-50%,-50%)', width: 7, height: 7, borderRadius: '50%', background: '#8C6A28', boxShadow: '0 0 0 2px var(--arvo-surface)' }} />
+        <span style={{ position: 'absolute', left: `${(dot.x / w) * 100}%`, top: `${(dot.y / h) * 100}%`, transform: 'translate(-50%,-50%)', width: active != null ? 9 : 7, height: active != null ? 9 : 7, borderRadius: '50%', background: '#8C6A28', boxShadow: '0 0 0 2px var(--arvo-surface)', pointerEvents: 'none', transition: 'width .1s, height .1s' }} />
+        <div style={{ position: 'absolute', inset: 0, display: 'flex' }}>
+          {data.map((_, i) => (
+            <div key={i} onMouseEnter={() => setActive(i)} onClick={e => { e.preventDefault(); e.stopPropagation(); setActive(a => a === i ? null : i) }} style={{ flex: 1, cursor: 'pointer' }} />
+          ))}
+        </div>
+        {active != null && (
+          <div style={{ position: 'absolute', left: `${tipXpct}%`, top: `${(coords[active].y / h) * 100}%`, transform: `translate(${tipShift}, calc(-100% - 9px))`, pointerEvents: 'none', background: 'var(--arvo-fg)', color: 'var(--arvo-surface)', borderRadius: 8, padding: '5px 9px', whiteSpace: 'nowrap', fontFamily: 'var(--arvo-font-body)', fontSize: 11, boxShadow: '0 4px 14px rgba(0,0,0,0.2)', zIndex: 3 }}>
+            <span style={{ opacity: 0.7 }}>{data[active].monthLabel}</span> <span style={{ fontWeight: 600 }}>{data[active].valueLabel}</span>
+          </div>
+        )}
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 5 }}>
         <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 10, color: 'var(--arvo-fg-soft)' }}>{startLabel}</span>
@@ -112,6 +127,11 @@ export default function HomePage() {
     const [y, m] = ym.split('-').map(Number)
     return new Date(y, m - 1, 1).toLocaleDateString(intlLocale, { month: 'short' }).replace('.', '') + '/' + String(y).slice(2)
   }
+
+  // Três indicadores principais desde o início (rentabilidade, ganho, aportes)
+  const inception = usePerformanceInception()
+  const inceptionMonth = inception ? inception.slice(0, 7) : perfFrom
+  const { data: perfSummary } = usePerformanceSummary(inceptionMonth, perfTo)
 
   useEffect(() => {
     apiFetch<TodayData>('/home/today')
@@ -176,9 +196,9 @@ export default function HomePage() {
         <div className="lg:col-span-2 space-y-5">
           {/* Patrimônio — hero com brilho dourado, valor obedece o olho global */}
           {showWealth && (
-            <Link to="/dashboard" className="p-6 sm:p-8" style={{
+            <div className="p-6 sm:p-8" style={{
               ...card,
-              position: 'relative', overflow: 'hidden', display: 'block', textDecoration: 'none',
+              position: 'relative', overflow: 'hidden',
               border: `1px solid rgba(${GOLD_RGB},0.55)`,
               background: `linear-gradient(150deg, rgba(${GOLD_RGB},0.16), var(--arvo-surface) 62%)`,
               boxShadow: `0 12px 40px -16px rgba(${GOLD_RGB},0.7)`,
@@ -198,19 +218,19 @@ export default function HomePage() {
                     )}
                   </div>
                 </div>
-                <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '9px 16px', borderRadius: 999, background: 'var(--arvo-pill-active-bg)', color: 'var(--arvo-pill-active-fg)', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                <Link to="/dashboard" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '9px 16px', borderRadius: 999, background: 'var(--arvo-pill-active-bg)', color: 'var(--arvo-pill-active-fg)', whiteSpace: 'nowrap', flexShrink: 0, textDecoration: 'none' }}>
                   {th.openDashboard ?? 'Ver dashboard'}
-                </span>
+                </Link>
               </div>
               {!hideValues && wealthSeries.length >= 2 && (
                 <Sparkline
-                  values={wealthSeries.map(m => m.total)}
+                  data={wealthSeries.map(m => ({ v: m.total, monthLabel: fmtMon(m.month), valueLabel: fmt(m.total, 0) }))}
                   caption={th.wealthTrend ?? 'Evolução · 12 meses'}
                   startLabel={fmtMon(wealthSeries[0].month)}
                   endLabel={fmtMon(wealthSeries[wealthSeries.length - 1].month)}
                 />
               )}
-            </Link>
+            </div>
           )}
 
           {/* Finanças do mês — gasto x orçado, renda e saldo (tudo de transações reais) */}
@@ -289,6 +309,33 @@ export default function HomePage() {
 
         {/* Coluna lateral */}
         <div className="space-y-5">
+          {/* Indicadores — três principais desde o início (rentabilidade, ganho, aportes) */}
+          {perfSummary && perfSummary.return_pct != null && (
+            <Link to="/performance" style={{ ...card, padding: '18px 20px', textDecoration: 'none', display: 'block' }}>
+              <p style={cardLabel}>{th.indicatorsLabel ?? 'Indicadores'}</p>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, marginTop: 12 }}>
+                <div>
+                  <p style={{ ...cardLabel, fontSize: 9.5 }}>{th.returnLabel ?? 'Rentabilidade'}</p>
+                  <p className="arvo-num" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 16, marginTop: 4 }}>
+                    <span className={hideValues ? undefined : perfSummary.return_pct >= 0 ? 'arvo-delta-pos' : 'arvo-delta-neg'}>
+                      {hideValues ? '•••' : `${perfSummary.return_pct >= 0 ? '+' : ''}${perfSummary.return_pct.toFixed(1)}%`}
+                    </span>
+                  </p>
+                </div>
+                <div>
+                  <p style={{ ...cardLabel, fontSize: 9.5 }}>{th.gainLabel ?? 'Ganho'}</p>
+                  <p className="arvo-num" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 16, marginTop: 4 }}>
+                    <span className={hideValues ? undefined : perfSummary.return_abs >= 0 ? 'arvo-delta-pos' : 'arvo-delta-neg'}>{fmt(perfSummary.return_abs, 0)}</span>
+                  </p>
+                </div>
+                <div>
+                  <p style={{ ...cardLabel, fontSize: 9.5 }}>{th.contributionsLabel ?? 'Aportes'}</p>
+                  <p className="arvo-num" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 16, color: 'var(--arvo-fg)', marginTop: 4 }}>{fmt(perfSummary.contributions, 0)}</p>
+                </div>
+              </div>
+            </Link>
+          )}
+
           {/* Metas — progresso rumo à liberdade financeira, ou convite pra criar o plano */}
           {plan === null && (
             <Link to="/finances/freedom" style={{ ...card, padding: '16px 18px', textDecoration: 'none', display: 'block' }}>

@@ -2859,6 +2859,10 @@
     "incomeLabel": "Renda",
     "momentLast": "Último momento",
     "goalAchieved": "conquistado",
-    "goalForYear": "meta para"
+    "goalForYear": "meta para",
+    "indicatorsLabel": "Indicadores",
+    "returnLabel": "Rentabilidade",
+    "gainLabel": "Ganho",
+    "contributionsLabel": "Aportes"
   }
 }
