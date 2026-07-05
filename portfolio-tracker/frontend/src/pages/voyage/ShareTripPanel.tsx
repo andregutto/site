@@ -225,7 +225,7 @@ export function ShareModal({ trip, onUpdate, onClose }: Props & { onClose: () =>
           ) : (
             <>
               <p style={{ fontFamily: 'var(--arvo-font-serif)', fontStyle: 'italic', fontSize: 13, color: 'var(--arvo-fg-soft)', lineHeight: 1.6 }}>
-                {sv.intro ?? 'Gere um link para compartilhar o roteiro com seguidores — eles verão os lugares, notas e podem importar para o Google Maps.'}
+                {sv.intro ?? 'Gere um link para compartilhar o roteiro com seguidores: eles verão os lugares, notas e podem importar para o Google Maps.'}
               </p>
 
               <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>

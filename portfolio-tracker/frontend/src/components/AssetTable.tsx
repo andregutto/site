@@ -355,7 +355,7 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
                           {groupRentab >= 0 ? '+' : ''}{groupRentab.toFixed(2)}%
                         </span>
                       ) : (
-                        <span className="text-xs" style={{ color: 'var(--arvo-fg-faint)' }}>—</span>
+                        <span className="text-xs" style={{ color: 'var(--arvo-fg-faint)' }}>-</span>
                       )}
                     </td>
                   </tr>
@@ -395,7 +395,7 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
                           </div>
                         </td>
                         <td className="px-4 py-3 text-right arvo-num" style={{ color: 'var(--arvo-fg-muted)' }}>
-                          {asset.holdings != null ? fmtNumber(asset.holdings, 6) : '—'}
+                          {asset.holdings != null ? fmtNumber(asset.holdings, 6) : '-'}
                         </td>
                         <td className="px-4 py-3 text-right arvo-num" style={{ color: 'var(--arvo-fg-muted)' }}>
                           {asset.price != null ? (
@@ -407,25 +407,25 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
                                 </div>
                               )}
                             </div>
-                          ) : '—'}
+                          ) : '-'}
                         </td>
                         <td className="px-4 py-3 text-right arvo-num" style={{ color: 'var(--arvo-fg-muted)' }}>
                           {asset.needs_manual && asset.invested_brl == null ? (
                             <span className="text-xs font-medium" style={{ color: 'var(--arvo-ocre)' }}>{d.enterValue}</span>
                           ) : asset.invested_brl != null ? (
                             fmt(asset.invested_brl)
-                          ) : '—'}
+                          ) : '-'}
                         </td>
                         <td className="px-4 py-3 text-right font-medium arvo-num">
                           {asset.needs_manual ? (
-                            <span className="text-xs" style={{ color: 'var(--arvo-fg-soft)' }}>—</span>
+                            <span className="text-xs" style={{ color: 'var(--arvo-fg-soft)' }}>-</span>
                           ) : (
                             <span style={{ color: 'var(--arvo-fg)' }}>{fmt(asset.value_brl)}</span>
                           )}
                         </td>
                         <td className="px-4 py-3 text-right arvo-num" style={{ color: 'var(--arvo-fg-soft)' }}>
                           {asset.needs_manual || portfolioTotal === 0
-                            ? '—'
+                            ? '-'
                             : ((asset.value_brl / portfolioTotal) * 100).toFixed(1) + '%'}
                         </td>
                         <td className="px-4 py-3 text-right">
@@ -458,7 +458,7 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
                               )
                             })()
                           ) : (
-                            <span className="text-xs" style={{ color: 'var(--arvo-fg-faint)' }}>—</span>
+                            <span className="text-xs" style={{ color: 'var(--arvo-fg-faint)' }}>-</span>
                           )}
                         </td>
                       </tr>
@@ -561,7 +561,7 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
                           <div className="flex items-center gap-2 shrink-0">
                             <div className="text-right">
                               <div className="text-sm font-medium arvo-num" style={{ color: 'var(--arvo-fg)' }}>
-                                {asset.needs_manual ? '—' : fmt(asset.value_brl)}
+                                {asset.needs_manual ? '-' : fmt(asset.value_brl)}
                               </div>
                               {!returnsLoading && displayRet != null && (
                                 <div className={`text-xs font-semibold arvo-num ${displayRet >= 0 ? 'arvo-delta-pos' : 'arvo-delta-neg'}`}>
@@ -622,7 +622,7 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
                               <span className="font-medium arvo-num" style={{ color: 'var(--arvo-fg)' }}>
                                 {asset.needs_manual && asset.invested_brl == null
                                   ? <span style={{ color: 'var(--arvo-ocre)' }}>{d.enterValue}</span>
-                                  : asset.invested_brl != null ? fmt(asset.invested_brl) : '—'}
+                                  : asset.invested_brl != null ? fmt(asset.invested_brl) : '-'}
                               </span>
                             </div>
                             {!asset.needs_manual && portfolioTotal > 0 && (

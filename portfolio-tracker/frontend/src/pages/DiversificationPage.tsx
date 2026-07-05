@@ -480,7 +480,7 @@ export default function DiversificationPage() {
                   formatter={(v: unknown, _name: unknown, props: { payload?: { risk?: number } }) => {
                     const riskLevel = props.payload?.risk ?? 0
                     const riskLabel = [d.riskLevelVeryLow, d.riskLevelLow, d.riskLevelMedium, d.riskLevelHigh, d.riskLevelVeryHigh][riskLevel - 1] ?? ''
-                    return [`${v}% — ${riskLabel}`, d.allocationPct]
+                    return [`${v}% · ${riskLabel}`, d.allocationPct]
                   }}
                   contentStyle={{ fontSize: 12, border: '1px solid var(--arvo-border)', borderRadius: 8 }}
                 />
@@ -503,7 +503,7 @@ export default function DiversificationPage() {
               ].map(r => (
                 <span key={r.level} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: 'var(--arvo-fg-soft)' }}>
                   <span style={{ width: 10, height: 10, borderRadius: 2, background: r.color, display: 'inline-block' }} />
-                  {r.level} — {r.label}
+                  {r.level} · {r.label}
                 </span>
               ))}
             </div>

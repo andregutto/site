@@ -19,14 +19,14 @@ type PeriodMode = 'last_5d' | 'current_month' | 'last_30d' | 'ytd' | 'last_12m' 
 const CARD_INDICES = ['IBOV', 'CDI', 'SP500', 'IPCA'] as const
 
 function fmtVal(v: number | null, unit: string) {
-  if (v == null) return '—'
+  if (v == null) return '-'
   if (unit === 'pts') return v.toLocaleString('pt-BR', { maximumFractionDigits: 0 })
   if (unit === '% a.a.' || unit === '% a.m.') return `${v.toFixed(2)}%`
   return v.toFixed(2)
 }
 
 function fmtPct(v: number | null) {
-  if (v == null) return '—'
+  if (v == null) return '-'
   return `${v >= 0 ? '+' : ''}${v.toFixed(2)}%`
 }
 

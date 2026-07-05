@@ -224,7 +224,7 @@ export default function PublicMomentPage() {
                 </span>
                 <span className="text-sm">{(tx.category as { icon: string } | null)?.icon ?? '❓'}</span>
                 <span className="flex-1 truncate text-xs" style={{ color: 'var(--arvo-fg-muted)' }}>
-                  {tx.description ?? (tx.category as { name: string } | null)?.name ?? '—'}
+                  {tx.description ?? (tx.category as { name: string } | null)?.name ?? '-'}
                 </span>
                 <span className="text-xs font-semibold shrink-0 arvo-num" style={{ color: 'var(--arvo-fg)' }}>
                   {fmt(Math.abs(tx.amount), tx.currency, dateLocale)}

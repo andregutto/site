@@ -371,7 +371,7 @@ export default function ImportB3Page() {
             <h1 style={{ fontFamily: 'var(--arvo-font-display)', fontWeight: 400, fontSize: 'clamp(22px, 2.2vw, 26px)', letterSpacing: 'var(--arvo-track-normal)', lineHeight: 'var(--arvo-leading-tight)', color: 'var(--arvo-fg)' }}>
               Importar eventos corporativos B3
             </h1>
-            <p className="text-sm text-[var(--arvo-fg-soft)] mt-1">Extrato de Movimentação — Área do Investidor da B3</p>
+            <p className="text-sm text-[var(--arvo-fg-soft)] mt-1">Extrato de Movimentação · Área do Investidor da B3</p>
           </div>
         </div>
 
@@ -437,7 +437,7 @@ export default function ImportB3Page() {
           <div>
             <span className="arvo-eyebrow block mb-1">Aportes</span>
             <h1 style={{ fontFamily: 'var(--arvo-font-display)', fontWeight: 400, fontSize: 'clamp(22px, 2.2vw, 26px)', letterSpacing: 'var(--arvo-track-normal)', lineHeight: 'var(--arvo-leading-tight)', color: 'var(--arvo-fg)' }}>
-              Prévia — Eventos corporativos
+              Prévia · Eventos corporativos
             </h1>
             <p className="text-sm text-[var(--arvo-fg-soft)] mt-1">{fmtDate(summary.date_from)} → {fmtDate(summary.date_to)}</p>
           </div>
@@ -501,10 +501,10 @@ export default function ImportB3Page() {
                       +{new Intl.NumberFormat('pt-BR').format(op.quantity)}
                     </td>
                     <td className="px-4 py-2.5 text-right tabular-nums text-[var(--arvo-fg-muted)]">
-                      {op.price > 0 ? fmtBrl(op.price) : '—'}
+                      {op.price > 0 ? fmtBrl(op.price) : '-'}
                     </td>
                     <td className="px-4 py-2.5 text-right tabular-nums font-medium text-[var(--arvo-fg)]">
-                      {op.value_brl > 0 ? fmtBrl(op.value_brl) : '—'}
+                      {op.value_brl > 0 ? fmtBrl(op.value_brl) : '-'}
                     </td>
                   </tr>
                 ))}
@@ -621,7 +621,7 @@ export default function ImportB3Page() {
             <h1 style={{ fontFamily: 'var(--arvo-font-display)', fontWeight: 400, fontSize: 'clamp(22px, 2.2vw, 26px)', letterSpacing: 'var(--arvo-track-normal)', lineHeight: 'var(--arvo-leading-tight)', color: 'var(--arvo-fg)' }}>
               Importar negociações B3
             </h1>
-            <p className="text-sm text-[var(--arvo-fg-soft)] mt-1">Extrato de Negociação — Área do Investidor da B3</p>
+            <p className="text-sm text-[var(--arvo-fg-soft)] mt-1">Extrato de Negociação · Área do Investidor da B3</p>
           </div>
         </div>
 
@@ -938,7 +938,7 @@ export default function ImportB3Page() {
 
                   {active.length > 0 && (
                     <div className="space-y-1.5">
-                      <p className="text-xs font-medium text-[var(--arvo-fg)]">Em carteira — impacto na Performance:</p>
+                      <p className="text-xs font-medium text-[var(--arvo-fg)]">Em carteira · impacto na Performance:</p>
                       <div className="flex flex-wrap gap-2">
                         {active.map(d => (
                           <span key={d.code} className="text-xs px-2.5 py-1 rounded-full font-semibold" style={{ background: 'var(--arvo-ocre-tint)', color: 'var(--arvo-fg-muted)' }}>
@@ -956,7 +956,7 @@ export default function ImportB3Page() {
 
                   {inactive.length > 0 && (
                     <div className="space-y-1.5">
-                      <p className="text-xs font-medium text-[var(--arvo-fg-muted)]">Já vendidos — sem impacto relevante:</p>
+                      <p className="text-xs font-medium text-[var(--arvo-fg-muted)]">Já vendidos · sem impacto relevante:</p>
                       <div className="flex flex-wrap gap-2">
                         {inactive.map(d => (
                           <span key={d.code} className="text-xs px-2.5 py-1 rounded-full font-semibold" style={{ background: 'var(--arvo-surface-2)', color: 'var(--arvo-fg-muted)' }}>
@@ -965,7 +965,7 @@ export default function ImportB3Page() {
                         ))}
                       </div>
                       <p className="text-xs text-[var(--arvo-fg-soft)]">
-                        Posição zerada — o histórico ausente afeta apenas períodos em que você os detinha, sem impacto no saldo atual.
+                        Posição zerada: o histórico ausente afeta apenas períodos em que você os detinha, sem impacto no saldo atual.
                       </p>
                     </div>
                   )}

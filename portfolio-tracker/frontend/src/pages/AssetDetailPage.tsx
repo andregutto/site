@@ -299,7 +299,7 @@ export default function AssetDetailPage() {
 
   const priceLabel = data.current_price != null
     ? `${data.price_currency} ${fmtNum(data.current_price, 2, intlLocale)}`
-    : '—'
+    : '-'
 
   const currentPriceBrlDisplay = data.price_currency !== 'BRL' && data.holdings != null && data.holdings > 0 && data.current_value_brl > 0
     ? data.current_value_brl / data.holdings
@@ -748,7 +748,7 @@ export default function AssetDetailPage() {
           </div>
           <div className="sm:border-l sm:pl-6" style={{ display: 'flex', flexDirection: 'column', gap: 6, borderColor: 'var(--arvo-border)' }}>
             <span style={kpiLabelStyle}>{d.invested}</span>
-            <span className="arvo-num text-base sm:text-lg" style={kpiValueStyle}>{data.invested_brl > 0 ? fmt(data.invested_brl) : '—'}</span>
+            <span className="arvo-num text-base sm:text-lg" style={kpiValueStyle}>{data.invested_brl > 0 ? fmt(data.invested_brl) : '-'}</span>
           </div>
           {/* P&L — % prominent, absolute value secondary */}
           <div className="sm:border-l sm:pl-6" style={{ display: 'flex', flexDirection: 'column', gap: 6, borderColor: 'var(--arvo-border)' }}>
@@ -772,7 +772,7 @@ export default function AssetDetailPage() {
                 )}
               </>
             ) : (
-              <span className="arvo-num text-base sm:text-lg" style={{ color: 'var(--arvo-fg-faint)' }}>—</span>
+              <span className="arvo-num text-base sm:text-lg" style={{ color: 'var(--arvo-fg-faint)' }}>-</span>
             )}
           </div>
           {/* Quantity (tickers) or portfolio weight */}
@@ -793,7 +793,7 @@ export default function AssetDetailPage() {
             ) : (
               <>
                 <span style={kpiLabelStyle}>{d.weight}</span>
-                <span className="arvo-num text-base sm:text-lg" style={{ color: 'var(--arvo-fg-faint)' }}>—</span>
+                <span className="arvo-num text-base sm:text-lg" style={{ color: 'var(--arvo-fg-faint)' }}>-</span>
               </>
             )}
           </div>
@@ -878,7 +878,7 @@ export default function AssetDetailPage() {
               <div>
                 <p className="text-xs text-blue-500 uppercase tracking-wide mb-0.5">{d.indexerSaved}</p>
                 <p className="font-bold text-blue-900 text-sm">
-                  {fiIndexerLabel(data.fi_type, data.fi_rate, data.fi_spread, d) ?? '—'}
+                  {fiIndexerLabel(data.fi_type, data.fi_rate, data.fi_spread, d) ?? '-'}
                 </p>
               </div>
               {(data.gain_loss_pct != null) && (
@@ -1121,13 +1121,13 @@ export default function AssetDetailPage() {
                           {e.changePct >= 0 ? '+' : ''}{e.changePct.toFixed(2)}%
                         </span>
                       ) : (
-                        <span className="text-xs text-[var(--arvo-fg-soft)]">—</span>
+                        <span className="text-xs text-[var(--arvo-fg-soft)]">-</span>
                       )}
                     </td>
                     <td className="px-4 py-3 text-right text-[var(--arvo-fg-muted)] text-xs">
                       {e.changeAbs != null
                         ? `${e.changeAbs >= 0 ? '+' : ''}${new Intl.NumberFormat(intlLocale, { style: 'currency', currency: e.currency, maximumFractionDigits: 2 }).format(e.changeAbs)}`
-                        : '—'}
+                        : '-'}
                     </td>
                     <td className="px-4 py-3 text-xs text-[var(--arvo-fg-soft)] italic">{e.notes ?? ''}</td>
                     <td className="px-4 py-3 text-center">
@@ -1240,10 +1240,10 @@ export default function AssetDetailPage() {
                             <td className="px-4 py-3 text-right text-[var(--arvo-fg-muted)]">
                               {c.price_orig != null && c.currency
                                 ? `${c.currency} ${fmtNum(c.price_orig, 4, intlLocale)}`
-                                : '—'}
+                                : '-'}
                             </td>
                             <td className="px-4 py-3 text-right font-medium text-[var(--arvo-fg)]">
-                              {totalBrlVal != null ? fmt(convert(totalBrlVal)) : '—'}
+                              {totalBrlVal != null ? fmt(convert(totalBrlVal)) : '-'}
                             </td>
                             <td className="px-4 py-3 text-right">
                               {profitBrl != null ? (
@@ -1258,7 +1258,7 @@ export default function AssetDetailPage() {
                                   )}
                                 </div>
                               ) : (
-                                <span className="text-xs text-[var(--arvo-fg-soft)]">—</span>
+                                <span className="text-xs text-[var(--arvo-fg-soft)]">-</span>
                               )}
                             </td>
                           </tr>
@@ -1292,7 +1292,7 @@ export default function AssetDetailPage() {
                             <div className="text-xs text-[var(--arvo-fg-muted)] mt-1">{fmtDate(c.date, intlLocale)}</div>
                           </div>
                           <div className="text-right shrink-0">
-                            <div className="font-medium text-sm text-[var(--arvo-fg)]">{totalBrlVal != null ? fmt(convert(totalBrlVal)) : '—'}</div>
+                            <div className="font-medium text-sm text-[var(--arvo-fg)]">{totalBrlVal != null ? fmt(convert(totalBrlVal)) : '-'}</div>
                             {profitBrl != null && (
                               <div>
                                 <div className={`text-xs font-semibold ${profitBrl >= 0 ? 'text-green-700' : 'text-red-600'}`}>
@@ -1355,7 +1355,7 @@ export default function AssetDetailPage() {
                     {assetDividends.map(div => (
                       <tr key={div.id} className="hover:bg-[var(--arvo-surface-2)]">
                         <td className="px-4 py-3 text-[var(--arvo-fg)]">{fmtDate(div.ex_date, intlLocale)}</td>
-                        <td className="px-4 py-3 text-[var(--arvo-fg-muted)]">{div.pay_date ? fmtDate(div.pay_date, intlLocale) : '—'}</td>
+                        <td className="px-4 py-3 text-[var(--arvo-fg-muted)]">{div.pay_date ? fmtDate(div.pay_date, intlLocale) : '-'}</td>
                         <td className="px-4 py-3">
                           <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700">
                             {div.dividend_type === 'jcp' ? (td.typeJcp ?? 'JCP') :

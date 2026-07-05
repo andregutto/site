@@ -614,7 +614,7 @@ function ItemRow({ item, tripId, canEdit, dragging, dropTarget, destinations, au
               {destinations.map(d => (
                 <button key={d.id} type="button" onClick={() => onPatch({ destination_id: item.destination_id === d.id ? null : d.id })}
                   style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 10.5, padding: '2px 8px', borderRadius: 999, cursor: 'pointer', border: `1px solid ${item.destination_id === d.id ? 'var(--arvo-fg)' : 'var(--arvo-border)'}`, background: item.destination_id === d.id ? 'var(--arvo-hover-bg)' : 'transparent', color: item.destination_id === d.id ? 'var(--arvo-fg)' : 'var(--arvo-fg-muted)' }}>
-                  {d.city ?? d.country ?? '—'}
+                  {d.city ?? d.country ?? '-'}
                 </button>
               ))}
             </div>
@@ -1132,7 +1132,7 @@ export default function TripItineraryPanel({ tripId, tripCity, tripCountry, trip
                       <span style={{ color: 'var(--arvo-fg-muted)', letterSpacing: '0.02em', textTransform: 'none', fontSize: 12 }}> · {inferredDateForDay(d, tripStartDate)}</span>
                     )}
                     {dayDestinationNames(d).length > 0 && (
-                      <span style={{ color: 'var(--arvo-fg-soft)', letterSpacing: '0.02em', textTransform: 'none', fontSize: 13 }}> — {dayDestinationNames(d).join(' → ')}</span>
+                      <span style={{ color: 'var(--arvo-fg-soft)', letterSpacing: '0.02em', textTransform: 'none', fontSize: 13 }}> · {dayDestinationNames(d).join(' → ')}</span>
                     )}
                   </p>
                 </span>

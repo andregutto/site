@@ -277,7 +277,7 @@ export default function MembersPanel({ tripId, isOwner }: Props) {
 
           {inviteDirectOk && (
             <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: '#1F8A5B', marginTop: 10 }}>
-              {mv.directOk ?? '✓ Adicionado direto — já é um membro ativo da viagem.'}
+              {mv.directOk ?? '✓ Adicionado direto: já é um membro ativo da viagem.'}
             </p>
           )}
 
@@ -285,7 +285,7 @@ export default function MembersPanel({ tripId, isOwner }: Props) {
           {inviteResult && (
             <div style={{ marginTop: 10, padding: '10px 12px', borderRadius: 8, background: 'var(--arvo-hover-bg)', border: '1px solid var(--arvo-border-soft)' }}>
               <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 9, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)', marginBottom: 6 }}>
-                {mv.noAccountYet ?? 'Sem conta no Arvo ainda — link de convite gerado'}
+                {mv.noAccountYet ?? 'Sem conta no Arvo ainda: link de convite gerado'}
               </p>
               <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                 <input

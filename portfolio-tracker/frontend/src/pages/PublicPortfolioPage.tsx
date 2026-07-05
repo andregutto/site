@@ -86,19 +86,19 @@ interface PublicData {
 const LOCALE_MAP: Record<string, string> = { pt: 'pt-BR', en: 'en-US', fr: 'fr-FR' }
 
 function fmtCurr(n: number | null, currency: string, locale: string): string {
-  if (n == null) return '—'
+  if (n == null) return '-'
   return new Intl.NumberFormat(locale, { style: 'currency', currency, maximumFractionDigits: 0 }).format(n)
 }
 function fmtDate(iso: string | null, locale: string): string {
-  if (!iso) return '—'
+  if (!iso) return '-'
   return new Date(iso).toLocaleDateString(locale, { day: '2-digit', month: 'long', year: 'numeric' })
 }
 function fmtPct(n: number | null, decimals = 1): string {
-  if (n == null) return '—'
+  if (n == null) return '-'
   return `${n.toFixed(decimals)}%`
 }
 function fmtSignedPct(n: number | null, decimals = 2): string {
-  if (n == null) return '—'
+  if (n == null) return '-'
   return `${n >= 0 ? '+' : ''}${n.toFixed(decimals)}%`
 }
 function fmtMonth(ym: string, locale: string): string {

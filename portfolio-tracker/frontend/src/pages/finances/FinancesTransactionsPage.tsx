@@ -1122,7 +1122,7 @@ export default function FinancesTransactionsPage() {
           <div className="px-5 py-4 border-b border-[var(--arvo-border-soft)] flex items-center justify-between flex-wrap gap-3">
             <div>
               <h3 className="font-semibold text-[var(--arvo-fg)] text-sm">
-                {t.finances.csvPreview} — {csvRows.length} {t.finances.csvTransactions}
+                {t.finances.csvPreview}: {csvRows.length} {t.finances.csvTransactions}
                 {csvDuplicateCount > 0 && (
                   <span className="ml-2 text-xs font-normal text-[var(--arvo-fg-soft)]">({t.finances.csvAlreadyImported.replace('{n}', String(csvDuplicateCount))})</span>
                 )}
@@ -1388,7 +1388,7 @@ export default function FinancesTransactionsPage() {
                   <span className="text-base shrink-0">{r.finance_categories?.icon ?? '📁'}</span>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm text-[var(--arvo-fg)] truncate">{r.description}</p>
-                    <p className="text-xs text-[var(--arvo-fg-soft)]">{r.date} · {r.finance_categories?.name ?? '—'}</p>
+                    <p className="text-xs text-[var(--arvo-fg-soft)]">{r.date} · {r.finance_categories?.name ?? '-'}</p>
                   </div>
                   <span className={`text-sm font-semibold shrink-0 tabular-nums ${r.amount < 0 ? 'text-[var(--arvo-fg)]' : 'arvo-delta-pos'}`}>
                     {r.amount > 0 ? '+' : ''}{fmt(r.amount, r.currency)}
@@ -1495,7 +1495,7 @@ export default function FinancesTransactionsPage() {
                               <td className="pl-3 pr-1 py-2 w-8" />
                               <td className="px-2 sm:px-3 py-2 text-[var(--arvo-fg-soft)] whitespace-nowrap text-xs">{fmtDate(tx.date)}</td>
                               <td className="px-2 sm:px-3 py-2 text-[var(--arvo-fg-muted)] max-w-[120px] sm:max-w-xs text-xs">
-                                <span className="truncate block">{tx.description || '—'}</span>
+                                <span className="truncate block">{tx.description || '-'}</span>
                               </td>
                               <td className={`px-2 sm:px-3 py-2 text-right text-xs font-medium whitespace-nowrap tabular-nums ${tx.amount < 0 ? 'text-[var(--arvo-fg)]' : 'arvo-delta-pos'}`}>
                                 {fmt(tx.amount, tx.currency)}
@@ -1532,7 +1532,7 @@ export default function FinancesTransactionsPage() {
                         </td>
                         <td className="px-2 sm:px-3 py-2.5 sm:py-3 text-[var(--arvo-fg-muted)] whitespace-nowrap text-xs sm:text-sm">{fmtDate(tx.date)}</td>
                         <td className="px-2 sm:px-3 py-2.5 sm:py-3 text-[var(--arvo-fg)] max-w-[140px] sm:max-w-xs">
-                          <span className="truncate block">{tx.description || '—'}</span>
+                          <span className="truncate block">{tx.description || '-'}</span>
                           <div className="flex items-center gap-1 flex-wrap mt-0.5">
                             {tx.is_internal_transfer && !tx.linked_transfer_id && (
                               <span className="text-[10px] text-[var(--arvo-fg-soft)]">{t.finances.internalTransfer}</span>
@@ -1659,7 +1659,7 @@ export default function FinancesTransactionsPage() {
                             <span
                               className="text-xs text-[var(--arvo-fg-soft)] [@media(hover:hover)]:text-[var(--arvo-fg-faint)] group-hover:text-[var(--arvo-fg-soft)] transition-colors cursor-pointer"
                               onClick={() => { setSelected(new Set([tx.id])); setShowMomentDropdown(true) }}
-                            >—</span>
+                            >-</span>
                           )}
                         </td>
                         <td className="px-1 sm:px-3 py-2.5 sm:py-3">
@@ -2251,7 +2251,7 @@ export default function FinancesTransactionsPage() {
                 <div>
                   <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">{t.shared?.tagTransaction ?? 'Categoria compartilhada'}</label>
                   <select value={addSharedCat} onChange={e => setAddSharedCat(e.target.value === '' ? '' : Number(e.target.value))} className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm">
-                    <option value="">—</option>
+                    <option value="">-</option>
                     {sharedCats.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
                   </select>
                 </div>

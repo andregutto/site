@@ -40,7 +40,7 @@ function fmtValue(v: number, unit: string) {
 }
 
 function fmtPct(v: number | null) {
-  if (v == null) return '—'
+  if (v == null) return '-'
   return `${v >= 0 ? '+' : ''}${v.toFixed(2)}%`
 }
 
@@ -179,7 +179,7 @@ export default function IndexDetailPage() {
       <div className="bg-[var(--arvo-surface)] border border-[var(--arvo-border)] rounded-2xl p-5 flex flex-wrap gap-6">
         <div>
           <div className="text-2xl font-bold text-[var(--arvo-fg)] tabular-nums">
-            {last ? fmtValue(last.value, data.unit) : '—'}
+            {last ? fmtValue(last.value, data.unit) : '-'}
           </div>
           <div className="text-xs text-[var(--arvo-fg-soft)] mt-0.5">{data.unit}</div>
         </div>

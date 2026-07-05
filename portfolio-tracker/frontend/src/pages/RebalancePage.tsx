@@ -143,7 +143,7 @@ export default function RebalancePage() {
                       step="0.5"
                       value={getTargetStr(cls)}
                       onChange={e => setTargets(prev => ({ ...prev, [getKey(cls)]: e.target.value }))}
-                      placeholder="—"
+                      placeholder="-"
                       className="w-16 border border-[var(--arvo-border)] rounded-[3px] px-2 py-1.5 text-sm text-center arvo-num bg-[var(--arvo-surface)] text-[var(--arvo-fg)] focus:outline-none focus:ring-2 focus:ring-[var(--arvo-fg)]/20"
                     />
                     <span className="text-xs text-[var(--arvo-fg-soft)]">%</span>

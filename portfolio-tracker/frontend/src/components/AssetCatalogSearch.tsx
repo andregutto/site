@@ -97,7 +97,7 @@ export default function AssetCatalogSearch({ kind, value, onQueryChange, onSelec
                 onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
               >
                 <span className="truncate text-[var(--arvo-fg)]">
-                  <strong>{c.symbol}</strong> — {c.name}
+                  <strong>{c.symbol}</strong> · {c.name}
                 </span>
                 {(c.exchange || c.quote_type) && (
                   <span className="text-xs text-[var(--arvo-fg-soft)] flex-shrink-0">

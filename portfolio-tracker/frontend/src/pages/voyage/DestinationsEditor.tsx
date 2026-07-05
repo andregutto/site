@@ -116,7 +116,7 @@ export default function DestinationsEditor({ tripId, destinations, onChange, dar
             }}
           >
             <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: fg }}>
-              {[d.city, d.country].filter(Boolean).join(', ') || '—'}
+              {[d.city, d.country].filter(Boolean).join(', ') || '-'}
             </span>
             <input
               autoFocus value={editDayStart} onChange={e => setEditDayStart(e.target.value)} type="number" min="1" placeholder="ini." inputMode="numeric"
@@ -149,7 +149,7 @@ export default function DestinationsEditor({ tripId, destinations, onChange, dar
           >
             <button type="button" onClick={() => startEdit(d)} title="Editar dias"
               style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', padding: 0, font: 'inherit', color: 'inherit' }}>
-              {[d.city, d.country].filter(Boolean).join(', ') || '—'}
+              {[d.city, d.country].filter(Boolean).join(', ') || '-'}
               {dayRangeLabel(d) && <span style={{ color: fgSoft, fontSize: 10.5 }}>· {dayRangeLabel(d)}</span>}
             </button>
             <button

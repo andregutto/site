@@ -337,39 +337,7 @@ export default function AppLayout() {
 
   // Categorias fixas da V1 (mesmo seed da migration 053_community.sql) — sem
   // busca assíncrona no header, é uma lista pequena e estável.
-  const communityItems = [
-    { to: '/community',            label: (t as any).community?.title ?? 'Comunidade', end: true, icon: (
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
-        <rect x="2" y="2.5" width="12" height="11" rx="1.2"/>
-        <rect x="4" y="5" width="4" height="3.5" rx="0.5"/>
-        <rect x="9.5" y="5" width="2.5" height="2.5" rx="0.5"/>
-        <rect x="9.5" y="8.5" width="2.5" height="3" rx="0.5"/>
-      </svg>
-    )},
-    { to: '/community/geral',      label: (t as any).community?.cat?.geral ?? 'Geral', end: false, icon: (
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M2 2.5h12v8H6.5L3 13.5V10.5H2v-8Z"/>
-      </svg>
-    )},
-    { to: '/community/suporte',    label: (t as any).community?.cat?.suporte ?? 'Suporte', end: false, icon: (
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
-        <circle cx="8" cy="8" r="6.5"/><path strokeLinecap="round" strokeLinejoin="round" d="M8 5.5v3M8 10.5h.01"/>
-      </svg>
-    )},
-    { to: '/community/sugestoes',  label: (t as any).community?.cat?.sugestoes ?? 'Sugestões', end: false, icon: (
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M8 1.5a4 4 0 00-2 7.465V11h4V8.965A4 4 0 008 1.5ZM6.5 13h3M7 14.5h2"/>
-      </svg>
-    )},
-    { to: '/community/viagens',    label: (t as any).community?.cat?.viagens ?? 'Viagens', end: false, icon: (
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M1 11.5l3-7 4 3 3-5 4 3"/>
-        <path strokeLinecap="round" d="M1 14.5h14"/>
-      </svg>
-    )},
-  ]
-
-  const activeSubItems = inInvestimentos ? investimentosItems : inFinances ? financesItems : inVoyage ? voyageItems : inCommunity ? communityItems : []
+  const activeSubItems = inInvestimentos ? investimentosItems : inFinances ? financesItems : inVoyage ? voyageItems : []
 
   const navItems = [
     { to: '/dashboard', label: t.nav.investments, match: inInvestimentos, icon: (
@@ -715,7 +683,7 @@ export default function AppLayout() {
             onDismiss={dismissBudgetBanner}
             action={<NavLink to="/finances/budget" onClick={dismissBudgetBanner} className="arvo-btn arvo-btn--link shrink-0">{t.profile.budgetReminderGoTo}</NavLink>}
           >
-            {t.profile.budgetReminderDue} — {t.profile.budgetReminderDueBody.replace('{freq}', freqLabel)}
+            {t.profile.budgetReminderDue}: {t.profile.budgetReminderDueBody.replace('{freq}', freqLabel)}
           </Banner>
         )
       })() : null}

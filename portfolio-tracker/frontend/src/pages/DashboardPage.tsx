@@ -599,7 +599,7 @@ export default function DashboardPage() {
                 {s.updatedAt}{' '}
                 {shareLink?.updated_at
                   ? new Date(shareLink.updated_at).toLocaleDateString(locale === 'fr' ? 'fr-FR' : locale === 'en' ? 'en-GB' : 'pt-BR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
-                  : '—'}
+                  : '-'}
               </span>
             </div>
 

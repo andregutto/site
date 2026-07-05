@@ -177,7 +177,7 @@ export default function PlaceExpensesPanel({ tripId, placeId, placeName, onClose
                   <div key={e.transaction_id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 0' }}>
                     {e.category && <span style={{ fontSize: 14, flexShrink: 0 }}>{e.category.icon}</span>}
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.description || '—'}</p>
+                      <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.description || '-'}</p>
                       <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)' }}>{fmtDate(e.date)}</p>
                     </div>
                     <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg)', fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>
@@ -234,7 +234,7 @@ export default function PlaceExpensesPanel({ tripId, placeId, placeName, onClose
                       </span>
                       {c.category && <span style={{ fontSize: 13, flexShrink: 0 }}>{c.category.icon}</span>}
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.description || '—'}</p>
+                        <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, color: 'var(--arvo-fg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.description || '-'}</p>
                         <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)' }}>{fmtDate(c.date)}</p>
                       </div>
                       <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)', fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>

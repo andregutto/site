@@ -396,7 +396,7 @@ function PlanForm({ initial, portfolio, ipcaAnnual, hicpAnnual, cpiAnnual, userC
       {/* ─── Step 0: Goal type (new plans only) ─── */}
       {step === 0 && (
         <div className="space-y-4">
-          <p className="text-sm text-[var(--arvo-fg-muted)]">{t.finances.freedomStepGoal} — {t.finances.freedomStepGoalDesc}</p>
+          <p className="text-sm text-[var(--arvo-fg-muted)]">{t.finances.freedomStepGoal}: {t.finances.freedomStepGoalDesc}</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {([
               { mode: 'capital' as const, emoji: '🏦', title: t.finances.freedomGoalCardCapitalTitle, desc: t.finances.freedomGoalCardCapitalDesc },
@@ -482,7 +482,7 @@ function PlanForm({ initial, portfolio, ipcaAnnual, hicpAnnual, cpiAnnual, userC
       {/* ─── Step 2: Initial capital ─── */}
       {step === 2 && (
         <div className="space-y-4">
-          <p className="text-sm text-[var(--arvo-fg-muted)]">{t.finances.freedomStepStarting} — {t.finances.freedomStepStartingDesc}</p>
+          <p className="text-sm text-[var(--arvo-fg-muted)]">{t.finances.freedomStepStarting}: {t.finances.freedomStepStartingDesc}</p>
           <div>
             <label className={labelCls}>{t.finances.freedomCapital} ({currency})</label>
             {isNew && Number(portfolioSuggestion) > 0 && (
@@ -622,7 +622,7 @@ function PlanForm({ initial, portfolio, ipcaAnnual, hicpAnnual, cpiAnnual, userC
                   <p className="text-[10px] text-[var(--arvo-fg-muted)]">
                     {t.finances.freedomNominalInYear} {horizonInputYears || 20} {t.finances.freedomAgeAtTarget}:&nbsp;
                     <strong>{fmtCur(Math.round(parseFloat(desiredIncome || '0') * Math.pow(1 + parseFloat(inflation || '2') / 100, horizonInputYears || 20)))}{t.finances.freedomPerMonth}</strong>
-                    &nbsp;— {t.finances.freedomRealToday}: <strong>{fmtCur(parseFloat(desiredIncome || '0'))}{t.finances.freedomPerMonth}</strong>
+                    &nbsp;· {t.finances.freedomRealToday}: <strong>{fmtCur(parseFloat(desiredIncome || '0'))}{t.finances.freedomPerMonth}</strong>
                   </p>
                   <p className="text-[10px] text-[var(--arvo-fg-soft)] leading-snug pt-1" style={{ borderTop: '1px solid var(--arvo-border-soft)' }}>
                     {t.finances.freedomComputedGoalLiveHint}
@@ -672,7 +672,7 @@ function PlanForm({ initial, portfolio, ipcaAnnual, hicpAnnual, cpiAnnual, userC
                 />
               ) : (
                 <div className={`${fieldCls} bg-[var(--arvo-surface-2)] text-[var(--arvo-fg)] flex items-center gap-1`}>
-                  <span>{calculatedContrib != null ? fmtCur(calculatedContrib) : '—'}</span>
+                  <span>{calculatedContrib != null ? fmtCur(calculatedContrib) : '-'}</span>
                   <span className="text-[10px] text-[var(--arvo-fg-soft)] ml-1">{t.finances.freedomCalcLabel}</span>
                 </div>
               )}
@@ -732,7 +732,7 @@ function PlanForm({ initial, portfolio, ipcaAnnual, hicpAnnual, cpiAnnual, userC
                     />
                   ) : (
                     <div className={`${fieldCls} bg-[var(--arvo-surface-2)] text-[var(--arvo-fg)] flex items-center gap-1`}>
-                      <span>{calculatedHorizonYears != null && currentAge != null ? Math.round(currentAge + calculatedHorizonYears) : '—'}</span>
+                      <span>{calculatedHorizonYears != null && currentAge != null ? Math.round(currentAge + calculatedHorizonYears) : '-'}</span>
                       <span className="text-[10px] text-[var(--arvo-fg-soft)] ml-1">{t.finances.freedomCalcLabel}</span>
                     </div>
                   )}
@@ -744,7 +744,7 @@ function PlanForm({ initial, portfolio, ipcaAnnual, hicpAnnual, cpiAnnual, userC
                       ? `${Math.max(0, parseInt(targetAge) - currentAge)} ${t.finances.freedomAgeAtTarget}`
                       : calculatedHorizonYears != null
                       ? `${Math.round(calculatedHorizonYears)} ${t.finances.freedomAgeAtTarget}`
-                      : '—'}
+                      : '-'}
                   </div>
                 </div>
               </div>
@@ -760,7 +760,7 @@ function PlanForm({ initial, portfolio, ipcaAnnual, hicpAnnual, cpiAnnual, userC
                   />
                 ) : (
                   <div className={`${fieldCls} max-w-[200px] bg-[var(--arvo-surface-2)] text-[var(--arvo-fg)] flex items-center gap-1`}>
-                    <span>{calculatedHorizonYears != null ? `${Math.round(calculatedHorizonYears * 10) / 10} ${t.finances.freedomAgeAtTarget}` : '—'}</span>
+                    <span>{calculatedHorizonYears != null ? `${Math.round(calculatedHorizonYears * 10) / 10} ${t.finances.freedomAgeAtTarget}` : '-'}</span>
                     <span className="text-[10px] text-[var(--arvo-fg-soft)] ml-1">{t.finances.freedomCalcLabel}</span>
                   </div>
                 )}
@@ -1365,7 +1365,7 @@ export default function FinancesFreedomPage() {
                       {new Date(reachMonth + '-01').toLocaleDateString(intlLocale, { month: 'short', year: 'numeric' })}
                     </span>
                   ) : (
-                    <span className="arvo-num text-base sm:text-lg" style={{ color: 'var(--arvo-fg-faint)' }}>—</span>
+                    <span className="arvo-num text-base sm:text-lg" style={{ color: 'var(--arvo-fg-faint)' }}>-</span>
                   )}
                   <span className="text-[11px]" style={{ color: 'var(--arvo-fg-muted)' }}>
                     {reachYearsFromNow != null && `${t.finances.freedomIn} ${reachYearsFromNow} ${t.finances.freedomAgeAtTarget}`}
@@ -1378,7 +1378,7 @@ export default function FinancesFreedomPage() {
                         : `${t.finances.freedomBehindSchedule} ${Math.abs(scheduleDeltaYears)} ${t.finances.freedomAgeAtTarget}`}
                     </span>
                   )}
-                  <span className="text-[11px]" style={{ color: 'var(--arvo-fg-soft)' }}>{t.finances.freedomBasedOnCurrent} — {t.finances.freedomNotThePlanGoal}</span>
+                  <span className="text-[11px]" style={{ color: 'var(--arvo-fg-soft)' }}>{t.finances.freedomBasedOnCurrent} · {t.finances.freedomNotThePlanGoal}</span>
                 </div>
               </div>
 

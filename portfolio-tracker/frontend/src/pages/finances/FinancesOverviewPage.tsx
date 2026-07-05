@@ -612,7 +612,7 @@ export default function FinancesOverviewPage() {
           <div>
             <div>
               <p style={{ fontFamily: "var(--arvo-font-body)", fontSize: 42, letterSpacing: '0.02em', lineHeight: 1.05, margin: 0, color: receivedIncome > 0 && netBalance < 0 ? 'var(--arvo-red)' : 'var(--arvo-fg)' }}>
-                {receivedIncome > 0 ? fmt(cx(netBalance), currency, false) : '—'}
+                {receivedIncome > 0 ? fmt(cx(netBalance), currency, false) : '-'}
               </p>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
                 <p style={{ fontFamily: "var(--arvo-font-body)", fontSize: 9, fontWeight: 600, letterSpacing: '0.10em', textTransform: 'uppercase', color: 'var(--arvo-gold-text)', margin: 0 }}>{t.finances.overviewBalance}</p>
@@ -622,7 +622,7 @@ export default function FinancesOverviewPage() {
                   border: `1px solid ${totalExpenses === 0 ? 'var(--arvo-border)' : isWithinBudget ? 'rgba(31,138,91,0.25)' : 'rgba(214,59,47,0.25)'}`,
                 }}>
                   {totalExpenses !== 0 && <Icon name={isWithinBudget ? 'check' : 'alert'} size={11} />}
-                  {totalExpenses === 0 ? '—' : isWithinBudget ? t.finances.overviewOnTrack : t.finances.overviewOverspent}
+                  {totalExpenses === 0 ? '-' : isWithinBudget ? t.finances.overviewOnTrack : t.finances.overviewOverspent}
                   {overspentAmount > 0 && ` +${fmt(cx(overspentAmount), currency, false)}`}
                 </div>
               </div>
@@ -632,7 +632,7 @@ export default function FinancesOverviewPage() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
                 <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 10, fontWeight: 600, letterSpacing: '0.10em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)', whiteSpace: 'nowrap' }}>{t.finances.heroIncomeLabel}</span>
                 <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 18, letterSpacing: '0.04em', color: receivedIncome > 0 && receivedIncome >= configuredIncome ? 'var(--arvo-green)' : receivedIncome > 0 ? 'var(--arvo-ocre)' : 'var(--arvo-fg)' }}>
-                  {receivedIncome > 0 ? fmt(cx(receivedIncome), currency, false) : '—'}
+                  {receivedIncome > 0 ? fmt(cx(receivedIncome), currency, false) : '-'}
                 </span>
                 <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 11, color: 'var(--arvo-fg-soft)' }}>
                   {t.finances.overviewPlanned} {fmt(cx(configuredIncome), currency, false)}
@@ -641,7 +641,7 @@ export default function FinancesOverviewPage() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
                 <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 10, fontWeight: 600, letterSpacing: '0.10em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)' }}>{t.finances.expenses}</span>
                 <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 18, letterSpacing: '0.04em', color: totalExpenses > totalBudgeted && totalBudgeted > 0 ? 'var(--arvo-red)' : 'var(--arvo-fg)' }}>
-                  {totalExpenses > 0 ? fmt(cx(totalExpenses), currency, false) : '—'}
+                  {totalExpenses > 0 ? fmt(cx(totalExpenses), currency, false) : '-'}
                 </span>
                 {totalBudgeted > 0 && (
                   <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 11, color: 'var(--arvo-fg-soft)' }}>
@@ -652,7 +652,7 @@ export default function FinancesOverviewPage() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
                 <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 10, fontWeight: 600, letterSpacing: '0.10em', textTransform: 'uppercase', color: 'var(--arvo-fg-muted)' }}>{t.finances.heroSavingsRate}</span>
                 <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 18, letterSpacing: '0.04em', color: receivedIncome > 0 && netBalance >= 0 ? 'var(--arvo-green)' : receivedIncome > 0 ? 'var(--arvo-red)' : 'var(--arvo-fg)' }}>
-                  {receivedIncome > 0 ? `${Math.round((netBalance / receivedIncome) * 100)}%` : '—'}
+                  {receivedIncome > 0 ? `${Math.round((netBalance / receivedIncome) * 100)}%` : '-'}
                 </span>
                 {receivedIncome > 0 && (
                   <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 11, color: 'var(--arvo-fg-faint)' }}>{t.finances.overviewStatus}</span>
@@ -767,7 +767,7 @@ export default function FinancesOverviewPage() {
                 {daysElapsed} {t.finances.overviewInsufficientData}
               </p>
             ) : (
-              <p style={{ fontSize: 22, fontFamily: "var(--arvo-font-body)", color: 'var(--arvo-fg-faint)' }}>—</p>
+              <p style={{ fontSize: 22, fontFamily: "var(--arvo-font-body)", color: 'var(--arvo-fg-faint)' }}>-</p>
             )}
 
             <div style={{ marginTop: 12 }}>
@@ -989,7 +989,7 @@ export default function FinancesOverviewPage() {
                     </div>
                   </div>
                   <span style={{ fontSize: 12, color: hasBudget && pct > 100 ? 'var(--arvo-red)' : 'var(--arvo-fg-soft)', width: 32, textAlign: 'right', flexShrink: 0 }}>
-                    {hasBudget ? `${pct.toFixed(0)}%` : '—'}
+                    {hasBudget ? `${pct.toFixed(0)}%` : '-'}
                   </span>
                 </div>
               )

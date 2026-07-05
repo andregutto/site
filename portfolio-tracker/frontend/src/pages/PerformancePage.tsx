@@ -441,7 +441,7 @@ export default function PerformancePage() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   <span style={kpiLabelStyle}>{t.performance.periodStart}</span>
                   <span className="arvo-num text-base sm:text-lg" style={{ fontFamily: 'var(--arvo-font-body)', letterSpacing: '0.04em', color: 'var(--arvo-fg)' }}>
-                    {summary.value_start > 0 ? fmt(summary.value_start) : '—'}
+                    {summary.value_start > 0 ? fmt(summary.value_start) : '-'}
                   </span>
                 </div>
                 <div className="sm:border-l sm:pl-6" style={{ display: 'flex', flexDirection: 'column', gap: 6, borderColor: 'var(--arvo-border)' }}>
@@ -458,7 +458,7 @@ export default function PerformancePage() {
                   <span style={kpiLabelStyle}>{t.performance.returnPct}</span>
                   {displayReturnPct != null
                     ? <StatDelta className="text-base sm:text-lg" value={displayReturnPct} formatted={`${Math.abs(displayReturnPct).toFixed(2)}%`} />
-                    : <span className="arvo-num text-base sm:text-lg" style={{ color: 'var(--arvo-fg-faint)' }}>—</span>
+                    : <span className="arvo-num text-base sm:text-lg" style={{ color: 'var(--arvo-fg-faint)' }}>-</span>
                   }
                   <span className="text-xs" style={{ color: 'var(--arvo-fg-soft)' }}>{t.performance.simpleDietz}</span>
                 </div>
@@ -601,7 +601,7 @@ export default function PerformancePage() {
                   </p>
                   {value != null
                     ? <StatDelta className="text-xl" value={value} formatted={`${Math.abs(value).toFixed(2)}%`} />
-                    : <span className="arvo-num text-xl" style={{ color: 'var(--arvo-fg-faint)' }}>—</span>
+                    : <span className="arvo-num text-xl" style={{ color: 'var(--arvo-fg-faint)' }}>-</span>
                   }
                 </div>
               ))}
@@ -649,25 +649,25 @@ export default function PerformancePage() {
                               </span>
                             </td>
                             <td className="px-4 py-3 text-right arvo-num text-[var(--arvo-fg)]">
-                              {m.total > 0 ? fmt(m.total) : '—'}
+                              {m.total > 0 ? fmt(m.total) : '-'}
                             </td>
                             <td className="px-4 py-3 text-right arvo-num text-[var(--arvo-fg-muted)] text-xs">
-                              {cf !== 0 ? `${cf > 0 ? '+' : ''}${fmt(cf)}` : '—'}
+                              {cf !== 0 ? `${cf > 0 ? '+' : ''}${fmt(cf)}` : '-'}
                             </td>
                             <td className="px-4 py-3 text-right arvo-num text-xs font-medium text-green-600">
-                              {(() => { const v = divByMonth.get(m.month); return v ? `+${fmt(convert(v))}` : '—' })()}
+                              {(() => { const v = divByMonth.get(m.month); return v ? `+${fmt(convert(v))}` : '-' })()}
                             </td>
                             <td className={`px-4 py-3 text-right arvo-num font-medium ${
                               gain == null ? 'text-[var(--arvo-fg-soft)]' :
                               gain >= 0 ? 'text-green-600' : 'text-red-600'
                             }`}>
-                              {gain != null ? `${gain >= 0 ? '+' : ''}${fmt(gain)}` : '—'}
+                              {gain != null ? `${gain >= 0 ? '+' : ''}${fmt(gain)}` : '-'}
                             </td>
                             <td className={`px-4 py-3 text-right arvo-num text-xs font-semibold ${
                               gainPct == null ? 'text-[var(--arvo-fg-faint)]' :
                               gainPct >= 0 ? 'text-green-600' : 'text-red-600'
                             }`}>
-                              {gainPct != null ? `${gainPct >= 0 ? '+' : ''}${gainPct.toFixed(2)}%` : '—'}
+                              {gainPct != null ? `${gainPct >= 0 ? '+' : ''}${gainPct.toFixed(2)}%` : '-'}
                             </td>
                           </tr>
                           {isExpanded && m.detail && (
@@ -732,19 +732,19 @@ export default function PerformancePage() {
                                               {fmt(d.value)}
                                             </td>
                                             <td className="py-1.5 text-right arvo-num text-[var(--arvo-fg-muted)]">
-                                              {d.contributions !== 0 ? `${d.contributions > 0 ? '+' : ''}${fmt(d.contributions)}` : '—'}
+                                              {d.contributions !== 0 ? `${d.contributions > 0 ? '+' : ''}${fmt(d.contributions)}` : '-'}
                                             </td>
                                             <td className="py-1.5 text-right arvo-num text-xs font-medium text-green-600">
                                               {(() => {
                                                 const v = divByMonthAsset.get(m.month)?.get(d.asset_id)
-                                                return v ? `+${fmt(convert(v))}` : '—'
+                                                return v ? `+${fmt(convert(v))}` : '-'
                                               })()}
                                             </td>
                                             <td className={`py-1.5 text-right arvo-num font-medium ${!hasGainData ? 'text-[var(--arvo-fg-faint)]' : d.gain >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                              {!hasGainData ? '—' : `${d.gain >= 0 ? '+' : ''}${fmt(d.gain)}`}
+                                              {!hasGainData ? '-' : `${d.gain >= 0 ? '+' : ''}${fmt(d.gain)}`}
                                             </td>
                                             <td className={`py-1.5 text-right arvo-num font-semibold ${gainPct == null ? 'text-[var(--arvo-fg-faint)]' : gainPct >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                              {gainPct != null ? `${gainPct >= 0 ? '+' : ''}${gainPct.toFixed(2)}%` : '—'}
+                                              {gainPct != null ? `${gainPct >= 0 ? '+' : ''}${gainPct.toFixed(2)}%` : '-'}
                                             </td>
                                           </tr>
                                         )
@@ -790,7 +790,7 @@ export default function PerformancePage() {
                           )}
                         </div>
                         <div className="text-right shrink-0">
-                          <div className="text-sm arvo-num font-medium text-[var(--arvo-fg)]">{m.total > 0 ? fmt(m.total) : '—'}</div>
+                          <div className="text-sm arvo-num font-medium text-[var(--arvo-fg)]">{m.total > 0 ? fmt(m.total) : '-'}</div>
                           <div className="flex items-center justify-end gap-2 mt-0.5">
                             {gain != null && (
                               <span className={`text-xs arvo-num font-medium ${gain >= 0 ? 'text-green-600' : 'text-red-600'}`}>
@@ -798,7 +798,7 @@ export default function PerformancePage() {
                               </span>
                             )}
                             <span className={`text-xs arvo-num font-semibold ${gainPct == null ? 'text-[var(--arvo-fg-faint)]' : gainPct >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                              {gainPct != null ? `${gainPct >= 0 ? '+' : ''}${gainPct.toFixed(2)}%` : '—'}
+                              {gainPct != null ? `${gainPct >= 0 ? '+' : ''}${gainPct.toFixed(2)}%` : '-'}
                             </span>
                           </div>
                         </div>
@@ -820,7 +820,7 @@ export default function PerformancePage() {
                                   <div className="text-right">
                                     <div className="text-xs arvo-num text-[var(--arvo-fg)]">{fmt(d.value)}</div>
                                     <div className={`text-[11px] arvo-num font-semibold ${gp == null ? 'text-[var(--arvo-fg-faint)]' : gp >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                      {gp != null ? `${gp >= 0 ? '+' : ''}${gp.toFixed(2)}%` : '—'}
+                                      {gp != null ? `${gp >= 0 ? '+' : ''}${gp.toFixed(2)}%` : '-'}
                                     </div>
                                   </div>
                                 </div>

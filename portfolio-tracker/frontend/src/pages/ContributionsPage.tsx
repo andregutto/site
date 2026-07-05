@@ -179,7 +179,7 @@ export default function ContributionsPage() {
     } else if (newFiType === 'pre') {
       suggested = `Tesouro Prefixado${rate ? ` ${fmtRate(rate)}%` : ''}${year ? ` ${year}` : ''}`
     } else if (newFiType === 'pos_cdi') {
-      suggested = rate ? `CDB ${fmtRate(rate)}% CDI${newFiInstitution ? ` — ${newFiInstitution}` : ''}` : ''
+      suggested = rate ? `CDB ${fmtRate(rate)}% CDI${newFiInstitution ? ` · ${newFiInstitution}` : ''}` : ''
     }
     if (suggested) setNewName(suggested)
   }, [newFormType, newFiType, newFiRate, newFiMaturity, newFiInstitution])
@@ -646,7 +646,7 @@ export default function ContributionsPage() {
               <label className="block text-xs text-[var(--arvo-fg-muted)]">Ativo</label>
               {editId ? (
                 <div className="w-full border border-[var(--arvo-border)] rounded-lg px-3 py-2 text-sm bg-[var(--arvo-surface)] text-[var(--arvo-fg-muted)]">
-                  {selectedAsset ? `${selectedAsset.code} — ${selectedAsset.name}` : t.contributions.unknownAsset}
+                  {selectedAsset ? `${selectedAsset.code} · ${selectedAsset.name}` : t.contributions.unknownAsset}
                 </div>
               ) : (
                 <>
@@ -666,7 +666,7 @@ export default function ContributionsPage() {
                       <option value="">{t.contributions.selectAsset}</option>
                       {filteredAssets.map(a => (
                         <option key={a.id} value={a.id}>
-                          {a.code} — {a.name} ({a.currency})
+                          {a.code} · {a.name} ({a.currency})
                         </option>
                       ))}
                     </select>
@@ -1108,7 +1108,7 @@ export default function ContributionsPage() {
             {isIncome && (
               <div className="sm:col-span-2">
                 <label className="block text-xs text-[var(--arvo-fg-muted)] mb-1">
-                  IR retido na fonte (R$) <span className="text-[var(--arvo-fg-soft)] font-normal">— opcional, para crédito fiscal França (2AB)</span>
+                  IR retido na fonte (R$) <span className="text-[var(--arvo-fg-soft)] font-normal">opcional, para crédito fiscal França (2AB)</span>
                 </label>
                 <input
                   type="text"
@@ -1204,7 +1204,7 @@ export default function ContributionsPage() {
                     </td>
                     <td className="px-4 py-3 text-right text-[var(--arvo-fg-muted)]">{fmtNum(c.quantity, 6)}</td>
                     <td className="px-4 py-3 text-right font-medium text-[var(--arvo-fg)]">
-                      {c.value_brl != null ? fmt(c.value_brl) : '—'}
+                      {c.value_brl != null ? fmt(c.value_brl) : '-'}
                     </td>
                     <td className="px-4 py-3 text-right" onClick={e => e.stopPropagation()}>
                       {confirmDeleteId === c.id ? (
@@ -1264,7 +1264,7 @@ export default function ContributionsPage() {
                   <div className="text-xs text-[var(--arvo-fg-soft)] mt-0.5">{fmtDate(c.date)} · {fmtNum(c.quantity, 4)}</div>
                 </div>
                 <div className="text-right shrink-0">
-                  <div className="text-sm font-medium text-[var(--arvo-fg)]">{c.value_brl != null ? fmt(c.value_brl) : '—'}</div>
+                  <div className="text-sm font-medium text-[var(--arvo-fg)]">{c.value_brl != null ? fmt(c.value_brl) : '-'}</div>
                 </div>
               </div>
             ))}

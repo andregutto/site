@@ -302,7 +302,7 @@ export default function ManualValueModal({ asset, onClose, onSaved, initialMode 
                     const raw = e.target.value.trim()
                     if (raw && parseLocaleNum(raw) === null) setAportTotalErr(t.modals.invalidFormat)
                   }}
-                  placeholder="ex: 60.000,00 — atualiza o valor de mercado"
+                  placeholder="ex: 60.000,00 (atualiza o valor de mercado)"
                   className={inputCls('w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2', !!aportTotalErr)}
                 />
                 {aportTotalErr && <p className="text-xs text-red-500 mt-0.5">{aportTotalErr}</p>}

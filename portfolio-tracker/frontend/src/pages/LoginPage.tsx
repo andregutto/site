@@ -13,7 +13,7 @@ const F_SANS    = "var(--arvo-font-body)"
 const F_DISPLAY = "'Playfair Display', serif"
 
 const COUNTRY_OPTIONS = [
-  { value: '',            label: '—' },
+  { value: '',            label: '-' },
   { value: 'Brasil',      label: 'Brasil' },
   { value: 'França',      label: 'France' },
   { value: 'Portugal',    label: 'Portugal' },
@@ -181,7 +181,7 @@ export default function LoginPage() {
             "{l.tagline1}"
           </div>
           <div style={{ fontFamily: F_SANS, fontSize: 10, letterSpacing: '0.30em', textTransform: 'uppercase', color: 'rgba(242,237,228,0.40)', marginTop: 22 }}>
-            — arvo, 2026
+            arvo, 2026
           </div>
         </div>
 

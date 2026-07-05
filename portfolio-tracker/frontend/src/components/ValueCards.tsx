@@ -23,7 +23,7 @@ export default function ValueCards({ total_brl, generated_at, invested_brl, gain
 
   function pctText(val: number | null | undefined) {
     if (hideValues) return '•••'
-    if (val == null) return chartLoading ? '...' : '—'
+    if (val == null) return chartLoading ? '...' : '-'
     return `${val >= 0 ? '+' : ''}${val.toFixed(1)}%`
   }
 
@@ -102,7 +102,7 @@ export default function ValueCards({ total_brl, generated_at, invested_brl, gain
             <span className={`arvo-num text-base sm:text-lg ${pctClass(period_abs)}`} style={{ fontFamily: "var(--arvo-font-body)", letterSpacing: '0.04em', ...pctStyle(period_abs) }}>
               {period_abs != null
                 ? `${period_abs >= 0 ? '+' : ''}${fmt(period_abs, 0)}`
-                : chartLoading ? '...' : '—'}
+                : chartLoading ? '...' : '-'}
             </span>
           </div>
           <div className="2xl:border-l 2xl:pl-6" style={{ display: 'flex', flexDirection: 'column', gap: 6, borderColor: 'var(--arvo-border)' }}>

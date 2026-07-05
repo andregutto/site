@@ -26,12 +26,12 @@ function dayPctColor(v: number | null, neutral: boolean) {
 }
 
 function fmtPct(v: number | null) {
-  if (v == null) return '—'
+  if (v == null) return '-'
   return `${v >= 0 ? '+' : ''}${v.toFixed(2)}%`
 }
 
 function fmtValue(v: number | null, unit: string) {
-  if (v == null) return '—'
+  if (v == null) return '-'
   if (unit === 'pts') return v.toLocaleString('pt-BR', { maximumFractionDigits: 0 })
   if (unit === '% a.a.' || unit === '% a.m.') return `${v.toFixed(2)}%`
   if (unit === 'R$') return v.toFixed(4)
@@ -129,7 +129,7 @@ export default function IndicesPage() {
                       <div key={label} className="text-center">
                         <div className="text-xs font-semibold">
                           {pct == null
-                            ? <span className="arvo-num arvo-delta-neutral">—</span>
+                            ? <span className="arvo-num arvo-delta-neutral">-</span>
                             : <StatDelta value={pct} neutral={isInflation} formatted={`${Math.abs(pct).toFixed(2)}%`} />}
                         </div>
                         <div className="text-[10px] text-[var(--arvo-fg-soft)] mt-0.5">{label}</div>

@@ -202,16 +202,16 @@ function BrReport({ year }: { year: number }) {
             <div className="py-3 space-y-1 text-sm text-[var(--arvo-fg-muted)]">
               <p>• {brData.bens_direitos.length} {bt.kpiBens.toLowerCase()}</p>
               {brData.rendimentos_isentos.map(g => (
-                <p key={g.codigo}>• {bt.sectionIsentos} — Código {g.codigo}: {g.descricao} ({fmtBRL(g.total)})</p>
+                <p key={g.codigo}>• {bt.sectionIsentos} · Código {g.codigo}: {g.descricao} ({fmtBRL(g.total)})</p>
               ))}
               {brData.tributacao_exclusiva.map(g => (
-                <p key={g.codigo}>• {bt.sectionExclusiva} — Código {g.codigo}: {g.descricao} ({fmtBRL(g.total)})</p>
+                <p key={g.codigo}>• {bt.sectionExclusiva} · Código {g.codigo}: {g.descricao} ({fmtBRL(g.total)})</p>
               ))}
               {brData.renda_variavel.length > 0 && (
                 <p>• {brData.renda_variavel.reduce((s, m) => s + m.operacoes.length, 0)} {t.frTax.salesDetected.replace('→ caso 3VG', '→ Renda Variável')}</p>
               )}
               {brData.carne_leao.length > 0 && (
-                <p>• {bt.sectionCL} — {brData.carne_leao.reduce((s, m) => s + m.items.length, 0)} {t.frTax.eventsSync}</p>
+                <p>• {bt.sectionCL} · {brData.carne_leao.reduce((s, m) => s + m.items.length, 0)} {t.frTax.eventsSync}</p>
               )}
             </div>
           </Section>
@@ -263,23 +263,23 @@ function BrReport({ year }: { year: number }) {
                       <tr key={m.mes} className={`border-b border-[var(--arvo-border-soft)] ${i % 2 === 0 ? '' : 'bg-[var(--arvo-surface-2)]/50'}`}>
                         <td className="py-1.5 font-medium">{m.mes}</td>
                         <td className="py-1.5 text-right text-[var(--arvo-fg-muted)]">{fmtBRL(m.total_vendas)}</td>
-                        <td className="py-1.5 text-right text-green-700 dark:text-green-300">{m.ganho_bruto > 0 ? fmtBRL(m.ganho_bruto) : '—'}</td>
-                        <td className="py-1.5 text-right text-red-500 dark:text-red-400">{m.perda_bruta < 0 ? fmtBRL(m.perda_bruta) : '—'}</td>
-                        <td className="py-1.5 text-right text-[var(--arvo-fg-soft)] font-mono text-xs">{m.carryover_anterior !== 0 ? fmtBRL(m.carryover_anterior) : '—'}</td>
-                        <td className="py-1.5 text-right font-semibold">{m.ganho_liquido > 0 ? fmtBRL(m.ganho_liquido) : '—'}</td>
+                        <td className="py-1.5 text-right text-green-700 dark:text-green-300">{m.ganho_bruto > 0 ? fmtBRL(m.ganho_bruto) : '-'}</td>
+                        <td className="py-1.5 text-right text-red-500 dark:text-red-400">{m.perda_bruta < 0 ? fmtBRL(m.perda_bruta) : '-'}</td>
+                        <td className="py-1.5 text-right text-[var(--arvo-fg-soft)] font-mono text-xs">{m.carryover_anterior !== 0 ? fmtBRL(m.carryover_anterior) : '-'}</td>
+                        <td className="py-1.5 text-right font-semibold">{m.ganho_liquido > 0 ? fmtBRL(m.ganho_liquido) : '-'}</td>
                         <td className="py-1.5 text-center">
                           <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${m.isento ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300' : 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300'}`}>
                             {m.isento ? bt.rvIsento : bt.rvTributado}
                           </span>
                         </td>
-                        <td className="py-1.5 text-right font-semibold text-red-600 dark:text-red-300">{m.darf_a_pagar > 0 ? fmtBRL(m.darf_a_pagar) : '—'}</td>
+                        <td className="py-1.5 text-right font-semibold text-red-600 dark:text-red-300">{m.darf_a_pagar > 0 ? fmtBRL(m.darf_a_pagar) : '-'}</td>
                       </tr>
                     ))}
                     <tr className="border-t border-[var(--arvo-border)] bg-[var(--arvo-surface-2)] font-semibold">
                       <td className="py-2 text-[var(--arvo-fg-muted)] text-xs">{bt.rvTotalDARF}</td>
                       <td />
                       <td className="py-2 text-right text-green-700 dark:text-green-300">{fmtBRL(brData.total_ganho_rv)}</td>
-                      <td className="py-2 text-right text-red-500 dark:text-red-400">{brData.total_perda_rv !== 0 ? fmtBRL(brData.total_perda_rv) : '—'}</td>
+                      <td className="py-2 text-right text-red-500 dark:text-red-400">{brData.total_perda_rv !== 0 ? fmtBRL(brData.total_perda_rv) : '-'}</td>
                       <td />
                       <td />
                       <td />
@@ -318,8 +318,8 @@ function BrReport({ year }: { year: number }) {
                         <td className="py-1.5 font-medium">{m.mes}</td>
                         <td className="py-1.5 text-right text-[var(--arvo-fg-muted)]">{fmtBRL(m.dividendos_brl)}</td>
                         <td className="py-1.5 text-right">{(m.aliquota * 100).toFixed(1)}%</td>
-                        <td className="py-1.5 text-right text-[var(--arvo-fg-soft)]">{m.deducao > 0 ? fmtBRL(m.deducao) : '—'}</td>
-                        <td className="py-1.5 text-right font-semibold text-orange-600 dark:text-orange-300">{m.ir_devido > 0 ? fmtBRL(m.ir_devido) : '—'}</td>
+                        <td className="py-1.5 text-right text-[var(--arvo-fg-soft)]">{m.deducao > 0 ? fmtBRL(m.deducao) : '-'}</td>
+                        <td className="py-1.5 text-right font-semibold text-orange-600 dark:text-orange-300">{m.ir_devido > 0 ? fmtBRL(m.ir_devido) : '-'}</td>
                       </tr>
                     ))}
                     <tr className="border-t border-[var(--arvo-border)] bg-[var(--arvo-surface-2)] font-semibold">
@@ -365,7 +365,7 @@ function BrReport({ year }: { year: number }) {
                         </td>
                         <td className="py-1.5"><span className="font-semibold">{b.code}</span> <span className="text-xs text-[var(--arvo-fg-soft)]">{b.name}</span></td>
                         <td className="py-1.5 text-xs text-[var(--arvo-fg-muted)] hidden md:table-cell">{b.discriminacao}</td>
-                        <td className="py-1.5 text-right text-[var(--arvo-fg-muted)]">{b.situacao_anterior > 0 ? fmtBRL(b.situacao_anterior) : '—'}</td>
+                        <td className="py-1.5 text-right text-[var(--arvo-fg-muted)]">{b.situacao_anterior > 0 ? fmtBRL(b.situacao_anterior) : '-'}</td>
                         <td className="py-1.5 text-right font-semibold">{fmtBRL(b.situacao_atual)}</td>
                       </tr>
                     ))}
@@ -546,11 +546,11 @@ function applyFS(cell: ExcelJS.Cell, s: FS) {
   if (s.align) cell.alignment = { horizontal: s.align, vertical: 'middle', wrapText: false }
 }
 
-// Arvo brand palette — #0D0D0D black · #1B4FD8 Azul Arara · #E8A020 Ocre Tucano · #D63B2F Vermelho Guará · #1F8A5B Arvo Green
+// Arvo brand palette · #0D0D0D black · #1B4FD8 Azul Arara · #E8A020 Ocre Tucano · #D63B2F Vermelho Guará · #1F8A5B Arvo Green
 const S: Record<string, FS> = {
-  // Column headers — neutral off-white, dark text
+  // Column headers · neutral off-white, dark text
   colHead:  { fill: 'FFEDEDE9', bold: true,  color: 'FF0D0D0D', size: 9 },
-  // Section labels — white bg, Arvo blue bold
+  // Section labels · white bg, Arvo blue bold
   secHead:  { bold: true, color: 'FF1B4FD8', size: 10 },
   // Data rows
   dataA:    {},
@@ -570,10 +570,10 @@ const S: Record<string, FS> = {
   // Step list
   stepNum:  { fill: 'FFEFF4FF', bold: true,  color: 'FF1B4FD8' },
   stepTxt:  { fill: 'FFEFF4FF',              color: 'FF555555' },
-  // Totals — Ocre Tucano gold accent
+  // Totals · Ocre Tucano gold accent
   totalRow: { fill: 'FFFDF4DC', bold: true,  color: 'FF0D0D0D' },
   totalVal: { fill: 'FFFFE896', bold: true,  color: 'FF6B4400' },
-  // Warnings — soft Vermelho Guará
+  // Warnings · soft Vermelho Guará
   warnBg:   { fill: 'FFFEF3F2',              color: 'FFD63B2F' },
   warnIcon: { fill: 'FFFEF3F2', bold: true,  color: 'FFD63B2F' },
   empty:    {},
@@ -598,7 +598,7 @@ function blank(ws: ExcelJS.Worksheet) { ws.addRow([]) }
 // Professional header: black band + gold rule
 function coverHeader(ws: ExcelJS.Worksheet, title: string, meta: string, cols: number) {
   const filler = Array(cols - 1).fill('')
-  // Row 1 — black band, "arvo" in Ocre gold + title in off-white (rich text)
+  // Row 1 · black band, "arvo" in Ocre gold + title in off-white (rich text)
   const r1 = ws.addRow(['', ...filler])
   r1.height = 34
   r1.getCell(1).value = {
@@ -611,7 +611,7 @@ function coverHeader(ws: ExcelJS.Worksheet, title: string, meta: string, cols: n
     cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0D0D0D' } } as ExcelJS.Fill
     cell.alignment = { horizontal: 'left', vertical: 'middle' }
   })
-  // Row 2 — black band, metadata in muted gray
+  // Row 2 · black band, metadata in muted gray
   const r2 = ws.addRow([meta, ...filler])
   r2.height = 18
   r2.eachCell({ includeEmpty: true }, cell => {
@@ -619,13 +619,13 @@ function coverHeader(ws: ExcelJS.Worksheet, title: string, meta: string, cols: n
     cell.font = { color: { argb: 'FF888880' }, size: 9, name: 'Calibri' } as ExcelJS.Font
     cell.alignment = { horizontal: 'left', vertical: 'middle' }
   })
-  // Row 3 — thin Ocre gold accent rule
+  // Row 3 · thin Ocre gold accent rule
   const r3 = ws.addRow(Array(cols).fill(''))
   r3.height = 4
   r3.eachCell({ includeEmpty: true }, cell => {
     cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE8A020' } } as ExcelJS.Fill
   })
-  // Row 4 — white spacer
+  // Row 4 · white spacer
   const r4 = ws.addRow(Array(cols).fill(''))
   r4.height = 10
 }
@@ -644,11 +644,11 @@ async function generateExcel(d: FranceTaxData, method: 'daily' | 'year_end') {
   const wsR = wb.addWorksheet('Récapitulatif')
   wsR.columns = [{ width: 8 }, { width: 60 }, { width: 20 }, { width: 44 }]
   coverHeader(wsR, `Rapport Fiscal France ${d.year}`, `Méthode de change : ${fxLabel}   ·   Généré le ${dateStr}`, 4)
-  sRow(wsR, ['RÉCAPITULATIF — FORMULAIRE 2042', '', '', ''], S.secHead)
+  sRow(wsR, ['RÉCAPITULATIF · FORMULAIRE 2042', '', '', ''], S.secHead)
   blank(wsR)
   sRow(wsR, ['Case', 'Libellé', 'Montant (€)', 'Action'], S.colHead)
-  sRow(wsR, ['2DC', 'Revenus de capitaux mobiliers — Dividendes', e2(tots.dividends_eur), '← reporter dans la case 2DC'], S.case2DC, [S.case2DC, S.case2DC, S.caseValB, S.case2DC])
-  sRow(wsR, ['2TR', 'Produits de placement à revenu fixe — Intérêts', e2(tots.interests_eur), '← reporter dans la case 2TR'], S.case2TR, [S.case2TR, S.case2TR, S.caseValG, S.case2TR])
+  sRow(wsR, ['2DC', 'Revenus de capitaux mobiliers · Dividendes', e2(tots.dividends_eur), '← reporter dans la case 2DC'], S.case2DC, [S.case2DC, S.case2DC, S.caseValB, S.case2DC])
+  sRow(wsR, ['2TR', 'Produits de placement à revenu fixe · Intérêts', e2(tots.interests_eur), '← reporter dans la case 2TR'], S.case2TR, [S.case2TR, S.case2TR, S.caseValG, S.case2TR])
   sRow(wsR, ['2AB', "Crédit d'impôt conventionnel total", e2(tots.credit_eur), '← reporter dans la case 2AB'], S.case2AB, [S.case2AB, S.case2AB, S.caseValY, S.case2AB])
   if (d.capital_gains.length > 0) {
     const cs = totalGainEur >= 0 ? S.gain3VG : S.loss3VM
@@ -673,13 +673,13 @@ async function generateExcel(d: FranceTaxData, method: 'daily' | 'year_end') {
   blank(wsR)
   sRow(wsR, ['!', 'Ce rapport est indicatif. Consultez un expert-comptable avant de soumettre votre déclaration.', '', ''], undefined, [S.warnIcon, S.warnBg, S.warnBg, S.warnBg])
   sRow(wsR, ['!', 'Le traitement fiscal du JCP et des revenus FII sous la convention France-Brésil (1971) est ambigu.', '', ''], undefined, [S.warnIcon, S.warnBg, S.warnBg, S.warnBg])
-  sRow(wsR, ['!', 'Les retenues à la source sont calculées sur des taux théoriques — vérifiez vos relevés de compte.', '', ''], undefined, [S.warnIcon, S.warnBg, S.warnBg, S.warnBg])
+  sRow(wsR, ['!', 'Les retenues à la source sont calculées sur des taux théoriques, vérifiez vos relevés de compte.', '', ''], undefined, [S.warnIcon, S.warnBg, S.warnBg, S.warnBg])
   sRow(wsR, ['!', `Taux BRL/EUR au 31/12 : ${d.fx_rates.year_end_brl_eur.toFixed(6)}   ·   USD/EUR au 31/12 : ${d.fx_rates.year_end_usd_eur.toFixed(6)}`, '', ''], undefined, [S.warnIcon, S.warnBg, S.warnBg, S.warnBg])
 
   // ── Sheet 2: 3916 ────────────────────────────────────────────────────────
   const ws3916 = wb.addWorksheet('3916')
   ws3916.columns = [{ width: 4 }, { width: 42 }, { width: 55 }, { width: 14 }, { width: 26 }, { width: 14 }]
-  coverHeader(ws3916, `Formulaire 3916 — Comptes et Contrats à l'Étranger`, `Exercice ${d.year}   ·   Généré le ${dateStr}`, 6)
+  coverHeader(ws3916, `Formulaire 3916 · Comptes et Contrats à l'Étranger`, `Exercice ${d.year}   ·   Généré le ${dateStr}`, 6)
   sRow(ws3916, ['#', 'Établissement', 'Adresse', 'Pays', 'Numéro de compte', 'État au 31/12'], S.colHead)
   d.accounts.forEach((a, i) => sRow(ws3916,
     [i + 1, a.institution, a.address, a.country, a.account_number || '(à vérifier)', a.status],
@@ -697,10 +697,10 @@ async function generateExcel(d: FranceTaxData, method: 'daily' | 'year_end') {
     const safe  = broker.slice(0, 28).replace(/[[\]*/\\?:]/g, '-')
     const wsBr  = wb.addWorksheet(safe)
     wsBr.columns = [{ width: 12 }, { width: 36 }, { width: 14 }, { width: 18 }, { width: 6 }, { width: 14 }, { width: 10 }, { width: 14 }, { width: 16 }]
-    coverHeader(wsBr, `${broker} — Revenus ${d.year}`, `Méthode de change : ${fxLabel}   ·   Généré le ${dateStr}`, 9)
+    coverHeader(wsBr, `${broker} · Revenus ${d.year}`, `Méthode de change : ${fxLabel}   ·   Généré le ${dateStr}`, 9)
     sRow(wsBr, ['Date', 'Actif', 'Pays', 'Nature', 'Case', 'Montant orig.', 'Taux EUR', 'Montant EUR', 'Retenue (théor.)'], S.colHead)
     evs.forEach((e, i) => sRow(wsBr, [
-      e.date, `${e.asset_code} — ${e.asset_name}`, countryLabel(e.country),
+      e.date, `${e.asset_code} · ${e.asset_name}`, countryLabel(e.country),
       eventTypeLabel(e.event_type), e.form_type,
       e2(e.gross_amount), e2(fxR(e)), e2(gross(e)), e2(wth(e)),
     ], i % 2 === 0 ? S.empty : S.dataB))
@@ -712,10 +712,10 @@ async function generateExcel(d: FranceTaxData, method: 'daily' | 'year_end') {
   // ── Sheet 4: 2047 ────────────────────────────────────────────────────────
   const ws2047 = wb.addWorksheet('2047')
   ws2047.columns = [{ width: 16 }, { width: 30 }, { width: 22 }, { width: 18 }, { width: 12 }, { width: 16 }, { width: 16 }, { width: 16 }]
-  coverHeader(ws2047, `Formulaire 2047 — Revenus Encaissés à l'Étranger`, `Exercice ${d.year}   ·   Méthode : ${fxLabel}   ·   Généré le ${dateStr}`, 8)
+  coverHeader(ws2047, `Formulaire 2047 · Revenus Encaissés à l'Étranger`, `Exercice ${d.year}   ·   Méthode : ${fxLabel}   ·   Généré le ${dateStr}`, 8)
   sRow(ws2047, ['Pays (201)', 'Nature (202)', 'Courtier', 'Revenu brut € (203)', 'Taux conv. (204)', 'Crédit théor. (205)', 'Retenue réelle (206)', 'Crédit effectif (207)'], S.colHead)
   secs.forEach((s, i) => sRow(ws2047, [
-    countryLabel(s.country), `${eventTypeLabel(s.event_type)} — ${s.form_type}`, s.broker,
+    countryLabel(s.country), `${eventTypeLabel(s.event_type)} · ${s.form_type}`, s.broker,
     e2(s.gross_eur), `${(s.convention_rate * 100).toFixed(0)}%`,
     e2(s.theoretical_credit_eur), e2(s.actual_withholding_eur), e2(s.effective_credit_eur),
   ], i % 2 === 0 ? S.empty : S.dataB))
@@ -728,7 +728,7 @@ async function generateExcel(d: FranceTaxData, method: 'daily' | 'year_end') {
   const ws2042 = wb.addWorksheet('2042')
   ws2042.columns = [{ width: 8 }, { width: 64 }, { width: 24 }]
   const case3VG = totalGainEur >= 0
-  coverHeader(ws2042, `Formulaire 2042 — Cases à Reporter`, `Exercice ${d.year}   ·   Généré le ${dateStr}`, 3)
+  coverHeader(ws2042, `Formulaire 2042 · Cases à Reporter`, `Exercice ${d.year}   ·   Généré le ${dateStr}`, 3)
   sRow(ws2042, ['Case', 'Libellé', 'Valeur à reporter (€)'], S.colHead)
   sRow(ws2042, ['2DC', 'Revenus de valeurs mobilières étrangères (dividendes + FII)', e2(tots.dividends_eur)], S.case2DC, [S.case2DC, S.case2DC, S.caseValB])
   sRow(ws2042, ['2TR', 'Produits de placement à revenu fixe (intérêts + JCP + renda fixa)', e2(tots.interests_eur)], S.case2TR, [S.case2TR, S.case2TR, S.caseValG])
@@ -742,7 +742,7 @@ async function generateExcel(d: FranceTaxData, method: 'daily' | 'year_end') {
       e2(Math.abs(totalGainEur)),
     ], cs, [cs, cs, cv])
   }
-  sRow(ws2042, ['8UU', "Comptes à l'étranger déclarés (formulaire 3916)", d.accounts.length > 0 ? 'OUI — à cocher' : 'NON'], S.dataB)
+  sRow(ws2042, ['8UU', "Comptes à l'étranger déclarés (formulaire 3916)", d.accounts.length > 0 ? 'OUI · à cocher' : 'NON'], S.dataB)
   blank(ws2042)
   sRow(ws2042, ['TOTAL revenus déclarés (2DC + 2TR)', '', e2(tots.dividends_eur + tots.interests_eur)], S.totalRow, [S.totalRow, S.totalRow, S.totalVal])
   if (d.capital_gains.length > 0) {
@@ -753,12 +753,12 @@ async function generateExcel(d: FranceTaxData, method: 'daily' | 'year_end') {
   if (d.capital_gains.length > 0) {
     const wsG = wb.addWorksheet('Plus-values')
     wsG.columns = [{ width: 12 }, { width: 34 }, { width: 14 }, { width: 18 }, { width: 8 }, { width: 16 }, { width: 16 }, { width: 16 }, { width: 10 }, { width: 14 }]
-    coverHeader(wsG, `Plus-values — Cessions de Valeurs Mobilières`, `Exercice ${d.year}   ·   Méthode : ${fxLabel}   ·   Généré le ${dateStr}`, 10)
+    coverHeader(wsG, `Plus-values · Cessions de Valeurs Mobilières`, `Exercice ${d.year}   ·   Méthode : ${fxLabel}   ·   Généré le ${dateStr}`, 10)
     sRow(wsG, ['Date', 'Actif', 'Pays', 'Courtier', 'Qtd', 'Prix vente (R$)', 'Coût moy. (R$)', 'G/P brut (R$)', 'Taux EUR', 'G/P net (€)'], S.colHead)
     d.capital_gains.forEach((g, i) => {
       const gainEur = method === 'daily' ? g.gain_loss_eur_daily : g.gain_loss_eur_year_end
       const fxR2    = method === 'daily' ? g.fx_rate_daily : g.fx_rate_year_end
-      sRow(wsG, [g.date, `${g.asset_code} — ${g.asset_name}`, countryLabel(g.country), g.broker, g.qty, e2(g.sale_value_brl), e2(g.cost_basis_brl), e2(g.gain_loss_brl), fxR2, e2(gainEur)],
+      sRow(wsG, [g.date, `${g.asset_code} · ${g.asset_name}`, countryLabel(g.country), g.broker, g.qty, e2(g.sale_value_brl), e2(g.cost_basis_brl), e2(g.gain_loss_brl), fxR2, e2(gainEur)],
         i % 2 === 0 ? S.empty : S.dataB)
     })
     blank(wsG)
@@ -783,15 +783,15 @@ async function generateBrExcel(d: BrazilTaxData) {
   // ── Sheet 1: Resumo ──────────────────────────────────────────────────────
   const wsR = wb.addWorksheet('Resumo')
   wsR.columns = [{ width: 44 }, { width: 20 }, { width: 42 }]
-  coverHeader(wsR, `DIRPF ${d.year} — Declaração de Imposto de Renda`, `Gerado em ${dateStr}`, 3)
+  coverHeader(wsR, `DIRPF ${d.year} · Declaração de Imposto de Renda`, `Gerado em ${dateStr}`, 3)
   sRow(wsR, ['RESUMO GERAL', '', ''], S.secHead)
   blank(wsR)
   sRow(wsR, ['Ficha / Item', 'Valor (R$)', 'Observação'], S.colHead)
-  sRow(wsR, ['Rendimentos Isentos — total', r2(d.total_isentos), 'Ficha: Rendimentos Isentos e Não Tributáveis'], S.empty)
-  sRow(wsR, ['Tributação Exclusiva — total', r2(d.total_exclusiva), 'Ficha: Tributação Exclusiva/Definitiva'], S.dataB)
-  sRow(wsR, ['IR Retido na Fonte — total', r2(d.ir_retido_total), 'Ficha: Imposto Pago/Retido — compensação'], S.empty)
-  sRow(wsR, ['DARF Renda Variável — total', r2(d.total_darf_rv), 'Código DARF 6015 — já recolhido?'], d.total_darf_rv > 0 ? S.warnBg : S.dataB)
-  sRow(wsR, ['Carnê-Leão — total', r2(d.total_carne_leao), 'Código DARF 0190 — já recolhido?'], d.total_carne_leao > 0 ? S.warnBg : S.empty)
+  sRow(wsR, ['Rendimentos Isentos · total', r2(d.total_isentos), 'Ficha: Rendimentos Isentos e Não Tributáveis'], S.empty)
+  sRow(wsR, ['Tributação Exclusiva · total', r2(d.total_exclusiva), 'Ficha: Tributação Exclusiva/Definitiva'], S.dataB)
+  sRow(wsR, ['IR Retido na Fonte · total', r2(d.ir_retido_total), 'Ficha: Imposto Pago/Retido · compensação'], S.empty)
+  sRow(wsR, ['DARF Renda Variável · total', r2(d.total_darf_rv), 'Código DARF 6015 · já recolhido?'], d.total_darf_rv > 0 ? S.warnBg : S.dataB)
+  sRow(wsR, ['Carnê-Leão · total', r2(d.total_carne_leao), 'Código DARF 0190 · já recolhido?'], d.total_carne_leao > 0 ? S.warnBg : S.empty)
   sRow(wsR, ['Carryover para próximo ano', r2(d.carryover_final), d.carryover_final < 0 ? 'Perdas a compensar em ganhos futuros' : ''], d.carryover_final < 0 ? S.case2TR : S.dataB)
   blank(wsR)
   sRow(wsR, ['BENS E DIREITOS', '', ''], S.secHead)
@@ -802,16 +802,16 @@ async function generateBrExcel(d: BrazilTaxData) {
   blank(wsR)
   sRow(wsR, ['!', 'Este relatório é indicativo. Consulte um contador antes de enviar a declaração.', ''], undefined, [S.warnIcon, S.warnBg, S.warnBg])
   sRow(wsR, ['!', 'Isenção de R$ 20.000/mês aplica-se apenas a ações em swing trade (Day trade excluído).', ''], undefined, [S.warnIcon, S.warnBg, S.warnBg])
-  sRow(wsR, ['!', 'Dividendos de FIIs são isentos para PF — verifique os requisitos legais vigentes.', ''], undefined, [S.warnIcon, S.warnBg, S.warnBg])
-  sRow(wsR, ['!', 'JCP está sujeito a 15% retido na fonte — confira os informes de cada instituição.', ''], undefined, [S.warnIcon, S.warnBg, S.warnBg])
+  sRow(wsR, ['!', 'Dividendos de FIIs são isentos para PF, verifique os requisitos legais vigentes.', ''], undefined, [S.warnIcon, S.warnBg, S.warnBg])
+  sRow(wsR, ['!', 'JCP está sujeito a 15% retido na fonte, confira os informes de cada instituição.', ''], undefined, [S.warnIcon, S.warnBg, S.warnBg])
 
   // ── Sheet 2: Bens e Direitos ─────────────────────────────────────────────
   const wsBens = wb.addWorksheet('Bens e Direitos')
   wsBens.columns = [{ width: 12 }, { width: 12 }, { width: 52 }, { width: 28 }, { width: 22 }, { width: 22 }]
-  coverHeader(wsBens, `Bens e Direitos — PGDI`, `Exercício ${d.year}   ·   Gerado em ${dateStr}`, 6)
+  coverHeader(wsBens, `Bens e Direitos · PGDI`, `Exercício ${d.year}   ·   Gerado em ${dateStr}`, 6)
   sRow(wsBens, ['PGDI Grupo', 'PGDI Código', 'Discriminação', 'Ativo', 'Situação Anterior (R$)', 'Situação Atual (R$)'], S.colHead)
   d.bens_direitos.forEach((b, i) => sRow(wsBens,
-    [b.pgdi_grupo, b.pgdi_codigo, b.discriminacao, `${b.code} — ${b.name}`, r2(b.situacao_anterior), r2(b.situacao_atual)],
+    [b.pgdi_grupo, b.pgdi_codigo, b.discriminacao, `${b.code} · ${b.name}`, r2(b.situacao_anterior), r2(b.situacao_atual)],
     i % 2 === 0 ? S.empty : S.dataB))
   blank(wsBens)
   sRow(wsBens, ['', '', 'TOTAL', '', r2(d.bens_direitos.reduce((s, b) => s + b.situacao_anterior, 0)), r2(d.bens_direitos.reduce((s, b) => s + b.situacao_atual, 0))],
@@ -820,7 +820,7 @@ async function generateBrExcel(d: BrazilTaxData) {
   // ── Sheet 3: Rendimentos ─────────────────────────────────────────────────
   const wsRend = wb.addWorksheet('Rendimentos')
   wsRend.columns = [{ width: 8 }, { width: 50 }, { width: 12 }, { width: 16 }, { width: 16 }]
-  coverHeader(wsRend, `Rendimentos — DIRPF ${d.year}`, `Exercício ${d.year}   ·   Gerado em ${dateStr}`, 5)
+  coverHeader(wsRend, `Rendimentos · DIRPF ${d.year}`, `Exercício ${d.year}   ·   Gerado em ${dateStr}`, 5)
   sRow(wsRend, ['RENDIMENTOS ISENTOS E NÃO TRIBUTÁVEIS', '', '', '', ''], S.secHead)
   blank(wsRend)
   sRow(wsRend, ['Código', 'Descrição', 'Data', 'Ativo', 'Valor (R$)'], S.colHead)
@@ -846,7 +846,7 @@ async function generateBrExcel(d: BrazilTaxData) {
   // ── Sheet 4: Renda Variável ──────────────────────────────────────────────
   const wsRV = wb.addWorksheet('Renda Variável')
   wsRV.columns = [{ width: 10 }, { width: 14 }, { width: 14 }, { width: 14 }, { width: 16 }, { width: 14 }, { width: 14 }, { width: 14 }]
-  coverHeader(wsRV, `Renda Variável — Operações em Bolsa`, `Exercício ${d.year}   ·   DARF código 6015 — vencimento último dia útil do mês seguinte   ·   Gerado em ${dateStr}`, 8)
+  coverHeader(wsRV, `Renda Variável · Operações em Bolsa`, `Exercício ${d.year}   ·   DARF código 6015 · vencimento último dia útil do mês seguinte   ·   Gerado em ${dateStr}`, 8)
   sRow(wsRV, ['Mês', 'Total Vendas', 'Ganho Bruto', 'Perda Bruta', 'Carryover Ant.', 'Ganho Líquido', 'Situação', 'DARF a Pagar'], S.colHead)
   d.renda_variavel.forEach((m, i) => sRow(wsRV,
     [m.mes, r2(m.total_vendas), r2(m.ganho_bruto), r2(m.perda_bruta), r2(m.carryover_anterior), r2(m.ganho_liquido), m.isento ? 'Isento' : 'Tributado', r2(m.darf_a_pagar)],
@@ -872,7 +872,7 @@ async function generateBrExcel(d: BrazilTaxData) {
   if (d.carne_leao.length > 0) {
     const wsCL = wb.addWorksheet('Carnê-Leão')
     wsCL.columns = [{ width: 10 }, { width: 20 }, { width: 14 }, { width: 16 }, { width: 18 }]
-    coverHeader(wsCL, `Carnê-Leão — Dividendos do Exterior`, `Exercício ${d.year}   ·   DARF código 0190 — vencimento último dia útil do mês seguinte   ·   Gerado em ${dateStr}`, 5)
+    coverHeader(wsCL, `Carnê-Leão · Dividendos do Exterior`, `Exercício ${d.year}   ·   DARF código 0190 · vencimento último dia útil do mês seguinte   ·   Gerado em ${dateStr}`, 5)
     sRow(wsCL, ['Mês', 'Dividendos (R$)', 'Alíquota', 'Dedução (R$)', 'IR Devido (R$)'], S.colHead)
     d.carne_leao.forEach((m, i) => sRow(wsCL,
       [m.mes, r2(m.dividendos_brl), `${(m.aliquota * 100).toFixed(1)}%`, r2(m.deducao), r2(m.ir_devido)],
@@ -1005,11 +1005,11 @@ function FrReport({ year }: { year: number }) {
       {/* ── Step 1: Overview ─────────────────────────────────────────────── */}
       {step === 'overview' && (
         <>
-          {/* KPI cards — always shown */}
+          {/* KPI cards · always shown */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <Card label={ft.kpiRevenues} value={noEvents ? '—' : fmtEUR(comp.daily.total_eur)} valueClass="text-blue-700 dark:text-blue-300" />
-            <Card label={ft.kpiDividends} value={noEvents ? '—' : fmtEUR(comp.daily.dividends_eur)} valueClass="text-blue-600 dark:text-blue-300" />
-            <Card label={ft.kpiInterests} value={noEvents ? '—' : fmtEUR(comp.daily.interests_eur)} valueClass="text-green-700 dark:text-green-300" />
+            <Card label={ft.kpiRevenues} value={noEvents ? '-' : fmtEUR(comp.daily.total_eur)} valueClass="text-blue-700 dark:text-blue-300" />
+            <Card label={ft.kpiDividends} value={noEvents ? '-' : fmtEUR(comp.daily.dividends_eur)} valueClass="text-blue-600 dark:text-blue-300" />
+            <Card label={ft.kpiInterests} value={noEvents ? '-' : fmtEUR(comp.daily.interests_eur)} valueClass="text-green-700 dark:text-green-300" />
             <Card label={ft.kpiCapGains} value={fmtEUR(taxData.total_gain_eur_daily)} valueClass={taxData.total_gain_eur_daily >= 0 ? 'text-[var(--arvo-gold-text)]' : 'text-red-600 dark:text-red-300'} />
           </div>
 
@@ -1026,14 +1026,14 @@ function FrReport({ year }: { year: number }) {
                       <div key={e.broker} className="flex items-center gap-2 text-xs">
                         <span className="text-green-500 font-bold dark:text-green-400">✓</span>
                         <span className="text-[var(--arvo-fg)] font-medium">{e.broker}</span>
-                        <span className="text-[var(--arvo-fg-soft)]">— {taxData.events.filter(ev => ev.broker === e.broker).length} {ft.eventsSync}</span>
+                        <span className="text-[var(--arvo-fg-soft)]">· {taxData.events.filter(ev => ev.broker === e.broker).length} {ft.eventsSync}</span>
                       </div>
                     ))}
                     {taxData.capital_gains.length > 0 && (
                       <div className="flex items-center gap-2 text-xs">
                         <span className="text-green-500 font-bold dark:text-green-400">✓</span>
                         <span className="text-[var(--arvo-fg)] font-medium">Plus-values (ventes)</span>
-                        <span className="text-[var(--arvo-fg-soft)]">— {taxData.capital_gains.length} {ft.salesDetected}</span>
+                        <span className="text-[var(--arvo-fg-soft)]">· {taxData.capital_gains.length} {ft.salesDetected}</span>
                       </div>
                     )}
                   </div>
@@ -1093,14 +1093,14 @@ function FrReport({ year }: { year: number }) {
                             {userAssets.filter(a => a.asset_type === 'fixed_income').length > 0 && (
                               <optgroup label={ft.fixedIncomeGroup}>
                                 {userAssets.filter(a => a.asset_type === 'fixed_income').map(a => (
-                                  <option key={a.id} value={a.id}>{a.code} — {a.name}</option>
+                                  <option key={a.id} value={a.id}>{a.code} · {a.name}</option>
                                 ))}
                               </optgroup>
                             )}
                             {userAssets.filter(a => a.asset_type !== 'fixed_income').length > 0 && (
                               <optgroup label={ft.othersGroup}>
                                 {userAssets.filter(a => a.asset_type !== 'fixed_income').map(a => (
-                                  <option key={a.id} value={a.id}>{a.code} — {a.name}</option>
+                                  <option key={a.id} value={a.id}>{a.code} · {a.name}</option>
                                 ))}
                               </optgroup>
                             )}
@@ -1237,8 +1237,8 @@ function FrReport({ year }: { year: number }) {
                   ))}
                   {taxData.capital_gains.length > 0 && (
                     <tr className="border-b border-[var(--arvo-border-soft)] hover:bg-[var(--arvo-surface-2)]">
-                      <td className="py-2 text-[var(--arvo-fg)]">—</td>
-                      <td className="py-2 text-[var(--arvo-fg-muted)] text-xs">—</td>
+                      <td className="py-2 text-[var(--arvo-fg)]">-</td>
+                      <td className="py-2 text-[var(--arvo-fg-muted)] text-xs">-</td>
                       <td className="py-2 text-[var(--arvo-fg)]">{ft.descCapGain}</td>
                       <td className="py-2 text-center"><span className="text-xs bg-[var(--arvo-gold-tint)] text-[var(--arvo-gold-text)] rounded px-1.5 py-0.5 font-mono">3VG</span></td>
                       <td className={`py-2 text-right font-semibold ${taxData.total_gain_eur_daily >= 0 ? 'text-[var(--arvo-gold-text)]' : 'text-red-600 dark:text-red-300'}`}>{fmtEUR(taxData.total_gain_eur_daily)}</td>
@@ -1355,7 +1355,7 @@ function FrReport({ year }: { year: number }) {
               </div>
 
               <InfoBox variant="info" title={ft.fxDiff}>
-                <p>{fmtEUR(comp.advantage_eur)} — {comp.recommended === 'daily' ? ft.optionATitle : ft.optionBTitle} ({fmtEUR(comp.advantage_eur)} {ft.fxAdvantage}).</p>
+                <p>{fmtEUR(comp.advantage_eur)} · {comp.recommended === 'daily' ? ft.optionATitle : ft.optionBTitle} ({fmtEUR(comp.advantage_eur)} {ft.fxAdvantage}).</p>
               </InfoBox>
             </div>
           </Section>
@@ -1533,7 +1533,7 @@ function FrReport({ year }: { year: number }) {
                         <td className="py-1.5 text-center">{formBadge(e.form_type)}</td>
                         <td className="py-1.5 text-right font-mono text-[var(--arvo-fg-soft)]">{fxR.toFixed(5)}</td>
                         <td className="py-1.5 text-right font-semibold">{fmtEUR(gross)}</td>
-                        <td className="py-1.5 text-right text-orange-600 dark:text-orange-300">{wth > 0 ? fmtEUR(wth) : '—'}</td>
+                        <td className="py-1.5 text-right text-orange-600 dark:text-orange-300">{wth > 0 ? fmtEUR(wth) : '-'}</td>
                       </tr>
                     )
                   })}

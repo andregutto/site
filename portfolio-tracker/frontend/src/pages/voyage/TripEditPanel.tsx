@@ -162,7 +162,7 @@ export default function TripEditPanel({ trip, destinations, isOwner = true, onSa
         <p style={{ ...labelStyle, marginBottom: 8 }}>
           {tv.destinationsLabel ?? 'Destinos'}
           <span style={{ textTransform: 'none', letterSpacing: 0, fontFamily: 'var(--arvo-font-body)', color: 'var(--arvo-fg-soft)' }}>
-            {' '}— {tv.destinationsHint ?? 'dia 1, 2, 3… relativo ao início da viagem'}
+            {' '}· {tv.destinationsHint ?? 'dia 1, 2, 3… relativo ao início da viagem'}
           </span>
         </p>
         <DestinationsEditor tripId={trip.id} destinations={destinations} onChange={onDestinationsChanged} />

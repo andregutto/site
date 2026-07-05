@@ -33,7 +33,7 @@ function fmt(value: number, currency: string) {
 }
 
 function fmtDate(d: string | null) {
-  if (!d) return '—'
+  if (!d) return '-'
   const [y, m, dd] = d.split('-')
   return `${dd}/${m}/${y}`
 }
@@ -96,7 +96,7 @@ export default function ArchivedAssetsList() {
         const isOpen = expanded.has(a.id)
         const pnlPositive = a.pnl >= 0
         const classColor = a.asset_classes?.color ?? '#94a3b8'
-        const className  = a.asset_classes?.name ?? '—'
+        const className  = a.asset_classes?.name ?? '-'
 
         return (
           <div key={a.id} className="bg-[var(--arvo-surface)] rounded-xl border border-[var(--arvo-border)] shadow-sm overflow-hidden">

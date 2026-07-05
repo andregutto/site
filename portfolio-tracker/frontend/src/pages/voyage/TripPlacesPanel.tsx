@@ -328,7 +328,7 @@ export function LibraryPicker({ tripId, tripCity, tripCountry, destinations = []
       {mode === 'url' ? (
         <form onSubmit={importFromUrl} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-soft)', lineHeight: 1.5 }}>
-            {tv.places?.urlIntro ?? 'Cole o link do Google Maps — o lugar será salvo na biblioteca e adicionado à viagem.'}
+            {tv.places?.urlIntro ?? 'Cole o link do Google Maps: o lugar será salvo na biblioteca e adicionado à viagem.'}
           </p>
           <input
             autoFocus
@@ -389,7 +389,7 @@ export function LibraryPicker({ tripId, tripCity, tripCountry, destinations = []
             </div>
           ) : library.length === 0 ? (
             <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)' }}>
-              {tv.places?.libraryEmpty ?? 'Biblioteca vazia — importe do Google Takeout ou cole um link do Maps.'}
+              {tv.places?.libraryEmpty ?? 'Biblioteca vazia: importe do Google Takeout ou cole um link do Maps.'}
             </p>
           ) : filtered.length === 0 && search ? (
             <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)' }}>

@@ -14,7 +14,7 @@ interface IndexSnapshot {
 const DASHBOARD_INDICES = ['IBOV', 'CDI', 'SP500', 'IPCA'] as const
 
 function fmtVal(v: number | null, unit: string) {
-  if (v == null) return '—'
+  if (v == null) return '-'
   if (unit === 'pts') return v.toLocaleString('pt-BR', { maximumFractionDigits: 0 })
   if (unit === '% a.a.' || unit === '% a.m.') return `${v.toFixed(2)}%`
   return v.toFixed(2)
@@ -63,7 +63,7 @@ export default function MarketIndicesBar() {
             <div className="mt-1 text-xs" style={{ fontFamily: "var(--arvo-font-body)", color: isPos ? 'var(--arvo-green)' : isNeg ? 'var(--arvo-red)' : 'var(--arvo-fg-soft)' }}>
               {pct != null ? (
                 <>{fmtPct(pct)} <span style={{ color: 'var(--arvo-fg-soft)' }}>no mês</span></>
-              ) : '—'}
+              ) : '-'}
             </div>
           </div>
         )

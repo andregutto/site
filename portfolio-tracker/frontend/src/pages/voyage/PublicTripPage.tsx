@@ -841,7 +841,7 @@ export default function PublicTripPage() {
             {tv.public?.ctaTitle ?? 'Inspired your next trip?'}
           </p>
           <p style={{ fontFamily: 'var(--arvo-font-serif)', fontStyle: 'italic', fontSize: 15, color: 'var(--arvo-fg-soft)', marginBottom: 14, lineHeight: 1.6 }}>
-            {tv.public?.ctaBody ?? "Build your own itinerary, organize places on the map and track your trip's cost — all in one place."}
+            {tv.public?.ctaBody ?? "Build your own itinerary, organize places on the map and track your trip's cost, all in one place."}
           </p>
           <a href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 20px', borderRadius: 8, background: 'var(--arvo-fg)', color: 'var(--arvo-bg)', textDecoration: 'none', fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, letterSpacing: '0.04em' }}>
             {tv.public?.ctaButton ?? 'Create my itinerary on Arvo Voyage →'}

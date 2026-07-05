@@ -5,6 +5,7 @@ import { useI18n } from '../../contexts/I18nContext'
 import { PageLoader } from '../../components/ArvoLoader'
 import Avatar from '../voyage/_shared/Avatar'
 import NewTopicModal from './NewTopicModal'
+import CategoryIcon, { PinIcon, LockIcon } from './_shared/CategoryIcon'
 import PullToRefresh from '../../components/PullToRefresh'
 import type { CommunityCategory, CommunityTopicSummary } from './types'
 
@@ -63,7 +64,7 @@ export default function CommunityCategoryPage() {
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
           <div className="flex items-center gap-2">
-            <span style={{ fontSize: 22 }}>{category.icon}</span>
+            <span style={{ color: OCRE, display: 'inline-flex' }}><CategoryIcon slug={category.slug} size={20} /></span>
             <h1 style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 24, color: 'var(--arvo-fg)' }}>
               {tc?.cat?.[category.slug] ?? category.slug}
             </h1>
@@ -99,8 +100,8 @@ export default function CommunityCategoryPage() {
               <Avatar name={topic.author.name} avatarUrl={topic.author.avatar_url} size={32} />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  {topic.pinned && <span style={{ fontSize: 12 }}>📌</span>}
-                  {topic.locked && <span style={{ fontSize: 12 }}>🔒</span>}
+                  {topic.pinned && <span style={{ color: 'var(--arvo-fg-soft)', display: 'inline-flex', flexShrink: 0 }}><PinIcon /></span>}
+                  {topic.locked && <span style={{ color: 'var(--arvo-fg-soft)', display: 'inline-flex', flexShrink: 0 }}><LockIcon /></span>}
                   <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, fontWeight: 600, color: 'var(--arvo-fg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {topic.title}
                   </span>

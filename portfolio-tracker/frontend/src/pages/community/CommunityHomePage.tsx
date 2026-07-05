@@ -6,6 +6,8 @@ import { PageLoader } from '../../components/ArvoLoader'
 import { SearchBox } from '../../components/ui'
 import Avatar from '../voyage/_shared/Avatar'
 import PullToRefresh from '../../components/PullToRefresh'
+import CategoryIcon, { PinIcon, LockIcon } from './_shared/CategoryIcon'
+import NewTopicModal from './NewTopicModal'
 import type { CommunityCategory, CommunityTopicSummary } from './types'
 
 function useDebounced<T>(value: T, delayMs: number): T {
@@ -35,8 +37,9 @@ function TopicResultsList({ topics, tc, navigate }: {
         >
           <Avatar name={topic.author.name} avatarUrl={topic.author.avatar_url} size={30} />
           <div className="flex-1 min-w-0">
-            <div style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: 'var(--arvo-fg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {topic.pinned ? '📌 ' : ''}{topic.title}
+            <div className="flex items-center gap-1.5" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: 'var(--arvo-fg)' }}>
+              {topic.pinned && <span style={{ flexShrink: 0, color: 'var(--arvo-fg-soft)', display: 'inline-flex' }}><PinIcon /></span>}
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{topic.title}</span>
             </div>
             <div style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-muted)' }}>
               @{topic.author.username ?? topic.author.name} · {timeAgo(topic.last_post_at)}
@@ -78,6 +81,7 @@ export default function CommunityHomePage() {
   const [showMine, setShowMine] = useState(false)
   const [mineResults, setMineResults] = useState<CommunityTopicSummary[] | null>(null)
   const [loadingMine, setLoadingMine] = useState(false)
+  const [showNewTopic, setShowNewTopic] = useState(false)
 
   async function loadCategoriesAndRecent() {
     setLoading(true)
@@ -144,6 +148,16 @@ export default function CommunityHomePage() {
           />
         ) : (
           <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setShowNewTopic(true)}
+              style={{
+                fontFamily: 'var(--arvo-font-body)', fontSize: 12, padding: '7px 16px', borderRadius: 999,
+                border: 'none', background: OCRE, color: '#1a1200', cursor: 'pointer', whiteSpace: 'nowrap',
+              }}
+            >
+              + {tc?.newTopic ?? 'Novo tópico'}
+            </button>
             <button
               type="button"
               onClick={toggleMine}
@@ -221,7 +235,7 @@ export default function CommunityHomePage() {
             onMouseEnter={(e) => { e.currentTarget.style.borderColor = OCRE; e.currentTarget.style.background = 'rgba(232,160,32,0.06)' }}
             onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--arvo-border)'; e.currentTarget.style.background = 'var(--arvo-surface)' }}
           >
-            <span style={{ fontSize: 15, lineHeight: 1 }}>{c.icon}</span>
+            <span style={{ lineHeight: 0, color: 'var(--arvo-fg-muted)' }}><CategoryIcon slug={c.slug} /></span>
             {tc?.cat?.[c.slug] ?? c.slug}
           </button>
         ))}
@@ -249,9 +263,8 @@ export default function CommunityHomePage() {
                 <Avatar name={topic.author.name} avatarUrl={topic.author.avatar_url} size={30} />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: 'var(--arvo-fg)' }}>
-                    {cat?.icon && <span style={{ flexShrink: 0 }}>{cat.icon}</span>}
-                    {topic.pinned && <span style={{ flexShrink: 0 }}>📌</span>}
-                    {topic.locked && <span style={{ flexShrink: 0 }}>🔒</span>}
+                    {topic.pinned && <span style={{ flexShrink: 0, color: 'var(--arvo-fg-soft)', display: 'inline-flex' }}><PinIcon /></span>}
+                    {topic.locked && <span style={{ flexShrink: 0, color: 'var(--arvo-fg-soft)', display: 'inline-flex' }}><LockIcon /></span>}
                     <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{topic.title}</span>
                   </div>
                   <div style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-muted)' }}>
@@ -270,6 +283,14 @@ export default function CommunityHomePage() {
         )}
       </div>
       </>}
+
+      {showNewTopic && (
+        <NewTopicModal
+          categories={categories ?? []}
+          onClose={() => setShowNewTopic(false)}
+          onCreated={(catSlug, topicId) => { setShowNewTopic(false); navigate(`/community/${catSlug}/${topicId}`) }}
+        />
+      )}
     </div>
     </PullToRefresh>
   )

@@ -173,11 +173,11 @@ export function InviteModal({ s, result, copied, onInvite, onCopy, onClose }: {
         {!result ? (
           <>
             <p className="text-xs" style={{ color: 'var(--arvo-fg-soft)', lineHeight: 1.5 }}>
-              {s.inviteHint ?? 'Informe o e-mail ou @usuário do convidado. Ele(a) recebe um convite e precisa aceitar — a menos que tenha ativado "aceitar automaticamente" pra você.'}
+              {s.inviteHint ?? 'Informe o e-mail ou @usuário do convidado. Ele(a) recebe um convite e precisa aceitar, a menos que tenha ativado "aceitar automaticamente" pra você.'}
             </p>
             {directOk && (
               <p className="text-xs" style={{ color: '#1F8A5B' }}>
-                {s.inviteDirectOk ?? '✓ Adicionado direto — já é membro ativo do grupo.'}
+                {s.inviteDirectOk ?? '✓ Adicionado direto: já é membro ativo do grupo.'}
               </p>
             )}
 
@@ -210,7 +210,7 @@ export function InviteModal({ s, result, copied, onInvite, onCopy, onClose }: {
             )}
             {friends.length > FRIEND_CHIP_CAP && !friendFilter.trim() && (
               <p className="text-[11px]" style={{ color: 'var(--arvo-fg-soft)' }}>
-                {(s.andMoreFriends ?? '+ {n} amigos — use o filtro acima').replace('{n}', String(friends.length - FRIEND_CHIP_CAP))}
+                {(s.andMoreFriends ?? '+ {n} amigos, use o filtro acima').replace('{n}', String(friends.length - FRIEND_CHIP_CAP))}
               </p>
             )}
 

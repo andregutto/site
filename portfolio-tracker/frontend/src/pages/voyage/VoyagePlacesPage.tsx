@@ -259,7 +259,7 @@ function TakeoutImporter({ onImported, onDeleteAll }: { onImported: () => void; 
           </p>
           {result.skipped > 0 && (
             <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)', marginTop: 3 }}>
-              {(tv.places?.skippedCount ?? '{n} entradas puladas (pins sem nome — provavelmente marcadores manuais no mapa)').replace('{n}', String(result.skipped))}
+              {(tv.places?.skippedCount ?? '{n} entradas puladas (pins sem nome, provavelmente marcadores manuais no mapa)').replace('{n}', String(result.skipped))}
             </p>
           )}
         </div>
@@ -285,7 +285,7 @@ function PlaceCard({ place, onDelete }: { place: Place; onDelete: (id: number) =
     // item do roteiro já tem os dados copiados) — avisa quando é o caso,
     // já que isso pode confundir quem espera que apague de tudo.
     if (data.usedInTrips > 0) {
-      alert((tv.confirm?.removedFromLibraryStillInTrips ?? 'Removido da biblioteca. Continua em {n} viagem(ns) já montada(s) — não foi removido do roteiro.').replace('{n}', String(data.usedInTrips)))
+      alert((tv.confirm?.removedFromLibraryStillInTrips ?? 'Removido da biblioteca. Continua em {n} viagem(ns) já montada(s), não foi removido do roteiro.').replace('{n}', String(data.usedInTrips)))
     }
     onDelete(place.id)
   }

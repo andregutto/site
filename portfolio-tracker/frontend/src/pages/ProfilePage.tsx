@@ -1318,7 +1318,7 @@ export default function ProfilePage() {
                         <ul className="text-xs text-[var(--arvo-fg-muted)] mt-1 space-y-0.5">
                           {deletePreview.pending_balances.map((b, i) => (
                             <li key={i}>
-                              {b.name ?? b.username ?? '—'}: {b.amount > 0
+                              {b.name ?? b.username ?? '-'}: {b.amount > 0
                                 ? t.profile.deleteBalanceOwedToYou.replace('{amount}', `${b.currency} ${Math.abs(b.amount).toFixed(2)}`)
                                 : t.profile.deleteBalanceYouOwe.replace('{amount}', `${b.currency} ${Math.abs(b.amount).toFixed(2)}`)}
                             </li>

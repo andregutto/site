@@ -246,7 +246,7 @@ export default function MessagesPage() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, fontWeight: 600, color: 'var(--arvo-fg)' }}>
-                      {c.peer.name ?? c.peer.username ?? '—'}
+                      {c.peer.name ?? c.peer.username ?? '-'}
                     </span>
                   </div>
                   {c.last_message && (

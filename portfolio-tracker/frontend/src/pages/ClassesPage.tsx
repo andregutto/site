@@ -59,7 +59,7 @@ function IconPicker({ value, onChange, color }: { value: string | null; onChange
           className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs border transition-all hover:scale-110 ${
             value == null ? 'border-[var(--arvo-fg)] bg-[var(--arvo-fg)]/10 ring-1 ring-[var(--arvo-fg)]' : 'border-[var(--arvo-border)] bg-[var(--arvo-surface-2)]'
           }`}
-        >—</button>
+        >-</button>
         {CLASS_ICON_KEYS.map(key => (
           <button
             key={key}

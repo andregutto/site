@@ -67,7 +67,7 @@ export default function DividendsPage() {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency, maximumFractionDigits: 2 }).format(convert(brl))
   }
   function fmtDate(s: string | null | undefined) {
-    if (!s) return '—'
+    if (!s) return '-'
     const [y, m, day] = s.split('-')
     return `${day}/${m}/${y}`
   }
