@@ -2834,6 +2834,12 @@
     "momentLabel": "Moment en cours",
     "until": "jusqu’au",
     "shortcuts": "Raccourcis",
-    "momentNext": "Prochain moment"
+    "momentNext": "Prochain moment",
+    "tripLast": "Dernier voyage",
+    "financesLabel": "Finances du mois",
+    "ofBudget": "sur",
+    "balancesLabel": "Entre amis",
+    "toReceive": "à recevoir",
+    "toPay": "à payer"
   }
 }

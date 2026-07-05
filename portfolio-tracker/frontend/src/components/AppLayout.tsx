@@ -414,7 +414,7 @@ export default function AppLayout() {
                 há valores monetários na tela. Em qualquer outra seção (Voyage,
                 Comunidade, Mensagens, Pessoas, Perfil, Notificações...) é um ícone
                 a mais sem função, então mostra só onde realmente serve. */}
-            {(inInvestimentos || inFinances) && (
+            {(inInvestimentos || inFinances || location.pathname.startsWith('/home')) && (
             <button
               onClick={toggleHideValues}
               title={hideValues ? (t.common.showValues ?? 'Mostrar valores') : (t.common.hideValues ?? 'Ocultar valores')}

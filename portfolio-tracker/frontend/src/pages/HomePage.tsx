@@ -13,9 +13,12 @@ import type { PortfolioValue } from '../lib/types'
 interface TodayData {
   first_name: string
   hot_topics: Array<{ id: number; title: string; category_slug: string; category_name: string | null; reply_count: number; last_post_at: string }>
-  next_trip: { id: number; title: string; destination: string | null; start_date: string; end_date: string | null; ongoing: boolean } | null
+  next_trip: { id: number; title: string; destination: string | null; start_date: string; end_date: string | null; ongoing: boolean; past: boolean } | null
   active_moment: { id: number; name: string; icon: string; color: string; start_date: string | null; end_date: string | null; ongoing: boolean } | null
+  month_summary: { spent: number; budget: number; currency: string } | null
 }
+
+interface ContactBalance { currency: string; amount: number }
 
 function timeAgo(iso: string): string {
   const mins = Math.floor((Date.now() - new Date(iso).getTime()) / 60000)
@@ -33,28 +36,37 @@ export default function HomePage() {
   const { t, locale } = useI18n()
   const th = (t as any).home ?? {}
   const navigate = useNavigate()
-  const { fmt } = useCurrency()
+  const { fmt, hideValues } = useCurrency()
 
   const [data, setData] = useState<TodayData | null>(null)
   const [loading, setLoading] = useState(true)
   const [wealth, setWealth] = useState<number | null>(null)
-  const [wealthLoading, setWealthLoading] = useState(false)
+  const [balances, setBalances] = useState<{ toReceive: ContactBalance[]; toPay: ContactBalance[] } | null>(null)
 
   useEffect(() => {
     apiFetch<TodayData>('/home/today')
       .then(setData)
       .finally(() => setLoading(false))
+    apiFetch<PortfolioValue>('/portfolio/value')
+      .then(v => setWealth(v.total_brl))
+      .catch(() => {})
+    // Saldos com amigos/grupos: agrega os balances por moeda do /people
+    apiFetch<{ contacts: Array<{ balances?: ContactBalance[] }> }>('/people')
+      .then(({ contacts }) => {
+        const byCur: Record<string, number> = {}
+        for (const c of contacts ?? []) for (const b of c.balances ?? []) {
+          byCur[b.currency] = (byCur[b.currency] ?? 0) + b.amount
+        }
+        const toReceive = Object.entries(byCur).filter(([, v]) => v >= 0.01).map(([currency, amount]) => ({ currency, amount }))
+        const toPay = Object.entries(byCur).filter(([, v]) => v <= -0.01).map(([currency, amount]) => ({ currency, amount: Math.abs(amount) }))
+        setBalances(toReceive.length || toPay.length ? { toReceive, toPay } : null)
+      })
+      .catch(() => {})
   }, [])
 
-  async function revealWealth() {
-    if (wealthLoading || wealth != null) return
-    setWealthLoading(true)
-    try {
-      const v = await apiFetch<PortfolioValue>('/portfolio/value')
-      setWealth(v.total_brl)
-    } finally {
-      setWealthLoading(false)
-    }
+  function fmtCur(amount: number, cur: string) {
+    if (hideValues) return '•••'
+    return new Intl.NumberFormat(locale === 'pt' ? 'pt-BR' : locale === 'fr' ? 'fr-FR' : 'en-US', { style: 'currency', currency: cur, maximumFractionDigits: 0 }).format(amount)
   }
 
   const hour = new Date().getHours()
@@ -88,22 +100,12 @@ export default function HomePage() {
         <div>
           <p style={cardLabel}>{th.wealthLabel ?? 'Patrimônio'}</p>
           <p className="arvo-num" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 24, color: 'var(--arvo-fg)', marginTop: 4 }}>
-            {wealth != null ? fmt(wealth, 0) : '•••••'}
+            {wealth != null ? fmt(wealth, 0) : '…'}
           </p>
         </div>
-        {wealth == null ? (
-          <button
-            onClick={revealWealth}
-            disabled={wealthLoading}
-            style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '9px 18px', borderRadius: 999, border: '1px solid var(--arvo-border)', background: 'none', color: 'var(--arvo-fg-muted)', cursor: 'pointer', opacity: wealthLoading ? 0.5 : 1 }}
-          >
-            {wealthLoading ? '...' : (th.reveal ?? 'Mostrar')}
-          </button>
-        ) : (
-          <Link to="/dashboard" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '9px 18px', borderRadius: 999, background: 'var(--arvo-pill-active-bg)', color: 'var(--arvo-pill-active-fg)', textDecoration: 'none' }}>
-            {th.openDashboard ?? 'Ver dashboard'}
-          </Link>
-        )}
+        <Link to="/dashboard" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '9px 18px', borderRadius: 999, background: 'var(--arvo-pill-active-bg)', color: 'var(--arvo-pill-active-fg)', textDecoration: 'none' }}>
+          {th.openDashboard ?? 'Ver dashboard'}
+        </Link>
       </div>
 
       {/* Comunidade: tópicos quentes */}
@@ -133,7 +135,7 @@ export default function HomePage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {data?.next_trip && (
             <Link to="/voyage" style={{ ...card, padding: '14px 18px', textDecoration: 'none', display: 'block' }}>
-              <p style={cardLabel}>{data.next_trip.ongoing ? (th.tripNow ?? 'Viagem em andamento') : (th.tripNext ?? 'Próxima viagem')}</p>
+              <p style={cardLabel}>{data.next_trip.ongoing ? (th.tripNow ?? 'Viagem em andamento') : data.next_trip.past ? (th.tripLast ?? 'Última viagem') : (th.tripNext ?? 'Próxima viagem')}</p>
               <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 18, color: 'var(--arvo-fg)', marginTop: 6 }}>{data.next_trip.title}</p>
               <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)', marginTop: 3 }}>
                 {data.next_trip.destination ? `${data.next_trip.destination} · ` : ''}
@@ -154,6 +156,55 @@ export default function HomePage() {
             </Link>
           )}
         </div>
+      )}
+
+      {/* Finanças do mês */}
+      {data?.month_summary && (
+        <Link to="/finances" style={{ ...card, padding: '14px 18px', textDecoration: 'none', display: 'block' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+            <p style={cardLabel}>{th.financesLabel ?? 'Finanças do mês'}</p>
+            {data.month_summary.budget > 0 && !hideValues && (
+              <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: data.month_summary.spent > data.month_summary.budget ? 'var(--arvo-red, #D63B2F)' : 'var(--arvo-fg-soft)' }}>
+                {Math.round((data.month_summary.spent / data.month_summary.budget) * 100)}%
+              </span>
+            )}
+          </div>
+          <p className="arvo-num" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 20, color: 'var(--arvo-fg)', marginTop: 5 }}>
+            {fmtCur(data.month_summary.spent, data.month_summary.currency)}
+            {data.month_summary.budget > 0 && (
+              <span style={{ fontSize: 12, color: 'var(--arvo-fg-soft)' }}> {th.ofBudget ?? 'de'} {fmtCur(data.month_summary.budget, data.month_summary.currency)}</span>
+            )}
+          </p>
+          {data.month_summary.budget > 0 && (
+            <div style={{ height: 5, borderRadius: 99, background: 'var(--arvo-hover-bg)', overflow: 'hidden', marginTop: 9 }}>
+              <div style={{ width: `${Math.min(100, (data.month_summary.spent / data.month_summary.budget) * 100)}%`, height: '100%', borderRadius: 99, background: data.month_summary.spent > data.month_summary.budget ? 'var(--arvo-red, #D63B2F)' : 'var(--arvo-gold)' }} />
+            </div>
+          )}
+        </Link>
+      )}
+
+      {/* Saldos com amigos */}
+      {balances && (
+        <Link to="/people" style={{ ...card, padding: '14px 18px', textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+          <div>
+            <p style={cardLabel}>{th.balancesLabel ?? 'Entre amigos'}</p>
+            <div style={{ display: 'flex', gap: 18, marginTop: 6, flexWrap: 'wrap' }}>
+              {balances.toReceive.length > 0 && (
+                <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5 }}>
+                  <span style={{ color: 'var(--arvo-fg-soft)', fontSize: 11.5 }}>{th.toReceive ?? 'a receber'} </span>
+                  <span className="arvo-delta-pos" style={{ fontWeight: 600 }}>{balances.toReceive.map(b => fmtCur(b.amount, b.currency)).join(' + ')}</span>
+                </span>
+              )}
+              {balances.toPay.length > 0 && (
+                <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5 }}>
+                  <span style={{ color: 'var(--arvo-fg-soft)', fontSize: 11.5 }}>{th.toPay ?? 'a pagar'} </span>
+                  <span className="arvo-delta-neg" style={{ fontWeight: 600 }}>{balances.toPay.map(b => fmtCur(b.amount, b.currency)).join(' + ')}</span>
+                </span>
+              )}
+            </div>
+          </div>
+          <span style={{ color: 'var(--arvo-fg-faint)', fontSize: 16, flexShrink: 0 }}>→</span>
+        </Link>
       )}
 
       {/* Atalhos */}

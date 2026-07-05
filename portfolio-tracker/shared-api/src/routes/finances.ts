@@ -186,7 +186,7 @@ export async function getRecentExpenseShares(userId: string): Promise<RecentExpe
 
 // ── Financial month helpers ───────────────────────────────────────────────────
 
-function financialMonthKey(dateStr: string, cycleDay: number): string {
+export function financialMonthKey(dateStr: string, cycleDay: number): string {
   if (cycleDay <= 1) return dateStr.slice(0, 7)
   const [y, m, d] = dateStr.split('-').map(Number)
   if (d >= cycleDay) {
@@ -196,7 +196,7 @@ function financialMonthKey(dateStr: string, cycleDay: number): string {
   return `${y}-${String(m).padStart(2, '0')}`
 }
 
-function financialMonthRange(yearMonth: string, cycleDay: number): { start: string; end: string } {
+export function financialMonthRange(yearMonth: string, cycleDay: number): { start: string; end: string } {
   const [y, m] = yearMonth.split('-').map(Number)
   if (cycleDay <= 1) {
     const start = `${y}-${String(m).padStart(2, '0')}-01`
@@ -211,7 +211,7 @@ function financialMonthRange(yearMonth: string, cycleDay: number): { start: stri
   return { start, end }
 }
 
-async function getUserCycleDay(userId: string): Promise<number> {
+export async function getUserCycleDay(userId: string): Promise<number> {
   const { data: { user } } = await supabaseAdmin.auth.admin.getUserById(userId)
   const day = user?.user_metadata?.month_cycle_day
   return typeof day === 'number' && day >= 1 && day <= 28 ? day : 1

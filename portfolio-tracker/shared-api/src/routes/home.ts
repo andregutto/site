@@ -2,6 +2,7 @@ import { Router } from 'express'
 import { requireAuth, AuthRequest } from '../middleware/auth.js'
 import { supabaseAdmin } from '../lib/supabase.js'
 import { userDisplay } from './people.js'
+import { financialMonthKey, financialMonthRange, getUserCycleDay } from './finances.js'
 
 /* Página "Hoje": abertura genérica do app, sem valores financeiros.
    Um único endpoint leve agrega saudação, tópicos quentes da comunidade,
@@ -70,8 +71,13 @@ router.get('/today', async (req: any, res: any) => {
     let nextTrip: any = null
     for (const t of trips ?? []) {
       const ongoing = t.start_date <= todayStr && (!t.end_date || t.end_date >= todayStr)
-      if (ongoing) { nextTrip = { ...t, ongoing: true }; break }
-      if (t.start_date >= todayStr) { nextTrip = { ...t, ongoing: false }; break }
+      if (ongoing) { nextTrip = { ...t, ongoing: true, past: false }; break }
+      if (t.start_date >= todayStr) { nextTrip = { ...t, ongoing: false, past: false }; break }
+    }
+    if (!nextTrip) {
+      // sem viagem futura: relembra a última (mantém o card vivo)
+      const past = (trips ?? []).filter((t: any) => t.start_date < todayStr)
+      if (past.length) nextTrip = { ...past[past.length - 1], ongoing: false, past: true }
     }
 
     // Momento do card: nunca os ocultos de par/grupo (is_pair_default); prioridade
@@ -97,11 +103,41 @@ router.get('/today', async (req: any, res: any) => {
       if (dateless) activeMoment = { ...dateless, ongoing: false }
     }
 
+    // Finanças do mês (ciclo financeiro do usuário): gasto x orçado
+    let monthSummary: { spent: number; budget: number; currency: string } | null = null
+    try {
+      const cycleDay = await getUserCycleDay(userId)
+      const fm = financialMonthKey(todayStr, cycleDay)
+      const { start, end } = financialMonthRange(fm, cycleDay)
+      const [txRes, catRes, incRes] = await Promise.all([
+        supabaseAdmin
+          .from('finance_transactions')
+          .select('amount, is_internal_transfer, exclude_from_stats')
+          .eq('user_id', userId)
+          .gte('date', start)
+          .lte('date', end),
+        supabaseAdmin.from('finance_categories').select('budget_monthly').eq('user_id', userId),
+        supabaseAdmin.from('finance_income').select('currency').eq('user_id', userId).maybeSingle(),
+      ])
+      const spent = (txRes.data ?? [])
+        .filter((t: any) => !t.is_internal_transfer && !t.exclude_from_stats && Number(t.amount) < 0)
+        .reduce((sum: number, t: any) => sum + Math.abs(Number(t.amount)), 0)
+      const budget = (catRes.data ?? []).reduce((sum: number, c: any) => sum + (Number(c.budget_monthly) || 0), 0)
+      if (spent > 0 || budget > 0) {
+        monthSummary = {
+          spent: Math.round(spent * 100) / 100,
+          budget: Math.round(budget * 100) / 100,
+          currency: incRes.data?.currency ?? 'EUR',
+        }
+      }
+    } catch { /* card opcional: sem finanças configuradas, não aparece */ }
+
     res.json({
       first_name: firstName,
       hot_topics: hotTopics,
       next_trip: nextTrip,
       active_moment: activeMoment,
+      month_summary: monthSummary,
     })
   } catch (err: any) {
     res.status(500).json({ error: err.message })
