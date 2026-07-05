@@ -2848,6 +2848,9 @@
     "newReplies": "new replies",
     "goalsLabel": "Financial freedom",
     "goalEmpty": "Set your goal and track your progress.",
-    "goalCreate": "Create plan"
+    "goalCreate": "Create plan",
+    "splitExpense": "Split an expense",
+    "splitWithWho": "Split with whom?",
+    "splitNoFriends": "You don't have connected friends to split with yet."
   }
 }

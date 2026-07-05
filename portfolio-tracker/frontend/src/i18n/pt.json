@@ -2848,6 +2848,9 @@
     "newReplies": "respostas novas",
     "goalsLabel": "Liberdade financeira",
     "goalEmpty": "Defina sua meta e acompanhe o progresso.",
-    "goalCreate": "Criar plano"
+    "goalCreate": "Criar plano",
+    "splitExpense": "Dividir despesa",
+    "splitWithWho": "Dividir com quem?",
+    "splitNoFriends": "Você ainda não tem amigos conectados para dividir."
   }
 }

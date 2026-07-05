@@ -132,7 +132,7 @@ function CollapsibleSection({ title, count, children, defaultOpen }: { title: st
 // amigos) — reaproveita o ExpensesPanel normal (mesma lista + form de nova
 // despesa) só que sem a moldura de Momento (nome/ícone/capa/colaboradores),
 // já que pra quem usa o Arvo só como Splitwise esse conceito nunca aparece.
-function PairMomentModal({ friendUserId, friendName, initialMomentId, onClose }: {
+export function PairMomentModal({ friendUserId, friendName, initialMomentId, onClose }: {
   friendUserId: string
   friendName: string
   initialMomentId: number | null
