@@ -260,7 +260,7 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
               const assetsWithRet = group.assets.filter(a =>
                 !a.needs_manual && a.value_brl > 0 && (
                   (returns && returns[a.id] != null) ||
-                  (a.invested_brl != null && a.invested_brl > 0)
+                  (a.source !== 'manual' && a.invested_brl != null && a.invested_brl > 0)
                 )
               )
               const totalRetWeight = assetsWithRet.reduce((s, a) => s + a.value_brl, 0)
@@ -268,7 +268,7 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
                 ? assetsWithRet.reduce((s, a) => {
                     const r = (returns && returns[a.id] != null)
                       ? returns[a.id]!
-                      : (a.invested_brl != null && a.invested_brl > 0)
+                      : (a.source !== 'manual' && a.invested_brl != null && a.invested_brl > 0)
                         ? (a.value_brl - a.invested_brl) / a.invested_brl * 100
                         : 0
                     return s + r * a.value_brl
@@ -439,7 +439,7 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
           const assetsWithRetM = group.assets.filter(a =>
             !a.needs_manual && a.value_brl > 0 && (
               (returns && returns[a.id] != null) ||
-              (a.invested_brl != null && a.invested_brl > 0)
+              (a.source !== 'manual' && a.invested_brl != null && a.invested_brl > 0)
             )
           )
           const totalRetWeightM = assetsWithRetM.reduce((s, a) => s + a.value_brl, 0)
@@ -447,7 +447,7 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
             ? assetsWithRetM.reduce((s, a) => {
                 const r = (returns && returns[a.id] != null)
                   ? returns[a.id]!
-                  : (a.invested_brl != null && a.invested_brl > 0)
+                  : (a.source !== 'manual' && a.invested_brl != null && a.invested_brl > 0)
                     ? (a.value_brl - a.invested_brl) / a.invested_brl * 100
                     : 0
                 return s + r * a.value_brl
@@ -481,7 +481,7 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
                     const isCardExpanded = expandedAssets.has(asset.id)
                     const ret = returns?.[asset.id] ?? null
                     const displayRet = ret != null ? ret
-                      : (asset.invested_brl != null && asset.invested_brl > 0 && asset.value_brl > 0)
+                      : (asset.source !== 'manual' && asset.invested_brl != null && asset.invested_brl > 0 && asset.value_brl > 0)
                         ? (asset.value_brl - asset.invested_brl) / asset.invested_brl * 100
                         : null
 
