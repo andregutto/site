@@ -203,7 +203,8 @@
     "allIndices": "Voir tous les indices",
     "removeFromFavorites": "Retirer des favoris",
     "totalReturnTip": "Rentabilité totale depuis le premier apport",
-    "aiSuggested": "Suggéré par IA"
+    "aiSuggested": "Suggéré par IA",
+    "priceVarTip": "Variation du prix de l'actif sur la période"
   },
   "login": {
     "subtitle": "Suivez vos investissements mondiaux",
@@ -287,7 +288,8 @@
     "topGainers": "Meilleures hausses",
     "topLosers": "Meilleures baisses",
     "noMoversData": "Aucune donnée de rendement",
-    "periodGainBrl": "Gain"
+    "periodGainBrl": "Gain",
+    "assetVariation": "Actif"
   },
   "setup": {
     "title": "Premiers pas",

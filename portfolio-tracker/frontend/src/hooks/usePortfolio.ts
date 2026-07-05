@@ -293,6 +293,22 @@ export function usePerformanceBenchmarks(from: string, to: string) {
   return { data, loading, refresh }
 }
 
+export function useAssetPositionReturns(from: string | null, to: string | null) {
+  const [data, setData]     = useState<import('../lib/types').AssetPositionReturns | null>(null)
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    if (!from || !to) { setData(null); return }
+    setLoading(true)
+    apiFetch<import('../lib/types').AssetPositionReturns>(`/performance/asset-position-returns?from=${from}&to=${to}`)
+      .then(setData)
+      .catch(() => setData(null))
+      .finally(() => setLoading(false))
+  }, [from, to])
+
+  return { data, loading }
+}
+
 export function useAssetReturns(from: string | null, to: string | null) {
   const [data, setData]     = useState<AssetReturns | null>(null)
   const [loading, setLoading] = useState(false)

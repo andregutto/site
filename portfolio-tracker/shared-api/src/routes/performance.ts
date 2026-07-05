@@ -1372,6 +1372,104 @@ export async function computeAssetReturns(userId: string, fromStr: string, toStr
   return returns
 }
 
+// Per-asset POSITION return (Simple Dietz) for [fromStr, toStr] ('YYYY-MM'), alongside the
+// asset's own price variation. position = (value_end - value_start - net_contribs) /
+// (value_start + 0.5 * net_contribs) — the same formula the Performance page uses for the
+// whole portfolio, applied per asset, so a mid-period contribution is not reported as gain.
+// price = computeAssetReturns' price variation (what the asset itself did in the period).
+// Manual assets get position=null (their "value" is a typed-in number, not a return).
+export interface AssetReturnPair { position: number | null; price: number | null }
+
+export async function computeAssetPositionReturns(
+  userId: string, fromStr: string, toStr: string
+): Promise<Record<number, AssetReturnPair>> {
+  const isDaily = DATE_RE.test(fromStr) && DATE_RE.test(toStr)
+
+  const data = await fetchPrefetchedData(userId)
+  await prefetchFIRates(data)
+  const splitEventsCache = buildSplitEventsCache(data.contributions, data.assets.map(a => a.id))
+  const fxMemo = makeFxMemo()
+  const priceIndex = buildPriceIndex(data.prices)
+
+  let start: { detail: Array<{ asset_id: number; value: number }> }
+  let end:   { detail: Array<{ asset_id: number; value: number }> }
+  let priceReturns: Record<number, number | null>
+  let fromDateStr: string
+  let toDateStr: string
+
+  if (isDaily) {
+    const today = localDate(new Date())
+    const clampedTo = toStr > today ? today : toStr
+    const startDate = new Date(fromStr + 'T12:00:00')
+    startDate.setDate(startDate.getDate() - 1)
+    const startStr = localDate(startDate)
+    const pricesByAsset: Record<number, Array<{ ref_date: string; price: number; currency: string }>> = {}
+    for (const p of data.prices) (pricesByAsset[p.asset_id] ??= []).push(p)
+    ;[priceReturns, start, end] = await Promise.all([
+      computeAssetReturns(userId, fromStr, toStr),
+      computePortfolioValueAtDay(data, startStr,  pricesByAsset, splitEventsCache, fxMemo),
+      computePortfolioValueAtDay(data, clampedTo, pricesByAsset, splitEventsCache, fxMemo),
+    ])
+    fromDateStr = fromStr
+    toDateStr   = clampedTo
+  } else {
+    const [fromY, fromM] = fromStr.split('-').map(Number)
+    const currentYM = localYM(new Date())
+    const clampedToStr = toStr > currentYM ? currentYM : toStr
+    const [toY, toM] = clampedToStr.split('-').map(Number)
+    const prevM = fromM === 1 ? 12 : fromM - 1
+    const prevY = fromM === 1 ? fromY - 1 : fromY
+    ;[priceReturns, start, end] = await Promise.all([
+      computeAssetReturns(userId, fromStr, toStr),
+      computePortfolioValueAtMonth(data, prevY, prevM, splitEventsCache, fxMemo, priceIndex),
+      computePortfolioValueAtMonth(data, toY,   toM,  splitEventsCache, fxMemo, priceIndex),
+    ])
+    fromDateStr = `${fromStr}-01`
+    const toLastDay = new Date(toY, toM, 0).getDate()
+    toDateStr = `${clampedToStr}-${String(toLastDay).padStart(2, '0')}`
+  }
+
+  const vsMap: Record<number, number> = {}
+  for (const d of start.detail) vsMap[d.asset_id] = d.value
+  const veMap: Record<number, number> = {}
+  for (const d of end.detail) veMap[d.asset_id] = d.value
+
+  const cfMap: Record<number, number> = {}
+  for (const c of data.contributions) {
+    if (c.type === 'income' || c.date < fromDateStr || c.date > toDateStr) continue
+    const v = estimateContribValue(c)
+    cfMap[c.asset_id] = (cfMap[c.asset_id] ?? 0) + (c.type === 'buy' ? v : -v)
+  }
+
+  const out: Record<number, AssetReturnPair> = {}
+  for (const a of data.assets) {
+    const price = priceReturns[a.id] ?? null
+    let position: number | null = null
+    if (a.asset_type !== 'manual') {
+      const vs = vsMap[a.id] ?? 0
+      const ve = veMap[a.id] ?? 0
+      const cf = cfMap[a.id] ?? 0
+      const denom = vs + 0.5 * cf
+      if ((vs > 0 || cf > 0) && denom > 0) {
+        position = Math.round(((ve - vs - cf) / denom) * 10000) / 100
+      }
+    }
+    out[a.id] = { position, price }
+  }
+  return out
+}
+
+router.get('/asset-position-returns', requireAuth, async (req, res: Response) => {
+  const { userId } = req as AuthRequest
+  const fromStr = (req.query.from as string) || localYM(new Date())
+  const toStr   = (req.query.to   as string) || localYM(new Date())
+  res.json(await cache.getOrFetch(
+    `asset-position-returns:${userId}:${fromStr}:${toStr}`,
+    60_000,
+    () => computeAssetPositionReturns(userId, fromStr, toStr),
+  ))
+})
+
 router.get('/asset-returns', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const fromStr = (req.query.from as string) || localYM(new Date())

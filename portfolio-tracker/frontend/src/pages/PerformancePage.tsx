@@ -321,6 +321,20 @@ export default function PerformancePage() {
         }
       })
 
+  // Anchor the chart's last point (current month / today) to the live portfolio total —
+  // the series is day-cached, so without this the last point showed the morning's value
+  // while the page header and Dashboard show the live one. Same rule the "Fim do período"
+  // card already applies.
+  {
+    const lastIsCurrent = useDailyChart
+      ? dailyValuePts.length > 0 && dailyValuePts[dailyValuePts.length - 1].date === localDate(now)
+      : monthsWithData.length > 0 && monthsWithData[monthsWithData.length - 1].month === currentYM
+    const live = livePortfolio?.total_brl
+    if (lastIsCurrent && live != null && live > 0 && valueChartData.length > 0) {
+      valueChartData[valueChartData.length - 1].value = convert(live)
+    }
+  }
+
   // Scale the value chart's Y axis to "value" and "contributions" only, so the
   // long-horizon Freedom Plan "target" line (often several times larger) doesn't
   // compress the Aportes line against the bottom axis. The target line is allowed

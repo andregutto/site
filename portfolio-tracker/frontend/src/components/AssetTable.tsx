@@ -2,7 +2,7 @@ import { useState, useMemo, Fragment } from 'react'
 import type { PortfolioAsset } from '../lib/types'
 import { useCurrency } from '../contexts/CurrencyContext'
 import { useI18n } from '../contexts/I18nContext'
-import { useAssetReturns, usePerformanceInception } from '../hooks/usePortfolio'
+import { useAssetPositionReturns, usePerformanceInception } from '../hooks/usePortfolio'
 import { Segmented } from './ui'
 import { Icon } from './icons'
 import { getClassIcon } from '../lib/classIcons'
@@ -142,10 +142,19 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
     return map
   }, [isInception, assets])
 
-  const { data: internalReturns, loading: internalLoading } = useAssetReturns(
+  // Sub-year periods: per-asset POSITION return (Dietz, contributions in the period are
+  // not gains) plus the asset's own price variation as secondary info.
+  const { data: positionReturns, loading: internalLoading } = useAssetPositionReturns(
     hasExternal || isInception ? null : from,
     hasExternal || isInception ? null : to,
   )
+  const internalReturns = useMemo(() => {
+    if (!positionReturns) return null
+    const map: Record<number, number | null> = {}
+    for (const [id, r] of Object.entries(positionReturns)) map[Number(id)] = r.position
+    return map
+  }, [positionReturns])
+  const priceVars = hasExternal || isInception ? null : positionReturns
   const returns = hasExternal ? externalReturns : isInception ? inceptionReturns : internalReturns
   const returnsLoading = hasExternal ? (externalReturnsLoading ?? false) : isInception ? false : internalLoading
 
@@ -423,8 +432,18 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
                           {returnsLoading ? (
                             <span className="text-xs" style={{ color: 'var(--arvo-fg-faint)' }}>...</span>
                           ) : ret != null ? (
-                            <span className={`text-xs font-semibold arvo-num ${ret >= 0 ? 'arvo-delta-pos' : 'arvo-delta-neg'}`}>
-                              {ret >= 0 ? '+' : ''}{ret.toFixed(2)}%
+                            <span className="inline-flex flex-col items-end gap-0.5">
+                              <span className={`text-xs font-semibold arvo-num ${ret >= 0 ? 'arvo-delta-pos' : 'arvo-delta-neg'}`}>
+                                {ret >= 0 ? '+' : ''}{ret.toFixed(2)}%
+                              </span>
+                              {(() => {
+                                const pv = priceVars?.[asset.id]?.price
+                                return pv != null ? (
+                                  <span className="text-[10px] arvo-num" style={{ color: 'var(--arvo-fg-faint)' }} title={t.common.priceVarTip ?? 'Variação de preço do ativo no período'}>
+                                    {d.assetVariation ?? 'Ativo'} {pv >= 0 ? '+' : ''}{pv.toFixed(2)}%
+                                  </span>
+                                ) : null
+                              })()}
                             </span>
                           ) : asset.source !== 'manual' && asset.invested_brl != null && asset.invested_brl > 0 && asset.value_brl > 0 ? (
                             (() => {
@@ -549,6 +568,14 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
                                   {displayRet >= 0 ? '+' : ''}{displayRet.toFixed(2)}%
                                 </div>
                               )}
+                              {!returnsLoading && (() => {
+                                const pv = priceVars?.[asset.id]?.price
+                                return pv != null ? (
+                                  <div className="text-[10px] arvo-num" style={{ color: 'var(--arvo-fg-faint)' }}>
+                                    {d.assetVariation ?? 'Ativo'} {pv >= 0 ? '+' : ''}{pv.toFixed(2)}%
+                                  </div>
+                                ) : null
+                              })()}
                             </div>
                             <button
                               onClick={e => { e.stopPropagation(); toggleAssetExpand(asset.id) }}

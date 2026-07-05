@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { PageLoader } from '../components/ArvoLoader'
-import { usePortfolioValue, usePerformanceInception, usePerformanceSummary, useAssetReturns, clearPerfCache } from '../hooks/usePortfolio'
+import { usePortfolioValue, usePerformanceInception, usePerformanceSummary, useAssetPositionReturns, clearPerfCache } from '../hooks/usePortfolio'
 import { useDividendSummary, useDividendSync } from '../hooks/useDividends'
 import { useCurrency } from '../contexts/CurrencyContext'
 import { useAchievementContext } from '../contexts/AchievementContext'
@@ -190,7 +190,24 @@ export default function DashboardPage() {
   const periodReturnPct = periodSummary?.return_pct ?? null
   const periodReturnAbs = periodSummary?.return_abs ?? null
 
-  const { data: dashReturns, loading: dashReturnsLoading } = useAssetReturns(perfFrom, perfTo)
+  // Movers use the POSITION return (Dietz — contributions in the period are not gains).
+  // For "Início" the position return over the whole history is best expressed over cost
+  // basis, computed client-side from by_asset (invested_brl), no request needed.
+  const { data: dashPosReturns, loading: dashPosLoading } = useAssetPositionReturns(
+    periodMode === 'inception' ? null : perfFrom,
+    periodMode === 'inception' ? null : perfTo,
+  )
+  const dashReturns: Record<number, number | null> | null = periodMode === 'inception'
+    ? Object.fromEntries((data?.by_asset ?? []).map(a => [
+        a.id,
+        (a.source !== 'manual' && a.invested_brl != null && a.invested_brl > 0 && a.value_brl > 0)
+          ? (a.value_brl - a.invested_brl) / a.invested_brl * 100
+          : null,
+      ]))
+    : (dashPosReturns
+        ? Object.fromEntries(Object.entries(dashPosReturns).map(([id, r]) => [Number(id), r.position]))
+        : null)
+  const dashReturnsLoading = periodMode === 'inception' ? false : dashPosLoading
 
   const divFrom = (() => {
     switch (periodMode) {

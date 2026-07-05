@@ -203,7 +203,8 @@
     "allIndices": "View all indices",
     "removeFromFavorites": "Remove from favorites",
     "totalReturnTip": "Total return since first contribution",
-    "aiSuggested": "Suggested by AI"
+    "aiSuggested": "Suggested by AI",
+    "priceVarTip": "Asset price variation in the period"
   },
   "login": {
     "subtitle": "Track your global investments",
@@ -287,7 +288,8 @@
     "topGainers": "Top gainers",
     "topLosers": "Top losers",
     "noMoversData": "No return data available",
-    "periodGainBrl": "Gain"
+    "periodGainBrl": "Gain",
+    "assetVariation": "Asset"
   },
   "setup": {
     "title": "Getting started",
