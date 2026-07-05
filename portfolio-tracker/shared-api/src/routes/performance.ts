@@ -444,8 +444,14 @@ export async function computePortfolioValueAtMonth(
           }
         }
       } else {
-        // Ticker / Variable income assets logic
-        if (!a.active) return null
+        // Ticker / Variable income assets logic.
+        // Inactive (sold/archived) assets are excluded from the CURRENT value, but must
+        // still be valued for historical months where they were held: their buy/sell
+        // contributions count in the series' cash flows, so skipping their value made
+        // every past month look deeply negative until the position was sold. Holdings
+        // computed from contributions <= dateStr already go to zero after the sale, and
+        // the historical branch below never triggers live price fetches for them.
+        if (!a.active && isCurrentOrFuture) return null
         if (holdings > 0) {
           const splitEvents = splitEventsCache?.get(a.id) ?? computeSplitFactorEvents(allContribs, a.id)
           const adjHoldings = holdings * getSplitAdjustmentFactor(splitEvents, dateStr)
@@ -860,7 +866,12 @@ export async function computePortfolioValueAtDay(
   // Assets are independent of each other here (same reasoning as computePortfolioValueAtMonth
   // above), so the FX/BCB/live-price awaits can run concurrently instead of serially per asset.
   const perAsset = await Promise.all(assets.map(async (a): Promise<{ asset_id: number; value: number } | null> => {
-    if (!a.active) return null
+    // Same rule as computePortfolioValueAtMonth: inactive ticker assets still count on
+    // historical dates where they were held (their cash flows are in the series), and
+    // only drop out of current/future valuations. Manual/FI inactive assets stay
+    // excluded entirely — their carry-forward valuation would never decay to zero.
+    const isTickerType = a.asset_type !== 'manual' && a.asset_type !== 'fixed_income'
+    if (!a.active && (isCurrentOrFuture || !isTickerType)) return null
     let value = 0
     const holdings = holdingsMap[a.id] ?? 0
     const cost = costMap[a.id]
