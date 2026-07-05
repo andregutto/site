@@ -38,7 +38,7 @@ function TopicResultsList({ topics, tc, navigate }: {
           <Avatar name={topic.author.name} avatarUrl={topic.author.avatar_url} size={30} />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: 'var(--arvo-fg)' }}>
-              {topic.pinned && <span style={{ flexShrink: 0, color: 'var(--arvo-fg-soft)', display: 'inline-flex' }}><PinIcon /></span>}
+              {topic.pinned && <span style={{ flexShrink: 0, color: '#E8A020', display: 'inline-flex' }}><PinIcon /></span>}
               <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{topic.title}</span>
             </div>
             <div style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-muted)' }}>
@@ -263,8 +263,8 @@ export default function CommunityHomePage() {
                 <Avatar name={topic.author.name} avatarUrl={topic.author.avatar_url} size={30} />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: 'var(--arvo-fg)' }}>
-                    {topic.pinned && <span style={{ flexShrink: 0, color: 'var(--arvo-fg-soft)', display: 'inline-flex' }}><PinIcon /></span>}
-                    {topic.locked && <span style={{ flexShrink: 0, color: 'var(--arvo-fg-soft)', display: 'inline-flex' }}><LockIcon /></span>}
+                    {topic.pinned && <span style={{ flexShrink: 0, color: '#E8A020', display: 'inline-flex' }}><PinIcon /></span>}
+                    {topic.locked && <span style={{ flexShrink: 0, color: '#E8A020', display: 'inline-flex' }}><LockIcon /></span>}
                     <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{topic.title}</span>
                   </div>
                   <div style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-muted)' }}>

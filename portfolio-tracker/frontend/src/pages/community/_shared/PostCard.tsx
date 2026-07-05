@@ -59,11 +59,8 @@ export default function PostCard({ post, currentUserId, isAdmin, onLike, onEdit,
             {friendshipStatus === 'active' && onMessage && (
               <button
                 onClick={() => onMessage(post.author.id)}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontFamily: 'var(--arvo-font-body)', fontSize: 11, letterSpacing: '0.04em', color: GOLD, background: 'none', border: `1px solid ${GOLD}`, borderRadius: 999, padding: '2px 10px', cursor: 'pointer' }}
+                style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, letterSpacing: '0.04em', color: 'var(--arvo-fg-soft)', background: 'none', border: '1px solid var(--arvo-border)', borderRadius: 999, padding: '2px 10px', cursor: 'pointer' }}
               >
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
-                </svg>
                 {tc.message ?? 'Mensagem'}
               </button>
             )}

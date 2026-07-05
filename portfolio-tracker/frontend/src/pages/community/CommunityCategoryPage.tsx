@@ -100,8 +100,8 @@ export default function CommunityCategoryPage() {
               <Avatar name={topic.author.name} avatarUrl={topic.author.avatar_url} size={32} />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  {topic.pinned && <span style={{ color: 'var(--arvo-fg-soft)', display: 'inline-flex', flexShrink: 0 }}><PinIcon /></span>}
-                  {topic.locked && <span style={{ color: 'var(--arvo-fg-soft)', display: 'inline-flex', flexShrink: 0 }}><LockIcon /></span>}
+                  {topic.pinned && <span style={{ color: '#E8A020', display: 'inline-flex', flexShrink: 0 }}><PinIcon /></span>}
+                  {topic.locked && <span style={{ color: '#E8A020', display: 'inline-flex', flexShrink: 0 }}><LockIcon /></span>}
                   <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, fontWeight: 600, color: 'var(--arvo-fg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {topic.title}
                   </span>

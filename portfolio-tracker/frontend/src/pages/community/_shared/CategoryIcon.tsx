@@ -14,7 +14,7 @@ export default function CategoryIcon({ slug, size = 15 }: { slug?: string | null
       return (
         <svg {...base} width={size} height={size}>
           <circle cx="8" cy="8" r="6.5" />
-          <path strokeLinecap="round" strokeLinejoin="round" d="M6.3 6.2A1.8 1.8 0 118 9.4v.8M8 12.2h.01" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M5.9 6.1c.35-.8 1.28-1.35 2.35-1.35 1.4 0 2.55.9 2.55 2 0 .93-.82 1.72-1.93 1.94-.36.07-.62.38-.62.75v.36M8 11.9h.01" />
         </svg>
       )
     case 'sugestoes':
