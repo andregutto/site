@@ -2854,6 +2854,11 @@
     "splitNoFriends": "You don't have connected friends to split with yet.",
     "inMonth": "this month",
     "forecastLabel": "Forecast",
-    "balanceLabel": "This month"
+    "balanceLabel": "This month",
+    "wealthTrend": "Trend · last 12 months",
+    "incomeLabel": "Income",
+    "momentLast": "Last moment",
+    "goalAchieved": "reached",
+    "goalForYear": "target"
   }
 }

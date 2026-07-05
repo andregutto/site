@@ -96,8 +96,13 @@ router.get('/today', async (req: any, res: any) => {
     let activeMoment: any = null
     for (const m of moments ?? []) {
       const ongoing = m.start_date <= todayStr && (!m.end_date || m.end_date >= todayStr)
-      if (ongoing) { activeMoment = { ...m, ongoing: true }; break }
-      if (m.start_date >= todayStr) { activeMoment = { ...m, ongoing: false }; break }
+      if (ongoing) { activeMoment = { ...m, ongoing: true, past: false }; break }
+      if (m.start_date >= todayStr) { activeMoment = { ...m, ongoing: false, past: false }; break }
+    }
+    if (!activeMoment) {
+      // sem momento atual nem futuro: relembra o último (mais recente no passado)
+      const past = (moments ?? []).filter((m: any) => m.start_date < todayStr)
+      if (past.length) activeMoment = { ...past[past.length - 1], ongoing: false, past: true }
     }
 
     // Finanças do mês: mesma base da página Finanças (só despesa, sem receita)

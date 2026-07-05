@@ -2854,6 +2854,11 @@
     "splitNoFriends": "Você ainda não tem amigos conectados para dividir.",
     "inMonth": "no mês",
     "forecastLabel": "Previsão",
-    "balanceLabel": "Saldo do mês"
+    "balanceLabel": "Saldo do mês",
+    "wealthTrend": "Evolução · 12 meses",
+    "incomeLabel": "Renda",
+    "momentLast": "Último momento",
+    "goalAchieved": "conquistado",
+    "goalForYear": "meta para"
   }
 }

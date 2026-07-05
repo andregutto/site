@@ -21,8 +21,8 @@ interface TodayData {
   first_name: string
   hot_topics: Array<{ id: number; title: string; category_slug: string; category_name: string | null; reply_count: number; last_post_at: string }>
   next_trip: { id: number; title: string; destination: string | null; start_date: string; end_date: string | null; cover_image_url: string | null; ongoing: boolean; past: boolean } | null
-  active_moment: { id: number; name: string; icon: string; color: string; start_date: string | null; end_date: string | null; ongoing: boolean } | null
-  month_summary: { spent: number; budget: number; currency: string; income: number; forecast: number } | null
+  active_moment: { id: number; name: string; icon: string; color: string; start_date: string | null; end_date: string | null; ongoing: boolean; past: boolean } | null
+  month_summary: { spent: number; budget: number; currency: string; income: number } | null
   community_unseen: number
 }
 
@@ -44,22 +44,34 @@ const card: React.CSSProperties = { background: 'var(--arvo-surface)', border: '
 const cardLabel: React.CSSProperties = { fontFamily: 'var(--arvo-font-body)', fontSize: 10, fontWeight: 600, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)' }
 const pillStyle: React.CSSProperties = { display: 'inline-flex', alignItems: 'center', gap: 8, cursor: 'pointer', padding: '11px 18px', borderRadius: 999, border: '1px solid var(--arvo-border)', background: 'var(--arvo-surface)', color: 'var(--arvo-fg-muted)', fontFamily: 'var(--arvo-font-body)', fontSize: 13.5 }
 
-// Mini gráfico de evolução do patrimônio no hero — linha dourada, sem eixos.
-function Sparkline({ values }: { values: number[] }) {
-  const w = 320, h = 46, pad = 3
+// Mini gráfico da evolução do patrimônio no hero: legenda + meses nas pontas +
+// ponto no valor atual, pra deixar claro o que é (patrimônio) e o período.
+function Sparkline({ values, caption, startLabel, endLabel }: { values: number[]; caption: string; startLabel: string; endLabel: string }) {
+  const w = 320, h = 44, pad = 3
   const min = Math.min(...values), max = Math.max(...values)
   const range = max - min || 1
-  const pts = values.map((v, i) => {
-    const x = pad + (i / (values.length - 1)) * (w - 2 * pad)
-    const y = h - pad - ((v - min) / range) * (h - 2 * pad)
-    return `${x.toFixed(1)},${y.toFixed(1)}`
-  })
+  const coords = values.map((v, i) => ({
+    x: pad + (i / (values.length - 1)) * (w - 2 * pad),
+    y: h - pad - ((v - min) / range) * (h - 2 * pad),
+  }))
+  const pts = coords.map(c => `${c.x.toFixed(1)},${c.y.toFixed(1)}`)
   const area = `M${pad},${h} L${pts.join(' L')} L${w - pad},${h} Z`
+  const last = coords[coords.length - 1]
   return (
-    <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" style={{ position: 'relative', display: 'block', width: '100%', height: 46, marginTop: 18 }}>
-      <path d={area} fill="rgba(200,184,154,0.14)" stroke="none" />
-      <polyline points={pts.join(' ')} fill="none" stroke="#8C6A28" strokeWidth={1.5} strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
-    </svg>
+    <div style={{ marginTop: 18 }}>
+      <p style={{ ...cardLabel, fontSize: 9.5, color: '#8C6A28', marginBottom: 7 }}>{caption}</p>
+      <div style={{ position: 'relative', width: '100%', height: h }}>
+        <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}>
+          <path d={area} fill="rgba(200,184,154,0.16)" stroke="none" />
+          <polyline points={pts.join(' ')} fill="none" stroke="#8C6A28" strokeWidth={1.5} strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+        </svg>
+        <span style={{ position: 'absolute', left: `${(last.x / w) * 100}%`, top: `${(last.y / h) * 100}%`, transform: 'translate(-50%,-50%)', width: 7, height: 7, borderRadius: '50%', background: '#8C6A28', boxShadow: '0 0 0 2px var(--arvo-surface)' }} />
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 5 }}>
+        <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 10, color: 'var(--arvo-fg-soft)' }}>{startLabel}</span>
+        <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 10, color: 'var(--arvo-fg-soft)' }}>{endLabel}</span>
+      </div>
+    </div>
   )
 }
 
@@ -96,6 +108,10 @@ export default function HomePage() {
     if (denom <= 0) return null
     return ((last.total - last.prev_total - last.contributions) / denom) * 100
   })()
+  const fmtMon = (ym: string) => {
+    const [y, m] = ym.split('-').map(Number)
+    return new Date(y, m - 1, 1).toLocaleDateString(intlLocale, { month: 'short' }).replace('.', '') + '/' + String(y).slice(2)
+  }
 
   useEffect(() => {
     apiFetch<TodayData>('/home/today')
@@ -160,20 +176,19 @@ export default function HomePage() {
         <div className="lg:col-span-2 space-y-5">
           {/* Patrimônio — hero com brilho dourado, valor obedece o olho global */}
           {showWealth && (
-            <Link to="/dashboard" style={{
+            <Link to="/dashboard" className="p-6 sm:p-8" style={{
               ...card,
               position: 'relative', overflow: 'hidden', display: 'block', textDecoration: 'none',
-              padding: '32px 34px',
               border: `1px solid rgba(${GOLD_RGB},0.55)`,
               background: `linear-gradient(150deg, rgba(${GOLD_RGB},0.16), var(--arvo-surface) 62%)`,
               boxShadow: `0 12px 40px -16px rgba(${GOLD_RGB},0.7)`,
             }}>
               <img src="/brand/logo/arvo-symbol-gold.svg" alt="" aria-hidden style={{ position: 'absolute', right: -20, bottom: -26, width: 185, opacity: 0.07, pointerEvents: 'none' }} />
-              <div style={{ position: 'relative', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12 }}>
-                <div>
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12, rowGap: 12, flexWrap: 'wrap' }}>
+                <div style={{ minWidth: 0 }}>
                   <p style={{ ...cardLabel, color: '#8C6A28' }}>{th.wealthLabel ?? 'Patrimônio'}</p>
                   <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, flexWrap: 'wrap', marginTop: 10 }}>
-                    <p className="arvo-num" style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 46, lineHeight: 1.05, color: 'var(--arvo-fg)' }}>
+                    <p className="arvo-num text-[34px] sm:text-[46px]" style={{ fontFamily: 'var(--arvo-font-display)', lineHeight: 1.05, color: 'var(--arvo-fg)' }}>
                       {wealth != null ? fmt(wealth, 0) : '…'}
                     </p>
                     {!hideValues && monthChangePct != null && (
@@ -187,7 +202,55 @@ export default function HomePage() {
                   {th.openDashboard ?? 'Ver dashboard'}
                 </span>
               </div>
-              {!hideValues && wealthSeries.length >= 2 && <Sparkline values={wealthSeries.map(m => m.total)} />}
+              {!hideValues && wealthSeries.length >= 2 && (
+                <Sparkline
+                  values={wealthSeries.map(m => m.total)}
+                  caption={th.wealthTrend ?? 'Evolução · 12 meses'}
+                  startLabel={fmtMon(wealthSeries[0].month)}
+                  endLabel={fmtMon(wealthSeries[wealthSeries.length - 1].month)}
+                />
+              )}
+            </Link>
+          )}
+
+          {/* Finanças do mês — gasto x orçado, renda e saldo (tudo de transações reais) */}
+          {data?.month_summary && (
+            <Link to="/finances" style={{ ...card, padding: '18px 20px', textDecoration: 'none', display: 'block' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                <p style={cardLabel}>{th.financesLabel ?? 'Finanças do mês'}</p>
+                {data.month_summary.budget > 0 && !hideValues && (
+                  <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, fontWeight: 600, color: data.month_summary.spent > data.month_summary.budget ? 'var(--arvo-red)' : 'var(--arvo-fg-soft)' }}>
+                    {Math.round((data.month_summary.spent / data.month_summary.budget) * 100)}%
+                  </span>
+                )}
+              </div>
+              <p className="arvo-num" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 23, color: 'var(--arvo-fg)', marginTop: 7 }}>
+                {fmtCur(data.month_summary.spent, data.month_summary.currency)}
+                {data.month_summary.budget > 0 && (
+                  <span style={{ fontSize: 12, color: 'var(--arvo-fg-soft)' }}> {th.ofBudget ?? 'de'} {fmtCur(data.month_summary.budget, data.month_summary.currency)}</span>
+                )}
+              </p>
+              {data.month_summary.budget > 0 && (
+                <div style={{ height: 6, borderRadius: 99, background: 'var(--arvo-hover-bg)', overflow: 'hidden', marginTop: 10 }}>
+                  <div style={{ width: `${Math.min(100, (data.month_summary.spent / data.month_summary.budget) * 100)}%`, height: '100%', borderRadius: 99, background: data.month_summary.spent > data.month_summary.budget ? 'var(--arvo-red)' : 'var(--arvo-gold)' }} />
+                </div>
+              )}
+              <div style={{ display: 'flex', gap: 32, marginTop: 14, paddingTop: 12, borderTop: '1px solid var(--arvo-border-soft)' }}>
+                <div>
+                  <p style={{ ...cardLabel, fontSize: 9.5 }}>{th.incomeLabel ?? 'Renda'}</p>
+                  <p className="arvo-num" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 15, color: 'var(--arvo-fg)', marginTop: 3 }}>
+                    {fmtCur(data.month_summary.income, data.month_summary.currency)}
+                  </p>
+                </div>
+                {(() => { const saldo = data.month_summary.income - data.month_summary.spent; return (
+                  <div>
+                    <p style={{ ...cardLabel, fontSize: 9.5 }}>{th.balanceLabel ?? 'Saldo do mês'}</p>
+                    <p className="arvo-num" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 15, marginTop: 3 }}>
+                      <span className={hideValues ? undefined : saldo >= 0 ? 'arvo-delta-pos' : 'arvo-delta-neg'}>{fmtCur(saldo, data.month_summary.currency)}</span>
+                    </p>
+                  </div>
+                )})()}
+              </div>
             </Link>
           )}
 
@@ -226,47 +289,6 @@ export default function HomePage() {
 
         {/* Coluna lateral */}
         <div className="space-y-5">
-          {/* Finanças do mês */}
-          {data?.month_summary && (
-            <Link to="/finances" style={{ ...card, padding: '18px 20px', textDecoration: 'none', display: 'block' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                <p style={cardLabel}>{th.financesLabel ?? 'Finanças do mês'}</p>
-                {data.month_summary.budget > 0 && !hideValues && (
-                  <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, fontWeight: 600, color: data.month_summary.spent > data.month_summary.budget ? 'var(--arvo-red)' : 'var(--arvo-fg-soft)' }}>
-                    {Math.round((data.month_summary.spent / data.month_summary.budget) * 100)}%
-                  </span>
-                )}
-              </div>
-              <p className="arvo-num" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 23, color: 'var(--arvo-fg)', marginTop: 7 }}>
-                {fmtCur(data.month_summary.spent, data.month_summary.currency)}
-                {data.month_summary.budget > 0 && (
-                  <span style={{ fontSize: 12, color: 'var(--arvo-fg-soft)' }}> {th.ofBudget ?? 'de'} {fmtCur(data.month_summary.budget, data.month_summary.currency)}</span>
-                )}
-              </p>
-              {data.month_summary.budget > 0 && (
-                <div style={{ height: 6, borderRadius: 99, background: 'var(--arvo-hover-bg)', overflow: 'hidden', marginTop: 10 }}>
-                  <div style={{ width: `${Math.min(100, (data.month_summary.spent / data.month_summary.budget) * 100)}%`, height: '100%', borderRadius: 99, background: data.month_summary.spent > data.month_summary.budget ? 'var(--arvo-red)' : 'var(--arvo-gold)' }} />
-                </div>
-              )}
-              <div style={{ display: 'flex', gap: 24, marginTop: 14, paddingTop: 12, borderTop: '1px solid var(--arvo-border-soft)' }}>
-                <div>
-                  <p style={{ ...cardLabel, fontSize: 9.5 }}>{th.forecastLabel ?? 'Previsão'}</p>
-                  <p className="arvo-num" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 15, color: data.month_summary.budget > 0 && data.month_summary.forecast > data.month_summary.budget ? 'var(--arvo-red)' : 'var(--arvo-fg)', marginTop: 3 }}>
-                    {fmtCur(data.month_summary.forecast, data.month_summary.currency)}
-                  </p>
-                </div>
-                {(() => { const saldo = data.month_summary.income - data.month_summary.spent; return (
-                  <div>
-                    <p style={{ ...cardLabel, fontSize: 9.5 }}>{th.balanceLabel ?? 'Saldo do mês'}</p>
-                    <p className="arvo-num" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 15, marginTop: 3 }}>
-                      <span className={hideValues ? undefined : saldo >= 0 ? 'arvo-delta-pos' : 'arvo-delta-neg'}>{fmtCur(saldo, data.month_summary.currency)}</span>
-                    </p>
-                  </div>
-                )})()}
-              </div>
-            </Link>
-          )}
-
           {/* Metas — progresso rumo à liberdade financeira, ou convite pra criar o plano */}
           {plan === null && (
             <Link to="/finances/freedom" style={{ ...card, padding: '16px 18px', textDecoration: 'none', display: 'block' }}>
@@ -286,17 +308,19 @@ export default function HomePage() {
             const goalYear = plan.horizon_years ? baseYear + Math.round(plan.horizon_years) : null
             return (
               <Link to="/finances/freedom" style={{ ...card, padding: '18px 20px', textDecoration: 'none', display: 'block' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
-                  <p style={cardLabel}>{th.goalsLabel ?? 'Liberdade financeira'}{goalYear ? ` · ${goalYear}` : ''}</p>
-                  {!hideValues && <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, fontWeight: 600, color: 'var(--arvo-gold-text, #8C6A28)' }}>{Math.round(pct)}%</span>}
-                </div>
+                <p style={cardLabel}>{th.goalsLabel ?? 'Liberdade financeira'}</p>
                 <p className="arvo-num" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 23, color: 'var(--arvo-fg)', marginTop: 7 }}>
-                  {wealth != null ? fmt(wealth, 0) : '…'}
-                  <span style={{ fontSize: 12.5, color: 'var(--arvo-fg-soft)' }}> {th.ofBudget ?? 'de'} {fmt(targetBrl, 0)}</span>
+                  {hideValues ? '•••' : `${Math.round(pct)}%`}
+                  <span style={{ fontSize: 12.5, color: 'var(--arvo-fg-soft)' }}> {th.goalAchieved ?? 'conquistado'}</span>
                 </p>
                 <div style={{ height: 6, borderRadius: 99, background: 'var(--arvo-hover-bg)', overflow: 'hidden', marginTop: 12 }}>
                   <div style={{ width: `${pct}%`, height: '100%', borderRadius: 99, background: 'var(--arvo-gold)' }} />
                 </div>
+                {goalYear && (
+                  <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-soft)', marginTop: 9 }}>
+                    {th.goalForYear ?? 'meta para'} {goalYear}
+                  </p>
+                )}
               </Link>
             )
           })()}
@@ -331,7 +355,7 @@ export default function HomePage() {
             <Link to="/finances/moments" style={{ ...card, padding: '16px 18px', textDecoration: 'none', display: 'block' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
                 <span style={{ width: 9, height: 9, borderRadius: '50%', background: data.active_moment.color || 'var(--arvo-gold)', flexShrink: 0 }} />
-                <p style={cardLabel}>{data.active_moment.ongoing ? (th.momentLabel ?? 'Momento em andamento') : (th.momentNext ?? 'Próximo momento')}</p>
+                <p style={cardLabel}>{data.active_moment.ongoing ? (th.momentLabel ?? 'Momento em andamento') : data.active_moment.past ? (th.momentLast ?? 'Último momento') : (th.momentNext ?? 'Próximo momento')}</p>
               </div>
               <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 18, color: 'var(--arvo-fg)', marginTop: 7 }}>{data.active_moment.name}</p>
               {data.active_moment.start_date && (
