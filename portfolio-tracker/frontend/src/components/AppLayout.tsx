@@ -540,7 +540,8 @@ export default function AppLayout() {
                 </div>
               )}
             </div>
-            <SetupChecklist firstName={meta.first_name as string | undefined} userId={user?.id} />
+            {/* Na Hoje o checklist vira um card na própria página — evita duplicar */}
+            {location.pathname !== '/home' && <SetupChecklist firstName={meta.first_name as string | undefined} userId={user?.id} />}
             <div ref={userMenuRef} className="relative">
               <button
                 onClick={() => setShowUserMenu(v => !v)}

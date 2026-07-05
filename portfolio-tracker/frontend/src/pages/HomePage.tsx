@@ -3,12 +3,16 @@ import { Link, useNavigate } from 'react-router-dom'
 import { apiFetch } from '../lib/api'
 import { useI18n } from '../contexts/I18nContext'
 import { useCurrency } from '../contexts/CurrencyContext'
+import { useAuth } from '../contexts/AuthContext'
 import { PageLoader } from '../components/ArvoLoader'
+import { useSetupChecklist } from '../components/SetupChecklist'
 import CategoryIcon from './community/_shared/CategoryIcon'
 import type { PortfolioValue } from '../lib/types'
 
-/* Página "Hoje": abertura do app sem valores na cara. Saudação, o que está
-   vivo agora (comunidade, viagem, momento) e atalhos. Patrimônio só ao tocar. */
+/* Página "Hoje": abertura do app. O que está vivo agora — patrimônio (obedece
+   o olho global), comunidade, viagem, momento, finanças do mês e saldos entre
+   amigos. Layout largo como o dashboard, cada card só aparece quando tem algo
+   a dizer. Atalhos no fim, só pra destinos que não estão no header. */
 
 interface TodayData {
   first_name: string
@@ -16,9 +20,12 @@ interface TodayData {
   next_trip: { id: number; title: string; destination: string | null; start_date: string; end_date: string | null; ongoing: boolean; past: boolean } | null
   active_moment: { id: number; name: string; icon: string; color: string; start_date: string | null; end_date: string | null; ongoing: boolean } | null
   month_summary: { spent: number; budget: number; currency: string } | null
+  community_unseen: number
 }
 
 interface ContactBalance { currency: string; amount: number }
+
+const GOLD_RGB = '200,184,154'
 
 function timeAgo(iso: string): string {
   const mins = Math.floor((Date.now() - new Date(iso).getTime()) / 60000)
@@ -29,18 +36,21 @@ function timeAgo(iso: string): string {
   return `${Math.floor(hours / 24)}d`
 }
 
-const card: React.CSSProperties = { background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', borderRadius: 14 }
+const card: React.CSSProperties = { background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', borderRadius: 16 }
 const cardLabel: React.CSSProperties = { fontFamily: 'var(--arvo-font-body)', fontSize: 10, fontWeight: 600, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)' }
 
 export default function HomePage() {
   const { t, locale } = useI18n()
   const th = (t as any).home ?? {}
   const navigate = useNavigate()
+  const { user } = useAuth()
   const { fmt, hideValues } = useCurrency()
+  const setup = useSetupChecklist(user?.id)
 
   const [data, setData] = useState<TodayData | null>(null)
   const [loading, setLoading] = useState(true)
   const [wealth, setWealth] = useState<number | null>(null)
+  const [hasAssets, setHasAssets] = useState<boolean | null>(null)
   const [balances, setBalances] = useState<{ toReceive: ContactBalance[]; toPay: ContactBalance[] } | null>(null)
 
   useEffect(() => {
@@ -48,9 +58,8 @@ export default function HomePage() {
       .then(setData)
       .finally(() => setLoading(false))
     apiFetch<PortfolioValue>('/portfolio/value')
-      .then(v => setWealth(v.total_brl))
-      .catch(() => {})
-    // Saldos com amigos/grupos: agrega os balances por moeda do /people
+      .then(v => { setWealth(v.total_brl); setHasAssets((v.by_asset?.length ?? 0) > 0) })
+      .catch(() => setHasAssets(false))
     apiFetch<{ contacts: Array<{ balances?: ContactBalance[] }> }>('/people')
       .then(({ contacts }) => {
         const byCur: Record<string, number> = {}
@@ -69,24 +78,26 @@ export default function HomePage() {
     return new Intl.NumberFormat(locale === 'pt' ? 'pt-BR' : locale === 'fr' ? 'fr-FR' : 'en-US', { style: 'currency', currency: cur, maximumFractionDigits: 0 }).format(amount)
   }
 
+  const intlLocale = locale === 'pt' ? 'pt-BR' : locale === 'fr' ? 'fr-FR' : 'en-US'
   const hour = new Date().getHours()
   const greeting = hour < 12 ? (th.morning ?? 'Bom dia') : hour < 19 ? (th.afternoon ?? 'Boa tarde') : (th.evening ?? 'Boa noite')
-  const intlLocale = locale === 'pt' ? 'pt-BR' : locale === 'fr' ? 'fr-FR' : 'en-US'
   const dateLine = new Intl.DateTimeFormat(intlLocale, { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date())
+  const fmtDay = (d: string) => new Date(d + 'T00:00:00').toLocaleDateString(intlLocale, { day: 'numeric', month: 'short' })
 
-  const shortcuts = [
-    { to: '/dashboard', label: t.nav.investments, icon: <path strokeLinecap="round" d="M3 20h18M5 20v-7M10 20V9M15 20v-5M20 20V5" /> },
-    { to: '/finances', label: t.nav.finances, icon: <><circle cx="12" cy="12" r="9" /><path strokeLinecap="round" d="M12 7v10M14.5 9.3c-.5-.9-1.4-1.4-2.5-1.4-1.5 0-2.6.9-2.6 2.1s1.1 1.7 2.6 2 2.7.9 2.7 2.1-1.1 2.1-2.7 2.1c-1.1 0-2.1-.5-2.6-1.4" /></> },
-    { to: '/voyage', label: (t as any).nav?.voyage ?? 'Viagens', icon: <><path strokeLinecap="round" strokeLinejoin="round" d="M12 3c-3.3 0-6 2.7-6 6 0 4.5 6 12 6 12s6-7.5 6-12c0-3.3-2.7-6-6-6Z" /><circle cx="12" cy="9" r="2.2" /></> },
-    { to: '/community', label: (t as any).nav?.community ?? 'Comunidade', icon: <><circle cx="9" cy="8" r="3" /><circle cx="17" cy="9" r="2.4" /><path strokeLinecap="round" strokeLinejoin="round" d="M3.5 19.5v-1a5.5 5.5 0 0 1 11 0v1M15.5 13.2a4.3 4.3 0 0 1 5 4.2v1.1" /></> },
-    { to: '/messages', label: (t as any).nav?.messages ?? 'Mensagens', icon: <path strokeLinecap="round" strokeLinejoin="round" d="M4 5h16v11H9l-5 4V5Z" /> },
+  const shortcuts: { to: string; label: string; icon: React.ReactNode }[] = [
+    { to: '/finances/transactions', label: th.quickTransaction ?? 'Nova transação', icon: <path strokeLinecap="round" strokeLinejoin="round" d="M12 5v14M5 12h14" /> },
     { to: '/people', label: t.nav.people, icon: <><circle cx="12" cy="8" r="3.2" /><path strokeLinecap="round" strokeLinejoin="round" d="M5.5 20v-.8a6.5 6.5 0 0 1 13 0v.8" /></> },
+    { to: '/finances/freedom', label: th.quickGoals ?? 'Metas', icon: <><circle cx="12" cy="12" r="8" /><circle cx="12" cy="12" r="3.2" /><circle cx="12" cy="12" r="0.6" fill="currentColor" /></> },
+    { to: '/finances/moments', label: th.quickMoments ?? 'Momentos', icon: <><circle cx="12" cy="12" r="8.5" /><path strokeLinecap="round" strokeLinejoin="round" d="M12 7.5v4.7l3 1.8" /></> },
+    { to: '/profile', label: th.quickProfile ?? 'Perfil', icon: <><circle cx="12" cy="8" r="3.4" /><path strokeLinecap="round" strokeLinejoin="round" d="M5 20v-1a7 7 0 0 1 14 0v1" /></> },
   ]
 
   if (loading) return <PageLoader />
 
+  const showWealth = hasAssets !== false
+
   return (
-    <div className="space-y-6 max-w-3xl mx-auto">
+    <div className="space-y-5">
       {/* Saudação */}
       <div>
         <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)' }}>{dateLine}</p>
@@ -95,130 +106,231 @@ export default function HomePage() {
         </h1>
       </div>
 
-      {/* Patrimônio: só ao tocar */}
-      <div style={{ ...card, padding: '16px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-        <div>
-          <p style={cardLabel}>{th.wealthLabel ?? 'Patrimônio'}</p>
-          <p className="arvo-num" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 24, color: 'var(--arvo-fg)', marginTop: 4 }}>
-            {wealth != null ? fmt(wealth, 0) : '…'}
-          </p>
-        </div>
-        <Link to="/dashboard" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '9px 18px', borderRadius: 999, background: 'var(--arvo-pill-active-bg)', color: 'var(--arvo-pill-active-fg)', textDecoration: 'none' }}>
-          {th.openDashboard ?? 'Ver dashboard'}
-        </Link>
-      </div>
+      {/* Card de configuração (só quando a conta está incompleta e não foi dispensado) */}
+      {setup.visible && <SetupCard setup={setup} firstName={data?.first_name} onNavigate={navigate} />}
 
-      {/* Comunidade: tópicos quentes */}
-      {data && data.hot_topics.length > 0 && (
-        <div style={{ ...card, overflow: 'hidden' }}>
-          <div style={{ padding: '13px 18px 9px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <p style={cardLabel}>{th.communityLabel ?? 'Na comunidade'}</p>
-            <Link to="/community" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: '#E8A020', textDecoration: 'none' }}>{th.seeAll ?? 'Ver tudo'} →</Link>
-          </div>
-          {data.hot_topics.map(topic => (
-            <button
-              key={topic.id}
-              onClick={() => navigate(`/community/${topic.category_slug}/${topic.id}`)}
-              className="w-full text-left flex items-center gap-3"
-              style={{ padding: '10px 18px', borderTop: '1px solid var(--arvo-border-soft, var(--arvo-border))', background: 'none', border: 'none', borderTopStyle: 'solid', cursor: 'pointer' }}
-            >
-              <span style={{ color: 'var(--arvo-fg-muted)', display: 'inline-flex', flexShrink: 0 }}><CategoryIcon slug={topic.category_slug} size={14} /></span>
-              <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{topic.title}</span>
-              <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)', flexShrink: 0 }}>{timeAgo(topic.last_post_at)}</span>
-            </button>
-          ))}
-        </div>
-      )}
+      {/* Bento: coluna principal larga + coluna lateral */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        {/* Coluna principal */}
+        <div className="lg:col-span-2 space-y-5">
+          {/* Patrimônio — hero com brilho dourado, valor obedece o olho global */}
+          {showWealth && (
+            <Link to="/dashboard" style={{
+              ...card,
+              position: 'relative', overflow: 'hidden', display: 'block', textDecoration: 'none',
+              padding: '24px 26px',
+              border: `1px solid rgba(${GOLD_RGB},0.55)`,
+              background: `linear-gradient(150deg, rgba(${GOLD_RGB},0.16), var(--arvo-surface) 62%)`,
+              boxShadow: `0 12px 40px -16px rgba(${GOLD_RGB},0.7)`,
+            }}>
+              <img src="/brand/logo/arvo-symbol-gold.svg" alt="" aria-hidden style={{ position: 'absolute', right: -18, bottom: -22, width: 150, opacity: 0.07, pointerEvents: 'none' }} />
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12 }}>
+                <div>
+                  <p style={{ ...cardLabel, color: '#8C6A28' }}>{th.wealthLabel ?? 'Patrimônio'}</p>
+                  <p className="arvo-num" style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 38, lineHeight: 1.05, color: 'var(--arvo-fg)', marginTop: 8 }}>
+                    {wealth != null ? fmt(wealth, 0) : '…'}
+                  </p>
+                </div>
+                <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '9px 16px', borderRadius: 999, background: 'var(--arvo-pill-active-bg)', color: 'var(--arvo-pill-active-fg)', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                  {th.openDashboard ?? 'Ver dashboard'}
+                </span>
+              </div>
+            </Link>
+          )}
 
-      {/* Viagem + Momento lado a lado */}
-      {(data?.next_trip || data?.active_moment) && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Comunidade — cabeçalho com cor + ponto vermelho de respostas novas */}
+          {data && data.hot_topics.length > 0 && (
+            <div style={{ ...card, overflow: 'hidden' }}>
+              <div style={{ padding: '14px 18px 11px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'linear-gradient(90deg, rgba(232,160,32,0.12), transparent 70%)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ color: '#E8A020', display: 'inline-flex' }}>
+                    <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7}><circle cx="9" cy="8" r="3" /><circle cx="17" cy="9" r="2.4" /><path strokeLinecap="round" strokeLinejoin="round" d="M3.5 19.5v-1a5.5 5.5 0 0 1 11 0v1M15.5 13.2a4.3 4.3 0 0 1 5 4.2v1.1" /></svg>
+                  </span>
+                  <p style={{ ...cardLabel, color: 'var(--arvo-fg-muted)' }}>{th.communityLabel ?? 'Na comunidade'}</p>
+                  {data.community_unseen > 0 && (
+                    <span title={th.newReplies ?? 'respostas novas'} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minWidth: 17, height: 17, padding: '0 5px', borderRadius: 999, background: 'var(--arvo-red)', color: '#fff', fontFamily: 'var(--arvo-font-body)', fontSize: 10.5, fontWeight: 700, lineHeight: 1 }}>
+                      {data.community_unseen}
+                    </span>
+                  )}
+                </div>
+                <Link to="/community" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: '#E8A020', textDecoration: 'none' }}>{th.seeAll ?? 'Ver tudo'} →</Link>
+              </div>
+              {data.hot_topics.map(topic => (
+                <button
+                  key={topic.id}
+                  onClick={() => navigate(`/community/${topic.category_slug}/${topic.id}`)}
+                  className="w-full text-left flex items-center gap-3"
+                  style={{ padding: '11px 18px', borderTop: '1px solid var(--arvo-border-soft)', background: 'none', border: 'none', borderTopStyle: 'solid', cursor: 'pointer' }}
+                >
+                  <span style={{ color: '#E8A020', display: 'inline-flex', flexShrink: 0 }}><CategoryIcon slug={topic.category_slug} size={15} /></span>
+                  <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{topic.title}</span>
+                  <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)', flexShrink: 0 }}>{timeAgo(topic.last_post_at)}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Coluna lateral */}
+        <div className="space-y-5">
+          {/* Finanças do mês */}
+          {data?.month_summary && (
+            <Link to="/finances" style={{ ...card, padding: '16px 18px', textDecoration: 'none', display: 'block' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                <p style={cardLabel}>{th.financesLabel ?? 'Finanças do mês'}</p>
+                {data.month_summary.budget > 0 && !hideValues && (
+                  <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, fontWeight: 600, color: data.month_summary.spent > data.month_summary.budget ? 'var(--arvo-red)' : 'var(--arvo-fg-soft)' }}>
+                    {Math.round((data.month_summary.spent / data.month_summary.budget) * 100)}%
+                  </span>
+                )}
+              </div>
+              <p className="arvo-num" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 21, color: 'var(--arvo-fg)', marginTop: 6 }}>
+                {fmtCur(data.month_summary.spent, data.month_summary.currency)}
+                {data.month_summary.budget > 0 && (
+                  <span style={{ fontSize: 12, color: 'var(--arvo-fg-soft)' }}> {th.ofBudget ?? 'de'} {fmtCur(data.month_summary.budget, data.month_summary.currency)}</span>
+                )}
+              </p>
+              {data.month_summary.budget > 0 && (
+                <div style={{ height: 6, borderRadius: 99, background: 'var(--arvo-hover-bg)', overflow: 'hidden', marginTop: 10 }}>
+                  <div style={{ width: `${Math.min(100, (data.month_summary.spent / data.month_summary.budget) * 100)}%`, height: '100%', borderRadius: 99, background: data.month_summary.spent > data.month_summary.budget ? 'var(--arvo-red)' : 'var(--arvo-gold)' }} />
+                </div>
+              )}
+            </Link>
+          )}
+
+          {/* Viagem */}
           {data?.next_trip && (
-            <Link to="/voyage" style={{ ...card, padding: '14px 18px', textDecoration: 'none', display: 'block' }}>
-              <p style={cardLabel}>{data.next_trip.ongoing ? (th.tripNow ?? 'Viagem em andamento') : data.next_trip.past ? (th.tripLast ?? 'Última viagem') : (th.tripNext ?? 'Próxima viagem')}</p>
-              <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 18, color: 'var(--arvo-fg)', marginTop: 6 }}>{data.next_trip.title}</p>
+            <Link to="/voyage" style={{ ...card, padding: '16px 18px', textDecoration: 'none', display: 'block' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                <span style={{ color: 'var(--arvo-red)', display: 'inline-flex' }}>
+                  <svg width="13" height="13" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2c-3.9 0-7 3.1-7 7 0 5.2 7 13 7 13s7-7.8 7-13c0-3.9-3.1-7-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5Z" /></svg>
+                </span>
+                <p style={cardLabel}>{data.next_trip.ongoing ? (th.tripNow ?? 'Viagem em andamento') : data.next_trip.past ? (th.tripLast ?? 'Última viagem') : (th.tripNext ?? 'Próxima viagem')}</p>
+              </div>
+              <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 18, color: 'var(--arvo-fg)', marginTop: 7 }}>{data.next_trip.title}</p>
               <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)', marginTop: 3 }}>
                 {data.next_trip.destination ? `${data.next_trip.destination} · ` : ''}
-                {new Date(data.next_trip.start_date + 'T00:00:00').toLocaleDateString(intlLocale, { day: 'numeric', month: 'short' })}
-                {data.next_trip.end_date ? ` – ${new Date(data.next_trip.end_date + 'T00:00:00').toLocaleDateString(intlLocale, { day: 'numeric', month: 'short' })}` : ''}
+                {fmtDay(data.next_trip.start_date)}{data.next_trip.end_date ? ` – ${fmtDay(data.next_trip.end_date)}` : ''}
               </p>
             </Link>
           )}
+
+          {/* Momento (só com data: em andamento ou próximo de verdade) */}
           {data?.active_moment && (
-            <Link to="/finances/moments" style={{ ...card, padding: '14px 18px', textDecoration: 'none', display: 'block' }}>
-              <p style={cardLabel}>{data.active_moment.ongoing ? (th.momentLabel ?? 'Momento em andamento') : (th.momentNext ?? 'Próximo momento')}</p>
-              <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 18, color: 'var(--arvo-fg)', marginTop: 6 }}>{data.active_moment.name}</p>
-              {data.active_moment.end_date && (
+            <Link to="/finances/moments" style={{ ...card, padding: '16px 18px', textDecoration: 'none', display: 'block' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                <span style={{ width: 9, height: 9, borderRadius: '50%', background: data.active_moment.color || 'var(--arvo-gold)', flexShrink: 0 }} />
+                <p style={cardLabel}>{data.active_moment.ongoing ? (th.momentLabel ?? 'Momento em andamento') : (th.momentNext ?? 'Próximo momento')}</p>
+              </div>
+              <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 18, color: 'var(--arvo-fg)', marginTop: 7 }}>{data.active_moment.name}</p>
+              {data.active_moment.start_date && (
                 <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)', marginTop: 3 }}>
-                  {(th.until ?? 'até')} {new Date(data.active_moment.end_date + 'T00:00:00').toLocaleDateString(intlLocale, { day: 'numeric', month: 'short' })}
+                  {data.active_moment.ongoing && data.active_moment.end_date
+                    ? `${th.until ?? 'até'} ${fmtDay(data.active_moment.end_date)}`
+                    : `${fmtDay(data.active_moment.start_date)}${data.active_moment.end_date ? ` – ${fmtDay(data.active_moment.end_date)}` : ''}`}
                 </p>
               )}
             </Link>
           )}
-        </div>
-      )}
 
-      {/* Finanças do mês */}
-      {data?.month_summary && (
-        <Link to="/finances" style={{ ...card, padding: '14px 18px', textDecoration: 'none', display: 'block' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-            <p style={cardLabel}>{th.financesLabel ?? 'Finanças do mês'}</p>
-            {data.month_summary.budget > 0 && !hideValues && (
-              <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: data.month_summary.spent > data.month_summary.budget ? 'var(--arvo-red, #D63B2F)' : 'var(--arvo-fg-soft)' }}>
-                {Math.round((data.month_summary.spent / data.month_summary.budget) * 100)}%
-              </span>
-            )}
-          </div>
-          <p className="arvo-num" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 20, color: 'var(--arvo-fg)', marginTop: 5 }}>
-            {fmtCur(data.month_summary.spent, data.month_summary.currency)}
-            {data.month_summary.budget > 0 && (
-              <span style={{ fontSize: 12, color: 'var(--arvo-fg-soft)' }}> {th.ofBudget ?? 'de'} {fmtCur(data.month_summary.budget, data.month_summary.currency)}</span>
-            )}
-          </p>
-          {data.month_summary.budget > 0 && (
-            <div style={{ height: 5, borderRadius: 99, background: 'var(--arvo-hover-bg)', overflow: 'hidden', marginTop: 9 }}>
-              <div style={{ width: `${Math.min(100, (data.month_summary.spent / data.month_summary.budget) * 100)}%`, height: '100%', borderRadius: 99, background: data.month_summary.spent > data.month_summary.budget ? 'var(--arvo-red, #D63B2F)' : 'var(--arvo-gold)' }} />
-            </div>
-          )}
-        </Link>
-      )}
-
-      {/* Saldos com amigos */}
-      {balances && (
-        <Link to="/people" style={{ ...card, padding: '14px 18px', textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-          <div>
-            <p style={cardLabel}>{th.balancesLabel ?? 'Entre amigos'}</p>
-            <div style={{ display: 'flex', gap: 18, marginTop: 6, flexWrap: 'wrap' }}>
-              {balances.toReceive.length > 0 && (
-                <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5 }}>
-                  <span style={{ color: 'var(--arvo-fg-soft)', fontSize: 11.5 }}>{th.toReceive ?? 'a receber'} </span>
-                  <span className="arvo-delta-pos" style={{ fontWeight: 600 }}>{balances.toReceive.map(b => fmtCur(b.amount, b.currency)).join(' + ')}</span>
-                </span>
-              )}
-              {balances.toPay.length > 0 && (
-                <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5 }}>
-                  <span style={{ color: 'var(--arvo-fg-soft)', fontSize: 11.5 }}>{th.toPay ?? 'a pagar'} </span>
-                  <span className="arvo-delta-neg" style={{ fontWeight: 600 }}>{balances.toPay.map(b => fmtCur(b.amount, b.currency)).join(' + ')}</span>
-                </span>
-              )}
-            </div>
-          </div>
-          <span style={{ color: 'var(--arvo-fg-faint)', fontSize: 16, flexShrink: 0 }}>→</span>
-        </Link>
-      )}
-
-      {/* Atalhos */}
-      <div>
-        <p style={{ ...cardLabel, marginBottom: 10 }}>{th.shortcuts ?? 'Atalhos'}</p>
-        <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
-          {shortcuts.map(s => (
-            <Link key={s.to} to={s.to} style={{ ...card, padding: '14px 8px', textDecoration: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-              <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="var(--arvo-fg-muted)" strokeWidth={1.6}>{s.icon}</svg>
-              <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-muted)', textAlign: 'center' }}>{s.label}</span>
+          {/* Saldos entre amigos */}
+          {balances && (
+            <Link to="/people" style={{ ...card, padding: '16px 18px', textDecoration: 'none', display: 'block' }}>
+              <p style={cardLabel}>{th.balancesLabel ?? 'Entre amigos'}</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 8 }}>
+                {balances.toReceive.length > 0 && (
+                  <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5 }}>
+                    <span style={{ color: 'var(--arvo-fg-soft)', fontSize: 11.5 }}>{th.toReceive ?? 'a receber'} </span>
+                    <span className="arvo-delta-pos" style={{ fontWeight: 600 }}>{balances.toReceive.map(b => fmtCur(b.amount, b.currency)).join(' + ')}</span>
+                  </span>
+                )}
+                {balances.toPay.length > 0 && (
+                  <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5 }}>
+                    <span style={{ color: 'var(--arvo-fg-soft)', fontSize: 11.5 }}>{th.toPay ?? 'a pagar'} </span>
+                    <span className="arvo-delta-neg" style={{ fontWeight: 600 }}>{balances.toPay.map(b => fmtCur(b.amount, b.currency)).join(' + ')}</span>
+                  </span>
+                )}
+              </div>
             </Link>
-          ))}
+          )}
         </div>
       </div>
+
+      {/* Atalhos — pills pra destinos que não estão no header */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 9, paddingTop: 2 }}>
+        {shortcuts.map(s => (
+          <Link key={s.to} to={s.to} style={{
+            display: 'inline-flex', alignItems: 'center', gap: 8, textDecoration: 'none',
+            padding: '9px 15px', borderRadius: 999, border: '1px solid var(--arvo-border)',
+            background: 'var(--arvo-surface)', color: 'var(--arvo-fg-muted)',
+            fontFamily: 'var(--arvo-font-body)', fontSize: 12.5,
+          }}>
+            <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="var(--arvo-fg-soft)" strokeWidth={1.7}>{s.icon}</svg>
+            {s.label}
+          </Link>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/* Card de configuração colapsável na Hoje. Reusa o hook do checklist do header
+   (mesma flag de dispensa e mesmo progresso) — só muda a apresentação. */
+function SetupCard({ setup, firstName, onNavigate }: {
+  setup: ReturnType<typeof useSetupChecklist>
+  firstName?: string
+  onNavigate: (to: string) => void
+}) {
+  const { t } = useI18n()
+  const s = (t as unknown as Record<string, Record<string, string>>).setup
+  const [collapsed, setCollapsed] = useState(false)
+  const pct = setup.doneCount / setup.total
+  const name = firstName?.split(' ')[0] ?? ''
+
+  return (
+    <div style={{
+      borderRadius: 16, overflow: 'hidden',
+      border: '1px solid rgba(27,79,216,0.28)',
+      background: 'linear-gradient(150deg, rgba(27,79,216,0.07), var(--arvo-surface) 60%)',
+    }}>
+      <div style={{ padding: '15px 18px', display: 'flex', alignItems: 'center', gap: 14 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 16, color: 'var(--arvo-fg)' }}>
+            {name ? `${name}, ` : ''}{s.title}
+          </p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginTop: 8 }}>
+            <div style={{ flex: 1, maxWidth: 240, height: 4, background: 'rgba(27,79,216,0.14)', borderRadius: 2, overflow: 'hidden' }}>
+              <div style={{ height: '100%', width: `${pct * 100}%`, background: '#1B4FD8', borderRadius: 2, transition: 'width 0.4s ease' }} />
+            </div>
+            <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, fontWeight: 600, color: '#1B4FD8' }}>{setup.doneCount}/{setup.total}</span>
+          </div>
+        </div>
+        <button onClick={() => setCollapsed(v => !v)} aria-label={collapsed ? 'expandir' : 'recolher'} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: 'var(--arvo-fg-soft)', flexShrink: 0 }}>
+          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} style={{ transform: collapsed ? 'rotate(-90deg)' : 'none', transition: 'transform 0.2s' }}><path strokeLinecap="round" strokeLinejoin="round" d="M6 9l6 6 6-6" /></svg>
+        </button>
+      </div>
+
+      {!collapsed && (
+        <div style={{ padding: '2px 10px 8px' }}>
+          {setup.steps.map(step => (
+            <button
+              key={step.key}
+              onClick={() => { if (!step.done) onNavigate(step.to) }}
+              className="w-full text-left flex items-center gap-3"
+              style={{ padding: '9px 10px', borderRadius: 10, background: 'none', border: 'none', cursor: step.done ? 'default' : 'pointer' }}
+            >
+              <span style={{ width: 18, height: 18, borderRadius: '50%', flexShrink: 0, border: `2px solid ${step.done ? '#22c55e' : '#1B4FD8'}`, background: step.done ? '#22c55e' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {step.done && <svg width="9" height="9" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
+              </span>
+              <span style={{ flex: 1, fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: step.done ? 'var(--arvo-fg-soft)' : 'var(--arvo-fg)', textDecoration: step.done ? 'line-through' : 'none' }}>{step.label}</span>
+              {!step.done && <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="rgba(27,79,216,0.5)" strokeWidth={2.2} style={{ flexShrink: 0 }}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>}
+            </button>
+          ))}
+          <div style={{ padding: '4px 10px 6px' }}>
+            <button onClick={setup.hide} style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)' }}>{s.dismiss}</button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

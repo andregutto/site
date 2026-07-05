@@ -2,7 +2,8 @@ import { Router } from 'express'
 import { requireAuth, AuthRequest } from '../middleware/auth.js'
 import { supabaseAdmin } from '../lib/supabase.js'
 import { userDisplay } from './people.js'
-import { financialMonthKey, financialMonthRange, getUserCycleDay } from './finances.js'
+import { getCurrentMonthFinance } from './finances.js'
+import { getRecentCommunityReplies } from './community.js'
 
 /* Página "Hoje": abertura genérica do app, sem valores financeiros.
    Um único endpoint leve agrega saudação, tópicos quentes da comunidade,
@@ -80,57 +81,41 @@ router.get('/today', async (req: any, res: any) => {
       if (past.length) nextTrip = { ...past[past.length - 1], ongoing: false, past: true }
     }
 
-    // Momento do card: nunca os ocultos de par/grupo (is_pair_default); prioridade
-    // 1) em andamento pelas datas, 2) o próximo futuro, 3) o momento real mais
-    // recente sem datas (um evento ainda sem período definido).
+    // Momento do card: nunca os ocultos de par/grupo (is_pair_default). Só surge
+    // um momento com DATA — 1) em andamento agora, 2) o próximo futuro. Momento
+    // sem data não é "próximo" nem "em andamento", então não vira card (evita o
+    // rótulo falso "Próximo momento" num momento que nem tem quando).
     const { data: moments } = await supabaseAdmin
       .from('finance_moments')
       .select('id, name, icon, color, start_date, end_date, created_at')
       .eq('user_id', userId)
       .eq('is_pair_default', false)
-      .order('created_at', { ascending: false })
+      .not('start_date', 'is', null)
+      .order('start_date', { ascending: true })
 
     let activeMoment: any = null
-    const dated = (moments ?? []).filter((m: any) => m.start_date)
-      .sort((a: any, b: any) => a.start_date.localeCompare(b.start_date))
-    for (const m of dated) {
+    for (const m of moments ?? []) {
       const ongoing = m.start_date <= todayStr && (!m.end_date || m.end_date >= todayStr)
       if (ongoing) { activeMoment = { ...m, ongoing: true }; break }
       if (m.start_date >= todayStr) { activeMoment = { ...m, ongoing: false }; break }
     }
-    if (!activeMoment) {
-      const dateless = (moments ?? []).find((m: any) => !m.start_date && !m.end_date)
-      if (dateless) activeMoment = { ...dateless, ongoing: false }
-    }
 
-    // Finanças do mês (ciclo financeiro do usuário): gasto x orçado
-    let monthSummary: { spent: number; budget: number; currency: string } | null = null
+    // Finanças do mês: mesma base da página Finanças (só despesa, sem receita)
+    const monthSummary = await getCurrentMonthFinance(userId).catch(() => null)
+
+    // Comunidade: respostas em tópicos meus que eu ainda não vi (mesmo critério
+    // do sino — respostas recentes menos as já dispensadas). Vira ponto vermelho.
+    let communityUnseen = 0
     try {
-      const cycleDay = await getUserCycleDay(userId)
-      const fm = financialMonthKey(todayStr, cycleDay)
-      const { start, end } = financialMonthRange(fm, cycleDay)
-      const [txRes, catRes, incRes] = await Promise.all([
-        supabaseAdmin
-          .from('finance_transactions')
-          .select('amount, is_internal_transfer, exclude_from_stats')
-          .eq('user_id', userId)
-          .gte('date', start)
-          .lte('date', end),
-        supabaseAdmin.from('finance_categories').select('budget_monthly').eq('user_id', userId),
-        supabaseAdmin.from('finance_income').select('currency').eq('user_id', userId).maybeSingle(),
-      ])
-      const spent = (txRes.data ?? [])
-        .filter((t: any) => !t.is_internal_transfer && !t.exclude_from_stats && Number(t.amount) < 0)
-        .reduce((sum: number, t: any) => sum + Math.abs(Number(t.amount)), 0)
-      const budget = (catRes.data ?? []).reduce((sum: number, c: any) => sum + (Number(c.budget_monthly) || 0), 0)
-      if (spent > 0 || budget > 0) {
-        monthSummary = {
-          spent: Math.round(spent * 100) / 100,
-          budget: Math.round(budget * 100) / 100,
-          currency: incRes.data?.currency ?? 'EUR',
-        }
+      const replies = await getRecentCommunityReplies(userId)
+      if (replies.length) {
+        const keys = replies.map(r => r.key)
+        const { data: dism } = await supabaseAdmin
+          .from('notification_dismissals').select('key').eq('user_id', userId).in('key', keys)
+        const dismissed = new Set((dism ?? []).map((d: any) => d.key))
+        communityUnseen = replies.filter(r => !dismissed.has(r.key)).length
       }
-    } catch { /* card opcional: sem finanças configuradas, não aparece */ }
+    } catch { /* ponto vermelho é opcional */ }
 
     res.json({
       first_name: firstName,
@@ -138,6 +123,7 @@ router.get('/today', async (req: any, res: any) => {
       next_trip: nextTrip,
       active_moment: activeMoment,
       month_summary: monthSummary,
+      community_unseen: communityUnseen,
     })
   } catch (err: any) {
     res.status(500).json({ error: err.message })

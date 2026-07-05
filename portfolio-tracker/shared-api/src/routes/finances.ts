@@ -328,6 +328,70 @@ export async function getBudgetAlerts(userId: string): Promise<BudgetAlertItem[]
 export interface OverBudgetStreakAlert { key: string; months: number; last_month: string }
 export interface NegativeBalanceAlert { key: string; month: string }
 
+// Resumo do mês financeiro corrente para a página Hoje: gasto x orçado de
+// DESPESA. Exclui envelopes de receita (Salário/Airbnb não são orçamento de
+// gasto), abate reembolsos (positivos numa categoria de despesa) e soma metas
+// de categorias compartilhadas — mesma base da página Finanças, pra bater.
+export async function getCurrentMonthFinance(
+  userId: string
+): Promise<{ spent: number; budget: number; currency: string } | null> {
+  const cycleDay = await getUserCycleDay(userId)
+  const todayStr = new Date().toISOString().slice(0, 10)
+  const fm = financialMonthKey(todayStr, cycleDay)
+  const { start, end } = financialMonthRange(fm, cycleDay)
+
+  const [catRes, envRes, incRes, txRes] = await Promise.all([
+    supabaseAdmin.from('finance_categories').select('id, envelope_id, budget_monthly').eq('user_id', userId),
+    supabaseAdmin.from('finance_envelopes').select('id, type').eq('user_id', userId),
+    supabaseAdmin.from('finance_income').select('currency').eq('user_id', userId).maybeSingle(),
+    supabaseAdmin.from('finance_transactions')
+      .select('amount, category_id, is_internal_transfer, exclude_from_stats')
+      .eq('user_id', userId).gte('date', start).lte('date', end),
+  ])
+
+  const cats = catRes.data ?? []
+  const envs = envRes.data ?? []
+  const incomeEnvId = envs.find(e => e.type === 'income')?.id ?? null
+  const expenseEnvIds = new Set(envs.filter(e => e.type !== 'income').map(e => e.id))
+  const catToEnv = new Map(cats.map(c => [c.id, c.envelope_id]))
+
+  let budget = cats
+    .filter(c => c.envelope_id != null && expenseEnvIds.has(c.envelope_id) && c.budget_monthly != null)
+    .reduce((s, c) => s + Number(c.budget_monthly), 0)
+
+  const { data: sharedEnvRows } = await supabaseAdmin
+    .from('shared_category_user_settings').select('shared_category_id, local_envelope_id').eq('user_id', userId)
+  const sharedCatIds = (sharedEnvRows ?? [])
+    .filter(r => r.local_envelope_id != null && expenseEnvIds.has(r.local_envelope_id))
+    .map(r => r.shared_category_id)
+  if (sharedCatIds.length > 0) {
+    const { data: sharedCatRows } = await supabaseAdmin.from('shared_categories').select('id, total_goal, group_id').in('id', sharedCatIds)
+    const groupIds = [...new Set((sharedCatRows ?? []).map(c => c.group_id))]
+    const { data: myMemberships } = await supabaseAdmin
+      .from('shared_group_members').select('group_id, share_pct').eq('user_id', userId).eq('status', 'active')
+      .in('group_id', groupIds.length > 0 ? groupIds : [-1])
+    const pctByGroup = new Map((myMemberships ?? []).map(m => [m.group_id, Number(m.share_pct ?? 50)]))
+    for (const cat of sharedCatRows ?? []) budget += Number(cat.total_goal) * (pctByGroup.get(cat.group_id) ?? 50) / 100
+  }
+
+  let spent = 0
+  for (const tx of txRes.data ?? []) {
+    if (tx.is_internal_transfer || tx.exclude_from_stats) continue
+    const amt = Number(tx.amount)
+    if (amt < 0) { spent += Math.abs(amt); continue }
+    const envId = tx.category_id ? (catToEnv.get(tx.category_id) ?? null) : null
+    if (envId != null && envId !== incomeEnvId) spent -= amt // reembolso abate o gasto
+  }
+  spent = Math.max(0, spent)
+
+  if (spent === 0 && budget === 0) return null
+  return {
+    spent: Math.round(spent * 100) / 100,
+    budget: Math.round(budget * 100) / 100,
+    currency: incRes.data?.currency ?? 'EUR',
+  }
+}
+
 export async function getMonthlyReviewAlerts(userId: string): Promise<{ streak: OverBudgetStreakAlert | null; negative: NegativeBalanceAlert | null }> {
   const cycleDay = await getUserCycleDay(userId)
   const todayStr = new Date().toISOString().slice(0, 10)

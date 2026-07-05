@@ -41,6 +41,87 @@ function readDismissedSnapshot(storageKey: string | null): DismissedSnapshot | n
   return { hiddenAt: '', snapshot: { hasAssets: false, hasAccount: false, hasIncome: false, hasFreedomPlan: false, hasPlanning: false } }
 }
 
+export interface SetupStep { key: string; done: boolean; label: string; to: string }
+
+// Hook compartilhado: mesma flag de dispensa, mesmos sinais e mesma lógica de
+// "reabrir sozinho quando algo novo foi concluído". Usado pelo círculo do header
+// e pelo card da página Hoje — uma fonte de verdade só, sem duplicação.
+export function useSetupChecklist(userId?: string) {
+  const { t } = useI18n()
+  const s = (t as unknown as Record<string, Record<string, string>>).setup
+  const storageKey = userId ? `${STORAGE_PREFIX}${userId}` : null
+  const [hidden, setHidden] = useState(() => !!(storageKey && localStorage.getItem(storageKey)))
+  const [state, setState] = useState<SetupState | null>(null)
+
+  useEffect(() => {
+    setHidden(!!(storageKey && localStorage.getItem(storageKey)))
+  }, [storageKey])
+
+  useEffect(() => {
+    function onReopen() {
+      if (storageKey) localStorage.removeItem(storageKey)
+      setHidden(false)
+    }
+    window.addEventListener(REOPEN_SETUP_CHECKLIST_EVENT, onReopen)
+    return () => window.removeEventListener(REOPEN_SETUP_CHECKLIST_EVENT, onReopen)
+  }, [storageKey])
+
+  useEffect(() => {
+    Promise.all([
+      apiFetch<Array<{ id: number }>>('/assets').catch(() => [] as Array<{ id: number }>),
+      apiFetch<Array<{ linked_asset_id?: number | null }>>('/finances/accounts').catch(() => []),
+      apiFetch<{ monthly_net?: number }>('/finances/income').catch(() => ({})),
+      apiFetch<Array<{ is_active: boolean }>>('/finances/freedom-plans').catch(() => []),
+      apiFetch<Array<{ budget_monthly?: number; name_key?: string }>>('/finances/categories').catch(() => []),
+    ]).then(([assets, accounts, income, plans, categories]) => {
+      const linkedAssetIds = new Set(
+        (accounts ?? []).map(a => a.linked_asset_id).filter((id): id is number => id != null)
+      )
+      const realAssets = (assets ?? []).filter(a => !linkedAssetIds.has(a.id))
+      const planningCategories = (categories ?? []).filter(c => c.name_key !== 'categorySalary')
+
+      const freshState: SetupState = {
+        hasAssets: realAssets.length > 0,
+        hasAccount: Array.isArray(accounts) && accounts.length > 0,
+        hasIncome: ((income as { monthly_net?: number }).monthly_net ?? 0) > 0,
+        hasFreedomPlan: Array.isArray(plans) && plans.some((p: { is_active: boolean }) => p.is_active),
+        hasPlanning: planningCategories.some(c => (c.budget_monthly ?? 0) > 0),
+      }
+      setState(freshState)
+
+      if (hidden) {
+        const dismissed = readDismissedSnapshot(storageKey)
+        const unlockedSomethingNew = dismissed && (Object.keys(freshState) as (keyof SetupState)[])
+          .some(k => freshState[k] && !dismissed.snapshot[k])
+        if (unlockedSomethingNew) {
+          if (storageKey) localStorage.removeItem(storageKey)
+          setHidden(false)
+        }
+      }
+    })
+  }, [hidden, storageKey])
+
+  function hide() {
+    if (storageKey && state) {
+      localStorage.setItem(storageKey, JSON.stringify({ hiddenAt: new Date().toISOString(), snapshot: state } satisfies DismissedSnapshot))
+    }
+    setHidden(true)
+  }
+
+  const steps: SetupStep[] = state ? [
+    { key: 'assets',   done: state.hasAssets,      label: s.stepAssets,   to: '/import-b3' },
+    { key: 'account',  done: state.hasAccount,     label: s.stepAccount,  to: '/finances/accounts' },
+    { key: 'income',   done: state.hasIncome,      label: s.stepIncome,   to: '/finances' },
+    { key: 'freedom',  done: state.hasFreedomPlan, label: s.stepFreedom,  to: '/finances/freedom' },
+    { key: 'planning', done: state.hasPlanning,    label: s.stepPlanning, to: '/finances/budget' },
+  ] : []
+  const doneCount = steps.filter(st => st.done).length
+  const total = steps.length || 5
+  const visible = !hidden && !!state && doneCount < total
+
+  return { state, steps, doneCount, total, hidden, hide, visible }
+}
+
 interface Props {
   firstName?: string
   userId?: string
@@ -65,100 +146,25 @@ export default function SetupChecklist({ firstName, userId }: Props) {
   const { t } = useI18n()
   const s = (t as unknown as Record<string, Record<string, string>>).setup
   const navigate = useNavigate()
-  const storageKey = userId ? `${STORAGE_PREFIX}${userId}` : null
-  const [hidden, setHidden] = useState(() => !!(storageKey && localStorage.getItem(storageKey)))
+  const { steps, doneCount, total, visible, hide } = useSetupChecklist(userId)
   const [open, setOpen] = useState(false)
-  const [state, setState] = useState<SetupState | null>(null)
   const wrapRef = useRef<HTMLDivElement>(null)
 
   useClickOutside(wrapRef, () => setOpen(false), open)
 
-  // Re-sync the dismissed flag when the signed-in user changes (account
-  // switch in the same browser) — each account has its own storage key, but
-  // the initial useState above only runs once per mount.
+  // Reabrir manualmente a partir do Perfil: o hook já limpa a dispensa; aqui só
+  // expandimos o painel pra confirmar visualmente que funcionou.
   useEffect(() => {
-    setHidden(!!(storageKey && localStorage.getItem(storageKey)))
-  }, [storageKey])
-
-  // Reabrir manualmente a partir do Perfil: limpa a dispensa e já expande o
-  // painel, pra confirmar visualmente que funcionou.
-  useEffect(() => {
-    function onReopen() {
-      if (storageKey) localStorage.removeItem(storageKey)
-      setHidden(false)
-      setOpen(true)
-    }
+    function onReopen() { setOpen(true) }
     window.addEventListener(REOPEN_SETUP_CHECKLIST_EVENT, onReopen)
     return () => window.removeEventListener(REOPEN_SETUP_CHECKLIST_EVENT, onReopen)
-  }, [storageKey])
+  }, [])
 
-  useEffect(() => {
-    // Mesmo dispensado, continua buscando o estado em segundo plano — é o que
-    // permite comparar com a foto salva e reabrir sozinho se algo novo foi
-    // concluído (ex: conectou um banco depois de ter ignorado o checklist).
-    Promise.all([
-      apiFetch<Array<{ id: number }>>('/assets').catch(() => [] as Array<{ id: number }>),
-      apiFetch<Array<{ linked_asset_id?: number | null }>>('/finances/accounts').catch(() => []),
-      apiFetch<{ monthly_net?: number }>('/finances/income').catch(() => ({})),
-      apiFetch<Array<{ is_active: boolean }>>('/finances/freedom-plans').catch(() => []),
-      apiFetch<Array<{ budget_monthly?: number; name_key?: string }>>('/finances/categories').catch(() => []),
-    ]).then(([assets, accounts, income, plans, categories]) => {
-      // Onboarding's "add bank account" step auto-creates a linked Caixa/cash
-      // asset so the balance shows in net worth — that's not the user
-      // importing real portfolio holdings, so it shouldn't count here.
-      const linkedAssetIds = new Set(
-        (accounts ?? []).map(a => a.linked_asset_id).filter((id): id is number => id != null)
-      )
-      const realAssets = (assets ?? []).filter(a => !linkedAssetIds.has(a.id))
+  function dismiss() { hide(); setOpen(false) }
 
-      // Onboarding's "monthly income" step auto-seeds a Salary category with
-      // budget_monthly = the salary so it shows in budget reports — that's
-      // not the user setting deliberate spending goals.
-      const planningCategories = (categories ?? []).filter(c => c.name_key !== 'categorySalary')
+  if (!visible) return null
 
-      const freshState: SetupState = {
-        hasAssets: realAssets.length > 0,
-        hasAccount: Array.isArray(accounts) && accounts.length > 0,
-        hasIncome: ((income as { monthly_net?: number }).monthly_net ?? 0) > 0,
-        hasFreedomPlan: Array.isArray(plans) && plans.some((p: { is_active: boolean }) => p.is_active),
-        hasPlanning: planningCategories.some(c => (c.budget_monthly ?? 0) > 0),
-      }
-      setState(freshState)
-
-      if (hidden) {
-        const dismissed = readDismissedSnapshot(storageKey)
-        const unlockedSomethingNew = dismissed && (Object.keys(freshState) as (keyof SetupState)[])
-          .some(k => freshState[k] && !dismissed.snapshot[k])
-        if (unlockedSomethingNew) {
-          if (storageKey) localStorage.removeItem(storageKey)
-          setHidden(false)
-        }
-      }
-    })
-  }, [hidden, storageKey])
-
-  function dismiss() {
-    if (storageKey && state) {
-      localStorage.setItem(storageKey, JSON.stringify({ hiddenAt: new Date().toISOString(), snapshot: state } satisfies DismissedSnapshot))
-    }
-    setHidden(true)
-    setOpen(false)
-  }
-
-  if (hidden || !state) return null
-
-  const steps = [
-    { key: 'assets',   done: state.hasAssets,      label: s.stepAssets,   to: '/import-b3' },
-    { key: 'account',  done: state.hasAccount,     label: s.stepAccount,  to: '/finances/accounts' },
-    { key: 'income',   done: state.hasIncome,      label: s.stepIncome,   to: '/finances' },
-    { key: 'freedom',  done: state.hasFreedomPlan, label: s.stepFreedom,  to: '/finances/freedom' },
-    { key: 'planning', done: state.hasPlanning,    label: s.stepPlanning, to: '/finances/budget' },
-  ]
-
-  const doneCount = steps.filter(st => st.done).length
-  if (doneCount === steps.length) return null
-
-  const pct = doneCount / steps.length
+  const pct = doneCount / total
   const strokeOffset = CIRC * (1 - pct)
 
   const name = firstName?.split(' ')[0] ?? ''

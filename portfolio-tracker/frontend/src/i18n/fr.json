@@ -2840,6 +2840,11 @@
     "ofBudget": "sur",
     "balancesLabel": "Entre amis",
     "toReceive": "à recevoir",
-    "toPay": "à payer"
+    "toPay": "à payer",
+    "quickTransaction": "Nouvelle transaction",
+    "quickGoals": "Objectifs",
+    "quickMoments": "Moments",
+    "quickProfile": "Profil",
+    "newReplies": "nouvelles réponses"
   }
 }
