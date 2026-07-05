@@ -7,6 +7,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { PageLoader } from '../components/ArvoLoader'
 import { useSetupChecklist } from '../components/SetupChecklist'
 import { useActiveFriends, type ActiveFriend } from '../hooks/useActiveFriends'
+import { usePerformanceMonthly } from '../hooks/usePortfolio'
 import { PairMomentModal } from './PeoplePage'
 import CategoryIcon from './community/_shared/CategoryIcon'
 import type { PortfolioValue } from '../lib/types'
@@ -21,7 +22,7 @@ interface TodayData {
   hot_topics: Array<{ id: number; title: string; category_slug: string; category_name: string | null; reply_count: number; last_post_at: string }>
   next_trip: { id: number; title: string; destination: string | null; start_date: string; end_date: string | null; cover_image_url: string | null; ongoing: boolean; past: boolean } | null
   active_moment: { id: number; name: string; icon: string; color: string; start_date: string | null; end_date: string | null; ongoing: boolean } | null
-  month_summary: { spent: number; budget: number; currency: string } | null
+  month_summary: { spent: number; budget: number; currency: string; income: number; forecast: number } | null
   community_unseen: number
 }
 
@@ -43,6 +44,25 @@ const card: React.CSSProperties = { background: 'var(--arvo-surface)', border: '
 const cardLabel: React.CSSProperties = { fontFamily: 'var(--arvo-font-body)', fontSize: 10, fontWeight: 600, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)' }
 const pillStyle: React.CSSProperties = { display: 'inline-flex', alignItems: 'center', gap: 8, cursor: 'pointer', padding: '11px 18px', borderRadius: 999, border: '1px solid var(--arvo-border)', background: 'var(--arvo-surface)', color: 'var(--arvo-fg-muted)', fontFamily: 'var(--arvo-font-body)', fontSize: 13.5 }
 
+// Mini gráfico de evolução do patrimônio no hero — linha dourada, sem eixos.
+function Sparkline({ values }: { values: number[] }) {
+  const w = 320, h = 46, pad = 3
+  const min = Math.min(...values), max = Math.max(...values)
+  const range = max - min || 1
+  const pts = values.map((v, i) => {
+    const x = pad + (i / (values.length - 1)) * (w - 2 * pad)
+    const y = h - pad - ((v - min) / range) * (h - 2 * pad)
+    return `${x.toFixed(1)},${y.toFixed(1)}`
+  })
+  const area = `M${pad},${h} L${pts.join(' L')} L${w - pad},${h} Z`
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" style={{ position: 'relative', display: 'block', width: '100%', height: 46, marginTop: 18 }}>
+      <path d={area} fill="rgba(200,184,154,0.14)" stroke="none" />
+      <polyline points={pts.join(' ')} fill="none" stroke="#8C6A28" strokeWidth={1.5} strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+    </svg>
+  )
+}
+
 export default function HomePage() {
   const { t, locale } = useI18n()
   const th = (t as any).home ?? {}
@@ -60,6 +80,22 @@ export default function HomePage() {
   const [splitPicker, setSplitPicker] = useState(false)
   const [splitFriend, setSplitFriend] = useState<ActiveFriend | null>(null)
   const activeFriends = useActiveFriends().filter(f => f.user_id)
+
+  // Série mensal do patrimônio (cacheada) pro mini gráfico e a variação do mês
+  const _now = new Date()
+  const _pad = (n: number) => String(n).padStart(2, '0')
+  const perfTo = `${_now.getFullYear()}-${_pad(_now.getMonth() + 1)}`
+  const _fromD = new Date(_now.getFullYear(), _now.getMonth() - 11, 1)
+  const perfFrom = `${_fromD.getFullYear()}-${_pad(_fromD.getMonth() + 1)}`
+  const { data: perfMonthly } = usePerformanceMonthly(perfFrom, perfTo)
+  const wealthSeries = (perfMonthly?.monthly ?? []).filter(m => m.total > 0)
+  const monthChangePct = (() => {
+    const last = wealthSeries[wealthSeries.length - 1]
+    if (!last) return null
+    const denom = last.prev_total + 0.5 * last.contributions
+    if (denom <= 0) return null
+    return ((last.total - last.prev_total - last.contributions) / denom) * 100
+  })()
 
   useEffect(() => {
     apiFetch<TodayData>('/home/today')
@@ -136,14 +172,22 @@ export default function HomePage() {
               <div style={{ position: 'relative', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12 }}>
                 <div>
                   <p style={{ ...cardLabel, color: '#8C6A28' }}>{th.wealthLabel ?? 'Patrimônio'}</p>
-                  <p className="arvo-num" style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 46, lineHeight: 1.05, color: 'var(--arvo-fg)', marginTop: 10 }}>
-                    {wealth != null ? fmt(wealth, 0) : '…'}
-                  </p>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, flexWrap: 'wrap', marginTop: 10 }}>
+                    <p className="arvo-num" style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 46, lineHeight: 1.05, color: 'var(--arvo-fg)' }}>
+                      {wealth != null ? fmt(wealth, 0) : '…'}
+                    </p>
+                    {!hideValues && monthChangePct != null && (
+                      <span className={monthChangePct >= 0 ? 'arvo-delta-pos' : 'arvo-delta-neg'} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, fontWeight: 600 }}>
+                        {monthChangePct >= 0 ? '+' : ''}{monthChangePct.toFixed(1)}% <span style={{ color: 'var(--arvo-fg-soft)', fontWeight: 400 }}>{th.inMonth ?? 'no mês'}</span>
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '9px 16px', borderRadius: 999, background: 'var(--arvo-pill-active-bg)', color: 'var(--arvo-pill-active-fg)', whiteSpace: 'nowrap', flexShrink: 0 }}>
                   {th.openDashboard ?? 'Ver dashboard'}
                 </span>
               </div>
+              {!hideValues && wealthSeries.length >= 2 && <Sparkline values={wealthSeries.map(m => m.total)} />}
             </Link>
           )}
 
@@ -204,6 +248,22 @@ export default function HomePage() {
                   <div style={{ width: `${Math.min(100, (data.month_summary.spent / data.month_summary.budget) * 100)}%`, height: '100%', borderRadius: 99, background: data.month_summary.spent > data.month_summary.budget ? 'var(--arvo-red)' : 'var(--arvo-gold)' }} />
                 </div>
               )}
+              <div style={{ display: 'flex', gap: 24, marginTop: 14, paddingTop: 12, borderTop: '1px solid var(--arvo-border-soft)' }}>
+                <div>
+                  <p style={{ ...cardLabel, fontSize: 9.5 }}>{th.forecastLabel ?? 'Previsão'}</p>
+                  <p className="arvo-num" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 15, color: data.month_summary.budget > 0 && data.month_summary.forecast > data.month_summary.budget ? 'var(--arvo-red)' : 'var(--arvo-fg)', marginTop: 3 }}>
+                    {fmtCur(data.month_summary.forecast, data.month_summary.currency)}
+                  </p>
+                </div>
+                {(() => { const saldo = data.month_summary.income - data.month_summary.spent; return (
+                  <div>
+                    <p style={{ ...cardLabel, fontSize: 9.5 }}>{th.balanceLabel ?? 'Saldo do mês'}</p>
+                    <p className="arvo-num" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 15, marginTop: 3 }}>
+                      <span className={hideValues ? undefined : saldo >= 0 ? 'arvo-delta-pos' : 'arvo-delta-neg'}>{fmtCur(saldo, data.month_summary.currency)}</span>
+                    </p>
+                  </div>
+                )})()}
+              </div>
             </Link>
           )}
 

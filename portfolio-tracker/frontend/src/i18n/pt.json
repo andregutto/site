@@ -2851,6 +2851,9 @@
     "goalCreate": "Criar plano",
     "splitExpense": "Dividir despesa",
     "splitWithWho": "Dividir com quem?",
-    "splitNoFriends": "Você ainda não tem amigos conectados para dividir."
+    "splitNoFriends": "Você ainda não tem amigos conectados para dividir.",
+    "inMonth": "no mês",
+    "forecastLabel": "Previsão",
+    "balanceLabel": "Saldo do mês"
   }
 }

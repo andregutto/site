@@ -334,7 +334,7 @@ export interface NegativeBalanceAlert { key: string; month: string }
 // de categorias compartilhadas — mesma base da página Finanças, pra bater.
 export async function getCurrentMonthFinance(
   userId: string
-): Promise<{ spent: number; budget: number; currency: string } | null> {
+): Promise<{ spent: number; budget: number; currency: string; income: number; forecast: number } | null> {
   const cycleDay = await getUserCycleDay(userId)
   const todayStr = new Date().toISOString().slice(0, 10)
   const fm = financialMonthKey(todayStr, cycleDay)
@@ -375,20 +375,33 @@ export async function getCurrentMonthFinance(
   }
 
   let spent = 0
+  let income = 0
   for (const tx of txRes.data ?? []) {
     if (tx.is_internal_transfer || tx.exclude_from_stats) continue
     const amt = Number(tx.amount)
     if (amt < 0) { spent += Math.abs(amt); continue }
     const envId = tx.category_id ? (catToEnv.get(tx.category_id) ?? null) : null
     if (envId != null && envId !== incomeEnvId) spent -= amt // reembolso abate o gasto
+    else income += amt // entrada real (salário, etc.)
   }
   spent = Math.max(0, spent)
 
-  if (spent === 0 && budget === 0) return null
+  // Previsão: projeta o gasto pro ciclo inteiro pelo ritmo até agora
+  const dayMs = 86400000
+  const startD = new Date(start).getTime()
+  const endD = new Date(end).getTime()
+  const todayD = new Date(todayStr).getTime()
+  const totalDays = Math.max(1, Math.round((endD - startD) / dayMs) + 1)
+  const elapsedDays = Math.min(totalDays, Math.max(1, Math.round((todayD - startD) / dayMs) + 1))
+  const forecast = Math.round((spent / elapsedDays) * totalDays * 100) / 100
+
+  if (spent === 0 && budget === 0 && income === 0) return null
   return {
     spent: Math.round(spent * 100) / 100,
     budget: Math.round(budget * 100) / 100,
     currency: incRes.data?.currency ?? 'EUR',
+    income: Math.round(income * 100) / 100,
+    forecast,
   }
 }
 
