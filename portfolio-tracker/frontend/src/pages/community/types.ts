@@ -2,9 +2,32 @@ export interface CommunityCategory {
   id: number
   slug: string
   name_key: string
+  name?: string | null
   icon: string | null
+  icon_key?: string | null
   sort_order: number
   topic_count: number
+  archived?: boolean
+}
+
+export interface CommunityMemberRow {
+  id: string
+  name: string
+  username: string | null
+  avatar_url: string | null
+  tier: 'free' | 'paid'
+  joined_at: string
+  is_admin: boolean
+}
+
+export interface CommunityRecentPost {
+  id: number
+  topic_id: number
+  topic_title: string
+  category_slug: string
+  author_name: string
+  excerpt: string
+  created_at: string
 }
 
 export interface CommunityAuthor {
@@ -12,6 +35,7 @@ export interface CommunityAuthor {
   name: string
   username?: string
   avatar_url?: string
+  is_admin?: boolean
 }
 
 export interface CommunityTopicSummary {

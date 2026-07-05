@@ -149,7 +149,8 @@
     "deleteAffectedNotice": "{count} pessoa(s) com quem você compartilha viagens, categorias ou momentos será(ão) avisada(s) de que sua conta foi apagada.",
     "setupChecklistTitle": "Checklist de configuração",
     "setupChecklistDesc": "Se você dispensou o guia de configuração inicial, pode reabri-lo aqui a qualquer momento.",
-    "setupChecklistBtn": "Ver checklist de configuração"
+    "setupChecklistBtn": "Ver checklist de configuração",
+    "defaultSectionToday": "Hoje"
   },
   "reports": {
     "title": "Relatórios IR",
@@ -2763,7 +2764,27 @@
     "matchedInBody": "encontrado numa resposta",
     "message": "Mensagem",
     "addFriend": "+ Amizade",
-    "inviteSent": "Convite enviado"
+    "inviteSent": "Convite enviado",
+    "admin": {
+      "eyebrow": "ADMINISTRAÇÃO",
+      "title": "Painel da comunidade",
+      "categories": "Categorias",
+      "members": "Membros",
+      "recentPosts": "Últimos posts",
+      "archive": "Arquivar",
+      "unarchive": "Restaurar",
+      "archived": "arquivada",
+      "newCatPlaceholder": "Nome da nova categoria",
+      "createCat": "Criar",
+      "searchMembers": "Buscar membro",
+      "promote": "Tornar admin",
+      "demote": "Remover admin",
+      "since": "desde",
+      "promoteConfirm": "Promover {name} a admin?",
+      "demoteConfirm": "Remover {name} como admin?",
+      "noMembers": "Nenhum membro encontrado.",
+      "noPosts": "Nenhum post ainda."
+    }
   },
   "messages": {
     "title": "Mensagens",
@@ -2796,5 +2817,20 @@
     "tabArchived": "Arquivadas",
     "emptyArchived": "Nenhuma conversa arquivada.",
     "unarchive": "Desarquivar"
+  },
+  "home": {
+    "morning": "Bom dia",
+    "afternoon": "Boa tarde",
+    "evening": "Boa noite",
+    "wealthLabel": "Patrimônio",
+    "reveal": "Mostrar",
+    "openDashboard": "Ver dashboard",
+    "communityLabel": "Na comunidade",
+    "seeAll": "Ver tudo",
+    "tripNow": "Viagem em andamento",
+    "tripNext": "Próxima viagem",
+    "momentLabel": "Momento ativo",
+    "until": "até",
+    "shortcuts": "Atalhos"
   }
 }

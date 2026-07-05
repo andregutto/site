@@ -117,7 +117,7 @@ export default function ProfilePage() {
   const [photoError,       setPhotoError]       = useState<string | null>(null)
   const modalFileRef = useRef<HTMLInputElement>(null)
 
-  const [defaultSection, setDefaultSection] = useState<'investments' | 'finances'>('investments')
+  const [defaultSection, setDefaultSection] = useState<'today' | 'investments' | 'finances'>('today')
   const [monthCycleDay, setMonthCycleDay]   = useState(1)
   const [budgetReminderFreq, setBudgetReminderFreq] = useState<number>(0)
 
@@ -160,7 +160,7 @@ export default function ProfilePage() {
         setCountry(d.country)
         setBirthdate(d.birthdate ?? '')
         setAvatarUrl(d.avatar_url)
-        setDefaultSection(d.default_section === 'finances' ? 'finances' : 'investments')
+        setDefaultSection(d.default_section === 'finances' ? 'finances' : d.default_section === 'investments' ? 'investments' : 'today')
         setMonthCycleDay(d.month_cycle_day ?? 1)
         setTaxCountry(d.tax_country || 'BR')
         setBudgetReminderFreq(d.budget_reminder_freq ?? 0)
@@ -976,7 +976,7 @@ export default function ProfilePage() {
                 <label className="block text-sm font-medium text-[var(--arvo-fg)] mb-1">{t.profile.defaultSectionLabel}</label>
                 <p className="text-xs text-[var(--arvo-fg-soft)] mb-2">{t.profile.defaultSectionHint}</p>
                 <div className="flex flex-wrap gap-2">
-                  {(['investments', 'finances'] as const).map(s => (
+                  {(['today', 'investments', 'finances'] as const).map(s => (
                     <button
                       key={s}
                       type="button"
@@ -987,7 +987,7 @@ export default function ProfilePage() {
                           : 'bg-[var(--arvo-surface)] text-[var(--arvo-fg-muted)] border-[var(--arvo-border)] hover:border-[var(--arvo-fg-faint)]'
                       }`}
                     >
-                      {s === 'investments' ? t.profile.defaultSectionInvestments : t.profile.defaultSectionFinances}
+                      {s === 'today' ? ((t.profile as any).defaultSectionToday ?? 'Hoje') : s === 'investments' ? t.profile.defaultSectionInvestments : t.profile.defaultSectionFinances}
                     </button>
                   ))}
                 </div>

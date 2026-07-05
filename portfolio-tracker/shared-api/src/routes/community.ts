@@ -1,6 +1,7 @@
 import { Router, Response } from 'express'
 import { requireAuth, AuthRequest } from '../middleware/auth.js'
 import { supabaseAdmin } from '../lib/supabase.js'
+import { cache } from '../lib/cache.js'
 import { userDisplay } from './people.js'
 
 const router = Router()
@@ -10,11 +11,17 @@ function uid(req: Parameters<typeof requireAuth>[0]): string {
   return (req as AuthRequest).userId
 }
 
-// Admin da comunidade V1 — sem painel de moderação dedicado ainda; um único
-// usuário (André) pode fixar/trancar tópicos e apagar qualquer conteúdo.
-const ADMIN_USER_IDS = new Set([process.env.COMMUNITY_ADMIN_ID ?? '453bc770-0cea-4c88-b72f-babf9e50437e'])
-function isAdmin(userId: string): boolean {
-  return ADMIN_USER_IDS.has(userId)
+// Admins vivem na tabela community_admins (migration 067). Cache curto para
+// não bater no banco a cada request; invalidado ao promover/rebaixar.
+const ADMINS_CACHE_KEY = 'community:admins'
+async function getAdminIds(): Promise<Set<string>> {
+  return cache.getOrFetch(ADMINS_CACHE_KEY, 60_000, async () => {
+    const { data } = await supabaseAdmin.from('community_admins').select('user_id')
+    return new Set<string>((data ?? []).map((r: any) => r.user_id))
+  })
+}
+async function isAdmin(userId: string): Promise<boolean> {
+  return (await getAdminIds()).has(userId)
 }
 
 // Garante que o usuário tem uma linha em community_members (tier 'free' por
@@ -36,9 +43,12 @@ export interface CommunityCategory {
   id: number
   slug: string
   name_key: string
+  name: string | null
   icon: string | null
+  icon_key: string | null
   sort_order: number
   topic_count: number
+  archived: boolean
 }
 
 export interface CommunityAuthor {
@@ -46,6 +56,7 @@ export interface CommunityAuthor {
   name: string
   username?: string
   avatar_url?: string
+  is_admin?: boolean
 }
 
 export interface CommunityTopicSummary {
@@ -94,8 +105,8 @@ export interface CommunityTopicDetail {
   posts: CommunityPost[]
 }
 
-function toAuthor(userId: string, display: { name?: string; email: string; avatar_url?: string; username?: string }): CommunityAuthor {
-  return { id: userId, name: display.name ?? display.email, username: display.username, avatar_url: display.avatar_url }
+function toAuthor(userId: string, display: { name?: string; email: string; avatar_url?: string; username?: string }, adminIds?: Set<string>): CommunityAuthor {
+  return { id: userId, name: display.name ?? display.email, username: display.username, avatar_url: display.avatar_url, is_admin: adminIds?.has(userId) || undefined }
 }
 
 // ── GET /api/community/categories ───────────────────────────────────────────
@@ -104,10 +115,14 @@ router.get('/categories', async (req: any, res: any) => {
   try {
     await ensureMember(userId)
 
-    const { data: categories, error } = await supabaseAdmin
+    const admin = await isAdmin(userId)
+    const includeArchived = admin && req.query.all === '1'
+    let query = supabaseAdmin
       .from('community_categories')
       .select('*')
       .order('sort_order', { ascending: true })
+    if (!includeArchived) query = query.is('archived_at', null)
+    const { data: categories, error } = await query
     if (error) { res.status(500).json({ error: error.message }); return }
 
     const { data: topics } = await supabaseAdmin
@@ -122,12 +137,15 @@ router.get('/categories', async (req: any, res: any) => {
       id: c.id,
       slug: c.slug,
       name_key: c.name_key,
+      name: c.name ?? null,
       icon: c.icon,
+      icon_key: c.icon_key ?? null,
       sort_order: c.sort_order,
       topic_count: counts[c.id] ?? 0,
+      archived: !!c.archived_at,
     }))
 
-    res.json({ categories: result })
+    res.json({ categories: result, is_admin: admin })
   } catch (err: any) {
     res.status(500).json({ error: err.message })
   }
@@ -403,6 +421,7 @@ router.get('/topics/:id', async (req: any, res: any) => {
     const authorIds = [...new Set([topic.user_id, ...(posts ?? []).map((p: any) => p.user_id)])]
     const displays = await Promise.all(authorIds.map(async (id) => [id, await userDisplay(id)] as const))
     const displayMap = new Map(displays)
+    const adminIds = await getAdminIds()
 
     const firstPostId = posts && posts.length > 0 ? posts[0].id : null
 
@@ -412,7 +431,7 @@ router.get('/topics/:id', async (req: any, res: any) => {
       body: p.body,
       edited_at: p.edited_at,
       created_at: p.created_at,
-      author: toAuthor(p.user_id, displayMap.get(p.user_id)!),
+      author: toAuthor(p.user_id, displayMap.get(p.user_id)!, adminIds),
       like_count: likeCounts[p.id] ?? 0,
       liked_by_me: likedByMe.has(p.id),
       is_first_post: p.id === firstPostId,
@@ -425,9 +444,9 @@ router.get('/topics/:id', async (req: any, res: any) => {
       pinned: topic.pinned,
       locked: topic.locked,
       created_at: topic.created_at,
-      author: toAuthor(topic.user_id, displayMap.get(topic.user_id)!),
+      author: toAuthor(topic.user_id, displayMap.get(topic.user_id)!, adminIds),
       is_own: topic.user_id === userId,
-      is_admin_viewer: isAdmin(userId),
+      is_admin_viewer: await isAdmin(userId),
       linked_trip: linkedTrip,
       posts: resultPosts,
     }
@@ -449,7 +468,7 @@ router.post('/topics/:id/posts', async (req: any, res: any) => {
   try {
     const { data: topic } = await supabaseAdmin.from('community_topics').select('*').eq('id', topicId).is('deleted_at', null).maybeSingle()
     if (!topic) { res.status(404).json({ error: 'topic not found' }); return }
-    if (topic.locked && !isAdmin(userId)) { res.status(403).json({ error: 'topic is locked' }); return }
+    if (topic.locked && !(await isAdmin(userId))) { res.status(403).json({ error: 'topic is locked' }); return }
 
     const now = new Date().toISOString()
     const { data: post, error } = await supabaseAdmin
@@ -508,7 +527,7 @@ router.delete('/posts/:id', async (req: any, res: any) => {
   try {
     const { data: post } = await supabaseAdmin.from('community_posts').select('*').eq('id', postId).is('deleted_at', null).maybeSingle()
     if (!post) { res.status(404).json({ error: 'post not found' }); return }
-    if (post.user_id !== userId && !isAdmin(userId)) { res.status(403).json({ error: 'forbidden' }); return }
+    if (post.user_id !== userId && !(await isAdmin(userId))) { res.status(403).json({ error: 'forbidden' }); return }
 
     const now = new Date().toISOString()
     await supabaseAdmin.from('community_posts').update({ deleted_at: now }).eq('id', postId)
@@ -572,7 +591,7 @@ router.patch('/topics/:id', async (req: any, res: any) => {
   const userId = uid(req)
   const topicId = Number(req.params.id)
   if (!Number.isFinite(topicId)) { res.status(400).json({ error: 'invalid topic id' }); return }
-  if (!isAdmin(userId)) { res.status(403).json({ error: 'admin only' }); return }
+  if (!(await isAdmin(userId))) { res.status(403).json({ error: 'admin only' }); return }
 
   const { pinned, locked } = req.body as { pinned?: boolean; locked?: boolean }
   const update: Record<string, boolean> = {}
@@ -599,7 +618,7 @@ router.delete('/topics/:id', async (req: any, res: any) => {
   try {
     const { data: topic } = await supabaseAdmin.from('community_topics').select('*').eq('id', topicId).is('deleted_at', null).maybeSingle()
     if (!topic) { res.status(404).json({ error: 'topic not found' }); return }
-    if (topic.user_id !== userId && !isAdmin(userId)) { res.status(403).json({ error: 'forbidden' }); return }
+    if (topic.user_id !== userId && !(await isAdmin(userId))) { res.status(403).json({ error: 'forbidden' }); return }
 
     const now = new Date().toISOString()
     await supabaseAdmin.from('community_topics').update({ deleted_at: now }).eq('id', topicId)
@@ -673,5 +692,190 @@ export async function getRecentCommunityReplies(userId: string): Promise<RecentC
     }
   })
 }
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Painel de administração (/api/community/admin/*) — todas as rotas exigem
+// que o chamador seja admin (tabela community_admins).
+// ═══════════════════════════════════════════════════════════════════════════
+
+async function requireAdmin(req: any, res: any): Promise<string | null> {
+  const userId = uid(req)
+  if (!(await isAdmin(userId))) { res.status(403).json({ error: 'admin only' }); return null }
+  return userId
+}
+
+function slugify(name: string): string {
+  return name
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase().trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 40)
+}
+
+// ── GET /api/community/admin/members?q= ──────────────────────────────────────
+router.get('/admin/members', async (req: any, res: any) => {
+  const adminId = await requireAdmin(req, res)
+  if (!adminId) return
+  const q = String(req.query.q ?? '').trim().toLowerCase()
+
+  try {
+    const { data: members } = await supabaseAdmin
+      .from('community_members')
+      .select('user_id, tier, created_at')
+      .order('created_at', { ascending: true })
+    const adminIds = await getAdminIds()
+
+    const rows = await Promise.all((members ?? []).map(async (m: any) => {
+      const d = await userDisplay(m.user_id)
+      return {
+        id: m.user_id,
+        name: d.name ?? d.email,
+        username: d.username ?? null,
+        avatar_url: d.avatar_url ?? null,
+        tier: m.tier,
+        joined_at: m.created_at,
+        is_admin: adminIds.has(m.user_id),
+      }
+    }))
+
+    const filtered = q
+      ? rows.filter(r => r.name.toLowerCase().includes(q) || (r.username ?? '').toLowerCase().includes(q))
+      : rows
+    res.json({ members: filtered })
+  } catch (err: any) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// ── POST /api/community/admin/members/:id/promote | /demote ─────────────────
+router.post('/admin/members/:id/promote', async (req: any, res: any) => {
+  const adminId = await requireAdmin(req, res)
+  if (!adminId) return
+  const targetId = String(req.params.id)
+  try {
+    await supabaseAdmin.from('community_admins').upsert({ user_id: targetId, promoted_by: adminId }, { onConflict: 'user_id' })
+    cache.deletePattern(ADMINS_CACHE_KEY)
+    res.json({ ok: true })
+  } catch (err: any) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+router.post('/admin/members/:id/demote', async (req: any, res: any) => {
+  const adminId = await requireAdmin(req, res)
+  if (!adminId) return
+  const targetId = String(req.params.id)
+  try {
+    const adminIds = await getAdminIds()
+    if (adminIds.has(targetId) && adminIds.size <= 1) {
+      res.status(400).json({ error: 'cannot demote the last admin' }); return
+    }
+    await supabaseAdmin.from('community_admins').delete().eq('user_id', targetId)
+    cache.deletePattern(ADMINS_CACHE_KEY)
+    res.json({ ok: true })
+  } catch (err: any) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// ── GET /api/community/admin/posts/recent ────────────────────────────────────
+router.get('/admin/posts/recent', async (req: any, res: any) => {
+  const adminId = await requireAdmin(req, res)
+  if (!adminId) return
+  try {
+    const { data: posts } = await supabaseAdmin
+      .from('community_posts')
+      .select('id, topic_id, user_id, body, created_at')
+      .is('deleted_at', null)
+      .order('created_at', { ascending: false })
+      .limit(20)
+
+    const topicIds = [...new Set((posts ?? []).map((p: any) => p.topic_id))]
+    const { data: topics } = topicIds.length
+      ? await supabaseAdmin.from('community_topics').select('id, title, category_id').in('id', topicIds)
+      : { data: [] as any[] }
+    const topicById = new Map((topics ?? []).map((t: any) => [t.id, t]))
+
+    const catIds = [...new Set((topics ?? []).map((t: any) => t.category_id))]
+    const { data: cats } = catIds.length
+      ? await supabaseAdmin.from('community_categories').select('id, slug').in('id', catIds)
+      : { data: [] as any[] }
+    const slugById = new Map((cats ?? []).map((c: any) => [c.id, c.slug]))
+
+    const authorIds = [...new Set((posts ?? []).map((p: any) => p.user_id))]
+    const displays = await Promise.all(authorIds.map(async (id) => [id, await userDisplay(id)] as const))
+    const displayMap = new Map(displays)
+
+    const result = (posts ?? []).map((p: any) => {
+      const topic = topicById.get(p.topic_id)
+      const d = displayMap.get(p.user_id)
+      return {
+        id: p.id,
+        topic_id: p.topic_id,
+        topic_title: topic?.title ?? '',
+        category_slug: topic ? (slugById.get(topic.category_id) ?? '') : '',
+        author_name: d?.name ?? d?.email ?? '',
+        excerpt: String(p.body).slice(0, 140),
+        created_at: p.created_at,
+      }
+    })
+    res.json({ posts: result })
+  } catch (err: any) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// ── POST /api/community/admin/categories ─────────────────────────────────────
+router.post('/admin/categories', async (req: any, res: any) => {
+  const adminId = await requireAdmin(req, res)
+  if (!adminId) return
+  const { name, icon_key } = req.body as { name?: string; icon_key?: string }
+  if (!name?.trim()) { res.status(400).json({ error: 'name required' }); return }
+
+  try {
+    const slug = slugify(name)
+    if (!slug) { res.status(400).json({ error: 'invalid name' }); return }
+    const { data: existing } = await supabaseAdmin.from('community_categories').select('id').eq('slug', slug).maybeSingle()
+    if (existing) { res.status(409).json({ error: 'category already exists' }); return }
+
+    const { data: maxRow } = await supabaseAdmin
+      .from('community_categories').select('sort_order').order('sort_order', { ascending: false }).limit(1).maybeSingle()
+    const { data: created, error } = await supabaseAdmin
+      .from('community_categories')
+      .insert({ slug, name_key: slug, name: name.trim(), icon_key: icon_key ?? null, sort_order: (maxRow?.sort_order ?? 0) + 1 })
+      .select('*').single()
+    if (error || !created) { res.status(500).json({ error: error?.message }); return }
+    res.json({ category: created })
+  } catch (err: any) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// ── PATCH /api/community/admin/categories/:id ────────────────────────────────
+router.patch('/admin/categories/:id', async (req: any, res: any) => {
+  const adminId = await requireAdmin(req, res)
+  if (!adminId) return
+  const catId = Number(req.params.id)
+  if (!Number.isFinite(catId)) { res.status(400).json({ error: 'invalid category id' }); return }
+  const { name, icon_key, sort_order, archived } = req.body as { name?: string; icon_key?: string; sort_order?: number; archived?: boolean }
+
+  try {
+    const update: Record<string, any> = {}
+    if (typeof name === 'string' && name.trim()) update.name = name.trim()
+    if (typeof icon_key === 'string') update.icon_key = icon_key || null
+    if (typeof sort_order === 'number') update.sort_order = sort_order
+    if (typeof archived === 'boolean') update.archived_at = archived ? new Date().toISOString() : null
+    if (!Object.keys(update).length) { res.status(400).json({ error: 'nothing to update' }); return }
+
+    const { data: updated, error } = await supabaseAdmin
+      .from('community_categories').update(update).eq('id', catId).select('*').single()
+    if (error || !updated) { res.status(500).json({ error: error?.message }); return }
+    res.json({ category: updated })
+  } catch (err: any) {
+    res.status(500).json({ error: err.message })
+  }
+})
 
 export default router

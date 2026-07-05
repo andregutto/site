@@ -71,6 +71,8 @@ import CommunityLayout from './pages/community/CommunityLayout'
 import CommunityHomePage from './pages/community/CommunityHomePage'
 import CommunityCategoryPage from './pages/community/CommunityCategoryPage'
 import CommunityTopicPage from './pages/community/CommunityTopicPage'
+import CommunityAdminPage from './pages/community/CommunityAdminPage'
+import HomePage from './pages/HomePage'
 import { MessagingProvider } from './contexts/MessagingContext'
 import MessagesPage from './pages/messages/MessagesPage'
 import ConversationPage from './pages/messages/ConversationPage'
@@ -137,8 +139,8 @@ function AppRoutes() {
 
   return (
     <Routes>
-      <Route path="/login"   element={user ? <Navigate to={sessionStorage.getItem('pending_invite_token') ? `/invite/${sessionStorage.getItem('pending_invite_token')}` : (user.user_metadata?.default_section === 'finances' ? '/finances' : user.user_metadata?.default_section === 'voyage' ? '/voyage' : '/dashboard')} replace /> : <LoginPage />} />
-      <Route path="/"        element={user ? <Navigate to={user.user_metadata?.default_section === 'finances' ? '/finances' : user.user_metadata?.default_section === 'voyage' ? '/voyage' : '/dashboard'} replace /> : <LandingPage />} />
+      <Route path="/login"   element={user ? <Navigate to={sessionStorage.getItem('pending_invite_token') ? `/invite/${sessionStorage.getItem('pending_invite_token')}` : (user.user_metadata?.default_section === 'finances' ? '/finances' : user.user_metadata?.default_section === 'voyage' ? '/voyage' : user.user_metadata?.default_section === 'investments' ? '/dashboard' : '/home')} replace /> : <LoginPage />} />
+      <Route path="/"        element={user ? <Navigate to={user.user_metadata?.default_section === 'finances' ? '/finances' : user.user_metadata?.default_section === 'voyage' ? '/voyage' : user.user_metadata?.default_section === 'investments' ? '/dashboard' : '/home'} replace /> : <LandingPage />} />
       <Route path="/privacy"                element={<PrivacyPolicyPage />} />
       <Route path="/terms"                  element={<TermsOfUsePage />} />
       <Route path="/share/momento/:token"   element={<PublicMomentPage />} />
@@ -169,6 +171,7 @@ function AppRoutes() {
         <Route path="/favorites"      element={<Navigate to="/assets?view=favorites" replace />} />
         <Route path="/achievements"   element={<AchievementsPage />} />
         <Route path="/notifications"  element={<NotificationsPage />} />
+        <Route path="/home"           element={<HomePage />} />
         <Route path="/people"         element={<PeoplePage />} />
         <Route path="/messages"       element={<MessagesPage />} />
         <Route path="/messages/:conversationId" element={<ConversationPage />} />
@@ -182,6 +185,7 @@ function AppRoutes() {
         </Route>
         <Route path="/community"       element={<CommunityLayout />}>
           <Route index                element={<CommunityHomePage />} />
+          <Route path="admin"         element={<CommunityAdminPage />} />
           <Route path=":slug"         element={<CommunityCategoryPage />} />
           <Route path=":slug/:topicId" element={<CommunityTopicPage />} />
         </Route>

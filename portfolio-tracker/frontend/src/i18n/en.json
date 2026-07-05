@@ -149,7 +149,8 @@
     "deleteAffectedNotice": "{count} people you share trips, categories or moments with will be notified that your account was deleted.",
     "setupChecklistTitle": "Setup checklist",
     "setupChecklistDesc": "If you dismissed the initial setup guide, you can reopen it here anytime.",
-    "setupChecklistBtn": "View setup checklist"
+    "setupChecklistBtn": "View setup checklist",
+    "defaultSectionToday": "Today"
   },
   "reports": {
     "title": "Tax Reports",
@@ -2763,7 +2764,27 @@
     "matchedInBody": "found in a reply",
     "message": "Message",
     "addFriend": "+ Friend",
-    "inviteSent": "Invite sent"
+    "inviteSent": "Invite sent",
+    "admin": {
+      "eyebrow": "ADMINISTRATION",
+      "title": "Community panel",
+      "categories": "Categories",
+      "members": "Members",
+      "recentPosts": "Latest posts",
+      "archive": "Archive",
+      "unarchive": "Restore",
+      "archived": "archived",
+      "newCatPlaceholder": "New category name",
+      "createCat": "Create",
+      "searchMembers": "Search member",
+      "promote": "Make admin",
+      "demote": "Remove admin",
+      "since": "since",
+      "promoteConfirm": "Promote {name} to admin?",
+      "demoteConfirm": "Remove {name} as admin?",
+      "noMembers": "No members found.",
+      "noPosts": "No posts yet."
+    }
   },
   "messages": {
     "title": "Messages",
@@ -2796,5 +2817,20 @@
     "tabArchived": "Archived",
     "emptyArchived": "No archived conversations.",
     "unarchive": "Unarchive"
+  },
+  "home": {
+    "morning": "Good morning",
+    "afternoon": "Good afternoon",
+    "evening": "Good evening",
+    "wealthLabel": "Wealth",
+    "reveal": "Show",
+    "openDashboard": "Open dashboard",
+    "communityLabel": "In the community",
+    "seeAll": "See all",
+    "tripNow": "Trip in progress",
+    "tripNext": "Next trip",
+    "momentLabel": "Active moment",
+    "until": "until",
+    "shortcuts": "Shortcuts"
   }
 }

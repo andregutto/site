@@ -149,7 +149,8 @@
     "deleteAffectedNotice": "{count} personne(s) avec qui vous partagez des voyages, catégories ou moments seront averties que votre compte a été supprimé.",
     "setupChecklistTitle": "Liste de configuration",
     "setupChecklistDesc": "Si vous avez fermé le guide de configuration initiale, vous pouvez le rouvrir ici à tout moment.",
-    "setupChecklistBtn": "Voir la liste de configuration"
+    "setupChecklistBtn": "Voir la liste de configuration",
+    "defaultSectionToday": "Aujourd’hui"
   },
   "reports": {
     "title": "Rapports fiscaux",
@@ -2763,7 +2764,27 @@
     "matchedInBody": "trouvé dans une réponse",
     "message": "Message",
     "addFriend": "+ Ami",
-    "inviteSent": "Invitation envoyée"
+    "inviteSent": "Invitation envoyée",
+    "admin": {
+      "eyebrow": "ADMINISTRATION",
+      "title": "Panneau de la communauté",
+      "categories": "Catégories",
+      "members": "Membres",
+      "recentPosts": "Derniers posts",
+      "archive": "Archiver",
+      "unarchive": "Restaurer",
+      "archived": "archivée",
+      "newCatPlaceholder": "Nom de la nouvelle catégorie",
+      "createCat": "Créer",
+      "searchMembers": "Chercher un membre",
+      "promote": "Rendre admin",
+      "demote": "Retirer admin",
+      "since": "depuis",
+      "promoteConfirm": "Promouvoir {name} admin ?",
+      "demoteConfirm": "Retirer {name} comme admin ?",
+      "noMembers": "Aucun membre trouvé.",
+      "noPosts": "Aucun post pour le moment."
+    }
   },
   "messages": {
     "title": "Messages",
@@ -2796,5 +2817,20 @@
     "tabArchived": "Archivées",
     "emptyArchived": "Aucune conversation archivée.",
     "unarchive": "Désarchiver"
+  },
+  "home": {
+    "morning": "Bonjour",
+    "afternoon": "Bon après-midi",
+    "evening": "Bonsoir",
+    "wealthLabel": "Patrimoine",
+    "reveal": "Afficher",
+    "openDashboard": "Voir le tableau",
+    "communityLabel": "Dans la communauté",
+    "seeAll": "Tout voir",
+    "tripNow": "Voyage en cours",
+    "tripNext": "Prochain voyage",
+    "momentLabel": "Moment actif",
+    "until": "jusqu’au",
+    "shortcuts": "Raccourcis"
   }
 }

@@ -6,6 +6,7 @@ import { PageLoader } from '../../components/ArvoLoader'
 import Avatar from '../voyage/_shared/Avatar'
 import NewTopicModal from './NewTopicModal'
 import CategoryIcon, { PinIcon, LockIcon } from './_shared/CategoryIcon'
+import { catName } from './_shared/catName'
 import PullToRefresh from '../../components/PullToRefresh'
 import type { CommunityCategory, CommunityTopicSummary } from './types'
 
@@ -64,9 +65,9 @@ export default function CommunityCategoryPage() {
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
           <div className="flex items-center gap-2">
-            <span style={{ color: OCRE, display: 'inline-flex' }}><CategoryIcon slug={category.slug} size={20} /></span>
+            <span style={{ color: OCRE, display: 'inline-flex' }}><CategoryIcon slug={category.slug} iconKey={category.icon_key} size={20} /></span>
             <h1 style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 24, color: 'var(--arvo-fg)' }}>
-              {tc?.cat?.[category.slug] ?? category.slug}
+              {catName(tc, category)}
             </h1>
           </div>
         </div>

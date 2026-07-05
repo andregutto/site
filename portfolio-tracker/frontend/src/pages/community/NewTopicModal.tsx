@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { apiFetch } from '../../lib/api'
 import { useI18n } from '../../contexts/I18nContext'
+import { catName } from './_shared/catName'
 import type { CommunityCategory, VoyageTripOption } from './types'
 
 const GOLD = '#E8A020'
@@ -77,7 +78,7 @@ export default function NewTopicModal({ categories, defaultCategorySlug, onClose
           style={{ width: '100%', marginTop: 6, marginBottom: 14, padding: '9px 12px', borderRadius: 10, border: '1px solid var(--arvo-border)', background: 'var(--arvo-bg)', color: 'var(--arvo-fg)', fontFamily: 'var(--arvo-font-body)', fontSize: 13.5 }}
         >
           {categories.map(c => (
-            <option key={c.slug} value={c.slug}>{tc.cat?.[c.slug] ?? c.slug}</option>
+            <option key={c.slug} value={c.slug}>{catName(tc, c)}</option>
           ))}
         </select>
 
