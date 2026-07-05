@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef, type CSSProperties } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { PageLoader } from '../components/ArvoLoader'
-import { usePerformanceSummary, usePerformanceMonthly, usePerformanceBenchmarks, usePortfolioValue, usePerformanceInception, usePerformanceDaily } from '../hooks/usePortfolio'
+import { usePerformanceMonthly, usePerformanceBenchmarks, usePortfolioValue, usePerformanceInception, usePerformanceDaily } from '../hooks/usePortfolio'
 import { useDividendSummary, useDividends } from '../hooks/useDividends'
 import { useCurrency } from '../contexts/CurrencyContext'
 import { useI18n } from '../contexts/I18nContext'
@@ -162,8 +162,23 @@ export default function PerformancePage() {
 
   const lastDailyPoint = dailyChartData[dailyChartData.length - 1]
 
-  const { data: summary,    loading: sLoading, refresh: refreshSummary    } = usePerformanceSummary(from, to)
   const { data: monthly,    loading: mLoading, refresh: refreshMonthly    } = usePerformanceMonthly(from, to)
+
+  // Summary derived from the monthly series instead of a separate /performance/summary request:
+  // both endpoints recompute the same portfolio values server-side, so for long ranges ("Início")
+  // the extra request doubled the heaviest work on the page. value_start = prev_total of the first
+  // month (same prev-month anchor /summary used), value_end = last month's total, contributions =
+  // sum of the per-month flows — identical numbers, one request less.
+  const summary = (() => {
+    const rows = monthly?.monthly ?? []
+    if (!rows.length) return null
+    const contributions = Math.round(rows.reduce((s, m) => s + (m.contributions ?? 0), 0) * 100) / 100
+    return {
+      value_start:   rows[0].prev_total,
+      value_end:     rows[rows.length - 1].total,
+      contributions,
+    }
+  })()
   const divDateFrom = `${from}-01`
   const divDateTo   = new Date().toISOString().split('T')[0]
   const { data: divSummary } = useDividendSummary(divDateFrom, divDateTo)
@@ -179,10 +194,9 @@ export default function PerformancePage() {
     am.set(r.asset_id, (am.get(r.asset_id) ?? 0) + r.amount_brl)
   }
   const handleRefresh = useCallback(() => {
-    refreshSummary()
     refreshMonthly()
     refreshBenchmarks()
-  }, [refreshSummary, refreshMonthly, refreshBenchmarks])
+  }, [refreshMonthly, refreshBenchmarks])
 
   const [showCDI,   setShowCDI]   = useState(true)
   const [showIBOV,  setShowIBOV]  = useState(false)
@@ -241,9 +255,9 @@ export default function PerformancePage() {
     if (!livePortfolio?.total_brl || livePortfolio.total_brl <= 0) return
     autoSynced.current = true
     apiFetch('/portfolio/sync-history', { method: 'POST' })
-      .then(() => { refreshSummary(); refreshMonthly(); refreshBenchmarks() })
+      .then(() => { refreshMonthly(); refreshBenchmarks() })
       .catch(() => {})
-  }, [mLoading, monthly, livePortfolio?.total_brl, refreshSummary, refreshMonthly, refreshBenchmarks])
+  }, [mLoading, monthly, livePortfolio?.total_brl, refreshMonthly, refreshBenchmarks])
 
   const monthsWithData = monthly?.monthly.filter(m => m.total > 0) ?? []
   const firstMonth = monthsWithData[0]?.month ?? ''
@@ -338,7 +352,7 @@ export default function PerformancePage() {
     ? (lastDailyPoint?.portfolio ?? displayReturnPct)
     : displayReturnPct
 
-  const isLoading = sLoading || mLoading || bLoading || (useDailyChart && dailyLoading)
+  const isLoading = mLoading || bLoading || (useDailyChart && dailyLoading)
 
   const modeButtons: Array<{ key: PeriodMode; label: string; disabled?: boolean }> = [
     { key: 'current_month', label: t.performance.currentMonth },

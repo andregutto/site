@@ -111,7 +111,19 @@ export type PrefetchedData = {
 
 // Fetches all data needed for portfolio value computation in one round-trip (4 parallel DB queries).
 // priceFrom: optional earliest ref_date to load from price_history (reduces rows for short periods).
+// Short-TTL cached per user+priceFrom: /summary, /monthly and /daily are fired concurrently by the
+// frontend and each needs the exact same dataset — the in-flight dedupe in cache.getOrFetch collapses
+// those into one DB round-trip, and the 15s TTL also covers quick period-tab switches. TTL is kept
+// short on purpose so post-mutation staleness (new contribution, history sync) resolves fast.
 export async function fetchPrefetchedData(userId: string, priceFrom?: string): Promise<PrefetchedData> {
+  return cache.getOrFetch(
+    `perf:prefetch:${userId}:${priceFrom ?? 'all'}`,
+    15_000,
+    () => fetchPrefetchedDataUncached(userId, priceFrom),
+  )
+}
+
+async function fetchPrefetchedDataUncached(userId: string, priceFrom?: string): Promise<PrefetchedData> {
   const { data: assets } = await supabaseAdmin
     .from('assets')
     .select('id, code, name, asset_type, currency, active, fi_principal, fi_start_date, fi_type, fi_rate, fi_spread, ticker_brapi, ticker_yahoo, coingecko_id')
@@ -265,13 +277,58 @@ export function getSplitAdjustmentFactor(events: SplitFactorEvent[], dateStr: st
   return factor
 }
 
+// Month-keyed price index, built once per request. computePortfolioValueAtMonth used to rebuild
+// this from every price_history row on every call — for a multi-year "Início" series that meant
+// O(months × total price rows) work plus an Object.keys().filter().sort() prior-month fallback per
+// asset per month. Building it once and binary-searching the sorted month keys makes the per-month
+// cost independent of how many price rows the portfolio has accumulated.
+type PriceEntry = { price: number; currency: string; ref_date: string }
+export type PriceIndex = {
+  byMonth: Map<number, Map<string, PriceEntry>>
+  monthKeys: Map<number, string[]> // ascending
+}
+
+export function buildPriceIndex(prices: PrefetchedData['prices']): PriceIndex {
+  const byMonth = new Map<number, Map<string, PriceEntry>>()
+  for (const p of prices) {
+    const pym = p.ref_date.substring(0, 7)
+    let m = byMonth.get(p.asset_id)
+    if (!m) { m = new Map(); byMonth.set(p.asset_id, m) }
+    const cur = m.get(pym)
+    if (!cur || p.ref_date > cur.ref_date) {
+      m.set(pym, { price: p.price, currency: p.currency, ref_date: p.ref_date })
+    }
+  }
+  const monthKeys = new Map<number, string[]>()
+  for (const [assetId, m] of byMonth) {
+    monthKeys.set(assetId, [...m.keys()].sort())
+  }
+  return { byMonth, monthKeys }
+}
+
+function lookupPrice(index: PriceIndex, assetId: number, targetYM: string): PriceEntry | undefined {
+  const m = index.byMonth.get(assetId)
+  if (!m) return undefined
+  const exact = m.get(targetYM)
+  if (exact) return exact
+  const keys = index.monthKeys.get(assetId)!
+  // binary search: greatest key strictly < targetYM
+  let lo = 0, hi = keys.length - 1, best = -1
+  while (lo <= hi) {
+    const mid = (lo + hi) >> 1
+    if (keys[mid] < targetYM) { best = mid; lo = mid + 1 } else { hi = mid - 1 }
+  }
+  return best >= 0 ? m.get(keys[best]) : undefined
+}
+
 // Computes portfolio total and per-asset values for a given month using pre-fetched data.
 export async function computePortfolioValueAtMonth(
   data: PrefetchedData,
   year: number,
   month: number,
   splitEventsCache?: Map<number, SplitFactorEvent[]>,
-  fxMemo?: (currency: string) => Promise<number>
+  fxMemo?: (currency: string) => Promise<number>,
+  priceIndex?: PriceIndex
 ): Promise<{ total: number; detail: Array<{ asset_id: number; value: number }> }> {
   const getFx = fxMemo ?? getFxRate
   const ym      = `${year}-${String(month).padStart(2, '0')}`
@@ -303,10 +360,10 @@ export async function computePortfolioValueAtMonth(
     }
   }
 
-  const fiAssetIds = assets.filter(a => a.asset_type === 'fixed_income').map(a => a.id)
+  const fiAssetIdSet = new Set(assets.filter(a => a.asset_type === 'fixed_income').map(a => a.id))
   const fiTranchesMap: Record<number, FITranche[]> = {}
   for (const c of contributions) {
-    if (!fiAssetIds.includes(c.asset_id)) continue
+    if (!fiAssetIdSet.has(c.asset_id)) continue
     if (c.type !== 'buy') continue
     const vBrl = Number(c.value_brl)
     if (vBrl <= 0) continue
@@ -314,25 +371,8 @@ export async function computePortfolioValueAtMonth(
     fiTranchesMap[c.asset_id].push({ principal: vBrl, start_date: c.date as string })
   }
 
-  // Index price_history mapped correctly by asset and strictly by specific historical month
-  type PriceEntry = { price: number; currency: string; ref_date: string }
-  const priceByMonth: Record<number, Record<string, PriceEntry>> = {}
-  for (const p of prices) {
-    const pym = p.ref_date.substring(0, 7)
-    const byMonth = (priceByMonth[p.asset_id] ??= {})
-    const cur = byMonth[pym]
-    if (!cur || p.ref_date > cur.ref_date) {
-      byMonth[pym] = { price: p.price, currency: p.currency, ref_date: p.ref_date }
-    }
-  }
-
-  function getPrice(assetId: number, targetYM: string): PriceEntry | undefined {
-    const byMonth = priceByMonth[assetId]
-    if (!byMonth) return undefined
-    if (byMonth[targetYM]) return byMonth[targetYM]
-    const prior = Object.keys(byMonth).filter(k => k < targetYM).sort().pop()
-    return prior ? byMonth[prior] : undefined
-  }
+  const index = priceIndex ?? buildPriceIndex(prices)
+  const getPrice = (assetId: number, targetYM: string) => lookupPrice(index, assetId, targetYM)
 
   const allMVByAsset: Record<number, ValPoint[]> = {}
   for (const mv of allMVRaw) {
@@ -506,9 +546,10 @@ export async function computePerformanceSummary(
 
   const splitEventsCache = buildSplitEventsCache(data.contributions, data.assets.map(a => a.id))
   const fxMemo = makeFxMemo()
+  const priceIndex = buildPriceIndex(data.prices)
   const [start, end] = await Promise.all([
-    computePortfolioValueAtMonth(data, prevY,      prevM,      splitEventsCache, fxMemo),
-    computePortfolioValueAtMonth(data, clampedToY, clampedToM, splitEventsCache, fxMemo),
+    computePortfolioValueAtMonth(data, prevY,      prevM,      splitEventsCache, fxMemo, priceIndex),
+    computePortfolioValueAtMonth(data, clampedToY, clampedToM, splitEventsCache, fxMemo, priceIndex),
   ])
 
   const v_ini = start.total
@@ -664,11 +705,12 @@ export async function computeMonthlySeries(
 
   const splitEventsCache = buildSplitEventsCache(data.contributions, data.assets.map(a => a.id))
   const fxMemo = makeFxMemo()
+  const priceIndex = buildPriceIndex(data.prices)
   const [prevMonthResult, valuesArr] = await Promise.all([
-    computePortfolioValueAtMonth(data, prevY, prevM, splitEventsCache, fxMemo),
+    computePortfolioValueAtMonth(data, prevY, prevM, splitEventsCache, fxMemo, priceIndex),
     Promise.all(
       months.map(async ({ year: y, month: m, label }) => {
-        const { total, detail } = await computePortfolioValueAtMonth(data, y, m, splitEventsCache, fxMemo)
+        const { total, detail } = await computePortfolioValueAtMonth(data, y, m, splitEventsCache, fxMemo, priceIndex)
         return { month: label, total, detail }
       })
     ),
@@ -780,10 +822,10 @@ export async function computePortfolioValueAtDay(
     }
   }
 
-  const fiAssetIds = assets.filter(a => a.asset_type === 'fixed_income').map(a => a.id)
+  const fiAssetIdSet = new Set(assets.filter(a => a.asset_type === 'fixed_income').map(a => a.id))
   const fiTranchesMap: Record<number, FITranche[]> = {}
   for (const c of contributions) {
-    if (!fiAssetIds.includes(c.asset_id) || c.type !== 'buy') continue
+    if (!fiAssetIdSet.has(c.asset_id) || c.type !== 'buy') continue
     const vBrl = Number(c.value_brl)
     if (vBrl <= 0) continue
     if (!fiTranchesMap[c.asset_id]) fiTranchesMap[c.asset_id] = []
