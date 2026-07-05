@@ -126,9 +126,10 @@ const CSS = `
   @keyframes lv3ty{0%,60%,100%{opacity:.25;transform:none}30%{opacity:1;transform:translateY(-2px)}}
 
   @media(max-width:900px){
-    .lv3 .hero-grid{padding-top:104px}
+    .lv3 .hero{flex-direction:column;align-items:stretch}
+    .lv3 .hero-grid{order:1;padding-top:104px}
     .lv3 .hero-copy{max-width:none;padding-bottom:0}
-    .lv3 .hero-mocks{position:relative;inset:auto;height:600px;margin-top:44px;pointer-events:auto}
+    .lv3 .hero-mocks{position:relative;inset:auto;order:2;height:600px;margin-top:44px;pointer-events:auto}
     .lv3 .laptop{display:none}
     .lv3 .phone{left:50%;right:auto;transform:translateX(-50%);width:290px;height:580px}
     .lv3 .hero-ctas{flex-direction:column;align-items:stretch;gap:16px}
@@ -222,9 +223,10 @@ const CSS = `
   @media(max-width:860px){
     .lv3 .steps{grid-template-columns:1fr;gap:38px}
     .lv3 .steps::before,.lv3 .steps .prog{display:none}
-    .lv3 .step{display:grid;grid-template-columns:68px 1fr;gap:18px;text-align:left;align-items:start}
-    .lv3 .step .ball{margin:0}
-    .lv3 .step h3{margin-top:8px}
+    .lv3 .step{display:grid;grid-template-columns:68px 1fr;gap:6px 18px;text-align:left;align-items:start}
+    .lv3 .step .ball{margin:0;grid-row:1 / span 2}
+    .lv3 .step h3{margin-top:8px;grid-column:2}
+    .lv3 .step p{grid-column:2}
     .lv3 .act{grid-template-columns:1fr}
     .lv3 .act.flip .vis{order:0}
   }
