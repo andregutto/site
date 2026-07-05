@@ -2,7 +2,8 @@ import { useState, useMemo, Fragment } from 'react'
 import type { PortfolioAsset } from '../lib/types'
 import { useCurrency } from '../contexts/CurrencyContext'
 import { useI18n } from '../contexts/I18nContext'
-import { useAssetReturns } from '../hooks/usePortfolio'
+import { useAssetReturns, usePerformanceInception } from '../hooks/usePortfolio'
+import { Segmented } from './ui'
 import { Icon } from './icons'
 import { getClassIcon } from '../lib/classIcons'
 
@@ -16,7 +17,7 @@ interface Props {
 }
 
 type SortKey = 'value_brl' | 'code' | 'pct' | 'return'
-type PeriodKey = 'current_month' | 'last_30d' | 'last_12' | 'ytd'
+type PeriodKey = 'current_month' | 'last_30d' | 'last_12' | 'ytd' | 'inception'
 
 function localYM(d: Date) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
@@ -97,11 +98,14 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
     })
   }
 
-  const PERIOD_OPTIONS: Array<{ key: PeriodKey; label: string }> = [
+  const inceptionYM = usePerformanceInception()
+
+  const PERIOD_OPTIONS: Array<{ key: PeriodKey; label: string; disabled?: boolean }> = [
     { key: 'current_month', label: d.periodCurrent },
     { key: 'last_30d',      label: d.period30d     },
     { key: 'last_12',       label: d.period12m     },
     { key: 'ytd',           label: d.periodYtd     },
+    { key: 'inception',     label: t.performance.inception, disabled: !inceptionYM },
   ]
 
   const now       = new Date()
@@ -113,6 +117,7 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
       case 'last_30d':      return { from: addMonths(currentYM, -1), to: currentYM }
       case 'last_12':       return { from: addMonths(currentYM, -11), to: currentYM }
       case 'ytd':           return { from: `${now.getFullYear()}-01`, to: currentYM }
+      case 'inception':     return { from: inceptionYM ?? `${now.getFullYear()}-01`, to: currentYM }
     }
   }
 
@@ -194,40 +199,48 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
 
   return (
     <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)' }}>
-      {/* Toolbar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4" style={{ borderBottom: '1px solid var(--arvo-border-soft)' }}>
-        <div className="flex items-center gap-2 flex-wrap">
-          <h2 className="text-sm" style={{ fontFamily: "var(--arvo-font-body)", color: 'var(--arvo-fg)', letterSpacing: '0.06em' }}>{d.assetsTitle} ({assets.length})</h2>
-          {needsCount > 0 && (
-            <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: 'rgba(232,160,32,0.12)', color: 'var(--arvo-ocre)' }}>
-              {needsCount} {d.awaitingValue}
-            </span>
-          )}
+      {/* Toolbar — one row on desktop (title · period · filter); two compact rows on mobile */}
+      <div className="p-3 sm:p-4 space-y-2.5" style={{ borderBottom: '1px solid var(--arvo-border-soft)' }}>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 min-w-0">
+            <h2 className="text-sm whitespace-nowrap" style={{ fontFamily: "var(--arvo-font-body)", color: 'var(--arvo-fg)', letterSpacing: '0.06em' }}>{d.assetsTitle} ({assets.length})</h2>
+            {needsCount > 0 && (
+              <span className="text-xs px-2 py-0.5 rounded-full whitespace-nowrap" style={{ background: 'rgba(232,160,32,0.12)', color: 'var(--arvo-ocre)' }}>
+                {needsCount} {d.awaitingValue}
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-2 min-w-0">
+            {!hasExternal && (
+              <div className="hidden md:block">
+                <Segmented
+                  ariaLabel={d.assetsTitle}
+                  value={period}
+                  onChange={setPeriod}
+                  options={PERIOD_OPTIONS.map(({ key, label, disabled }) => ({ value: key, label, disabled }))}
+                />
+              </div>
+            )}
+            <input
+              type="text"
+              placeholder={d.filterPlaceholder}
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="rounded-lg px-3 py-1.5 text-sm w-28 sm:w-40 focus:outline-none bg-transparent"
+              style={{ border: '1px solid var(--arvo-border-soft)', color: 'var(--arvo-fg)' }}
+            />
+          </div>
         </div>
-        <div className="flex items-center gap-2 flex-wrap justify-end">
-          {!hasExternal && (
-            <div className="flex items-center rounded-full p-0.5 gap-0.5" style={{ background: 'var(--arvo-chip-bg)' }}>
-              {PERIOD_OPTIONS.map(({ key, label }) => (
-                <button
-                  key={key}
-                  onClick={() => setPeriod(key)}
-                  className="px-2.5 py-1 text-xs rounded-full transition-all"
-                  style={period === key
-                    ? { fontFamily: "var(--arvo-font-body)", background: 'var(--arvo-fg)', color: 'var(--arvo-pill-active-fg)', letterSpacing: '0.06em' }
-                    : { fontFamily: "var(--arvo-font-body)", color: 'var(--arvo-fg-soft)', letterSpacing: '0.06em' }}
-                >{label}</button>
-              ))}
-            </div>
-          )}
-          <input
-            type="text"
-            placeholder={d.filterPlaceholder}
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="rounded-lg px-3 py-1.5 text-sm w-32 sm:w-40 focus:outline-none bg-transparent"
-            style={{ border: '1px solid var(--arvo-border-soft)', color: 'var(--arvo-fg)' }}
-          />
-        </div>
+        {!hasExternal && (
+          <div className="md:hidden">
+            <Segmented
+              ariaLabel={d.assetsTitle}
+              value={period}
+              onChange={setPeriod}
+              options={PERIOD_OPTIONS.map(({ key, label, disabled }) => ({ value: key, label, disabled }))}
+            />
+          </div>
+        )}
       </div>
 
       {/* Desktop table */}

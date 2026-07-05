@@ -1365,7 +1365,14 @@ router.get('/asset-returns', requireAuth, async (req, res: Response) => {
   const { userId } = req as AuthRequest
   const fromStr = (req.query.from as string) || localYM(new Date())
   const toStr   = (req.query.to   as string) || localYM(new Date())
-  res.json(await computeAssetReturns(userId, fromStr, toStr))
+  // Short cache: the Assets page refires this on every period-tab switch and the
+  // Dashboard requests the same ranges — within the TTL they share one computation
+  // (which may include live price lookups for stale tickers).
+  res.json(await cache.getOrFetch(
+    `asset-returns:${userId}:${fromStr}:${toStr}`,
+    60_000,
+    () => computeAssetReturns(userId, fromStr, toStr),
+  ))
 })
 
 export default router
