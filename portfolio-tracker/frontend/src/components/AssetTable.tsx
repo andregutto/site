@@ -122,9 +122,32 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
   }
 
   const { from, to } = getPeriodRange(period)
-  const { data: internalReturns, loading: internalLoading } = useAssetReturns(hasExternal ? null : from, hasExternal ? null : to)
-  const returns = hasExternal ? externalReturns : internalReturns
-  const returnsLoading = hasExternal ? (externalReturnsLoading ?? false) : internalLoading
+
+  // "Início" is the investor's whole holding period, so the meaningful per-asset
+  // return is over cost basis: (value - invested) / invested. The /asset-returns
+  // endpoint measures the asset's PRICE variation across the requested range,
+  // which for inception starts at the portfolio's first-ever contribution — for
+  // an asset bought later (e.g. BTC bought in 2024 with inception 2020) that
+  // reported the coin's multi-year price appreciation as if it were the user's
+  // gain. Cost-basis data is already in the assets prop, no request needed.
+  const isInception = period === 'inception' && !hasExternal
+  const inceptionReturns = useMemo(() => {
+    if (!isInception) return null
+    const map: Record<number, number | null> = {}
+    for (const a of assets) {
+      map[a.id] = (a.source !== 'manual' && a.invested_brl != null && a.invested_brl > 0 && a.value_brl > 0)
+        ? (a.value_brl - a.invested_brl) / a.invested_brl * 100
+        : null
+    }
+    return map
+  }, [isInception, assets])
+
+  const { data: internalReturns, loading: internalLoading } = useAssetReturns(
+    hasExternal || isInception ? null : from,
+    hasExternal || isInception ? null : to,
+  )
+  const returns = hasExternal ? externalReturns : isInception ? inceptionReturns : internalReturns
+  const returnsLoading = hasExternal ? (externalReturnsLoading ?? false) : isInception ? false : internalLoading
 
   function toggleSort(key: SortKey) {
     if (sortKey === key) setSortDir(dir => dir === 'asc' ? 'desc' : 'asc')
