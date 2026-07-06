@@ -53,6 +53,11 @@ async function bootstrapOAuthProfile(u: User) {
     if (!meta.last_name && lastName)          data.last_name = lastName
     if (!meta.default_currency)               data.default_currency = 'BRL'
     if (!meta.preferred_locale && storedLocale) data.preferred_locale = storedLocale
+    // Google's OAuth payload carries the profile photo as `picture` (GoTrue
+    // also mirrors it into `avatar_url` for some providers, but not reliably
+    // for Google, so read both). Only seed it if the user hasn't set one.
+    const googlePhoto: string | undefined = meta.avatar_url ?? meta.picture
+    if (!meta.avatar_url && googlePhoto)      data.avatar_url = googlePhoto
     await supabase.auth.updateUser({ data })
     // Same newsletter opt-in the register form does
     fetch('/api/newsletter/subscribe', {
