@@ -150,7 +150,8 @@
     "setupChecklistTitle": "Checklist de configuração",
     "setupChecklistDesc": "Se você dispensou o guia de configuração inicial, pode reabri-lo aqui a qualquer momento.",
     "setupChecklistBtn": "Ver checklist de configuração",
-    "defaultSectionToday": "Hoje"
+    "defaultSectionToday": "Hoje",
+    "connectedWithGoogle": "Conectado com Google"
   },
   "reports": {
     "title": "Relatórios IR",

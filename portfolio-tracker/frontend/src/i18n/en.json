@@ -150,7 +150,8 @@
     "setupChecklistTitle": "Setup checklist",
     "setupChecklistDesc": "If you dismissed the initial setup guide, you can reopen it here anytime.",
     "setupChecklistBtn": "View setup checklist",
-    "defaultSectionToday": "Today"
+    "defaultSectionToday": "Today",
+    "connectedWithGoogle": "Connected with Google"
   },
   "reports": {
     "title": "Tax Reports",

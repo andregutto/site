@@ -150,7 +150,8 @@
     "setupChecklistTitle": "Liste de configuration",
     "setupChecklistDesc": "Si vous avez fermé le guide de configuration initiale, vous pouvez le rouvrir ici à tout moment.",
     "setupChecklistBtn": "Voir la liste de configuration",
-    "defaultSectionToday": "Aujourd’hui"
+    "defaultSectionToday": "Aujourd’hui",
+    "connectedWithGoogle": "Connecté avec Google"
   },
   "reports": {
     "title": "Rapports fiscaux",

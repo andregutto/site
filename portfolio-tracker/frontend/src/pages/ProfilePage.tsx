@@ -11,6 +11,7 @@ import { useAchievementContext } from '../contexts/AchievementContext'
 import { useI18n } from '../contexts/I18nContext'
 import { getLevel, getNextLevel, getLevelProgress, ACHIEVEMENT_DEFS } from '../lib/achievementDefs'
 import { Icon } from '../components/icons'
+import GoogleLogo from '../components/GoogleLogo'
 import { supabase } from '../lib/supabase'
 import { normalizeStorageUrl } from '../lib/storageUrl'
 import { REOPEN_SETUP_CHECKLIST_EVENT } from '../components/SetupChecklist'
@@ -587,6 +588,7 @@ export default function ProfilePage() {
   }
 
   const emailForDisplay = email || user?.email || ''
+  const linkedWithGoogle = user?.identities?.some(i => i.provider === 'google') ?? false
   const avatarInitials  = initials(firstName, lastName, emailForDisplay)
   const displayName     = [firstName, lastName].filter(Boolean).join(' ') || t.profile.noName
 
@@ -772,6 +774,12 @@ export default function ProfilePage() {
                 readOnly
                 className="w-full border border-[var(--arvo-border)] rounded-[3px] px-3 py-2 text-sm bg-[var(--arvo-surface)] text-[var(--arvo-fg-muted)] cursor-not-allowed"
               />
+              {linkedWithGoogle && (
+                <div className="flex items-center gap-1.5 mt-2 text-xs text-[var(--arvo-fg-muted)]">
+                  <GoogleLogo size={13} />
+                  <span>{t.profile.connectedWithGoogle}</span>
+                </div>
+              )}
             </div>
 
 
