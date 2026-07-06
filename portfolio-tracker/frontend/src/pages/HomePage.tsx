@@ -21,12 +21,13 @@ interface TodayData {
   first_name: string
   hot_topics: Array<{ id: number; title: string; category_slug: string; category_name: string | null; reply_count: number; last_post_at: string }>
   next_trip: { id: number; title: string; destination: string | null; start_date: string; end_date: string | null; cover_image_url: string | null; ongoing: boolean; past: boolean } | null
-  active_moment: { id: number; name: string; icon: string; color: string; start_date: string | null; end_date: string | null; ongoing: boolean; past: boolean } | null
+  active_moment: { id: number; name: string; icon: string; color: string; start_date: string | null; end_date: string | null; cover_image_url: string | null; ongoing: boolean; past: boolean } | null
   month_summary: { spent: number; budget: number; currency: string; income: number } | null
   community_unseen: number
 }
 
 interface ContactBalance { currency: string; amount: number }
+interface NamedBalance { name: string; currency: string; amount: number }
 interface FreedomPlan { id: number; name: string; is_active: boolean; target_amount: number; currency: string; goal_mode?: 'capital' | 'income'; horizon_years?: number | null; start_date?: string | null }
 
 const GOLD_RGB = '200,184,154'
@@ -44,6 +45,35 @@ const card: React.CSSProperties = { background: 'var(--arvo-surface)', border: '
 const cardLabel: React.CSSProperties = { fontFamily: 'var(--arvo-font-body)', fontSize: 10, fontWeight: 600, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)' }
 const pillStyle: React.CSSProperties = { display: 'inline-flex', alignItems: 'center', gap: 8, cursor: 'pointer', padding: '11px 18px', borderRadius: 999, border: '1px solid var(--arvo-border)', background: 'var(--arvo-surface)', color: 'var(--arvo-fg-muted)', fontFamily: 'var(--arvo-font-body)', fontSize: 13.5 }
 
+// Card com capa (viagem e momento têm o mesmo formato): miniatura à esquerda +
+// rótulo/título/data. Um componente só pros dois — sem duplicar.
+function CoverCard({ to, coverUrl, accent, label, title, subtitle, fallbackIcon }: {
+  to: string
+  coverUrl: string | null
+  accent: string // "r,g,b" pro gradiente de fallback
+  label: string
+  title: string
+  subtitle?: string
+  fallbackIcon: React.ReactNode
+}) {
+  return (
+    <Link to={to} style={{ ...card, overflow: 'hidden', textDecoration: 'none', display: 'flex', alignItems: 'stretch' }}>
+      <div style={{
+        width: 92, flexShrink: 0,
+        background: coverUrl ? `center/cover no-repeat url(${coverUrl})` : `linear-gradient(150deg, rgba(${accent},0.16), var(--arvo-surface-2))`,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
+        {!coverUrl && fallbackIcon}
+      </div>
+      <div style={{ flex: 1, minWidth: 0, padding: '16px 18px' }}>
+        <p style={cardLabel}>{label}</p>
+        <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 18, color: 'var(--arvo-fg)', marginTop: 6, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{title}</p>
+        {subtitle && <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)', marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{subtitle}</p>}
+      </div>
+    </Link>
+  )
+}
+
 export default function HomePage() {
   const { t, locale } = useI18n()
   const th = (t as any).home ?? {}
@@ -56,7 +86,7 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true)
   const [wealth, setWealth] = useState<number | null>(null)
   const [hasAssets, setHasAssets] = useState<boolean | null>(null)
-  const [balances, setBalances] = useState<{ toReceive: ContactBalance[]; toPay: ContactBalance[] } | null>(null)
+  const [balances, setBalances] = useState<{ toReceive: NamedBalance[]; toPay: NamedBalance[] } | null>(null)
   const [plan, setPlan] = useState<FreedomPlan | null | undefined>(undefined) // undefined = carregando
   const [spending, setSpending] = useState<{ months: ProjectionMonth[] } | null>(null)
   const [splitPicker, setSplitPicker] = useState(false)
@@ -70,14 +100,19 @@ export default function HomePage() {
     apiFetch<PortfolioValue>('/portfolio/value')
       .then(v => { setWealth(v.total_brl); setHasAssets((v.by_asset?.length ?? 0) > 0) })
       .catch(() => setHasAssets(false))
-    apiFetch<{ contacts: Array<{ balances?: ContactBalance[] }> }>('/people')
+    apiFetch<{ contacts: Array<{ name?: string; email?: string; balances?: ContactBalance[] }> }>('/people')
       .then(({ contacts }) => {
-        const byCur: Record<string, number> = {}
-        for (const c of contacts ?? []) for (const b of c.balances ?? []) {
-          byCur[b.currency] = (byCur[b.currency] ?? 0) + b.amount
+        const toReceive: NamedBalance[] = []
+        const toPay: NamedBalance[] = []
+        for (const c of contacts ?? []) {
+          const who = (c.name ?? c.email ?? '').split(' ')[0] || '?'
+          for (const b of c.balances ?? []) {
+            if (b.amount >= 0.01) toReceive.push({ name: who, currency: b.currency, amount: b.amount })
+            else if (b.amount <= -0.01) toPay.push({ name: who, currency: b.currency, amount: Math.abs(b.amount) })
+          }
         }
-        const toReceive = Object.entries(byCur).filter(([, v]) => v >= 0.01).map(([currency, amount]) => ({ currency, amount }))
-        const toPay = Object.entries(byCur).filter(([, v]) => v <= -0.01).map(([currency, amount]) => ({ currency, amount: Math.abs(amount) }))
+        toReceive.sort((a, b) => b.amount - a.amount)
+        toPay.sort((a, b) => b.amount - a.amount)
         setBalances(toReceive.length || toPay.length ? { toReceive, toPay } : null)
       })
       .catch(() => {})
@@ -282,67 +317,59 @@ export default function HomePage() {
             )
           })()}
 
-          {/* Viagem — com miniatura da capa, linka pro detalhe (onde ficam as despesas) */}
+          {/* Viagem — capa + linka pro detalhe (onde ficam as despesas) */}
           {data?.next_trip && (
-            <Link to={`/voyage/${data.next_trip.id}`} style={{ ...card, overflow: 'hidden', textDecoration: 'none', display: 'flex', alignItems: 'stretch' }}>
-              <div style={{
-                width: 78, flexShrink: 0, position: 'relative',
-                background: data.next_trip.cover_image_url
-                  ? `center/cover no-repeat url(${data.next_trip.cover_image_url})`
-                  : 'linear-gradient(150deg, rgba(214,59,47,0.16), var(--arvo-surface-2))',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>
-                {!data.next_trip.cover_image_url && (
-                  <svg width="22" height="22" fill="var(--arvo-red)" viewBox="0 0 24 24"><path d="M12 2c-3.9 0-7 3.1-7 7 0 5.2 7 13 7 13s7-7.8 7-13c0-3.9-3.1-7-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5Z" /></svg>
-                )}
-              </div>
-              <div style={{ flex: 1, minWidth: 0, padding: '14px 16px' }}>
-                <p style={cardLabel}>{data.next_trip.ongoing ? (th.tripNow ?? 'Viagem em andamento') : data.next_trip.past ? (th.tripLast ?? 'Última viagem') : (th.tripNext ?? 'Próxima viagem')}</p>
-                <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 17, color: 'var(--arvo-fg)', marginTop: 6, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{data.next_trip.title}</p>
-                <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)', marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {data.next_trip.destination ? `${data.next_trip.destination} · ` : ''}
-                  {fmtDay(data.next_trip.start_date)}{data.next_trip.end_date ? ` – ${fmtDay(data.next_trip.end_date)}` : ''}
-                </p>
-              </div>
-            </Link>
+            <CoverCard
+              to={`/voyage/${data.next_trip.id}`}
+              coverUrl={data.next_trip.cover_image_url}
+              accent="214,59,47"
+              label={data.next_trip.ongoing ? (th.tripNow ?? 'Viagem em andamento') : data.next_trip.past ? (th.tripLast ?? 'Última viagem') : (th.tripNext ?? 'Próxima viagem')}
+              title={data.next_trip.title}
+              subtitle={`${data.next_trip.destination ? data.next_trip.destination + ' · ' : ''}${fmtDay(data.next_trip.start_date)}${data.next_trip.end_date ? ' – ' + fmtDay(data.next_trip.end_date) : ''}`}
+              fallbackIcon={<svg width="24" height="24" fill="var(--arvo-red)" viewBox="0 0 24 24"><path d="M12 2c-3.9 0-7 3.1-7 7 0 5.2 7 13 7 13s7-7.8 7-13c0-3.9-3.1-7-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5Z" /></svg>}
+            />
           )}
 
-          {/* Momento (só com data: em andamento ou próximo de verdade) */}
+          {/* Momento avulso (sem viagem associada — essa fica oculta) */}
           {data?.active_moment && (
-            <Link to="/finances/moments" style={{ ...card, padding: '16px 18px', textDecoration: 'none', display: 'block' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                <span style={{ width: 9, height: 9, borderRadius: '50%', background: data.active_moment.color || 'var(--arvo-gold)', flexShrink: 0 }} />
-                <p style={cardLabel}>{data.active_moment.ongoing ? (th.momentLabel ?? 'Momento em andamento') : data.active_moment.past ? (th.momentLast ?? 'Último momento') : (th.momentNext ?? 'Próximo momento')}</p>
-              </div>
-              <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 18, color: 'var(--arvo-fg)', marginTop: 7 }}>{data.active_moment.name}</p>
-              {data.active_moment.start_date && (
-                <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)', marginTop: 3 }}>
-                  {data.active_moment.ongoing && data.active_moment.end_date
+            <CoverCard
+              to="/finances/moments"
+              coverUrl={data.active_moment.cover_image_url}
+              accent="200,184,154"
+              label={data.active_moment.ongoing ? (th.momentLabel ?? 'Momento em andamento') : data.active_moment.past ? (th.momentLast ?? 'Último momento') : (th.momentNext ?? 'Próximo momento')}
+              title={data.active_moment.name}
+              subtitle={data.active_moment.start_date
+                ? (data.active_moment.ongoing && data.active_moment.end_date
                     ? `${th.until ?? 'até'} ${fmtDay(data.active_moment.end_date)}`
-                    : `${fmtDay(data.active_moment.start_date)}${data.active_moment.end_date ? ` – ${fmtDay(data.active_moment.end_date)}` : ''}`}
-                </p>
-              )}
-            </Link>
+                    : `${fmtDay(data.active_moment.start_date)}${data.active_moment.end_date ? ' – ' + fmtDay(data.active_moment.end_date) : ''}`)
+                : undefined}
+              fallbackIcon={<span style={{ width: 16, height: 16, borderRadius: '50%', background: data.active_moment.color || 'var(--arvo-gold)' }} />}
+            />
           )}
 
-          {/* Saldos entre amigos */}
+          {/* Saldos entre amigos — quem e quanto */}
           {balances && (
             <Link to="/people" style={{ ...card, padding: '16px 18px', textDecoration: 'none', display: 'block' }}>
               <p style={cardLabel}>{th.balancesLabel ?? 'Entre amigos'}</p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 8 }}>
-                {balances.toReceive.length > 0 && (
-                  <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5 }}>
-                    <span style={{ color: 'var(--arvo-fg-soft)', fontSize: 11.5 }}>{th.toReceive ?? 'a receber'} </span>
-                    <span className="arvo-delta-pos" style={{ fontWeight: 600 }}>{balances.toReceive.map(b => fmtCur(b.amount, b.currency)).join(' + ')}</span>
-                  </span>
-                )}
-                {balances.toPay.length > 0 && (
-                  <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5 }}>
-                    <span style={{ color: 'var(--arvo-fg-soft)', fontSize: 11.5 }}>{th.toPay ?? 'a pagar'} </span>
-                    <span className="arvo-delta-neg" style={{ fontWeight: 600 }}>{balances.toPay.map(b => fmtCur(b.amount, b.currency)).join(' + ')}</span>
-                  </span>
-                )}
-              </div>
+              {(['toReceive', 'toPay'] as const).map(dir => {
+                const items = balances[dir]
+                if (!items.length) return null
+                const cls = dir === 'toReceive' ? 'arvo-delta-pos' : 'arvo-delta-neg'
+                return (
+                  <div key={dir} style={{ marginTop: 9 }}>
+                    <p style={{ ...cardLabel, fontSize: 9.5 }}>{dir === 'toReceive' ? (th.toReceive ?? 'a receber') : (th.toPay ?? 'a pagar')}</p>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 3, marginTop: 5 }}>
+                      {items.slice(0, 3).map((b, i) => (
+                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', gap: 10, fontFamily: 'var(--arvo-font-body)', fontSize: 13 }}>
+                          <span style={{ color: 'var(--arvo-fg-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{b.name}</span>
+                          <span className={hideValues ? undefined : cls} style={{ fontWeight: 600, flexShrink: 0 }}>{fmtCur(b.amount, b.currency)}</span>
+                        </div>
+                      ))}
+                      {items.length > 3 && <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-soft)' }}>+{items.length - 3} {th.more ?? 'mais'}</p>}
+                    </div>
+                  </div>
+                )
+              })}
             </Link>
           )}
         </div>

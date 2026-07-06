@@ -2863,6 +2863,7 @@
     "indicatorsLabel": "Indicateurs",
     "returnLabel": "Rendement",
     "gainLabel": "Gain",
-    "contributionsLabel": "Apports"
+    "contributionsLabel": "Apports",
+    "more": "de plus"
   }
 }

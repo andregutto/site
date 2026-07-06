@@ -81,27 +81,32 @@ router.get('/today', async (req: any, res: any) => {
       if (past.length) nextTrip = { ...past[past.length - 1], ongoing: false, past: true }
     }
 
-    // Momento do card: nunca os ocultos de par/grupo (is_pair_default). Só surge
-    // um momento com DATA — 1) em andamento agora, 2) o próximo futuro. Momento
-    // sem data não é "próximo" nem "em andamento", então não vira card (evita o
-    // rótulo falso "Próximo momento" num momento que nem tem quando).
-    const { data: moments } = await supabaseAdmin
+    // Momento do card: nunca os ocultos de par/grupo (is_pair_default) nem os que
+    // têm uma VIAGEM associada (moment_type 'trip' ou ligados via voyage_trip_moments)
+    // — a viagem já os representa, senão duplicaria "última viagem" + "último momento"
+    // logo abaixo. Só surge momento avulso COM data: em andamento, próximo, ou o último.
+    const { data: tripMomentRows } = await supabaseAdmin
+      .from('voyage_trip_moments').select('moment_id').eq('user_id', userId)
+    const tripMomentIds = new Set((tripMomentRows ?? []).map((r: any) => r.moment_id))
+
+    const { data: momentsRaw } = await supabaseAdmin
       .from('finance_moments')
-      .select('id, name, icon, color, start_date, end_date, created_at')
+      .select('id, name, icon, color, start_date, end_date, cover_image_url, moment_type')
       .eq('user_id', userId)
       .eq('is_pair_default', false)
       .not('start_date', 'is', null)
       .order('start_date', { ascending: true })
+    const moments = (momentsRaw ?? []).filter((m: any) => m.moment_type !== 'trip' && !tripMomentIds.has(m.id))
 
     let activeMoment: any = null
-    for (const m of moments ?? []) {
+    for (const m of moments) {
       const ongoing = m.start_date <= todayStr && (!m.end_date || m.end_date >= todayStr)
       if (ongoing) { activeMoment = { ...m, ongoing: true, past: false }; break }
       if (m.start_date >= todayStr) { activeMoment = { ...m, ongoing: false, past: false }; break }
     }
     if (!activeMoment) {
       // sem momento atual nem futuro: relembra o último (mais recente no passado)
-      const past = (moments ?? []).filter((m: any) => m.start_date < todayStr)
+      const past = moments.filter((m: any) => m.start_date < todayStr)
       if (past.length) activeMoment = { ...past[past.length - 1], ongoing: false, past: true }
     }
 
