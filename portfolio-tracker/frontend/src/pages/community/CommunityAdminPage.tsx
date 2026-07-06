@@ -40,6 +40,8 @@ export default function CommunityAdminPage() {
   const [newCatIcon, setNewCatIcon] = useState<string>('chat')
   const [creating, setCreating] = useState(false)
   const [catErr, setCatErr] = useState<string | null>(null)
+  const [showNewCat, setShowNewCat] = useState(false)
+  const [showArchived, setShowArchived] = useState(false)
 
   async function loadAll() {
     setLoading(true)
@@ -98,6 +100,8 @@ export default function CommunityAdminPage() {
         body: JSON.stringify({ name: newCatName.trim(), icon_key: newCatIcon }),
       })
       setNewCatName('')
+      setNewCatIcon('chat')
+      setShowNewCat(false)
       const c = await apiFetch<{ categories: CommunityCategory[] }>('/community/categories?all=1')
       setCategories(c.categories)
     } catch (err: any) {
@@ -128,68 +132,111 @@ export default function CommunityAdminPage() {
     ? members.filter(m => m.name.toLowerCase().includes(memberQ.toLowerCase()) || (m.username ?? '').toLowerCase().includes(memberQ.toLowerCase()))
     : members
 
+  const activeCats = categories.filter(c => !c.archived)
+  const archivedCats = categories.filter(c => c.archived)
+
+  function renderCatRow(c: CommunityCategory) {
+    return (
+      <div key={c.id} className="flex items-center gap-3" style={{ padding: '11px 14px', borderBottom: '1px solid var(--arvo-border-soft, var(--arvo-border))', opacity: c.archived ? 0.45 : 1 }}>
+        <span style={{ color: OCRE, display: 'inline-flex' }}><CategoryIcon slug={c.slug} iconKey={c.icon_key} size={16} /></span>
+        <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg)', flex: 1 }}>
+          {catName(tc, c)}
+        </span>
+        <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-soft)' }}>
+          {(tc?.categoryTopicsMany ?? '{count} tópicos').replace('{count}', String(c.topic_count))}
+        </span>
+        <button
+          onClick={() => toggleArchive(c)}
+          disabled={busy === `cat-${c.id}`}
+          style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, padding: '4px 12px', borderRadius: 999, border: '1px solid var(--arvo-border)', background: 'none', color: 'var(--arvo-fg-soft)', cursor: 'pointer' }}
+        >
+          {c.archived ? (ta.unarchive ?? 'Restaurar') : (ta.archive ?? 'Arquivar')}
+        </button>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-8">
       {/* ── Categorias ── */}
       <section className="space-y-3">
         <h2 style={sectionTitle}>{ta.categories ?? 'Categorias'}</h2>
         <div style={card}>
-          {categories.map(c => (
-            <div key={c.id} className="flex items-center gap-3" style={{ padding: '11px 14px', borderBottom: '1px solid var(--arvo-border-soft, var(--arvo-border))', opacity: c.archived ? 0.45 : 1 }}>
-              <span style={{ color: OCRE, display: 'inline-flex' }}><CategoryIcon slug={c.slug} iconKey={c.icon_key} size={16} /></span>
-              <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg)', flex: 1 }}>
-                {catName(tc, c)}
-                {c.archived && <span style={{ fontSize: 10, marginLeft: 8, color: 'var(--arvo-fg-faint)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>{ta.archived ?? 'arquivada'}</span>}
-              </span>
-              <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-soft)' }}>
-                {(tc?.categoryTopicsMany ?? '{count} tópicos').replace('{count}', String(c.topic_count))}
-              </span>
-              <button
-                onClick={() => toggleArchive(c)}
-                disabled={busy === `cat-${c.id}`}
-                style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, padding: '4px 12px', borderRadius: 999, border: '1px solid var(--arvo-border)', background: 'none', color: 'var(--arvo-fg-soft)', cursor: 'pointer' }}
-              >
-                {c.archived ? (ta.unarchive ?? 'Restaurar') : (ta.archive ?? 'Arquivar')}
-              </button>
-            </div>
-          ))}
-          {/* Nova categoria */}
-          <div style={{ padding: '13px 14px' }}>
-            <div className="flex items-center gap-2 flex-wrap">
-              <input
-                value={newCatName}
-                onChange={e => setNewCatName(e.target.value)}
-                placeholder={ta.newCatPlaceholder ?? 'Nome da nova categoria'}
-                style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, padding: '8px 12px', border: '1px solid var(--arvo-border)', borderRadius: 8, background: 'var(--arvo-bg)', color: 'var(--arvo-fg)', flex: 1, minWidth: 180 }}
-              />
-              <button
-                onClick={createCategory}
-                disabled={creating || !newCatName.trim()}
-                style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, padding: '8px 18px', borderRadius: 999, border: 'none', background: OCRE, color: '#1a1200', cursor: 'pointer', opacity: creating || !newCatName.trim() ? 0.5 : 1 }}
-              >
-                {creating ? '...' : `+ ${ta.createCat ?? 'Criar'}`}
-              </button>
-            </div>
-            <div className="flex items-center gap-1.5 flex-wrap" style={{ marginTop: 10 }}>
-              {ICON_KEYS.map(k => (
+          {activeCats.map(renderCatRow)}
+
+          {showNewCat ? (
+            <div style={{ padding: '13px 14px', borderTop: activeCats.length ? '1px solid var(--arvo-border-soft, var(--arvo-border))' : undefined }}>
+              <div className="flex items-center gap-2 flex-wrap">
+                <input
+                  autoFocus
+                  value={newCatName}
+                  onChange={e => setNewCatName(e.target.value)}
+                  placeholder={ta.newCatPlaceholder ?? 'Nome da nova categoria'}
+                  style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, padding: '8px 12px', border: '1px solid var(--arvo-border)', borderRadius: 8, background: 'var(--arvo-bg)', color: 'var(--arvo-fg)', flex: 1, minWidth: 180 }}
+                />
                 <button
-                  key={k}
-                  onClick={() => setNewCatIcon(k)}
-                  title={k}
-                  style={{
-                    width: 32, height: 32, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    border: `1px solid ${newCatIcon === k ? OCRE : 'var(--arvo-border)'}`,
-                    background: newCatIcon === k ? 'rgba(232,160,32,0.10)' : 'transparent',
-                    color: newCatIcon === k ? OCRE : 'var(--arvo-fg-muted)', cursor: 'pointer',
-                  }}
+                  onClick={createCategory}
+                  disabled={creating || !newCatName.trim()}
+                  style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, padding: '8px 18px', borderRadius: 999, border: 'none', background: OCRE, color: '#1a1200', cursor: 'pointer', opacity: creating || !newCatName.trim() ? 0.5 : 1 }}
                 >
-                  <CategoryIcon iconKey={k} size={15} />
+                  {creating ? '...' : (ta.createCat ?? 'Criar')}
                 </button>
-              ))}
+                <button
+                  onClick={() => { setShowNewCat(false); setCatErr(null); setNewCatName('') }}
+                  disabled={creating}
+                  style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, padding: '8px 14px', borderRadius: 999, border: '1px solid var(--arvo-border)', background: 'none', color: 'var(--arvo-fg-soft)', cursor: 'pointer' }}
+                >
+                  {t.common?.cancel ?? 'Cancelar'}
+                </button>
+              </div>
+              <div className="flex items-center gap-1.5 flex-wrap" style={{ marginTop: 10 }}>
+                {ICON_KEYS.map(k => (
+                  <button
+                    key={k}
+                    onClick={() => setNewCatIcon(k)}
+                    title={k}
+                    style={{
+                      width: 32, height: 32, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      border: `1px solid ${newCatIcon === k ? OCRE : 'var(--arvo-border)'}`,
+                      background: newCatIcon === k ? 'rgba(232,160,32,0.10)' : 'transparent',
+                      color: newCatIcon === k ? OCRE : 'var(--arvo-fg-muted)', cursor: 'pointer',
+                    }}
+                  >
+                    <CategoryIcon iconKey={k} size={15} />
+                  </button>
+                ))}
+              </div>
+              {catErr && <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-red, #D63B2F)', marginTop: 8 }}>{catErr}</p>}
             </div>
-            {catErr && <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-red, #D63B2F)', marginTop: 8 }}>{catErr}</p>}
-          </div>
+          ) : (
+            <button
+              onClick={() => setShowNewCat(true)}
+              className="w-full text-left"
+              style={{
+                fontFamily: 'var(--arvo-font-body)', fontSize: 13, padding: '12px 14px', color: OCRE, cursor: 'pointer',
+                background: 'none', border: 'none', borderTop: activeCats.length ? '1px solid var(--arvo-border-soft, var(--arvo-border))' : undefined,
+              }}
+            >
+              {ta.newCategoryCta ?? '+ Nova categoria'}
+            </button>
+          )}
         </div>
+
+        {archivedCats.length > 0 && (
+          <div>
+            <button
+              onClick={() => setShowArchived(s => !s)}
+              style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-soft)', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 2px', letterSpacing: '0.04em' }}
+            >
+              {showArchived ? '▾' : '▸'} {ta.showArchived ?? 'Arquivadas'} ({archivedCats.length})
+            </button>
+            {showArchived && (
+              <div style={{ ...card, marginTop: 8 }}>
+                {archivedCats.map(renderCatRow)}
+              </div>
+            )}
+          </div>
+        )}
       </section>
 
       {/* ── Membros ── */}
