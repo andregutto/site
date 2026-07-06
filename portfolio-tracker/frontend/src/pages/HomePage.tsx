@@ -30,7 +30,7 @@ interface TodayData {
 }
 
 interface ContactBalance { currency: string; amount: number }
-interface NamedBalance { name: string; currency: string; amount: number; avatar_url?: string }
+interface NamedBalance { name: string; currency: string; amount: number; avatar_url?: string; user_id: string }
 interface FreedomPlan { id: number; name: string; is_active: boolean; target_amount: number; currency: string; goal_mode?: 'capital' | 'income'; horizon_years?: number | null; start_date?: string | null }
 
 const GOLD_RGB = '200,184,154'
@@ -115,15 +115,16 @@ export default function HomePage() {
     apiFetch<PortfolioValue>('/portfolio/value')
       .then(v => { setWealth(v.total_brl); setHasAssets((v.by_asset?.length ?? 0) > 0) })
       .catch(() => setHasAssets(false))
-    apiFetch<{ contacts: Array<{ name?: string; email?: string; avatar_url?: string; balances?: ContactBalance[] }> }>('/people')
+    apiFetch<{ contacts: Array<{ name?: string; email?: string; avatar_url?: string; user_id: string | null; balances?: ContactBalance[] }> }>('/people')
       .then(({ contacts }) => {
         const toReceive: NamedBalance[] = []
         const toPay: NamedBalance[] = []
         for (const c of contacts ?? []) {
+          if (!c.user_id) continue
           const who = (c.name ?? c.email ?? '').split(' ')[0] || '?'
           for (const b of c.balances ?? []) {
-            if (b.amount >= 0.01) toReceive.push({ name: who, currency: b.currency, amount: b.amount, avatar_url: c.avatar_url })
-            else if (b.amount <= -0.01) toPay.push({ name: who, currency: b.currency, amount: Math.abs(b.amount), avatar_url: c.avatar_url })
+            if (b.amount >= 0.01) toReceive.push({ name: who, currency: b.currency, amount: b.amount, avatar_url: c.avatar_url, user_id: c.user_id })
+            else if (b.amount <= -0.01) toPay.push({ name: who, currency: b.currency, amount: Math.abs(b.amount), avatar_url: c.avatar_url, user_id: c.user_id })
           }
         }
         toReceive.sort((a, b) => b.amount - a.amount)
@@ -179,9 +180,6 @@ export default function HomePage() {
           {greeting}{data?.first_name ? `, ${data.first_name}` : ''}
         </h1>
       </div>
-
-      {/* Card de configuração (só quando a conta está incompleta e não foi dispensado) */}
-      {setup.visible && <SetupCard setup={setup} firstName={data?.first_name} onNavigate={navigate} />}
 
       {/* Bento: coluna principal larga + coluna lateral */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
@@ -270,7 +268,7 @@ export default function HomePage() {
                   <div>
                     <p style={{ ...cardLabel, fontSize: 9.5 }}>{th.balanceLabel ?? 'Saldo do mês'}</p>
                     <p className="arvo-num" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 15, marginTop: 3 }}>
-                      <span className={hideValues ? undefined : saldo >= 0 ? 'arvo-delta-pos' : 'arvo-delta-neg'}>{fmtCur(saldo, data.month_summary.currency)}</span>
+                      <span className={hideValues ? undefined : saldo >= 0 ? 'arvo-delta-pos' : 'arvo-delta-neg'}>{saldo < 0 ? '−' : ''}{fmtCur(Math.abs(saldo), data.month_summary.currency)}</span>
                     </p>
                   </div>
                 )})()}
@@ -380,31 +378,37 @@ export default function HomePage() {
             />
           )}
 
-          {/* Saldos entre amigos — quem e quanto */}
-          {balances && (
-            <Link to="/people" style={{ ...card, padding: '16px 18px', textDecoration: 'none', display: 'block' }}>
-              <p style={cardLabel}>{th.balancesLabel ?? 'Entre amigos'}</p>
-              {(() => {
-                const rows = [
-                  ...balances.toReceive.map(b => ({ ...b, receive: true })),
-                  ...balances.toPay.map(b => ({ ...b, receive: false })),
-                ].sort((a, b) => b.amount - a.amount)
-                return (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 9, marginTop: 11 }}>
-                    {rows.slice(0, 4).map((b, i) => (
-                      <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-                        <Avatar name={b.name} avatarUrl={b.avatar_url} size={26} />
-                        <span style={{ flex: 1, minWidth: 0, fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{b.name}</span>
-                        <span className={hideValues ? undefined : b.receive ? 'arvo-delta-pos' : 'arvo-delta-neg'} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, fontWeight: 600, flexShrink: 0 }}>
-                          {fmtCur(b.amount, b.currency)}
-                        </span>
-                      </div>
-                    ))}
-                    {rows.length > 4 && <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-soft)' }}>+{rows.length - 4} {th.more ?? 'mais'}</p>}
+          {/* Entre amigos — quem e quanto, com botão de dividir por amigo + dividir despesa */}
+          {(balances || activeFriends.length > 0) && (
+            <div style={{ ...card, padding: '16px 18px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <p style={cardLabel}>{th.balancesLabel ?? 'Entre amigos'}</p>
+                <Link to="/people" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: '#8C6A28', textDecoration: 'none' }}>{th.seeAll ?? 'Ver tudo'} →</Link>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 11 }}>
+                {(balances
+                  ? [...balances.toReceive.map(b => ({ ...b, receive: true })), ...balances.toPay.map(b => ({ ...b, receive: false }))].sort((a, b) => b.amount - a.amount)
+                  : activeFriends.map(f => ({ name: f.name ?? f.email ?? '?', avatar_url: f.avatar_url, user_id: f.user_id as string, amount: null as number | null, currency: '', receive: true }))
+                ).slice(0, 4).map((b, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+                    <Avatar name={b.name} avatarUrl={b.avatar_url} size={26} />
+                    <span style={{ flex: 1, minWidth: 0, fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{b.name}</span>
+                    {b.amount != null && (
+                      <span className={hideValues ? undefined : b.receive ? 'arvo-delta-pos' : 'arvo-delta-neg'} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, fontWeight: 600, flexShrink: 0 }}>
+                        {b.receive ? '' : '−'}{fmtCur(b.amount, b.currency)}
+                      </span>
+                    )}
+                    <button type="button" onClick={() => setSplitFriend({ email: '', name: b.name, user_id: b.user_id } as ActiveFriend)} title={th.splitExpense ?? 'Dividir despesa'} style={{ flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--arvo-fg-soft)', padding: 3, display: 'inline-flex' }}>
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M2 4.5h6M2 4.5l2.2-2.2M2 4.5l2.2 2.2M14 11.5H6M14 11.5l-2.2-2.2M14 11.5l-2.2 2.2" /></svg>
+                    </button>
                   </div>
-                )
-              })()}
-            </Link>
+                ))}
+              </div>
+              <button type="button" onClick={() => setSplitPicker(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, marginTop: 12, padding: '8px 14px', borderRadius: 999, border: '1px solid var(--arvo-border)', background: 'var(--arvo-surface)', color: 'var(--arvo-fg-muted)', fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, cursor: 'pointer' }}>
+                <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M2 4.5h6M2 4.5l2.2-2.2M2 4.5l2.2 2.2M14 11.5H6M14 11.5l-2.2-2.2M14 11.5l-2.2 2.2" /></svg>
+                {th.splitExpense ?? 'Dividir despesa'}
+              </button>
+            </div>
           )}
         </div>
       </div>
@@ -413,12 +417,6 @@ export default function HomePage() {
       <div>
         <p style={{ ...cardLabel, marginBottom: 11 }}>{th.shortcuts ?? 'Atalhos'}</p>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-          <button type="button" onClick={() => setSplitPicker(true)} style={pillStyle}>
-            <svg width="17" height="17" fill="none" viewBox="0 0 16 16" stroke="var(--arvo-fg-soft)" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M2 4.5h9M2 4.5l2.5-2.5M2 4.5l2.5 2.5M14 11.5H5M14 11.5l-2.5-2.5M14 11.5l-2.5 2.5" />
-            </svg>
-            {th.splitExpense ?? 'Dividir despesa'}
-          </button>
           {shortcuts.map(s => (
             <Link key={s.to} to={s.to} style={{ ...pillStyle, textDecoration: 'none' }}>
               <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="var(--arvo-fg-soft)" strokeWidth={1.7}>{s.icon}</svg>
@@ -427,6 +425,9 @@ export default function HomePage() {
           ))}
         </div>
       </div>
+
+      {/* Configuração da conta — pequeno, no fim da página, colapsado por padrão */}
+      {setup.visible && <SetupCard setup={setup} onNavigate={navigate} />}
 
       {/* Seletor de amigo pra dividir despesa → abre o painel do momento oculto */}
       {splitPicker && !splitFriend && (
@@ -476,42 +477,34 @@ export default function HomePage() {
 
 /* Card de configuração colapsável na Hoje. Reusa o hook do checklist do header
    (mesma flag de dispensa e mesmo progresso) — só muda a apresentação. */
-function SetupCard({ setup, firstName, onNavigate }: {
+function SetupCard({ setup, onNavigate }: {
   setup: ReturnType<typeof useSetupChecklist>
-  firstName?: string
   onNavigate: (to: string) => void
 }) {
   const { t } = useI18n()
   const s = (t as unknown as Record<string, Record<string, string>>).setup
-  const [collapsed, setCollapsed] = useState(false)
+  const [collapsed, setCollapsed] = useState(true) // colapsado por padrão
   const pct = setup.doneCount / setup.total
-  const name = firstName?.split(' ')[0] ?? ''
+  const SIZE = 30, R = 11, C = 2 * Math.PI * R
 
   return (
-    <div style={{
-      borderRadius: 16, overflow: 'hidden',
-      border: '1px solid rgba(27,79,216,0.28)',
-      background: 'linear-gradient(150deg, rgba(27,79,216,0.07), var(--arvo-surface) 60%)',
-    }}>
-      <div style={{ padding: '15px 18px', display: 'flex', alignItems: 'center', gap: 14 }}>
+    <div style={{ borderRadius: 14, overflow: 'hidden', border: '1px solid var(--arvo-border)', background: 'var(--arvo-surface)' }}>
+      {/* Cabeçalho compacto: anel de progresso (o mesmo do header) + título + chevron */}
+      <button onClick={() => setCollapsed(v => !v)} aria-label={collapsed ? 'expandir' : 'recolher'} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '11px 16px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}>
+        <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`} style={{ flexShrink: 0 }}>
+          <circle cx={SIZE / 2} cy={SIZE / 2} r={R} fill="none" stroke="#1B4FD8" strokeWidth={2.5} strokeOpacity={0.15} />
+          <circle cx={SIZE / 2} cy={SIZE / 2} r={R} fill="none" stroke="#1B4FD8" strokeWidth={2.5} strokeLinecap="round" strokeDasharray={C} strokeDashoffset={C * (1 - pct)} style={{ transform: 'rotate(-90deg)', transformOrigin: 'center', transition: 'stroke-dashoffset .4s ease' }} />
+          <text x="50%" y="50%" dominantBaseline="central" textAnchor="middle" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 10, fontWeight: 700, fill: '#1B4FD8' }}>{setup.doneCount}</text>
+        </svg>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 16, color: 'var(--arvo-fg)' }}>
-            {name ? `${name}, ` : ''}{s.title}
-          </p>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginTop: 8 }}>
-            <div style={{ flex: 1, maxWidth: 240, height: 4, background: 'rgba(27,79,216,0.14)', borderRadius: 2, overflow: 'hidden' }}>
-              <div style={{ height: '100%', width: `${pct * 100}%`, background: '#1B4FD8', borderRadius: 2, transition: 'width 0.4s ease' }} />
-            </div>
-            <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, fontWeight: 600, color: '#1B4FD8' }}>{setup.doneCount}/{setup.total}</span>
-          </div>
+          <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, fontWeight: 600, color: 'var(--arvo-fg)' }}>{s.title}</p>
+          <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-soft)', marginTop: 1 }}>{setup.doneCount}/{setup.total}</p>
         </div>
-        <button onClick={() => setCollapsed(v => !v)} aria-label={collapsed ? 'expandir' : 'recolher'} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: 'var(--arvo-fg-soft)', flexShrink: 0 }}>
-          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} style={{ transform: collapsed ? 'rotate(-90deg)' : 'none', transition: 'transform 0.2s' }}><path strokeLinecap="round" strokeLinejoin="round" d="M6 9l6 6 6-6" /></svg>
-        </button>
-      </div>
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="var(--arvo-fg-soft)" strokeWidth={2} style={{ flexShrink: 0, transform: collapsed ? 'rotate(-90deg)' : 'none', transition: 'transform 0.2s' }}><path strokeLinecap="round" strokeLinejoin="round" d="M6 9l6 6 6-6" /></svg>
+      </button>
 
       {!collapsed && (
-        <div style={{ padding: '2px 10px 8px' }}>
+        <div style={{ padding: '2px 8px 8px' }}>
           {setup.steps.map(step => (
             <button
               key={step.key}
