@@ -8,7 +8,9 @@ import { PageLoader } from '../components/ArvoLoader'
 import { useSetupChecklist } from '../components/SetupChecklist'
 import { useActiveFriends, type ActiveFriend } from '../hooks/useActiveFriends'
 import { PairMomentModal } from './PeoplePage'
+import { usePerformanceDaily, usePerformanceBenchmarks } from '../hooks/usePortfolio'
 import { projectMonthExpenses, type ProjectionMonth } from '../lib/monthProjection'
+import { addMonths, dailyComparisonSeries } from '../lib/performanceComparison'
 import Avatar from './voyage/_shared/Avatar'
 import CategoryIcon from './community/_shared/CategoryIcon'
 import type { PortfolioValue } from '../lib/types'
@@ -93,6 +95,18 @@ export default function HomePage() {
   const [splitPicker, setSplitPicker] = useState(false)
   const [splitFriend, setSplitFriend] = useState<ActiveFriend | null>(null)
   const activeFriends = useActiveFriends().filter(f => f.user_id)
+
+  // Comparação Carteira vs CDI/IBOV/S&P500 nos últimos 30 dias — MESMO cálculo do
+  // Performance (lib/performanceComparison), só reusado aqui numa linha compacta.
+  const _cmpNow = new Date()
+  const _cp = (n: number) => String(n).padStart(2, '0')
+  const cmpTo = `${_cmpNow.getFullYear()}-${_cp(_cmpNow.getMonth() + 1)}-${_cp(_cmpNow.getDate())}`
+  const _cmpFromD = new Date(_cmpNow.getFullYear(), _cmpNow.getMonth(), _cmpNow.getDate() - 29)
+  const cmpFrom = `${_cmpFromD.getFullYear()}-${_cp(_cmpFromD.getMonth() + 1)}-${_cp(_cmpFromD.getDate())}`
+  const { data: daily30 } = usePerformanceDaily(cmpFrom, cmpTo)
+  const { data: bench30 } = usePerformanceBenchmarks(addMonths(cmpFrom.slice(0, 7), -1), cmpTo.slice(0, 7))
+  const cmp30series = dailyComparisonSeries(daily30?.daily ?? [], bench30?.monthly ?? [])
+  const cmp30 = cmp30series.length ? cmp30series[cmp30series.length - 1] : null
 
   useEffect(() => {
     apiFetch<TodayData>('/home/today')
@@ -193,6 +207,25 @@ export default function HomePage() {
                   {th.openDashboard ?? 'Ver dashboard'}
                 </span>
               </div>
+              {/* Rentabilidade vs benchmarks nos últimos 30d (linha, não card — pra diferenciar) */}
+              {!hideValues && cmp30 && (
+                <div style={{ position: 'relative', marginTop: 18, paddingTop: 14, borderTop: `1px solid rgba(${GOLD_RGB},0.35)`, display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '6px 20px' }}>
+                  <span style={{ ...cardLabel, fontSize: 9.5, color: '#8C6A28' }}>{th.last30d ?? 'Últimos 30 dias'}</span>
+                  {[
+                    { label: th.walletShort ?? 'Carteira', v: cmp30.portfolio, strong: true },
+                    { label: 'CDI', v: cmp30.cdi, strong: false },
+                    { label: 'IBOV', v: cmp30.ibov, strong: false },
+                    { label: 'S&P 500', v: cmp30.sp500, strong: false },
+                  ].map((it, i) => (
+                    <span key={i} style={{ fontFamily: 'var(--arvo-font-body)' }}>
+                      <span style={{ color: 'var(--arvo-fg-soft)', fontSize: 11 }}>{it.label} </span>
+                      {it.v == null
+                        ? <span style={{ color: 'var(--arvo-fg-faint)', fontSize: 13 }}>–</span>
+                        : <span className={it.v >= 0 ? 'arvo-delta-pos' : 'arvo-delta-neg'} style={{ fontSize: it.strong ? 14 : 13, fontWeight: it.strong ? 700 : 600 }}>{it.v >= 0 ? '+' : ''}{it.v.toFixed(1)}%</span>}
+                    </span>
+                  ))}
+                </div>
+              )}
             </Link>
           )}
 

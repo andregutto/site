@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, useRef, type CSSProperties } from 're
 import { useNavigate } from 'react-router-dom'
 import { PageLoader } from '../components/ArvoLoader'
 import { usePerformanceMonthly, usePerformanceBenchmarks, usePortfolioValue, usePerformanceInception, usePerformanceDaily } from '../hooks/usePortfolio'
+import { addMonths, dailyComparisonSeries } from '../lib/performanceComparison'
 import { useDividendSummary, useDividends } from '../hooks/useDividends'
 import { useCurrency } from '../contexts/CurrencyContext'
 import { useI18n } from '../contexts/I18nContext'
@@ -40,11 +41,6 @@ function localDate(d: Date) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
-function addMonths(ym: string, n: number): string {
-  const [y, m] = ym.split('-').map(Number)
-  const d = new Date(y, m - 1 + n, 1)
-  return localYM(d)
-}
 
 type PeriodMode = 'current_month' | 'last_30d' | 'last_12m' | 'ytd' | 'inception'
 
@@ -116,53 +112,12 @@ export default function PerformancePage() {
   // Must be declared before dailyChartData which calls interpolateBenchmarkCumAtDate
   const { data: benchmarks, loading: bLoading, refresh: refreshBenchmarks } = usePerformanceBenchmarks(addMonths(from, -1), to)
 
-  // Interpolate monthly benchmark cum factors to a specific day (linear within the month).
-  function interpolateBenchmarkCumAtDate(dateStr: string): { cdi: number | null; ibov: number | null; sp500: number | null } {
-    const bm = benchmarks?.monthly ?? []
-    if (!bm.length) return { cdi: null, ibov: null, sp500: null }
-    const ym = dateStr.substring(0, 7)
-    const day = parseInt(dateStr.split('-')[2])
-    const [y, m] = ym.split('-').map(Number)
-    const daysInMonth = new Date(y, m, 0).getDate()
-    const t = day / daysInMonth
-    const monthMap = new Map(bm.map(b => [b.month, b]))
-    const prevYm = addMonths(ym, -1)
-    const prev = monthMap.get(prevYm)
-    const cur  = monthMap.get(ym)
-    function interp(pv: number | null | undefined, cv: number | null | undefined): number | null {
-      if (cv == null) return null
-      const p = pv ?? cv
-      return p + (cv - p) * t
-    }
-    return {
-      cdi:   interp(prev?.cdi_cum,   cur?.cdi_cum),
-      ibov:  interp(prev?.ibov_cum,  cur?.ibov_cum),
-      sp500: interp(prev?.sp500_cum, cur?.sp500_cum),
-    }
-  }
-
-  const dailyChartData = useDailyChart ? (() => {
-    const pts = (dailyData?.daily ?? []).filter(pt => pt.total > 0)
-    if (pts.length === 0) return []
-    const periodStart = pts[0].total - (pts[0].contributions ?? 0)
-    const baseBm = interpolateBenchmarkCumAtDate(pts[0].date)
-    let cfCumul = 0
-    return pts.map(pt => {
-      cfCumul += (pt.contributions ?? 0)
-      const denom = periodStart + 0.5 * cfCumul
-      // No período "Início" o periodStart é 0 (nada antes da criação da carteira);
-      // a base do retorno passa a ser os aportes (0.5·cfCumul), igual ao resumo.
-      // Exigir periodStart > 0 zerava a linha inteira nesse caso.
-      const retPct = denom > 0
-        ? Math.round(((pt.total - periodStart - cfCumul) / denom) * 10000) / 100
-        : 0
-      const dayBm = interpolateBenchmarkCumAtDate(pt.date)
-      const cdi   = dayBm.cdi   != null && baseBm.cdi   != null && baseBm.cdi   > 0 ? Math.round((dayBm.cdi   / baseBm.cdi   - 1) * 10000) / 100 : null
-      const ibov  = dayBm.ibov  != null && baseBm.ibov  != null && baseBm.ibov  > 0 ? Math.round((dayBm.ibov  / baseBm.ibov  - 1) * 10000) / 100 : null
-      const sp500 = dayBm.sp500 != null && baseBm.sp500 != null && baseBm.sp500 > 0 ? Math.round((dayBm.sp500 / baseBm.sp500 - 1) * 10000) / 100 : null
-      return { month: fmtDayLabel(pt.date, intlLocale), portfolio: retPct, cdi, ibov, sp500 }
-    })
-  })() : []
+  // Série diária de comparação (Carteira vs benchmarks) — algoritmo compartilhado
+  // em lib/performanceComparison, o MESMO usado na linha de 30d do card de patrimônio na Hoje.
+  const dailyChartData = useDailyChart
+    ? dailyComparisonSeries(dailyData?.daily ?? [], benchmarks?.monthly ?? [])
+        .map(p => ({ month: fmtDayLabel(p.date, intlLocale), portfolio: p.portfolio, cdi: p.cdi, ibov: p.ibov, sp500: p.sp500 }))
+    : []
 
   const lastDailyPoint = dailyChartData[dailyChartData.length - 1]
 

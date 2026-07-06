@@ -2864,6 +2864,8 @@
     "returnLabel": "Rendement",
     "gainLabel": "Gain",
     "contributionsLabel": "Apports",
-    "more": "de plus"
+    "more": "de plus",
+    "last30d": "30 derniers jours",
+    "walletShort": "Portefeuille"
   }
 }

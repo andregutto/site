@@ -2864,6 +2864,8 @@
     "returnLabel": "Return",
     "gainLabel": "Gain",
     "contributionsLabel": "Contributions",
-    "more": "more"
+    "more": "more",
+    "last30d": "Last 30 days",
+    "walletShort": "Portfolio"
   }
 }

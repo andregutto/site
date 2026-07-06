@@ -2864,6 +2864,8 @@
     "returnLabel": "Rentabilidade",
     "gainLabel": "Ganho",
     "contributionsLabel": "Aportes",
-    "more": "mais"
+    "more": "mais",
+    "last30d": "Últimos 30 dias",
+    "walletShort": "Carteira"
   }
 }
