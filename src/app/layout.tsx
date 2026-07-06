@@ -1,12 +1,35 @@
 import type { Metadata } from "next";
-import { Libre_Baskerville, Playfair_Display, DM_Sans, DM_Mono, Fraunces } from "next/font/google";
+import {
+  Libre_Baskerville,
+  Playfair_Display,
+  DM_Sans,
+  DM_Mono,
+  Instrument_Serif,
+  Schibsted_Grotesk,
+  Fragment_Mono,
+} from "next/font/google";
 import "./globals.css";
 
-const fraunces = Fraunces({
-  weight: ["300", "400", "500", "600"],
+const instrumentSerif = Instrument_Serif({
+  weight: "400",
   style: ["normal", "italic"],
   subsets: ["latin"],
-  variable: "--f-fraunces",
+  variable: "--f-serif",
+  display: "swap",
+});
+
+const schibstedGrotesk = Schibsted_Grotesk({
+  weight: ["400", "500", "600"],
+  subsets: ["latin"],
+  variable: "--f-sans",
+  display: "swap",
+});
+
+const fragmentMono = Fragment_Mono({
+  weight: "400",
+  style: ["normal", "italic"],
+  subsets: ["latin"],
+  variable: "--f-data",
   display: "swap",
 });
 
@@ -61,7 +84,7 @@ export default function RootLayout({
   return (
     <html
       lang="pt-BR"
-      className={`${libreBaskerville.variable} ${playfairDisplay.variable} ${dmSans.variable} ${dmMono.variable} ${fraunces.variable}`}
+      className={`${libreBaskerville.variable} ${playfairDisplay.variable} ${dmSans.variable} ${dmMono.variable} ${instrumentSerif.variable} ${schibstedGrotesk.variable} ${fragmentMono.variable}`}
     >
       <head>
         <meta name="color-scheme" content="light only" />

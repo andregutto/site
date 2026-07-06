@@ -42,7 +42,7 @@ export default function Eixos() {
           {EIXOS.map((e, i) => (
             <Reveal key={e.num} delay={i * 90}>
               <article className="ag-eixo">
-                <span className="ag-eixo-num">/ {e.num}</span>
+                <span className="ag-eixo-num">{e.num}.</span>
                 <div>
                   <h3>{e.titulo}</h3>
                   <p>{e.texto}</p>

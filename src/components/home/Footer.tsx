@@ -53,6 +53,9 @@ export default function Footer() {
           </span>
         </div>
       </div>
+      <span className="ag-footer-name" aria-hidden="true">
+        André <em>Gutto</em>
+      </span>
     </footer>
   );
 }

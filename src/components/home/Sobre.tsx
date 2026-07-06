@@ -10,9 +10,9 @@ export default function Sobre() {
             <p className="ag-kicker">Quem escreve</p>
             <p className="ag-lede">
               Sou o André. Brasileiro, vivo em Paris e trabalho no setor de
-              energia. No resto do tempo, documento o que ninguém mostra: o
-              custo real das coisas, as decisões difíceis e a vida que dá pra
-              construir do outro lado do oceano.
+              energia. No resto do tempo, documento o que ninguém mostra:
+              <em> o custo real das coisas</em>, as decisões difíceis e a vida
+              que dá pra construir do outro lado do oceano.
             </p>
           </Reveal>
           <Reveal delay={100}>

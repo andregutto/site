@@ -22,7 +22,9 @@ export default function FilmStrip() {
         {[...FOTOS, ...FOTOS].map((f, i) => (
           <figure className="ag-strip-item" key={i} aria-hidden={i >= FOTOS.length}>
             <img src={f.src} alt={i < FOTOS.length ? f.local : ''} loading="lazy" />
-            <figcaption>{f.local}</figcaption>
+            <figcaption data-num={`${String((i % FOTOS.length) + 1).padStart(2, '0')} /`}>
+              {f.local}
+            </figcaption>
           </figure>
         ))}
       </div>
