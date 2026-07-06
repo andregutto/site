@@ -373,37 +373,9 @@ export default function HomePage() {
             )
           })()}
 
-          {/* Viagem — capa + linka pro detalhe (onde ficam as despesas) */}
-          {data?.next_trip && (
-            <CoverCard
-              to={`/voyage/${data.next_trip.id}`}
-              coverUrl={data.next_trip.cover_image_url}
-              accent="214,59,47"
-              label={data.next_trip.ongoing ? (th.tripNow ?? 'Viagem em andamento') : data.next_trip.past ? (th.tripLast ?? 'Última viagem') : (th.tripNext ?? 'Próxima viagem')}
-              title={data.next_trip.title}
-              subtitle={`${data.next_trip.destination ? data.next_trip.destination + ' · ' : ''}${fmtDay(data.next_trip.start_date)}${data.next_trip.end_date ? ' – ' + fmtDay(data.next_trip.end_date) : ''}`}
-              fallbackIcon={<svg width="24" height="24" fill="var(--arvo-red)" viewBox="0 0 24 24"><path d="M12 2c-3.9 0-7 3.1-7 7 0 5.2 7 13 7 13s7-7.8 7-13c0-3.9-3.1-7-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5Z" /></svg>}
-            />
-          )}
-
-          {/* Momento avulso (sem viagem associada — essa fica oculta) */}
-          {data?.active_moment && (
-            <CoverCard
-              to="/finances/moments"
-              coverUrl={data.active_moment.cover_image_url}
-              accent="200,184,154"
-              label={data.active_moment.ongoing ? (th.momentLabel ?? 'Momento em andamento') : data.active_moment.past ? (th.momentLast ?? 'Último momento') : (th.momentNext ?? 'Próximo momento')}
-              title={data.active_moment.name}
-              subtitle={data.active_moment.start_date
-                ? (data.active_moment.ongoing && data.active_moment.end_date
-                    ? `${th.until ?? 'até'} ${fmtDay(data.active_moment.end_date)}`
-                    : `${fmtDay(data.active_moment.start_date)}${data.active_moment.end_date ? ' – ' + fmtDay(data.active_moment.end_date) : ''}`)
-                : undefined}
-              fallbackIcon={<span style={{ width: 16, height: 16, borderRadius: '50%', background: data.active_moment.color || 'var(--arvo-gold)' }} />}
-            />
-          )}
-
-          {/* Entre amigos — quem e quanto, com botão de dividir por amigo + dividir despesa */}
+          {/* Entre amigos — quem e quanto, com botão de dividir por amigo + dividir despesa.
+              Fica logo após Metas (as duas são cards "financeiros") pra deixar Viagem,
+              Momento e Recursos juntos como bloco de conteúdo, sem intercalar. */}
           {(balances || activeFriends.length > 0) && (
             <div style={{ ...card, padding: '16px 18px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -434,6 +406,36 @@ export default function HomePage() {
                 {th.splitExpense ?? 'Dividir despesa'}
               </button>
             </div>
+          )}
+
+          {/* Viagem — capa + linka pro detalhe (onde ficam as despesas) */}
+          {data?.next_trip && (
+            <CoverCard
+              to={`/voyage/${data.next_trip.id}`}
+              coverUrl={data.next_trip.cover_image_url}
+              accent="214,59,47"
+              label={data.next_trip.ongoing ? (th.tripNow ?? 'Viagem em andamento') : data.next_trip.past ? (th.tripLast ?? 'Última viagem') : (th.tripNext ?? 'Próxima viagem')}
+              title={data.next_trip.title}
+              subtitle={`${data.next_trip.destination ? data.next_trip.destination + ' · ' : ''}${fmtDay(data.next_trip.start_date)}${data.next_trip.end_date ? ' – ' + fmtDay(data.next_trip.end_date) : ''}`}
+              fallbackIcon={<svg width="24" height="24" fill="var(--arvo-red)" viewBox="0 0 24 24"><path d="M12 2c-3.9 0-7 3.1-7 7 0 5.2 7 13 7 13s7-7.8 7-13c0-3.9-3.1-7-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5Z" /></svg>}
+            />
+          )}
+
+          {/* Momento avulso (sem viagem associada — essa fica oculta) */}
+          {data?.active_moment && (
+            <CoverCard
+              to="/finances/moments"
+              coverUrl={data.active_moment.cover_image_url}
+              accent="200,184,154"
+              label={data.active_moment.ongoing ? (th.momentLabel ?? 'Momento em andamento') : data.active_moment.past ? (th.momentLast ?? 'Último momento') : (th.momentNext ?? 'Próximo momento')}
+              title={data.active_moment.name}
+              subtitle={data.active_moment.start_date
+                ? (data.active_moment.ongoing && data.active_moment.end_date
+                    ? `${th.until ?? 'até'} ${fmtDay(data.active_moment.end_date)}`
+                    : `${fmtDay(data.active_moment.start_date)}${data.active_moment.end_date ? ' – ' + fmtDay(data.active_moment.end_date) : ''}`)
+                : undefined}
+              fallbackIcon={<span style={{ width: 16, height: 16, borderRadius: '50%', background: data.active_moment.color || 'var(--arvo-gold)' }} />}
+            />
           )}
 
           {/* Recursos — o mais recente (ou o próximo ainda não liberado) do canal, mesmo
