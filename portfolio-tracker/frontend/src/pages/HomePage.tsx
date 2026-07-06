@@ -6,6 +6,7 @@ import { useCurrency } from '../contexts/CurrencyContext'
 import { useAuth } from '../contexts/AuthContext'
 import { PageLoader } from '../components/ArvoLoader'
 import { useSetupChecklist } from '../components/SetupChecklist'
+import PullToRefresh from '../components/PullToRefresh'
 import { useActiveFriends, type ActiveFriend } from '../hooks/useActiveFriends'
 import { PairMomentModal, GroupExpensesModal, type MomentBalance } from './PeoplePage'
 import type { ResourceItem } from './ResourcesPage'
@@ -114,46 +115,52 @@ export default function HomePage() {
   const cmp30series = dailyComparisonSeries(daily30?.daily ?? [], bench30?.monthly ?? [])
   const cmp30 = cmp30series.length ? cmp30series[cmp30series.length - 1] : null
 
-  useEffect(() => {
-    apiFetch<TodayData>('/home/today')
-      .then(setData)
-      .finally(() => setLoading(false))
-    apiFetch<PortfolioValue>('/portfolio/value')
-      .then(v => { setWealth(v.total_brl); setHasAssets((v.by_asset?.length ?? 0) > 0) })
-      .catch(() => setHasAssets(false))
-    apiFetch<{ contacts: Array<{ name?: string; email?: string; avatar_url?: string; user_id: string | null; balances?: ContactBalance[]; balancesByMoment?: MomentBalance[] }> }>('/people')
-      .then(({ contacts }) => {
-        const toReceive: NamedBalance[] = []
-        const toPay: NamedBalance[] = []
-        const bbmMap: Record<string, MomentBalance[]> = {}
-        for (const c of contacts ?? []) {
-          if (!c.user_id) continue
-          if (c.balancesByMoment) bbmMap[c.user_id] = c.balancesByMoment
-          const who = (c.name ?? c.email ?? '').split(' ')[0] || '?'
-          for (const b of c.balances ?? []) {
-            if (b.amount >= 0.01) toReceive.push({ name: who, currency: b.currency, amount: b.amount, avatar_url: c.avatar_url, user_id: c.user_id })
-            else if (b.amount <= -0.01) toPay.push({ name: who, currency: b.currency, amount: Math.abs(b.amount), avatar_url: c.avatar_url, user_id: c.user_id })
+  // Extraído do useEffect pra poder ser chamado de novo pelo puxar-pra-atualizar
+  // (PullToRefresh), sem duplicar a lista de fetches.
+  function loadHome() {
+    return Promise.allSettled([
+      apiFetch<TodayData>('/home/today')
+        .then(setData)
+        .finally(() => setLoading(false)),
+      apiFetch<PortfolioValue>('/portfolio/value')
+        .then(v => { setWealth(v.total_brl); setHasAssets((v.by_asset?.length ?? 0) > 0) })
+        .catch(() => setHasAssets(false)),
+      apiFetch<{ contacts: Array<{ name?: string; email?: string; avatar_url?: string; user_id: string | null; balances?: ContactBalance[]; balancesByMoment?: MomentBalance[] }> }>('/people')
+        .then(({ contacts }) => {
+          const toReceive: NamedBalance[] = []
+          const toPay: NamedBalance[] = []
+          const bbmMap: Record<string, MomentBalance[]> = {}
+          for (const c of contacts ?? []) {
+            if (!c.user_id) continue
+            if (c.balancesByMoment) bbmMap[c.user_id] = c.balancesByMoment
+            const who = (c.name ?? c.email ?? '').split(' ')[0] || '?'
+            for (const b of c.balances ?? []) {
+              if (b.amount >= 0.01) toReceive.push({ name: who, currency: b.currency, amount: b.amount, avatar_url: c.avatar_url, user_id: c.user_id })
+              else if (b.amount <= -0.01) toPay.push({ name: who, currency: b.currency, amount: Math.abs(b.amount), avatar_url: c.avatar_url, user_id: c.user_id })
+            }
           }
-        }
-        toReceive.sort((a, b) => b.amount - a.amount)
-        toPay.sort((a, b) => b.amount - a.amount)
-        setBalances(toReceive.length || toPay.length ? { toReceive, toPay } : null)
-        setBalancesByMomentMap(bbmMap)
-      })
-      .catch(() => {})
-    apiFetch<FreedomPlan[]>('/finances/freedom-plans')
-      .then(plans => setPlan((plans ?? []).find(p => p.is_active) ?? null))
-      .catch(() => setPlan(null))
-    apiFetch<{ months: ProjectionMonth[] }>('/finances/spending-summary?months=60')
-      .then(setSpending)
-      .catch(() => {})
-    apiFetch<{ id: number; name: string }[]>('/shared/groups')
-      .then(setSplitGroups)
-      .catch(() => {})
-    apiFetch<{ resources: ResourceItem[] }>('/resources')
-      .then(({ resources }) => setResources(resources.filter(r => !r.unlocked).concat(resources.filter(r => r.unlocked)).slice(0, 1)))
-      .catch(() => {})
-  }, [])
+          toReceive.sort((a, b) => b.amount - a.amount)
+          toPay.sort((a, b) => b.amount - a.amount)
+          setBalances(toReceive.length || toPay.length ? { toReceive, toPay } : null)
+          setBalancesByMomentMap(bbmMap)
+        })
+        .catch(() => {}),
+      apiFetch<FreedomPlan[]>('/finances/freedom-plans')
+        .then(plans => setPlan((plans ?? []).find(p => p.is_active) ?? null))
+        .catch(() => setPlan(null)),
+      apiFetch<{ months: ProjectionMonth[] }>('/finances/spending-summary?months=60')
+        .then(setSpending)
+        .catch(() => {}),
+      apiFetch<{ id: number; name: string }[]>('/shared/groups')
+        .then(setSplitGroups)
+        .catch(() => {}),
+      apiFetch<{ resources: ResourceItem[] }>('/resources')
+        .then(({ resources }) => setResources(resources.filter(r => !r.unlocked).concat(resources.filter(r => r.unlocked)).slice(0, 1)))
+        .catch(() => {}),
+    ]).then(() => {})
+  }
+
+  useEffect(() => { loadHome() }, [])
 
   // Previsão do mês pela MESMA função da Visão Geral (lib/monthProjection), sem duplicar
   const forecast = (() => {
@@ -187,6 +194,7 @@ export default function HomePage() {
   const showWealth = hasAssets !== false
 
   return (
+    <PullToRefresh onRefresh={loadHome}>
     <div className="space-y-5">
       {/* Saudação */}
       <div>
@@ -378,34 +386,41 @@ export default function HomePage() {
               Fica logo após Metas (as duas são cards "financeiros") pra deixar Viagem,
               Momento e Recursos juntos como bloco de conteúdo, sem intercalar. */}
           {(balances || activeFriends.length > 0) && (
-            <div style={{ ...card, padding: '16px 18px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <p style={cardLabel}>{th.balancesLabel ?? 'Entre amigos'}</p>
+            <div style={{ ...card, overflow: 'hidden' }}>
+              <div style={{ padding: '16px 20px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'linear-gradient(90deg, rgba(140,106,40,0.12), transparent 70%)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ color: '#8C6A28', display: 'inline-flex' }}>
+                    <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M2 4.5h6M2 4.5l2.2-2.2M2 4.5l2.2 2.2M14 11.5H6M14 11.5l-2.2-2.2M14 11.5l-2.2 2.2" /></svg>
+                  </span>
+                  <p style={{ ...cardLabel, color: 'var(--arvo-fg-muted)' }}>{th.balancesLabel ?? 'Entre amigos'}</p>
+                </div>
                 <Link to="/people" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: '#8C6A28', textDecoration: 'none' }}>{th.seeAll ?? 'Ver tudo'} →</Link>
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 11 }}>
-                {(balances
-                  ? [...balances.toReceive.map(b => ({ ...b, receive: true })), ...balances.toPay.map(b => ({ ...b, receive: false }))].sort((a, b) => b.amount - a.amount)
-                  : activeFriends.map(f => ({ name: f.name ?? f.email ?? '?', avatar_url: f.avatar_url, user_id: f.user_id as string, amount: null as number | null, currency: '', receive: true }))
-                ).slice(0, 4).map((b, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-                    <Avatar name={b.name} avatarUrl={b.avatar_url} size={26} />
-                    <span style={{ flex: 1, minWidth: 0, fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{b.name}</span>
-                    {b.amount != null && (
-                      <span className={hideValues ? undefined : b.receive ? 'arvo-delta-pos' : 'arvo-delta-neg'} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, fontWeight: 600, flexShrink: 0 }}>
-                        {b.receive ? '' : '−'}{fmtCur(b.amount, b.currency)}
-                      </span>
-                    )}
-                    <button type="button" onClick={() => setSplitFriend({ email: '', name: b.name, user_id: b.user_id } as ActiveFriend)} title={th.splitExpense ?? 'Dividir despesa'} style={{ flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--arvo-fg-soft)', padding: 3, display: 'inline-flex' }}>
-                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M2 4.5h6M2 4.5l2.2-2.2M2 4.5l2.2 2.2M14 11.5H6M14 11.5l-2.2-2.2M14 11.5l-2.2 2.2" /></svg>
-                    </button>
-                  </div>
-                ))}
+              <div style={{ padding: '14px 20px 18px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {(balances
+                    ? [...balances.toReceive.map(b => ({ ...b, receive: true })), ...balances.toPay.map(b => ({ ...b, receive: false }))].sort((a, b) => b.amount - a.amount)
+                    : activeFriends.map(f => ({ name: f.name ?? f.email ?? '?', avatar_url: f.avatar_url, user_id: f.user_id as string, amount: null as number | null, currency: '', receive: true }))
+                  ).slice(0, 4).map((b, i) => (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+                      <Avatar name={b.name} avatarUrl={b.avatar_url} size={26} />
+                      <span style={{ flex: 1, minWidth: 0, fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{b.name}</span>
+                      {b.amount != null && (
+                        <span className={hideValues ? undefined : b.receive ? 'arvo-delta-pos' : 'arvo-delta-neg'} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, fontWeight: 600, flexShrink: 0 }}>
+                          {b.receive ? '' : '−'}{fmtCur(b.amount, b.currency)}
+                        </span>
+                      )}
+                      <button type="button" onClick={() => setSplitFriend({ email: '', name: b.name, user_id: b.user_id } as ActiveFriend)} title={th.splitExpense ?? 'Dividir despesa'} style={{ flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--arvo-fg-soft)', padding: 3, display: 'inline-flex' }}>
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M2 4.5h6M2 4.5l2.2-2.2M2 4.5l2.2 2.2M14 11.5H6M14 11.5l-2.2-2.2M14 11.5l-2.2 2.2" /></svg>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <button type="button" onClick={() => setSplitPicker(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, marginTop: 12, padding: '8px 14px', borderRadius: 999, border: '1px solid var(--arvo-border)', background: 'var(--arvo-surface)', color: 'var(--arvo-fg-muted)', fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, cursor: 'pointer' }}>
+                  <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M2 4.5h6M2 4.5l2.2-2.2M2 4.5l2.2 2.2M14 11.5H6M14 11.5l-2.2-2.2M14 11.5l-2.2 2.2" /></svg>
+                  {th.splitExpense ?? 'Dividir despesa'}
+                </button>
               </div>
-              <button type="button" onClick={() => setSplitPicker(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, marginTop: 12, padding: '8px 14px', borderRadius: 999, border: '1px solid var(--arvo-border)', background: 'var(--arvo-surface)', color: 'var(--arvo-fg-muted)', fontFamily: 'var(--arvo-font-body)', fontSize: 12.5, cursor: 'pointer' }}>
-                <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M2 4.5h6M2 4.5l2.2-2.2M2 4.5l2.2 2.2M14 11.5H6M14 11.5l-2.2-2.2M14 11.5l-2.2 2.2" /></svg>
-                {th.splitExpense ?? 'Dividir despesa'}
-              </button>
             </div>
           )}
 
@@ -442,7 +457,9 @@ export default function HomePage() {
 
           {/* Recursos — o mais recente (ou o próximo ainda não liberado) do canal, mesmo
               endpoint/tipo da página /resources. Mesmo formato de capa da Viagem/Momento,
-              pra ficar no mesmo idioma visual da coluna em vez de uma lista de texto solta. */}
+              pra ficar no mesmo idioma visual da coluna em vez de uma lista de texto solta.
+              Cor ocre da Comunidade (não terracota): Recursos e Comunidade foram agrupados
+              na mesma vertente "Aprender" no menu, então dividem a mesma cor. */}
           {resources[0] && (() => {
             const res = resources[0]
             const tierLabel = res.visibility === 'free' ? t.resources.free : res.visibility === 'plus' ? t.resources.plus : t.resources.beta
@@ -450,8 +467,8 @@ export default function HomePage() {
               <CoverCard
                 to={`/resources/${res.slug}`}
                 coverUrl={res.preview_image_url}
-                accent="163,106,82"
-                icon={<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="var(--arvo-terracotta)" strokeWidth={1.6}><path strokeLinecap="round" strokeLinejoin="round" d="M6.5 9.5l3-3M7.5 4.5l1-1a2.5 2.5 0 013.5 3.5l-1 1M8.5 11.5l-1 1a2.5 2.5 0 01-3.5-3.5l1-1" /></svg>}
+                accent="232,160,32"
+                icon={<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="var(--arvo-ocre)" strokeWidth={1.6}><path strokeLinecap="round" strokeLinejoin="round" d="M6.5 9.5l3-3M7.5 4.5l1-1a2.5 2.5 0 013.5 3.5l-1 1M8.5 11.5l-1 1a2.5 2.5 0 01-3.5-3.5l1-1" /></svg>}
                 label={t.resources.title}
                 title={res.title}
                 subtitle={res.unlocked ? t.resources.unlocked : tierLabel}
@@ -546,6 +563,7 @@ export default function HomePage() {
         />
       )}
     </div>
+    </PullToRefresh>
   )
 }
 
