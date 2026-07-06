@@ -2,19 +2,19 @@ import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useI18n } from '../contexts/I18nContext'
-import { apiFetch } from '../lib/api'
 import ArvoLoader from '../components/ArvoLoader'
 import GoogleLogo from '../components/GoogleLogo'
 
-// Página pública de um Recurso (/recursos/:slug) — destino dos lead magnets dos
-// vídeos do canal. Layout inspirado no auth/signin da Epic: foto de fundo em
-// tela cheia, login embutido à esquerda, informações do recurso à direita —
-// só pra visitante deslogado, que é o momento real de conversão. Quem já tem
-// sessão vê um painel único (a tela de login não faz sentido pra quem já
-// está logado). Login por senha libera na hora (mesmo componente, sem
-// redirect); Google e o "confirme seu e-mail" do cadastro dependem do
-// fluxo pending_resource_slug em sessionStorage (mesmo padrão do
-// AcceptTripInvitePage), já que saem da página.
+// Página pública de um Recurso (/recursos/:slug) — SÓ pro visitante deslogado
+// (App.tsx só monta esta rota quando !user; assim que a sessão existe, a
+// mesma URL passa a renderizar ResourceDetailPage dentro do AppLayout — ver
+// o roteamento condicional em App.tsx). É o destino dos lead magnets dos
+// vídeos do canal: layout inspirado no auth/signin da Epic — foto de fundo
+// em tela cheia, login embutido à esquerda (sem sair da página), info do
+// recurso à direita. Depois de autenticado (login por senha, ou volta do
+// Google/confirmação de e-mail), o React Router troca sozinho pra
+// ResourceDetailPage — o unlock em si (e o auto-unlock via
+// pending_resource_slug) vive lá, não aqui.
 
 const F_SANS    = "var(--arvo-font-body)"
 const F_DISPLAY = "'Playfair Display', Georgia, serif"
@@ -26,17 +26,6 @@ interface ResourcePreview {
   resource_type: 'file' | 'link' | 'content'
   preview_image_url: string | null
   visibility: 'free' | 'paid'
-}
-
-interface UnlockResult {
-  type: 'file' | 'link' | 'content'
-  download_url?: string
-  external_url?: string
-  content_md?: string
-}
-
-function getStoredUtm(): Record<string, string> {
-  try { return JSON.parse(sessionStorage.getItem('resource_utm') ?? '{}') } catch { return {} }
 }
 
 const inputBase: React.CSSProperties = {
@@ -53,7 +42,7 @@ const focusOff = (e: React.FocusEvent<HTMLInputElement>) => { e.currentTarget.st
 
 export default function ResourcePublicPage() {
   const { slug } = useParams<{ slug: string }>()
-  const { user, loading: authLoading, signIn, signUp, signInWithGoogle } = useAuth()
+  const { signIn, signUp, signInWithGoogle } = useAuth()
   const { t } = useI18n()
   const r = t.resources
   const l = t.login
@@ -61,11 +50,7 @@ export default function ResourcePublicPage() {
   const [preview, setPreview] = useState<ResourcePreview | null>(null)
   const [loadingPreview, setLoadingPreview] = useState(true)
   const [notFound, setNotFound] = useState(false)
-  const [unlocking, setUnlocking] = useState(false)
-  const [result, setResult] = useState<UnlockResult | null>(null)
-  const [unlockError, setUnlockError] = useState('')
 
-  // ── Auth panel (só renderizado pra visitante deslogado) ──
   const [mode, setMode] = useState<'login' | 'register'>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -87,6 +72,9 @@ export default function ResourcePublicPage() {
     }
     if (Object.keys(utm).length) sessionStorage.setItem('resource_utm', JSON.stringify(utm))
     sessionStorage.setItem('signup_source', `resource:${slug}`)
+    // Sinaliza pra ResourceDetailPage disparar o unlock sozinha assim que a
+    // sessão existir (login por senha aqui mesmo, ou volta do Google/e-mail).
+    sessionStorage.setItem('pending_resource_slug', slug)
 
     fetch(`/api/resources/public/${slug}${window.location.search}`)
       .then(async res => {
@@ -97,43 +85,13 @@ export default function ResourcePublicPage() {
       .finally(() => setLoadingPreview(false))
   }, [slug])
 
-  async function handleUnlock() {
-    if (unlocking) return
-    setUnlocking(true)
-    setUnlockError('')
-    try {
-      const res = await apiFetch<UnlockResult>(`/resources/${slug}/unlock`, {
-        method: 'POST',
-        body: JSON.stringify(getStoredUtm()),
-      })
-      setResult(res)
-      if (res.type === 'file' && res.download_url) window.location.assign(res.download_url)
-    } catch (ex: unknown) {
-      setUnlockError((ex as Error).message)
-    } finally {
-      setUnlocking(false)
-    }
-  }
-
-  // Voltou logado do Google (ou de /login) → libera sozinho
-  useEffect(() => {
-    if (!user || authLoading || !preview) return
-    const pending = sessionStorage.getItem('pending_resource_slug')
-    if (pending && pending === slug) {
-      sessionStorage.removeItem('pending_resource_slug')
-      if (preview.visibility === 'free') handleUnlock()
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, authLoading, preview])
-
   async function handleGoogle() {
     if (googleLoading) return
     setFormError('')
     setGoogleLoading(true)
-    sessionStorage.setItem('pending_resource_slug', slug ?? '')
     try {
-      // Passa o próprio path do recurso: o retorno do Google cai direto aqui,
-      // sem visitar /login antes (diferente do login normal do app).
+      // Passa o próprio path do recurso: o retorno do Google cai direto na
+      // mesma URL (que aí já renderiza ResourceDetailPage, sessão pronta).
       await signInWithGoogle(`/recursos/${slug}`)
     } catch (err) {
       setFormError(err instanceof Error ? err.message : 'Erro desconhecido')
@@ -149,7 +107,7 @@ export default function ResourcePublicPage() {
     try {
       if (mode === 'login') {
         await signIn(email, password)
-        handleUnlock()
+        // Sessão criada → o próximo render do router já troca pra ResourceDetailPage.
       } else {
         await signUp(email, password, {
           first_name: firstName || undefined,
@@ -168,18 +126,12 @@ export default function ResourcePublicPage() {
     }
   }
 
-  if (loadingPreview || authLoading) {
+  if (loadingPreview) {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--arvo-black)' }}>
         <ArvoLoader size={40} style={{ color: 'var(--arvo-gold)' }} />
       </div>
     )
-  }
-
-  const btnPrimary: React.CSSProperties = {
-    width: '100%', padding: '13px 24px', background: 'var(--arvo-black)', color: 'var(--arvo-offwhite, #F6F3EC)',
-    fontFamily: F_SANS, fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase',
-    border: 'none', borderRadius: 3, cursor: 'pointer', boxSizing: 'border-box' as const,
   }
 
   const pageShell: React.CSSProperties = {
@@ -192,7 +144,6 @@ export default function ResourcePublicPage() {
   }
   const bgOverlay: React.CSSProperties = { position: 'fixed', inset: 0, background: 'linear-gradient(to bottom right, rgba(13,13,13,0.60), rgba(13,13,13,0.90))' }
 
-  // ── Not found ──
   if (notFound || !preview) {
     return (
       <div style={pageShell}>
@@ -205,150 +156,6 @@ export default function ResourcePublicPage() {
     )
   }
 
-  // ── Resource info block, reused in both the logged-out (right column) and logged-in (single column) layouts ──
-  const infoBlock = (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <div>
-        <span style={{ fontFamily: F_SANS, fontSize: 10, letterSpacing: '0.24em', textTransform: 'uppercase', color: 'var(--arvo-gold)' }}>
-          {preview.visibility === 'paid' ? r.members : r.free}
-        </span>
-        <h1 style={{ fontFamily: F_DISPLAY, fontWeight: 400, fontSize: 'clamp(26px, 3vw, 34px)', color: 'var(--arvo-offwhite, #F6F3EC)', margin: '10px 0 0', lineHeight: 1.2 }}>
-          {preview.title}
-        </h1>
-      </div>
-
-      {preview.preview_image_url && (
-        <img src={preview.preview_image_url} alt="" style={{ width: '100%', maxWidth: 360, borderRadius: 8, display: 'block' }} />
-      )}
-
-      {preview.description && (
-        <p style={{ fontFamily: F_SANS, fontSize: 14.5, color: 'rgba(242,237,228,0.75)', lineHeight: 1.65, margin: 0, maxWidth: 420 }}>
-          {preview.description}
-        </p>
-      )}
-
-      {unlockError && <p style={{ fontFamily: F_SANS, fontSize: 13, color: '#FF8577', margin: 0 }}>{unlockError}</p>}
-
-      {result ? (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 360 }}>
-          {result.type === 'content' ? (
-            <div>
-              <p style={{ fontFamily: F_SANS, fontSize: 12, color: 'var(--arvo-green-on-dark, #7BC9A4)', fontWeight: 600, margin: '0 0 10px', letterSpacing: '0.08em', textTransform: 'uppercase' }}>{r.contentUnlocked}</p>
-              <div style={{ fontFamily: F_SANS, fontSize: 14, color: 'var(--arvo-black)', lineHeight: 1.6, whiteSpace: 'pre-wrap', maxHeight: 360, overflowY: 'auto', padding: '14px 16px', background: '#FFFFFF', borderRadius: 8 }}>
-                {result.content_md}
-              </div>
-            </div>
-          ) : result.type === 'link' ? (
-            <a href={result.external_url} target="_blank" rel="noopener noreferrer" style={{ ...btnPrimary, display: 'block', textAlign: 'center', textDecoration: 'none', background: 'var(--arvo-gold)', color: 'var(--arvo-black)' }}>
-              {r.openLink}
-            </a>
-          ) : (
-            <>
-              <p style={{ fontFamily: F_SANS, fontSize: 13, color: 'var(--arvo-green-on-dark, #7BC9A4)', margin: 0 }}>{r.downloadStarted}</p>
-              <a href={result.download_url} style={{ ...btnPrimary, display: 'block', textAlign: 'center', textDecoration: 'none', background: 'var(--arvo-gold)', color: 'var(--arvo-black)' }}>
-                {r.downloadAgain}
-              </a>
-            </>
-          )}
-          <Link to="/recursos" style={{ fontFamily: F_SANS, fontSize: 12, color: 'rgba(242,237,228,0.55)', textAlign: 'center' }}>{r.exploreMore}</Link>
-        </div>
-      ) : preview.visibility === 'paid' ? (
-        <p style={{ fontFamily: F_SANS, fontSize: 13, color: 'rgba(242,237,228,0.6)', margin: 0 }}>{r.membersSoon}</p>
-      ) : user ? (
-        <button onClick={handleUnlock} disabled={unlocking} style={{ ...btnPrimary, maxWidth: 300, background: 'var(--arvo-gold)', color: 'var(--arvo-black)', opacity: unlocking ? 0.6 : 1 }}>
-          {unlocking ? r.unlocking : r.unlockCta}
-        </button>
-      ) : (
-        <p style={{ fontFamily: F_SANS, fontSize: 12.5, color: 'rgba(242,237,228,0.5)', letterSpacing: '0.04em', margin: 0 }}>
-          {r.unlockHint}
-        </p>
-      )}
-    </div>
-  )
-
-  // ── Authenticated: full content page (hero + cards), same family as
-  // PublicMomentPage/PublicTripPage — no login form needed, so no reason to
-  // keep the dark split layout, this is a real page now, not a gate. ──
-  if (user) {
-    const cardStyle: React.CSSProperties = { background: 'var(--arvo-surface, #FFFFFF)', border: '1px solid var(--arvo-border)', borderRadius: 16 }
-    return (
-      <div style={{ minHeight: '100vh', background: 'var(--arvo-bg, var(--arvo-offwhite))', paddingTop: 'env(safe-area-inset-top, 0px)' }}>
-        {/* Hero */}
-        {preview.preview_image_url ? (
-          <div style={{ height: 220 }} className="sm:h-72 overflow-hidden">
-            <img src={preview.preview_image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-          </div>
-        ) : (
-          <div style={{ height: 160, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--arvo-black)' }}>
-            <img src="/brand/logo/arvo-symbol-gold.svg" width="36" height="38" alt="" />
-          </div>
-        )}
-
-        <div style={{ maxWidth: 640, margin: '0 auto', padding: '28px 20px 48px', display: 'flex', flexDirection: 'column', gap: 20 }}>
-          <Link to="/recursos" style={{ fontFamily: F_SANS, fontSize: 12, letterSpacing: '0.04em', color: 'var(--arvo-fg-soft)', textDecoration: 'none' }}>
-            ← {r.title}
-          </Link>
-
-          <div>
-            <span style={{ fontFamily: F_SANS, fontSize: 10, letterSpacing: '0.20em', textTransform: 'uppercase', color: 'var(--arvo-gold-text, #8C6A28)', fontWeight: 600 }}>
-              {preview.visibility === 'paid' ? r.members : r.free}
-            </span>
-            <h1 style={{ fontFamily: F_DISPLAY, fontWeight: 400, fontSize: 'clamp(26px, 3.5vw, 36px)', color: 'var(--arvo-fg)', margin: '8px 0 0', lineHeight: 1.2 }}>
-              {preview.title}
-            </h1>
-          </div>
-
-          {preview.description && (
-            <p style={{ fontFamily: F_SANS, fontSize: 15, color: 'var(--arvo-fg-soft)', lineHeight: 1.65, margin: 0 }}>
-              {preview.description}
-            </p>
-          )}
-
-          {/* Action card */}
-          <div style={{ ...cardStyle, padding: '22px 24px' }}>
-            {unlockError && <p style={{ fontFamily: F_SANS, fontSize: 13, color: 'var(--arvo-red)', margin: '0 0 14px' }}>{unlockError}</p>}
-
-            {result ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                {result.type === 'content' ? (
-                  <div>
-                    <p style={{ fontFamily: F_SANS, fontSize: 11.5, color: 'var(--arvo-green, #1F8A5B)', fontWeight: 600, margin: '0 0 10px', letterSpacing: '0.08em', textTransform: 'uppercase' }}>{r.contentUnlocked}</p>
-                    <div style={{ fontFamily: F_SANS, fontSize: 14, color: 'var(--arvo-fg)', lineHeight: 1.65, whiteSpace: 'pre-wrap', maxHeight: 420, overflowY: 'auto', padding: '16px 18px', background: 'var(--arvo-bg, var(--arvo-offwhite))', borderRadius: 10, border: '1px solid var(--arvo-border-soft, var(--arvo-border))' }}>
-                      {result.content_md}
-                    </div>
-                  </div>
-                ) : result.type === 'link' ? (
-                  <>
-                    <p style={{ fontFamily: F_SANS, fontSize: 12.5, color: 'var(--arvo-green, #1F8A5B)', margin: 0, letterSpacing: '0.04em' }}>{r.contentUnlocked}</p>
-                    <a href={result.external_url} target="_blank" rel="noopener noreferrer" style={{ ...btnPrimary, display: 'block', textAlign: 'center', textDecoration: 'none' }}>
-                      {r.openLink}
-                    </a>
-                  </>
-                ) : (
-                  <>
-                    <p style={{ fontFamily: F_SANS, fontSize: 12.5, color: 'var(--arvo-green, #1F8A5B)', margin: 0 }}>{r.downloadStarted}</p>
-                    <a href={result.download_url} style={{ ...btnPrimary, display: 'block', textAlign: 'center', textDecoration: 'none' }}>
-                      {r.downloadAgain}
-                    </a>
-                  </>
-                )}
-              </div>
-            ) : preview.visibility === 'paid' ? (
-              <p style={{ fontFamily: F_SANS, fontSize: 13.5, color: 'var(--arvo-fg-soft)', margin: 0 }}>{r.membersSoon}</p>
-            ) : (
-              <button onClick={handleUnlock} disabled={unlocking} style={{ ...btnPrimary, opacity: unlocking ? 0.6 : 1 }}>
-                {unlocking ? r.unlocking : r.unlockCta}
-              </button>
-            )}
-          </div>
-
-          <Link to="/recursos" style={{ fontFamily: F_SANS, fontSize: 12.5, color: 'var(--arvo-fg-soft)', textAlign: 'center' }}>{r.exploreMore}</Link>
-        </div>
-      </div>
-    )
-  }
-
-  // ── Anonymous visitor: split layout — login left, resource info right ──
   return (
     <div style={pageShell}>
       <div style={bgPhoto} /><div style={bgOverlay} /><div className="arvo-grain" />
@@ -452,7 +259,7 @@ export default function ResourcePublicPage() {
                   </div>
                 )}
 
-                <button type="submit" disabled={formLoading} style={{ ...btnPrimary, opacity: formLoading ? 0.6 : 1 }}>
+                <button type="submit" disabled={formLoading} style={{ ...inputBase, ...{ width: '100%', padding: '13px 24px', background: 'var(--arvo-black)', color: 'var(--arvo-offwhite, #F6F3EC)', fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', border: 'none', borderRadius: 3, cursor: 'pointer', opacity: formLoading ? 0.6 : 1 } }}>
                   {formLoading ? l.loading : mode === 'login' ? r.unlockCta : l.submitRegister}
                 </button>
               </form>
@@ -461,8 +268,36 @@ export default function ResourcePublicPage() {
         </div>
 
         {/* ── Right: resource info ── */}
-        <div style={{ padding: '0 4px' }}>
-          {infoBlock}
+        <div style={{ padding: '0 4px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div>
+            <span style={{ fontFamily: F_SANS, fontSize: 10, letterSpacing: '0.24em', textTransform: 'uppercase', color: 'var(--arvo-gold)' }}>
+              {preview.visibility === 'paid' ? r.members : r.free}
+            </span>
+            <h1 style={{ fontFamily: F_DISPLAY, fontWeight: 400, fontSize: 'clamp(26px, 3vw, 34px)', color: 'var(--arvo-offwhite, #F6F3EC)', margin: '10px 0 0', lineHeight: 1.2 }}>
+              {preview.title}
+            </h1>
+          </div>
+
+          {preview.preview_image_url && (
+            // Faixa (banda), não a imagem inteira no tamanho original — altura fixa + object-fit: cover.
+            <div style={{ width: '100%', maxWidth: 420, height: 180, borderRadius: 10, overflow: 'hidden' }}>
+              <img src={preview.preview_image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+            </div>
+          )}
+
+          {preview.description && (
+            <p style={{ fontFamily: F_SANS, fontSize: 14.5, color: 'rgba(242,237,228,0.75)', lineHeight: 1.65, margin: 0, maxWidth: 420 }}>
+              {preview.description}
+            </p>
+          )}
+
+          {preview.visibility === 'paid' ? (
+            <p style={{ fontFamily: F_SANS, fontSize: 13, color: 'rgba(242,237,228,0.6)', margin: 0 }}>{r.membersSoon}</p>
+          ) : (
+            <p style={{ fontFamily: F_SANS, fontSize: 12.5, color: 'rgba(242,237,228,0.5)', letterSpacing: '0.04em', margin: 0 }}>
+              {r.unlockHint}
+            </p>
+          )}
         </div>
       </div>
     </div>

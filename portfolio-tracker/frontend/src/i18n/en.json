@@ -2777,7 +2777,8 @@
       "unpublishAction": "Move back to draft",
       "uploadCover": "Choose cover",
       "changeCover": "Change cover",
-      "uploadCoverError": "Failed to upload cover photo"
+      "uploadCoverError": "Failed to upload cover photo",
+      "dragHint": "Drag to reposition"
     },
     "gateEyebrow": "Resource access",
     "unlockHint": "Log in or create your account on the side to unlock."

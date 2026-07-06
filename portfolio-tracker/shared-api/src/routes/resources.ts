@@ -37,6 +37,7 @@ export interface ResourceRow {
   external_url: string | null
   content_md: string | null
   preview_image_url: string | null
+  cover_image_position: string | null
   visibility: 'free' | 'paid'
   kit_tag: string | null
   is_published: boolean
@@ -93,7 +94,7 @@ router.get('/public/:slug', async (req: Request, res: Response) => {
 
   const { data: resource } = await supabaseAdmin
     .from('resources')
-    .select('id, slug, title, description, resource_type, preview_image_url, visibility')
+    .select('id, slug, title, description, resource_type, preview_image_url, cover_image_position, visibility')
     .eq('slug', slug).eq('is_published', true)
     .maybeSingle()
 
@@ -107,13 +108,39 @@ router.get('/public/:slug', async (req: Request, res: Response) => {
 
 // ── Autenticado ──────────────────────────────────────────────────────────────
 
+// GET /api/resources/:slug — detalhe de um recurso pra quem já está logado
+// (página /recursos/:slug dentro do app, com header/nav normais — diferente
+// do preview público, que é só título/descrição pro gate de cadastro).
+router.get('/:slug', requireAuth, async (req, res: Response) => {
+  const userId = uid(req)
+  const { slug } = req.params
+  if (!SLUG_RE.test(slug)) { res.status(404).json({ error: 'Recurso não encontrado' }); return }
+
+  const { data: resource } = await supabaseAdmin
+    .from('resources')
+    .select('id, slug, title, description, resource_type, preview_image_url, cover_image_position, visibility')
+    .eq('slug', slug).eq('is_published', true)
+    .maybeSingle()
+
+  if (!resource) { res.status(404).json({ error: 'Recurso não encontrado' }); return }
+
+  const { data: events } = await supabaseAdmin
+    .from('resource_events')
+    .select('id')
+    .eq('user_id', userId).eq('event_type', 'unlock').eq('resource_id', resource.id)
+    .limit(1)
+
+  const { id, ...preview } = resource
+  res.json({ ...preview, unlocked: (events ?? []).length > 0 })
+})
+
 // GET /api/resources — listagem no app, com flag de já-liberado por usuário
 router.get('/', requireAuth, async (req, res: Response) => {
   const userId = uid(req)
 
   const { data: resources, error } = await supabaseAdmin
     .from('resources')
-    .select('id, slug, title, description, resource_type, preview_image_url, visibility, created_at')
+    .select('id, slug, title, description, resource_type, preview_image_url, cover_image_position, visibility, created_at')
     .eq('is_published', true)
     .order('sort_order', { ascending: true })
     .order('created_at', { ascending: false })
@@ -243,7 +270,7 @@ router.post('/admin', requireAuth, async (req, res: Response) => {
   if (!(await isAdmin(uid(req)))) { res.status(403).json({ error: 'admin only' }); return }
 
   const { slug, title, description, resource_type, file_path, external_url, content_md,
-          preview_image_url, visibility, kit_tag, is_published, sort_order } = req.body ?? {}
+          preview_image_url, cover_image_position, visibility, kit_tag, is_published, sort_order } = req.body ?? {}
 
   if (!slug || !SLUG_RE.test(slug)) { res.status(400).json({ error: 'Slug inválido (a-z, 0-9 e hífen, 3 a 80 caracteres)' }); return }
   if (!title) { res.status(400).json({ error: 'Título obrigatório' }); return }
@@ -251,16 +278,17 @@ router.post('/admin', requireAuth, async (req, res: Response) => {
 
   const { data, error } = await supabaseAdmin.from('resources').insert({
     slug, title,
-    description:       description ?? null,
+    description:          description ?? null,
     resource_type,
-    file_path:         file_path ?? null,
-    external_url:      external_url ?? null,
-    content_md:        content_md ?? null,
-    preview_image_url: preview_image_url ?? null,
-    visibility:        visibility === 'paid' ? 'paid' : 'free',
-    kit_tag:           kit_tag ?? null,
-    is_published:      !!is_published,
-    sort_order:        Number(sort_order) || 0,
+    file_path:            file_path ?? null,
+    external_url:         external_url ?? null,
+    content_md:           content_md ?? null,
+    preview_image_url:    preview_image_url ?? null,
+    cover_image_position: cover_image_position ?? '50% 50%',
+    visibility:           visibility === 'paid' ? 'paid' : 'free',
+    kit_tag:              kit_tag ?? null,
+    is_published:         !!is_published,
+    sort_order:           Number(sort_order) || 0,
   }).select().single()
 
   if (error) { res.status(500).json({ error: error.message }); return }
@@ -275,7 +303,7 @@ router.patch('/admin/:id', requireAuth, async (req, res: Response) => {
   if (!Number.isInteger(id)) { res.status(400).json({ error: 'id inválido' }); return }
 
   const allowed = ['slug', 'title', 'description', 'resource_type', 'file_path', 'external_url',
-                   'content_md', 'preview_image_url', 'visibility', 'kit_tag', 'is_published', 'sort_order'] as const
+                   'content_md', 'preview_image_url', 'cover_image_position', 'visibility', 'kit_tag', 'is_published', 'sort_order'] as const
   const patch: Record<string, unknown> = {}
   for (const key of allowed) if (key in (req.body ?? {})) patch[key] = req.body[key]
   if (typeof patch.slug === 'string' && !SLUG_RE.test(patch.slug)) { res.status(400).json({ error: 'Slug inválido' }); return }

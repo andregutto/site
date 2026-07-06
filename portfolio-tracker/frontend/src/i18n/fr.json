@@ -2777,7 +2777,8 @@
       "unpublishAction": "Remettre en brouillon",
       "uploadCover": "Choisir la couverture",
       "changeCover": "Changer la couverture",
-      "uploadCoverError": "Échec de l'envoi de la photo de couverture"
+      "uploadCoverError": "Échec de l'envoi de la photo de couverture",
+      "dragHint": "Faites glisser pour repositionner"
     },
     "gateEyebrow": "Accès à la ressource",
     "unlockHint": "Connectez-vous ou créez votre compte à côté pour débloquer."

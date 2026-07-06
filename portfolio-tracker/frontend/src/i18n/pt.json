@@ -2777,7 +2777,8 @@
       "unpublishAction": "Voltar a rascunho",
       "uploadCover": "Escolher capa",
       "changeCover": "Trocar capa",
-      "uploadCoverError": "Erro ao enviar a foto de capa"
+      "uploadCoverError": "Erro ao enviar a foto de capa",
+      "dragHint": "Arraste pra reposicionar"
     },
     "gateEyebrow": "Acesso ao recurso",
     "unlockHint": "Faça login ou crie sua conta ao lado para liberar."

@@ -79,6 +79,7 @@ import ConversationPage from './pages/messages/ConversationPage'
 import ResourcesPage from './pages/ResourcesPage'
 import ResourcesAdminPage from './pages/ResourcesAdminPage'
 import ResourcePublicPage from './pages/ResourcePublicPage'
+import ResourceDetailPage from './pages/ResourceDetailPage'
 
 function EmailConfirmGate({ email }: { email: string }) {
   const { signOut } = useAuth()
@@ -152,7 +153,13 @@ function AppRoutes() {
       <Route path="/voyage/invite/:token"    element={<AcceptTripInvitePage />} />
       <Route path="/finances/moments/invite/:token" element={<AcceptMomentInvitePage />} />
       <Route path="/trip/:token"             element={<PublicTripPage />} />
-      <Route path="/recursos/:slug"          element={<ResourcePublicPage />} />
+      {/* /recursos/:slug: só uma das duas existe por vez, dependendo de `user` —
+          gate de cadastro (fora do app) pra quem não tem sessão, ou a página de
+          detalhe dentro do AppLayout (com header/nav normais) pra quem já está
+          logado. Não dá pra ter as duas registradas ao mesmo tempo com o mesmo
+          path (React Router não permite path duplicado), então a troca acontece
+          aqui, condicionada ao próprio estado de auth já disponível neste componente. */}
+      {!user && <Route path="/recursos/:slug" element={<ResourcePublicPage />} />}
       <Route element={<ProtectedRoutes />}>
         <Route path="/dashboard"      element={<DashboardPage />} />
         <Route path="/assets"         element={<AssetsPage />} />
@@ -179,6 +186,7 @@ function AppRoutes() {
         <Route path="/people"         element={<PeoplePage />} />
         <Route path="/recursos"       element={<ResourcesPage />} />
         <Route path="/recursos/admin" element={<ResourcesAdminPage />} />
+        <Route path="/recursos/:slug" element={<ResourceDetailPage />} />
         <Route path="/messages"       element={<MessagesPage />} />
         <Route path="/messages/:conversationId" element={<ConversationPage />} />
         <Route path="/archived"       element={<Navigate to="/assets?view=archived" replace />} />

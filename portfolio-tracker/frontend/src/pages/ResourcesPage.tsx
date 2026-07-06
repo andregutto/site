@@ -1,11 +1,16 @@
 import { useState, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useI18n } from '../contexts/I18nContext'
 import { apiFetch } from '../lib/api'
 import ArvoLoader from '../components/ArvoLoader'
 
-// Listagem interna dos Recursos (lead magnets do canal). A versão pública com
-// gate de cadastro fica em /recursos/:slug (ResourcePublicPage).
+// Listagem interna dos Recursos (lead magnets do canal). Cada card só navega
+// pra /recursos/:slug — o desbloqueio de verdade acontece lá (ResourceDetailPage,
+// dentro do AppLayout), nunca aqui. Chamar unlock direto no card e depois
+// window.open() o link resultante cai no bloqueio de popup do navegador (o
+// gap assíncrono entre o clique e o window.open faz o browser não reconhecer
+// como ação direta do usuário); a versão pública com gate de cadastro fica em
+// /recursos/:slug pra quem não está logado (ResourcePublicPage).
 
 interface ResourceItem {
   slug: string
@@ -13,15 +18,9 @@ interface ResourceItem {
   description: string | null
   resource_type: 'file' | 'link' | 'content'
   preview_image_url: string | null
+  cover_image_position: string | null
   visibility: 'free' | 'paid'
   unlocked: boolean
-}
-
-interface UnlockResult {
-  type: 'file' | 'link' | 'content'
-  download_url?: string
-  external_url?: string
-  content_md?: string
 }
 
 function TypeIcon({ type }: { type: ResourceItem['resource_type'] }) {
@@ -45,14 +44,12 @@ function TypeIcon({ type }: { type: ResourceItem['resource_type'] }) {
 
 export default function ResourcesPage() {
   const { t } = useI18n()
-  const navigate = useNavigate()
   const r = t.resources
 
   const [items, setItems] = useState<ResourceItem[]>([])
   const [isAdmin, setIsAdmin] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [busySlug, setBusySlug] = useState<string | null>(null)
 
   useEffect(() => {
     apiFetch<{ resources: ResourceItem[]; is_admin: boolean }>('/resources')
@@ -61,29 +58,6 @@ export default function ResourcesPage() {
       .finally(() => setLoading(false))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
-
-  async function handleUnlock(item: ResourceItem) {
-    if (busySlug) return
-    setBusySlug(item.slug)
-    try {
-      const result = await apiFetch<UnlockResult>(`/resources/${item.slug}/unlock`, {
-        method: 'POST',
-        body: JSON.stringify({}),
-      })
-      setItems(prev => prev.map(i => i.slug === item.slug ? { ...i, unlocked: true } : i))
-      if (result.type === 'file' && result.download_url) {
-        window.location.assign(result.download_url)
-      } else if (result.type === 'link' && result.external_url) {
-        window.open(result.external_url, '_blank', 'noopener')
-      } else if (result.type === 'content') {
-        navigate(`/recursos/${item.slug}`)
-      }
-    } catch (ex: unknown) {
-      setError((ex as Error).message)
-    } finally {
-      setBusySlug(null)
-    }
-  }
 
   return (
     <div className="space-y-6">
@@ -115,11 +89,13 @@ export default function ResourcesPage() {
       ) : (
         <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
           {items.map(item => (
-            <div key={item.slug} className="rounded-2xl overflow-hidden flex flex-col" style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border-soft)' }}>
-              {item.preview_image_url && (
-                <Link to={`/recursos/${item.slug}`}>
-                  <img src={item.preview_image_url} alt="" style={{ width: '100%', height: 140, objectFit: 'cover', display: 'block' }} />
-                </Link>
+            <Link key={item.slug} to={`/recursos/${item.slug}`} className="rounded-2xl overflow-hidden flex flex-col" style={{ background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border-soft)', textDecoration: 'none' }}>
+              {item.preview_image_url ? (
+                <img src={item.preview_image_url} alt="" style={{ width: '100%', height: 140, objectFit: 'cover', objectPosition: item.cover_image_position ?? '50% 50%', display: 'block' }} />
+              ) : (
+                <div className="h-[140px] flex items-center justify-center" style={{ background: 'var(--arvo-black)' }}>
+                  <img src="/brand/logo/arvo-symbol-gold.svg" width="28" height="30" alt="" />
+                </div>
               )}
               <div className="p-4 flex flex-col gap-2 flex-1">
                 <div className="flex items-center gap-2" style={{ color: 'var(--arvo-fg-soft)' }}>
@@ -133,30 +109,21 @@ export default function ResourcesPage() {
                     </span>
                   )}
                 </div>
-                <Link to={`/recursos/${item.slug}`} style={{ textDecoration: 'none' }}>
-                  <h2 className="text-base" style={{ fontFamily: 'var(--arvo-font-body)', fontWeight: 600, color: 'var(--arvo-fg)', margin: 0 }}>{item.title}</h2>
-                </Link>
+                <h2 className="text-base" style={{ fontFamily: 'var(--arvo-font-body)', fontWeight: 600, color: 'var(--arvo-fg)', margin: 0 }}>{item.title}</h2>
                 {item.description && (
                   <p className="text-sm" style={{ color: 'var(--arvo-fg-soft)', margin: 0, lineHeight: 1.55, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                     {item.description}
                   </p>
                 )}
                 <div className="mt-auto pt-2">
-                  {item.visibility === 'paid' ? (
-                    <p className="text-xs" style={{ color: 'var(--arvo-fg-soft)', margin: 0 }}>{r.membersSoon}</p>
-                  ) : (
-                    <button
-                      onClick={() => handleUnlock(item)}
-                      disabled={busySlug === item.slug}
-                      className="w-full py-2.5 rounded-lg text-xs transition-opacity"
-                      style={{ fontFamily: 'var(--arvo-font-body)', letterSpacing: '0.12em', textTransform: 'uppercase', background: 'var(--arvo-black, #0D0D0D)', color: 'var(--arvo-offwhite, #F6F3EC)', border: 'none', cursor: 'pointer', opacity: busySlug === item.slug ? 0.6 : 1 }}
-                    >
-                      {busySlug === item.slug ? r.unlocking : item.resource_type === 'file' ? r.download : item.resource_type === 'link' ? r.open : r.view}
-                    </button>
-                  )}
+                  <span className="inline-block w-full text-center py-2.5 rounded-lg text-xs"
+                    style={{ fontFamily: 'var(--arvo-font-body)', letterSpacing: '0.12em', textTransform: 'uppercase', background: item.visibility === 'paid' ? 'transparent' : 'var(--arvo-black, #0D0D0D)', color: item.visibility === 'paid' ? 'var(--arvo-fg-soft)' : 'var(--arvo-offwhite, #F6F3EC)' }}
+                  >
+                    {item.visibility === 'paid' ? r.membersSoon : item.unlocked ? (item.resource_type === 'file' ? r.download : item.resource_type === 'link' ? r.open : r.view) : r.unlockCta}
+                  </span>
                 </div>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       )}

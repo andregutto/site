@@ -27,6 +27,7 @@ interface ResourceRow {
   external_url: string | null
   content_md: string | null
   preview_image_url: string | null
+  cover_image_position: string | null
   visibility: 'free' | 'paid'
   kit_tag: string | null
   is_published: boolean
@@ -42,6 +43,7 @@ type FormState = {
   external_url: string
   content_md: string
   preview_image_url: string
+  cover_image_position: string
   visibility: 'free' | 'paid'
   kit_tag: string
   is_published: boolean
@@ -49,8 +51,13 @@ type FormState = {
 
 const emptyForm: FormState = {
   slug: '', title: '', description: '', resource_type: 'file', file_path: '',
-  external_url: '', content_md: '', preview_image_url: '', visibility: 'free',
+  external_url: '', content_md: '', preview_image_url: '', cover_image_position: '50% 50%', visibility: 'free',
   kit_tag: '', is_published: false,
+}
+
+function parsePosition(raw: string): { x: number; y: number } {
+  const [x, y] = raw.split(' ').map(v => parseFloat(v))
+  return { x: isNaN(x) ? 50 : x, y: isNaN(y) ? 50 : y }
 }
 
 const card: React.CSSProperties = { background: 'var(--arvo-surface)', border: '1px solid var(--arvo-border)', borderRadius: 12 }
@@ -64,6 +71,8 @@ export default function ResourcesAdminPage() {
   const { user } = useAuth()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const coverInputRef = useRef<HTMLInputElement>(null)
+  const coverContainerRef = useRef<HTMLDivElement>(null)
+  const dragStart = useRef<{ mx: number; my: number; px: number; py: number } | null>(null)
 
   const [loading, setLoading] = useState(true)
   const [forbidden, setForbidden] = useState(false)
@@ -73,6 +82,7 @@ export default function ResourcesAdminPage() {
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [uploadingCover, setUploadingCover] = useState(false)
+  const [isDraggingCover, setIsDraggingCover] = useState(false)
   const [error, setError] = useState('')
   const [busyId, setBusyId] = useState<number | null>(null)
   const [copiedSlug, setCopiedSlug] = useState<string | null>(null)
@@ -101,8 +111,8 @@ export default function ResourcesAdminPage() {
       slug: item.slug, title: item.title, description: item.description ?? '',
       resource_type: item.resource_type, file_path: item.file_path ?? '',
       external_url: item.external_url ?? '', content_md: item.content_md ?? '',
-      preview_image_url: item.preview_image_url ?? '', visibility: item.visibility,
-      kit_tag: item.kit_tag ?? '', is_published: item.is_published,
+      preview_image_url: item.preview_image_url ?? '', cover_image_position: item.cover_image_position ?? '50% 50%',
+      visibility: item.visibility, kit_tag: item.kit_tag ?? '', is_published: item.is_published,
     })
     setEditingId(item.id)
     setError('')
@@ -141,7 +151,7 @@ export default function ResourcesAdminPage() {
         .upload(path, file, { upsert: true, contentType: file.type })
       if (upErr) throw upErr
       const { data } = supabase.storage.from('resource-covers').getPublicUrl(path)
-      setForm(f => ({ ...f, preview_image_url: normalizeStorageUrl(data.publicUrl) }))
+      setForm(f => ({ ...f, preview_image_url: normalizeStorageUrl(data.publicUrl), cover_image_position: '50% 50%' }))
     } catch (err: any) {
       setError(err?.message ?? ra.uploadCoverError ?? 'Erro ao enviar a foto de capa')
     } finally {
@@ -149,6 +159,46 @@ export default function ResourcesAdminPage() {
       if (coverInputRef.current) coverInputRef.current.value = ''
     }
   }
+
+  // Arrastar pra reposicionar a capa — mesmo mecanismo de FinancesMomentsPage
+  // (drag na própria imagem, objectPosition em %, salvo como "x% y%").
+  function onCoverDragStart(e: React.MouseEvent | React.TouchEvent) {
+    const point = 'touches' in e ? e.touches[0] : e
+    const { x, y } = parsePosition(form.cover_image_position)
+    dragStart.current = { mx: point.clientX, my: point.clientY, px: x, py: y }
+    setIsDraggingCover(true)
+    e.preventDefault()
+  }
+
+  function onCoverDragMove(e: MouseEvent | TouchEvent) {
+    if (!dragStart.current || !coverContainerRef.current) return
+    const point = 'touches' in e ? (e as TouchEvent).touches[0] : (e as MouseEvent)
+    const rect = coverContainerRef.current.getBoundingClientRect()
+    const dx = ((point.clientX - dragStart.current.mx) / rect.width) * 100
+    const dy = ((point.clientY - dragStart.current.my) / rect.height) * 100
+    const x = Math.min(100, Math.max(0, dragStart.current.px - dx))
+    const y = Math.min(100, Math.max(0, dragStart.current.py - dy))
+    setForm(f => ({ ...f, cover_image_position: `${x.toFixed(1)}% ${y.toFixed(1)}%` }))
+  }
+
+  function onCoverDragEnd() {
+    dragStart.current = null
+    setIsDraggingCover(false)
+  }
+
+  useEffect(() => {
+    if (!isDraggingCover) return
+    window.addEventListener('mousemove', onCoverDragMove)
+    window.addEventListener('mouseup', onCoverDragEnd)
+    window.addEventListener('touchmove', onCoverDragMove, { passive: false })
+    window.addEventListener('touchend', onCoverDragEnd)
+    return () => {
+      window.removeEventListener('mousemove', onCoverDragMove)
+      window.removeEventListener('mouseup', onCoverDragEnd)
+      window.removeEventListener('touchmove', onCoverDragMove)
+      window.removeEventListener('touchend', onCoverDragEnd)
+    }
+  }, [isDraggingCover])
 
   async function save() {
     if (saving) return
@@ -163,6 +213,7 @@ export default function ResourcesAdminPage() {
       external_url: form.resource_type === 'link' ? (form.external_url || null) : null,
       content_md: form.resource_type === 'content' ? (form.content_md || null) : null,
       preview_image_url: form.preview_image_url || null,
+      cover_image_position: form.cover_image_position || '50% 50%',
       visibility: form.visibility,
       kit_tag: form.kit_tag || null,
       is_published: form.is_published,
@@ -326,26 +377,60 @@ export default function ResourcesAdminPage() {
 
           <div>
             <label style={label}>{ra.fieldPreviewImage ?? 'Imagem de capa'}</label>
-            <div className="flex items-center gap-3 flex-wrap">
-              {form.preview_image_url && (
-                <img src={form.preview_image_url} alt="" style={{ width: 72, height: 48, objectFit: 'cover', borderRadius: 6, border: '1px solid var(--arvo-border)' }} />
-              )}
+            <input
+              ref={coverInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              style={{ display: 'none' }}
+              onChange={e => { const f = e.target.files?.[0]; if (f) handleCoverUpload(f) }}
+            />
+            {form.preview_image_url ? (
+              <div>
+                <div
+                  ref={coverContainerRef}
+                  className="relative w-full h-40 rounded-xl overflow-hidden select-none"
+                  style={{ cursor: isDraggingCover ? 'grabbing' : 'grab' }}
+                  onMouseDown={onCoverDragStart}
+                  onTouchStart={onCoverDragStart}
+                >
+                  <img
+                    src={form.preview_image_url}
+                    alt=""
+                    draggable={false}
+                    className="w-full h-full object-cover pointer-events-none"
+                    style={{ objectPosition: form.cover_image_position }}
+                  />
+                  {!isDraggingCover && (
+                    <div className="absolute top-2 left-1/2 -translate-x-1/2 pointer-events-none">
+                      <span className="text-[10px] text-white/70 bg-black/40 rounded px-2 py-0.5 tracking-wide">
+                        {ra.dragHint ?? 'Arraste pra reposicionar'}
+                      </span>
+                    </div>
+                  )}
+                </div>
+                <div className="flex justify-end gap-3 mt-1.5">
+                  <button type="button" onClick={() => coverInputRef.current?.click()} disabled={uploadingCover}
+                    style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, background: 'none', border: 'none', color: 'var(--arvo-fg-soft)', cursor: 'pointer' }}
+                  >
+                    {uploadingCover ? (ra.uploading ?? 'Enviando...') : (ra.changeCover ?? 'Trocar capa')}
+                  </button>
+                  <button type="button" onClick={() => setForm(f => ({ ...f, preview_image_url: '', cover_image_position: '50% 50%' }))}
+                    style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, background: 'none', border: 'none', color: 'var(--arvo-red)', cursor: 'pointer' }}
+                  >
+                    {ra.delete ?? 'Excluir'}
+                  </button>
+                </div>
+              </div>
+            ) : (
               <button
                 type="button"
                 onClick={() => coverInputRef.current?.click()}
                 disabled={uploadingCover}
                 style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, padding: '8px 16px', borderRadius: 8, border: '1px solid var(--arvo-border)', background: 'none', color: 'var(--arvo-fg)', cursor: 'pointer', opacity: uploadingCover ? 0.6 : 1 }}
               >
-                {uploadingCover ? (ra.uploading ?? 'Enviando...') : form.preview_image_url ? (ra.changeCover ?? 'Trocar capa') : (ra.uploadCover ?? 'Escolher capa')}
+                {uploadingCover ? (ra.uploading ?? 'Enviando...') : (ra.uploadCover ?? 'Escolher capa')}
               </button>
-              <input
-                ref={coverInputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                style={{ display: 'none' }}
-                onChange={e => { const f = e.target.files?.[0]; if (f) handleCoverUpload(f) }}
-              />
-            </div>
+            )}
           </div>
 
           <div>
