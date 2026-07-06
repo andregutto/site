@@ -228,16 +228,15 @@ export default function AppLayout() {
     location.pathname.startsWith('/diversification') ||
     location.pathname.startsWith('/institutions')
   const inFinances = location.pathname.startsWith('/finances')
-  // Patrimônio agrupa Investimentos + Finanças num item de nav só (eram duas
-  // abas separadas) — libera espaço na nav principal (mobile inclusive) pro
-  // item de Recursos, que antes ficava escondido no menu do avatar sem
-  // sentido lá (não é função administrativa).
-  const inPatrimonio = inInvestimentos || inFinances
   const inVoyage = location.pathname.startsWith('/voyage')
   const inCommunity = location.pathname.startsWith('/community')
   const inResources = location.pathname.startsWith('/resources')
+  // Aprender agrupa Comunidade + Recursos num item de nav só — Recursos ainda
+  // não tem volume pra justificar uma vertente própria (só volta a ser
+  // separado quando Aprendizado/lives entrar em cena).
+  const inAprender = inCommunity || inResources
 
-  const sectionAccent = inInvestimentos ? '#1B4FD8' : inFinances ? '#A36A52' : inVoyage ? '#D63B2F' : inCommunity ? '#E8A020' : inResources ? '#E8A020' : '#1F8A5B'
+  const sectionAccent = inInvestimentos ? '#1B4FD8' : inFinances ? '#A36A52' : inVoyage ? '#D63B2F' : inAprender ? '#E8A020' : '#1F8A5B'
 
   const investimentosItems = [
     { to: '/dashboard', label: t.nav.dashboard, end: true, icon: (
@@ -349,14 +348,38 @@ export default function AppLayout() {
     )},
   ]
 
+  // Sub-nav de Aprender: só um toggle Comunidade/Recursos (cada um mantém sua
+  // própria navegação interna — categorias, tópicos, admin — dentro da
+  // própria página; aqui é só a troca entre as duas seções).
+  const aprenderItems = [
+    { to: '/community', label: (t as any).nav?.community ?? 'Comunidade', end: false, icon: (
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
+        <circle cx="6" cy="5.5" r="2"/><circle cx="11.5" cy="6" r="1.6"/>
+        <path strokeLinecap="round" d="M2 13c0-1.9 1.6-3.4 4-3.4s4 1.5 4 3.4M10.5 8.6c1.9 0 3.5 1.2 3.5 3"/>
+      </svg>
+    )},
+    { to: '/resources', label: (t as any).nav?.resources ?? 'Recursos', end: false, icon: (
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3 1.5h6.5L13 5v9.5H3zM9 1.5V5h4"/>
+        <path strokeLinecap="round" d="M8 7.5v4M6 9.7l2 1.8 2-1.8"/>
+      </svg>
+    )},
+  ]
+
   // Categorias fixas da V1 (mesmo seed da migration 053_community.sql) — sem
   // busca assíncrona no header, é uma lista pequena e estável.
-  const activeSubItems = inPatrimonio ? [...investimentosItems, ...financesItems] : inVoyage ? voyageItems : []
+  const activeSubItems = inInvestimentos ? investimentosItems : inFinances ? financesItems : inVoyage ? voyageItems : inAprender ? aprenderItems : []
 
   const navItems = [
-    { to: '/dashboard', label: t.nav.investments, match: inPatrimonio, icon: (
+    { to: '/dashboard', label: t.nav.investments, match: inInvestimentos, icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.5l7.5-7.5 4 4L21 4.5M3 20.5h18" />
+      </svg>
+    )},
+    { to: '/finances', label: t.nav.finances, match: inFinances, icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+        <circle cx="12" cy="12" r="9.75" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.75v10.5M15 9.3c-.6-1.05-1.65-1.65-3-1.65-1.8 0-3.15 1.05-3.15 2.55S10.2 12.3 12 12.6s3.3 1.05 3.3 2.55-1.35 2.55-3.3 2.55c-1.35 0-2.55-.6-3.15-1.65" />
       </svg>
     )},
     { to: '/voyage', label: (t as any).nav?.voyage ?? 'Viagens', match: inVoyage, icon: (
@@ -365,18 +388,12 @@ export default function AppLayout() {
         <circle cx="12" cy="9" r="2.5"/>
       </svg>
     )},
-    { to: '/community', label: (t as any).nav?.community ?? 'Comunidade', match: inCommunity, icon: (
+    { to: '/community', label: (t as any).nav?.aprender ?? 'Aprender', match: inAprender, icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
         <circle cx="9" cy="8" r="3"/>
         <circle cx="17" cy="9" r="2.4"/>
         <path strokeLinecap="round" strokeLinejoin="round" d="M3.5 19.5v-1a5.5 5.5 0 0 1 11 0v1"/>
         <path strokeLinecap="round" strokeLinejoin="round" d="M15.5 13.2a4.3 4.3 0 0 1 5 4.2v1.1"/>
-      </svg>
-    )},
-    { to: '/resources', label: (t as any).nav?.resources ?? 'Recursos', match: inResources, icon: (
-      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 2.25h9.75L19.5 7.5v14.25H4.5z"/>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M14.25 2.25V7.5h5.25M9 12.75h6M9 16.5h4.5"/>
       </svg>
     )},
   ]
@@ -398,18 +415,18 @@ export default function AppLayout() {
             <span className="hidden sm:inline" style={{ fontFamily: "var(--arvo-font-display)", fontSize: 16, letterSpacing: '0.30em', textIndent: '0.30em', color: 'var(--arvo-fg)', lineHeight: 1 }}>arvo</span>
           </Link>
           <div className="hidden sm:flex" style={{ alignItems: 'center', gap: 12, paddingLeft: 14, borderLeft: '1px solid var(--arvo-border)', height: 24 }}>
-            <span style={{ fontFamily: "var(--arvo-font-display)", fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: inVoyage ? '#D63B2F' : inCommunity || inResources ? '#E8A020' : 'var(--arvo-fg-soft)', lineHeight: 1, transition: 'color 280ms' }}>
-              {inVoyage ? 'Voyage' : inCommunity ? 'Comunidade' : inResources ? 'Recursos' : 'Patrimônio'}
+            <span style={{ fontFamily: "var(--arvo-font-display)", fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: inVoyage ? '#D63B2F' : inAprender ? '#E8A020' : 'var(--arvo-fg-soft)', lineHeight: 1, transition: 'color 280ms' }}>
+              {inVoyage ? 'Voyage' : inAprender ? 'Aprender' : 'Capital'}
             </span>
           </div>
 
           {/* Desktop — section tabs (pill style) */}
           <nav className="hidden sm:flex flex-1 justify-center gap-1">
             {([
-              { to: '/dashboard',    label: t.nav.investments, active: inPatrimonio },
+              { to: '/dashboard',    label: t.nav.investments,                         active: inInvestimentos },
+              { to: '/finances',     label: t.nav.finances,                            active: inFinances },
               { to: '/voyage',       label: (t as any).nav?.voyage ?? 'Viagens',       active: inVoyage },
-              { to: '/community',    label: (t as any).nav?.community ?? 'Comunidade', active: inCommunity },
-              { to: '/resources',    label: (t as any).nav?.resources ?? 'Recursos',   active: inResources },
+              { to: '/community',    label: (t as any).nav?.aprender ?? 'Aprender',    active: inAprender },
             ] as Array<{ to: string; label: string; active: boolean }>).map(({ to, label, active }) => (
               <NavLink
                 key={to} to={to}
@@ -428,7 +445,7 @@ export default function AppLayout() {
                 há valores monetários na tela. Em qualquer outra seção (Voyage,
                 Comunidade, Mensagens, Pessoas, Perfil, Notificações...) é um ícone
                 a mais sem função, então mostra só onde realmente serve. */}
-            {(inPatrimonio || location.pathname.startsWith('/home')) && (
+            {(inInvestimentos || inFinances || location.pathname.startsWith('/home')) && (
             <button
               onClick={toggleHideValues}
               title={hideValues ? (t.common.showValues ?? 'Mostrar valores') : (t.common.hideValues ?? 'Ocultar valores')}
