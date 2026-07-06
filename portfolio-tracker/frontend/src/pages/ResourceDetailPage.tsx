@@ -130,7 +130,7 @@ export default function ResourceDetailPage() {
   const tierLabel = resource.visibility === 'free' ? r.free : resource.visibility === 'plus' ? r.plus : r.beta
 
   return (
-    <div className="py-6 space-y-4" style={{ maxWidth: 640 }}>
+    <div className="py-6 space-y-4" style={{ maxWidth: 640, margin: '0 auto' }}>
       <button
         onClick={() => navigate('/recursos')}
         style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)', padding: 0 }}
