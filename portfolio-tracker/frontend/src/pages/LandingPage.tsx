@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, type ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import GoogleLogo from '../components/GoogleLogo'
 import { useI18n } from '../contexts/I18nContext'
 import { supabase } from '../lib/supabase'
 import LanguageSelector from '../components/LanguageSelector'
@@ -472,7 +473,7 @@ function PhoneMock({ l }: { l: Record<string, string> }) {
 }
 
 export default function LandingPage() {
-  const { signIn } = useAuth()
+  const { signIn, signInWithGoogle } = useAuth()
   const navigate = useNavigate()
   const { t } = useI18n()
   const l = (t as unknown as Record<string, Record<string, string>>).landing ?? {}
@@ -485,6 +486,7 @@ export default function LandingPage() {
   const [loginLoading, setLoginLoading] = useState(false)
   const [loginResending, setLoginResending] = useState(false)
   const [loginResent, setLoginResent] = useState(false)
+  const [googleLoading, setGoogleLoading] = useState(false)
   const [mobileLoginOpen, setMobileLoginOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const [liveStep, setLiveStep] = useState(0)
@@ -556,6 +558,18 @@ export default function LandingPage() {
     }
   }
 
+  async function handleGoogle() {
+    if (googleLoading) return
+    setLoginErr('')
+    setGoogleLoading(true)
+    try {
+      await signInWithGoogle()
+    } catch (err) {
+      setLoginErr(err instanceof Error ? err.message : 'Erro desconhecido')
+      setGoogleLoading(false)
+    }
+  }
+
   async function handleResendFromOverlay() {
     if (!loginEmail || loginResending || loginResent) return
     setLoginResending(true)
@@ -567,6 +581,22 @@ export default function LandingPage() {
   const headerOpaque = scrolled || menuOpen
   const BORDER = 'rgba(13,13,13,0.09)'
   const F_SANS = "'DM Sans', system-ui, sans-serif"
+
+  // Shared between the desktop header dropdown and the mobile drawer's mini login form
+  const googleLoginBlock = (
+    <>
+      <button type="button" onClick={handleGoogle} disabled={googleLoading}
+        style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px 0', fontFamily: F_SANS, fontSize: 12, color: DARK, background: '#fff', border: `1px solid ${BORDER}`, borderRadius: 999, cursor: googleLoading ? 'not-allowed' : 'pointer', opacity: googleLoading ? 0.6 : 1 }}>
+        <GoogleLogo size={14} />
+        {t.login.continueWithGoogle}
+      </button>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ flex: 1, height: 1, background: BORDER }} />
+        <span style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(13,13,13,.4)' }}>{t.login.orDivider}</span>
+        <div style={{ flex: 1, height: 1, background: BORDER }} />
+      </div>
+    </>
+  )
 
   const NAV = [
     ['#produto', l.navConcept],
@@ -615,6 +645,9 @@ export default function LandingPage() {
               {loginOpen && (
                 <div style={{ position: 'absolute', top: 'calc(100% + 12px)', right: 0, background: '#fff', border: `1px solid ${BORDER}`, borderRadius: 10, boxShadow: '0 8px 32px rgba(0,0,0,0.10)', padding: '24px 22px', width: 288, zIndex: 10 }}>
                   <p style={{ fontFamily: "'Playfair Display', serif", fontSize: 17, color: DARK, marginBottom: 18 }}>{l.loginTitle}</p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 12 }}>
+                    {googleLoginBlock}
+                  </div>
                   <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                     <input type="email" required autoFocus placeholder="E-mail" value={loginEmail} onChange={e => setLoginEmail(e.target.value)}
                       style={{ fontFamily: F_SANS, fontSize: 13, padding: '10px 12px', border: `1px solid ${BORDER}`, borderRadius: 4, outline: 'none', color: DARK, background: '#fff', width: '100%', boxSizing: 'border-box' }} />
@@ -694,6 +727,7 @@ export default function LandingPage() {
             ) : (
               <form onSubmit={async e => { await handleLogin(e); if (!loginErr) setMenuOpen(false) }}
                 style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {googleLoginBlock}
                 <input type="email" required autoFocus placeholder="E-mail" value={loginEmail} onChange={e => setLoginEmail(e.target.value)}
                   style={{ fontFamily: F_SANS, fontSize: 13, padding: '11px 12px', border: `1px solid ${BORDER}`, borderRadius: 4, color: DARK, background: '#fff', boxSizing: 'border-box' as const }} />
                 <input type="password" required placeholder="Senha" value={loginPass} onChange={e => setLoginPass(e.target.value)}
