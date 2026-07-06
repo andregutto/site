@@ -64,7 +64,12 @@ const card: React.CSSProperties = { background: 'var(--arvo-surface)', border: '
 const label: React.CSSProperties = { fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-soft)', letterSpacing: '0.04em', display: 'block', marginBottom: 5 }
 const input: React.CSSProperties = { fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, padding: '8px 12px', border: '1px solid var(--arvo-border)', borderRadius: 8, background: 'var(--arvo-bg)', color: 'var(--arvo-fg)', width: '100%', boxSizing: 'border-box' }
 
-export default function ResourcesAdminPage() {
+interface Props {
+  onRegisterNew?: (fn: () => void) => void
+  onEditingChange?: (editing: boolean) => void
+}
+
+export default function ResourcesAdminPage({ onRegisterNew, onEditingChange }: Props) {
   const { t } = useI18n()
   const ra = (t as any).resources?.admin ?? {}
   const navigate = useNavigate()
@@ -105,6 +110,10 @@ export default function ResourcesAdminPage() {
     setEditingId('new')
     setError('')
   }
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { onRegisterNew?.(startCreate) }, [])
+  useEffect(() => { onEditingChange?.(editingId !== null) }, [editingId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function startEdit(item: ResourceRow) {
     setForm({
@@ -273,17 +282,6 @@ export default function ResourcesAdminPage() {
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center justify-end gap-3">
-        {editingId === null && (
-          <button
-            onClick={startCreate}
-            style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, padding: '8px 18px', borderRadius: 999, border: 'none', background: OCRE, color: '#1a1200', cursor: 'pointer', whiteSpace: 'nowrap' }}
-          >
-            {ra.newResource ?? '+ Novo recurso'}
-          </button>
-        )}
-      </div>
-
       {editingId !== null ? (
         <section style={{ ...card, padding: 20 }} className="space-y-4">
           <h2 style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 17, color: 'var(--arvo-fg)' }}>
@@ -454,43 +452,57 @@ export default function ResourcesAdminPage() {
           </div>
         </section>
       ) : (
-        <section style={card}>
+        <div className="space-y-3">
           {items.map(item => (
-            <div key={item.id} style={{ padding: '14px 16px', borderBottom: '1px solid var(--arvo-border-soft, var(--arvo-border))' }}>
-              <div className="flex items-center gap-3 flex-wrap">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, fontWeight: 600, color: 'var(--arvo-fg)' }}>{item.title}</span>
-                    <span style={{ fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', color: item.is_published ? 'var(--arvo-green, #1F8A5B)' : 'var(--arvo-fg-faint)' }}>
-                      {item.is_published ? (ra.publishedYes ?? 'Publicado').split(' ')[0] : (ra.publishedNo ?? 'Rascunho').split(' ')[0]}
-                    </span>
-                  </div>
-                  <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-soft)' }}>/resources/{item.slug}</span>
+            <div key={item.id} className="rounded-2xl border shadow-sm overflow-hidden" style={{ background: 'var(--arvo-surface)', borderColor: 'var(--arvo-border)' }}>
+              {item.preview_image_url ? (
+                <div className="h-28 overflow-hidden relative">
+                  <img
+                    src={item.preview_image_url}
+                    alt={item.title}
+                    className="w-full h-full object-cover"
+                    style={{ objectPosition: item.cover_image_position ?? '50% 50%' }}
+                  />
                 </div>
-                <div style={{ fontSize: 11, color: 'var(--arvo-fg-soft)', whiteSpace: 'nowrap' }}>
+              ) : (
+                <div className="h-20 flex items-center justify-center" style={{ background: 'var(--arvo-black)' }}>
+                  <img src="/brand/logo/arvo-symbol-gold.svg" width="24" height="26" alt="" />
+                </div>
+              )}
+
+              <div style={{ padding: '14px 16px' }}>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="min-w-0 truncate" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, fontWeight: 600, color: 'var(--arvo-fg)' }}>{item.title}</span>
+                  <span className="shrink-0" style={{ fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', color: item.is_published ? 'var(--arvo-green, #1F8A5B)' : 'var(--arvo-fg-faint)' }}>
+                    {item.is_published ? (ra.publishedYes ?? 'Publicado').split(' ')[0] : (ra.publishedNo ?? 'Rascunho').split(' ')[0]}
+                  </span>
+                </div>
+                <p className="truncate" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-soft)', margin: '2px 0 0' }}>/resources/{item.slug}</p>
+                <p style={{ fontSize: 11, color: 'var(--arvo-fg-soft)', margin: '6px 0 0' }}>
                   {item.stats.views} {ra.views ?? 'views'} · {item.stats.unlocks} {ra.unlocks ?? 'liberações'} · {item.stats.downloads} {ra.downloads ?? 'downloads'} · {item.stats.signups} {ra.signups ?? 'cadastros'}
+                </p>
+
+                <div className="flex items-center gap-2 flex-wrap" style={{ marginTop: 12 }}>
+                  <button onClick={() => copyLink(item.slug)} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, padding: '4px 12px', borderRadius: 999, border: '1px solid var(--arvo-border)', background: 'none', color: 'var(--arvo-fg-soft)', cursor: 'pointer' }}>
+                    {copiedSlug === item.slug ? (ra.linkCopied ?? 'Link copiado!') : (ra.copyLink ?? 'Copiar link público')}
+                  </button>
+                  <button onClick={() => startEdit(item)} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, padding: '4px 12px', borderRadius: 999, border: '1px solid var(--arvo-border)', background: 'none', color: 'var(--arvo-fg-soft)', cursor: 'pointer' }}>
+                    {ra.editResource ?? 'Editar'}
+                  </button>
+                  <button onClick={() => togglePublish(item)} disabled={busyId === item.id} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, padding: '4px 12px', borderRadius: 999, border: `1px solid ${item.is_published ? 'var(--arvo-border)' : OCRE}`, background: item.is_published ? 'none' : 'rgba(232,160,32,0.08)', color: item.is_published ? 'var(--arvo-fg-soft)' : OCRE, cursor: 'pointer', opacity: busyId === item.id ? 0.5 : 1 }}>
+                    {item.is_published ? (ra.unpublishAction ?? 'Voltar a rascunho') : (ra.publishAction ?? 'Publicar agora')}
+                  </button>
+                  <button onClick={() => remove(item)} disabled={busyId === item.id} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, padding: '4px 12px', borderRadius: 999, border: '1px solid var(--arvo-border)', background: 'none', color: 'var(--arvo-red, #D63B2F)', cursor: 'pointer', opacity: busyId === item.id ? 0.5 : 1 }}>
+                    {ra.delete ?? 'Excluir'}
+                  </button>
                 </div>
-              </div>
-              <div className="flex items-center gap-2 flex-wrap" style={{ marginTop: 10 }}>
-                <button onClick={() => copyLink(item.slug)} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, padding: '4px 12px', borderRadius: 999, border: '1px solid var(--arvo-border)', background: 'none', color: 'var(--arvo-fg-soft)', cursor: 'pointer' }}>
-                  {copiedSlug === item.slug ? (ra.linkCopied ?? 'Link copiado!') : (ra.copyLink ?? 'Copiar link público')}
-                </button>
-                <button onClick={() => startEdit(item)} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, padding: '4px 12px', borderRadius: 999, border: '1px solid var(--arvo-border)', background: 'none', color: 'var(--arvo-fg-soft)', cursor: 'pointer' }}>
-                  {ra.editResource ?? 'Editar'}
-                </button>
-                <button onClick={() => togglePublish(item)} disabled={busyId === item.id} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, padding: '4px 12px', borderRadius: 999, border: `1px solid ${item.is_published ? 'var(--arvo-border)' : OCRE}`, background: item.is_published ? 'none' : 'rgba(232,160,32,0.08)', color: item.is_published ? 'var(--arvo-fg-soft)' : OCRE, cursor: 'pointer', opacity: busyId === item.id ? 0.5 : 1 }}>
-                  {item.is_published ? (ra.unpublishAction ?? 'Voltar a rascunho') : (ra.publishAction ?? 'Publicar agora')}
-                </button>
-                <button onClick={() => remove(item)} disabled={busyId === item.id} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, padding: '4px 12px', borderRadius: 999, border: '1px solid var(--arvo-border)', background: 'none', color: 'var(--arvo-red, #D63B2F)', cursor: 'pointer', opacity: busyId === item.id ? 0.5 : 1, marginLeft: 'auto' }}>
-                  {ra.delete ?? 'Excluir'}
-                </button>
               </div>
             </div>
           ))}
           {items.length === 0 && (
-            <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-soft)', padding: 16 }}>{ra.empty ?? 'Nenhum recurso criado ainda'}</p>
+            <p style={{ ...card, fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-soft)', padding: 16 }}>{ra.empty ?? 'Nenhum recurso criado ainda'}</p>
           )}
-        </section>
+        </div>
       )}
     </div>
   )
