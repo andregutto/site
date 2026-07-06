@@ -104,8 +104,7 @@ const CSS = `
   .lv3 .ph-nav span{font-family:'Tenor Sans',serif;font-size:9.5px;letter-spacing:.28em;color:#0D0D0D}
   .lv3 .ph-nav .av{margin-left:auto;width:19px;height:19px;font-size:6.5px}
   .lv3 .ph-screens{position:absolute;inset:0}
-  .lv3 .ph-s{position:absolute;inset:0;opacity:0;z-index:1;transition:opacity .9s cubic-bezier(.22,.61,.36,1);padding:68px 12px 14px;display:flex;flex-direction:column;gap:8px;background:#F4F4F4}
-  .lv3 .ph-s.prev{opacity:1;z-index:2;transition:none}
+  .lv3 .ph-s{position:absolute;inset:0;opacity:0;z-index:1;transition:opacity .35s cubic-bezier(.22,.61,.36,1);padding:68px 12px 14px;display:flex;flex-direction:column;gap:8px;background:#F4F4F4}
   .lv3 .ph-s.on{opacity:1;z-index:3}
   .lv3 .ph-tag{font-size:8px;font-weight:600;letter-spacing:.24em;text-transform:uppercase;color:rgba(13,13,13,.55);margin:0}
   .lv3 .ph-title{font-family:'Tenor Sans',serif;font-size:16px;color:#0D0D0D;margin:1px 0 0}
@@ -385,15 +384,19 @@ function LaptopMock({ l }: { l: Record<string, string> }) {
 
 // Phone with 3 cycling screens (hero)
 function PhoneMock({ l }: { l: Record<string, string> }) {
-  const [cur, setCur] = useState(0)
-  const [prev, setPrev] = useState(-1)
+  const [idx, setIdx] = useState(0)
+  const [visible, setVisible] = useState(true)
   useEffect(() => {
     const id = setInterval(() => {
-      setCur(c => { setPrev(c); return (c + 1) % 3 })
+      setVisible(false)
+      setTimeout(() => {
+        setIdx(i => (i + 1) % 3)
+        setVisible(true)
+      }, 380)
     }, 3600)
     return () => clearInterval(id)
   }, [])
-  const cls = (i: number) => `ph-s${i === cur ? ' on' : i === prev ? ' prev' : ''}`
+  const cls = (i: number) => `ph-s${i === idx && visible ? ' on' : ''}`
   return (
     <div className="phone">
       <div className="ph-island" />
@@ -467,7 +470,7 @@ function PhoneMock({ l }: { l: Record<string, string> }) {
           </div>
         </div>
       </div>
-      <div className="ph-dots">{[0, 1, 2].map(i => <i key={i} className={i === cur ? 'on' : ''} />)}</div>
+      <div className="ph-dots">{[0, 1, 2].map(i => <i key={i} className={i === idx ? 'on' : ''} />)}</div>
     </div>
   )
 }
@@ -623,9 +626,9 @@ export default function LandingPage() {
             <span style={{ fontFamily: "'Tenor Sans', serif", fontSize: 15, letterSpacing: '0.30em', textIndent: '0.30em', color: headerOpaque ? DARK : '#fff', lineHeight: 1, transition: 'color .4s' }}>arvo</span>
           </a>
 
-          <nav className="hidden md:flex" style={{ gap: 28 }}>
+          <nav className="hidden lg:flex" style={{ gap: 28 }}>
             {NAV.map(([href, label]) => (
-              <a key={href} href={href} style={{ fontSize: 11.5, letterSpacing: '0.12em', textTransform: 'uppercase', color: headerOpaque ? 'rgba(13,13,13,.55)' : 'rgba(255,255,255,.7)', transition: 'color .3s' }}
+              <a key={href} href={href} style={{ fontSize: 11.5, letterSpacing: '0.12em', textTransform: 'uppercase', whiteSpace: 'nowrap', color: headerOpaque ? 'rgba(13,13,13,.55)' : 'rgba(255,255,255,.7)', transition: 'color .3s' }}
                 onMouseEnter={e => (e.currentTarget.style.color = headerOpaque ? DARK : '#fff')}
                 onMouseLeave={e => (e.currentTarget.style.color = headerOpaque ? 'rgba(13,13,13,.55)' : 'rgba(255,255,255,.7)')}
               >{label}</a>
@@ -634,12 +637,12 @@ export default function LandingPage() {
 
           <div style={{ flex: 1 }} />
 
-          <div className="hidden md:flex" style={{ alignItems: 'center', gap: 22 }}>
+          <div className="hidden lg:flex" style={{ alignItems: 'center', gap: 22 }}>
             <div className={headerOpaque ? '' : 'dark'}><LanguageSelector /></div>
             <div style={{ width: 1, height: 14, background: headerOpaque ? BORDER : 'rgba(255,255,255,0.20)' }} />
             <div ref={loginRef} style={{ position: 'relative' }}>
               <button onClick={() => { setLoginOpen(o => !o); setLoginErr('') }}
-                style={{ fontSize: 12.5, color: headerOpaque ? 'rgba(13,13,13,.75)' : 'rgba(255,255,255,.85)', background: 'none', border: 'none', borderBottom: `1px solid ${headerOpaque ? 'rgba(13,13,13,.25)' : 'rgba(255,255,255,.3)'}`, cursor: 'pointer', padding: '0 0 2px', fontFamily: F_SANS, transition: 'color .4s' }}>
+                style={{ fontSize: 12.5, whiteSpace: 'nowrap', color: headerOpaque ? 'rgba(13,13,13,.75)' : 'rgba(255,255,255,.85)', background: 'none', border: 'none', borderBottom: `1px solid ${headerOpaque ? 'rgba(13,13,13,.25)' : 'rgba(255,255,255,.3)'}`, cursor: 'pointer', padding: '0 0 2px', fontFamily: F_SANS, transition: 'color .4s' }}>
                 {l.enterBtn}
               </button>
               {loginOpen && (
@@ -685,13 +688,13 @@ export default function LandingPage() {
               )}
             </div>
             <Link to="/login?mode=register"
-              style={{ fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', padding: '10px 24px', borderRadius: 999, background: headerOpaque ? DARK : 'transparent', color: headerOpaque ? '#fff' : GOLD, border: headerOpaque ? '1px solid transparent' : '1px solid rgba(200,184,154,0.55)', transition: 'all .4s' }}>
+              style={{ fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', whiteSpace: 'nowrap', padding: '10px 24px', borderRadius: 999, background: headerOpaque ? DARK : 'transparent', color: headerOpaque ? '#fff' : GOLD, border: headerOpaque ? '1px solid transparent' : '1px solid rgba(200,184,154,0.55)', transition: 'all .4s' }}>
               {l.createBtn}
             </Link>
           </div>
 
           {/* Mobile hamburger */}
-          <button className="md:hidden" onClick={() => setMenuOpen(o => !o)} aria-label="Menu"
+          <button className="lg:hidden" onClick={() => setMenuOpen(o => !o)} aria-label="Menu"
             style={{ background: 'none', border: 'none', cursor: 'pointer', color: headerOpaque ? DARK : '#fff', padding: 8, lineHeight: 0, marginRight: -8, transition: 'color .3s' }}>
             <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
               {menuOpen
@@ -703,7 +706,7 @@ export default function LandingPage() {
 
         {/* Mobile drawer */}
         {menuOpen && (
-          <div className="md:hidden" style={{ background: 'rgba(255,255,255,0.98)', borderTop: `1px solid ${BORDER}`, padding: '8px 24px 20px' }}>
+          <div className="lg:hidden" style={{ background: 'rgba(255,255,255,0.98)', borderTop: `1px solid ${BORDER}`, padding: '8px 24px 20px' }}>
             {NAV.map(([href, label]) => (
               <a key={href} href={href} onClick={() => setMenuOpen(false)}
                 style={{ display: 'flex', alignItems: 'center', padding: '15px 0', fontSize: 12, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(13,13,13,.55)', borderBottom: `1px solid ${BORDER}` }}>
