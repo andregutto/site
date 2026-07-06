@@ -51,10 +51,11 @@ const pillStyle: React.CSSProperties = { display: 'inline-flex', alignItems: 'ce
 
 // Card com capa (viagem e momento têm o mesmo formato): miniatura à esquerda +
 // rótulo/título/data. Um componente só pros dois — sem duplicar.
-function CoverCard({ to, coverUrl, accent, label, title, subtitle, fallbackIcon }: {
+function CoverCard({ to, coverUrl, accent, icon, label, title, subtitle, fallbackIcon }: {
   to: string
   coverUrl: string | null
   accent: string // "r,g,b" pro gradiente de fallback
+  icon?: React.ReactNode // selo colorido ao lado do rótulo — identifica a vertical mesmo quando há capa
   label: string
   title: string
   subtitle?: string
@@ -70,7 +71,7 @@ function CoverCard({ to, coverUrl, accent, label, title, subtitle, fallbackIcon 
         {!coverUrl && fallbackIcon}
       </div>
       <div style={{ flex: 1, minWidth: 0, padding: '16px 18px' }}>
-        <p style={cardLabel}>{label}</p>
+        <p style={{ ...cardLabel, display: 'flex', alignItems: 'center', gap: 6 }}>{icon}{label}</p>
         <p style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 18, color: 'var(--arvo-fg)', marginTop: 6, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{title}</p>
         {subtitle && <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)', marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{subtitle}</p>}
       </div>
@@ -414,6 +415,7 @@ export default function HomePage() {
               to={`/voyage/${data.next_trip.id}`}
               coverUrl={data.next_trip.cover_image_url}
               accent="214,59,47"
+              icon={<svg width="13" height="13" fill="var(--arvo-red)" viewBox="0 0 24 24"><path d="M12 2c-3.9 0-7 3.1-7 7 0 5.2 7 13 7 13s7-7.8 7-13c0-3.9-3.1-7-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5Z" /></svg>}
               label={data.next_trip.ongoing ? (th.tripNow ?? 'Viagem em andamento') : data.next_trip.past ? (th.tripLast ?? 'Última viagem') : (th.tripNext ?? 'Próxima viagem')}
               title={data.next_trip.title}
               subtitle={`${data.next_trip.destination ? data.next_trip.destination + ' · ' : ''}${fmtDay(data.next_trip.start_date)}${data.next_trip.end_date ? ' – ' + fmtDay(data.next_trip.end_date) : ''}`}
@@ -439,16 +441,17 @@ export default function HomePage() {
           )}
 
           {/* Recursos — o mais recente (ou o próximo ainda não liberado) do canal, mesmo
-              endpoint/tipo da página /recursos. Mesmo formato de capa da Viagem/Momento,
+              endpoint/tipo da página /resources. Mesmo formato de capa da Viagem/Momento,
               pra ficar no mesmo idioma visual da coluna em vez de uma lista de texto solta. */}
           {resources[0] && (() => {
             const res = resources[0]
             const tierLabel = res.visibility === 'free' ? t.resources.free : res.visibility === 'plus' ? t.resources.plus : t.resources.beta
             return (
               <CoverCard
-                to={`/recursos/${res.slug}`}
+                to={`/resources/${res.slug}`}
                 coverUrl={res.preview_image_url}
-                accent={GOLD_RGB}
+                accent="163,106,82"
+                icon={<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="var(--arvo-terracotta)" strokeWidth={1.6}><path strokeLinecap="round" strokeLinejoin="round" d="M6.5 9.5l3-3M7.5 4.5l1-1a2.5 2.5 0 013.5 3.5l-1 1M8.5 11.5l-1 1a2.5 2.5 0 01-3.5-3.5l1-1" /></svg>}
                 label={t.resources.title}
                 title={res.title}
                 subtitle={res.unlocked ? t.resources.unlocked : tierLabel}
