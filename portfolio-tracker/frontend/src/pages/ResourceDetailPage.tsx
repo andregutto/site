@@ -94,13 +94,17 @@ export default function ResourceDetailPage() {
     }
   }
 
-  // Voltou logado do Google (veio direto pra esta URL, ver AuthContext.signInWithGoogle
-  // e o handleGoogle da ResourcePublicPage) → libera sozinho.
+  // Auto-libera sem precisar clicar de novo quando: (a) voltou logado do Google
+  // direto pra esta URL (ver AuthContext.signInWithGoogle e handleGoogle da
+  // ResourcePublicPage), ou (b) o usuário já liberou este recurso antes
+  // (resource.unlocked) — nesse caso não faz sentido reexibir o botão "Liberar".
   useEffect(() => {
     if (!resource) return
     const pending = sessionStorage.getItem('pending_resource_slug')
     if (pending && pending === slug) {
       sessionStorage.removeItem('pending_resource_slug')
+      handleUnlock()
+    } else if (resource.unlocked) {
       handleUnlock()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
