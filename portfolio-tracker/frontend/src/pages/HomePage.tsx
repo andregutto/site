@@ -8,7 +8,7 @@ import { PageLoader } from '../components/ArvoLoader'
 import { useSetupChecklist } from '../components/SetupChecklist'
 import { useActiveFriends, type ActiveFriend } from '../hooks/useActiveFriends'
 import { PairMomentModal, GroupExpensesModal, type MomentBalance } from './PeoplePage'
-import { TypeIcon, type ResourceItem } from './ResourcesPage'
+import type { ResourceItem } from './ResourcesPage'
 import { usePerformanceDaily, usePerformanceBenchmarks } from '../hooks/usePortfolio'
 import { projectMonthExpenses, type ProjectionMonth } from '../lib/monthProjection'
 import { addMonths, dailyComparisonSeries } from '../lib/performanceComparison'
@@ -150,7 +150,7 @@ export default function HomePage() {
       .then(setSplitGroups)
       .catch(() => {})
     apiFetch<{ resources: ResourceItem[] }>('/resources')
-      .then(({ resources }) => setResources(resources.filter(r => !r.unlocked).concat(resources.filter(r => r.unlocked)).slice(0, 3)))
+      .then(({ resources }) => setResources(resources.filter(r => !r.unlocked).concat(resources.filter(r => r.unlocked)).slice(0, 1)))
       .catch(() => {})
   }, [])
 
@@ -436,29 +436,24 @@ export default function HomePage() {
             </div>
           )}
 
-          {/* Recursos — planilhas/guias do canal, mesmo endpoint da página /recursos. Pequeno
-              e neutro aqui (sem cor própria): a Hoje já reserva cor pra cada vertical de verdade. */}
-          {resources.length > 0 && (
-            <div style={{ ...card, padding: '16px 18px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <p style={cardLabel}>{t.resources.title}</p>
-                <Link to="/recursos" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-muted)', textDecoration: 'none' }}>{th.seeAll ?? 'Ver tudo'} →</Link>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 11 }}>
-                {resources.slice(0, 2).map(res => (
-                  <Link
-                    key={res.slug}
-                    to={`/recursos/${res.slug}`}
-                    className="flex items-center gap-3"
-                    style={{ textDecoration: 'none' }}
-                  >
-                    <span style={{ color: 'var(--arvo-fg-soft)', display: 'inline-flex', flexShrink: 0 }}><TypeIcon type={res.resource_type} /></span>
-                    <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{res.title}</span>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          )}
+          {/* Recursos — o mais recente (ou o próximo ainda não liberado) do canal, mesmo
+              endpoint/tipo da página /recursos. Mesmo formato de capa da Viagem/Momento,
+              pra ficar no mesmo idioma visual da coluna em vez de uma lista de texto solta. */}
+          {resources[0] && (() => {
+            const res = resources[0]
+            const tierLabel = res.visibility === 'free' ? t.resources.free : res.visibility === 'plus' ? t.resources.plus : t.resources.beta
+            return (
+              <CoverCard
+                to={`/recursos/${res.slug}`}
+                coverUrl={res.preview_image_url}
+                accent={GOLD_RGB}
+                label={t.resources.title}
+                title={res.title}
+                subtitle={res.unlocked ? t.resources.unlocked : tierLabel}
+                fallbackIcon={<img src="/brand/logo/arvo-symbol-gold.svg" width="22" height="24" alt="" />}
+              />
+            )
+          })()}
         </div>
       </div>
 
