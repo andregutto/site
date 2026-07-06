@@ -2772,7 +2772,12 @@
       "deleteError": "Échec de la suppression",
       "uploadError": "Échec de l'envoi du fichier",
       "slugError": "Slug invalide : lettres minuscules, chiffres et tirets uniquement (3 à 80 caractères)",
-      "titleRequired": "Titre requis"
+      "titleRequired": "Titre requis",
+      "publishAction": "Publier maintenant",
+      "unpublishAction": "Remettre en brouillon",
+      "uploadCover": "Choisir la couverture",
+      "changeCover": "Changer la couverture",
+      "uploadCoverError": "Échec de l'envoi de la photo de couverture"
     }
   },
   "community": {

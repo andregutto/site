@@ -2,6 +2,8 @@ import { useEffect, useState, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { apiFetch } from '../lib/api'
 import { supabase } from '../lib/supabase'
+import { normalizeStorageUrl } from '../lib/storageUrl'
+import { useAuth } from '../contexts/AuthContext'
 import { useI18n } from '../contexts/I18nContext'
 import { PageLoader } from '../components/ArvoLoader'
 
@@ -59,7 +61,9 @@ export default function ResourcesAdminPage() {
   const { t } = useI18n()
   const ra = (t as any).resources?.admin ?? {}
   const navigate = useNavigate()
+  const { user } = useAuth()
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const coverInputRef = useRef<HTMLInputElement>(null)
 
   const [loading, setLoading] = useState(true)
   const [forbidden, setForbidden] = useState(false)
@@ -68,6 +72,7 @@ export default function ResourcesAdminPage() {
   const [form, setForm] = useState<FormState>(emptyForm)
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [uploadingCover, setUploadingCover] = useState(false)
   const [error, setError] = useState('')
   const [busyId, setBusyId] = useState<number | null>(null)
   const [copiedSlug, setCopiedSlug] = useState<string | null>(null)
@@ -118,6 +123,30 @@ export default function ResourcesAdminPage() {
       setError(err?.message ?? ra.uploadError ?? 'Erro ao enviar arquivo')
     } finally {
       setUploading(false)
+    }
+  }
+
+  // Capa: bucket público 'resource-covers' (migration 069), upload direto do
+  // client igual ao trip-covers — diferente do arquivo do recurso em si, que
+  // fica no bucket privado 'resources' e passa pelo signed upload URL.
+  async function handleCoverUpload(file: File) {
+    if (!user) return
+    setUploadingCover(true)
+    setError('')
+    try {
+      const ext = file.type === 'image/png' ? 'png' : file.type === 'image/webp' ? 'webp' : 'jpg'
+      const path = `${user.id}/${Date.now()}.${ext}`
+      const { error: upErr } = await supabase.storage
+        .from('resource-covers')
+        .upload(path, file, { upsert: true, contentType: file.type })
+      if (upErr) throw upErr
+      const { data } = supabase.storage.from('resource-covers').getPublicUrl(path)
+      setForm(f => ({ ...f, preview_image_url: normalizeStorageUrl(data.publicUrl) }))
+    } catch (err: any) {
+      setError(err?.message ?? ra.uploadCoverError ?? 'Erro ao enviar a foto de capa')
+    } finally {
+      setUploadingCover(false)
+      if (coverInputRef.current) coverInputRef.current.value = ''
     }
   }
 
@@ -173,6 +202,8 @@ export default function ResourcesAdminPage() {
     try {
       await apiFetch(`/resources/admin/${item.id}`, { method: 'PATCH', body: JSON.stringify({ is_published: !item.is_published }) })
       setItems(prev => prev.map(i => i.id === item.id ? { ...i, is_published: !item.is_published } : i))
+    } catch (err: any) {
+      alert(err?.message ?? ra.saveError)
     } finally {
       setBusyId(null)
     }
@@ -293,15 +324,33 @@ export default function ResourcesAdminPage() {
             </div>
           )}
 
-          <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
-            <div>
-              <label style={label}>{ra.fieldPreviewImage ?? 'Imagem de capa (URL)'}</label>
-              <input style={input} value={form.preview_image_url} onChange={e => setForm(f => ({ ...f, preview_image_url: e.target.value }))} placeholder="https://..." />
+          <div>
+            <label style={label}>{ra.fieldPreviewImage ?? 'Imagem de capa'}</label>
+            <div className="flex items-center gap-3 flex-wrap">
+              {form.preview_image_url && (
+                <img src={form.preview_image_url} alt="" style={{ width: 72, height: 48, objectFit: 'cover', borderRadius: 6, border: '1px solid var(--arvo-border)' }} />
+              )}
+              <button
+                type="button"
+                onClick={() => coverInputRef.current?.click()}
+                disabled={uploadingCover}
+                style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, padding: '8px 16px', borderRadius: 8, border: '1px solid var(--arvo-border)', background: 'none', color: 'var(--arvo-fg)', cursor: 'pointer', opacity: uploadingCover ? 0.6 : 1 }}
+              >
+                {uploadingCover ? (ra.uploading ?? 'Enviando...') : form.preview_image_url ? (ra.changeCover ?? 'Trocar capa') : (ra.uploadCover ?? 'Escolher capa')}
+              </button>
+              <input
+                ref={coverInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                style={{ display: 'none' }}
+                onChange={e => { const f = e.target.files?.[0]; if (f) handleCoverUpload(f) }}
+              />
             </div>
-            <div>
-              <label style={label}>{ra.fieldKitTag ?? 'Tag do Kit'}</label>
-              <input style={input} value={form.kit_tag} onChange={e => setForm(f => ({ ...f, kit_tag: e.target.value }))} />
-            </div>
+          </div>
+
+          <div>
+            <label style={label}>{ra.fieldKitTag ?? 'Tag do Kit'}</label>
+            <input style={input} value={form.kit_tag} onChange={e => setForm(f => ({ ...f, kit_tag: e.target.value }))} />
           </div>
 
           <label className="flex items-center gap-2" style={{ cursor: 'pointer' }}>
@@ -355,7 +404,7 @@ export default function ResourcesAdminPage() {
                   {ra.editResource ?? 'Editar'}
                 </button>
                 <button onClick={() => togglePublish(item)} disabled={busyId === item.id} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, padding: '4px 12px', borderRadius: 999, border: `1px solid ${item.is_published ? 'var(--arvo-border)' : OCRE}`, background: item.is_published ? 'none' : 'rgba(232,160,32,0.08)', color: item.is_published ? 'var(--arvo-fg-soft)' : OCRE, cursor: 'pointer', opacity: busyId === item.id ? 0.5 : 1 }}>
-                  {item.is_published ? (ra.publishedNo ?? 'Rascunho').split(' ')[0] : (ra.publishedYes ?? 'Publicar').split(' ')[0]}
+                  {item.is_published ? (ra.unpublishAction ?? 'Voltar a rascunho') : (ra.publishAction ?? 'Publicar agora')}
                 </button>
                 <button onClick={() => remove(item)} disabled={busyId === item.id} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, padding: '4px 12px', borderRadius: 999, border: '1px solid var(--arvo-border)', background: 'none', color: 'var(--arvo-red, #D63B2F)', cursor: 'pointer', opacity: busyId === item.id ? 0.5 : 1, marginLeft: 'auto' }}>
                   {ra.delete ?? 'Excluir'}

@@ -2772,7 +2772,12 @@
       "deleteError": "Failed to delete",
       "uploadError": "Failed to upload file",
       "slugError": "Invalid slug: use only lowercase letters, numbers and hyphens (3 to 80 characters)",
-      "titleRequired": "Title required"
+      "titleRequired": "Title required",
+      "publishAction": "Publish now",
+      "unpublishAction": "Move back to draft",
+      "uploadCover": "Choose cover",
+      "changeCover": "Change cover",
+      "uploadCoverError": "Failed to upload cover photo"
     }
   },
   "community": {

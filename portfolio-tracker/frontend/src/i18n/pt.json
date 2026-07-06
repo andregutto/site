@@ -2772,7 +2772,12 @@
       "deleteError": "Erro ao excluir",
       "uploadError": "Erro ao enviar arquivo",
       "slugError": "Slug inválido: use apenas letras minúsculas, números e hífen (3 a 80 caracteres)",
-      "titleRequired": "Título obrigatório"
+      "titleRequired": "Título obrigatório",
+      "publishAction": "Publicar agora",
+      "unpublishAction": "Voltar a rascunho",
+      "uploadCover": "Escolher capa",
+      "changeCover": "Trocar capa",
+      "uploadCoverError": "Erro ao enviar a foto de capa"
     }
   },
   "community": {
