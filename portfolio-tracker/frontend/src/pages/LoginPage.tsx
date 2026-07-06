@@ -131,7 +131,7 @@ export default function LoginPage() {
           birthdate:         birthdate  || undefined,
           default_currency:  currency,
           preferred_locale:  locale,
-          // Atribuição de lead magnet: setado pela página pública /recursos/:slug;
+          // Atribuição de lead magnet: setado pela página pública /resources/:slug;
           // o trigger da migration 068 copia pra profiles.signup_source
           signup_source:     sessionStorage.getItem('signup_source') || undefined,
         }

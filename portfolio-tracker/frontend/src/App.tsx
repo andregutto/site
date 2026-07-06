@@ -71,15 +71,14 @@ import CommunityLayout from './pages/community/CommunityLayout'
 import CommunityHomePage from './pages/community/CommunityHomePage'
 import CommunityCategoryPage from './pages/community/CommunityCategoryPage'
 import CommunityTopicPage from './pages/community/CommunityTopicPage'
-import CommunityAdminPage from './pages/community/CommunityAdminPage'
 import HomePage from './pages/HomePage'
 import { MessagingProvider } from './contexts/MessagingContext'
 import MessagesPage from './pages/messages/MessagesPage'
 import ConversationPage from './pages/messages/ConversationPage'
 import ResourcesPage from './pages/ResourcesPage'
-import ResourcesAdminPage from './pages/ResourcesAdminPage'
 import ResourcePublicPage from './pages/ResourcePublicPage'
 import ResourceDetailPage from './pages/ResourceDetailPage'
+import AdminPage from './pages/AdminPage'
 
 function EmailConfirmGate({ email }: { email: string }) {
   const { signOut } = useAuth()
@@ -143,7 +142,7 @@ function AppRoutes() {
 
   return (
     <Routes>
-      <Route path="/login"   element={user ? <Navigate to={sessionStorage.getItem('pending_invite_token') ? `/invite/${sessionStorage.getItem('pending_invite_token')}` : sessionStorage.getItem('pending_resource_slug') ? `/recursos/${sessionStorage.getItem('pending_resource_slug')}` : (user.user_metadata?.default_section === 'finances' ? '/finances' : user.user_metadata?.default_section === 'voyage' ? '/voyage' : user.user_metadata?.default_section === 'investments' ? '/dashboard' : '/home')} replace /> : <LoginPage />} />
+      <Route path="/login"   element={user ? <Navigate to={sessionStorage.getItem('pending_invite_token') ? `/invite/${sessionStorage.getItem('pending_invite_token')}` : sessionStorage.getItem('pending_resource_slug') ? `/resources/${sessionStorage.getItem('pending_resource_slug')}` : (user.user_metadata?.default_section === 'finances' ? '/finances' : user.user_metadata?.default_section === 'voyage' ? '/voyage' : user.user_metadata?.default_section === 'investments' ? '/dashboard' : '/home')} replace /> : <LoginPage />} />
       <Route path="/"        element={user ? <Navigate to={user.user_metadata?.default_section === 'finances' ? '/finances' : user.user_metadata?.default_section === 'voyage' ? '/voyage' : user.user_metadata?.default_section === 'investments' ? '/dashboard' : '/home'} replace /> : <LandingPage />} />
       <Route path="/privacy"                element={<PrivacyPolicyPage />} />
       <Route path="/terms"                  element={<TermsOfUsePage />} />
@@ -153,13 +152,13 @@ function AppRoutes() {
       <Route path="/voyage/invite/:token"    element={<AcceptTripInvitePage />} />
       <Route path="/finances/moments/invite/:token" element={<AcceptMomentInvitePage />} />
       <Route path="/trip/:token"             element={<PublicTripPage />} />
-      {/* /recursos/:slug: só uma das duas existe por vez, dependendo de `user` —
+      {/* /resources/:slug: só uma das duas existe por vez, dependendo de `user` —
           gate de cadastro (fora do app) pra quem não tem sessão, ou a página de
           detalhe dentro do AppLayout (com header/nav normais) pra quem já está
           logado. Não dá pra ter as duas registradas ao mesmo tempo com o mesmo
           path (React Router não permite path duplicado), então a troca acontece
           aqui, condicionada ao próprio estado de auth já disponível neste componente. */}
-      {!user && <Route path="/recursos/:slug" element={<ResourcePublicPage />} />}
+      {!user && <Route path="/resources/:slug" element={<ResourcePublicPage />} />}
       <Route element={<ProtectedRoutes />}>
         <Route path="/dashboard"      element={<DashboardPage />} />
         <Route path="/assets"         element={<AssetsPage />} />
@@ -184,9 +183,10 @@ function AppRoutes() {
         <Route path="/notifications"  element={<NotificationsPage />} />
         <Route path="/home"           element={<HomePage />} />
         <Route path="/people"         element={<PeoplePage />} />
-        <Route path="/recursos"       element={<ResourcesPage />} />
-        <Route path="/recursos/admin" element={<ResourcesAdminPage />} />
-        <Route path="/recursos/:slug" element={<ResourceDetailPage />} />
+        <Route path="/admin"           element={<AdminPage />} />
+        <Route path="/resources"       element={<ResourcesPage />} />
+        <Route path="/resources/admin" element={<Navigate to="/admin?tab=resources" replace />} />
+        <Route path="/resources/:slug" element={<ResourceDetailPage />} />
         <Route path="/messages"       element={<MessagesPage />} />
         <Route path="/messages/:conversationId" element={<ConversationPage />} />
         <Route path="/archived"       element={<Navigate to="/assets?view=archived" replace />} />
@@ -199,7 +199,7 @@ function AppRoutes() {
         </Route>
         <Route path="/community"       element={<CommunityLayout />}>
           <Route index                element={<CommunityHomePage />} />
-          <Route path="admin"         element={<CommunityAdminPage />} />
+          <Route path="admin"         element={<Navigate to="/admin" replace />} />
           <Route path=":slug"         element={<CommunityCategoryPage />} />
           <Route path=":slug/:topicId" element={<CommunityTopicPage />} />
         </Route>

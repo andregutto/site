@@ -116,6 +116,13 @@ function toAuthor(userId: string, display: { name?: string; email: string; avata
 }
 
 // ── GET /api/community/categories ───────────────────────────────────────────
+// Usado pelo header/AppLayout pra decidir se mostra o item "Administração" no
+// menu do avatar — mesma tabela community_admins que já governa o admin de
+// Comunidade e de Recursos, então um flag só cobre os dois.
+router.get('/is-admin', async (req: any, res: any) => {
+  res.json({ is_admin: await isAdmin(uid(req)) })
+})
+
 router.get('/categories', async (req: any, res: any) => {
   const userId = uid(req)
   try {

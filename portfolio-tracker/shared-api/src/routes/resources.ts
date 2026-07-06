@@ -4,7 +4,7 @@ import { supabaseAdmin } from '../lib/supabase.js'
 import { cache } from '../lib/cache.js'
 import { TIER_RANK } from './community.js'
 
-// Recursos (lead magnets do canal): página pública /recursos/:slug com
+// Recursos (lead magnets do canal): página pública /resources/:slug com
 // preview, mas download/conteúdo só depois de cadastro/login — mesmo espírito
 // dos links compartilhados (shared.ts), porém com auth obrigatória em vez de
 // acesso público. Migration 068. Atribuição: profiles.signup_source +
@@ -116,7 +116,7 @@ router.get('/public/:slug', async (req: Request, res: Response) => {
 // ── Autenticado ──────────────────────────────────────────────────────────────
 
 // GET /api/resources/:slug — detalhe de um recurso pra quem já está logado
-// (página /recursos/:slug dentro do app, com header/nav normais — diferente
+// (página /resources/:slug dentro do app, com header/nav normais — diferente
 // do preview público, que é só título/descrição pro gate de cadastro).
 router.get('/:slug', requireAuth, async (req, res: Response) => {
   const userId = uid(req)

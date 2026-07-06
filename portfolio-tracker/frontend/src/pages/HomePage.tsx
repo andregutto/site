@@ -332,7 +332,7 @@ export default function HomePage() {
             </div>
           )}
 
-          {/* Recursos — planilhas/guias do canal, mesmo endpoint da página /recursos */}
+          {/* Recursos — planilhas/guias do canal, mesmo endpoint da página /resources */}
           {resources.length > 0 && (
             <div style={{ ...card, overflow: 'hidden' }}>
               <div style={{ padding: '16px 20px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'linear-gradient(90deg, rgba(27,79,216,0.10), transparent 70%)' }}>
@@ -342,12 +342,12 @@ export default function HomePage() {
                   </span>
                   <p style={{ ...cardLabel, color: 'var(--arvo-fg-muted)' }}>{t.resources.title}</p>
                 </div>
-                <Link to="/recursos" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: '#1B4FD8', textDecoration: 'none' }}>{th.seeAll ?? 'Ver tudo'} →</Link>
+                <Link to="/resources" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: '#1B4FD8', textDecoration: 'none' }}>{th.seeAll ?? 'Ver tudo'} →</Link>
               </div>
               {resources.map(res => (
                 <Link
                   key={res.slug}
-                  to={`/recursos/${res.slug}`}
+                  to={`/resources/${res.slug}`}
                   className="w-full text-left flex items-center gap-3"
                   style={{ padding: '14px 20px', borderTop: '1px solid var(--arvo-border-soft)', textDecoration: 'none' }}
                 >

@@ -112,7 +112,7 @@ export default function ResourceDetailPage() {
     return (
       <div className="py-6" style={{ textAlign: 'center' }}>
         <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, fontWeight: 600, color: 'var(--arvo-fg)' }}>{r.notFound}</p>
-        <button onClick={() => navigate('/recursos')} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-soft)', background: 'none', border: 'none', cursor: 'pointer' }}>
+        <button onClick={() => navigate('/resources')} style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-soft)', background: 'none', border: 'none', cursor: 'pointer' }}>
           ← {r.title}
         </button>
       </div>
@@ -132,7 +132,7 @@ export default function ResourceDetailPage() {
   return (
     <div className="py-6 space-y-4" style={{ maxWidth: 640, margin: '0 auto' }}>
       <button
-        onClick={() => navigate('/recursos')}
+        onClick={() => navigate('/resources')}
         style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)', padding: 0 }}
       >
         {r.title} <span style={{ opacity: 0.5 }}>/</span> <span style={{ color: 'var(--arvo-fg)' }}>{resource.title}</span>

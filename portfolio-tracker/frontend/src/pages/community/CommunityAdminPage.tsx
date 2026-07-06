@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { apiFetch } from '../../lib/api'
 import { useI18n } from '../../contexts/I18nContext'
 import { PageLoader } from '../../components/ArvoLoader'
@@ -130,16 +130,6 @@ export default function CommunityAdminPage() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <Link to="/community" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 12, color: 'var(--arvo-fg-soft)', textDecoration: 'none' }}>
-          ← {tc?.backToCommunity ?? 'Voltar para a comunidade'}
-        </Link>
-        <div style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: OCRE, margin: '14px 0 6px' }}>
-          {ta.eyebrow ?? 'ADMINISTRAÇÃO'}
-        </div>
-        <h1 style={{ fontFamily: 'var(--arvo-font-display)', fontSize: 26, color: 'var(--arvo-fg)' }}>{ta.title ?? 'Painel da comunidade'}</h1>
-      </div>
-
       {/* ── Categorias ── */}
       <section className="space-y-3">
         <h2 style={sectionTitle}>{ta.categories ?? 'Categorias'}</h2>
