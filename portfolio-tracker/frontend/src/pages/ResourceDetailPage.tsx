@@ -202,17 +202,17 @@ export default function ResourceDetailPage() {
               )}
             </div>
           </div>
+
+          {resource.description && (
+            <div style={{ paddingTop: 4, borderTop: '1px solid var(--arvo-border-soft, var(--arvo-border))' }}>
+              <h2 style={{ fontFamily: 'var(--arvo-font-display, var(--arvo-font-body))', fontSize: 15, color: 'var(--arvo-fg)', margin: '10px 0 6px' }}>{r.aboutTitle}</h2>
+              <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: 'var(--arvo-fg-soft)', lineHeight: 1.6, margin: 0 }}>
+                {resource.description}
+              </p>
+            </div>
+          )}
         </div>
       </div>
-
-      {resource.description && (
-        <div style={{ padding: '4px 4px' }}>
-          <h2 style={{ fontFamily: 'var(--arvo-font-display, var(--arvo-font-body))', fontSize: 16, color: 'var(--arvo-fg)', margin: '0 0 6px' }}>{r.aboutTitle}</h2>
-          <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 14, color: 'var(--arvo-fg-soft)', lineHeight: 1.6, margin: 0 }}>
-            {resource.description}
-          </p>
-        </div>
-      )}
     </div>
   )
 }
