@@ -132,7 +132,9 @@ export default function ResourcePublicPage() {
     setGoogleLoading(true)
     sessionStorage.setItem('pending_resource_slug', slug ?? '')
     try {
-      await signInWithGoogle()
+      // Passa o próprio path do recurso: o retorno do Google cai direto aqui,
+      // sem visitar /login antes (diferente do login normal do app).
+      await signInWithGoogle(`/recursos/${slug}`)
     } catch (err) {
       setFormError(err instanceof Error ? err.message : 'Erro desconhecido')
       setGoogleLoading(false)
@@ -264,17 +266,83 @@ export default function ResourcePublicPage() {
     </div>
   )
 
-  // ── Authenticated: single centered panel, no login form needed ──
+  // ── Authenticated: full content page (hero + cards), same family as
+  // PublicMomentPage/PublicTripPage — no login form needed, so no reason to
+  // keep the dark split layout, this is a real page now, not a gate. ──
   if (user) {
+    const cardStyle: React.CSSProperties = { background: 'var(--arvo-surface, #FFFFFF)', border: '1px solid var(--arvo-border)', borderRadius: 16 }
     return (
-      <div style={pageShell}>
-        <div style={bgPhoto} /><div style={bgOverlay} /><div className="arvo-grain" />
-        <div style={{ position: 'relative', zIndex: 2, maxWidth: 460, margin: '0 auto', width: '100%' }}>
-          <Link to="/home" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 10, marginBottom: 40 }}>
-            <img src="/brand/logo/arvo-symbol-gold.svg" width="20" height="21" alt="" />
-            <span style={{ fontFamily: F_SANS, fontSize: 13, letterSpacing: '0.28em', textIndent: '0.28em', color: 'var(--arvo-offwhite)' }}>arvo</span>
+      <div style={{ minHeight: '100vh', background: 'var(--arvo-bg, var(--arvo-offwhite))', paddingTop: 'env(safe-area-inset-top, 0px)' }}>
+        {/* Hero */}
+        {preview.preview_image_url ? (
+          <div style={{ height: 220 }} className="sm:h-72 overflow-hidden">
+            <img src={preview.preview_image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+          </div>
+        ) : (
+          <div style={{ height: 160, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--arvo-black)' }}>
+            <img src="/brand/logo/arvo-symbol-gold.svg" width="36" height="38" alt="" />
+          </div>
+        )}
+
+        <div style={{ maxWidth: 640, margin: '0 auto', padding: '28px 20px 48px', display: 'flex', flexDirection: 'column', gap: 20 }}>
+          <Link to="/recursos" style={{ fontFamily: F_SANS, fontSize: 12, letterSpacing: '0.04em', color: 'var(--arvo-fg-soft)', textDecoration: 'none' }}>
+            ← {r.title}
           </Link>
-          {infoBlock}
+
+          <div>
+            <span style={{ fontFamily: F_SANS, fontSize: 10, letterSpacing: '0.20em', textTransform: 'uppercase', color: 'var(--arvo-gold-text, #8C6A28)', fontWeight: 600 }}>
+              {preview.visibility === 'paid' ? r.members : r.free}
+            </span>
+            <h1 style={{ fontFamily: F_DISPLAY, fontWeight: 400, fontSize: 'clamp(26px, 3.5vw, 36px)', color: 'var(--arvo-fg)', margin: '8px 0 0', lineHeight: 1.2 }}>
+              {preview.title}
+            </h1>
+          </div>
+
+          {preview.description && (
+            <p style={{ fontFamily: F_SANS, fontSize: 15, color: 'var(--arvo-fg-soft)', lineHeight: 1.65, margin: 0 }}>
+              {preview.description}
+            </p>
+          )}
+
+          {/* Action card */}
+          <div style={{ ...cardStyle, padding: '22px 24px' }}>
+            {unlockError && <p style={{ fontFamily: F_SANS, fontSize: 13, color: 'var(--arvo-red)', margin: '0 0 14px' }}>{unlockError}</p>}
+
+            {result ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                {result.type === 'content' ? (
+                  <div>
+                    <p style={{ fontFamily: F_SANS, fontSize: 11.5, color: 'var(--arvo-green, #1F8A5B)', fontWeight: 600, margin: '0 0 10px', letterSpacing: '0.08em', textTransform: 'uppercase' }}>{r.contentUnlocked}</p>
+                    <div style={{ fontFamily: F_SANS, fontSize: 14, color: 'var(--arvo-fg)', lineHeight: 1.65, whiteSpace: 'pre-wrap', maxHeight: 420, overflowY: 'auto', padding: '16px 18px', background: 'var(--arvo-bg, var(--arvo-offwhite))', borderRadius: 10, border: '1px solid var(--arvo-border-soft, var(--arvo-border))' }}>
+                      {result.content_md}
+                    </div>
+                  </div>
+                ) : result.type === 'link' ? (
+                  <>
+                    <p style={{ fontFamily: F_SANS, fontSize: 12.5, color: 'var(--arvo-green, #1F8A5B)', margin: 0, letterSpacing: '0.04em' }}>{r.contentUnlocked}</p>
+                    <a href={result.external_url} target="_blank" rel="noopener noreferrer" style={{ ...btnPrimary, display: 'block', textAlign: 'center', textDecoration: 'none' }}>
+                      {r.openLink}
+                    </a>
+                  </>
+                ) : (
+                  <>
+                    <p style={{ fontFamily: F_SANS, fontSize: 12.5, color: 'var(--arvo-green, #1F8A5B)', margin: 0 }}>{r.downloadStarted}</p>
+                    <a href={result.download_url} style={{ ...btnPrimary, display: 'block', textAlign: 'center', textDecoration: 'none' }}>
+                      {r.downloadAgain}
+                    </a>
+                  </>
+                )}
+              </div>
+            ) : preview.visibility === 'paid' ? (
+              <p style={{ fontFamily: F_SANS, fontSize: 13.5, color: 'var(--arvo-fg-soft)', margin: 0 }}>{r.membersSoon}</p>
+            ) : (
+              <button onClick={handleUnlock} disabled={unlocking} style={{ ...btnPrimary, opacity: unlocking ? 0.6 : 1 }}>
+                {unlocking ? r.unlocking : r.unlockCta}
+              </button>
+            )}
+          </div>
+
+          <Link to="/recursos" style={{ fontFamily: F_SANS, fontSize: 12.5, color: 'var(--arvo-fg-soft)', textAlign: 'center' }}>{r.exploreMore}</Link>
         </div>
       </div>
     )
