@@ -350,7 +350,7 @@ export default function PerformancePage() {
         actions={
           <>
             <div className="w-full sm:w-auto">
-              <Segmented
+              <Segmented<PeriodMode>
                 ariaLabel={t.performance.subtitle}
                 value={mode}
                 onChange={setMode}
@@ -451,7 +451,7 @@ export default function PerformancePage() {
                     {chartView === 'value' ? t.dashboard.patrimony : t.performance.accumulatedReturn} · {periodLabel}
                   </h2>
                   <div className="flex items-center gap-2 flex-wrap">
-                    <Segmented
+                    <Segmented<'return' | 'value'>
                       ariaLabel={t.performance.accumulatedReturn}
                       value={chartView}
                       onChange={setChartView}
@@ -461,7 +461,7 @@ export default function PerformancePage() {
                       ]}
                     />
                     {chartView === 'value' && (
-                      <Segmented
+                      <Segmented<'linear' | 'log'>
                         ariaLabel="Escala"
                         value={valueScale}
                         onChange={setValueScale}

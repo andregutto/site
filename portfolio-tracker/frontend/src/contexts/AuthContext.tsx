@@ -7,7 +7,7 @@ interface AuthContextType {
   session: Session | null
   loading: boolean
   signIn: (email: string, password: string) => Promise<void>
-  signInWithGoogle: () => Promise<void>
+  signInWithGoogle: (redirectPath?: string) => Promise<void>
   signUp: (email: string, password: string, metadata?: Record<string, unknown>) => Promise<void>
   signOut: () => Promise<void>
 }
@@ -122,14 +122,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error) throw error
   }
 
-  async function signInWithGoogle() {
+  async function signInWithGoogle(redirectPath = '/login') {
     // Redirects to Google via the Supabase authorize endpoint (through the /sb
     // proxy in prod). On return, detectSessionInUrl picks up the tokens on
-    // /login and the router redirects to the app (incl. pending_invite_token).
+    // whatever path is passed here — defaults to /login (which then handles
+    // pending_invite_token etc.), but callers like the resource gate page
+    // pass their own path so the OAuth round-trip lands directly back on
+    // them instead of visibly bouncing through /login first.
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/login`,
+        redirectTo: `${window.location.origin}${redirectPath}`,
         queryParams: { prompt: 'select_account' },
       },
     })

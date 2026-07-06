@@ -245,7 +245,7 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
           <div className="flex items-center gap-2 min-w-0">
             {!hasExternal && (
               <div className="hidden md:block">
-                <Segmented
+                <Segmented<PeriodKey>
                   ariaLabel={d.assetsTitle}
                   value={period}
                   onChange={setPeriod}
@@ -265,7 +265,7 @@ export default function AssetTable({ assets, onAssetClick, favorites = new Set()
         </div>
         {!hasExternal && (
           <div className="md:hidden">
-            <Segmented
+            <Segmented<PeriodKey>
               ariaLabel={d.assetsTitle}
               value={period}
               onChange={setPeriod}

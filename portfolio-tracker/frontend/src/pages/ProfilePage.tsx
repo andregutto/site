@@ -600,7 +600,7 @@ export default function ProfilePage() {
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
-      <PageHeaderTabs title={t.profile.title} tabs={TABS} activeTab={tab} onTabChange={setTab} />
+      <PageHeaderTabs<'personal' | 'preferences' | 'advanced'> title={t.profile.title} tabs={TABS} activeTab={tab} onTabChange={setTab} />
 
       {loading ? (
         <PageLoader />

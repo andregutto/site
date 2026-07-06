@@ -212,7 +212,7 @@ export default function FinancesInsightsPage() {
 
   return (
     <div className="space-y-5">
-      <PageHeaderTabs title={t.finances.insightsTitle} subtitle={t.finances.insightsSubtitle} tabs={TABS} activeTab={tab} onTabChange={setTab} marginBottom={0} />
+      <PageHeaderTabs<'subscriptions' | 'fees'> title={t.finances.insightsTitle} subtitle={t.finances.insightsSubtitle} tabs={TABS} activeTab={tab} onTabChange={setTab} marginBottom={0} />
 
       {/* ── Subscriptions ────────────────────────────────────────── */}
       {tab === 'subscriptions' && (

@@ -312,7 +312,7 @@ export default function DiversificationPage() {
         eyebrow={t.dashboard.eyebrow}
         title={d.title}
         actions={
-          <Segmented
+          <Segmented<Tab>
             ariaLabel={d.subtitle}
             value={tab}
             onChange={setTab}
