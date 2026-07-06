@@ -332,34 +332,6 @@ export default function HomePage() {
             </div>
           )}
 
-          {/* Recursos — planilhas/guias do canal, mesmo endpoint da página /recursos */}
-          {resources.length > 0 && (
-            <div style={{ ...card, overflow: 'hidden' }}>
-              <div style={{ padding: '16px 20px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'linear-gradient(90deg, rgba(27,79,216,0.10), transparent 70%)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ color: '#1B4FD8', display: 'inline-flex' }}>
-                    <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7}><path strokeLinecap="round" strokeLinejoin="round" d="M4 6.5h16M4 6.5v11a2 2 0 002 2h12a2 2 0 002-2v-11M4 6.5l2.5-3h11L20 6.5M12 10.5v6m-3-3h6" /></svg>
-                  </span>
-                  <p style={{ ...cardLabel, color: 'var(--arvo-fg-muted)' }}>{t.resources.title}</p>
-                </div>
-                <Link to="/recursos" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: '#1B4FD8', textDecoration: 'none' }}>{th.seeAll ?? 'Ver tudo'} →</Link>
-              </div>
-              {resources.map(res => (
-                <Link
-                  key={res.slug}
-                  to={`/recursos/${res.slug}`}
-                  className="w-full text-left flex items-center gap-3"
-                  style={{ padding: '14px 20px', borderTop: '1px solid var(--arvo-border-soft)', textDecoration: 'none' }}
-                >
-                  <span style={{ color: '#1B4FD8', display: 'inline-flex', flexShrink: 0 }}><TypeIcon type={res.resource_type} /></span>
-                  <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{res.title}</span>
-                  <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: res.unlocked ? 'var(--arvo-green, #1F8A5B)' : 'var(--arvo-fg-soft)', flexShrink: 0 }}>
-                    {res.unlocked ? t.resources.unlocked : res.visibility === 'free' ? t.resources.free : res.visibility === 'plus' ? t.resources.plus : t.resources.beta}
-                  </span>
-                </Link>
-              ))}
-            </div>
-          )}
         </div>
 
         {/* Coluna lateral */}
@@ -461,6 +433,30 @@ export default function HomePage() {
                 <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M2 4.5h6M2 4.5l2.2-2.2M2 4.5l2.2 2.2M14 11.5H6M14 11.5l-2.2-2.2M14 11.5l-2.2 2.2" /></svg>
                 {th.splitExpense ?? 'Dividir despesa'}
               </button>
+            </div>
+          )}
+
+          {/* Recursos — planilhas/guias do canal, mesmo endpoint da página /recursos. Pequeno
+              e neutro aqui (sem cor própria): a Hoje já reserva cor pra cada vertical de verdade. */}
+          {resources.length > 0 && (
+            <div style={{ ...card, padding: '16px 18px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <p style={cardLabel}>{t.resources.title}</p>
+                <Link to="/recursos" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: 'var(--arvo-fg-muted)', textDecoration: 'none' }}>{th.seeAll ?? 'Ver tudo'} →</Link>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 11 }}>
+                {resources.slice(0, 2).map(res => (
+                  <Link
+                    key={res.slug}
+                    to={`/recursos/${res.slug}`}
+                    className="flex items-center gap-3"
+                    style={{ textDecoration: 'none' }}
+                  >
+                    <span style={{ color: 'var(--arvo-fg-soft)', display: 'inline-flex', flexShrink: 0 }}><TypeIcon type={res.resource_type} /></span>
+                    <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{res.title}</span>
+                  </Link>
+                ))}
+              </div>
             </div>
           )}
         </div>
