@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import Reveal from './Reveal';
 
 export default function Ferramentas() {
@@ -11,7 +10,12 @@ export default function Ferramentas() {
         </Reveal>
         <div className="ag-tools-grid">
           <Reveal>
-            <Link className="ag-tool" href="/planilha-custo-de-vida">
+            <a
+              className="ag-tool"
+              href="https://arvo.andregutto.com/recursos/planilha-custo-de-vida-paris"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
               <span className="ag-tool-tag">Planilha · Disponível</span>
               <h3>Custo de vida em Paris</h3>
               <p>
@@ -19,7 +23,7 @@ export default function Ferramentas() {
                 adapta pra sua realidade: aluguel, mercado, transporte, lazer.
               </p>
               <span className="ag-tool-cta">Baixar grátis →</span>
-            </Link>
+            </a>
           </Reveal>
           <Reveal delay={90}>
             <div className="ag-tool ag-tool--soon">
