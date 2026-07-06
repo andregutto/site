@@ -35,9 +35,13 @@ interface Props {
   periodLabel: string
   windowFrom?: string | null
   windowTo?: string | null
+  // Retorno da carteira no MESMO período do card (usePerformanceSummary já calculado
+  // pelo Dashboard) — mostrado como segundo número "vs Carteira" pra desambiguar o
+  // absoluto do índice sem duplicar o cálculo de performance aqui.
+  portfolioReturnPct?: number | null
 }
 
-export default function MarketIndicesCard({ periodMode, periodLabel, windowFrom, windowTo }: Props) {
+export default function MarketIndicesCard({ periodMode, periodLabel, windowFrom, windowTo, portfolioReturnPct }: Props) {
   const [data, setData] = useState<IndexSnapshot[] | null>(null)
   const [failed, setFailed] = useState(false)
   const { t } = useI18n()
@@ -81,13 +85,19 @@ export default function MarketIndicesCard({ periodMode, periodLabel, windowFrom,
       <p className="mb-3" style={{ fontFamily: "'Playfair Display', serif", fontStyle: 'italic', fontSize: 13, color: 'var(--arvo-fg-soft)' }}>
         {periodLabel}
       </p>
-      <div className="flex-1 grid items-baseline content-center" style={{ gridTemplateColumns: '1fr auto auto', columnGap: 14, rowGap: 10 }}>
+      <div className="flex-1 grid items-baseline content-center" style={{ gridTemplateColumns: `1fr auto auto${portfolioReturnPct != null ? ' auto' : ''}`, columnGap: 14, rowGap: 10 }}>
         {indices
           ? indices.map(idx => {
               const pct = getPct(idx)
               const isPos = pct != null && pct > 0
               const isNeg = pct != null && pct < 0
               const isCDI = idx.code === 'CDI'
+              // Vs. carteira: dois números lado a lado (absoluto do índice + relativo à
+              // carteira no mesmo período), pra não confundir com o número relativo/
+              // absoluto que aparece em outras telas (ex: linha de 30d na Hoje).
+              const vsPortfolio = pct != null && portfolioReturnPct != null ? Math.round((portfolioReturnPct - pct) * 100) / 100 : null
+              const vsPos = vsPortfolio != null && vsPortfolio > 0
+              const vsNeg = vsPortfolio != null && vsPortfolio < 0
               return (
                 <Fragment key={idx.code}>
                   <span style={{ fontFamily: "var(--arvo-font-body)", fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--arvo-fg-soft)' }}>
@@ -103,6 +113,15 @@ export default function MarketIndicesCard({ periodMode, periodLabel, windowFrom,
                   >
                     {fmtPct(pct)}
                   </span>
+                  {portfolioReturnPct != null && (
+                    <span
+                      className="arvo-num"
+                      style={{ fontFamily: "var(--arvo-font-body)", fontSize: 11.5, fontWeight: 600, color: vsPos ? 'var(--arvo-green)' : vsNeg ? 'var(--arvo-red)' : 'var(--arvo-fg-faint)', justifySelf: 'end', minWidth: 60, textAlign: 'right' }}
+                      title={t.indices.vsPortfolioTooltip}
+                    >
+                      {vsPortfolio == null ? '-' : `${vsPortfolio >= 0 ? '+' : ''}${vsPortfolio.toFixed(2)}%`}
+                    </span>
+                  )}
                 </Fragment>
               )
             })
@@ -111,9 +130,15 @@ export default function MarketIndicesCard({ periodMode, periodLabel, windowFrom,
                 <div className="h-2.5 w-16 rounded animate-pulse" style={{ background: 'var(--arvo-track-bg)' }} />
                 <div className="h-4 w-20 rounded animate-pulse justify-self-end" style={{ background: 'var(--arvo-track-bg)' }} />
                 <div className="h-4 w-12 rounded animate-pulse justify-self-end" style={{ background: 'var(--arvo-track-bg)' }} />
+                {portfolioReturnPct != null && <div className="h-4 w-12 rounded animate-pulse justify-self-end" style={{ background: 'var(--arvo-track-bg)' }} />}
               </Fragment>
             ))}
       </div>
+      {portfolioReturnPct != null && (
+        <p className="mt-2" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 9.5, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--arvo-fg-faint)', textAlign: 'right' }}>
+          {t.indices.vsPortfolioLabel}
+        </p>
+      )}
     </div>
   )
 }

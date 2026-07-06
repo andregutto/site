@@ -1400,7 +1400,9 @@
       "br_inflation": "Inflação BR",
       "fx": "Câmbio",
       "commodity": "Commodities"
-    }
+    },
+    "vsPortfolioLabel": "vs. minha carteira",
+    "vsPortfolioTooltip": "Quanto a sua carteira rendeu a mais (ou a menos) que esse índice, no mesmo período"
   },
   "modals": {
     "valorizacao": "Valorização",

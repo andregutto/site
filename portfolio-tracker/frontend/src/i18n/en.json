@@ -1400,7 +1400,9 @@
       "br_inflation": "BR Inflation",
       "fx": "FX",
       "commodity": "Commodities"
-    }
+    },
+    "vsPortfolioLabel": "vs. my portfolio",
+    "vsPortfolioTooltip": "How much your portfolio returned above (or below) this index, over the same period"
   },
   "modals": {
     "valorizacao": "Appreciation",

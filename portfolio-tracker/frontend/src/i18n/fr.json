@@ -1400,7 +1400,9 @@
       "br_inflation": "Inflation BR",
       "fx": "Change",
       "commodity": "Matières premières"
-    }
+    },
+    "vsPortfolioLabel": "vs. mon portefeuille",
+    "vsPortfolioTooltip": "Combien votre portefeuille a rapporté de plus (ou de moins) que cet indice, sur la même période"
   },
   "modals": {
     "valorizacao": "Valorisation",

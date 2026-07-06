@@ -209,23 +209,33 @@ export default function HomePage() {
                   {th.openDashboard ?? 'Ver dashboard'}
                 </span>
               </div>
-              {/* Rentabilidade vs benchmarks nos últimos 30d (linha, não card — pra diferenciar) */}
+              {/* Rentabilidade nos últimos 30d, e quanto ficou acima/abaixo de cada benchmark
+                  (um número por índice, não o valor absoluto dele) — o absoluto de cada índice
+                  já aparece com outro significado/período no card de Índices do Dashboard;
+                  repetir aqui como número solto gerava a impressão de números "diferentes"
+                  pro mesmo índice. Aqui é sempre "quanto eu bati esse índice", sem ambiguidade. */}
               {!hideValues && cmp30 && (
                 <div style={{ position: 'relative', marginTop: 18, paddingTop: 14, borderTop: `1px solid rgba(${GOLD_RGB},0.35)`, display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '6px 20px' }}>
                   <span style={{ ...cardLabel, fontSize: 9.5, color: '#8C6A28' }}>{th.last30d ?? 'Últimos 30 dias'}</span>
+                  <span style={{ fontFamily: 'var(--arvo-font-body)' }}>
+                    <span style={{ color: 'var(--arvo-fg-soft)', fontSize: 11 }}>{th.walletShort ?? 'Carteira'} </span>
+                    <span className={cmp30.portfolio >= 0 ? 'arvo-delta-pos' : 'arvo-delta-neg'} style={{ fontSize: 14, fontWeight: 700 }}>{cmp30.portfolio >= 0 ? '+' : ''}{cmp30.portfolio.toFixed(1)}%</span>
+                  </span>
                   {[
-                    { label: th.walletShort ?? 'Carteira', v: cmp30.portfolio, strong: true },
-                    { label: 'CDI', v: cmp30.cdi, strong: false },
-                    { label: 'IBOV', v: cmp30.ibov, strong: false },
-                    { label: 'S&P 500', v: cmp30.sp500, strong: false },
-                  ].map((it, i) => (
-                    <span key={i} style={{ fontFamily: 'var(--arvo-font-body)' }}>
-                      <span style={{ color: 'var(--arvo-fg-soft)', fontSize: 11 }}>{it.label} </span>
-                      {it.v == null
-                        ? <span style={{ color: 'var(--arvo-fg-faint)', fontSize: 13 }}>–</span>
-                        : <span className={it.v >= 0 ? 'arvo-delta-pos' : 'arvo-delta-neg'} style={{ fontSize: it.strong ? 14 : 13, fontWeight: it.strong ? 700 : 600 }}>{it.v >= 0 ? '+' : ''}{it.v.toFixed(1)}%</span>}
-                    </span>
-                  ))}
+                    { label: 'CDI', v: cmp30.cdi },
+                    { label: 'IBOV', v: cmp30.ibov },
+                    { label: 'S&P 500', v: cmp30.sp500 },
+                  ].map((it, i) => {
+                    const delta = it.v == null ? null : Math.round((cmp30.portfolio - it.v) * 10) / 10
+                    return (
+                      <span key={i} style={{ fontFamily: 'var(--arvo-font-body)' }}>
+                        <span style={{ color: 'var(--arvo-fg-soft)', fontSize: 11 }}>vs {it.label} </span>
+                        {delta == null
+                          ? <span style={{ color: 'var(--arvo-fg-faint)', fontSize: 13 }}>–</span>
+                          : <span className={delta >= 0 ? 'arvo-delta-pos' : 'arvo-delta-neg'} style={{ fontSize: 13, fontWeight: 600 }}>{delta >= 0 ? '+' : ''}{delta}%</span>}
+                      </span>
+                    )
+                  })}
                 </div>
               )}
             </Link>

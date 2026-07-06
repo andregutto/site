@@ -356,7 +356,7 @@ export default function DashboardPage() {
           })()}
         </div>
         <div className="lg:col-span-1">
-          <MarketIndicesCard periodMode={periodMode} periodLabel={periodLabel} windowFrom={idxWindowFrom} windowTo={idxWindowTo} />
+          <MarketIndicesCard periodMode={periodMode} periodLabel={periodLabel} windowFrom={idxWindowFrom} windowTo={idxWindowTo} portfolioReturnPct={periodReturnPct} />
         </div>
       </div>
 
