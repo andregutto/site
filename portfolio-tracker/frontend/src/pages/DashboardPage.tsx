@@ -279,7 +279,7 @@ export default function DashboardPage() {
         actions={
           <>
             <div className="w-full sm:w-auto">
-              <Segmented
+              <Segmented<PeriodMode>
                 ariaLabel={t.archived.period}
                 value={periodMode}
                 onChange={setPeriodMode}
