@@ -159,7 +159,7 @@ export default function ResourcePublicPage() {
   return (
     <div style={pageShell}>
       <div style={bgPhoto} /><div style={bgOverlay} /><div className="arvo-grain" />
-      <div style={{ position: 'relative', zIndex: 2, maxWidth: 980, margin: '0 auto', width: '100%' }} className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+      <div style={{ position: 'relative', zIndex: 2, maxWidth: 980, margin: '0 auto', width: '100%' }} className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 lg:items-stretch">
 
         {/* ── Left: auth panel ── */}
         <div style={{ background: '#FFFFFF', borderRadius: 12, padding: '32px 28px', boxShadow: '0 8px 40px rgba(0,0,0,0.35)' }}>
@@ -267,37 +267,44 @@ export default function ResourcePublicPage() {
           )}
         </div>
 
-        {/* ── Right: resource info ── */}
-        <div style={{ padding: '0 4px', display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <div>
-            <span style={{ fontFamily: F_SANS, fontSize: 10, letterSpacing: '0.24em', textTransform: 'uppercase', color: 'var(--arvo-gold)' }}>
-              {preview.visibility === 'paid' ? r.members : r.free}
-            </span>
-            <h1 style={{ fontFamily: F_DISPLAY, fontWeight: 400, fontSize: 'clamp(26px, 3vw, 34px)', color: 'var(--arvo-offwhite, #F6F3EC)', margin: '10px 0 0', lineHeight: 1.2 }}>
-              {preview.title}
-            </h1>
-          </div>
-
+        {/* ── Right: resource info — um card só, mesma altura do card de
+            login (grid items-stretch), imagem contida dentro dele em vez
+            de flutuar solta por baixo do texto parecendo um post. ── */}
+        <div style={{
+          background: 'rgba(20,18,15,0.55)', backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)',
+          border: '1px solid rgba(255,255,255,0.12)', borderRadius: 12, overflow: 'hidden',
+          display: 'flex', flexDirection: 'column', boxShadow: '0 8px 40px rgba(0,0,0,0.35)',
+        }}>
           {preview.preview_image_url && (
-            // Faixa (banda), não a imagem inteira no tamanho original — altura fixa + object-fit: cover.
-            <div style={{ width: '100%', maxWidth: 420, height: 180, borderRadius: 10, overflow: 'hidden' }}>
+            <div style={{ height: 180, flexShrink: 0 }}>
               <img src={preview.preview_image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
             </div>
           )}
 
-          {preview.description && (
-            <p style={{ fontFamily: F_SANS, fontSize: 14.5, color: 'rgba(242,237,228,0.75)', lineHeight: 1.65, margin: 0, maxWidth: 420 }}>
-              {preview.description}
-            </p>
-          )}
+          <div style={{ padding: '28px 28px', display: 'flex', flexDirection: 'column', gap: 14, flex: 1 }}>
+            <div>
+              <span style={{ fontFamily: F_SANS, fontSize: 10, letterSpacing: '0.24em', textTransform: 'uppercase', color: 'var(--arvo-gold)' }}>
+                {preview.visibility === 'paid' ? r.members : r.free}
+              </span>
+              <h1 style={{ fontFamily: F_DISPLAY, fontWeight: 400, fontSize: 'clamp(22px, 2.6vw, 28px)', color: 'var(--arvo-offwhite, #F6F3EC)', margin: '8px 0 0', lineHeight: 1.2 }}>
+                {preview.title}
+              </h1>
+            </div>
 
-          {preview.visibility === 'paid' ? (
-            <p style={{ fontFamily: F_SANS, fontSize: 13, color: 'rgba(242,237,228,0.6)', margin: 0 }}>{r.membersSoon}</p>
-          ) : (
-            <p style={{ fontFamily: F_SANS, fontSize: 12.5, color: 'rgba(242,237,228,0.5)', letterSpacing: '0.04em', margin: 0 }}>
-              {r.unlockHint}
-            </p>
-          )}
+            {preview.description && (
+              <p style={{ fontFamily: F_SANS, fontSize: 14, color: 'rgba(242,237,228,0.75)', lineHeight: 1.6, margin: 0 }}>
+                {preview.description}
+              </p>
+            )}
+
+            {preview.visibility === 'paid' ? (
+              <p style={{ fontFamily: F_SANS, fontSize: 13, color: 'rgba(242,237,228,0.6)', margin: '0 0 0 0', marginTop: 'auto' }}>{r.membersSoon}</p>
+            ) : (
+              <p style={{ fontFamily: F_SANS, fontSize: 12.5, color: 'rgba(242,237,228,0.5)', letterSpacing: '0.04em', margin: 0, marginTop: 'auto' }}>
+                {r.unlockHint}
+              </p>
+            )}
+          </div>
         </div>
       </div>
     </div>
