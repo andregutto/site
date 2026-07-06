@@ -607,6 +607,13 @@ export default function AppLayout() {
                     </svg>
                     {t.nav.people}
                   </Link>
+                  <Link to="/recursos" onClick={() => setShowUserMenu(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors" style={{ color: 'var(--arvo-fg-muted)' }} onMouseEnter={e => (e.currentTarget.style.background='var(--arvo-hover-bg)')} onMouseLeave={e => (e.currentTarget.style.background='')}>
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4 shrink-0">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 1.5h6.5L13 5v9.5H3zM9 1.5V5h4"/>
+                      <path strokeLinecap="round" d="M8 7.5v4M6 9.7l2 1.8 2-1.8"/>
+                    </svg>
+                    {t.nav.resources}
+                  </Link>
 
                   <div style={{ borderTop: '1px solid var(--arvo-border-soft)', margin: '4px 0' }} />
                   <Link to="/profile" onClick={() => setShowUserMenu(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors" style={{ color: 'var(--arvo-fg-muted)' }} onMouseEnter={e => (e.currentTarget.style.background='var(--arvo-hover-bg)')} onMouseLeave={e => (e.currentTarget.style.background='')}>
