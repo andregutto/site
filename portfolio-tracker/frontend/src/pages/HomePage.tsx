@@ -7,7 +7,6 @@ import { useAuth } from '../contexts/AuthContext'
 import { PageLoader } from '../components/ArvoLoader'
 import { useSetupChecklist } from '../components/SetupChecklist'
 import { useActiveFriends, type ActiveFriend } from '../hooks/useActiveFriends'
-import { usePerformanceSummary, usePerformanceInception } from '../hooks/usePortfolio'
 import { PairMomentModal } from './PeoplePage'
 import { projectMonthExpenses, type ProjectionMonth } from '../lib/monthProjection'
 import CategoryIcon from './community/_shared/CategoryIcon'
@@ -63,16 +62,6 @@ export default function HomePage() {
   const [splitPicker, setSplitPicker] = useState(false)
   const [splitFriend, setSplitFriend] = useState<ActiveFriend | null>(null)
   const activeFriends = useActiveFriends().filter(f => f.user_id)
-
-  // Indicadores desde o início (rentabilidade, ganho, aportes) — reusa /performance/summary
-  const _now = new Date()
-  const _pad = (n: number) => String(n).padStart(2, '0')
-  const perfTo = `${_now.getFullYear()}-${_pad(_now.getMonth() + 1)}`
-  const _fromD = new Date(_now.getFullYear(), _now.getMonth() - 11, 1)
-  const perfFrom = `${_fromD.getFullYear()}-${_pad(_fromD.getMonth() + 1)}`
-  const inception = usePerformanceInception()
-  const inceptionMonth = inception ? inception.slice(0, 7) : perfFrom
-  const { data: perfSummary } = usePerformanceSummary(inceptionMonth, perfTo)
 
   useEffect(() => {
     apiFetch<TodayData>('/home/today')
@@ -243,7 +232,7 @@ export default function HomePage() {
                   key={topic.id}
                   onClick={() => navigate(`/community/${topic.category_slug}/${topic.id}`)}
                   className="w-full text-left flex items-center gap-3"
-                  style={{ padding: '14px 20px', borderTop: '1px solid var(--arvo-border-soft)', background: 'none', border: 'none', borderTopStyle: 'solid', cursor: 'pointer' }}
+                  style={{ padding: '14px 20px', background: 'none', border: 'none', borderTop: '1px solid var(--arvo-border-soft)', cursor: 'pointer' }}
                 >
                   <span style={{ color: '#E8A020', display: 'inline-flex', flexShrink: 0 }}><CategoryIcon slug={topic.category_slug} size={15} /></span>
                   <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{topic.title}</span>
@@ -256,36 +245,10 @@ export default function HomePage() {
 
         {/* Coluna lateral */}
         <div className="space-y-5">
-          {/* Indicadores — três principais desde o início (rentabilidade, ganho, aportes) */}
-          {perfSummary && perfSummary.return_pct != null && (
-            <Link to="/performance" style={{ ...card, padding: '18px 20px', textDecoration: 'none', display: 'block' }}>
-              <p style={cardLabel}>{th.indicatorsLabel ?? 'Indicadores'}</p>
-              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, marginTop: 12 }}>
-                <div>
-                  <p style={{ ...cardLabel, fontSize: 9.5 }}>{th.returnLabel ?? 'Rentabilidade'}</p>
-                  <p className="arvo-num" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 16, marginTop: 4 }}>
-                    <span className={hideValues ? undefined : perfSummary.return_pct >= 0 ? 'arvo-delta-pos' : 'arvo-delta-neg'}>
-                      {hideValues ? '•••' : `${perfSummary.return_pct >= 0 ? '+' : ''}${perfSummary.return_pct.toFixed(1)}%`}
-                    </span>
-                  </p>
-                </div>
-                <div>
-                  <p style={{ ...cardLabel, fontSize: 9.5 }}>{th.gainLabel ?? 'Ganho'}</p>
-                  <p className="arvo-num" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 16, marginTop: 4 }}>
-                    <span className={hideValues ? undefined : perfSummary.return_abs >= 0 ? 'arvo-delta-pos' : 'arvo-delta-neg'}>{fmt(perfSummary.return_abs, 0)}</span>
-                  </p>
-                </div>
-                <div>
-                  <p style={{ ...cardLabel, fontSize: 9.5 }}>{th.contributionsLabel ?? 'Aportes'}</p>
-                  <p className="arvo-num" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 16, color: 'var(--arvo-fg)', marginTop: 4 }}>{fmt(perfSummary.contributions, 0)}</p>
-                </div>
-              </div>
-            </Link>
-          )}
-
-          {/* Metas — progresso rumo à liberdade financeira, ou convite pra criar o plano */}
+          {/* Metas — progresso rumo à liberdade financeira. Só no desktop: era pra preencher
+              o espaço largo; no mobile some pra não empurrar Viagem/Comunidade pra baixo. */}
           {plan === null && (
-            <Link to="/finances/freedom" style={{ ...card, padding: '16px 18px', textDecoration: 'none', display: 'block' }}>
+            <Link to="/finances/freedom" className="hidden lg:block" style={{ ...card, padding: '16px 18px', textDecoration: 'none' }}>
               <p style={cardLabel}>{th.goalsLabel ?? 'Liberdade financeira'}</p>
               <p style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13, color: 'var(--arvo-fg-soft)', marginTop: 8, lineHeight: 1.4 }}>{th.goalEmpty ?? 'Defina sua meta e acompanhe o progresso.'}</p>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 12, fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, letterSpacing: '0.06em', textTransform: 'uppercase', padding: '8px 15px', borderRadius: 999, background: 'var(--arvo-pill-active-bg)', color: 'var(--arvo-pill-active-fg)' }}>
@@ -301,7 +264,7 @@ export default function HomePage() {
             const baseYear = plan.start_date ? new Date(plan.start_date).getFullYear() : new Date().getFullYear()
             const goalYear = plan.horizon_years ? baseYear + Math.round(plan.horizon_years) : null
             return (
-              <Link to="/finances/freedom" style={{ ...card, padding: '18px 20px', textDecoration: 'none', display: 'block' }}>
+              <Link to="/finances/freedom" className="hidden lg:block" style={{ ...card, padding: '18px 20px', textDecoration: 'none' }}>
                 <p style={cardLabel}>{th.goalsLabel ?? 'Liberdade financeira'}</p>
                 <p className="arvo-num" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 23, color: 'var(--arvo-fg)', marginTop: 7 }}>
                   {hideValues ? '•••' : `${Math.round(pct)}%`}
