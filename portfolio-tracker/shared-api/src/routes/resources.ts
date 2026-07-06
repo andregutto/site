@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express'
 import { requireAuth, AuthRequest } from '../middleware/auth.js'
 import { supabaseAdmin } from '../lib/supabase.js'
 import { cache } from '../lib/cache.js'
+import { TIER_RANK } from './community.js'
 
 // Recursos (lead magnets do canal): página pública /recursos/:slug com
 // preview, mas download/conteúdo só depois de cadastro/login — mesmo espírito
@@ -38,12 +39,18 @@ export interface ResourceRow {
   content_md: string | null
   preview_image_url: string | null
   cover_image_position: string | null
-  visibility: 'free' | 'paid'
+  visibility: 'free' | 'plus' | 'beta'
   kit_tag: string | null
   is_published: boolean
   sort_order: number
   created_at: string
   updated_at: string
+}
+
+async function getUserTier(userId: string): Promise<string> {
+  const { data } = await supabaseAdmin
+    .from('community_members').select('tier').eq('user_id', userId).maybeSingle()
+  return data?.tier ?? 'free'
 }
 
 interface UtmFields {
@@ -178,10 +185,17 @@ router.post('/:slug/unlock', requireAuth, async (req, res: Response) => {
 
   if (!resource) { res.status(404).json({ error: 'Recurso não encontrado' }); return }
 
-  if (resource.visibility === 'paid') {
-    // Sem sistema de pagamento ainda — o frontend mostra o estado "em breve".
-    res.status(403).json({ error: 'Recurso disponível apenas para membros', paid: true })
-    return
+  const requiredRank = TIER_RANK[resource.visibility] ?? 0
+  if (requiredRank > 0) {
+    const userTier = await getUserTier(userId)
+    const userRank = TIER_RANK[userTier] ?? 0
+    if (userRank < requiredRank) {
+      res.status(403).json({
+        error: 'Recurso disponível apenas para membros',
+        required_tier: resource.visibility,
+      })
+      return
+    }
   }
 
   // Fallback de atribuição: se o trigger não gravou (conta criada antes da
@@ -285,7 +299,7 @@ router.post('/admin', requireAuth, async (req, res: Response) => {
     content_md:           content_md ?? null,
     preview_image_url:    preview_image_url ?? null,
     cover_image_position: cover_image_position ?? '50% 50%',
-    visibility:           visibility === 'paid' ? 'paid' : 'free',
+    visibility:           ['plus', 'beta'].includes(visibility) ? visibility : 'free',
     kit_tag:              kit_tag ?? null,
     is_published:         !!is_published,
     sort_order:           Number(sort_order) || 0,
@@ -307,6 +321,7 @@ router.patch('/admin/:id', requireAuth, async (req, res: Response) => {
   const patch: Record<string, unknown> = {}
   for (const key of allowed) if (key in (req.body ?? {})) patch[key] = req.body[key]
   if (typeof patch.slug === 'string' && !SLUG_RE.test(patch.slug)) { res.status(400).json({ error: 'Slug inválido' }); return }
+  if ('visibility' in patch && !['free', 'plus', 'beta'].includes(patch.visibility as string)) { res.status(400).json({ error: 'Visibilidade inválida' }); return }
   if (!Object.keys(patch).length) { res.status(400).json({ error: 'Nada para atualizar' }); return }
   patch.updated_at = new Date().toISOString()
 

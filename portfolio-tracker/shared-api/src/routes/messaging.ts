@@ -2,7 +2,7 @@ import { Router } from 'express'
 import { requireAuth, AuthRequest } from '../middleware/auth.js'
 import { supabaseAdmin } from '../lib/supabase.js'
 import { userDisplay, areActiveFriends } from './people.js'
-import { ensureMemberTier } from './community.js'
+import { ensureMemberTier, TIER_RANK } from './community.js'
 
 const router = Router()
 router.use(requireAuth)
@@ -12,14 +12,14 @@ function uid(req: Parameters<typeof requireAuth>[0]): string {
 }
 
 // Ferramenta premium: por enquanto MESSAGING_TIER_REQUIRED=free libera todo mundo
-// pra testes. Quando virar 'paid', qualquer usuário com tier 'free' recebe 403 em
-// TODOS os endpoints deste router — o switch é só trocar a env var.
-const TIER_REQUIRED = (process.env.MESSAGING_TIER_REQUIRED ?? 'free') as 'free' | 'paid'
+// pra testes. Quando virar 'plus' ou 'beta', qualquer usuário abaixo desse tier
+// recebe 403 em TODOS os endpoints deste router — o switch é só trocar a env var.
+const TIER_REQUIRED = (process.env.MESSAGING_TIER_REQUIRED ?? 'free') as 'free' | 'plus' | 'beta'
 router.use(async (req: any, res: any, next: any) => {
   if (TIER_REQUIRED === 'free') { next(); return }
   try {
     const tier = await ensureMemberTier(uid(req))
-    if (tier !== 'paid') { res.status(403).json({ error: 'premium_required' }); return }
+    if (TIER_RANK[tier] < TIER_RANK[TIER_REQUIRED]) { res.status(403).json({ error: 'premium_required' }); return }
     next()
   } catch (e: any) {
     res.status(500).json({ error: e.message ?? 'Erro ao validar acesso' })

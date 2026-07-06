@@ -2711,6 +2711,8 @@
     "unlocked": "Débloqué",
     "free": "Gratuit",
     "members": "Membres",
+    "plus": "Plus",
+    "beta": "Beta",
     "membersSoon": "Cette ressource sera bientôt disponible pour les membres",
     "empty": "Aucune ressource publiée pour le moment",
     "loadError": "Erreur lors du chargement des ressources",
@@ -2744,7 +2746,8 @@
       "typeContent": "Texte débloqué après inscription",
       "fieldVisibility": "Visibilité",
       "visibilityFree": "Gratuit (débloqué avec inscription)",
-      "visibilityPaid": "Membres (bientôt disponible)",
+      "visibilityPlus": "Plus (abonnés)",
+      "visibilityBeta": "Beta (testeurs uniquement)",
       "fieldPreviewImage": "Image de couverture (URL)",
       "fieldExternalUrl": "URL externe",
       "fieldContentMd": "Contenu débloqué (texte)",
@@ -2875,7 +2878,11 @@
       "promoteConfirm": "Promouvoir {name} admin ?",
       "demoteConfirm": "Retirer {name} comme admin ?",
       "noMembers": "Aucun membre trouvé.",
-      "noPosts": "Aucun post pour le moment."
+      "noPosts": "Aucun post pour le moment.",
+      "tierFree": "Free",
+      "tierPlus": "Plus",
+      "tierBeta": "Beta",
+      "tierChanged": "Tier mis à jour"
     }
   },
   "messages": {

@@ -2711,6 +2711,8 @@
     "unlocked": "Unlocked",
     "free": "Free",
     "members": "Members",
+    "plus": "Plus",
+    "beta": "Beta",
     "membersSoon": "This resource will be available to members soon",
     "empty": "No resources published yet",
     "loadError": "Failed to load resources",
@@ -2744,7 +2746,8 @@
       "typeContent": "Text unlocked at the gate",
       "fieldVisibility": "Visibility",
       "visibilityFree": "Free (unlocks with signup)",
-      "visibilityPaid": "Members (coming soon)",
+      "visibilityPlus": "Plus (subscribers)",
+      "visibilityBeta": "Beta (testers only)",
       "fieldPreviewImage": "Cover image (URL)",
       "fieldExternalUrl": "External URL",
       "fieldContentMd": "Unlocked content (text)",
@@ -2875,7 +2878,11 @@
       "promoteConfirm": "Promote {name} to admin?",
       "demoteConfirm": "Remove {name} as admin?",
       "noMembers": "No members found.",
-      "noPosts": "No posts yet."
+      "noPosts": "No posts yet.",
+      "tierFree": "Free",
+      "tierPlus": "Plus",
+      "tierBeta": "Beta",
+      "tierChanged": "Tier updated"
     }
   },
   "messages": {

@@ -15,7 +15,7 @@ export interface CommunityMemberRow {
   name: string
   username: string | null
   avatar_url: string | null
-  tier: 'free' | 'paid'
+  tier: 'free' | 'plus' | 'beta'
   joined_at: string
   is_admin: boolean
 }

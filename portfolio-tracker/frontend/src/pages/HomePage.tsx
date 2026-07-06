@@ -8,6 +8,7 @@ import { PageLoader } from '../components/ArvoLoader'
 import { useSetupChecklist } from '../components/SetupChecklist'
 import { useActiveFriends, type ActiveFriend } from '../hooks/useActiveFriends'
 import { PairMomentModal, GroupExpensesModal, type MomentBalance } from './PeoplePage'
+import { TypeIcon, type ResourceItem } from './ResourcesPage'
 import { usePerformanceDaily, usePerformanceBenchmarks } from '../hooks/usePortfolio'
 import { projectMonthExpenses, type ProjectionMonth } from '../lib/monthProjection'
 import { addMonths, dailyComparisonSeries } from '../lib/performanceComparison'
@@ -97,6 +98,7 @@ export default function HomePage() {
   const [splitFriend, setSplitFriend] = useState<ActiveFriend | null>(null)
   const [splitGroup, setSplitGroup] = useState<{ id: number; name: string } | null>(null)
   const [splitGroups, setSplitGroups] = useState<{ id: number; name: string }[]>([])
+  const [resources, setResources] = useState<ResourceItem[]>([])
   const activeFriends = useActiveFriends().filter(f => f.user_id)
 
   // Comparação Carteira vs CDI/IBOV/S&P500 nos últimos 30 dias — MESMO cálculo do
@@ -146,6 +148,9 @@ export default function HomePage() {
       .catch(() => {})
     apiFetch<{ id: number; name: string }[]>('/shared/groups')
       .then(setSplitGroups)
+      .catch(() => {})
+    apiFetch<{ resources: ResourceItem[] }>('/resources')
+      .then(({ resources }) => setResources(resources.filter(r => !r.unlocked).concat(resources.filter(r => r.unlocked)).slice(0, 3)))
       .catch(() => {})
   }, [])
 
@@ -323,6 +328,35 @@ export default function HomePage() {
                   <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{topic.title}</span>
                   <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11, color: 'var(--arvo-fg-soft)', flexShrink: 0 }}>{timeAgo(topic.last_post_at)}</span>
                 </button>
+              ))}
+            </div>
+          )}
+
+          {/* Recursos — planilhas/guias do canal, mesmo endpoint da página /recursos */}
+          {resources.length > 0 && (
+            <div style={{ ...card, overflow: 'hidden' }}>
+              <div style={{ padding: '16px 20px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'linear-gradient(90deg, rgba(27,79,216,0.10), transparent 70%)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ color: '#1B4FD8', display: 'inline-flex' }}>
+                    <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7}><path strokeLinecap="round" strokeLinejoin="round" d="M4 6.5h16M4 6.5v11a2 2 0 002 2h12a2 2 0 002-2v-11M4 6.5l2.5-3h11L20 6.5M12 10.5v6m-3-3h6" /></svg>
+                  </span>
+                  <p style={{ ...cardLabel, color: 'var(--arvo-fg-muted)' }}>{t.resources.title}</p>
+                </div>
+                <Link to="/recursos" style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 11.5, color: '#1B4FD8', textDecoration: 'none' }}>{th.seeAll ?? 'Ver tudo'} →</Link>
+              </div>
+              {resources.map(res => (
+                <Link
+                  key={res.slug}
+                  to={`/recursos/${res.slug}`}
+                  className="w-full text-left flex items-center gap-3"
+                  style={{ padding: '14px 20px', borderTop: '1px solid var(--arvo-border-soft)', textDecoration: 'none' }}
+                >
+                  <span style={{ color: '#1B4FD8', display: 'inline-flex', flexShrink: 0 }}><TypeIcon type={res.resource_type} /></span>
+                  <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 13.5, color: 'var(--arvo-fg)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{res.title}</span>
+                  <span style={{ fontFamily: 'var(--arvo-font-body)', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: res.unlocked ? 'var(--arvo-green, #1F8A5B)' : 'var(--arvo-fg-soft)', flexShrink: 0 }}>
+                    {res.unlocked ? t.resources.unlocked : res.visibility === 'free' ? t.resources.free : res.visibility === 'plus' ? t.resources.plus : t.resources.beta}
+                  </span>
+                </Link>
               ))}
             </div>
           )}

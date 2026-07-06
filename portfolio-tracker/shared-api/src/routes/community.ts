@@ -24,6 +24,12 @@ async function isAdmin(userId: string): Promise<boolean> {
   return (await getAdminIds()).has(userId)
 }
 
+// Hierarquia de tiers do Arvo: beta ⊃ plus ⊃ free (campo único por usuário,
+// não dois eixos separados). beta vê tudo, inclusive não lançado; plus vê
+// tudo já lançado; free vê o padrão. Fonte única — reaproveitado por
+// messaging.ts (gate premium) e resources.ts (gate por recurso).
+export const TIER_RANK: Record<string, number> = { free: 0, plus: 1, beta: 2 }
+
 // Garante que o usuário tem uma linha em community_members (tier 'free' por
 // padrão) — chamado no primeiro acesso a qualquer endpoint da comunidade.
 async function ensureMember(userId: string): Promise<void> {
@@ -32,9 +38,9 @@ async function ensureMember(userId: string): Promise<void> {
 
 // Mesma garantia acima, mas retornando o tier — usado pelo gate premium de
 // messaging.ts (MESSAGING_TIER_REQUIRED) sem duplicar a lógica de upsert.
-export async function ensureMemberTier(userId: string): Promise<'free' | 'paid'> {
+export async function ensureMemberTier(userId: string): Promise<'free' | 'plus' | 'beta'> {
   const { data } = await supabaseAdmin.from('community_members').select('tier').eq('user_id', userId).maybeSingle()
-  if (data) return data.tier as 'free' | 'paid'
+  if (data) return data.tier as 'free' | 'plus' | 'beta'
   await supabaseAdmin.from('community_members').insert({ user_id: userId, tier: 'free' })
   return 'free'
 }
@@ -775,6 +781,24 @@ router.post('/admin/members/:id/demote', async (req: any, res: any) => {
     }
     await supabaseAdmin.from('community_admins').delete().eq('user_id', targetId)
     cache.deletePattern(ADMINS_CACHE_KEY)
+    res.json({ ok: true })
+  } catch (err: any) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// ── POST /api/community/admin/members/:id/tier ───────────────────────────────
+// Tier comercial do Arvo (free < plus < beta), diferente de community_admins
+// (papel de admin do workspace, mexido por promote/demote acima). Upsert
+// porque a linha em community_members pode não existir pra todo usuário.
+router.post('/admin/members/:id/tier', async (req: any, res: any) => {
+  const adminId = await requireAdmin(req, res)
+  if (!adminId) return
+  const targetId = String(req.params.id)
+  const tier = String(req.body?.tier ?? '')
+  if (!['free', 'plus', 'beta'].includes(tier)) { res.status(400).json({ error: 'tier inválido' }); return }
+  try {
+    await supabaseAdmin.from('community_members').upsert({ user_id: targetId, tier }, { onConflict: 'user_id' })
     res.json({ ok: true })
   } catch (err: any) {
     res.status(500).json({ error: err.message })
