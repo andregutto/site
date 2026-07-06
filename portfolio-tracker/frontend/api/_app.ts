@@ -26,6 +26,7 @@ import peopleRouter         from '../../shared-api/src/routes/people.js'
 import communityRouter      from '../../shared-api/src/routes/community.js'
 import homeRouter           from '../../shared-api/src/routes/home.js'
 import messagingRouter      from '../../shared-api/src/routes/messaging.js'
+import resourcesRouter      from '../../shared-api/src/routes/resources.js'
 
 const app = express()
 
@@ -62,6 +63,7 @@ app.use('/api/people',      peopleRouter)
 app.use('/api/community',   communityRouter)
 app.use('/api/home',        homeRouter)
 app.use('/api/messages',    messagingRouter)
+app.use('/api/resources',   resourcesRouter)
 
 // Health — acessível em /api/health via Vercel routing
 app.get(['/health', '/api/health'], (_req, res) => {

@@ -76,6 +76,9 @@ import HomePage from './pages/HomePage'
 import { MessagingProvider } from './contexts/MessagingContext'
 import MessagesPage from './pages/messages/MessagesPage'
 import ConversationPage from './pages/messages/ConversationPage'
+import ResourcesPage from './pages/ResourcesPage'
+import ResourcesAdminPage from './pages/ResourcesAdminPage'
+import ResourcePublicPage from './pages/ResourcePublicPage'
 
 function EmailConfirmGate({ email }: { email: string }) {
   const { signOut } = useAuth()
@@ -139,7 +142,7 @@ function AppRoutes() {
 
   return (
     <Routes>
-      <Route path="/login"   element={user ? <Navigate to={sessionStorage.getItem('pending_invite_token') ? `/invite/${sessionStorage.getItem('pending_invite_token')}` : (user.user_metadata?.default_section === 'finances' ? '/finances' : user.user_metadata?.default_section === 'voyage' ? '/voyage' : user.user_metadata?.default_section === 'investments' ? '/dashboard' : '/home')} replace /> : <LoginPage />} />
+      <Route path="/login"   element={user ? <Navigate to={sessionStorage.getItem('pending_invite_token') ? `/invite/${sessionStorage.getItem('pending_invite_token')}` : sessionStorage.getItem('pending_resource_slug') ? `/recursos/${sessionStorage.getItem('pending_resource_slug')}` : (user.user_metadata?.default_section === 'finances' ? '/finances' : user.user_metadata?.default_section === 'voyage' ? '/voyage' : user.user_metadata?.default_section === 'investments' ? '/dashboard' : '/home')} replace /> : <LoginPage />} />
       <Route path="/"        element={user ? <Navigate to={user.user_metadata?.default_section === 'finances' ? '/finances' : user.user_metadata?.default_section === 'voyage' ? '/voyage' : user.user_metadata?.default_section === 'investments' ? '/dashboard' : '/home'} replace /> : <LandingPage />} />
       <Route path="/privacy"                element={<PrivacyPolicyPage />} />
       <Route path="/terms"                  element={<TermsOfUsePage />} />
@@ -149,6 +152,7 @@ function AppRoutes() {
       <Route path="/voyage/invite/:token"    element={<AcceptTripInvitePage />} />
       <Route path="/finances/moments/invite/:token" element={<AcceptMomentInvitePage />} />
       <Route path="/trip/:token"             element={<PublicTripPage />} />
+      <Route path="/recursos/:slug"          element={<ResourcePublicPage />} />
       <Route element={<ProtectedRoutes />}>
         <Route path="/dashboard"      element={<DashboardPage />} />
         <Route path="/assets"         element={<AssetsPage />} />
@@ -173,6 +177,8 @@ function AppRoutes() {
         <Route path="/notifications"  element={<NotificationsPage />} />
         <Route path="/home"           element={<HomePage />} />
         <Route path="/people"         element={<PeoplePage />} />
+        <Route path="/recursos"       element={<ResourcesPage />} />
+        <Route path="/recursos/admin" element={<ResourcesAdminPage />} />
         <Route path="/messages"       element={<MessagesPage />} />
         <Route path="/messages/:conversationId" element={<ConversationPage />} />
         <Route path="/archived"       element={<Navigate to="/assets?view=archived" replace />} />
