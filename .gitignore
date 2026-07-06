@@ -10,6 +10,9 @@
 # production
 /build
 
+# acervo bruto de fotos (curadas vão para public/img)
+/public/fotos/
+
 # misc
 .DS_Store
 *.pem

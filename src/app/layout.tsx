@@ -1,6 +1,14 @@
 import type { Metadata } from "next";
-import { Libre_Baskerville, Playfair_Display, DM_Sans, DM_Mono } from "next/font/google";
+import { Libre_Baskerville, Playfair_Display, DM_Sans, DM_Mono, Fraunces } from "next/font/google";
 import "./globals.css";
+
+const fraunces = Fraunces({
+  weight: ["300", "400", "500", "600"],
+  style: ["normal", "italic"],
+  subsets: ["latin"],
+  variable: "--f-fraunces",
+  display: "swap",
+});
 
 const libreBaskerville = Libre_Baskerville({
   weight: ["400", "700"],
@@ -33,11 +41,11 @@ const dmMono = DM_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "André Gutto",
+  title: "André Gutto · Uma vida sendo construída fora do Brasil",
   description:
     "Finanças reais e os bastidores de quem escolheu construir uma vida diferente, fora do Brasil.",
   openGraph: {
-    title: "André Gutto",
+    title: "André Gutto · Uma vida sendo construída fora do Brasil",
     description:
       "Finanças reais e os bastidores de quem escolheu construir uma vida diferente, fora do Brasil.",
     locale: "pt_BR",
@@ -53,7 +61,7 @@ export default function RootLayout({
   return (
     <html
       lang="pt-BR"
-      className={`${libreBaskerville.variable} ${playfairDisplay.variable} ${dmSans.variable} ${dmMono.variable}`}
+      className={`${libreBaskerville.variable} ${playfairDisplay.variable} ${dmSans.variable} ${dmMono.variable} ${fraunces.variable}`}
     >
       <head>
         <meta name="color-scheme" content="light only" />

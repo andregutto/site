@@ -1,25 +1,26 @@
-import Nav from "@/components/Nav";
-import Hero from "@/components/Hero";
-import Sobre from "@/components/Sobre";
-import Videos from "@/components/Videos";
-import Ferramentas from "@/components/Ferramentas";
-import Newsletter from "@/components/Newsletter";
-import Parceiros from "@/components/Parceiros";
-import Footer from "@/components/Footer";
+import "./home.css";
+import Nav from "@/components/home/Nav";
+import Hero from "@/components/home/Hero";
+import FilmStrip from "@/components/home/FilmStrip";
+import Sobre from "@/components/home/Sobre";
+import Eixos from "@/components/home/Eixos";
+import VideosSection from "@/components/home/VideosSection";
+import Night from "@/components/home/Night";
+import Footer from "@/components/home/Footer";
 
 export default function Home() {
   return (
-    <>
+    <div className="ag-page">
       <Nav />
       <main>
         <Hero />
+        <FilmStrip />
         <Sobre />
-        <Videos />
-        <Ferramentas />
-        <Newsletter />
-        <Parceiros />
+        <Eixos />
+        <VideosSection />
+        <Night />
       </main>
       <Footer />
-    </>
+    </div>
   );
 }
