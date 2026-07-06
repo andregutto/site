@@ -5,7 +5,7 @@ export default function Footer() {
         <div className="ag-footer-grid">
           <div className="ag-footer-brand">
             <a href="#" className="ag-logo">
-              André <span>Gutto</span>
+              André Gutto
             </a>
             <p>
               Histórias e números de uma vida em construção entre o Brasil e
@@ -56,9 +56,6 @@ export default function Footer() {
           </span>
         </div>
       </div>
-      <span className="ag-footer-name" aria-hidden="true">
-        André <em>Gutto</em>
-      </span>
     </footer>
   );
 }

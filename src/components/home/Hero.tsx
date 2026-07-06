@@ -29,14 +29,11 @@ export default function Hero() {
       <div className="ag-wrap ag-hero-grid">
         <div>
           <p className="ag-kicker">Brasileiro em Paris</p>
-          <h1>
-            Uma vida sendo <em className="ag-mark">construída</em> fora do
-            Brasil.
-          </h1>
+          <h1>Uma vida sendo construída fora do Brasil.</h1>
           <p className="ag-hero-sub">
-            Me mudei do Brasil pra França e resolvi contar como é, de
-            verdade: as contas, as escolhas, as estradas e os dias que não
-            saem como o planejado. Sem filtro de internet, sem personagem.
+            Planejei a mudança pro outro lado do oceano e resolvi documentar
+            a execução: as contas, as escolhas, as estradas e o que nenhum
+            plano prevê. Sem filtro de internet, sem personagem.
           </p>
           <div className="ag-hero-ctas">
             <a
@@ -57,15 +54,15 @@ export default function Hero() {
           <Stamp />
           <div className="ag-hero-frame">
             <Image
-              src="/img/andre-arco-triunfo.jpg"
-              alt="André Gutto caminhando em frente ao Arco do Triunfo, em Paris"
-              width={768}
-              height={1024}
+              src="/img/andre-luxembourg.jpg"
+              alt="André Gutto sorrindo no Jardin du Luxembourg, em Paris"
+              width={1519}
+              height={2000}
               priority
-              sizes="(max-width: 900px) 90vw, 420px"
+              sizes="(max-width: 900px) 90vw, 400px"
             />
             <p className="ag-photo-caption">
-              <span>Arco do Triunfo, Paris</span>
+              <span>Jardin du Luxembourg, Paris</span>
               <span className="ag-num">fig. 01</span>
             </p>
           </div>

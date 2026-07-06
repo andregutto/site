@@ -6,7 +6,7 @@ export default async function VideosSection() {
   const videos = await getLatestVideos(6);
 
   return (
-    <section className="ag-section" id="videos" style={{ paddingTop: 0 }}>
+    <section className="ag-section ag-dark ag-videos" id="videos">
       <div className="ag-wrap">
         <Reveal>
           <div className="ag-videos-head">

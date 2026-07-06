@@ -3,26 +3,26 @@ import Reveal from './Reveal';
 
 export default function Sobre() {
   return (
-    <section className="ag-section" id="sobre">
+    <section className="ag-section ag-sobre" id="sobre">
       <div className="ag-wrap ag-sobre-grid">
         <div>
           <Reveal>
             <p className="ag-kicker">Prazer, André</p>
             <p className="ag-lede">
-              Engenheiro de energia renovável de dia, brasileiro em tempo
-              integral. Vim pra França a trabalho e fiquei pela vida que dava
-              pra construir aqui. Esta página é onde eu conto essa história,
-              enquanto ela acontece.
+              Sou engenheiro de energia renovável. Sair do Brasil não foi
+              impulso, foi projeto: planejado, calculado e executado até
+              chegar em Paris. Esta página documenta o que vem depois do
+              plano, enquanto acontece.
             </p>
           </Reveal>
           <Reveal delay={100}>
             <div className="ag-sobre-body">
               <p>
-                Não sou influenciador nem vendedor de fórmula. Sou um cara
-                comum montando uma vida entre dois países, e resolvi abrir o
-                processo: as decisões de carreira, as contas na mesa, as
-                viagens, os recomeços e os dias em que nada sai como o
-                planejado.
+                Não sou influenciador nem vendedor de fórmula. Sou um
+                engenheiro que trata a própria vida como trata um projeto:
+                com método, com números e com honestidade sobre o que
+                funciona e o que não funciona. Carreira, contas, viagens,
+                recomeços: tudo entra no relato.
               </p>
               <p>
                 Se você pensa em sair do Brasil, já saiu, ou só gosta de ver
@@ -55,11 +55,11 @@ export default function Sobre() {
           <div className="ag-sobre-photos">
             <div className="ag-sobre-photo-main">
               <Image
-                src="/img/andre-luxembourg.jpg"
+                src="/img/andre-luxembourg-3.jpg"
                 alt="André no Jardin du Luxembourg, em Paris"
-                width={1519}
-                height={2000}
-                sizes="(max-width: 900px) 90vw, 400px"
+                width={724}
+                height={1086}
+                sizes="(max-width: 900px) 90vw, 390px"
               />
               <p className="ag-photo-caption">
                 <span>Paris, o lado de cá</span>

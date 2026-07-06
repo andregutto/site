@@ -3,7 +3,7 @@ import Reveal from './Reveal';
 
 export default function Ferramentas() {
   return (
-    <section className="ag-section" id="ferramentas" style={{ paddingTop: 0 }}>
+    <section className="ag-section ag-tools" id="ferramentas">
       <div className="ag-wrap">
         <Reveal>
           <p className="ag-kicker">Ferramentas</p>

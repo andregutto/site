@@ -30,7 +30,7 @@ const TEMAS = [
 
 export default function Eixos() {
   return (
-    <section className="ag-section" style={{ paddingTop: 0 }}>
+    <section className="ag-section ag-eixos" style={{ paddingTop: 0 }}>
       <div className="ag-wrap">
         <Reveal>
           <p className="ag-kicker">Os assuntos</p>
