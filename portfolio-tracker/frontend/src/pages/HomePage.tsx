@@ -457,7 +457,9 @@ export default function HomePage() {
 
           {/* Recursos — o mais recente (ou o próximo ainda não liberado) do canal, mesmo
               endpoint/tipo da página /resources. Mesmo formato de capa da Viagem/Momento,
-              pra ficar no mesmo idioma visual da coluna em vez de uma lista de texto solta. */}
+              pra ficar no mesmo idioma visual da coluna em vez de uma lista de texto solta.
+              Cor ocre da Comunidade (não terracota): Recursos e Comunidade foram agrupados
+              na mesma vertente "Aprender" no menu, então dividem a mesma cor. */}
           {resources[0] && (() => {
             const res = resources[0]
             const tierLabel = res.visibility === 'free' ? t.resources.free : res.visibility === 'plus' ? t.resources.plus : t.resources.beta
@@ -465,8 +467,8 @@ export default function HomePage() {
               <CoverCard
                 to={`/resources/${res.slug}`}
                 coverUrl={res.preview_image_url}
-                accent="163,106,82"
-                icon={<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="var(--arvo-terracotta)" strokeWidth={1.6}><path strokeLinecap="round" strokeLinejoin="round" d="M6.5 9.5l3-3M7.5 4.5l1-1a2.5 2.5 0 013.5 3.5l-1 1M8.5 11.5l-1 1a2.5 2.5 0 01-3.5-3.5l1-1" /></svg>}
+                accent="232,160,32"
+                icon={<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="var(--arvo-ocre)" strokeWidth={1.6}><path strokeLinecap="round" strokeLinejoin="round" d="M6.5 9.5l3-3M7.5 4.5l1-1a2.5 2.5 0 013.5 3.5l-1 1M8.5 11.5l-1 1a2.5 2.5 0 01-3.5-3.5l1-1" /></svg>}
                 label={t.resources.title}
                 title={res.title}
                 subtitle={res.unlocked ? t.resources.unlocked : tierLabel}
